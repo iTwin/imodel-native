@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/StrokeSymbol.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -27,14 +27,16 @@ LsSymbolReference::RotationMode LsSymbolReference::GetRotationMode () const
 // calculate the "maximum offset from the origin" for this XGraphics container
 // @bsimethod                                                   John.Gooding    06/2015
 //---------------------------------------------------------------------------------------
-static double getGeomPartMaxOffset (LsSymbolComponentCR symbol, double angle)
+static double getGeometryPartMaxOffset (LsSymbolComponentCR symbol, double angle)
     {
     //  NEEDSWORK_LINESTYLES  It would be better to draw this with the transform instead of transforming the range
     Transform transform;
     transform.InitFromPrincipleAxisRotations(Transform::FromIdentity(), 0.0, 0.0, angle);
     DRange3d        range;
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     symbol._GetRange(range);
+#endif
     transform.Multiply(range.low);
     transform.Multiply(range.high);
 
@@ -63,7 +65,7 @@ double LsSymbolReference::_GetMaxWidth (DgnModelP dgnModel) const
         return 0.0;
 
     double offset   = m_offset.Magnitude ();
-    double maxWidth = getGeomPartMaxOffset(*m_symbol, m_angle)/m_symbol->GetMuDef();
+    double maxWidth = getGeometryPartMaxOffset(*m_symbol, m_angle)/m_symbol->GetMuDef();
 
     return  (offset + maxWidth) * 2.0;
     }
@@ -171,23 +173,26 @@ StatusInt LsSymbolReference::Output (ViewContextP context, LineStyleSymbCP modif
             addClipPlane (convexClip, clipEnd, dir);
         }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     ClipPlaneSet clips (convexClip);
     context->DrawSymbol (m_symbol.get (), &transform, &clips);
+#endif
 
     return  SUCCESS;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    08/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
 void LsSymbolComponent::_Draw (ViewContextR context)
     {
-    DgnGeomPartPtr geomPart = GetGeomPart();
+    DgnGeometryPartPtr geomPart = GetGeometryPart();
     if (!geomPart.IsValid())
         return;
 
-    ElementGeomIO::Collection collection(geomPart->GetGeomStream().GetData(), geomPart->GetGeomStream().GetSize());
-    collection.Draw(context, context.GetCurrentDisplayParams().GetCategoryId(), *context.GetViewFlags()); 
+    GeometryStreamIO::Collection collection(geomPart->GetGeometryStream().GetData(), geomPart->GetGeometryStream().GetSize());
+    collection.Draw(context, context.GetCurrentGeometryParams().GetCategoryId(), context.GetViewFlags()); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -203,6 +208,7 @@ StatusInt LsSymbolComponent::_GetRange (DRange3dR range) const
 
     return BSISUCCESS;
     }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
@@ -222,7 +228,6 @@ LsSymbolComponent::LsSymbolComponent(LsSymbolComponentCR src) : LsComponent(&src
     m_lineColorByLevel = src.m_lineColorByLevel;
     m_postProcessed = false;
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -321,17 +326,19 @@ void                LsSymbolComponent::SetIsNoScale (bool value) { m_symFlags = 
 bool                LsSymbolComponent::Is3d ()   const { return (m_symFlags & LSSYM_3D) != 0; }
 void                LsSymbolComponent::GetRange (DRange3dR range) const 
     { 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     _GetRange (range);
+#endif
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    07/2015
 //---------------------------------------------------------------------------------------
-DgnGeomPartPtr LsSymbolComponent::GetGeomPart() const
+DgnGeometryPartPtr LsSymbolComponent::GetGeometryPart() const
     {
     if (m_geomPart.IsValid())
         return m_geomPart;
 
-    m_geomPart = GetDgnDbP()->GeomParts().LoadGeomPart(m_geomPartId);
+    m_geomPart = GetDgnDbP()->GeometryParts().LoadGeometryPart(m_geomPartId);
     return m_geomPart;
     }

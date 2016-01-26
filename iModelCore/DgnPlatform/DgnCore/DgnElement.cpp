@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/QvElemSet.h>
 #include <DgnPlatform/DgnScript.h>
 
 #define DGN_ELEMENT_PROPNAME_ECInstanceId "ECInstanceId"
@@ -145,15 +144,6 @@ DgnDbStatus DgnElement::_DeleteInDb() const
         }
 
     return DgnDbStatus::WriteError;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-void QvKey32::DeleteQvElem(QvElem* qvElem)
-    {
-    if (qvElem && qvElem != INVALID_QvElem)
-        T_HOST.GetGraphicsAdmin()._DeleteQvElem(qvElem);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -561,10 +551,11 @@ DgnDbStatus DgnElement::_LoadFromDb()
     DgnElements::ElementSelectStatement select = GetDgnDb().Elements().GetPreparedSelectStatement(*this);
     if (select.m_statement.IsNull())
         return DgnDbStatus::Success;
-    else if (BE_SQLITE_ROW != select.m_statement->Step())
+    
+    if (BE_SQLITE_ROW != select.m_statement->Step())
         return DgnDbStatus::ReadError;
-    else
-        return _ReadSelectParams(*select.m_statement, select.m_params);
+    
+    return _ReadSelectParams(*select.m_statement, select.m_params);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -591,7 +582,7 @@ struct GeomBlobHeader
 
     uint32_t m_signature;    // write this so we can detect errors on read
     uint32_t m_size;
-    GeomBlobHeader(GeomStream const& geom) {m_signature = Signature; m_size=geom.GetSize();}
+    GeomBlobHeader(GeometryStream const& geom) {m_signature = Signature; m_size=geom.GetSize();}
     GeomBlobHeader(SnappyReader& in) {uint32_t actuallyRead; in._Read((Byte*) this, sizeof(*this), actuallyRead);}
 };
 
@@ -601,8 +592,7 @@ struct GeomBlobHeader
 GeometrySource2dCP DgnElement::ToGeometrySource2d() const
     {
     GeometrySourceCP source = _ToGeometrySource();
-    
-    return (nullptr == source ? nullptr : source->ToGeometrySource2d());
+    return nullptr == source ? nullptr : source->ToGeometrySource2d();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -611,17 +601,14 @@ GeometrySource2dCP DgnElement::ToGeometrySource2d() const
 GeometrySource3dCP DgnElement::ToGeometrySource3d() const
     {
     GeometrySourceCP source = _ToGeometrySource();
-    
-    return (nullptr == source ? nullptr : source->ToGeometrySource3d());
+    return nullptr == source ? nullptr : source->ToGeometrySource3d();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeomStream::WriteGeomStreamAndStep(DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId, Statement& stmt, int stmtcolidx) const
+DgnDbStatus GeometryStream::WriteGeometryStreamAndStep(SnappyToBlob& snappy, DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId, Statement& stmt, int stmtcolidx) const
     {
-    SnappyToBlob& snappy = dgnDb.Elements().GetSnappyTo();
-
     snappy.Init();
     if (0 < GetSize())
         {
@@ -652,12 +639,11 @@ DgnDbStatus GeomStream::WriteGeomStreamAndStep(DgnDbR dgnDb, Utf8CP table, Utf8C
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeomStream::ReadGeomStream(DgnDbR dgnDb, void const* blob, int blobSize)
+DgnDbStatus GeometryStream::ReadGeometryStream(SnappyFromMemory& snappy, DgnDbR dgnDb, void const* blob, int blobSize)
     {
     if (0 == blobSize && nullptr == blob)
         return DgnDbStatus::Success;
 
-    SnappyFromMemory& snappy = dgnDb.Elements().GetSnappyFrom();
     snappy.Init(const_cast<void*>(blob), static_cast<uint32_t>(blobSize));
     GeomBlobHeader header(snappy);
     if ((GeomBlobHeader::Signature != header.m_signature) || 0 == header.m_size)
@@ -669,7 +655,7 @@ DgnDbStatus GeomStream::ReadGeomStream(DgnDbR dgnDb, void const* blob, int blobS
     ReserveMemory(header.m_size);
 
     uint32_t actuallyRead;
-    auto readStatus = snappy._Read(GetDataR(), GetSize(), actuallyRead);
+    auto readStatus = snappy._Read(GetDataP(), GetSize(), actuallyRead);
 
     if (ZIP_SUCCESS != readStatus || actuallyRead != GetSize())
         {
@@ -685,7 +671,8 @@ DgnDbStatus GeomStream::ReadGeomStream(DgnDbR dgnDb, void const* blob, int blobS
 +---------------+---------------+---------------+---------------+---------------+------*/
 Transform GeometrySource::GetPlacementTransform() const
     {
-    return (nullptr != _ToGeometrySource3d() ? _ToGeometrySource3d()->GetPlacement().GetTransform() : _ToGeometrySource2d()->GetPlacement().GetTransform());
+    GeometrySource3dCP source3d = _ToGeometrySource3d();
+    return nullptr != source3d ? source3d->GetPlacement().GetTransform() : _ToGeometrySource2d()->GetPlacement().GetTransform();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1037,7 +1024,7 @@ void ElementGeom2d::CopyFrom(GeometrySource2dCP src)
         {
         m_placement = src->GetPlacement();
         m_categoryId = src->GetCategoryId();
-        m_geom = src->GetGeomStream();
+        m_geom = src->GetGeometryStream();
         }
     }
 
@@ -1050,7 +1037,7 @@ void ElementGeom3d::CopyFrom(GeometrySource3dCP src)
         {
         m_placement = src->GetPlacement();
         m_categoryId = src->GetCategoryId();
-        m_geom = src->GetGeomStream();
+        m_geom = src->GetGeometryStream();
         }
     }
 
@@ -1060,7 +1047,7 @@ void ElementGeom3d::CopyFrom(GeometrySource3dCP src)
 void ElementGeomData::RemapIds(DgnImportContext& importer)
     {
     m_categoryId = importer.RemapCategory(m_categoryId);
-    importer.RemapGeomStreamIds(m_geom);
+    importer.RemapGeometryStreamIds(m_geom);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1085,61 +1072,10 @@ DgnElementPtr DgnElement::CopyForEdit() const
     return newEl;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeomStream::GeomStream(GeomStream const& other)
-    {
-    m_size = m_allocSize = 0;
-    m_data = nullptr;
-    SaveData(other.m_data, other.m_size);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeomStream::ReserveMemory(uint32_t size)
-    {
-    m_size = size;
-    if (size<=m_allocSize)
-        return;
-
-    m_data = (uint8_t*) realloc(m_data, size);
-    m_allocSize = size;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeomStream::~GeomStream()
-    {
-    FREE_AND_CLEAR(m_data);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeomStream& GeomStream::operator= (GeomStream const& other)
-    {
-    if (this != &other)
-        SaveData(other.m_data, other.m_size);
-
-    return *this;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeomStream::SaveData(uint8_t const* data, uint32_t size)
-    {
-    ReserveMemory(size);
-    if (data)
-        memcpy(m_data, data, size);
-    }
-
-
-static const double s_smallVal = .0005;
-inline static void fixRange(double& low, double& high) {if (low==high) {low-=s_smallVal; high+=s_smallVal;}}
+BEGIN_UNNAMED_NAMESPACE
+static const double halfMillimeter() {return .5 * DgnUnits::OneMillimeter();}
+static void fixRange(double& low, double& high) {if (low==high) {low-=halfMillimeter(); high+=halfMillimeter();}}
+END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
@@ -1174,8 +1110,8 @@ AxisAlignedBox3d Placement2d::CalculateRange() const
     // low and high are not allowed to be equal
     fixRange(range.low.x, range.high.x);
     fixRange(range.low.y, range.high.y);
-    range.low.z = -s_smallVal;
-    range.high.z = s_smallVal;
+    range.low.z = -halfMillimeter();
+    range.high.z = halfMillimeter();
 
     return range;
     }
@@ -1441,7 +1377,7 @@ RefCountedPtr<DgnElement::Aspect> DgnElement::Aspect::_CloneForImport(DgnElement
 /*=================================================================================**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +===============+===============+===============+===============+===============+======*/
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 struct MultiAspectMux : DgnElement::AppData
 {
     ECClassCR m_ecclass;
@@ -1458,7 +1394,7 @@ struct MultiAspectMux : DgnElement::AppData
     DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original) override;
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
@@ -2205,7 +2141,7 @@ DgnDbStatus ElementGeomData::ReadFrom(ECSqlStatement& stmt, ECSqlClassParams con
 
     int blobSize;
     void const* blob = stmt.GetValueBinary(geomIndex, &blobSize);
-    return m_geom.ReadGeomStream(el.GetDgnDb(), blob, blobSize);
+    return m_geom.ReadGeometryStream(el.GetDgnDb().Elements().GetSnappyFrom(), el.GetDgnDb(), blob, blobSize);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2415,13 +2351,13 @@ DgnDbStatus ElementGeomData::InsertGeomStream(DgnElementCR el, Utf8CP tableName)
     if (DgnDbStatus::Success != status)
         return status;
 
-    // Insert ElementUsesGeomParts relationships for any GeomPartIds in the GeomStream
+    // Insert ElementUsesGeometryParts relationships for any GeometryPartIds in the GeomStream
     DgnDbR db = el.GetDgnDb();
-    IdSet<DgnGeomPartId> parts;
-    ElementGeomIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeomPartIds(parts, db);
-    for (DgnGeomPartId const& partId : parts)
+    IdSet<DgnGeometryPartId> parts;
+    GeometryStreamIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeometryPartIds(parts, db);
+    for (DgnGeometryPartId const& partId : parts)
         {
-        if (BentleyStatus::SUCCESS != db.GeomParts().InsertElementGeomUsesParts(el.GetElementId(), partId))
+        if (BentleyStatus::SUCCESS != db.GeometryParts().InsertElementGeomUsesParts(el.GetElementId(), partId))
             status = DgnDbStatus::WriteError;
         }
 
@@ -2437,31 +2373,31 @@ DgnDbStatus ElementGeomData::UpdateGeomStream(DgnElementCR el, Utf8CP tableName)
     if (DgnDbStatus::Success != status)
         return status;
 
-    // Update ElementUsesGeomParts relationships for any GeomPartIds in the GeomStream
+    // Update ElementUsesGeometryParts relationships for any GeometryPartIds in the GeomStream
     DgnDbR db = el.GetDgnDb();
     DgnElementId eid = el.GetElementId();
-    CachedStatementPtr stmt = db.Elements().GetStatement("SELECT GeomPartId FROM " DGN_TABLE(DGN_RELNAME_ElementUsesGeomParts) " WHERE ElementId=?");
+    CachedStatementPtr stmt = db.Elements().GetStatement("SELECT GeometryPartId FROM " DGN_TABLE(DGN_RELNAME_ElementUsesGeometryParts) " WHERE ElementId=?");
     stmt->BindId(1, eid);
 
-    IdSet<DgnGeomPartId> partsOld;
+    IdSet<DgnGeometryPartId> partsOld;
     while (BE_SQLITE_ROW == stmt->Step())
-        partsOld.insert(stmt->GetValueId<DgnGeomPartId>(0));
+        partsOld.insert(stmt->GetValueId<DgnGeometryPartId>(0));
 
-    IdSet<DgnGeomPartId> partsNew;
-    ElementGeomIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeomPartIds(partsNew, db);
+    IdSet<DgnGeometryPartId> partsNew;
+    GeometryStreamIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeometryPartIds(partsNew, db);
 
     if (partsOld.empty() && partsNew.empty())
         return status;
 
-    bset<DgnGeomPartId> partsToRemove;
+    bset<DgnGeometryPartId> partsToRemove;
     std::set_difference(partsOld.begin(), partsOld.end(), partsNew.begin(), partsNew.end(), std::inserter(partsToRemove, partsToRemove.end()));
 
     if (!partsToRemove.empty())
         {
-        stmt = db.Elements().GetStatement("DELETE FROM " DGN_TABLE(DGN_RELNAME_ElementUsesGeomParts) " WHERE ElementId=? AND GeomPartId=?");
+        stmt = db.Elements().GetStatement("DELETE FROM " DGN_TABLE(DGN_RELNAME_ElementUsesGeometryParts) " WHERE ElementId=? AND GeometryPartId=?");
         stmt->BindId(1, eid);
 
-        for (DgnGeomPartId const& partId : partsToRemove)
+        for (DgnGeometryPartId const& partId : partsToRemove)
             {
             stmt->BindId(2, partId);
             if (BE_SQLITE_DONE != stmt->Step())
@@ -2469,12 +2405,12 @@ DgnDbStatus ElementGeomData::UpdateGeomStream(DgnElementCR el, Utf8CP tableName)
             }
         }
 
-    bset<DgnGeomPartId> partsToAdd;
+    bset<DgnGeometryPartId> partsToAdd;
     std::set_difference(partsNew.begin(), partsNew.end(), partsOld.begin(), partsOld.end(), std::inserter(partsToAdd, partsToAdd.end()));
 
-    for (DgnGeomPartId const& partId : partsToAdd)
+    for (DgnGeometryPartId const& partId : partsToAdd)
         {
-        if (BentleyStatus::SUCCESS != db.GeomParts().InsertElementGeomUsesParts(eid, partId))
+        if (BentleyStatus::SUCCESS != db.GeometryParts().InsertElementGeomUsesParts(eid, partId))
             status = DgnDbStatus::WriteError;
         }
 

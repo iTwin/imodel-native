@@ -19,7 +19,7 @@ DGNPLATFORM_TYPEDEFS (AreaOrVolumeParser)
 DGNPLATFORM_TYPEDEFS (AreaParser)
 DGNPLATFORM_TYPEDEFS (VolumeParser);
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 typedef RefCountedPtr<DoubleParser>         DoubleParserPtr;
 typedef RefCountedPtr<AngleParser>          AngleParserPtr;
@@ -399,4 +399,4 @@ public: DGNPLATFORM_EXPORT  VolumeParserPtr    Clone () const;
 
 };  //VolumeParser
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

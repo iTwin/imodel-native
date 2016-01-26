@@ -22,7 +22,7 @@ DGNPLATFORM_REF_COUNTED_PTR(AnnotationFrameStylePropertyBag);
 DGNPLATFORM_TYPEDEFS(AnnotationFrameStyle);
 DGNPLATFORM_REF_COUNTED_PTR(AnnotationFrameStyle);
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //! @addtogroup Annotations
 //! @beginGroup
@@ -216,4 +216,4 @@ namespace dgn_ElementHandler
 
 //! @endGroup
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

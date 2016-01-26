@@ -2,10 +2,10 @@
 |
 |     $Source: DgnCore/DgnRangeTree.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include    <DgnPlatformInternal.h>
+#include <DgnPlatformInternal.h>
 
 BEGIN_UNNAMED_NAMESPACE
 
@@ -16,301 +16,8 @@ typedef DgnRangeTree::LeafNode*     DRTLeafNodeP;
 typedef DgnRangeTree::InternalNode* DRTInternalNodeP;
 
 static const double   s_cameraLimit      = 1.0E-5;
-enum
-    {
-    MAX_OcclusionBatch = 1000,
-    };
 
-/*=================================================================================**//**
-* @bsiclass                                                     RayBentley      10/2009
-+===============+===============+===============+===============+===============+======*/
-struct  DRTPrefs
-{
-    double      m_minimumOcclusionPixelRatio;
-    double      m_maxOcclusionTestArea;
-    double      m_lodFilterFraction;
-    double      m_testLOD;
-    double      m_minLODFilterNPC;
-    uint32_t    m_targetLeafCount;
-    uint32_t    m_nOcclusionBatches;
-    uint32_t    m_minimumOcclusionNodeTest;
-    bool        m_doOcclusionCull;
-    bool        m_doLodFiltering;
-    bool        m_completeStatistics;
-    bool        m_weightScoreByZed;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-DRTPrefs()
-    {
-    m_minimumOcclusionPixelRatio = 500.0;
-    m_maxOcclusionTestArea = .2;
-    m_targetLeafCount = 15000;
-    m_nOcclusionBatches = 10;
-    m_doOcclusionCull = true;
-    m_lodFilterFraction = .25;
-    m_minLODFilterNPC = .0001;
-    m_minimumOcclusionNodeTest = 20;
-    m_doLodFiltering = true;
-    m_weightScoreByZed = true;
-    m_completeStatistics = true;
-    }
-};
-
-static DRTPrefs  s_prefs;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/2005
-+---------------+---------------+---------------+---------------+---------------+------*/
-static inline double timerGetResolution() { return 1.0; }
-static inline double timeGetTime() { return (double)BeTimeUtilities::QuerySecondsCounter(); }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/2005
-+---------------+---------------+---------------+---------------+---------------+------*/
-static inline double   timeGetSeconds()
-    {
-    static double  s_timerResolution = timerGetResolution();
-
-    return timeGetTime() / s_timerResolution;
-    }
-
-//#define DRT_DEBUGGING
-
-#if defined (DRT_DEBUGGING)
-#define INCLUDE_TIMER(t)            IncludeTimer  includer(t)
-#define EXCLUDE_TIMER(t)            ExcludeTimer  excluder(t)
-#define TIMER_OVERHEAD s_statistics.m_timerOverhead.m_value
-#define BEGIN_DELTA_TIMER(timer)    timer -= (timeGetTime() + TIMER_OVERHEAD); s_statistics.m_traverse.m_timerOverhead += TIMER_OVERHEAD;
-#define END_DELTA_TIMER(timer)      timer += timeGetTime(); s_statistics.m_traverse.m_timerOverhead += TIMER_OVERHEAD;
-#define BEGIN_NET_TIMER(timer)      timer -= (timeGetTime() + TIMER_OVERHEAD); s_statistics.m_traverse.m_timerOverhead += TIMER_OVERHEAD;
-#define END_NET_TIMER(timer)        timer += timeGetTime(); s_statistics.m_traverse.m_timerOverhead += TIMER_OVERHEAD;
-#define PERCENT(n,total)            (0.0 == total ? 0.0 : (100.0 * (double) n / (double) total))
-
-/*=================================================================================**//**
-* @bsiclass                                                     RayBentley      10/2009
-+===============+===============+===============+===============+===============+======*/
-struct DRTStatistics
-{
-    Logging::ILogger* m_myLogger;
-    double   m_deltaTime;
-
-    struct TimerOverhead
-        {
-        double  m_value;
-        void DoTest() {double  time1 = timeGetTime(), time2 = timeGetTime(); m_value = time2 - time1;}
-        } m_timerOverhead;
-
-    struct Create
-        {
-        double  m_createTime;
-        double  m_gatherTime;
-        double  m_treeTime;
-        size_t  m_modelCount;
-        size_t  m_leafNodeBytes;
-        size_t  m_internalNodeBytes;
-        void Clear() { memset(this, 0, sizeof (*this)); }
-        } m_create;
-
-    struct Traversal
-        {
-        double  m_totalTime;
-        double  m_newModelTime;
-        double  m_pushModelTime;
-        double  m_gatherTime;
-        double  m_sortTime;
-        double  m_occlusionTime;
-        double  m_maxOcclusionTime;
-        double  m_scoringTime;
-        double  m_elementTime;
-        double  m_maxElementTime;
-        double  m_timerOverhead;
-        size_t  m_elementVisitCount;
-        size_t  m_elementTargetCount;
-        size_t  m_leafVisitCount;
-        size_t  m_rangeTestCount;
-        size_t  m_leavesGathered;
-        size_t  m_leavesOcclusionTested;
-        size_t  m_leavesOccluded;
-        size_t  m_elementsOcclusionTested;
-        size_t  m_elementsOccluded;
-        size_t  m_occlusionCalls;
-        size_t  m_modelChangeCount;
-        size_t  m_lodFilteredElementCount;
-        size_t  m_lodFilteredNodeCount;
-        double  m_lodArea;
-        void Clear() { memset(this, 0, sizeof (*this)); }
-        } m_traverse;
-
-    void ClearCreate()   { m_create.Clear(); m_timerOverhead.DoTest(); GetLogger();}
-    void ClearTraverse() { m_traverse.Clear(); m_timerOverhead.DoTest(); GetLogger();}
-
-    void GetLogger()
-        {
-        if (nullptr == m_myLogger)
-            m_myLogger = LoggingManager::GetLogger(L"DgnCore.DgnRangeTree");
-        }
-
-    void Log(WCharCP msg, ...)
-        {
-        va_list arglist;
-        va_start(arglist, msg);
-        m_myLogger->messageva(Logging::SEVERITY.LOG_INFO, msg, arglist);
-        va_end(arglist);
-        }
-
-    void Log(WString& string) {Log(string.c_str());}
-    void Log(char* string) {Log(WString(string));}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley   06/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-WString   TimeString(double timer)
-    {
-    double  seconds = timer / timerGetResolution();
-    char    string[1024];
-
-    if (seconds > 60.0)
-        sprintf(string, "%f Minutes", seconds / 60.0);
-    else
-        sprintf(string, "%f Seconds", seconds);
-
-    return WString(string);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-double SecondsPer(double timer, size_t count)
-    {
-    if (0 == count)
-        return 0.0;
-
-    return timer / (timerGetResolution() * (double) count);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DumpTraverse()
-    {
-    Log(L"Total: %ls, Delta: %ls, Visited: Bins: %d (of %d) Elements: %d (of %d)", TimeString(m_traverse.m_totalTime).c_str(), TimeString(m_deltaTime).c_str(), m_traverse.m_leafVisitCount, m_traverse.m_leavesGathered, m_traverse.m_elementVisitCount, m_traverse.m_elementTargetCount);
-    if (s_prefs.m_completeStatistics)
-        {
-        Log(L"Element Seconds: %f (Max: %ls), Model Change Seconds: %f", SecondsPer(m_traverse.m_elementTime, m_traverse.m_elementVisitCount), TimeString(m_traverse.m_maxElementTime).c_str(), SecondsPer(m_traverse.m_newModelTime, m_traverse.m_modelChangeCount));
-        Log(L"LOD Filter Area:    %f, LOD FIlter Count (Node:Element): %d:%d", m_traverse.m_lodArea, m_traverse.m_lodFilteredNodeCount, m_traverse.m_lodFilteredElementCount);
-        Log(L"Gather Time: %ls\t    (%f percent)", TimeString(m_traverse.m_gatherTime).c_str(), PERCENT (m_traverse.m_gatherTime, m_traverse.m_totalTime));
-        Log(L"Sort Time: %ls\t      (%f percent)", TimeString(m_traverse.m_sortTime).c_str(), PERCENT (m_traverse.m_sortTime, m_traverse.m_totalTime));
-        Log(L"Model Time: %ls\t     (%f percent)", TimeString(m_traverse.m_newModelTime).c_str(), PERCENT (m_traverse.m_newModelTime, m_traverse.m_totalTime));
-        Log(L"Push Time: %ls\t      (%f percent)", TimeString(m_traverse.m_pushModelTime).c_str(), PERCENT (m_traverse.m_pushModelTime, m_traverse.m_totalTime));
-        Log(L"Score Time: %ls\t     (%f percent)", TimeString(m_traverse.m_scoringTime).c_str(), PERCENT (m_traverse.m_scoringTime, m_traverse.m_totalTime));
-        Log(L"Process Time: %ls\t   (%f percent)", TimeString(m_traverse.m_elementTime).c_str(), PERCENT (m_traverse.m_elementTime, m_traverse.m_totalTime));
-        Log(L"Occlusion Time: %ls\t (%f percent) Max: %ls", TimeString(m_traverse.m_occlusionTime).c_str(), PERCENT (m_traverse.m_occlusionTime, m_traverse.m_totalTime), TimeString(m_traverse.m_maxOcclusionTime).c_str());
-        Log(L"Accounted Time:      (%f percent)", PERCENT((m_traverse.m_newModelTime + m_traverse.m_scoringTime + m_traverse.m_gatherTime + m_traverse.m_elementTime + m_traverse.m_sortTime + m_traverse.m_occlusionTime + m_traverse.m_timerOverhead), m_traverse.m_totalTime));
-        Log(L"Timer Overhead: %ls\t (%f percent)", TimeString(m_traverse.m_timerOverhead).c_str(), PERCENT (m_traverse.m_timerOverhead, m_traverse.m_totalTime));
-        Log(L"Nodes Occlusion Tested: %d, Nodes Occluded: %d, Elements Occluded: %d, Occlusion Calls: %d", m_traverse.m_leavesOcclusionTested, m_traverse.m_leavesOccluded, m_traverse.m_elementsOccluded, m_traverse.m_occlusionCalls);
-        }
-    Log(L"______________________________________________________________");
-    }
-
-    void DumpCreate(DgnRangeTreeR tree);
-};
-
-DRTStatistics  s_statistics;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley   06/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-static WString memoryString(size_t bytes)
-    {
-    double mb = (1024.0 * 1024.0), gb = (1024.0 * mb);
-    char   string[1024];
-
-    if ((double) bytes > .5 * gb)
-        sprintf(string, "%f Gb.", (double) bytes / gb);
-    else
-        sprintf(string, "%f Mb.", (double) bytes / mb);
-
-    return WString(string);
-    }
-
-
-/*=================================================================================**//**
-* @bsiclass                                                     RayBentley      10/2009
-+===============+===============+===============+===============+===============+======*/
-struct      IncludeTimer
-{
-    double&             m_time;
-    IncludeTimer(double& time) : m_time(time) { m_time -= (timeGetTime() +  TIMER_OVERHEAD); }
-    ~IncludeTimer()                            { m_time += timeGetTime(); }
-};
-
-/*=================================================================================**//**
-* @bsiclass                                                     RayBentley      10/2009
-+===============+===============+===============+===============+===============+======*/
-struct      ExcludeTimer
-{
-    double&             m_time;
-    ExcludeTimer(double& time) : m_time(time) { m_time += timeGetTime(); }
-    ~ExcludeTimer()                            { m_time -= timeGetTime(); }
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DRTStatistics::DumpCreate(DgnRangeTreeR tree)
-    {
-    if (0 == m_create.m_modelCount)
-        return;
-
-    Log(L"*=======================================================================================================================");
-    Log(L"Create Time:     %ls", TimeString(m_create.m_createTime).c_str());
-    Log(L"Gather Time:     %ls", TimeString(m_create.m_gatherTime).c_str());
-    Log(L"Tree Time:       %ls", TimeString(m_create.m_treeTime).c_str());
-    Log(L"Model Count:     %d", m_create.m_modelCount);
-    Log(L"Max Internal Children: %d, Max Leaf Children: %d", tree.GetInternalNodeSize(), tree.GetLeafNodeSize());
-
-    Log(L"LeafNode Memory:     %ls", memoryString(m_create.m_leafNodeBytes));
-    Log(L"InternalNode Memory: %ls", memoryString(m_create.m_internalNodeBytes));
-    }
-
-#else
-
-#define INCLUDE_TIMER(t)
-#define EXCLUDE_TIMER(t)
-#define BEGIN_DELTA_TIMER(t)
-#define END_DELTA_TIMER(t)
-#define BEGIN_NET_TIMER(t)
-#define END_NET_TIMER(t)
-#endif
-
-/*=================================================================================**//**
-* @bsiclass                                                     RayBentley      10/2009
-+===============+===============+===============+===============+===============+======*/
-struct DRTRangeCorners
-{
-    DPoint3d m_points[8];
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                                    RayBentley      01/07
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    inline void InitFromRange(DRange3dCR range, TransformCP trans)
-        {
-        // Note we don't allow the box to degenerate in any direction as this makes it impossible to extract expansion direction.
-        m_points[0].x = m_points[3].x = m_points[4].x = m_points[7].x = (double) range.low.x;
-        m_points[1].x = m_points[2].x = m_points[5].x = m_points[6].x = (double) ((range.high.x == range.low.x) ? (range.low.x + 1) : range.high.x);
-
-        m_points[0].y = m_points[1].y = m_points[4].y = m_points[5].y = (double) range.low.y;
-        m_points[2].y = m_points[3].y = m_points[6].y = m_points[7].y = (double) ((range.high.y == range.low.y) ? (range.low.y + 1) : range.high.y);
-
-        m_points[0].z = m_points[1].z = m_points[2].z = m_points[3].z = (double) range.low.z;
-        m_points[4].z = m_points[5].z = m_points[6].z = m_points[7].z = (double) ((range.high.z == range.low.z) ? (range.low.z + 1) : range.high.z);
-
-        if (trans)
-            trans->Multiply(m_points, 8);
-    }
-};
+#define DEBUG_PRINTF(arg) 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      10/2009
@@ -1036,12 +743,6 @@ DgnRangeTree::DgnRangeTree(bool is3d, size_t leafSize)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnRangeTree::LoadTree(DgnModelCR dgnModel)
     {
-#ifdef DRT_DEBUGGING
-    {
-    s_statistics.m_create.m_modelCount++;
-    INCLUDE_TIMER(s_statistics.m_create.m_createTime);
-#endif
-
     BeAssert(nullptr == m_root);
     BeAssert(0 != m_internalNodeSize);
     BeAssert(0 != m_leafNodeSize);
@@ -1053,12 +754,6 @@ void DgnRangeTree::LoadTree(DgnModelCR dgnModel)
         if (nullptr != geom)
             AddElement(Entry(geom->CalculateRange3d(), *geom));
         }
-
-#ifdef DRT_DEBUGGING
-    }
-    s_statistics.m_create.m_leafNodeBytes   += m_leafNodes.GetMemoryAllocated();
-    s_statistics.m_create.m_internalNodeBytes += m_internalNodes.GetMemoryAllocated();
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1115,44 +810,6 @@ DgnRangeTree::Match DgnRangeTree::FindMatches(DgnRangeTree::Traverser& traverser
     return (nullptr == m_root) ? DgnRangeTree::Match::Ok : m_root->Traverse(traverser, Is3d());
     }
 
-//=======================================================================================
-// "Occlusion" order based traversal of the tree (front of view to back, most significant nodes first). Optionally, test for
-// occulsion culling periodically.
-//=======================================================================================
-/*=================================================================================**//**
-* @bsiclass                                                     Ray.Bentley      01/07
-+===============+===============+===============+===============+===============+======*/
-struct DRTViewNode
-{
-    DRTLeafNodeP    m_leaf;
-    DgnModelP       m_modelRef;
-    TransformP      m_localToWorld;
-    double          m_score;
-    bool            m_overlap;
-    bool            m_spansEyePlane;
-
-    bool    TestOcclusion() { return !m_spansEyePlane && m_score < s_prefs.m_maxOcclusionTestArea; }
-    size_t  GetElementCount() { return m_leaf->GetEntryCount(); }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-DRTViewNode(DRTLeafNodeP leaf, DgnModelP modelRef, TransformP localToWorld, double score, bool overlap, bool spansEyePlane)
-    {
-    m_leaf          = leaf;
-    m_modelRef      = modelRef;
-    m_localToWorld  = localToWorld;
-    m_score         = score;
-    m_overlap       = overlap;
-    m_spansEyePlane = spansEyePlane;
-    }
-};
-
-typedef bvector<DRTViewNode>    T_ViewNodes;
-typedef T_ViewNodes::iterator   T_ViewNodeIterator;
-typedef bvector<TransformP>     T_Transforms;
-typedef bvector<DgnModelP>      T_DgnModels;
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1185,13 +842,14 @@ void OcclusionScorer::InitForViewport(DgnViewportCR viewport, double minimumSize
     m_cameraOn   = viewport.IsCameraOn();
 
     m_lodFilterNPCArea = 0;
+    m_testLOD = false;
 
-    if (minimumSizePixels > 0)
+    if (minimumSizePixels > 0.0)
         {
-        BSIRect  screenRect = viewport.GetClientRect();
+        BSIRect  screenRect = viewport.GetViewRect();
         if (screenRect.Width() > 0 && screenRect.Height() > 0)
             {
-            double width = minimumSizePixels/screenRect.Width();
+            double width  = minimumSizePixels/screenRect.Width();
             double height = minimumSizePixels/screenRect.Height();
 
             m_lodFilterNPCArea = width * width + height * height;
@@ -1222,7 +880,7 @@ void OcclusionScorer::InitForViewport(DgnViewportCR viewport, double minimumSize
 * Compute Occlusion score for a range that crosses the eye plane.
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool OcclusionScorer::ComputeEyeSpanningRangeOcclusionScore(double* score, DPoint3dCP rangeCorners, bool doFrustumCull)
+bool OcclusionScorer::ComputeEyeSpanningRangeOcclusionScore(double* score, DPoint3dCP rangeCorners)
     {
     bool    anyInside = false;
     double  s_eyeSpanningCameraLimit = 1.0E-3;
@@ -1255,9 +913,6 @@ bool OcclusionScorer::ComputeEyeSpanningRangeOcclusionScore(double* score, DPoin
     if (!anyInside)
         return false;
 
-    if (doFrustumCull && (npcRange.high.x < 0.0 || npcRange.low.x > 1.0 || npcRange.high.y < 0.0 || npcRange.low.y > 1.0))
-         return false;
-
     if (nullptr == score)
         return  true;
 
@@ -1282,9 +937,8 @@ bool OcclusionScorer::ComputeEyeSpanningRangeOcclusionScore(double* score, DPoin
 * Algorithm by: Dieter Schmalstieg and Erik Pojar - ACM Transactions on Graphics.
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool OcclusionScorer::ComputeOcclusionScore(double* score, bool& overlap, bool& spansEyePlane, bool& eliminatedByLOD, DPoint3dCP localCorners, bool doFrustumCull)
+bool OcclusionScorer::ComputeOcclusionScore(double* score, bool& overlap, bool& spansEyePlane, DPoint3dCP localCorners)
     {
-    INCLUDE_TIMER(s_statistics.m_traverse.m_scoringTime);
     // Note - This routine is VERY time critical - Most of the calls to the geomlib
     // functions have been replaced with inline code as VTune had showed them as bottlenecks.
 
@@ -1345,10 +999,6 @@ bool OcclusionScorer::ComputeOcclusionScore(double* score, bool& overlap, bool& 
         OUTSIDE_Back   = (0x00001 << 5),
         };
 
-    eliminatedByLOD = false;
-    if (!doFrustumCull && 0.0 == m_lodFilterNPCArea && nullptr == score)
-        return true;
-
     uint32_t npcComputedMask = 0, zComputedMask = 0;
     uint32_t projectionIndex;
 
@@ -1389,9 +1039,6 @@ bool OcclusionScorer::ComputeOcclusionScore(double* score, bool& overlap, bool& 
 
     double  zTotal = 0.0;
 
-    // Note - Don't attempt to cull the front.back plane. - We can't do that as we're only looking at the frontmost vertices.
-    uint32_t outsideMask = OUTSIDE_Left | OUTSIDE_Right | OUTSIDE_Top | OUTSIDE_Bottom;
-
     overlap = false;
     for (uint32_t i=0, mask = 0x0001; i<nVertices; i++, mask <<= 1)
         {
@@ -1399,118 +1046,33 @@ bool OcclusionScorer::ComputeOcclusionScore(double* score, bool& overlap, bool& 
         if (0 == (mask & npcComputedMask) && !ComputeNPC(npcVertices[i], localCorners[cornerIndex]))
             {
             spansEyePlane = overlap = true;
-            return ComputeEyeSpanningRangeOcclusionScore(score, localCorners, doFrustumCull);
-            }
-
-        if (doFrustumCull)
-            {
-            if (npcVertices[i].x < 0.0)
-                {
-                overlap = true;
-                outsideMask &= ~OUTSIDE_Right;
-                npcVertices[i].x = 0.0;
-                }
-            else
-                {
-                outsideMask &= ~OUTSIDE_Left;
-                if (npcVertices[i].x > 1.0)
-                    {
-                    overlap = true;
-                    npcVertices[i].x = 1.0;
-                    }
-                else
-                    outsideMask &= ~OUTSIDE_Right;
-                }
-
-            if (npcVertices[i].y < 0.0)
-                {
-                overlap = true;
-                outsideMask &= ~OUTSIDE_Top;
-                npcVertices[i].y = 0.0;
-                }
-            else
-                {
-                outsideMask &= ~OUTSIDE_Bottom;
-                if (npcVertices[i].y > 1.0)
-                    {
-                    overlap = true;
-                    npcVertices[i].y = 1.0;
-                    }
-                else
-                    outsideMask &= ~OUTSIDE_Top;
-                }
+            return ComputeEyeSpanningRangeOcclusionScore(score, localCorners);
             }
 
         zTotal += (npcZ[cornerIndex] = npcVertices[i].z);
         zComputedMask |= (1 << cornerIndex);
         }
 
-    if (doFrustumCull)
-        {
-        if (outsideMask)           // If all off in any of the X-Y directions return now.
-            return false;
-
-        // We need to cull front and back seperately as we have only looked at the front most vertices so far and front/back requires checking all 8 corners.
-
-        outsideMask = OUTSIDE_Back | OUTSIDE_Front;
-        for (uint32_t i=0, mask = 0x0001; i<8; i++, mask <<= 1)
-            {
-            if (0 == (zComputedMask & mask))
-                {
-                npcZ[i] = m_localToNpc.coff[2][0] * localCorners[i].x + m_localToNpc.coff[2][1] * localCorners[i].y + m_localToNpc.coff[2][2] * localCorners[i].z + m_localToNpc.coff[2][3];
-
-                if (m_cameraOn)
-                    npcZ[i] /= (m_localToNpc.coff[3][0] * localCorners[i].x + m_localToNpc.coff[3][1] * localCorners[i].y + m_localToNpc.coff[3][2] * localCorners[i].z + m_localToNpc.coff[3][3]);
-                 }
-
-            if (npcZ[i] < 0.0)
-                {
-                overlap = true;
-                outsideMask &= ~OUTSIDE_Back;
-                }
-            else
-                {
-                outsideMask &= ~OUTSIDE_Front;
-                if (npcZ[i] > 1.0)
-                    overlap = true;
-                else
-                    outsideMask &= ~OUTSIDE_Back;
-                }
-            }
-        if (outsideMask)                // Off in front or Back.
-            return false;
-        }
-
-    if (0.0 != m_lodFilterNPCArea)
+    if (m_testLOD && 0.0 != m_lodFilterNPCArea)
         {
         //  In the cases where this does exclude the element it would be faster to do the other filtering first.  However, even when we exclude something due
         //  to LOD filtering we want to know if it should be drawn by the progressive display.  We want progressive display to draw zero-length line strings
         //  and points.
         int        diagonalVertex = nVertices/2;
         DPoint3dR  diagonalNPC    = npcVertices[diagonalVertex];
-        bool       lodFilterOnly  = nullptr == score && !doFrustumCull;
 
         if (!ComputeNPC(npcVertices[0], localCorners[s_indexList[projectionIndex][0]]) ||
             !ComputeNPC(diagonalNPC,    localCorners[s_indexList[projectionIndex][diagonalVertex]]))
             {
             spansEyePlane = overlap = true;
-            return lodFilterOnly ? true : ComputeEyeSpanningRangeOcclusionScore(score, localCorners, doFrustumCull);
+            return ComputeEyeSpanningRangeOcclusionScore(score, localCorners);
             }
 
         DPoint3dR   npcCorner = npcVertices[nVertices/2];
         DPoint2d    extent = { npcCorner.x - npcVertices[0].x, npcCorner.y - npcVertices[0].y};
 
-        if (extent.x * extent.x + extent.y * extent.y < m_lodFilterNPCArea)
-            {
-            eliminatedByLOD = true;
-#ifdef DRT_DEBUGGING
-            s_statistics.m_traverse.m_lodFilteredElementCount++;
-#endif
+        if ((extent.x * extent.x + extent.y * extent.y) < m_lodFilterNPCArea)
             return false;
-            }
-
-        if (lodFilterOnly)
-            return true;
 
         npcComputedMask |= 1;
         npcComputedMask |= (1 << diagonalVertex);
@@ -1537,469 +1099,9 @@ bool OcclusionScorer::ComputeOcclusionScore(double* score, bool& overlap, bool& 
     return true;
     }
 
-/*=================================================================================**//**
-* @bsiclass                                                     Ray.Bentley      09/09
-+===============+===============+===============+===============+===============+======*/
-struct OcclusionSortedProcessor : OcclusionScorer
-{
-    double                          m_frameTime;
-    double                          m_minLODArea;
-    ViewContextR                    m_viewContext;
-    ScanCriteriaCP                  m_scanCriteria;
-    DgnViewportP                    m_viewport;
-    DgnRangeTree::ProgressMonitor*  m_progressMonitor;
-    uint32_t                        m_visitElementCount;
-    DgnModelP                       m_currDgnModel;
-    DgnModelP                       m_rootModel;
-    uint32_t                        m_occlusionTestCount;
-    DgnMemoryPool<Transform,128>    m_localToWorldTrans;
-    TransformP                      m_localToWorld;
-    T_ViewNodes                     m_viewNodes;
-    size_t                          m_viewNodesProcessed;
-    uint32_t                        m_targetElementCount;
-    bool                            m_isDynamicUpdate;
-    bool                            m_doOcclusionCull;
-    bool                            m_doFrustumCull;
-
-    uint32_t GetVisitElementCount() {return m_visitElementCount;}
-    static bool CompareOcclusionScore(DRTViewNode const& lhs, DRTViewNode const& rhs) { return lhs.m_score > rhs.m_score; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     10/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-OcclusionSortedProcessor(ViewContextR viewContext, DgnModelP startModel, bool doFrustumCull, uint32_t targetElementCount, ProgressMonitorP monitor=nullptr)
-    : m_viewContext(viewContext)
-    {
-    m_doFrustumCull      = doFrustumCull;
-    m_progressMonitor    = monitor;
-    m_targetElementCount = targetElementCount;
-    m_cameraOn           = viewContext.IsCameraOn();
-    m_viewport           = viewContext.GetViewport();
-    m_scanCriteria       = viewContext.GetScanCriteria();
-    m_rootModel          = startModel;
-    m_visitElementCount  = 0;
-    m_currDgnModel       = nullptr;
-    m_isDynamicUpdate    = viewContext.GetDrawPurpose() == DrawPurpose::UpdateDynamic;
-    m_doOcclusionCull    = s_prefs.m_doOcclusionCull &&  !m_isDynamicUpdate;
-    m_occlusionTestCount = 0;
-    m_lodFilterNPCArea   = 0.0;
-    m_viewNodesProcessed = 0;
-
-    m_viewNodes.reserve((size_t)(s_prefs.m_targetLeafCount * 1.2));
-
-    if (s_prefs.m_doLodFiltering &&
-        (0.0 != s_prefs.m_testLOD || FILTER_LOD_ShowNothing == viewContext.GetFilterLODFlag()) &&
-        nullptr != m_viewport)
-        {
-        //double minLOD = 0.0 == s_prefs.m_testLOD ? viewContext.GetMinLOD() : s_prefs.m_testLOD;
-
-        BSIRect  screenRect = m_viewport->GetClientRect();
-        m_lodFilterNPCArea = MAX(s_prefs.m_minLODFilterNPC, s_prefs.m_lodFilterFraction * viewContext.GetMinLOD() /(double) screenRect.Area());
-
-#ifdef DRT_DEBUGGING
-        s_statistics.m_traverse.m_lodArea = m_lodFilterNPCArea;
-#endif
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void InitForDgnModel()
-    {
-    m_localToNpc = m_viewContext.GetWorldToNpc().M0;
-
-    // Use viewport camera position.
-    m_cameraPosition = m_viewport->GetCamera().GetEyePoint();
-
-    Transform localToWorld;
-
-    if (SUCCESS == m_viewContext.GetCurrLocalToWorldTrans(localToWorld))
-        {
-        m_localToWorld = m_localToWorldTrans.AllocateNode();
-        *m_localToWorld = localToWorld;
-
-        m_localToNpc.InitProduct(m_localToNpc, DMatrix4d::From(*m_localToWorld));
-        }
-    else
-        {
-        m_localToWorld = nullptr;
-        }
-
-    if (m_cameraOn)
-        {
-        if (m_localToWorld)
-            {
-            Transform  worldToLocal;
-
-            worldToLocal.InverseOf(*m_localToWorld);
-            worldToLocal.Multiply(m_cameraPosition);
-            }
-        }
-    else
-        {
-        DPoint4d viewDirection = {0.0, 0.0, -1.0, 0.0};
-
-        DMatrix4d  viewToLocal = m_viewContext.GetViewToLocal();
-        viewToLocal.Multiply (&viewDirection, &viewDirection, 1);
-        m_orthogonalProjectionIndex = ((viewDirection.x < 0.0) ? 1  : 0) +
-                                      ((viewDirection.x > 0.0) ? 2  : 0) +
-                                      ((viewDirection.y < 0.0) ? 4  : 0) +
-                                      ((viewDirection.y > 0.0) ? 8  : 0) +
-                                      ((viewDirection.z < 0.0) ? 16 : 0) +
-                                      ((viewDirection.z > 0.0) ? 32 : 0);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     10/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-inline bool WasAborted()
-    {
-    if (m_viewContext.WasAborted())
-        return true;
-
-    if (0 != m_targetElementCount && m_visitElementCount > m_targetElementCount)
-        {
-        m_viewContext.CheckStop();
-        return  true;
-        }
-
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     10/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool VisitRangeElement(GeometrySourceCP source, DgnModelP modelRef, bool testRange, double score)
-    {
-    m_viewContext.ValidateScanRange();
-
-    DRange3dCR   elRange = source->CalculateRange3d();
-    if (testRange && (ScanCriteria::Result::Pass != m_scanCriteria->CheckRange(elRange, true)))
-        return false;
-
-    DgnElementCP element = source->ToElement();
-    if (nullptr == element)
-        return false;
-
-    if (ScanCriteria::Result::Pass != m_scanCriteria->CheckElement(*element, false))
-        return false;
-
-    if (ClipPlaneContainment_StronglyOutside != m_viewContext.GetTransformClipStack().ClassifyRange(elRange, true))
-        {
-#ifdef DRT_DEBUGGING
-        s_statistics.m_traverse.m_elementVisitCount++;
-        double      elementTime = 0.0;
-        BEGIN_DELTA_TIMER(elementTime);
-#endif
-        m_viewContext.VisitElement(*source);
-
-#ifdef DRT_DEBUGGING
-        END_DELTA_TIMER(elementTime);
-        s_statistics.m_traverse.m_elementTime += elementTime;
-        s_statistics.m_traverse.m_maxElementTime = MAX(s_statistics.m_traverse.m_maxElementTime, elementTime);
-#endif
-        m_visitElementCount++;
-        }
-
-    return WasAborted();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     10/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ProcessViewNode(DRTViewNode& viewNode)
-    {
-#ifdef DRT_DEBUGGING
-    s_statistics.m_traverse.m_leafVisitCount++;
-#endif
-
-    bool testRange = viewNode.m_overlap;
-    for (DgnRangeTree::Entry* curr = &viewNode.m_leaf->m_firstChild[0]; curr < viewNode.m_leaf->m_endChild; ++curr)
-        {
-        if (VisitRangeElement(curr->m_geom, viewNode.m_modelRef, testRange, viewNode.m_score))
-            return  true;
-        }
-
-    if (nullptr != m_progressMonitor && m_progressMonitor->_MonitorProgress((double) m_viewNodesProcessed++ / (double) m_viewNodes.size()))
-        return true;
-
-    return  false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ProcessViewNodesBatch(T_ViewNodeIterator begin, T_ViewNodeIterator end, bool testOcclusion)
-    {
-    if (begin == end)
-        return false;
-
-    int                 results[MAX_OcclusionBatch];
-    uint32_t            nNodes;
-    DRTRangeCorners     corners[MAX_OcclusionBatch];
-    T_ViewNodeIterator  curr;
-
-    if (testOcclusion)
-        {
-        for (nNodes = 0, curr = begin; curr != end; ++curr)
-            {
-            if (curr->TestOcclusion())
-                {
-                corners[nNodes].InitFromRange(curr->m_leaf->GetRange(), curr->m_localToWorld);
-
-#ifdef DRT_DEBUGGING
-                s_statistics.m_traverse.m_elementsOcclusionTested += curr->GetElementCount();
-#endif
-                nNodes++;
-                }
-
-            if (WasAborted())
-                return true;
-            }
-
-        if (nNodes > s_prefs.m_minimumOcclusionNodeTest)
-            {
-#ifdef DRT_DEBUGGING
-            s_statistics.m_traverse.m_leavesOcclusionTested += nNodes;
-            s_statistics.m_traverse.m_occlusionCalls++;
-            double   occlusionTime = 0.0;
-            BEGIN_NET_TIMER(occlusionTime);
-#endif
-            if (SUCCESS != m_viewContext.GetIViewDraw().TestOcclusion(nNodes, corners[0].m_points, results))
-                testOcclusion = false;
-
-#ifdef DRT_DEBUGGING
-            END_NET_TIMER(occlusionTime);
-            s_statistics.m_traverse.m_maxOcclusionTime = MAX(s_statistics.m_traverse.m_maxOcclusionTime, occlusionTime);
-            s_statistics.m_traverse.m_occlusionTime  += occlusionTime;
-#endif
-            }
-        else
-            {
-            testOcclusion = false;
-            }
-        }
-
-    int* pResult = results;
-    for (curr = begin; curr != end; ++curr)
-        {
-        int    minPixels = (int) (s_prefs.m_minimumOcclusionPixelRatio * curr->m_score);
-        static const int  s_minOcclusionPixels =3;
-
-        if (minPixels < s_minOcclusionPixels)
-            minPixels = s_minOcclusionPixels;
-
-        if (!testOcclusion || !curr->TestOcclusion() || *pResult++ > minPixels)
-            {
-            if (ProcessViewNode(*curr))
-                return  true;
-            }
-#ifdef DRT_DEBUGGING
-        else
-            {
-            s_statistics.m_traverse.m_leavesOccluded++;
-            s_statistics.m_traverse.m_elementsOccluded += curr->GetElementCount();
-            }
-#endif
-
-        if (WasAborted())
-            return true;
-        }
-
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-void FindVisibleLeafs(DRTNodeR node, DgnModelR modelRef, bool testRange)
-    {
-    DRange3dCR nodeRange = node.GetRange();
-    if (testRange)
-        {
-        if (ScanCriteria::Result::Pass != m_scanCriteria->CheckRange(nodeRange, true) ||
-            ClipPlaneContainment_StronglyOutside == m_viewContext.GetTransformClipStack().ClassifyRange(nodeRange, true))
-            return;
-        }
-
-    DPoint3d localCorners[8];
-    localCorners[0].x = localCorners[3].x = localCorners[4].x = localCorners[7].x = (double) nodeRange.low.x;      //       7+------+6
-    localCorners[1].x = localCorners[2].x = localCorners[5].x = localCorners[6].x = (double) nodeRange.high.x;     //       /|     /|
-                                                                                                                     //      / |    / |
-    localCorners[0].y = localCorners[1].y = localCorners[4].y = localCorners[5].y = (double) nodeRange.low.y;      //     / 4+---/--+5
-    localCorners[2].y = localCorners[3].y = localCorners[6].y = localCorners[7].y = (double) nodeRange.high.y;     //   3+------+2 /    y   z
-                                                                                                                     //    | /    | /     |  /
-    localCorners[0].z = localCorners[1].z = localCorners[2].z = localCorners[3].z = (double) nodeRange.low.z;      //    |/     |/      |/
-    localCorners[4].z = localCorners[5].z = localCorners[6].z = localCorners[7].z = (double) nodeRange.high.z;     //   0+------+1      *---x
-
-    bool overlap, spansEye;
-    if (nullptr != node.ToLeaf())
-        {
-        double  score;
-        bool eliminatedByLOD;
-        if (!ComputeOcclusionScore(&score, overlap, spansEye, eliminatedByLOD, localCorners, testRange))
-            {
-#ifdef DRT_DEBUGGING
-            s_statistics.m_traverse.m_lodFilteredNodeCount++;
-#endif
-            return;
-            }
-
-        m_viewNodes.push_back(DRTViewNode((DRTLeafNodeP) &node, &modelRef, m_localToWorld, score, testRange && overlap, spansEye));
-        }
-    else
-        {
-        DRTInternalNodeP internalNode = (DRTInternalNodeP) &node;
-        bool eliminatedByLOD;
-        if (!ComputeOcclusionScore(nullptr, overlap, spansEye, eliminatedByLOD, localCorners, testRange))
-            {
-#ifdef DRT_DEBUGGING
-            s_statistics.m_traverse.m_lodFilteredNodeCount += internalNode->GetLeafCount();
-#endif
-            return;
-            }
-
-        for (DRTNodeH curr = &internalNode->m_firstChild[0]; curr != internalNode->m_endChild; ++curr)
-            FindVisibleLeafs(**curr, modelRef, testRange && overlap);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void FindAllVisibleLeafs(DgnModelR model)
-    {
-    DgnRangeTreeP tree = model.GetRangeIndexP(true);
-    if (nullptr == tree)
-        return;
-
-    InitForDgnModel();
-    m_viewContext.ValidateScanRange();
-
-    FindVisibleLeafs(*tree->GetRoot(), model, m_doFrustumCull);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ProcessEntries()
-    {
-    BEGIN_NET_TIMER(s_statistics.m_traverse.m_gatherTime);
-    FindAllVisibleLeafs(*m_rootModel);
-    END_NET_TIMER(s_statistics.m_traverse.m_gatherTime);
-
-    BEGIN_NET_TIMER(s_statistics.m_traverse.m_sortTime);
-    std::sort(m_viewNodes.begin(), m_viewNodes.end(), CompareOcclusionScore);
-    END_NET_TIMER(s_statistics.m_traverse.m_sortTime);
-
-#ifdef DRT_DEBUGGING
-    s_statistics.m_traverse.m_elementTargetCount = m_targetElementCount;
-    s_statistics.m_traverse.m_leavesGathered = m_viewNodes.size();
-#endif
-
-    static int s_debugToNode = 0;
-    if (s_debugToNode > 0)
-        {
-        size_t i=0;
-        for (T_ViewNodeIterator  curr = m_viewNodes.begin(), end = m_viewNodes.end(); curr != end && i <= (uint32_t) s_debugToNode; ++curr, i++)
-            if (ProcessViewNode(*curr))
-                return;
-        }
-    else if (m_isDynamicUpdate)
-        {
-        for (T_ViewNodeIterator  curr = m_viewNodes.begin(), end = m_viewNodes.end(); curr != end; ++curr)
-            {
-            if (ProcessViewNode(*curr))
-                return;
-            }
-        }
-    else
-        {
-        size_t                  nNodes, batchSize = MIN (MAX_OcclusionBatch, (m_viewNodes.size() / s_prefs.m_nOcclusionBatches));
-        T_ViewNodeIterator      beginBatch, curr, end, next;
-        bool                    doTestOcclusion = false;      // Don't turn this on until we have first batch complete (or there is nothing to occlude).
-        for (nNodes = 0, beginBatch = curr = m_viewNodes.begin(), end = m_viewNodes.end(); curr != end; curr = next)
-            {
-            next = curr + 1;
-
-            if (++nNodes >= batchSize || next == end)
-                {
-                if (ProcessViewNodesBatch(beginBatch, next, doTestOcclusion))
-                    return;
-
-                beginBatch = next;
-                nNodes = 0;
-
-                if (m_doOcclusionCull)
-                    doTestOcclusion = true;
-                }
-            }
-        }
-    }
-
-}; // OcclusionSortedProcessor
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnRangeTree::ProcessOcclusionSorted(ViewContextR context, DgnModelP startDgnModel, DgnRangeTree::ProgressMonitor* monitor, bool doFrustumCull, uint32_t* timeout)
-    {
-    uint32_t targetElementCount = 0;
-    bool   doTimeout = nullptr != timeout && context.GetDrawPurpose() == DrawPurpose::UpdateDynamic;
-
-    if (doTimeout && 0 != m_elementsPerSecond)
-        {
-        double timeOutSeconds = *timeout - BeTimeUtilities::QuerySecondsCounter();
-        targetElementCount = (uint32_t) (timeOutSeconds * m_elementsPerSecond);
-        }
-
-#ifdef DRT_DEBUGGING
-    END_NET_TIMER(s_statistics.m_deltaTime);
-    s_statistics.ClearCreate();
-    s_statistics.ClearTraverse();
-    BEGIN_NET_TIMER(s_statistics.m_traverse.m_totalTime);
-#endif
-#ifdef KAB_DEBUG
-    toolSubsystem_printf("OSP to=%d, eps=%f, targ=%d\n", timeout, m_elementsPerSecond, targetElementCount);
-#endif
-
-    double beginTime = timeGetSeconds();
-
-    OcclusionSortedProcessor processor(context, startDgnModel, doFrustumCull, targetElementCount, monitor);
-    processor.ProcessEntries();
-
-#ifdef DRT_DEBUGGING
-    END_NET_TIMER(s_statistics.m_traverse.m_totalTime);
-    s_statistics.DumpTraverse();
-    s_statistics.DumpCreate(*this);
-#endif
-
-    double elapsedTime = timeGetSeconds() - beginTime;
-#ifdef KAB_DEBUG
-    toolSubsystem_printf(" elapsed=%f, targ=%f, visited=%d\n", elapsedTime, timeOutSeconds, processor.GetVisitElementCount());
-#endif
-
-    if (0.0 < elapsedTime)
-        {
-        double thisElementsPerSecond = processor.GetVisitElementCount() / elapsedTime;
-        if (0 == m_elementsPerSecond)
-            m_elementsPerSecond = thisElementsPerSecond;
-        else
-            m_elementsPerSecond = ((m_elementsPerSecond*9.0) + thisElementsPerSecond) / 10.0;
-        }
-
-#ifdef DRT_DEBUGGING
-    s_statistics.m_deltaTime = 0.0;
-    BEGIN_NET_TIMER(s_statistics.m_deltaTime);
-#endif
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    05/2012
 //--------------+------------------------------------------------------------------------
-double DgnDbRTree3dViewFilter::MaxOcclusionScore() {return DBL_MAX;}
 void OverlapScorer::Initialize(DRange3dCR boundingRange) {m_boundingRange.FromRange(boundingRange);}
 
 //---------------------------------------------------------------------------------------
@@ -2016,37 +1118,20 @@ bool OverlapScorer::ComputeScore(double* score, BeSQLite::RTree3dValCR testRange
     return intersects;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2013
-//---------------------------------------------------------------------------------------
-void DgnDbRTree3dViewFilter::InitializeSecondaryTest(DRange3dCR volume, uint32_t hitLimit)
-    {
-    m_useSecondary = true;
-    m_secondaryFilter.m_hitLimit = hitLimit;
-    m_secondaryFilter.m_occlusionMapCount = 0;
-    m_secondaryFilter.m_occlusionMapMinimum = DBL_MAX;
-    m_secondaryFilter.m_scorer.Initialize(volume);
-    }
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/14
+* @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RtreeViewFilter::RtreeViewFilter(DgnViewportCR viewport, DbR db, double minimumSizePixels, DgnElementIdSet const* exclude)
-        : Tester(db), m_minimumSizePixels(minimumSizePixels), m_exclude(exclude), m_clips(nullptr)
+void RTreeFilter::SetFrustum(FrustumCR frustum)
     {
-    m_nCalls = m_nScores = m_nSkipped = 0;
-    m_scorer.InitForViewport(viewport, m_minimumSizePixels);
-    m_frustum  = viewport.GetFrustum(DgnCoordSystem::World, true);
-
-    DRange3d range = m_frustum.ToRange();
+    DRange3d range = frustum.ToRange();
     m_boundingRange.FromRange(range);
 
     // get bounding range of front plane of polyhedron
-    range.InitFrom(m_frustum.GetPts(), 4);
+    range.InitFrom(frustum.GetPts(), 4);
     m_frontFaceRange.FromRange(range);
 
     // get unit bvector from front plane to back plane
-    m_viewVec = DVec3d::FromStartEndNormalize(*(m_frustum.GetPts()+4), *m_frustum.GetPts());
+    m_viewVec = DVec3d::FromStartEndNormalize(*frustum.GetPts(), *(frustum.GetPts()+4));
 
     // check to see if it's worthwhile using skew scan (skew vector not along one of the three major axes)
     int alongAxes = (fabs(m_viewVec.x) < 1e-8);
@@ -2056,37 +1141,18 @@ RtreeViewFilter::RtreeViewFilter(DgnViewportCR viewport, DbR db, double minimumS
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/11
+* @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbRTree3dViewFilter::DgnDbRTree3dViewFilter(DgnViewportCR viewport, ICheckStopP checkStop, DbR db, uint32_t hitLimit, double minimumSizePixels,
-                            DgnElementIdSet const* alwaysDraw, DgnElementIdSet const* exclude)
-    : RtreeViewFilter(viewport, db, minimumSizePixels, exclude), m_checkStop(checkStop), m_useSecondary(false), m_alwaysDraw(nullptr)
+void RTreeFilter::SetViewport(DgnViewportCR viewport, double minimumSizePixels, double frustumScale)
     {
-    m_eliminatedByLOD = false;
-    m_hitLimit = hitLimit;
-    m_occlusionMapMinimum = 1.0e20;
-    m_occlusionMapCount = 0;
+    m_doOcclusionScore = true;
+    m_scorer.InitForViewport(viewport, minimumSizePixels);
+    Frustum frust = viewport.GetFrustum(DgnCoordSystem::World, true);
 
-    m_secondaryFilter.m_hitLimit = hitLimit;
-    m_secondaryFilter.m_occlusionMapCount = 0;
-    m_secondaryFilter.m_occlusionMapMinimum = DBL_MAX;
+    if (1.0 != frustumScale)
+        frust.ScaleAboutCenter(frustumScale);
 
-    if (nullptr != alwaysDraw)
-        {
-        m_lastScore = MaxOcclusionScore();
-        for (auto const& id : *alwaysDraw)
-            {
-            if (nullptr != m_exclude && m_exclude->find(id) != m_exclude->end())
-                continue;
-
-            m_passedPrimaryTest = true;
-            m_passedSecondaryTest = false;
-            RangeAccept(id.GetValueUnchecked());
-            }
-        }
-
-    //  We do this as the last step. Otherwise, the calls to _RangeAccept in the previous step would not have any effect.
-    m_alwaysDraw = alwaysDraw;
+    SetFrustum(frust);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2102,19 +1168,19 @@ static inline void exchangeAndNegate(double& dbl1, double& dbl2)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RtreeViewFilter::SkewTest(RTree3dValCP pt)
+bool RTreeFilter::SkewTest(RTree3dValCP testRange)
     {
-    if (!m_doSkewtest || pt->Intersects(m_frontFaceRange))
-        return  true;
+    if (!m_doSkewtest || testRange->Intersects(m_frontFaceRange))
+        return true;
 
     DVec3d skVector = m_viewVec;
     DPoint3d dlo;
     DPoint3d dhi;
 
-    dlo.x = pt->m_minx - m_frontFaceRange.m_maxx;
-    dlo.y = pt->m_miny - m_frontFaceRange.m_maxy;
-    dhi.x = pt->m_maxx - m_frontFaceRange.m_minx;
-    dhi.y = pt->m_maxy - m_frontFaceRange.m_miny;
+    dlo.x = testRange->m_minx - m_frontFaceRange.m_maxx;
+    dlo.y = testRange->m_miny - m_frontFaceRange.m_maxy;
+    dhi.x = testRange->m_maxx - m_frontFaceRange.m_minx;
+    dhi.y = testRange->m_maxy - m_frontFaceRange.m_miny;
 
     if (skVector.x < 0.0)
         {
@@ -2141,9 +1207,8 @@ bool RtreeViewFilter::SkewTest(RTree3dValCP pt)
         return false;
 
     // now we need the Z stuff
-    dlo.z = pt->m_minz - m_frontFaceRange.m_maxz;
-    dhi.z = pt->m_maxz - m_frontFaceRange.m_minz;
-
+    dlo.z = testRange->m_minz - m_frontFaceRange.m_maxz;
+    dhi.z = testRange->m_maxz - m_frontFaceRange.m_minz;
     if (skVector.z < 0.0)
         {
         skVector.z = - skVector.z;
@@ -2185,49 +1250,10 @@ bool RtreeViewFilter::SkewTest(RTree3dValCP pt)
     return true;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ray.Bentley                     04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDbRTree3dViewFilter::RangeAccept(uint64_t elementId)
-    {
-    BeAssert(m_lastId == elementId);
-    
-    if (nullptr != m_exclude && m_exclude->find(DgnElementId(elementId)) != m_exclude->end())
-        return;
-
-    if (m_passedPrimaryTest)
-        {
-        //  Don't add it if the constructor already added it.
-        if (nullptr == m_alwaysDraw || m_alwaysDraw->find(DgnElementId(elementId)) == m_alwaysDraw->end())
-            {
-            ++m_nCalls;
-
-            if (m_occlusionMapCount >= m_hitLimit)
-                m_occlusionScoreMap.erase(m_occlusionScoreMap.begin());
-            else
-                m_occlusionMapCount++;
-
-            m_occlusionScoreMap.Insert(m_lastScore, elementId);
-            m_occlusionMapMinimum = m_occlusionScoreMap.begin()->first;
-            }
-        }
-
-    if (m_passedSecondaryTest)
-        {
-        if (m_secondaryFilter.m_occlusionMapCount >= m_secondaryFilter.m_hitLimit)
-            m_secondaryFilter.m_occlusionScoreMap.erase(m_secondaryFilter.m_occlusionScoreMap.begin());
-        else
-            m_secondaryFilter.m_occlusionMapCount++;
-
-        m_secondaryFilter.m_occlusionScoreMap.Insert(m_secondaryFilter.m_lastScore, elementId);
-        m_secondaryFilter.m_occlusionMapMinimum = m_secondaryFilter.m_occlusionScoreMap.begin()->first;
-        }
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2013
 //---------------------------------------------------------------------------------------
-bool RtreeViewFilter::AllPointsClippedByOnePlane(ConvexClipPlaneSetCR cps, size_t nPoints, DPoint3dCP points) const
+bool RTreeFilter::AllPointsClippedByOnePlane(ConvexClipPlaneSetCR cps, size_t nPoints, DPoint3dCP points) const
     {
     for (auto const& plane : cps)
         {
@@ -2248,279 +1274,23 @@ bool RtreeViewFilter::AllPointsClippedByOnePlane(ConvexClipPlaneSetCR cps, size_
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline static void toLocalCorners(DPoint3dP localCorners, RTree3dValCP pt)
+int RTreeFitFilter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
     {
-    localCorners[0].x = localCorners[3].x = localCorners[4].x = localCorners[7].x = pt->m_minx;     //       7+------+6
-    localCorners[1].x = localCorners[2].x = localCorners[5].x = localCorners[6].x = pt->m_maxx;     //       /|     /|
-                                                                                                    //      / |    / |
-    localCorners[0].y = localCorners[1].y = localCorners[4].y = localCorners[5].y = pt->m_miny;     //     / 4+---/--+5
-    localCorners[2].y = localCorners[3].y = localCorners[6].y = localCorners[7].y = pt->m_maxy;     //   3+------+2 /    y   z
-                                                                                                    //    | /    | /     |  /
-    localCorners[0].z = localCorners[1].z = localCorners[2].z = localCorners[3].z = pt->m_minz;     //    |/     |/      |/
-    localCorners[4].z = localCorners[5].z = localCorners[6].z = localCorners[7].z = pt->m_maxz;     //   0+------+1      *---x
-    }
+    RTree3dValCP testRange = (RTree3dValCP) info.m_coords;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-int DgnDbRTree3dViewFilter::_TestRange(QueryInfo const& info)
-    {
-    BeAssert(6 == info.m_nCoord);
-    info.m_within = Within::Outside;
-
-    if (m_checkStop && m_checkStop->_CheckStop())
-        return BE_SQLITE_ERROR;
-
-    RTree3dValCP pt = (RTree3dValCP) info.m_coords;
-    m_passedPrimaryTest   = (info.m_parentWithin == Within::Inside) ? true : (m_boundingRange.Intersects(*pt) && SkewTest(pt));
-    m_passedSecondaryTest = m_useSecondary ? m_secondaryFilter.m_scorer.m_boundingRange.Intersects(*pt) : false;
-
-    if (m_passedSecondaryTest)
+    if (m_fitRange.IsContained(testRange->m_minx, testRange->m_miny, testRange->m_minz) &&
+        m_fitRange.IsContained(testRange->m_maxx, testRange->m_maxy, testRange->m_maxz))
         {
-        if (!m_secondaryFilter.m_scorer.ComputeScore(&m_secondaryFilter.m_lastScore, *pt))
-            {
-            m_passedSecondaryTest = false;
-            }
-        else if (m_secondaryFilter.m_occlusionMapCount >= m_secondaryFilter.m_hitLimit && m_secondaryFilter.m_lastScore <= m_secondaryFilter.m_occlusionMapMinimum)
-            {
-            m_passedSecondaryTest = false;
-            }
-
-        if (m_passedSecondaryTest)
-            info.m_within = Within::Partly;
-        }
-
-    if (!m_passedPrimaryTest)
-        return BE_SQLITE_OK;
-
-    DPoint3d localCorners[8];
-    toLocalCorners(localCorners, pt);
-
-#if defined (NEEDS_WORK_CLIPPING)
-    if (m_clips.IsValid())
-        {
-        bool allClippedByOnePlane = false;
-        for (ConvexClipPlaneSetCR cps : *m_clips)
-            {
-            if (allClippedByOnePlane = AllPointsClippedByOnePlane(cps, 8, localCorners))
-                break;
-            }
-
-        if (allClippedByOnePlane)
-            {
-            m_passedPrimaryTest = false;
-            return BE_SQLITE_OK;
-            }
-        }
-#endif
-
-    BeAssert(m_passedPrimaryTest);
-    bool overlap, spansEyePlane;
-
-    ++m_nScores;
-    bool eliminatedByLOD;
-    if (!m_scorer.ComputeOcclusionScore(&m_lastScore, overlap, spansEyePlane, eliminatedByLOD, localCorners, true))
-        {
-        m_eliminatedByLOD |= eliminatedByLOD;
-        m_passedPrimaryTest = false;
-        }
-    else if (m_occlusionMapCount >= m_hitLimit && m_lastScore <= m_occlusionMapMinimum)
-        {
-        // this box is smaller than the smallest entry we already have, skip it.
-        m_passedPrimaryTest = false;
-        }
-
-    if (m_passedPrimaryTest)
-        {
-        m_lastId = info.m_rowid;  // for debugging - make sure we get entries immediately after we score them.
-
-        if (info.m_level>0)
-            {
-            // For nodes, return 'level-score' (the "-" is because for occlusion score higher is better. But for rtree priority, lower means better).
-            info.m_score = info.m_level - m_lastScore;
-            info.m_within = info.m_parentWithin == Within::Inside ? Within::Inside : m_boundingRange.Contains(*pt) ? Within::Inside : Within::Partly;
-            }
-        else
-            {
-            // For entries (ilevel==0), we return 0 so they are processed immediately (lowest score has highest priority).
-            info.m_score = 0;
-            info.m_within = Within::Partly;
-            }
-        }
-
-    return BE_SQLITE_OK;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-int DgnDbRTreeFitFilter::_TestRange(QueryInfo const& info)
-    {
-    RTree3dValCP pt = (RTree3dValCP) info.m_coords;
-
-    if (m_fitRange.IsContained(pt->m_minx, pt->m_miny, pt->m_minz) &&
-        m_fitRange.IsContained(pt->m_maxx, pt->m_maxy, pt->m_maxz))
-        {
-        info.m_within = Within::Outside; // If this range is entirely contained there is no reason to continue (it cannot contribute to the fit)
+        info.m_within = RTreeMatchFunction::Within::Outside; // If this range is entirely contained there is no reason to continue (it cannot contribute to the fit)
         }
     else
         {
-        info.m_within = Within::Partly; 
+        info.m_within = RTreeMatchFunction::Within::Partly; 
         info.m_score  = info.m_level; // to get depth-first traversal
         if (info.m_level == 0)
-            m_lastRange = DRange3d::From(pt->m_minx, pt->m_miny, pt->m_minz, pt->m_maxx, pt->m_maxy, pt->m_maxz);
+            m_lastRange = DRange3d::From(testRange->m_minx, testRange->m_miny, testRange->m_minz, testRange->m_maxx, testRange->m_maxy, testRange->m_maxz);
         }
 
     return  BE_SQLITE_OK;
     }
 
-const double ProgressiveViewFilter::s_purgeFactor = 1.3;
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ProgressiveViewFilter::_StepRange(DbFunction::Context&, int nArgs, DbValue* args) 
-    {
-    if (m_context->WasAborted())
-        return;
-
-    // for restarts, skip calls up to the point where we finished last pass
-    if (++m_nThisPass < m_nLastPass)
-        return;
-
-    ++m_nLastPass;
-
-    DgnElementId elementId(args->GetValueUInt64());
-    if (nullptr != m_exclude && m_exclude->find(elementId) != m_exclude->end())
-        return;
-
-    if (m_existing.FindElementById(elementId))
-        return;
-
-    DgnElements& pool = m_dgndb.Elements();
-    DgnElementCPtr el = pool.GetElement(elementId);
-    if (el.IsValid())
-        {
-        GeometrySourceCP geomElem = el->ToGeometrySource();
-        if (nullptr != geomElem)
-            {
-            m_drewElementThisPass = true;
-            m_context->VisitElement(*geomElem);
-            }
-        }
-
-    if (pool.GetTotalAllocated() < (int64_t) m_elementReleaseTrigger)
-        return;
-
-    pool.DropFromPool(*el);
-
-    // Purging the element does not purge the symbols so it may be necessary to do a full purge
-    if (pool.GetTotalAllocated() < (int64_t) m_purgeTrigger)
-        return;
-
-    pool.Purge(m_elementReleaseTrigger);   // Try to get back to the elementPurgeTrigger
-
-    // The purge may not have succeeded if there are elements in the QueryView's list of elements and those elements hold symbol references.
-    // When that is true, we leave it to QueryViewController::_DrawView to try to clean up.  This logic just tries to recover from the
-    // growth is caused.  It allows some growth between calls to purge to avoid spending too much time in purge.
-    uint64_t newTotalAllocated = (uint64_t)pool.GetTotalAllocated();
-    m_purgeTrigger = (uint64_t)(s_purgeFactor * std::max(newTotalAllocated, m_elementReleaseTrigger));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-int ProgressiveViewFilter::_TestRange(QueryInfo const& info)
-    {
-    BeAssert(6 == info.m_nCoord);
-    info.m_within = Within::Outside;
-
-    if (m_context->_CheckStop())
-        return BE_SQLITE_ERROR;
-
-    RTree3dValCP pt = (RTree3dValCP) info.m_coords;
-    if ((info.m_parentWithin != Within::Inside) && !(m_boundingRange.Intersects(*pt) && SkewTest(pt)))
-        return BE_SQLITE_OK;
-
-    DPoint3d localCorners[8];
-    toLocalCorners(localCorners, pt);
-
-#if defined (NEEDS_WORK_CLIPPING)
-    if (m_clips.IsValid())
-        {
-        bool allClippedByOnePlane = false;
-        for (ConvexClipPlaneSetCR cps : *m_clips)
-            {
-            if (allClippedByOnePlane = AllPointsClippedByOnePlane(cps, 8, localCorners))
-                break;
-            }
-        if (allClippedByOnePlane)
-            return BE_SQLITE_OK;
-        }
-#endif
-
-    if (info.m_level > 0) // only score nodes, not elements
-        {
-        bool   overlap, spansEyePlane;
-        double score;
-
-        bool excludedByLOD;
-        if (!m_scorer.ComputeOcclusionScore(&score, overlap, spansEyePlane, excludedByLOD, localCorners, true))
-            return BE_SQLITE_OK;
-
-        info.m_within = info.m_parentWithin == Within::Inside ? Within::Inside : m_boundingRange.Contains(*pt) ? Within::Inside : Within::Partly;
-        info.m_score = info.m_maxLevel - info.m_level - score;
-        }
-    else
-        {
-        info.m_score = 0;
-        info.m_within = Within::Partly;
-        }                                                                                                                                  
-    return BE_SQLITE_OK;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2014
-//---------------------------------------------------------------------------------------
-bool ProgressiveViewFilter::_WantTimeoutSet(uint32_t& limit)
-    {
-    //  We want to limit how long ProgressiveDisplay runs but don't want to start the timer
-    //  until it has drawn at least one element.
-    if (!m_drewElementThisPass || m_setTimeout)
-        return false;
-
-    m_setTimeout = true;
-    limit = 1000;
-
-    return true;
-    }
-
-#define DEBUG_PRINTF(arg)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-IProgressiveDisplay::Completion ProgressiveViewFilter::_Process(ViewContextR context)
-    {
-    m_context = &context;
-    m_nThisPass = 0; // restart every pass
-    m_drewElementThisPass = m_setTimeout = false;
-
-    DEBUG_PRINTF("start progressive display\n");
-    if (BE_SQLITE_ROW != StepRTree(*m_rangeStmt))
-        {
-        m_rangeStmt->Reset();
-        DEBUG_PRINTF("aborted progressive display\n");
-        return IProgressiveDisplay::Completion::Aborted;
-        }
-    DEBUG_PRINTF("finished progressive display\n");
-
-    return IProgressiveDisplay::Completion::Finished;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveViewFilter::~ProgressiveViewFilter()
-    {
-    wt_OperationForGraphics  _v_v;
-    m_rangeStmt = nullptr;
-    }

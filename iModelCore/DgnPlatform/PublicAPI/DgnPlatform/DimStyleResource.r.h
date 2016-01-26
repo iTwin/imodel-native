@@ -18,7 +18,7 @@
 #define RTYPE_DimStylePropToOverrideMap     RTYPE ('d', 'S', 'P', 'O')
 #define RSCID_DIMSTYLE_PROPTOOVERRIDES      0
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 typedef struct PropToOverrideMap
     {
@@ -47,4 +47,4 @@ typedef struct DimStylePropToOverrideMapRsc
 resourceclass DimStylePropToOverrideMapRsc      RTYPE_DimStylePropToOverrideMap;
 #endif
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

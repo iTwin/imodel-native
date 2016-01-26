@@ -15,7 +15,7 @@
 #pragma warning (disable:4702)
 #endif
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 //=======================================================================================
 //! VolumeElementTestFixture
@@ -66,9 +66,9 @@ PhysicalElementCPtr VolumeElementTestFixture::InsertBlock(DPoint3dCR center, dou
     ISolidPrimitivePtr geomPtr = ISolidPrimitive::CreateDgnBox(blockDetail);
     BeAssert(geomPtr.IsValid());
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*m_testModel, m_testCategoryId, center, YawPitchRollAngles());
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*m_testModel, m_testCategoryId, center, YawPitchRollAngles());
     builder->Append(*geomPtr);
-    BentleyStatus status = builder->SetGeomStreamAndPlacement(*physicalElementPtr);
+    BentleyStatus status = builder->SetGeometryStreamAndPlacement(*physicalElementPtr);
     BeAssert(status == SUCCESS);
 
     PhysicalElementCPtr insertedElement = m_testDb->Elements().Insert<PhysicalElement>(*physicalElementPtr);

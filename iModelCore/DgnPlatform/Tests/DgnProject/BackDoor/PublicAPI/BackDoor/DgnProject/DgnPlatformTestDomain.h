@@ -86,7 +86,7 @@ public:
     static RefCountedPtr<TestElement> Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Utf8CP elementCode, double shapeSize);
 
     // Create element with display params 
-    static RefCountedPtr<TestElement> Create(Dgn::DgnDbR db, Dgn::ElemDisplayParamsCR ep, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Dgn::DgnCode elementCode, double shapeSize);
+    static RefCountedPtr<TestElement> Create(Dgn::DgnDbR db, Dgn::Render::GeometryParamsCR ep, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Dgn::DgnCode elementCode, double shapeSize);
     static RefCountedPtr<TestElement> CreateWithoutGeometry(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId);
 
     // Change the shape size
@@ -211,7 +211,7 @@ private:
 
     Utf8CP _GetECSchemaName() const override {return DPTEST_SCHEMA_NAME;}
     Utf8CP _GetECClassName() const override {return DPTEST_TEST_ITEM_CLASS_NAME;}
-    Dgn::DgnDbStatus _GenerateElementGeometry(Dgn::GeometricElementR el, GenerateReason) override;
+    Dgn::DgnDbStatus _GenerateGeometricPrimitive(Dgn::GeometricElementR el, GenerateReason) override;
     Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
     Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el) override;
 

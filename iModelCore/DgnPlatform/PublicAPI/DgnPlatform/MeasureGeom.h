@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/MeasureGeom.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,8 +11,9 @@
 //__PUBLISH_SECTION_START__
 
 #include <DgnPlatform/DgnPlatform.h>
+#include <DgnPlatform/SimplifyGraphic.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct MeasureGeomCollector;
 typedef RefCountedPtr<MeasureGeomCollector> MeasureGeomCollectorPtr;
@@ -20,7 +21,7 @@ typedef RefCountedPtr<MeasureGeomCollector> MeasureGeomCollectorPtr;
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct MeasureGeomCollector : RefCountedBase, IElementGraphicsProcessor
+struct MeasureGeomCollector : RefCountedBase, IGeometryProcessor
 {
 public:
 
@@ -43,9 +44,7 @@ protected:
 OperationType       m_opType;
 IGeomProvider*      m_geomProvider;
 
-ViewContextP        m_context;
 IFacetOptionsPtr    m_facetOptions;
-Transform           m_currentTransform;
 Transform           m_invCurrTransform;
 Transform           m_preFlattenTransform;
 bool                m_inFlatten;
@@ -66,20 +65,19 @@ int                 m_calculationMode;  // 0=best available, 1=PSD preferred, 2=
 mutable DPoint3d    m_spinMoments; // Holds computed result...
 mutable DPoint3d    m_centroidSum; // Holds computed result...
 
-virtual bool _ProcessAsFacets (bool isPolyface) const override {return true;} // Resort to facets for anything not specifically handled...
+virtual DrawPurpose _GetProcessPurpose() const override {return DrawPurpose::Measure;}
+virtual IFacetOptionsP _GetFacetOptionsP() override;
 
-virtual IFacetOptionsP _GetFacetOptionsP () override;
+virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR) const override {return UnhandledPreference::Auto;}
+virtual UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR) const override {return UnhandledPreference::Auto;}
+virtual UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR) const override {return UnhandledPreference::Auto;}
 
-virtual void _AnnounceContext (ViewContextR) override;
-virtual void _AnnounceTransform (TransformCP) override;
+virtual bool _ProcessCurveVector (CurveVectorCR, bool isFilled, SimplifyGraphic&) override;
+virtual bool _ProcessSolidPrimitive (ISolidPrimitiveCR, SimplifyGraphic&) override;
+virtual bool _ProcessSurface (MSBsplineSurfaceCR, SimplifyGraphic&) override;
+virtual bool _ProcessPolyface (PolyfaceQueryCR, bool isFilled, SimplifyGraphic&) override;
+virtual bool _ProcessBody (ISolidKernelEntityCR, SimplifyGraphic&) override;
 
-virtual BentleyStatus _ProcessCurveVector (CurveVectorCR, bool isFilled) override;
-virtual BentleyStatus _ProcessSolidPrimitive (ISolidPrimitiveCR) override;
-virtual BentleyStatus _ProcessSurface (MSBsplineSurfaceCR) override;
-virtual BentleyStatus _ProcessFacets (PolyfaceQueryCR, bool isFilled) override;
-virtual BentleyStatus _ProcessBody (ISolidKernelEntityCR) override;
-
-virtual DrawPurpose _GetDrawPurpose () override {return DrawPurpose::Measure;}
 virtual void _OutputGraphics (ViewContextR context) override;
 
 void AccumulateVolumeSums (double volumeB, double areaB, double closureErrorB, DPoint3dCR centroidB, DPoint3dCR momentB2, double iXYB, double iXZB, double iYZB);
@@ -87,21 +85,21 @@ void AccumulateAreaSums (double areaB, double perimeterB, DPoint3dCR centroidB, 
 void AccumulateLengthSums (double lengthB, DPoint3dCR centroidB, DPoint3dCR momentB2, double iXYB, double iXZB, double iYZB);
 void AccumulateLengthSums (DMatrix4dCR products);
 
-BentleyStatus DoAccumulateLengths (CurveVectorCR);
-BentleyStatus DoAccumulateLengths (ISolidKernelEntityCR);
+bool DoAccumulateLengths (CurveVectorCR, SimplifyGraphic& graphic);
+bool DoAccumulateLengths (ISolidKernelEntityCR, SimplifyGraphic& graphic);
 
-BentleyStatus DoAccumulateAreas (CurveVectorCR);
-BentleyStatus DoAccumulateAreas (ISolidPrimitiveCR);
-BentleyStatus DoAccumulateAreas (MSBsplineSurfaceCR);
-BentleyStatus DoAccumulateAreas (PolyfaceQueryCR);
-BentleyStatus DoAccumulateAreas (ISolidKernelEntityCR);
+bool DoAccumulateAreas (CurveVectorCR, SimplifyGraphic& graphic);
+bool DoAccumulateAreas (ISolidPrimitiveCR, SimplifyGraphic& graphic);
+bool DoAccumulateAreas (MSBsplineSurfaceCR, SimplifyGraphic& graphic);
+bool DoAccumulateAreas (PolyfaceQueryCR, SimplifyGraphic& graphic);
+bool DoAccumulateAreas (ISolidKernelEntityCR, SimplifyGraphic& graphic);
 
-BentleyStatus DoAccumulateVolumes (ISolidPrimitiveCR);
-BentleyStatus DoAccumulateVolumes (PolyfaceQueryCR);
-BentleyStatus DoAccumulateVolumes (ISolidKernelEntityCR);
+bool DoAccumulateVolumes (ISolidPrimitiveCR, SimplifyGraphic& graphic);
+bool DoAccumulateVolumes (PolyfaceQueryCR, SimplifyGraphic& graphic);
+bool DoAccumulateVolumes (ISolidKernelEntityCR, SimplifyGraphic& graphic);
 
-void GetOutputTransform (TransformR transform);
-bool GetPreFlattenTransform (TransformR flattenTransform);
+void GetOutputTransform (TransformR transform, SimplifyGraphic const& graphic);
+bool GetPreFlattenTransform (TransformR flattenTransform, SimplifyGraphic const& graphic);
 
 BentleyStatus GetOperationStatus ();
 
@@ -181,5 +179,5 @@ DGNPLATFORM_EXPORT static MeasureGeomCollectorPtr Create (OperationType opType);
 
 }; // MeasureGeomCollector
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 

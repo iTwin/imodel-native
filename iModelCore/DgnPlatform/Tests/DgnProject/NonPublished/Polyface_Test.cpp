@@ -2,12 +2,12 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/Polyface_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 static int s_printCoordinates = 0;
 
@@ -302,7 +302,6 @@ TEST_F (PolyfaceTest, MeshShape)
 
     SaveFile (L"MeshShape.dgn");
     }
-//#include <ElementGeometry/ElementGeometry.h>
 
 TEST_F (PolyfaceTest, Mesh_ComplexShape_HalfCircleOnSquare)
     {

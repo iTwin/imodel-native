@@ -55,7 +55,7 @@ extern "C"
 #define     INCLUDE_win32tools_recordDelayLoadHookFailure   (1)
 #include    <DgnPlatform/DesktopTools/w32tools.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 #pragma comment(lib, "VERSION")
 #pragma comment(lib, "shlwapi")

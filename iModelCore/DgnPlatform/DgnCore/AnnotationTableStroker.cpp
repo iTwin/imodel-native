@@ -1155,7 +1155,7 @@ TableEdgeStrokes::const_iterator  TableEdgeStrokes::end() const   { return new T
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-/* ctor */  AnnotationTableStroker::AnnotationTableStroker (AnnotationTableElementCR table, ElementGeometryBuilderR builder)
+/* ctor */  AnnotationTableStroker::AnnotationTableStroker (AnnotationTableElementCR table, GeometryBuilderR builder)
     :
     m_table (table),
     m_geomBuilder (builder),
@@ -1231,7 +1231,7 @@ void    AnnotationTableStroker::AppendFillBox (TableFillBox const& fillBox)
     if (UNEXPECTED_CONDITION ( ! fillSymb->HasFillColor()))
         return;
 
-    ElemDisplayParams displayParams;
+    GeometryParams displayParams;
     displayParams.SetCategoryId (m_table.GetCategoryId());
     displayParams.SetFillDisplay (FillDisplay::Blanking);
 
@@ -1258,7 +1258,7 @@ void   AnnotationTableStroker::AppendEdgeStroke (TableEdgeStroke const& stroke, 
     if ( ! symbology->GetVisible())
         return;
 
-    ElemDisplayParams displayParams;
+    GeometryParams displayParams;
     displayParams.SetCategoryId (m_table.GetCategoryId());
     displayParams.SetFillDisplay (FillDisplay::Never);
 

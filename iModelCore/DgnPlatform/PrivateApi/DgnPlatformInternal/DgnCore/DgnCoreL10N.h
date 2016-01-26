@@ -9,7 +9,7 @@
 #include <Bentley/WString.h>
 #include <BeSQLite/L10N.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 BENTLEY_TRANSLATABLE_STRINGS_START(DgnCoreL10N,dgncore_msg)
     L10N_STRING(Undone)                                         // ==" Undone"== <<must preserve leading space>>
@@ -220,5 +220,5 @@ BENTLEY_TRANSLATABLE_STRINGS_START(DgnCoreL10N,dgncore_msg)
 
 BENTLEY_TRANSLATABLE_STRINGS_END
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 

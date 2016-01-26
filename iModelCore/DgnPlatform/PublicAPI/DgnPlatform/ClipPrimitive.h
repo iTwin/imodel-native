@@ -11,7 +11,7 @@
 #include "DgnPlatform.h"
 #include <Geom/ClipPlaneSet.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 
 typedef bvector<DPoint2d>       T_ClipPolygon;
@@ -111,4 +111,4 @@ public:
 };
 
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

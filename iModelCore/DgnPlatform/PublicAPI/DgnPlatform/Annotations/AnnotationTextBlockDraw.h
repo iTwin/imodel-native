@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: PublicAPI/DgnPlatform/Annotations/AnnotationTextBlockDraw.h $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 #pragma once
 
@@ -12,7 +12,7 @@
 DGNPLATFORM_TYPEDEFS(AnnotationTextBlockDraw);
 DGNPLATFORM_REF_COUNTED_PTR(AnnotationTextBlockDraw);
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //! @addtogroup Annotations
 //! @beginGroup
@@ -27,11 +27,12 @@ private:
     DEFINE_T_SUPER(RefCountedBase)
 
     AnnotationTextBlockLayoutCP m_layout;
+    Transform m_documentTransform;
 
     DGNPLATFORM_EXPORT void CopyFrom(AnnotationTextBlockDrawCR);
-    BentleyStatus DrawTextRun(AnnotationLayoutRunCR, ViewContextR) const;
-    BentleyStatus DrawFractionRun(AnnotationLayoutRunCR, ViewContextR) const;
-    BentleyStatus DrawLineBreakRun(AnnotationLayoutRunCR, ViewContextR) const;
+    BentleyStatus DrawTextRun(AnnotationLayoutRunCR, Render::GraphicR, ViewContextR, Render::GeometryParamsR, TransformCR) const;
+    BentleyStatus DrawFractionRun(AnnotationLayoutRunCR, Render::GraphicR, ViewContextR, Render::GeometryParamsR, TransformCR) const;
+    BentleyStatus DrawLineBreakRun(AnnotationLayoutRunCR, Render::GraphicR, ViewContextR, Render::GeometryParamsR, TransformCR) const;
 
 public:
     DGNPLATFORM_EXPORT explicit AnnotationTextBlockDraw(AnnotationTextBlockLayoutCR);
@@ -39,12 +40,13 @@ public:
     AnnotationTextBlockDrawR operator=(AnnotationTextBlockDrawCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
     static AnnotationTextBlockDrawPtr Create(AnnotationTextBlockLayoutCR layout) { return new AnnotationTextBlockDraw(layout); }
     AnnotationTextBlockDrawPtr Clone() const { return new AnnotationTextBlockDraw(*this); }
-
     AnnotationTextBlockLayoutCR GetLayout() const { return *m_layout; }
+    TransformCR GetDocumentTransform() const { return m_documentTransform; }
+    void SetDocumentTransform(TransformCR value) { m_documentTransform = value; }
 
-    DGNPLATFORM_EXPORT BentleyStatus Draw(ViewContextR) const;
+    DGNPLATFORM_EXPORT BentleyStatus Draw(Render::GraphicR, ViewContextR, Render::GeometryParamsR) const;
 };
 
 //! @endGroup
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

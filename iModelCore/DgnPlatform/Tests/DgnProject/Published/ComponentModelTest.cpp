@@ -14,7 +14,7 @@
 #include <Bentley/BeNumerical.h>
 #include <Logging/bentleylogging.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
 
 // *** WARNING: Keep this consistent with ComponentModelTest.ts
@@ -95,16 +95,33 @@ struct DetectJsErrors : DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHan
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void checkGeomStream(GeometrySourceCR gel, ElementGeometry::GeometryType exptectedType, size_t expectedCount)
+static void checkGeometryStream(GeometrySourceCR gel, GeometricPrimitive::GeometryType exptectedType, size_t expectedCount)
     {
-    //  Verify that item generated a line
-    size_t count=0;
-    for (ElementGeometryPtr geom : ElementGeometryCollection (gel))
+    // Verify that we have 1 part containing two solid primitives
+    size_t partCount = 0;
+    size_t primitiveCount = 0;
+    for (auto outer : GeometryCollection (gel))
         {
-        ASSERT_EQ( exptectedType , geom->GetGeometryType() );
-        ++count;
+        EXPECT_FALSE(outer.GetGeometryPtr().IsValid());
+        DgnGeometryPartId partId = outer.GetGeometryPartId();
+        EXPECT_TRUE(partId.IsValid());
+        if (partId.IsValid())
+            {
+            ++partCount;
+            auto part = gel.GetSourceDgnDb().GeometryParts().LoadGeometryPart(partId);
+            ASSERT_TRUE(part.IsValid());
+            for (auto inner : GeometryCollection(part->GetGeometryStream(), gel.GetSourceDgnDb()))
+                {
+                auto geom = inner.GetGeometryPtr();
+                ASSERT_TRUE(geom.IsValid());
+                EXPECT_EQ(exptectedType, geom->GetGeometryType());
+                if (exptectedType == geom->GetGeometryType())
+                    ++primitiveCount;
+                }
+            }
         }
-    ASSERT_EQ( expectedCount , count );
+
+    ASSERT_EQ( expectedCount , primitiveCount );
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -112,8 +129,12 @@ static void checkGeomStream(GeometrySourceCR gel, ElementGeometry::GeometryType 
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void checkSlabDimensions(GeometrySourceCR el, double expectedX, double expectedY, double expectedZ)
     {
+    DgnGeometryPartId partId = (*GeometryCollection(el).begin()).GetGeometryPartId();
+    DgnGeometryPartPtr part = el.GetSourceDgnDb().GeometryParts().LoadGeometryPart(partId);
+    ASSERT_TRUE(part.IsValid());
+
     DgnBoxDetail box;
-    ASSERT_TRUE( (*(ElementGeometryCollection(el).begin()))->GetAsISolidPrimitive()->TryGetDgnBoxDetail(box) ) << "Geometry should be a slab";
+    ASSERT_TRUE( (*(GeometryCollection(part->GetGeometryStream(), el.GetSourceDgnDb()).begin())).GetGeometryPtr()->GetAsISolidPrimitive()->TryGetDgnBoxDetail(box) ) << "Geometry should be a slab";
     EXPECT_EQ( expectedX, box.m_baseX );
     EXPECT_EQ( expectedY, box.m_baseY );
     EXPECT_DOUBLE_EQ( expectedZ, box.m_topOrigin.Distance(box.m_baseOrigin) );
@@ -162,7 +183,7 @@ void VariationSpec::CheckInstance(DgnElementCR el, size_t expectedSolidCount) co
     ComponentDefPtr cdef = ComponentDef::FromECClass(nullptr, el.GetDgnDb(), *el.GetElementClass());
     ASSERT_TRUE(cdef.IsValid());
     ASSERT_STREQ(cdef->GetName().c_str(), m_componentName.c_str());
-    checkGeomStream(*el.ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, expectedSolidCount);
+    checkGeometryStream(*el.ToGeometrySource(), GeometricPrimitive::GeometryType::SolidPrimitive, expectedSolidCount);
     checkSlabDimensions(*el.ToGeometrySource(), m_params.find(m_slabDimensions[0])->second.m_value.GetDouble(), 
                                                 m_params.find(m_slabDimensions[1])->second.m_value.GetDouble(), 
                                                 m_params.find(m_slabDimensions[2])->second.m_value.GetDouble());

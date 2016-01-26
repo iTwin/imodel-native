@@ -27,10 +27,6 @@
 #define DGNTOOLS_EXPORT EXPORT_ATTRIBUTE
 #endif
 
-#if defined (__DGNDBTOXFDLL_BUILD__)
-#define DGNDBTOXF_EXPORT EXPORT_ATTRIBUTE
-#endif
-
 #if defined (__MSPSOLID_BUILD__)
 #define __DGNHOST_BUILD__
 #define MSPSOLID_EXPORT             EXPORT_ATTRIBUTE
@@ -51,11 +47,6 @@
 #define MSACIS_EXPORT             EXPORT_ATTRIBUTE
 #endif
 
-#if defined (__KISOLID_BUILD__)
-#define __DGNHOST_BUILD__
-#define KISOLID_EXPORT             EXPORT_ATTRIBUTE
-#endif
-
 #if defined (__MSPFACET_BUILD__)
 #define __DGNHOST_BUILD__
 #define MSPFACET_EXPORT             EXPORT_ATTRIBUTE
@@ -66,10 +57,6 @@
 #define DGNHOST_IMPLEMENTED
 #else
 #define DGNHOST_IMPLEMENTED       IMPORT_ATTRIBUTE
-#endif
-
-#if defined (__FEDERATIONTEST_BUILD__)
-#define FEDERATIONTEST_EXPORT            EXPORT_ATTRIBUTE
 #endif
 
 #if defined (__IMAGELIB_BUILD__)
@@ -130,17 +117,11 @@
 #if !defined (MSACIS_EXPORT)
 #define MSACIS_EXPORT       IMPORT_ATTRIBUTE
 #endif
-#if !defined (KISOLID_EXPORT)
-#define KISOLID_EXPORT       IMPORT_ATTRIBUTE
-#endif
 #if !defined (MSPFACET_EXPORT)
 #define MSPFACET_EXPORT       IMPORT_ATTRIBUTE
 #endif
 #if !defined (DGNHOST_EXPORT)
 #define DGNHOST_EXPORT      IMPORT_ATTRIBUTE
-#endif
-#if !defined (DGNDBTOXF_EXPORT)
-#define DGNDBTOXF_EXPORT  IMPORT_ATTRIBUTE
 #endif
 #if !defined (DGNVIEW_EXPORT)
 #define DGNVIEW_EXPORT  IMPORT_ATTRIBUTE

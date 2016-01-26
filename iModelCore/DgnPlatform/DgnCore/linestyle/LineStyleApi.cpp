@@ -7,8 +7,8 @@
 +----------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
+USING_NAMESPACE_BENTLEY_RENDER
 
-//////////////////Methods that were originally in lsproc.c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -34,16 +34,17 @@ static double  getLinearLength (DPoint3dCP pts, int nPts, int& disconnectPt)
 
     return  length;
     }
+    enum {DEFAULT_MINUMUM_LOD   = 50,};       // extent squared
 
 /*---------------------------------------------------------------------------------**//**
 * Check to see whether a single repeitition of this linestyle for this element is discernible in
 * this context. If not, we just draw a solid line.
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            LsComponent::IsWidthDiscernible (ViewContextP context, LineStyleSymbCP lsSymb, DPoint3dCR pt) const
+bool LsComponent::IsWidthDiscernible (ViewContextP context, Render::LineStyleSymbCP lsSymb, DPoint3dCR pt) const
     {
     // Not attached...is discernable...
-    if (NULL == context->GetViewport() || context->CheckICachedDraw())
+    if (NULL == context->GetViewport())
         return true;
 
     // Line codes are always discernible.  This catches line codes in a compound.
@@ -72,9 +73,14 @@ bool            LsComponent::IsWidthDiscernible (ViewContextP context, LineStyle
     vec[0] = pt;
     vec[1].SumOf (*vec,max);
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context->LocalToView (vec, vec, 2);
+#else
+    context->WorldToView (vec, vec, 2);
+#endif
 
-    double      minLODSize = context->GetMinLOD()*0.25;
+
+    double minLODSize = DEFAULT_MINUMUM_LOD * 0.25;
 
     return (vec[0].DistanceSquaredXY (vec[1]) > minLODSize);
     }
@@ -107,9 +113,13 @@ DPoint3dCR      pt
     vec[0] = pt;
     vec[1].SumOf (*vec,max);
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context->LocalToView (vec, vec, 2);
+#else
+    context->WorldToView (vec, vec, 2);
+#endif
 
-    double      minLODSize = context->GetMinLOD()*0.25;
+    double      minLODSize = DEFAULT_MINUMUM_LOD * 0.25;
 
     return (vec[0].DistanceSquaredXY (vec[1]) > minLODSize);
     }
@@ -119,6 +129,7 @@ DPoint3dCR      pt
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       LsComponent::_StrokeLineString (ViewContextP context, LineStyleSymbP lsSymb, DPoint3dCP pts, int nPts, bool isClosed) const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     double      totalLength;
     int         disconnect=0;
 
@@ -132,7 +143,7 @@ StatusInt       LsComponent::_StrokeLineString (ViewContextP context, LineStyleS
             return _StrokeLineString (context, lsSymb, pts+disconnect+1, nPts-disconnect-1, false);
             }
 
-        context->GetIDrawGeom().DrawLineString3d (nPts, pts, NULL);
+        context->GetCurrentGraphicR().AddLineString (nPts, pts, NULL);
 
         return SUCCESS;
         }
@@ -149,6 +160,8 @@ StatusInt       LsComponent::_StrokeLineString (ViewContextP context, LineStyleS
     //  we can skip drawing some of the segments.  In some cases, this is absolutely 
     //  essential for performance -- especially on tablets.
     context->ValidateScanRange();
+
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     TransformClipStackR clipStack = context->GetTransformClipStack();
 
     int startPoint = 0;
@@ -172,13 +185,16 @@ StatusInt       LsComponent::_StrokeLineString (ViewContextP context, LineStyleS
             //  Nothing previously accepted; current point and next are not rejected by the same plane.
             accepted = startPoint;
         }
-
     if (accepted >= 0)
         {
         _DoStroke (context, pts+accepted, nPts-accepted, lsSymb);
         }
+#endif
 
     return false;
+#else
+    return ERROR;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -205,6 +221,7 @@ StatusInt       LsComponent::_StrokeLineString2d (ViewContextP context, LineStyl
     return _StrokeLineString (context, lsSymb, pts3d, nPts, isClosed);
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -212,6 +229,7 @@ static inline bool biggerThanPixel (double val, double pixelSize)
     {
     return  fabs (val) > pixelSize;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/07
@@ -219,6 +237,7 @@ static inline bool biggerThanPixel (double val, double pixelSize)
 BentleyStatus       LsComponent::StrokeContinuousArc (ViewContextP context, LineStyleSymbCP lsSymb, DPoint3dCP origin, RotMatrixCP rMatrix,
                                         double r0, double r1, double const* inStart, double const* inSweep, DPoint3dCP range) const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     bool filled = false;        // if the linestyle on the arc is indiscernible, then just draw an unfilled arc.
 
     bool isWidthDiscernible = IsWidthDiscernible (context, lsSymb, *origin);
@@ -277,40 +296,43 @@ BentleyStatus       LsComponent::StrokeContinuousArc (ViewContextP context, Line
             curve->push_back (ICurvePrimitive::CreateArc (ellipse));
             curve->push_back (ICurvePrimitive::CreateLineString (pts, 3));
 
-            context->GetIDrawGeom().DrawCurveVector (*curve, filled);
+            context->GetCurrentGraphicR().AddCurveVector (*curve, filled);
             }
         else
             {
-            context->GetIDrawGeom().DrawArc3d (ellipse, NULL == inSweep, filled, range);
+            context->GetCurrentGraphicR().AddArc (ellipse, NULL == inSweep, filled, range);
             }
         }
     else
         {
 #if defined (NEEDS_WORK_DGNITEM)
-        ElemDisplayParamsP elParams = context->GetCurrentDisplayParams();
+        GeometryParamsP elParams = context->GetCurrentGeometryParams();
         if (0 == elParams->GetWeight())
             {
-            context->GetIDrawGeom().DrawArc3d (ellipse, NULL == inSweep, filled, range);
+            context->GetCurrentGraphic().AddArc (ellipse, NULL == inSweep, filled, range);
             }
         else
             {
             // True width is not discernable; need to ignore non-zero integer weight. Otherwise, discepancies
             // may arise due to level of detail differences between view display and printing. [TFS 8535]
-            ElemMatSymb saveMatSymb;
-            saveMatSymb = *context->GetElemMatSymb();
-            ElemDisplayParamsStateSaver saveState (*context->GetCurrentDisplayParams(), false, false, false, true, false);
+            GraphicParams saveMatSymb;
+            saveMatSymb = *context->GetGraphicParams();
+            GeometryParamsStateSaver saveState (*context->GetCurrentGeometryParams(), false, false, false, true, false);
             elParams->SetWeight (0);
-            context->CookDisplayParams();
-            context->GetIDrawGeom().ActivateMatSymb (context->GetElemMatSymb());
-            context->GetIDrawGeom().DrawArc3d (ellipse, NULL == inSweep, filled, range);
-            context->GetIDrawGeom().ActivateMatSymb (&saveMatSymb);
+            context->CookGeometryParams();
+            context->GetCurrentGraphic().ActivateGraphicParams (context->GetGraphicParams());
+            context->GetCurrentGraphic().AddArc (ellipse, NULL == inSweep, filled, range);
+            context->GetCurrentGraphic().ActivateGraphicParams (&saveMatSymb);
             }
 #else
-        context->GetIDrawGeom().DrawArc3d (ellipse, NULL == inSweep, filled, range);
+        context->GetCurrentGraphicR().AddArc (ellipse, NULL == inSweep, filled, range);
 #endif
         }
 
     return SUCCESS;
+#else
+    return ERROR;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -354,14 +376,16 @@ StatusInt       LsComponent::_StrokeArc (ViewContextP context, LineStyleSymbP ls
 
     if (NULL != context->GetViewport ())
         {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
         context->LocalToView (vec, vec, 2);
+#else
+        context->WorldToView (vec, vec, 2);
+#endif
 
         double  dist = vec[0].Distance (vec[1]);
+        double  arcTolerance = .01;
 
-        if (0.0 == context->GetArcTolerance())
-            numVerts = 200;
-        else
-            numVerts = fabs (dist * sweep * (.02 / context->GetArcTolerance()));
+        numVerts = fabs (dist * sweep * (.02 / arcTolerance));
         }
 
     int   nPts = (numVerts > 200) ? 200 : (int) numVerts;
@@ -425,13 +449,14 @@ StatusInt       LsComponent::_StrokeArc (ViewContextP context, LineStyleSymbP ls
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       LsComponent::_StrokeBSplineCurve (ViewContextP context, LineStyleSymbP lsSymb, MSBsplineCurveCP curve, double const* optTolerance) const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DPoint3d    firstPt;
     curve->FractionToPoint (firstPt, 0.0);
 
     // if the linestyle is too small to recognize in this view, just draw the bspline with no style.
     if (!IsWidthDiscernible (context, lsSymb, firstPt))
         {
-        context->GetIDrawGeom().DrawBSplineCurve (*curve, false);
+        context->GetCurrentGraphicR().AddBSplineCurve (*curve, false);
 
         return SUCCESS;
         }
@@ -486,6 +511,9 @@ StatusInt       LsComponent::_StrokeBSplineCurve (ViewContextP context, LineStyl
 
 
     return status;
+#else
+    return ERROR;
+#endif
     }
 
 LsComponentId       LsComponent::GetId ()const {return m_location.GetComponentId ();}

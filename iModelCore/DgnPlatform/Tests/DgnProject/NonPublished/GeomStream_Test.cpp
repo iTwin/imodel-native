@@ -7,46 +7,46 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
-class GeomStreamTest : public testing::Test
+class GeometryStreamTest : public testing::Test
 {
 protected:
 ScopedDgnHost       m_host;
 DgnDbTestDgnManager m_testDataManager;
 
 public:
-    GeomStreamTest() : m_testDataManager (L"2dMetricGeneral.idgndb", "", Db::OpenMode::ReadWrite, false){BeAssert( NULL != GetDgnModelP() );}
-    virtual ~GeomStreamTest () {}
+    GeometryStreamTest() : m_testDataManager (L"2dMetricGeneral.idgndb", "", Db::OpenMode::ReadWrite, false){BeAssert( NULL != GetDgnModelP() );}
+    virtual ~GeometryStreamTest () {}
 
     DgnModelP GetDgnModelP() {return m_testDataManager.GetDgnModelP();}
 };
     
-static bool hasGeom(GeomStreamCR el) {return (NULL != el.GetData()) && 3 == el.GetSize();}
-static bool sameGeomPtr(GeomStreamCR el1, GeomStreamCR el2) {return hasGeom(el1) && (el1.GetData() == el2.GetData());}
+static bool hasGeom(GeometryStreamCR el) {return (NULL != el.GetData()) && 3 == el.GetSize();}
+static bool sameGeomPtr(GeometryStreamCR el1, GeometryStreamCR el2) {return hasGeom(el1) && (el1.GetData() == el2.GetData());}
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
-TEST_F(GeomStreamTest, DgnElement)
+TEST_F(GeometryStreamTest, DgnElement)
     {
     // allocate a ElementGeom and put some data in its graphics
-    GeomStream eg1;         
+    GeometryStream eg1;         
     ASSERT_TRUE(!hasGeom(eg1));
     eg1.ReserveMemory(3);
-    memset (eg1.GetDataR(), 5, 3);
+    memset (eg1.GetDataP(), 5, 3);
     ASSERT_TRUE(hasGeom(eg1)); 
 
     // a move constructor should steal the data from the other
-    GeomStream eg2 = std::move(eg1);
+    GeometryStream eg2 = std::move(eg1);
     ASSERT_TRUE(hasGeom(eg2)); 
     ASSERT_TRUE(!hasGeom(eg1));
 
     // a copy constructor should not steal the data from the other
-    GeomStream eg3 = eg2;
+    GeometryStream eg3 = eg2;
     ASSERT_TRUE(hasGeom(eg2)); 
     ASSERT_TRUE(hasGeom(eg3)); 
     ASSERT_TRUE(!sameGeomPtr(eg2,eg3));
@@ -70,9 +70,9 @@ TEST_F(GeomStreamTest, DgnElement)
     ASSERT_TRUE(hasGeom(eg1)); 
     ASSERT_TRUE(!sameGeomPtr(eg2,eg1));
 
-    GeomStream eg4;
+    GeometryStream eg4;
     eg4.ReserveMemory(10);
-    memset (eg4.GetDataR(), 4, 10);
+    memset (eg4.GetDataP(), 4, 10);
 
     // an element with a graphics buffer that is large enough to hold the data from a copy operator should not need to realloc.
     void const* g4 = eg4.GetData(); 

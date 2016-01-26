@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/Annotations/TextAnnotationElement.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h> 
@@ -95,7 +95,7 @@ DgnDbStatus TextAnnotationData::_LoadProperties(DgnElementCR el)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     09/2015
 //---------------------------------------------------------------------------------------
-void TextAnnotationData::GenerateElementGeometry(GeometrySourceR source, GenerateReason reason) const
+void TextAnnotationData::GenerateGeometricPrimitive(GeometrySourceR source, GenerateReason reason) const
     {
     // To allow DgnV8 conversion to create first-class text elements, but provide custom WYSIWYG geometry.
     if (m_isGeometrySuppressed)
@@ -104,10 +104,10 @@ void TextAnnotationData::GenerateElementGeometry(GeometrySourceR source, Generat
     if (!m_annotation.IsValid())
         return;
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(source);
+    GeometryBuilderPtr builder = GeometryBuilder::Create(source);
     
-    builder->Append(*m_annotation, Transform::FromIdentity());
-    builder->SetGeomStreamAndPlacement(source);
+    builder->Append(*m_annotation);
+    builder->SetGeometryStreamAndPlacement(source);
     }
 
 //---------------------------------------------------------------------------------------
@@ -161,7 +161,7 @@ static DgnDbStatus updateGeometryOnChange(DgnDbStatus superStatus, DgnElementR e
         return superStatus;
     
     if (nullptr != item && nullptr != el.ToGeometrySourceP())
-        item->GenerateElementGeometry(*el.ToGeometrySourceP(), reason);
+        item->GenerateGeometricPrimitive(*el.ToGeometrySourceP(), reason);
 
     return DgnDbStatus::Success;
     }

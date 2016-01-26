@@ -27,7 +27,7 @@ DGNPLATFORM_TYPEDEFS (ProxyHLEdgeSegmentId)
 DGNPLATFORM_TYPEDEFS (ViewHandlerPass)   
 //DGNPLATFORM_TYPEDEFS (VisibleEdgeCacheElement)
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct CVEHLineSymbology // moved here from tcb.r.h in graphite and renamed
     {
@@ -402,7 +402,7 @@ virtual void _CreateCveElements (DgnModelR, TransformCR unitsTransform, ICreateC
 //    DGNPLATFORM_EXPORT virtual StatusInt     _ConnectToOutput () override  {return SUCCESS;}
 //    DGNPLATFORM_EXPORT virtual int           _GetIndexedLineWidth (int index) const override   { return index; }
 //    DGNPLATFORM_EXPORT virtual UInt32        _GetIndexedLinePattern (int index) const override { return index; }
-//    DGNPLATFORM_EXPORT virtual DgnDisplayCoreTypes::WindowP _GetWindowHandle () const override { return NULL; }
+//    DGNPLATFORM_EXPORT virtual DgnDisplayCoreTypes::WindowP _GetRenderWindow () const override { return NULL; }
 //
 //public:
 //    DGNPLATFORM_EXPORT StatusInt             Init (DgnModelP rootDgnModel, VisibleEdgeCacheP proxyCache);
@@ -416,12 +416,11 @@ static void RegisterHandlers (DgnDomain& domain);
 static bool IsProxyDisplayHandler (HandlerR);
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 //__PUBLISH_SECTION_START__
-#include "DgnPlatform/IPickGeom.h"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE // added in graphite
+BEGIN_BENTLEY_DGN_NAMESPACE // added in graphite
 
 struct  ProxyElementDisplayHandler; // added in graphite
 
@@ -450,4 +449,4 @@ struct ProxyGraphicsElemTopology : IElemTopology // added in graphite
     int GetClipPlaneIndex() const {return m_clipPlaneIndex;}
     };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

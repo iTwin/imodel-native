@@ -13,7 +13,7 @@
 
 typedef struct FT_FaceRec_* FT_Face; // Shield users from freetype.h because they have a bad include scheme.
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     03/2015
@@ -117,4 +117,4 @@ struct DgnFontPersistence : NonCopyableClass
     };
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

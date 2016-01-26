@@ -23,13 +23,13 @@ module DgnScriptTests {
         {
         g.TryTransformInPlace (be.Transform.CreateTranslationXYZ (dx*shiftXSize, dy*shiftYsize, 0.0));
         }
-    function ShowPoint (builder : be.ElementGeometryBuilder, point: be.DPoint3d)
+    function ShowPoint (builder : be.GeometryBuilder, point: be.DPoint3d)
         {
         var arc = be.EllipticArc.CreateCircleXY (point, 0.05);
         builder.Append (arc);
         }
 
-    function ShowArc (builder: be.ElementGeometryBuilder, arc: be.EllipticArc )
+    function ShowArc (builder: be.GeometryBuilder, arc: be.EllipticArc )
         {
         builder.Append (arc);
         ShowPoint (builder, arc.PointAtFraction (0.0));
@@ -70,7 +70,7 @@ module DgnScriptTests {
         var ele = be.PhysicalElement.Create(model, catid, '');
 
         //  Try out SolidPrimitive
-        var builder = new be.ElementGeometryBuilder(ele, new be.DPoint3d(0, 0, 0), new be.YawPitchRollAngles(0, 0, 0));
+        var builder = new be.GeometryBuilder(ele, new be.DPoint3d(0, 0, 0), new be.YawPitchRollAngles(0, 0, 0));
 
         var shiftCount = 0;
 
@@ -150,8 +150,8 @@ module DgnScriptTests {
         Shift (bspline5, shiftCount, 6);     builder.Append (bspline5);
 
 
-        if (0 != builder.SetGeomStreamAndPlacement(ele))
-            be.Script.ReportError('SetGeomStreamAndPlacement failed');
+        if (0 != builder.SetGeometryStreamAndPlacement(ele))
+            be.Script.ReportError('SetGeometryStreamAndPlacement failed');
 
         ele.Insert();
 

@@ -142,17 +142,14 @@ DgnMaterialId DgnMaterial::QueryMaterialId(DgnCode const& code, DgnDbR db)
 BentleyStatus DgnMaterial::GetAsset(JsonValueR value, Utf8CP keyWord) const
     {
     Json::Value root;
-
     if (!Json::Reader::Parse(GetValue(), root))
         return ERROR;
 
-    JsonValueCR     constValue =  root[keyWord];
-    
+    JsonValueCR  constValue =  root[keyWord];
     if (constValue.isNull())
         return ERROR;
 
     value = constValue;
-
     return SUCCESS;
     }
 

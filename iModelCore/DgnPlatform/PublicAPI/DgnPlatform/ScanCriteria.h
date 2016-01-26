@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ScanCriteria.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,9 +13,9 @@
 #include "DgnRangeTree.h"
 
 DGNPLATFORM_TYPEDEFS (DgnRangeTree)
-DGNPLATFORM_TYPEDEFS (IRangeNodeCheck)
+DGNPLATFORM_TYPEDEFS (RangeNodeCheck)
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 // @bsiclass                                                      Keith.Bentley   05/07
@@ -27,7 +27,6 @@ public:
     typedef int (*PFScanElementCallback)(DgnElementCR, void *callbackArg, ScanCriteriaR sc);
 
 private:
-    enum {MAX_SC_RANGE = 8,};
     struct ScanType
     {
         unsigned int testRange:1;
@@ -41,12 +40,11 @@ private:
     int                     m_numRanges;
     DPoint3d                m_skewVector;
     DRange3d                m_skewRange;
-    DRange3d                m_range[MAX_SC_RANGE];
+    DRange3d                m_range;
     PFScanElementCallback   m_callbackFunc;
     void*                   m_callbackArg;
     DgnCategoryIdSet const* m_categories;
-    IRangeNodeCheckP        m_appRangeNodeCheck;
-    ViewContextP            m_viewContext;
+    RangeNodeCheckP         m_appRangeNodeCheck;
     int                     m_lastMember;
 
     bool UseRangeTree(DgnRangeTree&);
@@ -58,11 +56,11 @@ public:
     DGNPLATFORM_EXPORT ScanCriteria();
 
     ScanType GetScanType() const {return m_type;}
-    DRange3dCR GetScanRange() const {return m_range[0];}
+    DRange3dCR GetScanRange() const {return m_range;}
     DPoint3dCR GetSkewVector() const {return m_skewVector;}
     DgnModelP GetDgnModelP() {return m_model;}
     PFScanElementCallback GetCallbackFunc() {return m_callbackFunc;}
-    void SetRangeNodeCheck (IRangeNodeCheckP checker) {m_appRangeNodeCheck = checker;}
+    void SetRangeNodeCheck(RangeNodeCheckP checker) {m_appRangeNodeCheck = checker;}
     DgnCategoryIdSet const* GetCategories() const {return m_categories;}
 
     DGNPLATFORM_EXPORT Result CheckRange(DRange3dCR elemRange, bool isElem3d) const;
@@ -86,7 +84,7 @@ public:
     DGNPLATFORM_EXPORT void SetRangeTest(DRange3dP scanRange);
 
     //! Perform the scan, filtering elements as dictated by this ScanCriteria, calling the callbackFunc specified in #SetElementCallback.
-    DGNPLATFORM_EXPORT StatusInt Scan(ViewContextP=nullptr);
+    DGNPLATFORM_EXPORT StatusInt Scan();
 
     //! Get the DgnModel set by #SetDgnModel.
     DGNPLATFORM_EXPORT DgnModelP GetDgnModel();
@@ -97,6 +95,6 @@ public:
     DGNPLATFORM_EXPORT Result CheckElement(DgnElementCR element, bool doRangeTest) const;
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 /** @endcond */

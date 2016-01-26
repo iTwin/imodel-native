@@ -20,7 +20,7 @@
 #define CHANGESET_ATTACH(name) CHANGES_ATTACH_ALIAS "." name
 #define CHANGES_TABLE_Sha1          CHANGESET_ATTACH(CHANGES_TABLE_DIRECT_Sha1)
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 /*=================================================================================**//**
 * Changeset-related properties that are stored in a project that keep track of the 
@@ -257,4 +257,4 @@ public:
     
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

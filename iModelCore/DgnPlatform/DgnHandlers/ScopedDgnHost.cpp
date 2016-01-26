@@ -124,7 +124,7 @@ struct ProxyServerAdmin : Dgn::DgnPlatformLib::Host::ServerAdmin
 * directories delivered with the unit test framework.
 * @bsiclass                                     Sam.Wilson                      01/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 struct ScopedDgnHostImpl : DgnPlatformLib::Host
 {
     bool        m_isInitialized;
@@ -142,7 +142,7 @@ struct ScopedDgnHostImpl : DgnPlatformLib::Host
     void SetFetchScriptCallback(ScopedDgnHost::FetchScriptCallback* cb) {((TestingDgnScriptingAdmin*)m_scriptingAdmin)->m_callback = cb;}
     void SetServerAdmin(DgnPlatformLib::Host::ServerAdmin* admin) {((ProxyServerAdmin*)m_serverAdmin)->m_impl = admin;}
 };
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011

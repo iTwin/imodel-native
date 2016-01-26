@@ -25,7 +25,7 @@ DGNPLATFORM_REF_COUNTED_PTR(SpatialTextAnnotationElement);
 #define DGN_CLASSNAME_TextAnnotationElement "TextAnnotationElement"
 #define DGN_CLASSNAME_SpatialTextAnnotationElement "SpatialTextAnnotationElement"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //__PUBLISH_SECTION_END__
 // So we can friend ConvertV8TextToDgnDbExtension within TextAnnotationData.
@@ -66,7 +66,7 @@ public:
     TextAnnotationData() : m_isGeometrySuppressed(false) {}
     TextAnnotationCP GetAnnotation() const { return m_annotation.get(); }
     void SetAnnotation(TextAnnotationCP value) { m_annotation = value ? value->Clone() : nullptr; }
-    DGNPLATFORM_EXPORT void GenerateElementGeometry(GeometrySourceR, GenerateReason) const;
+    DGNPLATFORM_EXPORT void GenerateGeometricPrimitive(GeometrySourceR, GenerateReason) const;
     DGNPLATFORM_EXPORT void RemapIds(DgnImportContext&);
 };
 
@@ -90,7 +90,7 @@ struct EXPORT_VTABLE_ATTRIBUTE TextAnnotationElement : AnnotationElement
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotationElement, AnnotationElement);
 
 protected:
-    virtual bool _DrawHit(HitDetailCR, ViewContextR) const override { return false; } // Don't flash text box...
+    virtual bool _DrawHit(HitDetailCR, DecorateContextR) const override { return false; } // Don't flash text box...
     virtual SnapStatus _OnSnap(SnapContextR context) const override { return context.DoTextSnap(); } // Default snap using text box...
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR originalElment) override;
@@ -134,7 +134,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SpatialTextAnnotationElement : SpatialElement
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialTextAnnotationElement, SpatialElement);
 
 protected:
-    virtual bool _DrawHit(HitDetailCR, ViewContextR) const override { return false; } // Don't flash text box...
+    virtual bool _DrawHit(HitDetailCR, DecorateContextR) const override { return false; } // Don't flash text box...
     virtual SnapStatus _OnSnap(SnapContextR context) const override { return context.DoTextSnap(); } // Default snap using text box...
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR originalElment) override;
@@ -173,4 +173,4 @@ namespace dgn_ElementHandler
 
 //! @endGroup
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

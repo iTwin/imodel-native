@@ -386,7 +386,7 @@ FaceAttachment::FaceAttachment ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-FaceAttachment::FaceAttachment (ElemDisplayParamsCR sourceParams)
+FaceAttachment::FaceAttachment (GeometryParamsCR sourceParams)
     {
     m_categoryId    = sourceParams.GetCategoryId();
     m_subCategoryId = sourceParams.GetSubCategoryId();
@@ -396,7 +396,7 @@ FaceAttachment::FaceAttachment (ElemDisplayParamsCR sourceParams)
     m_color = m_useColor ? sourceParams.GetLineColor() : ColorDef::Black();
 
     if (m_useMaterial = !sourceParams.IsMaterialFromSubCategoryAppearance())
-        m_material = sourceParams.GetMaterial();
+        m_material = sourceParams.GetMaterialId();
 
     m_uv.Init(0.0, 0.0);
     }
@@ -404,7 +404,7 @@ FaceAttachment::FaceAttachment (ElemDisplayParamsCR sourceParams)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void FaceAttachment::ToElemDisplayParams (ElemDisplayParamsR elParams) const
+void FaceAttachment::ToGeometryParams (GeometryParamsR elParams) const
     {
     elParams.SetCategoryId(m_categoryId);
     elParams.SetSubCategoryId(m_subCategoryId);
@@ -414,44 +414,7 @@ void FaceAttachment::ToElemDisplayParams (ElemDisplayParamsR elParams) const
         elParams.SetLineColor(m_color);
 
     if (m_useMaterial)
-        elParams.SetMaterial(m_material);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  12/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void FaceAttachment::ToElemMatSymb (ElemMatSymbR elMatSymb, DgnViewportR vp) const
-    {
-    if (!m_subCategoryId.IsValid())
-        return;
-
-    DgnSubCategory::Appearance appearance = vp.GetViewController().GetSubCategoryAppearance(m_subCategoryId);
-
-    ColorDef  color = (m_useColor ? m_color : appearance.GetColor());
-    double    netTransparency = m_transparency;
-
-    // SubCategory transparency is combined with face transparency to compute net transparency. 
-    if (0.0 != appearance.GetTransparency())
-        {
-        // combine transparencies by multiplying the opaqueness.
-        // A 50% transparent element on a 50% transparent category should give a 75% transparent result.
-        // (1 - ((1 - .5) * (1 - .5))
-        double faceOpaque = 1.0 - netTransparency;
-        double categoryOpaque = 1.0 - appearance.GetTransparency();
-        
-        netTransparency = (1.0 - (faceOpaque * categoryOpaque));
-        }
-
-    color.SetAlpha((Byte) (netTransparency * 255.0));
-
-    elMatSymb.Init();
-    elMatSymb.SetLineColor(color);
-    elMatSymb.SetFillColor(color);
-
-#ifdef WIP_MATERIAL
-    // NEEDSWORK: m_uv also affects material placement...
-    elMatSymb.SetMaterial(m_useMaterial ? m_material : MaterialManager::GetManagerR().SomethingSomething(appearance.GetMaterial()));
-#endif
+        elParams.SetMaterialId(m_material);
     }
 
 /*---------------------------------------------------------------------------------**//**

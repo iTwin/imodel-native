@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/WebMercator.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -137,13 +137,13 @@ Utf8String fmtSexagesimal (GeoPointCR gp)
 #ifdef WEBMERCATOR_DEBUG_TILES
 static void setSymbology (ViewContextR context, RgbColorDefCR color, uint32_t trans, uint32_t width)
     {
-    ElemMatSymb elemMatSymb;
+    GraphicParams elemMatSymb;
 
     auto colorIdx = ColorDef(color.red, color.green, color.blue, trans);
     elemMatSymb.SetLineColor (colorIdx);
     elemMatSymb.SetWidth (width);
 
-    context.GetIDrawGeom().ActivateMatSymb (&elemMatSymb);
+    context.GetIDrawGeom().ActivateGraphicParams (&elemMatSymb);
     }
 #endif
 
@@ -342,8 +342,7 @@ static double computeGroundResolutionInMeters (uint8_t zoomLevel, double latitud
 +---------------+---------------+---------------+---------------+---------------+------*/
 double WebMercatorUorConverter::ComputeViewResolutionInMetersPerPixel (DgnViewportR vp)
     {
-    DRange3d    range;
-    vp.GetViewCorners (range.low, range.high); // lower left back, upper right front    -- View coordinates aka "pixels"
+    DRange3d range = vp.GetViewCorners(); // lower left back, upper right front    -- View coordinates aka "pixels"
     
     DPoint3d corners[8];
     range.Get8Corners (corners);    // pixels
@@ -524,8 +523,10 @@ struct TextureCache
         {
         auto& entry = m_map[url];
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
         if (entry.m_textureId != 0)
             T_HOST.GetGraphicsAdmin()._DeleteTexture (entry.m_textureId);
+#endif
 
         entry.m_textureId = tid;
         entry.m_imageInfo = info;
@@ -554,7 +555,9 @@ struct TextureCache
                 {
                 if (!IsCacheTooLarge ())
                     return;
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
                 T_HOST.GetGraphicsAdmin()._DeleteTexture (m_map[url].m_textureId);
+#endif
                 m_map.erase (url);
                 }
             }
@@ -580,8 +583,9 @@ BentleyStatus WebMercatorTileDisplayHelper::GetCachedTexture (uintptr_t& cachedT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t WebMercatorTileDisplayHelper::DefineTexture (bvector<Byte> const& rgbData, ImageUtilities::RgbImageInfo const& imageInfo)
+uintptr_t WebMercatorTileDisplayHelper::DefineTexture (ByteStream const& rgbData, ImageUtilities::RgbImageInfo const& imageInfo)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     BeAssert (!imageInfo.isBGR);
     int format      = imageInfo.hasAlpha? QV_RGBA_FORMAT: QV_RGB_FORMAT;
     int sizeofPixel = imageInfo.hasAlpha? 4: 3;
@@ -595,6 +599,8 @@ uintptr_t WebMercatorTileDisplayHelper::DefineTexture (bvector<Byte> const& rgbD
     T_HOST.GetGraphicsAdmin()._DefineTile (textureId, "", sizeInPixels, false, format, pitch, &rgbData[0]);
 
     return textureId;
+#endif
+    return 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -651,7 +657,9 @@ void WebMercatorTileDisplayHelper::DrawTile (ViewContextR context, WebMercatorTi
         DrawTileAsBox (context, tileid, z, false);
     #endif
 
-    context.GetIViewDraw().DrawMosaic (1,1, &textureId, uvPts);
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    context.GetCurrentGraphicR().AddMosaic (1,1, &textureId, uvPts);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -666,17 +674,17 @@ void WebMercatorTileDisplayHelper::DrawAndCacheTile (ViewContextR context, WebMe
     
     BentleyStatus status;
 
-    m_rgbBuffer.clear(); // reuse the same buffer, in order to minimize mallocs
+    m_rgbBuffer.Clear(); // reuse the same buffer, in order to minimize mallocs
 
     if (contentType.Equals ("image/png"))
         {
-        status = ImageUtilities::ReadImageFromPngBuffer (m_rgbBuffer, actualImageInfo, data.data(), data.size());
+        status = ImageUtilities::ReadImageFromPngBuffer (m_rgbBuffer, actualImageInfo, data.GetData(), data.GetSize());
         if (SUCCESS != status)
             LOG.warningv("Invalid png image data: %s", url.c_str());
         }
     else if (contentType.Equals ("image/jpeg"))
         {
-        status = ImageUtilities::ReadImageFromJpgBuffer (m_rgbBuffer, actualImageInfo, data.data(), data.size(), expectedImageInfo);
+        status = ImageUtilities::ReadImageFromJpgBuffer (m_rgbBuffer, actualImageInfo, data.GetData(), data.GetSize(), expectedImageInfo);
         if (SUCCESS != status)
             LOG.warningv("Invalid jpeg image data: %s", url.c_str());
         }
@@ -713,16 +721,16 @@ void WebMercatorTileDisplayHelper::DrawTileAsBox (ViewContextR context, WebMerca
     box[2] = uvPts[3];
     box[3] = uvPts[2];
     box[4] = box[0];
-    context.GetIDrawGeom().DrawShape3d (_countof(box), box, filled, NULL);
+    context.GetIDrawGeom().AddShape (_countof(box), box, filled, NULL);
 
     //DPoint3d diagonal[2];
     //diagonal[0] = uvPts[2];
     //diagonal[1] = uvPts[1];
-    //context.GetIDrawGeom().DrawLineString3d (2, diagonal, NULL);
+    //context.GetIDrawGeom().AddLineString (2, diagonal, NULL);
     //
     //diagonal[0] = uvPts[0];
     //diagonal[1] = uvPts[3];
-    //context.GetIDrawGeom().DrawLineString3d (2, diagonal, NULL);
+    //context.GetIDrawGeom().AddLineString (2, diagonal, NULL);
     }
 #endif
 
@@ -749,18 +757,18 @@ static void drawPoint (ViewContextR context, DPoint3dCR pt, bool drawCrossHair=f
     DEllipse3d circle;
     auto z = DVec3d::From (0,0,1);
     circle.InitFromCenterNormalRadius (pt, z, 5*pixels);
-    context.GetIDrawGeom().DrawArc3d (circle, true, true, NULL);
+    context.GetIDrawGeom().AddArc (circle, true, true, NULL);
 
     if (drawCrossHair)
         {
         DPoint3d pts[2];
         pts[0].SumOf (pt, DVec3d::From(0,-100*pixels,0));
         pts[1].SumOf (pt, DVec3d::From(0, 100*pixels,0));
-        context.GetIDrawGeom().DrawLineString3d (2, pts, NULL);
+        context.GetIDrawGeom().AddLineString (2, pts, NULL);
 
         pts[0].SumOf (pt, DVec3d::From(-100*pixels,0,0));
         pts[1].SumOf (pt, DVec3d::From(100*pixels,0,0));
-        context.GetIDrawGeom().DrawLineString3d (2, pts, NULL);
+        context.GetIDrawGeom().AddLineString (2, pts, NULL);
         }
     }
 #endif
@@ -788,7 +796,7 @@ static void drawText (ViewContextR context, DPoint3dCR ptUl, Utf8StringCR string
 
         textString->SetOriginFromUserOrigin (pt);
 
-        context.GetIDrawGeom().DrawTextString (*textString);
+        context.GetIDrawGeom().AddTextString (*textString);
 
         pt.y -= 17*pixels;
         }
@@ -833,7 +841,7 @@ BentleyStatus WebMercatorTilingSystem::GetTileIdsForView (bvector<TileId>& tilei
     DPoint2d ul, lr;
         {
         // Get view corners
-        auto rect = vp.GetViewRect();
+        BSIRect rect = vp.GetViewRect();
 
         auto range = DRange3d::NullRange();
         range.Extend (vp.ViewToWorld (DPoint3d::From (rect.Left(), rect.Top())));
@@ -893,12 +901,8 @@ static bool shouldDraw (ViewContextR context)
     {
     switch (context.GetDrawPurpose())
         {
-        case DrawPurpose::Hilite:
-        case DrawPurpose::Unhilite:
-        case DrawPurpose::ChangedPre:       // Erase, rely on Healing.
-        case DrawPurpose::RestoredPre:      // Erase, rely on Healing.
         case DrawPurpose::Pick:
-        case DrawPurpose::Flash:
+        case DrawPurpose::Decorate:
         case DrawPurpose::CaptureGeometry:
         case DrawPurpose::FenceAccept:
         case DrawPurpose::RegionFlood:
@@ -1188,7 +1192,7 @@ void WebMercatorDisplay::DrawView (ViewContextR context)
 * This callback is invoked on a timer during progressive display.
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-IProgressiveDisplay::Completion WebMercatorDisplay::_Process (ViewContextR context)
+ProgressiveDisplay::Completion WebMercatorDisplay::_Process (ViewContextR context, uint32_t batchSize, WantShow& wantShow)
     {
     if (BeTimeUtilities::GetCurrentTimeAsUnixMillis() < m_nextRetryTime)
         {
@@ -1267,8 +1271,10 @@ IProgressiveDisplay::Completion WebMercatorDisplay::_Process (ViewContextR conte
         m_nextRetryTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis() + m_waitTime;  
         }
 
+    wantShow = WantShow::Yes;
+
     //  Don't report "Finished" unless all missing tiles have been found and displayed.
-    return m_missingTilesPending.empty()? Completion::Finished: Completion::Aborted;
+    return m_missingTilesPending.empty() ? Completion::Finished : Completion::Aborted;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1286,7 +1292,6 @@ WebMercatorDisplay::WebMercatorDisplay (WebMercatorModel& model, DgnViewportR vp
     m_nextRetryTime(0),
     m_failedAttempts(0)
     {
-    DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT
     T_HOST.RegisterCopyrightSupplier(*this);
     }
 
@@ -1473,7 +1478,7 @@ bool dgn_ModelHandler::StreetMap::_ShouldRejectTile (WebMercatorModel::Mercator 
 
         // MapBox
     auto const& data = realityData.GetData();
-    if (data.size() == sizeof(s_mapbox_x) && 0==memcmp(&data[0], s_mapbox_x, data.size()))
+    if (data.GetSize() == sizeof(s_mapbox_x) && 0==memcmp(data.GetData(), s_mapbox_x, data.GetSize()))
         return true;
 
     return false;
@@ -1672,7 +1677,7 @@ bool TiledRaster::_IsExpired() const {return DateTime::CompareResult::EarlierTha
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<Byte> const& TiledRaster::GetData() const {return m_data;}
+ByteStream const& TiledRaster::GetData() const {return m_data;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
@@ -1813,7 +1818,8 @@ BentleyStatus TiledRaster::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> co
 
     m_contentType = contentTypeIter->second.c_str();
     m_rasterInfo = *options.GetExpectedImageInfo();
-    m_data = body;
+
+    m_data.SaveData(&body.front(), (uint32_t) body.size());
 
     return BSISUCCESS;
     }
@@ -1837,7 +1843,7 @@ BentleyStatus TiledRaster::_InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key, 
 
         auto raster     = stmt->GetValueBlob(0);
         auto rasterSize = stmt->GetValueInt(1);
-        m_data.assign((Byte*) raster,(Byte*) raster + rasterSize);
+        m_data.SaveData((Byte*) raster, rasterSize);
 
         m_rasterInfo = DeserializeRasterInfo(stmt->GetValueText(2));
         DateTime::FromUnixMilliseconds(m_creationDate,(uint64_t) stmt->GetValueInt64(3));
@@ -1858,7 +1864,7 @@ BentleyStatus TiledRaster::_InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TiledRaster::_Persist(BeSQLite::Db& db, BeMutex& cs) const
     {
-    int bufferSize = (int) GetData().size();
+    int bufferSize = (int) GetData().GetSize();
 
     int64_t creationTime = 0;
     if (SUCCESS != GetCreationDate().ToUnixMilliseconds(creationTime))
@@ -1899,7 +1905,7 @@ BentleyStatus TiledRaster::_Persist(BeSQLite::Db& db, BeMutex& cs) const
 
         stmt->ClearBindings();
         stmt->BindText (1, GetId(), BeSQLite::Statement::MakeCopy::Yes);
-        stmt->BindBlob (2, GetData().data(), bufferSize, BeSQLite::Statement::MakeCopy::No);
+        stmt->BindBlob (2, GetData().GetData(), bufferSize, BeSQLite::Statement::MakeCopy::No);
         stmt->BindInt  (3, bufferSize);
         stmt->BindText (4, SerializeRasterInfo(m_rasterInfo).c_str(), BeSQLite::Statement::MakeCopy::Yes);
         stmt->BindInt64(5, creationTime);

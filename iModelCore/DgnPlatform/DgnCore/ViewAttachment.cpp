@@ -125,15 +125,16 @@ void ViewAttachment::_RemapIds(DgnImportContext& importer)
         }
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ViewAttachmentGeomCollector : IElementGraphicsProcessor
+struct ViewAttachmentGeomCollector : IGeometryProcessor
 {
 private:
     ViewAttachmentR             m_attachment;
     DgnSubCategoryId            m_subCategory;
-    ElementGeometryBuilderPtr   m_builder;
+    GeometryBuilderPtr   m_builder;
     Transform                   m_curTransform;
     ViewContextP                m_viewContext;
     NonVisibleViewport          m_viewport;
@@ -171,7 +172,7 @@ public:
         len *= s_lenFactor;
         m_builder->Append(*ICurvePrimitive::CreateRectangle(0, 0, len, len, 0));
 #endif
-        return IsValid() && SUCCESS == m_builder->SetGeomStreamAndPlacement(m_attachment) ? DgnDbStatus::Success : DgnDbStatus::BadElement;
+        return IsValid() && SUCCESS == m_builder->SetGeometryStreamAndPlacement(m_attachment) ? DgnDbStatus::Success : DgnDbStatus::BadElement;
         }
 };
 
@@ -185,7 +186,7 @@ ViewAttachmentGeomCollector::ViewAttachmentGeomCollector(ViewControllerR control
         m_subCategory = DgnCategory::GetDefaultSubCategoryId(m_attachment.GetCategoryId());
 
     Placement2dCR placement = m_attachment.GetPlacement();
-    m_builder = ElementGeometryBuilder::Create(m_attachment, placement.GetOrigin(), placement.GetAngle());
+    m_builder = GeometryBuilder::Create(m_attachment, placement.GetOrigin(), placement.GetAngle());
     BeAssert(IsValid());
 
     // Fit the view to define the range of our geometry
@@ -302,6 +303,7 @@ BentleyStatus ViewAttachmentGeomCollector::_ProcessCurveVector(CurveVectorCR cv,
     m_builder->Append(tfCv);
     return SUCCESS;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
@@ -318,12 +320,15 @@ DgnDbStatus ViewAttachment::GenerateGeomStream(DgnSubCategoryId subcat)
     if (controller.IsNull())
         return DgnDbStatus::ViewNotFound;
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     ViewAttachmentGeomCollector proc(*controller, *this, subcat);
     if (!proc.IsValid())
         return DgnDbStatus::BadElement;
 
-    ElementGraphicsOutput::Process(proc, GetDgnDb());
+    GeometryProcessor::Process(proc, GetDgnDb());
 
     return proc.SaveGeom();
+#endif
+    return DgnDbStatus::BadElement;
     }
 

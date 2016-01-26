@@ -219,8 +219,10 @@ bool    TestPoint (DPoint3dCR point) const
 +---------------+---------------+--------------+---------------+---------------+------*/
 void Pop (ViewContextR context)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     for (size_t i=0; i < m_drawGeomPopCount; i++)
-        ViewContext::DirectPopTransClipOutput (context.GetIDrawGeom ());
+        context.GetCurrentGraphicR().PopTransClip();
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

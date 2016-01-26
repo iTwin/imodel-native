@@ -433,18 +433,19 @@ static bool             AreClipPointsEqual (void const* data1, int numBytes1, vo
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SectionClipObject::SetDrawSymbology (ViewContextR context, ColorDef color, uint32_t weight, int32_t style)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DgnViewportP vp = context.GetViewport();
 
     if (nullptr == vp)
         return; // ex. RangeContext
 
-    ElemMatSymbR elemMatSymb = *context.GetElemMatSymb();
+    GraphicParamsR elemMatSymb = *context.GetGraphicParams();
 
     elemMatSymb.SetLineColor(vp->AdjustColorForContrast(color, vp->GetBackgroundColor()));
     elemMatSymb.SetWidth(vp->GetIndexedLineWidth(weight));
-    elemMatSymb.SetIndexedRasterPattern(style, vp->GetIndexedLinePattern(style));
 
-    context.GetIDrawGeom().ActivateMatSymb(&elemMatSymb);
+    context.GetCurrentGraphicR().ActivateGraphicParams(&elemMatSymb);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -466,11 +467,9 @@ bool SectionClipObject::IsDraw3D (ViewContextR context, DVec3dCR zVec)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    SunandSandurkar  08/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void   SectionClipObject::_Draw
-(
-ViewContextR        context
-)
+void SectionClipObject::_Draw (ViewContextR context)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     #ifdef WIP_SECTION_CLIP
     if (DrawPurpose::Plot == context.GetDrawPurpose () ||
         DrawPurpose::ExportVisibleEdges == context.GetDrawPurpose() ||
@@ -505,7 +504,7 @@ ViewContextR        context
     double  cornerEdgeLen = MIN (pixelBasedLength, maxLength);
 
     // Draw linestring
-    IViewDrawR      output   = context.GetIViewDraw ();
+    ViewDrawR      output   = context.GetIViewDraw ();
 
     DVec3d   segVec;
     DPoint3d cornerPts[2];
@@ -520,7 +519,7 @@ ViewContextR        context
         shape[4] = shape[0];
 
         SetDrawSymbology (context, ColorDef::White(), 0, 4);
-        output.DrawLineString3d (5, shape, NULL);
+        output.AddLineString (5, shape, NULL);
 
         // Draw fat corners
         if (!IsDraw3D (context, zVec))
@@ -532,11 +531,11 @@ ViewContextR        context
 
                 cornerPts[0] = points[iseg];
                 cornerPts[1].SumOf (cornerPts[0],segVec, cornerEdgeLen);
-                output.DrawLineString3d (2, cornerPts, NULL);
+                output.AddLineString (2, cornerPts, NULL);
 
                 cornerPts[0] = points[iseg+1];
                 cornerPts[1].SumOf (cornerPts[0],segVec, -cornerEdgeLen);
-                output.DrawLineString3d (2, cornerPts, NULL);
+                output.AddLineString (2, cornerPts, NULL);
                 }
             }
         else
@@ -546,43 +545,44 @@ ViewContextR        context
 
             cornerPts[0] = shape[0];
             cornerPts[1].SumOf (cornerPts[0],segVec, cornerEdgeLen);
-            output.DrawLineString3d (2, cornerPts, NULL);
+            output.AddLineString (2, cornerPts, NULL);
 
             cornerPts[0] = shape[1];
             cornerPts[1].SumOf (cornerPts[0],segVec, -cornerEdgeLen);
-            output.DrawLineString3d (2, cornerPts, NULL);
+            output.AddLineString (2, cornerPts, NULL);
 
             cornerPts[0] = shape[2];
             cornerPts[1].SumOf (cornerPts[0],segVec, -cornerEdgeLen);
-            output.DrawLineString3d (2, cornerPts, NULL);
+            output.AddLineString (2, cornerPts, NULL);
 
             cornerPts[0] = shape[3];
             cornerPts[1].SumOf (cornerPts[0],segVec, cornerEdgeLen);
-            output.DrawLineString3d (2, cornerPts, NULL);
+            output.AddLineString (2, cornerPts, NULL);
 
             if (iseg == 0)
                 {
                 cornerPts[0] = shape[0];
                 cornerPts[1].SumOf (cornerPts[0],zVec, cornerEdgeLen);
-                output.DrawLineString3d (2, cornerPts, NULL);
+                output.AddLineString (2, cornerPts, NULL);
 
                 cornerPts[0] = shape[3];
                 cornerPts[1].SumOf (cornerPts[0],zVec, -cornerEdgeLen);
-                output.DrawLineString3d (2, cornerPts, NULL);
+                output.AddLineString (2, cornerPts, NULL);
                 }
 
             if (iseg == numPoints-2)
                 {
                 cornerPts[0] = shape[1];
                 cornerPts[1].SumOf (cornerPts[0],zVec, cornerEdgeLen);
-                output.DrawLineString3d (2, cornerPts, NULL);
+                output.AddLineString (2, cornerPts, NULL);
 
                 cornerPts[0] = shape[2];
                 cornerPts[1].SumOf (cornerPts[0],zVec, -cornerEdgeLen);
-                output.DrawLineString3d (2, cornerPts, NULL);
+                output.AddLineString (2, cornerPts, NULL);
                 }
             }
         }
+#endif
     }
 
 ///*---------------------------------------------------------------------------------**//**

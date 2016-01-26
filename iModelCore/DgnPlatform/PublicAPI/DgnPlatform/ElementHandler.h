@@ -12,7 +12,7 @@
 #include "DgnElement.h"
 #include "ECSqlClassParams.h"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 //! A transformation matrix. Identifies a few special cases.
@@ -163,4 +163,4 @@ namespace dgn_AspectHandler
     };
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

@@ -17,7 +17,7 @@
 
 typedef struct rgbFile RGBFile;
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 /*----------------------------------------------------------------------+
 |                                   |
@@ -363,6 +363,6 @@ struct MSMovie
 
 //__PUBLISH_SECTION_START__
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 /** @endcond */

@@ -1848,7 +1848,7 @@ public:
         textspanElement->SetCode(DgnCode::CreateEmpty());
 
         DPoint3d origin = DPoint3d::From(p.x, p.y, 0.0);
-        ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*textspanElement, origin, angles);
+        GeometryBuilderPtr builder = GeometryBuilder::Create(*textspanElement, origin, angles);
 
         TextStringStylePtr textspanStyle = TextStringStyle::Create();
         textspanStyle->SetFont(DgnFontManager::GetDecoratorFont());
@@ -1861,7 +1861,7 @@ public:
         textspanText->SetOrigin(DPoint3d::From(0.0, 0.0, 0.0));
 
         builder->Append(*textspanText);
-        builder->SetGeomStreamAndPlacement(*textspanElement);
+        builder->SetGeometryStreamAndPlacement(*textspanElement);
         ASSERT_TRUE(db->Elements().Insert(*textspanElement).IsValid());
         }
 
@@ -1881,7 +1881,7 @@ public:
         polygonElement->SetCode(DgnCode::CreateEmpty());
 
         DPoint3d origin = DPoint3d::From(A[0].x, A[0].y, 0.0);
-        ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*polygonElement, origin, angles);
+        GeometryBuilderPtr builder = GeometryBuilder::Create(*polygonElement, origin, angles);
 
         bvector<DPoint3d> points;
         for (int i = 0; i < n; i++)
@@ -1894,7 +1894,7 @@ public:
         CurveVectorPtr polygonCurveVector = CurveVector::Create(polygonCurvePrimitive, CurveVector::BOUNDARY_TYPE_Open);
 
         builder->Append(*polygonCurveVector);
-        builder->SetGeomStreamAndPlacement(*polygonElement);
+        builder->SetGeometryStreamAndPlacement(*polygonElement);
         ASSERT_TRUE(db->Elements().Insert(*polygonElement).IsValid());
         }
 
@@ -1904,7 +1904,7 @@ public:
         bezierElement->SetCode(DgnCode::CreateEmpty());
 
         DPoint3d origin = DPoint3d::From(A[0].x, A[0].y, 0.0);
-        ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*bezierElement, origin, angles);
+        GeometryBuilderPtr builder = GeometryBuilder::Create(*bezierElement, origin, angles);
 
         bvector<DPoint3d> poles;
         for (int i = 0; i < n; i++)
@@ -1927,7 +1927,7 @@ public:
         CurveVectorPtr bezierCurveVector = CurveVector::Create(bezierCurvePrimitive, CurveVector::BOUNDARY_TYPE_Open);
 
         builder->Append(*bezierCurveVector);
-        builder->SetGeomStreamAndPlacement(*bezierElement);
+        builder->SetGeometryStreamAndPlacement(*bezierElement);
         ASSERT_TRUE(db->Elements().Insert(*bezierElement).IsValid());
         }
 
@@ -1937,7 +1937,7 @@ public:
         polylineElement->SetCode(DgnCode::CreateEmpty());
 
         DPoint3d origin = DPoint3d::From(A[0].x, A[0].y, 0.0);
-        ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*polylineElement, origin, angles);
+        GeometryBuilderPtr builder = GeometryBuilder::Create(*polylineElement, origin, angles);
 
         bvector<DPoint3d> points;
         for (int i = 0; i < n; i++)
@@ -1949,7 +1949,7 @@ public:
         CurveVectorPtr polylineCurveVector = CurveVector::Create(polylineCurvePrimitive, CurveVector::BOUNDARY_TYPE_Open);
 
         builder->Append(*polylineCurveVector);
-        builder->SetGeomStreamAndPlacement(*polylineElement);
+        builder->SetGeometryStreamAndPlacement(*polylineElement);
         ASSERT_TRUE(db->Elements().Insert(*polylineElement).IsValid());
         }
 
@@ -2044,7 +2044,7 @@ TEST_F(SchemaVisualizationTests, GraphvizDiagramTest)
 
     DrawingViewController viewController(*db, view.GetViewId());
     viewController.SetStandardViewRotation(StandardView::Top);
-    viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::Wireframe);
+    viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);
     viewController.ChangeCategoryDisplay(categoryId, true);
     viewController.ChangeModelDisplay(modelId, true);
 

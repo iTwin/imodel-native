@@ -48,7 +48,7 @@
 #include <map>
 #include <Bentley/bvector.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //__PUBLISH_SECTION_END__
 typedef struct msSheetPropertiesLinkageData MSSheetPropertiesLinkageData;
@@ -448,7 +448,7 @@ struct SheetDefTestBackdoor
 #endif
 
 //__PUBLISH_SECTION_START__
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 #endif
 
 /** @endcond */

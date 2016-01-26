@@ -40,7 +40,8 @@ void DgnDbTable::ReplaceInvalidCharacters(Utf8StringR str, Utf8CP invalidChars, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_domains(*this), m_styles(*this),
                  m_geomParts(*this), m_units(*this), m_models(*this), m_elements(*this), 
-                 m_links(*this), m_authorities(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_revisionManager(nullptr)
+                 m_links(*this), m_authorities(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_revisionManager(nullptr),
+                 m_queryQueue(*this)
     {
     //
     }
@@ -50,6 +51,7 @@ DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_dom
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDb::Destroy()
     {
+    m_queryQueue.Terminate();
     m_models.Empty();
     m_txnManager = nullptr; // RefCountedPtr, deletes TxnManager
     if (nullptr != m_revisionManager)
@@ -95,15 +97,14 @@ DbResult DgnDb::_OnDbOpened()
     if (BE_SQLITE_OK != rc)
         return rc;
 
-    Fonts().Update(); // ensure the font ID cache is loaded; if you wait for on-demand, it may need to query during an update, which we'd like to avoid
-
-    m_units.Load();
-    
     if (BE_SQLITE_OK != (rc = Domains().OnDbOpened()))
         return rc;
 
     if (BE_SQLITE_OK != (rc = Txns().InitializeTableHandlers())) // make sure txnmanager is allocated and that all txn-related temp tables are created. 
         return rc;                                               // NB: InitializeTableHandlers calls SaveChanges!
+
+    Fonts().Update(); // ensure the font ID cache is loaded; if you wait for on-demand, it may need to query during an update, which we'd like to avoid
+    m_units.Load();
 
     return BE_SQLITE_OK;
     }
@@ -475,36 +476,6 @@ DgnCloneContext::DgnCloneContext()
 DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : DgnCloneContext(), m_sourceDb(source), m_destDb(dest)
     {
     ComputeGcsAdjustment();
-    }
-
-static uintptr_t  s_nextQvMaterialId;
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ray.Bentley                   08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t DgnDb::AddQvMaterialId(DgnMaterialId materialId) const { return (m_qvMaterialIds[materialId] = ++s_nextQvMaterialId); }
-uintptr_t DgnDb::GetQvMaterialId(DgnMaterialId materialId) const
-    {
-    auto const&   found = m_qvMaterialIds.find(materialId);
-
-    return (found == m_qvMaterialIds.end()) ? 0 : found->second; 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ray.Bentley                   08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t DgnDb::AddQvTextureId(DgnTextureId TextureId) const 
-    { 
-    static uintptr_t s_nextQvTextureId;
-    return (m_qvTextureIds[TextureId] = ++s_nextQvTextureId); 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ray.Bentley                   08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t DgnDb::GetQvTextureId(DgnTextureId TextureId) const
-    {
-    auto const& found = m_qvTextureIds.find(TextureId);
-    return (found == m_qvTextureIds.end()) ? 0 : found->second; 
     }
 
 /*---------------------------------------------------------------------------------**//**

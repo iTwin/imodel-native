@@ -8,7 +8,7 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 /*--------------------------------------------------------------------------------**//**
 * NOTE: This code was brought up from MstnPlatform to preserve the old behavior until it is refactored correctly. 
@@ -1342,4 +1342,4 @@ VolumeParserPtr       VolumeParser::Create (DgnViewportR viewport)
     return parser;
     }
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

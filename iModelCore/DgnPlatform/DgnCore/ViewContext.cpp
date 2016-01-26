@@ -2,20 +2,10 @@
 |
 |     $Source: DgnCore/ViewContext.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include "UpdateLogging.h"
-
-enum FrustCorners
-    {
-    FRUST_Org    = 0,
-    FRUST_X      = 1,
-    FRUST_Y      = 2,
-    FRUST_Z      = 3,
-    FRUST_COUNT  = 4,
-    };
 
 static DRange3d const s_fullNpcRange =
     {
@@ -28,72 +18,9 @@ static DRange3d const s_fullNpcRange =
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewContext::ViewContext()
     {
-    m_viewport    = nullptr;
-    m_IViewDraw   = nullptr;
-    m_IDrawGeom   = nullptr;
-    m_ICachedDraw = nullptr;
-
-    m_scanCriteria  = nullptr;
-    m_purpose       = DrawPurpose::NotSpecified;
-    m_arcTolerance  = .01;
-    m_patternScale  = 1.0;
-    m_minLOD        = DEFAULT_MINUMUM_LOD;
-
-    m_isAttached                = false;
-    m_blockAsyncs               = false;
-    m_blockIntermediatePaints   = false;
-    m_is3dView                  = true; // Changed default to 3d...
-    m_creatingCacheElem         = false;
-    m_useNpcSubRange            = false;
-    m_filterLOD                 = FILTER_LOD_ShowRange;
-    m_parentRangeResult         = RangeResult::Overlap;
-
-    m_dgnDb = nullptr;
-
-    m_ignoreScaleForDimensions  = false;
-    m_ignoreScaleForMultilines  = false;
-    m_applyRotationToDimView    = false;
-    m_wantMaterials             = false;
-    m_useCachedGraphics         = true;
-
-    m_startTangent = m_endTangent = nullptr;
-
-    m_drawingClipElements       = false;
-    m_ignoreViewRange           = false;
-    m_displayStyleStackMark     = 0;
-    m_edgeMaskState             = EdgeMaskState_None;
-    m_hiliteState               = DgnElement::Hilited::None;
-    m_isCameraOn                = false;
-    m_edgeMaskState             = EdgeMaskState_None;
-
-    m_rasterDisplayParams.SetFlags(0);
-
-    m_scanRangeValid        = false;
-    m_levelOfDetail         = 1.0;
-
+    m_purpose = DrawPurpose::NotSpecified;
     m_worldToNpc.InitIdentity();
     m_worldToView.InitIdentity();
-
-    // Draw any plane
-    ResetRasterPlane();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  05/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-ViewContext::~ViewContext()
-    {
-    BeAssert(!m_isAttached);
-
-    DELETE_AND_CLEAR(m_scanCriteria);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    05/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelP ViewContext::_GetViewTarget()
-    {
-    return nullptr == GetViewport() ? nullptr : GetViewport()->GetViewController().GetTargetModel();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -123,24 +50,11 @@ void ViewContext::NpcToWorld(DPoint3dP worldPts, DPoint3dCP npcPts, int nPts) co
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::InitDisplayPriorityRange()
-    {
-    m_displayPriorityRange[0] = (m_is3dView ? 0 : -MAX_HW_DISPLAYPRIORITY);
-    m_displayPriorityRange[1] = (m_is3dView ? 0 : MAX_HW_DISPLAYPRIORITY);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt ViewContext::_InitContextForView()
     {
     BeAssert(0 == GetTransClipDepth());
-
-    m_elemMatSymb.Init();
-    m_ovrMatSymb.Clear();
-    m_rasterDisplayParams.SetFlags(0);
 
     m_worldToNpc  = *m_viewport->GetWorldToNpcMap();
     m_worldToView = *m_viewport->GetWorldToViewMap();
@@ -149,15 +63,7 @@ StatusInt ViewContext::_InitContextForView()
 
     _PushFrustumClip();
 
-    // Note - Don't set CurrentDisplayStyle here (by calling RefreshCurrentDisplayStyle).
-    // as it the root display style is only ever sent (and therefore stored in the
-    // viewOutput) in DrawContext::_InitContextForView. Nor can we clear it here
-    // (It is set to nullptr in the constructor). as that would overwrite the value when
-    // it is correctly set in DrawContext. TR# 329406 - The display style wth
-    // a proxy handler would be used if CVE proxy was last thing displayed.
-    m_displayStyleStackMark = 0;
-
-    SetDgnDb(GetViewport()->GetViewController().GetDgnDb());
+    SetDgnDb(m_viewport->GetViewController().GetDgnDb());
 
     return SUCCESS;
     }
@@ -197,11 +103,11 @@ void ViewContext::_PushFrustumClip()
 
     int         nPlanes;
     ClipPlane   frustumPlanes[6];
-    ViewFlagsCP viewFlags = GetViewFlags();
+    ViewFlags viewFlags = GetViewFlags();
 
     Frustum polyhedron = GetFrustum();
 
-    if (0 != (nPlanes = ClipUtil::RangePlanesFromPolyhedra(frustumPlanes, polyhedron.GetPts(), nullptr != viewFlags && !viewFlags->noFrontClip, nullptr != viewFlags && !viewFlags->noBackClip, 1.0E-6)))
+    if (0 != (nPlanes = ClipUtil::RangePlanesFromPolyhedra(frustumPlanes, polyhedron.GetPts(), !viewFlags.noFrontClip, !viewFlags.noBackClip, 1.0E-6)))
         m_transformClipStack.PushClipPlanes(frustumPlanes, nPlanes);
     }
 
@@ -211,7 +117,6 @@ void ViewContext::_PushFrustumClip()
 void ViewContext::_InitScanRangeAndPolyhedron()
     {
     // set up scanner search criteria
-    _InitScanCriteria();
     _ScanRangeFromPolyhedron();
     }
 
@@ -230,39 +135,19 @@ void ViewContext::_PushClip(ClipVectorCR clip)
     {
     m_transformClipStack.PushClip(clip);
 
-    for (ClipPrimitivePtr const& primitive: clip)
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    for (ClipPrimitivePtr const& primitive : clip)
         {
-        GetIDrawGeom()._PushTransClip(nullptr, primitive->GetClipPlanes());
+        GetCurrentGraphicR()._PushTransClip(nullptr, primitive->GetClipPlanes());
         m_transformClipStack.IncrementPushedToDrawGeom();
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_PushTransform(TransformCR trans)
-    {
-    m_transformClipStack.PushTransform(trans);
-    GetIDrawGeom()._PushTransClip(&trans , nullptr);
-    m_transformClipStack.IncrementPushedToDrawGeom();
-    InvalidateScanRange();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_PushViewIndependentOrigin(DPoint3dCP origin)
-    {
-    Transform   viTrans;
-    GetViewIndependentTransform(&viTrans, origin);
-    _PushTransform(viTrans);
-    m_transformClipStack.SetViewIndependent();
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_PopTransformClip()
+void ViewContext::_PopClip()
     {
     if (m_transformClipStack.IsEmpty())
         {
@@ -274,50 +159,12 @@ void ViewContext::_PopTransformClip()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::DirectPushTransClipOutput(IDrawGeomR drawGeom, TransformCP trans, ClipPlaneSetCP clip)
-    {
-    drawGeom._PushTransClip(trans, clip);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::DirectPopTransClipOutput(IDrawGeomR drawGeom)
-    {
-    drawGeom._PopTransClip();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_SetCurrentElement(GeometrySourceCP source)
-    {
-    if (nullptr == source)
-        GetIDrawGeom().PopMethodState();
-    else
-        GetIDrawGeom().PushMethodState();
-
-    m_currentElement = (nullptr == source ? nullptr : source->ToElement());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Prepare this context to work on the given project when getting project from ViewController.
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_SetDgnDb(DgnDbR dgnDb)
     {
     m_dgnDb = &dgnDb;
-    InitDisplayPriorityRange();
     _SetupScanCriteria();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_InitScanCriteria()
-    {
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -325,21 +172,9 @@ void ViewContext::_InitScanCriteria()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_SetupScanCriteria()
     {
-    if (nullptr == m_scanCriteria)
-        return;
-
     DgnViewportP vp = GetViewport();
     if (nullptr != vp)
-        m_scanCriteria->SetCategoryTest(vp->GetViewController().GetViewedCategories());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_AllocateScanCriteria()
-    {
-    if (nullptr == m_scanCriteria)
-        m_scanCriteria = new ScanCriteria;
+        m_scanCriteria.SetCategoryTest(vp->GetViewController().GetViewedCategories());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -357,25 +192,13 @@ StatusInt ViewContext::_Attach(DgnViewportP viewport, DrawPurpose purpose)
         }
 
     m_isAttached = true;
-    _AllocateScanCriteria();
 
     m_viewport = viewport;
-    _SetupOutputs();
-
     m_purpose = purpose;
     ClearAborted();
 
-    m_minLOD = viewport->GetMinimumLOD();
-    m_filterLOD = FILTER_LOD_ShowRange;
-    m_isCameraOn = viewport->IsCameraOn();
-
     m_is3dView = viewport->Is3dView();
-    m_useCachedGraphics = true;
-
     SetViewFlags(viewport->GetViewFlags());
-
-    m_arcTolerance = 0.1;
-    m_parentRangeResult = RangeResult::Overlap;
 
     return _InitContextForView();
     }
@@ -388,54 +211,15 @@ void ViewContext::_Detach()
     BeAssert(IsAttached());
 
     m_isAttached = false;
-
     m_transformClipStack.PopAll(*this);
-    m_currentElement = nullptr;
-
-    /* m_IDrawGeom and m_IViewDraw are not typically nullptr so the Get methods return references.
-       However, there is a hack in SymbolContext::_Detach that NULLs them out specifically
-       to prevent this method from modifying them */
-    if (nullptr != m_IDrawGeom)
-        m_IDrawGeom->ActivateOverrideMatSymb(nullptr);     // clear any overrides
-
-    UpdateLogging::RecordDetach();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
+* @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::LocalToView(DPoint4dP viewPts, DPoint3dCP localPts, int nPts) const
+bool ViewContext::IsCameraOn() const
     {
-    GetLocalToView().Multiply(viewPts, localPts, nullptr, nPts);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::LocalToView(DPoint3dP viewPts, DPoint3dCP localPts, int nPts) const
-    {
-    DMatrix4dCR  localToView = GetLocalToView();
-
-    if (m_isCameraOn)
-        localToView.MultiplyAndRenormalize(viewPts, localPts, nPts);
-    else
-        localToView.MultiplyAffine(viewPts, localPts, nPts);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::ViewToLocal(DPoint3dP localPts, DPoint4dCP viewPts, int nPts) const
-    {
-    GetViewToLocal().MultiplyAndNormalize(localPts, viewPts, nPts);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::ViewToLocal(DPoint3dP localPts, DPoint3dCP viewPts, int nPts) const
-    {
-    GetViewToLocal().MultiplyAndRenormalize(localPts, viewPts, nPts);
+    return m_viewport->IsCameraOn();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -490,307 +274,12 @@ void ViewContext::ViewToWorld(DPoint3dP worldPts, DPoint3dCP viewPts, int nPts) 
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::LocalToWorld(DPoint3dP worldPts, DPoint3dCP localPts, int nPts) const
-    {
-    Transform   localToWorld;
-
-    if (SUCCESS == m_transformClipStack.GetTransform(localToWorld))
-        localToWorld.Multiply(worldPts, localPts, nPts);
-    else
-        memcpy(worldPts, localPts, nPts * sizeof(DPoint3d));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::WorldToLocal(DPoint3dP localPts, DPoint3dCP worldPts, int nPts) const
-    {
-    Transform   worldToLocal;
-
-    if (SUCCESS == m_transformClipStack.GetInverseTransform(worldToLocal))
-        worldToLocal.Multiply(localPts, worldPts, nPts);
-    else
-        memcpy(localPts, worldPts, nPts * sizeof(DPoint3d));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::GetViewIndependentTransform(TransformP trans, DPoint3dCP originLocal)
-    {
-    RotMatrix   rMatrix;
-    DgnViewportP vp = GetViewport();
-    if (nullptr != vp)
-        {
-        // get two vectors from origin in VIEW x and y directions
-        DPoint4d    screenPt[2];
-        LocalToView(screenPt, originLocal, 1);
-
-        DPoint3d viewSize;
-        Frustum viewBox = vp->GetFrustum(DgnCoordSystem::View, true);
-        viewSize.DifferenceOf(viewBox.GetCorner(NPC_111), viewBox.GetCorner(NPC_000));
-
-        screenPt[1] = screenPt[0];
-        screenPt[0].x += viewSize.x;
-        screenPt[1].y += viewSize.y;
-
-        // convert to local coordinates
-        DPoint3d    localPt[2];
-        ViewToLocal(localPt, screenPt, 2);
-
-        // if we're in a 2d view, we remove any fuzz
-        if (!m_is3dView)
-            localPt[0].z = localPt[1].z = originLocal->z;
-
-        DVec3d  u, v;
-        u.NormalizedDifference(*localPt, *originLocal);
-        v.NormalizedDifference(localPt[1], *originLocal);
-
-        // convert to rmatrix
-        rMatrix.InitFrom2Vectors(u, v);
-        }
-    else
-        {
-        rMatrix.InitIdentity();
-        }
-
-    // get transform about origin
-    trans->InitFromMatrixAndFixedPoint(rMatrix, *originLocal);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    BSI                             04/2006
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::SetWantMaterials(bool wantMaterials)
-    {
-    bool    prevWantMaterials = m_wantMaterials;
-
-    m_wantMaterials = wantMaterials;
-
-    return prevWantMaterials;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrandonBohrer   06/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool QvUnsizedKey::Matches(QvUnsizedKeyCR other) const
-    {
-    if (m_transformKey != other.m_transformKey || m_qvIndex != other.m_qvIndex)
-        return false;
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrandonBohrer   06/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool QvUnsizedKey::IsNull() const {return m_transformKey == 0;}
-
-/*=================================================================================**//**
-* @bsiclass                                                     Keith.Bentley   12/06
-+===============+===============+===============+===============+===============+======*/
-struct QvSizedKey
-{
-    QvUnsizedKey    m_unsizedKey;
-    double          m_low;
-    double          m_high;
-
-public:
-    QvSizedKey(double size, double dependentRatio, QvUnsizedKeyCR unsizedKey) : m_unsizedKey(unsizedKey)
-        {
-        if (0.0 == dependentRatio)
-            {
-            m_low = -1.0;
-            m_high = 1.0E8;
-            }
-        else
-            {
-            m_low  = size / dependentRatio;
-            m_high = size * dependentRatio;
-            }
-
-        }
-
-    inline bool LessThan(QvSizedKey const& other) const { return m_low < other.m_low; }
-    void DeleteQvElem(QvElem* qvElem) { if (m_unsizedKey.OwnsQvElem()) T_HOST.GetGraphicsAdmin()._DeleteQvElem(qvElem);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrandonBohrer   07/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-inline bool Equal(QvSizedKey const& other) const
-    {
-    return other.m_low > m_low && other.m_high < m_high && m_unsizedKey.Matches(other.m_unsizedKey);
-    }
-};
-
-static DgnElement::AppData::Key s_cacheSetKey;
-/*=================================================================================**//**
-* @bsiclass                                                     Keith.Bentley   12/06
-+===============+===============+===============+===============+===============+======*/
-struct QvElemCacheSet : QvElemSet<QvSizedKey>
-{
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-public: QvElemCacheSet(HeapZone& zone) : QvElemSet<QvSizedKey> (zone) {}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-QvElem* Find(QvUnsizedKeyP* foundKey, double size, QvUnsizedKeyCR unsizedKey)
-    {
-    for (Entry* thisEntry = m_entry; nullptr != thisEntry; thisEntry = thisEntry->m_next)
-        {
-        if (thisEntry->m_key.m_unsizedKey.Matches(unsizedKey) &&
-            size >= thisEntry->m_key.m_low && size <= thisEntry->m_key.m_high)
-            {
-            if (nullptr != foundKey)
-                *foundKey = &thisEntry->m_key.m_unsizedKey;
-
-            return thisEntry->m_qvElem;
-            }
-        }
-
-    return nullptr;
-    }
-
-}; // QvElemCacheSet
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2010
-*
-*  Returns a key that is produced by transforming a (constant) random point and summing the
-*   coordinates.  This should return the same key for identical localTransforms - it is
-*   essentially a hash of the transform.  This is appropriate for use as part of a cache
-*   key when we want to distinguish between two representations with different display
-*   path transforms (as in more than one representation of a cell).  It is currently
-*   used to distinguish XGraphics cache keys and also thematic keys.
-*
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t ViewContext::GetLocalTransformKey() const
-    {
-    Transform   localToWorld;
-
-    if (SUCCESS != m_transformClipStack.GetTransform(localToWorld))
-        return 0;
-
-    static      DPoint3d  s_randomLocalToWorldTransformRefPoint = { 1234567.0, 7654321.0, 233425.0};
-    DPoint3d    transformedPoint;
-
-    localToWorld.Multiply(&transformedPoint, &s_randomLocalToWorldTransformRefPoint, 1);
-
-    return (uint32_t) transformedPoint.x + (uint32_t) transformedPoint.y + (uint32_t) transformedPoint.z;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-T_QvElemSet* getQvElems(DgnElementCR element, bool createIfNotPresent)
-    {
-    static DgnElement::AppData::Key s_qvElemsKey;
-    T_QvElemSet* qvElems = (T_QvElemSet*) element.FindAppData(s_qvElemsKey);
-    if (qvElems)
-        return qvElems;
-
-    if (!createIfNotPresent)
-        return nullptr;
-
-    HeapZone& zone = element.GetHeapZone();
-    qvElems = new T_QvElemSet(zone);
-
-    element.AddAppData(s_qvElemsKey, qvElems);
-    return qvElems;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   06/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-QvElem* getQvElem(DgnElementCR element, uint32_t id)
-    {
-    T_QvElemSet* qvElems = getQvElems(element, false);
-    return qvElems ? qvElems->Find(id) : nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   06/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool setQvElem(DgnElementCR element, QvElem* qvElem, uint32_t index)
-    {
-    getQvElems(element, true)->Add(index, qvElem);
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-QvElem* StrokeElementForCache::_GetQvElem(double pixelSize) const
-    {
-    QvElemP         qvElem;
-    QvUnsizedKey    unsizedKey = QvUnsizedKey(0, _GetQvIndex());
-    QvElemCacheSet* cacheSet;
-
-    // Search CacheSet first to find any conditional drawn elements.
-    if (nullptr != (cacheSet = (QvElemCacheSet*) m_element.FindAppData(s_cacheSetKey)) &&
-        nullptr != (qvElem = cacheSet->Find(nullptr, pixelSize, unsizedKey)))
-        return qvElem;
-
-    return unsizedKey.IsNull() ? getQvElem(m_element, _GetQvIndex()) : nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void StrokeElementForCache::_SaveQvElem(QvElemP qvElem, double pixelSize, double sizeDependentRatio) const
-    {
-    QvUnsizedKey    unsizedKey = QvUnsizedKey(0, _GetQvIndex());
-
-    if (0.0 == sizeDependentRatio && unsizedKey.IsNull())
-        {
-        setQvElem(m_element, qvElem, _GetQvIndex());
-        return;
-        }
-
-    QvElemCacheSet* cacheSet = (QvElemCacheSet*) m_element.FindAppData(s_cacheSetKey);
-
-    if (nullptr == cacheSet)
-        {
-        HeapZone& zone = m_element.GetHeapZone();
-        cacheSet = new QvElemCacheSet(zone);
-        m_element.AddAppData(s_cacheSetKey, cacheSet);
-        }
-
-    cacheSet->Add(QvSizedKey(pixelSize, sizeDependentRatio, unsizedKey), qvElem);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TransientCachedGraphics::~TransientCachedGraphics() {if (nullptr != m_qvElem) T_HOST.GetGraphicsAdmin()._DeleteQvElem(m_qvElem);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   03/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-ILineStyleCP ViewContext::_GetCurrLineStyle(LineStyleSymbP* symb)
-    {
-    LineStyleSymbR  tSymb = (m_ovrMatSymb.GetFlags() & MATSYMB_OVERRIDE_Style) ? m_ovrMatSymb.GetMatSymbR().GetLineStyleSymbR() : m_elemMatSymb.GetLineStyleSymbR();
-
-    if (symb)
-        *symb = &tSymb;
-
-    return 0 == tSymb.GetTextureHandle() ? tSymb.GetILineStyle() : nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * convert the view context polyhedron to scan parameters in the scanCriteria.
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewContext::_ScanRangeFromPolyhedron()
     {
     Frustum polyhedron = GetFrustum();
-
-    WorldToLocal(polyhedron.GetPtsP(), polyhedron.GetPts(), 8);
 
     // get enclosing bounding box around polyhedron (outside scan range).
     DRange3d scanRange = polyhedron.ToRange();
@@ -801,54 +290,31 @@ bool ViewContext::_ScanRangeFromPolyhedron()
         scanRange.high.z = 1;
         }
 
-    if (m_scanCriteria)
+    m_scanCriteria.SetRangeTest(&scanRange);
+
+    // if we're doing a skew scan, get the skew parameters
+    if (Is3dView())
         {
-        if (RangeResult::Inside == m_parentRangeResult)
-            m_scanCriteria->SetRangeTest(nullptr);
-        else
-            {
-            m_scanCriteria->SetRangeTest(&scanRange);
+        DRange3d skewRange;
 
-            // if we're doing a skew scan, get the skew parameters
-            if (Is3dView())
-                {
-                DRange3d skewRange;
+        // get bounding range of front plane of polyhedron
+        skewRange.InitFrom(polyhedron.GetPts(), 4);
 
-                // get bounding range of front plane of polyhedron
-                skewRange.InitFrom(polyhedron.GetPts(), 4);
+        // get unit bvector from front plane to back plane
+        DVec3d      skewVec = DVec3d::FromStartEndNormalize(polyhedron.GetCorner(0), polyhedron.GetCorner(4));
 
-                // get unit bvector from front plane to back plane
-                DVec3d      skewVec = DVec3d::FromStartEndNormalize(polyhedron.GetCorner(0), polyhedron.GetCorner(4));
+        // check to see if it's worthwhile using skew scan (skew bvector not along one of the three major axes */
+        int alongAxes = (fabs(skewVec.x) < 1e-8);
+        alongAxes += (fabs(skewVec.y) < 1e-8);
+        alongAxes += (fabs(skewVec.z) < 1e-8);
 
-                // check to see if it's worthwhile using skew scan (skew bvector not along one of the three major axes */
-                int alongAxes = (fabs(skewVec.x) < 1e-8);
-                alongAxes += (fabs(skewVec.y) < 1e-8);
-                alongAxes += (fabs(skewVec.z) < 1e-8);
-
-                if (alongAxes < 2)
-                    m_scanCriteria->SetSkewRangeTest(&scanRange, &skewRange, &skewVec);
-                }
-            }
+        if (alongAxes < 2)
+            m_scanCriteria.SetSkewRangeTest(&scanRange, &skewRange, &skewVec);
         }
+
     m_scanRangeValid = true;
     return true;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* make sure the scan range and range planes are in synch with the polyhedron (if not, calculate them from the
-* current polyhedron.
-* @bsimethod                                                    KeithBentley    08/02
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::ValidateScanRange()
-    {
-    return m_scanRangeValid ? true : _ScanRangeFromPolyhedron();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* mark the scan range and range planes as invalid (out-of-synch with current polyhedron).
-* @bsimethod                                                    KeithBentley    08/02
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::InvalidateScanRange()     { m_scanRangeValid = false; }
 
 /*---------------------------------------------------------------------------------**//**
 * Test an element against the current scan range using the range planes.
@@ -857,46 +323,148 @@ void ViewContext::InvalidateScanRange()     { m_scanRangeValid = false; }
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewContext::_FilterRangeIntersection(GeometrySourceCR source)
     {
-    if (RangeResult::Inside == m_parentRangeResult)
-        return false;
-
-    if (RangeResult::Outside == m_parentRangeResult)
-        return true;
-
     return ClipPlaneContainment_StronglyOutside == m_transformClipStack.ClassifyRange(source.CalculateRange3d(), nullptr != source.ToGeometrySource3d());
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    03/02
+* @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_OutputElement(GeometrySourceCR source)
+void ViewContext::_OutputGeometry(GeometrySourceCR source)
     {
-    ResetContextOverrides();
+    if (!source.HasGeometry())
+        return;
 
-    if (m_viewport)
-        return m_viewport->GetViewControllerR()._DrawElement(*this, source);
+    DPoint3d origin;
+    source.GetPlacementTransform().GetTranslation(origin);
+    double pixelSize = (nullptr != m_viewport ? m_viewport->GetPixelSizeAtPoint(&origin) : 0.0);
 
-    source.Draw(*this);
+    Render::GraphicPtr graphic = _GetCachedGraphic(source, pixelSize);
+
+    if (!graphic.IsValid())
+        {
+        graphic = (nullptr != m_viewport) ?
+                   m_viewport->GetViewControllerR()._StrokeGeometry(*this, source, pixelSize) :
+                   source.Stroke(*this, pixelSize);
+
+        if (WasAborted()) // if we aborted, the graphic may not be complete, don't save it
+            return;
+
+        _SaveGraphic(source, *graphic);
+        }
+
+    if (!graphic.IsValid())
+        return;
+
+    _OutputGraphic(*graphic, &source);
+
+    static int s_drawRange; // 0 - Host Setting (Bounding Box Debug), 1 - Bounding Box, 2 - Element Range
+    if (!s_drawRange)
+        return;
+
+    // Output element local range for debug display and locate...
+    if (!graphic->IsForDisplay() && nullptr == GetIPickGeom())
+        return;
+
+    Render::GraphicPtr rangeGraphic = CreateGraphic(Graphic::CreateParams(nullptr, (2 == s_drawRange ? Transform::FromIdentity() : source.GetPlacementTransform())));
+    Render::GeometryParams rangeParams;
+
+    rangeParams.SetCategoryId(source.GetCategoryId()); // Need category for pick...
+    rangeParams.SetLineColor(DgnViewport::MakeColorTransparency(m_viewport->AdjustColorForContrast(ColorDef::LightGrey(), m_viewport->GetBackgroundColor()), 0x96));
+    CookGeometryParams(rangeParams, *rangeGraphic);
+
+    DPoint3d      p[8], tmpPts[9];
+    BoundingBox3d range = (2 == s_drawRange ? BoundingBox3d(source.CalculateRange3d()) : (nullptr != source.ToGeometrySource3d() ? 
+                           BoundingBox3d(source.ToGeometrySource3d()->GetPlacement().GetElementBox()) : 
+                           BoundingBox3d(source.ToGeometrySource2d()->GetPlacement().GetElementBox())));
+
+    p[0].x = p[3].x = p[4].x = p[5].x = range.low.x;
+    p[1].x = p[2].x = p[6].x = p[7].x = range.high.x;
+    p[0].y = p[1].y = p[4].y = p[7].y = range.low.y;
+    p[2].y = p[3].y = p[5].y = p[6].y = range.high.y;
+    p[0].z = p[1].z = p[2].z = p[3].z = range.low.z;
+    p[4].z = p[5].z = p[6].z = p[7].z = range.high.z;
+
+    if (nullptr != source.ToGeometrySource3d())
+        {
+        tmpPts[0] = p[0];
+        tmpPts[1] = p[1];
+        tmpPts[2] = p[2];
+        tmpPts[3] = p[3];
+
+        tmpPts[4] = p[5];
+        tmpPts[5] = p[6];
+        tmpPts[6] = p[7];
+        tmpPts[7] = p[4];
+
+        tmpPts[8] = p[0];
+
+        // Draw a "saddle" shape to accumulate correct dirty region, simple lines can be clipped out when zoomed in...
+        rangeGraphic->AddLineString(9, tmpPts, nullptr);
+
+        // Draw missing connecting lines to complete box...
+        rangeGraphic->AddLineString(2, DSegment3d::From(p[0], p[3]).point, nullptr);
+        rangeGraphic->AddLineString(2, DSegment3d::From(p[4], p[5]).point, nullptr);
+        rangeGraphic->AddLineString(2, DSegment3d::From(p[1], p[7]).point, nullptr);
+        rangeGraphic->AddLineString(2, DSegment3d::From(p[2], p[6]).point, nullptr);
+        }
+    else
+        {
+        tmpPts[0] = p[0];
+        tmpPts[1] = p[1];
+        tmpPts[2] = p[2];
+        tmpPts[3] = p[3];
+        tmpPts[4] = p[0];
+
+        rangeGraphic->AddLineString(5, tmpPts, nullptr);
+        }
+
+    _OutputGraphic(*rangeGraphic, &source);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewContext::_AddSubGraphic(Render::GraphicR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams)
+    {
+    ElementAlignedBox3d localRange;
+    Render::GraphicPtr  partGraphic = _GetCachedPartGraphic(partId, graphic.GetPixelSize(), localRange);
+
+    if (!partGraphic.IsValid())
+        {
+        DgnGeometryPartPtr partGeometry = GetDgnDb().GeometryParts().LoadGeometryPart(partId);
+
+        if (partGeometry.IsValid())
+            {
+            GeometryStreamIO::Collection collection(partGeometry->GetGeometryStream().GetData(), partGeometry->GetGeometryStream().GetSize());
+
+            partGraphic = graphic.CreateSubGraphic(subToGraphic);
+            collection.Draw(*partGraphic, *this, geomParams, false);
+            
+            if (WasAborted()) // if we aborted, the graphic may not be complete, don't save it
+                return;
+
+            _SavePartGraphic(partId, *partGraphic, partGeometry->GetBoundingBox());
+            }
+        }
+
+    if (!partGraphic.IsValid())
+        return;
+
+    // NOTE: Need to cook GeometryParams to get GraphicParams, but we don't want to activate and bake into our QvElem...
+    GraphicParams graphicParams;
+    _CookGeometryParams(geomParams, graphicParams);
+    graphic.AddSubGraphic(*partGraphic, subToGraphic, graphicParams);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_AddViewOverrides(OvrMatSymbR ovrMatSymb)
+void ViewContext::_AddViewOverrides(OvrGraphicParamsR ovrMatSymb)
     {
-    // NOTE: ElemDisplayParams/ElemMatSymb ARE NOT setup at this point!
-    ViewFlagsCP viewFlags = GetViewFlags();
-
-    if (nullptr == viewFlags)
-        return;
-
-    if (!viewFlags->weights)
+    if (!m_viewflags.weights)
         ovrMatSymb.SetWidth(1);
 
-    if (!viewFlags->styles)
-        ovrMatSymb.SetRasterPattern(DgnViewport::GetDefaultIndexedLinePattern(0));
-
-    if (!viewFlags->transparency)
+    if (!m_viewflags.transparency)
         {
         ovrMatSymb.SetLineTransparency(0);
         ovrMatSymb.SetFillTransparency(0);
@@ -906,114 +474,40 @@ void ViewContext::_AddViewOverrides(OvrMatSymbR ovrMatSymb)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_AddContextOverrides(OvrMatSymbR ovrMatSymb)
+void ViewContext::_AddContextOverrides(OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source)
     {
-    // Modify m_ovrMatSymb for view flags...
-    _AddViewOverrides(ovrMatSymb); 
+    _AddViewOverrides(ovrMatSymb); // Modify m_ovrGraphicParams for view flags...
+
+    if (nullptr != m_viewport)
+        m_viewport->GetViewControllerR()._OverrideGraphicParams(ovrMatSymb, source);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_ModifyPreCook(ElemDisplayParamsR elParams)
+void ViewContext::_CookGeometryParams(GeometryParamsR geomParams, GraphicParamsR graphicParams)
     {
-    elParams.Resolve(*this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  01/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_CookDisplayParams(ElemDisplayParamsR elParams, ElemMatSymbR elMatSymb)
-    {
-    _ModifyPreCook(elParams); // Allow context to modify elParams before cooking...
-
-    // "cook" the display params into a MatSymb
-    elMatSymb.FromResolvedElemDisplayParams(elParams, *this, m_startTangent, m_endTangent);
+    geomParams.Resolve(*this);
+    graphicParams.Cook(geomParams, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::CookDisplayParams()
+void ViewContext::CookGeometryParams(Render::GeometryParamsR geomParams, Render::GraphicR graphic)
     {
-    _CookDisplayParams(m_currDisplayParams, m_elemMatSymb);
+    GraphicParams graphicParams;
 
-    //  NEEDSWORK_LINESTYLES
-    //  If this is a 3d view and we have a line style then we want to convert the line style
-    //  to a texture line style.  We don't do it prior to this because generating the geometry map
-    //  may use the current symbology.  This seems like a horrible place to do this,
-    //  so we need to come up with something better.
-    LineStyleSymb & lsSym = m_elemMatSymb.GetLineStyleSymbR();
-    if (lsSym.GetTextureHandle() == 0 && lsSym.GetILineStyle() != nullptr && Is3dView())
-        {
-        lsSym.ConvertLineStyleToTexture(*this, true);
-        }
-
-    // Activate the matsymb in the IDrawGeom
-    GetIDrawGeom().ActivateMatSymb(&m_elemMatSymb);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::ResetContextOverrides()
-    {
-    m_rasterDisplayParams.SetFlags(ViewContext::RasterDisplayParams::RASTER_PARAM_None); // NEEDSWORK_RASTER_DISPLAY - Not sure how this fits into new continuous update approach?!?
-
-    // NOTE: Context overrides CAN NOT look at m_currDisplayParams or m_elemMatSymb as they are not valid.
-    m_ovrMatSymb.Clear();
-    _AddContextOverrides(m_ovrMatSymb);
-    GetIDrawGeom().ActivateOverrideMatSymb(&m_ovrMatSymb);
+    _CookGeometryParams(geomParams, graphicParams);
+    graphic.ActivateGraphicParams(graphicParams, &geomParams);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      02/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::ElementIsUndisplayed(GeometrySourceCR source)
+bool ViewContext::IsUndisplayed(GeometrySourceCR source)
     {
     return (!_WantUndisplayed() && source.IsUndisplayed());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::DrawBox(DPoint3dP box, bool is3d)
-    {
-    IDrawGeomR  drawGeom = GetIDrawGeom();
-    DPoint3d    tmpPts[9];
-
-    if (is3d)
-        {
-        tmpPts[0] = box[0];
-        tmpPts[1] = box[1];
-        tmpPts[2] = box[2];
-        tmpPts[3] = box[3];
-
-        tmpPts[4] = box[5];
-        tmpPts[5] = box[6];
-        tmpPts[6] = box[7];
-        tmpPts[7] = box[4];
-
-        tmpPts[8] = box[0];
-
-        // Draw a "saddle" shape to accumulate correct dirty region, simple lines can be clipped out when zoomed in...
-        drawGeom.DrawLineString3d(9, tmpPts, nullptr);
-
-        // Draw missing connecting lines to complete box...
-        drawGeom.DrawLineString3d(2, DSegment3d::From(box[0], box[3]).point, nullptr);
-        drawGeom.DrawLineString3d(2, DSegment3d::From(box[4], box[5]).point, nullptr);
-        drawGeom.DrawLineString3d(2, DSegment3d::From(box[1], box[7]).point, nullptr);
-        drawGeom.DrawLineString3d(2, DSegment3d::From(box[2], box[6]).point, nullptr);
-        return;
-        }
-
-    tmpPts[0] = box[0];
-    tmpPts[1] = box[1];
-    tmpPts[2] = box[2];
-    tmpPts[3] = box[3];
-    tmpPts[4] = box[0];
-
-    drawGeom.DrawLineString3d(5, tmpPts, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1024,70 +518,12 @@ StatusInt ViewContext::_VisitElement(GeometrySourceCR source)
     if (_CheckStop())
         return ERROR;
 
-    if (ElementIsUndisplayed(source))
+    if (IsUndisplayed(source))
         return SUCCESS;
 
-    _SetCurrentElement(&source);
-    _OutputElement(source);
-
-    // Output element or local range for debugging if requested...
-    switch (GetDrawPurpose())
-        {
-        case DrawPurpose::FitView:
-        case DrawPurpose::CaptureGeometry:
-            break; // Don't do this when trying to compute range or drop!
-
-        default:
-            {
-            static int s_drawRange; // 0 - Host Setting (Bounding Box Debug), 1 - Bounding Box, 2 - Element Range
-            if (m_creatingCacheElem || nullptr == m_viewport || (!s_drawRange && !T_HOST.GetGraphicsAdmin()._WantDebugElementRangeDisplay()))
-                break;
-
-            DPoint3d  p[8];
-            BoundingBox3d  range = (2 == s_drawRange ? BoundingBox3d(source.CalculateRange3d()) : (nullptr != source.ToGeometrySource3d() ? 
-                                    BoundingBox3d(source.ToGeometrySource3d()->GetPlacement().GetElementBox()) : 
-                                    BoundingBox3d(source.ToGeometrySource2d()->GetPlacement().GetElementBox())));
-            Transform placementTrans = (2 == s_drawRange ? Transform::FromIdentity() : source.GetPlacementTransform());
-
-            p[0].x = p[3].x = p[4].x = p[5].x = range.low.x;
-            p[1].x = p[2].x = p[6].x = p[7].x = range.high.x;
-            p[0].y = p[1].y = p[4].y = p[7].y = range.low.y;
-            p[2].y = p[3].y = p[5].y = p[6].y = range.high.y;
-            p[0].z = p[1].z = p[2].z = p[3].z = range.low.z;
-            p[4].z = p[5].z = p[6].z = p[7].z = range.high.z;
-
-            m_ovrMatSymb.SetLineColor(m_viewport->MakeTransparentIfOpaque(m_viewport->AdjustColorForContrast(m_elemMatSymb.GetLineColor(), m_viewport->GetBackgroundColor()), 150));
-            m_ovrMatSymb.SetWidth(1);
-            m_ovrMatSymb.SetRasterPattern(0);
-            _AddContextOverrides(m_ovrMatSymb);
-            m_IDrawGeom->ActivateOverrideMatSymb(&m_ovrMatSymb);
-
-            PushTransform(placementTrans);
-            DrawBox(p, nullptr != source.ToGeometrySource3d());
-            PopTransformClip();
-
-            ResetContextOverrides();
-            break;
-            }
-        }
-
-    _SetCurrentElement(nullptr);
+    _OutputGeometry(source);
 
     return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::_VisitTransientGraphics(bool isPreUpdate)
-    {
-    IViewOutput*    output = (IsAttached() ? GetViewport()->GetIViewOutput() : nullptr);
-    bool            restoreZWrite = (output && isPreUpdate ? output->EnableZWriting(false) : false);
-
-    T_HOST.GetGraphicsAdmin()._CallViewTransients(*this, isPreUpdate);
-
-    if (restoreZWrite)
-        output->EnableZWriting(true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1109,14 +545,14 @@ static StatusInt visitElementFunc(DgnElementCR element, void* inContext, ScanCri
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_SetScanReturn()
     {
-    m_scanCriteria->SetRangeNodeCheck(this);
-    m_scanCriteria->SetElementCallback(visitElementFunc, this);
+    m_scanCriteria.SetRangeNodeCheck(this);
+    m_scanCriteria.SetElementCallback(visitElementFunc, this);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-ScanCriteria::Result  ViewContext::_CheckNodeRange(ScanCriteriaCR scanCriteria, DRange3dCR testRange, bool is3d)
+ScanCriteria::Result ViewContext::_CheckNodeRange(ScanCriteriaCR scanCriteria, DRange3dCR testRange, bool is3d)
     {
     return ClipPlaneContainment_StronglyOutside != m_transformClipStack.ClassifyElementRange(testRange, is3d, true) ? ScanCriteria::Result::Pass : ScanCriteria::Result::Fail;
     }
@@ -1126,53 +562,38 @@ ScanCriteria::Result  ViewContext::_CheckNodeRange(ScanCriteriaCR scanCriteria, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewContext::IsWorldPointVisible(DPoint3dCR worldPoint, bool boresite)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DPoint3d    localPoint;
 
     WorldToLocal(&localPoint, &worldPoint, 1);
 
     return IsLocalPointVisible(localPoint, boresite);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      04/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::IsLocalPointVisible(DPoint3dCR localPoint, bool boresite)
-    {
+#else
     if (m_transformClipStack.IsEmpty())
         return true;
 
     if (!boresite)
-        return m_transformClipStack.TestPoint(localPoint);
+        return m_transformClipStack.TestPoint(worldPoint);
 
-    DVec3d      localZVec;
+    DVec3d      worldZVec;
 
     if (IsCameraOn())
         {
-        DPoint3d        localCamera;
-        
-        WorldToLocal(&localCamera, &GetViewport()->GetCamera().GetEyePoint(), 1);
-        localZVec.NormalizedDifference(localPoint, localCamera);
+        worldZVec.NormalizedDifference(worldPoint, GetViewport()->GetCamera().GetEyePoint());
         }
     else
         {
-        DPoint3d        zPoints[2];
-        Transform       worldToLocal;
+        DPoint3d    zPoints[2];
 
         zPoints[0].Zero();
         zPoints[1].Init(0.0, 0.0, 1.0);
 
         NpcToWorld(zPoints, zPoints, 2);
-
-        localZVec.NormalizedDifference(zPoints[1], zPoints[0]);
-
-        if (GetCurrWorldToLocalTrans(worldToLocal))
-            {
-            worldToLocal.MultiplyMatrixOnly(localZVec);
-            localZVec.Normalize();
-            }
+        worldZVec.NormalizedDifference(zPoints[1], zPoints[0]);
         }
 
-    return  m_transformClipStack.TestRay(localPoint, localZVec);
+    return m_transformClipStack.TestRay(worldPoint, worldZVec);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1199,9 +620,8 @@ StatusInt ViewContext::_ScanDgnModel(DgnModelP model)
     if (!ValidateScanRange())
         return ERROR;
 
-    m_scanCriteria->SetDgnModel(model);
-
-    return m_scanCriteria->Scan(this);
+    m_scanCriteria.SetDgnModel(model);
+    return m_scanCriteria.Scan();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1252,7 +672,7 @@ void ViewContext::SetSubRectNpc(DRange3dCR subRect)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::VisitAllViewElements(bool includeTransients, BSIRectCP updateRect)
+bool ViewContext::VisitAllViewElements(BSIRectCP updateRect)
     {
     ClearAborted();
     if (nullptr != updateRect)
@@ -1261,27 +681,16 @@ bool ViewContext::VisitAllViewElements(bool includeTransients, BSIRectCP updateR
     _InitScanRangeAndPolyhedron();
 
     SetScanReturn();
-    _VisitAllModelElements(includeTransients);
+    _VisitAllModelElements();
 
-    m_transformClipStack.PopAll(*this);    // This will cause pushed clip elements to display correctly (outside their clip).
-
-#ifdef WIP_VANCOUVER_MERGE // material
-    m_materialAssignmentCache.clear();
-
-    if (!WasAborted() && _WantDgnAttachmentBoundaryDisplay())
-        AddAbortTest(drawAttachmentBoundaries(*this, _GetViewRoot(), includeList, includeRefs));
-#endif
-    return  WasAborted();
+    return WasAborted();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::_VisitAllModelElements(bool includeTransients)
+bool ViewContext::_VisitAllModelElements()
     {
-    if (includeTransients)
-        _VisitTransientGraphics(true);
-
     SpatialViewControllerCP physController = m_viewport->GetSpatialViewControllerCP();
     ClipVectorPtr clipVector = physController ? physController->GetClipVector() : nullptr;
     if (clipVector.IsValid())
@@ -1291,10 +700,7 @@ bool ViewContext::_VisitAllModelElements(bool includeTransients)
     m_viewport->GetViewControllerR().DrawView(*this);
 
     if (clipVector.IsValid())
-        PopTransformClip();
-
-    if (includeTransients) // Give post-update IViewTransients a chance to display even if aborted the element draw...
-        _VisitTransientGraphics(false);
+        PopClip();
 
     return WasAborted();
     }
@@ -1302,136 +708,10 @@ bool ViewContext::_VisitAllModelElements(bool includeTransients)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ViewContext::VisitHit(HitDetailCR hit)
+StatusInt DecorateContext::VisitHit(HitDetailCR hit)
     {
-    ClearAborted();
-    _InitScanRangeAndPolyhedron();
-
+    AutoRestore<bool> flash(&m_isFlash, true);
     return m_viewport->GetViewController().VisitHit(hit, *this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* create a QvElem using an IStrokeForCache stroker.
-* @bsimethod                                                    Keith.Bentley   06/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-QvElem* ViewContext::CreateCacheElem(IStrokeForCache& stroker, QvCache* qvCache, double pixelSize, ICachedDrawP cachedDraw)
-    {
-    BeAssert(!m_creatingCacheElem || nullptr != cachedDraw);
-
-    if (nullptr == cachedDraw)
-        cachedDraw = m_ICachedDraw;
-
-    if (nullptr == cachedDraw)
-        return nullptr;
-
-    if (nullptr == qvCache)
-        qvCache = T_HOST.GetGraphicsAdmin()._GetTempElementCache();
-
-    BeAssert(qvCache);
-    cachedDraw->BeginCacheElement(qvCache);
-
-    AutoRestore<IDrawGeomP> saveDrawGeom(&m_IDrawGeom, cachedDraw);
-    AutoRestore<Byte> savefilter(&m_filterLOD, FILTER_LOD_Off);
-    AutoRestore<bool> saveCreatingCache(&m_creatingCacheElem, true);
-
-    try
-        {
-        stroker._StrokeForCache(*this, pixelSize);
-        }
-    catch (...)
-        {
-        }
-
-    QvElem* result = cachedDraw->EndCacheElement();
-
-    if (!WasAborted() || nullptr == result)
-        return result;
-
-    T_HOST.GetGraphicsAdmin()._DeleteQvElem(result);
-
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-QvElem* ViewContext::GetCachedGeometry(IStrokeForCache& stroker, bool& deleteQvElem)
-    {
-    static double   s_sizeDependentCacheRatio = 3.0;
-    double          sizeDependentRatio = s_sizeDependentCacheRatio;
-    double          pixelSize = 0.0;
-
-    deleteQvElem = false;
-
-    if (stroker._GetSizeDependentGeometryPossible())
-        {
-        DRange3d    localRange = stroker._GetRange();
-        DPoint3d    localCenter;
-
-        localCenter.Interpolate(localRange.low, 0.5, localRange.high);
-        pixelSize = GetPixelSizeAtPoint(&localCenter);
-        }
-
-    if (m_creatingCacheElem)
-        {
-        stroker._StrokeForCache(*this, pixelSize);
-
-        return nullptr;
-        }
-
-    bool     useCachedDisplay = _UseCachedDisplay();
-    QvElem*  qvElem = nullptr;
-
-    // if there is already a qvElem, use that instead of stroking.
-    if (useCachedDisplay)
-        qvElem = stroker._GetQvElem(pixelSize);
-
-    if (nullptr == qvElem)
-        {
-        bool      saveQvElem = _WantSaveQvElem(stroker._GetDrawExpense());
-        QvCache*  qvCache = (saveQvElem ? stroker._GetQVCache() : nullptr);
-
-        if (nullptr == qvCache)
-            saveQvElem = false;
-
-        if (nullptr == (qvElem = CreateCacheElem(stroker, qvCache, pixelSize)))
-            return nullptr;
-
-        if (!stroker._GetSizeDependentGeometryStroked())
-            sizeDependentRatio = 0.0;
-
-        if (saveQvElem)
-            stroker._SaveQvElem(qvElem, pixelSize, sizeDependentRatio); 
-        else
-            deleteQvElem = true;
-        }
-
-    return qvElem;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Output a displayable that uses QvElems and can be cached in QuickVision.
-* Sometimes this function will find that the cached representation already exists, and then it
-* simply draws that cached representation. Otherwise it calls the Draw
-* method on the displayable and draws (and potentially saves) the resultant QvElem.
-* @bsimethod                                                    KeithBentley    07/02
-+---------------+---------------+---------------+---------------+---------------+------*/
-QvElem* ViewContext::_DrawCached(IStrokeForCache& stroker)
-    {
-    bool    deleteQvElem;
-    QvElem* qvElem = GetCachedGeometry(stroker, deleteQvElem);
-
-    if (nullptr == qvElem)
-        return nullptr;
-
-    m_IViewDraw->DrawQvElem(qvElem);
-
-    if (!deleteQvElem)
-        return qvElem;
-
-    T_HOST.GetGraphicsAdmin()._DeleteQvElem(qvElem);
-
-    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1439,6 +719,7 @@ QvElem* ViewContext::_DrawCached(IStrokeForCache& stroker)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP range, bool closed)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (nPts < 1)
         return;
 
@@ -1452,9 +733,10 @@ void ViewContext::_DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP r
         }
 
     if (closed)
-        GetIDrawGeom().DrawShape3d(nPts, pts, false, range);
+        GetCurrentGraphicR().AddShape(nPts, pts, false, range);
     else
-        GetIDrawGeom().DrawLineString3d(nPts, pts, range);
+        GetCurrentGraphicR().AddLineString(nPts, pts, range);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1462,6 +744,7 @@ void ViewContext::_DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP r
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_DrawStyledLineString2d(int nPts, DPoint2dCP pts, double priority, DPoint2dCP range, bool closed)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (nPts < 1)
         return;
 
@@ -1475,9 +758,10 @@ void ViewContext::_DrawStyledLineString2d(int nPts, DPoint2dCP pts, double prior
         }
 
     if (closed)
-        GetIDrawGeom().DrawShape2d(nPts, pts, false, priority, range);
+        GetCurrentGraphicR().AddShape2d(nPts, pts, false, priority, range);
     else
-        GetIDrawGeom().DrawLineString2d(nPts, pts, priority, range);
+        GetCurrentGraphicR().AddLineString2d(nPts, pts, priority, range);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1485,6 +769,7 @@ void ViewContext::_DrawStyledLineString2d(int nPts, DPoint2dCP pts, double prior
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_DrawStyledArc3d(DEllipse3dCR ellipse, bool isEllipse, DPoint3dCP range)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     LineStyleSymbP  currLsSymb;
     ILineStyleCP    currLStyle = _GetCurrLineStyle(&currLsSymb);
 
@@ -1499,7 +784,8 @@ void ViewContext::_DrawStyledArc3d(DEllipse3dCR ellipse, bool isEllipse, DPoint3
         return;
         }
 
-    GetIDrawGeom().DrawArc3d(ellipse, isEllipse, false, range);
+    GetCurrentGraphicR().AddArc(ellipse, isEllipse, false, range);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1507,6 +793,7 @@ void ViewContext::_DrawStyledArc3d(DEllipse3dCR ellipse, bool isEllipse, DPoint3
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_DrawStyledArc2d(DEllipse3dCR ellipse, bool isEllipse, double zDepth, DPoint2dCP range)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     LineStyleSymbP  currLsSymb;
     ILineStyleCP    currLStyle = _GetCurrLineStyle(&currLsSymb);
 
@@ -1522,7 +809,8 @@ void ViewContext::_DrawStyledArc2d(DEllipse3dCR ellipse, bool isEllipse, double 
         return;
         }
 
-    GetIDrawGeom().DrawArc2d(ellipse, isEllipse, false, zDepth, range);
+    GetCurrentGraphicR().AddArc2d(ellipse, isEllipse, false, zDepth, range);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1530,6 +818,7 @@ void ViewContext::_DrawStyledArc2d(DEllipse3dCR ellipse, bool isEllipse, double 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_DrawStyledBSplineCurve3d(MSBsplineCurveCR bcurve)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     LineStyleSymbP  currLsSymb;
     ILineStyleCP    currLStyle = _GetCurrLineStyle(&currLsSymb);
 
@@ -1539,7 +828,8 @@ void ViewContext::_DrawStyledBSplineCurve3d(MSBsplineCurveCR bcurve)
         return;
         }
 
-    GetIDrawGeom().DrawBSplineCurve(bcurve, false);
+    GetCurrentGraphicR().AddBSplineCurve(bcurve, false);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1547,6 +837,7 @@ void ViewContext::_DrawStyledBSplineCurve3d(MSBsplineCurveCR bcurve)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_DrawStyledBSplineCurve2d(MSBsplineCurveCR bcurve, double zDepth)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     LineStyleSymbP  currLsSymb;
     ILineStyleCP    currLStyle = _GetCurrLineStyle(&currLsSymb);
 
@@ -1575,41 +866,23 @@ void ViewContext::_DrawStyledBSplineCurve2d(MSBsplineCurveCR bcurve, double zDep
         return;
         }
 
-    GetIDrawGeom().DrawBSplineCurve2d(bcurve, false, zDepth);
+    GetCurrentGraphicR().AddBSplineCurve2d(bcurve, false, zDepth);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   10/03
+* @bsimethod                                                    Brien.Bastings  12/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-DMatrix4d ViewContext::GetViewToLocal() const
+void ViewContext::_AddTextString(TextStringCR text)
     {
-    DMatrix4d  viewToLocal = GetWorldToView().M1;
-    Transform  worldToLocalTransform;
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    text.GetGlyphSymbology(GetCurrentGeometryParams());
+    CookGeometryParams();
 
-    if (SUCCESS == GetCurrWorldToLocalTrans(worldToLocalTransform) && !worldToLocalTransform.IsIdentity())
-        {
-        DMatrix4d worldToLocal = DMatrix4d::From(worldToLocalTransform);
-        viewToLocal.InitProduct(worldToLocal, viewToLocal);
-        }
-
-    return viewToLocal;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   10/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-DMatrix4d ViewContext::GetLocalToView() const
-    {
-    DMatrix4d localToView = GetWorldToView().M0;
-    Transform localToWorldTransform;
-
-    if (SUCCESS == GetCurrLocalToWorldTrans(localToWorldTransform) && !localToWorldTransform.IsIdentity())
-        {
-        DMatrix4d   localToWorld = DMatrix4d::From(localToWorldTransform);
-        localToView.InitProduct(localToView, localToWorld);
-        }
-
-    return localToView;
+    double zDepth = GetCurrentGeometryParams().GetNetDisplayPriority();
+    GetCurrentGraphicR().AddTextString(text, Is3dView() ? nullptr : &zDepth);                
+    text.DrawTextAdornments(*this);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1620,7 +893,13 @@ double ViewContext::GetPixelSizeAtPoint(DPoint3dCP inPoint) const
     DPoint3d    vec[2];
 
     if (nullptr != inPoint)
+        {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
         LocalToView(vec, inPoint, 1); // convert point to pixels
+#else
+        WorldToView(vec, inPoint, 1); // convert point to pixels
+#endif
+        }
     else
         {
         DPoint3d    center = {.5, .5, .5};   // if they didn't give a point, use center of view.
@@ -1630,20 +909,18 @@ double ViewContext::GetPixelSizeAtPoint(DPoint3dCP inPoint) const
     vec[1] = vec[0];
     vec[1].x += 1.0;
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // Convert pixels back to local coordinates and use the length as tolerance
     ViewToLocal(vec, vec, 2);
+#else
+    // Convert pixels back to world coordinates and use the length as tolerance
+    ViewToWorld(vec, vec, 2);
+#endif
 
     return vec[0].Distance(vec[1]);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_ClearZ()
-    {
-    GetIViewDraw().ClearZ();
-    }
-
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Stephane.Poulin                 12/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1671,14 +948,6 @@ bool ViewContext::RasterDisplayParams::operator==(RasterDisplayParams const& rhs
 bool ViewContext::RasterDisplayParams::operator!=(RasterDisplayParams const& rhs) const
     {
     return !(operator==(rhs));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Stephane.Poulin                 11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::RasterDisplayParams::SetFlags(uint32_t flags)     
-    {
-    m_flags = flags;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1751,6 +1020,7 @@ void ViewContext::RasterDisplayParams::SetQualityFactor(double factor)
     m_quality = factor;
     m_flags |= ViewContext::RasterDisplayParams::RASTER_PARAM_Quality;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
@@ -1760,18 +1030,8 @@ void ViewContext::ContextMark::Pop()
     if (nullptr == m_context)
         return;
 
-    while (m_context->GetTransClipDepth() > m_transClipMark)
+    while (m_context->GetTransClipDepth() > (int)m_transClipMark)
         m_context->GetTransformClipStack().Pop(*m_context);
-
-    if (m_pushedRange)
-        {
-        m_context->SetCurrParentRangeResult(m_parentRangeResult);
-        m_pushedRange = false;
-        }
-
-    m_context->SetIgnoreScaleForDimensions(m_ignoreScaleForDimensions);
-    m_context->SetIgnoreScaleForMultilines(m_ignoreScaleForMultilines);
-    m_context->SetApplyRotationToDimView(m_applyRotationToDimView);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1779,14 +1039,7 @@ void ViewContext::ContextMark::Pop()
 +---------------+---------------+---------------+---------------+---------------+------*/
 inline void ViewContext::ContextMark::SetNow()
     {
-    m_transClipMark                 = m_context->GetTransClipDepth();
-    m_parentRangeResult             = m_context->GetCurrParentRangeResult();
-    m_displayStyleStackMark         = m_context->m_displayStyleStackMark;
-    m_pushedRange                   = false;
-
-    m_ignoreScaleForDimensions      = m_context->GetIgnoreScaleForDimensions();
-    m_ignoreScaleForMultilines      = m_context->GetIgnoreScaleForMultilines();
-    m_applyRotationToDimView        = m_context->GetApplyRotationToDimView();
+    m_transClipMark = m_context->GetTransClipDepth();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1801,69 +1054,9 @@ ViewContext::ContextMark::ContextMark(ViewContextP context)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  01/08
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::IsMonochromeDisplayStyleActive()
-    {
-#if defined (NEEDS_WORK_DGNITEM)
-    CookedDisplayStyleCP currDispStyle = _GetCurrentCookedDisplayStyle();
-
-    return (currDispStyle && currDispStyle->StylePresent() && currDispStyle->m_flags.m_elementColor);
-#endif
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-int32_t ViewContext::ResolveNetDisplayPriority(int32_t geomPriority, DgnSubCategoryId subCategoryId, DgnSubCategory::Appearance* appearanceIn) const
-    {
-    if (m_is3dView)
-        return 0;
-
-    // SubCategory display priority is combined with element priority to compute net display priority. 
-    int32_t netPriority = geomPriority;
-
-    if (nullptr == appearanceIn)
-        {
-        if (!subCategoryId.IsValid())
-            return netPriority;
-
-        DgnSubCategory::Appearance appearance;
-
-        if (nullptr != GetViewport())
-            {
-            appearance = GetViewport()->GetViewController().GetSubCategoryAppearance(subCategoryId);
-            }
-        else
-            {
-            DgnSubCategoryCPtr subCat = DgnSubCategory::QuerySubCategory(subCategoryId, GetDgnDb());
-            BeAssert(subCat.IsValid());
-            if (!subCat.IsValid())
-                return netPriority;
-            else
-                appearance = subCat->GetAppearance();
-            }
-
-        netPriority += appearance.GetDisplayPriority();
-        }
-    else
-        {
-        netPriority += appearanceIn->GetDisplayPriority();
-        }
-
-    int32_t displayRange[2];
-
-    if (GetDisplayPriorityRange(displayRange[0], displayRange[1]))
-        LIMIT_RANGE (displayRange[0], displayRange[1], netPriority);
-
-    return netPriority;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElemMatSymb::ElemMatSymb()
+GraphicParams::GraphicParams()
     {
     Init();
     }
@@ -1871,89 +1064,30 @@ ElemMatSymb::ElemMatSymb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                    07/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElemMatSymb::Init()
+void GraphicParams::Init()
     {
     m_lineColor         = ColorDef::Black();
     m_fillColor         = ColorDef::Black();
-    m_elementStyle      = 0;
     m_isFilled          = false;
     m_isBlankingRegion  = false;
-    m_extSymbID         = 0;
     m_rasterWidth       = 1;
-    m_rasterPat         = 0;
     m_patternParams     = nullptr;
     m_gradient          = nullptr;
     m_material          = nullptr;
+    m_linePixels        = (uint32_t) LinePixels::Solid;
     m_lStyleSymb.Clear();
-    }
-
-#if defined (WIP_PLOTTING)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   08/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-static Byte screenColor(Byte color, double factor)
-    {
-    uint32_t tmp = color + (uint32_t) (factor * (255 - color));
-    LIMIT_RANGE (0, 255, tmp);
-    return  (Byte) tmp;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    AndrewEdge      08/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void     applyScreeningFactor(ColorDef* rgb, double screeningFactor)
-    {
-    rgb->SetRed(screenColor(rgb->GetRed(),   screeningFactor));
-    rgb->SetGreen(screenColor(rgb->GetGreen(), screeningFactor));
-    rgb->SetBlue(screenColor(rgb->GetBlue(),  screeningFactor));
-    }
-#endif
-
-#define ACAD_LINEWEIGHT_SIGNATURE   (0x80000000)
-#define LINEWEIGHT_SIGNATURE_BITS   (0xff000000)
-#define ACAD_LINEWEIGHT_MAX         (211)
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BarryBentley    06/02
-+---------------+---------------+---------------+---------------+---------------+------*/
-static uint32_t   remapAcadLineWeight(uint32_t lineWeight)
-    {
-    if (ACAD_LINEWEIGHT_SIGNATURE != (lineWeight & LINEWEIGHT_SIGNATURE_BITS))
-        return lineWeight;
-
-    lineWeight = (lineWeight & ~LINEWEIGHT_SIGNATURE_BITS);
-
-    // maximum autocad line weight is 211.
-    if (lineWeight > ACAD_LINEWEIGHT_MAX)
-        lineWeight = ACAD_LINEWEIGHT_MAX;
-
-#ifdef BEIJING_DGNPLATFORM_WIP_DWG
-    double          styleScale, weightScale;
-    if (SUCCESS != dwgSaveSettings_getLineCodeAndWeightScale(&styleScale, &weightScale))
-        weightScale = DEFAULT_DWG_WEIGHT_SCALE;
-
-    return (uint32_t) (0.5 + 0.5 * weightScale * lineWeight);
-#endif
-    return lineWeight;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElemMatSymb::FromResolvedElemDisplayParams(ElemDisplayParamsCR elParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent)
+void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
     {
     Init();
 
-    // We store the style index returned from LineStyleSymb::FromResolvedElemDisplayParams in order to
-    // provide PlotContext with the information it needs to handle custom line styles that are
-    // mapped to cosmetic line styles.  PlotContext is different from DrawContext in that it
-    // uses QV extended symbologies for cosmetic line styles rather than pattern codes. TR 225586.
-    m_elementStyle = m_lStyleSymb.FromResolvedElemDisplayParams(elParams, context, startTangent, endTangent);
-
     DgnViewportP vp = context.GetViewport();
 
-    m_rasterPat = (nullptr != vp ? vp->GetIndexedLinePattern(m_elementStyle) : DgnViewport::GetDefaultIndexedLinePattern(m_elementStyle));
-    m_rasterWidth = (nullptr != vp ? vp->GetIndexedLineWidth(remapAcadLineWeight(elParams.GetWeight())) : DgnViewport::GetDefaultIndexedLineWidth(remapAcadLineWeight(elParams.GetWeight())));
+    m_rasterWidth = nullptr != vp ? vp->GetIndexedLineWidth(elParams.GetWeight()) : DgnViewport::GetDefaultIndexedLineWidth(elParams.GetWeight());
     m_lineColor = m_fillColor = elParams.GetLineColor(); // NOTE: In case no fill is defined it should be set the same as line color...
 
     double netElemTransparency = elParams.GetNetTransparency();
@@ -1983,7 +1117,8 @@ void ElemMatSymb::FromResolvedElemDisplayParams(ElemDisplayParamsCR elParams, Vi
         m_isBlankingRegion = (FillDisplay::Blanking == elParams.GetFillDisplay());
         }
 
-    m_material = JsonRenderMaterial::Create (context.GetDgnDb(), elParams.GetMaterial());
+    if (vp && elParams.GetMaterialId().IsValid())
+        m_material = vp->GetRenderTarget()->GetMaterial(elParams.GetMaterialId(), context.GetDgnDb());
 
     if (0.0 != netElemTransparency)
         {
@@ -2005,61 +1140,35 @@ void ElemMatSymb::FromResolvedElemDisplayParams(ElemDisplayParamsCR elParams, Vi
         m_fillColor.SetAlpha(netTransparency);
         }
 
-#if defined (WIP_PLOTTING)    
-    if (elParams.IsScreeningSet() && (elParams.GetScreening() >= SCREENING_Full) && (elParams.GetScreening() < SCREENING_None))
-        {
-        double  screeningFactor = (SCREENING_None - elParams.GetScreening()) / SCREENING_None;
-
-        applyScreeningFactor(&m_lineColor, screeningFactor);
-        applyScreeningFactor(&m_fillColor, screeningFactor);
-        }
-#endif
+    // NEEDSWORK_LINESTYLES
+    // If this is a 3d view and we have a line style then we want to convert the line style
+    // to a texture line style.  We don't do it prior to this because generating the geometry map
+    // may use the current symbology.  This seems like a horrible place to do this,
+    // so we need to come up with something better.
+    LineStyleSymb& lsSym = GetLineStyleSymbR();
+    if (nullptr == lsSym.GetTexture() && nullptr != lsSym.GetILineStyle() && context.Is3dView())
+        lsSym.ConvertLineStyleToTexture(context, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  01/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElemMatSymb::FromNaturalElemDisplayParams(ElemDisplayParamsR elParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent)
-    {
-    elParams.Resolve(context);
-    FromResolvedElemDisplayParams(elParams, context, startTangent, endTangent);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* compare two ElemMatSymb's to see if they're the same.
+* compare two GraphicParams's to see if they're the same.
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElemMatSymb::operator==(ElemMatSymbCR rhs) const
+bool GraphicParams::operator==(GraphicParamsCR rhs) const
     {
     if (this == &rhs)
         return true;
 
     if (rhs.m_lineColor        != m_lineColor        ||
         rhs.m_fillColor        != m_fillColor        ||
-        rhs.m_elementStyle     != m_elementStyle     ||
         rhs.m_isFilled         != m_isFilled         ||
         rhs.m_isBlankingRegion != m_isBlankingRegion ||
-        rhs.m_extSymbID        != m_extSymbID        ||
         rhs.m_material         != m_material         ||
-        rhs.m_rasterWidth      != m_rasterWidth      ||
-        rhs.m_rasterPat        != m_rasterPat)
+        rhs.m_rasterWidth      != m_rasterWidth)
         return false;
 
     if (!(rhs.m_gradient == m_gradient))
         return false;
-
-#ifdef WIP_VANCOUVER_MERGE // linestyle
-    if (!(rhs.m_lStyleSymb == m_lStyleSymb))
-        return false;
-
-    if (m_materialDetail.IsValid() && rhs.m_materialDetail.IsValid())
-        {
-        if (!(m_materialDetail->Equals(*rhs.m_materialDetail)))
-            return false;
-        }
-    else if (m_materialDetail.IsNull() != rhs.m_materialDetail.IsNull())
-        return false;
-#endif
 
     return true;
     }
@@ -2067,17 +1176,14 @@ bool ElemMatSymb::operator==(ElemMatSymbCR rhs) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    PaulChater  08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElemMatSymb::ElemMatSymb(ElemMatSymbCR rhs)
+GraphicParams::GraphicParams(GraphicParamsCR rhs)
     {
     m_lineColor         = rhs.m_lineColor;
     m_fillColor         = rhs.m_fillColor;
-    m_elementStyle      = rhs.m_elementStyle;
     m_isFilled          = rhs.m_isFilled;
     m_isBlankingRegion  = rhs.m_isBlankingRegion;
-    m_extSymbID         = rhs.m_extSymbID;
     m_material          = rhs.m_material;
     m_rasterWidth       = rhs.m_rasterWidth;
-    m_rasterPat         = rhs.m_rasterPat;
     m_lStyleSymb        = rhs.m_lStyleSymb;
     m_gradient          = rhs.m_gradient;
     }
@@ -2085,35 +1191,33 @@ ElemMatSymb::ElemMatSymb(ElemMatSymbCR rhs)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    PaulChater  08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElemMatSymbR ElemMatSymb::operator=(ElemMatSymbCR rhs)
+GraphicParamsR GraphicParams::operator=(GraphicParamsCR rhs)
     {
     m_lineColor         = rhs.m_lineColor;
     m_fillColor         = rhs.m_fillColor;
-    m_elementStyle      = rhs.m_elementStyle;
     m_isFilled          = rhs.m_isFilled;
     m_isBlankingRegion  = rhs.m_isBlankingRegion;
-    m_extSymbID         = rhs.m_extSymbID;
     m_material          = rhs.m_material;
     m_rasterWidth       = rhs.m_rasterWidth;
-    m_rasterPat         = rhs.m_rasterPat;
     m_lStyleSymb        = rhs.m_lStyleSymb;
     m_gradient          = rhs.m_gradient;
+
     return *this;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void OvrMatSymb::Clear()
+void OvrGraphicParams::Clear()
     {
-    SetFlags(MATSYMB_OVERRIDE_None);
+    SetFlags(FLAGS_None);
     m_matSymb.Init();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void  OvrMatSymb::SetLineStyle(int32_t styleNo, DgnModelR modelRef, DgnModelR styleDgnModel, LineStyleParamsCP lStyleParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent)
+void  OvrGraphicParams::SetLineStyle(int32_t styleNo, DgnModelR modelRef, DgnModelR styleDgnModel, LineStyleParamsCP lStyleParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent)
     {
 #ifdef WIP_VANCOUVER_MERGE // linestyle
     m_matSymb.GetLineStyleSymbR().FromResolvedStyle(styleNo, modelRef, styleDgnModel, lStyleParams, context, startTangent, endTangent);
@@ -2124,7 +1228,7 @@ void  OvrMatSymb::SetLineStyle(int32_t styleNo, DgnModelR modelRef, DgnModelR st
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    PaulChater  08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElemDisplayParams::ElemDisplayParams(ElemDisplayParamsCR rhs)
+GeometryParams::GeometryParams(GeometryParamsCR rhs)
     {
     m_appearanceOverrides   = rhs.m_appearanceOverrides;
     m_categoryId            = rhs.m_categoryId;
@@ -2140,17 +1244,17 @@ ElemDisplayParams::ElemDisplayParams(ElemDisplayParamsCR rhs)
     m_netElmTransparency    = rhs.m_netElmTransparency;
     m_fillTransparency      = rhs.m_fillTransparency;
     m_netFillTransparency   = rhs.m_netFillTransparency;
-    m_material              = rhs.m_material;
+    m_materialId            = rhs.m_materialId;
     m_styleInfo             = rhs.m_styleInfo;
     m_gradient              = rhs.m_gradient;
     m_pattern               = rhs.m_pattern;
-    m_plotInfo              = rhs.m_plotInfo;
+    m_resolved              = rhs.m_resolved;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    PaulChater  08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElemDisplayParamsR ElemDisplayParams::operator=(ElemDisplayParamsCR rhs)
+GeometryParamsR GeometryParams::operator=(GeometryParamsCR rhs)
     {
     m_appearanceOverrides   = rhs.m_appearanceOverrides;
     m_categoryId            = rhs.m_categoryId;
@@ -2166,11 +1270,11 @@ ElemDisplayParamsR ElemDisplayParams::operator=(ElemDisplayParamsCR rhs)
     m_netElmTransparency    = rhs.m_netElmTransparency;
     m_fillTransparency      = rhs.m_fillTransparency;
     m_netFillTransparency   = rhs.m_netFillTransparency;
-    m_material              = rhs.m_material;
+    m_materialId            = rhs.m_materialId;
     m_styleInfo             = rhs.m_styleInfo;
     m_gradient              = rhs.m_gradient;
     m_pattern               = rhs.m_pattern;
-    m_plotInfo              = rhs.m_plotInfo;
+    m_resolved              = rhs.m_resolved;
 
     return *this;
     }
@@ -2178,9 +1282,9 @@ ElemDisplayParamsR ElemDisplayParams::operator=(ElemDisplayParamsCR rhs)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    John.Gooding    10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElemDisplayParams::ElemDisplayParams()
+GeometryParams::GeometryParams()
     {
-    m_resolved = 0;
+    m_resolved = false;
     m_elmPriority = 0;
     m_netPriority = 0;    
     m_weight = 0;
@@ -2195,21 +1299,24 @@ ElemDisplayParams::ElemDisplayParams()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2015
 //---------------------------------------------------------------------------------------
-void ElemDisplayParams::ResetAppearance()
+void GeometryParams::ResetAppearance()
     {
     AutoRestore<DgnCategoryId> saveCategory(&m_categoryId);
     AutoRestore<DgnSubCategoryId> saveSubCategory(&m_subCategoryId);
 
-    *this = ElemDisplayParams();
+    *this = GeometryParams();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElemDisplayParams::operator==(ElemDisplayParamsCR rhs) const
+bool GeometryParams::operator==(GeometryParamsCR rhs) const
     {
     if (this == &rhs)
         return true;
+
+    if (rhs.m_resolved != m_resolved)
+        return false;
 
     if (rhs.m_categoryId    != m_categoryId ||
         rhs.m_subCategoryId != m_subCategoryId ||
@@ -2233,7 +1340,7 @@ bool ElemDisplayParams::operator==(ElemDisplayParamsCR rhs) const
     if (0 != memcmp(&rhs.m_appearanceOverrides, &m_appearanceOverrides, sizeof(m_appearanceOverrides)))
         return false;
 
-    if (!(m_material == rhs.m_material))
+    if (!(m_materialId == rhs.m_materialId))
         return false;
 
     if (!(m_gradient == rhs.m_gradient))
@@ -2245,33 +1352,28 @@ bool ElemDisplayParams::operator==(ElemDisplayParamsCR rhs) const
     if (!(m_styleInfo == rhs.m_styleInfo))
         return false;
 
-    if (!(m_plotInfo == rhs.m_plotInfo))
-        return false;
-
     return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  01/13
+* @bsimethod                                                    Brien.Bastings  12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElemDisplayParams::Resolve(ViewContextR context)
+void GeometryParams::Resolve(DgnDbR dgnDb, DgnViewportP vp)
     {
-    DgnSubCategoryId subCategoryId = GetSubCategoryId();
-
-    BeAssert(subCategoryId.IsValid());
-    if (!subCategoryId.IsValid())
+    BeAssert(m_subCategoryId.IsValid());
+    if (!m_subCategoryId.IsValid())
         return;
 
     // Setup from SubCategory appearance...
     DgnSubCategory::Appearance appearance;
 
-    if (nullptr != context.GetViewport())
+    if (nullptr != vp)
         {
-        appearance = context.GetViewport()->GetViewController().GetSubCategoryAppearance(subCategoryId);
+        appearance = vp->GetViewController().GetSubCategoryAppearance(m_subCategoryId);
         }
     else
         {
-        DgnSubCategoryCPtr subCat = DgnSubCategory::QuerySubCategory(subCategoryId, context.GetDgnDb());
+        DgnSubCategoryCPtr subCat = DgnSubCategory::QuerySubCategory(m_subCategoryId, dgnDb);
         BeAssert(subCat.IsValid());
         if (!subCat.IsValid())
             return;
@@ -2284,9 +1386,9 @@ void ElemDisplayParams::Resolve(ViewContextR context)
 
     if (m_appearanceOverrides.m_bgFill)
         {
-        m_fillColor = (nullptr != context.GetViewport() ? context.GetViewport()->GetBackgroundColor() : ColorDef::Black());
+        m_fillColor = (nullptr != vp ? vp->GetBackgroundColor() : ColorDef::Black());
 
-        // NEEDSWORK_ASK_QVIS_FOLKS: Problem with white-on-white reversal...don't want this to apply to the background fill... :(
+        // NOTE: Problem with white-on-white reversal...don't want this to apply to the background fill... :(
         if (ColorDef::White() == m_fillColor)
             m_fillColor.SetRed(254);
         }
@@ -2302,7 +1404,7 @@ void ElemDisplayParams::Resolve(ViewContextR context)
         m_styleInfo = LineStyleInfo::Create(appearance.GetStyle(), nullptr).get(); // WIP_LINESTYLE - Need LineStyleParams...
 
     if (!m_appearanceOverrides.m_material)
-        m_material = appearance.GetMaterial();
+        m_materialId = appearance.GetMaterial();
 
     // SubCategory transparency is combined with element transparency to compute net transparency. 
     if (0.0 != appearance.GetTransparency())
@@ -2319,153 +1421,451 @@ void ElemDisplayParams::Resolve(ViewContextR context)
         }
 
     // SubCategory display priority is combined with element priority to compute net display priority. 
-    m_netPriority = context.ResolveNetDisplayPriority(m_elmPriority, subCategoryId, &appearance);
+    if (nullptr != vp && vp->Is3dView())
+        m_netPriority = 0;
+    else
+        m_netPriority = m_elmPriority + appearance.GetDisplayPriority();
+
     m_resolved = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* draw a symbol into the current context
-* @bsimethod                                                    Keith.Bentley   06/04
+* @bsimethod                                                    Brien.Bastings  01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_DrawSymbol(IDisplaySymbol* symbol, TransformCP trans, ClipPlaneSetP clip)
+void GeometryParams::Resolve(ViewContextR context)
     {
-    QvCache* symbolCache = T_HOST.GetGraphicsAdmin()._GetSymbolCache();
+    Resolve(context.GetDgnDb(), context.GetViewport());
+    }
 
-    if (!symbolCache || CheckICachedDraw())
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DecorateContext::AddWorldDecoration(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovrParams)
+    {
+    if (!m_decorations.m_world.IsValid())
+        m_decorations.m_world = new GraphicList;
+
+    m_decorations.m_world->Add(graphic, m_target.ResolveOverrides(ovrParams), ovrParams ? ovrParams->GetFlags() : 0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DecorateContext::AddWorldOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovrParams)
+    {
+    if (!m_decorations.m_worldOverlay.IsValid())
+        m_decorations.m_worldOverlay = new GraphicList;
+
+    m_decorations.m_worldOverlay->Add(graphic, m_target.ResolveOverrides(ovrParams), ovrParams ? ovrParams->GetFlags() : 0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DecorateContext::AddViewOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovrParams)
+    {
+    if (!m_decorations.m_viewOverlay.IsValid())
+        m_decorations.m_viewOverlay = new GraphicList;
+
+    m_decorations.m_viewOverlay->Add(graphic, m_target.ResolveOverrides(ovrParams), ovrParams ? ovrParams->GetFlags() : 0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DecorateContext::AddFlashed(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovrParams)
+    {
+    if (!m_decorations.m_flashed.IsValid())
+        m_decorations.m_flashed = new GraphicList;
+
+    m_decorations.m_flashed->Add(graphic, m_target.ResolveOverrides(&m_ovrParams), m_ovrParams.GetFlags());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DecorateContext::AddSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency)
+    {
+    AddViewOverlay(*m_target.CreateSprite(sprite, location, xVec, transparency), nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+enum
+    {
+    MAX_GridDotsInRow       = 500,
+    GRID_DOT_Transparency   = 110,
+    GRID_LINE_Transparency  = 190,
+    GRID_PLANE_Transparency = 225,
+    MAX_GridPoints          = 90,
+    MAX_GridRefs            = 40,
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      05/04
++---------------+---------------+---------------+---------------+---------------+------*/
+static int getGridPlaneViewIntersections(DPoint3dP intersections, DPoint3dCP planePoint, DPoint3dCP planeNormal, double spacing, DgnViewportCR vp)
+    {
+    static int const index[12][2] = {
+                        {NPC_000, NPC_001},     // lines connecting front to back
+                        {NPC_100, NPC_101},
+                        {NPC_010, NPC_011},
+                        {NPC_110, NPC_111},
+
+                        {NPC_000, NPC_100},     // around front face
+                        {NPC_100, NPC_110},
+                        {NPC_110, NPC_010},
+                        {NPC_010, NPC_000},
+
+                        {NPC_001, NPC_101},     // around back face.
+                        {NPC_101, NPC_111},
+                        {NPC_111, NPC_011},
+                        {NPC_011, NPC_001}
+                        };
+
+    Frustum frust = vp.GetFrustum(DgnCoordSystem::World, true);
+    int     nIntersections = 0;
+
+    for (int i=0; i<12; i++)
         {
-        // if we're creating a cache elem already, we need to stroke the symbol into that elem by value
-        IDrawGeomR output = GetIDrawGeom();
+        double  param;
 
-        output._PushTransClip(trans, clip);
-        symbol->_Draw(*this);
-        output._PopTransClip();
+        if (bsiGeom_linePlaneIntersection(&param, intersections+nIntersections, &frust.GetCorner(index[i][0]), &frust.GetCorner(index[i][1]), planePoint, planeNormal) && param >= 0.0 && param <= 1.0)
+            ++nIntersections;
+        }
 
+    return nIntersections;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      05/04
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool getGridDimension(int& nRepetitions, double& min, DPoint3dCR org, DVec3dCR dir, double gridSize, DPoint3dCP points, int nPoints)
+    {
+    // initialized only to avoid warning.
+    double distLow=0.0, distHigh=0.0;
+
+    for (int i=0; i<nPoints; i++)
+        {
+        double  distance = points[i].DotDifference(org, dir);
+
+        if (i)
+            {
+            if (distance < distLow)
+                distLow = distance;
+
+            if (distance > distHigh)
+                distHigh = distance;
+            }
+        else
+            {
+            distLow = distHigh = distance;
+            }
+        }
+
+    if (distHigh <= distLow)
+        return false;
+
+    min = floor(distLow / gridSize);
+    double max = ceil(distHigh / gridSize);
+    nRepetitions = (int)(max - min);
+    min *= gridSize;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      05/04
++---------------+---------------+---------------+---------------+---------------+------*/
+static void drawGridRefs(Render::GraphicR graphic, DPoint3dCR org, DVec3dCR rowVec, DVec3dCR colVec, int rowRepetitions, int colRepetitions)
+    {
+    DPoint3d gridEnd;
+
+    gridEnd.SumOf(org,colVec, colRepetitions);
+
+    for (double d=0.0; d <= rowRepetitions; d += 1.0)
+        {
+        DPoint3d linePoints[2];
+
+        linePoints[0].SumOf(org,rowVec, d);
+        linePoints[1].SumOf(gridEnd,rowVec, d);
+        graphic.AddLineString(2, linePoints, nullptr);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      05/04
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool getClipPlaneIntersection(double& pMin, double& pMax, DPoint3dCR origin, DPoint3dCR direction, ClipPlane const* pPlane)
+    {
+    pMin = -FLT_MAX;
+    pMax =  FLT_MAX;
+
+    for (int i=0; i<6; i++, pPlane++)
+        {
+        double vD = pPlane->DotProduct(direction);
+        double vN = pPlane->EvaluatePoint(origin);
+        double testValue;
+
+        if (vD > 0.0)
+            {
+            if ((testValue = -vN/vD) > pMin)
+                pMin = testValue;
+            }
+        else if (vD < 0.0)
+            {
+            if ((testValue = -vN/vD) < pMax)
+                pMax = testValue;
+            }
+        }
+
+    return pMin < pMax;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      05/04
++---------------+---------------+---------------+---------------+---------------+------*/
+static void drawGridDots(Render::GraphicR graphic, bool doIsoGrid, DPoint3dCR origin, DVec3d const& rowVec, int rowRepetitions, DVec3d const& colVec, int colRepetitions, int refSpacing)
+    {
+    static double s_maxHorizonGrids = 800.0;
+    DgnViewportCR vp = *graphic.GetViewport();
+    DVec3d colNormal, rowNormal;
+    double colSpacing = colNormal.Normalize(colVec);
+    rowNormal.Normalize(rowVec);
+
+    DPoint3d points[MAX_GridDotsInRow];
+    bool     cameraOn = vp.IsCameraOn();
+    double   zCamera = 0.0, zCameraLimit = 0.0;
+    DVec3d   viewZ;
+
+    if (cameraOn)
+        {
+        CameraInfo const& camera = vp.GetCamera();
+        double sizeLimit = (s_maxHorizonGrids * colSpacing) / vp.GetViewDelta()->x;
+
+        vp.GetRotMatrix().GetRow(viewZ, 2);
+        zCamera = viewZ.DotProduct(*((DVec3d *) &camera.GetEyePoint()));
+        zCameraLimit = zCamera - camera.GetFocusDistance() * sizeLimit;
+        }
+
+    Frustum corners = vp.GetFrustum(DgnCoordSystem::World, true);
+    ClipPlane clipPlanes[6];
+    ClipUtil::RangePlanesFromPolyhedra(clipPlanes, corners.GetPts(), true, true, false);
+
+    double minClipDistance, maxClipDistance;
+    for (int i=0; i<rowRepetitions; i++)
+        {
+        if (0 != refSpacing && 0 == (i % refSpacing))
+            continue;
+
+        DPoint3d dotOrigin;
+        dotOrigin.SumOf(origin,rowVec, (double) i);
+
+        if (getClipPlaneIntersection(minClipDistance, maxClipDistance, dotOrigin, colNormal, clipPlanes))
+            {
+            if (cameraOn)
+                {
+                DPoint3d        startPoint, endPoint;
+
+                startPoint.SumOf(dotOrigin,colNormal, minClipDistance);
+                endPoint.SumOf(dotOrigin,colNormal, maxClipDistance);
+                if (viewZ.DotProduct(startPoint) < zCameraLimit && viewZ.DotProduct(endPoint) < zCameraLimit)
+                    continue;
+                }
+
+            int nToDisplay = 0;
+            int jMin = (int) floor(minClipDistance/ colSpacing);
+            int jMax = (int) ceil(maxClipDistance / colSpacing);
+
+            // Choose values that result in the least amount of dots between jMin-jMax and 0-colRepetitions...
+            jMin = (jMin < 0 ? 0 : jMin);
+            jMax = (jMax > colRepetitions ? colRepetitions : jMax);
+
+            double isoOffset = (doIsoGrid && (i&1)) ?  0.5 : 0.0;
+            for (int j=jMin; j <= jMax && nToDisplay < MAX_GridDotsInRow; j++)
+                {
+                if (0 != refSpacing && 0 == (j % refSpacing))
+                    continue;
+
+                DPoint3d point;
+                point.SumOf(dotOrigin,colVec, (double) j + isoOffset);
+
+                if (cameraOn)
+                    {
+                    double pointZ = viewZ.DotProduct(point);
+
+                    if (pointZ < zCamera && pointZ >zCameraLimit)
+                        points[nToDisplay++] = point;
+                    }
+                else
+                    {
+                    points[nToDisplay++] = point;
+                    }
+                }
+
+            if (0 != nToDisplay)
+                graphic.AddPointString(nToDisplay, points, nullptr);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/05
++---------------+---------------+---------------+---------------+---------------+------*/
+static void drawGridPlane(Render::GraphicR graphic, DPoint3dCR gridOrigin, DVec3dCR xVec, DVec3dCR yVec, Point2dCR repetitions)
+    {
+    DgnViewportCR vp = *graphic.GetViewport();
+    DVec3d viewZ;
+    vp.GetRotMatrix().GetRow(viewZ, 2);
+
+    // don't draw grid plane if perpendicular to view
+    if (viewZ.IsPerpendicularTo(xVec))
         return;
-        }
 
-    QvElem* qvElem = T_HOST.GetGraphicsAdmin()._LookupQvElemForSymbol(symbol);
+    // grid refs or points will give visual indication or grid plane...
+    DPoint3d shapePoints[5];
 
-    if (nullptr == qvElem)
-        {
-        SymbolContext symbolContext(*this);
+    shapePoints[0] = shapePoints[4] = gridOrigin;
+    shapePoints[1].SumOf(gridOrigin,xVec, repetitions.x);
+    shapePoints[2].SumOf(gridOrigin,xVec, repetitions.x, yVec, repetitions.y);
+    shapePoints[3].SumOf(gridOrigin,yVec, repetitions.y);
 
-        qvElem = symbolContext.DrawSymbolForCache(symbol, *symbolCache);
-
-        if (nullptr == qvElem)
-            return;
-
-        T_HOST.GetGraphicsAdmin()._SaveQvElemForSymbol(symbol, qvElem); // save the qvelem in case we encounter this symbol again
-        }
-
-    // draw the symbol.
-    IViewDrawR output = GetIViewDraw();
-
-    output._PushTransClip(trans, clip);
-    output.DrawQvElem(qvElem); // Display priority for symbols in 2d is incorporated into the transform.
-    output._PopTransClip();
+    graphic.AddShape(5, shapePoints, true, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* delete the cached representation of a symbol
-* @bsimethod                                                    Keith.Bentley   06/03
+* @bsimethod                                                    RayBentley      05/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_DeleteSymbol(IDisplaySymbol* symbol)
+static void drawGrid(Render::GraphicR graphic, bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVec, DVec3dCR yVec, uint32_t gridsPerRef, Point2d const& repetitions)
     {
-    T_HOST.GetGraphicsAdmin()._DeleteSymbol(symbol);
+    DgnViewportCR vp = *graphic.GetViewport();
+    ColorDef color = vp.GetContrastToBackgroundColor();
+    ColorDef lineColor = vp.MakeColorTransparency(color, GRID_LINE_Transparency);
+    ColorDef dotColor = vp.MakeColorTransparency(color, GRID_DOT_Transparency);
+    ColorDef planeColor = vp.MakeColorTransparency(color, GRID_PLANE_Transparency);
+    GraphicParams::LinePixels linePat = GraphicParams::LinePixels::Solid;
+    DVec3d zVec, viewZ;
+
+    zVec.NormalizedCrossProduct(xVec, yVec);
+    vp.GetRotMatrix().GetRow(viewZ, 2);
+
+    if (viewZ.DotProduct(zVec) < 0.0) // Provide visual indication that grid is being viewed from the back (grid z not towards eye)...
+        {
+        planeColor = vp.MakeColorTransparency(ColorDef::Red(), GRID_PLANE_Transparency);
+        linePat = GraphicParams::LinePixels::Code2;
+        }
+
+    int    gpr = (gridsPerRef>0) ? gridsPerRef : 1;
+    double rpg = (1.0 / gpr);
+
+    if (doIsoGrid)
+        gridsPerRef = 0; // turn off reference grid for iso
+
+    if (drawDots)
+        {
+        DVec3d  dotXVec = xVec;
+        DVec3d  dotYVec = yVec;
+
+        dotXVec.Scale(rpg);
+        dotYVec.Scale(rpg);
+
+        graphic.SetSymbology(dotColor, planeColor, 1);
+        drawGridDots(graphic, doIsoGrid, gridOrigin, dotYVec, repetitions.y*gpr, dotXVec, repetitions.x*gpr, gridsPerRef);
+        }
+
+    if (0 < gridsPerRef)
+        {
+        graphic.SetSymbology(lineColor, planeColor, 1, linePat);
+        drawGridRefs(graphic, gridOrigin, xVec, yVec, repetitions.x, repetitions.y);
+        drawGridRefs(graphic, gridOrigin, yVec, xVec, repetitions.y, repetitions.x);
+        }
+
+    if (RenderMode::Wireframe == vp.GetViewFlags().GetRenderMode())
+        return;
+
+    graphic.SetBlankingFill(planeColor);
+    drawGridPlane(graphic, gridOrigin, xVec, yVec, repetitions);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2012
+* @bsimethod                                                    Brien.Bastings  01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_DrawAligned(DVec3dCR axis, DPoint3dCR origin, AlignmentMode alignmentMode, IStrokeAligned& stroker)
+void DecorateContext::DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix, DPoint2d spacing, uint32_t gridsPerRef, bool isoGrid, Point2dCP fixedRepetitions)
     {
-    DPoint4d            zColumn4d;
-    DVec3d              zColumn;
-    DMatrix4d           toNpc = GetWorldToNpc().M0;
-    Transform           localToWorldTransform;
+    DgnViewportCR vp = *GetViewport();
+    DVec3d xVec, yVec, zVec, viewZ;
 
-    if (SUCCESS == GetCurrLocalToWorldTrans(localToWorldTransform))
+    rMatrix.GetRows(xVec, yVec, zVec);
+    vp.GetRotMatrix().GetRow(viewZ, 2);
+
+    if (!vp.IsCameraOn())
         {
-        DMatrix4d       localToWorld = DMatrix4d::From(localToWorldTransform);
+        static const double s_minDotProduct = .005;
 
-        toNpc.InitProduct(toNpc, localToWorld);
-        }
-
-    DVec3d      axisLocal;
-
-    switch (alignmentMode)
-        {
-        case AlignmentMode_AlongLocalInDrawing:
-            axisLocal = axis;
-            break;
-
-        case AlignmentMode_AlongDrawing:
-            axisLocal = axis;
-            break;
-
-        default:
-            BeAssert(false);
+        if (fabs(viewZ.DotProduct(zVec)) < s_minDotProduct) // Is grid parallel to view?
             return;
         }
-    axisLocal.Normalize();
 
-    toNpc.GetRow(zColumn4d, 2);
-    zColumn.XyzOf(zColumn4d);
-    zColumn.Normalize();
+    double   refScale = (0 == gridsPerRef) ? 1.0 : (double) gridsPerRef;
+    Point2d  repetitions;
+    DPoint3d gridOrg;
 
-    RotMatrix       rMatrix;
-
-    if (zColumn.IsParallelTo(axisLocal))
+    if (NULL == fixedRepetitions) // Compute grid origin and visible repetitions when not drawing a fixed sized grid...
         {
-        rMatrix = RotMatrix::From1Vector(zColumn, 2, true);
+        DPoint3d intersections[12];
+        int nIntersections = getGridPlaneViewIntersections(intersections, &gridOrigin, &zVec, spacing.x, vp);
+
+        if (nIntersections < 3)
+            return;
+
+        DPoint3d min;
+
+        if (!getGridDimension(repetitions.x, min.x, gridOrigin, xVec, spacing.x, intersections, nIntersections) ||
+            !getGridDimension(repetitions.y, min.y, gridOrigin, yVec, spacing.y, intersections, nIntersections))
+            return;
+
+        gridOrg.SumOf(gridOrigin,xVec, min.x, yVec, min.y);
         }
     else
         {
-        DVec3d          xColumn, yColumn;
-
-        yColumn.CrossProduct(zColumn, axisLocal);
-        xColumn.CrossProduct(yColumn, zColumn);
-        xColumn.Normalize();
-        yColumn.Normalize();
-        rMatrix = RotMatrix::FromColumnVectors(xColumn, yColumn, zColumn);
+        gridOrg = gridOrigin;
+        repetitions = *fixedRepetitions;
         }
 
-    Transform       alignmentTransform = Transform::From(rMatrix, origin);
+    DVec3d gridX, gridY;
+    gridX.Scale(xVec, spacing.x);
+    gridY.Scale(yVec, spacing.y);
 
-    PushTransform(alignmentTransform);
-    m_transformClipStack.SetViewIndependent();
-    stroker._StrokeAligned(*this);
-    PopTransformClip();
+    DPoint3d testPt;
+    testPt.SumOf(gridOrg,gridX, repetitions.x/2.0, gridY, repetitions.y/2.0);
+
+    int maxGridPts  = MAX_GridPoints;
+    int maxGridRefs = MAX_GridRefs;
+
+    if (maxGridPts < 10)
+        maxGridPts = 10;
+    if (maxGridRefs < 10)
+        maxGridRefs = 10;
+
+    // values are "per 1000 pixels"
+    double minGridSeperationPixels = 1000. / maxGridPts;
+    double minRefSeperation = 1000. / maxGridRefs;
+    double uorPerPixel = vp.GetPixelSizeAtPoint(&testPt); // center of view
+
+    if ((spacing.x/uorPerPixel) < minRefSeperation || (spacing.y/uorPerPixel) < minRefSeperation)
+        gridsPerRef = 0;
+
+    // Avoid z fighting with coincident geometry...let the wookie win...
+    gridOrg.SumOf(gridOrg, viewZ, uorPerPixel);
+    uorPerPixel *= refScale;
+
+    bool drawDots = ((spacing.x/uorPerPixel) > minGridSeperationPixels) &&((spacing.y/uorPerPixel) > minGridSeperationPixels);
+    Render::GraphicPtr graphic = CreateGraphic(Graphic::CreateParams(&vp));
+
+    drawGrid(*graphic, isoGrid, drawDots, gridOrg, gridX, gridY, gridsPerRef, repetitions);
+    AddWorldDecoration(*graphic);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  12/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_DrawTextString(TextStringCR text)
-    {
-    text.GetGlyphSymbology(GetCurrentDisplayParams());
-    CookDisplayParams();
 
-    double zDepth = GetCurrentDisplayParams().GetNetDisplayPriority();
-    GetIDrawGeom().DrawTextString(text, Is3dView() ? nullptr : &zDepth);                
-    text.DrawTextAdornments(*this);
-    }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::SetLinestyleTangents(DPoint3dCP start, DPoint3dCP end)
-    {
-    m_startTangent = start;
-    m_endTangent = end;
-    m_elemMatSymb.GetLineStyleSymbR().ClearContinuationData();
-    m_ovrMatSymb.GetMatSymbR().GetLineStyleSymbR().ClearContinuationData();
-    }
-
-//  On tablets some of the raster information on the GPU is reset whenever QV is reset.
-//  On tablets, QV is reset when the app is put into the background and when the device is
-//  rotated.  That causes QV to reset some of the raster data that is kept in the GPU.
-//  To compensate the RasterHandler needs to know if QV has been reset.
-static uint32_t s_numQvInitCalls;
-uint32_t ViewContext::GetCountQvInitCalls() {return s_numQvInitCalls;}
-void ViewContext::IncrementCountQvInitCalls() { ++s_numQvInitCalls; }

@@ -10,7 +10,7 @@
 
 #include <Bentley/WString.h>
 #include "DgnPlatform.h"
-#include "IViewOutput.h"
+#include "Render.h"
 #include "ColorUtil.h"
 #include "NotificationManager.h"
 #include "TxnManager.h"
@@ -27,7 +27,7 @@ typedef struct FT_LibraryRec_* FT_Library; // Shield users from freetype.h becau
 
 DGNPLATFORM_TYPEDEFS(DgnHost)
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 /*=================================================================================**//**
 @addtogroup DgnPlatformHost
@@ -238,6 +238,9 @@ public:
             //! Return the directory containing the required DgnPlatform assets that must be deployed with any DgnPlatform-based app.
             //! Examples of required assets include fonts, ECSchemas, and localization resources.
             DGNPLATFORM_EXPORT BeFileNameCR GetDgnPlatformAssetsDirectory();
+
+            //! Gets the directory that holds the sprite definition files.
+            virtual StatusInt _GetSpriteContainer(BeFileNameR spritePath, Utf8CP spriteNamespace, Utf8CP spriteName) { return BSIERROR; }
             };
 
         //=======================================================================================
@@ -484,132 +487,6 @@ public:
             DGNPLATFORM_EXPORT RealityDataCache& GetCache();
         };
 
-        //! Supervise various graphics operations.
-        struct GraphicsAdmin : IHostObject
-        {
-            //! Display control for edges marked as invisible in Mesh Elements and
-            //! for B-spline Curve/Surface control polygons ("splframe" global).
-            enum class ControlPolyDisplay
-            {
-                ByElement = 0, //! display according to element property.
-                Always    = 1, //! display on for all elements
-                Never     = 2, //! display off for all elements
-            };
-
-            DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
-            //! Return a pointer to a temporary QVCache used to create a temporary QVElem (short-lived).
-            virtual QvCache* _GetTempElementCache() {return nullptr;}
-
-            //! Create and maintain a cache to hold cached representations of drawn geometry for persistent elements (QVElem).
-            virtual QvCache* _CreateQvCache() {return nullptr;}
-
-            //! Delete specified qvCache.
-            virtual void _DeleteQvCache(QvCacheP qvCache) {}
-
-            //! Reset specified qvCache.
-            virtual void _ResetQvCache(QvCacheP qvCache) {}
-
-            //! Delete a specific cached representation from the persistent QVCache.
-            virtual void _DeleteQvElem(QvElem*) {}
-
-            //! Return whether a QVElem should be created, host must balance expense against memory use.
-            virtual bool _WantSaveQvElem(int expense) {return true;}
-
-            //! Return cache to use for symbols (if host has chosen to have a symbol cache).
-            //! @note Symbol cache will be required for an interactive host.
-            virtual QvCache* _GetSymbolCache() {return nullptr;}
-
-            //! Remove all entries in the symbol cache (if host has chosen to have a symbol cache).
-            virtual void _EmptySymbolCache() {}
-
-            //! Save cache entry for symbol (if host has chosen to have a symbol cache).
-            virtual void _SaveQvElemForSymbol(IDisplaySymbol* symbol, QvElem* qvElem) {}
-
-            //! Return cache entry for symbol (if host has chosen to have a symbol cache).
-            virtual QvElem* _LookupQvElemForSymbol(IDisplaySymbol* symbol) {return nullptr;}
-
-            //! Delete a specific entry from the symbol cache.
-            virtual void _DeleteSymbol(IDisplaySymbol* symbol) {}
-
-            //! Define a texture
-            virtual void _DefineTextureId(uintptr_t textureId, Point2dCR imageSize, bool enableAlpha, uint32_t imageFormat, Byte const* imageData) {}
-
-            //! Check if a texture is defined
-            virtual bool _IsTextureIdDefined(uintptr_t textureId) {return false;}
-
-            //! Delete a specific texture, tile, or icon.
-            virtual void _DeleteTexture(uintptr_t textureId) {}
-
-            //! Delete a specific texture, tile, or icon.
-            virtual void _DeleteMaterial (uintptr_t textureId) {}
-
-            //! Define a tile texture
-            virtual void _DefineTile(uintptr_t textureId, char const* tileName, Point2dCR imageSize, bool enableAlpha, uint32_t imageFormat, uint32_t pitch, Byte const* imageData) {}
-
-            //! Draw a tile texture
-            virtual void _DrawTile(IViewDrawR, uintptr_t textureId, DPoint3d const* verts) {}
-
-            //! Create a 3D multi-resolution image.
-            virtual QvMRImage* _CreateQvMRImage(DPoint3dCP fourCorners, Point2dCR imageSize, Point2dCR tileSize, bool enableAlpha, int format, int tileFlags, int numLayers) {return nullptr;}
-
-            //! Delete specified qvMRImage.
-            virtual void _DeleteQvMRImage(QvMRImage* qvMRI) {}
-
-            //! Add an image tile to a qvMRImage.
-            virtual QvElem* _CreateQvTile(bool is3d, QvCacheP hCache, QvMRImage* mri, uintptr_t textureId, int layer, int row, int column, int numLines, int bytesPerLine, Point2dCR bufferSize, Byte const* pBuffer) {return nullptr;}
-
-            //! Define a custom raster format(QV_*_FORMAT) for color index data. Return 0 if error.
-            virtual int _DefineCIFormat(int dataType, int numColors, QvUInt32 const* pTBGRColors){return 0;}
-
-            //! An InteractiveHost may choose to allow applications to display non-persistent geometry during an update.
-            virtual void _CallViewTransients(ViewContextR, bool isPreupdate) {}
-
-            //! @return Value to use for display control setting of mesh edges marked as invisible and for bspline curve/surface control polygons.
-            virtual ControlPolyDisplay _GetControlPolyDisplay() {return ControlPolyDisplay::ByElement;}
-
-            virtual bool _WantInvertBlackBackground() {return false;}
-
-            virtual bool _GetModelBackgroundOverride(ColorDef& rgbColor) {return false;}
-
-            //! If true, the UI icons that this library loads will be processed to darken their edges to attempt to increase visibility.
-            virtual bool _ShouldEnhanceIconEdges() {return false;}
-
-            virtual bool _WantDebugElementRangeDisplay() {return false;}
-
-            virtual void _CacheQvGeometryMap(ViewContextR viewContext, uintptr_t rendMatID) {}
-
-            // Send material to QuickVision.
-            virtual BentleyStatus _SendMaterialToQV(MaterialCR material, ColorDef elementColor, DgnViewportP viewport) {return ERROR;}
-
-            //! Supported color depths for this library's UI icons.
-            enum class IconColorDepth
-                {
-                Bpp32,    //!< 32 BPP icons will be used (transparency)
-                Bpp24     //!< 24 BPP icons will be used (no transparency)
-                };
-
-            //! Gets the desired color depth of the UI icons that this library loads. At this time, 32 is preferred, but 24 can be used if required.
-            virtual IconColorDepth _GetIconColorDepth() {return IconColorDepth::Bpp32;}
-
-            //! Get the longest amount of time allowed between clicks to be interpreted as a double click. Units are milliseconds.
-            virtual uint32_t _GetDoubleClickTimeout() {return 500;} // default to 1/2 second
-
-            //! Return minimum ratio between near and far clip planes for cameras - for z-Buffered output this is dictated by the depth of the z-Buffer
-            //! for pre DX11 this was .0003 - For DX11 it is approximately 1.0E-6.
-            virtual double _GetCameraFrustumNearScaleLimit() { return 1.0E-6; }
-
-            virtual void _DrawInVp(HitDetailCP, DgnViewportR vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const {}
-
-            //! Gets the directory that holds the sprite definition files.
-            virtual StatusInt _GetSpriteContainer(BeFileNameR spritePath, Utf8CP spriteNamespace, Utf8CP spriteName) { return BSIERROR; }
-
-            //! Return false to inhibit creating rule lines for surface/solid geometry for wireframe display.
-            //! Can be used to improve display performance in applications that only work in shaded views (or those that will clear all QvElems before switching to wireframe)
-            virtual bool _WantWireframeRuleDisplay() {return true;}
-
-        }; // GraphicsAdmin
-
         //! Support for elements that store their data as Parasolid or Acis breps. Also required
         //! to output element graphics as solid kernel entities and facet sets.
         struct SolidsKernelAdmin : IHostObject
@@ -657,19 +534,21 @@ public:
             virtual BentleyStatus _FacetBody(IFacetTopologyTablePtr& out, ISolidKernelEntityCR in, IFacetOptionsR options) const {return _FacetBody(out, in, 0.0);}
 
             //! Output a ISolidKernelEntity as one or more closed planar shapes (may have holes) and surfaces to the supplied view context.
+            //! @param[in,out] graphic The graphic to append the surface geometry to.
             //! @param[in] in The solid kernel entity to draw.
             //! @param[in] context The context to output the body to.
             //! @param[in] simplify if true faces are output as simple types (CurveVector, SolidPrimitive, and MSBSplineSurface) instead of sheet bodies.
             //! @return SUCCESS if operation was handled.
-            virtual BentleyStatus _OutputBodyAsSurfaces(ISolidKernelEntityCR in, ViewContextR context, bool simplify = true) const {return ERROR;}
+            virtual BentleyStatus _OutputBodyAsSurfaces(Render::GraphicR graphic, ISolidKernelEntityCR in, ViewContextR context, bool simplify = true) const {return ERROR;}
 
             //! Output a ISolidKernelEntity as a wireframe representation.
+            //! @param[in,out] graphic The graphic to append the edge and face hatch curve geometry to.
             //! @param[in] in The solid kernel entity.
             //! @param[in] context The context to output the body to.
             //! @param[in] includeEdges Include wire geometry for body edges.
             //! @param[in] includeFaceIso Include wire geometry for face isoparametrics.
             //! @return SUCCESS if operation was handled.
-            virtual BentleyStatus _OutputBodyAsWireframe(ISolidKernelEntityCR in, ViewContextR context, bool includeEdges = true, bool includeFaceIso = true) const {return ERROR;}
+            virtual BentleyStatus _OutputBodyAsWireframe(Render::GraphicR graphic, ISolidKernelEntityCR in, ViewContextR context, bool includeEdges = true, bool includeFaceIso = true) const {return ERROR;}
 
             //! Return a CurveVector representation for a sheet body with a single planar face.
             //! @param[in] in The solid kernel entity.
@@ -682,6 +561,7 @@ public:
             virtual CurveVectorPtr _WireBodyToCurveVector(ISolidKernelEntityCR in) const {return nullptr;}
 
             //! Output a cut section through an ISolidKernelEntity to the supplied view context.
+            //! @param[in,out] graphic The graphic to append the cut geometry to.
             //! @param[in] in The solid kernel entity to display a section cut through.
             //! @param[in] transform The local (UOR) transform (not entity transform).
             //! @param[in] context The context to output the cut section to.
@@ -691,7 +571,7 @@ public:
             //! @param[in] clipMask mask detailing which directions are being clipped.
             //! @param[in] compoundDrawState - used for generating CurvePrimitiveId - cannot be extracted from context as this is only for output (not context for this cut).
             //! @return SUCCESS if operation was handled.
-            virtual BentleyStatus _OutputBodyCut(ISolidKernelEntityCR in, TransformCP transform, ViewContextR context, DPlane3dCR plane, DRange2dCR clipRange, RotMatrixCR clipMatrix, ClipMask clipMask, CompoundDrawState* compoundDrawState) const {return ERROR;}
+            virtual BentleyStatus _OutputBodyCut(Render::GraphicR graphic, ISolidKernelEntityCR in, TransformCP transform, ViewContextR context, DPlane3dCR plane, DRange2dCR clipRange, RotMatrixCR clipMatrix, ClipMask clipMask, CompoundDrawState* compoundDrawState) const {return ERROR;}
 
             //! Stretch faces/edges of a solid/surface kernel entity.
             //! @param[in] in The solid kernel entity to strecth.
@@ -867,11 +747,12 @@ public:
             virtual bool _ClosestPoint(ISolidKernelEntityCR entity, DPoint3dCR testPt, ISubEntityPtr& subEntity, DPoint3dR point, DPoint2dR param, bool preferFace = false) const {return false;}
 
             //! Output the geometry for the supplied sub-entity to the specified context.
+            //! @param[in,out] graphic The graphic to add the sub-entity geometry to.
             //! @param[in] subEntity The solid kernel sub-entity to draw.
             //! @param[in] context The context to output the sub-entity to.
             //! @return SUCCESS if a valid solid kernel sub-entity was specified.
-            //! @note Can be used for selection dynamics as well as to collect sub-entity geometry as a CurveVector or SolidPrimitive using an IElementGraphicsProcessor.
-            virtual BentleyStatus _Draw(ISubEntityCR subEntity, ViewContextR context) const {return ERROR;}
+            //! @note Can be used for selection dynamics as well as to collect sub-entity geometry as a CurveVector or SolidPrimitive using an IGeometryProcessor.
+            virtual BentleyStatus _Draw(Render::GraphicR graphic, ISubEntityCR subEntity, ViewContextR context) const {return ERROR;}
 
             //! Evaluate a uv parameter on a face sub-entity.
             //! @param[in] subEntity The solid kernel sub-entity to query.
@@ -1014,7 +895,6 @@ public:
         RasterAttachmentAdmin*  m_rasterAttachmentAdmin;
         PointCloudAdmin*        m_pointCloudAdmin;
         NotificationAdmin*      m_notificationAdmin;
-        GraphicsAdmin*          m_graphicsAdmin;
         MaterialAdmin*          m_materialAdmin;
         SolidsKernelAdmin*      m_solidsKernelAdmin;
         GeoCoordinationAdmin*   m_geoCoordAdmin;
@@ -1055,9 +935,6 @@ public:
         //! Supply the NotificationAdmin for this session. This method is guaranteed to be called once per thread from DgnPlatformLib::Host::Initialize and never again.
         DGNPLATFORM_EXPORT virtual NotificationAdmin& _SupplyNotificationAdmin();
 
-        //! Supply the GraphicsAdmin for this session. This method is guaranteed to be called once per thread from DgnPlatformLib::Host::Initialize and never again.
-        DGNPLATFORM_EXPORT virtual GraphicsAdmin& _SupplyGraphicsAdmin();
-
         //! Supply the MaterialAdmin for this session. This method is guaranteed to be called once per thread from DgnPlatformLib::Host::Initialize and never again.
         DGNPLATFORM_EXPORT virtual MaterialAdmin& _SupplyMaterialAdmin();
 
@@ -1094,13 +971,11 @@ public:
             m_rasterAttachmentAdmin = nullptr;
             m_pointCloudAdmin = nullptr;
             m_notificationAdmin = nullptr;
-            m_graphicsAdmin = nullptr;
             m_materialAdmin = nullptr;
             m_solidsKernelAdmin = nullptr;
             m_geoCoordAdmin = nullptr;
             m_txnAdmin = nullptr;
             m_acsManager = nullptr;
-            //  m_lineStyleManager = nullptr;
             m_formatterAdmin = nullptr;
             m_realityDataAdmin = nullptr;
             m_scriptingAdmin = nullptr;
@@ -1118,13 +993,11 @@ public:
         RasterAttachmentAdmin&  GetRasterAttachmentAdmin() {return *m_rasterAttachmentAdmin;}
         PointCloudAdmin&        GetPointCloudAdmin()       {return *m_pointCloudAdmin;}
         NotificationAdmin&      GetNotificationAdmin()     {return *m_notificationAdmin;}
-        GraphicsAdmin&          GetGraphicsAdmin()         {return *m_graphicsAdmin;}
         MaterialAdmin&          GetMaterialAdmin()         {return *m_materialAdmin;}
         SolidsKernelAdmin&      GetSolidsKernelAdmin()     {return *m_solidsKernelAdmin;}
         GeoCoordinationAdmin&   GetGeoCoordinationAdmin()  {return *m_geoCoordAdmin;}
         TxnAdmin&               GetTxnAdmin()              {return *m_txnAdmin;}
         IACSManagerR            GetAcsManager()            {return *m_acsManager;}
-        //  LineStyleManagerR       GetLineStyleManager()      {return *m_lineStyleManager;}
         FormatterAdmin&         GetFormatterAdmin()        {return *m_formatterAdmin;}
         RealityDataAdmin&       GetRealityDataAdmin()      {return *m_realityDataAdmin;}
         ScriptAdmin&            GetScriptAdmin()           {return *m_scriptingAdmin;}
@@ -1190,5 +1063,5 @@ public:
     DGNPLATFORM_EXPORT static void ForwardAssertionFailures(BeAssertFunctions::T_BeAssertHandler*);
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 

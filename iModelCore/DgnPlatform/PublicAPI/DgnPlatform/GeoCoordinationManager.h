@@ -10,7 +10,7 @@
 
 #include    "IGeoCoordServices.h"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 /*=================================================================================**//**
 * The GeoCoordinationManager provides access to certain GeoCoordination services.
@@ -22,7 +22,7 @@ struct GeoCoordinationManager : NonCopyableClass
 DGNPLATFORM_EXPORT  static IGeoCoordinateServicesP   GetServices();
 };  // GeoCoordinationManager
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 
 

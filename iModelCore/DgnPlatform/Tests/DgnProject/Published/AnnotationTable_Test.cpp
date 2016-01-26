@@ -224,7 +224,7 @@ void SetUp () override
     viewController.SetStandardViewRotation(StandardView::Top);
     viewController.LookAtVolume(madeUpRange, nullptr, &viewMargin);
     //viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
-    viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::Wireframe);
+    viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);
     viewController.ChangeCategoryDisplay(m_categoryId, true);
     viewController.ChangeModelDisplay(m_modelId, true);
 

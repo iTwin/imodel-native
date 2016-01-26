@@ -10,7 +10,7 @@
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <DgnPlatform/ClipVector.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 //! Utilities to help save and restore values as JSON
@@ -322,7 +322,6 @@ static void DPoint3dVectorFromJson (bvector<DPoint3d>& points, JsonValueCR inVal
         points.push_back (pt);
         }
     }
-
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

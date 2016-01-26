@@ -374,10 +374,11 @@ void            SnapContext::SetSnapPoint (DPoint3dCR snapPt, bool forceHot)
     m_snapPath->SetHeat (withinAperture ? SNAP_HEAT_InRange : (forceHot ? SNAP_HEAT_NotInRange : SNAP_HEAT_None));
     }
 
+#if defined (NEEDSWORK_RENDER_GRAPHIC)
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct SnapGraphicsProcessor : IElementGraphicsProcessor
+struct SnapGraphicsProcessor : IGeometryProcessor
 {
 private:
 
@@ -469,7 +470,7 @@ bool TestCurveLocation (CurveVectorCR curvesLocal)
 virtual BentleyStatus _ProcessCurveVector (CurveVectorCR curves, bool isFilled) override
     {
     // Quick exclude of geometry that didn't generate the hit...
-    if (m_snapContext.GetSnapDetail()->GetGeomDetail().GetGeomStreamEntryId() != m_context->GetGeomStreamEntryId())
+    if (m_snapContext.GetSnapDetail()->GetGeomDetail().GetGeometryStreamEntryId() != m_context->GetGeometryStreamEntryId())
         return SUCCESS;
 
     TestCurveLocation(curves);
@@ -483,7 +484,7 @@ virtual BentleyStatus _ProcessCurveVector (CurveVectorCR curves, bool isFilled) 
 virtual BentleyStatus _ProcessFacets (PolyfaceQueryCR meshData, bool isFilled) override
     {
     // Quick exclude of geometry that didn't generate the hit...
-    if (m_snapContext.GetSnapDetail()->GetGeomDetail().GetGeomStreamEntryId() != m_context->GetGeomStreamEntryId())
+    if (m_snapContext.GetSnapDetail()->GetGeomDetail().GetGeometryStreamEntryId() != m_context->GetGeometryStreamEntryId())
         return SUCCESS;
 
     PolyfaceVisitorPtr  visitor = PolyfaceVisitor::Attach(meshData);
@@ -539,7 +540,7 @@ static bool DoSnapUsingClosestCurve (SnapContextR snapContext)
     {
     SnapGraphicsProcessor processor(snapContext);
 
-    ElementGraphicsOutput::Process(processor, snapContext.GetDgnDb());
+    GeometryProcessor::Process(processor, snapContext.GetDgnDb());
 
     if (nullptr == snapContext.GetSnapDetail()->GetGeomDetail().GetCurvePrimitive())
         return false; // No edge found...
@@ -554,7 +555,7 @@ static bool DoSnapUsingClosestCurve (GeometrySourceCR source, SnapContextR snapC
     {
     SnapGraphicsProcessor processor(snapContext);
 
-    ElementGraphicsOutput::Process(processor, source);
+    GeometryProcessor::Process(processor, source);
 
     if (nullptr == snapContext.GetSnapDetail()->GetGeomDetail().GetCurvePrimitive())
         return false; // No edge found...
@@ -563,6 +564,7 @@ static bool DoSnapUsingClosestCurve (GeometrySourceCR source, SnapContextR snapC
     }
 
 }; // SnapEdgeProcessor
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/06
@@ -591,6 +593,7 @@ SnapStatus      SnapContext::DoDefaultDisplayableSnap ()
             DgnElementCPtr   element = snap->GetElement();
             GeometrySourceCP source = (element.IsValid() ? element->ToGeometrySource() : nullptr);
 
+#if defined (NEEDSWORK_RENDER_GRAPHIC)
             if (nullptr == source)
                 return SnapGraphicsProcessor::DoSnapUsingClosestCurve(*this) ? SnapStatus::Success : SnapStatus::NotSnappable;
 
@@ -600,6 +603,7 @@ SnapStatus      SnapContext::DoDefaultDisplayableSnap ()
                 if (SnapGraphicsProcessor::DoSnapUsingClosestCurve (*source, *this))
                     return SnapStatus::Success;
                 }
+#endif
 
             DPoint3d hitPoint = (nullptr != source->ToGeometrySource3d() ? source->ToGeometrySource3d()->GetPlacement().GetOrigin() : DPoint3d::From(source->ToGeometrySource2d()->GetPlacement().GetOrigin()));
 

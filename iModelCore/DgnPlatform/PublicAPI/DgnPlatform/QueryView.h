@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/QueryView.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,7 +10,7 @@
 #include <DgnPlatform/QueryModel.h>
 #include <DgnPlatform/ViewController.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 //! Populates a QueryModel with \ref DgnElementGroup from a SQL query. The query can combine 
@@ -25,81 +25,44 @@ struct EXPORT_VTABLE_ATTRIBUTE QueryViewController : CameraViewController, BeSQL
 
 #if !defined (DOCUMENTATION_GENERATOR)
 //__PUBLISH_SECTION_END__
-    friend struct QueryModel::Selector;
+    friend struct QueryModel::Processor; // For BindModelAndCategory()...
 //__PUBLISH_SECTION_START__
 protected:
 
     bool        m_notifyOnViewUpdated;
     bool        m_forceNewQuery;    //!< If true, before doing the next view update, repopulate the QueryModel with the result of the query 
     bool        m_noQuery;          //!< If true, *only* draw the "always drawn" list - do not query for other elements
-    bool        m_selectProcessingActive;
-    uint64_t    m_lastUpdateTime;
-    double      m_lastQueryTime;
-    double      m_fps;
-    DrawPurpose m_lastUpdateType;
-    DRange3d    m_secondaryVolume;  //  ignored unless m_secondaryHitLimit > 0
-    uint32_t    m_secondaryHitLimit;
-    uint32_t    m_intermediatePaintsThreshold;
-    uint32_t    m_maxToDrawInDynamicUpdate;
-    uint32_t    m_maxDrawnInDynamicUpdate;
+    bool        m_needProgressiveDisplay;
+    uint64_t    m_maxElementMemory;
     Frustum     m_startQueryFrustum;
     Frustum     m_saveQueryFrustum;
     QueryModelR m_queryModel;
     DgnElementIdSet m_alwaysDrawn;
     DgnElementIdSet m_neverDrawn;
 
-    void ComputeFps();
     DGNPLATFORM_EXPORT void EmptyQueryModel();
     void QueryModelExtents(DRange3dR, DgnViewportR);
 
     //! Populate the QueryModel with the results of the query.
-    void LoadElementsForUpdate(DgnViewportR viewport, DrawPurpose updateType, ICheckStopP checkStop, bool needNewQuery, bool waitForQueryToFinish, bool stopQueryOnAbort);
+    void LoadElementsForUpdate(DgnViewportR viewport, DrawPurpose updateType, CheckStopP checkStop, bool needNewQuery, bool waitForQueryToFinish, bool stopQueryOnAbort);
     void SaveSelectResults();
-    void StartSelectProcessing(DgnViewportR, DrawPurpose updateType);
+    void PickUpResults();
+    bool FrustumChanged(DgnViewportCR vp) const;
+    void QueueQuery(DgnViewportR, UpdatePlan const&);
     DGNPLATFORM_EXPORT virtual bool _IsInSet(int nVal, BeSQLite::DbValue const*) const override;
     virtual void _FillModels() override {} // query models do not load elements in advance
     DGNPLATFORM_EXPORT virtual void _OnAttachedToViewport(DgnViewportR) override;
 
 protected:
-    //! Called at the beginning of a healing update to populate the QueryModel.
-    //! @param[in]  viewport    The viewport that will display the graphics
-    //! @param[in]  context     The context that is processing the graphics.
-    //! @param[in]  fullHeal    if true, this heal is of the entire viewport. Otherwise, just a portion of the viewport is being healed.
-    //! @remarks Applications that override this method normally perform any additional work that is required and then 
-    //! call QueryViewController::_OnHealUpdate to let it decide if is necessary to repopulate the QueryModel.
-    //! @remarks An application may use this and _OnFullUpdate to decide when to display some indication such as a spinner to 
-    //! let the user know that the update is in progress.  The application can override SpatialViewController::_OnUpdateComplete to stop the spinner.
-    DGNPLATFORM_EXPORT virtual void _OnHealUpdate(DgnViewportR viewport, ViewContextR context, bool fullHeal) override;
-
     //! Called at the beginning of a full update to populate the QueryModel.
     //! @param[in] viewport    The viewport that will display the graphics
-    //! @param[in] context     The context that is processing the graphics.
-    //! @param[in] info        Options
-    //! @remarks Applications that override this method normally perform any additional work that is required and then call QueryViewController::_OnFullUpdate to 
+    //! @param[in] plan The update plan
+    //! @remarks Applications that override this method normally perform any additional work that is required and then call QueryViewController::_OnUpdate to 
     //!  let it decide if is necessary to repopulate the QueryModel.
     //! @remarks An application may use this and _OnFullUpdate to decide when to display some indication such as a spinner to 
     //! let the user know that the update is in progress.  The application can override SpatialViewController::_OnUpdateComplete
     //! to know when to stop the spinner.
-    DGNPLATFORM_EXPORT virtual void _OnFullUpdate(DgnViewportR viewport, ViewContextR context, FullUpdateInfo& info) override;
-
-    //! Called at the beginning of a dynamic update to populate the QueryModel.
-    //! @param[in]  viewport    The viewport that will display the graphics
-    //! @param[in]  context     The context that is processing the graphics.
-    //! @param[in]  info        Options
-    //! @remarks  Although an application can override this method, the decision on whether or not to repopulate the QueryModel in a dynamic update is typically left to
-    //! QueryViewController::_OnDynamicUpdate. It in turn defers the decision to _WantElementLoadStart.
-    DGNPLATFORM_EXPORT virtual void _OnDynamicUpdate(DgnViewportR viewport, ViewContextR context, DynamicUpdateInfo& info) override;
-
-    //! QueryViewController uses this to determine if it should start another background query to repopulate the query model.
-    //! QueryViewController calls this from _OnDynamicUpdate and when it detects that the background element query processing is idle during a dynamic update.
-    //! @param[in] viewport    The viewport that will display the graphics
-    //! @param[in] currentTime The current time in seconds.
-    //! @param[in] lastQueryTime The time the last query was started.
-    //! @param[in] maxElementsDrawnInDynamicUpdate The maximum number of elements drawn in any dynamic frame since the QueryModel was last populated.
-    //! @param[in] queryFrustum The frustum used in the last range query used to populate the QueryModel.
-    //! @returns  Return true to start another round.
-    //! @remarks It is very rare than an application needs to override this method.
-    DGNPLATFORM_EXPORT virtual bool _WantElementLoadStart(DgnViewportR viewport, double currentTime, double lastQueryTime, uint32_t maxElementsDrawnInDynamicUpdate, Frustum const& queryFrustum);
+    DGNPLATFORM_EXPORT virtual void _OnUpdate(DgnViewportR viewport, UpdatePlan const& plan) override;
 
     //! Called when the visibility of a category is changed.
     DGNPLATFORM_EXPORT virtual void _OnCategoryChange(bool singleEnabled) override;
@@ -116,10 +79,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR context) override;
 
     //! Allow the supplied ViewContext to visit every element in the view, not just the best elements in the query model.
-    DGNPLATFORM_EXPORT void _VisitElements(ViewContextR) override;
-
-    //! Return the default maximum number of elements to load. This is then scaled by the value returned from _GetMaxElementFactor.
-    virtual uint32_t _GetMaxElementsToLoad() {return 5000;}
+    DGNPLATFORM_EXPORT void _VisitAllElements(ViewContextR) override;
 #endif
 
 protected:
@@ -141,7 +101,7 @@ __PUBLISH_INSERT_FILE__  QueryView_GetRTreeMatchSql.sampleCode
      */
     DGNPLATFORM_EXPORT virtual Utf8String _GetRTreeMatchSql(DgnViewportR viewport);
 
-    DGNPLATFORM_EXPORT void BindModelAndCategory(BeSQLite::StatementR stmt) const;
+    void BindModelAndCategory(BeSQLite::StatementR stmt, RTreeTester& matcher) const;
 
     //! Compute the range of the elements and graphics in the QueryModel.
     //! @remarks This function may also load elements to determine the range.
@@ -151,16 +111,9 @@ __PUBLISH_INSERT_FILE__  QueryView_GetRTreeMatchSql.sampleCode
     //! @return \a true if the returned \a range is complete. Otherwise the caller will compute the tightest fit for all loaded elements.
     DGNPLATFORM_EXPORT virtual FitComplete _ComputeFitRange(DRange3dR range, DgnViewportR viewport, FitViewParamsR params) override;
 
-    //! Return a value in the range -100 (fewest) to 100 (most) to determine the maximum number of elements loaded by the query.
-    //! 0 means the "default" number of elements.
-    virtual int32_t _GetMaxElementFactor() {return 0;}
-
-    //! Return the size in pixels of the smallest element that should be displayed.
-    virtual double _GetMinimumSizePixels(DrawPurpose updateType) {return 0.1;}
-
     //! Return the maximum number of bytes of memory that should be used to hold loaded element data. Element data may exceed this limit at times and is trimmed back at intervals.
     //! It is recommended that applications use this default implementation and instead control memory usage by overriding _GetMaxElementFactor
-    virtual uint64_t _GetMaxElementMemory() {return GetMaxElementMemory();}
+    virtual uint64_t _GetMaxElementMemory(DgnViewportCR vp) {return ComputeMaxElementMemory(vp);}
 
 public:
     //! Construct the view controller.                          
@@ -173,11 +126,11 @@ public:
     void SetForceNewQuery(bool newValue) { m_forceNewQuery = newValue; }
 //__PUBLISH_SECTION_START__
 
-    //! Return the maximum number of bytes of memory that should be used to hold loaded element data. Element data may exceed this limit at times and is trimmed back at intervals.
-    DGNPLATFORM_EXPORT uint64_t GetMaxElementMemory();
+    //! Computes and returns the maximum number of bytes of memory that should be used to hold loaded element data. Element data may exceed this limit at times and is trimmed back at intervals.
+    DGNPLATFORM_EXPORT uint64_t ComputeMaxElementMemory(DgnViewportCR vp);
 
-    //! Return the maximum number of elements to hold in the associated QueryModel.
-    DGNPLATFORM_EXPORT uint32_t GetMaxElementsToLoad();
+    //! Returns the value computed on the last call to ComputeMaxElementMemory;
+    DGNPLATFORM_EXPORT uint64_t GetMaxElementMemory();
 
     //! Get the list of elements that are always drawn
     DgnElementIdSet const& GetAlwaysDrawn() {return m_alwaysDrawn;}
@@ -197,18 +150,6 @@ public:
 
     //! Gets the QueryModel that this QueryViewController uses.
     QueryModelR GetQueryModel() const {return m_queryModel;}
-
-    //! Enables a secondary range query.
-    DGNPLATFORM_EXPORT void EnableSecondaryQueryRange(uint32_t hitLimit, DRange3dCR volume);
-
-    //! Disables secondary range query.
-    void DisableSecondaryQueryRange(){m_secondaryHitLimit=0;}
-
-    //! Return a counter that indicates when the last query was run. This counter is relative to some unspecified start time, 
-    //! but can conceptually be thought of as the number of seconds since the process started.
-    //! @see BeTimeUtilities::QuerySecondsCounter
-    //! @note this method can be used to determine if related caches need to be updated
-    double GetLastQueryCounter() {return m_lastQueryTime;}
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/VolumeElement.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY_EC
 
 #define VOLUME_DEFAULT_CATEGORY_NAME "VolumeCategory"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace dgn_ElementHandler
     {
@@ -75,9 +75,9 @@ void VolumeElement::SetupGeomStream(DPoint3dCR origin, bvector<DPoint2d> const& 
     DgnModelPtr model = GetModel();
     BeAssert(model.IsValid());
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, GetCategoryId(), origin, YawPitchRollAngles());
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*model, GetCategoryId(), origin, YawPitchRollAngles());
     builder->Append(*extrusionSolid);
-    builder->SetGeomStreamAndPlacement(*this);
+    builder->SetGeometryStreamAndPlacement(*this);
     }
 
 //--------------------------------------------------------------------------------------
@@ -134,7 +134,6 @@ DgnElementIdSet VolumeElement::QueryVolumes(DgnDbCR db)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   11/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-// static
 DgnElementId VolumeElement::QueryVolumeByLabel(DgnDbCR db, Utf8CP label)
     {
     CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " DGN_SCHEMA(DGN_CLASSNAME_VolumeElement) " WHERE Label=? LIMIT 1"); // find first if label not unique
@@ -152,17 +151,17 @@ DgnElementId VolumeElement::QueryVolumeByLabel(DgnDbCR db, Utf8CP label)
 //+---------------+---------------+---------------+---------------+---------------+-----
 BentleyStatus VolumeElement::ExtractExtrusionDetail(DgnExtrusionDetail& extrusionDetail) const
     {
-    ElementGeometryCollection geomCollection(*this);
+    GeometryCollection geomCollection(*this);
 
-    ElementGeometryCollection::const_iterator iter = geomCollection.begin();
+    GeometryCollection::const_iterator iter = geomCollection.begin();
     if (iter == geomCollection.end())
         {
         BeAssert(false && "Expected DgnExtrusion in the geometry source for VolumeElement-s");
         return ERROR;
         }
 
-    (*iter)->GetAsISolidPrimitive()->TryGetDgnExtrusionDetail(extrusionDetail);
-    extrusionDetail.TransformInPlace(geomCollection.GetGeometryToWorld());
+    iter.GetGeometryPtr()->GetAsISolidPrimitive()->TryGetDgnExtrusionDetail(extrusionDetail);
+    extrusionDetail.TransformInPlace(iter.GetGeometryToWorld());
     
     BeAssert(++iter == geomCollection.end() && "Did not expect more than two entries in geometry source for VolumeElement-s");
     if (extrusionDetail.m_baseCurve->GetBoundaryType() != CurveVector::BOUNDARY_TYPE_Outer)
@@ -265,7 +264,7 @@ void VolumeElement::ClearClip() const
     {
     if (m_viewContext)
         {
-        m_viewContext->PopTransformClip();
+        m_viewContext->PopClip();
         m_viewContext = nullptr;
         }
 
@@ -318,8 +317,7 @@ unique_ptr<FenceParams> VolumeElement::CreateFence(DgnViewportP viewport, bool a
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   01/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-// static
-unique_ptr<DgnViewport> VolumeElement::CreateNonVisibleViewport (DgnDbR project) 
+DgnViewportPtr VolumeElement::CreateNonVisibleViewport (DgnDbR project) 
     {
     // TODO: Is there a way to avoid specifying a view??
     // TODO: Is it cool to assume the first view found can be used to create a CameraViewController?
@@ -332,7 +330,8 @@ unique_ptr<DgnViewport> VolumeElement::CreateNonVisibleViewport (DgnDbR project)
     CameraViewControllerP viewController = new CameraViewController(project, viewId);
     viewController->Load();
     viewController->SetCameraOn (false); // Has to be done after Load()!!
-    return std::unique_ptr<NonVisibleViewport> (new NonVisibleViewport (*viewController));
+
+    return new NonVisibleViewport (nullptr, *viewController);
     }
     
 //--------------------------------------------------------------------------------------
@@ -377,7 +376,7 @@ void VolumeElement::FindElements(DgnElementIdSet& elementIds, FenceParamsR fence
 //+---------------+---------------+---------------+---------------+---------------+-----
 void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnDbR dgnDb, bool allowPartialOverlaps /*=true*/) const
     {
-    unique_ptr<DgnViewport> viewport = CreateNonVisibleViewport (dgnDb);
+    DgnViewportPtr viewport = CreateNonVisibleViewport (dgnDb);
     unique_ptr<FenceParams> fence = this->CreateFence (viewport.get(), allowPartialOverlaps);
     
     // Prepare element query by range
@@ -462,7 +461,7 @@ bool VolumeElement::ContainsElement(DgnElementCR element, bool allowPartialOverl
     if (nullptr == geomSource)
         return false;
 
-    unique_ptr<DgnViewport> viewport = CreateNonVisibleViewport(element.GetDgnDb());
+    DgnViewportPtr viewport = CreateNonVisibleViewport(element.GetDgnDb());
     unique_ptr<FenceParams> fence = this->CreateFence (viewport.get(), allowPartialOverlaps);
 
     return fence->AcceptElement(*geomSource);
@@ -479,4 +478,4 @@ void VolumeElement::Fit (DgnViewport& viewport, double const* aspectRatio /*=nul
     viewport.GetViewControllerR().LookAtVolume(volumeRange, aspectRatio, margin);
     }
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

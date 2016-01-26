@@ -84,7 +84,7 @@ StatusInt util_readRegistry (WStringR, WCharCP) {BeAssert (false); return ERROR;
 #pragma comment (lib, "shell32")
 
 USING_NAMESPACE_BENTLEY
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 
 /*---------------------------------------------------------------------------------**//**

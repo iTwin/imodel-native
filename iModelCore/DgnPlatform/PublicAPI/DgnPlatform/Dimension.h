@@ -19,7 +19,7 @@
 #include "DimensionElem.h"
 //__PUBLISH_SECTION_END__
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 struct DimArcInfo
     {
     DPoint3d       start;
@@ -32,7 +32,7 @@ struct DimArcInfo
     };
 
 struct AdimSegmentTextBoxes;
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 DGNPLATFORM_TYPEDEFS(AdimSegmentTextBoxes)
 DGNPLATFORM_TYPEDEFS(DimMLText)

@@ -11,7 +11,7 @@
 
 #include <DgnPlatform/DgnPlatform.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 //! Base class for UI progress meters that process multiple steps and tasks within those steps.
@@ -69,6 +69,6 @@ public:
     void SetAborted() {m_aborted = ABORT_Yes;}
     };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 /** @endcond */

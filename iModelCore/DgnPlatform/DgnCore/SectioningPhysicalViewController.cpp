@@ -184,58 +184,71 @@ void SectioningViewController::_DrawView(ViewContextR context)
 
     context.PushClip(*insideForward);
     DrawViewInternal(context);
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context.PopTransformClip();
+#else
+    context.PopClip();
+#endif
 
     //  Draw the clip planes themselves
     m_clip->Draw(context);
     
     //  Draw the stuff outside of the clip
     context.PushClip(*GetClipVectorInternal(m_pass = ClipVolumePass::InsideBackward));
-    SetOverrideMatSymb(context);
+    SetOverrideGraphicParams(context);
     DrawViewInternal(context);
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context.PopTransformClip();
+#else
+    context.PopClip();
+#endif
 
     context.PushClip(*GetClipVectorInternal(m_pass = ClipVolumePass::Outside));
-    SetOverrideMatSymb(context);
+    SetOverrideGraphicParams(context);
     DrawViewInternal(context);
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context.PopTransformClip();
+#else
+    context.PopClip();
+#endif
 
-    context.GetOverrideMatSymb()->Clear();
-    context.GetIDrawGeom().ActivateOverrideMatSymb(context.GetOverrideMatSymb());
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    context.GetOverrideGraphicParams()->Clear();
+    context.GetCurrentGraphicR().ActivateOverrideGraphicParams(context.GetOverrideGraphicParams());
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SectioningViewController::_DrawElement(ViewContextR context, GeometrySourceCR element)
+Render::GraphicPtr SectioningViewController::_StrokeGeometry(ViewContextR context, GeometrySourceCR source, double pixelSize)
     {
     if (m_pass == ClipVolumePass::InsideForward)
-        {
-        T_Super::_DrawElement(context, element);
-        return;
-        }
+        return T_Super::_StrokeGeometry(context, source, pixelSize);
 
-    SetOverrideMatSymb(context);
-    element.Draw(context);
+    SetOverrideGraphicParams(context);
+    return source.Stroke(context, pixelSize);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SectioningViewController::SetOverrideMatSymb(ViewContextR context) const
+void SectioningViewController::SetOverrideGraphicParams(ViewContextR context) const
     {
     if (m_pass == ClipVolumePass::InsideForward)
         return;
 
     //  Everything outside of the inside-forward clip volume is grayed out and transparent.
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     ColorDef color = (m_pass == ClipVolumePass::InsideBackward)? ColorDef(0xcf00ffff) : ColorDef(0xcfffff00);
 
-    OvrMatSymbP overrideMatSymb = context.GetOverrideMatSymb();
+    OvrGraphicParamsP overrideMatSymb = context.GetOverrideGraphicParams();
     overrideMatSymb->Clear();
     overrideMatSymb->SetLineColor(color);
     overrideMatSymb->SetFillColor(color);
-    overrideMatSymb->SetFlags(overrideMatSymb->GetFlags() | MATSYMB_OVERRIDE_FillColorTransparency);
+    overrideMatSymb->SetFlags(overrideMatSymb->GetFlags() | OvrGraphicParams::FLAGS_FillColorTransparency);
     overrideMatSymb->SetWidth(0);
-    context.GetIDrawGeom().ActivateOverrideMatSymb(overrideMatSymb);
+    context.GetCurrentGraphicR().ActivateOverrideGraphicParams(overrideMatSymb);
+#endif
     }

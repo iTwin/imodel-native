@@ -20,7 +20,7 @@ DGNPLATFORM_REF_COUNTED_PTR(DynamicChangeTracker)
 #define TXN_TABLE_Depend   TXN_TABLE("Depend")
 #define TXN_TABLE_Models   TXN_TABLE("Models")
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 /*=================================================================================**//**
  @addtogroup TxnMgr
@@ -665,4 +665,4 @@ namespace dgn_TableHandler
     };
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

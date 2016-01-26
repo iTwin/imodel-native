@@ -300,7 +300,7 @@ void MissingHandlerTest::TestRestrictions(ElemInfo const& info, DgnDbR db, uint6
     // Change geometry
     auto model = db.Models().Get<SpatialModel>(m_defaultModelId);
     ASSERT_TRUE(model.IsValid());
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, pElem->GetCategoryId(), placement.GetOrigin());
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*model, pElem->GetCategoryId(), placement.GetOrigin());
     ASSERT_TRUE(builder.IsValid());
     CurveVectorPtr shape = computeShape(100);
     builder->Append(*shape);
@@ -308,7 +308,7 @@ void MissingHandlerTest::TestRestrictions(ElemInfo const& info, DgnDbR db, uint6
     ISolidPrimitivePtr cylinder = ISolidPrimitive::CreateDgnCone(cylinderDetail);
     ASSERT_TRUE(cylinder.IsValid());
     builder->Append(*cylinder);
-    EXPECT_EQ(SUCCESS == builder->SetGeomStreamAndPlacement(*pElem), ALLOWED(Restriction::SetGeometry));
+    EXPECT_EQ(SUCCESS == builder->SetGeometryStreamAndPlacement(*pElem), ALLOWED(Restriction::SetGeometry));
     }
 
 /*---------------------------------------------------------------------------------**//**

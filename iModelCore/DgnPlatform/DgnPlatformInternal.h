@@ -34,11 +34,10 @@
 #include <DgnPlatform/VecMath.h>
 #include <DgnPlatform/ECUtils.h>
 #include <DgnPlatform/DgnCoreAPI.h>
-#include <DgnPlatform/QvElemSet.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatformInternal/DgnCore/DgnCoreL10N.h>
 #include <DgnPlatform/NullContext.h>
-#include <DgnPlatform/SimplifyViewDrawGeom.h>
+#include <DgnPlatform/SimplifyGraphic.h>
 #include <DgnPlatform/ClipPrimitive.h>
 #include <DgnPlatform/ClipVector.h>
 #include <DgnPlatform/SectionClip.h>
@@ -52,7 +51,8 @@
 #include <DgnPlatform/RealityDataCache.h>
 #include <DgnPlatform/WebMercator.h>
 #include <DgnPlatform/ElementGeometry.h>
-#include <DgnPlatform/MSSmartPtr.h>
+#include <DgnPlatform/ElementGraphics.h>
+#include <DgnPlatform/AutoRestore.h>
 #include <Logging/bentleylogging.h>
 #include <Bentley/BeStringUtilities.h>
 #include <BeXml/BeXml.h>
@@ -68,7 +68,6 @@
 #include <Regions/rimsbsAPI.h>
 #include <DgnPlatform/IEditActionSource.h>
 #include <Logging/bentleylogging.h>
-#include <DgnPlatform/Tools/ostime.fdf>
 #include <DgnPlatform/Tools/stringop.h>
 #include <DgnPlatformInternal/DgnCore/ElemRangeCalc.h>
 #include <DgnPlatform/IGeoCoordServices.h>
@@ -80,7 +79,7 @@
 #include <DgnPlatform/DgnTexture.h>
 #include <DgnPlatform/DgnTrueColor.h>
 #include <DgnPlatform/GenericDomain.h>
-// #include <DgnPlatform/SolarUtility.h>
+#include <DgnPlatform/QueryView.h>
 
 #include "DgnCore/DgnCoreLog.h"
 
@@ -117,7 +116,8 @@ ILogger& LOGGER ## _getLogger()\
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
+USING_NAMESPACE_BENTLEY_RENDER
 USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_BENTLEY_EC
 using namespace std;

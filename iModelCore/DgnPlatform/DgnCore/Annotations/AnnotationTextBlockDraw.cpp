@@ -2,14 +2,14 @@
 |
 |     $Source: DgnCore/Annotations/AnnotationTextBlockDraw.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h> 
 #include <DgnPlatform/Annotations/Annotations.h>
 #include <DgnPlatform/TextStyleInterop.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
@@ -18,6 +18,7 @@ AnnotationTextBlockDraw::AnnotationTextBlockDraw(AnnotationTextBlockLayoutCR lay
     T_Super()
     {
     m_layout = &layout;
+    m_documentTransform.InitIdentity();
     }
 
 //---------------------------------------------------------------------------------------
@@ -26,6 +27,7 @@ AnnotationTextBlockDraw::AnnotationTextBlockDraw(AnnotationTextBlockLayoutCR lay
 void AnnotationTextBlockDraw::CopyFrom(AnnotationTextBlockDrawCR rhs)
     {
     m_layout = rhs.m_layout;
+    m_documentTransform = rhs.m_documentTransform;
     }
 
 //---------------------------------------------------------------------------------------
@@ -55,7 +57,7 @@ static void adjustForSubOrSuperScript(TextStringR ts, AnnotationTextRunCR textRu
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus AnnotationTextBlockDraw::DrawTextRun(AnnotationLayoutRunCR layoutRun, ViewContextR context) const
+BentleyStatus AnnotationTextBlockDraw::DrawTextRun(AnnotationLayoutRunCR layoutRun, Render::GraphicR graphic, ViewContextR context, GeometryParamsR geomParams, TransformCR transform) const
     {
     AnnotationTextRunCR run = (AnnotationTextRunCR)layoutRun.GetSeedRun();
     
@@ -71,19 +73,22 @@ BentleyStatus AnnotationTextBlockDraw::DrawTextRun(AnnotationLayoutRunCR layoutR
     TextStyleInterop::AnnotationToTextString(ts.GetStyleR(), *effectiveStyle);
     
     adjustForSubOrSuperScript(ts, run);
+
+    if (!transform.IsIdentity())
+        ts.ApplyTransform(transform);
     
-    context.GetCurrentDisplayParams().ResetAppearance();
+    geomParams.ResetAppearance();
 
     switch (effectiveStyle->GetColorType())
         {
         case AnnotationColorType::ByCategory: /* don't override */break;
-        case AnnotationColorType::RGBA: context.GetCurrentDisplayParams().SetLineColor(effectiveStyle->GetColorValue()); break;
+        case AnnotationColorType::RGBA: geomParams.SetLineColor(effectiveStyle->GetColorValue()); break;
         case AnnotationColorType::ViewBackground: BeAssert(false) /* unsupported */; break;
         default: BeAssert(false) /* unknown */; break;
         }
     
-    context.CookDisplayParams();
-    context.DrawTextString(ts);
+    context.CookGeometryParams(geomParams, graphic);
+    graphic.AddTextString(ts);
     
     return SUCCESS;
     }
@@ -91,7 +96,7 @@ BentleyStatus AnnotationTextBlockDraw::DrawTextRun(AnnotationLayoutRunCR layoutR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus AnnotationTextBlockDraw::DrawFractionRun(AnnotationLayoutRunCR layoutRun, ViewContextR context) const
+BentleyStatus AnnotationTextBlockDraw::DrawFractionRun(AnnotationLayoutRunCR layoutRun, Render::GraphicR graphic, ViewContextR context, GeometryParamsR geomParams, TransformCR transform) const
     {
     AnnotationFractionRunCR run = (AnnotationFractionRunCR)layoutRun.GetSeedRun();
     
@@ -121,8 +126,8 @@ BentleyStatus AnnotationTextBlockDraw::DrawFractionRun(AnnotationLayoutRunCR lay
             barPts[0] = { 0.0, (1.25 * denominatorRange.YLength()), 0.0 };
             barPts[1] = { fractionWidth, barPts[0].y, 0.0 };
             
-            context.DrawStyledLineString3d(_countof(barPts), barPts, NULL);
-            
+            transform.Multiply(barPts, barPts, 2);
+            graphic.AddLineString(2, barPts, nullptr);
             break;
             }
         
@@ -133,8 +138,8 @@ BentleyStatus AnnotationTextBlockDraw::DrawFractionRun(AnnotationLayoutRunCR lay
             barPts[0] = { denominatorRange.low.x - (fontSize.x / 2.0), denominatorRange.low.y + (fontSize.y * (1.0 / 3.0)), 0.0 };
             barPts[1] = { barPts[0].x + fontSize.x, barPts[0].y + (fontSize.y * 1.5), 0.0 };
 
-            context.DrawStyledLineString3d(_countof(barPts), barPts, NULL);
-
+            transform.Multiply(barPts, barPts, 2);
+            graphic.AddLineString(2, barPts, nullptr);
             break;
             }
 
@@ -151,7 +156,10 @@ BentleyStatus AnnotationTextBlockDraw::DrawFractionRun(AnnotationLayoutRunCR lay
         TextStyleInterop::AnnotationToTextString(tsNumerator.GetStyleR(), *effectiveStyle);
         tsNumerator.GetStyleR().SetSize(fontSize);
 
-        context.DrawTextString(tsNumerator);
+        if (!transform.IsIdentity())
+            tsNumerator.ApplyTransform(transform);
+
+        graphic.AddTextString(tsNumerator);
         }
     
     if (!run.GetDenominatorContent().empty())
@@ -162,7 +170,10 @@ BentleyStatus AnnotationTextBlockDraw::DrawFractionRun(AnnotationLayoutRunCR lay
         TextStyleInterop::AnnotationToTextString(tsDenominator.GetStyleR(), *effectiveStyle);
         tsDenominator.GetStyleR().SetSize(fontSize);
 
-        context.DrawTextString(tsDenominator);
+        if (!transform.IsIdentity())
+            tsDenominator.ApplyTransform(transform);
+
+        graphic.AddTextString(tsDenominator);
         }
     
     return SUCCESS;
@@ -171,7 +182,7 @@ BentleyStatus AnnotationTextBlockDraw::DrawFractionRun(AnnotationLayoutRunCR lay
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus AnnotationTextBlockDraw::DrawLineBreakRun(AnnotationLayoutRunCR, ViewContextR) const
+BentleyStatus AnnotationTextBlockDraw::DrawLineBreakRun(AnnotationLayoutRunCR, Render::GraphicR, ViewContextR, GeometryParamsR, TransformCR) const
     {
     return SUCCESS;
     }
@@ -179,33 +190,26 @@ BentleyStatus AnnotationTextBlockDraw::DrawLineBreakRun(AnnotationLayoutRunCR, V
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus AnnotationTextBlockDraw::Draw(ViewContextR context) const
+BentleyStatus AnnotationTextBlockDraw::Draw(Render::GraphicR graphic, ViewContextR context, GeometryParamsR geomParams) const
     {
     BentleyStatus status = SUCCESS;
 
     for (auto const& line : m_layout->GetLines())
         {
-        Transform lineTrans;
-        lineTrans.InitIdentity();
-        lineTrans.SetTranslation(line->GetOffsetFromDocument());
-
-        context.PushTransform(lineTrans);
+        Transform lineTrans = Transform::From(DPoint3d::From(line->GetOffsetFromDocument()));
 
         for (auto const& run : line->GetRuns())
             {
-            Transform runTrans;
-            runTrans.InitIdentity();
-            runTrans.SetTranslation(run->GetOffsetFromLine());
-
-            context.PushTransform(runTrans);
+            Transform runTrans = Transform::From(DPoint3d::From(run->GetOffsetFromLine()));
+            Transform compoundTrans = Transform::FromProduct(m_documentTransform, runTrans, lineTrans);
             
             BentleyStatus runStatus = SUCCESS;
 
             switch (run->GetSeedRun().GetType())
                 {
-                case AnnotationRunType::Text: runStatus = DrawTextRun(*run, context); break;
-                case AnnotationRunType::Fraction: runStatus = DrawFractionRun(*run, context); break;
-                case AnnotationRunType::LineBreak: runStatus = DrawLineBreakRun(*run, context); break;
+                case AnnotationRunType::Text: runStatus = DrawTextRun(*run, graphic, context, geomParams, compoundTrans); break;
+                case AnnotationRunType::Fraction: runStatus = DrawFractionRun(*run, graphic, context, geomParams, compoundTrans); break;
+                case AnnotationRunType::LineBreak: runStatus = DrawLineBreakRun(*run, graphic, context, geomParams, compoundTrans); break;
 
                 default:
                     BeAssert(false); // Unknown/unexpected AnnotationRunType.
@@ -214,11 +218,7 @@ BentleyStatus AnnotationTextBlockDraw::Draw(ViewContextR context) const
 
             if (SUCCESS != runStatus)
                 status = ERROR;
-
-            context.PopTransformClip(); // runTrans
             }
-
-        context.PopTransformClip(); // lineTrans
         }
 
     return status;

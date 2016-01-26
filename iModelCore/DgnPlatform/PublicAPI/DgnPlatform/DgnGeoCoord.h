@@ -22,7 +22,7 @@ typedef struct GeoCoordType66 *         GeoCoordType66P;
 typedef union  ProjectionParams const*  ProjectionParamsCP;
 typedef union  ProjectionParams *       ProjectionParamsP;
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 typedef RefCountedPtr<DgnGCS>   DgnGCSPtr;
 
@@ -499,4 +499,4 @@ public:
 
 /*__PUBLISH_SECTION_START__*/
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

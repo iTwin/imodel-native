@@ -2,7 +2,7 @@
 |
 |     $Source: DgnHandlers/HitDetail.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -405,31 +405,28 @@ HitDetail::~HitDetail() {}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HitDetail::ShouldFlashCurveSegment(ViewContextR context) const
+bool HitDetail::ShouldFlashCurveSegment() const
     {
-    return (DrawPurpose::Flash == context.GetDrawPurpose() && 
-            SubSelectionMode::Segment == GetSubSelectionMode() && 
-            nullptr != GetGeomDetail().GetCurvePrimitive());
+    return (SubSelectionMode::Segment == GetSubSelectionMode() && nullptr != GetGeomDetail().GetCurvePrimitive());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HitDetail::FlashCurveSegment(ViewContextR context) const
+void HitDetail::FlashCurveSegment(DecorateContextR context, Render::GeometryParamsCR params) const
     {
     if (nullptr == GetGeomDetail().GetCurvePrimitive())
         return;
 
-    ElemDisplayParamsR elParams = context.GetCurrentDisplayParams();
-    ElemMatSymbR elMatSymb = *context.GetElemMatSymb();
+    Render::GraphicPtr  graphic = context.CreateGraphic();
+    GeometryParams      geomParams(params);
+    GraphicParams       graphicParams;
 
-    context.CookDisplayParams(elParams, elMatSymb); // Don't activate elMatSymb yet...
+    context.CookGeometryParams(geomParams, graphicParams); // Don't activate yet...need to tweak...
 
     // NOTE: Would be nice if flashing made element "glow" for now just bump up weight...
-    elMatSymb.SetWidth(elMatSymb.GetWidth()+2);
-
-    context.GetIDrawGeom().ActivateMatSymb(&elMatSymb);
-    context.ResetContextOverrides();
+    graphicParams.SetWidth(graphicParams.GetWidth()+2);
+    graphic->ActivateGraphicParams(graphicParams);
 
     bool doSegmentFlash = (GetHitType() < HitDetailType::Snap);
 
@@ -458,18 +455,19 @@ void HitDetail::FlashCurveSegment(ViewContextR context) const
         curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, GetGeomDetail().GetCurvePrimitive()->Clone());
 
     if (GetViewport().Is3dView())
-        context.GetIDrawGeom().DrawCurveVector(*curve, false);
+        graphic->AddCurveVector(*curve, false);
     else
-        context.GetIDrawGeom().DrawCurveVector2d(*curve, false, elParams.GetNetDisplayPriority());
+        graphic->AddCurveVector2d(*curve, false, geomParams.GetNetDisplayPriority());
+
+    context.AddFlashed(*graphic);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/09
+* @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HitDetail::_DrawInVp(DgnViewportR vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const
+void HitDetail::_Draw(DecorateContextR context) const
     {
-    if (vp.IsActive())
-        T_HOST.GetGraphicsAdmin()._DrawInVp(this, vp, drawMode, drawPurpose, stopFlag);
+    context.VisitHit(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -748,7 +746,6 @@ bool IntersectDetail::_IsSameHit(HitDetailCP otherPath) const
 void IntersectDetail::_SetHilited(DgnElement::Hilited newState) const
     {
     T_Super::_SetHilited(newState);
-
     m_secondHit->SetHilited(newState);
     }
 
@@ -758,10 +755,10 @@ void IntersectDetail::_SetHilited(DgnElement::Hilited newState) const
 * is drawn using a dashed symbology.
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IntersectDetail::_DrawInVp(DgnViewportR vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const
+void IntersectDetail::_Draw(DecorateContextR context) const
     {
     // start by drawing the first path normally
-    T_Super::_DrawInVp(vp, drawMode, drawPurpose, stopFlag);
+    T_Super::_Draw(context);
 
     SnapDetail tmpSnapDetail(m_secondHit); // So display handlers know this is from a snap...
 
@@ -769,14 +766,12 @@ void IntersectDetail::_DrawInVp(DgnViewportR vp, DgnDrawMode drawMode, DrawPurpo
     //       drawn hilited, we need to turn on its hilited flag temporarily, and then restore it.
     DgnElement::Hilited currHilite = tmpSnapDetail.IsHilited();
 
-    if (DrawPurpose::Flash == drawPurpose)
-        tmpSnapDetail.SetHilited(DgnElement::Hilited::Normal);
+    tmpSnapDetail.SetHilited(DgnElement::Hilited::Normal);
 
     tmpSnapDetail.SetSubSelectionMode(GetSubSelectionMode()); // Set correct flash mode...
-    tmpSnapDetail.DrawInVp(vp, drawMode, drawPurpose, stopFlag);
+    tmpSnapDetail.Draw(context);
 
-    if (DrawPurpose::Flash == drawPurpose)
-        tmpSnapDetail.SetHilited(currHilite);
+    tmpSnapDetail.SetHilited(currHilite);
     }
 
 /*=================================================================================**//**
@@ -795,17 +790,14 @@ HitList::~HitList() {clear();}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      01/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-int HitList::GetCount() const {return (int) size();}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      01/2008
-+---------------+---------------+---------------+---------------+---------------+------*/
 HitDetailP HitList::Get(int i)
     {
     if (i < 0)                  // ***NEEDS WORK: the old ObjectArray used to support -1 == END
         i = (int) size();
-    if (i >= GetCount())
+
+    if (i >= (int) GetCount())
         return NULL;
+
     return at(i).get();
     }
 
@@ -814,7 +806,7 @@ HitDetailP HitList::Get(int i)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HitList::Set(int i, HitDetailP p)
     {
-    if (i < 0 || i >= GetCount())
+    if (i < 0 || i >= (int) GetCount())
         {
         BeAssert(false);
         return;
@@ -1074,12 +1066,7 @@ int HitList::Compare(HitDetailCP oHit1, HitDetailCP oHit2, bool comparePriority,
 * Add a new hit to the list. Hits are sorted according to their priority and distance.
 * @bsimethod    Locate.Hitlist                                  KeithBentley    12/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-int             HitList::AddHit
-(
-HitDetail*      newHit,
-bool            allowDuplicates,
-bool            comparePriority
-)
+int HitList::AddHit (HitDetail* newHit, bool allowDuplicates, bool comparePriority)
     {
     HitList::iterator currHit = begin();
 

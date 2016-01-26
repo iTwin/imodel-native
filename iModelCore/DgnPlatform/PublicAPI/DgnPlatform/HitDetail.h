@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/HitDetail.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,10 +10,10 @@
 
 #include <Bentley/bvector.h>
 #include "ISprite.h"
-#include "IViewDraw.h"
-#include "IViewOutput.h"
+#include "ElementGeometry.h"
+#include "Render.h"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 /*=================================================================================**//**
 * @bsiclass                                                     KeithBentley    04/01
@@ -21,7 +21,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 enum class SubSelectionMode
     {
     None        = 0, //! Select entire element - No sub-selection
-    Part        = 1, //! Select single DgnGeomPart
+    Part        = 1, //! Select single DgnGeometryPart
     Primitive   = 2, //! Select single geometric primitive
     Segment     = 3, //! Select single curve primitive/line string segment
     };
@@ -91,7 +91,6 @@ ENUM_IS_FLAGS(HitDetailSource)
 struct  GeomDetail
 {
 private:
-
     ICurvePrimitivePtr      m_primitive;                // curve primitve for hit (world coordinates).
     DPoint3d                m_closePoint;               // the closest point on geometry (world coordinates).
     DVec3d                  m_normal;                   // surface hit normal (world coordinates).
@@ -101,10 +100,9 @@ private:
     bool                    m_nonSnappable;             // non-snappable detail, ex. pattern or line style.
     double                  m_viewDist;                 // xy distance to hit (view coordinates).
     double                  m_viewZ;                    // z distance to hit (view coordinates).
-    GeomStreamEntryId       m_geomId;                   // id of geometric primitive that generated this hit.
+    GeometryStreamEntryId   m_geomId;                   // id of geometric primitive that generated this hit.
 
 public:
-
     DGNPLATFORM_EXPORT void Init();
 
     DPoint3dCR              GetClosestPoint() const     {return m_closePoint;}
@@ -126,9 +124,9 @@ public:
     void                    SetZValue(double value)                {m_viewZ = value;}
 
     //! @private
-    GeomStreamEntryId GetGeomStreamEntryId() const {return m_geomId;}
+    GeometryStreamEntryId GetGeometryStreamEntryId() const {return m_geomId;}
     //! @private
-    void SetGeomStreamEntryId(GeomStreamEntryId geomId) {m_geomId = geomId;}
+    void SetGeometryStreamEntryId(GeometryStreamEntryId geomId) {m_geomId = geomId;}
 
     DGNPLATFORM_EXPORT bool     FillGPA (GPArrayR, bool singleSegment = true) const;
     DGNPLATFORM_EXPORT bool     GetArc(DEllipse3dR) const;
@@ -159,7 +157,6 @@ public:
 struct HitDetail : RefCountedBase
 {
 protected:
-
     DgnViewportR        m_viewport;
     DgnElementId        m_elementId;
     HitSource           m_locateSource;         // Operation that generated the hit.
@@ -176,11 +173,10 @@ protected:
     virtual void _SetHitPoint(DPoint3dCR pt) {m_geomDetail.SetClosestPoint(pt);}
     virtual void _SetTestPoint(DPoint3dCR pt) {m_testPoint = pt;}
     virtual bool _IsSameHit(HitDetailCP otherHit) const;
-    virtual void _DrawInVp(DgnViewportR, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const;
+    virtual void _Draw(DecorateContextR context) const;
     virtual void _SetHilited(DgnElement::Hilited) const;
 
 public:
-#if !defined (DOCUMENTATION_GENERATOR)
     DGNPLATFORM_EXPORT HitDetail(DgnViewportR, GeometrySourceCP, DPoint3dCR testPoint, HitSource, GeomDetailCR);
     DGNPLATFORM_EXPORT explicit HitDetail(HitDetailCR from);
     DGNPLATFORM_EXPORT virtual ~HitDetail();
@@ -191,19 +187,13 @@ public:
     void SetHilited(DgnElement::Hilited state) const {_SetHilited(state);}
     void SetSubSelectionMode(SubSelectionMode mode) {_SetSubSelectionMode(mode);}
 
-    void DrawInVp(DgnViewportR vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const {_DrawInVp(vp, drawMode, drawPurpose, stopFlag);}
-    DGNPLATFORM_EXPORT bool ShouldFlashCurveSegment(ViewContextR) const; //! Check for segment flash mode before calling FlashCurveSegment.
-    DGNPLATFORM_EXPORT void FlashCurveSegment(ViewContextR) const; //! Setup context.GetCurrentDisplayParams() before calling!
-    
-    DGNVIEW_EXPORT void DrawInView(IndexedViewportR, DgnDrawMode drawMode, DrawPurpose drawPurpose) const;
-    DGNVIEW_EXPORT void DrawInAllViews(IndexedViewSetR, DgnDrawMode drawMode, DrawPurpose drawPurpose) const;
-    DGNVIEW_EXPORT void Hilite(IndexedViewSetR, bool onOff) const;
+    void Draw(DecorateContextR context) const {_Draw(context);}
+    DGNPLATFORM_EXPORT bool ShouldFlashCurveSegment() const; //! Check for segment flash mode before calling FlashCurveSegment.
+    DGNPLATFORM_EXPORT void FlashCurveSegment(DecorateContextR, Render::GeometryParamsCR geomParams) const; //! Setup context.GetCurrentGeometryParams() before calling!
 
     void GetInfoString(Utf8StringR descr, Utf8CP delimiter) const {_GetInfoString(descr, delimiter);}
     DGNPLATFORM_EXPORT DgnElement::Hilited IsHilited() const;
     DGNPLATFORM_EXPORT bool IsInSelectionSet() const;
-#endif
-
     DGNPLATFORM_EXPORT DgnElementCPtr GetElement() const;
     DgnElementId GetElementId() const {return m_elementId;}
     DGNPLATFORM_EXPORT DgnModelR GetDgnModel() const;
@@ -222,7 +212,6 @@ public:
 
     DGNPLATFORM_EXPORT IElemTopologyCP GetElemTopology() const;
     DGNPLATFORM_EXPORT void SetElemTopology(IElemTopologyP topo);
-
 }; // HitDetail
 
 typedef RefCountedPtr<HitDetail> HitDetailPtr;
@@ -258,8 +247,7 @@ public:
     DGNPLATFORM_EXPORT bool RemoveHitsFrom(DgnModelR modelRef);
     DGNPLATFORM_EXPORT virtual void Dump(WCharCP label) const;
 
-    // Because we use private inheritance, we must re-export every HitDetailArray method that we want to expose.
-    DGNPLATFORM_EXPORT int GetCount() const;
+    uint32_t GetCount() const {return (uint32_t) size();}
     DGNPLATFORM_EXPORT HitDetailP Get(int i);
     DGNPLATFORM_EXPORT void Set(int i, HitDetailP);
     DGNPLATFORM_EXPORT void Insert(int i, HitDetailP);
@@ -310,7 +298,7 @@ protected:
     SnapHeat    m_heat;
     Point2d     m_screenPt;
     uint32_t    m_divisor;
-    ISpriteP    m_sprite;
+    Render::ISpriteP    m_sprite;
     SnapMode    m_snapMode;         // snap mode currently associated with this snap
     SnapMode    m_originalSnapMode; // snap mode used when snap was created, before constraint override was applied
     double      m_minScreenDist;    // minimum distance to element in screen coordinates.
@@ -334,8 +322,8 @@ public:
     bool GetAllowAssociations() const {return m_allowAssociations;}
     void SetAllowAssociations(bool allowAssociations) {m_allowAssociations = allowAssociations;}
 
-    ISpriteP GetSprite() const {return m_sprite;}
-    void SetSprite(ISpriteP sprite) {if (m_sprite) m_sprite->Release(); m_sprite = sprite; if (m_sprite) m_sprite->AddRef();}
+    Render::ISpriteP GetSprite() const {return m_sprite;}
+    void SetSprite(Render::ISpriteP sprite) {if (m_sprite) m_sprite->Release(); m_sprite = sprite; if (m_sprite) m_sprite->AddRef();}
 
     DGNPLATFORM_EXPORT bool GetCustomKeypoint(int* nBytesP, Byte** dataPP) const {if (nBytesP) *nBytesP = m_customKeypointSize; if (dataPP) *dataPP = m_customKeypointData; return (NULL != m_customKeypointData ? true : false);}
     DGNPLATFORM_EXPORT void SetCustomKeypoint(int nBytes, Byte* dataP);
@@ -369,7 +357,7 @@ struct IntersectDetail : SnapDetail
 private:
     HitDetailP  m_secondHit;
 
-    virtual void _DrawInVp(DgnViewportR, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const override;
+    virtual void _Draw(DecorateContextR) const override;
     virtual HitDetailType _GetHitType() const override{return HitDetailType::Intersection;}
     DGNPLATFORM_EXPORT virtual void _SetHilited(DgnElement::Hilited) const override;
     DGNPLATFORM_EXPORT virtual bool _IsSameHit(HitDetailCP otherHit) const override;
@@ -382,4 +370,18 @@ public:
     HitDetailP GetSecondHit() const {return m_secondHit;}
 }; 
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+//=======================================================================================
+//! Geometry data associated with a pick.
+//=======================================================================================
+struct IPickGeom
+{
+    virtual bool _IsSnap() const = 0;
+    virtual DPoint4dCR _GetPickPointView() const = 0;
+    virtual DPoint3dCR _GetPickPointWorld() const = 0;
+    virtual DRay3d _GetBoresite(TransformCR localToWorld) const = 0;
+    virtual void _SetHitPriorityOverride(HitPriority) = 0;
+    virtual GeomDetailR _GetGeomDetail() = 0;
+    virtual void _AddHit(HitDetailR) = 0;
+};
+
+END_BENTLEY_DGN_NAMESPACE

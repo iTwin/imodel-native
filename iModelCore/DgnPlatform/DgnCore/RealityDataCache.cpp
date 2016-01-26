@@ -18,7 +18,7 @@
 DPILOG_DEFINE(RealityDataCache)
 #define RDCLOG(sev,...) {if (RealityDataCache_getLogger().isSeverityEnabled(sev)) {RealityDataCache_getLogger().messagev(sev, __VA_ARGS__);}}
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 /*======================================================================================+
 |   Debug timer                                                 Grigas.Petraitis
@@ -240,9 +240,9 @@ template<typename T> typename ThreadSafeQueue<T>::Iterator ThreadSafeQueue<T>::e
 
 // explicitly implement for testing purposes, 
 // note: must be done AFTER all template functions are defined
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 template struct ThreadSafeQueue<int>;
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 /*======================================================================================+
 |   IRealityData
@@ -885,7 +885,7 @@ protected:
             }
     
         // read file content
-        bvector<Byte> data;
+        ByteStream data;
         if (BeFileStatus::Success != configFile.ReadEntireFile(data))
             {
             BeAssert (false);

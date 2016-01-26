@@ -2,23 +2,18 @@
 |
 |     $Source: PublicAPI/DgnPlatform/IAuxCoordSys.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 /** @cond BENTLEY_SDK_Internal */
 
-#include "DgnPlatform.h"
+#include "Render.h"
 #include "ValueFormat.h"
-
-//__PUBLISH_SECTION_END__
-
 #include "DgnCoreEvent.h"
 
-//__PUBLISH_SECTION_START__
-
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 //! @addtogroup AuxiliaryCoordinateSystems
@@ -68,9 +63,8 @@ ENUM_IS_FLAGS (ACSDisplayOptions)
 
 enum class ACSFlags
     {
-    None               = 0,      // Used for testing individual bits.
-    Default            = 0,
-    ViewIndependent    = (1<<0), // Whether ACS always orients itself to the current view rotations or is a fixed rotation...
+    None    = 0, // Used for testing individual bits.
+    Default = 0,
     };
 
 ENUM_IS_FLAGS (ACSFlags)
@@ -132,7 +126,7 @@ DGNPLATFORM_EXPORT void ReadSettings (SpatialViewControllerP viewController);
 DGNPLATFORM_EXPORT IAuxCoordSysPtr CreateACS (ACSType type, DPoint3dCR origin, RotMatrixCR rot, double scale, WCharCP name, WCharCP descr);
 
 DGNPLATFORM_EXPORT void SendEvent (IAuxCoordSysP acs, ACSEventType eventType, DgnModelP modelRef);
-DGNPLATFORM_EXPORT void DisplayCurrent (DgnViewportP viewport, bool isCursorView);
+DGNPLATFORM_EXPORT void DisplayCurrent (DecorateContextR, bool isCursorView);
 
 DGNVIEW_EXPORT bool GetStandardRotation (RotMatrixR rMatrix, StandardView nStandard, DgnViewportP viewport, bool useACS, DgnCoordSystem coordSys);
 DGNVIEW_EXPORT bool GetCurrentOrientation (RotMatrixR rMatrix, DgnViewportP viewport, bool checkAccuDraw, bool checkACS, DgnCoordSystem coordSys);
@@ -197,57 +191,58 @@ DGNPLATFORM_EXPORT static IACSManagerR GetManager ();
 //! An IAuxCoordSys is an object that holds the data which
 //! describes an auxiliary coordinate system
 //=======================================================================================
-struct          IAuxCoordSys : public RefCountedBase
+struct IAuxCoordSys : RefCountedBase
 {
 //__PUBLISH_SECTION_END__
 protected:
 
-virtual IAuxCoordSysPtr             _Clone                      () const = 0;
-virtual bool                        _Equals                     (IAuxCoordSysCP other) const = 0;
-virtual WString                     _GetName                    () const = 0;
-virtual WString                     _GetDescription             () const = 0;
-virtual ACSType                     _GetType                    () const = 0;
-virtual WString                     _GetTypeName                () const = 0;
-virtual double                      _GetScale                   () const = 0;
-virtual DPoint3dR                   _GetOrigin                  (DPoint3dR pOrigin) const = 0;
-virtual RotMatrixR                  _GetRotation                (RotMatrixR pRot) const = 0;
-virtual RotMatrixR                  _GetRotation                (RotMatrixR pRot, DPoint3dR pPosition) const = 0;
-virtual bool                        _GetIsReadOnly              () const = 0;
-virtual ACSFlags                    _GetFlags                   () const = 0;
-virtual StatusInt                   _SetName                    (WCharCP name) = 0;
-virtual StatusInt                   _SetDescription             (WCharCP descr) = 0;
-virtual StatusInt                   _SetType                    (ACSType type) = 0;
-virtual StatusInt                   _SetScale                   (double scale) = 0;
-virtual StatusInt                   _SetOrigin                  (DPoint3dCR pOrigin) = 0;
-virtual StatusInt                   _SetRotation                (RotMatrixCR pRot) = 0;
-virtual StatusInt                   _PointFromString            (DPoint3dR outPoint, WStringR errorMsg, WCharCP inString, bool relative, DPoint3dCP lastPoint, DgnModelR modelRef) = 0;
-virtual StatusInt                   _StringFromPoint            (WStringR outString, WStringR errorMsg, DPoint3dCR inPoint, bool delta, DPoint3dCP deltaOrigin, DgnModelR modelRef, DistanceFormatterR distanceFormatter, DirectionFormatterR directionFormatter) = 0;
-virtual StatusInt                   _SetFlags                   (ACSFlags flags) = 0;
-virtual uint32_t   _GetExtenderId () const = 0;
-virtual uint32_t   _GetSerializedSize () const = 0;
-virtual StatusInt  _Serialize (void *data, uint32_t maxSize) const = 0;
-virtual StatusInt                   _CompleteSetupFromViewController(SpatialViewControllerCP info) = 0;
-virtual void                        _DrawGrid                   (DgnViewportP vp) const = 0;
-virtual void                        _PointToGrid                (DgnViewportP vp, DPoint3dR point) const = 0;
+virtual IAuxCoordSysPtr _Clone() const = 0;
+virtual bool _Equals(IAuxCoordSysCP other) const = 0;
+virtual WString _GetName() const = 0;
+virtual WString _GetDescription() const = 0;
+virtual ACSType _GetType() const = 0;
+virtual WString _GetTypeName() const = 0;
+virtual double _GetScale() const = 0;
+virtual DPoint3dR _GetOrigin(DPoint3dR pOrigin) const = 0;
+virtual RotMatrixR _GetRotation(RotMatrixR pRot) const = 0;
+virtual RotMatrixR _GetRotation(RotMatrixR pRot, DPoint3dR pPosition) const = 0;
+virtual bool _GetIsReadOnly() const = 0;
+virtual ACSFlags _GetFlags() const = 0;
+virtual StatusInt _SetName(WCharCP name) = 0;
+virtual StatusInt _SetDescription(WCharCP descr) = 0;
+virtual StatusInt _SetType(ACSType type) = 0;
+virtual StatusInt _SetScale(double scale) = 0;
+virtual StatusInt _SetOrigin(DPoint3dCR pOrigin) = 0;
+virtual StatusInt _SetRotation(RotMatrixCR pRot) = 0;
+virtual StatusInt _PointFromString(DPoint3dR outPoint, WStringR errorMsg, WCharCP inString, bool relative, DPoint3dCP lastPoint, DgnModelR modelRef) = 0;
+virtual StatusInt _StringFromPoint(WStringR outString, WStringR errorMsg, DPoint3dCR inPoint, bool delta, DPoint3dCP deltaOrigin, DgnModelR modelRef, DistanceFormatterR distanceFormatter, DirectionFormatterR directionFormatter) = 0;
+virtual StatusInt _SetFlags(ACSFlags flags) = 0;
+virtual uint32_t _GetExtenderId() const = 0;
+virtual uint32_t _GetSerializedSize() const = 0;
+virtual StatusInt _Serialize(void *data, uint32_t maxSize) const = 0;
+virtual StatusInt _CompleteSetupFromViewController(SpatialViewControllerCP info) = 0;
+virtual void _DrawGrid(DecorateContextR context) const = 0;
+virtual void _PointToGrid(DgnViewportR vp, DPoint3dR point) const = 0;
 
 virtual StatusInt _GetStandardGridParams (Point2dR gridReps, Point2dR gridOffset, double& uorPerGrid, double& gridRatio, uint32_t& gridPerRef) const {return ERROR;}
 virtual StatusInt _SetStandardGridParams (Point2dCR gridReps, Point2dCR gridOffset, double uorPerGrid, double gridRatio, uint32_t gridPerRef) {return ERROR;}
 
 // these methods are called only internally, so they don't have corresponding nonvirtual public wrappers.
-DGNPLATFORM_EXPORT virtual bool _IsOriginInView (DPoint3dR drawOrigin, DgnViewportP vp, bool adjustOrigin) const;
-DGNPLATFORM_EXPORT virtual void _DrawZAxis (DgnViewportP vp, ICachedDrawP cached, TransformP transformP, ACSDisplayOptions options) const;
-DGNPLATFORM_EXPORT virtual ColorDef _GetColor (DgnViewportP vp, ColorDef menuColor, uint32_t transparency, ACSDisplayOptions options) const;
-DGNPLATFORM_EXPORT virtual void _DrawAxisText (DgnViewportP vp, ICachedDrawP cached, WCharCP label, bool isAxisLabel, double userOrgX, double userOrgY, double scale, double angle, ACSDisplayOptions options) const;
-DGNPLATFORM_EXPORT virtual void _DrawAxisArrow (DgnViewportP vp, ICachedDrawP cached, TransformP transformP, ColorDef menuColor, WCharCP label, bool swapAxis, ACSDisplayOptions options, ACSFlags flags) const;
-DGNPLATFORM_EXPORT virtual void _DisplayInView (DgnViewportP vp, ACSDisplayOptions options, bool drawName) const;
-DGNPLATFORM_EXPORT virtual QvElem* _CreateQvElems (DgnViewportP vp, DPoint3dCP drawOrigin, double acsSizePixels, ACSDisplayOptions options, bool drawName) const;
+DGNPLATFORM_EXPORT virtual bool _IsOriginInView (DPoint3dR drawOrigin, DgnViewportCR, bool adjustOrigin) const;
+DGNPLATFORM_EXPORT virtual ColorDef _GetColor (DgnViewportCR, ColorDef color, uint32_t transparency, ACSDisplayOptions options) const;
 DGNPLATFORM_EXPORT virtual uint32_t _GetTransparency (bool isFill, ACSDisplayOptions options) const;
 DGNPLATFORM_EXPORT virtual WCharCP _GetAxisLabel (uint32_t axis, WCharP axisLabel, uint32_t length) const;
+
+DGNPLATFORM_EXPORT virtual void _AddZAxis (Render::GraphicR, ColorDef color, ACSDisplayOptions options) const;
+DGNPLATFORM_EXPORT virtual void _AddXYAxis (Render::GraphicR, ColorDef color, WCharCP label, bool swapAxis, ACSDisplayOptions options, ACSFlags flags) const;
+DGNPLATFORM_EXPORT virtual void _AddAxisText (Render::GraphicR, WCharCP label, bool isAxisLabel, double userOrgX, double userOrgY, double scale, double angle, ACSDisplayOptions options) const;
+DGNPLATFORM_EXPORT virtual Render::GraphicPtr _CreateGraphic(DecorateContextR, DPoint3dCR drawOrigin, double acsSizePixels, ACSDisplayOptions options, bool drawName) const;
+DGNPLATFORM_EXPORT virtual void _DisplayInView (DecorateContextR, ACSDisplayOptions options, bool drawName) const;
 
 public:
 
 // Only for ACS's of type ACS_TYPE_GeoCoordinate is the rotation matrix position dependent, don't publish this yet.
-DGNPLATFORM_EXPORT RotMatrixR           GetRotation                 (RotMatrixR pRot, DPoint3dR pPosition) const;
+DGNPLATFORM_EXPORT RotMatrixR GetRotation (RotMatrixR pRot, DPoint3dR pPosition) const;
 
 // Standard grid settings don't apply to type ACS_TYPE_GeoCoordinate...
 double GetGridScaleFactor (DgnViewportR vp) const;
@@ -326,7 +321,7 @@ DGNPLATFORM_EXPORT StatusInt StringFromPoint (WStringR outString, WStringR error
 DGNPLATFORM_EXPORT StatusInt CompleteSetupFromViewController (SpatialViewControllerCP info);
 
 //! Display a representation of the ACS in the given view.
-DGNPLATFORM_EXPORT void DisplayInView (DgnViewportP vp, ACSDisplayOptions options, bool drawName) const;
+DGNPLATFORM_EXPORT void DisplayInView (DecorateContextR context, ACSDisplayOptions options, bool drawName) const;
 
 //! Boresite to ACS triad in the given view. The borePt and hitPt are in active coords...
 DGNPLATFORM_EXPORT bool Locate (DPoint3dR hitPt, DgnViewportR vp, DPoint3dCR borePt, double radius);
@@ -340,17 +335,17 @@ DGNPLATFORM_EXPORT uint32_t GetSerializedSize () const;
 //! Get the buffer size, in bytes, required to serialize the ACS.
 DGNPLATFORM_EXPORT StatusInt Serialize (void *buffer, uint32_t maxSize) const;
 
-//! Draw the grid to the specified DgnViewport.
-DGNPLATFORM_EXPORT void DrawGrid (DgnViewportP viewPort) const;
+//! Draw the grid to the specified context.
+DGNPLATFORM_EXPORT void DrawGrid (DecorateContextR context) const;
 
 //! Fix the point to the ACS's grid
-DGNPLATFORM_EXPORT void PointToGrid (DgnViewportP viewPort, DPoint3dR point) const;
+DGNPLATFORM_EXPORT void PointToGrid (DgnViewportR viewport, DPoint3dR point) const;
 
 //__PUBLISH_SECTION_START__
 };
 
 /** @endGroup */
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 /** @endcond */

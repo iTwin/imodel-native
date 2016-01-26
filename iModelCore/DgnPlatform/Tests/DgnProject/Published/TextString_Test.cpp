@@ -10,7 +10,7 @@
 // Rebuild test & harness:  bb re DgnProjectUnitTests BeGTestExe
 // Rebuild everything:      bb re DgnPlatform:PublicAPI DgnPlatform:PublishedApi DgnPlatformDLL DgnProjectUnitTests BeGTestExe
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     07/2014

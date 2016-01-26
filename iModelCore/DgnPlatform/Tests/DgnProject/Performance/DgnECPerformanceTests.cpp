@@ -52,11 +52,11 @@ StatusInt PerformanceDgnECTests::CreateArbitraryElement (DgnElementPtr& out, Dgn
 
     geomElement->SetCategoryId (categoryId);
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld (*geomElement);
+    GeometryBuilderPtr builder = GeometryBuilder::CreateWorld (*geomElement);
 
     builder->Append (*ICurvePrimitive::CreateLine (DSegment3d::From (DPoint3d::From (s_xCoord, s_yCoord, s_zCoord), DPoint3d::From (s_xCoord + s_increment, s_yCoord + s_increment, s_zCoord + s_increment))));
 
-    if (SUCCESS != builder->SetGeomStreamAndPlacement (*geomElement))
+    if (SUCCESS != builder->SetGeometryStreamAndPlacement (*geomElement))
         return ERROR;
 
     out = element;
@@ -95,10 +95,9 @@ void PerformanceDgnECTests::RunInsertTests (ECSchemaR schema, DgnDbTestDgnManage
         instances.push_back (instance);
         }
 
-    wchar_t countName[256];
-    BeStringUtilities::Snwprintf (countName, L"Inserting %d instances (total) (%ls schema)", TESTCLASS_INSTANCE_COUNT, schema.GetFullSchemaName ().c_str ());
+    Utf8PrintfString countName("Inserting %d instances (total) (%s schema)", TESTCLASS_INSTANCE_COUNT, Utf8String(schema.GetFullSchemaName()).c_str ());
 
-    StopWatch totalInsertingStopwatch (countName, false);
+    StopWatch totalInsertingStopwatch (countName.c_str(), false);
     StopWatch instructionTimer ("Single step", false);
 
     Utf8String inserting;
@@ -159,11 +158,8 @@ void PerformanceDgnECTests::RunInsertTests (ECSchemaR schema, DgnDbTestDgnManage
 
 
     bmap<Utf8String, double> results;
-    Utf8String total (totalInsertingStopwatch.GetDescription ().c_str ());
-    results[total] = totalInsertingStopwatch.GetElapsedSeconds ();
-
+    results[totalInsertingStopwatch.GetDescription()] = totalInsertingStopwatch.GetElapsedSeconds ();
     results[inserting] = insertingTimer.GetElapsedSeconds ();
-
     results[attaching] = attachingTimer.GetElapsedSeconds ();
 
     LogResultsToFile (results);

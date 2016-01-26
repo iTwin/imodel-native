@@ -120,8 +120,8 @@ struct ComponentGeometryHarvester
     private:
     ComponentDef& m_cdef;
 
-    DgnDbStatus HarvestModel(bvector<bpair<DgnSubCategoryId, DgnGeomPartId>>& geomBySubcategory, bvector<DgnElementCPtr>& nestedInstances);
-    DgnElementPtr CreateInstance(DgnDbStatus& status, DgnCode const& icode, bvector<bpair<DgnSubCategoryId, DgnGeomPartId>> const&, HarvestedSolutionWriter& writer);
+    DgnDbStatus HarvestModel(bvector<bpair<DgnSubCategoryId, DgnGeometryPartId>>& geomBySubcategory, bvector<DgnElementCPtr>& nestedInstances);
+    DgnElementPtr CreateInstance(DgnDbStatus& status, DgnCode const& icode, bvector<bpair<DgnSubCategoryId, DgnGeometryPartId>> const&, HarvestedSolutionWriter& writer);
 
     public:
     ComponentGeometryHarvester(ComponentDef& c) : m_cdef(c) {;}
@@ -195,7 +195,7 @@ DgnElementCPtr HarvestedSingletonInserter::_WriteInstance(DgnDbStatus& status, D
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ComponentGeometryHarvester::HarvestModel(bvector<bpair<DgnSubCategoryId, DgnGeomPartId>>& geomBySubcategory, bvector<DgnElementCPtr>& nestedInstances)
+DgnDbStatus ComponentGeometryHarvester::HarvestModel(bvector<bpair<DgnSubCategoryId, DgnGeometryPartId>>& geomBySubcategory, bvector<DgnElementCPtr>& nestedInstances)
     {
     // ***
     // *** WIP_COMPONENT_MODEL *** the logic below is not complete. Must must add another dimension -- we must break out builders by same ElemDisplayParams, not just subcategory
@@ -206,7 +206,7 @@ DgnDbStatus ComponentGeometryHarvester::HarvestModel(bvector<bpair<DgnSubCategor
     DgnCategoryId harvestableGeometryCategoryId = m_cdef.QueryCategoryId();
 
     //  Gather geometry by SubCategory
-    bmap<DgnSubCategoryId, ElementGeometryBuilderPtr> builders;     
+    bmap<DgnSubCategoryId, GeometryBuilderPtr> builders;     
     auto cm = m_cdef.GetModel();
     cm.FillModel();
     for (auto const& mapEntry : cm)
@@ -226,22 +226,25 @@ DgnDbStatus ComponentGeometryHarvester::HarvestModel(bvector<bpair<DgnSubCategor
         if (componentElement->GetCategoryId() != harvestableGeometryCategoryId)
             continue;
 
-        ElementGeometryCollection gcollection(*componentElement);
-        for (ElementGeometryPtr const& geom : gcollection)
+        GeometryCollection gcollection(*componentElement);
+        for (auto iter : gcollection)
             {
+            GeometricPrimitivePtr xgeom = iter.GetGeometryPtr();
+            if (!xgeom.IsValid()) // what to do about GeometryParts?? - BB
+                continue;
+
             //  Look up the subcategory ... IN THE CLIENT DB
-            ElemDisplayParamsCR dparams = gcollection.GetElemDisplayParams();
+            GeometryParamsCR dparams = iter.GetGeometryParams();
             DgnSubCategoryId clientsubcatid = dparams.GetSubCategoryId();
 
-            ElementGeometryBuilderPtr& builder = builders [clientsubcatid];
+            GeometryBuilderPtr& builder = builders [clientsubcatid];
             if (!builder.IsValid())
-                builder = ElementGeometryBuilder::CreateGeomPart(db, true);
+                builder = GeometryBuilder::CreateGeometryPart(db, true);
 
             // Since each little piece of geometry can have its own transform, we must
             // build the transforms back into them in order to assemble them into a single geomstream.
             // It's all relative to 0,0,0 in the component model, so it's fine to do this.
-            ElementGeometryPtr xgeom = geom->Clone();
-            Transform trans = gcollection.GetGeometryToWorld(); // A component model is in its own local coordinate system, so "World" just means relative to local 0,0,0
+            Transform trans = iter.GetGeometryToWorld(); // A component model is in its own local coordinate system, so "World" just means relative to local 0,0,0
             xgeom->TransformInPlace(trans);
 
             builder->Append(*xgeom);
@@ -256,18 +259,18 @@ DgnDbStatus ComponentGeometryHarvester::HarvestModel(bvector<bpair<DgnSubCategor
         }
     #endif
 
-    //  Generate and persist the geomeetry in one or more GeomParts. Note that we must create a unique GeomPart for each SubCategory.
+    //  Generate and persist the geomeetry in one or more GeometryParts. Note that we must create a unique GeometryPart for each SubCategory.
     for (auto const& entry : builders)
         {
         DgnSubCategoryId clientsubcatid = entry.first;
-        ElementGeometryBuilderPtr builder = entry.second;
+        GeometryBuilderPtr builder = entry.second;
 
-        // *** WIP_COMPONENT_MODEL How can we look up and re-use GeomParts that are based on the same component and parameters?
+        // *** WIP_COMPONENT_MODEL How can we look up and re-use GeometryParts that are based on the same component and parameters?
         // Note: Don't assign a Code. If we did that, then we would have trouble with change-merging.
-        DgnGeomPartPtr geomPart = DgnGeomPart::Create(db);
-        builder->CreateGeomPart(db, true);
-        builder->SetGeomStream(*geomPart);
-        if (BSISUCCESS != db.GeomParts().InsertGeomPart(*geomPart))
+        DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(db);
+        builder->CreateGeometryPart(db, true);
+        builder->SetGeometryStream(*geomPart);
+        if (BSISUCCESS != db.GeometryParts().InsertGeometryPart(*geomPart))
             {
             BeAssert(false && "cannot create geompart for solution geometry -- what could have gone wrong?");
             return DgnDbStatus::WriteError;
@@ -282,7 +285,7 @@ DgnDbStatus ComponentGeometryHarvester::HarvestModel(bvector<bpair<DgnSubCategor
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementPtr ComponentGeometryHarvester::CreateInstance(DgnDbStatus& status, DgnCode const& icode,
-    bvector<bpair<DgnSubCategoryId, DgnGeomPartId>> const& geomBySubcategory, HarvestedSolutionWriter& writer)
+    bvector<bpair<DgnSubCategoryId, DgnGeometryPartId>> const& geomBySubcategory, HarvestedSolutionWriter& writer)
     {
     DgnElementPtr capturedSolutionElement = writer._CreateInstance(status, DgnClassId(m_cdef.GetECClass().GetId()), icode);
     if (!capturedSolutionElement.IsValid())
@@ -297,15 +300,15 @@ DgnElementPtr ComponentGeometryHarvester::CreateInstance(DgnDbStatus& status, Dg
 
     geom->SetCategoryId(m_cdef.QueryCategoryId());
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*geom);
-    for (bpair<DgnSubCategoryId, DgnGeomPartId> const& subcatAndGeom : geomBySubcategory)
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*geom);
+    for (bpair<DgnSubCategoryId, DgnGeometryPartId> const& subcatAndGeom : geomBySubcategory)
         {
         Transform noTransform = Transform::FromIdentity();
         builder->Append(subcatAndGeom.first);
         builder->Append(subcatAndGeom.second, noTransform);
         }
 
-    builder->SetGeomStreamAndPlacement(*geom);
+    builder->SetGeometryStreamAndPlacement(*geom);
 
     // *** TBD: Other Aspects??
 
@@ -326,8 +329,8 @@ DgnElementCPtr ComponentGeometryHarvester::MakeInstance(DgnDbStatus& status, Dgn
         return nullptr;
         }
 
-    //  Gather up the current solution results. Note: a side-effect of harvesting is to create and insert GeomParts to hold the harvested solution geometry
-    bvector<bpair<DgnSubCategoryId, DgnGeomPartId>> geomBySubcategory;
+    //  Gather up the current solution results. Note: a side-effect of harvesting is to create and insert GeometryParts to hold the harvested solution geometry
+    bvector<bpair<DgnSubCategoryId, DgnGeometryPartId>> geomBySubcategory;
     bvector<DgnElementCPtr> nestedInstances;
     if (DgnDbStatus::Success != (status = HarvestModel(geomBySubcategory, nestedInstances)))
         return nullptr;

@@ -193,9 +193,9 @@ void ComponentModelPerfTest::Developer_CreateCMs()
             var solid = be.DgnBox.CreateCenteredBox(new be.DPoint3d(0,0,0), boxSize, true); \
             var element = model.CreateElement('dgn.PhysicalElement', options.Category);\
             var origin = new Bentley.Dgn.DPoint3d(i,i,i);\
-            var builder = new Bentley.Dgn.ElementGeometryBuilder(element, origin, angles); \
+            var builder = new Bentley.Dgn.GeometryBuilder(element, origin, angles); \
             builder.Append(solid); \
-            builder.SetGeomStreamAndPlacement(element); \
+            builder.SetGeometryStreamAndPlacement(element); \
             element.Insert(); \
             }\
         return 0;\
@@ -216,7 +216,7 @@ static void insertBoxesElement(DgnElementId& eid, SpatialModelR physicalTestMode
     {
     PhysicalElementPtr testElement = PhysicalElement::Create(physicalTestModel, testCategoryId);
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(physicalTestModel, testCategoryId, placementOrigin, YawPitchRollAngles());
+    GeometryBuilderPtr builder = GeometryBuilder::Create(physicalTestModel, testCategoryId, placementOrigin, YawPitchRollAngles());
     for (auto const& originOfBlock : originsOfBlocks)
         {
         DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(originOfBlock, sizeOfBlock, true);
@@ -224,7 +224,7 @@ static void insertBoxesElement(DgnElementId& eid, SpatialModelR physicalTestMode
         builder->Append(*testGeomPtr);
         }
 
-    builder->SetGeomStreamAndPlacement(*testElement);
+    builder->SetGeometryStreamAndPlacement(*testElement);
 
     eid = physicalTestModel.GetDgnDb().Elements().Insert(*testElement)->GetElementId();
     }

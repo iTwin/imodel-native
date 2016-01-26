@@ -19,7 +19,7 @@
 #include <DgnPlatform/GeomJsApi.h>
 #include <Logging/bentleylogging.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 #define STUB_OUT_SET_METHOD(PROPNAME,PROPTYPE)  void Set ## PROPNAME (PROPTYPE) {BeAssert(false);}
 
@@ -392,12 +392,12 @@ struct JsDgnModels : RefCountedBaseWithCreate
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
-struct JsElementGeometryBuilder : RefCountedBaseWithCreate
+struct JsGeometryBuilder : RefCountedBaseWithCreate
 {
-    ElementGeometryBuilderPtr m_builder;
+    GeometryBuilderPtr m_builder;
 
-    JsElementGeometryBuilder(JsDgnElementP el, JsDPoint3dP o, JsYawPitchRollAnglesP angles);
-    ~JsElementGeometryBuilder() {}
+    JsGeometryBuilder(JsDgnElementP el, JsDPoint3dP o, JsYawPitchRollAnglesP angles);
+    ~JsGeometryBuilder() {}
 
 
     void AppendSolidPrimitive(JsSolidPrimitiveP solid) {if (solid && solid->GetISolidPrimitivePtr().IsValid()) m_builder->Append(*solid->GetISolidPrimitivePtr());}
@@ -416,9 +416,9 @@ struct JsElementGeometryBuilder : RefCountedBaseWithCreate
             m_builder->Append(*geometry->GetISolidPrimitivePtr());
         }
 
-    BentleyStatus SetGeomStreamAndPlacement (JsDgnElementP el) {return m_builder->SetGeomStreamAndPlacement(*el->m_el->ToGeometrySourceP());}
+    BentleyStatus SetGeometryStreamAndPlacement (JsDgnElementP el) {return m_builder->SetGeometryStreamAndPlacement(*el->m_el->ToGeometrySourceP());}
 };
-typedef JsElementGeometryBuilder* JsElementGeometryBuilderP;
+typedef JsGeometryBuilder* JsGeometryBuilderP;
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
@@ -688,7 +688,7 @@ struct DgnJsApi : DgnPlatformLib::Host::ScriptAdmin::ScriptLibraryImporter
     void _ImportScriptLibrary(BeJsContextR, Utf8CP) override;
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 #endif//ndef _DGN_JS_API_H_
 

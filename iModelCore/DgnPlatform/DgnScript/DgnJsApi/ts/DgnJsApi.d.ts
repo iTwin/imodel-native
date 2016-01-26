@@ -372,13 +372,13 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type ComponentDefP = cxx_pointer<ComponentDef>;
 
-    class ElementGeometryBuilder implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    class GeometryBuilder implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
-        /*** NATIVE_TYPE_NAME = JsElementGeometryBuilder ***/ 
+        /*** NATIVE_TYPE_NAME = JsGeometryBuilder ***/ 
         constructor(el: DgnElementP, o: DPoint3dP, angles: YawPitchRollAnglesP);
         Append(geometry: GeometryP): void;
         AppendSolidPrimitive(geometry: SolidPrimitiveP): void;
-        SetGeomStreamAndPlacement(element: DgnElementP): cxx_double;
+        SetGeometryStreamAndPlacement(element: DgnElementP): cxx_double;
         OnDispose(): void;
         Dispose(): void;
     }

@@ -61,7 +61,7 @@
 #define TABLEHANDLER_DEFINE_MEMBERS(__classname__) \
     __classname__&  __classname__::GetHandler(){static __classname__* s_instance=nullptr; if (nullptr==s_instance) s_instance=new __classname__(); return *s_instance;}
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct DgnDomains;
 
@@ -308,7 +308,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
 
         virtual ElementHandlerP _ToElementHandler() {return nullptr;}       //!< dynamic_cast this Handler to an ElementHandler
         virtual ModelHandlerP _ToModelHandler() {return nullptr;}           //!< dynamic_cast this Handler to a ModelHandler
-        virtual ViewHandlerP _ToViewHandler() {return nullptr;}             //!< dynamic_cast this Handler to a ViewHandler
         virtual AuthorityHandlerP _ToAuthorityHandler() {return nullptr;}   //!< dynamic_cast this Handler to an AuthorityHandler
 
         static Handler& z_GetHandlerInstance(); //!< @private
@@ -475,4 +474,4 @@ public:
     DgnBaseDomain();
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

@@ -2,14 +2,14 @@
 |
 |     $Source: Tools/ToolSubs/fileutil/textfile.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 #include    <string.h>
 #include    <DgnPlatform/Tools/mstxtfil.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 static WCharCP s_openOptions[] = {L"rb", L"wb", L"ab"};
 

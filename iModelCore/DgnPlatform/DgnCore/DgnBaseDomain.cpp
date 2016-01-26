@@ -11,7 +11,7 @@
 #include <DgnPlatform/AnnotationTable.h>
 #include <DgnPlatform/VolumeElement.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace dgn_TableHandler
 {
@@ -64,10 +64,10 @@ HANDLER_DEFINE_MEMBERS(Model)
 HANDLER_DEFINE_MEMBERS(TrueColor)
 HANDLER_DEFINE_MEMBERS(Resource)
 HANDLER_DEFINE_MEMBERS(Category)
-HANDLER_DEFINE_MEMBERS(GeomPart)
+HANDLER_DEFINE_MEMBERS(GeometryPart)
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 HANDLER_EXTENSION_DEFINE_MEMBERS(IEditManipulatorExtension)
 
@@ -136,7 +136,7 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_AuthorityHandler::TrueColor::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Resource::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Category::GetHandler());
-    RegisterHandler(dgn_AuthorityHandler::GeomPart::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::GeometryPart::GetHandler());
 
     RegisterTableHandler(dgn_TableHandler::Element::GetHandler());
     RegisterTableHandler(dgn_TableHandler::Model::GetHandler());

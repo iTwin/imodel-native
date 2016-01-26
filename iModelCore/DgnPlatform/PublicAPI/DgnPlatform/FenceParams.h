@@ -8,7 +8,7 @@
 #pragma once
 
 /*__PUBLISH_SECTION_START__*/
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 //! The fence clip mode controls element acceptance criteria. A clip mode of none returns
@@ -181,6 +181,6 @@ DGNPLATFORM_EXPORT static void          Delete (FenceParamsP);
 
 }; // FenceParams
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 

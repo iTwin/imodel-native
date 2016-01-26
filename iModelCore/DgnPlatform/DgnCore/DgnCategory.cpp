@@ -319,10 +319,11 @@ DgnDbStatus DgnSubCategory::BindParams(ECSqlStatement& stmt)
     // default sub-categories don't have a description
     if (!IsDefaultSubCategory() && ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(SUBCAT_PROP_Descr), m_data.m_descr.c_str(), IECSqlBinder::MakeCopy::No))
         return DgnDbStatus::BadArg;
-    else if (ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(SUBCAT_PROP_Props), m_data.m_appearance.ToJson().c_str(), IECSqlBinder::MakeCopy::Yes))
+
+    if (ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(SUBCAT_PROP_Props), m_data.m_appearance.ToJson().c_str(), IECSqlBinder::MakeCopy::Yes))
         return DgnDbStatus::BadArg;
-    else
-        return DgnDbStatus::Success;
+
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -369,8 +370,6 @@ DgnCategoryId DgnSubCategory::QueryCategoryId(DgnSubCategoryId subCatId, DgnDbR 
     {
     if (!subCatId.IsValid())
         return DgnCategoryId();
-
-    BeSQLite::wt_OperationForGraphics highPriorityOperationBlock; // See comments on wt_OperationForGraphics
 
     CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ParentId FROM " DGN_SCHEMA(DGN_CLASSNAME_SubCategory) " WHERE ECInstanceId=? LIMIT 1");
     if (stmt.IsValid())
@@ -614,7 +613,7 @@ void DgnCategory::_OnImported(DgnElementCR original, DgnImportContext& importer)
 
         // When we import a Category, we currently import all of its SubCategories too.
         // If we decide to change this policy and wait until the caller asks for a SubCategory, 
-        // we must change ElementGeomIO::Import to call RemapSubCategory, rather than FindSubCategory.
+        // we must change GeometryStreamIO::Import to call RemapSubCategory, rather than FindSubCategory.
         for (auto const& srcSubCatId : DgnSubCategory::QuerySubCategories(importer.GetSourceDb(), DgnCategoryId(original.GetElementId().GetValue())))
             importer.RemapSubCategory(GetCategoryId(), srcSubCatId);
         }
@@ -732,9 +731,9 @@ DgnSubCategoryId DgnImportContext::RemapSubCategory(DgnCategoryId destCategoryId
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnImportContext::RemapGeomStreamIds(GeomStreamR geom)
+DgnDbStatus DgnImportContext::RemapGeometryStreamIds(GeometryStreamR geom)
     {
-    return ElementGeomIO::Import(geom, geom, *this);
+    return GeometryStreamIO::Import(geom, geom, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**
