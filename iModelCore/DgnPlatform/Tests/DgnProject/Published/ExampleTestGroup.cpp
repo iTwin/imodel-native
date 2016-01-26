@@ -3,14 +3,12 @@
 //  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 #include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
-
-#define GROUP_SUBDIR L"ExampleTestGroup"
-#define GROUP_SEED_FILENAME GROUP_SUBDIR L"/Test.dgndb"
-#define DEFAULT_MODEL_NAME "Default"
-#define DEFAULT_CATEGORY_NAME "DefaultCat"
-#define DEFAULT_VIEW_NAME "DefaultView"
+#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DPTEST
+
+#define EXAMPLE_MODEL_NAME  "Example"
 
 //=======================================================================================
 // @bsiclass                                                 Sam.Wilson     01/2016
@@ -18,27 +16,45 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 struct ExampleTestGroup : ::testing::Test
 {
     Dgn::ScopedDgnHost m_testHost;
+    static DgnDbTestUtils::SeedFileInfo s_seedFileInfo;
 
     // Insert the following macros into the definition of your test group subclass to declare that you want to set up shared resources for all of the tests in your group.
     BETEST_DECLARE_TC_SETUP
     BETEST_DECLARE_TC_TEARDOWN
 };
 
+DgnDbTestUtils::SeedFileInfo ExampleTestGroup::s_seedFileInfo;
+
 //---------------------------------------------------------------------------------------
-// Do one-time setup for all tests in this group
+//  Do one-time setup for all tests in this group
+//  This is an example of a test group that need to make a copy of the main seed file for use by tests in the group. 
+//  This case only comes up when the tests in the group need some setup that is specific to (and shared by) 
+//  tests in this group. There's no point in making a group copy if the tests can start with a root seed file just as well.
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
 BETEST_TC_SETUP(ExampleTestGroup) 
     {
     ScopedDgnHost tempHost;
 
-    DgnDbTestUtils::CreateSeedFiles();   // make sure that the base class has created the seed files that are used by all test groups
+    //  Request a root seed file.
+    DgnDbTestUtils::SeedFileInfo rootSeedInfo = DgnDbTestUtils::GetSeedFile(DgnDbTestUtils::SeedFileId::OneSpatialModel, DgnDbTestUtils::SeedFileOptions(false, true));
 
-    DgnDbTestUtils::CreateSubDirectory(GROUP_SUBDIR);
-    DgnDbPtr db = DgnDbTestUtils::CreateDgnDb(GROUP_SEED_FILENAME);
-    SpatialModelPtr model = DgnDbTestUtils::InsertSpatialModel(*db, DgnModel::CreateModelCode(DEFAULT_MODEL_NAME));
-    DgnDbTestUtils::InsertCameraView(*model, DEFAULT_VIEW_NAME);
-    DgnDbTestUtils::InsertCategory(*db, DEFAULT_CATEGORY_NAME);
+    //  The group's seed file is essentially the same as the root seed file, but with a different relative path.
+    //  Note that we must put our group seed file in a group-specific sub-directory
+    s_seedFileInfo = rootSeedInfo;
+    s_seedFileInfo.fileName.SetName(L"ExampleTestGroup/Test.dgndb");
+
+    DgnDbPtr db = DgnDbTestUtils::OpenDgnDbCopy(rootSeedInfo.fileName, s_seedFileInfo.fileName); // our seed starts as a copy of the root seed
+    ASSERT_TRUE(db.IsValid());
+    
+    // Suppose that all of the tests in this group will work with a certain setup, such as working woth two spatial models. 
+    // Do that setup now, one time for the whole group. 
+    // That way, each individual test can just make a copy of this seed file and start working, knowing that it has the needed setup.
+    // This custom setup is what makes our group seed different from the root seed file.
+    ASSERT_TRUE(DgnDbTestUtils::InsertSpatialModel(*db, DgnModel::CreateModelCode(EXAMPLE_MODEL_NAME)).IsValid());
+
+    db->SaveSettings();
+    db->SaveChanges();
     }
 
 //---------------------------------------------------------------------------------------
@@ -51,7 +67,7 @@ BETEST_TC_TEARDOWN(ExampleTestGroup)
     // base class to detect and throw an error if two groups try to use a directory of the same name.
     // Don't worry about stale data. The test runner will clean out everything at the start of the program.
     // You can empty the directory, if you want to save space.
-    DgnDbTestUtils::EmptySubDirectory(GROUP_SUBDIR);
+    DgnDbTestUtils::EmptySubDirectory(s_seedFileInfo.fileName.GetDirectoryName());
     }
 
 //---------------------------------------------------------------------------------------
@@ -62,22 +78,25 @@ TEST_F(ExampleTestGroup, Test1)
     {
     if (true)
         {
-        // Verify that the empty 3d seed file for the whole program is there.
-        DgnDbPtr db = DgnDbTestUtils::OpenDgnDb(DgnDbTestUtils::GetEmpty3dSeedFileName());
+        // Verify that the root seed file is there.
+        DgnDbTestUtils::SeedFileInfo rootSeedInfo = DgnDbTestUtils::GetSeedFile(DgnDbTestUtils::SeedFileId::OneSpatialModel, DgnDbTestUtils::SeedFileOptions(false, true));
+        DgnDbPtr db = DgnDbTestUtils::OpenDgnDb(rootSeedInfo.fileName);
         ASSERT_TRUE(db.IsValid());
-        ASSERT_TRUE(db->Models().QueryModelId(DgnDbTestUtils::GetDefaultModelCode()).IsValid());
-        ASSERT_TRUE(DgnCategory::QueryCategoryId(DgnDbTestUtils::GetDefaultCategoryName(), *db).IsValid());
-        ASSERT_TRUE(ViewDefinition::QueryViewId(DgnDbTestUtils::GetDefaultCameraViewName(), *db).IsValid());
+        ASSERT_TRUE(db->Models().QueryModelId(rootSeedInfo.modelCode).IsValid());
+        ASSERT_TRUE(DgnCategory::QueryCategoryId(rootSeedInfo.categoryName, *db).IsValid());
+        ASSERT_TRUE(ViewDefinition::QueryViewId(rootSeedInfo.viewName, *db).IsValid());
+        ASSERT_FALSE(db->Models().QueryModelId(DgnModel::CreateModelCode(EXAMPLE_MODEL_NAME)).IsValid()) << "Root seed file does not have this group's special setup";
         }
 
     if (true)
         {
         // Verify that the seed file for just this group is there.
-        DgnDbPtr db = DgnDbTestUtils::OpenDgnDb(GROUP_SEED_FILENAME);
+        DgnDbPtr db = DgnDbTestUtils::OpenDgnDb(s_seedFileInfo.fileName);
         ASSERT_TRUE(db.IsValid());
-        ASSERT_TRUE(db->Models().QueryModelId(DgnModel::CreateModelCode(DEFAULT_MODEL_NAME)).IsValid());
-        ASSERT_TRUE(DgnCategory::QueryCategoryId(DEFAULT_CATEGORY_NAME, *db).IsValid());
-        ASSERT_TRUE(ViewDefinition::QueryViewId(DEFAULT_VIEW_NAME, *db).IsValid());
+        ASSERT_TRUE(db->Models().QueryModelId(s_seedFileInfo.modelCode).IsValid());
+        ASSERT_TRUE(DgnCategory::QueryCategoryId(s_seedFileInfo.categoryName, *db).IsValid());
+        ASSERT_TRUE(ViewDefinition::QueryViewId(s_seedFileInfo.viewName, *db).IsValid());
+        ASSERT_TRUE(db->Models().QueryModelId(DgnModel::CreateModelCode(EXAMPLE_MODEL_NAME)).IsValid()) << "Group seed file has special setup";
         }
     }
 
@@ -90,30 +109,40 @@ TEST_F(ExampleTestGroup, Test2)
     if (true)
         {
         //  Verify that we can work with a read-write copy of the test group seed file
-        DgnDbPtr db = DgnDbTestUtils::OpenDgnDbCopy(GROUP_SEED_FILENAME);
-        db->Models().QueryModelId(DgnModel::CreateModelCode(DEFAULT_MODEL_NAME)).IsValid();
+        DgnDbPtr db = DgnDbTestUtils::OpenDgnDbCopy(s_seedFileInfo.fileName);
+        DgnModelId defaultModelId = db->Models().QueryModelId(s_seedFileInfo.modelCode);
+        ASSERT_TRUE(defaultModelId.IsValid());
+
+        ASSERT_TRUE(db->Models().QueryModelId(DgnModel::CreateModelCode(EXAMPLE_MODEL_NAME)).IsValid()) << "Group seed file has special setup";
 
         SpatialModelPtr model2 = DgnDbTestUtils::InsertSpatialModel(*db, DgnModel::CreateModelCode("Model2"));
         ASSERT_TRUE(model2.IsValid());
+        ASSERT_TRUE(model2->GetModelId() != defaultModelId);
+
+        db->SaveChanges();
         }
             
     if (true)
         {
-        //  Verify that we can work with a read-write copy of the base seed file
-        DgnDbPtr db = DgnDbTestUtils::OpenDgnDbCopy(DgnDbTestUtils::GetEmpty3dSeedFileName());
-        db->Models().QueryModelId(DgnDbTestUtils::GetDefaultModelCode()).IsValid();
+        //  Verify that we can work with a read-write copy of the root seed file
+        DgnDbTestUtils::SeedFileInfo info = DgnDbTestUtils::GetSeedFile(DgnDbTestUtils::SeedFileId::OneSpatialModel, DgnDbTestUtils::SeedFileOptions(false, true));
+        DgnDbPtr db = DgnDbTestUtils::OpenDgnDbCopy(info.fileName);
+
+        ASSERT_FALSE(db->Models().QueryModelId(DgnModel::CreateModelCode(EXAMPLE_MODEL_NAME)).IsValid()) << "Root seed file does not have this group's special setup";
 
         SpatialModelPtr model2 = DgnDbTestUtils::InsertSpatialModel(*db, DgnModel::CreateModelCode("Model2"));
         ASSERT_TRUE(model2.IsValid());
+        db->SaveChanges();
         }
 
     if (true)
         {
-        //  Verify that we can work with a read-write copy of the base seed file, where we assign a name
-        DgnDbPtr db = DgnDbTestUtils::OpenDgnDbCopy(DgnDbTestUtils::GetEmpty3dSeedFileName(), L"Test2");
-        db->Models().QueryModelId(DgnDbTestUtils::GetDefaultModelCode()).IsValid();
+        //  Verify that we can work with a read-write copy of the root seed file, where we assign a name
+        DgnDbTestUtils::SeedFileInfo info = DgnDbTestUtils::GetSeedFile(DgnDbTestUtils::SeedFileId::OneSpatialModel, DgnDbTestUtils::SeedFileOptions(false, true));
+        DgnDbPtr db = DgnDbTestUtils::OpenDgnDbCopy(info.fileName, L"Test2");
 
         SpatialModelPtr model2 = DgnDbTestUtils::InsertSpatialModel(*db, DgnModel::CreateModelCode("Model2"));
         ASSERT_TRUE(model2.IsValid());
+        db->SaveChanges();
         }
     }

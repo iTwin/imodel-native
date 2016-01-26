@@ -5,10 +5,12 @@
 
 #include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
 #include <DgnPlatform/DgnPlatformLib.h>
+#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
+USING_NAMESPACE_BENTLEY_DPTEST
 
 #define MUST_HAVE_HOST(BAD_RETURN) if (nullptr == DgnPlatformLib::QueryHost())\
         {\
@@ -16,12 +18,7 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
         return BAD_RETURN;\
         }
 
-#define EMPTY3D_FILENAME L"DgnDbTestUtils_Empty3d.dgndb"
-#define DEFAULT_MODEL_NAME "DefaultModel"
-#define DEFAULT_CATEGORY_NAME "DefaultCategory"
-#define DEFAULT_CAMERA_VIEW_NAME "DefaultCameraView"
-
-bool DgnDbTestUtils::s_createdSeedFiles;
+static bset<DgnDbTestUtils::SeedFileInfo> s_seedFilesCreated;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
@@ -34,55 +31,104 @@ static BeFileName getOutputPath(WStringCR relPath)
     return outputPathName;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                           Sam.Wilson             01/2016
-//---------------------------------------------------------------------------------------
-void DgnDbTestUtils::CreateSeedFiles()
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static void setBriefcase(DgnDbPtr& db, DgnDb::OpenMode mode)
     {
-    ASSERT_NE(nullptr, DgnPlatformLib::QueryHost()) << "Your TC_SETUP function must set up a host before calling DgnDbTestUtils::CreateSeedFiles. Just put an instance of ScopedDgnHost on the stack at the top of your function.";
-
-    if (s_createdSeedFiles)
+    if (db->IsBriefcase())
         return;
 
-    s_createdSeedFiles = true;
+    BeFileName name(db->GetFileName());
 
-    DgnDbPtr db = DgnDbTestUtils::CreateDgnDb(GetEmpty3dSeedFileName());
-    SpatialModelPtr model = DgnDbTestUtils::InsertSpatialModel(*db, GetDefaultModelCode());
-    DgnDbTestUtils::InsertCameraView(*model);
-    DgnDbTestUtils::InsertCategory(*db, GetDefaultCategoryName());
-    InsertCameraView(*model, GetDefaultCameraViewName());
+    db->ChangeBriefcaseId(BeBriefcaseId(1));
+    db->SaveChanges();
+    db->CloseDb();
+
+    DbResult result = BE_SQLITE_OK;
+    db = DgnDb::OpenDgnDb(&result, name, DgnDb::OpenParams(mode));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-WCharCP DgnDbTestUtils::GetEmpty3dSeedFileName()
+Utf8String DgnDbTestUtils::SeedFileOptions::ToKey() const
     {
-    return EMPTY3D_FILENAME;
+    return Utf8PrintfString("%d%d", testDomain, cameraView);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-DgnCode DgnDbTestUtils::GetDefaultModelCode()
+Utf8String DgnDbTestUtils::SeedFileInfo::ToKey() const
     {
-    return DgnModel::CreateModelCode(DEFAULT_MODEL_NAME);
+    return Utf8PrintfString("%d%s%s%d", (int)id, options.ToKey().c_str());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-Utf8CP DgnDbTestUtils::GetDefaultCategoryName()
+bool DgnDbTestUtils::SeedFileInfo::operator< (SeedFileInfo const& rhs) const
     {
-    return DEFAULT_CATEGORY_NAME;
+    return ToKey() < rhs.ToKey();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-Utf8CP DgnDbTestUtils::GetDefaultCameraViewName()
+DgnDbTestUtils::SeedFileInfo DgnDbTestUtils::GetOneSpatialModelSeedFile(SeedFileOptions const& options)
     {
-    return DEFAULT_CAMERA_VIEW_NAME;
+    if (nullptr == DgnPlatformLib::QueryHost())
+        {
+        EXPECT_TRUE(false) << "Your TC_SETUP function must set up a host before calling DgnDbTestUtils::CreateSeedFiles. Just put an instance of ScopedDgnHost on the stack at the top of your function.";
+        return SeedFileInfo();
+        }
+
+    SeedFileInfo info;
+    info.id = SeedFileId::OneSpatialModel;
+    info.options = options;
+    info.fileName.SetName(L"DgnDbTestUtils_OneSpatialModel.dgndb");
+    info.modelCode = DgnModel::CreateModelCode("DefaultModel");
+    info.categoryName = "DefaultCategory";
+
+    if (info.options.cameraView)
+        info.viewName = "DefaultCameraView";
+
+    if (!s_seedFilesCreated.insert(info).second)
+        return info;
+
+    //  First request for this seed file. Create it.
+    DgnDbPtr db = DgnDbTestUtils::CreateDgnDb(info.fileName, true, true);
+    SpatialModelPtr model = DgnDbTestUtils::InsertSpatialModel(*db, info.modelCode);
+    InsertCategory(*db, info.categoryName.c_str());
+    
+    if (info.options.cameraView)
+        InsertCameraView(*model, info.viewName.c_str());
+
+    if (info.options.testDomain)
+        EXPECT_EQ( DgnDbStatus::Success , DgnPlatformTestDomain::ImportSchema(*db) );
+
+    db->SaveSettings();
+    db->SaveChanges();
+    return info;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Sam.Wilson             01/2016
+//---------------------------------------------------------------------------------------
+DgnDbTestUtils::SeedFileInfo DgnDbTestUtils::GetSeedFile(SeedFileId seedId, SeedFileOptions const& options)
+    {
+    if (nullptr == DgnPlatformLib::QueryHost())
+        {
+        EXPECT_TRUE(false) << "Your TC_SETUP function must set up a host before calling DgnDbTestUtils::GetSeedFileInfo. Just put an instance of ScopedDgnHost on the stack at the top of your function.";
+        return SeedFileInfo();
+        }
+
+    if (SeedFileId::OneSpatialModel == seedId)
+        return GetOneSpatialModelSeedFile(options);
+
+    BeAssert(false && "invalid SeedFileId");
+    return SeedFileInfo();
     }
 
 //---------------------------------------------------------------------------------------
@@ -111,7 +157,7 @@ void DgnDbTestUtils::EmptySubDirectory(WCharCP relPath)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-DgnDbPtr DgnDbTestUtils::CreateDgnDb(WCharCP relPath)
+DgnDbPtr DgnDbTestUtils::CreateDgnDb(WCharCP relPath, bool isRoot, bool mustBeBriefcase)
     {
     MUST_HAVE_HOST(nullptr);
 
@@ -129,6 +175,12 @@ DgnDbPtr DgnDbTestUtils::CreateDgnDb(WCharCP relPath)
         return nullptr;
         }
 
+    if (!isRoot && BeFileName::GetDirectoryName(relPath).empty())
+        {
+        EXPECT_FALSE(true) << "DgnDbTestUtils::CreateDgnDb - the destination must be in a sub-directory with the same name as the test group.";
+        return nullptr;
+        }
+
     CreateDgnDbParams createProjectParams;
     createProjectParams.SetOverwriteExisting(false);
 
@@ -136,6 +188,9 @@ DgnDbPtr DgnDbTestUtils::CreateDgnDb(WCharCP relPath)
     DgnDbPtr db = DgnDb::CreateDgnDb(&createStatus, fileName, createProjectParams);
     if (!db.IsValid())
         EXPECT_FALSE(true) << WPrintfString(L"%ls - create failed", fileName.c_str()).c_str();
+
+    if (mustBeBriefcase)
+        setBriefcase(db, DgnDb::OpenMode::ReadWrite);
 
     return db;
     }
@@ -201,18 +256,31 @@ DgnDbPtr DgnDbTestUtils::OpenDgnDbCopy(WCharCP relSeedPathIn, WCharCP newName)
         
     //  2. Make sure that it is located in a subdirectory that is specific to the current test case. (That's how we keep test groups out of each other's way.)
     Utf8String tcname;
-    if (BSISUCCESS != BeTest::GetNameOfCurrentTestCase(tcname))
+    if (BSISUCCESS == BeTest::GetNameOfCurrentTestCase(tcname))
         {
-        EXPECT_FALSE(true) << "DgnDbTestUtils::OpenDgnDbCopy can only be called from a test, not a static setup function.";
-        return nullptr;
+        WString wtcname(tcname.c_str(), BentleyCharEncoding::Utf8);
+        if (!wtcname.Equals(ccRelPathBase.substr(0, tcname.size())))
+            {
+            WString tmp(ccRelPathBase);
+            ccRelPathBase.SetName(wtcname);
+            ccRelPathBase.AppendToPath(tmp.c_str());
+            }
+        }
+    else
+        {
+        // The caller is not a test. Caller must be a TC_SETUP function. We don't know the caller's TC name. At least check that he's specifying a subdirectory.
+        if (ccRelPathBase.GetDirectoryName().empty())
+            {
+            EXPECT_FALSE(true) << "DgnDbTestUtils::OpenDgnDbCopy - the destination must be in a sub-directory.";
+            return nullptr;
+            }
         }
 
-    WString wtcname(tcname.c_str(), BentleyCharEncoding::Utf8);
-    if (!wtcname.Equals(ccRelPathBase.substr(0, tcname.size())))
+    //  Make sure the output subdirectory exists
+    BeFileName subDir = getOutputPath(ccRelPathBase.GetDirectoryName());
+    if (!BeFileName::IsDirectory(subDir.c_str()))
         {
-        WString tmp(ccRelPathBase);
-        ccRelPathBase.SetName(wtcname);
-        ccRelPathBase.AppendToPath(tmp.c_str());
+        BeFileName::CreateNewDirectory(subDir.c_str());
         }
 
     //  3. Make sure it's unique

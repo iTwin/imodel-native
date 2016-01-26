@@ -23,27 +23,73 @@ struct DgnDbTestUtils : public testing::Test
     // BETEST_TC_SETUP(MyGroup) { ... one-time setup logic ... }
     // BETEST_TC_TEARDOWN(MyGroup) { ... one-time tear-down logic ... }
 
-protected:
-    static bool s_createdSeedFiles;
+    //! Identifies a root seed file
+    enum class SeedFileId
+        {
+        //! A seed file with:
+        //!     * A single spatial model that is empty.
+        //!     * A single camera view that points at this model
+        //!     * A single Category
+        OneSpatialModel = 1,    
+        };
 
+    //! Specifies optional features of a seed file
+    struct SeedFileOptions
+        {
+        bool        testDomain;     //!< If true, then the Test domain is imported into the seed file
+        bool        cameraView;     //!< If true, then the seed file contains a camera view pointing at the first spatial model
+
+        Utf8String ToKey() const;
+        
+        //! Construct SeedFileOptions
+        //! @param wantCameraView   If true, then the seed file will contain a camera view
+        //! @param testDomain       If true, then the Test domain will be imported into the seed file
+        SeedFileOptions(bool wantTestDomain = false, bool wantCameraView = true) : testDomain(wantTestDomain), cameraView(wantCameraView) {}
+        };
+
+    //! Information about a root seed file
+    struct SeedFileInfo
+        {
+        SeedFileId  id;             //!< The ID of the seed file
+        SeedFileOptions options;    //!< The options for the seed file
+        BeFileName  fileName;       //!< The filename 
+        DgnCode     modelCode;      //!< The DgnCode of the first DgnModel
+        Utf8String  categoryName;   //!< The name of the first Category
+        Utf8String  viewName;       //!< The name of the first view, if any.
+
+        SeedFileInfo() : id(SeedFileId::OneSpatialModel) {}
+        bool operator< (SeedFileInfo const& rhs) const;
+        Utf8String ToKey() const;
+        };
+
+private:
     //! Open the specified seed file.
     //! @param relPath Identifies a seed file that was created for the group in the TC_SETUP function. Be sure to use forward slash (/) as a directory separator.
     //! @param mode the file open mode
     //! @return a pointer to the open DgnDb, or nullptr if the file does not exist
     static DgnDbPtr OpenDgnDb(WCharCP relPath, DgnDb::OpenMode mode);
 
-public:
-    //! This function creates the program-wide seed files. It should be called before attempting to open open them. 
-    static void CreateSeedFiles();
-
     //! Create a DgnDb in the test output directory. The specified name must be a relative path, including an optional subdirectory path, and a filename.
     //! If the file already exists, that is an ERROR, indicating that two test groups are trying to create seed files with the same names.
     //! Each test group should use its own group-specific, unique name for its subdirectory and/or seed files.
-    //! @note Normally, this should be called only in the TC_SETUP function, once for an entire test group
     //! @param relPath  The subdirectory/filename for the new file. Be sure to use forward slash (/) as a directory separator.
+    //! @praam isRoot If true, the caller is DgnDbTestUtils and it wants to create a file in the root directory
+    //! @param mustBeBriefcase If true, the new DgnDb is marked as a (fake) briefcase.
     //! @return a pointer to the newly created file, or nullptr if the location is invalid
-    //! @see CreateSeedFiles
-    static DgnDbPtr CreateDgnDb(WCharCP relPath);
+    //! @note Normally, this should be called only in the TC_SETUP function, once for an entire test group
+    static DgnDbPtr CreateDgnDb(WCharCP relPath, bool isRoot, bool mustBeBriefcase);
+
+    static SeedFileInfo GetOneSpatialModelSeedFile(SeedFileOptions const& options);
+
+public:
+    //! Create a DgnDb in the test output directory. The specified name must be a relative path, including an optional subdirectory path, and a filename.
+    //! If the file already exists, that is an ERROR, indicating that two test groups are trying to create seed files with the same names.
+    //! Each test group should use its own group-specific, unique name for its subdirectory and/or seed files.
+    //! @param relPath  The subdirectory/filename for the new file. Be sure to use forward slash (/) as a directory separator.
+    //! @param mustBeBriefcase If true, the new DgnDb is marked as a (fake) briefcase. This is the default.
+    //! @return a pointer to the newly created file, or nullptr if the location is invalid
+    //! @note Normally, this should be called only in the TC_SETUP function, once for an entire test group
+    static DgnDbPtr CreateDgnDb(WCharCP relPath, bool mustBeBriefcase = true) {return CreateDgnDb(relPath, false, mustBeBriefcase);}
 
     //! Create a subdirectory in the test output directory. 
     //! If the directory already exists, that is an ERROR, indicating that two test groups are trying to use the same output directory.
@@ -56,32 +102,30 @@ public:
     //! @param relPath  The name of the subdirectory to empty. Be sure to use forward slash (/) as a directory separator.
     static void EmptySubDirectory(WCharCP relPath);
 
-    //! Get the filename (not the full file path) of the empty 3-D seed file
-    static WCharCP GetEmpty3dSeedFileName();
-
-    //! Get the name of the default model that is created in most of the seed files
-    static DgnCode GetDefaultModelCode();
-
-    //! Get the name of the default category that is created in most of the seed files
-    static Utf8CP GetDefaultCategoryName();
-
-    //! Get the name of the default spatial view that is created in most of the seed files
-    static Utf8CP GetDefaultCameraViewName();
+    //! Get information about a root seed file. 
+    //! @param seedId   Identifies the seed file that is of interest.
+    //! @param options  Optional features of the seed file that you want
+    //! @return Information about the requested seed file. 
+    //! @note This function may create the seed file as a side effect, if it hasn't been created already.
+    //! @see OpenDgnDb, OpenDgnDbCopy
+    static SeedFileInfo GetSeedFile(SeedFileId seedId, SeedFileOptions const& options = SeedFileOptions());
 
     //! Open the specified seed file read-only
-    //! @param relSeedPath Identifies a seed file that was created for the group in the TC_SETUP function. Be sure to use forward slash (/) as a directory separator.
+    //! @param relSeedPath Identifies a pre-existing seed file. If you want to open a seed file that was created by your test group's TC_SETUP logic, then you must specify the
+    //! relative path to it. If you want to open a program-wide seed file, call GetSeedFile to get its name. 
     //! @return a pointer to the open DgnDb, or nullptr if the file does not exist
-    //! @see CreateSeedFiles
+    //! @see GetSeedFile, OpenDgnDbCopy
     static DgnDbPtr OpenDgnDb(WCharCP relSeedPath);
         
     //! Open <em>a copy of</em> the specified seed file for reading and writing. The result will be a private copy for the use of the caller.
     //! The copy will always be located in a subdirectory with the same name as the caller's test case.
     //! @note The copy of the file is automatically assigned a unique name, to avoid name collisions with other tests.
-    //! @param relSeedPath Identifies a seed file that was created for the group in the TC_SETUP function. Be sure to use forward slash (/) as a directory separator.
+    //! @param relSeedPath Identifies a pre-existing seed file. If you want to open a seed file that was created by your test group's TC_SETUP logic, then you must specify the
+    //! relative path to it. If you want to open a program-wide seed file, call GetSeedFile to get its name. 
     //! @param newName optional. all or part of the name of the copy. If null, then the name of the copy will be based on the name of the input seed file. If not null, then
     //! the name of the copy will be based on \a newName and will be modified as necessary to make it unique.
     //! @return a pointer to the open DgnDb, or nullptr if the seed file does not exist.
-    //! @see CreateSeedFiles
+    //! @see OpenDgnDb, GetSeedFile
     static DgnDbPtr OpenDgnDbCopy(WCharCP relSeedPath, WCharCP newName = nullptr);
 
     //! Insert a SpatialModel 
