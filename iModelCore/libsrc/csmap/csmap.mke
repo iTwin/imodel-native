@@ -6,7 +6,7 @@
 #       $Date: 2010/04/21 15:09:58 $
 #     $Author: Alain.Robert $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 #----------------------------------------------------------------
@@ -377,7 +377,8 @@ MultiCompileDepends=$(_MakeFileSpec)
 
     $(o)CSmrcomp$(oext):              $(csSrcDir)CSmrcomp.c ${MultiCompileDepends}
 
-    $(o)CSsys34KMS$(oext):            $(csSrcDir)CSsys34KMS.c ${MultiCompileDepends}
+# No need to compile this file since it is included by CS_sys34.c pulling its content into the process.
+#    $(o)CSsys34KMS$(oext):            $(csSrcDir)CSsys34KMS.c ${MultiCompileDepends}
 
     $(o)CSwktFlavors$(oext):          $(csSrcDir)CSwktFlavors.c ${MultiCompileDepends}
 
