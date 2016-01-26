@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/HTiff/src/HTIFFTagEntry.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HTIFFTagEntry
@@ -14,7 +14,6 @@
 
 #include <Imagepp/all/h/HTIFFTagEntry.h>
 #include <Imagepp/all/h/HTIFFUtils.h>
-#include <Imagepp/all/h/HFCMemcpy.h>
 #include <Imagepp/all/h/HTIFFDirectory.h>
 
 #include <Imagepp/all/h/HTIFFRational.h>
@@ -243,7 +242,7 @@ bool HTIFFTagEntry::ReadData (const HTagInfo&      pi_rTagInfo,
             {
             Byte* pTempToBeDeleted = m_pEntry->pData;
             m_pEntry->pData = new Byte[NbByte + 1];
-            HFCMemcpy(m_pEntry->pData, pTempToBeDeleted, NbByte);
+            memcpy(m_pEntry->pData, pTempToBeDeleted, NbByte);
             *((char*)m_pEntry->pData + NbByte) = 0;
 
             delete pTempToBeDeleted;
@@ -272,14 +271,14 @@ bool HTIFFTagEntry::ReadData (const HTagInfo&      pi_rTagInfo,
                     uint64_t LVal = m_pEntry->Offset64;
                     if (m_pByteOrder->NeedSwapByte())
                         SwabArrayOfUInt64(&LVal, 1);
-                    HFCMemcpy(m_pEntry->pData, &LVal, NbByte);
+                    memcpy(m_pEntry->pData, &LVal, NbByte);
                     }
                 else
                     {
                     uint32_t LVal = (uint32_t)m_pEntry->Offset64;
                     if (m_pByteOrder->NeedSwapByte())
                         SwabArrayOfLong(&LVal, 1);
-                    HFCMemcpy(m_pEntry->pData, &LVal, NbByte);
+                    memcpy(m_pEntry->pData, &LVal, NbByte);
                     }
 
                 m_pEntry->Status.DataInOffset = false;
@@ -391,7 +390,7 @@ bool HTIFFTagEntry::ReadData (const HTagInfo&      pi_rTagInfo,
             {
             Byte* pTempToBeDeleted = m_pEntry->pData;
             m_pEntry->pData = new Byte[NbByte + 1];
-            HFCMemcpy(m_pEntry->pData, pTempToBeDeleted, NbByte);
+            memcpy(m_pEntry->pData, pTempToBeDeleted, NbByte);
             *((char*)m_pEntry->pData + NbByte) = 0;
 
             if (m_pEntry->Status.DataInOffset)
@@ -448,14 +447,14 @@ bool HTIFFTagEntry::WriteTagEntry (const HTagInfo&     pi_rTagInfo,
             case HTagInfo::UNDEFINED:
                 if (pio_pFile->m_IsTiff64)
                     {
-                    HFCMemcpy(&TagDescriptor.Offset64, m_pEntry->pData, NbByte);
+                    memcpy(&TagDescriptor.Offset64, m_pEntry->pData, NbByte);
 
                     if (m_pByteOrder->NeedSwapByte())
                         SwabArrayOfUInt64(&TagDescriptor.Offset64, 1);
                     }
                 else
                     {
-                    HFCMemcpy(&TagDescriptor.Offset32, m_pEntry->pData, NbByte);
+                    memcpy(&TagDescriptor.Offset32, m_pEntry->pData, NbByte);
 
                     if (m_pByteOrder->NeedSwapByte())
                         SwabArrayOfLong(&TagDescriptor.Offset32, 1);
@@ -1307,7 +1306,7 @@ void HTIFFTagEntry::SetArray (uint32_t pi_DirCount, const Byte* pi_pData)
     // If same pointer, don't copy, because the User can't change this
     // pointer.
     if ((Byte*)m_pEntry->pData != pi_pData)
-        HFCMemcpy(m_pEntry->pData, pi_pData, NbByte);
+        memcpy(m_pEntry->pData, pi_pData, NbByte);
     }
 
 

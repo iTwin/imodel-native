@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/h/HStlStuff.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -21,13 +21,13 @@ BEGIN_IMAGEPP_NAMESPACE
 ** --------------------------------------------------------------------------
 */
 
-#if defined (ANDROID) || defined (__APPLE__)
+#if 1
+// Copy on write is not legal in C++11
+//http://stackoverflow.com/questions/12199710/legality-of-cow-stdstring-implementation-in-c11
 
-#   define FREEZE_STL_STRING_W(x)  { WString::iterator FreezeItr = ((WString&)x).begin(); }
-#       define FREEZE_STL_STRING(x) FREEZE_STL_STRING_W(x)
+#define FREEZE_STL_STRING(x)
 
-#elif defined (_WIN32)
-
+#else
 #   define STL_STRING_DOES_REFCOUNTING
 
 // Call this macro to ensure that the specified string (STL::basic_string<>)
@@ -49,18 +49,8 @@ inline void FreezeStlStringFunction_A(std::string& pi_rObj)
 inline void FreezeStlStringFunction_W(WString& pi_rObj)
     {
     FREEZE_STL_STRING_W(pi_rObj)
-    }
-
-// Use this macro directly on a sequence (vector, list, etc...) to freeze
-// all strings in the specified range. Must be non-const iterators that point to
-// string objects. Example: iterators from a list<string>.
-// see definition above
-
-#else
-#   error Unknown compiler - Not using Microsoft STL? Check basic_string refcounting
+    }  
 #endif
-
-
 
 // TEMPLATE STRUCT less
 struct lessDoubleEpsilon
@@ -71,7 +61,6 @@ struct lessDoubleEpsilon
         return HDOUBLE_SMALLER_EPSILON(_Left, _Right);
         }
     };
-
 
 /*
 ** --------------------------------------------------------------------------

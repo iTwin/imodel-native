@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DCoord.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -225,6 +225,11 @@ public:
         }
 #endif
     };
+
+// Moved from HGF2DPosition.h to remove circular reference because HGF2DCoord<DataType>::CalculateLengthTo requires 
+// HGF2DDisplacement which requires HGF2DPosition.
+typedef HGF2DCoord<double> HGF2DPosition;
+typedef std::vector<HGF2DCoord<double>, std::allocator<HGF2DCoord<double> > > HGF2DPositionCollection;
 
 END_IMAGEPP_NAMESPACE
 

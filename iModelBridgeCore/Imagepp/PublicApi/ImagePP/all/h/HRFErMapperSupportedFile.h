@@ -7,7 +7,7 @@
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
-#if defined(_WIN32)
+#if defined(BENTLEY_WIN32)
     #if !defined(_DEBUG)    // We do not support these format when using the debug version of the C run-time library
         #define IPP_HAVE_ERMAPPER_SUPPORT
     #endif

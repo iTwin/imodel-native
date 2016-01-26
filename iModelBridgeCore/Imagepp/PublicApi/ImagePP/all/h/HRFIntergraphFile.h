@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFIntergraphFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
@@ -33,13 +33,8 @@ class HGF2DIdentity;
 #define HRF_INTERGRAPH_TYPICAL_READ_BUFFER_SIZE      1024
 #define HRF_INTERGRAPH_CACHED_READ_STROKE             512
 
-// Want to hang on other plateform because pragma instruction is normally compiler dependent
-#ifdef _WIN32
 // Disable the automatic word alingnement for intergraph structure.
 #pragma pack( push, IntergraphIdent,  1)
-#else
-#pragma pack( push, 1)
-#endif
 
 class HRFIntergraphFile : public HRFRasterFile
     {
@@ -476,10 +471,6 @@ private:
 
 // Re-enable the automatic word alingnement by removing the previous pragma instruction
 // at the begining of this class
-#ifdef _WIN32
 #pragma pack( pop, IntergraphIdent)
-#else
-#pragma pack( pop)
-#endif
 
 END_IMAGEPP_NAMESPACE

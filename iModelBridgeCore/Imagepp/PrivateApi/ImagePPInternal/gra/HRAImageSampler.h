@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PrivateApi/ImagePPInternal/gra/HRAImageSampler.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -60,6 +60,8 @@ public:
         HDEBUGCODE(BeAssert(!m_isAvailable););
         HDEBUGCODE(m_isAvailable = true;);
         }
+
+    enum {IsThreadSafe = 0};
 
 private:
     SingleBlockAllocator(SingleBlockAllocator const&) = delete;

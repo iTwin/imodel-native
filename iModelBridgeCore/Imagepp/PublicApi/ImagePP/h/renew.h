@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/h/renew.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -17,7 +17,7 @@ inline void* renew(Byte* pi_pMemblock, size_t pi_CurrentSize, size_t pi_NewSize)
     Byte* pNewMemBlock;
     if ((pNewMemBlock = new Byte[pi_NewSize]) != 0 && pi_pMemblock)
         {
-        memcpy(pNewMemBlock, pi_pMemblock, hmin(pi_CurrentSize, pi_NewSize));
+        memcpy(pNewMemBlock, pi_pMemblock, MIN(pi_CurrentSize, pi_NewSize));
         delete[] pi_pMemblock;
         }
 

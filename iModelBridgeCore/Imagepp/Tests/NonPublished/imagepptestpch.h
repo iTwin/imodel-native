@@ -2,28 +2,10 @@
 |
 |     $Source: Tests/NonPublished/imagepptestpch.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
-#ifdef _WIN32
-// Normally I would have add this lib to BEGTEST_LIBRARIES but it requires a full path and I can't find a way to resolve it using $(LIB) delimited list.
-//So I ended up adding this pragma here. see imagepp\test\dependencies.mki   
-//#pragma comment(lib, "Ws2_32.lib")
-
-#include "windows.h"
-#include <Winsock2.h>
-#include <Winerror.h>
-#include <wininet.h>
-#include <conio.h>
-#include <direct.h>
-#include <io.h>
-#include <wtypes.h>
-#include <urlmon.h>
-#include <initguid.h>
-#include <wtypes.h>     // Windows timer system
-#endif
 
 //#define IPP_USING_STATIC_LIBRARIES
 

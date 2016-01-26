@@ -158,8 +158,6 @@ $(o)HFCLocalBinStream$(oext) : $(ippUtlDir)hfc/src/HFCLocalBinStream.cpp $(ippAl
 
 $(o)HFCMath$(oext) : $(ippUtlDir)hfc/src/HFCMath.cpp $(ippAllInc)HFCMath.h ${MultiCompileDepends}
 
-$(o)HFCMemcpy$(oext) : $(ippUtlDir)hfc/src/HFCMemcpy.cpp $(ippAllInc)HFCMemcpy.h ${MultiCompileDepends}
-
 $(o)HFCMemoryBinStream$(oext) : $(ippUtlDir)hfc/src/HFCMemoryBinStream.cpp $(ippAllInc)HFCMemoryBinStream.h ${MultiCompileDepends}
 
 $(o)HFCMemoryLineStream$(oext) : $(ippUtlDir)hfc/src/HFCMemoryLineStream.cpp $(ippAllInc)HFCMemoryLineStream.h ${MultiCompileDepends}

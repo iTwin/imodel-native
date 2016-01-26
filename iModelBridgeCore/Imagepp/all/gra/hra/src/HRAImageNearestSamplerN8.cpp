@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAImageNearestSamplerN8.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -107,19 +107,17 @@ ImagePPStatus HRAImageNearestSamplerN8<PixelSize_T>::Stretch_T(HRAImageSampleR o
         };
     
     // Process all lines.
-#if defined (_WIN32)
-    if (!m_enableMultiThreading)
+#if defined (HAVE_CONCURRENCY_RUNTIME)
+    if (m_enableMultiThreading)
+        {
+        Concurrency::parallel_for<uint32_t>(0, outHeight, lineProcessor);
+        }
+    else
 #endif
         {
         for (uint32_t row = 0; row < outHeight; ++row)
             lineProcessor(row);
         }
-#if defined (_WIN32)
-    else
-        {
-        Concurrency::parallel_for<uint32_t>(0, outHeight, lineProcessor);
-        }
-#endif
 
     return IMAGEPP_STATUS_Success;
     }
@@ -185,19 +183,18 @@ ImagePPStatus HRAImageNearestSamplerN8<PixelSize_T>::Warp_T(HRAImageSampleR outD
         };
 
     // Process all lines.
-#if defined (_WIN32)
-    if (!m_enableMultiThreading || !m_pDestToSrcTransfo->IsConvertDirectThreadSafe())
+#if defined(HAVE_CONCURRENCY_RUNTIME)
+    if(m_enableMultiThreading && m_pDestToSrcTransfo->IsConvertDirectThreadSafe())
+        {
+        Concurrency::parallel_for<uint32_t>(0, outHeight, lineProcessor);
+        }
+    else
 #endif
         {
         for (uint32_t row = 0; row < outHeight; ++row)
             lineProcessor(row);
         }
-#if defined (_WIN32)
-    else
-        {
-        Concurrency::parallel_for<uint32_t>(0, outHeight, lineProcessor);
-        }
-#endif
+
     return IMAGEPP_STATUS_Success;
     }
 

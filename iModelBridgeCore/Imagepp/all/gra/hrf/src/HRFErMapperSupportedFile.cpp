@@ -1548,7 +1548,7 @@ void HRFErMapperSupportedFile::InitErMapperLibrary()
         NCSSetGDTPath(multiByteDestination);
 //DMx        CNCSGDTLocation::SetGuessPath(true);
 
-#if defined(_WIN32) || defined(WIN32)
+#if defined(BENTLEY_WIN32)
         //By default, the doc says that it is going to use 25% of the RAM, that seems to be much more than that.
         // Since we already cache on top of ECW library, we decided to limit to 512 MB.
         NCSecwSetConfig(NCSCFG_CACHE_MAXMEM, 512*1024*1024);    // tr #243826, limit the cache to 8 meg in 2008

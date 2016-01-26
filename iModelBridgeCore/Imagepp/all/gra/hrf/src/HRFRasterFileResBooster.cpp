@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFRasterFileResBooster.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -163,13 +163,7 @@ HRFRasterFileResBooster::~HRFRasterFileResBooster()
     if (m_AutoErase && (m_pBoosterFile != 0))
         {
         if (m_pBoosterFile->GetURL()->GetSchemeType() == HFCURLFile::s_SchemeName())
-            {
-#ifdef _WIN32
-            FileName = (((HFCPtr<HFCURLFile>&)m_pBoosterFile->GetURL())->GetHost());
-            FileName += L"\\";
-            FileName += ((HFCPtr<HFCURLFile>&)m_pBoosterFile->GetURL())->GetPath();
-#endif
-            }
+            FileName = static_cast<HFCURLFile const*>(m_pBoosterFile->GetURL().GetPtr())->GetAbsoluteFileName();
         }
 
     Close();
@@ -177,10 +171,8 @@ HRFRasterFileResBooster::~HRFRasterFileResBooster()
     // Erase the cache file
     if (m_AutoErase && !FileName.empty())
         {
-#ifdef _WIN32
         m_pBoosterFile = 0;
-        _wunlink(FileName.c_str());
-#endif
+        BeFileName::BeDeleteFile(FileName.c_str());
         }
     }
 

@@ -17,6 +17,7 @@
 
 #include <concrt.h>
 #include <ppl.h>
+#define HAVE_CONCURRENCY_RUNTIME 
 
 #elif defined(__unix__)
 

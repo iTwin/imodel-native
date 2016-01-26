@@ -2,7 +2,7 @@
     //:>
     //:>     $Source: all/gra/hra/src/HRAImageBicubicSamplerN8.cpp $
     //:>
-    //:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+    //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
     //:>
     //:>+--------------------------------------------------------------------------------------
 
@@ -303,19 +303,18 @@ ImagePPStatus HRAImageBicubicSamplerN8<ChannelCount_T, Data_T>::Stretch_T(HRAIma
         };
 
     // Process all lines.
-#if defined (_WIN32)
-    if (!m_enableMultiThreading)
+#if defined (HAVE_CONCURRENCY_RUNTIME)
+    if (m_enableMultiThreading)
+        {
+        Concurrency::parallel_for<uint32_t>(0, outHeight, lineProcessor);
+        }
+    else
 #endif
         {
         for (uint32_t row = 0; row < outHeight; ++row)
             lineProcessor(row);
         }
-#if defined (_WIN32)
-    else
-        {
-        Concurrency::parallel_for<uint32_t>(0, outHeight, lineProcessor);
-        }
-#endif
+
     return IMAGEPP_STATUS_Success;
     }
 
@@ -442,19 +441,17 @@ ImagePPStatus HRAImageBicubicSamplerN8<ChannelCount_T, Data_T>::Warp_T(HRAImageS
         };
 
     // Process all lines.
-#if defined (_WIN32)
-    if (!m_enableMultiThreading || !m_pDestToSrcTransfo->IsConvertDirectThreadSafe())
+#if defined (HAVE_CONCURRENCY_RUNTIME)
+    if (m_enableMultiThreading && m_pDestToSrcTransfo->IsConvertDirectThreadSafe())
+        {
+        Concurrency::parallel_for<uint32_t>(0, outHeight, lineProcessor);
+        }
+    else
 #endif
         {
         for (uint32_t row = 0; row < outHeight; ++row)
             lineProcessor(row);
         }
-#if defined (_WIN32)
-    else
-        {
-        Concurrency::parallel_for<uint32_t>(0, outHeight, lineProcessor);
-        }
-#endif
 
     return IMAGEPP_STATUS_Success;
     }
