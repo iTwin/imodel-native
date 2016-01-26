@@ -599,6 +599,8 @@ private:
     dim_t           m_screenBufferHeight;
     CHAR_INFO       m_charBuffer[s_charBufferSize];
     Title           m_title;
+    BeAtomic<uint32_t>  m_sequenceId;
+    bool                m_wantSequenceId;
     
     static WCharCP GetNameSpace(ILogProviderContext* pContext)
         {
@@ -642,7 +644,8 @@ private:
     virtual void STDCALL_ATTRIBUTE LogMessage ( ILogProviderContext * context, SEVERITY sev, WCharCP msg ) override;
     virtual void STDCALL_ATTRIBUTE LogMessage ( ILogProviderContext * context, SEVERITY sev, Utf8CP msg ) override;       // we have an optimized version for Android and iOS
 public:
-    SplitConsoleProvider(bvector<WString> const& paneNames) : m_severity(LOG_TRACE), m_defaultPane(nullptr)
+    SplitConsoleProvider(bvector<WString> const& paneNames) : m_severity(LOG_TRACE), m_defaultPane(nullptr),
+        m_sequenceId(0), m_wantSequenceId(nullptr != getenv("BENTLEY_SPLIT_CONSOLE_SHOW_SEQUENCE"))
         {
         InitPanes(paneNames);
         }
@@ -652,6 +655,8 @@ public:
     HANDLE GetScreenBuffer() { return m_screenBuffer; }
     dim_t GetBufferHeight() const { return m_screenBufferHeight; }
     dim_t GetBufferWidth() const { return m_screenBufferWidth; }
+    uint32_t GetSequenceId() { return m_sequenceId++; }
+    bool WantSequenceId() const { return m_wantSequenceId; }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -682,24 +687,18 @@ void SplitConsoleProvider::Pane::Log(WCharCP msg, SEVERITY sev, WCharCP nameSpac
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-SplitConsoleProvider::dim_t SplitConsoleProvider::Pane::PrepareMessage(WCharCP rawMsg, SEVERITY sev, WCharCP nameSpace, WCharCP& nextSegment)
+SplitConsoleProvider::dim_t SplitConsoleProvider::Pane::PrepareMessage(WCharCP rawMsg, SEVERITY sev, WCharCP, WCharCP& nextSegment)
     {
     nextSegment = nullptr;
     WCharCP msg = rawMsg;
     size_t nPrefixChars = 0;
-#ifdef ADD_PREFIX_FOR_DEFAULT
-    WString decoratedMsg;
-    if (m_isDefault)
+
+    WString formattedMsg;
+    if (m_provider->WantSequenceId() && nullptr != rawMsg)
         {
-        decoratedMsg.AssignOrClear(nameSpace);
-        decoratedMsg.append(1, ':');
-        nPrefixChars = decoratedMsg.length();
-        decoratedMsg.append(rawMsg);
-        msg = decoratedMsg.c_str();
+        formattedMsg.Sprintf(L"[%llu] %ls", m_provider->GetSequenceId(), rawMsg);
+        msg = formattedMsg.c_str();
         }
-#else
-    UNUSED_VARIABLE(nameSpace);
-#endif
 
     WORD attributes = GetAttributesForSeverity(sev);
     CHAR_INFO* pBuf = m_buffer;
