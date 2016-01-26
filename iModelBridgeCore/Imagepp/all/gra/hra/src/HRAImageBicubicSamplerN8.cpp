@@ -2,7 +2,7 @@
     //:>
     //:>     $Source: all/gra/hra/src/HRAImageBicubicSamplerN8.cpp $
     //:>
-    //:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+    //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
     //:>
     //:>+--------------------------------------------------------------------------------------
 
@@ -216,7 +216,7 @@ ImagePPStatus HRAImageBicubicSamplerN8<ChannelCount_T, Data_T>::Stretch_T(HRAIma
 
     //get offset array first
     float* pPixelsDeltas = GetRealPixelOffSetBuffer(outWidth);
-    RawBuffer_T<uint32_t, decltype(m_allocator)> offsets(outWidth, m_allocator);
+    RawBuffer_T<uint32_t, decltype(m_singleBlockAllocator)> offsets(outWidth, m_singleBlockAllocator);
     uint32_t* pPixelsOffsetInt = &offsets.At(0);
 
     for(uint32_t w=0; w < outWidth; ++w)
@@ -303,19 +303,18 @@ ImagePPStatus HRAImageBicubicSamplerN8<ChannelCount_T, Data_T>::Stretch_T(HRAIma
         };
 
     // Process all lines.
-#if defined (_WIN32)
-    if (!m_enableMultiThreading)
+#if defined (HAVE_CONCURRENCY_RUNTIME)
+    if (m_enableMultiThreading)
+        {
+        Concurrency::parallel_for<uint32_t>(0, outHeight, lineProcessor);
+        }
+    else
 #endif
         {
         for (uint32_t row = 0; row < outHeight; ++row)
             lineProcessor(row);
         }
-#if defined (_WIN32)
-    else
-        {
-        Concurrency::parallel_for<uint32_t>(0, outHeight, lineProcessor);
-        }
-#endif
+
     return IMAGEPP_STATUS_Success;
     }
 
@@ -326,23 +325,23 @@ template<uint32_t ChannelCount_T, typename Data_T>
 template<class Surface_T>
 ImagePPStatus HRAImageBicubicSamplerN8<ChannelCount_T, Data_T>::Warp_T(HRAImageSampleR outData, PixelOffset const& outOffset, Surface_T& inData, PixelOffset const& inOffset)
     {
-    if (!m_pDestToSrcTransfo->IsConvertDirectThreadSafe())
+#if defined (HAVE_CONCURRENCY_RUNTIME)
+    if (m_enableMultiThreading && m_pDestToSrcTransfo->IsConvertDirectThreadSafe())
         {
-        return Warp_T<Surface_T, SingleBlockAllocator>(outData, outOffset, inData, inOffset, m_allocator);
+        ConcurrencyLineExecutor executor;
+        return Warp_T<Surface_T, ConcurrencyLineExecutor>(outData, outOffset, inData, inOffset, executor);
         }
-    else
-        {
-        ConcurrencyAllocator allocator;
-        return Warp_T<Surface_T, ConcurrencyAllocator>(outData, outOffset, inData, inOffset, allocator);
-        }
+#endif
+    SequentialLineExecutor executor(m_singleBlockAllocator);
+    return Warp_T<Surface_T, SequentialLineExecutor>(outData, outOffset, inData, inOffset, executor);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Nicolas.Marquis 06/2014
  +---------------+---------------+---------------+---------------+---------------+------*/
 template<uint32_t ChannelCount_T, typename Data_T>
-template<typename Surface_T, class Allocator_T>
-ImagePPStatus HRAImageBicubicSamplerN8<ChannelCount_T, Data_T>::Warp_T(HRAImageSampleR outData, PixelOffset const& outOffset, Surface_T& inData, PixelOffset const& inOffset, Allocator_T& allocator)
+template<typename Surface_T, class Executor_T>
+ImagePPStatus HRAImageBicubicSamplerN8<ChannelCount_T, Data_T>::Warp_T(HRAImageSampleR outData, PixelOffset const& outOffset, Surface_T& inData, PixelOffset const& inOffset, Executor_T& executor)
     {
     // Refer to Note 1 above for explanations
     size_t inPitch, outPitch;
@@ -357,7 +356,7 @@ ImagePPStatus HRAImageBicubicSamplerN8<ChannelCount_T, Data_T>::Warp_T(HRAImageS
 
     auto lineProcessor = [&](uint32_t row)
         {
-        RawBuffer_T<double, Allocator_T> positions(outWidth * 2, allocator);
+        RawBuffer_T<double, typename Executor_T::Allocator> positions(outWidth * 2, executor.m_allocator);
         double* pXPositions = &positions.At(0);
         double* pYPositions = &positions.At(outWidth);
 
@@ -441,20 +440,7 @@ ImagePPStatus HRAImageBicubicSamplerN8<ChannelCount_T, Data_T>::Warp_T(HRAImageS
             }
         };
 
-    // Process all lines.
-#if defined (_WIN32)
-    if (!m_enableMultiThreading || !m_pDestToSrcTransfo->IsConvertDirectThreadSafe())
-#endif
-        {
-        for (uint32_t row = 0; row < outHeight; ++row)
-            lineProcessor(row);
-        }
-#if defined (_WIN32)
-    else
-        {
-        Concurrency::parallel_for<uint32_t>(0, outHeight, lineProcessor);
-        }
-#endif
+    executor.ForEachLine(outHeight, lineProcessor);
 
     return IMAGEPP_STATUS_Success;
     }

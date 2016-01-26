@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DPosition.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -11,11 +11,18 @@
 // Position in two-dimension
 //-----------------------------------------------------------------------------
 
-//DM-Android #pragma once
+#pragma once
 
 #include "HGF2DCoord.h"
-BEGIN_IMAGEPP_NAMESPACE
-typedef HGF2DCoord<double> HGF2DPosition;
-typedef vector<HGF2DCoord<double>, allocator<HGF2DCoord<double> > > HGF2DPositionCollection;
-END_IMAGEPP_NAMESPACE
+
+// Moved to HGF2DCoord.h to remove circular reference because HGF2DCoord<DataType>::CalculateLengthTo requires 
+// HGF2DDisplacement which requires HGF2DPosition.
+//
+// BEGIN_IMAGEPP_NAMESPACE
+// 
+// typedef HGF2DCoord<double> HGF2DPosition;
+// 
+// typedef std::vector<HGF2DCoord<double>, std::allocator<HGF2DCoord<double> > > HGF2DPositionCollection;
+// 
+// END_IMAGEPP_NAMESPACE
 

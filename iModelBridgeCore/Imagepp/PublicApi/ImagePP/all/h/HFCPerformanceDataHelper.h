@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCPerformanceDataHelper.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -12,7 +12,7 @@
 #pragma once
 
 // WIN32 conditional inclusion
-#if defined(_WIN32) || defined(WIN32)
+#if defined(BENTLEY_WIN32) 
 
 
 //###############################

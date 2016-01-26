@@ -2,7 +2,7 @@
     //:>
     //:>     $Source: all/gra/hra/src/HRAImageBilinearSamplerN8.cpp $
     //:>
-    //:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+    //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
     //:>
     //:>+--------------------------------------------------------------------------------------
 
@@ -178,28 +178,27 @@ void HRAImageBilinearSamplerN8<ChannelCount_T, Data_T>::Warp_T(HRAImageSampleR o
     {
     if(outData.GetPixelType().GetChannelOrg().GetChannelPtr(0)->GetNoDataValue() != NULL)
         {
-        if (!m_pDestToSrcTransfo->IsConvertDirectThreadSafe())
+#if defined (HAVE_CONCURRENCY_RUNTIME)
+        if (m_enableMultiThreading && m_pDestToSrcTransfo->IsConvertDirectThreadSafe())
             {
-            return Warp_T<Surface_T, true/*AsNoData*/, SingleBlockAllocator>(outData, outOffset, inData, inOffset, m_allocator);
+            ConcurrencyLineExecutor executor;
+            return Warp_T<Surface_T, true/*AsNoData*/, ConcurrencyLineExecutor>(outData, outOffset, inData, inOffset, executor);
             }
-        else
-            {
-            ConcurrencyAllocator allocator;
-            return Warp_T<Surface_T, true/*AsNoData*/, ConcurrencyAllocator>(outData, outOffset, inData, inOffset, allocator);
-            }
+#endif
+        SequentialLineExecutor executor(m_singleBlockAllocator);
+        return Warp_T<Surface_T, true/*AsNoData*/, SequentialLineExecutor>(outData, outOffset, inData, inOffset, executor);
         }
-    else
+
+#if defined (HAVE_CONCURRENCY_RUNTIME)
+    if (m_enableMultiThreading && m_pDestToSrcTransfo->IsConvertDirectThreadSafe())
         {
-        if (!m_pDestToSrcTransfo->IsConvertDirectThreadSafe())
-            {
-            return Warp_T<Surface_T, false/*AsNoData*/, SingleBlockAllocator>(outData, outOffset, inData, inOffset, m_allocator);
-            }
-        else
-            {
-            ConcurrencyAllocator allocator;
-            return Warp_T<Surface_T, false/*AsNoData*/, ConcurrencyAllocator>(outData, outOffset, inData, inOffset, allocator);
-            }
+        ConcurrencyLineExecutor executor;
+        return Warp_T<Surface_T, false/*AsNoData*/, ConcurrencyLineExecutor>(outData, outOffset, inData, inOffset, executor);
         }
+#endif
+
+    SequentialLineExecutor executor(m_singleBlockAllocator);
+    return Warp_T<Surface_T, false/*AsNoData*/, SequentialLineExecutor>(outData, outOffset, inData, inOffset, executor);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -228,7 +227,7 @@ void HRAImageBilinearSamplerN8<ChannelCount_T, Data_T>::Stretch_T(HRAImageSample
 
     float* pPixelsfx = GetRealPixelOffSetBuffer(outWidth);
    
-    RawBuffer_T<int32_t, decltype(m_allocator)> offsets(outWidth, m_allocator);
+    RawBuffer_T<int32_t, decltype(m_singleBlockAllocator)> offsets(outWidth, m_singleBlockAllocator);
     int32_t* pPixelsOffsetInt = &offsets.At(0);
 
     for (uint32_t w = 0; w < outWidth; ++w)
@@ -346,27 +345,25 @@ void HRAImageBilinearSamplerN8<ChannelCount_T, Data_T>::Stretch_T(HRAImageSample
         };
 
     // Process all lines.
-#if defined (_WIN32)
-    if (!m_enableMultiThreading)
+#if defined (HAVE_CONCURRENCY_RUNTIME)
+    if (m_enableMultiThreading)
+         {
+        Concurrency::parallel_for<uint32_t>(0, outHeight, lineProcessor);
+        }
+    else
 #endif
         {
         for (uint32_t row = 0; row < outHeight; ++row)
             lineProcessor(row);
         }
-#if defined (_WIN32)
-    else
-        {
-        Concurrency::parallel_for<uint32_t>(0, outHeight, lineProcessor);
-        }
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Nicolas.Marquis 06/2014
  +---------------+---------------+---------------+---------------+---------------+------*/
 template<uint32_t ChannelCount_T, typename Data_T>
-template<typename Surface_T, bool HasNoData_T, class Allocator_T>
-void HRAImageBilinearSamplerN8<ChannelCount_T, Data_T>::Warp_T(HRAImageSampleR outData, PixelOffset const& outOffset, Surface_T& inData, PixelOffset const& inOffset, Allocator_T& allocator)
+template<typename Surface_T, bool HasNoData_T, class Executor_T>
+void HRAImageBilinearSamplerN8<ChannelCount_T, Data_T>::Warp_T(HRAImageSampleR outData, PixelOffset const& outOffset, Surface_T& inData, PixelOffset const& inOffset, Executor_T& executor)
     {
     size_t inPitch, outPitch;
     Byte const* pInBuffer = inData.GetDataCP(inPitch);
@@ -386,7 +383,7 @@ void HRAImageBilinearSamplerN8<ChannelCount_T, Data_T>::Warp_T(HRAImageSampleR o
     // Can be called by several threads.
     auto lineProcessor = [&](uint32_t row)
         {
-        RawBuffer_T<double, Allocator_T> positions(outWidth * 2, allocator);
+        RawBuffer_T<double, typename Executor_T::Allocator> positions(outWidth * 2, executor.m_allocator);
         double* pXPositions = &positions.At(0);
         double* pYPositions = &positions.At(outWidth);
 
@@ -496,20 +493,7 @@ void HRAImageBilinearSamplerN8<ChannelCount_T, Data_T>::Warp_T(HRAImageSampleR o
             }
         };
 
-    // Process all lines.
-#if defined (_WIN32)
-    if (!m_enableMultiThreading || !m_pDestToSrcTransfo->IsConvertDirectThreadSafe())
-#endif
-        {
-        for (uint32_t row = 0; row < outHeight; ++row)
-            lineProcessor(row);
-        }
-#if defined (_WIN32)
-    else
-        {
-        Concurrency::parallel_for<uint32_t>(0, outHeight, lineProcessor);
-        }
-#endif
+    executor.ForEachLine(outHeight, lineProcessor);
     }
 
 

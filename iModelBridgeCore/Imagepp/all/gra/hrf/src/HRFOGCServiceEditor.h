@@ -19,6 +19,7 @@ class BlockReaderThread;
 class HRFOGCService;
 struct HttpSession;
 struct OGCTile;
+struct OGCBlockQuery;
 
 //----------------------------------------------------------------------------------------
 // @bsiclass

@@ -779,17 +779,12 @@ const HFCPtr<HRFRasterFileCapabilities>& HRFJpegCreator::GetCapabilities()
 #define COMPLETE_ELEMENTS(x, y)    ((x / y) + ((x%y) ? 1 : 0))
 
 
-#if defined(_WIN32)
-#pragma warning(disable: 4505)      //  since VS2013: unreferenced local function has been removed
-#endif                              // for the function HRFJpegErrorExit
-
-
 //
 //-----------------------------------------------------------------------------
 // Friend
 // JPEGErrorExit
 //-----------------------------------------------------------------------------
-METHODDEF(void) ImagePP::HRFJpegErrorExit(j_common_ptr cinfo)
+void HRFJpegFile::JpegLibErrorExit(j_common_ptr cinfo)
     {
     struct HRFJpegFileErrorManager* pErrorManager;
 
@@ -1098,7 +1093,7 @@ bool HRFJpegFile::Open()
 
         // set the jpeg error manager to a standard
         m_Jpeg.m_pDecompress->err = jpeg_std_error(&(m_pErrorManager->pub));
-        m_pErrorManager->pub.error_exit = HRFJpegErrorExit;
+        m_pErrorManager->pub.error_exit = HRFJpegFile::JpegLibErrorExit;
 
 
         ////////////////////////////////////////
@@ -1316,7 +1311,7 @@ bool HRFJpegFile::Create()
 
     // set the jpeg error manager to a standard
     m_Jpeg.m_pCompress->err = jpeg_std_error(&(m_pErrorManager->pub));
-    m_pErrorManager->pub.error_exit = HRFJpegErrorExit;
+    m_pErrorManager->pub.error_exit = HRFJpegFile::JpegLibErrorExit;
 
 
     ////////////////////////////////////////

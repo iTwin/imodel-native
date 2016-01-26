@@ -101,7 +101,7 @@ public:
     Credentials (Utf8CP username, Utf8CP password):m_username(username), m_password(password) {}
 
     Credentials (const Credentials&) = default;   
-    Credentials& Credentials::operator= (const Credentials&) = default;
+    Credentials& operator= (const Credentials&) = default;
 
     ~Credentials (){};
 

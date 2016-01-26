@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFRasterFileCache.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------
@@ -197,19 +197,14 @@ HRFRasterFileCache::~HRFRasterFileCache()
     Monitor.ReleaseKey();
 
     WString FileName;
+
     // Erase the cache file
     if (m_AutoErase)
         {
         HASSERT(m_pCache != 0);
 
         if (m_pCache->GetURL()->GetSchemeType() == HFCURLFile::s_SchemeName())
-            {
-#ifdef _WIN32
-            FileName = ((HFCPtr<HFCURLFile>&)m_pCache->GetURL())->GetHost();
-            FileName += L"\\";
-            FileName += ((HFCPtr<HFCURLFile>&)m_pCache->GetURL())->GetPath();
-#endif
-            }
+            FileName = static_cast<HFCURLFile const*>(m_pCache->GetURL().GetPtr())->GetAbsoluteFileName();
         }
 
     try
@@ -223,10 +218,8 @@ HRFRasterFileCache::~HRFRasterFileCache()
     // Erase the cache file
     if (m_AutoErase && !FileName.empty())
         {
-#ifdef _WIN32
         m_pCache = 0;
-        _wunlink(FileName.c_str());
-#endif
+        BeFileName::BeDeleteFile(FileName.c_str());
         }
     }
 

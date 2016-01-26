@@ -17,16 +17,17 @@
 
 #include <concrt.h>
 #include <ppl.h>
+#define HAVE_CONCURRENCY_RUNTIME 
 
 #elif defined(__unix__)
 
-//  #if defined (__APPLE__)
-//      apple specific here
-//  #endif
-    
-//  #if defined (ANDROID)
-//      android specific here
-//   #endif
+    #if defined (__APPLE__)
+    // apple specific here
+    #endif
+   
+    #if defined (ANDROID)
+    // android specific here
+    #endif
 
 #else
     #error unknown compiler

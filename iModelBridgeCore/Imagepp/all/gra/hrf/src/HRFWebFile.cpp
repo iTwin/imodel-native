@@ -249,7 +249,7 @@ HRFWebFile::HRFWebFile
 //         throw HRFCannotDownloadToInternetCacheException(pi_rpURL->GetURL());
 
 // We have a stream and need a file. Not all HRF support a MemoryBinStream and BeGetTempFileName will fail on non-windows. Were can we dump that file?
-#error todo non win32
+    BeAssert(!"TODO dump file to temp and open it from there");
 
 #endif
 

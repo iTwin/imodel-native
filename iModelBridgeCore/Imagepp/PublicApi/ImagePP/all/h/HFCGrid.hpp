@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCGrid.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -216,11 +216,7 @@ inline int64_t HFCGrid::GetYMax() const
 //-----------------------------------------------------------------------------
 inline int64_t HFCGrid::GetWidth() const
     {
-#if defined (ANDROID) || defined (__APPLE__)
-        return llabs(GetXMax() - GetXMin() + 1);       //DM-Android move that on BeNumeric? 
-#elif defined (_WIN32)
-        return _abs64(GetXMax() - GetXMin() + 1);
-#endif
+    return llabs(GetXMax() - GetXMin() + 1); 
     }
 
 //-----------------------------------------------------------------------------
@@ -230,11 +226,7 @@ inline int64_t HFCGrid::GetWidth() const
 //-----------------------------------------------------------------------------
 inline int64_t HFCGrid::GetHeight() const
     {
-#if defined (ANDROID) || defined (__APPLE__)
-        return llabs(GetYMax() - GetYMin() + 1);
-#elif defined (_WIN32)
-        return _abs64(GetYMax() - GetYMin() + 1);
-#endif
+    return llabs(GetYMax() - GetYMin() + 1);
     }
 
 END_IMAGEPP_NAMESPACE

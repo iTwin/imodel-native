@@ -14,9 +14,6 @@
 #include "HRFVirtualEarthEditor.h"
 #include <Imagepp/all/h/HRFVirtualEarthFile.h>
 #include <Imagepp/all/h/HRPPixelConverter.h>
-#include <Imagepp/all/h/HFCExceptionHandler.h>
-#include <Imagepp/all/h/HFCURLMemFile.h>
-#include <Imagepp/all/h/HRFJpegFile.h>
 #include <Imagepp/all/h/HRFPngFile.h>
 #include <ImagePPInternal/gra/Task.h>
 #include <ImagePPInternal/HttpConnection.h>

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/h/ImageppAPI.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -35,19 +35,9 @@
 #include <iosfwd>
 #include <utility>
 #include <stack>
-
-using namespace std;
-
-// General compiler Include files
-#if defined (ANDROID) || defined (__APPLE__)
-
-#elif defined (_WIN32)
-
 #include <numeric>
 
-#else
-#   error Unknown compiler - No STL inclusion Standard defined
-#endif
+using namespace std;
 
 // Include after the using std command
 #include "HNumeric.h"

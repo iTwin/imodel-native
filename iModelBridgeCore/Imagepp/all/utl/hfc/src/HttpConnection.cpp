@@ -8,7 +8,7 @@
 #include <ImagePPInternal/hstdcpp.h>
 #include <ImagePPInternal/HttpConnection.h>
 
-static std::atomic<uint32_t> s_curl_initTermCount = 0;
+static std::atomic<uint32_t> s_curl_initTermCount(0);
 
 //----------------------------------------------------------------------------------------
 // @bsiclass
