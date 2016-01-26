@@ -386,29 +386,12 @@ void QueryModel::Processor::SearchRangeTree(Filter& filter)
 
     do
         {
-        auto rc = rangeStmt->Step();
-        switch (rc)
-            {
-            case BE_SQLITE_DONE:
-                return;
+        if (BE_SQLITE_ROW != rangeStmt->Step())
+            break;
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-            case BE_SQLITE_BUSY:
-                DEBUG_ERRORLOG("Query busy, %ld", filter.m_lastRowid);
-                if (filter.m_rows.find(filter.m_lastRowid) != filter.m_rows.end())
-                    DEBUG_ERRORLOG("restart doesn't work");
-                filter.m_rows.insert(filter.m_lastRowid);
-                    
-                filter.m_busyTime = BeTimeUtilities::QueryMillisecondsCounter() + 100;
-                continue;
-#endif
+        filter.AcceptElement(rangeStmt->GetValueId<DgnElementId>(0));
 
-            case BE_SQLITE_ROW:
-                filter.AcceptElement(rangeStmt->GetValueId<DgnElementId>(0));
-                break;
-            }
-
-        if (/*filter.GetCount() >= m_params.m_plan.GetMinElements() && */(BeTimeUtilities::QueryMillisecondsCounter() > endTime))
+        if (BeTimeUtilities::QueryMillisecondsCounter() > endTime)
             {
             DEBUG_ERRORLOG("Query timeout");
             filter.m_needsProgressive = true;
@@ -432,15 +415,10 @@ QueryModel::Filter::Filter(QueryModelR model, uint32_t hitLimit, DgnElementIdSet
         {
         m_lastScore = DBL_MAX;
         for (auto const& id : *alwaysDraw)
-            {
-            if (nullptr != m_exclude && m_exclude->find(id) != m_exclude->end())
-                continue;
-
             AcceptElement(id);
-            }
         }
 
-    //  We do this as the last step. Otherwise, the calls to RangeAccept in the previous step would not have any effect.
+    //  We do this as the last step. Otherwise, the calls to AcceptElement in the previous step would not have any effect.
     m_alwaysDraw = alwaysDraw;
     }
 
@@ -471,7 +449,7 @@ int QueryModel::Filter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
         return BE_SQLITE_ERROR;
 
     RTree3dValCP pt = (RTree3dValCP) info.m_coords;
-    if (!m_boundingRange.Intersects(*pt) && SkewTest(pt))
+    if (!m_boundingRange.Intersects(*pt) || !SkewTest(pt))
         return BE_SQLITE_OK;
 
     DPoint3d localCorners[8];
@@ -555,7 +533,7 @@ int QueryModel::AllElementsFilter::_TestRTree(RTreeMatchFunction::QueryInfo cons
     info.m_within = RTreeMatchFunction::Within::Outside;
 
     RTree3dValCP pt = (RTree3dValCP) info.m_coords;
-    if (!(m_boundingRange.Intersects(*pt) && SkewTest(pt)))
+    if (!m_boundingRange.Intersects(*pt) || !SkewTest(pt))
         return BE_SQLITE_OK;
 
 #if defined (NEEDS_WORK_CLIPPING)

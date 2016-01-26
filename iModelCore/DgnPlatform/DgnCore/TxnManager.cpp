@@ -292,7 +292,7 @@ DgnDbStatus TxnManager::EndMultiTxnOperation()
 TxnManager::TxnId TxnManager::GetMultiTxnOperationStart()
     {
     return m_multiTxnOp.empty() ? GetSessionStartId() : m_multiTxnOp.back();
-    }
+    }                       
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
@@ -815,7 +815,7 @@ DgnDbStatus TxnManager::ReverseTxns(int numActions, AllowCrossSessions allowPrev
     {
     if (m_dgndb.Revisions().IsCreatingRevision())
         {
-        BeAssert(false && "Cannot reverse transactions after starting a revision. Call FinishCreateRevision() or AbandonCreateRevision() first");
+        BeAssert(false);// Cannot reverse transactions after starting a revision. Call FinishCreateRevision() or AbandonCreateRevision() first");
         return DgnDbStatus::IsCreatingRevision;
         }
 
@@ -855,7 +855,7 @@ DgnDbStatus TxnManager::ReverseAll(bool prompt)
     {
     if (m_dgndb.Revisions().IsCreatingRevision())
         {
-        BeAssert(false && "Cannot reverse transactions after starting a revision. Call FinishCreateRevision() or AbandonCreateRevision() first");
+        BeAssert(false);// Cannot reverse transactions after starting a revision. Call FinishCreateRevision() or AbandonCreateRevision() first");
         return DgnDbStatus::IsCreatingRevision;
         }
 
@@ -1020,7 +1020,7 @@ DgnDbStatus TxnManager::GetChangeSummary(ChangeSummary& changeSummary, TxnId sta
         result = changeGroup.AddChanges(sqlChangeSet.GetSize(), sqlChangeSet.GetData());
         if (result != BE_SQLITE_OK)
             {
-            BeAssert(false && "Failed to group sqlite changesets due to either schema changes- see error codes in sqlite3changegroup_add()");
+            BeAssert(false); // Failed to group sqlite changesets due to either schema changes- see error codes in sqlite3changegroup_add()
             return DgnDbStatus::SQLiteError;
             }
         }

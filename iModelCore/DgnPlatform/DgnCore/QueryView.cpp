@@ -21,7 +21,6 @@
 #   define DEBUG_PRINTF(fmt, ...)
 #endif
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -69,6 +68,10 @@ bool QueryViewController::FrustumChanged(DgnViewportCR vp) const
 //---------------------------------------------------------------------------------------
 void QueryViewController::QueueQuery(DgnViewportR viewport, UpdatePlan const& plan)
     {
+    static bool s_blockQuery = false;
+    if (s_blockQuery)
+        return;
+
     m_startQueryFrustum = viewport.GetFrustum(DgnCoordSystem::World, true);
     m_saveQueryFrustum.Invalidate();
 

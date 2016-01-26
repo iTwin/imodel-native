@@ -146,10 +146,8 @@ struct QueryModel : SpatialModel
         DgnDbR         m_dgndb;
         QueryModelR    m_queryModel;
         CheckStopP     m_checkStop;
-        AllElementsFilter(QueryModelR queryModel, DgnElementIdSet const* exclude, uint64_t maxMemory)
-             : RTreeFilter(exclude), m_dgndb(queryModel.GetDgnDb()), m_queryModel(queryModel), m_elementReleaseTrigger(maxMemory), m_purgeTrigger(maxMemory), m_checkStop(nullptr)
-            {
-            }
+        AllElementsFilter(QueryModelR queryModel, DgnElementIdSet const* exclude, uint64_t maxMemory) : RTreeFilter(exclude), 
+                    m_dgndb(queryModel.GetDgnDb()), m_queryModel(queryModel), m_elementReleaseTrigger(maxMemory), m_purgeTrigger(maxMemory), m_checkStop(nullptr) {}
                                                                                                             
         bool AcceptElement(ViewContextR context, DgnElementId elementId);
         virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
@@ -161,11 +159,11 @@ struct QueryModel : SpatialModel
     struct ProgressiveFilter : AllElementsFilter, ProgressiveDisplay
     {
         enum {SHOW_PROGRESS_INTERVAL = 1000}; // once per second.
-        uint32_t       m_total = 0;
-        uint32_t       m_thisBatch = 0;
-        uint32_t       m_batchSize = 0;
-        uint64_t       m_nextShow  = 0;
-        bool           m_setTimeout = false;
+        uint32_t m_total = 0;
+        uint32_t m_thisBatch = 0;
+        uint32_t m_batchSize = 0;
+        uint64_t m_nextShow  = 0;
+        bool     m_setTimeout = false;
         BeSQLite::CachedStatementPtr m_rangeStmt;
         ProgressiveFilter(DgnViewportCR vp, QueryModelR queryModel, DgnElementIdSet const* exclude, uint64_t maxMemory, BeSQLite::CachedStatement* stmt, double minPixelSize)
             : AllElementsFilter(queryModel, exclude, maxMemory), m_rangeStmt(stmt)
@@ -190,7 +188,6 @@ struct QueryModel : SpatialModel
         bvector<DgnElementCPtr> m_elements;
         bool     m_needsProgressive;
         uint32_t m_drawnBeforePurge;
-
         uint32_t GetCount() const {return (uint32_t) m_elements.size();}
     };
 
