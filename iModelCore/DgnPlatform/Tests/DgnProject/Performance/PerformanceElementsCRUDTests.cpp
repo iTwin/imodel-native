@@ -624,7 +624,6 @@ void PerformanceElementsCRUDTestFixture::CreateElements(int numInstances, Utf8CP
     DgnClassId classId = DgnClassId(m_db->Schemas().GetECClassId(ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className));
 
     bool addMultiAspect = false;
-    bool addDescription = false;
     bool addExtKey = false;
 
     if (0 == strcmp(className, ELEMENT_PERFORMANCE_ELEMENT1_CLASS))
@@ -635,12 +634,6 @@ void PerformanceElementsCRUDTestFixture::CreateElements(int numInstances, Utf8CP
             element->AddGeomtry();
             if (addMultiAspect)
                 DgnElement::MultiAspect::AddAspect(*element, *TestMultiAspect::Create("Initial Value"));
-            if (addDescription)
-            {
-                DgnElement::DescriptionAspectPtr descriptionAspect = DgnElement::DescriptionAspect::Create("TestDescription");
-                ASSERT_TRUE(descriptionAspect.IsValid());
-                element->AddAppData(DgnElement::DescriptionAspect::GetAppDataKey(), descriptionAspect.get());
-            }
             if (addExtKey)
             {
                 DgnElement::ExternalKeyAspectPtr extkeyAspect = DgnElement::ExternalKeyAspect::Create(DgnAuthorityId((uint64_t)1), "TestExtKey");
@@ -659,12 +652,6 @@ void PerformanceElementsCRUDTestFixture::CreateElements(int numInstances, Utf8CP
             element->AddGeomtry();
             if (addMultiAspect)
                 DgnElement::MultiAspect::AddAspect(*element, *TestMultiAspect::Create("Initial Value"));
-            if (addDescription)
-            {
-                DgnElement::DescriptionAspectPtr descriptionAspect = DgnElement::DescriptionAspect::Create("TestDescription");
-                ASSERT_TRUE(descriptionAspect.IsValid());
-                element->AddAppData(DgnElement::DescriptionAspect::GetAppDataKey(), descriptionAspect.get());
-            }
             if (addExtKey)
             {
                 DgnElement::ExternalKeyAspectPtr extkeyAspect = DgnElement::ExternalKeyAspect::Create(DgnAuthorityId((uint64_t)1), "TestExtKey");
@@ -683,12 +670,6 @@ void PerformanceElementsCRUDTestFixture::CreateElements(int numInstances, Utf8CP
             element->AddGeomtry();
             if (addMultiAspect)
                 DgnElement::MultiAspect::AddAspect(*element, *TestMultiAspect::Create("Initial Value"));
-            if (addDescription)
-            {
-                DgnElement::DescriptionAspectPtr descriptionAspect = DgnElement::DescriptionAspect::Create("TestDescription");
-                ASSERT_TRUE(descriptionAspect.IsValid());
-                element->AddAppData(DgnElement::DescriptionAspect::GetAppDataKey(), descriptionAspect.get());
-            }
             if (addExtKey)
             {
                 DgnElement::ExternalKeyAspectPtr extkeyAspect = DgnElement::ExternalKeyAspect::Create(DgnAuthorityId((uint64_t)1), "TestExtKey");
@@ -707,12 +688,6 @@ void PerformanceElementsCRUDTestFixture::CreateElements(int numInstances, Utf8CP
             element->AddGeomtry();
             if (addMultiAspect)
                 DgnElement::MultiAspect::AddAspect(*element, *TestMultiAspect::Create("Initial Value"));
-            if (addDescription)
-            {
-                DgnElement::DescriptionAspectPtr descriptionAspect = DgnElement::DescriptionAspect::Create("TestDescription");
-                ASSERT_TRUE(descriptionAspect.IsValid());
-                element->AddAppData(DgnElement::DescriptionAspect::GetAppDataKey(), descriptionAspect.get());
-            }
             if (addExtKey)
             {
                 DgnElement::ExternalKeyAspectPtr extkeyAspect = DgnElement::ExternalKeyAspect::Create(DgnAuthorityId((uint64_t)1), "TestExtKey");

@@ -319,6 +319,13 @@ private:
     virtual LockStatus _LockElement(DgnElementCR, LockLevel, DgnModelId) override { return LockStatus::Success; }
     virtual LockStatus _LockModel(DgnModelCR, LockLevel) override { return LockStatus::Success; }
     virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId, bool) override { level = LockLevel::Exclusive; return LockStatus::Success; }
+    virtual LockStatus _QueryLockLevels(DgnLockSet& levels, LockableIdSet& ids, bool) override
+        {
+        for (auto const& id : ids)
+            levels.insert(DgnLock(id, LockLevel::Exclusive));
+
+        return LockStatus::Success;
+        }
     virtual LockStatus _RefreshLocks() override { return LockStatus::Success; }
 public:
     static ILocksManagerPtr Create(DgnDbR db) { return new UnrestrictedLocksManager(db); }
@@ -337,6 +344,7 @@ public:
 #define STMT_SelectElementInModel " SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?"
 #define STMT_InsertOrReplace "INSERT OR REPLACE INTO " LOCAL_Table " " LOCAL_Values " VALUES(?,?,?)"
 #define STMT_SelectElemsInModels "SELECT " LOCAL_Id " FROM " LOCAL_Table " WHERE " LOCAL_Type "=2 AND InVirtualSet(@vset," LOCAL_Id ")"
+#define STMT_SelectLevelInSet "SELECT " LOCAL_Type "," LOCAL_Id "," LOCAL_Level " FROM " LOCAL_Table " WHERE InVirtualSet(@vset, " LOCAL_Type "," LOCAL_Id ")"
 
 /*---------------------------------------------------------------------------------**//**
 * Stores a local sqlite db containing locks obtained by a briefcase.
@@ -360,6 +368,7 @@ private:
     virtual LockStatus _RelinquishLocks() override;
     virtual LockStatus _DemoteLocks(DgnLockSet& locks) override;
     virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, bool localOnly) override;
+    virtual LockStatus _QueryLockLevels(DgnLockSet& levels, LockableIdSet& ids, bool localOnly) override;
     virtual LockStatus _RefreshLocks() override;
 
     virtual void _OnElementInserted(DgnElementId id) override
@@ -557,6 +566,50 @@ LockStatus LocalLocksManager::_QueryLockLevel(LockLevel& level, LockableId id, b
 
     auto server = GetLocksServer();
     return nullptr != server ? server->QueryLockLevel(level, id, GetDgnDb()) : LockStatus::ServerUnavailable;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+LockStatus LocalLocksManager::_QueryLockLevels(DgnLockSet& levels, LockableIdSet& ids, bool localOnly)
+    {
+    // First, query what we can locally
+    struct VSet : VirtualSet
+    {
+        LockableIdSet const& m_ids;
+        VSet(LockableIdSet const& ids) : m_ids(ids) { }
+        virtual bool _IsInSet(int nVals, DbValue const* vals) const override
+            {
+            LockableId id(static_cast<LockableType>(vals[0].GetValueInt()), BeInt64Id(vals[1].GetValueUInt64()));
+            return m_ids.end() != m_ids.find(id);
+            }
+    };
+
+    VSet vset(ids);
+    CachedStatementPtr stmt = GetLocalDb().GetCachedStatement(STMT_SelectLevelInSet);
+    stmt->BindVirtualSet(1, vset);
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        LockableId id(static_cast<LockableType>(stmt->GetValueInt(0)), BeInt64Id(stmt->GetValueUInt64(1)));
+        ids.erase(ids.find(id));
+        levels.insert(DgnLock(id, static_cast<LockLevel>(stmt->GetValueInt(2))));
+        }
+
+    if (ids.empty())
+        return LockStatus::Success;
+
+    // If only querying locally, any remaining locks have level=None
+    if (localOnly)
+        {
+        for (auto const& id : ids)
+            levels.insert(DgnLock(id, LockLevel::None));
+
+        return LockStatus::Success;
+        }
+
+    // Ask the server for the remaining
+    auto server = GetLocksServer();
+    return nullptr != server ? server->QueryLockLevels(levels, ids, GetDgnDb()) : LockStatus::ServerUnavailable;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1332,5 +1385,43 @@ bool LockRequest::Response::FromJson(JsonValueCR value)
         }
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+LockStatus ILocksServer::QueryOwnership(DgnLockOwnershipR ownership, LockableId lockId)
+    {
+    DgnOwnedLockSet ownerships;
+    LockableIdSet lockIds;
+    lockIds.insert(lockId);
+
+    auto status = QueryOwnerships(ownerships, lockIds);
+    BeAssert(LockStatus::Success != status || ownerships.size() == 1);
+    if (LockStatus::Success == status && ownerships.size() != 1)
+        status = LockStatus::InvalidResponse;
+
+    if (LockStatus::Success == status)
+        ownership = ownerships.begin()->GetOwnership();
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+LockStatus ILocksServer::QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db)
+    {
+    DgnLockSet levels;
+    LockableIdSet lockIds;
+    lockIds.insert(lockId);
+
+    auto status = QueryLockLevels(levels, lockIds, db);
+    BeAssert(LockStatus::Success != status || levels.size() == 1);
+    if (LockStatus::Success == status && levels.size() != 1)
+        status = LockStatus::InvalidResponse;
+
+    level = LockStatus::Success == status ? levels.begin()->GetLevel() : LockLevel::None;
+    return status;
     }
 

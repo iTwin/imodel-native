@@ -206,3 +206,4 @@ struct DynamicUpdatePlan : UpdatePlan
     };
 
 END_BENTLEY_DGN_NAMESPACE
+

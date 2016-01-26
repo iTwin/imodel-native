@@ -44,6 +44,18 @@ public:
     void SetVectorU (JsDVector3dP data){m_data.vectorU = data->Get ();}
     void SetVectorV (JsDVector3dP data){m_data.vectorV = data->Get ();}
 
+#ifdef ForwardDeclareTransform
+    JsTransformP GetLocalToWorldTransform ();
+    JsTransformP GetNormalizedLocalToWorldTransform ();
+    JsTransformP GetWorldToLocalTransform ();
+    JsTransformP GetWorldToNormalizedLocalTransform ();
+#else
+    JsTransformP GetLocalToWorldTransform (){return JsTransform::Create (m_data.LocalToWorldTransform ());}
+    JsTransformP GetNormalizedLocalToWorldTransform (){return JsTransform::Create (m_data.NormalizedLocalToWorldTransform ());}
+    JsTransformP GetWorldToLocalTransform (){return JsTransform::Create (m_data.WorldToLocalTransform ());}
+    JsTransformP GetWorldToNormalizedLocalTransform (){return JsTransform::Create (m_data.WorldToNormalizedLocalTransform ());}
+
+#endif
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

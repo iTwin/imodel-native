@@ -246,6 +246,9 @@ protected:
     //! A subclass can override this function to get the target model some other way.
     DGNPLATFORM_EXPORT virtual GeometricModelP _GetTargetModel() const;
 
+    //! Used to change the writable model in which new elements are to be placed.
+    virtual BentleyStatus _SetTargetModel(GeometricModelP model) {return GetTargetModel()==model ? SUCCESS : ERROR;}
+
     //! Returns the project that is being viewed
     virtual DgnDbR _GetDgnDb() const {return m_dgndb;}
 
@@ -453,6 +456,9 @@ public:
     //! Gets the DgnModel that will be the target of tools that add new elements.
     GeometricModelP GetTargetModel() const {return _GetTargetModel();}
 
+    //! Sets the DgnModel that will be the target of tools that add new elements.
+    BentleyStatus SetTargetModel(GeometricModelP model) {return _SetTargetModel(model);}
+
     //! Tests whether a rotation matrix corresponds to one of the StandardView orientations.
     //! @param[in] rotation  The matrix to test.
     //! @param[in] check3D   True to check the 3D members of StandardRotation.
@@ -507,10 +513,6 @@ public:
 
     //! Get the unit vector that points in the view Z (front-to-back) direction.
     DVec3d GetZVector() const {DVec3d v; GetRotation().GetRow(v,2); return v;}
-
-    //! Sets the Target DgnModel for this ViewController.
-    //! @param[in] target The model to which new elements are added by modification tools.
-    DGNPLATFORM_EXPORT BentleyStatus SetTargetModel(GeometricModelP target);
 };
 
 //=======================================================================================
@@ -548,6 +550,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _OnTransform(TransformCR);
     DGNPLATFORM_EXPORT virtual void _SaveToSettings(JsonValueR) const override;
     DGNPLATFORM_EXPORT virtual void _RestoreFromSettings(JsonValueCR) override;
+    DGNPLATFORM_EXPORT virtual BentleyStatus _SetTargetModel(GeometricModelP target) override;
 
 public:
     DGNPLATFORM_EXPORT bool ViewVectorsFromOrientation(DVec3dR forward, DVec3dR up, RotMatrixCR orientation, OrientationMode mode, UiOrientation ui);
@@ -570,7 +573,6 @@ public:
     //! Sets the Auxiliary Coordinate System to use for this view.
     //! @param[in] acs The new Auxiliary Coordinate System.
     void SetAuxCoordinateSystem(IAuxCoordSysP acs) {m_auxCoordSys = acs;}
-
 };
 
 /** @addtogroup DgnViewGroup

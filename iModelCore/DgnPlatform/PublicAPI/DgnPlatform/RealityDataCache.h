@@ -1023,6 +1023,7 @@ private:
     BeMutex m_activeRequestsCS;
     uint32_t m_idleTime; 
     uint64_t m_cacheSize;
+    RefCountedPtr<BeSQLite::BusyRetry> m_retry;
 
 private:
     BeSQLiteRealityDataStorage(BeFileName const& filename, uint32_t idleTime, uint64_t cacheSize);

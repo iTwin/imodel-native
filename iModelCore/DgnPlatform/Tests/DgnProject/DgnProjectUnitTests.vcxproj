@@ -60,6 +60,7 @@
     <ClCompile Include="NonPublished\RealityDataCache_Test.cpp" />
     <ClCompile Include="NonPublished\TransactionManager_Test.cpp" />
     <ClCompile Include="NonPublished\ValidatePublishing_Test.cpp" />
+    <ClCompile Include="Performance\ComponentModel_PerfTest.cpp" />
     <ClCompile Include="Performance\DgnECPerformanceTests.cpp" />
     <ClCompile Include="Performance\ElementDependencyGraphPerformance.cpp" />
     <ClCompile Include="Performance\ElementInsertPerformance.cpp" />
@@ -70,6 +71,7 @@
     <ClCompile Include="Performance\RelationshipPerformance_Test.cpp" />
     <ClCompile Include="Performance\TestSchemaHelper.cpp" />
     <ClCompile Include="Published\AnnotationFrameStyle_Test.cpp" />
+    <ClCompile Include="Published\AnnotationFrame_Test.cpp" />
     <ClCompile Include="Published\AnnotationLeaderStyle_Test.cpp" />
     <ClCompile Include="Published\AnnotationLeader_Test.cpp" />
     <ClCompile Include="Published\AnnotationTable_Test.cpp" />
@@ -78,6 +80,7 @@
     <ClCompile Include="Published\AnnotationTextStyle_Test.cpp" />
     <ClCompile Include="Published\ChangeSummary_Test.cpp" />
     <ClCompile Include="Published\ChangeTestFixture.cpp" />
+    <ClCompile Include="Published\ComponentModelBasicTest.cpp" />
     <ClCompile Include="Published\ComponentModelTest.cpp" />
     <ClCompile Include="Published\DgnChangeSummary_Test.cpp" />
     <ClCompile Include="Published\DgnECNavigator_Test.cpp" />

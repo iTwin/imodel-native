@@ -79,6 +79,16 @@ public:
         return nullptr;
         }
 
+    JsDRay3dP PointAndUnitTangentAtFraction (double f)
+        {
+        auto ray = m_curvePrimitive->FractionToPointAndUnitTangent (f);
+        return ray.IsValid () ? new JsDRay3d (ray.Value ()) : nullptr;
+        }
+
+    JsDPoint3dP GetStartPoint () { return PointAtFraction (0.0);}
+    JsDPoint3dP GetEndPoint () { return PointAtFraction (1.0);}
+
+
     double Length ()
         {
         double a;
@@ -155,6 +165,8 @@ public:
         ICurvePrimitivePtr cp = ICurvePrimitive::CreateLineString (points->GetRef ());
         Set (cp);
         }
+    JsDPoint3dArrayP GetPoints () const {return JsDPoint3dArray::Create (m_curvePrimitive->GetLineStringP ());}
+
     virtual JsLineString * Clone () override {return new JsLineString (m_curvePrimitive->Clone ());}
 
 };
@@ -235,6 +247,14 @@ JsEllipticArcP CloneWithPerpendicularAxes () const
     DEllipse3d data;
     return m_curvePrimitive->TryGetArc (data) ? new JsEllipticArc (DEllipse3d::FromPerpendicularAxes (data)) : nullptr;
     }
+
+bool IsCircular () const
+    {
+    DEllipse3d data;
+    double radius;
+    return m_curvePrimitive->TryGetArc (data) ? data.IsCircular (radius): false;
+    }
+
 };
 
 

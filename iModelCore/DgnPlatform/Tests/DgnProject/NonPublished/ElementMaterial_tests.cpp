@@ -25,27 +25,6 @@ struct GeometryBuilderTests : public DgnDbTestFixture
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void setUpView(DgnDbR dgnDb, DgnModelR model, ElementAlignedBox3d elementBox, DgnCategoryId categoryId)
-    {
-    CameraViewDefinition view(CameraViewDefinition::CreateParams(dgnDb, "TestView", ViewDefinition::Data(model.GetModelId(), DgnViewSource::Generated)));
-    EXPECT_TRUE(view.Insert().IsValid());
-    EXPECT_TRUE(view.GetViewId().IsValid());
-
-    ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
-
-    SpatialViewController viewController (dgnDb, view.GetViewId());
-    viewController.SetStandardViewRotation(StandardView::Iso);
-    viewController.LookAtVolume(elementBox, nullptr, &viewMargin);
-    viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::SmoothShade);
-    viewController.ChangeCategoryDisplay(categoryId, true);
-    viewController.ChangeModelDisplay(model.GetModelId(), true);
-
-    EXPECT_TRUE(BE_SQLITE_OK == viewController.Save());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
 static DgnMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, WCharCP pngFileName, JsonRenderMaterial::TextureMap::Units unitMode)
     {
     RgbFactor red = { 1.0, 0.0, 0.0};
@@ -182,6 +161,6 @@ TEST_F(GeometryBuilderTests, CreateElementWithMaterials)
 
     Placement3d placement = builder->GetPlacement3d();
 
-    setUpView(*m_db, *model, placement.GetElementBox(), m_defaultCategoryId);
+    SetUpSpatialView(*m_db, *model, placement.GetElementBox(), m_defaultCategoryId);
     m_db->SaveSettings();   
     }

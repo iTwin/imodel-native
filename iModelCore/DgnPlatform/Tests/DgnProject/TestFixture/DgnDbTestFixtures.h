@@ -65,6 +65,6 @@ public:
     DgnElementId InsertElementUsingGeometryPart(DgnGeometryPartId gpId, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnCode elementCode = DgnCode());
     DgnElementId InsertElementUsingGeometryPart2d(DgnCodeCR gpCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnCode elementCode = DgnCode());
 
-    void setUpSpatialView(DgnDbR dgnDb, DgnModelR model, ElementAlignedBox3d elementBox, DgnCategoryId categoryId);
+    void SetUpSpatialView(DgnDbR dgnDb, DgnModelR model, ElementAlignedBox3d elementBox, DgnCategoryId categoryId);
 };
 

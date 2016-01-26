@@ -165,6 +165,7 @@ protected:
     virtual void _Destroy() {DestroyViewport();}
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(ViewControllerR, bool expandView);
     DGNPLATFORM_EXPORT virtual int _GetIndexedLineWidth(int index) const;
+
     DGNPLATFORM_EXPORT static void StartRenderThread();
     DMap4d CalcNpcToView();
     void QueueDrawFrame();
@@ -304,6 +305,10 @@ public:
     //! Get the current TBGR color value of the user-selected hilite color for this DgnViewport.
     //! @return the current TBGR hilite color.
     ColorDef GetHiliteColor() const {return m_hiliteColor;}
+
+    //! Set the current TGBR color value of the user-selected hilite color for this DgnViewport.
+    //! @param color The new TBGR hilite color
+    void SetHiliteColor(ColorDef color) {m_hiliteColor=color;}
 
 /** @} */
 

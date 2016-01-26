@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/GeomJsTypes/JsDPoint3dArray.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -34,6 +34,10 @@ private:
         }
 public:   
     JsDPoint3dArray() {}
+    static JsDPoint3dArrayP Create (bvector<DPoint3d> const *data)
+        {
+        return data != nullptr ? new JsDPoint3dArray (*data) : nullptr;
+        }
     JsDPoint3dArray(bvector<DPoint3d> const &source) {m_data = source;}
     JsDPoint3dArrayP Clone (){ return new JsDPoint3dArray (m_data);}
     bvector<DPoint3d> & GetRef () {return m_data;}
