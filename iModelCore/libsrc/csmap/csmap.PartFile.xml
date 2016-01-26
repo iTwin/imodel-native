@@ -19,7 +19,7 @@
 <!--        <RequiredRepository>bsitools-wix_3.0.5419.0</RequiredRepository> -->
         <SubPart PartName="GeoCoordDataMinimal"/>
         <Bindings>
-            <Files ProductDirectoryName="GeoCoordData" SubPartDirectory="GeoCoordData" SourceName="Delivery/GeoCoordData">
+            <Files ProductDirectoryName="GeoCoordData" SubPartDirectory="GeoCoordData">
                 Delivery/GeoCoordData/coordsys.dty
                 Delivery/GeoCoordData/coordsys.dty.xml
                 Delivery/GeoCoordData/NameMapper.csv
@@ -46,7 +46,7 @@
     <Part Name="GeoCoordDataMinimal" BentleyBuildMakeFile="GeoCoordData.mke" BMakeOptions="+dMinimal">
         <SubPart PartName="CsmapCompiler"/>
         <Bindings>
-            <Files ProductDirectoryName="GeoCoordData" SubPartDirectory="GeoCoordData" SourceName="Delivery/GeoCoordDataMinimal">
+            <Files ProductDirectoryName="GeoCoordData" SubPartDirectory="GeoCoordData">
                 Delivery/GeoCoordDataMinimal/datum.dty
                 Delivery/GeoCoordDataMinimal/GeodeticPath.dty
                 Delivery/GeoCoordDataMinimal/GeodeticTransform.dty
