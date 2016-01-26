@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ElementGeometry.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -94,7 +94,7 @@ enum class OpCode : uint32_t
     {
     Invalid             = 0,
     Header              = 1,    //!< Required to be first opcode
-    GeomPartInstance    = 3,    //!< Draw referenced geometry part
+    GeometryPartInstance= 3,    //!< Draw referenced geometry part
     BasicSymbology      = 4,    //!< Set symbology for subsequent geometry that doesn't follow subCategory appearance
     PointPrimitive      = 5,    //!< Simple lines, line strings, shapes, point strings, etc.
     PointPrimitive2d    = 6,    //!< Simple 2d lines, line strings, shapes, point strings, etc.
@@ -183,7 +183,7 @@ struct Writer
     void Append(MSBsplineSurfaceCR);
     void Append(ISolidKernelEntityCR, bool saveBRepOnly = false); // Adds multiple op-codes for when PSolid is un-available unless saveBRepOnly is true...
     void Append(ElementGeometryCR);
-    void Append(DgnGeomPartId, TransformCP geomToElem);
+    void Append(DgnGeometryPartId, TransformCP geomToElem);
     void Append(ElemDisplayParamsCR, bool ignoreSubCategory); // Adds multiple op-codes...
     void Append(TextStringCR);
 
@@ -211,7 +211,7 @@ struct Reader
     bool Get(Operation const&, MSBsplineSurfacePtr&) const;
     bool Get(Operation const&, ISolidKernelEntityPtr&) const;
     bool Get(Operation const&, ElementGeometryPtr&) const;
-    bool Get(Operation const&, DgnGeomPartId&, TransformR) const;
+    bool Get(Operation const&, DgnGeometryPartId&, TransformR) const;
     bool Get(Operation const&, ElemDisplayParamsR) const; // Updated by multiple op-codes, true if changed
     bool Get(Operation const&, TextStringR) const;
 
@@ -267,7 +267,7 @@ struct Collection
     const_iterator begin() const {return const_iterator(m_data, m_dataSize);}
     const_iterator end() const {return const_iterator();}
 
-    void GetGeomPartIds(IdSet<DgnGeomPartId>&, DgnDbR) const;
+    void GetGeometryPartIds(IdSet<DgnGeometryPartId>&, DgnDbR) const;
     void Draw(ViewContextR, DgnCategoryId, ViewFlagsCR) const;
 
     }; // Collection
@@ -325,7 +325,7 @@ struct Iterator : std::iterator<std::forward_iterator_tag, uint8_t const*>
     ViewContextP        m_context;
     bool                m_geomToElemPushed;
     ElementGeometryPtr  m_elementGeometry;
-    DgnGeomPartPtr      m_partGeometry;
+    DgnGeometryPartPtr  m_partGeometry;
     uint8_t const*      m_saveData;
     size_t              m_saveDataOffset;
     size_t              m_saveTotalDataSize;
@@ -401,8 +401,8 @@ ENUM_IS_FLAGS(ElementGeometryCollection::BRepOutput)
 //! an identity placement, append the geometry, and then just update the placement to reflect the element’s world coordinates and
 //! orientation. It’s not expected for the placement to remain identity unless the element is really at the origin.
 //!
-//! For repeated geometry that can be shared in a single GeomStream or by multiple GeomStreams, a DgnGeomPart should be
-//! created. When appending a DgnGeomPartId you specify the part geometry to element transform in order to position the 
+//! For repeated geometry that can be shared in a single GeomStream or by multiple GeomStreams, a DgnGeometryPart should be
+//! created. When appending a DgnGeometryPartId you specify the part geometry to element transform in order to position the 
 //! part's geometry relative to the other geometry/parts display by the element.
 //! @ingroup ElementGeometryGroup
 //=======================================================================================
@@ -439,12 +439,12 @@ Placement3dCR GetPlacement3d() const {return m_placement3d;} //!< @private
 DGNPLATFORM_EXPORT BentleyStatus GetGeomStream (GeomStreamR); //!< @private
 DGNPLATFORM_EXPORT GeomStreamEntryId GetGeomStreamEntryId() const; //! Return the primitive id of the geometry last added to the builder.
 
-DGNPLATFORM_EXPORT BentleyStatus SetGeomStream (DgnGeomPartR);
+DGNPLATFORM_EXPORT BentleyStatus SetGeomStream (DgnGeometryPartR);
 DGNPLATFORM_EXPORT BentleyStatus SetGeomStreamAndPlacement (GeometrySourceR);
 
 DGNPLATFORM_EXPORT bool Append (DgnSubCategoryId);
 DGNPLATFORM_EXPORT bool Append (ElemDisplayParamsCR);
-DGNPLATFORM_EXPORT bool Append (DgnGeomPartId, TransformCR geomToElement); //! Placement must already be specified, not valid for CreateWorld.
+DGNPLATFORM_EXPORT bool Append (DgnGeometryPartId, TransformCR geomToElement); //! Placement must already be specified, not valid for CreateWorld.
 DGNPLATFORM_EXPORT bool Append (ElementGeometryCR);
 DGNPLATFORM_EXPORT bool Append (ICurvePrimitiveCR);
 DGNPLATFORM_EXPORT bool Append (CurveVectorCR);
@@ -457,8 +457,8 @@ DGNPLATFORM_EXPORT bool Append (TextAnnotationCR, TransformCR transform);
 
 DGNPLATFORM_EXPORT void SetUseCurrentDisplayParams(bool newValue);
 
-DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateGeomPart (DgnDbR db, bool is3d);
-DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateGeomPart (GeomStreamCR, DgnDbR db, bool ignoreSymbology = false); //!< @private
+DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateGeometryPart (DgnDbR db, bool is3d);
+DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateGeometryPart (GeomStreamCR, DgnDbR db, bool ignoreSymbology = false); //!< @private
 
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles());
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees());
