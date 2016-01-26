@@ -35,7 +35,7 @@ struct DgnRemapTables
 protected:
     // *** NEEDS WORK: We may have to move these remappings into temp tables
     bmap<DgnModelId, DgnModelId> m_modelId;
-    bmap<DgnGeomPartId, DgnGeomPartId> m_geomPartId;
+    bmap<DgnGeometryPartId, DgnGeometryPartId> m_geomPartId;
     bmap<DgnElementId, DgnElementId> m_elementId;
     bmap<DgnClassId, DgnClassId> m_classId;
     bmap<DgnAuthorityId, DgnAuthorityId> m_authorityId;
@@ -51,8 +51,8 @@ public:
     DgnModelId Add(DgnModelId sourceId, DgnModelId targetId) {return m_modelId[sourceId] = targetId;}
     DgnElementId Find(DgnElementId sourceId) const {return Find<DgnElementId>(m_elementId, sourceId);}
     DgnElementId Add(DgnElementId sourceId, DgnElementId targetId) {return m_elementId[sourceId] = targetId;}
-    DgnGeomPartId Find(DgnGeomPartId sourceId) const {return Find<DgnGeomPartId>(m_geomPartId, sourceId);}
-    DgnGeomPartId Add(DgnGeomPartId sourceId, DgnGeomPartId targetId) {return m_geomPartId[sourceId] = targetId;}
+    DgnGeometryPartId Find(DgnGeometryPartId sourceId) const {return Find<DgnGeometryPartId>(m_geomPartId, sourceId);}
+    DgnGeometryPartId Add(DgnGeometryPartId sourceId, DgnGeometryPartId targetId) {return m_geomPartId[sourceId] = targetId;}
     DgnCategoryId Find(DgnCategoryId sourceId) const {return FindElement<DgnCategoryId>(sourceId);}
     DgnCategoryId Add(DgnCategoryId sourceId, DgnCategoryId targetId) {return DgnCategoryId((m_elementId[sourceId] = targetId).GetValueUnchecked());}
     DgnMaterialId Find(DgnMaterialId sourceId) const { return FindElement<DgnMaterialId>(sourceId); }
@@ -125,8 +125,8 @@ public:
     DgnModelId FindModelId(DgnModelId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of a model
     DgnModelId AddModelId(DgnModelId sourceId, DgnModelId targetId) {return m_remap.Add(sourceId, targetId);}
-    //! Make sure that a GeomPart has been imported
-    DGNPLATFORM_EXPORT DgnGeomPartId RemapGeomPartId(DgnGeomPartId sourceId);
+    //! Make sure that a GeometryPart has been imported
+    DGNPLATFORM_EXPORT DgnGeometryPartId RemapGeometryPartId(DgnGeometryPartId sourceId);
     //! Look up a copy of a Category
     DgnCategoryId FindCategory(DgnCategoryId sourceId) const { return m_remap.Find(sourceId); }
     //! Register a copy of a Category

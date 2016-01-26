@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ElementGeometry.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -1184,16 +1184,16 @@ void ElementGeomIO::Writer::Append(ISolidKernelEntityCR entity, bool saveBRepOnl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeomIO::Writer::Append(DgnGeomPartId geomPart, TransformCP geomToElem)
+void ElementGeomIO::Writer::Append(DgnGeometryPartId geomPart, TransformCP geomToElem)
     {
     if (nullptr == geomToElem || geomToElem->IsIdentity())
         {
         FlatBufferBuilder fbb;
 
-        auto mloc = FB::CreateGeomPart(fbb, geomPart.GetValueUnchecked());
+        auto mloc = FB::CreateGeometryPart(fbb, geomPart.GetValueUnchecked());
 
         fbb.Finish(mloc);
-        Append(Operation(OpCode::GeomPartInstance, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
+        Append(Operation(OpCode::GeometryPartInstance, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
         return;
         }
 
@@ -1207,10 +1207,10 @@ void ElementGeomIO::Writer::Append(DgnGeomPartId geomPart, TransformCP geomToEle
 
     FlatBufferBuilder fbb;
 
-    auto mloc = FB::CreateGeomPart(fbb, geomPart.GetValueUnchecked(), (FB::DPoint3d*) &origin, angles.GetYaw().Degrees(), angles.GetPitch().Degrees(), angles.GetRoll().Degrees());
+    auto mloc = FB::CreateGeometryPart(fbb, geomPart.GetValueUnchecked(), (FB::DPoint3d*) &origin, angles.GetYaw().Degrees(), angles.GetPitch().Degrees(), angles.GetRoll().Degrees());
 
     fbb.Finish(mloc);
-    Append(Operation(OpCode::GeomPartInstance, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
+    Append(Operation(OpCode::GeometryPartInstance, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1559,14 +1559,14 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, ISolidKernelEntityPtr& en
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeomIO::Reader::Get(Operation const& egOp, DgnGeomPartId& geomPart, TransformR geomToElem) const
+bool ElementGeomIO::Reader::Get(Operation const& egOp, DgnGeometryPartId& geomPart, TransformR geomToElem) const
     {
-    if (OpCode::GeomPartInstance != egOp.m_opCode)
+    if (OpCode::GeometryPartInstance != egOp.m_opCode)
         return false;
 
-    auto ppfb = flatbuffers::GetRoot<FB::GeomPart>(egOp.m_data);
+    auto ppfb = flatbuffers::GetRoot<FB::GeometryPart>(egOp.m_data);
 
-    geomPart = DgnGeomPartId((uint64_t)ppfb->geomPartId());
+    geomPart = DgnGeometryPartId((uint64_t)ppfb->geomPartId());
 
     DPoint3d            origin = (nullptr == ppfb->origin() ? DPoint3d::FromZero() : *((DPoint3dCP) ppfb->origin()));
     YawPitchRollAngles  angles = YawPitchRollAngles::FromDegrees(ppfb->yaw(), ppfb->pitch(), ppfb->roll());
@@ -1592,7 +1592,7 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, ElemDisplayParamsR elPara
             DgnSubCategoryId subCategoryId((uint64_t)ppfb->subCategoryId());
 
             if (!subCategoryId.IsValid())
-                subCategoryId = elParams.GetSubCategoryId(); // Preserve current sub-category if not explicitly stored (GeomPart, FaceAttachment, etc.)...
+                subCategoryId = elParams.GetSubCategoryId(); // Preserve current sub-category if not explicitly stored (GeometryPart, FaceAttachment, etc.)...
 
             if (subCategoryId.IsValid())
                 {
@@ -2008,16 +2008,16 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, ElementGeometryPtr& elemG
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeomIO::Collection::GetGeomPartIds(IdSet<DgnGeomPartId>& parts, DgnDbR dgnDb) const
+void ElementGeomIO::Collection::GetGeometryPartIds(IdSet<DgnGeometryPartId>& parts, DgnDbR dgnDb) const
     {
     ElementGeomIO::Reader reader(dgnDb);
 
     for (auto const& egOp : *this)
         {
-        if (ElementGeomIO::OpCode::GeomPartInstance != egOp.m_opCode)
+        if (ElementGeomIO::OpCode::GeometryPartInstance != egOp.m_opCode)
             continue;
 
-        DgnGeomPartId geomPartId;
+        DgnGeometryPartId geomPartId;
         Transform     geomToElem;
 
         if (!reader.Get(egOp, geomPartId, geomToElem))
@@ -2188,11 +2188,11 @@ static bool SetActive(ViewContextR context, bool enable)
     {
     GeomStreamEntryId entryId = context.GetGeomStreamEntryId();
 
-    if (GeomStreamEntryId::Type::Invalid != entryId.GetType() && entryId.GetGeomPartId().IsValid())
+    if (GeomStreamEntryId::Type::Invalid != entryId.GetType() && entryId.GetGeometryPartId().IsValid())
         {
         if (!enable)
             {
-            entryId.SetGeomPartId(DgnGeomPartId()); // Clear part and remain active...
+            entryId.SetGeometryPartId(DgnGeometryPartId()); // Clear part and remain active...
             context.SetGeomStreamEntryId(entryId);
             }
 
@@ -2212,14 +2212,14 @@ static bool SetActive(ViewContextR context, bool enable)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void SetActiveGeomPart(ViewContextR context, DgnGeomPartId partId)
+static void SetActiveGeometryPart(ViewContextR context, DgnGeometryPartId partId)
     {
     GeomStreamEntryId entryId = context.GetGeomStreamEntryId();
 
     if (GeomStreamEntryId::Type::Invalid == entryId.GetType())
         return;
 
-    entryId.SetGeomPartId(partId);
+    entryId.SetGeometryPartId(partId);
     context.SetGeomStreamEntryId(entryId);
     }
 
@@ -2233,7 +2233,7 @@ static void Increment(ViewContextR context)
     if (GeomStreamEntryId::Type::Indexed != entryId.GetType())
         return;
 
-    if (entryId.GetGeomPartId().IsValid())
+    if (entryId.GetGeometryPartId().IsValid())
         entryId.SetPartIndex(entryId.GetPartIndex()+1);
     else
         entryId.SetIndex(entryId.GetIndex()+1);
@@ -2282,16 +2282,16 @@ DgnDbStatus ElementGeomIO::Import(GeomStreamR dest, GeomStreamCR source, DgnImpo
                 break;
                 }
 
-            case ElementGeomIO::OpCode::GeomPartInstance:
+            case ElementGeomIO::OpCode::GeometryPartInstance:
                 {
-                DgnGeomPartId geomPartId;
+                DgnGeometryPartId geomPartId;
                 Transform     geomToElem;
 
                 if (reader.Get(egOp, geomPartId, geomToElem))
                     {
-                    DgnGeomPartId remappedGeomPartId = importer.RemapGeomPartId(geomPartId); // Trigger deep-copy if necessary
-                    BeAssert(remappedGeomPartId.IsValid() && "Unable to deep-copy geompart!");
-                    writer.Append(remappedGeomPartId, &geomToElem);
+                    DgnGeometryPartId remappedGeometryPartId = importer.RemapGeometryPartId(geomPartId); // Trigger deep-copy if necessary
+                    BeAssert(remappedGeometryPartId.IsValid() && "Unable to deep-copy geompart!");
+                    writer.Append(remappedGeometryPartId, &geomToElem);
                     }
                 break;
                 }
@@ -2396,7 +2396,7 @@ void ElementGeomIO::Debug(IDebugOutput& output, GeomStreamCR stream, DgnDbR db, 
     Collection  collection(stream.GetData(), stream.GetSize());
     Reader      reader(db);
 
-    IdSet<DgnGeomPartId> parts;
+    IdSet<DgnGeometryPartId> parts;
 
     for (auto const& egOp : collection)
         {
@@ -2408,18 +2408,18 @@ void ElementGeomIO::Debug(IDebugOutput& output, GeomStreamCR stream, DgnDbR db, 
                 break;
                 }
 
-            case ElementGeomIO::OpCode::GeomPartInstance:
+            case ElementGeomIO::OpCode::GeometryPartInstance:
                 {
-                auto ppfb = flatbuffers::GetRoot<FB::GeomPart>(egOp.m_data);
+                auto ppfb = flatbuffers::GetRoot<FB::GeometryPart>(egOp.m_data);
 
-                DgnGeomPartId       partId = DgnGeomPartId((uint64_t)ppfb->geomPartId());
+                DgnGeometryPartId       partId = DgnGeometryPartId((uint64_t)ppfb->geomPartId());
                 DPoint3d            origin = (nullptr == ppfb->origin() ? DPoint3d::FromZero() : *((DPoint3dCP) ppfb->origin()));
                 YawPitchRollAngles  angles = YawPitchRollAngles::FromDegrees(ppfb->yaw(), ppfb->pitch(), ppfb->roll());
 
                 if (output._WantPartGeometry())
                     parts.insert(partId);
 
-                output._DoOutputLine(Utf8PrintfString("OpCode::GeomPartInstance - PartId: %" PRIu64 "\n", partId.GetValue()).c_str());
+                output._DoOutputLine(Utf8PrintfString("OpCode::GeometryPartInstance - PartId: %" PRIu64 "\n", partId.GetValue()).c_str());
 
                 if (!output._WantVerbose())
                     break;
@@ -2777,11 +2777,11 @@ void ElementGeomIO::Debug(IDebugOutput& output, GeomStreamCR stream, DgnDbR db, 
 
     if (0 != parts.size())
         {
-        for (DgnGeomPartId partId : parts)
+        for (DgnGeometryPartId partId : parts)
             {
             output._DoOutputLine(Utf8PrintfString("\n[--- PartId: %" PRIu64 " ---]\n\n", partId.GetValue()).c_str());
 
-            DgnGeomPartPtr partGeometry = db.GeomParts().LoadGeomPart(partId);
+            DgnGeometryPartPtr partGeometry = db.GeometryParts().LoadGeometryPart(partId);
 
             if (!partGeometry.IsValid())
                 continue;
@@ -2836,10 +2836,10 @@ void ElementGeomIO::Debug(IDebugOutput& output, GeomStreamCR stream, DgnDbR db, 
                     break;
                 }
 
-            if (!geomId.GetGeomPartId().IsValid())
+            if (!geomId.GetGeometryPartId().IsValid())
                 output._DoOutputLine(Utf8PrintfString("- GeometryType::%s \t[Index: %d]\n", geomType.c_str(), geomId.GetIndex()).c_str());
             else
-                output._DoOutputLine(Utf8PrintfString("- GeometryType::%s \t[Index: %d | PartId: %" PRIu64 " Part Index: %d]\n", geomType.c_str(), geomId.GetIndex(), geomId.GetGeomPartId().GetValue(), geomId.GetPartIndex()).c_str());
+                output._DoOutputLine(Utf8PrintfString("- GeometryType::%s \t[Index: %d | PartId: %" PRIu64 " Part Index: %d]\n", geomType.c_str(), geomId.GetIndex(), geomId.GetGeometryPartId().GetValue(), geomId.GetPartIndex()).c_str());
             }
 
         output._DoOutputLine(Utf8PrintfString("\n"));
@@ -2889,24 +2889,24 @@ void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId categor
                 break;
                 }
 
-            case ElementGeomIO::OpCode::GeomPartInstance:
+            case ElementGeomIO::OpCode::GeometryPartInstance:
                 {
                 GeomStreamEntryIdHelper::Increment(context);
 
-                DgnGeomPartId geomPartId;
+                DgnGeometryPartId geomPartId;
                 Transform     geomToElem;
 
                 if (!reader.Get(egOp, geomPartId, geomToElem))
                     break;
 
-                DgnGeomPartPtr partGeometry = context.GetDgnDb().GeomParts().LoadGeomPart(geomPartId);
+                DgnGeometryPartPtr partGeometry = context.GetDgnDb().GeometryParts().LoadGeometryPart(geomPartId);
 
                 if (!partGeometry.IsValid())
                     break;
 
                 ElementGeomIO::Collection collection(partGeometry->GetGeomStream().GetData(), partGeometry->GetGeomStream().GetSize());
 
-                GeomStreamEntryIdHelper::SetActiveGeomPart(context, geomPartId);
+                GeomStreamEntryIdHelper::SetActiveGeometryPart(context, geomPartId);
                 state.CookElemDisplayParams();
 
                 context.PushTransform(geomToElem);
@@ -3341,7 +3341,7 @@ bool GeometrySource::_DrawHit(HitDetailCR hit, ViewContextR context) const
         {
         case SubSelectionMode::Part:
             {
-            if (hit.GetGeomDetail().GetGeomStreamEntryId().GetGeomPartId().IsValid())
+            if (hit.GetGeomDetail().GetGeomStreamEntryId().GetGeometryPartId().IsValid())
                 break;
 
             return false;
@@ -3375,7 +3375,7 @@ bool GeometrySource::_DrawHit(HitDetailCR hit, ViewContextR context) const
             {
             case SubSelectionMode::Part:
                 {
-                if (hit.GetGeomDetail().GetGeomStreamEntryId().GetGeomPartId() == collection.GetGeomStreamEntryId().GetGeomPartId())
+                if (hit.GetGeomDetail().GetGeomStreamEntryId().GetGeometryPartId() == collection.GetGeomStreamEntryId().GetGeometryPartId())
                     break;
 
                 continue;
@@ -3484,17 +3484,17 @@ void ElementGeometryCollection::Iterator::ToNext()
                 break;
                 }
 
-            case ElementGeomIO::OpCode::GeomPartInstance:
+            case ElementGeomIO::OpCode::GeometryPartInstance:
                 {
                 GeomStreamEntryIdHelper::Increment(*m_context);
 
-                DgnGeomPartId geomPartId;
+                DgnGeometryPartId geomPartId;
                 Transform     geomToElem;
 
                 if (!reader.Get(egOp, geomPartId, geomToElem))
                     break;
 
-                m_partGeometry = m_context->GetDgnDb().GeomParts().LoadGeomPart(geomPartId);
+                m_partGeometry = m_context->GetDgnDb().GeometryParts().LoadGeometryPart(geomPartId);
 
                 if (!m_partGeometry.IsValid())
                     break;
@@ -3512,7 +3512,7 @@ void ElementGeometryCollection::Iterator::ToNext()
                 m_dataOffset = 0;
                 m_totalDataSize = m_partGeometry->GetGeomStream().GetSize();
 
-                GeomStreamEntryIdHelper::SetActiveGeomPart(*m_context, geomPartId);
+                GeomStreamEntryIdHelper::SetActiveGeometryPart(*m_context, geomPartId);
                 break;
                 }
 
@@ -3726,12 +3726,12 @@ GeomStreamEntryId ElementGeometryBuilder::GetGeomStreamEntryId() const
         {
         switch (egOp.m_opCode)
             {
-            case ElementGeomIO::OpCode::GeomPartInstance:
+            case ElementGeomIO::OpCode::GeometryPartInstance:
                 {
-                auto ppfb = flatbuffers::GetRoot<FB::GeomPart>(egOp.m_data);
+                auto ppfb = flatbuffers::GetRoot<FB::GeometryPart>(egOp.m_data);
 
                 entryId.SetType(GeomStreamEntryId::Type::Indexed);
-                entryId.SetGeomPartId(DgnGeomPartId((uint64_t)ppfb->geomPartId()));
+                entryId.SetGeometryPartId(DgnGeometryPartId((uint64_t)ppfb->geomPartId()));
                 entryId.SetIndex(entryId.GetIndex()+1);
                 break;
                 }
@@ -3748,7 +3748,7 @@ GeomStreamEntryId ElementGeometryBuilder::GetGeomStreamEntryId() const
                     break;
 
                 entryId.SetType(GeomStreamEntryId::Type::Indexed);
-                entryId.SetGeomPartId(DgnGeomPartId());
+                entryId.SetGeometryPartId(DgnGeometryPartId());
                 entryId.SetIndex(entryId.GetIndex()+1);
                 break;
                 }
@@ -3774,7 +3774,7 @@ BentleyStatus ElementGeometryBuilder::GetGeomStream(GeomStreamR geom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ElementGeometryBuilder::SetGeomStream(DgnGeomPartR part)
+BentleyStatus ElementGeometryBuilder::SetGeomStream(DgnGeometryPartR part)
     {
     if (!m_isPartCreate)
         return ERROR; // Invalid builder for creating part geometry...
@@ -3879,7 +3879,7 @@ bool ElementGeometryBuilder::Append(ElemDisplayParamsCR elParams)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeometryBuilder::Append(DgnGeomPartId geomPartId, TransformCR geomToElement)
+bool ElementGeometryBuilder::Append(DgnGeometryPartId geomPartId, TransformCR geomToElement)
     {
     if (m_isPartCreate)
         {
@@ -3891,7 +3891,7 @@ bool ElementGeometryBuilder::Append(DgnGeomPartId geomPartId, TransformCR geomTo
         return false; // geomToElement must be relative to an already defined placement (i.e. not computed placement from CreateWorld)...
 
     DRange3d partRange;
-    if (SUCCESS != m_dgnDb.GeomParts().QueryGeomPartRange(partRange, geomPartId))
+    if (SUCCESS != m_dgnDb.GeometryParts().QueryGeometryPartRange(partRange, geomPartId))
         return false; // part probably doesn't exist...
 
     if (!geomToElement.IsIdentity())
@@ -4341,7 +4341,7 @@ ElementGeometryBuilder::ElementGeometryBuilder(DgnDbR dgnDb, DgnCategoryId categ
     m_haveLocalGeom = m_havePlacement = true;
     m_appearanceChanged = false;
 
-    if (!(m_isPartCreate = !categoryId.IsValid())) // Called from CreateGeomPart with invalid category...
+    if (!(m_isPartCreate = !categoryId.IsValid())) // Called from CreateGeometryPart with invalid category...
         m_elParams.SetCategoryId(categoryId);
     }
 
@@ -4355,7 +4355,7 @@ ElementGeometryBuilder::ElementGeometryBuilder(DgnDbR dgnDb, DgnCategoryId categ
     m_haveLocalGeom = m_havePlacement = true;
     m_appearanceChanged = false;
 
-    if (!(m_isPartCreate = !categoryId.IsValid())) // Called from CreateGeomPart with invalid category...
+    if (!(m_isPartCreate = !categoryId.IsValid())) // Called from CreateGeometryPart with invalid category...
         m_elParams.SetCategoryId(categoryId);
     }
 
@@ -4372,7 +4372,7 @@ ElementGeometryBuilder::ElementGeometryBuilder(DgnDbR dgnDb, DgnCategoryId categ
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementGeometryBuilderPtr ElementGeometryBuilder::CreateGeomPart(GeomStreamCR stream, DgnDbR db, bool ignoreSymbology)
+ElementGeometryBuilderPtr ElementGeometryBuilder::CreateGeometryPart(GeomStreamCR stream, DgnDbR db, bool ignoreSymbology)
     {
     ElementGeometryBuilderPtr builder = new ElementGeometryBuilder(db, DgnCategoryId(), Placement3d());
     ElementGeomIO::Collection collection(stream.GetData(), stream.GetSize());
@@ -4384,7 +4384,7 @@ ElementGeometryBuilderPtr ElementGeometryBuilder::CreateGeomPart(GeomStreamCR st
             case ElementGeomIO::OpCode::Header:
                 break; // Already have header....
 
-            case ElementGeomIO::OpCode::GeomPartInstance:
+            case ElementGeomIO::OpCode::GeometryPartInstance:
                 return nullptr; // Nested parts aren't supported...
 
             case ElementGeomIO::OpCode::BasicSymbology:
@@ -4392,7 +4392,7 @@ ElementGeometryBuilderPtr ElementGeometryBuilder::CreateGeomPart(GeomStreamCR st
                 if (ignoreSymbology)
                     break;
 
-                // Can't change sub-category in GeomPart's GeomStream, only preserve sub-category appearance overrides.
+                // Can't change sub-category in GeometryPart's GeomStream, only preserve sub-category appearance overrides.
                 auto ppfb = flatbuffers::GetRoot<FB::BasicSymbology>(egOp.m_data);
 
                 if (0 == ppfb->subCategoryId())
@@ -4460,7 +4460,7 @@ ElementGeometryBuilderPtr ElementGeometryBuilder::CreateGeomPart(GeomStreamCR st
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementGeometryBuilderPtr ElementGeometryBuilder::CreateGeomPart(DgnDbR db, bool is3d)
+ElementGeometryBuilderPtr ElementGeometryBuilder::CreateGeometryPart(DgnDbR db, bool is3d)
     {
     // NOTE: Part geometry is always specified in local coords, i.e. has identity placement.
     //       Category isn't needed when creating a part, invalid category will be used to set m_isPartCreate.

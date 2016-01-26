@@ -166,7 +166,7 @@ DgnElementId DgnDbTestFixture::InsertElement2d(DgnModelId mid, DgnCategoryId cat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId DgnDbTestFixture::InsertElementUsingGeomPart2d(DgnCodeCR gpCode, DgnModelId mid, DgnCategoryId categoryId, DgnCode elementCode)
+DgnElementId DgnDbTestFixture::InsertElementUsingGeometryPart2d(DgnCodeCR gpCode, DgnModelId mid, DgnCategoryId categoryId, DgnCode elementCode)
     {
     if (!mid.IsValid())
         mid = m_defaultModelId;
@@ -181,7 +181,7 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeomPart2d(DgnCodeCR gpCode, Dg
 
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, categoryId, DPoint2d::From(0.0, 0.0));
 
-    DgnGeomPartId existingPartId = m_db->GeomParts().QueryGeomPartId(gpCode);
+    DgnGeometryPartId existingPartId = m_db->GeometryParts().QueryGeometryPartId(gpCode);
     EXPECT_TRUE(existingPartId.IsValid());
 
     if (!(builder->Append(existingPartId, Transform::From(0.0, 0.0, 0.0))))
@@ -196,7 +196,7 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeomPart2d(DgnCodeCR gpCode, Dg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId DgnDbTestFixture::InsertElementUsingGeomPart(DgnCodeCR gpCode, DgnModelId mid, DgnCategoryId categoryId, DgnCode elementCode)
+DgnElementId DgnDbTestFixture::InsertElementUsingGeometryPart(DgnCodeCR gpCode, DgnModelId mid, DgnCategoryId categoryId, DgnCode elementCode)
     {
     if (!mid.IsValid())
         mid = m_defaultModelId;
@@ -211,7 +211,7 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeomPart(DgnCodeCR gpCode, DgnM
 
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, categoryId, DPoint3d::From(0.0, 0.0,0.0));
 
-    DgnGeomPartId existingPartId = m_db->GeomParts().QueryGeomPartId(gpCode);
+    DgnGeometryPartId existingPartId = m_db->GeometryParts().QueryGeometryPartId(gpCode);
     EXPECT_TRUE(existingPartId.IsValid());
 
     if (!(builder->Append(existingPartId, Transform::From(0.0, 0.0, 0.0))))
@@ -225,7 +225,7 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeomPart(DgnCodeCR gpCode, DgnM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId DgnDbTestFixture::InsertElementUsingGeomPart(DgnGeomPartId gpId, DgnModelId mid, DgnCategoryId categoryId, DgnCode elementCode)
+DgnElementId DgnDbTestFixture::InsertElementUsingGeometryPart(DgnGeometryPartId gpId, DgnModelId mid, DgnCategoryId categoryId, DgnCode elementCode)
     {
     if (!mid.IsValid())
         mid = m_defaultModelId;

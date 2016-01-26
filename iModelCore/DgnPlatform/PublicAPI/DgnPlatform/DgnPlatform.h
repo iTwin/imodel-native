@@ -67,7 +67,7 @@ DGNPLATFORM_TYPEDEFS (DictionaryElement)
 DGNPLATFORM_TYPEDEFS (DgnDb)
 DGNPLATFORM_TYPEDEFS (DgnElement)
 DGNPLATFORM_TYPEDEFS (DgnFont)
-DGNPLATFORM_TYPEDEFS (DgnGeomPart)
+DGNPLATFORM_TYPEDEFS (DgnGeometryPart)
 DGNPLATFORM_TYPEDEFS (DgnGlyph)
 DGNPLATFORM_TYPEDEFS (DgnGlyphLayoutContext)
 DGNPLATFORM_TYPEDEFS (DgnGlyphLayoutResult)
@@ -254,7 +254,7 @@ DGNPLATFORM_REF_COUNTED_PTR (DgnElement)
 DGNPLATFORM_REF_COUNTED_PTR (DgnElementExpressionContext)
 DGNPLATFORM_REF_COUNTED_PTR (DgnFont)
 DGNPLATFORM_REF_COUNTED_PTR (DgnGCS)
-DGNPLATFORM_REF_COUNTED_PTR (DgnGeomPart)
+DGNPLATFORM_REF_COUNTED_PTR (DgnGeometryPart)
 DGNPLATFORM_REF_COUNTED_PTR (DgnMarkupProject)
 DGNPLATFORM_REF_COUNTED_PTR (DgnModel)
 DGNPLATFORM_REF_COUNTED_PTR (DgnRevision)
@@ -297,7 +297,7 @@ DGNPLATFORM_REF_COUNTED_PTR (ViewController)
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 BEBRIEFCASEBASED_ID_CLASS(DgnElementId)       //!< An Id that is assigned to an Element. @ingroup DgnElementGroup
-BEBRIEFCASEBASED_ID_CLASS(DgnGeomPartId)      //!< An Id that is assigned to a DgnGeomPart.
+BEBRIEFCASEBASED_ID_CLASS(DgnGeometryPartId)  //!< An Id that is assigned to a DgnGeometryPart.
 BEBRIEFCASEBASED_ID_CLASS(DgnModelId)         //!< An Id that is assigned to a DgnModel.  A DgnModel is a container for DgnElements. @ingroup DgnModelGroup
 BEBRIEFCASEBASED_ID_CLASS(DgnLinkId)          //!< An Id that is assigned to a DGN link. See DgnLinkTable.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnMaterialId, DgnElementId) //!< An element Id that refers to a material.
