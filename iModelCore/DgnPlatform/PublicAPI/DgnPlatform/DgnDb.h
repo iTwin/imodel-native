@@ -12,8 +12,7 @@
 #include "QueryModel.h"
 #include "DgnDomain.h"
 #include "MemoryManager.h"
-#include "LocksManager.h"
-#include "DgnCodesManager.h"
+#include "RepositoryManager.h"
 #include <Bentley/BeFileName.h>
 
 /** @addtogroup DgnDbGroup

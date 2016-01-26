@@ -414,7 +414,7 @@ void IDgnCodesManager::BackDoor_SetEnabled(bool enable) { s_enableCodeManager = 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-IDgnCodesManagerPtr DgnPlatformLib::Host::ServerAdmin::_CreateCodesManager(DgnDbR db) const
+IDgnCodesManagerPtr DgnPlatformLib::Host::RepositoryAdmin::_CreateCodesManager(DgnDbR db) const
     {
     return (db.IsMasterCopy() || !s_enableCodeManager) ? UnrestrictedCodesManager::Create(db) : LocalCodesManager::Create(db);
     }
@@ -424,7 +424,7 @@ IDgnCodesManagerPtr DgnPlatformLib::Host::ServerAdmin::_CreateCodesManager(DgnDb
 +---------------+---------------+---------------+---------------+---------------+------*/
 IDgnCodesServerP IDgnCodesManager::GetCodesServer() const
     {
-    return T_HOST.GetServerAdmin()._GetCodesServer(GetDgnDb());
+    return T_HOST.GetRepositoryAdmin()._GetCodesServer(GetDgnDb());
     }
 
 /*---------------------------------------------------------------------------------**//**

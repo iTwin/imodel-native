@@ -35,7 +35,7 @@ struct ScopedDgnHost
     DGNPLATFORM_EXPORT ~ScopedDgnHost();
 
     DGNPLATFORM_EXPORT void SetFetchScriptCallback(FetchScriptCallback* cb);
-    DGNPLATFORM_EXPORT void SetServerAdmin(DgnPlatformLib::Host::ServerAdmin* admin);
+    DGNPLATFORM_EXPORT void SetRepositoryAdmin(DgnPlatformLib::Host::RepositoryAdmin* admin);
 };
 
 struct TestDataManager

@@ -1038,7 +1038,7 @@ void ILocksManager::BackDoor_SetLockingEnabled(bool enable) { s_enableLocking = 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ILocksManagerPtr DgnPlatformLib::Host::ServerAdmin::_CreateLocksManager(DgnDbR db) const
+ILocksManagerPtr DgnPlatformLib::Host::RepositoryAdmin::_CreateLocksManager(DgnDbR db) const
     {
     // NEEDSWORK: Bogus. Currently we have no way of determining if locking is required for a given DgnDb...and we have no actual server
     return (db.IsMasterCopy() || !s_enableLocking) ? UnrestrictedLocksManager::Create(db) : LocalLocksManager::Create(db);
@@ -1049,7 +1049,7 @@ ILocksManagerPtr DgnPlatformLib::Host::ServerAdmin::_CreateLocksManager(DgnDbR d
 +---------------+---------------+---------------+---------------+---------------+------*/
 ILocksServerP ILocksManager::GetLocksServer() const
     {
-    return T_HOST.GetServerAdmin()._GetLocksServer(GetDgnDb());
+    return T_HOST.GetRepositoryAdmin()._GetLocksServer(GetDgnDb());
     }
 
 #define JSON_Status "Status"            // LockStatus

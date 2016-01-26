@@ -582,7 +582,7 @@ void LocksServer::Dump(Utf8CP descr)
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::ServerAdmin
+struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::RepositoryAdmin
 {
     mutable LocksServer m_server;
     ScopedDgnHost m_host;
@@ -591,7 +591,7 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::ServerAd
 
     LocksManagerTest()
         {
-        m_host.SetServerAdmin(this);
+        m_host.SetRepositoryAdmin(this);
         BackDoor::ILocksManager::SetLockingEnabled(true);
         }
 
@@ -698,7 +698,7 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::ServerAd
 
         // Test that response matches direct ownership query
         DgnLockOwnership ownership;
-        EXPECT_EQ(LockStatus::Success, T_HOST.GetServerAdmin()._GetLocksServer(requestor)->QueryOwnership(ownership, lockableId));
+        EXPECT_EQ(LockStatus::Success, T_HOST.GetRepositoryAdmin()._GetLocksServer(requestor)->QueryOwnership(ownership, lockableId));
         EXPECT_EQ(level, ownership.GetLockLevel());
         auto owningBcId = ExtractDgnDb(lockedObj).GetBriefcaseId();
         switch (level)

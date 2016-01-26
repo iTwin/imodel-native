@@ -415,7 +415,7 @@ void CodesServer::MarkRevision(DgnCodeSet const& codes, bool discarded, Utf8Stri
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct CodesManagerTest : public ::testing::Test, DgnPlatformLib::Host::ServerAdmin
+struct CodesManagerTest : public ::testing::Test, DgnPlatformLib::Host::RepositoryAdmin
 {
     typedef IDgnCodesManager::Request Request;
     typedef IDgnCodesManager::Response Response;
@@ -425,7 +425,7 @@ struct CodesManagerTest : public ::testing::Test, DgnPlatformLib::Host::ServerAd
     
     CodesManagerTest()
         {
-        m_host.SetServerAdmin(this);
+        m_host.SetRepositoryAdmin(this);
         BackDoor::IDgnCodesManager::SetEnabled(true);
         }
 

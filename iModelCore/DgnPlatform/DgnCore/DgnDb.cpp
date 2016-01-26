@@ -129,7 +129,7 @@ ILocksManagerR DgnDb::Locks()
     // which is not initialized in constructor.
     if (m_locksManager.IsNull())
         {
-        m_locksManager = T_HOST.GetServerAdmin()._CreateLocksManager(*this);
+        m_locksManager = T_HOST.GetRepositoryAdmin()._CreateLocksManager(*this);
         BeAssert(m_locksManager.IsValid());
         }
 
@@ -143,7 +143,7 @@ IDgnCodesManagerR DgnDb::Codes()
     {
     if (m_codesManager.IsNull())
         {
-        m_codesManager = T_HOST.GetServerAdmin()._CreateCodesManager(*this);
+        m_codesManager = T_HOST.GetRepositoryAdmin()._CreateCodesManager(*this);
         BeAssert(m_codesManager.IsValid());
         }
 
