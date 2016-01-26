@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/TxnManager.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -61,7 +61,7 @@ struct TxnMonitor
     virtual void _OnUndoRedo(TxnManager&, TxnAction) {}
 };
 
-namespace dgn_TxnTable {struct Element; struct ElementDep;}
+namespace dgn_TxnTable {struct Element; struct ElementDep; struct Model;}
 
 //=======================================================================================
 //! An instance of a TxnTable is created for a single SQLite table of a DgnDb via a DgnDomain::TableHandler.
@@ -315,6 +315,9 @@ public:
     //! Get the dgn_TxnTable::ElementDep TxnTable for this TxnManager
     DGNPLATFORM_EXPORT dgn_TxnTable::ElementDep& ElementDependencies() const;
 
+    //! Get the dgn_TxnTable::Model TxnTable for this TxnManager
+    DGNPLATFORM_EXPORT dgn_TxnTable::Model& Models() const;
+
     //! Get the description of a previously committed Txn, given its TxnId.
     DGNPLATFORM_EXPORT Utf8String GetTxnDescription(TxnId txnId);
 
@@ -521,6 +524,7 @@ namespace dgn_TxnTable
             const_iterator end() const {return Entry(nullptr, false);}
         };
 
+    bool HasChanges() const {return m_changes;}
     Iterator MakeIterator() const {return Iterator(m_txnMgr.GetDgnDb());}
     };
 
@@ -543,6 +547,31 @@ namespace dgn_TxnTable
         void _OnReversedUpdate(BeSQLite::Changes::Change const&) override;
 
         void AddChange(BeSQLite::Changes::Change const& change, ChangeType changeType);
+
+        //! iterator for models that are directly changed. Only valid during _PropagateChanges.
+        struct Iterator : BeSQLite::DbTableIterator
+        {
+        public:
+            Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) { }
+            struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+            {
+            private:
+                friend struct Iterator;
+                Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
+            public:
+                DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
+                DGNPLATFORM_EXPORT ChangeType GetChangeType() const;
+                Entry const& operator*() const {return *this;}
+            };
+
+            typedef Entry const_iterator;
+            typedef Entry iterator;
+            DGNPLATFORM_EXPORT const_iterator begin() const;
+            const_iterator end() const {return Entry(nullptr, false);}
+        };
+
+        Iterator MakeIterator() const {return Iterator(m_txnMgr.GetDgnDb());}
+        bool HasChanges() const {return m_changes;}
     };
 
     struct ElementDep : TxnTable
@@ -566,6 +595,7 @@ namespace dgn_TxnTable
         void AddDependency(BeSQLite::EC::ECInstanceId const&, ChangeType);
         void AddFailedTarget(DgnElementId id) {m_failedTargets.insert(id);}
         DgnElementIdSet const& GetFailedTargets() const {return m_failedTargets;}
+        bool HasChanges() const {return m_changes;}
     };
 
     struct ModelDep : TxnTable

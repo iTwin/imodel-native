@@ -170,6 +170,16 @@ protected:
     void QueueDrawFrame();
     void CalcTargetNumElements(UpdatePlan const& plan, bool isForProgressive);
 
+    enum class CloseMe {No=0, Yes=1};
+    //! called when one or more models are deleted
+    //! Default implementation does:
+    //! - Removes deleted models from viewed model list
+    //! - Chooses a new target model arbitrarily from viewed model list if target model deleted
+    //! - Closes viewport if no viewed models remain
+    //! Override this method to change this behavior
+    //! @return true to close this viewport
+    DGNPLATFORM_EXPORT virtual CloseMe _OnModelsDeleted(bset<Dgn::DgnModelId> const&, Dgn::DgnDbR db);
+
 public:
     DgnViewport(Render::TargetP target) : m_renderTarget(target) {}
     virtual ~DgnViewport() {DestroyViewport();}

@@ -864,7 +864,7 @@ void SpatialViewController::TransformBy(TransformCR trans)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SpatialViewController::SetTargetModel(GeometricModelP target)
+BentleyStatus ViewController::SetTargetModel(GeometricModelP target)
     {
     if (!m_viewedModels.Contains(target->GetModelId()))
         return  ERROR;

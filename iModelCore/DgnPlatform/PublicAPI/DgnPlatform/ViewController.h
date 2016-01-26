@@ -507,6 +507,10 @@ public:
 
     //! Get the unit vector that points in the view Z (front-to-back) direction.
     DVec3d GetZVector() const {DVec3d v; GetRotation().GetRow(v,2); return v;}
+
+    //! Sets the Target DgnModel for this ViewController.
+    //! @param[in] target The model to which new elements are added by modification tools.
+    DGNPLATFORM_EXPORT BentleyStatus SetTargetModel(GeometricModelP target);
 };
 
 //=======================================================================================
@@ -567,9 +571,6 @@ public:
     //! @param[in] acs The new Auxiliary Coordinate System.
     void SetAuxCoordinateSystem(IAuxCoordSysP acs) {m_auxCoordSys = acs;}
 
-    //! Sets the Target DgnModel for this SpatialViewController.
-    //! @param[in] target The model to which new elements are added by modification tools.
-    DGNPLATFORM_EXPORT BentleyStatus SetTargetModel(GeometricModelP target);
 };
 
 /** @addtogroup DgnViewGroup
