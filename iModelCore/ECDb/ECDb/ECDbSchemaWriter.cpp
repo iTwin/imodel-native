@@ -594,6 +594,7 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
     const int arrayMinIndex = 13;
     const int arrayMaxIndex = 14;
     const int navDirIndex = 15;
+
     if (ecProperty.GetIsPrimitive())
         {
         PrimitiveECPropertyCP primProp = ecProperty.GetAsPrimitiveProperty();
@@ -655,6 +656,12 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
                 return ERROR;
 
             if (BE_SQLITE_OK != stmt->BindInt64(nonPrimitiveTypeIndex, arrayProp->GetAsStructArrayProperty()->GetStructElementType()->GetId()))
+                return ERROR;
+            }
+
+        if (arrayProp->HasExtendedType())
+            {
+            if (BE_SQLITE_OK != stmt->BindText(extendedTypeIndex, arrayProp->GetExtendedTypeName().c_str(), Statement::MakeCopy::No))
                 return ERROR;
             }
 
