@@ -867,27 +867,7 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
 
             case Cardinality::ManyToOne:
                 {
-                //if (m_customMapType == CustomMapType::ForeignKeyOnTarget)
-                //    {
-                //    LOG.errorv("ECRelationshipClass %s implies a foreign key relationship on the source's table. Therefore the 'End' property in the ForeignKeyRelationshipMap custom attribute must not be set to 'Target'.",
-                //               GetECClass().GetFullName());
-                //    return MapStatus::Error;
-                //    }
-                //If relationship have abstract end with multiple tables
-                //if (sourceTableCount > 1)
-                //    {
-                //    if (userStrategyIsForeignKeyMapping)
-                //        {
-                //        LOG.errorv("ECRelationshipClass %s implies a link table relationship as the source constraint is mapped to more than one end table.. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
-                //                   GetECClass().GetFullName());
-                //        return MapStatus::Error;
-                //        }
-
-                //    resolvedStrategy = ECDbMapStrategy::Strategy::OwnTable;
-                //    }
-                //else
-                    resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable;
-
+                resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable;
                 break;
                 }
 
