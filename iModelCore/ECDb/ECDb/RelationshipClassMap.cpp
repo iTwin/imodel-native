@@ -584,9 +584,9 @@ MapStatus RelationshipClassEndTableMap::CreateConstraintColumns(ECDbSqlColumn*& 
     {
     fkIdColumn = nullptr;
 
+    ECRelationshipClassCR relClass = *mapInfo.GetECClass().GetRelationshipClassCP();
     std::set<ECDbSqlColumn const*> keyPropertyColumns;
-
-    if (SUCCESS != TryGetKeyPropertyColumn(keyPropertyColumns, constraint, *mapInfo.GetECClass().GetRelationshipClassCP(), constraintEnd))
+    if (SUCCESS != TryGetKeyPropertyColumn(keyPropertyColumns, constraint, relClass, constraintEnd))
         return MapStatus::Error;
 
     const ColumnKind fkColumnId = GetThisEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? ColumnKind::TargetECInstanceId : ColumnKind::SourceECInstanceId;
@@ -597,24 +597,30 @@ MapStatus RelationshipClassEndTableMap::CreateConstraintColumns(ECDbSqlColumn*& 
         fkIdColumn = const_cast<ECDbSqlColumn*>((*keyPropertyColumns.begin()));
     else
         {
+        //First look at CA for an ECInstanceIdColumnName. 
+        //If not specified, look whether there is a single NavigationProperty and take its name
+        //If this doesn't exist, generate a default name
+
         RelationshipEndColumns const& constraintColumnMapping = GetEndColumnsMapping(mapInfo);
-        //if id column name was specified in the CA, try to see if there is a column already
-        Utf8CP idColName = constraintColumnMapping.GetECInstanceIdColumnName();
-        if (!Utf8String::IsNullOrEmpty(idColName))
-            fkIdColumn = GetPrimaryTable().FindColumnP(idColName);
+        Utf8String idColName (constraintColumnMapping.GetECInstanceIdColumnName());
+        if (idColName.empty())
+            {
+            //if (SUCCESS != TryGetConstraintIdColumnNameFromNavigationProperty(idColName, constraint, relClass, constraintEnd))
+            //    return MapStatus::Error;
+            }
+
+        if (!idColName.empty())
+            fkIdColumn = GetPrimaryTable().FindColumnP(idColName.c_str());
 
         if (fkIdColumn == nullptr)
             {
-            Utf8String colName;
-            if (!Utf8String::IsNullOrEmpty(idColName))
-                colName.assign(idColName);
-            else
+            if (idColName.empty())
                 {
-                if (!GetOtherEndKeyColumnName(colName, GetPrimaryTable(), true))
+                if (!GetOtherEndKeyColumnName(idColName, GetPrimaryTable(), true))
                     return MapStatus::Error;
                 }
 
-            fkIdColumn = CreateConstraintColumn(colName.c_str(), fkColumnId, PersistenceType::Persisted);
+            fkIdColumn = CreateConstraintColumn(idColName.c_str(), fkColumnId, PersistenceType::Persisted);
             m_autogenerateForeignKeyColumns = true;
             }
         }
@@ -631,7 +637,6 @@ MapStatus RelationshipClassEndTableMap::CreateConstraintColumns(ECDbSqlColumn*& 
 
         if (!canEdit)
             fkIdColumn->GetTableR().GetEditHandleR().EndEdit();
-
         }
 
     return MapStatus::Success;
@@ -974,6 +979,46 @@ BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(std::set<ECD
         }
 
     return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                      Krischan.Eberle                          01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus RelationshipClassEndTableMap::TryGetConstraintIdColumnNameFromNavigationProperty(Utf8StringR columnName, ECN::ECRelationshipConstraintCR constraint, ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipEnd constraintEnd) const
+    {
+    columnName.clear();
+    ECRelationshipConstraintClassList const& constraintClasses = constraint.GetConstraintClasses();
+    if (constraintClasses.size() == 0)
+        return SUCCESS;
+
+    const ECRelatedInstanceDirection expectedDirection = constraintEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? ECRelatedInstanceDirection::Forward : ECRelatedInstanceDirection::Backward;
+    NavigationECPropertyCP singleNavProperty = nullptr;
+    for (ECRelationshipConstraintClassCP constraintClass : constraintClasses)
+        {
+        for (ECPropertyCP prop : constraintClass->GetClass().GetProperties())
+            {
+            NavigationECPropertyCP navProp = prop->GetAsNavigationProperty();
+            if (navProp != nullptr && navProp->GetRelationshipClass() == &relClass && navProp->GetDirection() == expectedDirection)
+                {
+                if (singleNavProperty == nullptr)
+                    singleNavProperty = navProp;
+                else
+                    {
+                    LOG.infov("More than one NavigationECProperty found on the %s constraint classes of the ECRelationship %s. Therefore the constraint column name cannot be implied from a navigation property. A default name will be picked.", 
+                              constraintEnd == ECRelationshipEnd_Source ? "source" : "target", relClass.GetFullName());
+                    return SUCCESS;
+                    }
+                }
+            }
+        }
+
+    //no nav prop found
+    if (singleNavProperty == nullptr)
+        return SUCCESS;
+
+    bool isNullable, isUnique; //unused
+    ECDbSqlColumn::Constraint::Collation collation;//unused
+    return PropertyMap::DetermineColumnInfo(columnName, isNullable, isUnique, collation, *singleNavProperty, singleNavProperty->GetName().c_str());
     }
 
 //************************** RelationshipClassLinkTableMap *****************************************

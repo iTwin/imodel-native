@@ -40,14 +40,14 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECSqlSupport)
                          "    </ECEntityClass>"
                          "    <ECEntityClass typeName='B'>"
                          "        <ECProperty propertyName='PB' typeName='int' />"
-                         "        <ECNavigationProperty propertyName='AParent' relationshipName='AHasB' direction='Backward' />"
+                         "        <ECNavigationProperty propertyName='AId' relationshipName='AHasB' direction='Backward' />"
                          "    </ECEntityClass>"
                          "    <ECEntityClass typeName='C'>"
                          "        <ECProperty propertyName='PC' typeName='int' />"
                          "    </ECEntityClass>"
                          "    <ECEntityClass typeName='D'>"
                          "        <ECProperty propertyName='PD' typeName='int' />"
-                         "        <ECNavigationProperty propertyName='CParent' relationshipName='CHasDLinkTable' direction='Backward' />"
+                         "        <ECNavigationProperty propertyName='CId' relationshipName='CHasDLinkTable' direction='Backward' />"
                          "    </ECEntityClass>"
                          "   <ECRelationshipClass typeName='AHasB' strength='Embedding'>"
                          "      <Source cardinality='(0,1)' polymorphic='False'>"
@@ -71,18 +71,18 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECSqlSupport)
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
     AssertPrepare("SELECT PB FROM ts.B WHERE ECInstanceId=?", true, "");
-    AssertPrepare("SELECT PB, AParent FROM ts.B WHERE ECInstanceId=?", true, "");
+    AssertPrepare("SELECT PB, AId FROM ts.B WHERE ECInstanceId=?", true, "");
     AssertPrepare("SELECT * FROM ts.B WHERE ECInstanceId=?", true, "");
 
     AssertPrepare("SELECT PD FROM ts.D WHERE ECInstanceId=?", true, "");
-    AssertPrepare("SELECT PD, CParent FROM ts.D WHERE ECInstanceId=?", false, "NavProp with link table relationship is not supported.");
+    AssertPrepare("SELECT PD, CId FROM ts.D WHERE ECInstanceId=?", false, "NavProp with link table relationship is not supported.");
     AssertPrepare("SELECT * FROM ts.D WHERE ECInstanceId=?", false, "NavProp with link table relationship is not supported.");
 
-    AssertPrepare("INSERT INTO ts.B (PB,AParent) VALUES(123,?)", true, "NavProp with single related instance is expected to be supported.");
-    AssertPrepare("INSERT INTO ts.D (PD,CParent) VALUES(123,?)", false, "NavProp with link table relationship is not supported.");
+    AssertPrepare("INSERT INTO ts.B (PB,AId) VALUES(123,?)", true, "NavProp with single related instance is expected to be supported.");
+    AssertPrepare("INSERT INTO ts.D (PD,CId) VALUES(123,?)", false, "NavProp with link table relationship is not supported.");
 
-    AssertPrepare("UPDATE ONLY ts.B SET AParent=?", true, "Updating NavProp with end table rel is supported.");
-    AssertPrepare("UPDATE ONLY ts.D SET CParent=?", false, "Updating NavProp with link table rel is not supported.");
+    AssertPrepare("UPDATE ONLY ts.B SET AId=?", true, "Updating NavProp with end table rel is supported.");
+    AssertPrepare("UPDATE ONLY ts.D SET CId=?", false, "Updating NavProp with link table rel is not supported.");
     }
 
 //---------------------------------------------------------------------------------------
@@ -100,7 +100,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
                          "    </ECEntityClass>"
                          "    <ECEntityClass typeName='DgnElement'>"
                          "        <ECProperty propertyName='Code' typeName='string' />"
-                         "        <ECNavigationProperty propertyName='Model' relationshipName='ParentHasChildren' direction='Backward' />"
+                         "        <ECNavigationProperty propertyName='ModelId' relationshipName='ParentHasChildren' direction='Backward' />"
                          "    </ECEntityClass>"
                          "   <ECRelationshipClass typeName='ParentHasChildren' strength='Referencing'>"
                          "      <Source cardinality='(0,1)' polymorphic='False'>"
@@ -128,7 +128,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     ECInstanceKey elementKey;
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO np.DgnElement(Model,Code) VALUES(?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO np.DgnElement(ModelId,Code) VALUES(?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, modelKey.GetECInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(2, "TestCode-1", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(elementKey));
@@ -165,7 +165,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Code, Model FROM np.DgnElement WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Code, ModelId FROM np.DgnElement WHERE ECInstanceId=?"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, elementKey.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(1).GetValue());
@@ -190,7 +190,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     stmt.Finalize();
 
     //Nav prop in where clause
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId FROM np.DgnElement WHERE Model=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId FROM np.DgnElement WHERE ModelId=?"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, modelKey.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(elementKey.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue());
@@ -199,7 +199,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
 
     //with literal values
     Utf8String ecsql;
-    ecsql.Sprintf("SELECT ECInstanceId FROM np.DgnElement WHERE Model=%lld", modelKey.GetECInstanceId().GetValue());
+    ecsql.Sprintf("SELECT ECInstanceId FROM np.DgnElement WHERE ModelId=%lld", modelKey.GetECInstanceId().GetValue());
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(elementKey.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue());
@@ -207,7 +207,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     stmt.Finalize();
 
     //Nav prop in order by clause
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT * FROM np.DgnElement ORDER BY Model"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT * FROM np.DgnElement ORDER BY ModelId"));
 
     int actualRowCount = 0;
     while (BE_SQLITE_ROW == stmt.Step())
@@ -219,7 +219,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     stmt.Finalize();
 
     //Nav prop in order by clause
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*), Model FROM np.DgnElement GROUP BY Model"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*), ModelId FROM np.DgnElement GROUP BY ModelId"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
     stmt.Finalize();
@@ -241,7 +241,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
                                       "    </ECEntityClass>"
                                       "    <ECEntityClass typeName='GeometrySource' modifier='Abstract'>"
                                       "        <ECProperty propertyName='Geometry' typeName='binary' />"
-                                      "        <ECNavigationProperty propertyName='Category' relationshipName='GeometryIsInsCategory' direction='Forward' />"
+                                      "        <ECNavigationProperty propertyName='CategoryId' relationshipName='GeometryIsInsCategory' direction='Forward' />"
                                       "    </ECEntityClass>"
                                       "    <ECEntityClass typeName='GeometrySource3d' modifier='Abstract'>"
                                       "       <BaseClass>GeometrySource</BaseClass>"
@@ -316,7 +316,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     //INSERT
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO np.FooElement(Diameter, Code, Category) VALUES(?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO np.FooElement(Diameter, Code, CategoryId) VALUES(?,?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindDouble(1, fooDiameter));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(2, fooCode, IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, catKey.GetECInstanceId()));
@@ -326,7 +326,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     //Verify via SELECT
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, Code, Category, Diameter FROM np.FooElement"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, Code, CategoryId, Diameter FROM np.FooElement"));
     int rowCount = 0;
     while (stmt.Step() == BE_SQLITE_ROW)
         {
@@ -347,7 +347,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     stmt.Finalize();
 
     //select via base class
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, GetECClassId(), Category FROM np.GeometrySource"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, GetECClassId(), CategoryId FROM np.GeometrySource"));
     rowCount = 0;
     while (stmt.Step() == BE_SQLITE_ROW)
         {
@@ -369,7 +369,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     //UPDATE
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE np.GeometrySource SET Category=? WHERE Category IS NULL"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE np.GeometrySource SET CategoryId=? WHERE Category IS NULL"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, catKey.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
@@ -377,7 +377,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     //Verify via SELECT
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Category FROM np.FooElement"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT CategoryId FROM np.FooElement"));
     int rowCount = 0;
     while (stmt.Step() == BE_SQLITE_ROW)
         {
@@ -390,7 +390,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     stmt.Finalize();
 
     //select via base class
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Category FROM np.GeometrySource"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT CategoryId FROM np.GeometrySource"));
     rowCount = 0;
     while (stmt.Step() == BE_SQLITE_ROW)
         {

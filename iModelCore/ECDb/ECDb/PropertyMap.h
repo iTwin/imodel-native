@@ -119,7 +119,7 @@ protected:
         return *current;
         }
 
-    BentleyStatus DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, ECDbSqlColumn::Constraint::Collation&) const;
+    BentleyStatus DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, ECDbSqlColumn::Constraint::Collation& collation) const { return DetermineColumnInfo(columnName, isNullable, isUnique, collation, GetProperty(), GetPropertyAccessString()); }
 
 public:
     virtual ~PropertyMap () {}
@@ -181,6 +181,8 @@ public:
 
     //! For debugging and logging
     Utf8String ToString() const;
+
+    static BentleyStatus DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, ECDbSqlColumn::Constraint::Collation&, ECN::ECPropertyCR, Utf8CP propAccessString);
 
     static PropertyMapPtr CreateAndEvaluateMapping (ClassMapLoadContext&, ECDbCR, ECN::ECPropertyCR, ECN::ECClassCR rootClass, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap);
     //only called during schema import

@@ -140,7 +140,8 @@ PropertyMapPtr PropertyMap::CreateAndEvaluateMapping(ClassMapLoadContext& ctx, E
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle     01/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus PropertyMap::DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, ECDbSqlColumn::Constraint::Collation& collation) const
+//static
+BentleyStatus PropertyMap::DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, ECDbSqlColumn::Constraint::Collation& collation, ECPropertyCR ecProp, Utf8CP propAccessString)
     {
     columnName.clear();
     isNullable = true;
@@ -148,7 +149,7 @@ BentleyStatus PropertyMap::DetermineColumnInfo(Utf8StringR columnName, bool& isN
     collation = ECDbSqlColumn::Constraint::Collation::Default;
 
     ECDbPropertyMap customPropMap;
-    if (ECDbMapCustomAttributeHelper::TryGetPropertyMap(customPropMap, GetProperty()))
+    if (ECDbMapCustomAttributeHelper::TryGetPropertyMap(customPropMap, ecProp))
         {
         if (ECObjectsStatus::Success != customPropMap.TryGetColumnName(columnName))
             return ERROR;
@@ -166,7 +167,7 @@ BentleyStatus PropertyMap::DetermineColumnInfo(Utf8StringR columnName, bool& isN
         if (!ECDbSqlColumn::Constraint::TryParseCollationString(collation, collationStr.c_str()))
             {
             LOG.errorv("Custom attribute PropertyMap on ECProperty %s:%s has an invalid value for the property 'Collation': %s",
-                       GetProperty().GetClass().GetFullName(), GetProperty().GetName().c_str(),
+                       ecProp.GetClass().GetFullName(), ecProp.GetName().c_str(),
                        collationStr.c_str());
             return ERROR;
             }
@@ -176,7 +177,7 @@ BentleyStatus PropertyMap::DetermineColumnInfo(Utf8StringR columnName, bool& isN
     // we use the ECProperty's propertyAccessString (and replace . by _)
     if (columnName.empty())
         {
-        columnName.assign(GetPropertyAccessString());
+        columnName.assign(propAccessString);
         columnName.ReplaceAll(".", "_");
         }
 
