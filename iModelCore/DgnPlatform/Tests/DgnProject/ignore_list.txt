@@ -46,3 +46,7 @@ VolumeElementTestFixture.QueryTest                      # FenceParams::AcceptEle
 
 # WIP_MERGE_0600
 RevisionTestFixture.* # notified Raman
+
+# TxnMonitors can't determine what changed due to undo/redo...
+TransactionManagerTests.ModelInsertReverse
+
