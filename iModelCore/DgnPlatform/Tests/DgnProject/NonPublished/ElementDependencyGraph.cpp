@@ -77,7 +77,7 @@ struct ElementDependencyGraph : ::testing::Test
     DgnDbPtr      m_db;
     DgnModelId    m_defaultModelId;
     DgnCategoryId m_defaultCategoryId;
-    static DgnDbTestUtils::SeedFileInfo s_seedFileInfo;
+    static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
 
     ElementDependencyGraph();
     ~ElementDependencyGraph();
@@ -100,7 +100,7 @@ struct ElementDependencyGraph : ::testing::Test
     void TestRelationships(DgnDb& db, ElementsAndRelationships const&);
 };
 
-DgnDbTestUtils::SeedFileInfo ElementDependencyGraph::s_seedFileInfo;
+DgnDbTestUtils::SeedDbInfo ElementDependencyGraph::s_seedFileInfo;
 
 END_UNNAMED_NAMESPACE
 
@@ -112,7 +112,7 @@ END_UNNAMED_NAMESPACE
 BETEST_TC_SETUP(ElementDependencyGraph) 
     {
     ScopedDgnHost tempHost;
-    s_seedFileInfo = DgnDbTestUtils::GetSeedFile(DgnDbTestUtils::SeedFileId::OneSpatialModel, DgnDbTestUtils::SeedFileOptions(true, true));
+    s_seedFileInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(true, true));
     }
 
 //---------------------------------------------------------------------------------------
@@ -209,9 +209,9 @@ void ElementDependencyGraph::SetupProject(WCharCP testFile, Db::OpenMode mode, b
     {
     // Note: We know that our group's TC_SETUP function has already created the group seed file. We can just ask for it.
     if (Db::OpenMode::ReadWrite == mode)
-        m_db = DgnDbTestUtils::OpenDgnDbCopy(s_seedFileInfo.fileName, testFile);
+        m_db = DgnDbTestUtils::OpenSeedDbCopy(s_seedFileInfo.fileName, testFile);
     else
-        m_db = DgnDbTestUtils::OpenDgnDb(s_seedFileInfo.fileName);
+        m_db = DgnDbTestUtils::OpenSeedDb(s_seedFileInfo.fileName);
     ASSERT_TRUE(m_db.IsValid());
 
     if (needBriefcase)

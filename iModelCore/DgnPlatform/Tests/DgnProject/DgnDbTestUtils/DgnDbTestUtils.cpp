@@ -18,7 +18,7 @@ USING_NAMESPACE_BENTLEY_DPTEST
         return BAD_RETURN;\
         }
 
-static bset<DgnDbTestUtils::SeedFileInfo> s_seedFilesCreated;
+static bset<DgnDbTestUtils::SeedDbInfo> s_seedFilesCreated;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
@@ -52,7 +52,7 @@ static void setBriefcase(DgnDbPtr& db, DgnDb::OpenMode mode)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbTestUtils::SeedFileOptions::ToKey() const
+Utf8String DgnDbTestUtils::SeedDbOptions::ToKey() const
     {
     return Utf8PrintfString("%d%d", testDomain, cameraView);
     }
@@ -60,7 +60,7 @@ Utf8String DgnDbTestUtils::SeedFileOptions::ToKey() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbTestUtils::SeedFileInfo::ToKey() const
+Utf8String DgnDbTestUtils::SeedDbInfo::ToKey() const
     {
     return Utf8PrintfString("%d%s%s%d", (int)id, options.ToKey().c_str());
     }
@@ -68,7 +68,7 @@ Utf8String DgnDbTestUtils::SeedFileInfo::ToKey() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-bool DgnDbTestUtils::SeedFileInfo::operator< (SeedFileInfo const& rhs) const
+bool DgnDbTestUtils::SeedDbInfo::operator< (SeedDbInfo const& rhs) const
     {
     return ToKey() < rhs.ToKey();
     }
@@ -76,16 +76,16 @@ bool DgnDbTestUtils::SeedFileInfo::operator< (SeedFileInfo const& rhs) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-DgnDbTestUtils::SeedFileInfo DgnDbTestUtils::GetOneSpatialModelSeedFile(SeedFileOptions const& options)
+DgnDbTestUtils::SeedDbInfo DgnDbTestUtils::GetOneSpatialModelSeedDb(SeedDbOptions const& options)
     {
     if (nullptr == DgnPlatformLib::QueryHost())
         {
-        EXPECT_TRUE(false) << "Your TC_SETUP function must set up a host before calling DgnDbTestUtils::CreateSeedFiles. Just put an instance of ScopedDgnHost on the stack at the top of your function.";
-        return SeedFileInfo();
+        EXPECT_TRUE(false) << "Your TC_SETUP function must set up a host before calling DgnDbTestUtils::CreateSeedDbs. Just put an instance of ScopedDgnHost on the stack at the top of your function.";
+        return SeedDbInfo();
         }
 
-    SeedFileInfo info;
-    info.id = SeedFileId::OneSpatialModel;
+    SeedDbInfo info;
+    info.id = SeedDbId::OneSpatialModel;
     info.options = options;
     info.fileName.SetName(L"DgnDbTestUtils_OneSpatialModel.dgndb");
     info.modelCode = DgnModel::CreateModelCode("DefaultModel");
@@ -116,19 +116,19 @@ DgnDbTestUtils::SeedFileInfo DgnDbTestUtils::GetOneSpatialModelSeedFile(SeedFile
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-DgnDbTestUtils::SeedFileInfo DgnDbTestUtils::GetSeedFile(SeedFileId seedId, SeedFileOptions const& options)
+DgnDbTestUtils::SeedDbInfo DgnDbTestUtils::GetSeedDb(SeedDbId seedId, SeedDbOptions const& options)
     {
     if (nullptr == DgnPlatformLib::QueryHost())
         {
-        EXPECT_TRUE(false) << "Your TC_SETUP function must set up a host before calling DgnDbTestUtils::GetSeedFileInfo. Just put an instance of ScopedDgnHost on the stack at the top of your function.";
-        return SeedFileInfo();
+        EXPECT_TRUE(false) << "Your TC_SETUP function must set up a host before calling DgnDbTestUtils::GetSeedDbInfo. Just put an instance of ScopedDgnHost on the stack at the top of your function.";
+        return SeedDbInfo();
         }
 
-    if (SeedFileId::OneSpatialModel == seedId)
-        return GetOneSpatialModelSeedFile(options);
+    if (SeedDbId::OneSpatialModel == seedId)
+        return GetOneSpatialModelSeedDb(options);
 
-    BeAssert(false && "invalid SeedFileId");
-    return SeedFileInfo();
+    BeAssert(false && "invalid SeedDbId");
+    return SeedDbInfo();
     }
 
 //---------------------------------------------------------------------------------------
@@ -212,7 +212,7 @@ DgnDbPtr DgnDbTestUtils::OpenDgnDb(WCharCP relPath, DgnDb::OpenMode mode)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-DgnDbPtr DgnDbTestUtils::OpenDgnDb(WCharCP relSeedPath)
+DgnDbPtr DgnDbTestUtils::OpenSeedDb(WCharCP relSeedPath)
     {
     return OpenDgnDb(relSeedPath, DgnDb::OpenMode::Readonly);
     }
@@ -229,7 +229,7 @@ static void supplyMissingDbExtension(WStringR name)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-DgnDbPtr DgnDbTestUtils::OpenDgnDbCopy(WCharCP relSeedPathIn, WCharCP newName)
+DgnDbPtr DgnDbTestUtils::OpenSeedDbCopy(WCharCP relSeedPathIn, WCharCP newName)
     {
     WString relSeedPath(relSeedPathIn);
     supplyMissingDbExtension(relSeedPath);
