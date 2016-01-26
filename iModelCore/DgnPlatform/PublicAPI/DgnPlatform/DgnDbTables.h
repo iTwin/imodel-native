@@ -389,7 +389,6 @@ public:
 struct DgnGeometryParts : DgnDbTable
 {
     friend struct DgnDb;
-    friend struct DgnGeometryParts;
 
 private:
     explicit DgnGeometryParts(DgnDbR db) : DgnDbTable(db), m_snappyFrom(m_snappyFromBuffer, _countof(m_snappyFromBuffer)) {}
