@@ -255,8 +255,8 @@ DgnDbPtr DgnDbTestUtils::OpenSeedDbCopy(WCharCP relSeedPathIn, WCharCP newName)
         }
         
     //  2. Make sure that it is located in a subdirectory that is specific to the current test case. (That's how we keep test groups out of each other's way.)
-    Utf8String tcname;
-    if (BSISUCCESS == BeTest::GetNameOfCurrentTestCase(tcname))
+    Utf8String tcname = BeTest::GetNameOfCurrentTestCase();
+    if (!tcname.empty())
         {
         WString wtcname(tcname.c_str(), BentleyCharEncoding::Utf8);
         if (!wtcname.Equals(ccRelPathBase.substr(0, tcname.size())))
