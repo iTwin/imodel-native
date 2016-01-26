@@ -13,7 +13,7 @@
 //=======================================================================================
 // @bsiclass                                                    Brien.Bastings  03/15
 //=======================================================================================
-struct DbGeomPartsWriter
+struct DbGeometryPartsWriter
 {
 protected:
     DgnDbR m_dgndb;
@@ -23,15 +23,15 @@ protected:
     void ExecStatement();
     void PrepareInsertStatement();
     void PrepareUpdateStatement();
-    StatusInt SaveGeomPartToRow(GeomStreamCR, DgnCodeCR code, DgnGeomPartId geomPartId, ElementAlignedBox3dCR bbox);
+    StatusInt SaveGeometryPartToRow(GeomStreamCR, DgnCodeCR code, DgnGeometryPartId geomPartId, ElementAlignedBox3dCR bbox);
     void BindBoundingBox(ElementAlignedBox3dCR box);
     void BindCode(DgnCodeCR code);
 
 public:
-    DbGeomPartsWriter(DgnDbR db) : m_dgndb(db) {}
+    DbGeometryPartsWriter(DgnDbR db) : m_dgndb(db) {}
 
-    DgnGeomPartId InsertGeomPart(GeomStreamCR, DgnCodeCR code, ElementAlignedBox3dCR bbox);
-    BentleyStatus UpdateGeomPart(DgnGeomPartId geomPartId, GeomStreamCR, DgnCodeCR code, ElementAlignedBox3dCR bbox);
+    DgnGeometryPartId InsertGeometryPart(GeomStreamCR, DgnCodeCR code, ElementAlignedBox3dCR bbox);
+    BentleyStatus UpdateGeometryPart(DgnGeometryPartId geomPartId, GeomStreamCR, DgnCodeCR code, ElementAlignedBox3dCR bbox);
 
     enum Column : int // Must match columns in PrepareInsertStatement & PrepareUpdateStatement
     {
@@ -52,10 +52,10 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DbGeomPartsWriter::PrepareInsertStatement()
+void DbGeometryPartsWriter::PrepareInsertStatement()
     {
     Utf8CP insertSql =
-            "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_GeomPart) "("
+            "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_GeometryPart) "("
                 "Id,"   // 1
                 GEOMPART_CODE ","       // 2,3,4
                 "Geom,"                 // 5
@@ -68,10 +68,10 @@ void DbGeomPartsWriter::PrepareInsertStatement()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DbGeomPartsWriter::PrepareUpdateStatement()
+void DbGeometryPartsWriter::PrepareUpdateStatement()
     {
     Utf8CP updateSql =
-            "UPDATE " DGN_TABLE(DGN_CLASSNAME_GeomPart) " SET "
+            "UPDATE " DGN_TABLE(DGN_CLASSNAME_GeometryPart) " SET "
                 "Code_AuthorityId=?2,"
                 "Code_Namespace=?3,"
                 "Code_Value=?4,"
@@ -86,7 +86,7 @@ void DbGeomPartsWriter::PrepareUpdateStatement()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DbGeomPartsWriter::ExecStatement()
+void DbGeometryPartsWriter::ExecStatement()
     {
     DbResult status = m_stmt->Step();
     if (status != BE_SQLITE_DONE)
@@ -101,7 +101,7 @@ void DbGeomPartsWriter::ExecStatement()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DbGeomPartsWriter::BindBoundingBox(ElementAlignedBox3dCR box)
+void DbGeometryPartsWriter::BindBoundingBox(ElementAlignedBox3dCR box)
     {
     m_stmt->BindDouble(Column::LowX, box.GetLeft());
     m_stmt->BindDouble(Column::LowY, box.GetFront());
@@ -114,7 +114,7 @@ void DbGeomPartsWriter::BindBoundingBox(ElementAlignedBox3dCR box)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DbGeomPartsWriter::BindCode(DgnCodeCR code)
+void DbGeometryPartsWriter::BindCode(DgnCodeCR code)
     {
     m_stmt->BindId(Column::Authority, code.GetAuthority());
     m_stmt->BindText(Column::Namespace, code.GetNamespace(), Statement::MakeCopy::No);
@@ -127,7 +127,7 @@ void DbGeomPartsWriter::BindCode(DgnCodeCR code)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DbGeomPartsWriter::SaveGeomPartToRow(GeomStreamCR geom, DgnCodeCR code, DgnGeomPartId geomPartId, ElementAlignedBox3dCR box)
+StatusInt DbGeometryPartsWriter::SaveGeometryPartToRow(GeomStreamCR geom, DgnCodeCR code, DgnGeometryPartId geomPartId, ElementAlignedBox3dCR box)
     {
     m_stmt->BindId(Column::Id, geomPartId);
 
@@ -140,58 +140,58 @@ StatusInt DbGeomPartsWriter::SaveGeomPartToRow(GeomStreamCR geom, DgnCodeCR code
         return SUCCESS; // Is this an error?!?
         }
 
-    return (DgnDbStatus::Success == geom.WriteGeomStreamAndStep(m_dgndb, DGN_TABLE(DGN_CLASSNAME_GeomPart), "Geom", geomPartId.GetValue(), *m_stmt, Column::Geom))? BSISUCCESS: BSIERROR;
+    return (DgnDbStatus::Success == geom.WriteGeomStreamAndStep(m_dgndb, DGN_TABLE(DGN_CLASSNAME_GeometryPart), "Geom", geomPartId.GetValue(), *m_stmt, Column::Geom))? BSISUCCESS: BSIERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnGeomPartId DbGeomPartsWriter::InsertGeomPart(GeomStreamCR geom, DgnCodeCR code, ElementAlignedBox3dCR bbox)
+DgnGeometryPartId DbGeometryPartsWriter::InsertGeometryPart(GeomStreamCR geom, DgnCodeCR code, ElementAlignedBox3dCR bbox)
     {
-    DgnGeomPartId geomPartId = m_dgndb.GeomParts().MakeNewGeomPartId();
+    DgnGeometryPartId geomPartId = m_dgndb.GeometryParts().MakeNewGeometryPartId();
 
     if (!geomPartId.IsValid())
-        return DgnGeomPartId();
+        return DgnGeometryPartId();
 
     PrepareInsertStatement();
 
-    return (SUCCESS == SaveGeomPartToRow(geom, code, geomPartId, bbox) ? geomPartId : DgnGeomPartId());
+    return (SUCCESS == SaveGeometryPartToRow(geom, code, geomPartId, bbox) ? geomPartId : DgnGeometryPartId());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DbGeomPartsWriter::UpdateGeomPart(DgnGeomPartId geomPartId, GeomStreamCR geom, DgnCodeCR code, ElementAlignedBox3dCR bbox)
+BentleyStatus DbGeometryPartsWriter::UpdateGeometryPart(DgnGeometryPartId geomPartId, GeomStreamCR geom, DgnCodeCR code, ElementAlignedBox3dCR bbox)
     {
     if (!geomPartId.IsValid())
         return ERROR;
 
     PrepareUpdateStatement();
 
-    return (SUCCESS == SaveGeomPartToRow(geom, code, geomPartId, bbox) ? SUCCESS : ERROR);
+    return (SUCCESS == SaveGeometryPartToRow(geom, code, geomPartId, bbox) ? SUCCESS : ERROR);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnGeomPartId DgnGeomParts::MakeNewGeomPartId()
+DgnGeometryPartId DgnGeometryParts::MakeNewGeometryPartId()
     {
-    if (!m_highestGeomPartId.IsValid())
+    if (!m_highestGeometryPartId.IsValid())
         {
-        m_highestGeomPartId = DgnGeomPartId(m_dgndb, DGN_TABLE(DGN_CLASSNAME_GeomPart), "Id");
+        m_highestGeometryPartId = DgnGeometryPartId(m_dgndb, DGN_TABLE(DGN_CLASSNAME_GeometryPart), "Id");
         }
     else
         {
-        m_highestGeomPartId.UseNext(m_dgndb);
+        m_highestGeometryPartId.UseNext(m_dgndb);
         }
 
-    return m_highestGeomPartId;
+    return m_highestGeometryPartId;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Brien.Bastings                  01/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus DgnGeomParts::InsertGeomPart(DgnGeomPartR geomPart)
+BentleyStatus DgnGeometryParts::InsertGeometryPart(DgnGeometryPartR geomPart)
     {
     if (!geomPart.GetCode().IsValid())
         geomPart.SetCode(geomPart.GenerateDefaultCode());
@@ -199,8 +199,8 @@ BentleyStatus DgnGeomParts::InsertGeomPart(DgnGeomPartR geomPart)
     if (CodeStatus::Success != GetDgnDb().Codes().ReserveCode(geomPart.GetCode()))
         return BentleyStatus::ERROR;    // NEEDSWORK return codes...
 
-    DbGeomPartsWriter writer(GetDgnDb());
-    DgnGeomPartId geomPartId = writer.InsertGeomPart(geomPart.GetGeomStream(), geomPart.GetCode(), geomPart.GetBoundingBox());
+    DbGeometryPartsWriter writer(GetDgnDb());
+    DgnGeometryPartId geomPartId = writer.InsertGeometryPart(geomPart.GetGeomStream(), geomPart.GetCode(), geomPart.GetBoundingBox());
 
     if (!geomPartId.IsValid())
         return BentleyStatus::ERROR;
@@ -213,25 +213,25 @@ BentleyStatus DgnGeomParts::InsertGeomPart(DgnGeomPartR geomPart)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  02/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus DgnGeomParts::UpdateGeomPart(DgnGeomPartR geomPart)
+BentleyStatus DgnGeometryParts::UpdateGeometryPart(DgnGeometryPartR geomPart)
     {
     if (CodeStatus::Success != GetDgnDb().Codes().ReserveCode(geomPart.GetCode()))
         return BentleyStatus::ERROR;    // NEEDSWORK return codes...
 
-    DbGeomPartsWriter writer(GetDgnDb());
-    return writer.UpdateGeomPart(geomPart.GetId(), geomPart.GetGeomStream(), geomPart.GetCode(), geomPart.GetBoundingBox());
+    DbGeometryPartsWriter writer(GetDgnDb());
+    return writer.UpdateGeometryPart(geomPart.GetId(), geomPart.GetGeomStream(), geomPart.GetCode(), geomPart.GetBoundingBox());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    03/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus DgnGeomParts::InsertElementGeomUsesParts(DgnElementId elementId, DgnGeomPartId geomPartId)
+BentleyStatus DgnGeometryParts::InsertElementGeomUsesParts(DgnElementId elementId, DgnGeometryPartId geomPartId)
     {
     if (!elementId.IsValid() || !geomPartId.IsValid())
         return BentleyStatus::ERROR;
 
     CachedECSqlStatementPtr statementPtr = GetDgnDb().GetPreparedECSqlStatement(
-        "INSERT INTO " DGN_SCHEMA(DGN_RELNAME_ElementUsesGeomParts) " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)");
+        "INSERT INTO " DGN_SCHEMA(DGN_RELNAME_ElementUsesGeometryParts) " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)");
 
     if (!statementPtr.IsValid())
         return BentleyStatus::ERROR;
@@ -248,7 +248,7 @@ BentleyStatus DgnGeomParts::InsertElementGeomUsesParts(DgnElementId elementId, D
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    01/2015
 //---------------------------------------------------------------------------------------
-DgnGeomPartPtr DgnGeomParts::LoadGeomPart(DgnGeomPartId geomPartId)
+DgnGeometryPartPtr DgnGeometryParts::LoadGeometryPart(DgnGeometryPartId geomPartId)
     {
     if (!geomPartId.IsValid())
         return nullptr;
@@ -257,7 +257,7 @@ DgnGeomPartPtr DgnGeomParts::LoadGeomPart(DgnGeomPartId geomPartId)
    
     auto& elements = m_dgndb.Elements();
 
-    CachedStatementPtr stmt=elements.GetStatement("SELECT " GEOMPART_CODE "," GEOMPART_BBOX ",Geom FROM " DGN_TABLE(DGN_CLASSNAME_GeomPart) " WHERE Id=?");
+    CachedStatementPtr stmt=elements.GetStatement("SELECT " GEOMPART_CODE "," GEOMPART_BBOX ",Geom FROM " DGN_TABLE(DGN_CLASSNAME_GeometryPart) " WHERE Id=?");
     stmt->BindId(1, geomPartId);
 
     DbResult result = stmt->Step();
@@ -265,7 +265,7 @@ DgnGeomPartPtr DgnGeomParts::LoadGeomPart(DgnGeomPartId geomPartId)
         return nullptr;
 
     DgnCode code(stmt->GetValueId<DgnAuthorityId>(0), stmt->GetValueText(2), stmt->GetValueText(1));
-    DgnGeomPartPtr geomPartPtr = new DgnGeomPart(GetDgnDb(), code);
+    DgnGeometryPartPtr geomPartPtr = new DgnGeometryPart(GetDgnDb(), code);
 
     ElementAlignedBox3d bbox(stmt->GetValueDouble(3),stmt->GetValueDouble(4),stmt->GetValueDouble(5),stmt->GetValueDouble(6),stmt->GetValueDouble(7),stmt->GetValueDouble(8));
     geomPartPtr->SetBoundingBox(bbox);
@@ -282,28 +282,28 @@ DgnGeomPartPtr DgnGeomParts::LoadGeomPart(DgnGeomPartId geomPartId)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    05/2015
 //---------------------------------------------------------------------------------------
-DgnGeomPartId DgnGeomParts::QueryGeomPartId(DgnCodeCR code)
+DgnGeometryPartId DgnGeometryParts::QueryGeometryPartId(DgnCodeCR code)
     {
     // empty codes are not unique...
     if (!code.IsValid() || code.IsEmpty())
-        return DgnGeomPartId();
+        return DgnGeometryPartId();
 
-    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_GeomPart) " WHERE Code_AuthorityId=? AND Code_Namespace=? AND Code_Value=?");
+    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_GeometryPart) " WHERE Code_AuthorityId=? AND Code_Namespace=? AND Code_Value=?");
     stmt->BindId(1, code.GetAuthority());
     stmt->BindText(2, code.GetNamespace(), Statement::MakeCopy::No);
     stmt->BindText(3, code.GetValue(), Statement::MakeCopy::No);
-    return (BE_SQLITE_ROW != stmt->Step()) ? DgnGeomPartId() : stmt->GetValueId<DgnGeomPartId>(0);
+    return (BE_SQLITE_ROW != stmt->Step()) ? DgnGeometryPartId() : stmt->GetValueId<DgnGeometryPartId>(0);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnGeomParts::QueryGeomPartRange(DRange3dR range, DgnGeomPartId geomPartId)
+BentleyStatus DgnGeometryParts::QueryGeometryPartRange(DRange3dR range, DgnGeometryPartId geomPartId)
     {
     if (!geomPartId.IsValid())
         return ERROR;
 
-    CachedStatementPtr stmt = GetDgnDb().Elements().GetStatement("SELECT " GEOMPART_BBOX " FROM " DGN_TABLE(DGN_CLASSNAME_GeomPart) " WHERE Id=?");
+    CachedStatementPtr stmt = GetDgnDb().Elements().GetStatement("SELECT " GEOMPART_BBOX " FROM " DGN_TABLE(DGN_CLASSNAME_GeometryPart) " WHERE Id=?");
     stmt->BindId(1, geomPartId);
 
     if (BE_SQLITE_ROW != stmt->Step())
@@ -317,9 +317,9 @@ BentleyStatus DgnGeomParts::QueryGeomPartRange(DRange3dR range, DgnGeomPartId ge
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    01/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus DgnGeomParts::DeleteGeomPart(DgnGeomPartId geomPartId)
+BentleyStatus DgnGeometryParts::DeleteGeometryPart(DgnGeometryPartId geomPartId)
     {
-    CachedECSqlStatementPtr statementPtr = GetDgnDb().GetPreparedECSqlStatement("DELETE FROM ONLY " DGN_SCHEMA(DGN_CLASSNAME_GeomPart) " WHERE ECInstanceId=?");
+    CachedECSqlStatementPtr statementPtr = GetDgnDb().GetPreparedECSqlStatement("DELETE FROM ONLY " DGN_SCHEMA(DGN_CLASSNAME_GeometryPart) " WHERE ECInstanceId=?");
     if (!statementPtr.IsValid())
         return BentleyStatus::ERROR;
 
@@ -335,40 +335,40 @@ BentleyStatus DgnGeomParts::DeleteGeomPart(DgnGeomPartId geomPartId)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DgnGeomPartPtr DgnGeomPart::Create(DgnDbR db, DgnCode code)
+DgnGeometryPartPtr DgnGeometryPart::Create(DgnDbR db, DgnCode code)
     {
-    return new DgnGeomPart(db, code);
+    return new DgnGeometryPart(db, code);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnGeomPartId DgnImportContext::RemapGeomPartId(DgnGeomPartId source)
+DgnGeometryPartId DgnImportContext::RemapGeometryPartId(DgnGeometryPartId source)
     {
     if (!IsBetweenDbs())
         return source;
 
-    DgnGeomPartId dest = m_remap.Find(source);
+    DgnGeometryPartId dest = m_remap.Find(source);
     if (dest.IsValid())
         return dest;
 
-    DgnGeomPartPtr sourceGeomPart = GetSourceDb().GeomParts().LoadGeomPart(source);
-    if (!sourceGeomPart.IsValid())
-        return DgnGeomPartId();
+    DgnGeometryPartPtr sourceGeometryPart = GetSourceDb().GeometryParts().LoadGeometryPart(source);
+    if (!sourceGeometryPart.IsValid())
+        return DgnGeometryPartId();
 
-    dest = GetDestinationDb().GeomParts().QueryGeomPartId(sourceGeomPart->GetCode());
+    dest = GetDestinationDb().GeometryParts().QueryGeometryPartId(sourceGeometryPart->GetCode());
 
     if (!dest.IsValid())
         {
-        DgnGeomPartPtr destGeomPart = DgnGeomPart::Create(GetDestinationDb());
-        ElementGeomIO::Import(destGeomPart->GetGeomStreamR(), sourceGeomPart->GetGeomStream(), *this);
+        DgnGeometryPartPtr destGeometryPart = DgnGeometryPart::Create(GetDestinationDb());
+        ElementGeomIO::Import(destGeometryPart->GetGeomStreamR(), sourceGeometryPart->GetGeomStream(), *this);
 
-        if (BSISUCCESS != GetDestinationDb().GeomParts().InsertGeomPart(*destGeomPart))
+        if (BSISUCCESS != GetDestinationDb().GeometryParts().InsertGeometryPart(*destGeometryPart))
             {
             BeAssert(false);
-            return DgnGeomPartId();
+            return DgnGeometryPartId();
             }
-        dest = destGeomPart->GetId();
+        dest = destGeometryPart->GetId();
         }
 
     return m_remap.Add(source, dest);
