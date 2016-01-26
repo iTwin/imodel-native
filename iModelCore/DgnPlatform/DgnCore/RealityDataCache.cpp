@@ -265,6 +265,23 @@ IRealityDataStorageBase::~IRealityDataStorageBase() {Terminate();}
 /*======================================================================================+
 |   BeSQLiteRealityDataStorage
 +======================================================================================*/
+struct RealityDataStorageBusyRetry : BeSQLite::BusyRetry
+    {
+    virtual int _OnBusy(int count) const
+        {
+        if (count > 100)
+            {
+            BeAssert(false && "Exceeded maximum retries count");
+            return 0;
+            }
+        
+        int sleepTime = 10 * (count + 1);
+        RDCLOG(LOG_DEBUG, "Database is busy. Waiting for %d ms before retry...", sleepTime);
+        BeThreadUtilities::BeSleep(sleepTime);
+        return 1;
+        }
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -279,6 +296,7 @@ BeSQLiteRealityDataStoragePtr BeSQLiteRealityDataStorage::Create(BeFileName cons
 BeSQLiteRealityDataStorage::BeSQLiteRealityDataStorage(BeFileName const& filename, uint32_t idleTime, uint64_t cacheSize)
     : m_filename(filename), m_database(new BeSQLite::Db()), m_initialized(false), m_hasChanges(false), m_idleTime(idleTime), m_cacheSize(cacheSize)
     {
+    m_retry = new RealityDataStorageBusyRetry();
     m_threadPool = BeSQLiteStorageThreadPool::Create(*this);
     }
 
@@ -292,6 +310,7 @@ BeSQLiteRealityDataStorage::~BeSQLiteRealityDataStorage()
         BeAssert(false);
         DELETE_AND_CLEAR(m_database);
         }
+    m_retry = nullptr;
     }
 
 //=======================================================================================
@@ -402,9 +421,9 @@ void BeSQLiteRealityDataStorage::wt_Prepare(DatabasePrepareAndCleanupHandler con
     m_databaseCS.Enter();
     if (!m_initialized)
         {
-        if (BeSQLite::BE_SQLITE_OK != (result = m_database->OpenBeSQLiteDb(m_filename.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes))))
+        if (BeSQLite::BE_SQLITE_OK != (result = m_database->OpenBeSQLiteDb(m_filename.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes, m_retry.get()))))
             {
-            Db::CreateParams createParams(Db::PageSize::PAGESIZE_32K, Db::Encoding::Utf8, false, DefaultTxn::Yes);
+            Db::CreateParams createParams(Db::PageSize::PAGESIZE_32K, Db::Encoding::Utf8, false, DefaultTxn::Yes, m_retry.get());
             if (BeSQLite::BE_SQLITE_OK != (result = m_database->CreateNewDb(m_filename.c_str(), BeSQLite::BeGuid(), createParams)))
                 {
                 m_databaseCS.Leave();
