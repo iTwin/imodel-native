@@ -2,7 +2,7 @@
 |
 |     $Source: ECSqlConsole/ECSqlCommand.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECDb/ECDbApi.h>
@@ -98,8 +98,16 @@ void ECSqlCommand::ExecuteSelect (ECSqlConsoleSession& session, ECSqlStatement& 
                 out += PrimitiveToString(value) + "\t";
             else if (prop->GetIsStruct())
                 out += StructToString (value) + "\t";
-            else
+            else if (prop->GetIsArray())
                 out += ArrayToString(value, prop) + "\t";
+            else if (prop->GetIsNavigation())
+                {
+                ECN::NavigationECPropertyCP navProp = prop->GetAsNavigationProperty();
+                if (!navProp->IsMultiple())
+                    out += PrimitiveToString(value) + "\t";
+                else
+                    out += ArrayToString(value, prop) + "\t";
+                }
             }
 
         Console::WriteLine(out.c_str());
@@ -250,7 +258,7 @@ Utf8String ECSqlCommand::PrimitiveToString (IECSqlValue const& value, ECN::Primi
 Utf8String ECSqlCommand::PrimitiveToString (IECSqlValue const& value)
     {
     Utf8String out;
-    auto primitiveType = value.GetColumnInfo ().GetProperty ()->GetAsPrimitiveProperty()->GetType ();
+    auto primitiveType = value.GetColumnInfo ().GetDataType().GetPrimitiveType();
     return PrimitiveToString (value, primitiveType);
     }
 
