@@ -118,6 +118,13 @@ struct TxnTable : RefCountedBase
 
     //! @name Reversing previously committed changesets via undo/redo.
     //@{
+    //! Called before a set of Txns are undone/redone. TxnTables that use temporary tables can prepare them in this method.
+    //! After this method is called one or more _OnReversedxxx methods will be called, followed finally by a call to _OnReversed
+    virtual void _OnReverse() { }
+
+    //! Called after undo/redo of a set of Txns is complete. TxnTables that create temporary tables can empty them in this method.
+    virtual void _OnReversed() { }
+
     //! Called when an add of a row in this TxnTable was reversed via undo or redo.
     //! @param[in] change The data for a previously added row that is now deleted. All data will be in the "old values" of change.
     //! @note If you wish to determine whether the action that caused this call was an undo or a redo, call m_txnMgr.GetCurrentAction()
@@ -280,6 +287,8 @@ private:
     bool IsMultiTxnMember(TxnId rowid);
     BentleyStatus MergeChanges(BeSQLite::ChangeStream& changeStream);
     void CancelDynamics();
+    void OnBeginApplyChanges();
+    void OnEndApplyChanges();
 
 public:
     DgnDbStatus DeleteFromStartTo(TxnId lastId);
@@ -353,6 +362,10 @@ public:
     //! Get the current Action being processed by the TxnManager. This can be called from inside TxnTable methods only,
     //! otherwise it will always return TxnAction::None
     TxnAction GetCurrentAction() const {return m_action;}
+
+    //! Returns true if the TxnManager is in the process of undoing or redoing txns. This can be called from inside TxnTable methods only,
+    //! otherwise it will always return false
+    bool IsInUndoRedo() const {return TxnAction::Reverse==m_action || TxnAction::Reinstate==m_action;}
 
     //! Get the TxnId of the current Txn.
     //! @return the current TxnId. This value can be saved and later used to reverse changes that happen after this time.
@@ -493,9 +506,11 @@ namespace dgn_TxnTable
         void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete);}
         void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Update);}
         void _OnValidated() override;
+        void _OnReverse() override {_OnValidate();}
         void _OnReversedDelete(BeSQLite::Changes::Change const&) override;
         void _OnReversedAdd(BeSQLite::Changes::Change const&) override;
         void _OnReversedUpdate(BeSQLite::Changes::Change const&) override;
+        void _OnReversed() override {_OnValidated();}
 
         void AddChange(BeSQLite::Changes::Change const& change, ChangeType changeType);
         void AddElement(DgnElementId, DgnModelId, ChangeType changeType);
@@ -543,8 +558,11 @@ namespace dgn_TxnTable
         void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete);}
         void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Update);}
         void _OnValidated() override;
+        void _OnReverse() override {_OnValidate();}
+        void _OnReversedDelete(BeSQLite::Changes::Change const&) override;
         void _OnReversedAdd(BeSQLite::Changes::Change const&) override;
         void _OnReversedUpdate(BeSQLite::Changes::Change const&) override;
+        void _OnReversed() override {_OnValidated();}
 
         void AddChange(BeSQLite::Changes::Change const& change, ChangeType changeType);
 

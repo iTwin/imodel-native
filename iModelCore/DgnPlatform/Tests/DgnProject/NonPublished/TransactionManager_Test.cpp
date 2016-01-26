@@ -681,8 +681,6 @@ TEST_F(TransactionManagerTests, ModelInsertReverse)
     monitor.Clear();
     EXPECT_EQ(DgnDbStatus::Success, stat);
     m_db->SaveChanges("changeSet2");
-    EXPECT_TRUE(monitor.WasAdded(model1Id));
-    monitor.Clear();
 
     EXPECT_TRUE(m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")).IsValid());
     }
