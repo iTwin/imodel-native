@@ -460,12 +460,6 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="DefinitionElement" modifier="Abstract">
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <!-- WIP: This rename didn't work. Should be applied to this and all other dgn_Element join tables. -->
-                <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
-            </ClassMap>
-        </ECCustomAttributes>
         <BaseClass>Element</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="DictionaryElement" modifier="Abstract">
