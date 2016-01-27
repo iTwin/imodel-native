@@ -117,7 +117,6 @@
     <Part Name="DgnDbServerClient-Library" BentleyBuildMakeFile="DgnDbServerClientLib.mke" ExcludePlatforms="Android*">
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="DgnClientFxLibrary"            PartFile="DgnClientFx" Repository="DgnClientFx" />
-        <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
         <SubPart PartName="DgnClientFxLibrary-WinRT"      PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)DgnDbServerClient$(libext)</Libs>
@@ -128,9 +127,7 @@
 
     <Part Name="DgnDbServerClient-Library-Android" BentleyBuildMakeFile="DgnDbServerClientLib.mke" OnlyPlatforms="Android*">
         <SubPart PartName="WebServicesClient" />
-        <SubPart PartName="DgnClientFxLibrary"            PartFile="DgnClientFx" Repository="DgnClientFx" />
         <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
-        <SubPart PartName="DgnClientFxLibrary-WinRT"      PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)DgnDbServerClient.so</Libs>
             <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)DgnDbServerClient.so</Assemblies>
