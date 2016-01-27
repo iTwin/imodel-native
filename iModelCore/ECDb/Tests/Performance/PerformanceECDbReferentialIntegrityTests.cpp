@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Performance/PerformanceECDbReferentialIntegrityTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTests.h"
@@ -71,11 +71,11 @@ void CreateDeleteReferentialIntegrityTestDb(BeFileNameR testDbPath)
     Utf8CP schemaXml =
         "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"TS\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
 
-        "  <ECClass typeName=\"TestClass\" >"
+        "  <ECEntityClass typeName=\"TestClass\" >"
         "    <ECProperty propertyName=\"TestProperty\" typeName=\"string\" />"
-        "  </ECClass>"
+        "  </ECEntityClass>"
 
-        "  <ECRelationshipClass typeName = \"TestClassRelationship\" isDomainClass = \"True\" strength = \"holding\" strengthDirection = \"forward\">"
+        "  <ECRelationshipClass typeName = \"TestClassRelationship\" strength = \"holding\" strengthDirection = \"forward\">"
         "    <Source cardinality = \"(0, 1)\" polymorphic = \"True\">"
         "      <Class class = \"TestClass\" />"
         "    </Source>"
@@ -85,11 +85,11 @@ void CreateDeleteReferentialIntegrityTestDb(BeFileNameR testDbPath)
         "  </ECRelationshipClass>"
 
         // Classes below reduces performance significantly
-        "  <ECClass typeName=\"CachedInfoClass\" >"
+        "  <ECEntityClass typeName=\"CachedInfoClass\" >"
         "    <ECProperty propertyName=\"TestProperty\" typeName=\"string\" />"
-        "  </ECClass>"
+        "  </ECEntityClass>"
 
-        "  <ECRelationshipClass typeName = \"CachedInfoClassRelationship\" isDomainClass = \"True\" strength = \"holding\" strengthDirection = \"backward\">"
+        "  <ECRelationshipClass typeName = \"CachedInfoClassRelationship\" strength = \"holding\" strengthDirection = \"backward\">"
         "    <Source cardinality = \"(0, 1)\" polymorphic = \"True\">"
         "      <Class class = \"CachedInfoClass\" />"
         "    </Source>"

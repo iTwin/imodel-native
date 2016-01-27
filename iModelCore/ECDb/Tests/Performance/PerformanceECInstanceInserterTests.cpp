@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Performance/PerformanceECInstanceInserterTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeSQLite/BeSQLite.h>
@@ -23,8 +23,8 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 ECSchemaCachePtr GenerateTestSchema()
 {
     Utf8CP testSchemaXml =
-        "<ECSchema schemaName=\"Test\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-        "  <ECClass typeName=\"P\" isDomainClass = \"True\">"
+        "<ECSchema schemaName=\"Test\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+        "  <ECEntityClass typeName=\"P\">"
         "    <ECProperty propertyName=\"bo\" typeName=\"boolean\" />"
         "    <ECProperty propertyName=\"bi\" typeName=\"binary\" />"
         "    <ECProperty propertyName=\"dt\" typeName=\"dateTime\" />"
@@ -34,8 +34,8 @@ ECSchemaCachePtr GenerateTestSchema()
         "    <ECProperty propertyName=\"s\" typeName=\"string\" />"
         "    <ECProperty propertyName=\"p2d\" typeName=\"Point2D\" />"
         "    <ECProperty propertyName=\"p3d\" typeName=\"Point3D\" />"
-        "  </ECClass>"
-        "  <ECClass typeName=\"PStruct\" isDomainClass = \"False\" isStruct = \"True\">"
+        "  </ECEntityClass>"
+        "  <ECStructClass typeName=\"PStruct\">"
         "    <ECProperty propertyName=\"bo\" typeName=\"boolean\" />"
         "    <ECProperty propertyName=\"bi\" typeName=\"binary\" />"
         "    <ECProperty propertyName=\"dt\" typeName=\"dateTime\" />"
@@ -45,31 +45,31 @@ ECSchemaCachePtr GenerateTestSchema()
         "    <ECProperty propertyName=\"s\" typeName=\"string\" />"
         "    <ECProperty propertyName=\"p2d\" typeName=\"Point2D\" />"
         "    <ECProperty propertyName=\"p3d\" typeName=\"Point3D\" />"
-        "  </ECClass>"
-        "  <ECClass typeName=\"Int\" isDomainClass = \"True\">"
+        "  </ECStructClass>"
+        "  <ECEntityClass typeName=\"Int\" >"
         "    <ECProperty propertyName=\"i\" typeName=\"int\" />"
-        "  </ECClass>"
-        "  <ECClass typeName=\"DateTime\" isDomainClass = \"True\">"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName=\"DateTime\" >"
         "    <ECProperty propertyName=\"dt\" typeName=\"dateTime\" />"
-        "  </ECClass>"
-        "  <ECClass typeName=\"String\" isDomainClass = \"True\">"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName=\"String\" >"
         "    <ECProperty propertyName=\"s\" typeName=\"string\" />"
-        "  </ECClass>"
-        "  <ECClass typeName=\"S\" >"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName=\"S\" >"
         "    <ECStructProperty propertyName=\"s\" typeName=\"PStruct\" />"
-        "  </ECClass>"
-        "  <ECClass typeName=\"IntA\" >"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName=\"IntA\" >"
         "    <ECArrayProperty propertyName=\"a\" typeName=\"int\" maxOccurs=\"unbounded\" minOccurs=\"0\" />"
-        "  </ECClass>"
-        "  <ECClass typeName=\"DateTimeA\" >"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName=\"DateTimeA\" >"
         "    <ECArrayProperty propertyName=\"a\" typeName=\"dateTime\" maxOccurs=\"unbounded\" minOccurs=\"0\" />"
-        "  </ECClass>"
-        "  <ECClass typeName=\"StringA\" >"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName=\"StringA\" >"
         "    <ECArrayProperty propertyName=\"a\" typeName=\"string\" maxOccurs=\"unbounded\" minOccurs=\"0\" />"
-        "  </ECClass>"
-        "  <ECClass typeName=\"SA\" >"
-        "    <ECArrayProperty propertyName=\"a\" typeName=\"PStruct\" maxOccurs=\"unbounded\" minOccurs=\"0\" />"
-        "  </ECClass>"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName=\"SA\" >"
+        "    <ECStructArrayProperty propertyName=\"a\" typeName=\"PStruct\" maxOccurs=\"unbounded\" minOccurs=\"0\" />"
+        "  </ECEntityClass>"
         "</ECSchema>";
 
     return ECDbTestUtility::ReadECSchemaFromString(testSchemaXml);
@@ -1078,7 +1078,6 @@ TEST(Performance_TriggerVsCascadeDelete, V3)
     BeFileName temporaryDir;
     BeTest::GetHost().GetOutputRoot(temporaryDir);
     BeSQLiteLib::Initialize(temporaryDir);
-
 
     TestResult r1, r2;
     int noOfClasses = 700;

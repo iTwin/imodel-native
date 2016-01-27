@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Performance/PerformanceSharedTableTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTests.h"
@@ -49,15 +49,15 @@ struct PerformanceSharedTableTests: ECDbTestFixture
                 SchemaItem testSchema(
                     "<?xml version='1.0' encoding='utf-8'?>"
                     "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='dgn' version='1.0'"
-                    "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
-                    "   xmlns:ecschema='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
+                    "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'"
+                    "   xmlns:ecschema='http://www.bentley.com/schemas/Bentley.ECXML.3.0'"
                     "   xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'"
                     "   xsi:schemaLocation='ecschema ECSchema.xsd' >"
                     "    <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />"
                     "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.12' prefix='bsca' />"
                     "    <ECSchemaReference name='Bentley_Standard_Classes' version='01.00' prefix='bsm' />"
                     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-                    "    <ECClass typeName='Foo' isDomainClass='False' isStruct='False' isCustomAttributeClass='False'>"
+                    "    <ECEntityClass typeName='Foo' >"
                     "        <ECCustomAttributes>"
                     "            <ClassMap xmlns='ECDbMap.01.00'>"
                     "                <MapStrategy>"
@@ -70,22 +70,21 @@ struct PerformanceSharedTableTests: ECDbTestFixture
                     "        <ECProperty propertyName='F2s' typeName='string'/>"
                     "        <ECProperty propertyName='F3l' typeName='long'/>"
                     "        <ECProperty propertyName='F4s' typeName='string'/>"
-                    "    </ECClass>"
-                    "   <ECClass typeName='Goo' isDomainClass='True' isStruct='False' >"
+                    "    </ECEntityClass>"
+                    "   <ECEntityClass typeName='Goo' >"
                     "        <BaseClass>Foo</BaseClass>"
                     "        <ECProperty propertyName='G1l' typeName='long'/>"
                     "        <ECProperty propertyName='G2s' typeName='string'/>"
                     "        <ECProperty propertyName='G3l' typeName='long'/>"
                     "        <ECProperty propertyName='G4s' typeName='string'/>"
-
-                    "    </ECClass>"
-                    "   <ECClass typeName='Boo' isDomainClass='True' isStruct='False'>"
+                    "    </ECEntityClass>"
+                    "   <ECEntityClass typeName='Boo' >"
                     "        <BaseClass>Goo</BaseClass>"
                     "        <ECProperty propertyName='B1l' typeName='long'/>"
                     "        <ECProperty propertyName='B2s' typeName='string'/>"
                     "        <ECProperty propertyName='B3l' typeName='long'/>"
                     "        <ECProperty propertyName='B4s' typeName='string'/>"
-                    "    </ECClass>"
+                    "    </ECEntityClass>"
                     "</ECSchema>");
 
                 ECDbR seed = SetupECDb(seedFileName.c_str(), testSchema);
