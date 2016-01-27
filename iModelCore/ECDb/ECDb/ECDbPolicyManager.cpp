@@ -165,7 +165,7 @@ ECDbPolicy ECDbPolicyManager::DoGetClassPolicy(IClassMap const& classMap, IsVali
         const ECSqlType ecsqlType = assertion.GetECSqlType();
         if (ecsqlType == ECSqlType::Delete || ecsqlType == ECSqlType::Insert || ecsqlType == ECSqlType::Update)
             {
-            if (classMap.IsRelationshipClassMap())
+            /*if (classMap.IsRelationshipClassMap())
                 {
                 RelationshipClassMapCP relClassMap = static_cast<RelationshipClassMapCP> (&classMap);
                 if (relClassMap->IsReadonly())
@@ -175,7 +175,7 @@ ECDbPolicy ECDbPolicyManager::DoGetClassPolicy(IClassMap const& classMap, IsVali
                                                 className.c_str());
                     return ECDbPolicy::CreateNotSupported(notSupportedMessage.c_str());
                     }
-                }
+                }*/
 
             if (ecsqlType == ECSqlType::Insert)
                 {
