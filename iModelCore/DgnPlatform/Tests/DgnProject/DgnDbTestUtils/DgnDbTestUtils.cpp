@@ -18,8 +18,6 @@ USING_NAMESPACE_BENTLEY_DPTEST
         return BAD_RETURN;\
         }
 
-static bset<DgnDbTestUtils::SeedDbInfo> s_seedFilesCreated;
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
@@ -52,25 +50,9 @@ static void setBriefcase(DgnDbPtr& db, DgnDb::OpenMode mode)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbTestUtils::SeedDbOptions::ToKey() const
+WString DgnDbTestUtils::SeedDbOptions::ToKey() const
     {
-    return Utf8PrintfString("%d%d", testDomain, cameraView);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                           Sam.Wilson             01/2016
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbTestUtils::SeedDbInfo::ToKey() const
-    {
-    return Utf8PrintfString("%d%s%s%d", (int)id, options.ToKey().c_str());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                           Sam.Wilson             01/2016
-//---------------------------------------------------------------------------------------
-bool DgnDbTestUtils::SeedDbInfo::operator< (SeedDbInfo const& rhs) const
-    {
-    return ToKey() < rhs.ToKey();
+    return WPrintfString(L"%d%d", testDomain, cameraView);
     }
 
 //---------------------------------------------------------------------------------------
@@ -87,19 +69,19 @@ DgnDbTestUtils::SeedDbInfo DgnDbTestUtils::GetOneSpatialModelSeedDb(SeedDbOption
     SeedDbInfo info;
     info.id = SeedDbId::OneSpatialModel;
     info.options = options;
-    info.fileName.SetName(L"DgnDbTestUtils_OneSpatialModel.dgndb");
+    info.fileName.SetName(WPrintfString(L"DgnDbTestUtils_OneSpatialModel%ls.dgndb", options.ToKey().c_str()));   // note that we need different files for different combinations of options.
     info.modelCode = DgnModel::CreateModelCode("DefaultModel");
     info.categoryName = "DefaultCategory";
 
     if (info.options.cameraView)
         info.viewName = "DefaultCameraView";
 
-    if (!s_seedFilesCreated.insert(info).second)
+    if (getOutputPath(info.fileName).DoesPathExist())
         return info;
 
     //  First request for this seed file. Create it.
-    DgnDbPtr db = DgnDbTestUtils::CreateDgnDb(info.fileName, true, true);
-    SpatialModelPtr model = DgnDbTestUtils::InsertSpatialModel(*db, info.modelCode);
+    DgnDbPtr db = CreateDgnDb(info.fileName, true, true);
+    SpatialModelPtr model = InsertSpatialModel(*db, info.modelCode);
     InsertCategory(*db, info.categoryName.c_str());
     
     if (info.options.cameraView)

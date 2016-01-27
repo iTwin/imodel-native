@@ -39,7 +39,7 @@ struct DgnDbTestUtils : public testing::Test
         bool        testDomain;     //!< If true, then the Test domain is imported into the seed DgnDb
         bool        cameraView;     //!< If true, then the seed DgnDb contains a camera view pointing at the first spatial model
 
-        Utf8String ToKey() const;
+        WString ToKey() const;
         
         //! Construct SeedDbOptions
         //! @param wantCameraView   If true, then the seed DgnDb will contain a camera view
@@ -58,8 +58,6 @@ struct DgnDbTestUtils : public testing::Test
         Utf8String  viewName;       //!< The name of the first view, if any.
 
         SeedDbInfo() : id(SeedDbId::OneSpatialModel) {}
-        bool operator< (SeedDbInfo const& rhs) const;
-        Utf8String ToKey() const;
         };
 
 private:
