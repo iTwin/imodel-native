@@ -1522,7 +1522,7 @@ void PerformanceElementsCRUDTestFixture::GetSelectSql (Utf8CP className, Utf8Str
                 }
             }
 
-        selectSql.append(" FROM dgn_Element e, dgn_SpatialElement p WHERE e.Id=p.ECInstanceId AND e.ECClassId=p.ECClassId AND e.Id=?");
+        selectSql.append(" FROM dgn_Element e, dgn_SpatialElement p WHERE e.Id=p.ElementId AND e.ECClassId=p.ECClassId AND e.Id=?");
         if (!omitClassIdFilter)
             {
             Utf8String classIdFilter;
