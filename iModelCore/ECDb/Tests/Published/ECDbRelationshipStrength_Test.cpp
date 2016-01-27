@@ -196,6 +196,9 @@ TEST_F (RelationshipStrength, RelationshipTest)
 
     ASSERT_FALSE (HasInstance (*grandParent2HasSingleParent, ecdb));
     ASSERT_FALSE (HasInstance (*grandParent2, ecdb));
+
+    //Without following purge operation the rest of assertion fails
+    ecdb.Purge(ECDb::PurgeMode::HoldingRelationships);
     ASSERT_FALSE (HasInstance (*singleParent, ecdb));
     ASSERT_FALSE (HasInstance (*singleParentHasChild1, ecdb));
     ASSERT_FALSE (HasInstance (*singleParentHasChild2, ecdb));
@@ -317,6 +320,9 @@ TEST_F (RelationshipStrength, BackwardHoldingForwardEmbedding)
     */
     DeleteInstance (*grandParent2, ecdb);
     ecdb.SaveChanges ();
+
+    //Without following purge operation the rest of assertion fails
+    ecdb.Purge(ECDb::PurgeMode::HoldingRelationships);
 
     ASSERT_FALSE (HasInstance (*grandParent2, ecdb));
     ASSERT_FALSE (HasInstance (*singleParentHasGrandParent2, ecdb));

@@ -8,7 +8,6 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 #include "ECDbInternalTypes.h"
-#include "ECDbSql.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -85,4 +84,108 @@ public:
 
     };
 
+#if 0
+//! WIP effort to unify all view generation into one
+/*
+
+*/
+struct ECDbViewFactory
+    {
+    struct Param
+        {
+        enum class Type
+            {
+            Debug,
+            System
+            };
+
+        private:
+            Type m_type;
+            bool m_supportDelete;
+            bool m_supportInsert;
+            bool m_supportUpdate;
+            bool m_polymorphic;
+            bool m_neverReturnNullView;
+            std::set<Utf8String> m_propertyPathFilter;
+        public:
+            //! Create system view
+            Param(bool polymorphic, bool neverReturnNullView, bool supportDelete, bool supportInsert, bool supportUpdate)
+                :m_type(Type::System), m_neverReturnNullView(neverReturnNullView), m_supportDelete(supportDelete), m_supportInsert(supportInsert), m_supportUpdate(supportUpdate)
+                {}
+            //! Create debug view
+            Param()
+                :m_type(Type::Debug), m_neverReturnNullView(false), m_supportDelete(false), m_supportInsert(false), m_supportUpdate(false)
+                {}
+            //! Support delete trigger on view
+            bool SystemViewSupportDelete() const {
+                return m_supportDelete;
+                }
+            //! Support delete insert on view
+            bool SystemViewSupportInsert() const {
+                return m_supportInsert;
+                }
+            //! Support update trigger on view
+            bool SystemViewSupportUpdate() const {
+                return m_supportUpdate;
+                }
+            //! Generate Polymorphic view include derived class
+            bool Polymorphic() const {
+                return m_polymorphic;
+                }
+            //! If class resolved into no persistent table then do not return null view.
+            bool NeverReturnNullView() const {
+                return m_neverReturnNullView;
+                }
+            //! Only include set of property path. System properties are always included. If no filter is specified all properties is returned
+            void IncludePropertyPath(Utf8CP propertyPath) {
+                m_propertyPathFilter.insert(propertyPath);
+                }
+            //! Return list of filter property path that would be included. Empty mean include all.
+            const std::set<Utf8String>& GetPropertyPaths() const {
+                return m_propertyPathFilter;
+                }
+            //! Type determins if view will be for debug with PropertyPath or column name in case of system view.
+            Type Type() const {
+                return m_type;
+                }
+        };
+    private:
+        Param m_param;
+        ECDbCR m_ecdb;
+
+    private:
+        BentleyStatus RenderClass(SqlViewBuilder& viewBuilder, IClassMap const& classMap);
+        BentleyStatus RenderEntityClass(SqlViewBuilder& viewBuilder, IClassMap const& classMap)
+            {
+            StorageDescription const& storageDescr = classMap.GetStorageDescription();
+            for (auto const& horizontalDescr : storageDescr.GetHorizontalPartitions())
+                {
+                if (horizontalDescr.GetTable().GetPersistenceType() == PersistenceType::Virtual)
+                    {
+                    // CREATE TRIGGER _reject_abstract_class INSTEAD OF INSERT ON b WHEN ECClassId IN () BEGIN SELECT RAISE (FAIL, 'Cannot INSERT instance of abstract class');
+
+                    continue;
+                    }
+
+                    // CREATE TRIGGER _insert_table1 INSTEAD OF INSERT ON _<class_name> WHEN ECClassId IN (...) BEGIN INSERT INTO table1 (...) VALUES(...);... END
+                    // CREATE TRIGGER _update_table1 INSTEAD OF UPDATE ON _<class_name> WHEN ECClassId IN (...) BEGIN UPDATE table1 SET ... WHERE ;... END
+                    // CREATE TRIGGER _delete_table1 INSTEAD OF DELETE ON _<class_name> WHEN ECClassId IN (...) BEGIN DELETE FROM  table1 WHERE ;... END
+                    
+                //dgn_Element.Id 
+                }
+            }
+        BentleyStatus RenderRelationshipClass(SqlViewBuilder& viewBuilder);
+        BentleyStatus RenderRelationshipClassEndTable(SqlViewBuilder& viewBuilder);
+        BentleyStatus RenderRelationshipClassLinkTable(SqlViewBuilder& viewBuilder);
+
+    public:
+        ECDbViewFactory(ECDbCR ecdb, Param param = Param())
+            :m_ecdb(ecdb), m_param(param)
+            {
+            }
+
+
+        BentleyStatus CreateView(SqlViewBuilder& viewBuilder);
+    };
+#endif
 END_BENTLEY_SQLITE_EC_NAMESPACE

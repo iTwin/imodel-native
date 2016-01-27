@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/ECDb.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -45,7 +45,9 @@ public:
     //+===============+===============+===============+===============+===============+======
     enum class PurgeMode
         {
-        OrphanedFileInfos = 1 //!< Purges orphaned FileInfo instances (see also @ref ECDbFileInfo)
+        OrphanedFileInfos = 1, //!< Purges orphaned FileInfo instances (see also @ref ECDbFileInfo)
+        HoldingRelationships = 2 //!< Purges all holding relationship ends.
+
         };
 
     struct Impl;

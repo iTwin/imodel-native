@@ -7,11 +7,262 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include <vector>
-USING_NAMESPACE_BENTLEY_EC
 
+#define ECDB_HOLDING_VIEW "ec_RelationshipHoldingStatistics"
+
+USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan     01/2016
+//---------------+---------------+---------------+---------------+---------------+---------
+Utf8CP RelationshipPurger::SqlSpec::GetTable() const {
+    return m_table;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan     01/2016
+//---------------+---------------+---------------+---------------+---------------+---------
+Utf8CP RelationshipPurger::SqlSpec::GetTablePrimaryKey() const {
+    return m_table_pk;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan     01/2016
+//---------------+---------------+---------------+---------------+---------------+---------
+void RelationshipPurger::SqlSpec::PushClassId(ECClassId id) {
+    m_filter.insert(id);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan     01/2016
+//---------------+---------------+---------------+---------------+---------------+---------
+Utf8String RelationshipPurger::SqlSpec::ToSQL() const
+    {
+    Utf8String str;
+    if (m_filter.empty())
+        str.Sprintf("DELETE FROM [%s] WHERE [%s] NOT IN (SELECT ECInstanceId FROM " ECDB_HOLDING_VIEW ")", m_table, m_table_pk);
+    else
+        {
+        Utf8String filter;
+        ECClassId first = *m_filter.begin();
+        for (auto i : m_filter)
+            {
+            if (first != i)
+                filter.append(",");
+
+            filter.append(SqlPrintfString("%ull", i).GetUtf8CP());
+            }
+        str.Sprintf("DELETE FROM [%s] WHERE [%s] NOT IN (SELECT ECInstanceId FROM " ECDB_HOLDING_VIEW " WHERE ECClassId IN (%s))", m_table, m_table_pk, filter.c_str());
+        }
+
+    return str;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan     01/2016
+//---------------+---------------+---------------+---------------+---------------+---------
+RelationshipPurger::SqlSpec::Ptr RelationshipPurger::SqlSpec::Create(Utf8CP table, Utf8CP pk, Utf8CP classId)
+    {
+    return Ptr(new SqlSpec(table, pk, classId));
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan     01/2016
+//---------------+---------------+---------------+---------------+---------------+---------
+DbResult RelationshipPurger::Prepare(ECDbR ecdb, RelationshipPurger::Commands commands)
+    {
+    bool updateView = Enum::Contains(commands, Commands::UpdateHoldingView);
+    bool purge = Enum::Contains(commands, Commands::Purge);
+    if (!purge)
+        {
+        BeAssert(false && "Purge is required flag");
+        return BE_SQLITE_ERROR;
+        }
+
+    if (ecdb.IsReadonly())
+        {
+        return BE_SQLITE_READONLY;
+        }
+
+    if (!m_stmts.empty())
+        {
+        BeAssert(false && "Call finalize before calling prepare again");
+        return BE_SQLITE_ERROR;
+        }
+
+    ECDbMapCR map = ecdb.GetECDbImplR().GetECDbMap();
+    std::vector<RelationshipClassMapCP> relationships;
+    CachedStatementPtr stmt = ecdb.GetCachedStatement(
+        SqlPrintfString("SELECT C.Id FROM ec_Class C INNER JOIN ec_ClassMap CM ON CM.[ClassId] = C.Id WHERE C.RelationStrength = %d AND CM.MapStrategy != %d",
+            StrengthType::Holding, ECDbMapStrategy::Strategy::NotMapped).GetUtf8CP());
+
+    while (stmt->Step() == BE_SQLITE_ROW)
+        {
+        ECClassId id = stmt->GetValueInt64(0);
+        if (RelationshipClassMapCP relationshipClassMap = static_cast<RelationshipClassMapCP>(map.GetClassMap(id)))
+            {
+            relationships.push_back(relationshipClassMap);
+            }
+        }
+
+    SqlSpec::SpecByTableMap sqlSpecs;
+    NativeSqlBuilder::List unionList;
+    NativeSqlBuilder viewSql;
+    std::map <ECDbSqlTable const*, ECDbMap::LightweightCache::RelationshipEnd> linkTables;
+    for (RelationshipClassMapCP r : relationships)
+        {
+        ECRelationshipConstraintR endToDeleteFrom = r->GetRelationshipClass().GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? r->GetRelationshipClass().GetTarget() : r->GetRelationshipClass().GetSource();
+        std::set<ECDbSqlTable const*> tables = map.GetTablesFromRelationshipEnd(endToDeleteFrom);
+        for (auto table : tables)
+            {
+            auto aTable = table->GetBaseTable() ? table->GetBaseTable() : table;
+            auto itor = sqlSpecs.find(aTable->GetName().c_str());
+            SqlSpec* spec = nullptr;
+            if (itor == sqlSpecs.end())
+                {
+                auto ecId = aTable->GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+                sqlSpecs[aTable->GetName().c_str()] = SqlSpec::Create(aTable->GetName().c_str(), ecId->GetName().c_str());
+                spec = sqlSpecs[aTable->GetName().c_str()].get();
+                }
+            }
+
+        if (updateView)
+            {
+            ECRelationshipConstraintR fkEnd = r->GetRelationshipClass().GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? r->GetRelationshipClass().GetSource() : r->GetRelationshipClass().GetTarget();
+            PropertyMapCP fkInstanceId = r->GetRelationshipClass().GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? r->GetSourceECInstanceIdPropMap() : r->GetTargetECInstanceIdPropMap();
+            //PropertyMapCP fkClassId = r->GetRelationshipClass().GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? r->GetSourceECClassIdPropMap() : r->GetTargetECClassIdPropMap();
+            auto fkColumn = fkInstanceId->GetFirstColumn()->GetName().c_str();
+
+            if (r->GetClassMapType() == IClassMap::Type::RelationshipEndTable)
+                {
+                //RelationshipClassEndTableMapCP relationship = static_cast<RelationshipClassEndTableMapCP>(r);
+                std::set<ECDbSqlTable const*> tables = map.GetTablesFromRelationshipEndWithColumn(fkEnd, fkColumn);
+                for (auto table : tables)
+                    {
+                    viewSql.AppendFormatted("SELECT [%s] ECInstanceId FROM [%s] WHERE [%s] IS NOT NULL", fkColumn, table->GetName().c_str(), fkColumn);
+                    }
+
+                unionList.push_back(std::move(viewSql));
+                viewSql.Reset();
+                }
+            else
+                {
+                ECDbMap::LightweightCache::RelationshipEnd endPoint = r->GetRelationshipClass().GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? ECDbMap::LightweightCache::RelationshipEnd::Source : ECDbMap::LightweightCache::RelationshipEnd::Target;
+                RelationshipClassLinkTableMapCP relationship = static_cast<RelationshipClassLinkTableMapCP>(r);
+                auto itor = linkTables.find(&relationship->GetPrimaryTable());
+                if (itor == linkTables.end())
+                    {
+                    linkTables[&relationship->GetPrimaryTable()] = endPoint;
+                    }
+                else if (Enum::Contains(linkTables[&relationship->GetPrimaryTable()], endPoint))
+                    {
+                    continue;
+                    }
+
+                linkTables[&relationship->GetPrimaryTable()] = Enum::Or(linkTables[&relationship->GetPrimaryTable()], endPoint);
+                viewSql.AppendFormatted("SELECT [%s] ECInstanceId FROM [%s]", fkColumn, relationship->GetPrimaryTable().GetName().c_str());
+                unionList.push_back(std::move(viewSql));
+                viewSql.Reset();
+                }
+            }
+        }
+
+    if (updateView)
+        {
+        viewSql.Reset();
+        viewSql.Append("DROP VIEW IF EXISTS ").Append(ECDB_HOLDING_VIEW).Append(";").AppendEOL();
+        viewSql.Append("CREATE VIEW ").Append(ECDB_HOLDING_VIEW).Append(" AS ").AppendEOL();
+        if (!unionList.empty())
+            {
+            for (auto& select : unionList)
+                {
+                viewSql.Append(select);
+                if (&select != &(unionList.back()))
+                    viewSql.Append(" \r\n UNION ALL \r\n");
+                }
+            viewSql.Append(";\n");
+            }
+        else
+            {
+            viewSql.Append("SELECT NULL ECInstanceId LIMIT 0;");
+            }
+
+        DbResult rs = ecdb.ExecuteSql(viewSql.ToString());
+        if (rs != BE_SQLITE_OK)
+            {
+            BeAssert(false && "Failed to create/update view");
+            return rs;
+            }
+        }
+
+    for (auto& spec : sqlSpecs)
+        {
+        std::unique_ptr<Statement> stmt = std::unique_ptr<Statement>(new Statement());
+        DbResult rs = stmt->Prepare(ecdb, spec.second->ToSQL().c_str());
+        if (rs != BE_SQLITE_OK)
+            {
+            BeAssert(false && "Faild to prepare ecsql");
+            return rs;
+            }
+
+        m_stmts.push_back(std::move(stmt));
+        }
+
+    return BE_SQLITE_OK;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan     01/2016
+//---------------+---------------+---------------+---------------+---------------+---------
+DbResult RelationshipPurger::Reset()
+    {
+    for (auto& stmt : m_stmts)
+        {
+        DbResult r = stmt->Reset();
+        if (r != BE_SQLITE_OK)
+            return r;
+        }
+
+    return BE_SQLITE_OK;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan     01/2016
+//---------------+---------------+---------------+---------------+---------------+---------
+DbResult RelationshipPurger::Step()
+    {
+    for (auto& stmt : m_stmts)
+        {
+        DbResult r = stmt->Step();
+        if (r != BE_SQLITE_DONE)
+            return r;
+        }
+
+    return BE_SQLITE_DONE;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan     01/2016
+//---------------+---------------+---------------+---------------+---------------+---------
+void RelationshipPurger::Finialize()
+    {
+    for (auto& stmt : m_stmts)
+        {
+        stmt->Finalize();
+        }
+
+    m_stmts.clear();
+    }
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan     01/2016
+//---------------+---------------+---------------+---------------+---------------+---------
+RelationshipPurger::~RelationshipPurger()
+    {
+    Finialize();
+    }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Casey.Mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -38,6 +289,91 @@ bool ECDbMap::IsImportingSchema () const
     return m_schemaImportContext != nullptr;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      01/2016
+//---------------+---------------+---------------+---------------+---------------+--------
+//DbResult ECDbMap::UpdateHoldingView()
+//    {
+//    NativeSqlBuilder viewSql;
+//    Utf8CP sql = "SELECT Id FROM ec_Class WHERE ec_Class.RelationStrength = 1"; // Holding relationships       
+//    NativeSqlBuilder::List unionList;
+//    auto stmt = m_map.GetECDbR().GetCachedStatement(sql);
+//    if (!stmt.IsValid())
+//        {
+//        BeAssert(false && "Failed to prepared statement");
+//        return DbResult::BE_SQLITE_ERROR;
+//        }
+//    std::map<ECDbSqlTable const*, ECDbMap::LightweightCache::RelationshipEnd> doneSet;
+//    while (stmt->Step() == BE_SQLITE_ROW)
+//        {
+//        ECClassId ecClassId = stmt->GetValueInt64(0);
+//        auto holdingRelationshipClass = m_map.GetECDbR().Schemas().GetECClass(ecClassId);
+//        if (holdingRelationshipClass == nullptr)
+//            {
+//            BeAssert(false && "Fail to find class for holding relationship");
+//            return DbResult::BE_SQLITE_ERROR;
+//            }
+//        
+//        auto holdingRelationshipClassMap = static_cast<RelationshipClassMapCP>(m_map.GetClassMap(*holdingRelationshipClass));
+//        if (holdingRelationshipClassMap == nullptr || holdingRelationshipClassMap->GetJoinedTable().GetPersistenceType() == PersistenceType::Virtual)
+//            continue;
+//
+//
+//        Utf8CP column;
+//        ECDbMap::LightweightCache::RelationshipEnd filter;
+//        if (holdingRelationshipClassMap->GetRelationshipClass().GetStrengthDirection() == ECRelatedInstanceDirection::Forward)
+//            {
+//            column = holdingRelationshipClassMap->GetTargetECInstanceIdPropMap()->GetFirstColumn()->GetName().c_str();
+//            filter = ECDbMap::LightweightCache::RelationshipEnd::Source;
+//            }
+//        else
+//            {
+//            column = holdingRelationshipClassMap->GetSourceECInstanceIdPropMap()->GetFirstColumn()->GetName().c_str();
+//            filter = ECDbMap::LightweightCache::RelationshipEnd::Target;
+//            }
+//
+//        ECDbSqlTable const* table = &holdingRelationshipClassMap->GetJoinedTable();
+//        auto itor = doneSet.find(table);
+//        if (itor == doneSet.end() || (((int)(itor->second) & (int)filter) == 0))
+//            {
+//            NativeSqlBuilder relaitonshipView;
+//            relaitonshipView.Append("SELECT ");
+//            relaitonshipView.Append(column);
+//            relaitonshipView.Append(" ECInstanceId FROM ").Append(table->GetName().c_str());
+//            //relaitonshipView.Append (" WHERE (").Append (column).Append(" IS NOT NULL)").AppendEOL();
+//            unionList.push_back(std::move(relaitonshipView));
+//            if (itor == doneSet.end())
+//                doneSet[table] = filter;
+//            else
+//                doneSet[table] = static_cast<ECDbMap::LightweightCache::RelationshipEnd>((int)(itor->second) & (int)(filter));
+//            }
+//        }
+//    viewSql.Append("DROP VIEW IF EXISTS ").Append(ECDB_HOLDING_VIEW).Append(";").AppendEOL();
+//    viewSql.Append("CREATE VIEW ").Append(ECDB_HOLDING_VIEW).Append(" AS ").AppendEOL();
+//    if (!unionList.empty())
+//        {
+//
+//        for (auto& select : unionList)
+//            {
+//            viewSql.Append(select);
+//            if (&select != &(unionList.back()))
+//                viewSql.Append(" \r\n UNION ALL \r\n");
+//            }
+//        viewSql.Append(";\n");
+//        }
+//    else
+//        {
+//        viewSql.Append("SELECT NULL ECInstanceId LIMIT 0;");
+//        }
+//
+//    auto r = GetECDbR().ExecuteSql(sql);
+//    if (r != BE_SQLITE_OK)
+//        {
+//        BeAssert(false && "Failed to create holding view");
+//        LOG.errorv("Failed to execute DDL statement during mapping - %s", sql);
+//        }
+//    return r;
+//    }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      12/2015
 //---------------+---------------+---------------+---------------+---------------+--------
