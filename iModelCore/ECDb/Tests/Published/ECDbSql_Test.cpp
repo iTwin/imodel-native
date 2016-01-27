@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECDbSql_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -33,10 +33,10 @@ TEST(ECDbSql, PartialIndex)
     ECDb db;
     ASSERT_EQ(BE_SQLITE_OK, ECDbTestUtility::CreateECDb(db, nullptr, L"ecdbmapindextest.ecdb"));
 
-    Utf8CP testSchemaXml = "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+    Utf8CP testSchemaXml = "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
         "   <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.12' prefix ='bsca' />"
         "   <ECSchemaReference name='ECDbMap' version='01.00' prefix ='ecdbmap' />"
-        "   <ECClass typeName = 'IndexClass' isDomainClass = 'True'>"
+        "   <ECEntityClass typeName = 'IndexClass' >"
         "       <ECCustomAttributes>"
         "       <ClassMap xmlns = 'ECDbMap.01.00'>"
         "           <Indexes>"
@@ -68,7 +68,7 @@ TEST(ECDbSql, PartialIndex)
         "   </ECCustomAttributes>"
         "   <ECProperty propertyName ='PropertyFullIndex' typeName = 'string' />"
         "   <ECProperty propertyName ='PropertyPartialIndex' typeName = 'string' />"
-        "   </ECClass>"
+        "   </ECEntityClass>"
         "</ECSchema>";
 
     ASSERT_EQ(SUCCESS, ImportSchema(db, testSchemaXml));
@@ -107,10 +107,10 @@ TEST(ECDbSql, UniqueIndex)
     ASSERT_EQ(BE_SQLITE_OK, ECDbTestUtility::CreateECDb(db, nullptr, L"ecdbmapindextest.ecdb"));
 
     Utf8CP testSchemaXml =
-        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
         "   <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.12' prefix ='bsca' />"
         "   <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-        "<ECClass typeName='IndexClass2' isDomainClass='True'>"
+        "<ECEntityClass typeName='IndexClass2' >"
         "   <ECCustomAttributes>"
         "       <ClassMap xmlns = 'ECDbMap.01.00'>"
         "           <Indexes>"
@@ -133,7 +133,7 @@ TEST(ECDbSql, UniqueIndex)
         "   </ECCustomAttributes>"
         "   <ECProperty propertyName='Property1' typeName='string' />"
         "   <ECProperty propertyName='Property2' typeName='string' />"
-        "</ECClass>"
+        "</ECEntityClass>"
         "</ECSchema>";
 
     ASSERT_EQ(SUCCESS, ImportSchema(db, testSchemaXml));
@@ -166,16 +166,19 @@ TEST(ECDbSql, IndexErrors)
 
     bvector<bpair<Utf8String,BentleyStatus>> testSchemaXmls;
     testSchemaXmls.push_back(bpair<Utf8String, BentleyStatus>(
-        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
         "   <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.12' prefix='bsca' />"
         "   <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-        "<ECClass typeName='IndexClass3' isDomainClass='True'>"
+        "<ECEntityClass typeName='IndexClass3' >"
         "   <ECCustomAttributes>"
         "       <ClassMap xmlns='ECDbMap.01.00'>"
         "           <Indexes>"
         "               <DbIndex>"
         "                   <Name>IDX_NoProperty</Name>"
         "                   <IsUnique>False</IsUnique>"
+        "                   <Properties>"
+        "                       <string>Property1</string>"
+        "                   </Properties>"
         "               </DbIndex>"
         "           </Indexes>"
         "       </ClassMap>"
@@ -183,15 +186,15 @@ TEST(ECDbSql, IndexErrors)
         "   <ECProperty propertyName='PropertyString' typeName='string' />"
         "   <ECProperty propertyName='PropertyInt' typeName='int' />"
         "   <ECProperty propertyName='PropertyDouble' typeName='double' />"
-        "</ECClass>"
+        "</ECEntityClass>"
         "</ECSchema>",
         ERROR));
 
     testSchemaXmls.push_back(bpair<Utf8String, BentleyStatus>(
-        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
         "   <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.12' prefix ='bsca' />"
         "   <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-        "<ECClass typeName='IndexClass3' isDomainClass='True'>"
+        "<ECEntityClass typeName='IndexClass3' >"
         "   <ECCustomAttributes>"
         "       <ClassMap xmlns='ECDbMap.01.00'>"
         "           <Indexes>"
@@ -208,15 +211,15 @@ TEST(ECDbSql, IndexErrors)
         "   <ECProperty propertyName ='PropertyString' typeName = 'string' />"
         "   <ECProperty propertyName ='PropertyInt' typeName = 'int' />"
         "   <ECProperty propertyName ='PropertyDouble' typeName = 'double' />"
-        "</ECClass>"
+        "</ECEntityClass>"
         "</ECSchema>",
         ERROR));
 
     testSchemaXmls.push_back(bpair<Utf8String, BentleyStatus>(
-        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
         "   <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.12' prefix ='bsca' />"
         "   <ECSchemaReference name='ECDbMap' version='01.00' prefix ='ecdbmap' />"
-        "<ECClass typeName = 'IndexClass3' isDomainClass = 'True'>"
+        "<ECEntityClass typeName = 'IndexClass3' >"
         "   <ECCustomAttributes>"
         "       <ClassMap xmlns = 'ECDbMap.01.00'>"
         "           <Indexes>"
@@ -225,6 +228,7 @@ TEST(ECDbSql, IndexErrors)
         "                   <IsUnique>False</IsUnique>"
         "                   <Properties>"
         "                       <int>PropertyInt</int>"
+        "                       <string>Property1</string>"
         "                   </Properties>"
         "               </DbIndex>"
         "           </Indexes>"
@@ -233,15 +237,15 @@ TEST(ECDbSql, IndexErrors)
         "   <ECProperty propertyName ='PropertyString' typeName = 'string' />"
         "   <ECProperty propertyName ='PropertyInt' typeName = 'int' />"
         "   <ECProperty propertyName ='PropertyDouble' typeName = 'double' />"
-        "</ECClass>"
+        "</ECEntityClass>"
         "</ECSchema>",
         ERROR));
 
     testSchemaXmls.push_back(bpair<Utf8String, BentleyStatus>(
-        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
         "   <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.12' prefix ='bsca' />"
         "   <ECSchemaReference name='ECDbMap' version='01.00' prefix ='ecdbmap' />"
-        "<ECClass typeName = 'IndexClass3' isDomainClass = 'True'>"
+        "<ECEntityClass typeName = 'IndexClass3' >"
         "   <ECCustomAttributes>"
         "       <ClassMap xmlns = 'ECDbMap.01.00'>"
         "           <Indexes>"
@@ -258,7 +262,7 @@ TEST(ECDbSql, IndexErrors)
         "   <ECProperty propertyName ='PropertyString' typeName = 'string' />"
         "   <ECProperty propertyName ='PropertyInt' typeName = 'int' />"
         "   <ECProperty propertyName ='PropertyDouble' typeName = 'double' />"
-        "</ECClass>"
+        "</ECEntityClass>"
         "</ECSchema>",
         SUCCESS));
 
