@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Persistence/BaseCacheTest.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -50,6 +50,17 @@ ECSchemaPtr BaseCacheTest::GetTestSchema()
                         <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
                             <RequiredSymbolSets />
                             <ECExpression>"CalculatedValue"</ECExpression>
+                        </CalculatedECPropertySpecification>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECClass>
+            <ECClass typeName="TestClass4" >
+                <ECProperty propertyName="TestProperty" typeName="string" />
+                <ECProperty propertyName="TestCalculatedProperty" typeName="string" >
+                    <ECCustomAttributes>
+                        <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                            <RequiredSymbolSets />
+                            <ECExpression>this.TestProperty</ECExpression>
                         </CalculatedECPropertySpecification>
                     </ECCustomAttributes>
                 </ECProperty>
