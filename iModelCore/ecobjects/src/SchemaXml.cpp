@@ -679,21 +679,22 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
         }
 
     uint32_t versionMajor = DEFAULT_VERSION_MAJOR;
+    uint32_t versionMiddle = DEFAULT_VERSION_MIDDLE;
     uint32_t versionMinor = DEFAULT_VERSION_MINOR;
 
     // OPTIONAL attributes - If these attributes exist they do not need to be valid.  We will ignore any errors setting them and use default values.
     // NEEDSWORK This is due to the current implementation in managed ECObjects.  We should reconsider whether it is the correct behavior.
     Utf8String     versionString;
     if ((BEXML_Success != schemaNode->GetAttributeStringValue(versionString, SCHEMA_VERSION_ATTRIBUTE)) ||
-        (ECObjectsStatus::Success != ECSchema::ParseVersionString(versionMajor, versionMinor, versionString.c_str())))
+        (ECObjectsStatus::Success != SchemaKey::ParseVersionString(versionMajor, versionMiddle, versionMinor, versionString.c_str())))
         {
-        LOG.warningv("Invalid version attribute has been ignored while reading ECSchema '%s'.  The default version number %02d.%02d has been applied.",
-                     schemaName.c_str(), versionMajor, versionMinor);
+        LOG.warningv("Invalid version attribute has been ignored while reading ECSchema '%s'.  The default version number %s has been applied.",
+                     schemaName.c_str(), SchemaKey::FormatSchemaVersion(versionMajor, versionMiddle, versionMinor).c_str());
         }
 
-    LOG.debugv("Reading ECSchema %s.%02d.%02d", schemaName.c_str(), versionMajor, versionMinor);
+    LOG.debugv("Reading ECSchema %s", SchemaKey::FormatFullSchemaName(schemaName.c_str(), versionMajor, versionMiddle, versionMinor).c_str());
 
-    ECObjectsStatus createStatus = ECSchema::CreateSchema(schemaOut, schemaName, versionMajor, versionMinor);
+    ECObjectsStatus createStatus = ECSchema::CreateSchema(schemaOut, schemaName, versionMajor, versionMiddle, versionMinor);
     if (ECObjectsStatus::Success != createStatus)
         return SchemaReadStatus::InvalidECSchemaXml;
 
@@ -800,9 +801,7 @@ SchemaWriteStatus SchemaXmlWriter::WriteSchemaReferences()
         m_xmlWriter.WriteElementStart(EC_SCHEMAREFERENCE_ELEMENT);
         m_xmlWriter.WriteAttribute(SCHEMAREF_NAME_ATTRIBUTE, refSchema->GetName().c_str());
 
-        Utf8Char versionString[8];
-        sprintf(versionString, "%02d.%02d", refSchema->GetVersionMajor(), refSchema->GetVersionMinor());
-        m_xmlWriter.WriteAttribute(SCHEMAREF_VERSION_ATTRIBUTE, versionString);
+        m_xmlWriter.WriteAttribute(SCHEMAREF_VERSION_ATTRIBUTE, refSchema->GetSchemaKey().GetVersionString().c_str());
 
         const Utf8String prefix = mapPair.second;
         m_xmlWriter.WriteAttribute(SCHEMAREF_PREFIX_ATTRIBUTE, prefix.c_str());
@@ -918,12 +917,9 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
     Utf8PrintfString ns("%s.%d.%d", ECXML_URI, m_ecXmlVersionMajor, m_ecXmlVersionMinor);
     m_xmlWriter.WriteElementStart(EC_SCHEMA_ELEMENT, ns.c_str());
 
-    Utf8Char versionString[8];
-    BeStringUtilities::Snprintf(versionString, "%02d.%02d", m_ecSchema.m_key.m_versionMajor, m_ecSchema.m_key.m_versionMinor);
-
     m_xmlWriter.WriteAttribute(SCHEMA_NAME_ATTRIBUTE, m_ecSchema.GetName().c_str());
     m_xmlWriter.WriteAttribute(SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE, m_ecSchema.GetNamespacePrefix().c_str());
-    m_xmlWriter.WriteAttribute(SCHEMA_VERSION_ATTRIBUTE, versionString);
+    m_xmlWriter.WriteAttribute(SCHEMA_VERSION_ATTRIBUTE, m_ecSchema.GetSchemaKey().GetVersionString().c_str());
     m_xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, m_ecSchema.GetInvariantDescription().c_str());
     if (m_ecSchema.GetIsDisplayLabelDefined())
         m_xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, m_ecSchema.GetInvariantDisplayLabel().c_str());

@@ -233,48 +233,6 @@ ECSchemaPtr     ECSchemaReadContext::LocateSchema (SchemaKeyR key, SchemaMatchTy
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr     ECSchemaReadContext::LocateSchema (SchemaKeyR key, bset<SchemaMatchType> const& matches)
-    {
-    m_knownSchemaDirtyStack.push_back(false);
-
-    ECSchemaPtr schema;
-    for (auto const& locater : m_locaters)
-        {
-        if ( ! EXPECTED_CONDITION (nullptr != locater))
-            continue;
-
-        for (auto const& matchType : matches)
-            {
-            schema = locater->LocateSchema(key, matchType, *this); //Doing this will change m_knownSchemas
-            if (schema.IsValid())
-                break;
-
-            if (m_knownSchemaDirtyStack.back())
-                {
-                for (auto const& knownMatchType : matches)
-                    {
-                    schema = m_knownSchemas->LocateSchema (key, knownMatchType, *this);
-                    if (schema.IsValid())
-                        break;
-                    }
-                m_knownSchemaDirtyStack.back() = false;
-                }
-
-            if (schema.IsValid())
-                break;
-            }
-
-        if (schema.IsValid())
-            break;
-        }
-
-    m_knownSchemaDirtyStack.pop_back();
-    return schema;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCacheR ECSchemaReadContext::GetCache ()
     {
     return *m_knownSchemas;
