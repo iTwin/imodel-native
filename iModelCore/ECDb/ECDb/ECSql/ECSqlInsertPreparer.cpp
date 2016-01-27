@@ -257,6 +257,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoRelationship(ECSqlPrepareConte
         return ECSqlStatus::InvalidECSql;
         }
 
+    RelationshipClassMapCR relationshipClassMap = static_cast<RelationshipClassMapCR> (classMap);
     //Validate and if need be determine SourceECClassId and TargetECClassId
     ECClassId sourceECClassId = ECClass::UNSET_ECCLASSID; //remains unset if is parametrized
     ECSqlStatus stat = ValidateConstraintClassId(sourceECClassId, ctx, exp, relationshipClassMap, ECRelationshipEnd_Source);
