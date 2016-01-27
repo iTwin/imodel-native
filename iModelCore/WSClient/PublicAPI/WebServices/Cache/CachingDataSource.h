@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/CachingDataSource.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -81,12 +81,6 @@ struct CachingDataSource :
             (
             ObjectIdCR objectId,
             ICancellationTokenPtr ct
-            );
-
-        BentleyStatus LoadSchemas
-            (
-            const std::vector<BeFileName>& schemaFilePaths,
-            std::vector<ECSchemaPtr>& schemasOut
             );
 
         void NotifyOnCacheSchemaChangedListeners();
