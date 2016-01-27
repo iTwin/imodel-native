@@ -2,14 +2,15 @@
 |
 |     $Source: src/ExpressionContext.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
 
 #include <ECObjects/ECExpressionNode.h>
+#include <Bentley/BeThreadLocalStorage.h>
 
-static ECN::IECSymbolProvider::ExternalSymbolPublisher   s_externalSymbolPublisher;
+BeThreadLocalStorage g_externalSymbolPublisher;
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -1259,9 +1260,7 @@ ExpressionStatus PropertySymbol::_GetValue (EvaluationResultR evalResult, Primar
 +---------------+---------------+---------------+---------------+---------------+------*/
 void IECSymbolProvider::RegisterExternalSymbolPublisher (ExternalSymbolPublisher publisher)
     {
-    // MT: This is a function pointer passed down from DgnPlatform. The function wraps access to the host object which actually provides the symbols.
-    if (NULL == s_externalSymbolPublisher)
-        s_externalSymbolPublisher = publisher;
+    g_externalSymbolPublisher.SetValueAsPointer(publisher);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1269,7 +1268,7 @@ void IECSymbolProvider::RegisterExternalSymbolPublisher (ExternalSymbolPublisher
 +---------------+---------------+---------------+---------------+---------------+------*/
 void IECSymbolProvider::UnRegisterExternalSymbolPublisher ()
     {
-    s_externalSymbolPublisher = NULL;
+    g_externalSymbolPublisher.SetValueAsPointer(nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1281,9 +1280,10 @@ SymbolExpressionContextPtr SymbolExpressionContext::Create (bvector<Utf8String> 
     if (context.IsValid())
         {
         InternalECSymbolProviderManager::GetManager ().PublishSymbols (*context, requestedSymbolSets);
+        ECN::IECSymbolProvider::ExternalSymbolPublisher externalSymbolPublisher = static_cast<ECN::IECSymbolProvider::ExternalSymbolPublisher>(g_externalSymbolPublisher.GetValueAsPointer());
 
-        if (NULL != s_externalSymbolPublisher)
-            s_externalSymbolPublisher (*context, requestedSymbolSets);
+        if (nullptr != externalSymbolPublisher)
+            externalSymbolPublisher (*context, requestedSymbolSets);
         }
     
     return context;
