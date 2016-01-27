@@ -17,8 +17,7 @@
             <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>true</AppliesToSubclasses>
+                    <Strategy>NotMapped</Strategy>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
