@@ -42,8 +42,8 @@ struct DgnDbTestUtils : public testing::Test
         WString ToKey() const;
         
         //! Construct SeedDbOptions
+        //! @param wantTestDomain   If true, then the Test domain will be imported into the seed DgnDb
         //! @param wantCameraView   If true, then the seed DgnDb will contain a camera view
-        //! @param testDomain       If true, then the Test domain will be imported into the seed DgnDb
         SeedDbOptions(bool wantTestDomain = false, bool wantCameraView = true) : testDomain(wantTestDomain), cameraView(wantCameraView) {}
         };
 
