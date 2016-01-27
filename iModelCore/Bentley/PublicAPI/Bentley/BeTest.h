@@ -226,7 +226,7 @@ static Utf8CP GetNameOfCurrentTest()
 
 //! Get name of the "test case" of the currently running test. 
 //! @return the name of a test case or "" if no test is running
-static Utf8CP BeTest::GetNameOfCurrentTestCase()
+static Utf8CP GetNameOfCurrentTestCase()
     {
 #if defined (USE_GTEST)
     ::testing::TestInfo const* tinfo = ::testing::UnitTest::GetInstance()->current_test_info();
