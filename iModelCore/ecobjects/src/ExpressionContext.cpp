@@ -1260,7 +1260,7 @@ ExpressionStatus PropertySymbol::_GetValue (EvaluationResultR evalResult, Primar
 +---------------+---------------+---------------+---------------+---------------+------*/
 void IECSymbolProvider::RegisterExternalSymbolPublisher (ExternalSymbolPublisher publisher)
     {
-    g_externalSymbolPublisher.SetValueAsPointer(publisher);
+    g_externalSymbolPublisher.SetValueAsPointer((void*)publisher);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1280,7 +1280,7 @@ SymbolExpressionContextPtr SymbolExpressionContext::Create (bvector<Utf8String> 
     if (context.IsValid())
         {
         InternalECSymbolProviderManager::GetManager ().PublishSymbols (*context, requestedSymbolSets);
-        ECN::IECSymbolProvider::ExternalSymbolPublisher externalSymbolPublisher = static_cast<ECN::IECSymbolProvider::ExternalSymbolPublisher>(g_externalSymbolPublisher.GetValueAsPointer());
+        ECN::IECSymbolProvider::ExternalSymbolPublisher externalSymbolPublisher = reinterpret_cast<ECN::IECSymbolProvider::ExternalSymbolPublisher>(g_externalSymbolPublisher.GetValueAsPointer());
 
         if (nullptr != externalSymbolPublisher)
             externalSymbolPublisher (*context, requestedSymbolSets);
