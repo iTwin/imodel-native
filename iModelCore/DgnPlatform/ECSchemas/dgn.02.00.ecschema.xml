@@ -44,7 +44,6 @@
                 <OnDeleteAction>Restrict</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
-	
         <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="true">
             <Class class="GeometrySource">
                 <Key>
@@ -225,7 +224,6 @@
                 <OnDeleteAction>Restrict</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
-
         <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="false">
             <Class class="Authority"/>
         </Source>
@@ -255,7 +253,11 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="AuthorityIssuesGeometryPartCode" description="GeometryPart has a code which was issued by the given authority" strength="referencing">
-        <!-- WIP: want ON DELETE RESTRICT? -->
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>Restrict</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
         <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="false">
             <Class class="Authority"/>
         </Source>
@@ -370,7 +372,6 @@
                 <OnDeleteAction>Restrict</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
-
         <Source cardinality="(1,1)" roleLabel="is on 1 model" polymorphic="true">
             <Class class="Model"/>
         </Source>
@@ -858,7 +859,7 @@
                     </DbIndex>
                     <DbIndex>
                         <!-- Index for looking up Element by ExternalKey -->
-                        <!-- WIP: IsUnique=False to support ExternalKeys for types (multiple Elements have same ExternalKey) -->
+                        <!-- IsUnique=False to support ExternalKeys for types (multiple Elements have same ExternalKey) -->
                         <IsUnique>False</IsUnique>
                         <Properties>
                             <string>AuthorityId</string>
@@ -1213,7 +1214,6 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementUsesGeometryParts" strength="referencing">
         <!-- Used to indicate that an Element uses a GeometryPart.  This is useful for "garbage collecting" or finding Elements that would be affected by a change to a GeometryPart. -->
-        <!-- WIP: want ON DELETE RESTRICT? -->
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
@@ -1261,7 +1261,6 @@
                 <IsReadOnlyProperty>IsReadOnly</IsReadOnlyProperty>
             </AdhocPropertyContainerDefinition>
         </ECCustomAttributes>
-
         <ECProperty propertyName="Name" typeName="string" />
         <ECProperty propertyName="Label" typeName="string" />
         <ECProperty propertyName="Value" typeName="string" />
