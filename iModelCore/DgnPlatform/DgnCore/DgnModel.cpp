@@ -537,14 +537,8 @@ DgnDbStatus DgnModel::_OnUpdate()
             return stat;
         }
 
-    if (RepositoryStatus::Success != GetDgnDb().Locks().LockModel(*this, LockLevel::Exclusive))
-        return DgnDbStatus::LockNotHeld;
-
-    // Ensure this briefcase has reserved the model's code
-    if (RepositoryStatus::Success != GetDgnDb().Codes().ReserveCode(GetCode()))
-        return DgnDbStatus::CodeNotReserved;
-
-    return DgnDbStatus::Success;
+    // Ensure code is reserved and lock acquired
+    return GetDgnDb().BriefcaseManager().OnModelUpdate(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -784,8 +778,9 @@ DgnDbStatus DgnModel::_OnDelete()
     if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Delete))
         return DgnDbStatus::MissingHandler;
 
-    if (RepositoryStatus::Success != GetDgnDb().Locks().LockModel(*this, LockLevel::Exclusive))
-        return DgnDbStatus::LockNotHeld;
+    DgnDbStatus stat = GetDgnDb().BriefcaseManager().OnModelDelete(*this);
+    if (DgnDbStatus::Success != stat)
+        return stat;
 
     for (auto appdata : m_appData)
         appdata.second->_OnDelete(*this);
@@ -811,7 +806,7 @@ DgnDbStatus DgnModel::_OnDelete()
         }
 
     // delete all views which use this model as their base model
-    DgnDbStatus stat = DeleteAllViews();
+    stat = DeleteAllViews();
     if (DgnDbStatus::Success != stat)
         return stat;
 
@@ -864,15 +859,8 @@ DgnDbStatus DgnModel::_OnInsert()
     if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Insert))
         return DgnDbStatus::MissingHandler;
 
-    // If db is exclusively locked, cannot create models in it
-    if (RepositoryStatus::Success != GetDgnDb().Locks().LockDb(LockLevel::Shared))
-        return DgnDbStatus::LockNotHeld;
-
-    // Ensure this briefcase has reserved the model's code
-    if (RepositoryStatus::Success != GetDgnDb().Codes().ReserveCode(GetCode()))
-        return DgnDbStatus::CodeNotReserved;
-
-    return DgnDbStatus::Success;
+    // Ensure db is not exclusively locked and code reserved
+    return GetDgnDb().BriefcaseManager().OnModelInsert(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -945,7 +933,7 @@ DgnDbStatus DgnModel::Insert()
         
     // NB: We do this here rather than in _OnInserted() because Update() is going to request a lock too, and the server doesn't need to be
     // involved in locks for models created locally.
-    GetDgnDb().Locks().OnModelInserted(GetModelId());
+    GetDgnDb().BriefcaseManager().OnModelInserted(GetModelId());
     status = Update();
     BeAssert(status == DgnDbStatus::Success);
 

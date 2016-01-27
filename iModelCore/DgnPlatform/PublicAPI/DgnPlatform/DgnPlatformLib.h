@@ -878,10 +878,8 @@ public:
             {
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
-            DGNPLATFORM_EXPORT virtual ILocksManagerPtr _CreateLocksManager(DgnDbR db) const;
-            virtual ILocksServerP _GetLocksServer(DgnDbR db) const { return nullptr; }
-            DGNPLATFORM_EXPORT virtual IDgnCodesManagerPtr _CreateCodesManager(DgnDbR db) const;
-            virtual IDgnCodesServerP _GetCodesServer(DgnDbR db) const { return nullptr; }
+            DGNPLATFORM_EXPORT virtual IBriefcaseManagerPtr _CreateBriefcaseManager(DgnDbR db) const;
+            virtual IRepositoryManagerP _GetRepositoryManager(DgnDbR db) const { return nullptr; }
             };
 
         typedef bvector<DgnDomain*> T_RegisteredDomains;

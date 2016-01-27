@@ -210,13 +210,10 @@ DgnDbStatus DgnElement::_OnInsert()
             return stat;
         }
 
-    // If model is exclusively locked we cannot insert elements into it
-    if (RepositoryStatus::Success != GetDgnDb().Locks().LockModel(*GetModel(), LockLevel::Shared))
-        return DgnDbStatus::LockNotHeld;
-
-    // Ensure this briefcase has reserved the element's code
-    if (RepositoryStatus::Success != GetDgnDb().Codes().ReserveCode(GetCode()))
-        return DgnDbStatus::CodeNotReserved;
+    // Ensure model not exclusively locked, and code reserved
+    DgnDbStatus stat = GetDgnDb().BriefcaseManager().OnElementInsert(*this);
+    if (DgnDbStatus::Success != stat)
+        return stat;
 
     return GetModel()->_OnInsertElement(*this);
     }
@@ -247,7 +244,7 @@ void DgnElement::_OnInserted(DgnElementP copiedFrom) const
         copiedFrom->CallAppData(OnInsertedCaller(*this));
 
     GetModel()->_OnInsertedElement(*this);
-    GetDgnDb().Locks().OnElementInserted(GetElementId());
+    GetDgnDb().BriefcaseManager().OnElementInserted(GetElementId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -322,12 +319,10 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
             return stat;
         }
 
-    if (RepositoryStatus::Success != GetDgnDb().Locks().LockElement(*this, LockLevel::Exclusive, original.GetModelId()))
-        return DgnDbStatus::LockNotHeld;
-
-    // Ensure this briefcase has reserved the element's code
-    if (RepositoryStatus::Success != GetDgnDb().Codes().ReserveCode(GetCode()))
-        return DgnDbStatus::CodeNotReserved;
+    // Ensure lock acquired and code reserved
+    DgnDbStatus stat = GetDgnDb().BriefcaseManager().OnElementUpdate(*this, original.GetModelId());
+    if (DgnDbStatus::Success != stat)
+        return stat;
 
     return GetModel()->_OnUpdateElement(*this, original);
     }
@@ -389,8 +384,10 @@ DgnDbStatus DgnElement::_OnDelete() const
             return stat;
         }
 
-    if (RepositoryStatus::Success != GetDgnDb().Locks().LockElement(*this, LockLevel::Exclusive))
-        return DgnDbStatus::LockNotHeld;
+    // Ensure lock acquired
+    DgnDbStatus stat = GetDgnDb().BriefcaseManager().OnElementDelete(*this);
+    if (DgnDbStatus::Success != stat)
+        return stat;
 
     return GetModel()->_OnDeleteElement(*this);
     }

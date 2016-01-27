@@ -60,8 +60,7 @@ void DgnDb::Destroy()
         m_revisionManager = nullptr;
         }
     m_ecsqlCache.Empty();
-    m_locksManager = nullptr;
-    m_codesManager = nullptr;
+    m_briefcaseManager = nullptr;
     m_localStateDb.Destroy();
     }
 
@@ -123,31 +122,17 @@ TxnManagerR DgnDb::Txns()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ILocksManagerR DgnDb::Locks()
+IBriefcaseManagerR DgnDb::BriefcaseManager()
     {
-    // This is here rather than in the constructor because _CreateLocksManager() requires briefcase ID, which is obtained from m_dbFile,
+    // This is here rather than in the constructor because _CreateBriefcaseManager() requires briefcase ID, which is obtained from m_dbFile,
     // which is not initialized in constructor.
-    if (m_locksManager.IsNull())
+    if (m_briefcaseManager.IsNull())
         {
-        m_locksManager = T_HOST.GetRepositoryAdmin()._CreateLocksManager(*this);
-        BeAssert(m_locksManager.IsValid());
+        m_briefcaseManager = T_HOST.GetRepositoryAdmin()._CreateBriefcaseManager(*this);
+        BeAssert(m_briefcaseManager.IsValid());
         }
 
-    return *m_locksManager;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-IDgnCodesManagerR DgnDb::Codes()
-    {
-    if (m_codesManager.IsNull())
-        {
-        m_codesManager = T_HOST.GetRepositoryAdmin()._CreateCodesManager(*this);
-        BeAssert(m_codesManager.IsValid());
-        }
-
-    return *m_codesManager;
+    return *m_briefcaseManager;
     }
 
 /*---------------------------------------------------------------------------------**//**
