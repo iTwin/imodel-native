@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlPreparedStatement.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -67,7 +67,7 @@ ECSqlStatus ECSqlPreparedStatement::Prepare(ECSqlPrepareContext& prepareContext,
         if (nativeSqlStat != BE_SQLITE_OK)
             {
             Utf8String errorMessage;
-            errorMessage.Sprintf("Preparing the SQLite statement '%s' failed with error code", nativeSql.c_str());
+            errorMessage.Sprintf("Preparing the ECSQL '%s' failed. Underlying SQLite statement '%s' failed to prepare with error code", ecsql, nativeSql.c_str());
             GetIssueReporter().ReportSqliteIssue(ECDbIssueSeverity::Error, nativeSqlStat, errorMessage.c_str());
             //even if this is a SQLite error, we want this to be an InvalidECSql error as the reason usually
             //is a wrong ECSQL provided by the user.

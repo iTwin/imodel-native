@@ -216,6 +216,8 @@ TEST_F(ECDbSchemaManagerTests, GetPropertyWithExtendedType)
                                       "  <ECEntityClass typeName='Foo' >"
                                       "    <ECProperty propertyName='Name' typeName='string' />"
                                       "    <ECProperty propertyName='Homepage' typeName='string' extendedTypeName='URL' />"
+                                      "    <ECArrayProperty propertyName='Addresses' typeName='string' minOccurs='0' maxOccurs='unbounded' />"
+                                      "    <ECArrayProperty propertyName='Favorites' typeName='string' extendedTypeName='URL' minOccurs='0' maxOccurs='unbounded' />"
                                       "  </ECEntityClass>"
                                       "</ECSchema>"));
     ASSERT_TRUE(ecdb.IsDbOpen());
@@ -231,6 +233,15 @@ TEST_F(ECDbSchemaManagerTests, GetPropertyWithExtendedType)
     ASSERT_TRUE(prop != nullptr && prop->GetAsPrimitiveProperty() != nullptr);
     ASSERT_TRUE(prop->HasExtendedType());
     ASSERT_STREQ("URL", prop->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str());
+
+    prop = fooClass->GetPropertyP("Addresses");
+    ASSERT_TRUE(prop != nullptr && prop->GetAsArrayProperty() != nullptr);
+    ASSERT_FALSE(prop->HasExtendedType());
+
+    prop = fooClass->GetPropertyP("Favorites");
+    ASSERT_TRUE(prop != nullptr && prop->GetAsArrayProperty() != nullptr);
+    ASSERT_TRUE(prop->HasExtendedType());
+    ASSERT_STREQ("URL", prop->GetAsArrayProperty()->GetExtendedTypeName().c_str());
     }
 
 //---------------------------------------------------------------------------------------

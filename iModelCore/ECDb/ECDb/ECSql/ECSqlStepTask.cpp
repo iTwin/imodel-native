@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlStepTask.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -218,7 +218,7 @@ DbResult InsertStructArrayStepTask::_Execute(ECInstanceId const& instanceId)
         int parameterIndex = PARAMETER_STRUCTARRAY - 1;
         for (PropertyMap const* propertyMap : structMemberPropMaps)
             {
-            if (propertyMap->IsSystemPropertyMap() || propertyMap->IsUnmapped())
+            if (propertyMap->IsSystemPropertyMap())
                 continue;
 
             parameterIndex++;
@@ -285,7 +285,7 @@ ECSqlStepTaskCreateStatus InsertStructArrayStepTask::Create(unique_ptr<InsertStr
 
     for (auto& propertyMap : arrayElementTypeMap->GetPropertyMaps())
         {
-        if (propertyMap->IsSystemPropertyMap() || propertyMap->IsUnmapped())
+        if (propertyMap->IsSystemPropertyMap())
             continue;
 
         Utf8String propName("[");

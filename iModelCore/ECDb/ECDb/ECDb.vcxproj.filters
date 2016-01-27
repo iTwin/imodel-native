@@ -357,9 +357,6 @@
     <ClInclude Include="ECDbSql.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
-    <ClInclude Include="ColumnInfo.h">
-      <Filter>ECDbMap</Filter>
-    </ClInclude>
     <ClInclude Include="ECDbPch.h">
       <Filter>Mke</Filter>
     </ClInclude>
@@ -714,9 +711,6 @@
       <Filter>ECSql\ECSqlStatement</Filter>
     </ClCompile>
     <ClCompile Include="ECDbSql.cpp">
-      <Filter>ECDbMap</Filter>
-    </ClCompile>
-    <ClCompile Include="ColumnInfo.cpp">
       <Filter>ECDbMap</Filter>
     </ClCompile>
     <ClCompile Include="ECDbPch.cpp">

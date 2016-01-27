@@ -41,7 +41,6 @@ ECDbAllHeaders = \
                 $(baseDir)ECSchemaComparers.h \
                 $(baseDir)ECDbImpl.h \
                 $(baseDir)BeBriefcaseBasedIdSequence.h \
-                $(baseDir)ColumnInfo.h \
                 $(baseDir)ECDbMap.h \
                 $(baseDir)ClassMap.h \
                 $(baseDir)ClassMapSubclasses.h \
@@ -177,8 +176,6 @@ $(o)PropertyMap$(oext):										$(baseDir)PropertyMap.cpp                   $(E
 
 $(o)SystemPropertyMap$(oext):								$(baseDir)SystemPropertyMap.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
  
-$(o)ColumnInfo$(oext):										$(baseDir)ColumnInfo.cpp                    $(ECDbAllHeaders) ${MultiCompileDepends}
-
 $(o)ECDbImpl$(oext):										$(baseDir)ECDbImpl.cpp                      $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDb$(oext):											$(baseDir)ECDb.cpp                          $(ECDbAllHeaders) ${MultiCompileDepends}

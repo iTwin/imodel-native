@@ -693,7 +693,6 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
                 case ECPropertyKind::PrimitiveArray:
                 {
                 PrimitiveType primType;
-                //not used yet as ECObjects doesn't support extended types on prim arrays. But that may change
                 Utf8CP extendedType = nullptr;
                 if (SUCCESS != PropReaderHelper::TryReadPrimitiveType(primType, extendedType, *stmt))
                     {
@@ -704,6 +703,12 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
                 ArrayECPropertyP arrayProp = nullptr;
                 if (ECObjectsStatus::Success != ecClass->CreateArrayProperty(arrayProp, propName, primType))
                     return ERROR;
+
+                if (!Utf8String::IsNullOrEmpty(extendedType))
+                    {
+                    if (ECObjectsStatus::Success != arrayProp->SetExtendedTypeName(extendedType))
+                        return ERROR;
+                    }
 
                 uint32_t minOccurs, maxOccurs;
                 if (SUCCESS != PropReaderHelper::TryReadArrayConstraints(minOccurs, maxOccurs, *stmt))

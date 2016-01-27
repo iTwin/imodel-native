@@ -872,9 +872,7 @@ TEST_F(JoinedTableECDbMapStrategyTests, InsertWithUnnamedParameterBinding)
 
     ECSqlStatement stmt;
     //-----------------------------INSERT----------------------------------------------------
-    ASSERT_EQ(stmt.Prepare(db, "INSERT INTO dgn.Goo (ECInstanceId, A, B, C, D ) VALUES ( ?, ?, ?, ?, ?)"), ECSqlStatus::Success);
-
-
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO dgn.Goo (ECInstanceId, A, B, C, D ) VALUES ( ?, ?, ?, ?, ?)"));
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, 101));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, 10000));
@@ -895,7 +893,7 @@ TEST_F(JoinedTableECDbMapStrategyTests, InsertWithUnnamedParameterBinding)
     stmt.Finalize();
 
     //-----------------------------SELECT----------------------------------------------------
-    ASSERT_EQ(stmt.Prepare(db, "SELECT A, B, C, D FROM dgn.Goo WHERE ECInstanceId = ?"), ECSqlStatus::Success);;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT A, B, C, D FROM dgn.Goo WHERE ECInstanceId = ?"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, 101));
     ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
 
@@ -917,28 +915,27 @@ TEST_F(JoinedTableECDbMapStrategyTests, InsertWithUnnamedParameterBinding)
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(4, "d2001", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(5, 101));
 
-    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
     db.SaveChanges();
-    ASSERT_EQ(stmt.Prepare(db, "SELECT A, B, C, D FROM dgn.Goo WHERE ECInstanceId = 101"), ECSqlStatus::Success);
-    ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT A, B, C, D FROM dgn.Goo WHERE ECInstanceId = 101"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
-    ASSERT_EQ(stmt.GetValueInt64(0), 10001);
-    ASSERT_STRCASEEQ(stmt.GetValueText(1), "a1001");
-    ASSERT_EQ(stmt.GetValueInt64(2), 20001);
-    ASSERT_STRCASEEQ(stmt.GetValueText(3), "d2001");
+    ASSERT_EQ(10001, stmt.GetValueInt64(0));
+    ASSERT_STRCASEEQ("a1001", stmt.GetValueText(1));
+    ASSERT_EQ(20001, stmt.GetValueInt64(2));
+    ASSERT_STRCASEEQ("d2001", stmt.GetValueText(3));
     stmt.Finalize();
 
     //-----------------------------DELETE----------------------------------------------------
 
-    ASSERT_EQ(stmt.Prepare(db, "DELETE FROM dgn.Goo WHERE ECInstanceId = ?"), ECSqlStatus::Success);
-    auto bindR = stmt.BindInt64(1, 101);
-    ASSERT_EQ(ECSqlStatus::Success, bindR);
-    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "DELETE FROM dgn.Goo WHERE ECInstanceId = ?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, 101));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
-    ASSERT_EQ(stmt.Prepare(db, "SELECT A, B, C, D FROM dgn.Goo WHERE ECInstanceId = 101"), ECSqlStatus::Success);
-    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT A, B, C, D FROM dgn.Goo WHERE ECInstanceId = 101"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
     }
 
