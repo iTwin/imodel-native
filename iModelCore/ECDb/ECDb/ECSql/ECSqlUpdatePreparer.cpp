@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlUpdatePreparer.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -110,7 +110,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
                 NativeSqlBuilder snippet;
                 snippet.AppendFormatted(
                     " WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] %s) ",
-                    parentOfjoinedTableId->GetName().c_str(),
+                    joinedTableId->GetName().c_str(),
                     primaryTable.GetName().c_str(),
                     parentOfjoinedTableId->GetName().c_str(),
                     primaryTable.GetName().c_str(),

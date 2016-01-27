@@ -1050,7 +1050,7 @@ void JoinedTableECDbMapStrategyTests::AssertTableLayouts(ECDbCR ecdb, bmap<Utf8S
             {
             Utf8String actualColName (stmt.GetColumnName(i));
             actualColName.ToLower();
-            if (actualColName.Equals("ecinstanceid") ||
+            if (actualColName.EndsWith("ecinstanceid") ||
                 actualColName.Equals("ecclassid"))
                 continue;
 

@@ -251,6 +251,10 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoRelationship(ECSqlPrepareConte
     BeAssert(ctx.GetClassMapViewMode() == IClassMap::View::DomainClass && "Relationship classes that are also used as structs are not supported.");
 
     auto const& relationshipClassMap = static_cast<RelationshipClassMapCR> (classMap);
+    if (relationshipClassMap.IsReadonly())
+        {
+        return ECSqlStatus::Error;
+        }
 
     auto const& specialTokenMap = exp.GetPropertyNameListExp()->GetSpecialTokenExpIndexMap();
     if (specialTokenMap.IsUnset(ECSqlSystemProperty::SourceECInstanceId) || specialTokenMap.IsUnset(ECSqlSystemProperty::TargetECInstanceId))
