@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/WString.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -85,7 +85,7 @@ public:
     explicit WString (CharCP in) {AssignA (in);}
 #endif
 
-    //! Construct a WString from a CharCP using either the current system locale or Utf8
+    //! @deprecated
     BENTLEYDLL_EXPORT WString (CharCP in, bool isUtf8);
 
     //! Construct a WString from a CharCP string in the specified encoding

@@ -422,6 +422,11 @@ public:
     //! @return BeFileNameStatus::Success if the directory was successfully removed.
     BENTLEYDLL_EXPORT static BeFileNameStatus EmptyAndRemoveDirectory(WCharCP path);
 
+    //! Recursively empty all of the contents of an existing directory.
+    //! @param[in] path The pathname for the directory to empty.
+    //! @return BeFileNameStatus::Success if the directory was successfully emptied.
+    BENTLEYDLL_EXPORT static BeFileNameStatus EmptyDirectory(WCharCP path);
+
     //! Clone the contents of an existing directory, and optionally its subdirectories, into a new directory.
     //! @param[in] destDir The name for the new directory.
     //! @param[in] sourceDir The source directory to clone.
