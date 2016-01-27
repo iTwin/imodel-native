@@ -212,7 +212,7 @@ BENTLEYDLL_EXPORT static void SetBeAssertListener (T_BeAssertListener*);
 
 //! Get name of currently running test. 
 //! @return the name of a test or "" if no test is running
-static Utf8String GetNameOfCurrentTest()
+static Utf8CP GetNameOfCurrentTest()
     {
 #if defined (USE_GTEST)
     ::testing::TestInfo const* tinfo = ::testing::UnitTest::GetInstance()->current_test_info();
@@ -226,7 +226,7 @@ static Utf8String GetNameOfCurrentTest()
 
 //! Get name of the "test case" of the currently running test. 
 //! @return the name of a test case or "" if no test is running
-static Utf8String BeTest::GetNameOfCurrentTestCase()
+static Utf8CP BeTest::GetNameOfCurrentTestCase()
     {
 #if defined (USE_GTEST)
     ::testing::TestInfo const* tinfo = ::testing::UnitTest::GetInstance()->current_test_info();
@@ -239,8 +239,8 @@ static Utf8String BeTest::GetNameOfCurrentTestCase()
     }
 
 
-BENTLEYDLL_EXPORT static Utf8String GetNameOfCurrentTestInternal();
-BENTLEYDLL_EXPORT static Utf8String GetNameOfCurrentTestCaseInternal();
+BENTLEYDLL_EXPORT static Utf8CP GetNameOfCurrentTestInternal();
+BENTLEYDLL_EXPORT static Utf8CP GetNameOfCurrentTestCaseInternal();
 
 
 //! Get name of currently running test case
