@@ -605,8 +605,8 @@ MapStatus RelationshipClassEndTableMap::CreateConstraintColumns(ECDbSqlColumn*& 
         Utf8String idColName (constraintColumnMapping.GetECInstanceIdColumnName());
         if (idColName.empty())
             {
-            //if (SUCCESS != TryGetConstraintIdColumnNameFromNavigationProperty(idColName, constraint, relClass, constraintEnd))
-            //    return MapStatus::Error;
+            if (SUCCESS != TryGetConstraintIdColumnNameFromNavigationProperty(idColName, constraint, relClass, constraintEnd))
+                return MapStatus::Error;
             }
 
         if (!idColName.empty())

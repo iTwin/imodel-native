@@ -999,9 +999,9 @@ TEST_F(ECDbSchemaManagerTests, ImportSchemaWithSubclassesToBaseClassInExistingSc
     auto setup = [] (ECInstanceKey& activityKey, ECDbCR ecdb, bool clearCacheAfterFirstImport)
         {
         Utf8CP baseSchemaXml =
-            "<ECSchema schemaName='Planning' nameSpacePrefix='p' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+            "<ECSchema schemaName='Planning' nameSpacePrefix='p' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
             "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-            "  <ECClass typeName='Element'>"
+            "  <ECEntityClass typeName='Element'>"
             "    <ECCustomAttributes>"
             "        <ClassMap xmlns='ECDbMap.01.00'>"
             "            <MapStrategy>"
@@ -1011,12 +1011,12 @@ TEST_F(ECDbSchemaManagerTests, ImportSchemaWithSubclassesToBaseClassInExistingSc
             "        </ClassMap>"
             "    </ECCustomAttributes>"
             "    <ECProperty propertyName='Code' typeName='string' />"
-            "  </ECClass>"
-            "  <ECClass typeName='Activity'>"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Activity'>"
             "    <BaseClass>Element</BaseClass>"
             "    <ECProperty propertyName='PlanId' typeName='long' />"
             "    <ECProperty propertyName='OutlineIndex' typeName='int' />"
-            "  </ECClass>"
+            "  </ECEntityClass>"
             "</ECSchema>";
 
         ECSchemaReadContextPtr context1 = ECSchemaReadContext::CreateContext();
@@ -1029,12 +1029,12 @@ TEST_F(ECDbSchemaManagerTests, ImportSchemaWithSubclassesToBaseClassInExistingSc
             ecdb.ClearECDbCache();
 
         Utf8CP secondSchemaXml =
-            "<ECSchema schemaName='Construction' nameSpacePrefix='c' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+            "<ECSchema schemaName='Construction' nameSpacePrefix='c' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
             "  <ECSchemaReference name='Planning' version='01.00' prefix='p' />"
-            "  <ECClass typeName='Activity'>"
+            "  <ECEntityClass typeName='Activity'>"
             "    <BaseClass>p:Activity</BaseClass>"
             "    <ECProperty propertyName='Name' typeName='string' />"
-            "  </ECClass>"
+            "  </ECEntityClass>"
             "</ECSchema>";
 
         ECSchemaReadContextPtr context2 = ECSchemaReadContext::CreateContext();
@@ -1106,12 +1106,12 @@ TEST_F(ECDbSchemaManagerTests, ImportSchemaWithSubclassesToBaseClassInExistingSc
 TEST_F(ECDbSchemaManagerTests, IGeometryTypes)
     {
     SchemaItem testSchema("<?xml version='1.0' encoding='utf-8'?>"
-                          "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-                          "    <ECClass typeName='Foo' isDomainClass='True'>"
+                          "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                          "    <ECEntityClass typeName='Foo' >"
                           "        <ECProperty propertyName='g1' typeName='Bentley.Geometry.Common.IGeometry' />"
                           "        <ECProperty propertyName='g2' typeName='Bentley.GeometryNET.Common.IGeometry' />"
                           "        <ECProperty propertyName='g3' typeName='Bentley.GeometryNET.Common.ICoordinate' />"
-                          "    </ECClass>"
+                          "    </ECEntityClass>"
                           "</ECSchema>");
 
     ECDb& ecdb = SetupECDb("ecdbgeometrytypes.ecdb", testSchema);

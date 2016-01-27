@@ -233,17 +233,17 @@ TEST_F (ECDbFileInfoTests, IterateThroughEmbeddedFiles)
         ASSERT_TRUE (embeddedFileId.IsValid ());
         }
 
-            {
-            //test file 2
-            BeFileName testFilePath = SearchTestFile ("CommonGeometry.json");
-            ASSERT_TRUE (testFilePath.DoesPathExist ());
+        {
+        //test file 2
+        BeFileName testFilePath = SearchTestFile ("CommonGeometry.json");
+        ASSERT_TRUE (testFilePath.DoesPathExist ());
 
-            //Imports the file into the db.
-            DbResult stat = BE_SQLITE_OK;
-            BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import (&stat, "CommonGeometry.json", testFilePath.GetNameUtf8 ().c_str (), "JSON", "Geometry");
-            ASSERT_EQ (BE_SQLITE_OK, stat);
-            ASSERT_TRUE (embeddedFileId.IsValid ());
-            }
+        //Imports the file into the db.
+        DbResult stat = BE_SQLITE_OK;
+        BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import (&stat, "CommonGeometry.json", testFilePath.GetNameUtf8 ().c_str (), "JSON", "Geometry");
+        ASSERT_EQ (BE_SQLITE_OK, stat);
+        ASSERT_TRUE (embeddedFileId.IsValid ());
+        }
 
     DbEmbeddedFileTable::Iterator iter = embeddedFileTable.MakeIterator ();
     ASSERT_EQ (2, iter.QueryCount ());
@@ -274,56 +274,48 @@ TEST_F (ECDbFileInfoTests, IterateThroughEmbeddedFiles)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Maha Nasir                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbFileInfoTests, CRUD)
+TEST_F (ECDbFileInfoTests, VerifyEmbeddedFileSize)
     {
     ECDbR ecdb = SetupECDb ("ecdbfileinfo.ecdb");
     ASSERT_TRUE (ecdb.IsDbOpen ());
 
     DbEmbeddedFileTable& embeddedFileTable = ecdb.EmbeddedFiles ();
 
-    //Test File 1
+    //embedd test file
+    Utf8CP testFileName = "CommonGeometry.json";
+    uint64_t size = 0;
         {
-        BeFileName testFilePath = SearchTestFile ("CommonGeometry.json");
+        BeFileName testFilePath = SearchTestFile (testFileName);
         ASSERT_TRUE (testFilePath.DoesPathExist ());
 
         //Imports the test file into the db.
         DbResult stat = BE_SQLITE_OK;
-        BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import (&stat, "CommonGeometry.json", testFilePath.GetNameUtf8 ().c_str (), "JSON", "Geometry");
+        BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import (&stat, testFileName, testFilePath.GetNameUtf8 ().c_str (), "JSON", "Geometry");
         ASSERT_EQ (BE_SQLITE_OK, stat);
         ASSERT_TRUE (embeddedFileId.IsValid ());
 
         //Query the values for a file.
-        uint64_t size = 9500;
-        BeBriefcaseBasedId id = embeddedFileTable.QueryFile ("CommonGeometry.json", &size);
+        BeBriefcaseBasedId id = embeddedFileTable.QueryFile (testFileName, &size);
         ASSERT_TRUE (id.IsValid ());
+        ASSERT_TRUE (size > 0);
         }
 
-    //Test file 2
+    //Read existing embedded file, AddEntry, Save and verify the size. 
         {
-        BeFileName testFilePath = SearchTestFile ("FieldEngineerStructArray.json");
-        ASSERT_TRUE (testFilePath.DoesPathExist ());
+        Utf8CP newfileName = "CopyCommonGeometry.json";
 
-     //Creates a new entry in the embedded file table with the specified name.
+        //Creates a new entry in the embedded file table with the specified name.
+        ASSERT_EQ (BE_SQLITE_OK, embeddedFileTable.AddEntry (newfileName, "JSON"));
+        bvector<Byte> buffer;
+        ASSERT_EQ (BE_SQLITE_OK, embeddedFileTable.Read (buffer, testFileName));
 
-        ASSERT_EQ (BE_SQLITE_OK, embeddedFileTable.AddEntry ("FieldEngineerStructArray", "JSON"));
-        void const* data = testFilePath;
-        ASSERT_EQ (BE_SQLITE_OK, embeddedFileTable.Save (data, 9000, "FieldEngineerStructArray"));
+        //Now save data without compression and read it again to verify that the data is unchanged.
+        ASSERT_EQ (BE_SQLITE_OK, embeddedFileTable.Save (buffer.data (), size, newfileName, false));
+        bvector<Byte> newBuffer;
+        ASSERT_EQ (BE_SQLITE_OK, embeddedFileTable.Read (newBuffer, newfileName));
+        ASSERT_TRUE (buffer.size () == newBuffer.size ());
+        ASSERT_EQ (0, memcmp (&buffer[0], &newBuffer[0], buffer.size ()));
         }
-
-        {
-     //Test file 3
-        BeFileName testFilePath = SearchTestFile ("StartupCompany.json");
-        ASSERT_TRUE (testFilePath.DoesPathExist ());
-
-     //Replaces the test file 1 with the contents of test file 3
-        ASSERT_EQ (BE_SQLITE_OK, embeddedFileTable.Replace ("CommonGeometry.json", testFilePath.GetNameUtf8 ().c_str ()));
-        }
-
-    //Removes the specified file from the table.
-    ASSERT_EQ (BE_SQLITE_OK, embeddedFileTable.Remove ("FieldEngineerStructArray"));
-    //FieldEngineerStructArray should be no longer in the table.
-    bvector<Byte> buffer;
-    ASSERT_EQ (BE_SQLITE_ERROR, embeddedFileTable.Read (buffer, "FieldEngineerStructArray"));
     }
 
 //---------------------------------------------------------------------------------------
@@ -469,7 +461,6 @@ void AssertPurge(ECDbCR ecdb, std::vector<std::pair<ECInstanceKey, ECInstanceKey
 
         i++;
         }
-
     }
 
 //---------------------------------------------------------------------------------------
