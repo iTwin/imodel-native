@@ -30,13 +30,13 @@
         </Bindings>
     </Part>
 
-    <Part Name="WebServicesClient-Library" BentleyBuildMakeFile="ClientLib.mke" ExcludePlatforms="Android*">
+    <Part Name="WebServicesClient-Library" BentleyBuildMakeFile="ClientLib.mke" ExcludePlatforms="Android*" ApiNumber="G06">
         <SubPart PartName="WebServicesClient-PublicAPI" />
         <SubPart PartName="DgnClientFxLibrary"            PartFile="DgnClientFx" Repository="DgnClientFx" />
         <SubPart PartName="DgnClientFxLibrary-WinRT"      PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)WebServicesClient$(libext)</Libs>
-            <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)WebServicesClient$(shlibext)</Assemblies>
+            <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)WebServicesClient$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
@@ -67,13 +67,13 @@
         </Bindings>
     </Part>
 
-    <Part Name="WebServicesCache-Library" BentleyBuildMakeFile="CacheLib.mke" ExcludePlatforms="Android*">
+    <Part Name="WebServicesCache-Library" BentleyBuildMakeFile="CacheLib.mke" ExcludePlatforms="Android*" ApiNumber="G06">
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="DgnClientFxLibrary"            PartFile="DgnClientFx" Repository="DgnClientFx" />
         <SubPart PartName="DgnClientFxLibrary-WinRT"      PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)WebServicesCache$(libext)</Libs>
-            <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)WebServicesCache$(shlibext)</Assemblies>
+            <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)WebServicesCache$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
@@ -115,18 +115,18 @@
         </Bindings>
     </Part>
 
-    <Part Name="DgnDbServerClient-Library" BentleyBuildMakeFile="DgnDbServerClientLib.mke">
+    <Part Name="DgnDbServerClient-Library" BentleyBuildMakeFile="DgnDbServerClientLib.mke" ApiNumber="G06">
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="DgnClientFxLibrary"            PartFile="DgnClientFx" Repository="DgnClientFx" />
         <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
         <SubPart PartName="DgnClientFxLibrary-WinRT"      PartFile="DgnClientFx" Repository="DgnClientFx" />
     </Part>
 
-    <Part Name="DgnDbServerClient-Bindings" ExcludePlatforms="Android*">
+    <Part Name="DgnDbServerClient-Bindings" ExcludePlatforms="Android*" ApiNumber="G06">
         <SubPart PartName="DgnDbServerClient-Library" />
         <Bindings>
             <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)DgnDbServerClient$(libext)</Libs>
-            <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)DgnDbServerClient$(shlibext)</Assemblies>
+            <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)DgnDbServerClient$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
