@@ -243,6 +243,7 @@ struct BcDTM : RefCounted<TerrainModel::IDTM>
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTMDraping* _GetDTMDraping () override;
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTMContouring* _GetDTMContouring () override;
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTMDrainage* _GetDTMDrainage () override;
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTMVolume* _GetDTMVolume() override;
         virtual DTMStatusInt _GetBoundary (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointArray& ret) override;
         virtual DTMStatusInt _CalculateSlopeArea (double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints) override;
         virtual DTMStatusInt _GetTransformDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& transformedDTM, TransformCR transformation) override;
@@ -262,6 +263,8 @@ struct BcDTM : RefCounted<TerrainModel::IDTM>
         virtual DTMStatusInt _DrapeLinear (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) override;
 
         virtual bool _ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint) override;
+
+        virtual bool _DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector) override;
 
         // End IDTMDraping Implementation
 

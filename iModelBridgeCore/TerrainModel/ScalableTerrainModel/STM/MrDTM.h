@@ -6,7 +6,7 @@
 |       $Date: 2012/01/06 16:30:13 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -167,6 +167,7 @@ template <class INDEXPOINT> class MrDTM : public MrDTMBase
         virtual IDTMDrapingP     _GetDTMDraping() override;
         virtual IDTMDrainageP    _GetDTMDrainage() override;
         virtual IDTMContouringP  _GetDTMContouring() override;
+        virtual IDTMVolumeP     _GetDTMVolume() override;
 
         virtual DTMStatusInt     _GetRange(DRange3dR range) override;
         virtual BcDTMP           _GetBcDTM() override;
@@ -242,6 +243,7 @@ template <class POINT> class MrDTMSingleResolutionPointIndexView : public RefCou
         virtual IDTMDrapingP     _GetDTMDraping() override;
         virtual IDTMDrainageP    _GetDTMDrainage() override;
         virtual IDTMContouringP  _GetDTMContouring() override;
+        virtual IDTMVolumeP     _GetDTMVolume() override;
 
         virtual DTMStatusInt     _GetRange(DRange3dR range) override;
         virtual BcDTMP           _GetBcDTM() override;

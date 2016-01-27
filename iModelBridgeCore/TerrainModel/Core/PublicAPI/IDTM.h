@@ -121,6 +121,8 @@ virtual DTMStatusInt _DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int num
 
 virtual bool _ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint) = 0;
 
+virtual bool _DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector) = 0;
+
 /*__PUBLISH_SECTION_START__*/
 public:
 //! Drapes a point onto the DTM.
@@ -139,7 +141,23 @@ BENTLEYDTM_EXPORT DTMStatusInt DrapePoint (double* elevation, double* slope, dou
 //! @return DTM status.
 BENTLEYDTM_EXPORT DTMStatusInt DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints);
 
+//! Projects point on the DTM
+//! @param[out]  pointOnDTM           Projected point.
+//! @param[in]  w2vMap           The world to view map
+//! @param[in]  testPoint           The point to project.
 BENTLEYDTM_EXPORT bool ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint);
+
+//! Drapes a point onto the DTM along a vector.
+//! @param[out] endPt           Projected point.   
+//! @param[out] slope           Slope on the point. Can be null.     
+//! @param[out] aspect          Aspect on the point. Can be null.     
+//! @param[out] triangle        Triangle around the point. Can be null.     
+//! @param[out] drapeType       Type of draping. Can be null. (should be declared as an DTMEnum !!!).    
+//! @param[in]  point           The point to drape.
+//! @param[in]  directionOfVector           Direction of vector.
+//! @param[in]  slopeOfVector           Slope of vector.
+//! @return true if there is an intersection with the mesh.
+BENTLEYDTM_EXPORT bool DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector);
 };
 
 /*=================================================================================**//**
@@ -241,6 +259,48 @@ BENTLEYDTM_EXPORT DTMStatusInt ContourAtPoint (DTMPointArray& ret, DPoint3dCR pt
 //! @return DTM status.
 BENTLEYDTM_EXPORT DTMStatusInt ContourAtPoint (DTMPointArray& ret, DPoint3dCR pt,double contourInterval, DTMContourSmoothing smoothOption, double smoothFactor, int smoothDensity);
 };
+
+
+/*=================================================================================**//**
+* Interface implemented by DTM engines.
+* @bsiclass                                                     Bentley Systems
++===============+===============+===============+===============+===============+======*/
+struct IDTMVolume abstract
+{
+/*__PUBLISH_SECTION_END__*/
+/*__OPUBLISH_CLASS_VIRTUAL__*/
+protected:
+    virtual DTMStatusInt _ComputeCutFillVolume(double* cut, double* fill, double* volume, PolyfaceHeaderCP mesh) = 0;
+    virtual DTMStatusInt _ComputeCutFillVolumeClosed(double* cut, double* fill, double* volume, PolyfaceHeaderCP mesh) = 0;
+    virtual bool _RestrictVolumeToRegion(uint64_t regionId) = 0;
+    virtual void _RemoveAllRestrictions() = 0;
+
+/*__PUBLISH_SECTION_START__*/
+public:
+//! Compute volume between DTM and mesh.
+//! @param[out] cut       Cut volume. Can be null.     
+//! @param[out] fill           Fill volume. Can be null.     
+//! @param[out] volume          Total volume. Can be null.        
+//! @param[in]  mesh           Compute volume between DTM and this surface mesh.
+//! @return DTM status.
+    BENTLEYDTM_EXPORT DTMStatusInt ComputeCutFillVolume(double* cut, double* fill, double* volume, PolyfaceHeaderCP mesh);
+
+//! Compute volume between DTM and closed mesh.
+//! @param[out] cut       Cut volume. Can be null.     
+//! @param[out] fill           Fill volume. Can be null.     
+//! @param[out] volume          Total volume. Can be null.        
+//! @param[in]  mesh           Compute volume between DTM and this surface mesh.
+//! @return DTM status.
+    BENTLEYDTM_EXPORT DTMStatusInt ComputeCutFillVolumeClosed(double* cut, double* fill, double* volume, PolyfaceHeaderCP mesh);
+
+//! Clips volume computations to a given region.     
+//! @param[in]  regionId        ID of the region to consider
+//! @return true if the region is found within the DTM.
+BENTLEYDTM_EXPORT bool RestrictVolumeToRegion(uint64_t regionId);
+
+//! Use the whole DTM for further computations.     
+BENTLEYDTM_EXPORT void RemoveAllRestrictions();
+};
 /*__PUBLISH_SECTION_END__*/
 
 //__PUBLISH_SECTION_START__
@@ -255,6 +315,7 @@ struct IDTM abstract : IRefCounted
 protected: 
 virtual int64_t _GetPointCount () = 0;
 virtual IDTMDraping* _GetDTMDraping () = 0;
+virtual IDTMVolume* _GetDTMVolume() = 0;
 virtual IDTMDrainage* _GetDTMDrainage () = 0;
 virtual IDTMContouring* _GetDTMContouring () = 0;
 virtual DTMStatusInt _GetRange(DRange3dR range) = 0;
@@ -282,6 +343,10 @@ BENTLEYDTM_EXPORT IDTMDrainage* GetDTMDrainage ();
 //! Gets the contouring interface.
 //! @return The contouring interface.
 BENTLEYDTM_EXPORT IDTMContouring* GetDTMContouring ();
+
+//! Gets the draping interface.
+//! @return The draping interface.
+BENTLEYDTM_EXPORT IDTMVolume* GetDTMVolume();
 //__PUBLISH_SECTION_START__
 
 //! Gets the range of the DTM.

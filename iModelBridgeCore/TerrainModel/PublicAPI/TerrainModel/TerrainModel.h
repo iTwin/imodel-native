@@ -2,7 +2,7 @@
 |
 |   $Source: PublicAPI/TerrainModel/TerrainModel.h $
 |
-| $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+| $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -129,6 +129,7 @@ TERRAINMODEL_TYPEDEFS (IDTMDrapedLinePoint)
 TERRAINMODEL_TYPEDEFS (IDTMDraping)
 TERRAINMODEL_TYPEDEFS (IDTMDrainage)
 TERRAINMODEL_TYPEDEFS (IDTMContouring)
+TERRAINMODEL_TYPEDEFS (IDTMVolume)
 TERRAINMODEL_TYPEDEFS (TMTransformHelper)
 //__PUBLISH_SECTION_START__
 

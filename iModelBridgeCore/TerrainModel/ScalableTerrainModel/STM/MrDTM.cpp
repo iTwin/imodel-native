@@ -6,7 +6,7 @@
 |       $Date: 2012/01/06 16:30:15 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
   
@@ -933,6 +933,12 @@ template <class POINT> IDTMContouringP  MrDTM<POINT>::_GetDTMContouring()
     return 0;
     }
 
+template <class POINT> IDTMVolumeP MrDTM<POINT>::_GetDTMVolume()
+    {
+    assert(0);
+    return 0; //Not supported yet
+    }
+
 template <class POINT> DTMStatusInt MrDTM<POINT>::_CalculateSlopeArea (double&, double&, const DPoint3d*, int)
     {
     return DTM_ERROR;
@@ -1364,6 +1370,12 @@ template <class POINT> IDTMDrainageP    MrDTMSingleResolutionPointIndexView<POIN
     }
 
 template <class POINT> IDTMContouringP  MrDTMSingleResolutionPointIndexView<POINT>::_GetDTMContouring()
+    {
+    assert(0);
+    return 0;
+    }
+
+template <class POINT> IDTMVolumeP MrDTMSingleResolutionPointIndexView<POINT>::_GetDTMVolume()
     {
     assert(0);
     return 0;
