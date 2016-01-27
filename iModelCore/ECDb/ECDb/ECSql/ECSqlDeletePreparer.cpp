@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlDeletePreparer.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -87,90 +87,85 @@ RelationshipClassEndTableMapCR classMap
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets
-(
-    NativeSqlSnippets& deleteSqlSnippets,
-    ECSqlPrepareContext& ctx,
-    DeleteStatementExp const& exp,
-    ClassNameExp const& classNameExp
-    )
+ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& deleteSqlSnippets, ECSqlPrepareContext& ctx, DeleteStatementExp const& exp, ClassNameExp const& classNameExp)
     {
-    auto status = ECSqlExpPreparer::PrepareClassRefExp(deleteSqlSnippets.m_classNameNativeSqlSnippet, ctx, classNameExp);
+    ECSqlStatus status = ECSqlExpPreparer::PrepareClassRefExp(deleteSqlSnippets.m_classNameNativeSqlSnippet, ctx, classNameExp);
     if (!status.IsSuccess())
         return status;
 
-
-    //WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] WHERE (%s))
-    if (auto whereClauseExp = exp.GetWhereClauseExp())
+    WhereExp const* whereExp = exp.GetWhereClauseExp();
+    if (whereExp != nullptr)
         {
+        //WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] WHERE (%s))
         NativeSqlBuilder whereClause;
         //Following generate optimized WHERE depending on what was accessed in WHERE class of delete. It will avoid uncessary
-        auto const & currentClassMap = classNameExp.GetInfo().GetMap();
-        if (!currentClassMap.IsMappedToSingleTable())
+        IClassMap const& currentClassMap = classNameExp.GetInfo().GetMap();
+        if (currentClassMap.IsMappedToSingleTable())
             {
-            auto propertyAccessed =  whereClauseExp->Find(Exp::Type::PropertyName, true);
-            auto& primaryTable = currentClassMap.GetPrimaryTable();
-            auto& secondaryTable = currentClassMap.GetJoinedTable();
+            status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, whereExp);
+            if (!status.IsSuccess())
+                return status;
 
-            auto const tableBeenAccessed = whereClauseExp->GetReferencedTables();
-            bool referencedRootOfJoinedTable = (tableBeenAccessed.find(&primaryTable) != tableBeenAccessed.end());
-            bool referencedJoinedTable = (tableBeenAccessed.find(&secondaryTable) != tableBeenAccessed.end());
-            bool hasOnlyECInstanceId = false;
-            if (propertyAccessed.size() == 1)
-                hasOnlyECInstanceId = strcmp(static_cast<PropertyNameExp const*>(propertyAccessed.front())->GetPropertyName(), ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME) == 0;
+            deleteSqlSnippets.m_whereClauseNativeSqlSnippet = whereClause;
+            }
+        else
+            {
+            std::vector<Exp const*> propertyExpsInWhereClause =  whereExp->Find(Exp::Type::PropertyName, true);
+            ECDbSqlTable& primaryTable = currentClassMap.GetPrimaryTable();
+            ECDbSqlTable& joinedTable = currentClassMap.GetJoinedTable();
 
-            if (hasOnlyECInstanceId)
+            /* WIP Needs fixes as the prepare picks the joined table when it should actually pick the primary table
+            std::set<ECDbSqlTable const*> tablesReferencedByWhereClause = whereExp->GetReferencedTables();
+            const bool primaryTableIsReferencedByWhereClause = (tablesReferencedByWhereClause.find(&primaryTable) != tablesReferencedByWhereClause.end());
+            const bool joinedTableIsReferencedByWhereClause = (tablesReferencedByWhereClause.find(&joinedTable) != tablesReferencedByWhereClause.end());
+            ECSqlSystemProperty systemPropExp = ECSqlSystemProperty::ECInstanceId;
+            
+            if (propertyExpsInWhereClause.size() == 1 && 
+                static_cast<PropertyNameExp const*>(propertyExpsInWhereClause[0])->TryGetSystemProperty(systemPropExp) && systemPropExp == ECSqlSystemProperty::ECInstanceId)
                 {
-                ctx.GetCurrentScopeR().SetExtendedOption(ECSqlPrepareContext::ExpScope::ExtendOptions::SkipTableAliasWhenPreparingDeleteWhereClause, true);
-                status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, whereClauseExp);
+                //WhereClause only consists of ECInstanceId exp
+                ctx.GetCurrentScopeR().SetExtendedOption(ECSqlPrepareContext::ExpScope::ExtendedOptions::SkipTableAliasWhenPreparingDeleteWhereClause);
+                status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, whereExp);
                 if (!status.IsSuccess())
                     return status;
 
                 deleteSqlSnippets.m_whereClauseNativeSqlSnippet = whereClause;
                 }
-            else if (referencedRootOfJoinedTable && !referencedJoinedTable)
+            else if (primaryTableIsReferencedByWhereClause && !joinedTableIsReferencedByWhereClause)
                 {
-                //do not modifiy where
-                status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, whereClauseExp);
+                //only primary table is involved in where clause -> do not modify where
+                status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, whereExp);
                 if (!status.IsSuccess())
                     return status;
 
                 deleteSqlSnippets.m_whereClauseNativeSqlSnippet = whereClause;
                 }
-            else
+            else*/
                 {
-                status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, whereClauseExp);
+                status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, whereExp);
                 if (!status.IsSuccess())
                     return status;
 
-                auto joinedTableId = secondaryTable.GetFilteredColumnFirst(ColumnKind::ECInstanceId);
-                auto parentOfjoinedTableId = primaryTable.GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+                ECDbSqlColumn const* joinedTableIdCol = joinedTable.GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+                ECDbSqlColumn const* primaryTableIdCol = primaryTable.GetFilteredColumnFirst(ColumnKind::ECInstanceId);
                 NativeSqlBuilder snippet;
                 snippet.AppendFormatted(
                     " WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] %s) ",
-                    parentOfjoinedTableId->GetName().c_str(),
+                    primaryTableIdCol->GetName().c_str(),
                     primaryTable.GetName().c_str(),
-                    parentOfjoinedTableId->GetName().c_str(),
+                    primaryTableIdCol->GetName().c_str(),
                     primaryTable.GetName().c_str(),
-                    secondaryTable.GetName().c_str(),
-                    secondaryTable.GetName().c_str(),
-                    joinedTableId->GetName().c_str(),
+                    joinedTable.GetName().c_str(),
+                    joinedTable.GetName().c_str(),
+                    joinedTableIdCol->GetName().c_str(),
                     primaryTable.GetName().c_str(),
-                    parentOfjoinedTableId->GetName().c_str(),
+                    primaryTableIdCol->GetName().c_str(),
                     whereClause.ToString()
                     );
 
                 deleteSqlSnippets.m_whereClauseNativeSqlSnippet = snippet;
                 deleteSqlSnippets.m_whereClauseNativeSqlSnippet.ImportParameters(whereClause);
                 }
-            }
-        else 
-            {
-            status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, whereClauseExp);
-            if (!status.IsSuccess())
-                return status;
-
-            deleteSqlSnippets.m_whereClauseNativeSqlSnippet = whereClause;
             }
         }
 

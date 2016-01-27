@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECDb_Tests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -216,7 +216,7 @@ TEST (ECDbTests, TwoConnectionsWithBusyRetryHandler)
 
 
 //---------------------------------------------------------------------------------------
-// @bsiclass                                     Muhammad Hassan                  11/14
+// @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbTests, getAndChangeBriefcaseIdForDb)
     {
@@ -231,6 +231,9 @@ TEST(ECDbTests, getAndChangeBriefcaseIdForDb)
     ASSERT_FALSE(previousBriefcaseId == changedBriefcaseId);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Muhammad Hassan                  11/14
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbTests, getAndChangeGUIDForDb)
     {
     ECDbTestProject testProject;

@@ -272,13 +272,6 @@ void ClassUpdaterImpl::Initialize(bvector<uint32_t>& propertiesToBind)
         if (ecProperty->GetIsStruct())
             continue;
 
-        if (ecProperty->GetIsNavigation())
-            {
-            //WIP_NAVPROP Not implemented yet
-            continue;
-            }
-
-
         if (!m_needsCalculatedPropertyEvaluation)
             m_needsCalculatedPropertyEvaluation = ECInstanceAdapterHelper::IsOrContainsCalculatedProperty (*ecProperty);
 

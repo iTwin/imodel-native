@@ -35,10 +35,10 @@ BentleyStatus AddRowToRtree(ECDbR ecdb, ECInstanceId const& id, DRange2dCR bound
 BentleyStatus CreateRangeTreeTestProject(Utf8StringR ecdbPath)
     {
     Utf8CP testSchemaXml =
-        "<ECSchema schemaName=\"RangeTreeTest\" nameSpacePrefix=\"rt\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "<ECSchema schemaName=\"RangeTreeTest\" nameSpacePrefix=\"rt\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
         "  <ECSchemaReference version='01.12' prefix='bsca' name ='Bentley_Standard_CustomAttributes' />"
         "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-        "  <ECClass typeName=\"DemoRTree\" isDomainClass='True'>"
+        "  <ECEntityClass typeName=\"DemoRTree\" >"
         "       <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.01.00'>"
         "                <MapStrategy>"
@@ -51,10 +51,10 @@ BentleyStatus CreateRangeTreeTestProject(Utf8StringR ecdbPath)
         "       <ECProperty typeName='double' propertyName='MaxX' />"
         "       <ECProperty typeName='double' propertyName='MinY' />"
         "       <ECProperty typeName='double' propertyName='MaxY' />"
-        "  </ECClass>"
-        "  <ECClass typeName='DemoData' isDomainClass='True'>"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='DemoData' isDomainClass='True'>"
         "       <ECProperty propertyName='Name' typeName='string' />"
-        "  </ECClass>"
+        "  </ECEntityClass>"
         "</ECSchema>";
 
     ECDbTestProject testProject;
