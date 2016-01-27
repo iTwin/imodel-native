@@ -102,8 +102,8 @@ public:
         }
     bool IsReadonly() const
         {
-        size_t sourceCount = GetECDbMap().GetTableCountOnRelationshipEnd(GetConstraintMap(ECRelationshipEnd::ECRelationshipEnd_Source).GetRelationshipConstraint());
-        size_t targetCount = GetECDbMap().GetTableCountOnRelationshipEnd(GetConstraintMap(ECRelationshipEnd::ECRelationshipEnd_Target).GetRelationshipConstraint());
+        size_t sourceCount = GetECDbMap().GetTableCountOnRelationshipEnd(GetConstraintMap(ECN::ECRelationshipEnd::ECRelationshipEnd_Source).GetRelationshipConstraint());
+        size_t targetCount = GetECDbMap().GetTableCountOnRelationshipEnd(GetConstraintMap(ECN::ECRelationshipEnd::ECRelationshipEnd_Target).GetRelationshipConstraint());
         return sourceCount > 1 || targetCount > 1;
         }
     };

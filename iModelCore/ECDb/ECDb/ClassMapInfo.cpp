@@ -249,7 +249,6 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
                         return ERROR;
                         }
 
-                    //WIP: Can only commented out when prepare issues with picking the right table are solved.
                     m_ecInstanceIdColumnName.Sprintf("%s%s", rootClassMap->GetClass().GetName().c_str(), m_ecInstanceIdColumnName.c_str());
                     }
                 }

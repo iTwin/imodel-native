@@ -28,14 +28,6 @@ ECSqlStatus ECSqlDeletePreparer::Prepare (ECSqlPrepareContext& ctx, DeleteStatem
     if (!stat.IsSuccess())
         return stat;
 
-    if (auto relationship = dynamic_cast<RelationshipClassMapCP>(&classMap))
-        {
-        if (relationship->IsReadonly())
-            {
-            return ECSqlStatus::Error;
-            }
-        }
-
     if (classMap.GetClassMapType () == ClassMap::Type::RelationshipEndTable)
         stat = PrepareForEndTableRelationship (ctx, deleteNativeSqlSnippets, static_cast<RelationshipClassEndTableMapCR> (classMap));
     else
