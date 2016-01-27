@@ -21,8 +21,10 @@ struct ExtendedTypeTests : ECTestFixture
             "<ECSchema schemaName=\"ExtendedTypeTesting\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
             "    <ECClass typeName=\"ClassA\" displayLabel=\"Class B\" isDomainClass=\"True\">"
             "        <ECProperty propertyName=\"knownExtendedType\" extendedTypeName=\"color\" typeName=\"string\" />"
-            "        <ECProperty propertyName=\"unknownExtendedType\" extendedTypeName=\"banana\" typeName=\"int\" />"
+            "        <ECProperty propertyName = \"unknownExtendedType\" extendedTypeName=\"postalcode\" typeName=\"inst\" />"
+            "        <ECArrayProperty propertyName=\"arrayExtendedType\" extendedTypeName=\"banana\" typeName=\"int\" />"
             "        <ECProperty propertyName=\"withoutExtendedType\" typeName=\"int\" />"
+            "        <ECProperty propertyName=\"arrayWithoutExtendedType\" typeName=\"int\" />"
             "    </ECClass>"
             "</ECSchema>";
 
@@ -38,6 +40,71 @@ struct ExtendedTypeTests : ECTestFixture
         EXPECT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString (schema, schemaXMLString.c_str (), *schemaContext));
 
         return schema;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+     * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static void VerifyExtendedTypeOnProperty
+        (
+        Utf8String expectedExtendedTypeName,
+        Utf8String propertyName,
+        ECClassP ecClass
+        )
+        {
+        ECPropertyP ecProperty = ecClass->GetPropertyP(propertyName);
+        EXPECT_FALSE(ecProperty == nullptr) << "Property " + propertyName + " not found on " + ecClass->GetName() + ".";
+
+        Utf8String extendedTypeName;
+        if (ecProperty->GetIsPrimitive())
+            {
+            PrimitiveECPropertyP primitiveProperty = ecProperty->GetAsPrimitivePropertyP();
+            EXPECT_FALSE(primitiveProperty == nullptr) << "Property " + extendedTypeName + " is not an PrimitiveECProperty.";
+
+            extendedTypeName = primitiveProperty->GetExtendedTypeName();
+            }
+        else if (ecProperty->GetIsPrimitiveArray())
+            {
+            ArrayECPropertyP arrayProperty = ecProperty->GetAsArrayPropertyP();
+            EXPECT_FALSE(arrayProperty == nullptr) << "Property " + extendedTypeName + " is not an ArrayECProperty.";
+
+            extendedTypeName = arrayProperty->GetExtendedTypeName();
+            }
+        EXPECT_EQ(expectedExtendedTypeName, extendedTypeName) << "Unexpected extended type name " + extendedTypeName +
+            " expected: '" + expectedExtendedTypeName + "'";
+        }
+
+    template<typename PROPERTY_TYPE>
+    static void VerifyExtendedTypeSet
+        (
+        PROPERTY_TYPE &ecProperty,
+        Utf8CP extendedTypeName,
+        bool useReset
+        )
+        {        
+        Utf8String propertyName = ecProperty->GetName();
+        if (ECObjectsStatus::Success != ecProperty->SetExtendedTypeName(extendedTypeName))
+            {
+            FAIL() << "Couldn't set the ExtendedTypeName on property " + propertyName;
+            }
+
+        EXPECT_TRUE(ecProperty->HasExtendedType()) << "Property " + propertyName + " was expected to return true on HasExtendedType.";
+
+        if (!useReset)
+            {
+            if (ECObjectsStatus::Success != ecProperty->SetExtendedTypeName(nullptr))
+                {
+                FAIL() << "Couldn't set the ExtendedTypeName to nullptr on property " + propertyName;
+                }
+            }
+        else
+            {
+            if (!ecProperty->RemoveExtendedTypeName())
+                {
+                FAIL() << "Couldn't remove the ExtendedTypeName on property " + propertyName;
+                }
+            }
+        EXPECT_FALSE(ecProperty->HasExtendedType()) << "Property " + propertyName + " was expected to return false on HasExtendedType.";
         }
     };
     
@@ -55,13 +122,21 @@ TEST_F(ExtendedTypeTests, ReadSchemaWithExtendedTypes)
     ECPropertyP property2 = classPtr->GetPropertyP("unknownExtendedType");
     EXPECT_FALSE(property2 == nullptr) << "Property unknownExtendedType not found on ClassA.";
 
-    ECPropertyP property3 = classPtr->GetPropertyP("withoutExtendedType");
-    EXPECT_FALSE(property3 == nullptr) << "Property withoutExtendedType not found on ClassA.";
+    ECPropertyP property3 = classPtr->GetPropertyP("arrayExtendedType");
+    EXPECT_FALSE(property3 == nullptr) << "Property arrayExtendedType not found on ClassA.";
+
+    ECPropertyP property4 = classPtr->GetPropertyP("withoutExtendedType");
+    EXPECT_FALSE(property4 == nullptr) << "Property withoutExtendedType not found on ClassA.";
+
+    ECPropertyP property5 = classPtr->GetPropertyP("arrayWithoutExtendedType");
+    EXPECT_FALSE(property5 == nullptr) << "Property arrayWithoutExtendedType not found on ClassA.";
 
     // Checks if the ECProperties are flagged correctly as extended type properties
     EXPECT_TRUE(property1->HasExtendedType())  << "Property knownExtendedType was expected to return true on HasExtendedType.";
-    EXPECT_TRUE(property2->HasExtendedType())  << "Property unknownExtendedType was expected to return true on HasExtendedType.";
-    EXPECT_FALSE(property3->HasExtendedType()) << "Property withoutExtendedType was expected to return false on HasExtendedType.";
+    EXPECT_TRUE(property2->HasExtendedType())  << "Property arrayExtendedType was expected to return true on HasExtendedType.";
+    EXPECT_TRUE(property3->HasExtendedType())  << "Property arrayExtendedType was expected to return true on HasExtendedType.";
+    EXPECT_FALSE(property4->HasExtendedType()) << "Property withoutExtendedType was expected to return false on HasExtendedType.";
+    EXPECT_FALSE(property4->HasExtendedType()) << "Property arrayWithoutExtendedType was expected to return false on HasExtendedType.";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -72,6 +147,7 @@ TEST_F(ExtendedTypeTests, WriteSchemaWithExtendedTypes)
     ECSchemaPtr schemaPtr;
     ECSchema::CreateSchema(schemaPtr, "TestSchema", 1, 0);
 
+    // Writing
     ECEntityClassP classPtr;
     schemaPtr.get()->CreateEntityClass(classPtr, "ClassA");
     PrimitiveECPropertyP propertyPtr;
@@ -81,23 +157,24 @@ TEST_F(ExtendedTypeTests, WriteSchemaWithExtendedTypes)
         FAIL() << "Couldn't set the ExtendedTypeName on property knownExtendedType";
         }
 
+    ArrayECPropertyP arrayPropertyPtr;
+    classPtr->CreateArrayProperty(arrayPropertyPtr, "arrayExtendedType", PrimitiveType::PRIMITIVETYPE_Integer);
+    if (ECObjectsStatus::Success != arrayPropertyPtr->SetExtendedTypeName("banana"))
+        {
+        FAIL() << "Couldn't set the ExtendedTypeName on property arrayExtendedType";
+        }
+
     WString resultString;
     schemaPtr->WriteToXmlString(resultString);
 
+    // Verification (Reading)
     ECSchemaPtr resultSchema;
     ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
     ECSchema::ReadFromXmlString(resultSchema, resultString.c_str(), *schemaContext);
 
     ECClassP resultClassPtr = schemaPtr.get()->GetClassP("ClassA");
-
-    ECPropertyP property1 = resultClassPtr->GetPropertyP("knownExtendedType");
-    EXPECT_FALSE(property1 == nullptr) << "Property knownExtendedType not found on ClassA.";
-
-    PrimitiveECPropertyP primitiveProperty = property1->GetAsPrimitivePropertyP();
-    EXPECT_FALSE(primitiveProperty == nullptr) << "Property knownExtendedType is not an PrimitiveECProperty.";
-
-    Utf8String extendedTypeName = primitiveProperty->GetExtendedTypeName();
-    EXPECT_EQ("color", extendedTypeName) << "Unexpected extended type name " << extendedTypeName << "expected: 'color'";
+    VerifyExtendedTypeOnProperty("color",  "knownExtendedType", resultClassPtr);
+    VerifyExtendedTypeOnProperty("banana", "arrayExtendedType", resultClassPtr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -108,14 +185,8 @@ TEST_F(ExtendedTypeTests, GetKnownExtendedType)
     ECSchemaPtr schemaPtr = CreateTestSchema();
     ECClassP classPtr = schemaPtr->GetClassP("ClassA");
 
-    ECPropertyP property1 = classPtr->GetPropertyP("knownExtendedType");
-    EXPECT_FALSE(property1 == nullptr) << "Property knownExtendedType not found on ClassA.";
-
-    PrimitiveECPropertyP primitiveProperty = property1->GetAsPrimitivePropertyP();
-    EXPECT_FALSE(primitiveProperty == nullptr) << "Property knownExtendedType is not an PrimitiveECProperty.";
-
-    Utf8String extendedTypeName = primitiveProperty->GetExtendedTypeName();
-    EXPECT_EQ("color", extendedTypeName) << "Unexpected extended type name " << extendedTypeName << "expected: 'color'";
+    VerifyExtendedTypeOnProperty("color", "knownExtendedType", classPtr);
+    VerifyExtendedTypeOnProperty("banana", "arrayExtendedType", classPtr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -129,35 +200,15 @@ TEST_F(ExtendedTypeTests, SetExtendedTypeToNull)
     ECEntityClassP classPtr;
     schemaPtr.get()->CreateEntityClass(classPtr, "ClassA");
 
-    PrimitiveECPropertyP colorPropertyPtr, resetPropertyPtr;
-    classPtr->CreatePrimitiveProperty(colorPropertyPtr, "colorProperty");
-    classPtr->CreatePrimitiveProperty(resetPropertyPtr, "resetProperty");
+    PrimitiveECPropertyP colorPropertyPtr;
+    classPtr->CreatePrimitiveProperty(colorPropertyPtr, "colorProperty", PrimitiveType::PRIMITIVETYPE_Integer);
+    PrimitiveECPropertyP resetPropertyPtr;
+    classPtr->CreatePrimitiveProperty(resetPropertyPtr, "resetProperty", PrimitiveType::PRIMITIVETYPE_Integer);
+    ArrayECPropertyP arrayPropertyPtr;
+    classPtr->CreateArrayProperty(arrayPropertyPtr, "arrayProperty", PrimitiveType::PRIMITIVETYPE_Integer);
 
-    if (ECObjectsStatus::Success != colorPropertyPtr->SetExtendedTypeName("color"))
-        {
-        FAIL() << "Couldn't set the ExtendedTypeName on property colorProperty";
-        }
-
-    if (ECObjectsStatus::Success != resetPropertyPtr->SetExtendedTypeName("reset"))
-        {
-        FAIL() << "Couldn't set the ExtendedTypeName on property resetProperty";
-        }
-
-    EXPECT_TRUE(colorPropertyPtr->HasExtendedType()) << "Property colorProperty was expected to return true on HasExtendedType.";
-    EXPECT_TRUE(resetPropertyPtr->HasExtendedType()) << "Property resetProperty was expected to return true on HasExtendedType.";
-   
-    
-    if (ECObjectsStatus::Success != colorPropertyPtr->SetExtendedTypeName(nullptr))
-        {
-        FAIL() << "Couldn't set the ExtendedTypeName to nullptr on property colorProperty";
-        }
-    if (!resetPropertyPtr->RemoveExtendedTypeName())
-        {
-        FAIL() << "Couldn't set the ExtendedTypeName to nullptr on property resetProperty";
-        }
-    EXPECT_FALSE(colorPropertyPtr->HasExtendedType()) << "Property colorProperty was expected to return true on HasExtendedType.";
-    EXPECT_FALSE(resetPropertyPtr->HasExtendedType()) << "Property resetProperty was expected to return true on HasExtendedType.";
-    
+    VerifyExtendedTypeSet(colorPropertyPtr, "color", false);
+    VerifyExtendedTypeSet(resetPropertyPtr, "reset", true);
+    VerifyExtendedTypeSet(arrayPropertyPtr, "array", false);
     }
-    
 END_BENTLEY_ECN_TEST_NAMESPACE

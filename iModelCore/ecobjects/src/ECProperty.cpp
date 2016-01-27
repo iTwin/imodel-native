@@ -446,10 +446,8 @@ ECObjectsStatus PrimitiveECProperty::SetExtendedTypeName(Utf8CP extendedTypeName
     else if (!m_extendedTypeName.Equals(extendedTypeName))
         {
         m_extendedTypeName = extendedTypeName;
-        InvalidateClassLayout();
         }
-    
-        return ECObjectsStatus::Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -904,6 +902,11 @@ SchemaReadStatus ArrayECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaRea
         return SchemaReadStatus::Success;
         }
 
+    if (BEXML_Success == propertyNode.GetAttributeStringValue(value, EXTENDED_TYPE_NAME_ATTRIBUTE))
+        {
+        this->SetExtendedTypeName(value.c_str());
+        }
+
     return SchemaReadStatus::Success;
     }
 
@@ -936,6 +939,11 @@ SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlV
             elementName = EC_STRUCTARRAYPROPERTY_ELEMENT;
         }
 
+    if (this->HasExtendedType())
+        {
+        additionalAttributes[EXTENDED_TYPE_NAME_ATTRIBUTE] = m_extendedTypeName.c_str();
+        }
+
     SchemaWriteStatus status = T_Super::_WriteXml (xmlWriter, elementName, ecXmlVersionMajor, &additionalAttributes);
     if (status != SchemaWriteStatus::Success || m_forSupplementation) // If this property was created during supplementation, don't serialize it
         return status;
@@ -950,6 +958,30 @@ SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlV
 
         
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ArrayECProperty::SetExtendedTypeName(Utf8CP extendedTypeName)
+    {
+    if (Utf8String::IsNullOrEmpty(extendedTypeName))
+        {
+        m_extendedTypeName = Utf8String(); // Resets String
+        }
+    else if (!m_extendedTypeName.Equals(extendedTypeName))
+        {
+        m_extendedTypeName = extendedTypeName;
+        }
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ArrayECProperty::RemoveExtendedTypeName()
+    {
+    return ECObjectsStatus::Success == this->SetExtendedTypeName(nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**

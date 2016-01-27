@@ -914,8 +914,9 @@ private:
     uint32_t                                    m_minOccurs;
     uint32_t                                    m_maxOccurs;    // D-106653 we store this as read from the schema, but all arrays are considered to be of unbounded size
     mutable CalculatedPropertySpecificationPtr  m_calculatedSpec;
-    PrimitiveType   m_primitiveType;
-    mutable IECTypeAdapter* m_cachedMemberTypeAdapter;
+    PrimitiveType                               m_primitiveType;
+    mutable IECTypeAdapter*                     m_cachedMemberTypeAdapter;
+    Utf8String                                  m_extendedTypeName;
 
 protected:
     ArrayKind               m_arrayKind;
@@ -937,6 +938,7 @@ protected:
     virtual Utf8String                  _GetTypeName () const override;
     virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
+    virtual bool                        _HasExtendedType() const override { return !m_extendedTypeName.empty(); }
     virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const override;
     virtual bool                                _IsCalculated() const override;
     virtual bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) override;
@@ -964,6 +966,12 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetMaxOccurs(uint32_t value);
     //! Gets the Maximum number of array members.
     ECOBJECTS_EXPORT uint32_t           GetMaxOccurs() const;
+    //! Gets the extended type of this ECProperty
+    Utf8StringCR GetExtendedTypeName() const { return m_extendedTypeName; }
+    //! Sets the Name of the Extended Type of this property.
+    ECOBJECTS_EXPORT ECObjectsStatus SetExtendedTypeName(Utf8CP extendedTypeName);
+    //! Resets the extended type on this property.
+    ECOBJECTS_EXPORT bool RemoveExtendedTypeName();
 
 //__PUBLISH_SECTION_END__
     //! Because of a legacy bug GetMaxOccurs always returns "unbounded". For components that need to persist

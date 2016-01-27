@@ -73,7 +73,6 @@ public:
     void                                RemoveSchema(ECSchemaR schema);
     ECSchemaPtr         GetFoundSchema (SchemaKeyCR key, SchemaMatchType matchType);
 
-    ECOBJECTS_EXPORT void               AddConversionSchemaPath(WCharCP schemaPath);
     ECOBJECTS_EXPORT ECObjectsStatus    AddConversionSchema(ECSchemaR schema);
     void                                RemoveConversionSchema(ECSchemaR schema);
     ECSchemaPtr                         LocateConversionSchemaFor(Utf8CP schemaName, int versionMajor, int versionMinor);
@@ -118,6 +117,10 @@ public:
     //! Adds a file path that should be used to search for a matching schema name
     //! @param[in] path Path to the directory where schemas can be found
     ECOBJECTS_EXPORT void AddSchemaPath (WCharCP path);
+
+    //! Adds a file path that should be used to search for a matching conversion schemas
+    //! @param[in] path Path to the directory where conversion schemas can be found
+    ECOBJECTS_EXPORT void AddConversionSchemaPath(WCharCP path);
 
     //! Adds a culture string that will be appended to the existing search paths
     //! when looking for localization supplemental schemas.
