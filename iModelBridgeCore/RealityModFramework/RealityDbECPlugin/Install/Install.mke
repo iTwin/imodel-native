@@ -2,7 +2,7 @@
 #
 #  $Source: RealityDbECPlugin/Install/Install.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -64,6 +64,9 @@ $(wxsFilesDir)Product_Directories.wxs : $(_MakeFilePath)Product_Directories.wxs
 $(wxsFilesDir)Product_Files.wxs : $(_MakeFilePath)Product_Files.wxs
         $(LinkFirstDepToFirstTarget)
 
+$(wxsFilesDir)Product_MergeModules.wxs : $(_MakeFilePath)Product_MergeModules.wxs
+        $(LinkFirstDepToFirstTarget)
+        
 $(wxsFilesDir)Product_SystemSearch.wxs : $(_MakeFilePath)Product_SystemSearch.wxs
         $(LinkFirstDepToFirstTarget)
 
@@ -105,8 +108,8 @@ always:
 LANGUAGE = $(MAIN_INSTALLER_LANGUAGE)
 INSTALLER_OUTPUT_FILENAME     = $(INSTALLER_NAME)
 INSTALLER_OUTPUT_FILEDIR      = $(o)
-INSTALLER_SOURCE_LIST         = $(wxsFilesDir)Product.wxs $(wxsFilesDir)Product_Directories.wxs $(wxsFilesDir)Product_Files.wxs $(wxsFilesDir)Product_SystemSearch.wxs $(wxsFilesDir)Product_Registry.wxs $(wxsFilesDir)Product_CustomActions.wxs
-INSTALLER_OBJECT_LIST         = $(o)Product.wixobj $(o)Product_Directories.wixobj $(o)Product_Files.wixobj $(o)Product_SystemSearch.wixobj $(o)Product_Registry.wixobj $(o)Product_CustomActions.wixobj
+INSTALLER_SOURCE_LIST         = $(wxsFilesDir)Product.wxs $(wxsFilesDir)Product_Directories.wxs $(wxsFilesDir)Product_Files.wxs $(wxsFilesDir)Product_MergeModules.wxs $(wxsFilesDir)Product_SystemSearch.wxs $(wxsFilesDir)Product_Registry.wxs $(wxsFilesDir)Product_CustomActions.wxs
+INSTALLER_OBJECT_LIST         = $(o)Product.wixobj $(o)Product_Directories.wixobj $(o)Product_Files.wixobj $(o)Product_MergeModules.wixobj $(o)Product_SystemSearch.wixobj $(o)Product_Registry.wixobj $(o)Product_CustomActions.wixobj
 INSTALLER_USE_NETFXEXTENSION  = 1
 INSTALLER_TOOLSET_VERSION     = 3.10.2103.0
 INSTALLER_IMAGE_BANNER        = $(MISCDEV_DIR)eula/winstall/bentleyInstallBannerWithShortLogo.bmp

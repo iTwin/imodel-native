@@ -2,7 +2,7 @@
 <!--
 #  $Source: RealityDbECPlugin/Install/Product.wxs $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 -->
 <?include Defines.wxi?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
@@ -97,7 +97,8 @@
           <ComponentGroupRef Id="CG_Config" />
           <ComponentGroupRef Id="CG_AppFiles" />
           <ComponentGroupRef Id="CG_BentleyFiles" />
-          <ComponentGroupRef Id="CG_Registry" />          
+          <ComponentGroupRef Id="CG_Registry" />
+          <MergeRef Id="Microsoft_VC140_CRT" />
 
           
           <!--<Feature Id="ProductShortcuts" Level="1" Title="!(loc.FeatureTitleProductShortcuts)" Description="!(loc.FeatureDescriptionProductShortcuts)" Absent="allow" AllowAdvertise="no" Display='collapse'>

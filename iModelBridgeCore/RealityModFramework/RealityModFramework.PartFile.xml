@@ -117,6 +117,7 @@
     <Part Name="RealityDbECPluginInstaller" BMakeFile="RealityDbECPlugin/Install/Install.mke">
       <RequiredRepository>bsitools-wix_3.10.2103.0</RequiredRepository>
       <RequiredRepository>Miscdev-Eula</RequiredRepository>
+      <RequiredRepository>Mergemodule-Microsoft_VC_14.0</RequiredRepository>
       <Bindings>
         <Files ProductDirectoryName="ApplicationInstallRoot" Required="true" IfNotPresent="Warn">Delivery/Setup_RealityDbECPlugin.msi</Files>
       </Bindings>

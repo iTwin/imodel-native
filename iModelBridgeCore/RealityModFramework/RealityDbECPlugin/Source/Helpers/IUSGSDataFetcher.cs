@@ -9,6 +9,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using Bentley.ECSystem.Configuration;
 
 namespace IndexECPlugin.Source.Helpers
     {
@@ -54,7 +55,8 @@ namespace IndexECPlugin.Source.Helpers
         {
         //TODO : Add outputFormat=JSON in WebReq???
         const string WebReqCategories = "http://viewer.nationalmap.gov/tnmaccess/api/searchCategories?";
-        const string WebReq = "http://viewer.nationalmap.gov/tnmaccess/api/searchProducts?bbox=_bbox&q=&start=&end=&dateType=&datasets=_datasets&prodFormats=_prodFormats&prodExtents=&polyCode=&polyType=&max=200&offset=0";
+        const string WebReq = "http://viewer.nationalmap.gov/tnmaccess/api/searchProducts?bbox=_bbox&q=&start=&end=&dateType=&datasets=_datasets&prodFormats=_prodFormats&prodExtents=&polyCode=&polyType=&max=_maxResults&offset=0";
+        string MaxResults = ConfigurationRoot.GetAppSetting("RECPMaxResultsUSGS") ?? "400";
         //const int USGSIdLenght = 24;
         private readonly List<UsgsAPICategory> m_categoryTable = new List<UsgsAPICategory> 
         { //new UsgsAPICategory(){Title = "Elevation Products (3DEP)", SubTitle = "2 arc-second DEM - Alaska", Format = "none", Priority = 0, Type = "", SbDatasetTag = "National Elevation Dataset (NED) Alaska 2 arc-second"},
@@ -326,7 +328,7 @@ namespace IndexECPlugin.Source.Helpers
                 //    continue;
                 //}
 
-                string readyToSend = WebReq.Replace("_bbox", bbox).Replace("_datasets", req.Dataset).Replace("_prodFormats", req.Format).Replace(' ', '+');
+                string readyToSend = WebReq.Replace("_bbox", bbox).Replace("_datasets", req.Dataset).Replace("_prodFormats", req.Format).Replace(' ', '+').Replace("_maxResults", MaxResults);
 
                 try
                     {

@@ -246,11 +246,17 @@ namespace IndexECPlugin.Source
                         }
                     }
                 }
-            catch ( System.Data.Common.DbException )
+            catch ( System.Data.Common.DbException ex)
                 {
                 //For now, we intercept all of these sql exceptions to prevent any "revealing" messages about the sql command.
                 //It would be nice to parse the exception to make it easier to pinpoint the problem for the user.
-                //Log.Logger.error(String.Format("Query {0} aborted. The database server has encountered a problem.", query.ID));
+                Log.Logger.error(String.Format("Query {0} aborted. DbException message : {1}", query.ID, ex.Message));
+                Exception innerEx = ex.InnerException;
+                while (innerEx != null)
+                    {
+                    Log.Logger.error(String.Format("Inner error message : {0}", ex.Message));
+                    innerEx = innerEx.InnerException;
+                    }
                 throw new UserFriendlyException("The server has encountered a problem while processing your request. Please verify the syntax of your request. If the problem persists, the server may be down");
                 }
             catch ( Exception e )
