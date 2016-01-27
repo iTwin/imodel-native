@@ -100,21 +100,13 @@ struct ProxyRepositoryAdmin : Dgn::DgnPlatformLib::Host::RepositoryAdmin
     RepositoryAdmin* m_impl;
 
     ProxyRepositoryAdmin() : m_impl(nullptr) { }
-    virtual ILocksManagerPtr _CreateLocksManager(DgnDbR db) const override
+    virtual IBriefcaseManagerPtr _CreateBriefcaseManager(DgnDbR db) const override
         {
-        return nullptr != m_impl ? m_impl->_CreateLocksManager(db) : T_Super::_CreateLocksManager(db);
+        return nullptr != m_impl ? m_impl->_CreateBriefcaseManager(db) : T_Super::_CreateBriefcaseManager(db);
         }
-    virtual ILocksServerP _GetLocksServer(DgnDbR db) const override
+    virtual IRepositoryManagerP _GetRepositoryManager(DgnDbR db) const override
         {
-        return nullptr != m_impl ? m_impl->_GetLocksServer(db) : T_Super::_GetLocksServer(db);
-        }
-    virtual IDgnCodesManagerPtr _CreateCodesManager(DgnDbR db) const override
-        {
-        return nullptr != m_impl ? m_impl->_CreateCodesManager(db) : T_Super::_CreateCodesManager(db);
-        }
-    virtual IDgnCodesServerP _GetCodesServer(DgnDbR db) const override
-        {
-        return nullptr != m_impl ? m_impl->_GetCodesServer(db) : T_Super::_GetCodesServer(db);
+        return nullptr != m_impl ? m_impl->_GetRepositoryManager(db) : T_Super::_GetRepositoryManager(db);
         }
 };
 

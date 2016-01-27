@@ -196,7 +196,7 @@ BentleyStatus DgnGeometryParts::InsertGeometryPart(DgnGeometryPartR geomPart)
     if (!geomPart.GetCode().IsValid())
         geomPart.SetCode(geomPart.GenerateDefaultCode());
 
-    if (RepositoryStatus::Success != GetDgnDb().Codes().ReserveCode(geomPart.GetCode()))
+    if (RepositoryStatus::Success != GetDgnDb().BriefcaseManager().ReserveCode(geomPart.GetCode()))
         return BentleyStatus::ERROR;    // NEEDSWORK return codes...
 
     DbGeometryPartsWriter writer(GetDgnDb());
@@ -215,7 +215,7 @@ BentleyStatus DgnGeometryParts::InsertGeometryPart(DgnGeometryPartR geomPart)
 //---------------------------------------------------------------------------------------
 BentleyStatus DgnGeometryParts::UpdateGeometryPart(DgnGeometryPartR geomPart)
     {
-    if (RepositoryStatus::Success != GetDgnDb().Codes().ReserveCode(geomPart.GetCode()))
+    if (RepositoryStatus::Success != GetDgnDb().BriefcaseManager().ReserveCode(geomPart.GetCode()))
         return BentleyStatus::ERROR;    // NEEDSWORK return codes...
 
     DbGeometryPartsWriter writer(GetDgnDb());

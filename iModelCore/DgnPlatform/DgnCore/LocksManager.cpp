@@ -438,7 +438,6 @@ void LockRequest::ToJson(JsonValueR value) const
         lock.ToJson(locks[i++]);
 
     value[JSON_Locks] = locks;
-    value[JSON_Options] = static_cast<uint32_t>(m_options);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -448,8 +447,7 @@ bool LockRequest::FromJson(JsonValueCR value)
     {
     Clear();
     JsonValueCR locks = value[JSON_Locks];
-    JsonValueCR opts = value[JSON_Options];
-    if (!locks.isArray() || !opts.isConvertibleTo(Json::uintValue))
+    if (!locks.isArray())
         return false;
 
     DgnLock lock;

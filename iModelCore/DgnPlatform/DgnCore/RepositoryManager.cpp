@@ -19,9 +19,9 @@ private:
     virtual Response _ProcessRequest(Request&) override { return Response(RepositoryStatus::Success); }
     virtual RepositoryStatus _Demote(DgnLockSet&, DgnCodeSet const&) override { return RepositoryStatus::Success; }
     virtual RepositoryStatus _Relinquish(Resources) override { return RepositoryStatus::Success; }
-    virtual DgnDbStatus _LockElement(DgnElementCR, DgnCodeCR, DgnModelId) override { return RepositoryStatus::Success; }
-    virtual DgnDbStatus _LockModel(DgnModelCR, LockLevel, DgnCodeCR) override { return RepositoryStatus::Success; }
-    virtual DgnDbStatus _LockDb(LockLevel, DgnCodeCR) override { return RepositoryStatus::Success; }
+    virtual DgnDbStatus _LockElement(DgnElementCR, DgnCodeCR, DgnModelId) override { return DgnDbStatus::Success; }
+    virtual DgnDbStatus _LockModel(DgnModelCR, LockLevel, DgnCodeCR) override { return DgnDbStatus::Success; }
+    virtual DgnDbStatus _LockDb(LockLevel, DgnCodeCR) override { return DgnDbStatus::Success; }
     virtual RepositoryStatus _ReserveCode(DgnCodeCR) override { return RepositoryStatus::Success; }
     virtual RepositoryStatus _QueryLockLevel(LockLevel& level, LockableId lockId) override { level = LockLevel::Exclusive; return RepositoryStatus::Success; }
     virtual RepositoryStatus _OnFinishRevision(DgnRevision const&) override { return RepositoryStatus::Success; }
@@ -29,7 +29,7 @@ private:
     virtual void _OnModelInserted(DgnModelId) override { }
     virtual RepositoryStatus _QueryLockLevels(DgnLockSet& levels, LockableIdSet& lockIds) override
         {
-        for (auto const& id : lockId)
+        for (auto const& id : lockIds)
             levels.insert(DgnLock(id, LockLevel::Exclusive));
 
         return RepositoryStatus::Success;
@@ -81,7 +81,6 @@ private:
     RepositoryStatus Pull();
     DbResult Save() { return GetLocalDb().SaveChanges(); }
     void Cull(Request& req) { Cull(req.Codes()); Cull(req.Locks().GetLockSet()); }
-    void Insert(Request const& req) { Insert(req.Codes()); Insert(req.Locks()); }
 
     // Codes...
     void Insert(DgnCodeSet const& codes);
@@ -121,7 +120,7 @@ IBriefcaseManagerPtr DgnPlatformLib::Host::RepositoryAdmin::_CreateBriefcaseMana
 #define CODE_Values "(" CODE_Columns ")"
 #define STMT_InsertCode "INSERT INTO " TABLE_Codes " " CODE_Values " Values (?,?,?)"
 #define STMT_SelectCodesInSet "SELECT " CODE_Columns " FROM " TABLE_Codes " WHERE InVirtualSet(@vset," CODE_Columns ")"
-#define STMT_DeleteCodesInSet "DELETE FROM " TABLE_COdes " WHERE InVirtualSet(@vset," CODE_Columns ")"
+#define STMT_DeleteCodesInSet "DELETE FROM " TABLE_Codes " WHERE InVirtualSet(@vset," CODE_Columns ")"
 
 enum CodeColumn { AuthorityId=0, NameSpace, Value };
 
@@ -196,7 +195,7 @@ RepositoryStatus BriefcaseManager::Pull()
     DgnLockSet locks;
     DgnCodeSet codes;
     auto server = GetRepositoryManager();
-    status = nullptr != server ? server->QueryHeldResources(locks, codes, GetDgnDb()) : RepositoryStatus::ServerUnavailable;
+    auto status = nullptr != server ? server->QueryHeldResources(locks, codes, GetDgnDb()) : RepositoryStatus::ServerUnavailable;
     if (RepositoryStatus::Success != status)
         return status;
 
@@ -528,7 +527,7 @@ RepositoryStatus BriefcaseManager::PromoteDependentElements(LockRequestCR usedLo
         }
 
     // NB: Do not cull - we still hold exclusive lock on model which implies exclusive lock on all elems within it. Want to explicitly acquire those locks.
-    return AcquireLocks(elemRequest, false).GetStatus();
+    return AcquireLocks(elemRequest, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -549,6 +548,7 @@ RepositoryStatus BriefcaseManager::AcquireLocks(LockRequestR locks, bool cull)
     if (nullptr == server)
         return RepositoryStatus::ServerUnavailable;
 
+    Request req;
     std::swap(locks, req.Locks());
     auto result = server->ProcessRequest(req, GetDgnDb()).Result();
     std::swap(locks, req.Locks());
@@ -559,7 +559,7 @@ RepositoryStatus BriefcaseManager::AcquireLocks(LockRequestR locks, bool cull)
         Save();
         }
 
-    return response;
+    return result;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -601,7 +601,7 @@ void BriefcaseManager::Cull(DgnLockSet& locks)
     while (BE_SQLITE_ROW == stmt->Step())
         {
         LockableId id(static_cast<LockableType>(stmt->GetValueInt(0)), BeInt64Id(stmt->GetValueUInt64(1)));
-        locks.Remove(id);
+        locks.erase(locks.find(DgnLock(id, LockLevel::Exclusive)));
         }
     }
 
@@ -622,10 +622,11 @@ IBriefcaseManager::Response BriefcaseManager::_ProcessRequest(Request& req)
     if (nullptr == mgr)
         return Response(RepositoryStatus::ServerUnavailable);
 
-    auto response = mgr->ProcessRequest(req, *this);
+    auto response = mgr->ProcessRequest(req, GetDgnDb());
     if (RepositoryStatus::Success == response.Result())
         {
-        Insert(req);
+        Insert(req.Codes());
+        Insert(req.Locks(), true);
         Save();
         }
 
@@ -648,7 +649,7 @@ public:
 
     RepositoryStatus GetStatus() const { return m_status; }
     DgnCodeSet const& GetUsedCodes() const { return m_usedCodes; }
-    LockRequestR GetUsedLocks() const { return m_usedLocks; }
+    LockRequestR GetUsedLocks() { return m_usedLocks; }
 
     RepositoryStatus ClearTxns();
 };
@@ -691,7 +692,7 @@ ReleaseContext::ReleaseContext(DgnDbR db, bool wantLocks, bool wantCodes) : m_db
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ReleaseContext::ClearTxns()
+RepositoryStatus ReleaseContext::ClearTxns()
     {
     // NEEDSWORK: We need a way to persistently record that undo is not permitted beyond this point.
     // For now, disallow redo.
@@ -721,7 +722,7 @@ RepositoryStatus BriefcaseManager::_Relinquish(Resources which)
         return context.GetStatus();
     else if (!context.GetUsedLocks().IsEmpty())
         return RepositoryStatus::LockUsed;
-    else if (!context.GetUsedCodes().IsEmpty())
+    else if (!context.GetUsedCodes().empty())
         return RepositoryStatus::CodeUsed;
 
     DbResult result = wantLocks ? GetLocalDb().ExecuteSql("DELETE FROM " TABLE_Locks) : BE_SQLITE_OK;
@@ -735,7 +736,7 @@ RepositoryStatus BriefcaseManager::_Relinquish(Resources which)
         return RepositoryStatus::SyncError;
         }
 
-    stat = server>Relinquish(which);
+    stat = server->Relinquish(which, GetDgnDb());
     if (RepositoryStatus::Success == stat)
         stat = context.ClearTxns();
 
@@ -779,7 +780,7 @@ RepositoryStatus BriefcaseManager::_Demote(DgnLockSet& locks, DgnCodeSet const& 
         else if (curLevel <= lock.GetLevel())
             iter = locks.erase(iter);
         else
-            ++iter
+            ++iter;
         }
 
     bool wantLocks = !locks.empty(),
@@ -893,7 +894,7 @@ RepositoryStatus BriefcaseManager::_QueryLockLevel(LockLevel& level, LockableId 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus BriefcaseManager::_QueryLockLevels(DgnLockSet& levels, LockableIdSet& lockIds)
+RepositoryStatus BriefcaseManager::_QueryLockLevels(DgnLockSet& levels, LockableIdSet& ids)
     {
     // Our local DB was populated from the server...there's no need to contact server again
     RepositoryStatus stat;
@@ -985,7 +986,7 @@ void IBriefcaseManager::OnModelInserted(DgnModelId id) { _OnModelInserted(id); }
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T> static DgnDbStatus processRequest(T const& obj, LockLevel level, DgnCodeCR code, IBriefcaseManagerR mgr, DgnModelId originalModelId=DgnModelId())
     {
-    IBriefcaseManager::Request reql
+    IBriefcaseManager::Request req;
     req.Locks().Insert(obj, level);
     bool wantCode = code.IsValid() && !code.IsEmpty();
     if (wantCode)
@@ -1056,7 +1057,7 @@ RepositoryStatus IBriefcaseManager::_ReserveCode(DgnCodeCR code)
     {
     DgnCodeSet codes;
     codes.insert(code);
-    return ReserveCodes(codes).GetResult();
+    return ReserveCodes(codes).Result();
     }
 
 /*---------------------------------------------------------------------------------**//**

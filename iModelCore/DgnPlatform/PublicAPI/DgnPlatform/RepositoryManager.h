@@ -131,12 +131,12 @@ public:
 
     RepositoryStatus QueryLockLevel(LockLevel& level, LockableId lockId) { return _QueryLockLevel(level, lockId); }
 
-    RepositoryStatus QueryLockLevels(dgnLockSet& lockLevels, LockableIdSet& lockIds) { return _QueryLockLevels(lockLevels, lockIds); }
+    RepositoryStatus QueryLockLevels(DgnLockSet& lockLevels, LockableIdSet& lockIds) { return _QueryLockLevels(lockLevels, lockIds); }
 
     LockLevel QueryLockLevel(LockableId lockId) { LockLevel level; return RepositoryStatus::Success == QueryLockLevel(level, lockId) ? level : LockLevel::None; }
     LockLevel QueryLockLevel(DgnDbCR db) { return QueryLockLevel(LockableId(db)); }
     LockLevel QueryLockLevel(DgnElementCR el) { return QueryLockLevel(LockableId(el)); }
-    LockLevel QueryLockLevel(DgnModelCR model) { return QueyLockLevel(LockableId(model)); }
+    LockLevel QueryLockLevel(DgnModelCR model) { return QueryLockLevel(LockableId(model)); }
 
     //! Reformulate a denied request such that it does not contain any of the locks in the "denied" set.
     //! If the request contains locks which are dependent upon other locks in the denied set (e.g., elements within a model for which the model lock was not granted),
@@ -198,6 +198,7 @@ public:
     RepositoryStatus Demote(DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db) { return _Demote(locks, codes, db); }
     RepositoryStatus Relinquish(Resources which, DgnDbR db) { return _Relinquish(which, db); }
     RepositoryStatus QueryStates(DgnOwnedLockSet& lockOwnership, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes) { return _QueryStates(lockOwnership, codeStates, locks, codes); }
+    RepositoryStatus QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnDbR db) { return _QueryHeldResources(locks, codes, db); }
 
     DGNPLATFORM_EXPORT RepositoryStatus QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes);
     DGNPLATFORM_EXPORT RepositoryStatus QueryLockOwnerships(DgnOwnedLockSet& ownership, LockableIdSet const& locks);
