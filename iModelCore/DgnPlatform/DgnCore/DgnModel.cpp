@@ -1229,7 +1229,7 @@ AxisAlignedBox3d GeometricModel::_QueryModelRange() const
                         "g.BBoxLow_X,g.BBoxLow_Y,g.BBoxLow_Z,"
                         "g.BBoxHigh_X,g.BBoxHigh_Y,g.BBoxHigh_Z))))"
         " FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e," DGN_TABLE(DGN_CLASSNAME_SpatialElement) " As g"
-        " WHERE e.ModelId=? AND e.Id=g.Id");
+        " WHERE e.ModelId=? AND e.Id=g.ElementId");
 
     stmt.BindId(1, GetModelId());
     auto rc = stmt.Step();

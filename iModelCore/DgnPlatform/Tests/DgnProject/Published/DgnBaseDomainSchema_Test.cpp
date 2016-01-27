@@ -55,7 +55,7 @@ TEST_F(DgnBaseDomainSchemaTests, ValidateDomainSchemaDDL)
     // dgn_AnnotationElement
         {
         Utf8String ddl = GetDDL(DGN_TABLE(DGN_CLASSNAME_AnnotationElement));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([Id]) REFERENCES [dgn_Element] ([Id]) ON DELETE CASCADE"));
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([ElementId]) REFERENCES [dgn_Element] ([Id]) ON DELETE CASCADE"));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([CategoryId]) REFERENCES [dgn_Element] ([Id]) ON DELETE RESTRICT"));
         }
 
@@ -69,21 +69,21 @@ TEST_F(DgnBaseDomainSchemaTests, ValidateDomainSchemaDDL)
     // dgn_DrawingElement
         {
         Utf8String ddl = GetDDL(DGN_TABLE(DGN_CLASSNAME_DrawingElement));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([Id]) REFERENCES [dgn_Element] ([Id]) ON DELETE CASCADE"));
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([ElementId]) REFERENCES [dgn_Element] ([Id]) ON DELETE CASCADE"));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([CategoryId]) REFERENCES [dgn_Element] ([Id]) ON DELETE RESTRICT")); 
         }
 
     // dgn_SheetElement
         {
         Utf8String ddl = GetDDL(DGN_TABLE(DGN_CLASSNAME_SheetElement));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([Id]) REFERENCES [dgn_Element] ([Id]) ON DELETE CASCADE"));
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([ElementId]) REFERENCES [dgn_Element] ([Id]) ON DELETE CASCADE"));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([CategoryId]) REFERENCES [dgn_Element] ([Id]) ON DELETE RESTRICT")); 
         }
 
     // Validate dgn_SpatialElement DDL
         {
         Utf8String ddl = GetDDL(DGN_TABLE(DGN_CLASSNAME_SpatialElement));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([Id]) REFERENCES [dgn_Element] ([Id]) ON DELETE CASCADE"));
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([ElementId]) REFERENCES [dgn_Element] ([Id]) ON DELETE CASCADE"));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([CategoryId]) REFERENCES [dgn_Element] ([Id]) ON DELETE RESTRICT")); 
         }
 

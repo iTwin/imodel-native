@@ -20,30 +20,45 @@ USING_NAMESPACE_BENTLEY_EC
 // @bsiclass                                                 Ramanujam.Raman   10/15
 //=======================================================================================
 struct ChangeSummaryTestFixture : ChangeTestFixture
+{
+DEFINE_T_SUPER(ChangeTestFixture)
+protected:
+    void ModifyElement(DgnElementId elementId);
+    void DeleteElement(DgnElementId elementId);
+
+    void DumpChangeSummary(ChangeSummary const& changeSummary, Utf8CP label);
+    void DumpSqlChanges(DgnDbCR dgnDb, Changes const& sqlChanges, Utf8CP label);
+
+    void GetChangeSummaryFromCurrentTransaction(ChangeSummary& changeSummary);
+    void GetChangeSummaryFromSavedTransactions(ChangeSummary& changeSummary);
+
+    bool ChangeSummaryContainsInstance(ChangeSummary const& changeSummary, ECInstanceId instanceId, Utf8CP schemaName, Utf8CP className, DbOpcode dbOpcode);
+    BentleyStatus ImportECInstance(ECInstanceKey& instanceKey, IECInstanceR instance, DgnDbR dgndb);
+
+    int GetChangeSummaryInstanceCount(BeSQLite::EC::ChangeSummaryCR changeSummary, Utf8CP qualifiedClassName) const;
+
+public:
+    ChangeSummaryTestFixture() : T_Super(L"ChangeSummaryTest.dgndb") {}
+};
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    12/2015
+//---------------------------------------------------------------------------------------
+int ChangeSummaryTestFixture::GetChangeSummaryInstanceCount(ChangeSummaryCR changeSummary, Utf8CP qualifiedClassName) const
     {
-    DEFINE_T_SUPER(ChangeTestFixture)
-    protected:
-        WCharCP m_testFileName = L"ChangeSummaryTest.dgndb";
+    Utf8PrintfString ecSql("SELECT COUNT(*) FROM %s WHERE IsChangedInstance(?, GetECClassId(), ECInstanceId)", qualifiedClassName);
 
-        void CreateDgnDb() { T_Super::CreateDgnDb(m_testFileName); }
-        void OpenDgnDb() { T_Super::OpenDgnDb(m_testFileName); }
+    ECSqlStatement stmt;
+    ECSqlStatus ecSqlStatus = stmt.Prepare(*m_testDb, ecSql.c_str());
+    BeAssert(ecSqlStatus.IsSuccess());
 
-        void ModifyElement(DgnElementId elementId);
-        void DeleteElement(DgnElementId elementId);
+    stmt.BindInt64(1, (int64_t) &changeSummary);
 
-        void DumpChangeSummary(ChangeSummary const& changeSummary, Utf8CP label);
-        void DumpSqlChanges(DgnDbCR dgnDb, Changes const& sqlChanges, Utf8CP label);
+    DbResult ecSqlStepStatus = stmt.Step();
+    BeAssert(ecSqlStepStatus == BE_SQLITE_ROW);
 
-        void GetChangeSummaryFromCurrentTransaction(ChangeSummary& changeSummary);
-        void GetChangeSummaryFromSavedTransactions(ChangeSummary& changeSummary);
-
-        bool ChangeSummaryContainsInstance(ChangeSummary const& changeSummary, ECInstanceId instanceId, Utf8CP schemaName, Utf8CP className, DbOpcode dbOpcode);
-        BentleyStatus ImportECInstance(ECInstanceKey& instanceKey, IECInstanceR instance, DgnDbR dgndb);
-
-    public:
-        virtual void SetUp() override {}
-        virtual void TearDown() override { if (m_testDb.IsValid()) m_testDb->SaveChanges(); }
-    };
+    return stmt.GetValueInt(0);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
@@ -209,9 +224,12 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
     ChangeSummary changeSummary(*m_testDb);
 
     m_testDb->SaveChanges();
-    InsertModel();
-    InsertCategory();
-    DgnElementId elementId = InsertElement(0, 0, 0);
+    
+    DgnModelId csModelId = InsertSpatialModel("ChangeSummaryModel");
+    SpatialModelPtr csModel = m_testDb->Models().Get<SpatialModel>(csModelId);
+    DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
+
+    DgnElementId elementId = InsertPhysicalElement(*csModel, csCategoryId, 0, 0, 0);
     GetChangeSummaryFromCurrentTransaction(changeSummary);
 
     DumpChangeSummary(changeSummary, "ChangeSummary after inserts");
@@ -294,7 +312,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
                 TargetECInstanceId;NULL;0:2
     */
     EXPECT_EQ(9, changeSummary.MakeInstanceIterator().QueryCount());
-    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(m_testModel->GetModelId().GetValueUnchecked()), DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel, DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(csModelId.GetValueUnchecked()), DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel, DbOpcode::Insert));
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(m_testCategoryId.GetValueUnchecked()), DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Category, DbOpcode::Insert));
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(elementId.GetValueUnchecked()), DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement, DbOpcode::Insert));
 
@@ -374,9 +392,11 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
 
     ChangeSummary changeSummary(*m_testDb);
 
-    InsertModel();
-    InsertCategory();
-    DgnElementId elementId = InsertElement(0, 0, 0);
+    DgnModelId csModelId = InsertSpatialModel("ChangeSummaryModel");
+    SpatialModelPtr csModel = m_testDb->Models().Get<SpatialModel>(csModelId);
+    DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
+
+    DgnElementId elementId = InsertPhysicalElement(*csModel, csCategoryId, 0, 0, 0);
 
     m_testDb->SaveChanges();
 
@@ -609,9 +629,11 @@ TEST_F(ChangeSummaryTestFixture, ValidateInstanceIterator)
     {
     CreateDgnDb();
 
-    InsertModel();
-    InsertCategory();
-    InsertElement(0, 0, 0);
+    DgnModelId csModelId = InsertSpatialModel("ChangeSummaryModel");
+    SpatialModelPtr csModel = m_testDb->Models().Get<SpatialModel>(csModelId);
+    DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
+
+    DgnElementId elementId = InsertPhysicalElement(*csModel, csCategoryId, 0, 0, 0);
 
     ChangeSummary changeSummary(*m_testDb);
     GetChangeSummaryFromCurrentTransaction(changeSummary);
@@ -1304,10 +1326,12 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
     {
     CreateDgnDb();
 
-    InsertModel();
-    InsertCategory();
-    DgnElementId parentElementId = InsertElement(0, 0, 0);
-    DgnElementId childElementId = InsertElement(1, 1, 1);
+    DgnModelId csModelId = InsertSpatialModel("ChangeSummaryModel");
+    SpatialModelPtr csModel = m_testDb->Models().Get<SpatialModel>(csModelId);
+    DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
+
+    DgnElementId parentElementId = InsertPhysicalElement(*csModel, csCategoryId, 0, 0, 0);
+    DgnElementId childElementId = InsertPhysicalElement(*csModel, csCategoryId, 1, 1, 1);
 
     m_testDb->SaveChanges();
 
@@ -1390,13 +1414,14 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
 
     ChangeSummary changeSummary(*m_testDb);
 
-    InsertModel();
-    InsertCategory();
+    DgnModelId csModelId = InsertSpatialModel("ChangeSummaryModel");
+    SpatialModelPtr csModel = m_testDb->Models().Get<SpatialModel>(csModelId);
+    DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
 
     bset<DgnElementId> insertedElements;
     for (int ii = 0; ii < 10; ii++)
         {
-        DgnElementId elementId = InsertElement(ii, 0, 0);
+        DgnElementId elementId = InsertPhysicalElement(*csModel, csCategoryId, ii, 0, 0);
         insertedElements.insert(elementId);
         }
 
@@ -1441,8 +1466,11 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
 TEST_F(ChangeSummaryTestFixture, QueryMultipleSessions)
     {
     CreateDgnDb();
-    InsertModel();
-    InsertCategory();
+
+    DgnModelId csModelId = InsertSpatialModel("ChangeSummaryModel");
+    SpatialModelPtr csModel = m_testDb->Models().Get<SpatialModel>(csModelId);
+    DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
+
     m_testDb->SaveChanges();
     CloseDgnDb();
 
@@ -1454,7 +1482,7 @@ TEST_F(ChangeSummaryTestFixture, QueryMultipleSessions)
 
         for (int jj = 0; jj < nTransactionsPerSession; jj++)
             {
-            InsertElement(ii, jj, 0);
+            InsertPhysicalElement(*csModel, csCategoryId, ii, jj, 0);
             m_testDb->SaveChanges();
             }
 
