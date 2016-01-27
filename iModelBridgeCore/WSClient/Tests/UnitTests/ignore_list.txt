@@ -32,15 +32,13 @@ FileUtilTests.TruncateFilePath_PathIsFolder_Error
 # Fail due to DgnDb06 changes 
 #----------------------------------------------------------------------------------------
 
-# MetaSchema import issues in ECDb/EC3
-CachingDataSourceTests*
-DataSourceCacheTests.UpdateSchemas_DefaultUsedSchemasPassed_Success
-
 # Graphite05x EDDb upgrade is not yet supported or will not be. Waiting for requirements for any upgrades needed to be implemented.
 DataSourceCacheUpgradeTests*
 
 # ECSchema update in ECDb is not yet supported
 DataSourceCacheTests.UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable
+CachingDataSourceTests.UpdateSchemas_*
+CachingDataSourceTests.OpenOrCreate_SchemaPathNotPassedAndServerRetursMetaSchema_GetsAllSchemasAndMetaSchemaFromServer
 
 # Fails when using existing ECDb and opening it. Works fine when using freshly opened ECDb
 ECDbAdapterTests.DeleteInstances_DeletingParentThatHoldsTwoChildrenThatHoldSubChild_DeletesParentAndChildrenAndSubChild
