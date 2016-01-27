@@ -41,10 +41,10 @@ BETEST_TC_SETUP(ExampleTestGroup)
 
     //  The group's seed file is essentially the same as the root seed file, but with a different relative path.
     //  Note that we must put our group seed file in a group-specific sub-directory
-    s_seedFileInfo = rootSeedInfo;
-    s_seedFileInfo.fileName.SetName(L"ExampleTestGroup/Test.dgndb");
+    ExampleTestGroup::s_seedFileInfo = rootSeedInfo;
+    ExampleTestGroup::s_seedFileInfo.fileName.SetName(L"ExampleTestGroup/Test.dgndb");
 
-    DgnDbPtr db = DgnDbTestUtils::OpenSeedDbCopy(rootSeedInfo.fileName, s_seedFileInfo.fileName); // our seed starts as a copy of the root seed
+    DgnDbPtr db = DgnDbTestUtils::OpenSeedDbCopy(rootSeedInfo.fileName, ExampleTestGroup::s_seedFileInfo.fileName); // our seed starts as a copy of the root seed
     ASSERT_TRUE(db.IsValid());
     
     // Suppose that all of the tests in this group will work with a certain setup, such as working woth two spatial models. 
@@ -67,7 +67,7 @@ BETEST_TC_TEARDOWN(ExampleTestGroup)
     // base class to detect and throw an error if two groups try to use a directory of the same name.
     // Don't worry about stale data. The test runner will clean out everything at the start of the program.
     // You can empty the directory, if you want to save space.
-    DgnDbTestUtils::EmptySubDirectory(s_seedFileInfo.fileName.GetDirectoryName());
+    DgnDbTestUtils::EmptySubDirectory(ExampleTestGroup::s_seedFileInfo.fileName.GetDirectoryName());
     }
 
 //---------------------------------------------------------------------------------------
