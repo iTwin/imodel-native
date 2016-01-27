@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/VolumeElement.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -423,7 +423,7 @@ void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnViewportR viewp
     Statement stmt;
     Utf8CP sql = "SELECT r.ElementId FROM " DGN_VTABLE_RTree3d " AS r, " DGN_TABLE(DGN_CLASSNAME_Element) " AS e, " DGN_TABLE(DGN_CLASSNAME_SpatialElement) " AS g " \
         " WHERE r.MaxX > ? AND r.MinX < ?  AND r.MaxY > ? AND r.MinY < ? AND r.MaxZ > ? AND r.MinZ < ?" \
-        " AND e.Id=r.ElementId AND g.Id=r.ElementId AND e.Id != ?" \
+        " AND e.Id=r.ElementId AND g.ElementId=r.ElementId AND e.Id != ?" \
         " AND InVirtualSet (?,e.ModelId,g.CategoryId)";
     DbResult result = stmt.Prepare (dgnDb, sql);
     BeAssert (result == BE_SQLITE_OK);

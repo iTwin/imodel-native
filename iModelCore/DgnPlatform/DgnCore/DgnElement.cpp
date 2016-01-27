@@ -2395,7 +2395,7 @@ DgnDbStatus ElementGeomData::WriteGeomStream(DgnElementCR el, Utf8CP tableName) 
     // Ideally we would do this in BindTo(), but ECSql does not support binding a zero blob.
     Utf8String sql("UPDATE ");
     sql.append(tableName);
-    sql.append(" SET " GEOM_Geometry "=? WHERE Id=?");
+    sql.append(" SET " GEOM_Geometry "=? WHERE ElementId=?");
     CachedStatementPtr stmt = pool.GetStatement(sql.c_str());
     stmt->BindId(2, el.GetElementId());
     stmt->BindZeroBlob(1, snappyTo.GetCompressedSize());
