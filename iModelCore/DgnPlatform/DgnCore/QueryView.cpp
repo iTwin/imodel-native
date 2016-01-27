@@ -21,7 +21,6 @@
 #   define DEBUG_PRINTF(fmt, ...)
 #endif
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -69,6 +68,12 @@ bool QueryViewController::FrustumChanged(DgnViewportCR vp) const
 //---------------------------------------------------------------------------------------
 void QueryViewController::QueueQuery(DgnViewportR viewport, UpdatePlan const& plan)
     {
+#if defined (DEBUG_QUERY)
+    static bool s_blockQuery = false;
+    if (s_blockQuery)
+        return;
+#endif
+
     m_startQueryFrustum = viewport.GetFrustum(DgnCoordSystem::World, true);
     m_saveQueryFrustum.Invalidate();
 
@@ -266,14 +271,9 @@ ViewController::FitComplete QueryViewController::_ComputeFitRange(DRange3dR rang
 Utf8String QueryViewController::_GetRTreeMatchSql(DgnViewportR) 
     {
     return Utf8String("SELECT r.ElementId FROM "
-           DGN_VTABLE_RTree3d " AS r WHERE r.ElementId MATCH DGN_rTree(@matcher)");
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    return Utf8String("SELECT r.ElementId FROM "
            DGN_VTABLE_RTree3d " AS r, " DGN_TABLE(DGN_CLASSNAME_Element) " AS e, " DGN_TABLE(DGN_CLASSNAME_SpatialElement) " AS g "
            "WHERE r.ElementId MATCH DGN_rTree(@matcher) AND e.Id=r.ElementId AND g.Id=r.ElementId"
            " AND InVirtualSet(@vSet,e.ModelId,g.CategoryId)");
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -304,13 +304,11 @@ void QueryViewController::BindModelAndCategory(StatementR stmt, RTreeTester& mat
     BeAssert(0 != matcherIdx);
     stmt.BindInt64(matcherIdx, (int64_t) &matcher);
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     int vSetIdx = stmt.GetParameterIndex("@vSet");
     if (0 == vSetIdx)
         return;
 
     stmt.BindVirtualSet(vSetIdx, *this);
-#endif
     }
 
 //---------------------------------------------------------------------------------------

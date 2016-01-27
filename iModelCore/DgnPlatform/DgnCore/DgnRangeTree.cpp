@@ -928,7 +928,7 @@ bool OcclusionScorer::ComputeEyeSpanningRangeOcclusionScore(double* score, DPoin
     if (npcRange.high.y > 1.0)
         npcRange.high.y = 1.0;
 
-    *score = (npcRange.high.x - npcRange.low.x) * (npcRange.high.y - npcRange.low.y);      // Double score as the area calculation below doubles.
+    *score = (npcRange.high.x - npcRange.low.x) * (npcRange.high.y - npcRange.low.y);  // Double score as the area calculation below doubles.
 
     return true;
     }
@@ -1055,9 +1055,9 @@ bool OcclusionScorer::ComputeOcclusionScore(double* score, bool& overlap, bool& 
 
     if (m_testLOD && 0.0 != m_lodFilterNPCArea)
         {
-        //  In the cases where this does exclude the element it would be faster to do the other filtering first.  However, even when we exclude something due
-        //  to LOD filtering we want to know if it should be drawn by the progressive display.  We want progressive display to draw zero-length line strings
-        //  and points.
+        // In the cases where this does exclude the element it would be faster to do the other filtering first. However, even when we exclude something due
+        // to LOD filtering we want to know if it should be drawn by the progressive display. We want progressive display to draw zero-length line strings
+        // and points.
         int        diagonalVertex = nVertices/2;
         DPoint3dR  diagonalNPC    = npcVertices[diagonalVertex];
 
