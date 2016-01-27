@@ -32,7 +32,7 @@ struct CodesServer : IDgnCodesServer
 private:
     Db  m_db;
 
-    virtual Response _ReserveCodes(Request const&, DgnDbR) override;
+    virtual CodeResponse _ReserveCodes(CodeRequest const&, DgnDbR) override;
     virtual RepositoryStatus _ReleaseCodes(DgnCodeSet const&, DgnDbR) override;
     virtual RepositoryStatus _RelinquishCodes(DgnDbR) override;
     virtual RepositoryStatus _QueryCodeStates(DgnCodeInfoSet&, DgnCodeSet const&) override;
@@ -170,7 +170,7 @@ void CodesServer::Dump(Utf8CP descr)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-CodesServer::Response CodesServer::_ReserveCodes(Request const& req, DgnDbR db)
+CodeResponse CodesServer::_ReserveCodes(CodeRequest const& req, DgnDbR db)
     {
     Dump("ReserveCodes: before");
     VirtualCodeSet vset(req);
@@ -181,9 +181,9 @@ CodesServer::Response CodesServer::_ReserveCodes(Request const& req, DgnDbR db)
     DgnCodeInfoSet discarded;
 
     RepositoryStatus status = RepositoryStatus::Success;
-    Response response(status);
+    CodeResponse response(status);
     stmt.BindVirtualSet(1, vset);
-    bool wantInfos = ResponseOptions::IncludeState == (req.GetOptions() & ResponseOptions::IncludeState);
+    bool wantInfos = CodeResponseOptions::IncludeState == (req.GetOptions() & CodeResponseOptions::IncludeState);
     while (BE_SQLITE_ROW == stmt.Step())
         {
         DgnCode code(stmt.GetValueId<DgnAuthorityId>(0), stmt.GetValueText(2), stmt.GetValueText(1));
@@ -417,8 +417,8 @@ void CodesServer::MarkRevision(DgnCodeSet const& codes, bool discarded, Utf8Stri
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct CodesManagerTest : public ::testing::Test, DgnPlatformLib::Host::RepositoryAdmin
 {
-    typedef IDgnCodesManager::Request Request;
-    typedef IDgnCodesManager::Response Response;
+    typedef CodeRequest Request;
+    typedef CodeResponse Response;
 
     mutable CodesServer m_server;
     ScopedDgnHost m_host;
@@ -578,7 +578,7 @@ TEST_F(CodesManagerTest, ReserveQueryRelinquish)
     IDgnCodesManagerR mgr = db.Codes();
 
     // Empty request
-    Request req;
+    CodeRequest req;
     EXPECT_STATUS(Success, mgr.ReserveCodes(req).GetResult());
 
     // Reserve single code
@@ -678,7 +678,7 @@ TEST_F(CodesManagerTest, CodesInRevisions)
     // Reserve some codes
     DgnCode unusedCode = MakeStyleCode("Unused", db);
     DgnCode usedCode = MakeStyleCode("Used", db);
-    Request req;
+    CodeRequest req;
     req.insert(unusedCode);
     req.insert(usedCode);
     EXPECT_STATUS(Success, mgr.ReserveCodes(req).GetResult());

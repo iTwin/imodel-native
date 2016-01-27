@@ -104,63 +104,73 @@ public:
 typedef bset<DgnCodeInfo> DgnCodeInfoSet;
 
 //=======================================================================================
+//! Options specifying what additional information should be included in responses to requests
+// @bsistruct                                                    Paul.Connelly   01/16
+//=======================================================================================
+enum class CodeResponseOptions
+{
+    None = 0, //!< No special options
+    IncludeState = 1 << 0, //!< Include DgnCodeState for any codes for which the request was denied
+};
+
+//=======================================================================================
+//! Represents a request to operate on a set of codes.
+// @bsistruct                                                    Paul.Connelly   01/16
+//=======================================================================================
+struct CodeRequest : DgnCodeSet
+{
+protected:
+    CodeResponseOptions m_options;
+public:
+    //! Constructor
+    //! @param[in]      options Specifies what additional data should be included in the response.
+    explicit CodeRequest(CodeResponseOptions options=CodeResponseOptions::None) : m_options(options) { }
+
+    CodeResponseOptions GetOptions() const { return m_options; } //!< Set the options specifying additional data to be included in response
+    void SetOptions(CodeResponseOptions options) { m_options = options; } //!< Get the options specifying additional data to be included in response
+};
+
+//=======================================================================================
+//! Represents a response to a request. A response always includes a RepositoryStatus indicating the result. Based on options supplied in
+//! the request, may also include additional information.
+// @bsistruct                                                    Paul.Connelly   01/16
+//=======================================================================================
+struct CodeResponse
+{
+private:
+    DgnCodeInfoSet  m_details;
+    RepositoryStatus      m_result;
+public:
+    //! Construct a response with the specified result
+    explicit CodeResponse(RepositoryStatus result=RepositoryStatus::InvalidResponse) : m_result(result) { }
+
+    //!< Returns the overall result of the operation as a RepositoryStatus
+    RepositoryStatus GetResult() const { return m_result; }
+
+    //!< Sets the overall result of the operation
+    void SetResult(RepositoryStatus result) { m_result = result; }
+
+    //! Provides the state of each code for which the operation did not succeed, if CodeResponseOptions::IncludeState specified in request
+    DgnCodeInfoSet const& GetDetails() const { return m_details; }
+    //! Provides the state of each code for which the operation did not succeed, if CodeResponseOptions::IncludeState specified in request
+    DgnCodeInfoSet& GetDetails() { return m_details; }
+
+    //! Reset the response
+    void Invalidate() { m_result = RepositoryStatus::InvalidResponse; m_details.clear(); }
+};
+
+//=======================================================================================
 //! Manages acquisition of authority-issued codes for a briefcase.
 // @bsiclass                                                      Paul.Connelly   01/16
 //=======================================================================================
 struct IDgnCodesManager : RefCountedBase
 {
-    //! Options specifying what additional information should be included in responses to requests
-    enum class ResponseOptions
-    {
-        None = 0, //!< No special options
-        IncludeState = 1 << 0, //!< Include DgnCodeState for any codes for which the request was denied
-    };
-
-    //! Represents a request to operate on a set of codes.
-    struct Request : DgnCodeSet
-    {
-    protected:
-        ResponseOptions m_options;
-    public:
-        //! Constructor
-        //! @param[in]      options Specifies what additional data should be included in the response.
-        explicit Request(ResponseOptions options=ResponseOptions::None) : m_options(options) { }
-
-        ResponseOptions GetOptions() const { return m_options; } //!< Set the options specifying additional data to be included in response
-        void SetOptions(ResponseOptions options) { m_options = options; } //!< Get the options specifying additional data to be included in response
-    };
-
-    //! Represents a response to a request. A response always includes a RepositoryStatus indicating the result. Based on options supplied in
-    //! the request, may also include additional information.
-    struct Response
-    {
-    private:
-        DgnCodeInfoSet  m_details;
-        RepositoryStatus      m_result;
-    public:
-        //! Construct a response with the specified result
-        explicit Response(RepositoryStatus result=RepositoryStatus::InvalidResponse) : m_result(result) { }
-
-        //!< Returns the overall result of the operation as a RepositoryStatus
-        RepositoryStatus GetResult() const { return m_result; }
-
-        //!< Sets the overall result of the operation
-        void SetResult(RepositoryStatus result) { m_result = result; }
-
-        //! Provides the state of each code for which the operation did not succeed, if ResponseOptions::IncludeState specified in request
-        DgnCodeInfoSet const& GetDetails() const { return m_details; }
-        //! Provides the state of each code for which the operation did not succeed, if ResponseOptions::IncludeState specified in request
-        DgnCodeInfoSet& GetDetails() { return m_details; }
-
-        //! Reset the response
-        void Invalidate() { m_result = RepositoryStatus::InvalidResponse; m_details.clear(); }
-    };
 private:
     DgnDbR      m_dgndb;
 protected:
     IDgnCodesManager(DgnDbR dgndb) : m_dgndb(dgndb) { }
 
-    virtual Response _ReserveCodes(Request& request) = 0;
+    virtual CodeResponse _ReserveCodes(CodeRequest& request) = 0;
     virtual RepositoryStatus _ReleaseCodes(DgnCodeSet const& request) = 0;
     virtual RepositoryStatus _RelinquishCodes() = 0;
     virtual RepositoryStatus _QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) = 0;
@@ -175,7 +185,7 @@ public:
 
     //! Attempts to reserve a set of codes for this briefcase.
     //! Note: the request object may be modified by this function
-    Response ReserveCodes(Request& request) { return _ReserveCodes(request); }
+    CodeResponse ReserveCodes(CodeRequest& request) { return _ReserveCodes(request); }
     RepositoryStatus ReleaseCodes(DgnCodeSet const& request) { return _ReleaseCodes(request); } //!< Attempts to release a set of codes reserved by this briefcase
     RepositoryStatus RelinquishCodes() { return _RelinquishCodes(); } //!< Attempts to release all codes reserved by this briefcase
     RepositoryStatus QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) { return _QueryCodeStates(states, codes); } //!< Queries the state of a set of codes
@@ -189,7 +199,7 @@ public:
 //__PUBLISH_SECTION_START__
 };
 
-ENUM_IS_FLAGS(IDgnCodesManager::ResponseOptions);
+ENUM_IS_FLAGS(CodeResponseOptions);
 
 //=======================================================================================
 //! Interface adopted by a server-like object which can coordinate authority-issued codes
@@ -201,17 +211,14 @@ ENUM_IS_FLAGS(IDgnCodesManager::ResponseOptions);
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE IDgnCodesServer
 {
-    typedef IDgnCodesManager::Request Request;
-    typedef IDgnCodesManager::Response Response;
-    typedef IDgnCodesManager::ResponseOptions ResponseOptions;
 protected:
-    virtual Response _ReserveCodes(Request const& request, DgnDbR db) = 0;
+    virtual CodeResponse _ReserveCodes(CodeRequest const& request, DgnDbR db) = 0;
     virtual RepositoryStatus _ReleaseCodes(DgnCodeSet const& request, DgnDbR db) = 0;
     virtual RepositoryStatus _RelinquishCodes(DgnDbR db) = 0;
     virtual RepositoryStatus _QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) = 0;
     virtual RepositoryStatus _QueryCodes(DgnCodeSet& codes, DgnDbR db) = 0;
 public:
-    Response ReserveCodes(Request const& request, DgnDbR db) { return _ReserveCodes(request, db); }
+    CodeResponse ReserveCodes(CodeRequest const& request, DgnDbR db) { return _ReserveCodes(request, db); }
     RepositoryStatus ReleaseCodes(DgnCodeSet const& request, DgnDbR db) { return _ReleaseCodes(request, db); }
     RepositoryStatus RelinquishCodes(DgnDbR db) { return _RelinquishCodes(db); }
     RepositoryStatus QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) { return _QueryCodeStates(states, codes); }

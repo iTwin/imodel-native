@@ -59,13 +59,11 @@ static void ExpectRequestsEqual(LockRequestCR a, LockRequestCR b)
 struct LocksServer : ILocksServer
 {
 private:
-    typedef LockRequest::ResponseOptions ResponseOptions;
-
     Db m_db;
     bool m_offline;
 
     virtual RepositoryStatus _QueryLocksHeld(bool& held, LockRequestCR reqs, DgnDbR db) override;
-    virtual LockRequest::Response _AcquireLocks(LockRequestCR reqs, DgnDbR db) override;
+    virtual LockResponse _AcquireLocks(LockRequestCR reqs, DgnDbR db) override;
     virtual RepositoryStatus _RelinquishLocks(DgnDbR db) override;
     virtual RepositoryStatus _DemoteLocks(DgnLockSet const& locks, DgnDbR db) override;
     RepositoryStatus _QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db);
@@ -485,7 +483,7 @@ void LocksServer::Reset()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-LockRequest::Response LocksServer::_AcquireLocks(LockRequestCR inputReqs, DgnDbR db)
+LockResponse LocksServer::_AcquireLocks(LockRequestCR inputReqs, DgnDbR db)
     {
     // Simulating serialization and deserialization of server request...
     Json::Value reqJson;
@@ -496,8 +494,8 @@ LockRequest::Response LocksServer::_AcquireLocks(LockRequestCR inputReqs, DgnDbR
 
     if (!AreLocksAvailable(reqs, db.GetBriefcaseId()))
         {
-        LockRequest::Response response(RepositoryStatus::LockAlreadyHeld);
-        if (ResponseOptions::None != (ResponseOptions::DeniedLocks & reqs.GetOptions()))
+        LockResponse response(RepositoryStatus::LockAlreadyHeld);
+        if (LockResponseOptions::None != (LockResponseOptions::DeniedLocks & reqs.GetOptions()))
             GetDeniedLocks(response.GetDeniedLocks(), reqs, db.GetBriefcaseId());
 
         return response;
@@ -549,7 +547,7 @@ LockRequest::Response LocksServer::_AcquireLocks(LockRequestCR inputReqs, DgnDbR
             }
         }
 
-    return LockRequest::Response(RepositoryStatus::Success);
+    return LockResponse(RepositoryStatus::Success);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -656,7 +654,7 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::Reposito
 
     template<typename T> static DgnDbR ExtractDgnDb(T const& obj) { return obj.GetDgnDb(); }
 
-    LockRequest::Response AcquireResponse(LockRequestR req, DgnDbR db)
+    LockResponse AcquireResponse(LockRequestR req, DgnDbR db)
         {
         m_server.Dump("Before acquiring locks");
         auto response = db.Locks().AcquireLocks(req);
@@ -664,9 +662,9 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::Reposito
         return response;
         }
 
-    template<typename T> LockRequest::Response AcquireResponse(T const& obj, LockLevel level)
+    template<typename T> LockResponse AcquireResponse(T const& obj, LockLevel level)
         {
-        LockRequest req(LockRequest::ResponseOptions::DeniedLocks);
+        LockRequest req(LockResponseOptions::DeniedLocks);
         req.Insert(obj, level);
         return AcquireResponse(req, ExtractDgnDb(obj));
         }
@@ -686,7 +684,7 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::Reposito
         EXPECT_EQ(RepositoryStatus::LockAlreadyHeld, Acquire(obj, level));
         }
 
-    template<typename T> void ExpectInDeniedSet(T const& lockedObj, LockLevel level, LockRequest::Response const& response, DgnDbR requestor)
+    template<typename T> void ExpectInDeniedSet(T const& lockedObj, LockLevel level, LockResponse const& response, DgnDbR requestor)
         {
         // Test that locked obj is in response
         auto lockableId = MakeLockableId(lockedObj);
@@ -1297,7 +1295,7 @@ TEST_F(DoubleBriefcaseTest, ReformulateRequest)
 
         // Try to lock both elems
         DgnElementCPtr elemB2d1 = GetElement(dbB, Elem2dId1());
-        LockRequest req(LockRequest::ResponseOptions::DeniedLocks);
+        LockRequest req(LockResponseOptions::DeniedLocks);
         req.Insert(*elemB2d2, LockLevel::Exclusive);
         req.Insert(*elemB2d1, LockLevel::Exclusive);
         auto response = AcquireResponse(req, dbB);
@@ -1319,7 +1317,7 @@ TEST_F(DoubleBriefcaseTest, ReformulateRequest)
 
         // Try to lock one elem from each model
         DgnElementCPtr elemB3d2 = GetElement(dbB, Elem3dId2());
-        LockRequest req(LockRequest::ResponseOptions::DeniedLocks);
+        LockRequest req(LockResponseOptions::DeniedLocks);
         req.Insert(*elemB2d2, LockLevel::Exclusive);
         req.Insert(*elemB3d2, LockLevel::Exclusive);
         auto response = AcquireResponse(req, dbB);

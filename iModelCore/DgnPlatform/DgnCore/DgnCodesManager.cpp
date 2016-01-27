@@ -16,7 +16,7 @@ struct UnrestrictedCodesManager : IDgnCodesManager
 private:
     UnrestrictedCodesManager(DgnDbR db) : IDgnCodesManager(db) { }
 
-    virtual Response _ReserveCodes(Request&) override { return Response(RepositoryStatus::Success); }
+    virtual CodeResponse _ReserveCodes(CodeRequest&) override { return CodeResponse(RepositoryStatus::Success); }
     virtual RepositoryStatus _ReleaseCodes(DgnCodeSet const&) override { return RepositoryStatus::Success; }
     virtual RepositoryStatus _RelinquishCodes() override { return RepositoryStatus::Success; }
     virtual RepositoryStatus _ReserveCode(DgnCodeCR) override { return RepositoryStatus::Success; }
@@ -60,7 +60,7 @@ private:
 
     LocalCodesManager(DgnDbR db) : IDgnCodesManager(db), m_dbState(DbState::New) { }
 
-    virtual Response _ReserveCodes(Request&) override;
+    virtual CodeResponse _ReserveCodes(CodeRequest&) override;
     virtual RepositoryStatus _ReleaseCodes(DgnCodeSet const&) override;
     virtual RepositoryStatus _RelinquishCodes() override;
     virtual RepositoryStatus _QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) override;
@@ -222,18 +222,18 @@ void LocalCodesManager::Cull(DgnCodeSet& codes)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-IDgnCodesManager::Response LocalCodesManager::_ReserveCodes(Request& req)
+CodeResponse LocalCodesManager::_ReserveCodes(CodeRequest& req)
     {
     if (!Validate())
-        return Response(RepositoryStatus::SyncError);
+        return CodeResponse(RepositoryStatus::SyncError);
 
     Cull(req);
     if (req.empty())
-        return Response(RepositoryStatus::Success);
+        return CodeResponse(RepositoryStatus::Success);
 
     auto server = GetCodesServer();
     if (nullptr == server)
-        return Response(RepositoryStatus::ServerUnavailable);
+        return CodeResponse(RepositoryStatus::ServerUnavailable);
 
     auto response = server->ReserveCodes(req, GetDgnDb());
     if (RepositoryStatus::Success == response.GetResult())
@@ -435,7 +435,7 @@ RepositoryStatus IDgnCodesManager::_ReserveCode(DgnCodeCR code)
     if (code.IsEmpty())
         return RepositoryStatus::Success;
 
-    Request req;
+    CodeRequest req;
     req.insert(code);
     return _ReserveCodes(req).GetResult();
     }

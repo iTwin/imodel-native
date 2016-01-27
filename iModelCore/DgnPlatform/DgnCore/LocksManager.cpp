@@ -311,7 +311,7 @@ private:
 
         return true;
         }
-    virtual LockRequest::Response _AcquireLocks(LockRequestR) override { return LockRequest::Response(RepositoryStatus::Success); }
+    virtual LockResponse _AcquireLocks(LockRequestR) override { return LockResponse(RepositoryStatus::Success); }
     virtual RepositoryStatus _RelinquishLocks() override { return RepositoryStatus::Success; }
     virtual RepositoryStatus _DemoteLocks(DgnLockSet& locks) override { return RepositoryStatus::Success; }
     virtual void _OnElementInserted(DgnElementId) override { }
@@ -364,7 +364,7 @@ private:
     BeBriefcaseId GetId() const { return GetDgnDb().GetBriefcaseId(); }
 
     virtual bool _QueryLocksHeld(LockRequestR locks, bool localOnly, RepositoryStatus* status) override;
-    virtual LockRequest::Response _AcquireLocks(LockRequestR locks) override { return AcquireLocks(locks, true); }
+    virtual LockResponse _AcquireLocks(LockRequestR locks) override { return AcquireLocks(locks, true); }
     virtual RepositoryStatus _RelinquishLocks() override;
     virtual RepositoryStatus _DemoteLocks(DgnLockSet& locks) override;
     virtual RepositoryStatus _QueryLockLevel(LockLevel& level, LockableId lockId, bool localOnly) override;
@@ -392,7 +392,7 @@ private:
     template<typename T> void Insert(T const& locks, bool checkExisting);
 
     bool Validate(RepositoryStatus* status = nullptr);
-    LockRequest::Response AcquireLocks(LockRequestR locks, bool cull);
+    LockResponse AcquireLocks(LockRequestR locks, bool cull);
     void Cull(LockRequestR locks);
     DbResult Save() { return GetLocalDb().SaveChanges(); }
     void AddDependentElements(DgnLockSet& locks, bvector<DgnModelId> const& models);
@@ -1001,20 +1001,20 @@ bool LocalLocksManager::_QueryLocksHeld(LockRequestR locks, bool localOnly, Repo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-LockRequest::Response LocalLocksManager::AcquireLocks(LockRequestR locks, bool cull)
+LockResponse LocalLocksManager::AcquireLocks(LockRequestR locks, bool cull)
     {
     if (!Validate())
-        return LockRequest::Response(RepositoryStatus::SyncError);
+        return LockResponse(RepositoryStatus::SyncError);
 
     if (cull)
         Cull(locks);
 
     if (locks.IsEmpty())
-        return LockRequest::Response(RepositoryStatus::Success);
+        return LockResponse(RepositoryStatus::Success);
 
     auto server = GetLocksServer();
     if (nullptr == server)
-        return LockRequest::Response(RepositoryStatus::ServerUnavailable);
+        return LockResponse(RepositoryStatus::ServerUnavailable);
 
     auto response = server->AcquireLocks(locks, GetDgnDb());
     if (RepositoryStatus::Success == response.GetStatus())
@@ -1061,7 +1061,7 @@ ILocksServerP ILocksManager::GetLocksServer() const
 #define JSON_LockLevel "Level"          // LockLevel
 #define JSON_Owner "Owner"              // BeBriefcaseId
 #define JSON_DeniedLocks "DeniedLocks"  // list of DgnLock. Only supplied if AllAcquired=false
-#define JSON_Options "Options"          // LockRequest::ResponseOptions
+#define JSON_Options "Options"          // LockResponseOptions
 #define JSON_ExclusiveOwner "Exclusive" // BeBriefcaseId
 #define JSON_SharedOwners "Shared"      // list of BeBriefcaseId
 
@@ -1338,14 +1338,14 @@ bool LockRequest::FromJson(JsonValueCR value)
         m_locks.insert(lock);
         }
 
-    m_options = static_cast<ResponseOptions>(opts.asUInt());
+    m_options = static_cast<LockResponseOptions>(opts.asUInt());
     return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LockRequest::Response::ToJson(JsonValueR value) const
+void LockResponse::ToJson(JsonValueR value) const
     {
     uint32_t nLocks = static_cast<uint32_t>(m_denied.size());
     Json::Value locks(Json::arrayValue);
@@ -1361,7 +1361,7 @@ void LockRequest::Response::ToJson(JsonValueR value) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool LockRequest::Response::FromJson(JsonValueCR value)
+bool LockResponse::FromJson(JsonValueCR value)
     {
     m_denied.clear();
     JsonValueCR locks = value[JSON_DeniedLocks];
