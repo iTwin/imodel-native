@@ -16,7 +16,7 @@
 
 #include <ScalableMeshSchema/ScalableMeshSchemaCommon.h>
 #include <ScalableMeshSchema/ExportMacros.h>
-#include <ScalableMeshSchema/TerrainHandler.h>
+#include <ScalableMeshSchema/IMeshSpatialModel.h>
 
 
 #endif // __SCALABLEMESHSCHEMAINTERNAL_H__

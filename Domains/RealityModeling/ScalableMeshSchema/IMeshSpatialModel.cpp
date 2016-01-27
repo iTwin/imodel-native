@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------------------+
 |
-|     $Source: ScalableMeshSchema/TerrainHandler.cpp $
+|     $Source: ScalableMeshSchema/IMeshSpatialModel.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -18,15 +18,15 @@ BentleyStatus ITerrainTexture::LoadTexture(uint32_t& width, uint32_t& height, bv
 {
 return _LoadTexture(width, height, dataRGBA);
 }
-/*
+
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     1/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus ITerrainTexture::GetMeshPart(DRange3dR range, bvector<DPoint3d>& vertices, bvector<int32_t>& verticeIndexes) const
-{
-return _GetMeshPart(range, vertices, verticeIndexes);
-}
-*/
+ITextureTileId const& ITerrainTexture::GetId() const
+    {
+    return _GetId();
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     1/2016
@@ -54,10 +54,27 @@ bool ITerrainTileIterator::NextPart()
     return _NextPart();
     }   
 
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     1/2016
 //----------------------------------------------------------------------------------------
-AxisAlignedBox3dCR TerrainSpatialModel::GetRange() const
+void IMeshSpatialModel::RegisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) 
+    {
+    return _RegisterTilesChangedEventListener(eventListener); 
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Elenie.Godzaridis     1/2016
+//----------------------------------------------------------------------------------------
+bool IMeshSpatialModel::UnregisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) 
+    {
+    return _UnregisterTilesChangedEventListener(eventListener);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Elenie.Godzaridis     1/2016
+//----------------------------------------------------------------------------------------
+AxisAlignedBox3dCR IMeshSpatialModel::GetRange() const
 {
 return _GetRange();
 }
@@ -65,7 +82,15 @@ return _GetRange();
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     1/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus TerrainSpatialModel::QueryTexturesLod(bvector<ITerrainTexturePtr>& textures, size_t maxSizeBytes) const
+TerrainModel::IDTM* IMeshSpatialModel::GetDTM() 
+    {
+    return _GetDTM();
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Elenie.Godzaridis     1/2016
+//----------------------------------------------------------------------------------------
+BentleyStatus IMeshSpatialModel::QueryTexturesLod(bvector<ITerrainTexturePtr>& textures, size_t maxSizeBytes) const
 {
 return _QueryTexturesLod(textures, maxSizeBytes);
 }
@@ -73,7 +98,7 @@ return _QueryTexturesLod(textures, maxSizeBytes);
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     1/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus TerrainSpatialModel::QueryTexture(ITextureTileId const& tileId, ITerrainTexturePtr& texture) const
+BentleyStatus IMeshSpatialModel::QueryTexture(ITextureTileId const& tileId, ITerrainTexturePtr& texture) const
 {
 return _QueryTexture(tileId, texture);
 }
@@ -81,17 +106,17 @@ return _QueryTexture(tileId, texture);
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     1/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus TerrainSpatialModel::GetMeshPartUnderClipMask(bvector<DPoint3d>& vertices,
+/*BentleyStatus IMeshSpatialModel::GetMeshPartUnderClipMask(bvector<DPoint3d>& vertices,
                                                             bvector<int32_t>&  verticeIndexes,
                                                             BentleyApi::Dgn::DgnElementId&      clippedConceptualElementId)
 {
 return _GetMeshPartUnderClipMask(vertices,verticeIndexes,clippedConceptualElementId);
-}
+}*/
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     1/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus TerrainSpatialModel::ReloadClipMask(BentleyApi::Dgn::DgnElementId& clipMaskElementId, bool isNew)
+BentleyStatus IMeshSpatialModel::ReloadClipMask(BentleyApi::Dgn::DgnElementId& clipMaskElementId, bool isNew)
 {
 return _ReloadClipMask(clipMaskElementId, isNew);
 }
@@ -99,7 +124,7 @@ return _ReloadClipMask(clipMaskElementId, isNew);
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     1/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus TerrainSpatialModel::ReloadAllClipMasks()
+BentleyStatus IMeshSpatialModel::ReloadAllClipMasks()
 {
 return _ReloadAllClipMasks();
 }
@@ -107,7 +132,7 @@ return _ReloadAllClipMasks();
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     1/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus TerrainSpatialModel::StartClipMaskBulkInsert()
+BentleyStatus IMeshSpatialModel::StartClipMaskBulkInsert()
 {
 return _StartClipMaskBulkInsert();
 }
@@ -115,7 +140,7 @@ return _StartClipMaskBulkInsert();
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     1/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus TerrainSpatialModel::StopClipMaskBulkInsert()
+BentleyStatus IMeshSpatialModel::StopClipMaskBulkInsert()
 {
 return _StopClipMaskBulkInsert();
 }
@@ -123,7 +148,7 @@ return _StopClipMaskBulkInsert();
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     1/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus TerrainSpatialModel::CreateIterator(ITerrainTileIteratorPtr& iterator)
+BentleyStatus IMeshSpatialModel::CreateIterator(ITerrainTileIteratorPtr& iterator)
 {
 return _CreateIterator(iterator);
 }

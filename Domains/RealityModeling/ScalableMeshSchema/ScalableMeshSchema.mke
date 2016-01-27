@@ -28,10 +28,10 @@ CompileOptionsMki               = $(SrcScMeshSchema)ScalableMeshSchema.mki
 #--------------------------------------------------------------------------------------
 #   Set up build dependencies
 #--------------------------------------------------------------------------------------
-terrainHandlerDepends             = $(BuildContext)PublicAPI/DgnPlatform/DgnModel.h \
+meshmodelDepends             = $(BuildContext)PublicAPI/DgnPlatform/DgnModel.h \
                                   $(BuildContext)PublicAPI/DgnPlatform/DgnPlatform.h \
                                   $(ScMeshSchemaPublicApiSrc)ScalableMeshSchemaCommon.h           \
-                                  $(ScMeshSchemaPublicApiSrc)TerrainHandler.h            
+                                  $(ScMeshSchemaPublicApiSrc)IMeshSpatialModel.h            
 always:
     !~@mkdir $(o)
 
@@ -41,7 +41,7 @@ always:
 PchCompiland        = $(SrcScMeshSchema)ScalableMeshSchemaPCH.cpp
 PchOutputDir        = $(o)
 PchExtraOptions     = -Zm160
-PchExplicitDepends  = $(terrainHandlerDepends)
+PchExplicitDepends  = $(meshmodelDepends)
 
 %include $(SharedMki)PreCompileHeader.mki
 
@@ -54,7 +54,7 @@ MultiCompileDepends=$(_MakeFileSpec)
 #--------------------------------------------------------------------------------------
 #   Compile portable source
 #--------------------------------------------------------------------------------------
-$(o)TerrainHandler$(oext)        : $(SrcScMeshSchema)TerrainHandler.cpp       $(terrainHandlerDepends) ${MultiCompileDepends}
+$(o)IMeshSpatialModel$(oext)        : $(SrcScMeshSchema)IMeshSpatialModel.cpp       $(meshmodelDepends) ${MultiCompileDepends}
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
