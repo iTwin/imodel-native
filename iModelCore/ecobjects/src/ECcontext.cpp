@@ -207,12 +207,12 @@ ECSchemaPtr     ECSchemaReadContext::LocateSchema (SchemaKeyR key, SchemaMatchTy
     m_knownSchemaDirtyStack.push_back(false);
 
     ECSchemaPtr schema;
-    for (bvector<IECSchemaLocaterP>::const_iterator iter = m_locaters.begin(); iter != m_locaters.end(); ++iter)
+    for (auto const& locater : m_locaters)
         {
-        if ( ! EXPECTED_CONDITION (NULL != *iter))
+        if ( ! EXPECTED_CONDITION (nullptr != locater))
             continue;
 
-        schema = (*iter)->LocateSchema(key, matchType, *this);
+        schema = locater->LocateSchema(key, matchType, *this);
         if (schema.IsValid())
             break;
 
@@ -238,22 +238,22 @@ ECSchemaPtr     ECSchemaReadContext::LocateSchema (SchemaKeyR key, bset<SchemaMa
     m_knownSchemaDirtyStack.push_back(false);
 
     ECSchemaPtr schema;
-    for (bvector<IECSchemaLocaterP>::const_iterator iter = m_locaters.begin(); iter != m_locaters.end(); ++iter)
+    for (auto const& locater : m_locaters)
         {
-        if ( ! EXPECTED_CONDITION (NULL != *iter))
+        if ( ! EXPECTED_CONDITION (nullptr != locater))
             continue;
 
-        for (bset<SchemaMatchType>::const_iterator matchIter = matches.begin(); matchIter != matches.end(); ++matchIter)
+        for (auto const& matchType : matches)
             {
-            schema = (*iter)->LocateSchema(key, *matchIter, *this); //Doing this will change m_knownSchemas
+            schema = locater->LocateSchema(key, matchType, *this); //Doing this will change m_knownSchemas
             if (schema.IsValid())
                 break;
 
             if (m_knownSchemaDirtyStack.back())
                 {
-                for (bset<SchemaMatchType>::const_iterator kmatchIter = matches.begin(); matchIter != matches.end(); ++matchIter)
+                for (auto const& knownMatchType : matches)
                     {
-                    schema = m_knownSchemas->LocateSchema (key, *kmatchIter, *this);
+                    schema = m_knownSchemas->LocateSchema (key, knownMatchType, *this);
                     if (schema.IsValid())
                         break;
                     }
