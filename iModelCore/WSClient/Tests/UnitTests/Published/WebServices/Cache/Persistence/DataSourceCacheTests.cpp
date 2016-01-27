@@ -1573,25 +1573,25 @@ TEST_F(DataSourceCacheTests, CacheResponse_MultipleClassRelationshipsAndNewResul
     auto testRelClass2 = cache->GetAdapter().GetECRelationshipClass("TestSchema.TestRelationshipClass2");
     ASSERT_LT(testRelClass1->GetId(), testRelClass2->GetId()); // Ensure that ids are as expected for regression
 
-    {
-    StubInstances instances;
-    auto instance = instances.Add({"TestSchema.TestClass", "A"});
-    instance.AddRelated({"TestSchema.TestRelationshipClass2", "AB"}, {"TestSchema.TestClass", "B"});
-    instance.AddRelated({"TestSchema.TestRelationshipClass2", "AC"}, {"TestSchema.TestClass", "C"});
+        {
+        StubInstances instances;
+        auto instance = instances.Add({"TestSchema.TestClass", "A"});
+        instance.AddRelated({"TestSchema.TestRelationshipClass2", "AB"}, {"TestSchema.TestClass", "B"});
+        instance.AddRelated({"TestSchema.TestRelationshipClass2", "AC"}, {"TestSchema.TestClass", "C"});
 
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
-    }
+        ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
+        }
 
-    {
-    StubInstances instances;
-    auto instance = instances.Add({"TestSchema.TestClass", "A"});
-    instance.AddRelated({"TestSchema.TestRelationshipClass2", "AB"}, {"TestSchema.TestClass", "B"});
-    instance.AddRelated({"TestSchema.TestRelationshipClass", "A1"}, {"TestSchema.TestClass", "1"});
-    instance.AddRelated({"TestSchema.TestRelationshipClass2", "AC"}, {"TestSchema.TestClass", "C"});
-    instance.AddRelated({"TestSchema.TestRelationshipClass", "A2"}, {"TestSchema.TestClass", "2"});
+            {
+            StubInstances instances;
+            auto instance = instances.Add({"TestSchema.TestClass", "A"});
+            instance.AddRelated({"TestSchema.TestRelationshipClass2", "AB"}, {"TestSchema.TestClass", "B"});
+            instance.AddRelated({"TestSchema.TestRelationshipClass", "A1"}, {"TestSchema.TestClass", "1"});
+            instance.AddRelated({"TestSchema.TestRelationshipClass2", "AC"}, {"TestSchema.TestClass", "C"});
+            instance.AddRelated({"TestSchema.TestRelationshipClass", "A2"}, {"TestSchema.TestClass", "2"});
 
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
-    }
+            ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
+                }
 
     EXPECT_TRUE(VerifyHasRelationship(cache, testRelClass2, {"TestSchema.TestClass", "A"}, {"TestSchema.TestClass", "B"}));
     EXPECT_TRUE(VerifyHasRelationship(cache, testRelClass2, {"TestSchema.TestClass", "A"}, {"TestSchema.TestClass", "C"}));
@@ -2476,8 +2476,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_RelationshipWithProperties_CachesRela
     StubInstances instances;
     instances
         .Add({"TestSchema.TestClass", "A"})
-        .AddRelated({"TestSchema.TestRelationshipPropertiesClass", "AB"}, {"TestSchema.TestClass", "B"}, {}, 
-            ECRelatedInstanceDirection::Forward, {{"TestProperty", "RelationshipValue"}});
+        .AddRelated({"TestSchema.TestRelationshipPropertiesClass", "AB"}, {"TestSchema.TestClass", "B"}, {},
+        ECRelatedInstanceDirection::Forward, {{"TestProperty", "RelationshipValue"}});
 
     bset<ObjectId> rejected;
     EXPECT_EQ(SUCCESS, cache->CacheResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse(), &rejected, nullptr));
@@ -2748,7 +2748,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_FinalNotModifiedResponseAndDefaultPag
     EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "A"}).IsValid());
     EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid());
     }
-    
+
 TEST_F(DataSourceCacheTests, CacheResponse_FinalNotModifiedResponseAndOnLastPage_SetsAsCached)
     {
     // Arrange
@@ -2965,6 +2965,26 @@ TEST_F(DataSourceCacheTests, CacheResponse_ExistingInstanceWithReadOnlyProperty_
     EXPECT_EQ(instance1, instance2);
     Json::Value properties = ReadInstance(*cache, instance2);
     EXPECT_EQ("NewValue", properties["TestReadOnlyProperty"].asString());
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCalculatedProperty_CachesAndUpdatesCalculatedPropertyValue)
+    {
+    auto cache = GetTestCache();
+    auto key = StubCachedResponseKey(*cache);
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass4", "Foo"}, {{"TestProperty", "OldValue"}});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+
+    Json::Value properties = ReadInstance(*cache, cache->FindInstance({"TestSchema.TestClass4", "Foo"}));
+    EXPECT_EQ("OldValue", properties["TestCalculatedProperty"].asString());
+
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass4", "Foo"}, {{"TestProperty", "NewValue"}});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+
+    properties = ReadInstance(*cache, cache->FindInstance({"TestSchema.TestClass4", "Foo"}));
+    EXPECT_EQ("NewValue", properties["TestCalculatedProperty"].asString());
     }
 
 TEST_F(DataSourceCacheTests, IsResponseCached_ParentDoesNotExist_False)
