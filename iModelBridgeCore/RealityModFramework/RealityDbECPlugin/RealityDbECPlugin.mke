@@ -1,11 +1,17 @@
 #--------------------------------------------------------------------------------------
 #      $Source: RealityDbECPlugin/RealityDbECPlugin.mke $
-#   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #--------------------------------------------------------------------------------------
 %include  mdl.mki
 
 baseDir     = $(_MakeFilePath)
+
+%ifndef IMSOFF
 appName     = RealityDbECPlugin
+%else
+appName     = RealityDbECPluginC
+%endif
+
 
 %include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
 
