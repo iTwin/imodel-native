@@ -38,7 +38,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectGlobal_Succeeds)
     Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net/";
     Utf8String repositoryId = "BentleyCONNECT.Global--CONNECT.GLOBAL";
     Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
-    BeFileName cachePath(L":memory:");
+    BeFileName cachePath = StubFilePath("TestWSCache.ecdb");
 
     StubLocalState localState;
     ConnectAuthenticationPersistence::CustomInitialize(&localState);
@@ -62,7 +62,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectSharedContent_Succeeds
     Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net/";
     Utf8String repositoryId = "BentleyCONNECT.SharedContent--CONNECT.SharedContent";
     Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
-    BeFileName cachePath(L":memory:");
+    BeFileName cachePath = StubFilePath("TestWSCache.ecdb");
 
     StubLocalState localState;
     ConnectAuthenticationPersistence::CustomInitialize(&localState);
@@ -95,7 +95,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectPersonalShare_Succeeds
     Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net";
     Utf8String repositoryId = "BentleyCONNECT.PersonalPublishing--CONNECT.PersonalPublishing";
     Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
-    BeFileName cachePath(L":memory:");
+    BeFileName cachePath = StubFilePath("TestWSCache.ecdb");
 
     StubLocalState localState;
     ConnectAuthenticationPersistence::CustomInitialize(&localState);
@@ -120,7 +120,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectShare_Succeeds)
     Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net";
     Utf8String repositoryId = "BentleyCONNECT.ProjectContent--f84ee4ab-3b31-4ba9-bf8e-edd124c73393";
     Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
-    BeFileName cachePath(L":memory:");
+    BeFileName cachePath = StubFilePath("TestWSCache.ecdb");
 
     StubLocalState localState;
     ConnectAuthenticationPersistence::CustomInitialize(&localState);
@@ -145,7 +145,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectDataRetrieved_S
     Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net";
     Utf8String repositoryId = "BentleyCONNECT.ProjectContent--f84ee4ab-3b31-4ba9-bf8e-edd124c73393";
     Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
-    BeFileName cachePath(L":memory:");
+    BeFileName cachePath = StubFilePath("TestWSCache.ecdb");
 
     StubLocalState localState;
     ConnectAuthenticationPersistence::CustomInitialize(&localState);
@@ -184,7 +184,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13eBPluginRepository_Succeeds)
     Utf8String serverUrl = "https://viltest2-7.bentley.com/ws";
     Utf8String repositoryId = "eB.viltest2-5.bentley.com,eB_Mobile";
     Credentials creds("admin", "admin");
-    BeFileName cachePath(L":memory:");
+    BeFileName cachePath = StubFilePath("TestWSCache.ecdb");
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
@@ -200,7 +200,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13ProjectWisePluginRepository_Suc
     Utf8String serverUrl = "https://viltest2-7.bentley.com/ws";
     Utf8String repositoryId = "pw.PW_Mobile_SS3";
     Credentials creds("admin", "admin");
-    BeFileName cachePath(L":memory:");
+    BeFileName cachePath = StubFilePath("TestWSCache.ecdb");
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
@@ -216,7 +216,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13SharePointPluginRepository_Succ
     Utf8String serverUrl = "https://viltest2-7.bentley.com/ws";
     Utf8String repositoryId = "ec.Bentley.ECOM.SharePointProvider--http~3A~2F~2Fviltest2-10";
     Credentials creds("VILTEST2-10\\administrator", "Q!w2e3r4");
-    BeFileName cachePath(L":memory:");
+    BeFileName cachePath = StubFilePath("TestWSCache.ecdb");
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
@@ -232,7 +232,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG22eBPluginRepository_Succeeds)
     Utf8String serverUrl = "https://viltest2-7.bentley.com/ws22";
     Utf8String repositoryId = "Bentley.eB--viltest2-5.bentley.com~2CeB_Mobile";
     Credentials creds("admin", "admin");
-    BeFileName cachePath(L":memory:");
+    BeFileName cachePath = StubFilePath("TestWSCache.ecdb");
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
@@ -248,7 +248,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG23ProjectWisePluginRepository_Suc
     Utf8String serverUrl = "https://viltest2-8.bentley.com/ws23";
     Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Mobile_SS3";
     Credentials creds("admin", "admin");
-    BeFileName cachePath(L":memory:");
+    BeFileName cachePath = StubFilePath("TestWSCache.ecdb");
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
@@ -264,7 +264,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG2xProjectWisePluginMapMobileRepos
     Utf8String serverUrl = "https://geo-demo-ws.bentley.com/ws";
     Utf8String repositoryId = "Bentley.PW--geo-demo.bentley.com~3AGeo-Demo";
     Credentials creds("twc", "admin");
-    BeFileName cachePath(L":memory:");
+    BeFileName cachePath = StubFilePath("TestWSCache.ecdb");
 
     auto info = std::make_shared<ClientInfo>("Bentley-MapMobile", BeVersion(5,4), "77def89a-7e50-4f0e-a4c7-24fb6044dbfb", 
         "CLQIqB7y8eCUpdJe5uyRVVaaGbk=", "Windows 6.1", nullptr);
@@ -283,7 +283,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG24SharePointPluginRepository_Succ
     Utf8String serverUrl = "https://viltest2-8.bentley.com/ws24";
     Utf8String repositoryId = "Bentley.SP--http~3A~2F~2Fviltest2-10";
     Credentials creds(R"(.\administrator)", "Q!w2e3r4");
-    BeFileName cachePath(L":memory:");
+    BeFileName cachePath = StubFilePath("TestWSCache.ecdb");
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
@@ -299,7 +299,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG23ProjectWisePluginRepository
     Utf8String serverUrl = "https://viltest2-8.bentley.com/ws23";
     Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Mobile_SS3";
     Credentials creds("admin", "admin");
-    BeFileName cachePath(L":memory:");
+    BeFileName cachePath = StubFilePath("TestWSCache.ecdb");
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
@@ -453,7 +453,7 @@ TEST_F(CachingDataSourceTests, GetObjects_WSG2PWSpatialQuery_Succeeds)
     Utf8String serverUrl = "https://viltest2-8.bentley.com/ws23";
     Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Mobile_SS3";
     Credentials creds("admin", "admin");
-    BeFileName cachePath(L":memory:");
+    BeFileName cachePath = StubFilePath("TestWSCache.ecdb");
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
@@ -601,7 +601,7 @@ TEST_F(CachingDataSourceTests, GetObjects_PunchlistQueries_Succeeds)
     Utf8String serverUrl = "https://qa-punchlist-eus.cloudapp.net";
     Utf8String repositoryId = "IssuePlugin--default";
     Credentials credentials("bcc_user4@mailinator.com", "member#4");
-    BeFileName cachePath(L":memory:");
+    BeFileName cachePath = StubFilePath("TestWSCache.ecdb");
 
     cachePath = BeFileName(StubFilePath("punchlistcache.ecdb"));
     DataSourceCache::DeleteCacheFromDisk(cachePath, StubCacheEnvironemnt());
