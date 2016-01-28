@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPackage/RealityDataSource.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RealityPackage/RealityDataPackage.h>
@@ -25,6 +25,9 @@ void RealityDataSource::SetType(Utf8CP type) { m_type = type; }
 
 Utf8StringCR RealityDataSource::GetCopyright() const { return m_copyright; }
 void RealityDataSource::SetCopyright(Utf8CP copyright) { m_copyright = copyright; }
+
+Utf8StringCR RealityDataSource::GetId() const { return m_id; }
+void RealityDataSource::SetId(Utf8CP id) { m_id = id; }
 
 Utf8StringCR RealityDataSource::GetProvider() const { return m_provider; }
 void RealityDataSource::SetProvider(Utf8CP provider) { m_provider = provider; }
@@ -88,6 +91,7 @@ RealityPackageStatus RealityDataSource::_Read(BeXmlNodeR dataSourceNode)
        BEXML_Success != dataSourceNode.GetAttributeStringValue (m_type, PACKAGE_SOURCE_ATTRIBUTE_Type))
         return RealityPackageStatus::MissingSourceAttribute;
 
+    // &&JFC TODO: Create an object for url.
     // Split full uri if it is a compound type (uri#fileInCompound).
     m_fileInCompound = "";
     if (Utf8String::npos != m_uri.find("#"))
@@ -99,11 +103,12 @@ RealityPackageStatus RealityDataSource::_Read(BeXmlNodeR dataSourceNode)
 
     // Optional fields.
     dataSourceNode.GetContent(m_copyright, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Copyright);
+    dataSourceNode.GetContent(m_id, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Id);
     dataSourceNode.GetContent(m_provider, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Provider);
     dataSourceNode.GetContentUInt64Value(m_filesize, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Filesize);
     dataSourceNode.GetContent(m_metadata, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Metadata);
 
-    // Create bvector from comma-separated list.
+    // &&JFC TODO: Create bvector from comma-separated list.
     Utf8String sisterFilesAsString;
     dataSourceNode.GetContent(sisterFilesAsString, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_SisterFiles);
 
@@ -135,6 +140,9 @@ RealityPackageStatus RealityDataSource::_Write(BeXmlNodeR dataSourceNode) const
     // Optional fields.
     if (!m_copyright.empty())
         dataSourceNode.AddElementStringValue(PACKAGE_ELEMENT_Copyright, m_copyright.c_str());
+
+    if (!m_id.empty())
+        dataSourceNode.AddElementStringValue(PACKAGE_ELEMENT_Id, m_id.c_str());
 
     if (!m_provider.empty())
         dataSourceNode.AddElementStringValue(PACKAGE_ELEMENT_Provider, m_provider.c_str());

@@ -2,7 +2,7 @@
 |
 |     $Source: BentleyWMSPackageNet/BentleyWMSPackageNet.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -80,6 +80,13 @@ void RealityDataPackageNet::Create(String^  location,
                 pWmsDataSource->SetCopyright(copyright.c_str());
                 }
 
+            if (!String::IsNullOrEmpty(source->GetId()))
+                {
+                Utf8String id;
+                BeStringUtilities::WCharToUtf8(id, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(wmsSourceNet->GetId()).ToPointer()));
+                pWmsDataSource->SetId(id.c_str());
+                }
+
             if (!String::IsNullOrEmpty(wmsSourceNet->GetProvider()))
                 {
                 Utf8String provider;
@@ -132,6 +139,13 @@ void RealityDataPackageNet::Create(String^  location,
                 Utf8String copyright;
                 BeStringUtilities::WCharToUtf8(copyright, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetCopyright()).ToPointer()));
                 pDataSource->SetCopyright(copyright.c_str());
+                }
+
+            if (!String::IsNullOrEmpty(source->GetId()))
+                {
+                Utf8String id;
+                BeStringUtilities::WCharToUtf8(id, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetId()).ToPointer()));
+                pDataSource->SetId(id.c_str());
                 }
 
             if (!String::IsNullOrEmpty(source->GetProvider()))
@@ -212,6 +226,13 @@ void RealityDataPackageNet::Create(String^  location,
                 pOsmDataSource->SetCopyright(copyright.c_str());
                 }
 
+            if (!String::IsNullOrEmpty(osmSourceNet->GetId()))
+                {
+                Utf8String id;
+                BeStringUtilities::WCharToUtf8(id, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(osmSourceNet->GetId()).ToPointer()));
+                pOsmDataSource->SetId(id.c_str());
+                }
+
             if (!String::IsNullOrEmpty(osmSourceNet->GetProvider()))
                 {
                 Utf8String provider;
@@ -267,6 +288,13 @@ void RealityDataPackageNet::Create(String^  location,
                 pDataSource->SetCopyright(copyright.c_str());
                 }
 
+            if (!String::IsNullOrEmpty(source->GetId()))
+                {
+                Utf8String id;
+                BeStringUtilities::WCharToUtf8(id, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetId()).ToPointer()));
+                pDataSource->SetId(id.c_str());
+                }
+
             if (!String::IsNullOrEmpty(source->GetProvider()))
                 {
                 Utf8String provider;
@@ -320,6 +348,13 @@ void RealityDataPackageNet::Create(String^  location,
             pDataSource->SetCopyright(copyright.c_str());
             }
 
+        if (!String::IsNullOrEmpty(source->GetId()))
+            {
+            Utf8String id;
+            BeStringUtilities::WCharToUtf8(id, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetId()).ToPointer()));
+            pDataSource->SetId(id.c_str());
+            }
+
         if (!String::IsNullOrEmpty(source->GetProvider()))
             {
             Utf8String provider;
@@ -371,6 +406,13 @@ void RealityDataPackageNet::Create(String^  location,
             Utf8String copyright;
             BeStringUtilities::WCharToUtf8(copyright, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetCopyright()).ToPointer()));
             pDataSource->SetCopyright(copyright.c_str());
+            }
+
+        if (!String::IsNullOrEmpty(source->GetId()))
+            {
+            Utf8String id;
+            BeStringUtilities::WCharToUtf8(id, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetId()).ToPointer()));
+            pDataSource->SetId(id.c_str());
             }
 
         if (!String::IsNullOrEmpty(source->GetProvider()))
@@ -540,13 +582,14 @@ TerrainGroupNet::~TerrainGroupNet() {}
 RealityDataSourceNet^ RealityDataSourceNet::Create(System::String^ uri, 
                                                    System::String^ type, 
                                                    System::String^ copyright,
+                                                   System::String^ id,
                                                    System::String^ provider,
                                                    uint64_t filesize,
                                                    System::String^ fileInCompound,
                                                    System::String^ metadata, 
                                                    List<System::String^>^ sisterFiles)
     {
-    return gcnew RealityDataSourceNet(uri, type, copyright, provider, filesize, fileInCompound, metadata, sisterFiles);
+    return gcnew RealityDataSourceNet(uri, type, copyright, id, provider, filesize, fileInCompound, metadata, sisterFiles);
     }
 
 //-------------------------------------------------------------------------------------
@@ -555,6 +598,7 @@ RealityDataSourceNet^ RealityDataSourceNet::Create(System::String^ uri,
 RealityDataSourceNet::RealityDataSourceNet(System::String^ uri,
                                            System::String^ type,
                                            System::String^ copyright,
+                                           System::String^ id,
                                            System::String^ provider,
                                            uint64_t filesize,
                                            System::String^ fileInCompound,
@@ -563,6 +607,7 @@ RealityDataSourceNet::RealityDataSourceNet(System::String^ uri,
     : m_uri(uri),
       m_type(type),
       m_copyright(copyright),
+      m_id(id),
       m_provider(provider),
       m_filesize(filesize),
       m_fileInCompound(fileInCompound),
@@ -580,10 +625,12 @@ RealityDataSourceNet::~RealityDataSourceNet() {}
 //-------------------------------------------------------------------------------------
 WmsSourceNet::WmsSourceNet(System::String^ uri,
                            System::String^ copyright,
+                           System::String^ id,
                            System::String^ provider,
                            uint64_t filesize,
                            System::String^ metadata,
                            List<System::String^>^ sisterFiles,
+                           System::String^ mapUri,
                            double bboxMinX,
                            double bboxMinY,
                            double bboxMaxX,
@@ -598,15 +645,15 @@ WmsSourceNet::WmsSourceNet(System::String^ uri,
                            System::String^ format,
                            System::String^ vendorSpecific,
                            bool isTransparent)
-    : RealityDataSourceNet(uri, "wms", copyright, provider, filesize, "", metadata, sisterFiles)
+    : RealityDataSourceNet(uri, "wms", copyright, id, provider, filesize, "", metadata, sisterFiles)
     {
     // Create range from min and max values.
     DRange2d bbox;
     bbox.InitFrom(bboxMinX, bboxMinY, bboxMaxX, bboxMaxY);
 
     // Create WmsMapSettings with required parameters.
-    Utf8String uriUtf8;
-    BeStringUtilities::WCharToUtf8(uriUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(uri).ToPointer()));
+    Utf8String mapUriUtf8;
+    BeStringUtilities::WCharToUtf8(mapUriUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(mapUri).ToPointer()));
 
     Utf8String versionUtf8;
     BeStringUtilities::WCharToUtf8(versionUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(version).ToPointer()));
@@ -620,7 +667,8 @@ WmsSourceNet::WmsSourceNet(System::String^ uri,
     Utf8String csLabelUtf8;
     BeStringUtilities::WCharToUtf8(csLabelUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(csLabel).ToPointer()));
 
-    RealityPlatform::WmsMapSettingsPtr pMapSettings = RealityPlatform::WmsMapSettings::Create(bbox,
+    RealityPlatform::WmsMapSettingsPtr pMapSettings = RealityPlatform::WmsMapSettings::Create(mapUriUtf8.c_str(),
+                                                                                              bbox,
                                                                                               versionUtf8.c_str(),
                                                                                               layersUtf8.c_str(),
                                                                                               csTypeUtf8.c_str(),
@@ -657,10 +705,12 @@ WmsSourceNet::~WmsSourceNet() {}
 //-------------------------------------------------------------------------------------
 WmsSourceNet^ WmsSourceNet::Create(System::String^ uri,
                                    System::String^ copyright,
+                                   System::String^ id,
                                    System::String^ provider,
                                    uint64_t filesize,
                                    System::String^ metadata,
                                    List<System::String^>^ sisterFiles,
+                                   System::String^ mapUri,
                                    double bboxMinX,
                                    double bboxMinY,
                                    double bboxMaxX,
@@ -678,10 +728,12 @@ WmsSourceNet^ WmsSourceNet::Create(System::String^ uri,
     {
     return gcnew WmsSourceNet(uri,
                               copyright,
+                              id,
                               provider,
                               filesize,
                               metadata,
                               sisterFiles,
+                              mapUri,
                               bboxMinX,
                               bboxMinY,
                               bboxMaxX,
@@ -703,13 +755,14 @@ WmsSourceNet^ WmsSourceNet::Create(System::String^ uri,
 //-------------------------------------------------------------------------------------
 OsmSourceNet::OsmSourceNet(System::String^ uri,
                            System::String^ copyright,
+                           System::String^ id,
                            System::String^ provider,
                            uint64_t filesize,
                            System::String^ metadata,
                            List<System::String^>^ sisterFiles,
                            List<double>^ regionOfInterest,
                            List<System::String^>^ urls)
-    : RealityDataSourceNet(uri, "osm", copyright, provider, filesize, "", metadata, sisterFiles)
+    : RealityDataSourceNet(uri, "osm", copyright, id, provider, filesize, "", metadata, sisterFiles)
     {
     // Create range from min and max values.
     DPoint2d pts[4];
@@ -773,6 +826,7 @@ OsmSourceNet::~OsmSourceNet() {}
 //-------------------------------------------------------------------------------------
 OsmSourceNet^ OsmSourceNet::Create(System::String^ uri,
                                    System::String^ copyright,
+                                   System::String^ id,
                                    System::String^ provider,
                                    uint64_t filesize,
                                    System::String^ metadata,
@@ -780,5 +834,5 @@ OsmSourceNet^ OsmSourceNet::Create(System::String^ uri,
                                    List<double>^ regionOfInterest,
                                    List<System::String^>^ urls)
     {
-    return gcnew OsmSourceNet(uri, copyright, provider, filesize, metadata, sisterFiles, regionOfInterest, urls);
+    return gcnew OsmSourceNet(uri, copyright, id, provider, filesize, metadata, sisterFiles, regionOfInterest, urls);
     }
