@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Core/Version.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -12,6 +12,6 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-static const int WSCACHE_FORMAT_VERSION = 10;
+static const int WSCACHE_FORMAT_VERSION = 11;
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

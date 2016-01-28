@@ -26,6 +26,28 @@ BeFileName SchemaContext::GetCacheSchemasDir()
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    07/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName SchemaContext::GetSupportV3ConversionDir()
+    {
+    BeFileName path = GetCacheSchemasDir();
+    path.AppendToPath(L"Support");
+    path.AppendToPath(L"V3Conversion");
+    return path;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    07/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName SchemaContext::GetSupportMappingDir()
+    {
+    BeFileName path = GetCacheSchemasDir();
+    path.AppendToPath(L"Support");
+    path.AppendToPath(L"Mapping");
+    return path;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileName SchemaContext::GetECDbSchemasDir()
@@ -44,5 +66,6 @@ ECSchemaReadContextPtr SchemaContext::CreateReadContext()
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     context->AddSchemaPath(GetCacheSchemasDir());
     context->AddSchemaPath(GetECDbSchemasDir());
+    context->AddConversionSchemaPath(GetSupportV3ConversionDir());
     return context;
     }

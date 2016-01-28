@@ -32,15 +32,13 @@ FileUtilTests.TruncateFilePath_PathIsFolder_Error
 # Fail due to DgnDb06 changes 
 #----------------------------------------------------------------------------------------
 
-# MetaSchema import issues in ECDb/EC3
-CachingDataSourceTests*
-DataSourceCacheTests.UpdateSchemas_DefaultUsedSchemasPassed_Success
-
 # Graphite05x EDDb upgrade is not yet supported or will not be. Waiting for requirements for any upgrades needed to be implemented.
 DataSourceCacheUpgradeTests*
 
 # ECSchema update in ECDb is not yet supported
 DataSourceCacheTests.UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable
+CachingDataSourceTests.UpdateSchemas_*
+CachingDataSourceTests.OpenOrCreate_SchemaPathNotPassedAndServerRetursMetaSchema_GetsAllSchemasAndMetaSchemaFromServer
 
 # Fails when using existing ECDb and opening it. Works fine when using freshly opened ECDb
 ECDbAdapterTests.DeleteInstances_DeletingParentThatHoldsTwoChildrenThatHoldSubChild_DeletesParentAndChildrenAndSubChild
@@ -49,7 +47,7 @@ ECDbAdapterTests.DeleteInstances_DeletedInstanceIsInHoldingCircularRelationships
 # Fails because ECDb holding relationship deletion deletes child but not subchildren
 ECDbAdapterTests.DeleteInstances_DeletingRelationshipThatHoldsHierarchy_HierarchyDeleted
 
-# Fails because ECDb does not update read-only properties
+# Fails because ECDb does not update read-only and calculated properties
 DataSourceCacheTests.CacheResponse_ExistingInstanceWithReadOnlyProperty_UpdatesPropertyValueForSameInstanceInCache
 
 #Need adjustments to 06 ECRelationship limitations in ECDb
@@ -400,7 +398,6 @@ DataSourceCacheTests.GetExtendedData_UpdatedDataForRelationship_WorksFine
 DataSourceCacheTests.GetExtendedData_UpdatedDataForRoot_WorksFine
 DataSourceCacheTests.GetExtendedData_UpdatedDataForNavigationBase_WorksFine
 DataSourceCacheTests.CacheResponse_ResultContainsInstanceThatWasLocallyModified_UpdatesPropertiesThatWereNotChanged
-DataSourceCacheTests.CacheResponse_FullResultContainsInstanceThatWasLocallyModified_UpdatesPropertiesThatWereNotChanged
 DataSourceCacheTests.CacheResponse_PartialResultsContainInstanceThatWasLocallyModified_RejectsAndDoesNotUpdateInstance
 DataSourceCacheTests.CacheResponse_PartialResultsContainInstanceWihtIdOnlyThatWasLocallyModified_DoesNotRejectOrUpdateInstance
 DataSourceCacheTests.CacheResponse_FullResultContainsInstanceThatWasLocallyDeleted_IgnoresInstance
