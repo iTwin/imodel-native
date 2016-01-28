@@ -112,7 +112,7 @@ END_UNNAMED_NAMESPACE
 BETEST_TC_SETUP(ElementDependencyGraph) 
     {
     ScopedDgnHost tempHost;
-    s_seedFileInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(true, true));
+    ElementDependencyGraph::s_seedFileInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(true, true));
     }
 
 //---------------------------------------------------------------------------------------
