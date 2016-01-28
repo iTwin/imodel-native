@@ -311,7 +311,7 @@ TEST (ECDbRelationships, ImportECRelationshipInstances)
     //   Relates: Foo (1) -> Asset, Employee (1)
     relInstance = CreateRelationship (test, "StartupCompany", "Foo", "Asset", "Foo_has_SomethingInOneOfManyTables");
     ASSERT_TRUE (relInstance.IsValid());
-    ASSERT_EQ(SUCCESS, PersistRelationship(*relInstance, db)) << "Relationship with many target tables is readonly";
+    ASSERT_EQ(ERROR, PersistRelationship(*relInstance, db)) << "Relationship with many target tables is readonly";
 
     // Import 1-to-M relationships
     // EmployeeFurniture
