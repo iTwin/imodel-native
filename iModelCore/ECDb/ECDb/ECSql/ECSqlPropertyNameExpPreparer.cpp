@@ -71,7 +71,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
         }
     else if (currentScopeECSqlType == ECSqlType::Delete)
         {
-        if (!ctx.GetCurrentScope().GetExtendedOption(ECSqlPrepareContext::ExpScope::ExtendOptions::SkipTableAliasWhenPreparingDeleteWhereClause))
+        if (!currentScope.HasExtendedOption(ECSqlPrepareContext::ExpScope::ExtendedOptions::SkipTableAliasWhenPreparingDeleteWhereClause))
             classIdentifier.assign(exp->GetPropertyMap().GetFirstColumn()->GetTable().GetName());
 
         if (exp->GetClassRefExp()->GetType() == Exp::Type::ClassName)

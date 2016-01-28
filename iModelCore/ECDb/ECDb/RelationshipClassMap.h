@@ -52,6 +52,7 @@ struct RelationshipConstraintMap : NonCopyableClass
         bool TryGetSingleClassIdFromConstraint(ECN::ECClassId& classId) const;
         ECN::ECRelationshipConstraintCR GetRelationshipConstraint()const;
         bool IsSingleAbstractClass() const { return m_constraint.GetClasses().size() == 1 && m_constraint.GetClasses().front()->GetClassModifier() == ECN::ECClassModifier::Abstract; }
+
     };
 
 /*=================================================================================**//**
@@ -99,6 +100,12 @@ public:
 
         return false;
         }
+    bool IsReadonly() const
+        {
+        size_t sourceCount = GetECDbMap().GetTableCountOnRelationshipEnd(GetConstraintMap(ECN::ECRelationshipEnd::ECRelationshipEnd_Source).GetRelationshipConstraint());
+        size_t targetCount = GetECDbMap().GetTableCountOnRelationshipEnd(GetConstraintMap(ECN::ECRelationshipEnd::ECRelationshipEnd_Target).GetRelationshipConstraint());
+        return sourceCount > 1 || targetCount > 1;
+        }
     };
 
 /*=================================================================================**//**
@@ -129,6 +136,7 @@ private:
     //! @return SUCCESS if key property was found or no key property exists on the constraint. ERROR if constraint has more
     //! than one class or more than one key properties.
     BentleyStatus TryGetKeyPropertyColumn(std::set<ECDbSqlColumn const*>& keyPropertyColumns, ECN::ECRelationshipConstraintCR, ECN::ECRelationshipClassCR, ECN::ECRelationshipEnd constraintEnd) const;
+    BentleyStatus TryGetConstraintIdColumnNameFromNavigationProperty(Utf8StringR, ECN::ECRelationshipConstraintCR, ECN::ECRelationshipClassCR, ECN::ECRelationshipEnd constraintEnd) const;
 
     MapStatus CreateConstraintColumns(ECDbSqlColumn*& foreignKeyIdColumn, RelationshipMapInfo const&, ECN::ECRelationshipEnd constraintEnd, ECN::ECRelationshipConstraintCR);
     MapStatus CreateConstraintPropMaps (ECN::ECRelationshipEnd thisEnd, ECN::ECClassId defaultThisEndClassId, ECDbSqlColumn* const& otherEndECInstanceIdColumn, ECDbSqlColumn* const& otherEndECClassIdColumn, ECN::ECClassId defaultOtherEndClassId);

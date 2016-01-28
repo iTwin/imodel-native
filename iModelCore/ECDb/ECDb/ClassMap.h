@@ -180,6 +180,8 @@ public:
         return std::find(tables.begin(), tables.end(), &table) != tables.end();
         }
     bool IsMappedToSingleTable() const { return GetTables().size() == 1; }
+
+    IClassMap const* FindSharedTableRootClassMap() const;
     IClassMap const* FindClassMapOfParentOfJoinedTable() const;
     BentleyStatus GetPathToParentOfJoinedTable(std::vector<IClassMap const*>& path) const;
 
@@ -190,7 +192,7 @@ public:
     PropertyMapCollection const& GetPropertyMaps () const;
 
     //! Returns the class maps of the classes derived from this class map's class.
-    //! @eturn Derived classes class maps
+    //! @return Derived classes class maps
     std::vector<IClassMap const*> GetDerivedClassMaps () const;
 
     //! Checks whether this class map contains a property map of type PropertyMapToTable.
@@ -328,7 +330,7 @@ struct ClassMap : public IClassMap, RefCountedBase
         ECN::ECClassId              m_parentMapClassId;
         std::unique_ptr<ClassDbView> m_dbView;
         ColumnFactory               m_columnFactory;
-        std::unique_ptr<Utf8String> m_userSpecifiedECInstanceIdColumnName;
+
     private:
         BentleyStatus ProcessStandardKeySpecifications(SchemaImportContext&, ClassMapInfo const&);
         BentleyStatus InitializeDisableECInstanceIdAutogeneration();
@@ -380,7 +382,6 @@ struct ClassMap : public IClassMap, RefCountedBase
         ECDbSqlColumn* FindOrCreateColumnForProperty(ClassMapCR, ClassMapInfo const*, PropertyMapR,
                                                      Utf8CP requestedColumnName, ECN::PrimitiveType, bool nullable, bool unique, ECDbSqlColumn::Constraint::Collation, Utf8CP accessStringPrefix);
 
-        Utf8StringCP GetUserSpecifiedECInstanceIdColumnName() const {return m_userSpecifiedECInstanceIdColumnName.get(); }
         PropertyMapCP GetECInstanceIdPropertyMap() const;
         bool TryGetECInstanceIdPropertyMap(PropertyMapPtr& ecIstanceIdPropertyMap) const;
 

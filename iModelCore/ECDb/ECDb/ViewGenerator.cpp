@@ -9,7 +9,9 @@
 #include "ECDbPolicyManager.h"
 #include <set>
 #include "ECSql/ECSqlPrepareContext.h"
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
 #define ECDB_HOLDING_VIEW "ec_RelationshipHoldingStatistics"
         
 //************************** ViewGenerator ***************************************************
@@ -248,7 +250,7 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewQue
             continue;
 
         auto aliasSqlSnippets = basePropMap->ToNativeSql(nullptr, ECSqlType::Select, false);
-        BeAssert(actualPropMap->GetTable() != nullptr);
+        BeAssert(actualPropMap->GetTable() != nullptr);                                                                                     
         auto colSqlSnippets = actualPropMap->ToNativeSql(actualPropMap->GetTable()->GetName().c_str(), ECSqlType::Select, false);
         auto colSqlSnippetsWithoutTableNames = actualPropMap->ToNativeSql(nullptr, ECSqlType::Select, false);
 

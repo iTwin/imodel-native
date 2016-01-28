@@ -877,11 +877,6 @@ TEST_F (ECSqlStatementTestFixture, PolymorphicDeleteTestWithStructArrays)
 
     bvector<Utf8String> tableNames;
     tableNames.push_back ("nsat_ClassA");
-    tableNames.push_back ("nsat_DerivedA");
-    tableNames.push_back ("nsat_DerivedB");
-    tableNames.push_back ("nsat_DoubleDerivedA");
-    tableNames.push_back ("nsat_DoubleDerivedB");
-    tableNames.push_back ("nsat_DoubleDerivedC");
     tableNames.push_back ("nsat_S1");
     tableNames.push_back ("nsat_S2");
     tableNames.push_back ("nsat_S3");
@@ -906,10 +901,10 @@ TEST_F (ECSqlStatementTestFixture, PolymorphicDeleteTestWithStructArrays)
 TEST_F(ECSqlStatementTestFixture, PolymorphicDeleteWithSubclassesInMultipleTables)
     {
     SchemaItem testSchema("<?xml version='1.0' encoding='utf-8' ?>"
-                          "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-                          "    <ECClass typeName='A' isDomainClass='True'>"
+                          "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                          "    <ECEntityClass typeName='A' >"
                           "        <ECProperty propertyName='Price' typeName='double' />"
-                          "    </ECClass>"
+                          "    </ECEntityClass>"
                           "</ECSchema>", false, "");
     ECDbR ecdb = SetupECDb("PolymorphicDeleteTest.ecdb", testSchema);
     ASSERT_TRUE(ecdb.IsDbOpen());
@@ -1336,7 +1331,6 @@ void setProductsValues (StandaloneECInstancePtr instance, int ProductId, Utf8CP 
     instance->SetValue ("Price", ECValue (price));
     }
 
-
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Affan.Khan                 01/14
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1559,36 +1553,36 @@ TEST_F (ECSqlStatementTestFixture, BindPrimitiveArray)
         ASSERT_EQ(BE_SQLITE_DONE, statement.Step (ecInstanceKey));
         }
 
+        {
+        ECSqlStatement statement;
+        auto stat = statement.Prepare (ecdb, "SELECT I_Array, S_Array FROM ONLY ecsql.PA WHERE ECInstanceId = ?");
+        ASSERT_EQ (ECSqlStatus::Success, stat);
+        statement.BindId (1, ecInstanceKey.GetECInstanceId ());
+
+        ASSERT_EQ (BE_SQLITE_ROW, statement.Step ());
+
+        IECSqlArrayValue const& intArray = statement.GetValueArray (0);
+        size_t expectedIndex = 0;
+        for (IECSqlValue const* arrayElement : intArray)
             {
-            ECSqlStatement statement;
-            auto stat = statement.Prepare (ecdb, "SELECT I_Array, S_Array FROM ONLY ecsql.PA WHERE ECInstanceId = ?");
-            ASSERT_EQ(ECSqlStatus::Success, stat);
-            statement.BindId (1, ecInstanceKey.GetECInstanceId ());
-
-            ASSERT_EQ(BE_SQLITE_ROW, statement.Step ());
-
-            IECSqlArrayValue const& intArray = statement.GetValueArray (0);
-            size_t expectedIndex = 0;
-            for (IECSqlValue const* arrayElement : intArray)
-                {
-                ECDbIssueListener issueListener(ecdb);
-                int actualArrayElement = arrayElement->GetInt ();
-                ASSERT_FALSE (issueListener.GetIssue().IsIssue());
-                ASSERT_EQ (expectedIntArray[expectedIndex], actualArrayElement);
-                expectedIndex++;
-                }
-
-            IECSqlArrayValue const& stringArray = statement.GetValueArray (1);
-            expectedIndex = 0;
-            for (IECSqlValue const* arrayElement : stringArray)
-                {
-                ECDbIssueListener issueListener(ecdb);
-                auto actualArrayElement = arrayElement->GetText ();
-                ASSERT_FALSE(issueListener.GetIssue().IsIssue());
-                ASSERT_STREQ (expectedStringArray[expectedIndex].c_str (), actualArrayElement);
-                expectedIndex++;
-                }
+            ECDbIssueListener issueListener (ecdb);
+            int actualArrayElement = arrayElement->GetInt ();
+            ASSERT_FALSE (issueListener.GetIssue ().IsIssue ());
+            ASSERT_EQ (expectedIntArray[expectedIndex], actualArrayElement);
+            expectedIndex++;
             }
+
+        IECSqlArrayValue const& stringArray = statement.GetValueArray (1);
+        expectedIndex = 0;
+        for (IECSqlValue const* arrayElement : stringArray)
+            {
+            ECDbIssueListener issueListener (ecdb);
+            auto actualArrayElement = arrayElement->GetText ();
+            ASSERT_FALSE (issueListener.GetIssue ().IsIssue ());
+            ASSERT_STREQ (expectedStringArray[expectedIndex].c_str (), actualArrayElement);
+            expectedIndex++;
+            }
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -2051,14 +2045,14 @@ TEST_F (ECSqlStatementTestFixture, UpdateWithStructBinding)
 TEST_F(ECSqlStatementTestFixture, StructsInWhereClause)
     {
     SchemaItem schema("<?xml version='1.0' encoding='utf-8' ?>"
-                      "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-                      "    <ECClass typeName='Name' isStruct='True'>"
+                      "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                      "    <ECStructClass typeName='Name' >"
                       "        <ECProperty propertyName='First' typeName='string' />"
                       "        <ECProperty propertyName='Last' typeName='string' />"
-                      "    </ECClass>"
-                      "    <ECClass typeName='Person' isDomainClass='True'>"
+                      "    </ECStructClass>"
+                      "    <ECEntityClass typeName='Person' >"
                       "        <ECStructProperty propertyName='FullName' typeName='Name' />"
-                      "    </ECClass>"
+                      "    </ECEntityClass>"
                       "</ECSchema>");
 
     // Create and populate a sample project
@@ -3611,16 +3605,16 @@ TEST_F(ECSqlStatementTestFixture, ClassWithStructHavingStructArrayUpdateWithDotO
 TEST_F(ECSqlStatementTestFixture, AmbiguousQuery)
     {
     SchemaItem schemaXml("<?xml version='1.0' encoding='utf-8'?>"
-                      "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                      "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                       "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-                      "    <ECClass typeName='Struct' isStruct='True'>"
+                      "    <ECStructClass typeName='Struct' >"
                       "        <ECProperty propertyName='P1' typeName='string' />"
                       "        <ECProperty propertyName='P2' typeName='int' />"
-                      "    </ECClass>"
-                      "    <ECClass typeName='TestClass' isDomainClass='True'>"
+                      "    </ECStructClass>"
+                      "    <ECEntityClass typeName='TestClass' >"
                       "        <ECProperty propertyName='P1' typeName='string'/>"
                       "         <ECStructProperty propertyName = 'TestClass' typeName = 'Struct'/>"
-                      "    </ECClass>"
+                      "    </ECEntityClass>"
                       "</ECSchema>");
 
     SetupECDb("AmbiguousQuery.ecdb", schemaXml);
@@ -3726,12 +3720,12 @@ TEST_F (ECSqlStatementTestFixture, BindNegECInstanceId)
 TEST_F(ECSqlStatementTestFixture, InstanceInsertionInArray)
     {
     SchemaItem schema("<?xml version='1.0' encoding='utf-8'?>"
-                      "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-                      "    <ECClass typeName='TestClass' isDomainClass='True'>"
+                      "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                      "    <ECEntityClass typeName='TestClass' >"
                       "        <ECProperty propertyName='P1' typeName='string'/>"
                       "        <ECArrayProperty propertyName = 'P2_Array' typeName = 'string' minOccurs='1' maxOccurs='2'/>"
                       "        <ECArrayProperty propertyName = 'P3_Array' typeName = 'int' minOccurs='1' maxOccurs='2'/>"
-                      "    </ECClass>"
+                      "    </ECEntityClass>"
                       "</ECSchema>");
 
     SetupECDb("InstanceInsertionInArray.ecdb", schema);

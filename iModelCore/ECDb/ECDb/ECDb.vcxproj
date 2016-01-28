@@ -15,7 +15,6 @@
     <ClCompile Include="ClassMap.cpp" />
     <ClCompile Include="ClassMapInfo.cpp" />
     <ClCompile Include="ClassMapSubclasses.cpp" />
-    <ClCompile Include="ColumnInfo.cpp" />
     <ClCompile Include="docs\samplecode\ECDb.sample.cpp" />
     <ClCompile Include="docs\samplecode\ECDbCRUD.sample.cpp" />
     <ClCompile Include="docs\samplecode\ECDbCRUDAdapters.sample.cpp" />
@@ -143,7 +142,6 @@
     <ClInclude Include="ClassMap.h" />
     <ClInclude Include="ClassMapInfo.h" />
     <ClInclude Include="ClassMapSubclasses.h" />
-    <ClInclude Include="ColumnInfo.h" />
     <ClInclude Include="ECDbImpl.h" />
     <ClInclude Include="ECDbInternalTypes.h" />
     <ClInclude Include="ECDbLogger.h" />

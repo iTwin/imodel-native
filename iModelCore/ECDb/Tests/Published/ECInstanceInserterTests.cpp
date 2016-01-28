@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECInstanceInserterTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -108,6 +108,7 @@ TEST_F(ECInstanceInserterTests, InsertMultipleInstancesOfPrimitiveClass)
     {
     InsertInstances("PrimitiveClass", "KitchenSink", 100, true);
     }
+
 TEST_F(ECInstanceInserterTests, InsertSingleInstanceOfPrimitiveClassWithNullValues)
     {
     InsertInstances("PrimitiveClass", "KitchenSink", 1, false);
@@ -390,10 +391,10 @@ TEST_F (ECInstanceInserterTests, GroupByClauseWithAndWithOutFunctions)
     {
     auto const schema =
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='SchemaWithReuseColumn' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "<ECSchema schemaName='SchemaWithReuseColumn' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
         "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-        "    <ECClass typeName='ClassA' isDomainClass='True'>"
+        "    <ECEntityClass typeName='ClassA' >"
         "        <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.01.00'>"
         "                <MapStrategy>"
@@ -404,13 +405,13 @@ TEST_F (ECInstanceInserterTests, GroupByClauseWithAndWithOutFunctions)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Price' typeName='double' />"
         "        <ECProperty propertyName='Id' typeName='int' />"
-        "    </ECClass>"
-        "    <ECClass typeName='ClassAB' isDomainClass='True'>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='ClassAB' >"
         "        <BaseClass>ClassA</BaseClass>"
-        "    </ECClass>"
-        "    <ECClass typeName='ClassAC' isDomainClass='True'>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='ClassAC' >"
         "        <BaseClass>ClassA</BaseClass>"
-        "    </ECClass>"
+        "    </ECEntityClass>"
         "</ECSchema>";
 
     ECDbTestProject saveTestProject;
@@ -514,10 +515,10 @@ TEST_F (ECInstanceInserterTests, InsertInstanceWithOutProvidingSourceTargetClass
     {
     auto const schema =
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='SchemaWithReuseColumn' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "<ECSchema schemaName='SchemaWithReuseColumn' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
         "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-        "    <ECClass typeName='ClassA' isDomainClass='True'>"
+        "    <ECEntityClass typeName='ClassA' >"
         "        <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.01.00'>"
         "                <MapStrategy>"
@@ -527,18 +528,18 @@ TEST_F (ECInstanceInserterTests, InsertInstanceWithOutProvidingSourceTargetClass
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='P1' typeName='string' />"
-        "    </ECClass>"
-        "    <ECClass typeName='ClassAB' isDomainClass='True'>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='ClassAB' >"
         "        <BaseClass>ClassA</BaseClass>"
         "        <ECProperty propertyName='P2' typeName='double' />"
-        "    </ECClass>"
-        "    <ECClass typeName='ClassC' isDomainClass='True'>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='ClassC' >"
         "        <ECProperty propertyName='P3' typeName='int' />"
-        "    </ECClass>"
-        "    <ECClass typeName='ClassD' isDomainClass='True'>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='ClassD' >"
         "        <ECProperty propertyName='P4' typeName='int' />"
-        "    </ECClass>"
-        "      <ECRelationshipClass typeName = 'RelationshipClassA' isDomainClass = 'True' strength = 'referencing' strengthDirection = 'forward'> "
+        "    </ECEntityClass>"
+        "      <ECRelationshipClass typeName = 'RelationshipClassA' strength = 'referencing' strengthDirection = 'forward'> "
         "          <Source cardinality = '(0,1)' polymorphic = 'True'> "
         "              <Class class = 'ClassA'/> "
         "          </Source> "
@@ -546,7 +547,7 @@ TEST_F (ECInstanceInserterTests, InsertInstanceWithOutProvidingSourceTargetClass
         "              <Class class = 'ClassC'/> "
         "          </Target> "
         "      </ECRelationshipClass> "
-        "      <ECRelationshipClass typeName = 'RelationshipClassB' isDomainClass = 'True' strength = 'referencing' strengthDirection = 'forward'> "
+        "      <ECRelationshipClass typeName = 'RelationshipClassB' strength = 'referencing' strengthDirection = 'forward'> "
         "          <Source cardinality = '(0,1)' polymorphic = 'True'> "
         "              <Class class = 'ClassA'/> "
         "          </Source> "
@@ -554,7 +555,7 @@ TEST_F (ECInstanceInserterTests, InsertInstanceWithOutProvidingSourceTargetClass
         "              <Class class = 'ClassC'/> "
         "          </Target> "
         "      </ECRelationshipClass> "
-        "      <ECRelationshipClass typeName = 'RelationshipClassC' isDomainClass = 'True' strength = 'referencing' strengthDirection = 'forward'> "//relationship Constaining polymorphic Constraint
+        "      <ECRelationshipClass typeName = 'RelationshipClassC' strength = 'referencing' strengthDirection = 'forward'> "//relationship Constaining polymorphic Constraint
         "          <Source cardinality = '(0,N)' polymorphic = 'True'> "
         "              <Class class = 'ClassA'/> "
         "          </Source> "
@@ -562,7 +563,7 @@ TEST_F (ECInstanceInserterTests, InsertInstanceWithOutProvidingSourceTargetClass
         "              <Class class = 'ClassC'/> "
         "          </Target> "
         "      </ECRelationshipClass> "
-        "      <ECRelationshipClass typeName = 'RelationshipClassD' isDomainClass = 'True' strength = 'referencing' strengthDirection = 'forward'> "
+        "      <ECRelationshipClass typeName = 'RelationshipClassD' strength = 'referencing' strengthDirection = 'forward'> "
         "          <Source cardinality = '(0,N)' polymorphic = 'True'> "
         "              <Class class = 'ClassC'/> "
         "          </Source> "

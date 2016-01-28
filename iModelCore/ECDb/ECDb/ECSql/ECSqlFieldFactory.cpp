@@ -310,9 +310,6 @@ ECSqlColumnInfo&& structFieldColumnInfo
     ECSqlStatus status = ECSqlStatus::Success;
     for(PropertyMapCP childPropertyMap : childPropertyMaps)
         {
-        if (childPropertyMap->IsUnmapped ())
-            continue;
-
         ECSqlColumnInfo childColumnInfo = ECSqlColumnInfo::CreateChild (newStructField->GetColumnInfo (), childPropertyMap->GetProperty ());
 
         std::unique_ptr<ECSqlField> childField = nullptr;

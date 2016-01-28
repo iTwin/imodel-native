@@ -70,22 +70,17 @@ bool PropertyMap::IsVirtual () const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle     03/2014
-//---------------------------------------------------------------------------------------
-bool PropertyMap::IsUnmapped () const
-    {
-    return _IsUnmapped ();
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle     01/2016
 //---------------------------------------------------------------------------------------
 ECDbSqlTable const* PropertyMap::GetTable() const
     {
     if (m_mappedTables.empty())
         return nullptr;
+    
+    if (IsSystemPropertyMap())
+        return m_mappedTables.back();
 
-    return m_mappedTables[0];
+    return m_mappedTables.front();
     }
 
 //---------------------------------------------------------------------------------------
@@ -110,11 +105,6 @@ PropertyMapPtr PropertyMap::CreateAndEvaluateMapping(ClassMapLoadContext& ctx, E
     if (!ecProperty.HasId())
         ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema(ecdb, ecProperty);
 
-    // WIP_ECDB: honor the hint for non-default mappings
-    ColumnInfo columnInfo = ColumnInfo::Create(ecProperty, propertyAccessString);
-    if (!columnInfo.IsValid())
-        return nullptr;
-
     PrimitiveECPropertyCP primitiveProperty = ecProperty.GetAsPrimitiveProperty();
     if (primitiveProperty != nullptr)
         {
@@ -122,10 +112,10 @@ PropertyMapPtr PropertyMap::CreateAndEvaluateMapping(ClassMapLoadContext& ctx, E
             {
                 case PRIMITIVETYPE_Point2D:
                 case PRIMITIVETYPE_Point3D:
-                    return new PropertyMapPoint(ecProperty, propertyAccessString, columnInfo, parentPropertyMap);
+                    return new PropertyMapPoint(ecProperty, propertyAccessString, parentPropertyMap);
 
                 default:
-                    return new PropertyMapSingleColumn(ecProperty, propertyAccessString, columnInfo, parentPropertyMap);
+                    return new PropertyMapSingleColumn(ecProperty, propertyAccessString, parentPropertyMap);
             }
         }
 
@@ -135,7 +125,7 @@ PropertyMapPtr PropertyMap::CreateAndEvaluateMapping(ClassMapLoadContext& ctx, E
     if (arrayProperty != nullptr)
         {
         if (ARRAYKIND_Primitive == arrayProperty->GetKind())
-            return new PropertyMapPrimitiveArray(ecdb, ecProperty, propertyAccessString, columnInfo, parentPropertyMap);
+            return new PropertyMapPrimitiveArray(ecdb, ecProperty, propertyAccessString, parentPropertyMap);
         else
             {
             BeAssert(ARRAYKIND_Primitive != arrayProperty->GetKind());
@@ -149,6 +139,54 @@ PropertyMapPtr PropertyMap::CreateAndEvaluateMapping(ClassMapLoadContext& ctx, E
     BeAssert(ecProperty.GetIsNavigation());
     return NavigationPropertyMap::Create(ctx, ecdb, ecProperty, propertyAccessString, parentPropertyMap);
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle     01/2016
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus PropertyMap::DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, ECDbSqlColumn::Constraint::Collation& collation, ECPropertyCR ecProp, Utf8CP propAccessString)
+    {
+    columnName.clear();
+    isNullable = true;
+    isUnique = false;
+    collation = ECDbSqlColumn::Constraint::Collation::Default;
+
+    ECDbPropertyMap customPropMap;
+    if (ECDbMapCustomAttributeHelper::TryGetPropertyMap(customPropMap, ecProp))
+        {
+        if (ECObjectsStatus::Success != customPropMap.TryGetColumnName(columnName))
+            return ERROR;
+
+        if (ECObjectsStatus::Success != customPropMap.TryGetIsNullable(isNullable))
+            return ERROR;
+
+        if (ECObjectsStatus::Success != customPropMap.TryGetIsUnique(isUnique))
+            return ERROR;
+
+        Utf8String collationStr;
+        if (ECObjectsStatus::Success != customPropMap.TryGetCollation(collationStr))
+            return ERROR;
+
+        if (!ECDbSqlColumn::Constraint::TryParseCollationString(collation, collationStr.c_str()))
+            {
+            LOG.errorv("Custom attribute PropertyMap on ECProperty %s:%s has an invalid value for the property 'Collation': %s",
+                       ecProp.GetClass().GetFullName(), ecProp.GetName().c_str(),
+                       collationStr.c_str());
+            return ERROR;
+            }
+        }
+
+    // PropertyMappingRule: if custom attribute PropertyMap does not supply a column name for an ECProperty, 
+    // we use the ECProperty's propertyAccessString (and replace . by _)
+    if (columnName.empty())
+        {
+        columnName.assign(propAccessString);
+        columnName.ReplaceAll(".", "_");
+        }
+
+    return SUCCESS;
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle     06/2013
@@ -178,7 +216,7 @@ BentleyStatus PropertyMap::_Save(ECDbClassMapInfo & classMapInfo) const
 
     if (columns.size() > 1)
         {
-        BeAssert(false && "Overide this funtion for multicolumn mapping");
+        BeAssert(false && "Override this funtion for multicolumn mapping");
         return ERROR;
         }
 
@@ -225,23 +263,26 @@ Utf8CP PropertyMap::GetPropertyAccessString() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      12/2013
 //---------------------------------------------------------------------------------------
-NativeSqlBuilder::List PropertyMap::ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses) const
+NativeSqlBuilder::List PropertyMap::ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses, ECDbSqlTable const* tableFilter) const
     {
-    return _ToNativeSql(classIdentifier, ecsqlType, wrapInParentheses);
+    return _ToNativeSql(classIdentifier, ecsqlType, wrapInParentheses, tableFilter);
     }
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      12/2013
 //---------------------------------------------------------------------------------------
-NativeSqlBuilder::List PropertyMap::_ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses) const
+NativeSqlBuilder::List PropertyMap::_ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses, ECDbSqlTable const* tableFilter) const
     {
     std::vector<ECDbSqlColumn const*> columns;
     GetColumns (columns);
 
     NativeSqlBuilder::List nativeSqlSnippets;
-    for (auto column : columns)
+    for (ECDbSqlColumn const* column : columns)
         {
+        if (tableFilter != nullptr && &column->GetTable() != tableFilter)
+            continue;
+
         BeAssert (!column->GetName ().empty());
 
         NativeSqlBuilder sqlSnippet;
@@ -737,8 +778,8 @@ Utf8String PropertyMapStructArray::_ToString() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-PropertyMapSingleColumn::PropertyMapSingleColumn (ECPropertyCR ecProperty, Utf8CP propertyAccessString, ColumnInfoCR columnInfo, PropertyMapCP parentPropertyMap)
-: PropertyMap (ecProperty, propertyAccessString, parentPropertyMap), m_columnInfo (columnInfo), m_primitiveProperty (ecProperty.GetAsPrimitiveProperty ()), m_column (nullptr)
+PropertyMapSingleColumn::PropertyMapSingleColumn (ECPropertyCR ecProperty, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap)
+: PropertyMap (ecProperty, propertyAccessString, parentPropertyMap), m_primitiveProperty (ecProperty.GetAsPrimitiveProperty ()), m_column (nullptr)
     {}
 
 //---------------------------------------------------------------------------------------
@@ -752,14 +793,24 @@ bool PropertyMapSingleColumn::_IsVirtual () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-BentleyStatus PropertyMapSingleColumn::_FindOrCreateColumnsInTable (ClassMap& classMap , ClassMapInfo const* classMapInfor)
+BentleyStatus PropertyMapSingleColumn::_FindOrCreateColumnsInTable (ClassMap& classMap , ClassMapInfo const* classMapInfo)
     {
-    Utf8CP        columnName = m_columnInfo.GetName ();
-    PrimitiveType primitiveType = m_columnInfo.GetColumnType ();
-    bool          nullable = m_columnInfo.IsNullable ();
-    bool          unique = m_columnInfo.IsUnique ();
-    ECDbSqlColumn::Constraint::Collation collation = m_columnInfo.GetCollation ();
-    ECDbSqlColumn* col = classMap.FindOrCreateColumnForProperty(classMap, classMapInfor, *this, columnName, primitiveType, nullable, unique, collation, nullptr);
+    if (!GetProperty().GetIsPrimitive())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    Utf8String colName;
+    bool isNullable = true;
+    bool isUnique = false;
+    ECDbSqlColumn::Constraint::Collation collation = ECDbSqlColumn::Constraint::Collation::Default;
+    if (SUCCESS != DetermineColumnInfo(colName, isNullable, isUnique, collation))
+        return ERROR;
+
+    const PrimitiveType colType = GetProperty().GetAsPrimitiveProperty()->GetType();
+
+    ECDbSqlColumn* col = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, colName.c_str(), colType, isNullable, isUnique, collation, nullptr);
     if (col == nullptr)
         {
         BeAssert(col != nullptr && "This actually indicates a mapping error. The method PropertyMapSingleColumn::_FindOrCreateColumnsInTable should therefore be changed to return an error.");
@@ -793,29 +844,32 @@ void PropertyMapSingleColumn::_GetColumns (std::vector<ECDbSqlColumn const*>& co
 Utf8String PropertyMapSingleColumn::_ToString() const
     {
     return Utf8PrintfString("PropertyMapSingleColumn: ecProperty=%s.%s, columnName=%s", GetProperty().GetClass().GetFullName(), 
-        GetProperty().GetName().c_str(), m_columnInfo.GetName());
+        GetProperty().GetName().c_str(), m_column->GetName().c_str());
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-PropertyMapPoint::PropertyMapPoint (ECPropertyCR ecProperty, Utf8CP propertyAccessString, ColumnInfoCR columnInfo, PropertyMapCP parentPropertyMap)
-: PropertyMap (ecProperty, propertyAccessString, parentPropertyMap), m_columnInfo (columnInfo), m_xColumn (nullptr), m_yColumn (nullptr), m_zColumn (nullptr)
+PropertyMapPoint::PropertyMapPoint (ECPropertyCR ecProperty, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap)
+: PropertyMap (ecProperty, propertyAccessString, parentPropertyMap), m_is3d(false), m_xColumn (nullptr), m_yColumn (nullptr), m_zColumn (nullptr)
     {
     PrimitiveECPropertyCP primitiveProperty = ecProperty.GetAsPrimitiveProperty();
     if (!EXPECTED_CONDITION(primitiveProperty))
         return;
 
-    m_columnInfo.SetColumnType(PRIMITIVETYPE_Double);
-
     switch (primitiveProperty->GetType())
         {
-        case PRIMITIVETYPE_Point3D: m_is3d = true; return;
-        case PRIMITIVETYPE_Point2D: m_is3d = false; return;
-        }
+        case PRIMITIVETYPE_Point3D:
+            m_is3d = true; 
+            break;
+        case PRIMITIVETYPE_Point2D: 
+            m_is3d = false; 
+            break;
 
-    m_is3d = false;
-    BeAssert (false && "Constructed a PropertyMapPoint for a property that is not a Point2d or Point3d");
+        default:
+            BeAssert(false);
+            break;
+        }
     }
 
 /*---------------------------------------------------------------------------------------
@@ -926,11 +980,11 @@ BentleyStatus PropertyMapPoint::SetColumns(ECDbSqlColumn const& xCol, ECDbSqlCol
 Utf8String PropertyMapPoint::_ToString() const
     {
     if (m_is3d)
-        return Utf8PrintfString("PropertyMapPoint (3d): ecProperty=%s.%s, columnName=%s_X, _Y, _Z", GetProperty().GetClass().GetFullName(), 
-            GetProperty().GetName().c_str(), m_columnInfo.GetName());
+        return Utf8PrintfString("PropertyMapPoint (3d): ecProperty=%s.%s, columnNames=%s, %s, %s", GetProperty().GetClass().GetFullName(), 
+            GetProperty().GetName().c_str(), m_xColumn->GetName().c_str(), m_yColumn->GetName().c_str(), m_zColumn->GetName().c_str());
     else
         return Utf8PrintfString("PropertyMapPoint (2d): ecProperty=%s.%s, columnName=%s_X, _Y", GetProperty().GetClass().GetFullName(), 
-            GetProperty().GetName().c_str(), m_columnInfo.GetName());
+            GetProperty().GetName().c_str(), m_xColumn->GetName().c_str(), m_yColumn->GetName().c_str());
     }
 
 /*---------------------------------------------------------------------------------------
@@ -938,18 +992,18 @@ Utf8String PropertyMapPoint::_ToString() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus PropertyMapPoint::_FindOrCreateColumnsInTable(ClassMap& classMap,  ClassMapInfo const* classMapInfo)
     {
-    PrimitiveType primitiveType = PRIMITIVETYPE_Double;
-
-    Utf8CP        columnName    = m_columnInfo.GetName();
-    bool          nullable      = m_columnInfo.IsNullable();
-    bool          unique        = m_columnInfo.IsUnique();
-    ECDbSqlColumn::Constraint::Collation collation = m_columnInfo.GetCollation();
+    const PrimitiveType colType = PRIMITIVETYPE_Double;
+    Utf8String columnName;
+    bool isNullable = true;
+    bool isUnique = false;
+    ECDbSqlColumn::Constraint::Collation collation = ECDbSqlColumn::Constraint::Collation::Default;
+    if (SUCCESS != DetermineColumnInfo(columnName, isNullable, isUnique, collation))
+        return ERROR;
 
     bset<ECDbSqlTable const*> tables;
-
     Utf8String xColumnName(columnName);
     xColumnName.append("_X");
-    ECDbSqlColumn const* xCol = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, xColumnName.c_str(), primitiveType, nullable, unique, collation, "X");
+    ECDbSqlColumn const* xCol = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, xColumnName.c_str(), colType, isNullable, isUnique, collation, "X");
     if (xCol == nullptr)
         {
         BeAssert(false);
@@ -958,7 +1012,7 @@ BentleyStatus PropertyMapPoint::_FindOrCreateColumnsInTable(ClassMap& classMap, 
 
     Utf8String yColumnName(columnName);
     yColumnName.append("_Y");
-    ECDbSqlColumn const* yCol = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, yColumnName.c_str(), primitiveType, nullable, unique, collation, "Y");
+    ECDbSqlColumn const* yCol = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, yColumnName.c_str(), colType, isNullable, isUnique, collation, "Y");
     if (yCol == nullptr)
         {
         BeAssert(false);
@@ -970,7 +1024,7 @@ BentleyStatus PropertyMapPoint::_FindOrCreateColumnsInTable(ClassMap& classMap, 
         {
         Utf8String zColumnName(columnName);
         zColumnName.append("_Z");
-        zCol = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, zColumnName.c_str(), primitiveType, nullable, unique, collation, "Z");
+        zCol = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, zColumnName.c_str(), colType, isNullable, isUnique, collation, "Z");
         if (zCol == nullptr)
             {
             BeAssert(false);
@@ -995,16 +1049,47 @@ void PropertyMapPoint::_GetColumns(std::vector<ECDbSqlColumn const*>& columns) c
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-PropertyMapPrimitiveArray::PropertyMapPrimitiveArray (ECDbCR ecdb, ECPropertyCR ecProperty, Utf8CP propertyAccessString, ColumnInfoCR columnInfo, PropertyMapCP parentPropertyMap)
-    : PropertyMapSingleColumn (ecProperty, propertyAccessString, columnInfo, parentPropertyMap)
+PropertyMapPrimitiveArray::PropertyMapPrimitiveArray (ECDbCR ecdb, ECPropertyCR ecProperty, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap)
+    : PropertyMapSingleColumn (ecProperty, propertyAccessString, parentPropertyMap)
     {
-    BeAssert (columnInfo.GetColumnType() == PRIMITIVETYPE_Binary); 
     ArrayECPropertyCP arrayProperty = GetProperty().GetAsArrayProperty();
     BeAssert(arrayProperty);
 
     ECClassCP primitiveArrayPersistenceClass = ECDbSystemSchemaHelper::GetClassForPrimitiveArrayPersistence (ecdb, arrayProperty->GetPrimitiveElementType());
     BeAssert(primitiveArrayPersistenceClass != nullptr);
     m_primitiveArrayEnabler = primitiveArrayPersistenceClass->GetDefaultStandaloneEnabler();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    casey.mullen      11/2012
+//---------------------------------------------------------------------------------------
+BentleyStatus PropertyMapPrimitiveArray::_FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfo const* classMapInfo)
+    {
+    if (!GetProperty().GetIsPrimitiveArray())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    Utf8String colName;
+    bool isNullable = true;
+    bool isUnique = false;
+    ECDbSqlColumn::Constraint::Collation collation = ECDbSqlColumn::Constraint::Collation::Default;
+    if (SUCCESS != DetermineColumnInfo(colName, isNullable, isUnique, collation))
+        return ERROR;
+
+    //prim array is persisted as BLOB in a single col
+    const PrimitiveType colType = PRIMITIVETYPE_Binary;
+
+    ECDbSqlColumn* col = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, colName.c_str(), colType, isNullable, isUnique, collation, nullptr);
+    if (col == nullptr)
+        {
+        BeAssert(col != nullptr && "This actually indicates a mapping error. The method PropertyMapPrimitiveArray::_FindOrCreateColumnsInTable should therefore be changed to return an error.");
+        return ERROR;
+        }
+
+    SetColumn(*col);
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------------
@@ -1016,7 +1101,7 @@ Utf8String PropertyMapPrimitiveArray::_ToString() const
     BeAssert (arrayProperty);
     
     return Utf8PrintfString("PropertyMapPrimitiveArray: ecProperty=%s.%s, type=%s, columnName=%s", GetProperty().GetClass().GetFullName(), 
-                            GetProperty().GetName().c_str(), ExpHelper::ToString(arrayProperty->GetPrimitiveElementType()), m_columnInfo.GetName());
+                            GetProperty().GetName().c_str(), ExpHelper::ToString(arrayProperty->GetPrimitiveElementType()), m_column->GetName().c_str());
     }
 
 

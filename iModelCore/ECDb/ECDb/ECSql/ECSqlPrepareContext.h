@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlPrepareContext.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -350,54 +350,37 @@ struct ECSqlPrepareContext
         //+===============+===============+===============+===============+===============+======
         struct ExpScope
             {
-            enum class ExtendOptions
+            enum class ExtendedOptions
                 {
-                SkipTableAliasWhenPreparingDeleteWhereClause = 0,
-                Unused1 = 1,
-                Unused2 = 2,
+                None = 0,
+                SkipTableAliasWhenPreparingDeleteWhereClause = 1
                 };
+
             private:
                 ExpCR m_exp;
                 ECSqlType m_ecsqlType;
                 ExpScope const* m_parent;
                 OptionsExp const* m_options;
                 int m_nativeSqlSelectClauseColumnCount;
-                ECSqlType DetermineECSqlType(ExpCR exp) const;
-                std::bitset<3> m_extendOptions;
-            public:
-                ExpScope(ExpCR exp, ExpScope const* parent, OptionsExp const* options);
+                ExtendedOptions m_extendedOptions;
 
-                ExpScope const* GetParent() const
-                    {
-                    return m_parent;
-                    }
-                ExpCR GetExp() const
-                    {
-                    return m_exp;
-                    }
-                OptionsExp const* GetOptions() const
-                    {
-                    return m_options;
-                    }
-                void SetExtendedOption(ExtendOptions option, bool value)
-                    {
-                    m_extendOptions[static_cast<int>(option)] = value;
-                    }
-                bool GetExtendedOption(ExtendOptions option) const
-                    {
-                    return m_extendOptions[static_cast<int>(option)];
-                    }
-                bool IsRootScope() const
-                    {
-                    return m_parent == nullptr;
-                    }
+                ECSqlType DetermineECSqlType(ExpCR) const;
+
+            public:
+                ExpScope(ExpCR, ExpScope const* parent, OptionsExp const*);
+
+                ECSqlType GetECSqlType() const { return m_ecsqlType; }
+                ExpScope const* GetParent() const { return m_parent; }
+                ExpCR GetExp() const { return m_exp; }
+                OptionsExp const* GetOptions() const { return m_options; }
+                bool IsRootScope() const { return m_parent == nullptr; }
+
+                void SetExtendedOption(ExtendedOptions option) { m_extendedOptions = Enum::Or(m_extendedOptions, option); }
+                bool HasExtendedOption(ExtendedOptions option) const { return Enum::Contains(m_extendedOptions, option); }
+
                 //SELECT only
                 void IncrementNativeSqlSelectClauseColumnCount(size_t value);
                 int GetNativeSqlSelectClauseColumnCount() const;
-                ECSqlType GetECSqlType() const
-                    {
-                    return m_ecsqlType;
-                    }
             };
 
         //=======================================================================================
@@ -412,7 +395,7 @@ struct ECSqlPrepareContext
                 ExpScopeStack()
                     {}
 
-                void Push(ExpCR statementExp, OptionsExp const* options);
+                void Push(ExpCR statementExp, OptionsExp const*);
                 void Pop();
 
                 size_t Depth() const;
@@ -438,49 +421,24 @@ struct ECSqlPrepareContext
         //SELECT only
         static bool FindLastParameterIndexBeforeWhereClause(int& index, Exp const& statementExp, WhereExp const* whereExp);
     public:
-        ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& ecsqlStatement);
-        ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& ecsqlStatement, ECN::ECClassId joinTableClassI);
-        ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& ecsqlStatement, ECSqlPrepareContext const& parent, ArrayECPropertyCR parentArrayProperty, ECSqlColumnInfo const* parentColumnInfo);
-        ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECSqlPrepareContext const& parentCtx);
+        ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&);
+        ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECN::ECClassId joinTableClassId);
+        ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECSqlPrepareContext const& parentCtx, ArrayECPropertyCR parentArrayProperty, ECSqlColumnInfo const* parentColumnInfo);
+        ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECSqlPrepareContext const& parentCtx);
         //ECSqlPrepareContext is copyable. Using compiler-generated copy ctor and assignment op.
 
         //! Gets the view mode to be used for class maps for classes in the ECSQL to prepare
-        //! ClassMap views differ for ECClasses that are domain classes and structs at the same time.
         //! @return View mode for class maps for this prepare context
         IClassMap::View GetClassMapViewMode() const;
 
-        ECDbCR GetECDb() const
-            {
-            return m_ecdb;
-            }
-        ECSqlPrepareContext const* GetParentContext() const
-            {
-            return m_parentCtx;
-            }
-        ArrayECPropertyCP GetParentArrayProperty() const
-            {
-            return m_parentArrayProperty;
-            }
-        ECSqlColumnInfo const* GetParentColumnInfo() const
-            {
-            return m_parentColumnInfo;
-            }
-        SelectionOptions const& GetSelectionOptions() const
-            {
-            return m_selectionOptions;
-            }
-        SelectionOptions& GetSelectionOptionsR()
-            {
-            return m_selectionOptions;
-            }
-        ECClassId GetJoinTableClassId() const
-            {
-            return m_joinTableClassId;
-            }
-        bool IsParentOfJoinTable() const
-            {
-            return m_joinTableClassId != 0;
-            }
+        ECDbCR GetECDb() const { return m_ecdb; }
+        ECSqlPrepareContext const* GetParentContext() const { return m_parentCtx; }
+        ArrayECPropertyCP GetParentArrayProperty() const { return m_parentArrayProperty; }
+        ECSqlColumnInfo const* GetParentColumnInfo() const { return m_parentColumnInfo; }
+        SelectionOptions const& GetSelectionOptions() const { return m_selectionOptions; }
+        SelectionOptions& GetSelectionOptionsR() { return m_selectionOptions; }
+        ECClassId GetJoinTableClassId() const { return m_joinTableClassId; }
+        bool IsParentOfJoinTable() const { return m_joinTableClassId != ECClass::UNSET_ECCLASSID; }
         void MarkAsParentOfJoinedTable(ECN::ECClassId classId)
             {
             BeAssert(!IsParentOfJoinTable());

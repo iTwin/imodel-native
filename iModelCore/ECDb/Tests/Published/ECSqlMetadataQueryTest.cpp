@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECSqlMetadataQueryTest.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -26,10 +26,10 @@ struct ECSqlMetadataQueryTest : SchemaImportTestFixture
         //When the metaschema is finished and this is refactored, remove this SchemaItem,
         //  the #defined XML string above, and the import lines below it.
         SchemaItem metaschemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                  "<ECSchema schemaName='MetaSchema' nameSpacePrefix='ms' version='2.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                                  "<ECSchema schemaName='MetaSchema' nameSpacePrefix='ms' version='2.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                   "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
                                   "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-                                  "    <ECClass typeName='ECClassDef' description='ECClass' displayLabel='ECClass' isDomainClass='True'>"
+                                  "    <ECEntityClass typeName='ECClassDef' description='ECClass' displayLabel='ECClass' >"
                                   "        <ECCustomAttributes>"
                                   "            <InstanceLabelSpecification xmlns='Bentley_Standard_CustomAttributes.01.00'>"
                                   "                <PropertyName>DisplayLabel</PropertyName>"
@@ -48,8 +48,8 @@ struct ECSqlMetadataQueryTest : SchemaImportTestFixture
                                   "        <ECProperty propertyName='Type' typeName='int' />"
                                   "        <ECProperty propertyName='Modifier' typeName='int' />"
                                   "        <ECProperty propertyName='SchemaId' typeName='long' />"
-                                  "    </ECClass>"
-                                  "    <ECClass typeName='ECPropertyDef' description='ECProperty' displayLabel='ECProperty' isDomainClass='True'>"
+                                  "    </ECEntityClass>"
+                                  "    <ECEntityClass typeName='ECPropertyDef' description='ECProperty' displayLabel='ECProperty' >"
                                   "        <ECCustomAttributes>"
                                   "            <InstanceLabelSpecification xmlns='Bentley_Standard_CustomAttributes.01.00'>"
                                   "                <PropertyName>DisplayLabel</PropertyName>"
@@ -72,7 +72,7 @@ struct ECSqlMetadataQueryTest : SchemaImportTestFixture
                                   "        <ECProperty propertyName='ArrayMinOccurs' typeName='int' />"
                                   "        <ECProperty propertyName='ArrayMaxOccurs' typeName='int' />"
                                   "        <ECProperty propertyName='ClassId' typeName='long' />"
-                                  "    </ECClass>"
+                                  "    </ECEntityClass>"
                                   "    <ECRelationshipClass typeName='ClassHasLocalProperty' strength='embedding'>"
                                   "        <Source cardinality='(1,1)' roleLabel='ClassHasLocalProperty'>"
                                   "            <Class class='ECClassDef' />"
@@ -85,7 +85,7 @@ struct ECSqlMetadataQueryTest : SchemaImportTestFixture
                                   "            </Class>"
                                   "        </Target>"
                                   "    </ECRelationshipClass>"
-                                  "    <ECClass typeName='ECSchemaDef' description='ECSchema' displayLabel='ECSchema' isDomainClass='True'>"
+                                  "    <ECEntityClass typeName='ECSchemaDef' description='ECSchema' displayLabel='ECSchema' >"
                                   "        <ECCustomAttributes>"
                                   "            <InstanceLabelSpecification xmlns='Bentley_Standard_CustomAttributes.01.00'>"
                                   "                <PropertyName>DisplayLabel</PropertyName>"
@@ -104,7 +104,7 @@ struct ECSqlMetadataQueryTest : SchemaImportTestFixture
                                   "        <ECProperty propertyName='Description' typeName='string' />"
                                   "        <ECProperty propertyName='VersionMajor' typeName='int' />"
                                   "        <ECProperty propertyName='VersionMinor' typeName='int' />"
-                                  "    </ECClass>"
+                                  "    </ECEntityClass>"
                                   "    <ECRelationshipClass typeName='SchemaHasClass' strength='embedding'>"
                                   "        <Source cardinality='(1,1)' roleLabel='SchemaHasClass'>"
                                   "            <Class class='ECSchemaDef' />"

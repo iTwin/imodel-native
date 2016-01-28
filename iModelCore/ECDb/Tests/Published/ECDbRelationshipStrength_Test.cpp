@@ -2,10 +2,11 @@
 |
 |  $Source: Tests/Published/ECDbRelationshipStrength_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
+#include "SchemaImportTestFixture.h"
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
@@ -320,6 +321,674 @@ TEST_F (RelationshipStrength, BackwardHoldingForwardEmbedding)
     ASSERT_FALSE (HasInstance (*grandParent2, ecdb));
     ASSERT_FALSE (HasInstance (*singleParentHasGrandParent2, ecdb));
     ASSERT_FALSE (HasInstance (*singleParent, ecdb));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                       Muhammad Hassan                  01/16
+//+---------------+---------------+---------------+---------------+---------------+------
+struct ECDbRelationshipsIntegrityTests : ECDbMappingTestFixture
+    {
+    enum class Cardinality
+        {
+        ZeroOne,
+        ZeroMany,
+        OneOne,
+        OneMany
+        };
+
+    enum class Direction
+        {
+        Forward,
+        Backward
+        };
+
+    private:
+        ECEntityClassP GetEntityClass (Utf8CP className);
+
+        RelationshipCardinalityCR GetClassCardinality (Cardinality classCardinality);
+
+        ECRelatedInstanceDirection GetRelationDirection (Direction direction);
+
+    protected:
+        ECSchemaPtr testSchema = nullptr;
+        ECSchemaReadContextPtr readContext = nullptr;
+
+        void CreateSchema (Utf8CP schemaName, Utf8CP schemaNamePrefix);
+
+        //Adding a Class automatically adds a Property of Type string with Name "SqlPrintfString ("%sProp", className)" to the class.
+        void AddEntityClass (Utf8CP className);
+
+        void AddRelationShipClass (Cardinality SourceClassCardinality, Cardinality targetClassCardinality, StrengthType strengthType, Direction direction, Utf8CP relationshipClassName, Utf8CP sourceClass, Utf8CP targetClass, bool isPolymorphic);
+
+        void AssertSchemaImport (bool isSchemaImportExpectedToSucceed);
+
+        void InsertEntityClassInstances (Utf8CP className, Utf8CP propName, int numberOfInstances, std::vector<ECInstanceKey>& classKeys);
+
+        void InsertRelationshipInstances (Utf8CP relationshipClass, std::vector<ECInstanceKey> const& sourceKeys, std::vector<ECInstanceKey>const& targetKeys, std::vector<DbResult> const& expected, size_t& rowInserted) const;
+
+        size_t GetInsertedRelationshipsCount (Utf8CP relationshipClass) const;
+
+        ECClassId GetRelationShipClassId (Utf8CP className);
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  01/16
+//+---------------+---------------+---------------+---------------+---------------+------
+ECEntityClassP ECDbRelationshipsIntegrityTests::GetEntityClass (Utf8CP className)
+    {
+    return testSchema->GetClassP (className)->GetEntityClassP ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  01/16
+//+---------------+---------------+---------------+---------------+---------------+------
+RelationshipCardinalityCR ECDbRelationshipsIntegrityTests::GetClassCardinality (Cardinality classCardinality)
+    {
+    if (classCardinality == Cardinality::ZeroOne)
+        return RelationshipCardinality::ZeroOne ();
+    else if (classCardinality == Cardinality::ZeroMany)
+        return RelationshipCardinality::ZeroMany ();
+    else if (classCardinality == Cardinality::OneOne)
+        return RelationshipCardinality::OneOne ();
+    else
+        return RelationshipCardinality::OneMany ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  01/16
+//+---------------+---------------+---------------+---------------+---------------+------
+ECRelatedInstanceDirection ECDbRelationshipsIntegrityTests::GetRelationDirection (Direction direction)
+    {
+    if (direction == Direction::Forward)
+        return ECRelatedInstanceDirection::Forward;
+    else
+        return ECRelatedInstanceDirection::Backward;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  01/16
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDbRelationshipsIntegrityTests::CreateSchema (Utf8CP schemaName, Utf8CP schemaNamePrefix)
+    {
+    readContext = ECSchemaReadContext::CreateContext ();
+    readContext->AddSchemaLocater (m_ecdb.GetSchemaLocater ());
+    SchemaKey ecdbmapKey = SchemaKey ("ECDbMap", 1, 0);
+    ECSchemaPtr ecdbmapSchema = readContext->LocateSchema (ecdbmapKey, SchemaMatchType::SCHEMAMATCHTYPE_LatestCompatible);
+    ASSERT_TRUE (ecdbmapSchema.IsValid ());
+
+    ECSchema::CreateSchema (testSchema, schemaName, 1, 0);
+    ASSERT_TRUE (testSchema.IsValid ());
+
+    testSchema->SetNamespacePrefix (schemaNamePrefix);
+    testSchema->AddReferencedSchema (*ecdbmapSchema);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  01/16
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDbRelationshipsIntegrityTests::AssertSchemaImport (bool isSchemaImportExpectedToSucceed)
+    {
+    EXPECT_EQ (ECObjectsStatus::Success, readContext->AddSchema (*testSchema));
+    if (isSchemaImportExpectedToSucceed)
+        {
+        EXPECT_EQ (SUCCESS, m_ecdb.Schemas ().ImportECSchemas (readContext->GetCache ()));
+        }
+    else
+        {
+        EXPECT_EQ (ERROR, m_ecdb.Schemas ().ImportECSchemas (readContext->GetCache ()));
+        }
+    m_ecdb.SaveChanges ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  01/16
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDbRelationshipsIntegrityTests::AddEntityClass (Utf8CP className)
+    {
+    ECEntityClassP testClass = nullptr;
+    EXPECT_EQ (ECObjectsStatus::Success, testSchema->CreateEntityClass (testClass, className));
+    PrimitiveECPropertyP prim = nullptr;
+    EXPECT_EQ (ECObjectsStatus::Success, testClass->CreatePrimitiveProperty (prim, SqlPrintfString ("%sProp", className).GetUtf8CP ()));
+    EXPECT_EQ (ECObjectsStatus::Success, prim->SetType (PrimitiveType::PRIMITIVETYPE_String));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  01/16
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDbRelationshipsIntegrityTests::AddRelationShipClass (Cardinality SourceClassCardinality, Cardinality targetClassCardinality, StrengthType strengthType, Direction direction, Utf8CP relationshipClassName, Utf8CP sourceClass, Utf8CP targetClass, bool isPolymorphic)
+    {
+    ECRelationshipClassP testRelationshipClass = nullptr;
+    EXPECT_EQ (ECObjectsStatus::Success, testSchema->CreateRelationshipClass (testRelationshipClass, relationshipClassName));
+    EXPECT_EQ (ECObjectsStatus::Success, testRelationshipClass->SetStrength (strengthType));
+    EXPECT_EQ (ECObjectsStatus::Success, testRelationshipClass->SetStrengthDirection (GetRelationDirection (direction)));
+
+    //Set Relstionship Source Class and Cardinality
+    EXPECT_EQ (ECObjectsStatus::Success, testRelationshipClass->GetSource ().AddClass (*GetEntityClass (sourceClass)));
+    EXPECT_EQ (ECObjectsStatus::Success, testRelationshipClass->GetSource ().SetIsPolymorphic (true));
+    EXPECT_EQ (ECObjectsStatus::Success, testRelationshipClass->GetSource ().SetCardinality (GetClassCardinality (SourceClassCardinality)));
+
+    //Set Relstionship Target Class and Cardinality
+    EXPECT_EQ (ECObjectsStatus::Success, testRelationshipClass->GetTarget ().AddClass (*GetEntityClass (targetClass)));
+    EXPECT_EQ (ECObjectsStatus::Success, testRelationshipClass->GetTarget ().SetIsPolymorphic (true));
+    EXPECT_EQ (ECObjectsStatus::Success, testRelationshipClass->GetTarget ().SetCardinality (GetClassCardinality (targetClassCardinality)));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  01/16
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDbRelationshipsIntegrityTests::InsertEntityClassInstances (Utf8CP className, Utf8CP propName, int numberOfInstances, std::vector<ECInstanceKey>& classKeys)
+    {
+    ECSqlStatement stmt;
+
+    SqlPrintfString insertECSql = SqlPrintfString ("INSERT INTO %s(%s) VALUES(?)", GetEntityClass (className)->GetECSqlName ().c_str (), propName);
+
+    ASSERT_EQ (stmt.Prepare (m_ecdb, insertECSql.GetUtf8CP ()), ECSqlStatus::Success);
+    for (int i = 0; i < numberOfInstances; i++)
+        {
+        ECInstanceKey key;
+        ASSERT_EQ (stmt.Reset (), ECSqlStatus::Success);
+        ASSERT_EQ (stmt.ClearBindings (), ECSqlStatus::Success);
+        ASSERT_EQ (stmt.BindText (1, SqlPrintfString ("%s_%d", className, i).GetUtf8CP (), IECSqlBinder::MakeCopy::No), ECSqlStatus::Success);
+        ASSERT_EQ (stmt.Step (key), BE_SQLITE_DONE);
+        classKeys.push_back (key);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  01/16
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDbRelationshipsIntegrityTests::InsertRelationshipInstances (Utf8CP relationshipClass, std::vector<ECInstanceKey> const& sourceKeys, std::vector<ECInstanceKey>const& targetKeys, std::vector<DbResult> const& expected, size_t& rowInserted) const
+    {
+    ECSqlStatement stmt;
+    SqlPrintfString sql = SqlPrintfString ("INSERT INTO %s (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)", relationshipClass);
+
+    ASSERT_EQ (stmt.Prepare (m_ecdb, sql.GetUtf8CP ()), ECSqlStatus::Success);
+    ASSERT_EQ (expected.size (), sourceKeys.size () * targetKeys.size ());
+    int n = 0;
+    for (auto& sourceKey : sourceKeys)
+        {
+        for (auto& targetKey : targetKeys)
+            {
+            stmt.Reset ();
+            ASSERT_EQ (ECSqlStatus::Success, stmt.ClearBindings ());
+            stmt.BindId (1, sourceKey.GetECInstanceId ());
+            stmt.BindInt64 (2, sourceKey.GetECClassId ());
+            stmt.BindId (3, targetKey.GetECInstanceId ());
+            stmt.BindInt64 (4, targetKey.GetECClassId ());
+
+            if (expected[n] != BE_SQLITE_DONE)
+                ASSERT_NE (BE_SQLITE_DONE, stmt.Step ());
+            else
+                {
+                ASSERT_EQ (BE_SQLITE_DONE, stmt.Step ());
+                rowInserted++;
+                }
+
+            n = n + 1;
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  01/16
+//+---------------+---------------+---------------+---------------+---------------+------
+size_t ECDbRelationshipsIntegrityTests::GetInsertedRelationshipsCount (Utf8CP relationshipClass) const
+    {
+    ECSqlStatement stmt;
+    auto sql = SqlPrintfString ("SELECT COUNT(*) FROM ONLY ts.Foo JOIN ts.Goo USING %s", relationshipClass);
+    if (stmt.Prepare (m_ecdb, sql.GetUtf8CP ()) == ECSqlStatus::Success)
+        {
+        if (stmt.Step () == BE_SQLITE_ROW)
+            return static_cast<size_t>(stmt.GetValueInt (0));
+        }
+
+    return 0;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  01/16
+//+---------------+---------------+---------------+---------------+---------------+------
+ECClassId ECDbRelationshipsIntegrityTests::GetRelationShipClassId (Utf8CP className)
+    {
+    return testSchema->GetClassP (className)->GetEntityClassP ()->GetId();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  01/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (ECDbRelationshipsIntegrityTests, ForwardEmbeddingRelationshipsTest)
+    {
+    SetupECDb ("forwardEmbeddingRelationshipsTest.ecdb");
+    CreateSchema ("testSchema", "ts");
+    AddEntityClass ("Foo");
+    AddEntityClass ("Goo");
+    AddRelationShipClass (Cardinality::ZeroOne, Cardinality::OneOne, StrengthType::Embedding, Direction::Forward, "FooOwnsGoo", "Foo", "Goo", true);
+    AddRelationShipClass (Cardinality::ZeroOne, Cardinality::OneMany, StrengthType::Embedding, Direction::Forward, "FooOwnsManyGoo", "Foo", "Goo", true);
+    AddRelationShipClass (Cardinality::ZeroMany, Cardinality::OneMany, StrengthType::Embedding, Direction::Forward, "ManyFooOwnManyGoo", "Foo", "Goo", true);
+    AssertSchemaImport (true);
+
+    std::vector<ECInstanceKey> fooKeys, gooKeys;
+    const int maxFooInstances = 3;
+    const int maxGooInstances = 3;
+    InsertEntityClassInstances ("Foo", "FooProp", maxFooInstances, fooKeys);
+    InsertEntityClassInstances ("Goo", "GooProp", maxGooInstances, gooKeys);
+
+    //Compute what are the right valid permutation
+    std::vector<DbResult> FooOwnsGooResult;
+    std::vector<DbResult> FooOwnsManyGooResult;
+    std::vector<DbResult> ManyFooOwnManyGooResult;
+
+    for (auto f = 0; f < maxFooInstances; f++)
+        {
+        for (auto g = 0; g < maxGooInstances; g++)
+            {
+            //Source(0,1), Target(1,1)
+            if (f == g)
+                FooOwnsGooResult.push_back (BE_SQLITE_DONE);
+            else
+                FooOwnsGooResult.push_back (BE_SQLITE_CONSTRAINT_UNIQUE);
+
+            //Source(0,1), Target(1,N)
+            if (f == 0)
+                FooOwnsManyGooResult.push_back (BE_SQLITE_DONE);
+            else
+                FooOwnsManyGooResult.push_back (BE_SQLITE_CONSTRAINT_UNIQUE);
+
+            //Source(0,N), Target(1,N)
+            ManyFooOwnManyGooResult.push_back (BE_SQLITE_DONE);
+            }
+        }
+
+    //1-1............................
+    PersistedMapStrategy mapStrategy;
+    ASSERT_TRUE (TryGetPersistedMapStrategy (mapStrategy, m_ecdb, GetRelationShipClassId ("FooOwnsGoo")));
+    ASSERT_EQ (PersistedMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
+
+    size_t count_FooOwnsGoo = 0;
+    InsertRelationshipInstances ("ts.FooOwnsGoo", fooKeys, gooKeys, FooOwnsGooResult, count_FooOwnsGoo);
+    ASSERT_EQ (count_FooOwnsGoo, GetInsertedRelationshipsCount ("ts.FooOwnsGoo"));
+    
+    //1-N............................
+    ASSERT_TRUE (TryGetPersistedMapStrategy (mapStrategy, m_ecdb, GetRelationShipClassId ("FooOwnsManyGoo")));
+    ASSERT_EQ (PersistedMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
+
+    size_t count_FooOwnsManyGoo = 0;
+    InsertRelationshipInstances ("ts.FooOwnsManyGoo", fooKeys, gooKeys, FooOwnsManyGooResult, count_FooOwnsManyGoo);
+    ASSERT_EQ (count_FooOwnsManyGoo, GetInsertedRelationshipsCount ("ts.FooOwnsManyGoo"));
+
+    //N-N............................
+    ASSERT_TRUE (TryGetPersistedMapStrategy (mapStrategy, m_ecdb, GetRelationShipClassId ("ManyFooOwnManyGoo")));
+    ASSERT_EQ (PersistedMapStrategy::Strategy::OwnTable, mapStrategy.m_strategy);
+
+    size_t count_ManyGooOwnManyGoo = 0;
+    InsertRelationshipInstances ("ts.ManyFooOwnManyGoo", fooKeys, gooKeys, ManyFooOwnManyGooResult, count_ManyGooOwnManyGoo);
+    ASSERT_EQ (count_ManyGooOwnManyGoo, GetInsertedRelationshipsCount ("ts.ManyFooOwnManyGoo"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  01/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (ECDbRelationshipsIntegrityTests, BackwardEmbeddingRelationshipsTest)
+    {
+    SetupECDb ("backwardEmbeddingRelationshipTest.ecdb");
+    CreateSchema ("testSchema", "ts");
+    AddEntityClass ("Foo");
+    AddEntityClass ("Goo");
+    AddRelationShipClass (Cardinality::OneOne, Cardinality::ZeroOne, StrengthType::Embedding, Direction::Backward, "GooOwnsFoo", "Foo", "Goo", true);
+    AddRelationShipClass (Cardinality::OneMany, Cardinality::ZeroOne, StrengthType::Embedding, Direction::Backward, "GooOwnsManyFoo", "Foo", "Goo", true);
+    AddRelationShipClass (Cardinality::OneMany, Cardinality::ZeroMany, StrengthType::Embedding, Direction::Backward, "ManyGooOwnManyFoo", "Foo", "Goo", true);
+    AssertSchemaImport (true);
+
+    std::vector<ECInstanceKey> fooKeys, gooKeys;
+    const int maxFooInstances = 3;
+    const int maxGooInstances = 3;
+    InsertEntityClassInstances ("Foo", "FooProp", maxFooInstances, fooKeys);
+    InsertEntityClassInstances ("Goo", "GooProp", maxGooInstances, gooKeys);
+
+    //Compute what are the right valid permutation
+    std::vector<DbResult> GooOwnsFooResult;
+    std::vector<DbResult> GooOwnsManyFooResult;
+    std::vector<DbResult> ManyGooOwnManyFooResult;
+
+    for (auto f = 0; f < maxFooInstances; f++)
+        {
+        for (auto g = 0; g < maxGooInstances; g++)
+            {
+            //Source(1,1), Target(0,1)
+            if (f == g)
+                GooOwnsFooResult.push_back (BE_SQLITE_DONE);
+            else
+                GooOwnsFooResult.push_back (BE_SQLITE_CONSTRAINT_UNIQUE);
+
+            //Source(1,N), Target(0,1)
+            if (g == 0)
+                GooOwnsManyFooResult.push_back (BE_SQLITE_DONE);
+            else
+                GooOwnsManyFooResult.push_back (BE_SQLITE_CONSTRAINT_UNIQUE);
+
+            //Source(1,N), Target(0,N)
+            ManyGooOwnManyFooResult.push_back (BE_SQLITE_DONE);
+            }
+        }
+
+    //1-1...........................
+    PersistedMapStrategy mapStrategy;
+#ifdef TFS361480
+    ASSERT_TRUE (TryGetPersistedMapStrategy (mapStrategy, m_ecdb, GetRelationShipClassId ("GooOwnsFoo")));
+    ASSERT_EQ (PersistedMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable, mapStrategy.m_strategy);
+#endif
+
+    size_t count_FooOwnsGoo = 0;
+    InsertRelationshipInstances ("ts.GooOwnsFoo", fooKeys, gooKeys, GooOwnsFooResult, count_FooOwnsGoo);
+    ASSERT_EQ (count_FooOwnsGoo, GetInsertedRelationshipsCount ("ts.GooOwnsFoo"));
+
+    //1-N..........................
+    ASSERT_TRUE (TryGetPersistedMapStrategy (mapStrategy, m_ecdb, GetRelationShipClassId ("GooOwnsManyFoo")));
+    ASSERT_EQ (PersistedMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable, mapStrategy.m_strategy);
+
+    size_t count_FooOwnsManyGoo = 0;
+    InsertRelationshipInstances ("ts.GooOwnsManyFoo", fooKeys, gooKeys, GooOwnsManyFooResult, count_FooOwnsManyGoo);
+    ASSERT_EQ (count_FooOwnsManyGoo, GetInsertedRelationshipsCount ("ts.GooOwnsManyFoo"));
+
+    //N-N..........................
+    ASSERT_TRUE (TryGetPersistedMapStrategy (mapStrategy, m_ecdb, GetRelationShipClassId ("ManyGooOwnManyFoo")));
+    ASSERT_EQ (PersistedMapStrategy::Strategy::OwnTable, mapStrategy.m_strategy);
+
+    size_t count_ManyGooOwnManyGoo = 0;
+    InsertRelationshipInstances ("ts.ManyGooOwnManyFoo", fooKeys, gooKeys, ManyGooOwnManyFooResult, count_ManyGooOwnManyGoo);
+    ASSERT_EQ (count_ManyGooOwnManyGoo, GetInsertedRelationshipsCount ("ts.ManyGooOwnManyFoo"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  01/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (ECDbRelationshipsIntegrityTests, ForwardReferencingRelationshipsTest)
+    {
+    SetupECDb ("forwardReferencingRelationshipTest.ecdb");
+    CreateSchema ("testSchema", "ts");
+    AddEntityClass ("Foo");
+    AddEntityClass ("Goo");
+    AddRelationShipClass (Cardinality::ZeroOne, Cardinality::ZeroOne, StrengthType::Referencing, Direction::Forward, "FooHasGoo", "Foo", "Goo", true);
+    AddRelationShipClass (Cardinality::ZeroOne, Cardinality::ZeroMany, StrengthType::Referencing, Direction::Forward, "FooHasManyGoo", "Foo", "Goo", true);
+    AddRelationShipClass (Cardinality::ZeroMany, Cardinality::ZeroMany, StrengthType::Referencing, Direction::Forward, "ManyFoohaveManyGoo", "Foo", "Goo", true);
+    AssertSchemaImport (true);
+
+    std::vector<ECInstanceKey> fooKeys, gooKeys;
+    const int maxFooInstances = 3;
+    const int maxGooInstances = 3;
+    InsertEntityClassInstances ("Foo", "FooProp", maxFooInstances, fooKeys);
+    InsertEntityClassInstances ("Goo", "GooProp", maxGooInstances, gooKeys);
+
+    //Compute what are the right valid permutation
+    std::vector<DbResult> FooOwnsGooResult;
+    std::vector<DbResult> FooOwnsManyGooResult;
+    std::vector<DbResult> ManyFooOwnManyGooResult;
+
+    for (auto f = 0; f < maxFooInstances; f++)
+        {
+        for (auto g = 0; g < maxGooInstances; g++)
+            {
+            //Source(0,1), Target(0,1)
+            if (f == g)
+                FooOwnsGooResult.push_back (BE_SQLITE_DONE);
+            else
+                FooOwnsGooResult.push_back (BE_SQLITE_CONSTRAINT_UNIQUE);
+
+            //Source(0,1), Target(0,N)
+            if (f == 0)
+                FooOwnsManyGooResult.push_back (BE_SQLITE_DONE);
+            else
+                FooOwnsManyGooResult.push_back (BE_SQLITE_CONSTRAINT_UNIQUE);
+
+            //Source(0,N), Target(0,N)
+            ManyFooOwnManyGooResult.push_back (BE_SQLITE_DONE);
+            }
+        }
+
+    //1-1............................
+    PersistedMapStrategy mapStrategy;
+    ASSERT_TRUE (TryGetPersistedMapStrategy (mapStrategy, m_ecdb, GetRelationShipClassId ("FooHasGoo")));
+    ASSERT_EQ (PersistedMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
+
+    size_t count_FooOwnsGoo = 0;
+    InsertRelationshipInstances ("ts.FooHasGoo", fooKeys, gooKeys, FooOwnsGooResult, count_FooOwnsGoo);
+    ASSERT_EQ (count_FooOwnsGoo, GetInsertedRelationshipsCount ("ts.FooHasGoo"));
+
+    //1-N...........................
+    ASSERT_TRUE (TryGetPersistedMapStrategy (mapStrategy, m_ecdb, GetRelationShipClassId ("FooHasManyGoo")));
+    ASSERT_EQ (PersistedMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
+
+    size_t count_FooOwnsManyGoo = 0;
+    InsertRelationshipInstances ("ts.FooHasManyGoo", fooKeys, gooKeys, FooOwnsManyGooResult, count_FooOwnsManyGoo);
+    ASSERT_EQ (count_FooOwnsManyGoo, GetInsertedRelationshipsCount ("ts.FooHasManyGoo"));
+
+    //N-N...........................
+    ASSERT_TRUE (TryGetPersistedMapStrategy (mapStrategy, m_ecdb, GetRelationShipClassId ("ManyFoohaveManyGoo")));
+    ASSERT_EQ (PersistedMapStrategy::Strategy::OwnTable, mapStrategy.m_strategy);
+
+    size_t count_ManyGooOwnManyGoo = 0;
+    InsertRelationshipInstances ("ts.ManyFoohaveManyGoo", fooKeys, gooKeys, ManyFooOwnManyGooResult, count_ManyGooOwnManyGoo);
+    ASSERT_EQ (count_ManyGooOwnManyGoo, GetInsertedRelationshipsCount ("ts.ManyFoohaveManyGoo"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  01/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (ECDbRelationshipsIntegrityTests, BackwardReferencingRelationshipsTest)
+    {
+    SetupECDb ("backwardReferencingRelationshipsTest.ecdb");
+    CreateSchema ("testSchema", "ts");
+    AddEntityClass ("Foo");
+    AddEntityClass ("Goo");
+    AddRelationShipClass (Cardinality::ZeroOne, Cardinality::ZeroOne, StrengthType::Referencing, Direction::Backward, "GooHasFoo", "Foo", "Goo", true);
+    AddRelationShipClass (Cardinality::ZeroMany, Cardinality::ZeroOne, StrengthType::Referencing, Direction::Backward, "GooHasManyFoo", "Foo", "Goo", true);
+    AddRelationShipClass (Cardinality::ZeroMany, Cardinality::ZeroMany, StrengthType::Referencing, Direction::Backward, "ManyGooHaveManyFoo", "Foo", "Goo", true);
+    AssertSchemaImport (true);
+
+    std::vector<ECInstanceKey> fooKeys, gooKeys;
+    const int maxFooInstances = 3;
+    const int maxGooInstances = 3;
+    InsertEntityClassInstances ("Foo", "FooProp", maxFooInstances, fooKeys);
+    InsertEntityClassInstances ("Goo", "GooProp", maxGooInstances, gooKeys);
+
+    //Compute what are the right valid permutation
+    std::vector<DbResult> GooOwnsFooResult;
+    std::vector<DbResult> GooOwnsManyFooResult;
+    std::vector<DbResult> ManyGooOwnManyFooResult;
+
+    for (auto f = 0; f < maxFooInstances; f++)
+        {
+        for (auto g = 0; g < maxGooInstances; g++)
+            {
+            //Source(0,1), Target(0,1)
+            if (f == g)
+                GooOwnsFooResult.push_back (BE_SQLITE_DONE);
+            else
+                GooOwnsFooResult.push_back (BE_SQLITE_CONSTRAINT_UNIQUE);
+
+            //Source(0,N), Target(0,1)
+            if (g == 0)
+                GooOwnsManyFooResult.push_back (BE_SQLITE_DONE);
+            else
+                GooOwnsManyFooResult.push_back (BE_SQLITE_CONSTRAINT_UNIQUE);
+
+            //Source(0,N), Target(0,N)
+            ManyGooOwnManyFooResult.push_back (BE_SQLITE_DONE);
+            }
+        }
+
+    //1-1............................
+    PersistedMapStrategy mapStrategy;
+#ifdef TFS361480
+    ASSERT_TRUE (TryGetPersistedMapStrategy (mapStrategy, m_ecdb, GetRelationShipClassId ("GooHasFoo")));
+    ASSERT_EQ (PersistedMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable, mapStrategy.m_strategy);
+#endif
+
+    size_t count_FooOwnsGoo = 0;
+    InsertRelationshipInstances ("ts.GooHasFoo", fooKeys, gooKeys, GooOwnsFooResult, count_FooOwnsGoo);
+    ASSERT_EQ (count_FooOwnsGoo, GetInsertedRelationshipsCount ("ts.GooHasFoo"));
+
+    //1-N...........................
+    ASSERT_TRUE (TryGetPersistedMapStrategy (mapStrategy, m_ecdb, GetRelationShipClassId ("GooHasManyFoo")));
+    ASSERT_EQ (PersistedMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable, mapStrategy.m_strategy);
+
+    size_t count_FooOwnsManyGoo = 0;
+    InsertRelationshipInstances ("ts.GooHasManyFoo", fooKeys, gooKeys, GooOwnsManyFooResult, count_FooOwnsManyGoo);
+    ASSERT_EQ (count_FooOwnsManyGoo, GetInsertedRelationshipsCount ("ts.GooHasManyFoo"));
+
+    //N-N...........................
+    ASSERT_TRUE (TryGetPersistedMapStrategy (mapStrategy, m_ecdb, GetRelationShipClassId ("ManyGooHaveManyFoo")));
+    ASSERT_EQ (PersistedMapStrategy::Strategy::OwnTable, mapStrategy.m_strategy);
+
+    size_t count_ManyGooOwnManyGoo = 0;
+    InsertRelationshipInstances ("ts.ManyGooHaveManyFoo", fooKeys, gooKeys, ManyGooOwnManyFooResult, count_ManyGooOwnManyGoo);
+    ASSERT_EQ (count_ManyGooOwnManyGoo, GetInsertedRelationshipsCount ("ts.ManyGooHaveManyFoo"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  01/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (ECDbRelationshipsIntegrityTests, ForwardHoldingRelationshipsTest)
+    {
+    SetupECDb ("forwardHoldingRelationshipsTest.ecdb");
+    CreateSchema ("testSchema", "ts");
+    AddEntityClass ("Foo");
+    AddEntityClass ("Goo");
+    AddRelationShipClass (Cardinality::OneOne, Cardinality::OneOne, StrengthType::Holding, Direction::Forward, "FooOwnsGoo", "Foo", "Goo", true);
+    AddRelationShipClass (Cardinality::OneOne, Cardinality::OneMany, StrengthType::Holding, Direction::Forward, "FooOwnsManyGoo", "Foo", "Goo", true);
+    AddRelationShipClass (Cardinality::OneMany, Cardinality::OneMany, StrengthType::Holding, Direction::Forward, "ManyFooOwnManyGoo", "Foo", "Goo", true);
+    AssertSchemaImport (true);
+
+    std::vector<ECInstanceKey> fooKeys, gooKeys;
+    const int maxFooInstances = 3;
+    const int maxGooInstances = 3;
+    InsertEntityClassInstances ("Foo", "FooProp", maxFooInstances, fooKeys);
+    InsertEntityClassInstances ("Goo", "GooProp", maxGooInstances, gooKeys);
+
+    //Compute what are the right valid permutation
+    std::vector<DbResult> FooOwnsGooResult;
+    std::vector<DbResult> FooOwnsManyGooResult;
+    std::vector<DbResult> ManyFooOwnManyGooResult;
+
+    for (auto f = 0; f < maxFooInstances; f++)
+        {
+        for (auto g = 0; g < maxGooInstances; g++)
+            {
+            //Source(1,1), Target(1,1)
+            if (f == g)
+                FooOwnsGooResult.push_back (BE_SQLITE_DONE);
+            else
+                FooOwnsGooResult.push_back (BE_SQLITE_CONSTRAINT_UNIQUE);
+
+            //Source(1,1), Target(1,N)
+            if (f == 0)
+                FooOwnsManyGooResult.push_back (BE_SQLITE_DONE);
+            else
+                FooOwnsManyGooResult.push_back (BE_SQLITE_CONSTRAINT_UNIQUE);
+
+            //Source(1,N), Target(1,N)
+            ManyFooOwnManyGooResult.push_back (BE_SQLITE_DONE);
+            }
+        }
+
+    //1-1............................
+    PersistedMapStrategy mapStrategy;
+    ASSERT_TRUE (TryGetPersistedMapStrategy (mapStrategy, m_ecdb, GetRelationShipClassId ("FooOwnsGoo")));
+    ASSERT_EQ (PersistedMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
+
+    size_t count_FooOwnsGoo = 0;
+    InsertRelationshipInstances ("ts.FooOwnsGoo", fooKeys, gooKeys, FooOwnsGooResult, count_FooOwnsGoo);
+    ASSERT_EQ (count_FooOwnsGoo, GetInsertedRelationshipsCount ("ts.FooOwnsGoo"));
+
+    //1-N............................
+    ASSERT_TRUE (TryGetPersistedMapStrategy (mapStrategy, m_ecdb, GetRelationShipClassId ("FooOwnsManyGoo")));
+    ASSERT_EQ (PersistedMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
+
+    size_t count_FooOwnsManyGoo = 0;
+    InsertRelationshipInstances ("ts.FooOwnsManyGoo", fooKeys, gooKeys, FooOwnsManyGooResult, count_FooOwnsManyGoo);
+    ASSERT_EQ (count_FooOwnsManyGoo, GetInsertedRelationshipsCount ("ts.FooOwnsManyGoo"));
+
+    //N-N...........................
+    ASSERT_TRUE (TryGetPersistedMapStrategy (mapStrategy, m_ecdb, GetRelationShipClassId ("ManyFooOwnManyGoo")));
+    ASSERT_EQ (PersistedMapStrategy::Strategy::OwnTable, mapStrategy.m_strategy);
+
+    size_t count_ManyGooOwnManyGoo = 0;
+    InsertRelationshipInstances ("ts.ManyFooOwnManyGoo", fooKeys, gooKeys, ManyFooOwnManyGooResult, count_ManyGooOwnManyGoo);
+    ASSERT_EQ (count_ManyGooOwnManyGoo, GetInsertedRelationshipsCount ("ts.ManyFooOwnManyGoo"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  01/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (ECDbRelationshipsIntegrityTests, BackwardHoldingRelationshipsTest)
+    {
+    SetupECDb ("backwardHoldingRelationshipsTest.ecdb");
+    CreateSchema ("testSchema", "ts");
+    AddEntityClass ("Foo");
+    AddEntityClass ("Goo");
+    AddRelationShipClass (Cardinality::OneOne, Cardinality::OneOne, StrengthType::Holding, Direction::Backward, "GooOwnsFoo", "Foo", "Goo", true);
+    AddRelationShipClass (Cardinality::OneMany, Cardinality::OneOne, StrengthType::Holding, Direction::Backward, "GooOwnsManyFoo", "Foo", "Goo", true);
+    AddRelationShipClass (Cardinality::OneMany, Cardinality::OneMany, StrengthType::Holding, Direction::Backward, "ManyGooOwnManyFoo", "Foo", "Goo", true);
+    AssertSchemaImport (true);
+
+    std::vector<ECInstanceKey> fooKeys, gooKeys;
+    const int maxFooInstances = 3;
+    const int maxGooInstances = 3;
+    InsertEntityClassInstances ("Foo", "FooProp", maxFooInstances, fooKeys);
+    InsertEntityClassInstances ("Goo", "GooProp", maxGooInstances, gooKeys);
+
+    //Compute what are the right valid permutation
+    std::vector<DbResult> GooOwnsFooResult;
+    std::vector<DbResult> GooOwnsManyFooResult;
+    std::vector<DbResult> ManyGooOwnManyFooResult;
+
+    for (auto f = 0; f < maxFooInstances; f++)
+        {
+        for (auto g = 0; g < maxGooInstances; g++)
+            {
+            //Source(1,1), Target(1,1)
+            if (f == g)
+                GooOwnsFooResult.push_back (BE_SQLITE_DONE);
+            else
+                GooOwnsFooResult.push_back (BE_SQLITE_CONSTRAINT_UNIQUE);
+
+            //Source(1,N), Target(1,1)
+            if (g == 0)
+                GooOwnsManyFooResult.push_back (BE_SQLITE_DONE);
+            else
+                GooOwnsManyFooResult.push_back (BE_SQLITE_CONSTRAINT_UNIQUE);
+
+            //Source(1,N), Target(1,N)
+            ManyGooOwnManyFooResult.push_back (BE_SQLITE_DONE);
+            }
+        }
+
+    //1-1............................
+    PersistedMapStrategy mapStrategy;
+#ifdef TFS361480
+    ASSERT_TRUE (TryGetPersistedMapStrategy (mapStrategy, m_ecdb, GetRelationShipClassId ("GooOwnsFoo")));
+    ASSERT_EQ (PersistedMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable, mapStrategy.m_strategy);
+#endif // TFS361480
+
+    size_t count_FooOwnsGoo = 0;
+    InsertRelationshipInstances ("ts.GooOwnsFoo", fooKeys, gooKeys, GooOwnsFooResult, count_FooOwnsGoo);
+    ASSERT_EQ (count_FooOwnsGoo, GetInsertedRelationshipsCount ("ts.GooOwnsFoo"));
+
+    //1-N...........................
+    ASSERT_TRUE (TryGetPersistedMapStrategy (mapStrategy, m_ecdb, GetRelationShipClassId ("GooOwnsManyFoo")));
+    ASSERT_EQ (PersistedMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable, mapStrategy.m_strategy);
+
+    size_t count_FooOwnsManyGoo = 0;
+    InsertRelationshipInstances ("ts.GooOwnsManyFoo", fooKeys, gooKeys, GooOwnsManyFooResult, count_FooOwnsManyGoo);
+    ASSERT_EQ (count_FooOwnsManyGoo, GetInsertedRelationshipsCount ("ts.GooOwnsManyFoo"));
+
+    //N-N...........................
+    ASSERT_TRUE (TryGetPersistedMapStrategy (mapStrategy, m_ecdb, GetRelationShipClassId ("ManyGooOwnManyFoo")));
+    ASSERT_EQ (PersistedMapStrategy::Strategy::OwnTable, mapStrategy.m_strategy);
+
+    size_t count_ManyGooOwnManyGoo = 0;
+    InsertRelationshipInstances ("ts.ManyGooOwnManyFoo", fooKeys, gooKeys, ManyGooOwnManyFooResult, count_ManyGooOwnManyGoo);
+    ASSERT_EQ (count_ManyGooOwnManyGoo, GetInsertedRelationshipsCount ("ts.ManyGooOwnManyFoo"));
     }
 
 END_ECDBUNITTESTS_NAMESPACE

@@ -291,6 +291,29 @@ IClassMap const* IClassMap::FindClassMapOfParentOfJoinedTable() const
     return nullptr;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  01/2016
+//---------------------------------------------------------------------------------------
+IClassMap const* IClassMap::FindSharedTableRootClassMap() const
+    {
+    ECDbMapStrategy mapStrategy = GetMapStrategy();
+    if (mapStrategy.GetStrategy() != ECDbMapStrategy::Strategy::SharedTable && !mapStrategy.AppliesToSubclasses())
+        return nullptr;
+
+    ECClassId parentId = GetParentMapClassId();
+    if (parentId == ECClass::UNSET_ECCLASSID)
+        return this;
+
+    ClassMap const* parent = GetECDbMap().GetClassMap(parentId);
+    if (parent == nullptr)
+        {
+        BeAssert(false && "Failed to find parent classmap. This should not happen");
+        return nullptr;
+        }
+
+    return parent->FindSharedTableRootClassMap();
+    }
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -428,9 +451,6 @@ MapStatus ClassMap::_MapPart1(SchemaImportContext& schemaImportContext, ClassMap
         tableType = TableType::StructArray;
     else if (mapInfo.GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::ExistingTable)
         tableType = TableType::Existing;
-
-    if (!Utf8String::IsNullOrEmpty(mapInfo.GetECInstanceIdColumnName()) && strcmp(mapInfo.GetECInstanceIdColumnName(), ECDB_COL_ECInstanceId) != 0)
-        m_userSpecifiedECInstanceIdColumnName = std::unique_ptr<Utf8String>(new Utf8String(mapInfo.GetECInstanceIdColumnName()));
 
     auto findOrCreateTable = [&] ()
         {

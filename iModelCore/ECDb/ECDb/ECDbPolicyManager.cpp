@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbPolicyManager.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -142,7 +142,7 @@ ECDbPolicy ECDbPolicyManager::DoGetClassPolicy(IClassMap const& classMap, IsVali
     if (!ecClass.IsEntityClass() && !ecClass.IsRelationshipClass())
         {
         Utf8String notSupportedMessage;
-        notSupportedMessage.Sprintf("ECClass '%s' is not supported in ECSQL as it neither an entity class nor a relationship class.",
+        notSupportedMessage.Sprintf("ECClass '%s' is not supported in ECSQL as it is neither an entity class nor a relationship class.",
                                     className.c_str());
         return ECDbPolicy::CreateNotSupported(notSupportedMessage.c_str());
         }
@@ -162,9 +162,22 @@ ECDbPolicy ECDbPolicyManager::DoGetClassPolicy(IClassMap const& classMap, IsVali
     //if policy for specific ECSQL type was requested, check that now
     if (assertion.UseECSqlTypeFilter())
         {
-        switch (assertion.GetECSqlType())
+        const ECSqlType ecsqlType = assertion.GetECSqlType();
+        if (ecsqlType == ECSqlType::Delete || ecsqlType == ECSqlType::Insert || ecsqlType == ECSqlType::Update)
             {
-                case ECSqlType::Insert:
+            if (classMap.IsRelationshipClassMap())
+                {
+                RelationshipClassMapCP relClassMap = static_cast<RelationshipClassMapCP> (&classMap);
+                if (relClassMap->IsReadonly())
+                    {
+                    Utf8String notSupportedMessage;
+                    notSupportedMessage.Sprintf("ECRelationshipClass '%s' is mapped to more than one table on its Foreign Key end. Therefore only ECSQL SELECT statements can be used against the relationship class.",
+                                                className.c_str());
+                    return ECDbPolicy::CreateNotSupported(notSupportedMessage.c_str());
+                    }
+                }
+
+            if (ecsqlType == ECSqlType::Insert)
                 {
                 //Inserting into abstract classes is not possible (by definition of abstractness)
                 if (ecClass.GetClassModifier() == ECClassModifier::Abstract)
@@ -175,6 +188,7 @@ ECDbPolicy ECDbPolicyManager::DoGetClassPolicy(IClassMap const& classMap, IsVali
 
                     return ECDbPolicy::CreateNotSupported(notSupportedMessage.c_str());
                     }
+
                 }
             }
         }

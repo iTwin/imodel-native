@@ -58,7 +58,7 @@ TEST_F(ReadTests, ReadPolymorphic)
     count = CountInstancesOfClass (db, *hardware, false);
     ASSERT_EQ (3, count);
     count = CountInstancesOfClass (db, *hardware, true);
-    ASSERT_EQ (12, count);
+    ASSERT_EQ (9, count);
     }
 
 /*---------------------------------------------------------------------------------**//**

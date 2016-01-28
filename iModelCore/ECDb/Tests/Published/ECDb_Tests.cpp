@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECDb_Tests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -213,12 +213,10 @@ TEST (ECDbTests, TwoConnectionsWithBusyRetryHandler)
         }
     }
 
-
-
 //---------------------------------------------------------------------------------------
-// @bsiclass                                     Muhammad Hassan                  11/14
+// @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECDbTests, getAndChangeBriefcaseIdForDb)
+TEST(ECDbTests, GetAndChangeBriefcaseIdForDb)
     {
     ECDbTestProject testProject;
     ECDbR ecdbr = testProject.Create("EcdbBriefcaseIdTest.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
@@ -231,7 +229,10 @@ TEST(ECDbTests, getAndChangeBriefcaseIdForDb)
     ASSERT_FALSE(previousBriefcaseId == changedBriefcaseId);
     }
 
-TEST(ECDbTests, getAndChangeGUIDForDb)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Muhammad Hassan                  11/14
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST(ECDbTests, GetAndChangeGUIDForDb)
     {
     ECDbTestProject testProject;
     ECDbR ecdbr = testProject.Create("EcdbBriefcaseIdTest.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
@@ -251,7 +252,10 @@ TEST(ECDbTests, getAndChangeGUIDForDb)
     ASSERT_FALSE(guid.IsValid());
     }
 
-TEST(ECDbTests, createEmptyProject)
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Muhammad Hassan                  12/14
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST(ECDbTests, CreateEmptyProject)
     {
     ECDbTestProject testproject;
     ECDbR ecdbr = testproject.Create("emptyecdb.ecdb");
@@ -259,34 +263,11 @@ TEST(ECDbTests, createEmptyProject)
     ASSERT_TRUE(repositotyId.IsValid());
     ASSERT_TRUE(ecdbr.Schemas().GetECSchema("ECDb_System", true) != nullptr);
     }
-
-//---------------------------------------------------------------------------------------
-// @bsiclass                                     Muhammad Hassan                  12/14
-//+---------------+---------------+---------------+---------------+---------------+------
-//this test might fail if changes made to the classes Furniture and Employee in the ECsql schema.
-TEST(ECDbTests, checkPrimaryKeyForTablesIsBasedOnECInstanceId)
-{
-    Utf8CP sc_Furniture = "CREATE TABLE [sc_Furniture] ([ECInstanceId] INTEGER not null , [ECClassId] INTEGER not null , [AssetID] CHAR, [AssetOwner] CHAR, [BarCode] CHAR, [AssetUserID] CHAR, [Cost] DOUBLE, [Room] CHAR, [AssetRecordKey] CHAR, [Condition] INTEGER, [Material] INTEGER, [Weight] DOUBLE, [ChairFootPrint] BLOB, [Type] CHAR, [Color] CHAR, [DeskFootPrint] CHAR, [NumberOfCabinets] INTEGER, [Size] CHAR, [Length] DOUBLE, [Breadth] DOUBLE, [Employee__src_01_id] INTEGER, PRIMARY KEY  (ECInstanceId)) ";
-    Utf8CP sc_Employee = "CREATE TABLE [sc_Employee] ([ECInstanceId] INTEGER not null , [EmployeeID] INTEGER, [FirstName] CHAR, [JobTitle] CHAR, [LastName] CHAR, [ManagerID] INTEGER, [Room] CHAR, [SSN] INTEGER, [Project] CHAR, [WorkPhone] BLOB, [MobilePhone] BLOB, [FullName] CHAR, Location_Coordinate_X DOUBLE, [Location_Coordinate_Y] DOUBLE, [Location_Coordinate_Z] DOUBLE, [Location_Street] CHAR, [Location_City] CHAR, [Location_State] CHAR, [Location_Country] CHAR, [Location_Zip] CHAR, [EmployeeType] INTEGER, [Address_Coordinate_X] DOUBLE, [Address_Coordinate_Y] DOUBLE, [Address_Coordinate_Z] DOUBLE, [Address_Street] CHAR, [Address_City] CHAR, [Address_State] CHAR, [Address_Country] CHAR, [Address_Zip] CHAR, [EmployeeRecordKey] TIMESTAMP, [Company__trg_11_id] INTEGER, [Phone__trg_01_id] INTEGER, PRIMARY KEY  (ECInstanceId)) ";
-    ECDbTestProject testProject;
-    ECDbR ecdbr = testProject.Create("EcdbBriefcaseIdTest.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
-    Statement sqlstmt0;
-    ASSERT_EQ(BE_SQLITE_OK, sqlstmt0.Prepare(ecdbr, "SELECT sql FROM sqlite_master WHERE type='table' AND tbl_name='sc_Furniture'"));
-    sqlstmt0.Step();
-    Utf8CP sqlValue0 = sqlstmt0.GetValueText(0);
-    ASSERT_TRUE(strcmp(sc_Furniture, sqlValue0) > 0);
-
-    Statement sqlstmt;
-    ASSERT_EQ(BE_SQLITE_OK, sqlstmt.Prepare(ecdbr, "SELECT sql FROM sqlite_master WHERE type='table' AND tbl_name='sc_Employee'"));
-    sqlstmt.Step();
-    Utf8CP sqlValue = sqlstmt.GetValueText(0);
-    ASSERT_TRUE(strcmp(sc_Employee, sqlValue) > 0);
-}
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECN::ECClassCP generateECClass(ECN::ECSchemaR schema, Utf8CP className)
+ECN::ECClassCP GenerateECClass(ECN::ECSchemaR schema, Utf8CP className)
     {
     ECN::ECEntityClassP ecclass;      
     if (ECN::ECObjectsStatus::Success != schema.CreateEntityClass(ecclass, className))
@@ -304,7 +285,7 @@ static ECN::ECClassCP generateECClass(ECN::ECSchemaR schema, Utf8CP className)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-static ECN::ECSchemaPtr copyECSchema(ECN::ECSchemaCR schemaIn)
+ECN::ECSchemaPtr CopyECSchema(ECN::ECSchemaCR schemaIn)
     {
     ECN::ECSchemaPtr cc;
     if (ECN::ECObjectsStatus::Success != schemaIn.CopySchema(cc))
@@ -319,7 +300,7 @@ static ECN::ECSchemaPtr copyECSchema(ECN::ECSchemaCR schemaIn)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-static ECN::ECSchemaCP importECSchema(ECN::ECObjectsStatus& ecstatus, ECDbR db, ECN::ECSchemaCR schemaIn, bool updateExistingSchemas)
+ECN::ECSchemaCP ImportECSchema(ECN::ECObjectsStatus& ecstatus, ECDbR db, ECN::ECSchemaCR schemaIn, bool updateExistingSchemas)
     {
     ECN::ECSchemaCP existing = db.Schemas().GetECSchema(schemaIn.GetName().c_str());
     if (nullptr != existing)
@@ -334,7 +315,7 @@ static ECN::ECSchemaCP importECSchema(ECN::ECObjectsStatus& ecstatus, ECDbR db, 
 
     ECDbSchemaManager::ImportOptions options(false, updateExistingSchemas);
 
-    ECN::ECSchemaPtr imported = copyECSchema(schemaIn);
+    ECN::ECSchemaPtr imported = CopyECSchema(schemaIn);
 
     ECN::ECSchemaReadContextPtr contextPtr = ECN::ECSchemaReadContext::CreateContext();
     if (ECN::ECObjectsStatus::Success != contextPtr->AddSchema(*imported))
@@ -365,10 +346,10 @@ TEST(ECDbTests, SelectAfterImport)
         ASSERT_EQ( ECN::ECObjectsStatus::Success , ECN::ECSchema::CreateSchema(schema, "ImportTwoInARow", 0, 0) );
         schema->SetNamespacePrefix("tir");
 
-        ASSERT_TRUE( nullptr != generateECClass(*schema, "C1") );
+        ASSERT_TRUE( nullptr != GenerateECClass(*schema, "C1") );
 
         ECN::ECObjectsStatus ecstatus;
-        importECSchema(ecstatus, ecdbr, *schema, false);
+        ImportECSchema(ecstatus, ecdbr, *schema, false);
         }
 
     EC::ECSqlStatement selectC1;
