@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/DeleteStatementExp.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -47,7 +47,6 @@ Exp::FinalizeParseStatus DeleteStatementExp::_FinalizeParsing(ECSqlParseContext&
         {
         ctx.PopFinalizeParseArg ();
         m_finalizeParsingArgCache = nullptr;
-
         return FinalizeParseStatus::Completed;
         }
     }

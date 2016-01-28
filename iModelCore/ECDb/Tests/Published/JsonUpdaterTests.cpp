@@ -81,11 +81,11 @@ TEST_F (JsonUpdaterTests, UpdateRelationshipProperty)
 
     {
     SchemaItem testItem ("<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-        "    <ECClass typeName='A' isDomainClass='True'>"
+        "<ECSchema schemaName='test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEntityClass typeName='A' >"
         "        <ECProperty propertyName='P1' typeName='int' />"
-        "    </ECClass>"
-        "    <ECRelationshipClass typeName='AHasA' isDomainClass='True'>"
+        "    </ECEntityClass>"
+        "    <ECRelationshipClass typeName='AHasA' strength='referencing'>"
         "        <ECProperty propertyName='Name' typeName='string' />"
         "        <Source cardinality='(0,N)' polymorphic='False'><Class class='A'/></Source>"
         "        <Target cardinality='(0,N)' polymorphic='False'><Class class='A'/></Target>"
@@ -178,12 +178,12 @@ TEST_F (JsonUpdaterTests, UpdateProperties)
     ECInstanceKey key;
     {
     SchemaItem testItem ("<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='testSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-        "    <ECClass typeName='A' isDomainClass='True'>"
+        "<ECSchema schemaName='testSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEntityClass typeName='A' >"
         "        <ECProperty propertyName='P1' typeName='int' />"
         "        <ECProperty propertyName='P2' typeName='string' />"
         "        <ECProperty propertyName='P3' typeName='double' />"
-        "    </ECClass>"
+        "    </ECEntityClass>"
         "</ECSchema>",
         true, "");
 
@@ -258,13 +258,13 @@ TEST_F (JsonUpdaterTests, UpdateProperties)
 TEST_F (JsonUpdaterTests, CommonGeometryJsonSerialization)
     {
     ECDbR ecdb = SetupECDb ("cgjsonserialization.ecdb", SchemaItem ("<?xml version='1.0' encoding='utf-8' ?>"
-        "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-        "<ECClass typeName='SpatialLocation' isDomainClass='True'>"
-        "  <ECProperty propertyName='Center' typeName='Bentley.Geometry.Common.IGeometry' />"
-        "  <ECProperty propertyName='URP' typeName='Bentley.Geometry.Common.IGeometry' />"
-        "  <ECProperty propertyName='LLP' typeName='Bentley.Geometry.Common.IGeometry' />"
-        "  <ECProperty propertyName='Location' typeName='Bentley.Geometry.Common.IGeometry'/>"
-        "</ECClass>"
+        "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECEntityClass typeName='SpatialLocation' >"
+        "       <ECProperty propertyName='Center' typeName='Bentley.Geometry.Common.IGeometry' />"
+        "       <ECProperty propertyName='URP' typeName='Bentley.Geometry.Common.IGeometry' />"
+        "       <ECProperty propertyName='LLP' typeName='Bentley.Geometry.Common.IGeometry' />"
+        "   <ECProperty propertyName='Location' typeName='Bentley.Geometry.Common.IGeometry'/>"
+        "   </ECEntityClass>"
         "</ECSchema>"), 3);
 
     ASSERT_TRUE (ecdb.IsDbOpen ());

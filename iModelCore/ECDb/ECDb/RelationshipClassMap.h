@@ -52,6 +52,7 @@ struct RelationshipConstraintMap : NonCopyableClass
         bool TryGetSingleClassIdFromConstraint(ECN::ECClassId& classId) const;
         ECN::ECRelationshipConstraintCR GetRelationshipConstraint()const;
         bool IsSingleAbstractClass() const { return m_constraint.GetClasses().size() == 1 && m_constraint.GetClasses().front()->GetClassModifier() == ECN::ECClassModifier::Abstract; }
+
     };
 
 /*=================================================================================**//**
@@ -98,6 +99,12 @@ public:
             return true;
 
         return false;
+        }
+    bool IsReadonly() const
+        {
+        size_t sourceCount = GetECDbMap().GetTableCountOnRelationshipEnd(GetConstraintMap(ECN::ECRelationshipEnd::ECRelationshipEnd_Source).GetRelationshipConstraint());
+        size_t targetCount = GetECDbMap().GetTableCountOnRelationshipEnd(GetConstraintMap(ECN::ECRelationshipEnd::ECRelationshipEnd_Target).GetRelationshipConstraint());
+        return sourceCount > 1 || targetCount > 1;
         }
     };
 

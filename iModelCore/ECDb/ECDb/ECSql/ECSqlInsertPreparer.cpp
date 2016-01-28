@@ -250,8 +250,6 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoRelationship(ECSqlPrepareConte
     BeAssert(classMap.IsRelationshipClassMap());
     BeAssert(ctx.GetClassMapViewMode() == IClassMap::View::DomainClass && "Relationship classes that are also used as structs are not supported.");
 
-    auto const& relationshipClassMap = static_cast<RelationshipClassMapCR> (classMap);
-
     auto const& specialTokenMap = exp.GetPropertyNameListExp()->GetSpecialTokenExpIndexMap();
     if (specialTokenMap.IsUnset(ECSqlSystemProperty::SourceECInstanceId) || specialTokenMap.IsUnset(ECSqlSystemProperty::TargetECInstanceId))
         {
@@ -259,6 +257,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoRelationship(ECSqlPrepareConte
         return ECSqlStatus::InvalidECSql;
         }
 
+    RelationshipClassMapCR relationshipClassMap = static_cast<RelationshipClassMapCR> (classMap);
     //Validate and if need be determine SourceECClassId and TargetECClassId
     ECClassId sourceECClassId = ECClass::UNSET_ECCLASSID; //remains unset if is parametrized
     ECSqlStatus stat = ValidateConstraintClassId(sourceECClassId, ctx, exp, relationshipClassMap, ECRelationshipEnd_Source);
