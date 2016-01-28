@@ -98,9 +98,12 @@
     </ECEntityClass>
     <ECEntityClass typeName="Asset" modifier="None">
         <ECCustomAttributes>
-            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.12">
-                <Hidden>True</Hidden>
-            </DisplayOptions>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>SharedTable</Strategy>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                </MapStrategy>
+            </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="AssetID" typeName="string" displayLabel="Asset ID" readOnly="false"/>
         <ECProperty propertyName="AssetOwner" typeName="string" readOnly="false"/>
@@ -162,17 +165,6 @@
     </ECRelationshipClass>
     <ECEntityClass typeName="Furniture" modifier="None">
         <BaseClass>Asset</BaseClass>
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
-                </MapStrategy>
-            </ClassMap>
-            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.12">
-                <Hidden>False</Hidden>
-            </DisplayOptions>
-        </ECCustomAttributes>
         <ECProperty propertyName="Condition" typeName="int" readOnly="false">
             <ECCustomAttributes>
                 <StandardValues xmlns="EditorCustomAttributes.01.02">
@@ -1076,20 +1068,6 @@
             <Class class="Employee"/>
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="LikesToShare1" modifier="None">
-        <BaseClass>Hardware</BaseClass>
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>False</AppliesToSubclasses>
-                </MapStrategy>
-                <TableName>SharedTable</TableName>
-            </ClassMap>
-        </ECCustomAttributes>
-        <ECProperty propertyName="Conflicted" typeName="boolean" readOnly="false"/>
-        <ECProperty propertyName="Unique1" typeName="string" readOnly="false"/>
-    </ECEntityClass>
     <ECEntityClass typeName="LikesToShare2" modifier="None">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">

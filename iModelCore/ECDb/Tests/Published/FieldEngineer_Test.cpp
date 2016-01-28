@@ -218,9 +218,7 @@ bool PopulateSimpleCompany (ECDbR ecDb)
     /* Import sample instances into Db */
     ECClassCP employeeClass = schema->GetClassCP ("Employee");
     ECClassCP managerClass = schema->GetClassCP ("Manager");
-    ECClassCP subContractorClass = schema->GetClassCP ("SubContractor");
     ECRelationshipClassCP managerRelClass = schema->GetClassCP ("ManagerRelationship")->GetRelationshipClassCP();
-    ECRelationshipClassCP subContractorRelClass = schema->GetClassCP ("SubContractorRelationship")->GetRelationshipClassCP();
 
     IECInstancePtr goldFish = CreateEmployee (*employeeClass,  "Gold",  "Fish");
     if (!InsertInstance (ecDb, *employeeClass, *goldFish))
@@ -231,15 +229,11 @@ bool PopulateSimpleCompany (ECDbR ecDb)
     IECInstancePtr lionSeal = CreateManager (*managerClass, "Lion",  "Seal");
     if (!InsertInstance (ecDb, *managerClass, *lionSeal))
         return false;
-    IECInstancePtr subContractor = CreateSubContractor (*subContractorClass, "Sub", "Contractor");
-    if (!InsertInstance (ecDb, *subContractorClass, *subContractor))
-        return false;
     IECInstancePtr whiteShark = CreateManager (*managerClass, "White", "Shark");
     if (!InsertInstance (ecDb, *managerClass, *whiteShark))
         return false;
 
-    IECRelationshipInstancePtr managerRel;
-    managerRel = CreateRelationship (*managerRelClass, *lionSeal, *salmonFish);
+    IECRelationshipInstancePtr managerRel = CreateRelationship (*managerRelClass, *lionSeal, *salmonFish);
     if (!InsertInstance (ecDb, *managerRelClass, *managerRel))
         return false;
 
@@ -249,15 +243,6 @@ bool PopulateSimpleCompany (ECDbR ecDb)
 
     managerRel = CreateRelationship (*managerRelClass, *whiteShark, *lionSeal);
     if (!InsertInstance (ecDb, *managerRelClass, *managerRel))
-        return false;
-
-    managerRel = CreateRelationship (*managerRelClass, *whiteShark, *subContractor);
-    if (!InsertInstance (ecDb, *managerRelClass, *managerRel))
-        return false;
-
-    IECRelationshipInstancePtr subContractorRel;
-    subContractorRel = CreateRelationship (*subContractorRelClass, *subContractor, *salmonFish);
-    if (!InsertInstance (ecDb, *subContractorRelClass, *subContractorRel))
         return false;
 
     ecDb.SaveChanges();
@@ -497,128 +482,6 @@ TEST (FieldEngineer, Workflow)
      ASSERT_TRUE (ECSqlStatus::Success == prepareStatus);
      stepStatus = statement.Step();
      ASSERT_TRUE (stepStatus == BE_SQLITE_DONE); // Validate that there aren't any rows for relationship!!
-
-    /*
-    * Retrieve specific relationship - Get SubContractorRelationship between "SubContractor" and "SalmonFish"
-    * (Tests relationships stored in one of the end tables)
-    */
-     ECClassCP subContractorClass = simpleCompanySchema->GetClassCP ("SubContractor");
-     ASSERT_TRUE (subContractorClass != nullptr);
-     ECInstanceId subContractorId = GetIdOfPerson (ecDb, *subContractorClass, "Sub", "Contractor");
-     ASSERT_TRUE (subContractorId.IsValid ());
-     ECInstanceId salmonFishId = GetIdOfPerson (ecDb, *employeeClass, "Salmon", "Fish");
-     ASSERT_TRUE (salmonFishId.IsValid ());
-     ECRelationshipClassCP subContractorRelClass = simpleCompanySchema->GetClassCP ("SubContractorRelationship")->GetRelationshipClassCP();
-     ASSERT_TRUE (subContractorRelClass != nullptr);
-
-     ecSqlWithoutSelect = "FROM sico.SubContractorRelationship WHERE SourceECInstanceId=? AND TargetECInstanceId=?";
-     statement.Finalize();
-     prepareStatus = statement.Prepare (ecDb, BuildECSql ("SELECT *", ecSqlWithoutSelect).c_str());
-     ASSERT_TRUE (ECSqlStatus::Success == prepareStatus);
-     statement.BindId (1, subContractorId);
-     statement.BindId (2, salmonFishId);
-     stepStatus = statement.Step();
-     ASSERT_TRUE (stepStatus == BE_SQLITE_ROW); 
-     ECInstanceId subContractorRelId = statement.GetValueId<ECInstanceId> (0);
-     ASSERT_TRUE (subContractorRelId.IsValid ());
-
-    /*
-    * Remove relationship and validate
-    * (Tests relationships stored in an end table)
-    */
-     JsonDeleter deleter3 (ecDb, *subContractorRelClass);
-     deleteStatus = deleter3.Delete (subContractorRelId); 
-     ASSERT_TRUE (deleteStatus == SUCCESS);
-
-    statement.Finalize();
-    prepareStatus = statement.Prepare (ecDb, BuildECSql ("SELECT *", ecSqlWithoutSelect).c_str());
-    ASSERT_TRUE (ECSqlStatus::Success == prepareStatus);
-    stepStatus = statement.Step();
-    ASSERT_TRUE (stepStatus == BE_SQLITE_DONE); // Validate that there aren't any rows for relationship!!
-
-    statement.Reset();
-
-    ecDb.SaveChanges();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsiclass                                   Ramanujam.Raman                  02/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST (FieldEngineer, RelationshipIssue)
-    {
-    ECDb ecDb;
-    InitializeFieldEngineerTest();
-
-    /* Create a new empty db */
-    BeFileName outputDir;
-    BeTest::GetHost().GetOutputRoot (outputDir);
-    BeFileName projectFile (nullptr, outputDir.GetName(), L"FieldEngineerRelationship.ecdb", nullptr);
-    if (BeFileName::DoesPathExist (projectFile.GetName()))
-        {
-        // Delete any previously created file
-        BeFileNameStatus fileDeleteStatus = BeFileName::BeDeleteFile (projectFile.GetName());
-        ASSERT_TRUE (fileDeleteStatus == BeFileNameStatus::Success);
-        }
-    DbResult stat = ecDb.CreateNewDb (projectFile.GetNameUtf8().c_str());
-    ASSERT_TRUE (stat == BE_SQLITE_OK);
-
-    /* Import DSCacheJoinSchema */
-
-    // Construct the sample schema path name
-    BeFileName schemaPath;
-    BeTest::GetHost().GetDocumentsRoot (schemaPath);
-    schemaPath.AppendToPath (L"ECDb\\Schemas");
-    BeFileName schemaPathname (schemaPath);
-    schemaPathname.AppendToPath (L"DSCacheJoinSchema.01.00.ecschema.xml");
-    ASSERT_TRUE (BeFileName::DoesPathExist (schemaPathname.GetName()));
-
-    // Read the sample schema from disk
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext ();
-    context->AddSchemaPath (schemaPathname.GetName()); // Setup locating any dependencies in the same folder
-    ECSchemaPtr dscJoinSchema;
-    ECSchema::ReadFromXmlFile (dscJoinSchema, schemaPathname.GetName(), *context);
-    ASSERT_TRUE (dscJoinSchema.IsValid());
-
-    // Import schema into Db
-    auto importSchemaStatus = ecDb.Schemas().ImportECSchemas (context->GetCache());
-    ASSERT_EQ (SUCCESS, importSchemaStatus);
-
-    /* Import sample instances into Db */
-    ECClassCP cachedFileInfoClass = ecDb.Schemas().GetECClass ("DSCacheSchema", "CachedFileInfo");
-    ASSERT_TRUE (cachedFileInfoClass != nullptr);
-
-    ECClassCP folderClass = ecDb.Schemas().GetECClass ("eB_PW_CommonSchema_WSB", "Folder");
-    ASSERT_TRUE (folderClass != nullptr);
-
-    ECClassCP tmpClass = ecDb.Schemas().GetECClass ("DSCacheJoinSchema", "CachedFileInfoRelationship");
-    ECRelationshipClassCP cachedFileInfoRelClass = tmpClass->GetRelationshipClassCP();
-    ASSERT_TRUE (cachedFileInfoRelClass != nullptr);
-
-    IECInstancePtr cachedFileInfo = cachedFileInfoClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
-    IECInstancePtr folder = folderClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
-
-    ASSERT_TRUE (InsertInstance (ecDb, *cachedFileInfoClass, *cachedFileInfo));
-    ASSERT_TRUE (InsertInstance (ecDb, *folderClass, *folder));
-
-    IECRelationshipInstancePtr cachedFileInfoRel;
-    cachedFileInfoRel = CreateRelationship (*cachedFileInfoRelClass, *cachedFileInfo, *folder);
-    ASSERT_TRUE (InsertInstance (ecDb, *cachedFileInfoRelClass, *cachedFileInfoRel));
-
-    // Test retrieval of relationship instance directly
-    ECSqlStatement statement;
-    ECSqlStatus prepareStatus = statement.Prepare (ecDb, "SELECT * FROM ONLY DSCJS.CachedFileInfoRelationship WHERE CachedFileInfoRelationship.ECInstanceId = ?");
-    ASSERT_TRUE (ECSqlStatus::Success == prepareStatus);
-    statement.BindId (1, InstanceToId (*cachedFileInfoRel));
-    DbResult stepStatus = statement.Step();
-    ASSERT_TRUE (stepStatus == BE_SQLITE_ROW); 
-
-    // Test retrieval of related instances
-    statement.Finalize();
-    prepareStatus = statement.Prepare (ecDb, "SELECT * FROM DSC.CachedFileInfo JOIN eBPWC.Folder USING DSCJS.CachedFileInfoRelationship WHERE Folder.ECInstanceId = ?");
-    ASSERT_TRUE (ECSqlStatus::Success == prepareStatus);
-    statement.BindId (1, InstanceToId (*folder));
-    stepStatus = statement.Step();
-    ASSERT_TRUE (stepStatus == BE_SQLITE_ROW); 
 
     ecDb.SaveChanges();
     }

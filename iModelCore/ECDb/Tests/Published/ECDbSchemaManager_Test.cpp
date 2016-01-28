@@ -903,7 +903,7 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViews)
     schemasWithECClassViews = GetECViewNamesByPrefix(ecdb);
     ASSERT_EQ(2, schemasWithECClassViews.size()) << "Unexpected number of schemas with ECClassViews";
     ASSERT_EQ(4, schemasWithECClassViews["ecdbf"].size()) << "Unexpected number of ECClassViews";
-    ASSERT_EQ(40, schemasWithECClassViews["stco"].size()) << "Unexpected number of ECClassViews";
+    ASSERT_EQ(39, schemasWithECClassViews["stco"].size()) << "Unexpected number of ECClassViews";
     }
 
 //---------------------------------------------------------------------------------------

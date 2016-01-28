@@ -98,12 +98,13 @@ ECN::ECClassId ClassToId (ECClassCR ecClass)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PersistRelationship (IECRelationshipInstanceR relInstance, ECDbR ecdb)
+BentleyStatus PersistRelationship (IECRelationshipInstanceR relInstance, ECDbR ecdb)
     {
     ECInstanceInserter inserter (ecdb, relInstance.GetClass ());
-    ASSERT_TRUE (inserter.IsValid ());
-    auto insertStatus = inserter.Insert (relInstance);
-    ASSERT_EQ (SUCCESS, insertStatus);    
+    if (!inserter.IsValid())
+        return ERROR;
+
+    return inserter.Insert (relInstance);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -299,8 +300,8 @@ TEST (ECDbRelationships, ImportECRelationshipInstances)
     //   Should write to sc_Phone table
     relInstance = CreateRelationship (test, "StartupCompany", "Employee", "Phone", "EmployeePhone");
     ASSERT_TRUE (relInstance.IsValid());
-    PersistRelationship (*relInstance, db);
-    ValidatePersistingRelationship (db, "sc_Phone", InstanceToId (*relInstance->GetTarget()), 
+    ASSERT_EQ(SUCCESS, PersistRelationship(*relInstance, db));
+    ValidatePersistingRelationship (db, "sc_Asset", InstanceToId (*relInstance->GetTarget()), 
         "Employee__src_01_id", InstanceToId (*relInstance->GetSource()).GetValue ());
     ValidateReadingRelationship (db,"StartupCompany", "EmployeePhone", *relInstance);
     ValidateReadingRelated (db, "StartupCompany", "EmployeePhone", relInstance->GetSource(), relInstance->GetTarget());
@@ -310,19 +311,7 @@ TEST (ECDbRelationships, ImportECRelationshipInstances)
     //   Relates: Foo (1) -> Asset, Employee (1)
     relInstance = CreateRelationship (test, "StartupCompany", "Foo", "Asset", "Foo_has_SomethingInOneOfManyTables");
     ASSERT_TRUE (relInstance.IsValid());
-    PersistRelationship (*relInstance, db);
-
-    db.SaveChanges ();
-    ValidateReadingRelationship (db, "StartupCompany", "Foo_has_SomethingInOneOfManyTables", *relInstance);
-    ValidateReadingRelated (db, "StartupCompany", "Foo_has_SomethingInOneOfManyTables", relInstance->GetSource(), relInstance->GetTarget());
-
-    //now attempt to insert a second relation to same Foo object which will violate cardinality
-    relInstance = CreateRelationship (test, "StartupCompany", "Foo", "Employee", "Foo_has_SomethingInOneOfManyTables");
-    ASSERT_TRUE (relInstance.IsValid());
-    ECInstanceInserter inserter (db, relInstance->GetClass ());
-    ASSERT_TRUE (inserter.IsValid ());
-    BentleyStatus insertStatus = inserter.Insert (*relInstance);
-    ASSERT_EQ (ERROR, insertStatus) << "Inserting second relationship for same Foo instance is expected to violate cardinality 1:1";
+    ASSERT_EQ(SUCCESS, PersistRelationship(*relInstance, db)) << "Relationship with many target tables is readonly";
 
     // Import 1-to-M relationships
     // EmployeeFurniture
@@ -330,16 +319,16 @@ TEST (ECDbRelationships, ImportECRelationshipInstances)
     //   Relates: Employee (1) -> Chair, Desk  (M)
     relInstance = CreateRelationship (test, "StartupCompany", "Employee", "Chair", "EmployeeFurniture");
     ASSERT_TRUE (relInstance.IsValid());
-    PersistRelationship (*relInstance, db);
-    ValidatePersistingRelationship (db, "sc_Furniture", InstanceToId (*relInstance->GetTarget()), 
+    ASSERT_EQ(SUCCESS, PersistRelationship (*relInstance, db));
+    ValidatePersistingRelationship (db, "sc_Asset", InstanceToId (*relInstance->GetTarget()), 
         "Employee__src_01_id", InstanceToId (*relInstance->GetSource()).GetValue ());
     ValidateReadingRelationship (db, "StartupCompany", "EmployeeFurniture", *relInstance);
     ValidateReadingRelated (db, "StartupCompany", "EmployeeFurniture", relInstance->GetSource(), relInstance->GetTarget());
 
     relInstance = CreateRelationship (test, "StartupCompany", "Employee", "Desk", "EmployeeFurniture");
     ASSERT_TRUE (relInstance.IsValid());
-    PersistRelationship (*relInstance, db);
-    ValidatePersistingRelationship (db, "sc_Furniture", InstanceToId (*relInstance->GetTarget()), 
+    ASSERT_EQ(SUCCESS, PersistRelationship(*relInstance, db));
+    ValidatePersistingRelationship (db, "sc_Asset", InstanceToId (*relInstance->GetTarget()),
         "Employee__src_01_id", InstanceToId (*relInstance->GetSource()).GetValue ());
     ValidateReadingRelationship (db, "StartupCompany", "EmployeeFurniture", *relInstance);
     ValidateReadingRelated (db, "StartupCompany", "EmployeeFurniture", relInstance->GetSource(), relInstance->GetTarget());
@@ -350,8 +339,8 @@ TEST (ECDbRelationships, ImportECRelationshipInstances)
     //   Relates: Employee (M) -> Company (1)
     relInstance = CreateRelationship (test, "StartupCompany", "Employee", "Company", "EmployeeCompany");
     ASSERT_TRUE (relInstance.IsValid());
-    PersistRelationship (*relInstance, db);
-    ValidatePersistingRelationship (db, "sc_Employee", InstanceToId (*relInstance->GetSource()), 
+    ASSERT_EQ(SUCCESS, PersistRelationship(*relInstance, db));
+    ValidatePersistingRelationship (db, "sc_Employee", InstanceToId (*relInstance->GetSource()),
         "Company__trg_11_id", InstanceToId (*relInstance->GetTarget()).GetValue ());
     ValidateReadingRelationship (db, "StartupCompany", "EmployeeCompany", *relInstance);
     ValidateReadingRelated (db, "StartupCompany", "EmployeeCompany", relInstance->GetSource(), relInstance->GetTarget());
@@ -363,7 +352,7 @@ TEST (ECDbRelationships, ImportECRelationshipInstances)
     db.SaveChanges();
     relInstance = CreateRelationship (test, "StartupCompany", "Employee", "Hardware", "EmployeeHardware");
     ASSERT_TRUE (relInstance.IsValid());
-    PersistRelationship (*relInstance, db);
+    ASSERT_EQ(SUCCESS, PersistRelationship(*relInstance, db));
     db.SaveChanges();
     ValidatePersistingRelationship (db, "sc_EmployeeHardware", InstanceToId (*relInstance), 
         "Employee__src_0N_id", InstanceToId (*relInstance->GetSource()).GetValue ());

@@ -877,11 +877,6 @@ TEST_F (ECSqlStatementTestFixture, PolymorphicDeleteTestWithStructArrays)
 
     bvector<Utf8String> tableNames;
     tableNames.push_back ("nsat_ClassA");
-    tableNames.push_back ("nsat_DerivedA");
-    tableNames.push_back ("nsat_DerivedB");
-    tableNames.push_back ("nsat_DoubleDerivedA");
-    tableNames.push_back ("nsat_DoubleDerivedB");
-    tableNames.push_back ("nsat_DoubleDerivedC");
     tableNames.push_back ("nsat_S1");
     tableNames.push_back ("nsat_S2");
     tableNames.push_back ("nsat_S3");

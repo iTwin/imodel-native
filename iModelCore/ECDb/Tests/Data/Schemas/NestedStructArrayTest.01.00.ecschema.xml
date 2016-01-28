@@ -9,6 +9,14 @@
         </SchemaChangeTrackingState>
     </ECCustomAttributes>
     <ECEntityClass typeName="ClassA" modifier="None">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>SharedTable</Strategy>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
         <ECProperty propertyName="I" typeName="int" readOnly="false"/>
         <ECProperty propertyName="T" typeName="string" readOnly="false"/>
     </ECEntityClass>
