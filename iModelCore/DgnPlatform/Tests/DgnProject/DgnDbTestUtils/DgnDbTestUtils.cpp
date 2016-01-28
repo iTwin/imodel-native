@@ -5,6 +5,7 @@
 
 #include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
 #include <DgnPlatform/DgnPlatformLib.h>
+#include <DgnPlatform/Render.h>
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -395,7 +396,7 @@ DgnViewId DgnDbTestUtils::InsertCameraView(SpatialModelR model, Utf8CP nameIn)
     viewController->SetDelta(DVec3d::From(10,10,10));
 
     auto& viewFlags = viewController->GetViewFlagsR();
-    viewFlags.SetRenderMode(DgnRenderMode::SmoothShade);
+    viewFlags.SetRenderMode(RenderMode::SmoothShade);
     viewFlags.constructions = true;
     viewFlags.dimensions = true;
     viewFlags.weights = true;
