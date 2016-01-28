@@ -53,7 +53,7 @@ BentleyStatus CreateRangeTreeTestProject(Utf8StringR ecdbPath)
         "       <ECProperty typeName='double' propertyName='MinY' />"
         "       <ECProperty typeName='double' propertyName='MaxY' />"
         "  </ECEntityClass>"
-        "  <ECEntityClass typeName='DemoData' isDomainClass='True'>"
+        "  <ECEntityClass typeName='DemoData' >"
         "       <ECProperty propertyName='Name' typeName='string' />"
         "  </ECEntityClass>"
         "</ECSchema>";

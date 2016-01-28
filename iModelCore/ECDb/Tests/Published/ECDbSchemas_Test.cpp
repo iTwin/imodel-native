@@ -168,10 +168,10 @@ TEST (ECDbSchemas, OrderOfPropertyIsPreservedInTableColumns)
     ECDbR db = saveTestProject.Create ("propertyOrderTest.ecdb");
     auto schema =
         "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-        "<ECSchema schemaName=\"OrderSchema\" nameSpacePrefix=\"os\" version=\"1.0\" xmlns = \"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-        "  <ECClass typeName=\"OrderedStruct\" isDomainClass=\"True\" isStruct =\"True\">"
+        "<ECSchema schemaName=\"OrderSchema\" nameSpacePrefix=\"os\" version=\"1.0\" xmlns = \"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+        "  <ECStructClass typeName=\"OrderedStruct\" >"
         "   <ECProperty propertyName=\"a\" typeName=\"string\"/>"
-        "	 <ECProperty propertyName=\"g\" typeName=\"integer\"/>"
+        "	 <ECProperty propertyName=\"g\" typeName=\"int\"/>"
         "	 <ECProperty propertyName=\"c\" typeName=\"dateTime\"/>"
         "   <ECProperty propertyName=\"z\" typeName=\"point3d\"/>"
         "	 <ECProperty propertyName=\"y\" typeName=\"point2d\"/>"
@@ -179,10 +179,10 @@ TEST (ECDbSchemas, OrderOfPropertyIsPreservedInTableColumns)
         "   <ECProperty propertyName=\"u\" typeName=\"double\"/>"
         "	 <ECProperty propertyName=\"k\" typeName=\"string\"/>"
         "	 <ECProperty propertyName=\"r\" typeName=\"string\"/>"
-        "  </ECClass>"
-        "  <ECClass typeName=\"PropertyOrderTest\" isDomainClass=\"True\" isStruct =\"True\">"
+        "  </ECStructClass>"
+        "  <ECEntityClass typeName=\"PropertyOrderTest\" >"
         "   <ECProperty propertyName=\"x\" typeName=\"string\"/>"
-        "	 <ECProperty propertyName=\"h\" typeName=\"integer\"/>"
+        "	 <ECProperty propertyName=\"h\" typeName=\"int\"/>"
         "	 <ECProperty propertyName=\"i\" typeName=\"dateTime\"/>"
         "   <ECProperty propertyName=\"d\" typeName=\"point3d\"/>"
         "	 <ECProperty propertyName=\"u\" typeName=\"point2d\"/>"
@@ -191,7 +191,7 @@ TEST (ECDbSchemas, OrderOfPropertyIsPreservedInTableColumns)
         "	 <ECProperty propertyName=\"p\" typeName=\"string\"/>"
         "	 <ECStructProperty propertyName=\"o\" typeName=\"OrderedStruct\"/>"
         "	 <ECProperty propertyName=\"z\" typeName=\"long\"/>"
-        "  </ECClass>"
+        "  </ECEntityClass>"
         "</ECSchema>";
 
     ECSchemaPtr orderSchema;
@@ -209,7 +209,8 @@ TEST (ECDbSchemas, OrderOfPropertyIsPreservedInTableColumns)
         order_PropertyOrderTest.append (stmt1.GetValueText (1)).append (" ");
         }
 
-    ASSERT_TRUE (order_PropertyOrderTest == "ECInstanceId ParentECInstanceId ECPropertyPathId ECArrayIndex x h i d_X d_Y d_Z u_X u_Y f e p o_a o_g o_c o_z_X o_z_Y o_z_Z o_y_X o_y_Y o_t o_u o_k o_r z ");
+    Utf8CP expectedPropertyOrder = "ECInstanceId x h i d_X d_Y d_Z u_X u_Y f e p o_a o_g o_c o_z_X o_z_Y o_z_Z o_y_X o_y_Y o_t o_u o_k o_r z ";
+    ASSERT_STREQ (order_PropertyOrderTest.c_str(), expectedPropertyOrder);
     
     Statement stmt2;
     stmt2.Prepare (db, "PRAGMA table_info('os_OrderedStruct')");
@@ -2397,9 +2398,9 @@ TEST_F(ECDbTestFixture, CheckClassHasCurrentTimeStamp)
     {
     SchemaItem schema (
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        "<ECSchema schemaName=\"SimpleSchema\" nameSpacePrefix=\"adhoc\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "<ECSchema schemaName=\"SimpleSchema\" nameSpacePrefix=\"adhoc\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
         "<ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.11\" prefix=\"besc\" />"
-        "<ECClass typeName=\"SimpleClass\" isDomainClass=\"True\">"
+        "<ECEntityClass typeName=\"SimpleClass\" >"
         "<ECProperty propertyName = \"DateTimeProperty\" typeName=\"dateTime\" readOnly=\"True\" />"
         "<ECProperty propertyName = \"testprop\" typeName=\"int\" />"
         "<ECCustomAttributes>"
@@ -2407,7 +2408,7 @@ TEST_F(ECDbTestFixture, CheckClassHasCurrentTimeStamp)
         "<PropertyName>DateTimeProperty</PropertyName>"
         "</ClassHasCurrentTimeStampProperty>"
         "</ECCustomAttributes>"
-        "</ECClass>"
+        "</ECEntityClass>"
         "</ECSchema>");
 
     SetupECDb("checkClassHasCurrentTimeStamp.ecdb", schema);
