@@ -32,8 +32,9 @@ public:
     enum class ResponseOptions : uint8_t
     {
         None = 0, //!< No special options
-        DeniedLocks = 1 << 0, //!< If a request to acquire locks is denied, the response will include the current lock state of each denied lock
+        LockState = 1 << 0, //!< If a request to acquire locks is denied, the response will include the current lock state of each denied lock
         CodeState = 1 << 1, //!< Include DgnCodeState for any codes for which the request was denied
+        RevisionIds = 1 << 2, //!< For locks or codes requiring a revision to be pulled, include the specific revision IDs.
         All = 0xff, //!< Include all options
     };
 
@@ -60,20 +61,20 @@ public:
     {
     private:
         DgnCodeInfoSet      m_codeStates;
-        DgnLockSet          m_deniedLocks;
+        DgnLockInfoSet      m_lockStates;
         RepositoryStatus    m_status;
     public:
         explicit Response(RepositoryStatus status=RepositoryStatus::InvalidResponse) : m_status(status) { }
 
         RepositoryStatus Result() const { return m_status; }
-        DgnLockSet const& DeniedLocks() const { return m_deniedLocks; }
+        DgnLockInfoSet const& LockStates() const { return m_lockStates; }
         DgnCodeInfoSet const& CodeStates() const { return m_codeStates; }
 
         void SetResult(RepositoryStatus result) { m_status = result; }
-        DgnLockSet& DeniedLocks() { return m_deniedLocks; }
+        DgnLockInfoSet& LockStates() { return m_lockStates; }
         DgnCodeInfoSet& CodeStates() { return m_codeStates; }
 
-        void Invalidate() { m_status = RepositoryStatus::InvalidResponse; m_deniedLocks.clear(); m_codeStates.clear(); }
+        void Invalidate() { m_status = RepositoryStatus::InvalidResponse; m_lockStates.clear(); m_codeStates.clear(); }
     };
         
 private:
@@ -200,16 +201,16 @@ protected:
     virtual RepositoryStatus _Demote(DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db) = 0;
     virtual RepositoryStatus _Relinquish(Resources which, DgnDbR db) = 0;
     virtual RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnDbR db) = 0;
-    virtual RepositoryStatus _QueryStates(DgnOwnedLockSet& ownership, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes) = 0;
+    virtual RepositoryStatus _QueryStates(DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes) = 0;
 public:
     Response ProcessRequest(Request const& req, DgnDbR db) { return _ProcessRequest(req, db); }
     RepositoryStatus Demote(DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db) { return _Demote(locks, codes, db); }
     RepositoryStatus Relinquish(Resources which, DgnDbR db) { return _Relinquish(which, db); }
-    RepositoryStatus QueryStates(DgnOwnedLockSet& lockOwnership, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes) { return _QueryStates(lockOwnership, codeStates, locks, codes); }
+    RepositoryStatus QueryStates(DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes) { return _QueryStates(lockStates, codeStates, locks, codes); }
     RepositoryStatus QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnDbR db) { return _QueryHeldResources(locks, codes, db); }
 
     DGNPLATFORM_EXPORT RepositoryStatus QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes);
-    DGNPLATFORM_EXPORT RepositoryStatus QueryLockOwnerships(DgnOwnedLockSet& ownership, LockableIdSet const& locks);
+    DGNPLATFORM_EXPORT RepositoryStatus QueryLockStates(DgnLockInfoSet& states, LockableIdSet const& locks);
 };
 
 ENUM_IS_FLAGS(IBriefcaseManager::ResponseOptions);

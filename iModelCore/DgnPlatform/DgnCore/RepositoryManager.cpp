@@ -1002,7 +1002,7 @@ template<typename T> static DgnDbStatus processRequest(T const& obj, LockLevel l
     bool wantCode = code.IsValid() && !code.IsEmpty();
     if (wantCode)
         {
-        req.SetOptions(IBriefcaseManager::ResponseOptions::DeniedLocks);
+        req.SetOptions(IBriefcaseManager::ResponseOptions::LockState);
         req.Codes().insert(code);
         }
 
@@ -1030,7 +1030,7 @@ template<typename T> static DgnDbStatus processRequest(T const& obj, LockLevel l
         case RepositoryStatus::CodeUsed:
             return DgnDbStatus::CodeNotReserved;
         default:
-            return response.DeniedLocks().empty() ? DgnDbStatus::CodeNotReserved : DgnDbStatus::LockNotHeld;
+            return response.LockStates().empty() ? DgnDbStatus::CodeNotReserved : DgnDbStatus::LockNotHeld;
         }
     }
 
@@ -1111,17 +1111,17 @@ IBriefcaseManager::Response IBriefcaseManager::ReserveCodes(DgnCodeSet& codes, R
 +---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryStatus IRepositoryManager::QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes)
     {
-    DgnOwnedLockSet unused;
+    DgnLockInfoSet unused;
     return QueryStates(unused, states, LockableIdSet(), codes);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus IRepositoryManager::QueryLockOwnerships(DgnOwnedLockSet& ownerships, LockableIdSet const& locks)
+RepositoryStatus IRepositoryManager::QueryLockStates(DgnLockInfoSet& states, LockableIdSet const& locks)
     {
     DgnCodeInfoSet unused;
-    return QueryStates(ownerships, unused, locks, DgnCodeSet());
+    return QueryStates(states, unused, locks, DgnCodeSet());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1141,43 +1141,45 @@ void IBriefcaseManager::RemoveElements(LockRequestR request, DgnModelId modelId)
 void IBriefcaseManager::ReformulateLockRequest(LockRequestR req, Response const& response) const
     {
     DgnLockSet& locks = req.GetLockSet();
-    for (auto const& lock : response.DeniedLocks())
+    for (auto const& state : response.LockStates())
         {
-        auto found = locks.find(DgnLock(lock.GetLockableId(), LockLevel::Exclusive));
-        if (locks.end() != found)
+        auto lockId = state.GetLockableId();
+        auto found = locks.find(DgnLock(lockId, LockLevel::Exclusive));
+        if (locks.end() == found)
+            continue;
+
+        auto level = state.GetOwnership().GetLockLevel();
+        if (LockLevel::Shared == level)
             {
-            if (LockLevel::Exclusive == lock.GetLevel())
+            // Shared lock should not have been denied if no one holds an exclusive lock on it...
+            // Note that if we requested an exclusive lock, we will now downgrade it to a shared lock
+            BeAssert(LockLevel::Exclusive == found->GetLevel());
+            switch (lockId.GetType())
                 {
-                switch (lock.GetType())
-                    {
-                    case LockableType::Db:
-                        // The entire Db is locked. We can do nothing.
-                        req.Clear();
-                        return;
-                    case LockableType::Model:
-                        locks.erase(found);
-                        RemoveElements(req, DgnModelId(lock.GetId().GetValue()));
-                        break;
-                    default:
-                        locks.erase(found);
-                        break;
-                    }
+                case LockableType::Db:
+                case LockableType::Model:
+                    found->SetLevel(LockLevel::Shared);
+                    break;
+                default:
+                    locks.erase(found);
+                    break;
                 }
-            else if (LockLevel::Shared == lock.GetLevel())
+            }
+        else // Will be "None" if we need to pull a revision before acquiring this lock...treat same as if "Exclusive"
+            {
+            switch (lockId.GetType())
                 {
-                // Shared lock should not have been denied if no one holds an exclusive lock on it...
-                // Note that if we requested an exclusive lock, we will now downgrade it to a shared lock
-                BeAssert(LockLevel::Exclusive == found->GetLevel());
-                switch (lock.GetType())
-                    {
-                    case LockableType::Db:
-                    case LockableType::Model:
-                        found->SetLevel(LockLevel::Shared);
-                        break;
-                    default:
-                        locks.erase(found);
-                        break;
-                    }
+                case LockableType::Db:
+                    // The entire Db is locked. We can do nothing.
+                    req.Clear();
+                    return;
+                case LockableType::Model:
+                    locks.erase(found);
+                    RemoveElements(req, DgnModelId(lockId.GetId().GetValue()));
+                    break;
+                default:
+                    locks.erase(found);
+                    break;
                 }
             }
         }

@@ -34,14 +34,14 @@ private:
     virtual RepositoryStatus _Demote(DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db) override;
     virtual RepositoryStatus _Relinquish(Resources which, DgnDbR db) override;
     virtual RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnDbR db) override;
-    virtual RepositoryStatus _QueryStates(DgnOwnedLockSet& ownership, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes) override;
+    virtual RepositoryStatus _QueryStates(DgnLockInfoSet&, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes) override;
 
     DbResult CreateLocksTable();
     DbResult CreateCodesTable();
 
     // locks
     bool AreLocksAvailable(LockRequestCR reqs, BeBriefcaseId requestor);
-    void GetDeniedLocks(DgnLockSet& locks, LockRequestCR reqs, BeBriefcaseId bcId);
+    void GetDeniedLocks(DgnLockInfoSet& locks, LockRequestCR reqs, BeBriefcaseId bcId);
     int32_t QueryLockCount(BeBriefcaseId bc);
     void Relinquish(DgnLockSet const&, DgnDbR);
     void Reduce(DgnLockSet const&, DgnDbR);
@@ -49,8 +49,8 @@ private:
     RepositoryStatus _RelinquishLocks(DgnDbR);
     RepositoryStatus _DemoteLocks(DgnLockSet const&, DgnDbR);
     RepositoryStatus _QueryLocks(DgnLockSet&, DgnDbR);
-    RepositoryStatus _QueryOwnership(DgnLockOwnershipR, LockableId);
-    RepositoryStatus _QueryOwnerships(DgnOwnedLockSet&, LockableIdSet const&);
+    RepositoryStatus _QueryLockState(DgnLockInfoR, LockableId);
+    RepositoryStatus _QueryLockStates(DgnLockInfoSet&, LockableIdSet const&);
 
     // codes
     enum class CodeState : uint8_t { Available, Reserved, Discarded, Used };
@@ -322,9 +322,9 @@ RepositoryStatus RepositoryManager::_Relinquish(Resources which, DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus RepositoryManager::_QueryStates(DgnOwnedLockSet& ownerships, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes)
+RepositoryStatus RepositoryManager::_QueryStates(DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes)
     {
-    auto stat = _QueryOwnerships(ownerships, locks);
+    auto stat = _QueryLockStates(lockStates, locks);
     if (RepositoryStatus::Success == stat)
         stat = _QueryCodeStates(codeStates, codes);
 
@@ -365,8 +365,9 @@ bool RepositoryManager::AreLocksAvailable(LockRequestCR reqs, BeBriefcaseId bcId
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RepositoryManager::GetDeniedLocks(DgnLockSet& locks, LockRequestCR reqs, BeBriefcaseId bcId)
+void RepositoryManager::GetDeniedLocks(DgnLockInfoSet& states, LockRequestCR reqs, BeBriefcaseId bcId)
     {
+    // NB: Interface has evolved repeatedly...should probably rewrite this function...
     Statement stmt;
     stmt.Prepare(m_db, "SELECT " LOCK_Type "," LOCK_Id "," LOCK_Exclusive
                        " FROM " TABLE_Locks " WHERE " LOCK_BcId " != ?" " AND InVirtualSet(@vset," LOCK_Type "," LOCK_Id "," LOCK_Exclusive ")");
@@ -375,17 +376,18 @@ void RepositoryManager::GetDeniedLocks(DgnLockSet& locks, LockRequestCR reqs, Be
     bindBcId(stmt, 1, bcId);
     stmt.BindVirtualSet(2, vset);
 
+    LockableIdSet deniedLocks;
     while (BE_SQLITE_ROW == stmt.Step())
         {
         LockableId id(static_cast<LockableType>(stmt.GetValueInt(0)), stmt.GetValueId<BeInt64Id>(1));
         auto level = (0 != stmt.GetValueInt(2)) ? LockLevel::Exclusive : LockLevel::Shared;
-        DgnLock lock(id, level);
-        auto inserted = locks.insert(lock);
+        auto inserted = deniedLocks.insert(id);
         if (LockLevel::Exclusive == level)
             EXPECT_TRUE(inserted.second);   // If the server has granted an exclusive lock, it should not have any shared locks for same object.
-        else if (!inserted.second)
-            EXPECT_EQ(LockLevel::Shared, inserted.first->GetLevel()); // If more than one lock exists for the same object, they should all be shared locks.
         }
+
+    if (!deniedLocks.empty())
+        QueryLockStates(states, deniedLocks);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -416,8 +418,8 @@ void RepositoryManager::_AcquireLocks(Response& response, LockRequestCR inputReq
     if (!AreLocksAvailable(reqs, db.GetBriefcaseId()))
         {
         response.SetResult(RepositoryStatus::LockAlreadyHeld);
-        if (Options::None != (Options::DeniedLocks & opts))
-            GetDeniedLocks(response.DeniedLocks(), reqs, db.GetBriefcaseId());
+        if (Options::None != (Options::LockState & opts))
+            GetDeniedLocks(response.LockStates(), reqs, db.GetBriefcaseId());
 
         return;
         }
@@ -549,9 +551,11 @@ RepositoryStatus RepositoryManager::_QueryLocks(DgnLockSet& locks, DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus RepositoryManager::_QueryOwnership(DgnLockOwnershipR ownership, LockableId inputLockId)
+RepositoryStatus RepositoryManager::_QueryLockState(DgnLockInfoR state, LockableId inputLockId)
     {
-    ownership.Reset();
+    // NB: Currently not tracking revision IDs in mock server for locks...
+    state.Reset();
+    DgnLockOwnershipR ownership = state.GetOwnership();
 
     // Simulating serialization and deserialization of server request...
     Json::Value lockIdJson;
@@ -581,19 +585,22 @@ RepositoryStatus RepositoryManager::_QueryOwnership(DgnLockOwnershipR ownership,
             }
         }
 
+    if (state.IsOwned())
+        state.SetTracked();
+
     return RepositoryStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus RepositoryManager::_QueryOwnerships(DgnOwnedLockSet& ownerships, LockableIdSet const& ids)
+RepositoryStatus RepositoryManager::_QueryLockStates(DgnLockInfoSet& states, LockableIdSet const& ids)
     {
     // NB: Previously could not batch requests like this...forward to old one-at-a-time impl
     for (auto const& id : ids)
         {
-        DgnOwnedLock& lock = *ownerships.insert(DgnOwnedLock(id)).first;
-        auto status = _QueryOwnership(lock.GetOwnership(), id);
+        DgnLockInfo& info = *states.insert(DgnLockInfo(id)).first;
+        auto status = _QueryLockState(info, id);
         if (RepositoryStatus::Success != status)
             return status;
         }
@@ -995,7 +1002,7 @@ struct LocksManagerTest : RepositoryManagerTest
         {
         LockRequest req;
         req.Insert(obj, level);
-        return AcquireResponse(req, ExtractDgnDb(obj), ResponseOptions::DeniedLocks);
+        return AcquireResponse(req, ExtractDgnDb(obj), ResponseOptions::LockState);
         }
 
     template<typename T> RepositoryStatus Acquire(T const& obj, LockLevel level)
@@ -1015,14 +1022,14 @@ struct LocksManagerTest : RepositoryManagerTest
 
     RepositoryStatus QueryOwnership(DgnLockOwnershipR ownership, LockableId const& id)
         {
-        DgnOwnedLockSet ownerships;
+        DgnLockInfoSet states;
         LockableIdSet ids;
         ids.insert(id);
-        auto stat = m_server.QueryLockOwnerships(ownerships, ids);
+        auto stat = m_server.QueryLockStates(states, ids);
         if (RepositoryStatus::Success == stat)
             {
-            EXPECT_EQ(1, ownerships.size());
-            ownership = ownerships.begin()->GetOwnership();
+            EXPECT_EQ(1, states.size());
+            ownership = states.begin()->GetOwnership();
             }
 
         return stat;
@@ -1032,11 +1039,10 @@ struct LocksManagerTest : RepositoryManagerTest
         {
         // Test that locked obj is in response
         auto lockableId = MakeLockableId(lockedObj);
-        DgnLock lock(lockableId, level);
-        auto found = response.DeniedLocks().find(lock);
-        EXPECT_FALSE(found == response.DeniedLocks().end());
-        if (response.DeniedLocks().end() != found)
-            EXPECT_EQ(found->GetLevel(), level);
+        auto found = response.LockStates().find(DgnLockInfo(lockableId));
+        EXPECT_FALSE(found == response.LockStates().end());
+        if (response.LockStates().end() != found)
+            EXPECT_EQ(found->GetOwnership().GetLockLevel(), level);
 
         // Test that response matches direct ownership query
         DgnLockOwnership ownership;
@@ -1590,7 +1596,7 @@ TEST_F(DoubleBriefcaseTest, ReformulateRequest)
         ExpectAcquire(*modelA2d, LockLevel::Exclusive);
         auto response = AcquireResponse(*modelB2d, LockLevel::Shared);
         EXPECT_EQ(RepositoryStatus::LockAlreadyHeld, response.Result());
-        EXPECT_EQ(1, response.DeniedLocks().size());
+        EXPECT_EQ(1, response.LockStates().size());
 
         ExpectInDeniedSet(*modelA2d, LockLevel::Exclusive, response, dbB);
         // Reformulate request => remove request for model
@@ -1611,7 +1617,7 @@ TEST_F(DoubleBriefcaseTest, ReformulateRequest)
         // Try to lock exclusively
         auto response = AcquireResponse(*modelB2d, LockLevel::Exclusive);
         EXPECT_EQ(RepositoryStatus::LockAlreadyHeld, response.Result());
-        EXPECT_EQ(1, response.DeniedLocks().size());
+        EXPECT_EQ(1, response.LockStates().size());
         ExpectInDeniedSet(*modelA2d, LockLevel::Shared, response, dbB);
 
         // Expect two shared owners
@@ -1645,7 +1651,7 @@ TEST_F(DoubleBriefcaseTest, ReformulateRequest)
         Request req;
         req.Locks().Insert(*elemB2d2, LockLevel::Exclusive);
         req.Locks().Insert(*elemB2d1, LockLevel::Exclusive);
-        auto response = AcquireResponse(req.Locks(), dbB, ResponseOptions::DeniedLocks);
+        auto response = AcquireResponse(req.Locks(), dbB, ResponseOptions::LockState);
         EXPECT_EQ(RepositoryStatus::LockAlreadyHeld, response.Result());
 
         // Reformulate request => remove one element
@@ -1667,7 +1673,7 @@ TEST_F(DoubleBriefcaseTest, ReformulateRequest)
         Request req;
         req.Locks().Insert(*elemB2d2, LockLevel::Exclusive);
         req.Locks().Insert(*elemB3d2, LockLevel::Exclusive);
-        auto response = AcquireResponse(req.Locks(), dbB, ResponseOptions::DeniedLocks);
+        auto response = AcquireResponse(req.Locks(), dbB, ResponseOptions::LockState);
         EXPECT_EQ(RepositoryStatus::LockAlreadyHeld, response.Result());
 
         // Reformulate request => remove element in locked model

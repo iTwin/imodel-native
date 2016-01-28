@@ -13,7 +13,7 @@
 DGNPLATFORM_TYPEDEFS(LockRequest);
 DGNPLATFORM_TYPEDEFS(DgnLock);
 DGNPLATFORM_TYPEDEFS(DgnLockOwnership);
-DGNPLATFORM_TYPEDEFS(DgnOwnedLock);
+DGNPLATFORM_TYPEDEFS(DgnLockInfo);
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -189,31 +189,55 @@ public:
 };
 
 //=======================================================================================
-//! Describes a lock and its ownership.
+//! Describes the state of a lockable object.
 // @bsiclass                                                      Paul.Connelly   10/15
 //=======================================================================================
-struct DgnOwnedLock
+struct DgnLockState
 {
 private:
     DgnLockOwnership    m_ownership;
-    LockableId          m_id;
+    Utf8String          m_revisionId;
+    bool                m_tracked;
+
+    void Init(bool tracked, Utf8StringCR revId="")
+        {
+        m_tracked = tracked;
+        m_revisionId = revId;
+        m_ownership.Reset();
+        }
 public:
-    DgnOwnedLock() { } //!< Default constructor, chiefly for use by stl containers
-    explicit DgnOwnedLock(LockableId lockId) : m_id(lockId) { } //!< Construct for the specified lock, with ownership yet to be supplied
+    explicit DgnLockState(bool tracked=false, Utf8StringCR revId="") { Init(tracked, revId); }
 
-    LockableId GetLockableId() const { return m_id; } //!< The ID of the lockable object
-    DgnLockOwnershipCR GetOwnership() const { return m_ownership; } //!< The ownership of the lock
-    DgnLockOwnershipR GetOwnership() { return m_ownership; } //!< A writable reference to the ownership of the lock
+    bool IsTracked() const { return m_tracked; } //!< Returns true if the repository is tracking this object
+    bool IsOwned() const { return LockLevel::None != m_ownership.GetLockLevel(); } //!< Returns true if the lock is held by one or more briefcases
+    DgnLockOwnershipCR GetOwnership() const { return m_ownership; } //!< Get the ownership details
+    Utf8StringCR GetRevisionId() const { return m_revisionId; } //!< Get the most recent revision ID in which a change to this object was committed to the repository
 
-    //! Compare two DgnOwnedLock objects by the ID of the lockable object, for sorting purposes
-    struct IdentityComparator
-    {
-        bool operator()(DgnOwnedLockCR lhs, DgnOwnedLockCR rhs) const { return lhs.GetLockableId() < rhs.GetLockableId(); }
-    };
+    void SetTracked() { m_tracked = true; } //!< Mark as being tracked by repository
+    DgnLockOwnershipR GetOwnership() { return m_ownership; } //!< Get a writable reference to the ownership details
+    void SetRevisionId(Utf8StringCR revId) { m_revisionId=revId; } //!< Set the revision ID associated with the lock
+    void Reset() { Init(false); } //!< Reset to default (untracked) state
 };
 
-//! A set of locks paired with their ownership details, compared by identity of the locked object
-typedef bset<DgnOwnedLock, DgnOwnedLock::IdentityComparator> DgnOwnedLockSet;
+//=======================================================================================
+//! Pairs a lock ID with its state
+// @bsiclass                                                      Paul.Connelly   10/15
+//=======================================================================================
+struct DgnLockInfo : DgnLockState
+{
+private:
+    LockableId  m_id;
+public:
+    explicit DgnLockInfo(LockableId id, bool tracked=false) : DgnLockState(tracked), m_id(id) { }
+    DgnLockInfo() { }
+
+    LockableId GetLockableId() const { return m_id; } //!< The ID of the lockable object
+
+    //! Compare based on IDs
+    bool operator<(DgnLockInfo const& rhs) const { return GetLockableId() < rhs.GetLockableId(); }
+};
+
+typedef bset<DgnLockInfo> DgnLockInfoSet;
 
 //=======================================================================================
 //! Specifies a request to acquire one or more locks.
