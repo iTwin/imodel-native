@@ -44,7 +44,7 @@ INIT_METHOD
     BeAssert (documentsManifest.DoesPathExist ());
     #endif
         
-    NSString* bundleDir      = [[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:@"MobileDgnAssets.bundle"];
+    NSString* bundleDir      = [[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:@"DgnClientFxAssets.bundle"];
     NSString* tempDir        = NSTemporaryDirectory ();
     NSArray*  appSupportUrls = [[NSFileManager defaultManager] URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask];
     NSString* appBundleId    = [[NSBundle mainBundle] bundleIdentifier];
