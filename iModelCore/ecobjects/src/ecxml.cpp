@@ -2,7 +2,7 @@
 |
 |     $Source: src/ecxml.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -62,32 +62,32 @@ Utf8CP ECXml::GetPrimitiveTypeName (PrimitiveType primitiveType)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECXml::ParsePrimitiveType (PrimitiveType& primitiveType, Utf8StringCR typeName)
     {
-    if (0 == typeName.length())
+    if (typeName.empty())
         return ECObjectsStatus::ParseError;
 
-    if (0 == typeName.compare (ECXML_TYPENAME_STRING))
+    if (typeName.EqualsI (ECXML_TYPENAME_STRING))
         primitiveType = PRIMITIVETYPE_String;
-    else if (0 == typeName.compare (ECXML_TYPENAME_INTEGER))
+    else if (typeName.EqualsI (ECXML_TYPENAME_INTEGER))
         primitiveType = PRIMITIVETYPE_Integer;
-    else if (0 == typeName.compare (ECXML_TYPENAME_LONG))
+    else if (typeName.EqualsI (ECXML_TYPENAME_LONG))
         primitiveType = PRIMITIVETYPE_Long;
-    else if (0 == typeName.compare (ECXML_TYPENAME_BOOLEAN))
+    else if (typeName.EqualsI (ECXML_TYPENAME_BOOLEAN))
         primitiveType = PRIMITIVETYPE_Boolean;
-    else if (0 == typeName.compare (ECXML_TYPENAME_BOOL))
+    else if (typeName.EqualsI (ECXML_TYPENAME_BOOL))
         primitiveType = PRIMITIVETYPE_Boolean;
-    else if (0 == typeName.compare (ECXML_TYPENAME_DOUBLE))
+    else if (typeName.EqualsI (ECXML_TYPENAME_DOUBLE))
         primitiveType = PRIMITIVETYPE_Double;
-    else if (0 == typeName.compare (ECXML_TYPENAME_POINT2D))
+    else if (typeName.EqualsI (ECXML_TYPENAME_POINT2D))
         primitiveType = PRIMITIVETYPE_Point2D;
-    else if (0 == typeName.compare (ECXML_TYPENAME_POINT3D))
+    else if (typeName.EqualsI (ECXML_TYPENAME_POINT3D))
         primitiveType = PRIMITIVETYPE_Point3D;
-    else if (0 == typeName.compare (ECXML_TYPENAME_DATETIME))
+    else if (typeName.EqualsI (ECXML_TYPENAME_DATETIME))
         primitiveType = PRIMITIVETYPE_DateTime;
-    else if (0 == typeName.compare (ECXML_TYPENAME_BINARY))
+    else if (typeName.EqualsI (ECXML_TYPENAME_BINARY))
         primitiveType = PRIMITIVETYPE_Binary;
-    else if (0 == typeName.compare(0, strlen(ECXML_TYPENAME_IGEOMETRY_GENERIC), ECXML_TYPENAME_IGEOMETRY_GENERIC))
+    else if (typeName.StartsWithI(ECXML_TYPENAME_IGEOMETRY_GENERIC))
         primitiveType = PRIMITIVETYPE_IGeometry; 
-    else if (0 == typeName.compare(0, strlen(ECXML_TYPENAME_IGEOMETRY_LEGACY), ECXML_TYPENAME_IGEOMETRY_LEGACY))
+    else if (typeName.StartsWithI(ECXML_TYPENAME_IGEOMETRY_LEGACY))
         primitiveType = PRIMITIVETYPE_IGeometry; 
     else
         return ECObjectsStatus::ParseError;

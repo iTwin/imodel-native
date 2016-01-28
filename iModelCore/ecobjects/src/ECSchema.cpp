@@ -1487,7 +1487,6 @@ SchemaMatchType                 matchType,
 bvector<WString>&               searchPaths
 )
     {
-    WString fullFileName;
     for (WString schemaPathStr: searchPaths)
         {
         BeFileName schemaPath (schemaPathStr.c_str());
@@ -1496,10 +1495,11 @@ bvector<WString>&               searchPaths
 
         //Finds latest
         SchemaKey foundKey(key);
+        WString fullFileName;
         if (ECObjectsStatus::Success != GetSchemaFileName (fullFileName, foundKey.m_versionMinor, schemaPath,  matchType == SCHEMAMATCHTYPE_LatestCompatible))
             continue;
 
-        ECSchemaPtr schemaOut = NULL;
+        ECSchemaPtr schemaOut = nullptr;
         //Check if schema is compatible before reading, as reading it would add the schema to the cache.
         if (!foundKey.Matches(key, matchType))
             {
@@ -1554,7 +1554,7 @@ bvector<WString>&               searchPaths
         return schemaOut;
         }
 
-    return NULL;
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2624,9 +2624,9 @@ ECObjectsStatus SchemaKey::ParseVersionString (uint32_t& versionMajor, uint32_t&
     BeStringUtilities::Split(versionString, ".", tokens);
     size_t digits = tokens.size();
 
-    if (digits < 2 || digits > 3)
+    if (digits < 2)
         {
-        LOG.errorv("Invalid ECSchema Version String: '%s' 2-3 version numbers are required!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
+        LOG.errorv("Invalid ECSchema Version String: '%s' at least version numbers are required!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
         return ECObjectsStatus::ParseError;
         }
 
@@ -2653,14 +2653,19 @@ ECObjectsStatus SchemaKey::ParseVersionString (uint32_t& versionMajor, uint32_t&
         return ECObjectsStatus::Success;
         }
 
-    versionMiddle = second;
-
+    
     chars = tokens[2].c_str();
-    versionMinor = strtoul(chars, &end, 10);
+    uint32_t third = strtoul(chars, &end, 10);
+    //We have to support this case because some callers pass stuff like "1.5.ecschema.xml" to this method, which used to work
+    //before 3 number versions were introduced.
     if (end == chars)
         {
-        LOG.errorv("Invalid ECSchema Version String: '%s' The characters '%s' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString, chars);
-        return ECObjectsStatus::ParseError;
+        versionMinor = second;
+        }
+    else
+        {
+        versionMiddle = second;
+        versionMinor = third;
         }
 
     return ECObjectsStatus::Success;
