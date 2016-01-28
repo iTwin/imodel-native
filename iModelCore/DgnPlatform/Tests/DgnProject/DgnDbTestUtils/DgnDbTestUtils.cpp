@@ -396,7 +396,7 @@ DgnViewId DgnDbTestUtils::InsertCameraView(SpatialModelR model, Utf8CP nameIn)
     viewController->SetDelta(DVec3d::From(10,10,10));
 
     auto& viewFlags = viewController->GetViewFlagsR();
-    viewFlags.SetRenderMode(RenderMode::SmoothShade);
+    viewFlags.SetRenderMode(Render::RenderMode::SmoothShade);
     viewFlags.constructions = true;
     viewFlags.dimensions = true;
     viewFlags.weights = true;
