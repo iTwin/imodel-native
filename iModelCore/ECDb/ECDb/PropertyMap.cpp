@@ -76,8 +76,11 @@ ECDbSqlTable const* PropertyMap::GetTable() const
     {
     if (m_mappedTables.empty())
         return nullptr;
+    
+    if (IsSystemPropertyMap())
+        return m_mappedTables.back();
 
-    return m_mappedTables[0];
+    return m_mappedTables.front();
     }
 
 //---------------------------------------------------------------------------------------

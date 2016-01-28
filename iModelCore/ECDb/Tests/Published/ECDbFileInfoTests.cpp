@@ -310,7 +310,7 @@ TEST_F (ECDbFileInfoTests, VerifyEmbeddedFileSize)
         ASSERT_EQ (BE_SQLITE_OK, embeddedFileTable.Read (buffer, testFileName));
 
         //Now save data without compression and read it again to verify that the data is unchanged.
-        ASSERT_EQ (BE_SQLITE_OK, embeddedFileTable.Save (buffer.data (), size, newfileName, false));
+        ASSERT_EQ (BE_SQLITE_OK, embeddedFileTable.Save (buffer.data (), size, newfileName, nullptr, false));
         bvector<Byte> newBuffer;
         ASSERT_EQ (BE_SQLITE_OK, embeddedFileTable.Read (newBuffer, newfileName));
         ASSERT_TRUE (buffer.size () == newBuffer.size ());
