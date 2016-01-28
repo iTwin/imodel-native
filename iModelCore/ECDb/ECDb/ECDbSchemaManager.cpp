@@ -163,6 +163,10 @@ ImportOptions const& options
     if (MapStatus::Error == m_map.MapSchemas (context, importedSchemas, !diffs.empty ()))
         return ERROR;
 
+    RelationshipPurger purger;
+    purger.Prepare(m_ecdb, RelationshipPurger::Commands::PurgeAndUpdateHoldingView);
+    purger.Finialize();
+
     m_ecdb.ClearECDbCache();
 
     timer.Stop();

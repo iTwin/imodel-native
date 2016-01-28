@@ -2,6 +2,7 @@
 <ECSchema schemaName="UserWorkBench" nameSpacePrefix="UWB" version="01.00" description="Schema that contains all the data about a user" displayLabel="User WorkBench" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
     <ECSchemaReference name="EditorCustomAttributes" version="01.02" prefix="beca"/>
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
+	    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap"/>
     <ECCustomAttributes>
         <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.12">
             <SchemaFullNameAtEditingStart>UserWorkBench.01.00</SchemaFullNameAtEditingStart>
@@ -31,6 +32,14 @@
         </Target>
     </ECRelationshipClass>
     <ECEntityClass typeName="houses" displayLabel="House" modifier="None">
+	    <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>SharedTable</Strategy>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
         <ECProperty propertyName="town_id" typeName="int" displayLabel="Town Id" readOnly="false"/>
         <ECProperty propertyName="state_id" typeName="int" displayLabel="State Id" readOnly="false"/>
         <ECProperty propertyName="province_id" typeName="int" displayLabel="Province Id" readOnly="false"/>
@@ -103,6 +112,14 @@
         <ECProperty propertyName="name" typeName="string" displayLabel="Name" readOnly="false"/>
     </ECEntityClass>
     <ECEntityClass typeName="country" displayLabel="Country" modifier="None">
+	        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>SharedTable</Strategy>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
         <ECProperty propertyName="name" typeName="string" displayLabel="Name" readOnly="false"/>
         <ECProperty propertyName="country_id" typeName="int" displayLabel="Country Id" readOnly="false"/>
     </ECEntityClass>

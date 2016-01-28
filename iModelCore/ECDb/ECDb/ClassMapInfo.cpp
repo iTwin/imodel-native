@@ -840,27 +840,29 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
 
             case Cardinality::OneToMany:
                 {
-                if (m_customMapType == CustomMapType::ForeignKeyOnSource)
-                    {
-                    LOG.errorv("ECRelationshipClass %s implies a foreign key relationship on the target's table. Therefore the 'End' property in the ForeignKeyRelationshipMap custom attribute must not be set to 'Source'.",
-                               GetECClass().GetFullName());
-                    return MapStatus::Error;
-                    }
+                //if (m_customMapType == CustomMapType::ForeignKeyOnSource)
+                //    {
+                //    LOG.errorv("ECRelationshipClass %s implies a foreign key relationship on the target's table. Therefore the 'End' property in the ForeignKeyRelationshipMap custom attribute must not be set to 'Source'.",
+                //               GetECClass().GetFullName());
+                //    return MapStatus::Error;
+                //    }
 
-                if (targetTableCount > 1)
-                    {
-                    if (userStrategyIsForeignKeyMapping)
-                        {
-                        LOG.errorv("ECRelationshipClass %s implies a link table relationship as the target constraint is mapped to more than one end table. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
-                                   GetECClass().GetFullName());
-                        return MapStatus::Error;
-                        }
+                //if (targetTableCount > 1)
+                //    {
+                //    if (userStrategyIsForeignKeyMapping)
+                //        {
+                //        LOG.errorv("ECRelationshipClass %s implies a link table relationship as the target constraint is mapped to more than one end table. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
+                //                   GetECClass().GetFullName());
+                //        return MapStatus::Error;
+                //        }
 
-                    resolvedStrategy = ECDbMapStrategy::Strategy::OwnTable;
-                    }
-                else
-                    resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable;
+                //    resolvedStrategy = ECDbMapStrategy::Strategy::OwnTable;
+                //    }
+                //else
+                //    resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable;
 
+                //break;
+                resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable;
                 break;
                 }
 
