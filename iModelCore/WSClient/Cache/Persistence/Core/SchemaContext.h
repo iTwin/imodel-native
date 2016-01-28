@@ -26,6 +26,8 @@ struct SchemaContext
     {
     public:
         static BeFileName GetCacheSchemasDir();
+        static BeFileName GetSupportV3ConversionDir();
+        static BeFileName GetSupportMappingDir();
         static BeFileName GetECDbSchemasDir();
         static ECSchemaReadContextPtr CreateReadContext();
     };

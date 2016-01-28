@@ -17,7 +17,16 @@ ECSchemaPtr BaseCacheTest::GetTestSchema()
     Utf8String schemaXml =
         R"xml(<ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
+            <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
             <ECClass typeName="TestClass" >
+                <ECCustomAttributes>
+                   <ClassMap xmlns='ECDbMap.01.00'>
+                        <MapStrategy>
+                           <Strategy>SharedTable</Strategy>
+                           <AppliesToSubclasses>True</AppliesToSubclasses>
+                        </MapStrategy>"
+                    </ClassMap>"
+                </ECCustomAttributes>"
                 <ECProperty propertyName="TestProperty" typeName="string" />
                 <ECProperty propertyName="TestProperty2" typeName="string" />
                 <ECProperty propertyName="TestProperty3" typeName="string" />
@@ -51,6 +60,17 @@ ECSchemaPtr BaseCacheTest::GetTestSchema()
                         <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
                             <RequiredSymbolSets />
                             <ECExpression>"CalculatedValue"</ECExpression>
+                        </CalculatedECPropertySpecification>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECClass>
+            <ECClass typeName="TestClass4" >
+                <ECProperty propertyName="TestProperty" typeName="string" />
+                <ECProperty propertyName="TestCalculatedProperty" typeName="string" >
+                    <ECCustomAttributes>
+                        <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                            <RequiredSymbolSets />
+                            <ECExpression>this.TestProperty</ECExpression>
                         </CalculatedECPropertySpecification>
                     </ECCustomAttributes>
                 </ECProperty>

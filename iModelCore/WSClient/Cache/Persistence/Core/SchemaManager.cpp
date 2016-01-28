@@ -30,8 +30,6 @@ m_db(db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SchemaManager::ImportCacheSchemas()
     {
-    ECSchemaReadContextPtr context = SchemaContext::CreateReadContext();
-
     SchemaKey cacheSchemaKey = SchemaKey
         (
         SCHEMA_CacheSchema,
@@ -39,32 +37,9 @@ BentleyStatus SchemaManager::ImportCacheSchemas()
         SCHEMA_CacheSchema_Minor
         );
 
+    ECSchemaReadContextPtr context = SchemaContext::CreateReadContext();
     ECSchemaPtr cacheSchema = LoadSchema(cacheSchemaKey, *context);
-    // WIP06
-    //ECSchemaPtr supportSchema = LoadSchema(SchemaKey(SCHEMA_CacheLegacySupportSchema, 1, 0), *context);
-
-    if (SUCCESS != ImportSchemas(std::vector<ECSchemaPtr> {cacheSchema/*, supportSchema*/}))
-        {
-        return ERROR;
-        }
-
-    return SUCCESS;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr SchemaManager::LoadSchema(SchemaKey key, ECSchemaReadContext& context)
-    {
-    ECSchemaPtr schema = context.LocateSchema(key, SchemaMatchType::SCHEMAMATCHTYPE_Exact);
-    if (!schema.IsValid())
-        {
-        LOG.errorv(L"Could not load schema: %ls.%ls. Check assets or dependencies", 
-            key.m_schemaName.c_str(), 
-            ECSchema::FormatSchemaVersion(key.m_versionMajor, key.m_versionMinor).c_str());
-        BeAssert(false);
-        }
-    return schema;
+    return ImportSchemas(std::vector<ECSchemaPtr> {cacheSchema});
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -73,20 +48,13 @@ ECSchemaPtr SchemaManager::LoadSchema(SchemaKey key, ECSchemaReadContext& contex
 BentleyStatus SchemaManager::ImportSchemas(const std::vector<BeFileName>& schemaPaths)
     {
     std::vector<ECSchemaPtr> schemas;
-
-    ECSchemaReadContextPtr schemaContext = SchemaContext::CreateReadContext();
-    for (BeFileNameCR schemaPath : schemaPaths)
+    if (SUCCESS != LoadSchemas(schemaPaths, schemas) ||
+        SUCCESS != ImportSchemas(schemas))
         {
-        ECSchemaPtr schema;
-        SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, BeFileName(schemaPath).GetName(), *schemaContext);
-        if (SchemaReadStatus::Success != status || schema.IsNull())
-            {
-            return ERROR;
-            }
-        schemas.push_back(schema);
+        BeAssert(false);
+        return ERROR;
         }
-
-    return ImportSchemas(schemas);
+    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -105,7 +73,6 @@ BentleyStatus SchemaManager::ImportSchemas(const std::vector<ECSchemaPtr>& schem
         if (schema.IsNull())
             {
             LOG.error("One or more supplied schemas are null - check depenendcies and assets");
-            BeAssert(false && "Supplied schema is null");
             return ERROR;
             }
         schemaCache->AddSchema(*schema);
@@ -127,9 +94,9 @@ BentleyStatus SchemaManager::ImportSchemas(const std::vector<ECSchemaPtr>& schem
 
     m_db.NotifyOnSchemaChangedListeners();
 
-    if (SUCCESS != m_db.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions (true, true)))
+    if (SUCCESS != m_db.Schemas().ImportECSchemas(*schemaCache, ECDbSchemaManager::ImportOptions(true, true)))
         {
-        BeAssert(false);
+        LOG.errorv("Failed to import one or more schemas: %s", ToFullNameListString(schemas).c_str());
         return ERROR;
         }
 
@@ -139,13 +106,104 @@ BentleyStatus SchemaManager::ImportSchemas(const std::vector<ECSchemaPtr>& schem
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SchemaManager::ToFullNameListString(const std::vector<ECSchemaPtr>& schemas)
+    {
+    Utf8String listStr;
+    for (auto schema : schemas)
+        {
+        if (!listStr.empty())
+            listStr += ", ";
+        listStr += schema->GetFullSchemaName();
+        }
+    return listStr;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaPtr SchemaManager::LoadSchema(SchemaKey key, ECSchemaReadContext& context)
+    {
+    ECSchemaPtr schema = context.LocateSchema(key, SchemaMatchType::SCHEMAMATCHTYPE_Exact);
+    if (!schema.IsValid())
+        {
+        LOG.errorv(L"Could not load schema: %ls.%ls. Check assets or dependencies",
+                   key.m_schemaName.c_str(),
+                   ECSchema::FormatSchemaVersion(key.m_versionMajor, key.m_versionMinor).c_str());
+        BeAssert(false);
+        }
+    return schema;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    08/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SchemaManager::LoadSchemas
+(
+const std::vector<BeFileName>& schemaPaths,
+std::vector<ECSchemaPtr>& schemasOut
+)
+    {
+    ECSchemaReadContextPtr context = SchemaContext::CreateReadContext();
+    for (BeFileNameCR schemaPath : schemaPaths)
+        {
+        context->AddSchemaPath(schemaPath.GetDirectoryName());
+        }
+    context->AddSchemaLocater(m_db.GetSchemaLocater());
+
+    for (BeFileName schemaPath : schemaPaths)
+        {
+        ECSchemaPtr schema;
+        SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, schemaPath.GetName(), *context);
+        if (SchemaReadStatus::Success != status &&
+            SchemaReadStatus::DuplicateSchema != status)
+            {
+            return ERROR;
+            }
+
+        if (SUCCESS != FixLegacySchema(*schema, *context))
+            {
+            return ERROR;
+            }
+
+        schemasOut.push_back(schema);
+        }
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RemoveSchema(ECSchemaList& schemas, ECSchemaCP schema)
+BentleyStatus SchemaManager::FixLegacySchema(ECSchema& schema, ECSchemaReadContextR context)
     {
-    auto schemaIt = std::find(schemas.begin(), schemas.end(), schema);
-    if (schemaIt != schemas.end())
+    Utf8String versionStr = ECSchema::FormatSchemaVersion(schema.GetVersionMajor(), schema.GetVersionMinor());
+    Utf8String supplName = schema.GetName() + "_Supplemental_ECDbMapping." + versionStr + ".ecschema.xml";
+
+    BeFileName supplPath = SchemaContext::GetSupportMappingDir();
+    supplPath.AppendToPath(BeFileName(supplName));
+
+    if (!supplPath.DoesPathExist())
         {
-        schemas.erase(schemaIt);
+        return SUCCESS;
         }
+
+    ECSchemaPtr supplSchema;
+    ECSchema::ReadFromXmlFile(supplSchema, supplPath, context);
+    if (supplSchema.IsNull())
+        {
+        return ERROR;
+        }
+
+    bvector<ECSchemaP> supplSchemas;
+    supplSchemas.push_back(supplSchema.get());
+
+    SupplementedSchemaBuilder builder;
+    if (SupplementedSchemaStatus::Success != builder.UpdateSchema(schema, supplSchemas))
+        {
+        return ERROR;
+        }
+
+    return SUCCESS;
     }
