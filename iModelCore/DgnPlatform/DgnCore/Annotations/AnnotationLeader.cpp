@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: DgnCore/Annotations/AnnotationLeader.cpp $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
  
 #include <DgnPlatformInternal.h> 
@@ -46,9 +46,9 @@ void AnnotationLeader::CopyFrom(AnnotationLeaderCR rhs)
     m_styleID = rhs.m_styleID;
     m_styleOverrides = rhs.m_styleOverrides;
     m_sourceAttachmentType = rhs.m_sourceAttachmentType;
-    m_sourceAttachmentDataForId.reset(rhs.m_sourceAttachmentDataForId ? new uint32_t(*rhs.m_sourceAttachmentDataForId) : NULL);
+    m_sourceAttachmentDataForId = rhs.m_sourceAttachmentDataForId;
     m_targetAttachmentType = rhs.m_targetAttachmentType;
-    m_targetAttachmentDataForPhysicalPoint.reset(rhs.m_targetAttachmentDataForPhysicalPoint ? new DPoint3d(*rhs.m_targetAttachmentDataForPhysicalPoint) : NULL);
+    m_targetAttachmentDataForPhysicalPoint = rhs.m_targetAttachmentDataForPhysicalPoint;
     }
 
 //---------------------------------------------------------------------------------------
@@ -60,9 +60,9 @@ void AnnotationLeader::Reset()
     m_styleID.Invalidate();
     m_styleOverrides.ClearAllProperties();
     m_sourceAttachmentType = AnnotationLeaderSourceAttachmentType::Invalid;
-    m_sourceAttachmentDataForId.reset(NULL);
+    m_sourceAttachmentDataForId = 0;
     m_targetAttachmentType = AnnotationLeaderTargetAttachmentType::Invalid;
-    m_targetAttachmentDataForPhysicalPoint.reset(NULL);
+    m_targetAttachmentDataForPhysicalPoint.Zero();
     }
 
 //---------------------------------------------------------------------------------------
@@ -110,10 +110,8 @@ BentleyStatus AnnotationLeaderPersistence::EncodeAsFlatBuf(Offset<FB::Annotation
     switch (leader.m_sourceAttachmentType)
         {
         case AnnotationLeaderSourceAttachmentType::Id:
-            PRECONDITION(leader.m_sourceAttachmentDataForId, ERROR);
-
             fbLeader.add_sourceAttachmentType(FB::AnnotationLeaderSourceAttachmentType_ById);
-            fbLeader.add_sourceAttachmentId(*leader.m_sourceAttachmentDataForId.get());
+            fbLeader.add_sourceAttachmentId(leader.m_sourceAttachmentDataForId);
             break;
 
         default:
@@ -124,10 +122,8 @@ BentleyStatus AnnotationLeaderPersistence::EncodeAsFlatBuf(Offset<FB::Annotation
     switch (leader.m_targetAttachmentType)
         {
         case AnnotationLeaderTargetAttachmentType::PhysicalPoint:
-            PRECONDITION(leader.m_targetAttachmentDataForPhysicalPoint, ERROR);
-            
             fbLeader.add_targetAttachmentType(FB::AnnotationLeaderTargetAttachmentType_ByPhysicalPoint);
-            fbLeader.add_targetAttachmentPt(reinterpret_cast<FB::AnnotationLeaderDPoint3d*>(leader.m_targetAttachmentDataForPhysicalPoint.get()));
+            fbLeader.add_targetAttachmentPt(reinterpret_cast<FB::AnnotationLeaderDPoint3d const*>(&leader.m_targetAttachmentDataForPhysicalPoint));
             break;
             
         default:
@@ -185,7 +181,7 @@ BentleyStatus AnnotationLeaderPersistence::DecodeFromFlatBuf(AnnotationLeaderR l
             uint32_t sourceAttachmentId = fbLeader.sourceAttachmentId();
 
             leader.SetSourceAttachmentType(AnnotationLeaderSourceAttachmentType::Id);
-            leader.SetSourceAttachmentDataForId(&sourceAttachmentId);
+            leader.SetSourceAttachmentDataForId(sourceAttachmentId);
 
             break;
             }
@@ -202,7 +198,7 @@ BentleyStatus AnnotationLeaderPersistence::DecodeFromFlatBuf(AnnotationLeaderR l
             PRECONDITION(fbLeader.has_targetAttachmentPt(), ERROR);
 
             leader.SetTargetAttachmentType(AnnotationLeaderTargetAttachmentType::PhysicalPoint);
-            leader.SetTargetAttachmentDataForPhysicalPoint((DPoint3dCP)fbLeader.targetAttachmentPt());
+            leader.SetTargetAttachmentDataForPhysicalPoint(*(DPoint3dCP)fbLeader.targetAttachmentPt());
 
             break;
             }
