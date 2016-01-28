@@ -2275,9 +2275,9 @@ TEST_F(ECDbTestFixture, CheckClassHasCurrentTimeStamp)
     {
     SchemaItem schema (
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        "<ECSchema schemaName=\"SimpleSchema\" nameSpacePrefix=\"adhoc\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "<ECSchema schemaName=\"SimpleSchema\" nameSpacePrefix=\"adhoc\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
         "<ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.11\" prefix=\"besc\" />"
-        "<ECClass typeName=\"SimpleClass\" isDomainClass=\"True\">"
+        "<ECEntityClass typeName=\"SimpleClass\" >"
         "<ECProperty propertyName = \"DateTimeProperty\" typeName=\"dateTime\" readOnly=\"True\" />"
         "<ECProperty propertyName = \"testprop\" typeName=\"int\" />"
         "<ECCustomAttributes>"
@@ -2285,7 +2285,7 @@ TEST_F(ECDbTestFixture, CheckClassHasCurrentTimeStamp)
         "<PropertyName>DateTimeProperty</PropertyName>"
         "</ClassHasCurrentTimeStampProperty>"
         "</ECCustomAttributes>"
-        "</ECClass>"
+        "</ECEntityClass>"
         "</ECSchema>");
 
     SetupECDb("checkClassHasCurrentTimeStamp.ecdb", schema);
