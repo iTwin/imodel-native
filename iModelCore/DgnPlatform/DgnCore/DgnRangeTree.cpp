@@ -1272,6 +1272,30 @@ bool RTreeFilter::AllPointsClippedByOnePlane(ConvexClipPlaneSetCR cps, size_t nP
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+RTreeFilter::RTreeFilter(DgnDbR db, DgnElementIdSet const* exclude) : m_dgndb(db)
+    {
+    m_exclude=exclude;
+    db.GetCachedStatement(m_rangeStmt, "SELECT ElementId FROM " DGN_VTABLE_RTree3d " WHERE ElementId MATCH DGN_rTree(?1)");
+    m_rangeStmt->BindInt64(1, (uint64_t) this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String RTreeTester::GetAcceptSql() {return " AND e.Id=@elId";}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+uint64_t RTreeTester::StepRtree()
+    {
+    auto rc=m_rangeStmt->Step();
+    return (rc != BE_SQLITE_ROW) ? 0 : m_rangeStmt->GetValueInt64(0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 int RTreeFitFilter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
@@ -1293,4 +1317,5 @@ int RTreeFitFilter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
 
     return  BE_SQLITE_OK;
     }
+
 
