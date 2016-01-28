@@ -536,7 +536,7 @@ TEST_F (ECInstanceInserterTests, InsertInstanceWithOutProvidingSourceTargetClass
         "    <ECEntityClass typeName='ClassC' >"
         "        <ECProperty propertyName='P3' typeName='int' />"
         "    </ECEntityClass>"
-        "    <ECEntityClass typeName='ClassD' isDomainClass='True'>"
+        "    <ECEntityClass typeName='ClassD' >"
         "        <ECProperty propertyName='P4' typeName='int' />"
         "    </ECEntityClass>"
         "      <ECRelationshipClass typeName = 'RelationshipClassA' strength = 'referencing' strengthDirection = 'forward'> "

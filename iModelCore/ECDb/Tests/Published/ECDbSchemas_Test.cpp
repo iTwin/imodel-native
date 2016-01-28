@@ -162,64 +162,56 @@ static ECSchemaPtr importECSchema (ECDbR ecDB, BeFileNameCR ecSchemaFile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                         05/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (ECDbSchemas, OrderOfPropertyIsPreservedInTableColumns)
+TEST_F(ECDbTestFixture, OrderOfPropertyIsPreservedInTableColumns)
     {
-    ECDbTestProject saveTestProject;
-    ECDbR db = saveTestProject.Create ("propertyOrderTest.ecdb");
-    auto schema =
-        "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-        "<ECSchema schemaName=\"OrderSchema\" nameSpacePrefix=\"os\" version=\"1.0\" xmlns = \"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-        "  <ECClass typeName=\"OrderedStruct\" isDomainClass=\"True\" isStruct =\"True\">"
-        "   <ECProperty propertyName=\"a\" typeName=\"string\"/>"
-        "	 <ECProperty propertyName=\"g\" typeName=\"integer\"/>"
-        "	 <ECProperty propertyName=\"c\" typeName=\"dateTime\"/>"
-        "   <ECProperty propertyName=\"z\" typeName=\"point3d\"/>"
-        "	 <ECProperty propertyName=\"y\" typeName=\"point2d\"/>"
-        "	 <ECProperty propertyName=\"t\" typeName=\"boolean\"/>"
-        "   <ECProperty propertyName=\"u\" typeName=\"double\"/>"
-        "	 <ECProperty propertyName=\"k\" typeName=\"string\"/>"
-        "	 <ECProperty propertyName=\"r\" typeName=\"string\"/>"
-        "  </ECClass>"
-        "  <ECClass typeName=\"PropertyOrderTest\" isDomainClass=\"True\" isStruct =\"True\">"
-        "   <ECProperty propertyName=\"x\" typeName=\"string\"/>"
-        "	 <ECProperty propertyName=\"h\" typeName=\"integer\"/>"
-        "	 <ECProperty propertyName=\"i\" typeName=\"dateTime\"/>"
-        "   <ECProperty propertyName=\"d\" typeName=\"point3d\"/>"
-        "	 <ECProperty propertyName=\"u\" typeName=\"point2d\"/>"
-        "	 <ECProperty propertyName=\"f\" typeName=\"boolean\"/>"
-        "   <ECProperty propertyName=\"e\" typeName=\"double\"/>"
-        "	 <ECProperty propertyName=\"p\" typeName=\"string\"/>"
-        "	 <ECStructProperty propertyName=\"o\" typeName=\"OrderedStruct\"/>"
-        "	 <ECProperty propertyName=\"z\" typeName=\"long\"/>"
-        "  </ECClass>"
-        "</ECSchema>";
+    SetupECDb("propertyOrderTest.ecdb", SchemaItem("<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+                         "<ECSchema schemaName=\"OrderSchema\" nameSpacePrefix=\"os\" version=\"1.0\" xmlns = \"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+                         "  <ECStructClass typeName=\"OrderedStruct\">"
+                         "   <ECProperty propertyName=\"a\" typeName=\"string\"/>"
+                         "	 <ECProperty propertyName=\"g\" typeName=\"int\"/>"
+                         "	 <ECProperty propertyName=\"c\" typeName=\"dateTime\"/>"
+                         "   <ECProperty propertyName=\"z\" typeName=\"point3d\"/>"
+                         "	 <ECProperty propertyName=\"y\" typeName=\"point2d\"/>"
+                         "	 <ECProperty propertyName=\"t\" typeName=\"boolean\"/>"
+                         "   <ECProperty propertyName=\"u\" typeName=\"double\"/>"
+                         "	 <ECProperty propertyName=\"k\" typeName=\"string\"/>"
+                         "	 <ECProperty propertyName=\"r\" typeName=\"string\"/>"
+                         "  </ECStructClass>"
+                         "  <ECEntityClass typeName=\"PropertyOrderTest\" >"
+                         "   <ECProperty propertyName=\"x\" typeName=\"string\"/>"
+                         "	 <ECProperty propertyName=\"h\" typeName=\"int\"/>"
+                         "	 <ECProperty propertyName=\"i\" typeName=\"dateTime\"/>"
+                         "   <ECProperty propertyName=\"d\" typeName=\"point3d\"/>"
+                         "	 <ECProperty propertyName=\"u\" typeName=\"point2d\"/>"
+                         "	 <ECProperty propertyName=\"f\" typeName=\"boolean\"/>"
+                         "   <ECProperty propertyName=\"e\" typeName=\"double\"/>"
+                         "	 <ECProperty propertyName=\"p\" typeName=\"string\"/>"
+                         "	 <ECStructProperty propertyName=\"o\" typeName=\"OrderedStruct\"/>"
+                         "	 <ECProperty propertyName=\"z\" typeName=\"long\"/>"
+                         "  </ECEntityClass>"
+                         "</ECSchema>"));
 
-    ECSchemaPtr orderSchema;
-    auto readContext = ECSchemaReadContext::CreateContext ();
-    ECSchema::ReadFromXmlString (orderSchema, schema, *readContext);
-    ASSERT_TRUE (orderSchema != nullptr);
-    auto importStatus = db. Schemas ().ImportECSchemas (readContext->GetCache ());
-    ASSERT_TRUE (importStatus == BentleyStatus::SUCCESS);
-    
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+
     Statement stmt1;
-    stmt1.Prepare (db, "PRAGMA table_info('os_PropertyOrderTest')");
+    stmt1.Prepare (GetECDb(), "PRAGMA table_info('os_PropertyOrderTest')");
     Utf8String order_PropertyOrderTest;
     while (stmt1.Step () == BE_SQLITE_ROW)
         {
         order_PropertyOrderTest.append (stmt1.GetValueText (1)).append (" ");
         }
 
-    ASSERT_TRUE (order_PropertyOrderTest == "ECInstanceId ParentECInstanceId ECPropertyPathId ECArrayIndex x h i d_X d_Y d_Z u_X u_Y f e p o_a o_g o_c o_z_X o_z_Y o_z_Z o_y_X o_y_Y o_t o_u o_k o_r z ");
+    ASSERT_STREQ("ECInstanceId x h i d_X d_Y d_Z u_X u_Y f e p o_a o_g o_c o_z_X o_z_Y o_z_Z o_y_X o_y_Y o_t o_u o_k o_r z ", order_PropertyOrderTest.c_str());
     
     Statement stmt2;
-    stmt2.Prepare (db, "PRAGMA table_info('os_OrderedStruct')");
+    stmt2.Prepare (GetECDb(), "PRAGMA table_info('os_OrderedStruct')");
     Utf8String order_OrderedStruct;
     while (stmt2.Step () == BE_SQLITE_ROW)
         {
         order_OrderedStruct.append (stmt2.GetValueText (1)).append (" ");
         }
 
-    ASSERT_TRUE (order_OrderedStruct == "ECInstanceId ParentECInstanceId ECPropertyPathId ECArrayIndex a g c z_X z_Y z_Z y_X y_Y t u k r "); 
+    ASSERT_STREQ("ECInstanceId ParentECInstanceId ECPropertyPathId ECArrayIndex a g c z_X z_Y z_Z y_X y_Y t u k r ", order_OrderedStruct.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -674,15 +666,14 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
 
     //verify system array tables. They are created if  a primitive array property is ecounter in schema
 
-    //========================[TablePerHieracrchy Test]============================================
-    // TablePerHierarchy Should have one table for all base class
     //========================[sc_Asset]=========================================================
     //baseClass
     Utf8CP tblAsset = "sc_Asset";
     EXPECT_TRUE (db.TableExists(tblAsset));    
-    EXPECT_EQ   (8, GetColumnCount(db, tblAsset));            
+    EXPECT_EQ   (33, GetColumnCount(db, tblAsset));            
     EXPECT_TRUE (db.ColumnExists(tblAsset, "ECInstanceId"));
-    
+    EXPECT_TRUE(db.ColumnExists(tblAsset, "ECClassId"));
+
     EXPECT_TRUE (db.ColumnExists(tblAsset, "AssetID"));
     EXPECT_TRUE (db.ColumnExists(tblAsset, "AssetOwner"));
     EXPECT_TRUE (db.ColumnExists(tblAsset, "BarCode"));
@@ -690,48 +681,42 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (db.ColumnExists(tblAsset, "Cost"));
     EXPECT_TRUE (db.ColumnExists(tblAsset, "Room"));
     EXPECT_TRUE (db.ColumnExists(tblAsset, "AssetRecordKey")); 
-    
-    //========================[sc_Furniture]=====================================================
-    //TablePerHierarchy
-    Utf8CP tblFurniture = "sc_Furniture"; //Drived from Asset
-    EXPECT_TRUE (db.TableExists(tblFurniture));
-    EXPECT_EQ   (21, GetColumnCount (db, tblFurniture));
-    //Table for this child classes of Furniture should not exist    
-    EXPECT_FALSE (db.TableExists("sc_Desk")); 
-    EXPECT_FALSE (db.TableExists("sc_Chair"));
-    
-    EXPECT_TRUE (db.ColumnExists(tblFurniture, "ECInstanceId"));
-    //It must have ECClassId to differentiate each row to see which class it belong to.
-    EXPECT_TRUE (db.ColumnExists(tblFurniture, "ECClassId")); 
-    
-    //BaseClass properties
-    EXPECT_TRUE (db.ColumnExists(tblFurniture, "AssetID"));
-    EXPECT_TRUE (db.ColumnExists(tblFurniture, "AssetOwner"));
-    EXPECT_TRUE (db.ColumnExists(tblFurniture, "BarCode"));
-    EXPECT_TRUE (db.ColumnExists(tblFurniture, "AssetUserID"));
-    EXPECT_TRUE (db.ColumnExists(tblFurniture, "Cost"));
-    EXPECT_TRUE (db.ColumnExists(tblFurniture, "Room"));
-    EXPECT_TRUE (db.ColumnExists(tblFurniture, "AssetRecordKey")); 
     //Local properties of Furniture   
-    EXPECT_TRUE (db.ColumnExists(tblFurniture, "Condition")); 
-    EXPECT_TRUE (db.ColumnExists(tblFurniture, "Material")); 
-    EXPECT_TRUE (db.ColumnExists(tblFurniture, "Weight")); 
+    EXPECT_TRUE (db.ColumnExists(tblAsset, "Condition"));
+    EXPECT_TRUE (db.ColumnExists(tblAsset, "Material"));
+    EXPECT_TRUE (db.ColumnExists(tblAsset, "Weight"));
     // Properties of Chair which is derived from Furniture
-    EXPECT_TRUE (db.ColumnExists(tblFurniture, "ChairFootPrint"));
-    EXPECT_TRUE (db.ColumnExists(tblFurniture, "Type")); 
-    EXPECT_TRUE (db.ColumnExists(tblFurniture, "Color")); 
+    EXPECT_TRUE (db.ColumnExists(tblAsset, "ChairFootPrint"));
+    EXPECT_TRUE (db.ColumnExists(tblAsset, "Type"));
+    EXPECT_TRUE (db.ColumnExists(tblAsset, "Color"));
     
     // Properties of Desk which is derived from Furniture    
-    EXPECT_TRUE (db.ColumnExists(tblFurniture, "DeskFootPrint")); 
-    EXPECT_TRUE (db.ColumnExists(tblFurniture, "NumberOfCabinets")); 
-    EXPECT_TRUE (db.ColumnExists(tblFurniture, "Size")); 
-    EXPECT_TRUE (db.ColumnExists(tblFurniture, "Type")); 
-    EXPECT_TRUE (db.ColumnExists(tblFurniture, "Breadth")); 
-    EXPECT_TRUE (db.ColumnExists(tblFurniture, "Length")); 
-    
+    EXPECT_TRUE (db.ColumnExists(tblAsset, "DeskFootPrint"));
+    EXPECT_TRUE (db.ColumnExists(tblAsset, "NumberOfCabinets"));
+    EXPECT_TRUE (db.ColumnExists(tblAsset, "Size"));
+    EXPECT_TRUE (db.ColumnExists(tblAsset, "Type"));
+    EXPECT_TRUE (db.ColumnExists(tblAsset, "Breadth"));
+    EXPECT_TRUE (db.ColumnExists(tblAsset, "Length"));
     //relation key
-    EXPECT_TRUE (db.ColumnExists(tblFurniture, "Employee__src_01_id")); 
+    EXPECT_TRUE (db.ColumnExists(tblAsset, "Employee__src_01_id"));
     
+    EXPECT_TRUE(db.ColumnExists(tblAsset, "HasWarranty"));
+    EXPECT_TRUE(db.ColumnExists(tblAsset, "IsCompanyProperty"));
+    EXPECT_TRUE(db.ColumnExists(tblAsset, "Make"));
+    EXPECT_TRUE(db.ColumnExists(tblAsset, "Model"));
+    EXPECT_TRUE(db.ColumnExists(tblAsset, "WarrantyExpiryDate"));
+    EXPECT_TRUE(db.ColumnExists(tblAsset, "Vendor"));
+    EXPECT_TRUE(db.ColumnExists(tblAsset, "Weight"));
+    EXPECT_TRUE(db.ColumnExists(tblAsset, "Type"));
+    EXPECT_TRUE(db.ColumnExists(tblAsset, "Size"));
+    EXPECT_TRUE(db.ColumnExists(tblAsset, "Type"));
+    EXPECT_TRUE(db.ColumnExists(tblAsset, "Vendor"));
+    EXPECT_TRUE(db.ColumnExists(tblAsset, "Weight"));
+    EXPECT_TRUE(db.ColumnExists(tblAsset, "Number"));
+    EXPECT_TRUE(db.ColumnExists(tblAsset, "Owner"));
+    EXPECT_TRUE(db.ColumnExists(tblAsset, "User"));
+
+
     //========================[sc_Employee]======================================================
     //Related to Furniture. Employee can have one or more furniture
     Utf8CP tblEmployee = "sc_Employee";
@@ -779,114 +764,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (db.ColumnExists(tblEmployeeCertification, "ExpiryDate"));
     EXPECT_TRUE (db.ColumnExists(tblEmployeeCertification, "Technology"));
     EXPECT_TRUE (db.ColumnExists(tblEmployeeCertification, "Level"));
-    
-    //========================[sc_Hardware]======================================================
-    //TablePerClass
-    Utf8CP tblHardware = "sc_Hardware"; //Drived from Asset
-    EXPECT_TRUE (db.TableExists(tblHardware));
-    EXPECT_EQ   (14, GetColumnCount(db, tblHardware));            
-    
-    EXPECT_TRUE (db.ColumnExists(tblHardware, "ECInstanceId"));
-    //It must not have ECClassId to differentiate each row to see which class it belong to.
-    EXPECT_FALSE(db.ColumnExists(tblHardware, "ECClassId")); 
-    
-    //base class Asset properties
-    EXPECT_TRUE (db.ColumnExists(tblHardware, "AssetID"));
-    EXPECT_TRUE (db.ColumnExists(tblHardware, "AssetOwner"));
-    EXPECT_TRUE (db.ColumnExists(tblHardware, "BarCode"));
-    EXPECT_TRUE (db.ColumnExists(tblHardware, "AssetUserID"));
-    EXPECT_TRUE (db.ColumnExists(tblHardware, "Cost"));
-    EXPECT_TRUE (db.ColumnExists(tblHardware, "Room"));
-    EXPECT_TRUE (db.ColumnExists(tblHardware, "AssetRecordKey")); 
-    //Local properties of Hardware   
-    EXPECT_TRUE (db.ColumnExists(tblHardware, "HasWarranty")); 
-    EXPECT_TRUE (db.ColumnExists(tblHardware, "IsCompanyProperty")); 
-    EXPECT_TRUE (db.ColumnExists(tblHardware, "Make")); 
-    EXPECT_TRUE (db.ColumnExists(tblHardware, "Model")); 
-    EXPECT_TRUE (db.ColumnExists(tblHardware, "WarrantyExpiryDate")); 
-        
-    //========================[sc_Computer]======================================================
-    //TablePerClass
-    Utf8CP tblComputer = "sc_Computer"; //Drived from Asset
-    EXPECT_TRUE (db.TableExists(tblComputer));
-    EXPECT_EQ   (17, GetColumnCount(db, tblComputer));            
-    
-    EXPECT_TRUE (db.ColumnExists(tblComputer, "ECInstanceId"));
-    //It must not have ECClassId to differentiate each row to see which class it belong to.
-    EXPECT_FALSE(db.ColumnExists(tblComputer, "ECClassId")); 
-    
-    //base class properties of Asset 
-    EXPECT_TRUE (db.ColumnExists(tblComputer, "AssetID"));
-    EXPECT_TRUE (db.ColumnExists(tblComputer, "AssetOwner"));
-    EXPECT_TRUE (db.ColumnExists(tblComputer, "BarCode"));
-    EXPECT_TRUE (db.ColumnExists(tblComputer, "AssetUserID"));
-    EXPECT_TRUE (db.ColumnExists(tblComputer, "Cost"));
-    EXPECT_TRUE (db.ColumnExists(tblComputer, "Room"));
-    EXPECT_TRUE (db.ColumnExists(tblComputer, "AssetRecordKey")); 
-    //base class properties of Hardware   
-    EXPECT_TRUE (db.ColumnExists(tblComputer, "HasWarranty")); 
-    EXPECT_TRUE (db.ColumnExists(tblComputer, "IsCompanyProperty")); 
-    EXPECT_TRUE (db.ColumnExists(tblComputer, "Make")); 
-    EXPECT_TRUE (db.ColumnExists(tblComputer, "Model")); 
-    EXPECT_TRUE (db.ColumnExists(tblComputer, "WarrantyExpiryDate")); 
-    //local properties
-    EXPECT_TRUE (db.ColumnExists(tblComputer, "Vendor")); 
-    EXPECT_TRUE (db.ColumnExists(tblComputer, "Weight")); 
-    EXPECT_TRUE (db.ColumnExists(tblComputer, "Type")); 
-
-    //========================[sc_Monitor]======================================================
-    //TablePerClass
-    Utf8CP tblMonitor = "sc_Monitor"; //Drived from Asset
-    EXPECT_TRUE (db.TableExists(tblMonitor));
-    EXPECT_EQ   (18, GetColumnCount(db, tblMonitor));            
-    
-    EXPECT_TRUE (db.ColumnExists(tblMonitor, "ECInstanceId"));
-    //It must not have ECClassId to differentiate each row to see which class it belong to.
-    EXPECT_FALSE(db.ColumnExists(tblMonitor, "ECClassId")); 
-    
-    //base class properties of Asset 
-    EXPECT_TRUE (db.ColumnExists(tblMonitor, "AssetID"));
-    EXPECT_TRUE (db.ColumnExists(tblMonitor, "AssetOwner"));
-    EXPECT_TRUE (db.ColumnExists(tblMonitor, "BarCode"));
-    EXPECT_TRUE (db.ColumnExists(tblMonitor, "AssetUserID"));
-    EXPECT_TRUE (db.ColumnExists(tblMonitor, "Cost"));
-    EXPECT_TRUE (db.ColumnExists(tblMonitor, "Room"));
-    EXPECT_TRUE (db.ColumnExists(tblMonitor, "AssetRecordKey")); 
-    //base class properties of Hardware   
-    EXPECT_TRUE (db.ColumnExists(tblMonitor, "HasWarranty")); 
-    EXPECT_TRUE (db.ColumnExists(tblMonitor, "IsCompanyProperty")); 
-    EXPECT_TRUE (db.ColumnExists(tblMonitor, "Make")); 
-    EXPECT_TRUE (db.ColumnExists(tblMonitor, "Model")); 
-    EXPECT_TRUE (db.ColumnExists(tblMonitor, "WarrantyExpiryDate")); 
-    //local properties
-    EXPECT_TRUE (db.ColumnExists(tblMonitor, "Size")); 
-    EXPECT_TRUE (db.ColumnExists(tblMonitor, "Type")); 
-    EXPECT_TRUE (db.ColumnExists(tblMonitor, "Vendor")); 
-    EXPECT_TRUE (db.ColumnExists(tblMonitor, "Weight")); 
-    
-    //========================[sc_Phone]=========================================================
-    //TablePerClass
-    Utf8CP tblPhone = "sc_Phone"; //Drived from Asset
-    EXPECT_TRUE (db.TableExists(tblPhone));
-    EXPECT_EQ   (12, GetColumnCount(db, tblPhone));            
-    
-    EXPECT_TRUE (db.ColumnExists(tblPhone, "ECInstanceId"));
-    //It must not have ECClassId to differentiate each row to see which class it belong to.
-    EXPECT_FALSE(db.ColumnExists(tblPhone, "ECClassId")); 
-    
-    //base class properties of Asset 
-    EXPECT_TRUE (db.ColumnExists(tblPhone, "AssetID"));
-    EXPECT_TRUE (db.ColumnExists(tblPhone, "AssetOwner"));
-    EXPECT_TRUE (db.ColumnExists(tblPhone, "BarCode"));
-    EXPECT_TRUE (db.ColumnExists(tblPhone, "AssetUserID"));
-    EXPECT_TRUE (db.ColumnExists(tblPhone, "Cost"));
-    EXPECT_TRUE (db.ColumnExists(tblPhone, "Room"));
-    EXPECT_TRUE (db.ColumnExists(tblPhone, "AssetRecordKey")); 
-    //local properties
-    EXPECT_TRUE (db.ColumnExists(tblPhone, "Number")); 
-    EXPECT_TRUE (db.ColumnExists(tblPhone, "Owner")); 
-    EXPECT_TRUE (db.ColumnExists(tblPhone, "User")); 
-    
+            
     //========================[sc_Widget]========================================================
     Utf8CP tblWidget = "sc_Widget"; 
     EXPECT_TRUE (db.TableExists(tblWidget));
@@ -1802,7 +1680,7 @@ TEST(ECDbSchemas, ECDbSchemaManagerAPITest)
     ECClassKeys inSchemaClassKeys;
     EXPECT_EQ (SUCCESS, schemaManager.GetECClassKeys (inSchemaClassKeys, "StartupCompany"));
     LOG.infov("No of classes in StartupCompany is %d", (int)inSchemaClassKeys.size());
-    EXPECT_EQ (48, inSchemaClassKeys.size());
+    EXPECT_EQ (47, inSchemaClassKeys.size());
 
     StopWatch randomClassSW ("Loading Random Class", false);
     int maxClassesToLoad = 100;
@@ -2397,9 +2275,9 @@ TEST_F(ECDbTestFixture, CheckClassHasCurrentTimeStamp)
     {
     SchemaItem schema (
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        "<ECSchema schemaName=\"SimpleSchema\" nameSpacePrefix=\"adhoc\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "<ECSchema schemaName=\"SimpleSchema\" nameSpacePrefix=\"adhoc\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
         "<ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.11\" prefix=\"besc\" />"
-        "<ECClass typeName=\"SimpleClass\" isDomainClass=\"True\">"
+        "<ECEntityClass typeName=\"SimpleClass\" >"
         "<ECProperty propertyName = \"DateTimeProperty\" typeName=\"dateTime\" readOnly=\"True\" />"
         "<ECProperty propertyName = \"testprop\" typeName=\"int\" />"
         "<ECCustomAttributes>"
@@ -2407,7 +2285,7 @@ TEST_F(ECDbTestFixture, CheckClassHasCurrentTimeStamp)
         "<PropertyName>DateTimeProperty</PropertyName>"
         "</ClassHasCurrentTimeStampProperty>"
         "</ECCustomAttributes>"
-        "</ECClass>"
+        "</ECEntityClass>"
         "</ECSchema>");
 
     SetupECDb("checkClassHasCurrentTimeStamp.ecdb", schema);

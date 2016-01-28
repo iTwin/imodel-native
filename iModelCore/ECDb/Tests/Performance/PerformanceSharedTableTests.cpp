@@ -36,10 +36,12 @@ struct PerformanceSharedTableTests: ECDbTestFixture
                 seedFileName.Sprintf("sharedTableperformance_seed_%d.ecdb", DateTime::GetCurrentTimeUtc().GetDayOfYear());
 
                 BeFileName seedPath = ECDbTestUtility::BuildECDbPath(seedFileName.c_str());
+                s_seedFilePath = seedPath;
                 //if seed file exists on disk, we reuse it. This is risky if other tests happen to create file with same name
                 //but we add the current day of the year to the file name, to make sure it would never be reused after 24h.
-                if (seedPath.DoesPathExist())
-                    s_seedFilePath = seedPath;
+                if (seedPath.DoesPathExist ())
+                    {
+                    }
                 else
                     mustCreateSeed = true;
                 }
@@ -150,6 +152,7 @@ TEST_F(PerformanceSharedTableTests, CreateSeedFile)
     ECDb ecdb;
     ASSERT_EQ(SUCCESS, SetupTestECDb(ecdb));
     }
+
 TEST_F(PerformanceSharedTableTests, Insert)
     {
     ECDb ecdb;
@@ -293,6 +296,5 @@ TEST_F(PerformanceSharedTableTests, Delete)
     LogTiming(timer, "ECSQL DELETE (SHAREDTABLE) ", s_opCount);
 
     }
-
 
 END_ECDBUNITTESTS_NAMESPACE

@@ -349,9 +349,6 @@
                 </AccessCustomAttributes>
             </ECCustomAttributes>
             <Class class="Test2Class">
-                <Key>
-                    <Property name="Test2StringMember"/>
-                </Key>
             </Class>
         </Target>
     </ECRelationshipClass>

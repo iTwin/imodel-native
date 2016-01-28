@@ -69,7 +69,7 @@ void CreateDeleteReferentialIntegrityTestDb(BeFileNameR testDbPath)
 
     // Test schema
     Utf8CP schemaXml =
-        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"TS\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"TS\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
 
         "  <ECEntityClass typeName=\"TestClass\" >"
         "    <ECProperty propertyName=\"TestProperty\" typeName=\"string\" />"
