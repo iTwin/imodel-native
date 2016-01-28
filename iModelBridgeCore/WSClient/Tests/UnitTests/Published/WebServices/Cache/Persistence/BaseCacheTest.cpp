@@ -64,6 +64,17 @@ ECSchemaPtr BaseCacheTest::GetTestSchema()
                     </ECCustomAttributes>
                 </ECProperty>
             </ECClass>
+            <ECClass typeName="TestClass4" >
+                <ECProperty propertyName="TestProperty" typeName="string" />
+                <ECProperty propertyName="TestCalculatedProperty" typeName="string" >
+                    <ECCustomAttributes>
+                        <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                            <RequiredSymbolSets />
+                            <ECExpression>this.TestProperty</ECExpression>
+                        </CalculatedECPropertySpecification>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECClass>
             <ECClass typeName="TestLabeledClass" >
                 <ECProperty propertyName="Name" typeName="string" />
             </ECClass>

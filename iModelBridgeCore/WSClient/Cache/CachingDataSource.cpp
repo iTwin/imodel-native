@@ -328,7 +328,9 @@ AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancel
                 for (ObjectIdCR schemaId : schemaIds)
                     {
                     SchemaKey schemaKey = ReadSchemaKey(txn, schemaId);
-                    if (ECSchema::IsStandardSchema(schemaKey.m_schemaName))
+
+                    if (ECSchema::IsStandardSchema(schemaKey.m_schemaName)
+                        || schemaKey.m_schemaName == "MetaSchema") // WIP06 ECDb does not support schema update
                         {
                         continue;
                         }
@@ -374,17 +376,9 @@ AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancel
                             }
                         }
 
-                    // Load schemas
-                    std::vector<ECSchemaPtr> changedSchemas;
-                    if (SUCCESS != LoadSchemas(changedSchemaPaths, changedSchemas))
-                        {
-                        result->SetError(Status::RepositorySchemaError);
-                        return;
-                        }
-
                     // Update schemas
                     auto txn = StartCacheTransaction();
-                    if (SUCCESS != txn.GetCache().UpdateSchemas(changedSchemas))
+                    if (SUCCESS != txn.GetCache().UpdateSchemas(changedSchemaPaths))
                         {
                         result->SetError(Status::RepositorySchemaError);
                         return;
@@ -499,39 +493,6 @@ SchemaKey CachingDataSource::ReadSchemaKey(CacheTransactionCR txn, ObjectIdCR sc
         schemaDef["VersionMajor"].asInt(),
         schemaDef["VersionMinor"].asInt()
         );
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    08/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus CachingDataSource::LoadSchemas
-(
-const std::vector<BeFileName>& schemaPaths,
-std::vector<ECSchemaPtr>& loadedSchemasOut
-)
-    {
-    auto txn = StartCacheTransaction();
-    auto readContext = SchemaContext::CreateReadContext();
-
-    for (BeFileNameCR schemaPath : schemaPaths)
-        {
-        readContext->AddSchemaPath(schemaPath.GetDirectoryName());
-        }
-    readContext->AddSchemaLocater(txn.GetCache().GetAdapter().GetECDb().GetSchemaLocater());
-
-    for (BeFileNameCR schemaPath : schemaPaths)
-        {
-        ECSchemaPtr schema;
-        SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, schemaPath.GetName(), *readContext);
-        if (SchemaReadStatus::Success != status &&
-            SchemaReadStatus::DuplicateSchema != status)
-            {
-            return ERROR;
-            }
-        loadedSchemasOut.push_back(schema);
-        }
-
-    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
