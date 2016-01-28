@@ -25,6 +25,7 @@ private:
     virtual RepositoryStatus _ReserveCode(DgnCodeCR) override { return RepositoryStatus::Success; }
     virtual RepositoryStatus _QueryLockLevel(LockLevel& level, LockableId lockId) override { level = LockLevel::Exclusive; return RepositoryStatus::Success; }
     virtual RepositoryStatus _OnFinishRevision(DgnRevision const&) override { return RepositoryStatus::Success; }
+    virtual RepositoryStatus _RefreshFromRepository() override { return RepositoryStatus::Success; }
     virtual void _OnElementInserted(DgnElementId) override { }
     virtual void _OnModelInserted(DgnModelId) override { }
     virtual RepositoryStatus _QueryLockLevels(DgnLockSet& levels, LockableIdSet& lockIds) override
@@ -70,6 +71,7 @@ private:
     virtual RepositoryStatus _QueryLockLevel(LockLevel&, LockableId) override;
     virtual RepositoryStatus _QueryLockLevels(DgnLockSet&, LockableIdSet&) override;
     virtual RepositoryStatus _OnFinishRevision(DgnRevision const&) override;
+    virtual RepositoryStatus _RefreshFromRepository() override { return Refresh(); }
     virtual void _OnElementInserted(DgnElementId) override;
     virtual void _OnModelInserted(DgnModelId) override;
 
@@ -138,6 +140,15 @@ enum CodeColumn { AuthorityId=0, NameSpace, Value };
 #define STMT_InsertOrReplaceLock "INSERT OR REPLACE INTO " TABLE_Locks " " LOCK_Values " VALUES(?,?,?)"
 #define STMT_SelectElemsInModels "SELECT " LOCK_Id " FROM " TABLE_Locks " WHERE " LOCK_Type "=2 AND InVirtualSet(@vset," LOCK_Id ")"
 #define STMT_SelectLevelInSet "SELECT " LOCK_Columns " FROM " TABLE_Locks " WHERE InVirtualSet(@vset, " LOCK_Type "," LOCK_Id ")"
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IBriefcaseManager::LocksRequired() const
+    {
+    // We don't acquire locks for indirect or dynamic changes.
+    return (!GetDgnDb().Txns().IsInDynamics() && TxnManager::Mode::Indirect != GetDgnDb().Txns().GetMode());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
@@ -950,7 +961,7 @@ RepositoryStatus BriefcaseManager::_OnFinishRevision(DgnRevision const& rev)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BriefcaseManager::_OnElementInserted(DgnElementId id)
     {
-    if (Validate())
+    if (LocksRequired() && Validate())
         {
         Insert(LockableId(id), LockLevel::Exclusive);
         Save();
@@ -962,7 +973,7 @@ void BriefcaseManager::_OnElementInserted(DgnElementId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BriefcaseManager::_OnModelInserted(DgnModelId id)
     {
-    if (Validate())
+    if (LocksRequired() && Validate())
         {
         Insert(LockableId(id), LockLevel::Exclusive);
         Save();
@@ -1028,6 +1039,9 @@ template<typename T> static DgnDbStatus processRequest(T const& obj, LockLevel l
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus IBriefcaseManager::_LockElement(DgnElementCR el, DgnCodeCR code, DgnModelId originalModelId)
     {
+    if (!LocksRequired())
+        return DgnDbStatus::Success;
+
     if (originalModelId.IsValid() && originalModelId == el.GetModelId())
         originalModelId = DgnModelId();
 
@@ -1039,7 +1053,7 @@ DgnDbStatus IBriefcaseManager::_LockElement(DgnElementCR el, DgnCodeCR code, Dgn
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus IBriefcaseManager::_LockModel(DgnModelCR model, LockLevel level, DgnCodeCR code)
     {
-    return processRequest(model, level, code, *this);
+    return LocksRequired() ? processRequest(model, level, code, *this) : DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1047,7 +1061,7 @@ DgnDbStatus IBriefcaseManager::_LockModel(DgnModelCR model, LockLevel level, Dgn
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus IBriefcaseManager::_LockDb(LockLevel level, DgnCodeCR code)
     {
-    return processRequest(GetDgnDb(), level, code, *this);
+    return LocksRequired() ? processRequest(GetDgnDb(), level, code, *this) : DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1075,7 +1089,9 @@ IBriefcaseManager::Response IBriefcaseManager::AcquireLocks(LockRequestR locks, 
     {
     Request req(options);
     std::swap(locks, req.Locks());
-    return ProcessRequest(req);
+    auto response = ProcessRequest(req);
+    std::swap(locks, req.Locks());
+    return response;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1085,7 +1101,9 @@ IBriefcaseManager::Response IBriefcaseManager::ReserveCodes(DgnCodeSet& codes, R
     {
     Request req(options);
     std::swap(codes, req.Codes());
-    return ProcessRequest(req);
+    auto response = ProcessRequest(req);
+    std::swap(codes, req.Codes());
+    return response;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1109,11 +1127,21 @@ RepositoryStatus IRepositoryManager::QueryLockOwnerships(DgnOwnedLockSet& owners
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IBriefcaseManager::ReformulateRequest(Request& req, Response const& response) const
+void IBriefcaseManager::RemoveElements(LockRequestR request, DgnModelId modelId) const
     {
-#ifdef TODO_REPOSITORY_MANAGER
+    Statement stmt(m_db, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
+    stmt.BindId(1, modelId);
+    while (BE_SQLITE_ROW == stmt.Step())
+        request.Remove(LockableId(stmt.GetValueId<DgnElementId>(0)));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void IBriefcaseManager::ReformulateLockRequest(LockRequestR req, Response const& response) const
+    {
     DgnLockSet& locks = req.GetLockSet();
-    for (auto const& lock : denied)
+    for (auto const& lock : response.DeniedLocks())
         {
         auto found = locks.find(DgnLock(lock.GetLockableId(), LockLevel::Exclusive));
         if (locks.end() != found)
@@ -1153,6 +1181,24 @@ void IBriefcaseManager::ReformulateRequest(Request& req, Response const& respons
                 }
             }
         }
-#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void IBriefcaseManager::ReformulateCodeRequest(DgnCodeSet& req, Response const& response) const
+    {
+    for (auto const& codeState : response.CodeStates())
+        if (!codeState.IsAvailable())
+            req.erase(req.find(codeState.GetCode()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void IBriefcaseManager::ReformulateRequest(Request& req, Response const& response) const
+    {
+    ReformulateLockRequest(req.Locks(), response);
+    ReformulateCodeRequest(req.Codes(), response);
     }
 

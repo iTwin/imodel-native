@@ -78,6 +78,10 @@ public:
         
 private:
     DgnDbR  m_db;
+
+    void ReformulateLockRequest(LockRequestR, Response const&) const;
+    void ReformulateCodeRequest(DgnCodeSet&, Response const&) const;
+    void RemoveElements(LockRequestR, DgnModelId) const;
 protected:
     explicit IBriefcaseManager(DgnDbR db) : m_db(db) { }
 
@@ -103,8 +107,10 @@ protected:
     virtual RepositoryStatus _OnFinishRevision(DgnRevision const& rev) = 0;
     virtual void _OnElementInserted(DgnElementId id) = 0;
     virtual void _OnModelInserted(DgnModelId id) = 0;
+    virtual RepositoryStatus _RefreshFromRepository() = 0;
 
     DGNPLATFORM_EXPORT IRepositoryManagerP GetRepositoryManager() const;
+    DGNPLATFORM_EXPORT bool LocksRequired() const;
 public:
     DgnDbR GetDgnDb() const { return m_db; }
 
@@ -162,6 +168,7 @@ public:
     //! @name Local State Management
     //@{
     RepositoryStatus OnFinishRevision(DgnRevision const& rev) { return _OnFinishRevision(rev); }
+    RepositoryStatus RefreshFromRepository() { return _RefreshFromRepository(); }
     void OnElementInserted(DgnElementId id); //!< @private
     void OnModelInserted(DgnModelId id); //!< @private
     //@}
@@ -186,6 +193,7 @@ struct IRepositoryManager
     typedef IBriefcaseManager::Request Request;
     typedef IBriefcaseManager::Response Response;
     typedef IBriefcaseManager::Resources Resources;
+    typedef IBriefcaseManager::ResponseOptions ResponseOptions;
 protected:
     // Codes + Locks
     virtual Response _ProcessRequest(Request const& req, DgnDbR db) = 0;
