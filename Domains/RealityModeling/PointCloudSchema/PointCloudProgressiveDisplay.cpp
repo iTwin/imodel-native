@@ -2,7 +2,7 @@
 |
 |     $Source: PointCloudSchema/PointCloudProgressiveDisplay.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <PointCloudSchemaInternal.h>
@@ -14,6 +14,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_POINTCLOUDSCHEMA
 USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     5/2015
 //----------------------------------------------------------------------------------------
@@ -109,3 +110,4 @@ bool PointCloudProgressiveDisplay::ShouldDrawInContext (ViewContextR context) co
 
     return true;
     }
+#endif

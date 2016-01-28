@@ -2,7 +2,7 @@
 |
 |     $Source: ThreeMxSchema/MRMesh/MRMeshTexture.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "..\ThreeMxSchemaInternal.h"
@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY_THREEMX_SCHEMA
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      11/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt readBGRAFromJPEGData (bvector<Byte>& bgra, Point2dR size, Byte const* jpegData, size_t jpegDataSize)
+StatusInt readBGRAFromJPEGData (ByteStream& bgra, Point2dR size, Byte const* jpegData, size_t jpegDataSize)
     {
     ImageUtilities::RgbImageInfo        outInfo, inInfo;
 
@@ -43,12 +43,12 @@ MRMeshTexture::MRMeshTexture (Byte const* pData, size_t dataSize)
     // But save the uncompressed data as well which we'll keep around just in case the texture
     // image is required again (by an export application).
 
-    m_compressedData.resize (dataSize);
-    memcpy (&m_compressedData.front(), pData, dataSize);
-    readBGRAFromJPEGData (m_data, m_size, pData, dataSize);
+    m_compressedData.SaveData(pData, (uint32_t)dataSize);
+    readBGRAFromJPEGData(m_data, m_size, pData, dataSize);
     }
 
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     09/2015
 +===============+===============+===============+===============+===============+======*/
@@ -101,13 +101,14 @@ virtual     RenderMaterialMapPtr    _GetMap (char const* key) const override
     }
 
 };  // MRMeshRenderMaterial
-
+#endif
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    MRMeshTexture::Initialize (MRMeshNodeCR node, MRMeshContextCR host, ViewContextR viewContext)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (!m_material.IsValid())
         {
         ImageBufferPtr imageBuffer = ImageBuffer::Create(m_size.x, m_size.y, ImageBuffer::Format::Bgra);
@@ -115,6 +116,7 @@ void    MRMeshTexture::Initialize (MRMeshNodeCR node, MRMeshContextCR host, View
 
         m_material = MRMeshRenderMaterial::Create (*imageBuffer);
         }
+#endif
     }
 
 /*-----------------------------------------------------------------------------------**//**
@@ -122,6 +124,7 @@ void    MRMeshTexture::Initialize (MRMeshNodeCR node, MRMeshContextCR host, View
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    MRMeshTexture::Activate (ViewContextR viewContext)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (!m_material.IsValid())
         {
         BeAssert (false);
@@ -132,6 +135,7 @@ void    MRMeshTexture::Activate (ViewContextR viewContext)
 
     elemMatSymb->SetMaterial (m_material.get());
     viewContext.GetIDrawGeom ().ActivateMatSymb (elemMatSymb);
+#endif
     }
 
 
@@ -140,7 +144,11 @@ void    MRMeshTexture::Activate (ViewContextR viewContext)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool    MRMeshTexture::IsInitialized() const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     return m_material.IsValid();
+#else
+    return false;
+#endif
     }
 
 /*-----------------------------------------------------------------------------------**//**
@@ -148,10 +156,12 @@ bool    MRMeshTexture::IsInitialized() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t      MRMeshTexture::GetMemorySize() const
     {
-    size_t      size = m_data.size();
+    size_t      size = m_data.GetSize();
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (m_material.IsValid())
         size += m_size.x * m_size.y * 8;     // Approximate memory for QVision and embedded material.
+#endif
 
     return size;
     }

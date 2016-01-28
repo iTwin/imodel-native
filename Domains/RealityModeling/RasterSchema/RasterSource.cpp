@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/RasterSource.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "RasterSchemaInternal.h"
@@ -180,6 +180,7 @@ Bitmap::Bitmap(uint32_t width, uint32_t height, PixelType pixelType, bool isTopD
 //----------------------------------------------------------------------------------------
 DisplayTilePtr DisplayTile::Create(uint32_t width, uint32_t height, DisplayTile::PixelType pixelType, bool alphaBlend, Byte const* pData, size_t pitch)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     BeAssert(pitch < UINT32_MAX);
 
     DisplayTilePtr pTile = new DisplayTile();
@@ -189,6 +190,9 @@ DisplayTilePtr DisplayTile::Create(uint32_t width, uint32_t height, DisplayTile:
     pTile->m_haveTexture = true;
     T_HOST.GetGraphicsAdmin()._DefineTile(pTile->GetTextureId(), NULL, size, alphaBlend, static_cast<uint32_t>(pixelType), (uint32_t)pitch, pData);
     return pTile;
+#else
+    return nullptr;
+#endif
     }
 
 //----------------------------------------------------------------------------------------
@@ -196,10 +200,12 @@ DisplayTilePtr DisplayTile::Create(uint32_t width, uint32_t height, DisplayTile:
 //----------------------------------------------------------------------------------------
 DisplayTile::~DisplayTile()
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if(m_haveTexture)
         T_HOST.GetGraphicsAdmin()._DeleteTexture (GetTextureId());
 
     m_haveTexture = false;
+#endif
     }
 
 //----------------------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/WmsSource.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "RasterSchemaInternal.h"
@@ -213,6 +213,7 @@ BentleyStatus WmsTileData::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> co
 //----------------------------------------------------------------------------------------
 BentleyStatus WmsTileData::_InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key, BeSQLiteRealityDataStorage::SelectOptions const& options)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     wt_OperationForGraphics highPriority;
     BeMutexHolder lock(cs);
 
@@ -240,6 +241,7 @@ BentleyStatus WmsTileData::_InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key, 
 
         return SUCCESS;
         }
+#endif
     return ERROR;
     }
 
@@ -248,6 +250,7 @@ BentleyStatus WmsTileData::_InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key, 
 //----------------------------------------------------------------------------------------
 BentleyStatus WmsTileData::_Persist(BeSQLite::Db& db, BeMutex& cs) const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     int bufferSize = (int) GetData().size();
 
     int64_t creationTime = 0;
@@ -301,6 +304,9 @@ BentleyStatus WmsTileData::_Persist(BeSQLite::Db& db, BeMutex& cs) const
         }
 
     return SUCCESS;
+#else
+    return ERROR;
+#endif
     }
 
 //----------------------------------------------------------------------------------------
@@ -471,7 +477,7 @@ DisplayTilePtr WmsSource::_QueryTile(TileId const& id, bool request)
     
     BentleyStatus status;
 
-    m_decompressBuffer.clear(); // reuse the same buffer, in order to minimize mallocs
+    m_decompressBuffer.Clear(); // reuse the same buffer, in order to minimize mallocs
 
     if (contentType.EqualsI (CONTENT_TYPE_PNG))
         {
@@ -501,7 +507,7 @@ DisplayTilePtr WmsSource::_QueryTile(TileId const& id, bool request)
     
     BeAssert (!actualImageInfo.isBGR);    //&&MM todo 
     DisplayTile::PixelType pixelType = actualImageInfo.hasAlpha ? DisplayTile::PixelType::Rgba : DisplayTile::PixelType::Rgb;
-    DisplayTilePtr pDisplayTile = DisplayTile::Create(actualImageInfo.width, actualImageInfo.height, pixelType, m_mapInfo.m_transparent && actualImageInfo.hasAlpha, m_decompressBuffer.data(), 0/*notPadded*/);
+    DisplayTilePtr pDisplayTile = DisplayTile::Create(actualImageInfo.width, actualImageInfo.height, pixelType, m_mapInfo.m_transparent && actualImageInfo.hasAlpha, m_decompressBuffer.GetData(), 0/*notPadded*/);
 
     return pDisplayTile;
     }

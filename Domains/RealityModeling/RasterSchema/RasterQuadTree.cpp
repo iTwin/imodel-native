@@ -113,6 +113,7 @@ struct DisplayTileCache
     ItemList m_lru;    
     };
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
@@ -165,6 +166,7 @@ public:
 
     static RefCountedPtr<RasterProgressiveDisplay> Create(RasterQuadTreeR raster, ViewContextR context);
 };
+#endif
 
 //----------------------------------------------------------------------------------------
 //-------------------------------  RasterTile --------------------------------------------
@@ -270,6 +272,7 @@ ReprojectStatus RasterTile::ReprojectCorners(DPoint3dP outUors, DPoint3dCP srcCa
 //----------------------------------------------------------------------------------------
 bool RasterTile::Draw(ViewContextR context)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // Corners are in this order:
     //  [0]  [1]
     //  [2]  [3]
@@ -340,6 +343,9 @@ bool RasterTile::Draw(ViewContextR context)
     context.GetIViewDraw().DrawMosaic (1,1, &textureId, uvPts); 
     
     return true;
+#else
+    return false;
+#endif
     }
 
 //----------------------------------------------------------------------------------------
@@ -450,6 +456,7 @@ void RasterTile::QueryVisible(bvector<RasterTilePtr>& visibles, ViewContextR con
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RasterTile::IsVisible (ViewContextR viewContext, double& factor) const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DPoint3d npcCorners[4];
     DPoint3d frustCorners[4];
 
@@ -511,6 +518,9 @@ bool RasterTile::IsVisible (ViewContextR viewContext, double& factor) const
 #endif
 
     return true;
+#else
+    return false;
+#endif
     }
 
 //----------------------------------------------------------------------------------------
@@ -554,10 +564,13 @@ void RasterQuadTree::QueryVisible(bvector<RasterTilePtr>& visibles, ViewContextR
 //----------------------------------------------------------------------------------------
 void RasterQuadTree::Draw (ViewContextR context)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     RefCountedPtr<RasterProgressiveDisplay> display = RasterProgressiveDisplay::Create(*this, context);
     display->Draw(context);
+#endif
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //----------------------------------------------------------------------------------------
 //-------------------------------  RasterProgressiveDisplay -----------------------------------------
 //----------------------------------------------------------------------------------------
@@ -783,4 +796,4 @@ IProgressiveDisplay::Completion RasterProgressiveDisplay::_Process(ViewContextR 
 
     return completion;    
     }
-
+#endif

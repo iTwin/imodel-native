@@ -2,7 +2,7 @@
 |
 |     $Source: ThreeMxSchema/MRMesh/MRMeshScene.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "..\ThreeMxSchemaInternal.h"
@@ -77,10 +77,10 @@ void        MRMeshScene::DrawBoundingSpheres (ViewContextR viewContext)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshScene::DrawMeshes (IDrawGeomP drawGeom, TransformCR transform)
+void MRMeshScene::DrawMeshes (Render::GraphicR graphic, TransformCR transform)
     {
     for (bvector<MRMeshNodePtr>::iterator child = m_children.begin (); child != m_children.end (); child++)
-        (*child)->DrawMeshes (drawGeom, transform);
+        (*child)->DrawMeshes (graphic, transform);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -162,6 +162,7 @@ BentleyStatus   MRMeshScene::_GetRange (DRange3dR range, TransformCR transform) 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    MRMeshScene::_Draw (bool& childrenScheduled, ViewContextR viewContext, MRMeshContextCR MeshContext)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     viewContext.PushTransform (m_transform);
 
     for (bvector<MRMeshNodePtr>::iterator child = m_children.begin (); child != m_children.end (); child++)
@@ -172,6 +173,7 @@ void    MRMeshScene::_Draw (bool& childrenScheduled, ViewContextR viewContext, M
         (*child)->Draw (childrenScheduled, viewContext, MeshContext);
         }
     viewContext.PopTransformClip ();
+#endif
     }
 
 

@@ -2,7 +2,7 @@
 |
 |     $Source: PointCloudSchema/VisualizationManager.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -43,7 +43,9 @@ struct VisualizationManager
         VisualizationManager();
         ~VisualizationManager();
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
         Dgn::IProgressiveDisplay::Completion DrawToContext(Dgn::ViewContextR context, BePointCloud::PointCloudSceneCR pointCloudScene, DRange3dCR pointCloudRange);
+#endif
 
         static  VisualizationManager& GetInstance();
     };
@@ -66,6 +68,7 @@ struct PerspectiveViewParams
     DPoint3d    targetRoot;
     };
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //=======================================================================================
 // Class responsible to construct / destroy the transformation pushed to the context.
 // @bsiclass                                                    Eric.Paquet         02/15
@@ -86,5 +89,6 @@ struct ContextTransform
             m_viewContext.PopTransformClip();
             }
     };
+#endif
 
 END_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE

@@ -2,7 +2,7 @@
 |
 |     $Source: ThreeMxSchema/MRMesh/MRMeshUtil.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "..\ThreeMxSchemaInternal.h"
@@ -70,14 +70,18 @@ double MRMeshUtil::CalculateResolutionRatio ()
 MRMeshContext::MRMeshContext (TransformCR transform, ViewContextR viewContext, double fixedResolution) 
     : m_transform (transform), m_useFixedResolution (false), m_fixedResolution (0.0), m_nodeCount (0), m_pointCount (0)    
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     m_qvCache = viewContext.GetDgnDb().Models().GetQvCache();
+#endif
 
     m_loadSynchronous    = // FILTER_LOD_Off == viewContext.GetFilterLODFlag() ||          // If the LOD filter is off we assume that this is an application that is interested in full detail (and isn't going to wait for nodes to load.(DrawPurpose::CaptureGeometry == viewContext.GetDrawPurpose() || DrawPurpose::ModelFacet == viewContext.GetDrawPurpose())
                            DrawPurpose::ModelFacet == viewContext.GetDrawPurpose();          
     
     if (m_loadSynchronous)
         {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
         if (DrawPurpose::Update != viewContext.GetDrawPurpose())       // For capture image the LOD filter is off - but we still want view dependent resolution.
+#endif
             {
             m_useFixedResolution = true;
             m_fixedResolution    = .1;  // (0.0 == fixedResolution ? MRMeshElementHandler::ComputeDefaultExportResolution (element) : fixedResolution) / transform.ColumnXMagnitude();

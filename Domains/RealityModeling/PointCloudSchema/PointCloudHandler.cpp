@@ -2,7 +2,7 @@
 |
 |     $Source: PointCloudSchema/PointCloudHandler.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <PointCloudSchemaInternal.h>
@@ -102,11 +102,13 @@ PointCloudScenePtr PointCloudModel::GetPointCloudScenePtr()
 //----------------------------------------------------------------------------------------
 void PointCloudModel::_AddGraphicsToScene (ViewContextR context)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (GetPointCloudScenePtr() != nullptr)
         {
         RefCountedPtr<PointCloudProgressiveDisplay> display = new PointCloudProgressiveDisplay(*this);
         display->DrawView(context);
         }
+#endif
     }
 
 //----------------------------------------------------------------------------------------

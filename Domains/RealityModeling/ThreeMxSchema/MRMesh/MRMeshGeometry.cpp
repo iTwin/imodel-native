@@ -2,7 +2,7 @@
 |
 |     $Source: ThreeMxSchema/MRMesh/MRMeshGeometry.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "..\ThreeMxSchemaInternal.h"
@@ -19,7 +19,7 @@ void floatToDouble (double* pDouble, float const* pFloat, int n)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-MRMeshGeometry::MRMeshGeometry (int nbVertices,float* positions,float* normals,int nbTriangles,int* indices,float* textureCoordinates,int textureId) : m_textureId (textureId), m_qvElem (NULL)
+MRMeshGeometry::MRMeshGeometry (int nbVertices,float* positions,float* normals,int nbTriangles,int* indices,float* textureCoordinates,int textureId) : m_textureId (textureId)
     {
     m_polyface = PolyfaceHeader::CreateFixedBlockIndexed (3);
 
@@ -68,7 +68,7 @@ size_t      MRMeshGeometry::GetMemorySize() const
                   m_polyface->NormalIndex ().size ()     * sizeof (int32_t) +                           m_polyface->ParamIndex ().size ()      * sizeof (int32_t) +
                   m_polyface->GetFaceIndexCount ()       * sizeof (int32_t);
 
-    if (NULL != m_qvElem)
+    if (m_graphic.IsValid())
         {
         size += (m_polyface->GetPointCount()  * 3 +
                  m_polyface->GetNormalCount() * 3 +
@@ -82,6 +82,7 @@ size_t      MRMeshGeometry::GetMemorySize() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MRMeshGeometry::Draw (ViewContextR viewContext, MRMeshNodeR node, MRMeshContextCR host)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     MRMeshTextureP  texture;
 
     ICachedDrawP    cachedDraw = viewContext.GetICachedDraw();
@@ -106,6 +107,7 @@ void MRMeshGeometry::Draw (ViewContextR viewContext, MRMeshNodeR node, MRMeshCon
         }
 
     viewContext.GetIViewDraw().DrawQvElem (m_qvElem);
+#endif
     }
 
 /*-----------------------------------------------------------------------------------**//**
@@ -113,11 +115,13 @@ void MRMeshGeometry::Draw (ViewContextR viewContext, MRMeshNodeR node, MRMeshCon
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MRMeshGeometry::DrawCut (ViewContextR viewContext, DPlane3dCR plane)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     CurveVectorPtr  slice;
     
     if (m_polyface.IsValid() &&
         (slice = m_polyface->PlaneSlice (plane, false, false)).IsValid())
         viewContext.GetIDrawGeom().DrawCurveVector (*slice, false);
+#endif
     }
 
 
@@ -126,6 +130,7 @@ void MRMeshGeometry::DrawCut (ViewContextR viewContext, DPlane3dCR plane)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MRMeshGeometry::ReleaseQVisionCache ()
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // shutting down
     if (nullptr == DgnPlatformLib::QueryHost())
         return;
@@ -134,6 +139,7 @@ void MRMeshGeometry::ReleaseQVisionCache ()
         T_HOST.GetGraphicsAdmin()._DeleteQvElem (m_qvElem);
 
     m_qvElem = NULL;
+#endif
     }
 
 /*-----------------------------------------------------------------------------------**//**

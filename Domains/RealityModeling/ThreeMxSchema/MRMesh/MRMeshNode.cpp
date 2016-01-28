@@ -2,7 +2,7 @@
 |
 |     $Source: ThreeMxSchema/MRMesh/MRMeshNode.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "..\ThreeMxSchemaInternal.h"
@@ -273,9 +273,16 @@ void MRMeshNode::DrawMeshes (ViewContextR viewContext, MRMeshContextCR MeshConte
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshNode::DrawBoundingSphere (ViewContextR viewContext)
+void MRMeshNode::DrawBoundingSphere (ViewContextR context)
     {
-    viewContext.GetIDrawGeom().DrawSolidPrimitive (*ISolidPrimitive::CreateDgnSphere (DgnSphereDetail (m_info.m_center, m_info.m_radius)));
+    Render::GraphicPtr graphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport()));
+
+    graphic->AddSolidPrimitive (*ISolidPrimitive::CreateDgnSphere(DgnSphereDetail (m_info.m_center, m_info.m_radius)));
+    graphic->Close();
+
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    context.OutputGraphic(*graphic, nullptr); // When is this called, should this be added to the scene, etc?!?
+#endif
     }
 
 /*-----------------------------------------------------------------------------------**//**
@@ -292,17 +299,10 @@ DRange3d MRMeshNode::GetRange () const
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshNode::DrawMeshes (IDrawGeomP drawGeom, TransformCR transform)
+void MRMeshNode::DrawMeshes (Render::GraphicR graphic, TransformCR transform)
     {
     if (SUCCESS != Load ())
         return;
-
-    if (NULL == drawGeom)
-        {
-        BeAssert (false);
-        return;
-        }
-
 
     for (bvector<MRMeshGeometryPtr>::const_iterator mesh = m_meshes.begin (); mesh != m_meshes.end (); mesh++)
         {
@@ -310,7 +310,7 @@ void MRMeshNode::DrawMeshes (IDrawGeomP drawGeom, TransformCR transform)
 
         polyface->CopyFrom (*(*mesh)->GetPolyface());
         polyface->Transform (transform);
-        drawGeom->DrawPolyface (*polyface, false);
+        graphic.AddPolyface (*polyface, false);
         }
     }
 
@@ -359,7 +359,11 @@ BentleyStatus MRMeshNode::Draw (bool& childrenScheduled, ViewContextR viewContex
         {                                                                                                 
         for (bvector<MRMeshNodePtr>::iterator child = m_children.begin (); child != m_children.end (); child++)
             {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
             if (DrawPurpose::Update != viewContext.GetDrawPurpose() && viewContext.CheckStop())      // Only check stop when not updating  -- doing it during update can leave incomplete display.
+#else
+            if (viewContext.CheckStop())      // Only check stop when not updating  -- doing it during update can leave incomplete display.
+#endif
                 return SUCCESS;
 
             (*child)->Draw (childrenScheduled, viewContext, meshContext);
@@ -374,6 +378,7 @@ BentleyStatus MRMeshNode::Draw (bool& childrenScheduled, ViewContextR viewContex
         !m_primary)
         Clear();
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if ((DrawPurpose::Update  == viewContext.GetDrawPurpose() || DrawPurpose::UpdateHealing == viewContext.GetDrawPurpose()) &&
         !isUnderMaximumSize &&
         childrenNeedLoading &&
@@ -382,6 +387,7 @@ BentleyStatus MRMeshNode::Draw (bool& childrenScheduled, ViewContextR viewContex
         childrenScheduled = true;
         MRMeshCacheManager::GetManager().QueueChildLoad (unloadedVisibleChildren, viewContext.GetViewport(), meshContext.GetTransform());
         }
+#endif
 
     return SUCCESS;
     }

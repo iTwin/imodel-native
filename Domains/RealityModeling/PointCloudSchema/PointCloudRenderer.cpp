@@ -2,7 +2,7 @@
 |
 |     $Source: PointCloudSchema/PointCloudRenderer.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <PointCloudSchemaInternal.h>
@@ -59,6 +59,7 @@ PointCloudRenderer::~PointCloudRenderer()
     {
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     2/2015
 //----------------------------------------------------------------------------------------
@@ -165,6 +166,7 @@ void PointCloudRenderer::DrawPointBuffer(ViewContextR context, PointCloudDrawBuf
         context.GetIViewDraw().DrawPointCloud (buffer);
         }
     }
+#endif
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                    Simon.Normand                   05/2014
@@ -238,7 +240,7 @@ void PointCloudRenderer::ApplyClassification(PointCloudQueryBuffers& channels, L
     LasClassificationInfo adjustedClassification;
     if (contextVp != NULL)
         {
-        mediaColor = contextVp->GetWindowBgColor();
+        mediaColor = contextVp->GetBackgroundColor();
         if(memcmp(&mediaColor, &whiteColor, sizeof(whiteColor)) == 0)
             backgroundIsWhite = true;
         }
@@ -279,4 +281,5 @@ void PointCloudRenderer::ApplyClassification(PointCloudQueryBuffers& channels, L
 
     classifyPoints (pClassifInfo, filterBuffer, pClassifChannel, pClassifColors, pRgbChannel, nPoints, hasRgb, hasFilter);
     }
+
 

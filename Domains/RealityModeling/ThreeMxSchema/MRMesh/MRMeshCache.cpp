@@ -2,7 +2,7 @@
 |
 |     $Source: ThreeMxSchema/MRMesh/MRMeshCache.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "..\ThreeMxSchemaInternal.h"
@@ -186,8 +186,9 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2015
     +---------------+---------------+---------------+---------------+---------------+------*/
-    BentleyStatus InitFromSource(Utf8CP filename, bvector<Byte> const& data, RequestOptions const& options)
+    BentleyStatus InitFromSource(Utf8CP filename, ByteStream const& data, RequestOptions const& options)
         {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
         m_filename = filename;
         m_node = MRMeshNode::Create();
         
@@ -209,6 +210,9 @@ protected:
             m_nodeBytes.clear();
 
         return SUCCESS;
+#else
+        return ERROR;
+#endif
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -327,7 +331,11 @@ protected:
     virtual Utf8CP _GetId() const override {return GetFilename().c_str();}
     virtual bool _IsExpired() const override {return false;}
     virtual BentleyStatus _InitFrom(IRealityDataBase const& self, RealityDataCacheOptions const& options) override {return InitFromSelf(self, (RequestOptions const&)options);}
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, bvector<Byte> const& body, HttpRealityDataSource::RequestOptions const& options) override {return InitFromSource(url, body, (RequestOptions const&)options);}
+#else
+    virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, bvector<Byte> const& body, HttpRealityDataSource::RequestOptions const& options) override {return ERROR;}
+#endif
     virtual BentleyStatus _InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP id, BeSQLiteRealityDataStorage::SelectOptions const& options) override {return InitFromStorage(db, cs, id, (RequestOptions const&)options);}
     virtual BentleyStatus _Persist(BeSQLite::Db& db, BeMutex& cs) const override {return PersistToStorage(db, cs);}
     virtual BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandlerPtr _GetDatabasePrepareAndCleanupHandler() const override {return DatabasePrepareAndCleanupHandler::Create();}
@@ -365,7 +373,7 @@ protected:
     virtual Utf8CP _GetId() const override {return GetFilename().c_str();}
     virtual bool _IsExpired() const override {return false;}
     virtual BentleyStatus _InitFrom(IRealityDataBase const& self, RealityDataCacheOptions const& options) override {return InitFromSelf(self, (RequestOptions const&)options);}
-    virtual BentleyStatus _InitFrom(Utf8CP filepath, bvector<Byte> const& data, FileRealityDataSource::RequestOptions const& options) override {return InitFromSource(filepath, data, (RequestOptions const&)options);}
+    virtual BentleyStatus _InitFrom(Utf8CP filepath, ByteStream const& data, FileRealityDataSource::RequestOptions const& options) override {return InitFromSource(filepath, data, (RequestOptions const&)options);}
     virtual BentleyStatus _InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP id, BeSQLiteRealityDataStorage::SelectOptions const& options) override {return InitFromStorage(db, cs, id, (RequestOptions const&)options);}
     virtual BentleyStatus _Persist(BeSQLite::Db& db, BeMutex& cs) const override {return PersistToStorage(db, cs);}
     virtual BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandlerPtr _GetDatabasePrepareAndCleanupHandler() const override {return DatabasePrepareAndCleanupHandler::Create();}

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/PointCloudSchema/PointCloudDrawBuffer.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,6 +14,7 @@ BEGIN_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
 struct PointCloudDrawParams;
 struct PointCloudDrawBuffer;
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                                    StephanePoulin  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -93,5 +94,6 @@ struct PointCloudDrawParams : public PointCloudDrawBuffer
         POINTCLOUDSCHEMA_EXPORT static PointCloudDrawParams* Create(BePointCloud::PointCloudXyzChannel* pXyzChannel, BePointCloud::PointCloudRgbChannel* pRgbChannel);
 
     }; // PointCloudDrawParams
+#endif
 
 END_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE

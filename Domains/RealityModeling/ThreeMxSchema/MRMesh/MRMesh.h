@@ -2,7 +2,7 @@
 |
 |     $Source: ThreeMxSchema/MRMesh/MRMesh.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -46,7 +46,11 @@ struct MRMeshGeometry : RefCountedBase
 
     PolyfaceHeaderPtr           m_polyface;
     int                         m_textureId;
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     QvElem*                     m_qvElem;
+#else
+    Render::GraphicPtr          m_graphic;
+#endif
 
     PolyfaceHeaderPtr           GetPolyface () { return m_polyface; }
     void                        Draw (ViewContextR viewContext, MRMeshNodeR node, MRMeshContextCR meshContext);
@@ -55,11 +59,17 @@ struct MRMeshGeometry : RefCountedBase
 
 
     size_t                      GetMemorySize() const;
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     void                        ClearQvElems () { m_qvElem = NULL; }
-    bool                        IsDisplayable () const      { return m_textureId >= 0; }
     bool                        IsCached () const           { return NULL != m_qvElem; }
-    void                        ReleaseQVisionCache ();
     void                        ClearQvElemReferences ()    { m_qvElem = NULL; }
+#else
+    void                        ClearQvElems () {m_graphic = nullptr;}
+    bool                        IsCached () const {return m_graphic.IsValid();}
+    void                        ClearQvElemReferences () {m_graphic = nullptr;}
+#endif
+    bool                        IsDisplayable () const      { return m_textureId >= 0; }
+    void                        ReleaseQVisionCache ();
 
     static MRMeshGeometryPtr    Create (int nbVertices,float* positions,float* normals,int nbTriangles,int* indices,float* textureCoordinates,int textureId);
 
@@ -70,10 +80,12 @@ struct MRMeshGeometry : RefCountedBase
 +===============+===============+===============+===============+===============+======*/
 struct MRMeshTexture : RefCountedBase
 {
-    bvector <Byte>              m_data;         // BGRA
-    bvector <Byte>              m_compressedData;
+    ByteStream                  m_data;         // BGRA
+    ByteStream                  m_compressedData;
     Point2d                     m_size;
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     RenderMaterialPtr           m_material;
+#endif
 
                                 MRMeshTexture (Byte const* pData, size_t dataSize);
                                 ~MRMeshTexture ();
@@ -97,7 +109,9 @@ struct MRMeshContext
     bool                m_loadSynchronous;
     bool                m_useFixedResolution;
     double              m_fixedResolution;
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     QvCache*            m_qvCache;
+#endif
 
     mutable size_t      m_lastPumpTicks;
     mutable size_t      m_nodeCount;
@@ -109,7 +123,9 @@ struct MRMeshContext
     bool                GetLoadSynchronous () const { return m_loadSynchronous; }
     bool                UseFixedResolution ()const  { return m_useFixedResolution; }
     double              GetFixedResolution () const { return m_fixedResolution; }
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     QvCache*            GetQvCache() const          { return m_qvCache; }
+#endif
 
 };  // MRMeshContext
 
@@ -137,7 +153,7 @@ public:
 
 
     void            DrawBoundingSpheres (ViewContextR viewContext);
-    void            DrawMeshes (IDrawGeomP drawGeom, TransformCR transform);
+    void            DrawMeshes (Render::GraphicR graphic, TransformCR transform);
 
     size_t          GetTextureMemorySize () const;
     size_t          GetMeshMemorySize() const;
@@ -181,8 +197,8 @@ struct MRMeshNode :  BaseMeshNode,  RefCountedBase
     void                        Dump (WStringCR prefix);
     BentleyStatus               Draw (bool& childrenScheduled, ViewContextR viewContext, MRMeshContextCR MeshContext);
     BentleyStatus               DrawCut (ViewContextR viewContext, MRMeshContextCR MeshContext, DPlane3dCR plane);
-    void                        Draw (IDrawGeomR drawGeom, TransformCR tranform);
-    void                        DrawMeshes (IDrawGeomP drawGeom, TransformCR transform);
+    void                        Draw (Render::GraphicR graphic, TransformCR tranform);
+    void                        DrawMeshes (Render::GraphicR graphic, TransformCR transform);
     void                        DrawMeshes (ViewContextR viewContext, MRMeshContextCR MeshContext);
     void                        DrawBoundingSphere (ViewContextR viewContext);
     DRange3d                    GetRange () const;

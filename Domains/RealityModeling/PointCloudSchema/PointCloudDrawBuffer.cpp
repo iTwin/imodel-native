@@ -2,7 +2,7 @@
 |
 |     $Source: PointCloudSchema/PointCloudDrawBuffer.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <PointCloudSchemaInternal.h>
@@ -26,6 +26,7 @@ PointCloudByteChannelPool       PointCloudByteChannel::m_pool(VIEW_POOL_MAX_BUFF
 * Need to implement the virtual destructor of interface so that we can use delete on PointCloudDrawBuffer
 * @bsimethod                                    Simon.Normand                   03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
                         PointCloudDrawBuffer::~PointCloudDrawBuffer ()           { }
                         PointCloudDrawBuffer::PointCloudDrawBuffer()             { }
 void                    PointCloudDrawBuffer::Deallocate()                       { _Deallocate(); }
@@ -156,3 +157,4 @@ PointCloudDrawParams* PointCloudDrawParams::Create(PointCloudXyzChannel* pXyzCha
     {
     return new PointCloudDrawParams(pXyzChannel, pRgbChannel);
     }
+#endif

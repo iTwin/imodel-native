@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/PointCloudSchema/PointCloudProgressiveDisplay.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,6 +13,7 @@
 
 BEGIN_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //========================================================================================
 // @bsiclass                                                        Eric.Paquet     5/2015
 //========================================================================================
@@ -42,5 +43,6 @@ protected:
     PointCloudProgressiveDisplay (PointCloudModel& model);
     ~PointCloudProgressiveDisplay();
     };
+#endif
 
 END_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE

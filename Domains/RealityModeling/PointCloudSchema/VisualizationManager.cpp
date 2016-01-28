@@ -2,7 +2,7 @@
 |
 |     $Source: PointCloudSchema/VisualizationManager.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <PointCloudSchemaInternal.h>
@@ -25,6 +25,7 @@ VisualizationManager::~VisualizationManager ()
     {
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     2/2015
 //----------------------------------------------------------------------------------------
@@ -145,6 +146,7 @@ IProgressiveDisplay::Completion VisualizationManager::DrawToContext(ViewContextR
 
     return status;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    01/2009
@@ -213,10 +215,18 @@ void VisualizationManager::SetViewportProjectionFromSceneRange(ViewContextR cont
 
     PointCloudVortex::SetViewportSize ((int)(subViewRange_view.low.x + 0.5), (int)(subViewRange_view.low.y + 0.5), horizontalPixels, verticalPixels);
     
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DPoint3d subViewBox_local[NPC_CORNER_COUNT];
     context.ViewToLocal(subViewBox_local, subViewBox_view, NPC_CORNER_COUNT);
     DVec3d subViewBox_scene[NPC_CORNER_COUNT];
     uorToScene.Multiply (subViewBox_scene, subViewBox_local, NPC_CORNER_COUNT);
+#else
+    // NEEDSWORK: Not sure if "local" is appropriate anymore...is a transform still going to be "pushed" somewhere?
+    DPoint3d subViewBox_world[NPC_CORNER_COUNT];
+    context.ViewToWorld(subViewBox_world, subViewBox_view, NPC_CORNER_COUNT);
+    DVec3d subViewBox_scene[NPC_CORNER_COUNT];
+    uorToScene.Multiply (subViewBox_scene, subViewBox_world, NPC_CORNER_COUNT);
+#endif
 
     PerspectiveViewParams subViewParams;
     ViewParametersFromWorld(subViewParams, subViewBox_scene);
@@ -239,7 +249,11 @@ void VisualizationManager::SetViewportOrtho(ViewContextR context, Transform cons
     DRange3d pointCloudRange_local; pointCloudRange_local.InitFrom(vector.low, vector.high);
     DPoint3d pointCloudBox[NPC_CORNER_COUNT];
     pointCloudRange_local.Get8Corners(pointCloudBox);
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context.LocalToView(&pointCloudBox[0], &pointCloudBox[0], NPC_CORNER_COUNT);
+#else
+    context.WorldToView(&pointCloudBox[0], &pointCloudBox[0], NPC_CORNER_COUNT);
+#endif
     context.ViewToNpc(&pointCloudBox[0], &pointCloudBox[0], NPC_CORNER_COUNT);
 
     // intersect the point cloud with the view
@@ -257,7 +271,11 @@ void VisualizationManager::SetViewportOrtho(ViewContextR context, Transform cons
 
     PointCloudVortex::SetViewportSize ((int)(viewRange_view.low.x + 0.5), (int)(viewRange_view.low.y + 0.5), horizontalPixels, verticalPixels);
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DMatrix4d sceneToUorMat, localToView = context.GetLocalToView();
+#else
+    DMatrix4d sceneToUorMat, localToView = context.GetWorldToView().M0;
+#endif
     bsiDMatrix4d_initFromTransform (&sceneToUorMat, &sceneToUor);
 
     // TR# 296246. - On viewlets (and the sheet/drawing parents) the "View" Z coordinates are somewhat 
@@ -361,7 +379,11 @@ StatusInt VisualizationManager::LocalToViewAccountingForPointBehindCamera(DPoint
         static double   s_minW = .001;                  // Arbitrary front of eye lmit.
 
         point4d.Init (localPoints[i], 1.0);
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
         context.GetLocalToView().Multiply(point4d, point4d);
+#else
+        context.GetWorldToView().M0.Multiply(point4d, point4d);
+#endif
 
         if (point4d.w < s_minW)
             return ERROR;
@@ -415,7 +437,7 @@ void VisualizationManager::OverrideViewSettings(RefCountedPtr<PointCloudSchema::
         return;
 
     ColorDef mediaColor;
-    mediaColor = contextVp->GetWindowBgColor();
+    mediaColor = contextVp->GetBackgroundColor();
 
     ColorDef whiteColor = {255,255,255};
 
@@ -558,8 +580,10 @@ bool VisualizationManager::IsDrawPurposeValidForFastUpdate(DrawPurpose drawPurpo
     {
     switch (drawPurpose)
         {
-        case DrawPurpose::UpdateDynamic:
         case DrawPurpose::Dynamics:
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+        case DrawPurpose::UpdateDynamic:
+#endif
             {
             return true;
             }
@@ -575,8 +599,10 @@ bool VisualizationManager::IsDrawPurposeValidForCompleteUpdate(DrawPurpose drawP
     switch (drawPurpose)
         {
         case DrawPurpose::Plot:
-        case DrawPurpose::GenerateThumbnail:
         case DrawPurpose::ModelFacet:
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+        case DrawPurpose::GenerateThumbnail:
+#endif
             {
             return true;
             }

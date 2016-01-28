@@ -2,7 +2,7 @@
 |
 |     $Source: ThreeMxSchema/ThreeMxHandler.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ThreeMxSchemaInternal.h"
@@ -12,6 +12,7 @@ USING_NAMESPACE_BENTLEY_THREEMX_SCHEMA
 
 HANDLER_DEFINE_MEMBERS(ThreeMxModelHandler)
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //========================================================================================
 // @bsiclass                                                        Ray.Bentley     09/2015
 //========================================================================================
@@ -55,6 +56,7 @@ static void Schedule (ThreeMxModelR model, ViewContextR viewContext)
     }
 
 };  //  ThreeMxProgressiveDisplay
+#endif
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
@@ -144,17 +146,21 @@ void ThreeMxModel::_AddGraphicsToScene (ViewContextR viewContext)
         }
 
     MRMeshContext       meshContext (Transform::FromIdentity(), viewContext, 0.0);
-    ViewFlags           viewFlags = *viewContext.GetViewFlags(), saveViewFlags = viewFlags;
     bool                childrenScheduled = false;
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    Render::ViewFlags   viewFlags = viewContext.GetViewFlags(), saveViewFlags = viewFlags;
 
     viewFlags.ignoreLighting = true;
     
     viewContext.GetViewport()->GetIViewOutput()->SetRenderMode (viewFlags);
+#endif
     scene->_Draw (childrenScheduled, viewContext, meshContext);
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     viewContext.GetViewport()->GetIViewOutput()->SetRenderMode (saveViewFlags);
 
     if (childrenScheduled)
         ThreeMxProgressiveDisplay::Schedule (*this, viewContext);
+#endif
     }
 
 //----------------------------------------------------------------------------------------
