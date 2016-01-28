@@ -143,8 +143,10 @@ DbResult RelationshipPurger::Prepare(ECDbR ecdb, RelationshipPurger::Commands co
                     {
                     viewSql.AppendFormatted("SELECT [%s] ECInstanceId FROM [%s] WHERE [%s] IS NOT NULL", fkColumn, table->GetName().c_str(), fkColumn);
                     }
+                
+                if (!viewSql.IsEmpty())
+                    unionList.push_back(std::move(viewSql));
 
-                unionList.push_back(std::move(viewSql));
                 viewSql.Reset();
                 }
             else

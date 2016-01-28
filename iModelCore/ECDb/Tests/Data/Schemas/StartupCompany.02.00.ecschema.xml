@@ -101,6 +101,12 @@
             <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.12">
                 <Hidden>True</Hidden>
             </DisplayOptions>
+			<ClassMap xmlns="ECDbMap.01.00">
+				<MapStrategy>
+					<Strategy>SharedTable</Strategy>
+					<AppliesToSubclasses>True</AppliesToSubclasses>
+				</MapStrategy>
+			</ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="AssetID" typeName="string" displayLabel="Asset ID" readOnly="false"/>
         <ECProperty propertyName="AssetOwner" typeName="string" readOnly="false"/>
@@ -162,13 +168,7 @@
     </ECRelationshipClass>
     <ECEntityClass typeName="Furniture" modifier="None">
         <BaseClass>Asset</BaseClass>
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
-                </MapStrategy>
-            </ClassMap>
+        <ECCustomAttributes>			
             <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.12">
                 <Hidden>False</Hidden>
             </DisplayOptions>
@@ -1067,7 +1067,7 @@
             <Class class="Bar"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="Foo_has_SomethingInOneOfManyTables" modifier="None" strength="embedding" strengthDirection="forward">
+    <!-- Not supported by ECDb ECRelationshipClass typeName="Foo_has_SomethingInOneOfManyTables" modifier="None" strength="embedding" strengthDirection="forward">
         <Source cardinality="(1,1)" roleLabel="has" polymorphic="true">
             <Class class="Foo"/>
         </Source>
@@ -1075,9 +1075,8 @@
             <Class class="Asset"/>
             <Class class="Employee"/>
         </Target>
-    </ECRelationshipClass>
+    </ECRelationshipClass -->
     <ECEntityClass typeName="LikesToShare1" modifier="None">
-        <BaseClass>Hardware</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
