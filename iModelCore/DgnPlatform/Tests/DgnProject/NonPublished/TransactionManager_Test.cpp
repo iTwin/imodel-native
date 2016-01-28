@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/TransactionManager_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -610,6 +610,43 @@ TEST_F(TransactionManagerTests, UndoRedo)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ModelTxnMonitor : TxnMonitor
+{
+    typedef bmap<DgnModelId, TxnTable::ChangeType> ChangeMap;
+
+    ChangeMap   m_changes;
+
+    ModelTxnMonitor() { DgnPlatformLib::GetHost().GetTxnAdmin().AddTxnMonitor(*this); }
+    ~ModelTxnMonitor() { DgnPlatformLib::GetHost().GetTxnAdmin().DropTxnMonitor(*this); }
+
+    void CollectChanges(TxnManager& mgr)
+        {
+        for (auto it : mgr.Models().MakeIterator())
+            {
+            DgnModelId mid = it.GetModelId();
+            auto changeType = it.GetChangeType();
+            m_changes[mid] = changeType;
+            }
+        }
+
+    virtual void _OnCommit(TxnManager& mgr) override {CollectChanges(mgr);}
+    virtual void _OnReversedChanges(TxnManager& mgr) override {CollectChanges(mgr);}
+    virtual void _OnUndoRedo(TxnManager& mgr, TxnAction action) override {CollectChanges(mgr);}
+
+    void Clear() { m_changes.clear(); }
+    ChangeMap& GetChanges() { return m_changes; }
+    bool HasChange(DgnModelId mid, TxnTable::ChangeType type) const
+        {
+        auto iter = m_changes.find(mid);
+        return m_changes.end() != iter && iter->second == type;
+        }
+    bool WasDeleted(DgnModelId mid) const { return HasChange(mid, TxnTable::ChangeType::Delete); }
+    bool WasAdded(DgnModelId mid) const { return HasChange(mid, TxnTable::ChangeType::Insert); }
+};
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Maha Nasir                      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, ModelInsertReverse)
@@ -617,11 +654,16 @@ TEST_F(TransactionManagerTests, ModelInsertReverse)
     SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
     auto& txns = m_db->Txns();
 
+    ModelTxnMonitor monitor;
+
     auto seedModelId = m_defaultModelId;
     DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId);
     DgnModelPtr model1 = seedModel->Clone(DgnModel::CreateModelCode("model1"));
     model1->Insert();
     m_db->SaveChanges("changeSet1");
+    DgnModelId model1Id = model1->GetModelId();
+    EXPECT_TRUE(monitor.WasAdded(model1Id));
+    monitor.Clear();
 
     ASSERT_TRUE(model1 != nullptr);
     EXPECT_TRUE(m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")).IsValid());
@@ -630,9 +672,13 @@ TEST_F(TransactionManagerTests, ModelInsertReverse)
     auto stat = txns.ReverseTxns(1);
     EXPECT_EQ(DgnDbStatus::Success, stat);
     EXPECT_FALSE(m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")).IsValid());
+    EXPECT_TRUE(monitor.WasDeleted(model1Id));
+    monitor.Clear();
 
     //Reinstate Transaction.Model should be back.
     stat = txns.ReinstateTxn();
+    EXPECT_TRUE(monitor.WasAdded(model1Id));
+    monitor.Clear();
     EXPECT_EQ(DgnDbStatus::Success, stat);
     m_db->SaveChanges("changeSet2");
 

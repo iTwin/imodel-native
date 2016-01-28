@@ -88,7 +88,10 @@ void QueryModel::SaveQueryResults()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t QueryModel::GetElementCount() const {return m_currQueryResults.IsValid() ? m_currQueryResults->GetCount() : 0;}
+uint32_t QueryModel::GetElementCount() const 
+    {
+    return m_currQueryResults.IsValid() ? m_currQueryResults->GetCount() : 0;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
@@ -257,7 +260,8 @@ void QueryModel::Queue::Process()
         }
 
         m_cv.notify_all();
-        BeThreadUtilities::BeSleep(delay);
+        if (delay) // optionally, wait before starting the next task
+            BeThreadUtilities::BeSleep(delay);
         }
 
     m_state = State::Terminated;
@@ -376,53 +380,47 @@ void QueryModel::Processor::SearchIdSet(DgnElementIdSet& idList, Filter& filter)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryModel::Processor::SearchRangeTree(Filter& filter)
     {
-    CachedStatementPtr rangeStmt;
-    GetModel().GetDgnDb().GetCachedStatement(rangeStmt, m_params.m_searchSql.c_str());
+    CachedStatementPtr viewStmt;
+    Utf8String acceptSql = m_params.m_searchSql.c_str() + filter.GetAcceptSql();
+    GetModel().GetDgnDb().GetCachedStatement(viewStmt, acceptSql.c_str());
 
-    static_cast<QueryViewControllerCP>(&m_params.m_vp.GetViewController())->BindModelAndCategory(*rangeStmt, filter);
+    QueryViewControllerCR qViewController = static_cast<QueryViewControllerCR>(m_params.m_vp.GetViewController());
+    qViewController.BindModelAndCategory(*viewStmt);
 
-    uint64_t now = BeTimeUtilities::QueryMillisecondsCounter();
-    uint64_t endTime = now + m_params.m_plan.GetTimeout();
+    uint64_t endTime = BeTimeUtilities::QueryMillisecondsCounter() + m_params.m_plan.GetTimeout();
 
-    do
+    int idCol = viewStmt->GetParameterIndex("@elId");
+    BeAssert(0 != idCol);
+
+    uint64_t thisId;
+    while (0 != (thisId=filter.StepRtree()))
         {
-        auto rc = rangeStmt->Step();
-        switch (rc)
+        viewStmt->Reset();
+        viewStmt->BindInt64(idCol, thisId);
+
+        if (filter.CheckAbort())
             {
-            case BE_SQLITE_DONE:
-                return;
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-            case BE_SQLITE_BUSY:
-                DEBUG_ERRORLOG("Query busy, %ld", filter.m_lastRowid);
-                if (filter.m_rows.find(filter.m_lastRowid) != filter.m_rows.end())
-                    DEBUG_ERRORLOG("restart doesn't work");
-                filter.m_rows.insert(filter.m_lastRowid);
-                    
-                filter.m_busyTime = BeTimeUtilities::QueryMillisecondsCounter() + 100;
-                continue;
-#endif
-
-            case BE_SQLITE_ROW:
-                filter.AcceptElement(rangeStmt->GetValueId<DgnElementId>(0));
-                break;
+            DEBUG_ERRORLOG("Query aborted");
+            return;
             }
 
-        if (/*filter.GetCount() >= m_params.m_plan.GetMinElements() && */(BeTimeUtilities::QueryMillisecondsCounter() > endTime))
+        if (BE_SQLITE_ROW == viewStmt->Step())
+            filter.AcceptElement(DgnElementId(thisId));
+
+        if (BeTimeUtilities::QueryMillisecondsCounter() > endTime)
             {
             DEBUG_ERRORLOG("Query timeout");
             filter.m_needsProgressive = true;
             break;
             }
-    
-        } while (!filter.CheckAbort());
+        };
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 QueryModel::Filter::Filter(QueryModelR model, uint32_t hitLimit, DgnElementIdSet const* alwaysDraw, DgnElementIdSet const* exclude)
-    : m_model(model), m_alwaysDraw(nullptr), RTreeFilter(exclude)
+    : m_model(model), m_alwaysDraw(nullptr), RTreeFilter(model.GetDgnDb(), exclude)
     {
     m_hitLimit = hitLimit;
     m_occlusionMapMinimum = 1.0e20;
@@ -432,15 +430,10 @@ QueryModel::Filter::Filter(QueryModelR model, uint32_t hitLimit, DgnElementIdSet
         {
         m_lastScore = DBL_MAX;
         for (auto const& id : *alwaysDraw)
-            {
-            if (nullptr != m_exclude && m_exclude->find(id) != m_exclude->end())
-                continue;
-
             AcceptElement(id);
-            }
         }
 
-    //  We do this as the last step. Otherwise, the calls to RangeAccept in the previous step would not have any effect.
+    //  We do this as the last step. Otherwise, the calls to AcceptElement in the previous step would not have any effect.
     m_alwaysDraw = alwaysDraw;
     }
 
@@ -471,7 +464,7 @@ int QueryModel::Filter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
         return BE_SQLITE_ERROR;
 
     RTree3dValCP pt = (RTree3dValCP) info.m_coords;
-    if (!m_boundingRange.Intersects(*pt) && SkewTest(pt))
+    if (!m_boundingRange.Intersects(*pt) || !SkewTest(pt))
         return BE_SQLITE_OK;
 
     DPoint3d localCorners[8];
@@ -555,7 +548,7 @@ int QueryModel::AllElementsFilter::_TestRTree(RTreeMatchFunction::QueryInfo cons
     info.m_within = RTreeMatchFunction::Within::Outside;
 
     RTree3dValCP pt = (RTree3dValCP) info.m_coords;
-    if (!(m_boundingRange.Intersects(*pt) && SkewTest(pt)))
+    if (!m_boundingRange.Intersects(*pt) || !SkewTest(pt))
         return BE_SQLITE_OK;
 
 #if defined (NEEDS_WORK_CLIPPING)
@@ -612,23 +605,38 @@ ProgressiveDisplay::Completion QueryModel::ProgressiveFilter::_Process(ViewConte
 
     m_scorer.SetTestLOD(true);  
 
-    DbResult rc;
+    CachedStatementPtr viewStmt;              
+    DgnViewportR vp = *context.GetViewport();
+    QueryViewControllerCR queryView = static_cast<QueryViewControllerCR>(vp.GetViewController());
+
+    Utf8String viewSql = queryView._GetQuery(vp) + GetAcceptSql();
+    m_dgndb.GetCachedStatement(viewStmt, viewSql.c_str());
+    queryView.BindModelAndCategory(*viewStmt);
+
     DEBUG_PRINTF("begin progressive display");
-    while (BE_SQLITE_ROW == (rc=m_rangeStmt->Step()))
+
+    uint64_t thisId;
+    int idCol = viewStmt->GetParameterIndex("@elId");
+    BeAssert(0 != idCol);
+
+    while (0 != (thisId=StepRtree()))
         {
-        if (!AcceptElement(context, m_rangeStmt->GetValueId<DgnElementId>(0)))
-            continue;
+        viewStmt->Reset();
+        viewStmt->BindInt64(idCol, thisId);
+
+        if (BE_SQLITE_ROW == viewStmt->Step())
+            {
+            AcceptElement(context, DgnElementId(thisId));
+
+            if (!m_setTimeout) // don't set the timeout until after we've drawn one element
+                {
+                context.EnableStopAfterTimout(SHOW_PROGRESS_INTERVAL);
+                m_setTimeout = true;
+                }
+        }
 
         if (context._CheckStop())
             break;
-
-        ++m_total;
-
-        if (!m_setTimeout) // don't set the timeout until after we've drawn one element
-            {
-            context.EnableStopAfterTimout(SHOW_PROGRESS_INTERVAL);
-            m_setTimeout = true;
-            }
 
         if (m_batchSize && ++m_thisBatch >= m_batchSize) // limit the number or elements added per batch (optionally)
             {
@@ -663,7 +671,7 @@ ProgressiveDisplay::Completion QueryModel::ProgressiveFilter::_Process(ViewConte
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool QueryModel::AllElementsFilter::AcceptElement(ViewContextR context, DgnElementId elementId) 
     {
-    if (m_queryModel.FindElementById(elementId))
+    if (m_model.FindElementById(elementId))
         return false;
 
     if (nullptr != m_exclude && m_exclude->find(elementId) != m_exclude->end())

@@ -257,6 +257,7 @@ void DgnElement::_OnReversedDelete() const
     {
     GetModel()->_OnReversedDeleteElement(*this);
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -265,7 +266,8 @@ DgnDbStatus DgnElement::_SetParentId(DgnElementId parentId)
     // Check for direct cycle...will check indirect cycles on update.
     if (parentId.IsValid() && parentId == GetElementId())
         return DgnDbStatus::InvalidParent;
-    else if (GetElementHandler()._IsRestrictedAction(RestrictedAction::SetParent))
+
+    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::SetParent))
         return DgnDbStatus::MissingHandler;
 
     m_parentId = parentId;
@@ -280,7 +282,8 @@ static bool parentCycleExists(DgnElementId parentId, DgnElementId elemId, DgnDbR
     // simple checks first...
     if (!parentId.IsValid() || !elemId.IsValid())
         return false;
-    else if (parentId == elemId)
+
+    if (parentId == elemId)
         return true;
 
     CachedStatementPtr stmt = db.Elements().GetStatement("SELECT ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
@@ -308,7 +311,8 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
     {
     if (m_classId != original.m_classId)
         return DgnDbStatus::WrongClass;
-    else if (GetElementHandler()._IsRestrictedAction(RestrictedAction::Update))
+
+    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::Update))
         return DgnDbStatus::MissingHandler;
 
     auto parentId = GetParentId();
@@ -2331,7 +2335,7 @@ DgnDbStatus ElementGeomData::WriteGeomStream(DgnElementCR el, Utf8CP tableName) 
     // Ideally we would do this in BindTo(), but ECSql does not support binding a zero blob.
     Utf8String sql("UPDATE ");
     sql.append(tableName);
-    sql.append(" SET " GEOM_Geometry "=? WHERE Id=?");
+    sql.append(" SET " GEOM_Geometry "=? WHERE ElementId=?");
     CachedStatementPtr stmt = pool.GetStatement(sql.c_str());
     stmt->BindId(2, el.GetElementId());
     stmt->BindZeroBlob(1, snappyTo.GetCompressedSize());
