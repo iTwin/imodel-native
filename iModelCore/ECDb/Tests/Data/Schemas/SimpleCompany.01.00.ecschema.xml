@@ -16,6 +16,12 @@
     </ECStructClass>
     <ECEntityClass typeName="Employee" modifier="None">
         <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>SharedTable</Strategy>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                </MapStrategy>
+            </ClassMap>
             <SyncIDSpecification xmlns="Bentley_Standard_CustomAttributes.01.12">
                 <Property>EmployeeId</Property>
             </SyncIDSpecification>
@@ -59,8 +65,6 @@
         </Source>
         <Target cardinality="(0,N)" polymorphic="true">
             <Class class="Employee"/>
-            <Class class="SubContractor"/>
-            <Class class="Manager"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="SubContractorRelationship" modifier="None" strength="referencing" strengthDirection="forward">
