@@ -95,7 +95,7 @@ void DgnDbTestFixture::OpenDb(DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode m
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDbTestFixture::SetupSeedProject()
 {
-    WString fileName (TEST_NAME, true);
+    WString fileName (TEST_NAME, BentleyCharEncoding::Utf8);
     fileName.append(L".idgndb");
     SetupProject(L"3dMetricGeneral.idgndb", fileName.c_str(), Db::OpenMode::ReadWrite);
 }

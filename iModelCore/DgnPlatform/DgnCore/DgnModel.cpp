@@ -650,10 +650,11 @@ DgnDbStatus DgnModel::_OnInsertElement(DgnElementR element)
     {
     if (m_dgndb.IsReadonly())
         return DgnDbStatus::ReadOnly;
-    else if (GetModelHandler()._IsRestrictedAction(RestrictedAction::InsertElement))
+
+    if (GetModelHandler()._IsRestrictedAction(RestrictedAction::InsertElement))
         return DgnDbStatus::MissingHandler;
-    else
-        return DgnDbStatus::Success;
+
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -679,10 +680,8 @@ DgnDbStatus DgnModel::_OnDeleteElement(DgnElementCR element)
     {
     if (m_dgndb.IsReadonly())
         return DgnDbStatus::ReadOnly;
-    else if (GetModelHandler()._IsRestrictedAction(RestrictedAction::DeleteElement))
-        return DgnDbStatus::MissingHandler;
-    else
-        return DgnDbStatus::Success;
+
+    return GetModelHandler()._IsRestrictedAction(RestrictedAction::DeleteElement) ? DgnDbStatus::MissingHandler : DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -728,10 +727,8 @@ DgnDbStatus DgnModel::_OnUpdateElement(DgnElementCR modified, DgnElementCR origi
     {
     if (m_dgndb.IsReadonly())
         return DgnDbStatus::ReadOnly;
-    else if (GetModelHandler()._IsRestrictedAction(RestrictedAction::UpdateElement))
-        return DgnDbStatus::MissingHandler;
-    else
-        return DgnDbStatus::Success;
+
+    return GetModelHandler()._IsRestrictedAction(RestrictedAction::UpdateElement) ? DgnDbStatus::MissingHandler : DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1220,7 +1217,7 @@ AxisAlignedBox3d GeometricModel::_QueryModelRange() const
                         "g.BBoxLow_X,g.BBoxLow_Y,g.BBoxLow_Z,"
                         "g.BBoxHigh_X,g.BBoxHigh_Y,g.BBoxHigh_Z))))"
         " FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e," DGN_TABLE(DGN_CLASSNAME_SpatialElement) " As g"
-        " WHERE e.ModelId=? AND e.Id=g.Id");
+        " WHERE e.ModelId=? AND e.Id=g.ElementId");
 
     stmt.BindId(1, GetModelId());
     auto rc = stmt.Step();
@@ -1277,10 +1274,9 @@ DgnDbStatus SheetModel::_ReadSelectParams(ECSqlStatement& statement, ECSqlClassP
         return status;
 
     m_size = statement.GetValuePoint2D(params.GetSelectIndex(SHEET_MODEL_PROP_SheetSize));
-
     return DgnDbStatus::Success;
     }
-	
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                 Ramanujam.Raman   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1594,8 +1590,10 @@ uint64_t DgnModel::RestrictedAction::Parse(Utf8CP name)
         };
 
     for (auto const& pair : s_pairs)
+        {
         if (0 == BeStringUtilities::Stricmp(pair.name, name))
             return pair.value;
+        }
 
     return T_Super::Parse(name);
     }

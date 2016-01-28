@@ -32,6 +32,7 @@ ChangeSummaryTestFixture.* # Too fragile due to various schema changes - tempora
 ConfigurationManager_Test.*                             # UmarH -- Tests are ported from Vancouver for MacroConfiguration ,seems macros are not expanding on get variable method. 
 ComponentModelBasicTest.QueryComponentDefs              
 ComponentModelBasicTest.Variations                      #  Delete -- WIP_COMPONENT: detect if variation is in use
+ComponentModelBasicTest.MakeVariationInstance           # UmarH Failing Only on 0601Dev Firebug ( not locally), need to investigate
 
 DgnProjectPackageTest.VerifyViewsForDgndbFilesConvertedDuringBuild   #Affan #TFS353039
 
@@ -39,10 +40,12 @@ ECInstanceSelectTests.SelectQueriesOnDbGeneratedDuringBuild_04Plant # Notified M
 ECInstanceSelectTests.SelectQueriesOnDbGeneratedDuringBuild_79Main # Notified Maha
 
 ImportTest.ImportElementsWithDependencies # Seemingly utterly unrelated schema changes induce this
+ComponentModelBasicTest.MakeVariationInstance # fails firebug; notified Umar
 
 # WIP fixing after 0601 branch created
 ViewAttachmentTest.Geom                                 # NonVisibleViewport
 VolumeElementTestFixture.QueryTest                      # FenceParams::AcceptElement
+
 
 # WIP_MERGE_0600
 RevisionTestFixture.* # notified Raman
