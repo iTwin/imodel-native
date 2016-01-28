@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="PW_WSG_Supplemental_ECDbMapping" nameSpacePrefix="pwwsg_ecdbmapping" version="02.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca" />
+    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+    <ECCustomAttributes>
+        <SupplementalSchemaMetaData xmlns="Bentley_Standard_CustomAttributes.01.12">
+            <PrimarySchemaName>PW_WSG</PrimarySchemaName>
+            <PrimarySchemaMajorVersion>2</PrimarySchemaMajorVersion>
+            <PrimarySchemaMinorVersion>2</PrimarySchemaMinorVersion>
+            <Precedence>10</Precedence>
+            <Purpose>ECDbMapping</Purpose>
+            <IsUserSpecific>False</IsUserSpecific>
+        </SupplementalSchemaMetaData>
+    </ECCustomAttributes>
+    <ECClass typeName="Environment">
+        <ECCustomAttributes>
+            <!-- DgnDb06 ECDb requires one table for relationship end -->
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>SharedTable</Strategy>
+                    <AppliesToSubclasses>true</AppliesToSubclasses>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ProjectType">
+        <ECCustomAttributes>
+            <!-- DgnDb06 ECDb requires one table for relationship end -->
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>SharedTable</Strategy>
+                    <AppliesToSubclasses>true</AppliesToSubclasses>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECRelationshipClass typeName="ItemAddress" >
+        <ECCustomAttributes>
+            <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>NotMapped</Strategy>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SavedSearchParent" >
+        <ECCustomAttributes>
+            <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>NotMapped</Strategy>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+</ECSchema>

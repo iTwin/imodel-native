@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Core/SchemaManager.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -23,6 +23,9 @@ struct SchemaManager
 
     private:
         ECSchemaPtr LoadSchema(SchemaKey key, ECSchemaReadContext& context);
+        BentleyStatus LoadSchemas(const std::vector<BeFileName>& schemaPaths, std::vector<ECSchemaPtr>& schemasOut);
+        BentleyStatus FixLegacySchema(ECSchema& schema, ECSchemaReadContextR context);
+        Utf8String ToFullNameListString(const std::vector<ECSchemaPtr>& schemas);
 
     public:
         SchemaManager(ObservableECDb& m_db);
