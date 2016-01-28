@@ -596,14 +596,14 @@ namespace IndexECPlugin.Source
                 string uri = firstSpatialDataSource.GetPropertyValue("MainURL").StringValue;
                 string type = firstSpatialDataSource.GetPropertyValue("DataSourceType").StringValue;
                 string copyright = firstMetadata.GetPropertyValue("Legal").StringValue;
-
+                string id = "";
                 string provider = "";
                 UInt64 filesize = 0;
                 string fileInCompound = "";
                 string metadata = "";
                 List<string> sisterFiles = new List<string>();
 
-                RDSNList.Add(RealityDataSourceNet.Create(uri, type, copyright, provider, filesize, fileInCompound, metadata, sisterFiles));
+                RDSNList.Add(RealityDataSourceNet.Create(uri, type, copyright, id, provider, filesize, fileInCompound, metadata, sisterFiles));
                 }
 
             return RDSNList;
@@ -789,12 +789,14 @@ namespace IndexECPlugin.Source
 
                 List<string> sisterFiles = new List<string>();
 
-                wmsMapInfoList.Add(WmsSourceNet.Create(mapInfo.GetMapURL.TrimEnd('?'),     // Url
+                wmsMapInfoList.Add(WmsSourceNet.Create(mapInfo.GetMapURL.TrimEnd('?'),      // Url
                                                        mapInfo.Legal,                       // Copyright
+                                                       "",                                  // Id
                                                        "",                                  // Provider
                                                        0,                                   // Filesize
                                                        "",                                  // Metadata
                                                        sisterFiles,                         // Sister files
+                                                       mapInfo.GetMapURL.TrimEnd('?'),      // Url
                                                        minX, minY, maxX, maxY,              // Bbox min/max values
                                                        mapInfo.Version,                     // Version
                                                        mapInfo.Layers,                      // Layers (comma-separated list)
@@ -860,14 +862,15 @@ namespace IndexECPlugin.Source
             alternateUrls.Add(alternateURL1);
             alternateUrls.Add(alternateURL2);
 
-            return OsmSourceNet.Create(mainURL,                     // Url
-                                       legal,               // Data copyright
-                                       "",               // Provider
-                                       0,               // Data size
-                                       "",         // Metadata
+            return OsmSourceNet.Create(mainURL,                 // Url
+                                       legal,                   // Data copyright
+                                       "",                      // Id
+                                       "",                      // Provider
+                                       0,                       // Data size
+                                       "",                      // Metadata
                                        new List<string>(),      // Sister Files 
-                                       regionOfInterest,  // bbox
-                                       alternateUrls);      // Alternate urls        
+                                       regionOfInterest,        // bbox
+                                       alternateUrls);          // Alternate urls        
             }
 
         private List<Tuple<RealityDataSourceNet, string>> UsgsPackager (OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> usgsRequestedEntities)
@@ -925,6 +928,7 @@ namespace IndexECPlugin.Source
                 string url = entity.GetPropertyValue("MainURL").StringValue;
                 string type = entity.GetPropertyValue("DataSourceType").StringValue;
                 string copyright = queriedMetadatas.First(m => m.InstanceId == entity.InstanceId).GetPropertyValue("Legal").StringValue;
+                string id = entity.GetPropertyValue("Id").StringValue;
                 long fileSize = (long) entity.GetPropertyValue("FileSize").NativeValue;
                 ulong uFileSize = (fileSize > 0) ? (ulong) fileSize : 0;
                 string location = entity.GetPropertyValue("LocationInCompound").StringValue;
@@ -935,15 +939,16 @@ namespace IndexECPlugin.Source
                     classification = classificationPropValue.StringValue;
                     }
 
-                usgsSourceNetList.Add(new Tuple<RealityDataSourceNet, string>(RealityDataSourceNet.Create(url,                     // Url
-                                                                                            type,                    // Main file type
-                                                                                            copyright,               // Data copyright
-                                                                                            "usgs",                 // Provider
-                                                                                            uFileSize,               // Data size
-                                                                                            location,           // Main file location
-                                                                                            metadata,
-                                                                                            new List<string>()),      // Sister Files ,                                                                                                      
-                                                                                            classification));              // Metadata location 
+                usgsSourceNetList.Add(new Tuple<RealityDataSourceNet, string>(RealityDataSourceNet.Create(url,                  // Url
+                                                                                                          type,                 // Main file type
+                                                                                                          copyright,            // Data copyright
+                                                                                                          id,                   // Id
+                                                                                                          "usgs",               // Provider
+                                                                                                          uFileSize,            // Data size
+                                                                                                          location,             // Main file location
+                                                                                                          metadata,             // Metadata
+                                                                                                          new List<string>()),  // Sister files                                                                                                      
+                                                                                                          classification));     // Classif
 
                 }
 

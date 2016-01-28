@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPackage/RealitySerialization.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -68,6 +68,7 @@
 #define PACKAGE_SOURCE_ATTRIBUTE_Uri        "uri"
 #define PACKAGE_SOURCE_ATTRIBUTE_Type       "type"
 #define PACKAGE_ELEMENT_Copyright           "Copyright"
+#define PACKAGE_ELEMENT_Id                  "Id"
 #define PACKAGE_ELEMENT_Provider            "Provider"
 #define PACKAGE_ELEMENT_Filesize            "Filesize"
 #define PACKAGE_ELEMENT_Metadata            "Metadata"
