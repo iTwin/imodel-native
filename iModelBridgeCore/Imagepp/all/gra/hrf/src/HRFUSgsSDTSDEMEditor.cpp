@@ -9,7 +9,7 @@
 // Class HRFUSgsSDTSDEMEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HRFUSgsSDTSDEMEditor.h>
 

@@ -9,7 +9,7 @@
 // Methods for class HTIFFUtils
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 #include <Imagepp/all/h/HTIFFUtils.h>

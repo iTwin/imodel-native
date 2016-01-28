@@ -8,7 +8,7 @@
 // Methods for class HVE2DHoledShape
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 #include <Imagepp/all/h/HVE2DHoledShape.h>

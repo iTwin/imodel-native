@@ -32,7 +32,6 @@
 #include <iosfwd>
 #include <locale>
 #include <iterator>
-#include <iosfwd>
 #include <utility>
 #include <stack>
 #include <numeric>

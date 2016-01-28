@@ -9,7 +9,7 @@
 // Class HRFCacheRandomBlockEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HRFCacheRandomBlockEditor.h>
 #include <Imagepp/all/h/HFCMonitor.h>

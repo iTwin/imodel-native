@@ -8,7 +8,7 @@
 // Methods for class HVE2DPolygonOfSegments
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 #include <Imagepp/all/h/HVE2DPolygonOfSegments.h>

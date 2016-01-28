@@ -8,7 +8,7 @@
 // Class HRFIntergraphCitFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 #include <Imagepp/all/h/HFCURLFile.h>

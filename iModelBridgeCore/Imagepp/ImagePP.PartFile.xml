@@ -13,9 +13,9 @@
     <Part Name="Base64Lib"  BentleyBuildMakeFile="ext/Base64/Base64.mke"> </Part>
     
     <Part Name="GdalLib"  BentleyBuildMakeFile="ext/gdal/gdal.mke">
-        <SubPart PartName="png"             PartFile="png"              Repository="libsrc-png"/>
-        <SubPart PartName="Zlib" PartFile="Zlib" Repository="Libsrc-Compress" />
-        <SubPart PartName="BeLibJpegTurbo"  PartFile="BeLibJpegTurbo"   Repository="libsrc-libjpegturbo"/>
+        <SubPart PartName="png"                     PartFile="png"              Repository="libsrc-png"/>
+        <SubPart PartName="Zlib"                    PartFile="Zlib"             Repository="Libsrc-Compress" />
+        <SubPart PartName="BeLibJpegTurbo"          PartFile="BeLibJpegTurbo"   Repository="libsrc-libjpegturbo"/>
         <SubPart PartName="ErdasEcwJpeg2000"        PartFile="${SrcRoot}bsicommon/CvsPartfiles/ErdasEcwJpeg2000"     Repository="Bin-ErdasEcwJpeg2000" />
         <Bindings>
             <VendorAPI Domain="ImagePP-GdalLib" />
@@ -147,24 +147,28 @@
     </Part>
 
     <!-- All ImagePP dlls -->
-    <Part Name="ImagePP" OnlyPlatforms="x86,x64">
-        <SubPart PartName="ImagePPDll" />
+    <Part Name="ImagePP">
+        <SubPart PartName="ImagePP-NonAndroid" />
+        <SubPart PartName="ImagePP-Android" />
+    </Part>
+
+    <Part Name="ImagePP-NonAndroid" ExcludePlatforms="Android*">
+        <SubPart PartName="ImagePPDll"/>
         <SubPart PartName="IppImagingDll" />
     </Part>
 
-    <Part Name="ImagePP-Android">
+    <Part Name="ImagePP-Android" OnlyPlatforms="Android*">
         <SubPart PartName="ImagePPDll" LibType="Static"/>
-        <SubPart PartName="IppImagingDll" LibType="Static"/>
     </Part>    
         
-    <Part Name="ImagePP-Tested" OnlyPlatforms="x86,x64">
+    <Part Name="ImagePP-Tested">
         <SubPart PartName="RunGtest"/>
     </Part>
     
-    <Part Name="ImagePP-Dev" OnlyPlatforms="x86,x64">
+    <Part Name="ImagePP-Dev">
         <SubPart PartName= "ImagePP" />
         <SubPart PartName= "ImagePP-Tested" />
-        <SubProduct ProductName="ImageppApps"           PartFile="ImageppApps"          Repository="ImageppApps" />
+        <SubProduct ProductName="ImageppApps" PartFile="ImageppApps" Repository="ImageppApps" />
     </Part>
 
     <!-- Use this part to validate that everything that use(and we maintain) IPP build
@@ -201,7 +205,7 @@
     </Product>    
     
     <!-- Define a gtest program to run the tests Urlmon.lib -dGUNITTEST_LIBS="wininet.lib Urlmon.lib"' -->
-    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ImagePPTest -dTEST_COLLECTION_PRODUCT=ImagePP-Tests -dGUNITTEST_NTLIBS=Urlmon.lib -dGUNITTEST_LIBS=wininet.lib" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ImagePPTest -dTEST_COLLECTION_PRODUCT=ImagePP-Tests -dGUNITTEST_NTLIBS=Urlmon.lib" OnlyPlatforms="x86,x64,Linux*,MacOS*">
          <SubProduct ProductName="ImagePP-Tests"/>
          <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>

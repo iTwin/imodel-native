@@ -8,7 +8,7 @@
 // Class HRFWbmpFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 #include <Imagepp/all/h/HFCException.h>

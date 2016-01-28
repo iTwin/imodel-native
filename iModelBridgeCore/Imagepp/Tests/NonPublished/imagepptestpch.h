@@ -259,6 +259,7 @@
 #include "../../PrivateApi/ImagePPInternal/gra/ImageCommon.h"
 #include "../../PrivateApi/ImagePPInternal/gra/HRAImageEditor.h"
 #include "../../PrivateApi/ImagePPInternal/gra/ImageAllocator.h"
+#include "../../PrivateApi/ImagePPInternal/gra/Task.h"
 
 /*---------------------------------------------------------------------------------**//**
 * Generic host for all our tests.

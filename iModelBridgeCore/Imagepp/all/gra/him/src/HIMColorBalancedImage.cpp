@@ -2,11 +2,11 @@
 //:>
 //:>     $Source: all/gra/him/src/HIMColorBalancedImage.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
     //:> must be first
 
 #include <Imagepp/all/h/HIMColorBalancedImage.h>

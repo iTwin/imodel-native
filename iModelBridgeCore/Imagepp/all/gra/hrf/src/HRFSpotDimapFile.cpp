@@ -8,7 +8,7 @@
 // Class HRFSpotDimapFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HRFTiffFile.h>
 #include <Imagepp/all/h/HRFSpotDimapFile.h>

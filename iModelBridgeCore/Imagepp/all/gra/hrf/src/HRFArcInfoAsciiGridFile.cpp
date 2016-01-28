@@ -9,7 +9,7 @@
 //-----------------------------------------------------------------------------
 // This class describes a File Raster image.
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 #include <Imagepp/all/h/HRFArcInfoAsciiGridFile.h>

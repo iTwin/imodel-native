@@ -8,7 +8,7 @@
 // Class HRFGifImageEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 #include <Imagepp/all/h/HRFGifImageEditor.h>

@@ -9,7 +9,7 @@
 // Class : HRFRasterFileCache
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HRFRasterFileCache.h>
 #include <Imagepp/all/h/HRFCacheRandomBlockEditor.h>

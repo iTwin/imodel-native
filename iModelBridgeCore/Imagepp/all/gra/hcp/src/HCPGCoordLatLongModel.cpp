@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <ImagePPInternal/hstdcpp.h>                // must be first for PreCompiledHeader Option
+#include <ImageppInternal.h>                // must be first for PreCompiledHeader Option
 
 
 #include <Imagepp/all/h/HCPGCoordLatLongModel.h>

@@ -8,7 +8,7 @@
 // Class HRFErMapperFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HRFErMapperSupportedFile.h>
 #if defined(IPP_HAVE_ERMAPPER_SUPPORT) 

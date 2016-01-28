@@ -9,7 +9,7 @@
 // Class HRFRasterFileBlockAdapter
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 

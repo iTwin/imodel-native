@@ -8,7 +8,7 @@
 // Methods for class HFCLocalBinStream
 //---------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 #include <Imagepp/all/h/HFCLocalBinStream.h>

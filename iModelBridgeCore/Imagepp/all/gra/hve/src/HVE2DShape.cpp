@@ -8,7 +8,7 @@
 // Methods for class HVE2DShape
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 #include <Imagepp/all/h/HVE2DShape.h>

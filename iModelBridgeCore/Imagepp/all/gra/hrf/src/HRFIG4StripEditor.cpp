@@ -8,7 +8,7 @@
 // Class HRFIG4StripEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HRFIG4StripEditor.h>
 #include <Imagepp/all/h/HRFIG4File.h>

@@ -8,7 +8,7 @@
 // Class HRFPngFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 #include <Imagepp/all/h/HRFPngFile.h>

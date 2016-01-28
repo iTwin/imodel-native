@@ -8,7 +8,7 @@
 // Class HRFVirtualEarthEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 #include "HRFVirtualEarthEditor.h"

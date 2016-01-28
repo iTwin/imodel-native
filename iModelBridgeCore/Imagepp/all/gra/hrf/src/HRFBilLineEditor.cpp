@@ -9,7 +9,7 @@
 // Class HRFBilLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HRFBilLineEditor.h>
 #include <Imagepp/all/h/HRFBilFile.h>

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hgs/src/HGSRegion.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:>-----------------------------------------------------------------------------
@@ -13,7 +13,7 @@
 //:> public section
 //:>-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HGSRegion.h>
 #include <Imagepp/all/h/HGF2DWorld.h>

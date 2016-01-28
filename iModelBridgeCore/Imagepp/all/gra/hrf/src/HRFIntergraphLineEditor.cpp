@@ -8,7 +8,7 @@
 // Class HRFIntergraphLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HRFIntergraphLineEditor.h>
 #include <Imagepp/all/h/HRFIntergraphFile.h>

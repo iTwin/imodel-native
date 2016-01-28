@@ -6,89 +6,67 @@
 #
 #--------------------------------------------------------------------------------------
 BUILD_NO_STACK_CHECK        = 1
-WARNINGS_UP                 = 1
+
 %include mdl.mki
 
-appName             = ImagePP
-SrcImagePP          = $(SrcRoot)ImagePP/
+#----------------------------------------------------------
+# Set and then include the CompileOptionsMki file.
+# It is needed and also %included by PreCompileHeader.mki
+#----------------------------------------------------------
+CompileOptionsMki               = $(baseDir)imagepp.mki
+%include $(CompileOptionsMki)
 
-
-%include $(SrcImagepp)mki/imageppdirs.mki
-
-CCompPDBName = $(appName)
-MultiCompileIntermediatePdbFile =   $(o)$(CCompPDBName).pdb
-IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
-LIB_PDB_NAME = $(appName).pdb
-
+# Unfortunately, we cannot do this third party stuff in imagepp.mki because TARGET_PLATFORM is not defined yet
 %if $(TARGET_PLATFORM) == "Windows"
     %if defined (__IPP_EXTERNAL_THIRD_PARTY_SUPPORTED)
-    # PDF library dependency    
-    pdflsdkInc=$(BuildContext)VendorAPI/adobe/
-    pdflsdkLib=$(BuildContext)SubParts/Libs/
+        # PDF library dependency    
+        pdflsdkInc=$(BuildContext)VendorAPI/adobe/
+        pdflsdkLib=$(BuildContext)SubParts/Libs/
     
-    # Oracle library dependency
-    oracleInc=$(BuildContext)VendorAPI/oracle/
-    oracleLib=$(BuildContext)SubParts/Libs/
+        # Oracle library dependency
+        oracleInc=$(BuildContext)VendorAPI/oracle/
+        oracleLib=$(BuildContext)SubParts/Libs/
+
+        %if !defined(DEBUG_RUNTIME) 
+
+            # Have to include oracle dir because it has nested includes that don't use quotes.
+            dirToSearch = $(oracleInc)
+            %include cincapnd.mki
+
+            #To satisfy PDFLInitHFT.c and PDFLInitCommon.c included by all/gra/hrf/src/HRFPDFLibInterface.cpp
+            dirToSearch=$(pdflsdkInc)Headers/
+            %include cincapnd.mki
+        %endif
     
+        #to statisfy pdflsdk\Include\Headers\environ.h
+        nameToDefine=WIN_ENV
+        %include cdefapnd.mki
+    
+        #to statisfy pdf
+        nameToDefine=WIN_PLATFORM
+        %include cdefapnd.mki
+
+        #to statisfy pdf
+        nameToDefine=PRODUCT=\"HFTLibrary.h\"
+        %include cdefapnd.mki
+    
+        nameToDefine=STRICT_HFT_VERSION_CHECKING
+        %include cdefapnd.mki
+    
+        nameToDefine = DLL_NAME_FOR_OCI=L\"$(OCIName).dll\"
+        %include cdefapnd.mki
     %endif
 %endif
 
-PublicApiIncludes   + -I$(ippPrivateAPISrc) -I$(ippOutPrivateApi)
-
+# Need to this here because $(OutBuildDir) is not yet defined in imagepp.mki.
+dirToSearch                     = $(ippOutPrivateApi)
+%include cincapnd.mki
 
 #----------------------------------------------------------------------
 #       Create output directories
 #----------------------------------------------------------------------
 always:
     !~@mkdir $(o)
-
-#----------------------------------------------------------
-# Preprocessor definition.
-#----------------------------------------------------------
-nameToDefine=__IMAGEPP_BUILD__
-%include cdefapnd.mki
-
-# Static libraries need to have a hard-coded file name for MUI lookup; control this via makefiles, which know this information.
-# Note that at this time, MUI files always have a DLL suffix, regardless of platform. The biggest part of this is really getting the API number.
-nameToDefine = DLL_NAME_FOR_RESOURCES=L\"ImagePP$(DLM_API_NUMBER).dll\"
-%include cdefapnd.mki
-
-
-%if $(TARGET_PLATFORM) == "Windows"
-%if defined (__IPP_EXTERNAL_THIRD_PARTY_SUPPORTED)
-%if !defined(DEBUG_RUNTIME) 
-
-    # Have to include oracle dir because it has nested includes that don't use quotes.
-    dirToSearch = $(oracleInc)
-    %include cincapnd.mki
-
-    #To satisfy PDFLInitHFT.c and PDFLInitCommon.c included by all/gra/hrf/src/HRFPDFLibInterface.cpp
-    dirToSearch=$(pdflsdkInc)Headers/
-    %include cincapnd.mki
-%endif
-    
-    #to statisfy pdflsdk\Include\Headers\environ.h
-    nameToDefine=WIN_ENV
-    %include cdefapnd.mki
-    
-    #to statisfy pdf
-    nameToDefine=WIN_PLATFORM
-    %include cdefapnd.mki
-
-    #to statisfy pdf
-    nameToDefine=PRODUCT=\"HFTLibrary.h\"
-    %include cdefapnd.mki
-    
-    nameToDefine=STRICT_HFT_VERSION_CHECKING
-    %include cdefapnd.mki
-    
-    nameToDefine = DLL_NAME_FOR_OCI=L\"$(OCIName).dll\"
-    %include cdefapnd.mki
-%endif
-%endif
-
-nameToDefine = NOMINMAX
-%include cdefapnd.mki
 
 #----------------------------------------------------------------------
 #       Build source files
@@ -101,34 +79,27 @@ HRasterDepends = $(ippAllInc)HRARaster.h \
                  $(ippAllInc)HRAPyramidRaster.h \
                  $(ippAllInc)HRATiledRaster.h \
                  $(ippAllInc)HRAStripedRaster.h
+
+#----------------------------------------------------------------------
+#   Make sure that out pch is up-to-date.
+#----------------------------------------------------------------------
+PchCompiland         = $(SrcImagepp)ImageppInternal.cpp
+PchOutputDir         = $(o)
+#PchExtraOptions      = -Zm220
             
-# Create PCH
-#$(o)HStdcpp$(oext) $(o)$(appName).pch : $(SrcImagepp)PrivateApi/ImagePPInternal/HStdcpp.cpp $(SrcImagepp)PrivateApi/ImagePPInternal/HStdcpp.h
-#PchCompiland = $(SrcImagepp)PrivateApi/ImagePPInternal/HStdcpp.cpp
-#PchOutputDir = $(o)
-#PchExplicitDepends = $(SrcImagepp)PrivateApi/ImagePPInternal/HStdcpp.h
-#PchExtraOptions = -YcImagePPInternal/hstdcpp.h -Fp$(o)$(appName).pch -Zm110
+%if defined (winNT) && $(BUILD_TOOLSET) == "GCC"
+    # Using pch generate a crash in cc1plus.exe. Apparently this is caused by a too large pch. Should be fixed in future android NDK release.
+    # http://stackoverflow.com/questions/10841306/cc1plus-exe-crash-when-using-large-precompiled-header-file
+    GCC_NO_PRE_COMPILED_HEADER = 1
+%endif
 
-
-#PchCompiland                    = $(baseDir)ConverterInternal.cpp
-#PchOutputDir                    = $(o)
-#PchExtraOptions                 = -Zm220
-
-#%include $(SharedMki)PreCompileHeader.mki
-
-
-CCPchOpts = -YcImagePPInternal/hstdcpp.h -Fp$(o)$(appName).pch -Fd$(o)$(appName).pdb -Zm110 
-
-$(o)HStdcpp$(oext) $(o)$(appName).pch : $(SrcImagepp)PrivateApi/ImagePPInternal/HStdcpp.cpp $(SrcImagepp)PrivateApi/ImagePPInternal/HStdcpp.h
-
-# Use PCH
-#CCPchOpts = -YuImagePPInternal/hstdcpp.h -Fp$(o)$(appName).pch -Zm110 -showIncludes
-CCPchOpts = -YuImagePPInternal/hstdcpp.h -Fp$(o)$(appName).pch -Zm110 -Fd$(o)$(appName).pdb
+%include $(SharedMki)PreCompileHeader.mki
+CCPchOpts           = $(UsePrecompiledHeaderOptions)
+CPchOpts            = $(UsePrecompiledHeaderOptions)
 
 MultiCompileDepends=$(_MakeFileSpec)
 
 %include MultiCppCompileRule.mki
-
 
 #----------------------------------------------------------------------
 #   Utl
@@ -1388,9 +1359,8 @@ OCIName                         = Oci
 #----------------------------------------------------------------------
 #       DLL/LIB creation
 #----------------------------------------------------------------------
-DLM_NAME                    = $(appName)
 DLM_OBJECT_FILES            = $(objs) $(nonUniformObjs)
-DLM_OBJECT_PCH              = $(o)HStdcpp$(oext)
+DLM_OBJECT_PCH              = $(o)ImageppInternal$(oext)
 DLM_DEST                    = $(o)
 DLM_SYMB_DEST               = $(o)
 DLM_EXPORT_DEST             = $(o)
@@ -1400,7 +1370,6 @@ DLM_NO_DEF                  = 1
 DLM_NOMSBUILTINS            = 1
 DLM_NO_DLS                  = 1
 DLM_NOENTRY                 = 1
-DLMLINK_WARNINGS_AS_ERRORS  = 1
 
 # creatlib.mki common options
 LIB_TMP_DIR                 = $(o)
@@ -1416,27 +1385,25 @@ LIB_TMP_DIR                 = $(o)
 # MrSID support
 LINKER_LIBRARIES_DELAYLOADED   + $(ContextSubpartsLibs)lti_dsdk.lib $(ContextSubpartsLibs)lti_dsdk_cdll.lib 
 
-# ECW/Jpeg2000 support (delay-load removed - see comment below)
+# ECW/Jpeg2000 support (delay-load removed)
+# Delaying the load of NCSEcw.lib creates a linker error 
+# due to the import of the data symbol 
+# "__declspec(dllimport) const NCS::CMutex::`vftable". 
+# This is why the dll is added above without delay-load.  
 # LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)NCSEcw.lib 
 
 
 LINKER_LIBRARIES =  $(BeLibJpegTurbo) \
                     $(IppJpegLib12Bits) \
                     $(ContextSubpartsLibs)$(libprefix)BePng$(stlibext) \
-                    $(ContextSubpartsLibs)$(libprefix)BeZLib$(libext) \
+                    $(ContextSubpartsLibs)$(libprefix)BeZLib$(stlibext) \
                     $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
                     $(IppGdalLib) \
                     $(ContextSubpartsLibs)$(libprefix)MatrixFromTiePts$(stlibext) \
                     $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
                     $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext) \
                     $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
-                    $(BaseGeocoordLibExportLib) \
-                    $(ContextSubpartsLibs)NCSEcw.lib
-
-                    # Delaying the load of NCSEcw.lib creates a linker error 
-                    # due to the import of the data symbol 
-                    # "__declspec(dllimport) const NCS::CMutex::`vftable". 
-                    # This is why the dll is added above without delay-load.                   
+                    $(BaseGeocoordLibExportLib)                 
 
 %if defined (CREATE_STATIC_LIBRARIES)
     # embed our private external static lib into gralib.
@@ -1448,6 +1415,8 @@ LINKER_LIBRARIES =  $(BeLibJpegTurbo) \
 
         # For GDAL
         LINKER_LIBRARIES + wsock32.lib ws2_32.lib
+
+        LINKER_LIBRARIES + $(ContextSubpartsLibs)NCSEcw.lib
     %endif
 %endif
 

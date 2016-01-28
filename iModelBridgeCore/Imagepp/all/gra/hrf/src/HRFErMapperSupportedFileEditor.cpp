@@ -8,7 +8,7 @@
 // Class HRFErMapperSupportedFileEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HRFErMapperSupportedFile.h>
 

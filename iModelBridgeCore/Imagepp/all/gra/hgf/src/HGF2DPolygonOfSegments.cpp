@@ -8,7 +8,7 @@
 // Methods for class HGF2DPolygonOfSegments
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 #include <Imagepp/all/h/HGFAngle.h>

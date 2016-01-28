@@ -8,7 +8,7 @@
 // Class HRFTgaLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HFCMath.h>
 #include <Imagepp/all/h/HRFTgaLineEditor.h>

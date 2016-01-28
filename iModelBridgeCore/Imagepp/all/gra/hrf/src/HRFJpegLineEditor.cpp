@@ -8,7 +8,7 @@
 // Class HRFJpegLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HRFJpegLineEditor.h>
 #include <Imagepp/all/h/HRFJpegFile.h>

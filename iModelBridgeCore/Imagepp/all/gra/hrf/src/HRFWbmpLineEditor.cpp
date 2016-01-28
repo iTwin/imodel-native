@@ -8,7 +8,7 @@
 // Class HRFWbmpLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 #include <Imagepp/all/h/HRFWbmpFile.h>
