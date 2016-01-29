@@ -421,7 +421,7 @@ TEST_F(ECDbSchemaManagerTests, UpdateExistingSchema)
 
     BeTest::SetFailOnAssert(false);
     Savepoint s(ecdbr, "test");
-    ASSERT_EQ(ERROR, ecdbr.Schemas().ImportECSchemas(*schemaCache, ECDbSchemaManager::ImportOptions(false, true))) << "couldn't update the existing schema";
+    ASSERT_EQ(ERROR, ecdbr.Schemas().ImportECSchemas(*schemaCache, ECDbSchemaManager::ImportOptions(false))) << "couldn't update the existing schema";
     BeTest::SetFailOnAssert(true);
     s.Cancel();
 
@@ -471,7 +471,7 @@ TEST_F(ECDbSchemaManagerTests, UpdateExistingSchemaDifferentCache)
     ASSERT_EQ(SUCCESS, testEcdb.Schemas().ImportECSchemas(*schemaCache, ECDbSchemaManager::ImportOptions())) << "Couldn't import the first version of Schema";
     ECClassCP ecClass = testEcdb. Schemas ().GetECClass ("RSComponents", "TestClass");
     EXPECT_TRUE(ecClass == NULL);
-    ASSERT_EQ(SUCCESS, testEcdb.Schemas().ImportECSchemas(*schemaCache1, ECDbSchemaManager::ImportOptions(false, true))) << "Couldn't import or update the existing schema";
+    ASSERT_EQ(SUCCESS, testEcdb.Schemas().ImportECSchemas(*schemaCache1, ECDbSchemaManager::ImportOptions(false))) << "Couldn't import or update the existing schema";
     testEcdb.SaveChanges();
 
     //getting the updated schema
@@ -594,7 +594,7 @@ TEST_F(ECDbSchemaManagerTests, ImportSupplementedSchemaDoSupplementationFalse)
     ASSERT_TRUE(schemaPtr != NULL);
     schemaCache->AddSchema(*schemaPtr);
 
-    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(*schemaCache, ECDbSchemaManager::ImportOptions(false, false))) << "couldn't import the schema";
+    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(*schemaCache, ECDbSchemaManager::ImportOptions(false))) << "couldn't import the schema";
     ECSchemaCP SchoolSupplSchema = testecdb.Schemas().GetECSchema("SchoolSchema", true);
     ASSERT_TRUE (SchoolSupplSchema != nullptr);
 
@@ -636,7 +636,7 @@ TEST_F(ECDbSchemaManagerTests, ImportMultipalSupplementalSchemas)
     schemacache->AddSchema(*supple);
     schemacache->AddSchema(*supple1);
 
-    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(*schemacache, ECDbSchemaManager::ImportOptions(true, false))) << "couldn't import the schema";
+    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(*schemacache, ECDbSchemaManager::ImportOptions())) << "couldn't import the schema";
     ECSchemaCP SchoolSupplSchema = testecdb.Schemas().GetECSchema("SchoolSchema", true);
     ASSERT_TRUE (SchoolSupplSchema != NULL);
 
@@ -698,7 +698,7 @@ TEST_F(ECDbSchemaManagerTests, ImportLowPrioritySupplementalSchama)
     schemaCache->AddSchema(*schemaPtr);
 
 
-    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(*schemaCache, ECDbSchemaManager::ImportOptions(true, false))) << "couldn't import the schema";
+    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(*schemaCache, ECDbSchemaManager::ImportOptions())) << "couldn't import the schema";
     ECSchemaCP SchoolSupplSchema = testecdb.Schemas().GetECSchema("SchoolSchema", true);
     ASSERT_TRUE (SchoolSupplSchema != NULL);
     }
@@ -725,7 +725,7 @@ TEST_F(ECDbSchemaManagerTests, ImportReferenceSchemaReferedByMultipleSchemas)
      schemacache->AddSchema(*schemaptr);
      schemacache->AddSchema(*supplementalSchemaptr);
 
-     ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(*schemacache, ECDbSchemaManager::ImportOptions(true, false))) << "couldn't import the schema";
+     ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(*schemacache, ECDbSchemaManager::ImportOptions())) << "couldn't import the schema";
     }
 
  //---------------------------------------------------------------------------------------
@@ -750,7 +750,7 @@ TEST_F(ECDbSchemaManagerTests, ImportHighPrioritySupplementalSchama)
     schemacache->AddSchema(*schemaptr);
     schemacache->AddSchema(*supplementalSchemaptr);
 
-    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(*schemacache, ECDbSchemaManager::ImportOptions(true, false))) << "couldn't import the schema";
+    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(*schemacache, ECDbSchemaManager::ImportOptions())) << "couldn't import the schema";
     ECSchemaCP SchoolSupplSchema = testecdb.Schemas().GetECSchema("SchoolSchema", true);
     ASSERT_TRUE (SchoolSupplSchema != NULL);
     }
@@ -803,7 +803,7 @@ TEST_F(ECDbSchemaManagerTests, SupplementWithLatestCompatibleSupplementalSchema)
     ASSERT_TRUE(supple != NULL);
     schemacache->AddSchema (*supple);
 
-    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(*schemacache, ECDbSchemaManager::ImportOptions(true, false))) << "couldn't import the schema";
+    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(*schemacache, ECDbSchemaManager::ImportOptions())) << "couldn't import the schema";
     ECSchemaCP basicSupplSchema = testecdb.Schemas().GetECSchema("BasicSchema", true);
     ASSERT_TRUE (basicSupplSchema != NULL);
 
@@ -847,7 +847,7 @@ TEST_F(ECDbSchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasGreaterMaj
     ASSERT_TRUE (supple != NULL);
     schemacache->AddSchema (*supple);
 
-    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(*schemacache, ECDbSchemaManager::ImportOptions(true, false))) << "couldn't import the schema";
+    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(*schemacache, ECDbSchemaManager::ImportOptions())) << "couldn't import the schema";
     ECSchemaCP basicSupplSchema = testecdb.Schemas().GetECSchema("BasicSchema", true);
     ASSERT_TRUE (basicSupplSchema != NULL);
 
@@ -898,7 +898,7 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViews)
     ECSchemaCachePtr schemacache = ECSchemaCache::Create();
     schemacache->AddSchema(*schemaptr);
 
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(*schemacache, ECDbSchemaManager::ImportOptions(true, false))) << "couldn't import the schema";
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(*schemacache, ECDbSchemaManager::ImportOptions())) << "couldn't import the schema";
     ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
     schemasWithECClassViews = GetECViewNamesByPrefix(ecdb);
     ASSERT_EQ(2, schemasWithECClassViews.size()) << "Unexpected number of schemas with ECClassViews";
@@ -931,7 +931,7 @@ TEST_F(ECDbSchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasLowerMinor
     ASSERT_TRUE(supple != NULL);
     schemacache->AddSchema (*supple);
 
-    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(*schemacache, ECDbSchemaManager::ImportOptions(true, false))) << "couldn't import the schema";
+    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(*schemacache, ECDbSchemaManager::ImportOptions())) << "couldn't import the schema";
     ECSchemaCP basicSupplSchema = testecdb.Schemas().GetECSchema("BasicSchema", true);
     ASSERT_TRUE (basicSupplSchema != NULL);
 
@@ -976,7 +976,7 @@ TEST_F(ECDbSchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasGreaterMin
     ASSERT_TRUE(supple != NULL);
     schemacache->AddSchema (*supple);
 
-    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(*schemacache, ECDbSchemaManager::ImportOptions(true, false))) << "couldn't import the schema";
+    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(*schemacache, ECDbSchemaManager::ImportOptions())) << "couldn't import the schema";
     ECSchemaCP basicSupplSchema = testecdb. Schemas ().GetECSchema ("BasicSchema", true);
     ASSERT_TRUE (basicSupplSchema != NULL);
 

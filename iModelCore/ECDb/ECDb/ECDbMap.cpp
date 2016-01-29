@@ -411,7 +411,7 @@ bool ECDbMap::AssertIfIsNotImportingSchema() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    04/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-MapStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext, bvector<ECSchemaCP> const& mapSchemas, bool forceMapStrategyReevaluation)
+MapStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext, bvector<ECSchemaCP> const& mapSchemas)
     {
     if (m_schemaImportContext != nullptr)
         {
@@ -424,7 +424,7 @@ MapStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext, bvector<
 
     m_schemaImportContext = &schemaImportContext;
 
-    auto stat = DoMapSchemas(mapSchemas, forceMapStrategyReevaluation);
+    auto stat = DoMapSchemas(mapSchemas);
     if (MapStatus::Success != stat)
         {
         m_schemaImportContext = nullptr;
@@ -508,7 +508,7 @@ BentleyStatus ECDbMap::CreateECClassViewsInDb() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan         09/2012
 //---------------------------------------------------------------------------------------
-MapStatus ECDbMap::DoMapSchemas(bvector<ECSchemaCP> const& mapSchemas, bool forceMapStrategyReevaluation)
+MapStatus ECDbMap::DoMapSchemas(bvector<ECSchemaCP> const& mapSchemas)
     {
     if (AssertIfIsNotImportingSchema())
         return MapStatus::Error;
@@ -544,14 +544,11 @@ MapStatus ECDbMap::DoMapSchemas(bvector<ECSchemaCP> const& mapSchemas, bool forc
             }
         }
 
-    if (forceMapStrategyReevaluation)
-        ClearCache();
-
     // Starting with the root, recursively map the entire class hierarchy. 
     MapStatus status = MapStatus::Success;
     for (ECClassCP rootClass : rootClasses)
         {
-        status = MapClass(*rootClass, forceMapStrategyReevaluation);
+        status = MapClass(*rootClass);
         if (status == MapStatus::Error)
             return status;
         }
@@ -562,7 +559,7 @@ MapStatus ECDbMap::DoMapSchemas(bvector<ECSchemaCP> const& mapSchemas, bool forc
     BeAssert(status != MapStatus::BaseClassesNotMapped && "Expected to resolve all class maps by now.");
     for (ECRelationshipClassCP rootRelationshipClass : rootRelationships)
         {
-        status = MapClass(*rootRelationshipClass, forceMapStrategyReevaluation);
+        status = MapClass(*rootRelationshipClass);
         if (status == MapStatus::Error)
             return status;
         }
@@ -686,7 +683,7 @@ ClassMapPtr ECDbMap::LoadClassMap(ClassMapLoadContext& ctx, ECN::ECClassCR ecCla
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-MapStatus ECDbMap::MapClass(ECClassCR ecClass, bool forceRevaluationOfMapStrategy)
+MapStatus ECDbMap::MapClass(ECClassCR ecClass)
     {
     if (AssertIfIsNotImportingSchema())
         return MapStatus::Error;
@@ -708,14 +705,11 @@ MapStatus ECDbMap::MapClass(ECClassCR ecClass, bool forceRevaluationOfMapStrateg
      * through the code below creates the new class maps
      */
     const bool classMapExists = GetClassMap(ecClass) != nullptr;
-    const bool revaluateMapStrategy = classMapExists && forceRevaluationOfMapStrategy;
-
     if (!classMapExists)
         {
         MapStatus status = MapStatus::Success;
         std::unique_ptr<ClassMapInfo> classMapInfo = ClassMapInfoFactory::Create(status, *GetSchemaImportContext(), ecClass, *this);
-        //error (and no reevaluation)
-        if ((status == MapStatus::BaseClassesNotMapped || status == MapStatus::Error) && !revaluateMapStrategy)
+        if ((status == MapStatus::BaseClassesNotMapped || status == MapStatus::Error))
             return status;
 
         BeAssert(classMapInfo != nullptr);
@@ -748,14 +742,14 @@ MapStatus ECDbMap::MapClass(ECClassCR ecClass, bool forceRevaluationOfMapStrateg
         status = classMap->Map(*GetSchemaImportContext(), *classMapInfo);
         GetSchemaImportContext()->CacheClassMapInfo(*classMap, classMapInfo);
 
-        //error (and no reevaluation)
-        if ((status == MapStatus::BaseClassesNotMapped || status == MapStatus::Error) && !revaluateMapStrategy)
+        //error
+        if (status == MapStatus::BaseClassesNotMapped || status == MapStatus::Error)
             return status;
         }
 
     for (ECClassP childClass : ecClass.GetDerivedClasses())
         {
-        MapStatus status = MapClass(*childClass, forceRevaluationOfMapStrategy);
+        MapStatus status = MapClass(*childClass);
         if (status == MapStatus::Error)
             return status;
         }

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSchemaValidator.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -14,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                 Krischan.Eberle                    05/2014
 //---------------------------------------------------------------------------------------
 //static
-bool ECSchemaValidator::ValidateSchemas(ECSchemaValidationResult& result, bvector<ECN::ECSchemaP> const& schemas, bool supportLegacySchemas)
+bool ECSchemaValidator::ValidateSchemas(ECSchemaValidationResult& result, bvector<ECN::ECSchemaP> const& schemas)
     {
     std::vector<std::unique_ptr<ECSchemaValidationRule>> validationTasks;
     validationTasks.push_back(std::move(std::unique_ptr<ECSchemaValidationRule>(new SchemaNamespacePrefixRule())));
@@ -29,7 +29,7 @@ bool ECSchemaValidator::ValidateSchemas(ECSchemaValidationResult& result, bvecto
                 valid = false;
             }
 
-        bool succeeded = ValidateSchema(result, *schema, supportLegacySchemas);
+        bool succeeded = ValidateSchema(result, *schema);
         if (!succeeded)
             valid = false;
         }
@@ -46,10 +46,10 @@ bool ECSchemaValidator::ValidateSchemas(ECSchemaValidationResult& result, bvecto
 // @bsimethod                                 Krischan.Eberle                    05/2014
 //---------------------------------------------------------------------------------------
 //static
-bool ECSchemaValidator::ValidateSchema (ECSchemaValidationResult& result, ECN::ECSchemaCR schema, bool supportLegacySchemas)
+bool ECSchemaValidator::ValidateSchema (ECSchemaValidationResult& result, ECN::ECSchemaCR schema)
     {
     std::vector<std::unique_ptr<ECSchemaValidationRule>> validationTasks;
-    validationTasks.push_back(std::move(std::unique_ptr<ECSchemaValidationRule> (new CaseInsensitiveClassNamesRule (supportLegacySchemas))));
+    validationTasks.push_back(std::move(std::unique_ptr<ECSchemaValidationRule> (new CaseInsensitiveClassNamesRule ())));
     validationTasks.push_back(std::move(std::unique_ptr<ECSchemaValidationRule>(new ValidRelationshipConstraintsRule())));
 
     bool valid = true;
@@ -62,7 +62,7 @@ bool ECSchemaValidator::ValidateSchema (ECSchemaValidationResult& result, ECN::E
                 valid = false;
             }
 
-        bool succeeded = ValidateClass (result, *ecClass, supportLegacySchemas);
+        bool succeeded = ValidateClass (result, *ecClass);
         if (!succeeded)
             valid = false;
         }
@@ -79,10 +79,10 @@ bool ECSchemaValidator::ValidateSchema (ECSchemaValidationResult& result, ECN::E
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------
 //static
-bool ECSchemaValidator::ValidateClass (ECSchemaValidationResult& result, ECN::ECClassCR ecClass, bool supportLegacySchemas)
+bool ECSchemaValidator::ValidateClass (ECSchemaValidationResult& result, ECN::ECClassCR ecClass)
     {
     std::vector<std::unique_ptr<ECSchemaValidationRule>> validationTasks;
-    validationTasks.push_back (std::move (std::unique_ptr<ECSchemaValidationRule> (new CaseInsensitivePropertyNamesRule (ecClass, supportLegacySchemas))));
+    validationTasks.push_back (std::move (std::unique_ptr<ECSchemaValidationRule> (new CaseInsensitivePropertyNamesRule (ecClass))));
     validationTasks.push_back (std::move (std::unique_ptr<ECSchemaValidationRule> (new NoPropertiesOfSameTypeAsClassRule (ecClass))));
 
     bool valid = true;
@@ -185,10 +185,10 @@ Utf8String ECSchemaValidationRule::Error::ToString() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------
-CaseInsensitiveClassNamesRule::CaseInsensitiveClassNamesRule (bool supportLegacySchemas) 
-: ECSchemaValidationRule (Type::CaseInsensitiveClassNames), m_supportLegacySchemas (supportLegacySchemas), m_error (nullptr)
+CaseInsensitiveClassNamesRule::CaseInsensitiveClassNamesRule () 
+: ECSchemaValidationRule (Type::CaseInsensitiveClassNames),m_error (nullptr)
     {
-    m_error = std::unique_ptr<Error> (new Error (GetType (), m_supportLegacySchemas));
+    m_error = std::unique_ptr<Error> (new Error (GetType ()));
     }
 
 //---------------------------------------------------------------------------------------
@@ -217,11 +217,6 @@ bool CaseInsensitiveClassNamesRule::_ValidateSchema (ECN::ECSchemaCR schema, ECN
         }
 
     m_classNameSet.insert (className.c_str ());
-
-    //In legacy support mode, this is not an error
-    if (m_supportLegacySchemas)
-        return true;
-
     return valid;
     }
 
@@ -288,15 +283,8 @@ Utf8String CaseInsensitiveClassNamesRule::Error::_ToString () const
         }
 
 
-    Utf8CP strTemplate = nullptr;
-    if (m_supportLegacySchemas)
-        strTemplate = "ECSchema '%s' contains ECClasses for which names only differ by case. ECDb might have to skip some of these during the import (see further messages). Please try to fix the schema. Conflicting ECClasses: %s.";
-    else
-        strTemplate = "ECSchema '%s' contains ECClasses for which names only differ by case. ECDb does not support case sensitive class names. Conflicting ECClasses: %s.";
-
     Utf8String str;
-    str.Sprintf (strTemplate, schema->GetName ().c_str (), violatingClassesStr.c_str ());
-
+    str.Sprintf ("ECSchema '%s' contains ECClasses for which names only differ by case. ECDb does not support case sensitive class names. Conflicting ECClasses: %s.", schema->GetName ().c_str (), violatingClassesStr.c_str ());
     return std::move (str);
     }
 
@@ -307,10 +295,10 @@ Utf8String CaseInsensitiveClassNamesRule::Error::_ToString () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------
-CaseInsensitivePropertyNamesRule::CaseInsensitivePropertyNamesRule (ECClassCR ecClass, bool supportLegacySchemas)
-: ECSchemaValidationRule (Type::CaseInsensitivePropertyNames), m_supportLegacySchemas (supportLegacySchemas), m_error (nullptr)
+CaseInsensitivePropertyNamesRule::CaseInsensitivePropertyNamesRule (ECClassCR ecClass)
+: ECSchemaValidationRule (Type::CaseInsensitivePropertyNames), m_error (nullptr)
     {
-    m_error = std::unique_ptr<Error> (new Error (GetType (), ecClass, m_supportLegacySchemas));
+    m_error = std::unique_ptr<Error> (new Error (GetType (), ecClass));
     }
 
 //---------------------------------------------------------------------------------------
@@ -339,11 +327,6 @@ bool CaseInsensitivePropertyNamesRule::_ValidateClass (ECN::ECClassCR ecClass, E
         }
 
     m_propertyNameSet.insert (propName.c_str ());
-
-    //In legacy support mode, this is not an error
-    if (m_supportLegacySchemas)
-        return true;
-
     return valid;
     }
 
@@ -392,15 +375,8 @@ Utf8String CaseInsensitivePropertyNamesRule::Error::_ToString () const
         isFirstSet = false;
         }
 
-    Utf8CP strTemplate = nullptr;
-    if (m_supportLegacySchemas)
-        strTemplate = "ECClass '%s' contains ECProperties for which names only differ by case. ECDb might have to skip some of these during the import (see further messages). Please try to fix the schema. Conflicting ECProperties: %s.";
-    else
-        strTemplate = "ECClass '%s' contains ECProperties for which names only differ by case. ECDb does not support case sensitive property names. Conflicting ECProperties: %s.";
-
     Utf8String str;
-    str.Sprintf (strTemplate, m_ecClass.GetFullName (), violatingPropsStr.c_str ());
-
+    str.Sprintf ("ECClass '%s' contains ECProperties for which names only differ by case. ECDb does not support case sensitive property names. Conflicting ECProperties: %s.", m_ecClass.GetFullName (), violatingPropsStr.c_str ());
     return std::move (str);
     }
 

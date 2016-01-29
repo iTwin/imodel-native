@@ -117,9 +117,9 @@ private:
 
     ClassMapPtr                 LoadClassMap(ClassMapLoadContext& ctx, ECN::ECClassCR) const;
 
-    MapStatus                   DoMapSchemas(bvector<ECN::ECSchemaCP> const& mapSchemas, bool forceMapStrategyReevaluation);
+    MapStatus                   DoMapSchemas(bvector<ECN::ECSchemaCP> const& mapSchemas);
     
-    MapStatus                   MapClass(ECN::ECClassCR, bool forceRevaluationOfMapStrategy);
+    MapStatus                   MapClass(ECN::ECClassCR);
     MapStatus                   AddClassMap(ClassMapPtr&) const;
     void                        RemoveClassMap(IClassMap const&);
     BentleyStatus               FinishTableDefinition() const;
@@ -145,7 +145,7 @@ public:
 
     ECDbSQLManager const& GetSQLManager() const { return m_ecdbSqlManager; }
 
-    MapStatus MapSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&, bool forceMapStrategyReevaluation);
+    MapStatus MapSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&);
 
     BentleyStatus CreateECClassViewsInDb() const;
     ECDbSqlTable* FindOrCreateTable(SchemaImportContext*, Utf8CP tableName, TableType, bool isVirtual, Utf8CP primaryKeyColumnName);

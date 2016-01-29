@@ -156,11 +156,10 @@ ImportOptions const& options
     BeMutexHolder lock (m_criticalSection);
     
     bvector<ECSchemaCP> importedSchemas;
-    bvector<ECDiffPtr> diffs;
-    if (SUCCESS != BatchImportOrUpdateECSchemas (context, importedSchemas, diffs, cache, options))
+    if (SUCCESS != BatchImportECSchemas (context, importedSchemas, cache, options))
         return ERROR;
   
-    if (MapStatus::Error == m_map.MapSchemas (context, importedSchemas, !diffs.empty ()))
+    if (MapStatus::Error == m_map.MapSchemas (context, importedSchemas))
         return ERROR;
 
     RelationshipPurger purger;
@@ -177,7 +176,7 @@ ImportOptions const& options
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                   Affan.Khan        29/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportContext const& context, bvector<ECN::ECSchemaCP>& importedSchemas, bvector<ECN::ECDiffPtr>&  diffs, ECSchemaCacheR schemaCache, ImportOptions const& options) const
+BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext const& context, bvector<ECN::ECSchemaCP>& importedSchemas, ECSchemaCacheR schemaCache, ImportOptions const& options) const
     {
     bvector<ECSchemaP> schemas;
     schemaCache.GetSchemas(schemas);
@@ -195,8 +194,7 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
             return ERROR;
             }
 
-        if (id <= 0ULL || // skip ECSchemas that are already imported(if not updating)
-            options.UpdateExistingSchemas())
+        if (id <= 0ULL) // skip ECSchemas that are already imported(if not updating)
             BuildDependencyOrderedSchemaList(schemasToImport, schema);
         }
 
@@ -207,7 +205,7 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
         {
         if (schema->IsSupplementalSchema())
             suppSchemas.push_back(schema);
-        else 
+        else
             primarySchemas.push_back(schema);
         }
 
@@ -246,25 +244,19 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
     // The dependency order may have *changed* due to supplementation adding new ECSchema references! Re-sort them.
     bvector<ECSchemaP> dependencyOrderedPrimarySchemas;
     for (ECSchemaP schema : primarySchemas)
-        BuildDependencyOrderedSchemaList (dependencyOrderedPrimarySchemas, schema);
-    
-    primarySchemas.clear (); // Just make sure no one tries to use it anymore
+        BuildDependencyOrderedSchemaList(dependencyOrderedPrimarySchemas, schema);
+
+    primarySchemas.clear(); // Just make sure no one tries to use it anymore
 
     ECSchemaValidationResult validationResult;
-    bool isValid = ECSchemaValidator::ValidateSchemas(validationResult, dependencyOrderedPrimarySchemas, options.SupportLegacySchemas());
+    bool isValid = ECSchemaValidator::ValidateSchemas(validationResult, dependencyOrderedPrimarySchemas);
     if (validationResult.HasErrors())
         {
         std::vector<Utf8String> errorMessages;
         validationResult.ToString(errorMessages);
 
-        ECDbIssueSeverity sev;
-        if (options.SupportLegacySchemas())
-            sev = ECDbIssueSeverity::Warning;
-        else
-            {
-            sev = ECDbIssueSeverity::Error;
-            m_ecdb.GetECDbImplR().GetIssueReporter().Report(sev, "Failed to import ECSchemas. Details: ");
-            }
+        const ECDbIssueSeverity sev = ECDbIssueSeverity::Error;
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report(sev, "Failed to import ECSchemas. Details: ");
 
         for (Utf8StringCR errorMessage : errorMessages)
             m_ecdb.GetECDbImplR().GetIssueReporter().Report(sev, errorMessage.c_str());
@@ -278,79 +270,16 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
         {
         importedSchemas.push_back(schema);
 
-        ECDiffPtr diff;
         if (0ULL != ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, schema->GetName().c_str()))
-            {
-            if (!options.UpdateExistingSchemas())
-                continue;
+            continue;
 
-            //Go a head and attempt to update ECSchema
-            if (SUCCESS != UpdateECSchema(diff, *schema))
-                return ERROR;
-
-            if (diff != nullptr && diff->GetStatus() == DiffStatus::Success && !diff->IsEmpty())
-                diffs.push_back(diff);
-            }
-        else
-            if (SUCCESS != schemaWriter.Import(*schema))
-                return ERROR;
+        if (SUCCESS != schemaWriter.Import(*schema))
+            return ERROR;
         }
 
-    if (!diffs.empty ())
-        ClearCache ();
-
+    ClearCache();
     return SUCCESS;
     }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                   Affan.Khan        05/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::UpdateECSchema (ECDiffPtr& diff, ECSchemaCR ecSchema) const
-    {
-    auto existingSchema = GetECSchema (ecSchema.GetName().c_str (), true);
-    if (existingSchema == nullptr)
-        {
-        m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-            "Failed to update ECSchema '%s'. ECSchema does not exist in the ECDb file.",
-                                                        ecSchema.GetName().c_str ());
-        return ERROR;
-        }
-
-    if (existingSchema->GetVersionMajor () != ecSchema.GetVersionMajor () ||
-        existingSchema->GetVersionMinor () > ecSchema.GetVersionMinor ())
-        {
-        if (ecSchema.IsStandardSchema ())
-            return BentleyStatus::SUCCESS; 
-
-        ReportUpdateError (ecSchema, *existingSchema, "Version mismatch: Major version must be equal, minor version must be greater or equal than version of existing schema.");
-        return ERROR;
-        }
-
-    if (existingSchema->GetNamespacePrefix () != ecSchema.GetNamespacePrefix ())
-        {
-        Utf8String reason;
-        reason.Sprintf ("Namespace prefixes differ: New prefix: %s - existing prefix : %s.",
-            ecSchema.GetNamespacePrefix ().c_str (), existingSchema->GetNamespacePrefix ().c_str ());
-
-        ReportUpdateError (ecSchema, *existingSchema, reason.c_str ());
-        return ERROR;
-        }
-
-    diff = ECDiff::Diff (*existingSchema, ecSchema);
-    if (diff->GetStatus () != DiffStatus::Success)
-        {
-        ReportUpdateError (ecSchema, *existingSchema, "Could not compute the difference between the new and the existing version.");
-        return ERROR;
-        }
-
-    if (diff->IsEmpty ())
-        return SUCCESS; //nothing to update
-
-    LOG.errorv("The ECSchema '%s' cannot be updated. Updating ECSchemas is not yet supported in this version of ECDb.",
-               ecSchema.GetName().c_str());
-    return ERROR;
-    }
-
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
@@ -545,26 +474,6 @@ BentleyStatus ECDbSchemaManager::EnsureDerivedClassesExist(ECN::ECClassCR ecClas
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   04/2014
-//---------------------------------------------------------------------------------------
-void ECDbSchemaManager::ReportUpdateError(ECN::ECSchemaCR newSchema, ECN::ECSchemaCR existingSchema, Utf8CP reason) const
-    {
-    const uint32_t newVersionMajor = newSchema.GetVersionMajor();
-    const uint32_t newVersionMinor = newSchema.GetVersionMinor();
-    const uint32_t existingVersionMajor = existingSchema.GetVersionMajor();
-    const uint32_t existingVersionMinor = existingSchema.GetVersionMinor();
-
-    Utf8String str("Failed to update ECSchema '");
-    str.append(newSchema.GetName());
-    str.append("' from version ").append(ECSchema::FormatSchemaVersion(existingVersionMajor, existingVersionMinor));
-    str.append(" to ").append(ECSchema::FormatSchemaVersion(newVersionMajor, newVersionMinor));
-    str.append(". ").append(reason);
-
-    m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, str.c_str());
-    }
-
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan   12/2015
 //---------------------------------------------------------------------------------------
 BentleyStatus ECDbSchemaManager::CreateECClassViewsInDb() const
@@ -580,23 +489,20 @@ BentleyStatus ECDbSchemaManager::CreateECClassViewsInDb() const
 // @bsimethod                                                   Krischan.Eberle   04/2014
 //---------------------------------------------------------------------------------------
 ECDbSchemaManager::ImportOptions::ImportOptions ()
-    : m_doSupplementation (true), m_updateExistingSchemas (false), m_supportLegacySchemas (false)
+    : m_doSupplementation (true)
     {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   04/2014
 //---------------------------------------------------------------------------------------
-ECDbSchemaManager::ImportOptions::ImportOptions (bool doSupplementation, bool updateExistingSchemas)
-    : m_doSupplementation (doSupplementation), m_updateExistingSchemas (updateExistingSchemas), m_supportLegacySchemas (false)
+ECDbSchemaManager::ImportOptions::ImportOptions (bool doSupplementation)
+    : m_doSupplementation (doSupplementation)
     {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   04/2014
 //---------------------------------------------------------------------------------------
 bool ECDbSchemaManager::ImportOptions::DoSupplementation () const { return m_doSupplementation; }
-bool ECDbSchemaManager::ImportOptions::UpdateExistingSchemas () const { return m_updateExistingSchemas; }
-void ECDbSchemaManager::ImportOptions::SetSupportLegacySchemas () { m_supportLegacySchemas = true; }
-bool ECDbSchemaManager::ImportOptions::SupportLegacySchemas () const { return m_supportLegacySchemas; }
 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

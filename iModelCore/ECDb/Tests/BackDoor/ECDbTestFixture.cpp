@@ -121,7 +121,7 @@ BentleyStatus ECDbTestFixture::CreateECDb(BeFileNameR filePath, Utf8CP fileName,
     if (schema == nullptr)
         return ERROR;
 
-    if (SUCCESS != ecdb.Schemas().ImportECSchemas(schemaReadContext->GetCache(), ECDbSchemaManager::ImportOptions(true, false)))
+    if (SUCCESS != ecdb.Schemas().ImportECSchemas(schemaReadContext->GetCache(), ECDbSchemaManager::ImportOptions()))
         return ERROR;
 
     ecdb.ClearECDbCache();

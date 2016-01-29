@@ -829,7 +829,7 @@ TEST_F (ECSqlStatementTestFixture, PolymorphicDelete_PolymorphicSharedTable)
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create ();
     schemaCache->AddSchema (*nestedStructArraySchema);
 
-    ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions (false, false)));
+    ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions (false)));
     PopulateTestDb (ecdb);
 
     //Delete all Instances of the base class, all the structArrays and relationships should also be deleted.
@@ -998,7 +998,7 @@ TEST_F (ECSqlStatementTestFixture, PolymorphicUpdateWithSharedTable)
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create ();
     schemaCache->AddSchema (*nestedStructArraySchema);
 
-    ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions (false, false)));
+    ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions (false)));
     PopulateTestDb (ecdb);
 
     //Updates the instances of ClassA
