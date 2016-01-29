@@ -186,7 +186,7 @@
         </ECProperty>
     </ECStructClass>
 
-    <ECEntityClass typeName="CodedObject" modifier="Abstract">
+    <ECEntityClass typeName="CodedEntity" modifier="Abstract">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <Indexes>
@@ -207,7 +207,7 @@
     <!-- NEEDSWORK This breaks everything. Why.
     <ECRelationshipClass typeName="CodeIssuedByAuthority" description="Object has a code which was issued by the specified authority" strength="referencing">
         <Source cardinality="(0,N)" roleLabel="has N codes" polymorphic="true">
-            <Class class="CodedObject">
+            <Class class="CodedEntity">
                 <Key>
                     <Property name="Code.AuthorityId" />
                 </Key>
@@ -271,7 +271,7 @@
     </ECRelationshipClass>
 
     <ECEntityClass typeName="Model" modifier="Abstract">
-        <BaseClass>CodedObject</BaseClass>
+        <BaseClass>CodedEntity</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00">
                 <Restrictions>
@@ -385,7 +385,8 @@
     </ECRelationshipClass>
 
     <ECEntityClass typeName="Element" modifier="Abstract">
-        <BaseClass>CodedObject</BaseClass>
+        <!-- NOTE: Element subclasses should drop the "Element" suffix from their name once the concept becomes "user facing" -->
+        <BaseClass>CodedEntity</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
@@ -723,7 +724,7 @@
         <ECProperty propertyName="SymbologyKey" typeName="int"/>
     </ECEntityClass>
 
-    <ECEntityClass typeName="ViewAttachmentElement">
+    <ECEntityClass typeName="ViewAttachment">
         <!-- A reference to a ViewDefinition, placed onto a sheet -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
@@ -742,7 +743,7 @@
             <Class class="ViewDefinition"/>
         </Source>
         <Target cardinality="(1,1)" roleLabel="references" polymorphic="true">
-            <Class class="ViewAttachmentElement">
+            <Class class="ViewAttachment">
                 <Key>
                     <Property name="ViewId"/>
                 </Key>
@@ -1184,7 +1185,7 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="GeometryPart">
-        <BaseClass>CodedObject</BaseClass>
+        <BaseClass>CodedEntity</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>

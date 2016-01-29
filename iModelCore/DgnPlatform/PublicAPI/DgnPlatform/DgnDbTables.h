@@ -22,6 +22,7 @@
 #define DGN_CLASSNAME_Authority             "Authority"
 #define DGN_CLASSNAME_TrueColor             "TrueColor"
 #define DGN_CLASSNAME_CategoryAuthority     "CategoryAuthority"
+#define DGN_CLASSNAME_CodedEntity           "CodedEntity"
 #define DGN_CLASSNAME_ComponentAuthority    "ComponentAuthority"
 #define DGN_CLASSNAME_ComponentModel        "ComponentModel"
 #ifdef WIP_COMPONENT_MODEL // *** Pending redesign

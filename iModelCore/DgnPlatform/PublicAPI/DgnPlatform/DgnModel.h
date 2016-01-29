@@ -63,7 +63,7 @@ struct DgnElementMap : bmap<DgnElementId, DgnElementCPtr>
 //! @ingroup DgnModelGroup
 // @bsiclass                                                     KeithBentley    10/00
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase, ICodedObject
+struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase, ICodedEntity
     {
     friend struct DgnModels;
     friend struct DgnElement;
