@@ -234,12 +234,11 @@ DbResult ECDb::Impl::ResetSequences (BeBriefcaseId* repoId)
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDb::Impl::Purge(ECDb::PurgeMode mode) const
     {
-    //All purge modes will be tried even if one fails. If one fails, the method returns ERROR
-    BentleyStatus stat = SUCCESS;
     if (Enum::Contains(mode, ECDb::PurgeMode::OrphanedFileInfos))
-        stat = PurgeFileInfos();
+        if (SUCCESS != PurgeFileInfos())
+            return ERROR;
 
-    else if (Enum::Contains(mode, ECDb::PurgeMode::HoldingRelationships))
+    if (Enum::Contains(mode, ECDb::PurgeMode::HoldingRelationships))
         {
         RelationshipPurger purger;
         if (purger.Prepare(const_cast<ECDb&>(m_schemaManager->GetECDb()), RelationshipPurger::Commands::PurgeAndUpdateHoldingView) != BE_SQLITE_OK)
@@ -251,7 +250,7 @@ BentleyStatus ECDb::Impl::Purge(ECDb::PurgeMode mode) const
         purger.Finialize();
         }
 
-    return stat;
+    return SUCCESS;
     }
 
 #define ECDBF_FILEINFOOWNERSHIP_FULLCLASSNAME "ecdbf.FileInfoOwnership"

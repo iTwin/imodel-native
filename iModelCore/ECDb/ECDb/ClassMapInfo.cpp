@@ -765,8 +765,8 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
 
     DetermineCardinality(source, target);
     
-    m_sourceTables = m_ecdbMap.GetTablesFromRelationshipEnd(source, false);
-    m_targetTables = m_ecdbMap.GetTablesFromRelationshipEnd(target, false);
+    m_sourceTables = m_ecdbMap.GetTablesFromRelationshipEnd(source);
+    m_targetTables = m_ecdbMap.GetTablesFromRelationshipEnd(target);
     auto join = [] (std::set<ECDbSqlTable const*> const& list)
         {
         Utf8String str;
@@ -807,19 +807,12 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
         return MapStatus::Success;
         }
 
-    if (m_cardinality == Cardinality::ManyToMany)
+    if (m_cardinality == Cardinality::ManyToMany && (relationshipClass->GetStrength() == StrengthType::Embedding ||
+                                                     relationshipClass->GetStrength() == StrengthType::Holding))
         {
-        if (relationshipClass->GetStrength() == StrengthType::Embedding) {
-            LOG.errorv("Embedding type relationship with cardianlity ManyToMany is not supported. Error occured while mappign ECRelationshipClass '%s'.",
-                GetECClass().GetFullName());
-            return MapStatus::Error;
-            }
-
-        if (relationshipClass->GetStrength() == StrengthType::Holding) {
-            LOG.errorv("Holding type relationship with cardianlity ManyToMany is not supported. Error occured while mappign ECRelationshipClass '%s'.",
-                GetECClass().GetFullName());
-            return MapStatus::Error;
-            }
+        LOG.errorv("The ECRelationshipClass '%s' has a N:N cardinality and the strength 'Embedding' or 'Holding'. N:N relationships only allow the strength 'Referencing'.",
+                   GetECClass().GetFullName());
+        return MapStatus::Error;
         }
 
     if (m_customMapType == CustomMapType::LinkTable ||
@@ -835,7 +828,7 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
 
         if (relationshipClass->GetStrength() == StrengthType::Embedding)
             {
-            LOG.errorv("The ECRelationshipClass '%s' embedding type relationship cannot be mapped to a LinkTable.",
+            LOG.errorv("The ECRelationshipClass '%s' implies a link table relationship, but has the strength 'Embedding' which is not allowed for link tables.",
                 GetECClass().GetFullName());
             return MapStatus::Error;
             }

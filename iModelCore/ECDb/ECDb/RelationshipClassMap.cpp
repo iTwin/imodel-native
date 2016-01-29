@@ -1143,41 +1143,26 @@ MapStatus RelationshipClassLinkTableMap::_MapPart2 (SchemaImportContext& context
 
     std::set<ECDbSqlTable const*> sourceTables = GetECDbMap().GetTablesFromRelationshipEnd(GetRelationshipClass().GetSource());
     std::set<ECDbSqlTable const*> targetTables = GetECDbMap().GetTablesFromRelationshipEnd(GetRelationshipClass().GetTarget());
-    if (sourceTables.size() > 1)
+    const size_t sourceTableCount = sourceTables.size();
+    const size_t targetTableCount = targetTables.size();
+    if (sourceTableCount > 1 || targetTableCount > 1)
         {
-        GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter().Report(
-            ECDbIssueSeverity::Error,
-            "Relationship %s is mapped to more then one source table which is not supported in ecdb",
-            GetRelationshipClass().GetFullName()
-            );
+        Utf8CP constraintStr = nullptr;
+        if (sourceTableCount > 1 && targetTableCount > 1)
+            constraintStr = "source and target constraints are";
+        else if (sourceTableCount > 1)
+            constraintStr = "source constraint is";
+        else
+            constraintStr = "target constraint is";
 
-        BeAssert(false && "Multiple source tables");
+        GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+            "The ECRelationshipClass '%s' is mapped to a link table, but the %s mapped to more than one table, which is not supported for link tables.",
+            GetRelationshipClass().GetFullName(), constraintStr);
+
         return MapStatus::Error;
         }
 
-    if (targetTables.size() > 1)
-        {
-        GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter().Report(
-            ECDbIssueSeverity::Error,
-            "Relationship %s is mapped to more then one target table which is not supported in ecdb",
-            GetRelationshipClass().GetFullName()
-            );
-
-        BeAssert(false && "Multiple target tables");
-        return MapStatus::Error;
-        }
-
-    if (GetRelationshipClass().GetStrength() == StrengthType::Embedding)
-        {
-        GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter().Report(
-            ECDbIssueSeverity::Error,
-            "Relationship %s is of type embedding and desgniated to be mapped as LinkTable which is not supported in ECDb",
-            GetRelationshipClass().GetFullName()
-            );
-
-        BeAssert(false && "Linktable donot support embedding relationshp");
-        return MapStatus::Error;
-        }
+    BeAssert(GetRelationshipClass().GetStrength() != StrengthType::Embedding && "Should have caught already in ClassMapInfo");
 
     if (GetPrimaryTable().GetTableType() != TableType::Existing)
         {

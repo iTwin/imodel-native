@@ -1059,15 +1059,6 @@
             <Class class="Bar"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="Foo_has_SomethingInOneOfManyTables" modifier="None" strength="embedding" strengthDirection="forward">
-        <Source cardinality="(1,1)" roleLabel="has" polymorphic="true">
-            <Class class="Foo"/>
-        </Source>
-        <Target cardinality="(1,1)" roleLabel="is had by" polymorphic="true">
-            <Class class="Asset"/>
-            <Class class="Employee"/>
-        </Target>
-    </ECRelationshipClass>
     <ECEntityClass typeName="LikesToShare2" modifier="None">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
