@@ -453,7 +453,6 @@ ViewportStatus DgnViewport::SetupFromViewController()
     DVec3d   delta  = viewController->GetDelta();
 
     m_rotMatrix     = viewController->GetRotation();
-    m_viewFlags = viewController->GetViewFlags();
     m_is3dView      = false;
     m_isCameraOn    = false;
     m_viewOrg       = m_viewOrgUnexpanded   = origin;
