@@ -99,28 +99,14 @@ namespace DirectionParser
     /*---------------------------------------------------------------------------------**//**
     * @bsinamespace
     +---------------+---------------+---------------+---------------+---------------+------*/
-    namespace ILocksManager
-    {
-        /*---------------------------------------------------------------------------------**//**
-        * @bsimethod                                                    Paul.Connelly   11/15
-        +---------------+---------------+---------------+---------------+---------------+------*/
-        void SetLockingEnabled(bool enabled)
-            {
-            Dgn::ILocksManager::BackDoor_SetLockingEnabled(enabled);
-            }
-    };
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsinamespace
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    namespace IDgnCodesManager
+    namespace IBriefcaseManager
     {
         /*---------------------------------------------------------------------------------**//**
         * @bsimethod                                                    Paul.Connelly   11/15
         +---------------+---------------+---------------+---------------+---------------+------*/
         void SetEnabled(bool enabled)
             {
-            Dgn::IDgnCodesManager::BackDoor_SetEnabled(enabled);
+            Dgn::IBriefcaseManager::BackDoor_SetEnabled(enabled);
             }
     };
 }
