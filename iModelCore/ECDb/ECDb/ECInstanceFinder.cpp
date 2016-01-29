@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECInstanceFinder.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -220,7 +220,7 @@ void ECInstanceFinder::FindEndClasses (bset<ECClassId>& endClassIds, ECClassId r
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                 Ramanujam.Raman     08/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ECInstanceFinder::FindRelationshipsOnEnd (QueryableRelationshipVector& queryableRelationships, ECClassId thisEndClassId, ECDbCR ecDb)
+DbResult ECInstanceFinder::FindRelationshipsOnEnd (QueryableRelationshipVector& queryableRelationships, ECClassId foreignEndClassId, ECDbCR ecDb)
     {
     queryableRelationships.clear();
 
@@ -231,13 +231,13 @@ DbResult ECInstanceFinder::FindRelationshipsOnEnd (QueryableRelationshipVector& 
         "    UNION "
         "    SELECT BaseClassId FROM ec_BaseClass, BaseClassesOfEndClass WHERE ec_BaseClass.ClassId=BaseClassesOfEndClass.ClassId"
         "    )"
-        " SELECT DISTINCT ECRelationshipClass.Id AS RelationshipId, ThisEndConstraintClass.RelationshipEnd As ThisEndIsTarget"
-        " FROM ec_RelationshipConstraintClass ThisEndConstraintClass"
-        " JOIN ec_Class ECRelationshipClass ON ThisEndConstraintClass.RelationshipClassId = ECRelationshipClass.Id"
-        " JOIN ec_RelationshipConstraint ThisEndConstraint ON (ThisEndConstraint.RelationshipClassId = ECRelationshipClass.Id AND ThisEndConstraint.RelationshipEnd = ThisEndConstraintClass.RelationshipEnd)"
+        " SELECT DISTINCT ECRelationshipClass.Id AS RelationshipId, ForeignEndConstraintClass.RelationshipEnd As ForeignEndIsTarget"
+        " FROM ec_RelationshipConstraintClass ForeignEndConstraintClass"
+        " JOIN ec_Class ECRelationshipClass ON ForeignEndConstraintClass.RelationshipClassId = ECRelationshipClass.Id"
+        " JOIN ec_RelationshipConstraint ForeignEndConstraint ON (ForeignEndConstraint.RelationshipClassId = ECRelationshipClass.Id AND ForeignEndConstraint.RelationshipEnd = ForeignEndConstraintClass.RelationshipEnd)"
         " JOIN BaseClassesOfEndClass"
-        " WHERE ThisEndConstraintClass.ClassId IN (:endClassId, :anyClassId)"
-        "   OR (ThisEndConstraint.IsPolymorphic = 1 AND ThisEndConstraintClass.ClassId = BaseClassesOfEndClass.ClassId)";
+        " WHERE ForeignEndConstraintClass.ClassId IN (:endClassId, :anyClassId)"
+        "   OR (ForeignEndConstraint.IsPolymorphic = 1 AND ForeignEndConstraintClass.ClassId = BaseClassesOfEndClass.ClassId)";
 
     CachedStatementPtr stmt;
     DbResult result = ecDb.GetCachedStatement (stmt, sql);
@@ -256,10 +256,10 @@ DbResult ECInstanceFinder::FindRelationshipsOnEnd (QueryableRelationshipVector& 
         stmt->BindInt64 (anyClassIdx, (int64_t) anyClass->GetId());
         }
 
-    ECClassCP thisEndClass = ecDbSchemaManager.GetECClass (thisEndClassId);
-    BeAssert (thisEndClass != nullptr);
+    ECClassCP foreignEndClass = ecDbSchemaManager.GetECClass (foreignEndClassId);
+    BeAssert (foreignEndClass != nullptr);
     int endClassIdx = stmt->GetParameterIndex (":endClassId");
-    stmt->BindInt64 (endClassIdx, (int64_t) thisEndClass->GetId());
+    stmt->BindInt64 (endClassIdx, (int64_t) foreignEndClass->GetId());
 
     while (BE_SQLITE_ROW == (result = stmt->Step()))
         {
@@ -269,7 +269,7 @@ DbResult ECInstanceFinder::FindRelationshipsOnEnd (QueryableRelationshipVector& 
         BeAssert (ecRelationshipClass != nullptr);
 
         ECRelationshipEnd thisRelationshipEnd = (stmt->GetValueInt (1) == 1) ? ECRelationshipEnd_Target : ECRelationshipEnd_Source;
-        queryableRelationships.push_back (QueryableRelationship (*ecRelationshipClass, *thisEndClass, thisRelationshipEnd));
+        queryableRelationships.push_back (QueryableRelationship (*ecRelationshipClass, *foreignEndClass, thisRelationshipEnd));
         }
 
     if (BE_SQLITE_DONE != result)
@@ -284,20 +284,20 @@ DbResult ECInstanceFinder::FindRelationshipsOnEnd (QueryableRelationshipVector& 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ECInstanceFinder::GetRelationshipsOnEnd (QueryableRelationshipVectorP &queryableRelationships, ECClassId thisEndClassId)
+DbResult ECInstanceFinder::GetRelationshipsOnEnd (QueryableRelationshipVectorP &queryableRelationships, ECClassId foreignEndClassId)
     {
     queryableRelationships = nullptr;
-    QueryableRelationshipsByClass::iterator iter = m_queryableRelationshipsByClass.find (thisEndClassId);
+    QueryableRelationshipsByClass::iterator iter = m_queryableRelationshipsByClass.find (foreignEndClassId);
     if (iter != m_queryableRelationshipsByClass.end())
         {
         queryableRelationships = &(iter->second);
         }
     else
         {
-        DbResult result = FindRelationshipsOnEnd (m_queryableRelationshipsByClass[thisEndClassId], thisEndClassId, m_ecDb);
+        DbResult result = FindRelationshipsOnEnd (m_queryableRelationshipsByClass[foreignEndClassId], foreignEndClassId, m_ecDb);
         if (result != BE_SQLITE_OK)
             return result;
-        queryableRelationships = &(m_queryableRelationshipsByClass[thisEndClassId]);
+        queryableRelationships = &(m_queryableRelationshipsByClass[foreignEndClassId]);
         }
     return BE_SQLITE_OK;
     }
@@ -376,14 +376,14 @@ int findRelatedDirections
         {
         // Gather all containing relationships on "this end" class (if possible uses relationships cached previously)
         ECClassId thisClassId = classIdIter->first;
-        QueryableRelationshipVectorP queryableRelationshipsOnThisEnd = nullptr;
-        DbResult result = GetRelationshipsOnEnd (queryableRelationshipsOnThisEnd, thisClassId);
+        QueryableRelationshipVectorP queryableRelationshipsOnForeignEnd = nullptr;
+        DbResult result = GetRelationshipsOnEnd (queryableRelationshipsOnForeignEnd, thisClassId);
         POSTCONDITION (result == BE_SQLITE_OK, ERROR);
-        BeAssert (queryableRelationshipsOnThisEnd != nullptr);
+        BeAssert (queryableRelationshipsOnForeignEnd != nullptr);
 
         // Iterate through all relationships on "this end" class
         bpair<ECInstanceKeyMultiMapConstIterator, ECInstanceKeyMultiMapConstIterator> instanceIdRange = seedInstanceKeyMap.equal_range (thisClassId);
-        for (QueryableRelationship& queryableRelationship : *queryableRelationshipsOnThisEnd)
+        for (QueryableRelationship& queryableRelationship : *queryableRelationshipsOnForeignEnd)
             {
             RelatedDirection relatedDirection = queryableRelationship.GetRelatedDirection();
             if (!(findRelatedDirections & relatedDirection))
@@ -433,10 +433,10 @@ int findRelatedDirections
                     // Get related instance (key)
                     if (relatedInstanceKeyMap != nullptr)
                         {
-                        ECClassId otherEndClassId = (ECClassId) statement->GetValueInt64 (1);
-                        ECInstanceId otherEndInstanceId = statement->GetValueId<ECInstanceId> (2);
-                        POSTCONDITION (otherEndClassId > 0 && otherEndInstanceId.IsValid (), ERROR);
-                        ECInstanceKeyMultiMapPair relatedInstanceEntry (otherEndClassId, otherEndInstanceId);
+                        ECClassId referencedEndClassId = (ECClassId) statement->GetValueInt64 (1);
+                        ECInstanceId referencedEndInstanceId = statement->GetValueId<ECInstanceId> (2);
+                        POSTCONDITION (referencedEndClassId > 0 && referencedEndInstanceId.IsValid (), ERROR);
+                        ECInstanceKeyMultiMapPair relatedInstanceEntry (referencedEndClassId, referencedEndInstanceId);
                         if (relatedInstanceKeyMap->end() == std::find (relatedInstanceKeyMap->begin(), relatedInstanceKeyMap->end(), relatedInstanceEntry))
                             relatedInstanceKeyMap->insert (relatedInstanceEntry);
                         }

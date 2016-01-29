@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/ECInstanceFinder.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -122,8 +122,8 @@ private:
     QueryableRelationshipsByClass m_queryableRelationshipsByClass;
 
     static void FindEndClasses (bset<ECN::ECClassId>& endClassIds, ECN::ECClassId relationshipClassId, ECN::ECRelationshipEnd relationshipEnd, ECDbCR ecDb);
-    static DbResult FindRelationshipsOnEnd (QueryableRelationshipVector& queryableRelationships, ECN::ECClassId thisEndClassId, ECDbCR ecDb);
-    DbResult GetRelationshipsOnEnd (QueryableRelationshipVectorP &queryableRelationships, ECN::ECClassId thisEndClassId);
+    static DbResult FindRelationshipsOnEnd (QueryableRelationshipVector& queryableRelationships, ECN::ECClassId foreignEndClassId, ECDbCR ecDb);
+    DbResult GetRelationshipsOnEnd (QueryableRelationshipVectorP &queryableRelationships, ECN::ECClassId foreignEndClassId);
 
     BentleyStatus FindInstancesRecursive 
         (
