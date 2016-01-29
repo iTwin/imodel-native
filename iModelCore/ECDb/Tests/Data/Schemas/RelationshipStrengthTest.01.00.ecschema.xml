@@ -14,7 +14,7 @@
             <Class class="Person"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="ChildrenHaveManyParents" modifier="None" strength="holding" strengthDirection="backward">
+    <ECRelationshipClass typeName="ChildrenHaveManyParents" modifier="None" strength="referencing" strengthDirection="backward">
         <Source cardinality="(0,N)" roleLabel="Children" polymorphic="true">
             <Class class="Person"/>
         </Source>
@@ -22,7 +22,7 @@
             <Class class="Person"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="ManyParentsHaveChildren" modifier="None" strength="holding" strengthDirection="forward">
+    <ECRelationshipClass typeName="ManyParentsHaveChildren" modifier="None" strength="referencing" strengthDirection="forward">
         <Source cardinality="(1,N)" roleLabel="Parents" polymorphic="true">
             <Class class="Person"/>
         </Source>

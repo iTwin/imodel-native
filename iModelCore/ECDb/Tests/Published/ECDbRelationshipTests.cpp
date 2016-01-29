@@ -306,13 +306,6 @@ TEST (ECDbRelationships, ImportECRelationshipInstances)
     ValidateReadingRelationship (db,"StartupCompany", "EmployeePhone", *relInstance);
     ValidateReadingRelated (db, "StartupCompany", "EmployeePhone", relInstance->GetSource(), relInstance->GetTarget());
 
-    // Import another 1-to-1 relationships (with multiple classes on one end)
-    // Foo_has_SomethingInOneOfManyTables
-    //   Relates: Foo (1) -> Asset, Employee (1)
-    relInstance = CreateRelationship (test, "StartupCompany", "Foo", "Asset", "Foo_has_SomethingInOneOfManyTables");
-    ASSERT_TRUE (relInstance.IsValid());
-    ASSERT_EQ(ERROR, PersistRelationship(*relInstance, db)) << "Relationship with many target tables is readonly";
-
     // Import 1-to-M relationships
     // EmployeeFurniture
     //   Inherits: AssetRelationshipsBase, EmployeeRelationshipsBase

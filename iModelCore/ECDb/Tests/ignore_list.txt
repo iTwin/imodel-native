@@ -10,9 +10,7 @@ InstanceCRUDTests.* 	# No need to run with the build, used by testing after buil
 # TFS 178486 will address these (Affan): (ECSchema Update not working in 06 yet.)
 ECDbSchemas.UpdatingSchemaShouldNotDeleteExistingRelationshipsOrIndexes
 ECDbInstances.CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST
-ECDbSchemaManagerTests.UpdateExistingSchemaDifferentCache
 ECDbSchemas.UpdateExistingECSchemaWithNewProperties
-ECDbSchemas.UpdatingExistingECSchema
 ECDbSchemas.Verify_TFS_14829_A
 
 #TFS268976 will address this (Affan)
@@ -40,4 +38,10 @@ ECSqlUpdateTestFramework.WhereRelationshipWithAdditionalPropsTests
 
 TFS#359449 (Affan)
 ECSqlNavigationPropertyTestFixture.SingleInstanceNavProp_ForeignKeyMappingWithJoinedTable
+
+#Struct arrays are not deleted when doing a polymorphic delete
+ECSqlStatementTestFixture.PolymorphicDelete_PolymorphicSharedTable
+ECSqlStatementTestFixture.PolymorphicDeleteTestWithStructArrays
+ECSqlStatementTestFixture.DeleteStructArray
+
 

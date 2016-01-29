@@ -3923,7 +3923,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
             "      </Class>"
             "    </Target>"
             "  </ECRelationshipClass>"
-            "   <ECRelationshipClass typeName='RelNN' modifier='None' strength='embedding'>"
+            "   <ECRelationshipClass typeName='RelNN' modifier='None' strength='referencing'>"
             "    <Source cardinality='(1,N)' polymorphic='True'>"
             "      <Class class='A' />"
             "    </Source>"
@@ -4477,8 +4477,8 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWhereLinkTableIsRequired)
         "    </Source>"
         "    <Target cardinality='(0,N)' polymorphic='True'>"
         "      <Class class = 'Child' />"
-        "      <Class class = 'Child2' />"
         "    </Target>"
+        "    <ECProperty propertyName='ForcingToLinkTable' typeName='string' />"
         "  </ECRelationshipClass>"
         "</ECSchema>", false,"Cannot apply ForeignKeyRelationshipMap when a link table is required.");
 

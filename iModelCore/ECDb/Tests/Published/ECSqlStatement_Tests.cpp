@@ -829,17 +829,19 @@ TEST_F (ECSqlStatementTestFixture, PolymorphicDelete_PolymorphicSharedTable)
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create ();
     schemaCache->AddSchema (*nestedStructArraySchema);
 
-    ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions (false)));
+    ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (*schemaCache));
     PopulateTestDb (ecdb);
+
+    ecdb.SaveChanges();
+
+    ASSERT_FALSE(ecdb.TableExists("nsat_DerivedA"));
+    ASSERT_FALSE(ecdb.TableExists("nsat_DoubleDerivedA"));
+    ASSERT_FALSE(ecdb.TableExists("nsat_DoubleDerivedC"));
 
     //Delete all Instances of the base class, all the structArrays and relationships should also be deleted.
     ECSqlStatement stmt;
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "DELETE FROM nsat.ClassA"));
     ASSERT_EQ (BE_SQLITE_DONE, stmt.Step ());
-
-    ASSERT_FALSE (ecdb.TableExists ("nsat_DerivedA"));
-    ASSERT_FALSE (ecdb.TableExists ("nsat_DoubleDerivedA"));
-    ASSERT_FALSE (ecdb.TableExists ("nsat_DoubleDerivedC"));
 
     bvector<Utf8String> tableNames;
     tableNames.push_back ("nsat_ClassA");
@@ -850,15 +852,17 @@ TEST_F (ECSqlStatementTestFixture, PolymorphicDelete_PolymorphicSharedTable)
     tableNames.push_back ("nsat_BaseHasDerivedA");
     tableNames.push_back ("nsat_DerivedBOwnsChilds");
 
-    BeSQLite::Statement readStatement;
-    for (auto tableName : tableNames)
+    for (Utf8StringCR tableName : tableNames)
         {
-        Utf8String selectSql = "SELECT * FROM ";
+        Utf8String selectSql = "SELECT count(*) FROM ";
         selectSql.append (tableName);
-        ASSERT_EQ (DbResult::BE_SQLITE_OK, readStatement.Prepare (ecdb, selectSql.c_str ())) << "Select prepare failed for " << selectSql.c_str ();
-        ASSERT_EQ (DbResult::BE_SQLITE_DONE, readStatement.Step ()) << "step failed for " << selectSql.c_str ();
-        readStatement.Finalize ();
+        Statement stmt;
+        ASSERT_EQ (BE_SQLITE_OK, stmt.Prepare (ecdb, selectSql.c_str ())) << "Select prepare failed for " << selectSql.c_str ();
+        ASSERT_EQ (BE_SQLITE_ROW, stmt.Step ()) << "step failed for " << selectSql.c_str ();
+        ASSERT_EQ(0, stmt.GetValueInt(0)) << "Table " << tableName.c_str() << " is expected to be empty after DELETE FROM nsat.ClassA";
         }
+
+    ecdb.AbandonChanges();
     }
 
 //---------------------------------------------------------------------------------------
@@ -884,14 +888,14 @@ TEST_F (ECSqlStatementTestFixture, PolymorphicDeleteTestWithStructArrays)
     tableNames.push_back ("nsat_BaseHasDerivedA");
     tableNames.push_back ("nsat_DerivedBOwnsChilds");
     
-    BeSQLite::Statement readStatement;
-    for (auto tableName : tableNames)
+    for (Utf8StringCR tableName : tableNames)
         {
-        Utf8String selectSql = "SELECT * FROM ";
-        selectSql.append (tableName);
-        ASSERT_EQ (DbResult::BE_SQLITE_OK, readStatement.Prepare (ecdb, selectSql.c_str ())) << "Select prepare failed for " << selectSql.c_str ();
-        ASSERT_EQ (DbResult::BE_SQLITE_DONE, readStatement.Step ()) << "step failed for " << selectSql.c_str ();
-        readStatement.Finalize ();
+        Utf8String selectSql = "SELECT count(*) FROM ";
+        selectSql.append(tableName);
+        Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, selectSql.c_str())) << "Select prepare failed for " << selectSql.c_str();
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "step failed for " << selectSql.c_str();
+        ASSERT_EQ(0, stmt.GetValueInt(0)) << "Table " << tableName.c_str() << " is expected to be empty after DELETE FROM nsat.ClassA";
         }
     }
 
@@ -1195,18 +1199,18 @@ TEST_F (ECSqlStatementTestFixture, DeleteStructArray)
         {
         if (testClass->IsStructClass())
             {
-            Utf8String selectSql = "SELECT * FROM nsat_";
+            Utf8String selectSql = "SELECT count(*) FROM nsat_";
             selectSql.append (testClass->GetName ());
             selectStatements.push_back (selectSql);
             }
         }
 
-    BeSQLite::Statement readStmt;
-    for (auto selectSql : selectStatements)
+    for (Utf8StringCR selectSql : selectStatements)
         {
-        ASSERT_EQ (DbResult::BE_SQLITE_OK, readStmt.Prepare (ecdb, selectSql.c_str ())) << "preparation failed for " << selectSql.c_str ();
-        ASSERT_EQ (readStmt.Step (), DbResult::BE_SQLITE_DONE) << "step failed for " << selectSql.c_str ();
-        readStmt.Finalize ();
+        Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, selectSql.c_str())) << "Select prepare failed for " << selectSql.c_str();
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "step failed for " << selectSql.c_str();
+        ASSERT_EQ(0, stmt.GetValueInt(0)) << "Table [" << selectSql.c_str() << "] is expected to be empty after DELETE FROM nsat.ClassA";
         }
     }
 

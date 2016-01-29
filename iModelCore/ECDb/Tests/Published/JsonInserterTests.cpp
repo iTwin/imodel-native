@@ -5,13 +5,13 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECDbTestProject.h"
+#include "ECDbPublishedTests.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-struct JsonInserterTests : public ::testing::Test
+struct JsonInserterTests : public ECDbTestFixture
     {
     };
 
@@ -20,8 +20,8 @@ struct JsonInserterTests : public ::testing::Test
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (JsonInserterTests, InsertJsonCppJSON)
     {
-    ECDbTestProject testProject;
-    ECDbR ecdb = testProject.Create ("insertUsingJsonAPI.ecdb", L"eB_PW_CommonSchema_WSB.01.00.ecschema.xml", false);
+    ECDbR ecdb = SetupECDb("insertUsingJsonAPI.ecdb", BeFileName(L"eB_PW_CommonSchema_WSB.01.00.ecschema.xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
 
     // Read JSON input from file
     BeFileName jsonInputFile;
@@ -61,8 +61,8 @@ TEST_F (JsonInserterTests, InsertJsonCppJSON)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (JsonInserterTests, insertRapidJson)
     {
-    ECDbTestProject testProject;
-    ECDbR ecdb = testProject.Create ("InsertUsingRapidJson.ecdb", L"eB_PW_CommonSchema_WSB.01.00.ecschema.xml", false);
+    ECDbR ecdb = SetupECDb("InsertUsingRapidJson.ecdb", BeFileName(L"eB_PW_CommonSchema_WSB.01.00.ecschema.xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
 
     // Read JSON input from file
     BeFileName jsonInputFile;

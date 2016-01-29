@@ -187,14 +187,36 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext const&
         BeAssert(schema != nullptr);
         if (schema == nullptr) continue;
 
-        ECSchemaId id = ECDbSchemaPersistenceHelper::GetECSchemaId(this->m_ecdb, schema->GetName().c_str());
+        ECSchemaId id = ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, schema->GetName().c_str());
         if (schema->HasId() && (id == 0 || id != schema->GetId()))
             {
             m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema %s is owned by some other ECDb file.", schema->GetFullSchemaName().c_str());
             return ERROR;
             }
 
-        if (id <= 0ULL) // skip ECSchemas that are already imported(if not updating)
+        if (id > INT64_C(0))
+            {
+            //schema with same name already exists. If version of existing schema is older than fail, as ECDb does not update
+            //schemas via import
+            SchemaKey existingSchemaKey;
+            if (!ECDbSchemaPersistenceHelper::TryGetECSchemaKey(existingSchemaKey, m_ecdb, id))
+                {
+                BeAssert(false && "SchemaId exists, so schema key must be retrievable");
+                return ERROR;
+                }
+
+            if (schema->GetVersionMajor() > existingSchemaKey.GetVersionMajor() ||
+                (schema->GetVersionMajor() == existingSchemaKey.GetVersionMajor() &&
+                 schema->GetVersionMinor() > existingSchemaKey.GetVersionMinor()))
+                {
+                m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                                                                "Failed to import the ECSchema '%s'. The ECSchema already exists in the ECDb file with an older version '%s'. ECDb does not support to update ECSchemas on import.",
+                                                                schema->GetFullSchemaName().c_str(),
+                                                                ECSchema::FormatSchemaVersion(existingSchemaKey.GetVersionMajor(), existingSchemaKey.GetVersionMinor()).c_str());
+                return ERROR;
+                }
+            }
+        else
             BuildDependencyOrderedSchemaList(schemasToImport, schema);
         }
 
@@ -270,14 +292,13 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext const&
         {
         importedSchemas.push_back(schema);
 
-        if (0ULL != ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, schema->GetName().c_str()))
+        if (INT64_C(0) != ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, schema->GetName().c_str()))
             continue;
 
         if (SUCCESS != schemaWriter.Import(*schema))
             return ERROR;
         }
 
-    ClearCache();
     return SUCCESS;
     }
 
@@ -287,7 +308,7 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext const&
 ECSchemaCP ECDbSchemaManager::GetECSchema (Utf8CP schemaName, bool ensureAllClassesLoaded) const
     {
     const ECSchemaId schemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(GetECDb(), schemaName); //WIP_FNV: could be more efficient if it first looked through those already cached in memory...
-    if (0 == schemaId)
+    if (INT64_C(0) == schemaId)
         return nullptr;
 
     return GetECSchema(schemaId, ensureAllClassesLoaded);

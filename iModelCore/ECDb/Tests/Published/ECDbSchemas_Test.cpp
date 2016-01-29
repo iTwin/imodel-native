@@ -249,64 +249,6 @@ TEST (ECDbSchemas, DWGRTest)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                         05/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbSchemas, UpdatingExistingECSchema)
-    {
-    // Save a test project
-    ECDbTestProject saveTestProject;
-    ECDbR db = saveTestProject.Create ("RSComponents.ecdb", L"RSComponents.01.00.ecschema.xml", true);
-
-    ECSchemaPtr modifiedECSchema;
-    ECSchemaReadContextPtr schemaContext = nullptr;
-
-    ECDbTestUtility::ReadECSchemaFromDisk (modifiedECSchema, schemaContext, L"RSComponents.02.00.ecschema.xml", nullptr);
-    ASSERT_TRUE(modifiedECSchema.IsValid());
-    modifiedECSchema->SetVersionMajor(1); //Major version should match
-    modifiedECSchema->SetVersionMinor(1); //Minor version should be greater then existing schema minor version
-
-    auto importSchemaStatus = db. Schemas ().ImportECSchemas (schemaContext->GetCache (), ECDbSchemaManager::ImportOptions ());
-    ASSERT_EQ (SUCCESS, importSchemaStatus);
-
-    ECSchemaCP  updatedECSchema = db.Schemas().GetECSchema("RSComponents");
-
-    ECDiffPtr diff = ECDiff::Diff(*updatedECSchema, *modifiedECSchema);
-    ASSERT_EQ (diff->GetStatus() , DiffStatus::Success);
-    if (!diff->IsEmpty())
-        {
-        bmap<Utf8String, DiffNodeState> searchResults;
-        diff->GetNodesState(searchResults, "*.ArrayInfo");
-        if (!searchResults.empty())
-            LOG.error("*** Feature missing : Array type property Maxoccurs and Minoccurs are not stored currently by ECDbSchemaManager");
-        WriteECSchemaDiffToLog(*diff, NativeLogging::LOG_ERROR);
-        ASSERT_TRUE(false && "There should be no difference between in memory and stored ECSchema after update");
-        }
-    //Read back schema and generate some new instance with additional properties
-    //ECSchemaP storedSchema;
-    //db.Schemas().GetECSchema(storedSchema, "RSComponents", true);
-    for(auto ecClass : modifiedECSchema->GetClasses())
-        {
-        if (ecClass->IsRelationshipClass() || ecClass->IsStructClass() || ecClass->IsCustomAttributeClass())
-            continue; 
-
-        ECInstanceInserter inserter (db, *ecClass);
-        if (!inserter.IsValid ())
-            {
-            LOG.errorv("Failed to create ECInstanceInserter for %s", ecClass->GetName().c_str());
-            }
-        ASSERT_TRUE (inserter.IsValid ());
-
-        for( int i=0; i<3; i++)
-            {
-            auto newInst = ECDbTestUtility::CreateArbitraryECInstance (*ecClass, PopulatePrimitiveValueWithCustomDataSet2);
-            ECInstanceKey instanceKey;
-            auto insertStatus = inserter.Insert (instanceKey, *newInst);
-            ASSERT_EQ (SUCCESS, insertStatus);    
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Affan.Khan                         05/13
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ECDbSchemas, UpdateExistingECSchemaWithNewProperties)
     {
     ECDbTestProject testProject;
@@ -1402,77 +1344,6 @@ TEST(ECDbSchemas, CheckCustomAttributesXmlFormatTest)
     ASSERT_EQ (1, rowCount) << "Only one test custom attribute instance had been created.";
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   11/12
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECDbSchemas, HandlingMismatchesBetweenCAInstanceAndCAClassTest)
-    {
-    Utf8CP const CAClassName = "MyCA";
-    Utf8CP nameOfCAPropertyToRemove = "dateprop";
-
-    ECSchemaPtr testSchema = nullptr;
-    ECSchemaCachePtr testSchemaCache = nullptr;
-    CreateCustomAttributeTestSchema (testSchema, testSchemaCache);
-
-    //assign CA with instance id and all props populated
-    IECInstancePtr expectedCAInstance = CreateAndAssignRandomCAInstance (testSchema);
-
-    //create test ECDb file and delete one of the properties of the CA in the EC tables
-    Utf8String dbPath;
-        {
-        ECDbTestProject testProject;
-        ECDbR db = testProject.Create ("customattributestest.ecdb");
-        auto importStat = db. Schemas ().ImportECSchemas (*testSchemaCache);
-        ASSERT_EQ (SUCCESS, importStat) << "Could not import test schema into ECDb file";
-
-        //now remove one of the CA properties only in the CA class definition again
-        Statement stmt;
-        DbResult stat = stmt.Prepare (db, "delete from ec_Property WHERE Name = 'dateprop' and ClassId = (select Id from ec_Class where Name = 'MyCA')");
-        ASSERT_EQ (BE_SQLITE_OK, stat) << "Preparing the SQL statement to delete row from ec_Property failed.";
-        stat = stmt.Step ();
-        ASSERT_EQ (BE_SQLITE_DONE, stat) << "Executing SQL statement to delete row from ec_Property failed";
-        EXPECT_EQ (1, db.GetModifiedRowCount ()) << "The SQL statement to delete row from ec_Property is expected to only delete one row";
-
-        dbPath = testProject.GetECDbPath ();
-        }
-
-    //now reopen the out-synched ECDb file (to make sure that the schema stuff is read into memory from scratch
-    ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OpenMode::Readonly));
-    ASSERT_EQ (BE_SQLITE_OK, stat) << "Could not open test ECDb file";
-
-    ECSchemaCP readSchema = db. Schemas ().GetECSchema (Utf8String (testSchema->GetName ().c_str ()).c_str ());
-    ASSERT_TRUE (readSchema != nullptr) << "Could not read test schema from reopened ECDb file.";
-
-    //assert custom attribute instance with instance id
-    ECClassCP domainClass1 = readSchema->GetClassCP ("domain1");
-    ASSERT_TRUE (domainClass1 != nullptr) << "Could not retrieve domain class 1 from re-read test schema.";
-
-    IECInstancePtr actualCAInstance = domainClass1->GetCustomAttribute (CAClassName);
-    ASSERT_TRUE (actualCAInstance.IsValid ()) << "Test custom attribute instance not found on domain class 1.";
-
-    //removed property is expected to not be found anymore in the instance
-    bool isNull = false;
-    ECObjectsStatus ecStat = actualCAInstance->IsPropertyNull (isNull, nameOfCAPropertyToRemove);
-    EXPECT_EQ (ECObjectsStatus::PropertyNotFound, ecStat) << "Calling IsPropertyNull on CA instance";
-
-    //now check whether the rest of the instance is still the same
-    ECValuesCollectionPtr expectedValueCollection = ECValuesCollection::Create (*expectedCAInstance);
-    for (ECPropertyValueCR expectedPropertyValue : *expectedValueCollection)
-        {
-        Utf8CP expectedPropertyName = expectedPropertyValue.GetValueAccessor ().GetAccessString ();
-        if (BeStringUtilities::Stricmp (expectedPropertyName, nameOfCAPropertyToRemove) == 0)
-            {
-            continue;
-            }
-
-        ECValue actualValue;
-        ecStat = actualCAInstance->GetValue (actualValue, expectedPropertyName);
-        EXPECT_EQ (ECObjectsStatus::Success, ecStat) << "Property '" << expectedPropertyName << "' not found in actual CA instance.";
-        EXPECT_TRUE (expectedPropertyValue.GetValue ().Equals (actualValue)) << "Property values for property '" << expectedPropertyName << "' do not match";
-        }
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                        07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1680,7 +1551,7 @@ TEST(ECDbSchemas, ECDbSchemaManagerAPITest)
     ECClassKeys inSchemaClassKeys;
     EXPECT_EQ (SUCCESS, schemaManager.GetECClassKeys (inSchemaClassKeys, "StartupCompany"));
     LOG.infov("No of classes in StartupCompany is %d", (int)inSchemaClassKeys.size());
-    EXPECT_EQ (47, inSchemaClassKeys.size());
+    EXPECT_EQ (46, inSchemaClassKeys.size());
 
     StopWatch randomClassSW ("Loading Random Class", false);
     int maxClassesToLoad = 100;
