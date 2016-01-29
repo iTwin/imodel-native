@@ -19,9 +19,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 typedef std::shared_ptr<struct DgnDbRepositoryConnection> DgnDbRepositoryConnectionPtr;
 
-#ifdef NEEDSWORK_LOCKS
 struct DgnDbLockSetResultInfo;
-#endif // NEEDSWORK_LOCKS
 
 typedef AsyncResult<void, DgnDbServerError> DgnDbResult;
 typedef AsyncResult<DgnDbRepositoryConnectionPtr, DgnDbServerError> DgnDbRepositoryConnectionResult;
@@ -31,15 +29,12 @@ typedef AsyncResult<bvector<DgnRevisionPtr>, DgnDbServerError> DgnDbRevisionsRes
 typedef AsyncResult<uint64_t, DgnDbServerError> DgnDbUInt64Result;
 typedef AsyncResult<uint32_t, DgnDbServerError> DgnDbUInt32Result;
 
-#ifdef NEEDSWORK_LOCKS
 typedef AsyncResult<DgnDbLockSetResultInfo, DgnDbServerError> DgnDbLockSetResult;
-typedef AsyncResult<LockRequest::Response, DgnDbServerError> DgnLockResponseResult;
-#endif // NEEDSWORK_LOCKS
+typedef AsyncResult<IRepositoryManager::Response, DgnDbServerError> DgnRepositoryResponseResult;
 
 typedef AsyncResult<DgnDbServerRevisionPtr, DgnDbServerError> DgnDbServerRevisionResult;
 typedef AsyncResult<bvector<DgnDbServerRevisionPtr>, DgnDbServerError> DgnDbServerRevisionsResult;
 
-#ifdef NEEDSWORK_LOCKS
 //=======================================================================================
 //! DgnDbLockSet results.
 //@bsiclass                                      Eligijus.Mauragas              01/2016
@@ -49,7 +44,9 @@ struct DgnDbLockSetResultInfo
 //__PUBLISH_SECTION_END__
 private:
     DgnLockSet      m_locks;
+#ifdef NEEDSWORK_LOCKS
     DgnOwnedLockSet m_owners;
+#endif
 
 public:
     DgnDbLockSetResultInfo () {};
@@ -57,13 +54,14 @@ public:
 
 //__PUBLISH_SECTION_START__
 public:
-    //! Returns an owners information.
+    //! Returns the set of locks.
     DGNDBSERVERCLIENT_EXPORT const DgnLockSet& GetLocks () const;
 
+#ifdef NEEDSWORK_LOCKS
     //! Returns an owners information.
     DGNDBSERVERCLIENT_EXPORT const DgnOwnedLockSet& GetOwners () const;
+#endif
 };
-#endif // NEEDSWORK_LOCKS
 
 
 //=======================================================================================
@@ -81,9 +79,7 @@ private:
 
     friend struct DgnDbClient;
     friend struct DgnDbBriefcase;
-#ifdef NEEDSWORK_LOCKS
-    friend struct DgnDbLocks;
-#endif // NEEDSWORK_LOCKS
+    friend struct DgnDbRepositoryManager;
 
     //! Returns AzureBlobStorageClient. Creates if doesn't exist.
     WebServices::IAzureBlobStorageClientPtr GetAzureClient();
@@ -119,10 +115,8 @@ private:
     //! Get the index from a revisionId.
     AsyncTaskPtr<DgnDbUInt64Result> GetRevisionIndex(Utf8StringCR revisionId, ICancellationTokenPtr cancellationToken = nullptr);
 
-#ifdef NEEDSWORK_LOCKS
     //! Returns all available locks for given lock ids and briefcase id.
     AsyncTaskPtr<DgnDbLockSetResult> QueryLocksInternal (LockableIdSet const* ids, const BeSQLite::BeBriefcaseId* briefcaseId, ICancellationTokenPtr cancellationToken = nullptr);
-#endif // NEEDSWORK_LOCKS
 
     DgnDbRepositoryConnection(RepositoryInfoPtr repository, WebServices::CredentialsCR credentials, WebServices::ClientInfoPtr clientInfo);
 
@@ -166,7 +160,6 @@ public:
     //!< Returns repository information for this connection.
     DGNDBSERVERCLIENT_EXPORT RepositoryInfoCR GetRepositoryInfo ();
 
-#ifdef NEEDSWORK_LOCKS
     //! Returns all available locks for given briefcase id.
     //! @param[in] briefcaseId
     //! @param[in] cancellationToken
@@ -188,7 +181,7 @@ public:
     //! @param[in] briefcaseId
     //! @param[in] lastRevisionId Last pulled revision id
     //! @param[in] cancellationToken
-    DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnLockResponseResult> AcquireLocks (LockRequestCR locks, const BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringCR lastRevisionId, ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnRepositoryResponseResult> AcquireLocks (LockRequestCR locks, const BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringCR lastRevisionId, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Release certain locks.
     //! @param[in] locks Set of locks to release
@@ -202,6 +195,5 @@ public:
     //! @param[in] releasedWithRevisionId Revision that was pushed just before those locks are released
     //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnDbResult> RelinquishLocks (const BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringCR releasedWithRevisionId, ICancellationTokenPtr cancellationToken = nullptr);
-#endif // NEEDSWORK_LOCKS
 };
 END_BENTLEY_DGNDBSERVER_NAMESPACE

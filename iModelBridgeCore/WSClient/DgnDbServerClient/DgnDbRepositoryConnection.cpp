@@ -17,7 +17,6 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
-#ifdef NEEDSWORK_LOCKS
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              01/2016
@@ -26,11 +25,13 @@ void DgnDbLockSetResultInfo::AddLock (const DgnLock dgnLock, const BeSQLite::BeB
     {
     m_locks.insert (dgnLock);
 
+#ifdef NEEDSWORK_LOCKS
     DgnOwnedLock& ownedLock = *m_owners.insert (DgnOwnedLock (dgnLock.GetLockableId ())).first;
     if (LockLevel::Exclusive == dgnLock.GetLevel ())
         ownedLock.GetOwnership ().SetExclusiveOwner (briefcaseId);
     else
         ownedLock.GetOwnership ().AddSharedOwner (briefcaseId);
+#endif // NEEDSWORK_LOCKS
     }
 
 //---------------------------------------------------------------------------------------
@@ -38,12 +39,13 @@ void DgnDbLockSetResultInfo::AddLock (const DgnLock dgnLock, const BeSQLite::BeB
 //---------------------------------------------------------------------------------------
 const DgnLockSet& DgnDbLockSetResultInfo::GetLocks () const { return m_locks; }
 
+#ifdef NEEDSWORK_LOCKS
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              01/2016
 //---------------------------------------------------------------------------------------
 const DgnOwnedLockSet& DgnDbLockSetResultInfo::GetOwners () const { return m_owners; }
-
 #endif // NEEDSWORK_LOCKS
+
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
@@ -243,8 +245,6 @@ ICancellationTokenPtr           cancellationToken
         }
     }
 
-#ifdef NEEDSWORK_LOCKS
-
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
@@ -356,7 +356,7 @@ std::shared_ptr<WSChangeset> LockDeleteAllJsonRequest (const BeBriefcaseId& brie
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnLockResponseResult> DgnDbRepositoryConnection::AcquireLocks
+AsyncTaskPtr<DgnRepositoryResponseResult> DgnDbRepositoryConnection::AcquireLocks
 (
 LockRequestCR         locks,
 const BeBriefcaseId&  briefcaseId,
@@ -369,20 +369,22 @@ ICancellationTokenPtr cancellationToken
     Json::Value requestJson;
     changeset->ToRequestJson(requestJson);
     HttpStringBodyPtr request = HttpStringBody::Create(requestJson.toStyledString());
-    return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)->Then<DgnLockResponseResult>
+    return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)->Then<DgnRepositoryResponseResult>
         ([=] (const WSChangesetResult& result)
         {
         if (result.IsSuccess())
             {
-            LockRequest::Response response;
+            IRepositoryManager::Response response;
             Json::Value responseJson;
-            responseJson[Locks::Status] = static_cast<uint32_t>(LockStatus::Success);
+            responseJson[Locks::Status] = static_cast<uint32_t>(RepositoryStatus::Success);
+#ifdef NEEDSWORK_LOCKS
             response.FromJson(responseJson);
-            return DgnLockResponseResult::Success(response);
+#endif
+            return DgnRepositoryResponseResult::Success(response);
             }
         else
             {
-            return DgnLockResponseResult::Error(result.GetError());
+            return DgnRepositoryResponseResult::Error(result.GetError());
             }
         });
     }
@@ -540,8 +542,6 @@ ICancellationTokenPtr cancellationToken
             return DgnDbLockSetResult::Error(result.GetError());
         });
     }
-
-#endif // NEEDSWORK_LOCKS
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015

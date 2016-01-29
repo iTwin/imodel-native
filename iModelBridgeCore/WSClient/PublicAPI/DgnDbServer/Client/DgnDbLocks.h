@@ -9,19 +9,17 @@
 //__PUBLISH_SECTION_START__
 #include <DgnDbServer/DgnDbServerCommon.h>
 #include <DgnDbServer/Client/DgnDbRepositoryConnection.h>
-#include <DgnPlatform/LocksManager.h>
-
-#ifdef NEEDSWORK_LOCKS
+#include <DgnPlatform/RepositoryManager.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
-typedef std::shared_ptr<struct DgnDbLocks> DgnDbLocksPtr;
+typedef std::shared_ptr<struct DgnDbRepositoryManager> DgnDbRepositoryManagerPtr;
 //=======================================================================================
 //! 
 // @bsiclass                                      Karolis.Dziedzelis             10/2015
 //=======================================================================================
-struct DgnDbLocks : public ILocksServer
+struct DgnDbRepositoryManager : public IRepositoryManager
     {
 private:
     DgnDbRepositoryConnectionPtr m_connection;
@@ -30,22 +28,23 @@ private:
     WebServices::ClientInfoPtr m_clientInfo;
 
 protected:
-    virtual LockStatus _QueryLocksHeld(bool& held, LockRequestCR locks, DgnDbR db) override;
-    virtual LockRequest::Response _AcquireLocks(LockRequestCR locks, DgnDbR db) override;
-    virtual LockStatus _DemoteLocks(DgnLockSet const& locks, DgnDbR db) override;
-    virtual LockStatus _RelinquishLocks(DgnDbR db) override;
-    virtual LockStatus _QueryLockLevels(DgnLockSet&, LockableIdSet const&, DgnDbR db) override;
-    virtual LockStatus _QueryLocks(DgnLockSet& locks, DgnDbR db) override;
-    virtual LockStatus _QueryOwnerships(DgnOwnedLockSet&, LockableIdSet const&) override;
+    virtual Response _ProcessRequest(Request const& req, DgnDbR db) override;
+    virtual RepositoryStatus _Demote(DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db) override;
+    virtual RepositoryStatus _Relinquish(Resources which, DgnDbR db) override;
+    virtual RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnDbR db) override;
+    virtual RepositoryStatus _QueryStates(DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes) override;
 
-    DgnDbLocks(WebServices::ClientInfoPtr clientInfo);
+    Response _AcquireLocks(LockRequestCR locks, DgnDbR db);
+    RepositoryStatus _DemoteLocks(DgnLockSet const& locks, DgnDbR db);
+    RepositoryStatus _RelinquishLocks(DgnDbR db);
+    RepositoryStatus _QueryLocks(DgnLockSet& locks, DgnDbR db);
+
+    DgnDbRepositoryManager(WebServices::ClientInfoPtr clientInfo);
 public:
-    static DgnDbLocksPtr Create(WebServices::ClientInfoPtr clientInfo);
+    static DgnDbRepositoryManagerPtr Create(WebServices::ClientInfoPtr clientInfo);
 
     DGNDBSERVERCLIENT_EXPORT DgnDbResult Connect(DgnDbCR db);
     DGNDBSERVERCLIENT_EXPORT void SetCancellationToken(ICancellationTokenPtr cancellationToken);
     void SetCredentials(CredentialsCR credentials) { m_credentials = credentials; };
     };
 END_BENTLEY_DGNDBSERVER_NAMESPACE
-
-#endif // NEEDSWORK_LOCKS
