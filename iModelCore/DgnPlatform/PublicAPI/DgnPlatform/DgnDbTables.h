@@ -186,6 +186,9 @@ public:
     };
 
     static Iterator MakeIterator(DgnDbR db) { return Iterator(db); }
+
+    DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
+    DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
 };
 
 typedef bset<DgnCode> DgnCodeSet;

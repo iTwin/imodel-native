@@ -1204,3 +1204,498 @@ void IBriefcaseManager::ReformulateRequest(Request& req, Response const& respons
     ReformulateCodeRequest(req.Codes(), response);
     }
 
+#define JSON_Status "Status"            // RepositoryStatus
+#define JSON_Locks "Locks"              // list of DgnLock.
+#define JSON_LockableId "LockableId"    // LockableId
+#define JSON_Id "Id"                    // BeInt64Id
+#define JSON_LockType "Type"            // LockType
+#define JSON_LockLevel "Level"          // LockLevel
+#define JSON_Owner "Owner"              // BeBriefcaseId
+#define JSON_LockStates "LockStates"    // list of DgnLockInfo
+#define JSON_ExclusiveOwner "Exclusive" // BeBriefcaseId
+#define JSON_SharedOwners "Shared"      // list of BeBriefcaseId
+#define JSON_Ownership "Ownership"      // DgnLockOwnership
+#define JSON_RevisionId "Revision"      // string
+#define JSON_Tracked "Tracked"          // boolean
+#define JSON_AuthorityId "Authority"    // BeInt64Id
+#define JSON_Namespace "Namespace"      // string
+#define JSON_Name "Name"                // string
+#define JSON_Code "Code"                // DgnCode
+#define JSON_CodeStateType "Type"       // DgnCodeState::Type
+#define JSON_Codes "Codes"              // DgnCodeSet
+#define JSON_Options "Options"          // ResponseOptions
+#define JSON_CodeStates "CodeStates"    // list of DgnCodeInfo
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RepositoryJson::BeInt64IdFromJson(BeInt64Id& id, JsonValueCR value)
+    {
+    if (value.isNull())
+        return false;
+
+    id = BeInt64Id(value.asInt64());
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void RepositoryJson::BeInt64IdToJson(JsonValueR value, BeInt64Id id)
+    {
+    value = id.GetValue();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RepositoryJson::BriefcaseIdFromJson(BeBriefcaseId& bcId, JsonValueCR value)
+    {
+    if (!value.isConvertibleTo(Json::uintValue))
+        return false;
+
+    bcId = BeBriefcaseId(value.asUInt());
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void RepositoryJson::BriefcaseIdToJson(JsonValueR value, BeBriefcaseId id)
+    {
+    value = id.GetValue();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RepositoryJson::LockLevelFromJson(LockLevel& level, JsonValueCR value)
+    {
+    if (value.isConvertibleTo(Json::uintValue))
+        {
+        level = static_cast<LockLevel>(value.asUInt());
+        switch (level)
+            {
+            case LockLevel::None:
+            case LockLevel::Shared:
+            case LockLevel::Exclusive:
+                return true;
+            }
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void RepositoryJson::LockLevelToJson(JsonValueR value, LockLevel level)
+    {
+    value = static_cast<uint32_t>(level);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RepositoryJson::LockableTypeFromJson(LockableType& type, JsonValueCR value)
+    {
+    if (value.isConvertibleTo(Json::uintValue))
+        {
+        type = static_cast<LockableType>(value.asUInt());
+        switch (type)
+            {
+            case LockableType::Db:
+            case LockableType::Model:
+            case LockableType::Element:
+                return true;
+            }
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void RepositoryJson::LockableTypeToJson(JsonValueR value, LockableType type)
+    {
+    value = static_cast<uint32_t>(type);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RepositoryJson::RepositoryStatusFromJson(RepositoryStatus& status, JsonValueCR value)
+    {
+    if (!value.isConvertibleTo(Json::uintValue))
+        return false;
+
+    status = static_cast<RepositoryStatus>(value.asUInt());
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void RepositoryJson::RepositoryStatusToJson(JsonValueR value, RepositoryStatus status)
+    {
+    value = static_cast<uint32_t>(status);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void LockableId::ToJson(JsonValueR value) const
+    {
+    RepositoryJson::BeInt64IdToJson(value[JSON_Id], m_id);
+    RepositoryJson::LockableTypeToJson(value[JSON_LockType], m_type);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool LockableId::FromJson(JsonValueCR value)
+    {
+    if (!RepositoryJson::BeInt64IdFromJson(m_id, value[JSON_Id]) || !RepositoryJson::LockableTypeFromJson(m_type, value[JSON_LockType]))
+        {
+        Invalidate();
+        return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnLock::ToJson(JsonValueR value) const
+    {
+    m_id.ToJson(value[JSON_LockableId]);
+    RepositoryJson::LockLevelToJson(value[JSON_LockLevel], m_level);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnLock::FromJson(JsonValueCR value)
+    {
+    if (!m_id.FromJson(value[JSON_LockableId]) || !RepositoryJson::LockLevelFromJson(m_level, value[JSON_LockLevel]))
+        {
+        Invalidate();
+        return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> void toJson(JsonValueR value, T const& obj) { obj.ToJson(value); }
+template<> void toJson(JsonValueR value, BeBriefcaseId const& id) { RepositoryJson::BriefcaseIdToJson(value, id); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> static void collectionToJson(JsonValueR value, T const& objs)
+    {
+    uint32_t nObjs = static_cast<uint32_t>(objs.size());
+    Json::Value array(Json::arrayValue);
+    array.resize(nObjs);
+
+    uint32_t i = 0;
+    for (auto const& obj : objs)
+        toJson(array[i++], obj);
+
+    value = array;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> static bool setFromJson(bset<T>& objs, JsonValueCR value)
+    {
+    if (!value.isArray())
+        return false;
+
+    T obj;
+    uint32_t nObjs = value.size();
+    for (uint32_t i = 0; i < nObjs; i++)
+        {
+        if (!obj.FromJson(value[i]))
+            return false;
+
+        objs.insert(obj);
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnLockOwnership::ToJson(JsonValueR value) const
+    {
+    auto level = GetLockLevel();
+    RepositoryJson::LockLevelToJson(value[JSON_LockLevel], level);
+    switch (level)
+        {
+        case LockLevel::Exclusive:
+            value[JSON_ExclusiveOwner] = GetExclusiveOwner().GetValue();
+            break;
+        case LockLevel::Shared:
+            collectionToJson(value[JSON_SharedOwners], m_sharedOwners);
+            break;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnLockOwnership::FromJson(JsonValueCR value)
+    {
+    Reset();
+    LockLevel level;
+    if (!RepositoryJson::LockLevelFromJson(level, value[JSON_LockLevel]))
+        return false;
+
+    switch (level)
+        {
+        case LockLevel::None:
+            return true;
+        case LockLevel::Exclusive:
+            return RepositoryJson::BriefcaseIdFromJson(m_exclusiveOwner, value[JSON_ExclusiveOwner]);
+        case LockLevel::Shared:
+            {
+            JsonValueCR owners = value[JSON_SharedOwners];
+            if (!owners.isArray())
+                return false;
+
+            BeBriefcaseId owner;
+            uint32_t nOwners = owners.size();
+            for (uint32_t i = 0; i < nOwners; i++)
+                {
+                if (!RepositoryJson::BriefcaseIdFromJson(owner, value[i]))
+                    {
+                    Reset();
+                    return false;
+                    }
+
+                AddSharedOwner(owner);
+                }
+
+            return true;
+            }
+        default:
+            return false;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void LockRequest::ToJson(JsonValueR value) const
+    {
+    collectionToJson(value[JSON_Locks], m_locks);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool LockRequest::FromJson(JsonValueCR value)
+    {
+    Clear();
+    JsonValueCR locks = value[JSON_Locks];
+    if (!locks.isArray())
+        return false;
+
+    DgnLock lock;
+    uint32_t nLocks = locks.size();
+    for (uint32_t i = 0; i < nLocks; i++)
+        {
+        if (!lock.FromJson(locks[i]))
+            {
+            Clear();
+            return false;
+            }
+
+        m_locks.insert(lock);
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnLockState::ToJson(JsonValueR value) const
+    {
+    m_ownership.ToJson(value[JSON_Ownership]);
+    value[JSON_RevisionId] = m_revisionId;
+    value[JSON_Tracked] = m_tracked;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnLockState::FromJson(JsonValueCR value)
+    {
+    Reset();
+    if (!m_ownership.FromJson(value[JSON_Ownership]))
+        return false;
+
+    m_revisionId = value[JSON_RevisionId].asString();
+    m_tracked = value[JSON_Tracked].asBool();
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnLockInfo::ToJson(JsonValueR value) const
+    {
+    DgnLockState::ToJson(value);
+    m_id.ToJson(value[JSON_LockableId]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnLockInfo::FromJson(JsonValueCR value)
+    {
+    return m_id.FromJson(value[JSON_LockableId]) && DgnLockState::FromJson(value);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnCode::ToJson(JsonValueR value) const
+    {
+    RepositoryJson::BeInt64IdToJson(value[JSON_Id], m_authority);
+    value[JSON_Namespace] = m_nameSpace;
+    value[JSON_Name] = m_value;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnCode::FromJson(JsonValueCR value)
+    {
+    if (!RepositoryJson::BeInt64IdFromJson(m_authority, value[JSON_Id]))
+        {
+        *this = DgnCode();
+        return false;
+        }
+
+    m_nameSpace = value[JSON_Namespace].asString();
+    m_value = value[JSON_Name].asString();
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnCodeState::ToJson(JsonValueR value) const
+    {
+    value[JSON_CodeStateType] = static_cast<uint32_t>(m_type);
+    RepositoryJson::BriefcaseIdToJson(value[JSON_Owner], m_reservedBy);
+    value[JSON_RevisionId] = m_revisionId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnCodeState::FromJson(JsonValueCR value)
+    {
+    if (!RepositoryJson::BriefcaseIdFromJson(m_reservedBy, value[JSON_Owner]))
+        {
+        *this = DgnCodeState();
+        return false;
+        }
+
+    m_revisionId = value[JSON_RevisionId].asString();
+    m_type = static_cast<Type>(value[JSON_CodeStateType].asUInt());
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnCodeInfo::ToJson(JsonValueR value) const
+    {
+    DgnCodeState::ToJson(value);
+    m_code.ToJson(value[JSON_Code]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnCodeInfo::FromJson(JsonValueCR value)
+    {
+    return m_code.FromJson(value[JSON_Code]) && DgnCodeState::FromJson(value);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void RepositoryJson::ResponseOptionsToJson(JsonValueR value, IBriefcaseManager::ResponseOptions options)
+    {
+    value = static_cast<uint32_t>(options);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RepositoryJson::ResponseOptionsFromJson(IBriefcaseManager::ResponseOptions& options, JsonValueCR value)
+    {
+    options = static_cast<IBriefcaseManager::ResponseOptions>(value.asUInt());
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void IBriefcaseManager::Request::ToJson(JsonValueR value) const
+    {
+    m_locks.ToJson(value);
+    collectionToJson(value[JSON_Codes], m_codes);
+    RepositoryJson::ResponseOptionsToJson(value[JSON_Options], m_options);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IBriefcaseManager::Request::FromJson(JsonValueCR value)
+    {
+    Reset();
+    if (RepositoryJson::ResponseOptionsFromJson(m_options, value[JSON_Options]) && m_locks.FromJson(value) && setFromJson(m_codes, value[JSON_Codes]))
+        return true;
+
+    Reset();
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void IBriefcaseManager::Response::ToJson(JsonValueR value) const
+    {
+    RepositoryJson::RepositoryStatusToJson(value[JSON_Status], m_status);
+    collectionToJson(value[JSON_LockStates], m_lockStates);
+    collectionToJson(value[JSON_CodeStates], m_codeStates);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IBriefcaseManager::Response::FromJson(JsonValueCR value)
+    {
+    Invalidate();
+    if (RepositoryJson::RepositoryStatusFromJson(m_status, value[JSON_Status]) && setFromJson(m_lockStates, value[JSON_LockStates]) && setFromJson(m_codeStates, value[JSON_CodeStates]))
+        return true;
+
+    Invalidate();
+    return false;
+    }
+
