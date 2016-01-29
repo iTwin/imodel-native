@@ -767,7 +767,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _WriteJsonProperties(Json::Value&) const override;
     DGNPLATFORM_EXPORT virtual void _ReadJsonProperties(Json::Value const&) override;
 
-    virtual GeometricModelCP _ToGeometricModel() const override {return this;}
+    virtual GeometricModelCP _ToGeometricModel() const override final {return this;}
     
     explicit GeometricModel(CreateParams const& params) : T_Super(params), m_rangeIndex(nullptr), m_displayInfo(params.m_displayInfo) {}
 
@@ -797,7 +797,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel3d : GeometricModel
     DEFINE_T_SUPER(GeometricModel);
 
 protected:
-    virtual DgnModel3dCP _ToDgnModel3d() const override {return this;}
+    virtual DgnModel3dCP _ToDgnModel3d() const override final {return this;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
 
 public:
@@ -814,9 +814,9 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel2d : GeometricModel
     DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_Model2d, GeometricModel);
 
 protected:
-    DgnModel2dCP _ToDgnModel2d() const override {return this;}
+    DgnModel2dCP _ToDgnModel2d() const override final {return this;}
 
-    CoordinateSpace _GetCoordinateSpace() const override {return CoordinateSpace::Local;}
+    CoordinateSpace _GetCoordinateSpace() const override final {return CoordinateSpace::Local;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element);
 
 public:
@@ -834,8 +834,8 @@ struct EXPORT_VTABLE_ATTRIBUTE SpatialModel : DgnModel3d
 {
     DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialModel, DgnModel3d);
 protected:
-    SpatialModelCP _ToSpatialModel() const override {return this;}
-    CoordinateSpace _GetCoordinateSpace() const override {return CoordinateSpace::World;}
+    SpatialModelCP _ToSpatialModel() const override final {return this;}
+    CoordinateSpace _GetCoordinateSpace() const override final {return CoordinateSpace::World;}
 
 public:
     explicit SpatialModel(CreateParams const& params) : T_Super(params) {}
@@ -850,7 +850,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DefinitionModel : DgnModel
 {
     DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_DefinitionModel, DgnModel);
 protected:
-    DefinitionModelCP _ToDefinitionModel() const override {return this;}
+    DefinitionModelCP _ToDefinitionModel() const override final {return this;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
 public:
     explicit DefinitionModel(CreateParams const& params) : T_Super(params) { }
@@ -1305,7 +1305,7 @@ private:
 protected:
     DPoint2d m_size;
 
-    SheetModelCP _ToSheetModel() const override {return this;}
+    SheetModelCP _ToSheetModel() const override final {return this;}
 
     DGNPLATFORM_EXPORT virtual void _InitFrom(DgnModelCR other) override;
 
@@ -1351,7 +1351,7 @@ namespace dgn_ModelHandler
 
         ECSqlClassParams const& GetECSqlClassParams();
     protected:
-        ModelHandlerP _ToModelHandler() override {return this;}
+        ModelHandlerP _ToModelHandler() override final {return this;}
         virtual DgnModelP _CreateInstance(DgnModel::CreateParams const& params) {return nullptr;}
         virtual uint64_t _ParseRestrictedAction(Utf8CP name) const override { return DgnModel::RestrictedAction::Parse(name); }
         DGNPLATFORM_EXPORT virtual DgnDbStatus _VerifySchema(DgnDomains&) override;

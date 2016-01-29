@@ -58,7 +58,7 @@ static void openDb (DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode)
 static DgnDbStatus createSpatialModel(SpatialModelPtr& catalogModel, DgnDbR db, DgnCode const& code)
     {
     DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
-    catalogModel = new SpatialModel(DgnModel3d::CreateParams(db, mclassId, code));
+    catalogModel = new SpatialModel(SpatialModel::CreateParams(db, mclassId, code));
     catalogModel->SetInGuiList(false);
     return catalogModel->Insert();
     }

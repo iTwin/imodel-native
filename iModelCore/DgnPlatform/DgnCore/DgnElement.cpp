@@ -38,7 +38,7 @@
  *      BBoxHigh : point3d
  */
 
-#define GEOM_Geometry "Geometry"
+#define GEOM_GeometryStream "GeometryStream"
 #define GEOM_Category "CategoryId"
 #define GEOM_Origin "Origin"
 #define GEOM_Box_Low "BBoxLow"
@@ -2199,7 +2199,7 @@ DgnDbStatus ElementGeomData::ReadFrom(ECSqlStatement& stmt, ECSqlClassParams con
     m_categoryId = stmt.GetValueId<DgnCategoryId>(params.GetSelectIndex(GEOM_Category));
 
     // Read GeomStream
-    auto geomIndex = params.GetSelectIndex(GEOM_Geometry);
+    auto geomIndex = params.GetSelectIndex(GEOM_GeometryStream);
     if (stmt.IsValueNull(geomIndex))
         return DgnDbStatus::Success;    // no geometry...
 
@@ -2227,7 +2227,7 @@ DgnDbStatus ElementGeomData::BindTo(ECSqlStatement& stmt, DgnElementCR el)
         snappyTo.Write(m_geom.GetData(), m_geom.GetSize());
         }
 
-    auto geomIndex = stmt.GetParameterIndex(GEOM_Geometry);
+    auto geomIndex = stmt.GetParameterIndex(GEOM_GeometryStream);
     uint32_t zipSize = snappyTo.GetCompressedSize();
     if (0 < zipSize)
         {
@@ -2395,14 +2395,14 @@ DgnDbStatus ElementGeomData::WriteGeomStream(DgnElementCR el, Utf8CP tableName) 
     // Ideally we would do this in BindTo(), but ECSql does not support binding a zero blob.
     Utf8String sql("UPDATE ");
     sql.append(tableName);
-    sql.append(" SET " GEOM_Geometry "=? WHERE ElementId=?");
+    sql.append(" SET " GEOM_GeometryStream "=? WHERE ElementId=?");
     CachedStatementPtr stmt = pool.GetStatement(sql.c_str());
     stmt->BindId(2, el.GetElementId());
     stmt->BindZeroBlob(1, snappyTo.GetCompressedSize());
     if (BE_SQLITE_DONE != stmt->Step())
         return DgnDbStatus::WriteError;
 
-    StatusInt status = snappyTo.SaveToRow(el.GetDgnDb(), tableName, GEOM_Geometry, el.GetElementId().GetValue());
+    StatusInt status = snappyTo.SaveToRow(el.GetDgnDb(), tableName, GEOM_GeometryStream, el.GetElementId().GetValue());
     return SUCCESS == status ? DgnDbStatus::Success : DgnDbStatus::WriteError;
     }
 
@@ -2490,7 +2490,7 @@ void ElementGeomData::AddBaseClassParams(ECSqlClassParams& params)
     params.Add(GEOM_Origin);
     params.Add(GEOM_Box_Low);
     params.Add(GEOM_Box_High);
-    params.Add(GEOM_Geometry);
+    params.Add(GEOM_GeometryStream);
     }
 
 /*---------------------------------------------------------------------------------**//**

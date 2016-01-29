@@ -34,7 +34,7 @@
             </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="CategoryId" typeName="long"/><!-- should be non-nullable but shared table... -->
-        <ECProperty propertyName="Geometry" typeName="binary"/>
+        <ECProperty propertyName="GeometryStream" typeName="binary"/>
     </ECEntityClass>
     
     <ECRelationshipClass typeName="GeometrySourceIsInCategory" description="Element is in Category" strength="referencing">
@@ -1191,7 +1191,7 @@
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
-        <ECProperty propertyName="Geom" typeName="binary">
+        <ECProperty propertyName="GeometryStream" typeName="binary">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>False</IsNullable>
