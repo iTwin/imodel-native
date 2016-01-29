@@ -1018,7 +1018,7 @@ static ECN::ECSchemaCP importECSchema(ECN::ECObjectsStatus& ecstatus, DgnDbR db,
         updateExistingSchemas = false;
         }
 
-    ECDbSchemaManager::ImportOptions options(false, updateExistingSchemas);
+    ECDbSchemaManager::ImportOptions options(false);
 
     ECN::ECSchemaReadContextPtr contextPtr = ECN::ECSchemaReadContext::CreateContext();
 

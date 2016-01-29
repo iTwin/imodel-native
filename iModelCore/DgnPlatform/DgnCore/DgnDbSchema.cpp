@@ -18,7 +18,7 @@ static DgnVersion getCurrentSchemaVerion()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void importDgnSchema(DgnDbR db, bool updateExisting)
+static void importDgnSchema(DgnDbR db)
     {
     ECSchemaReadContextPtr ecSchemaContext = ECN::ECSchemaReadContext::CreateContext();
     ecSchemaContext->AddSchemaLocater(db.GetSchemaLocater());
@@ -38,7 +38,7 @@ static void importDgnSchema(DgnDbR db, bool updateExisting)
     ECSchemaPtr dgnschema = ECSchema::LocateSchema(dgnschemaKey, *ecSchemaContext);
     BeAssert(dgnschema != NULL);
 
-    BentleyStatus status = db.Schemas().ImportECSchemas(ecSchemaContext->GetCache(), ECDbSchemaManager::ImportOptions(false, updateExisting));
+    BentleyStatus status = db.Schemas().ImportECSchemas(ecSchemaContext->GetCache(), ECDbSchemaManager::ImportOptions(false));
     BeAssert(status == SUCCESS);
     }
 
@@ -95,7 +95,7 @@ DbResult DgnDb::CreateDgnDbTables()
 
     ExecuteSql("CREATE VIRTUAL TABLE " DGN_VTABLE_RTree3d " USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)"); // Define this before importing dgn schema!
 
-    importDgnSchema(*this, false);
+    importDgnSchema(*this);
 
     // Every DgnDb has a few built-in authorities for element codes
     CreateAuthorities();
