@@ -8,8 +8,6 @@
 #include <DgnDbServer/Client/DgnDbLocks.h>
 #include "DgnDbServerUtils.h"
 
-#ifdef NEEDSWORK_LOCKS
-
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
@@ -17,7 +15,7 @@ USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
-DgnDbResult DgnDbLocks::Connect(DgnDbCR db)
+DgnDbResult DgnDbRepositoryManager::Connect(DgnDbCR db)
     {
     auto repository = RepositoryInfo::ReadRepositoryInfo(db);
     if (m_connection)
@@ -43,10 +41,10 @@ DgnDbResult DgnDbLocks::Connect(DgnDbCR db)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
-LockRequest::Response DgnDbLocks::_AcquireLocks(LockRequestCR locks, DgnDbR db)
+DgnDbRepositoryManager::Response DgnDbRepositoryManager::_AcquireLocks(LockRequestCR locks, DgnDbR db)
     {
     if (!m_connection)
-        return LockRequest::Response (LockStatus::ServerUnavailable);
+        return Response(RepositoryStatus::ServerUnavailable);
 
     Utf8String lastRevisionId;
     db.QueryBriefcaseLocalValue (Db::Local::LastRevision, lastRevisionId);
@@ -61,48 +59,68 @@ LockRequest::Response DgnDbLocks::_AcquireLocks(LockRequestCR locks, DgnDbR db)
         if (DgnDbServerError::Id::LockOwnedByAnotherBriefcase == error.GetId())
             {
             Json::Value deniedLocks;
-            DgnLocksJson::LockStatusToJson(deniedLocks[Locks::Status], LockStatus::AlreadyHeld);
+            DgnLocksJson::RepositoryStatusToJson(deniedLocks[Locks::Status], RepositoryStatus::LockAlreadyHeld);
             deniedLocks[Locks::DeniedLocks] = Json::arrayValue;
             JsonValueCR errorData = error.GetExtendedData();
             uint32_t i = 0;
             for (auto const& lock : errorData[ServerSchema::Property::ExistingLocks])
                 FormatLockFromServer(deniedLocks[Locks::DeniedLocks][i++], lock);
-            LockRequest::Response response;
+            Response response;
+#ifdef NEEDSWORK_LOCKS
             response.FromJson(deniedLocks);
+#endif
             return response;
             }
-        return LockRequest::Response(LockStatus::ServerUnavailable);//NEEDSWORK: Use appropriate status
+        return Response(RepositoryStatus::ServerUnavailable);//NEEDSWORK: Use appropriate status
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbRepositoryManager::Response DgnDbRepositoryManager::_ProcessRequest(Request const& req, DgnDbR db)
+    {
+    // NEEDSWORK_LOCKS: Handle codes
+    return _AcquireLocks(req.Locks(), db);
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
-Dgn::LockStatus DgnDbLocks::_DemoteLocks(Dgn::DgnLockSet const& locks, Dgn::DgnDbR db)
+Dgn::RepositoryStatus DgnDbRepositoryManager::_DemoteLocks(Dgn::DgnLockSet const& locks, Dgn::DgnDbR db)
     {
     if (!m_connection)
-        return LockStatus::ServerUnavailable;
+        return RepositoryStatus::ServerUnavailable;
 
     Utf8String lastRevisionId;
     db.QueryBriefcaseLocalValue (Db::Local::LastRevision, lastRevisionId);
     auto result = m_connection->DemoteLocks (locks, db.GetBriefcaseId(), lastRevisionId, m_cancellationToken)->GetResult();
     if (result.IsSuccess())
         {
-        return LockStatus::Success;
+        return RepositoryStatus::Success;
         }
     else
         {
-        return LockStatus::ServerUnavailable;//NEEDSWORK: Use appropriate status
+        return RepositoryStatus::ServerUnavailable;//NEEDSWORK: Use appropriate status
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus DgnDbRepositoryManager::_Demote(DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db)
+    {
+    // NEEDSWORK_LOCKS: Handle codes
+    return _DemoteLocks(locks, db);
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
-LockStatus DgnDbLocks::_RelinquishLocks(DgnDbR db)
+RepositoryStatus DgnDbRepositoryManager::_RelinquishLocks(DgnDbR db)
     {
     if (!m_connection)
-        return LockStatus::ServerUnavailable;
+        return RepositoryStatus::ServerUnavailable;
 
     Utf8String lastRevisionId;
     db.QueryBriefcaseLocalValue (Db::Local::LastRevision, lastRevisionId);
@@ -110,105 +128,65 @@ LockStatus DgnDbLocks::_RelinquishLocks(DgnDbR db)
     auto result = m_connection->RelinquishLocks(db.GetBriefcaseId(), lastRevisionId, m_cancellationToken)->GetResult();
     if (result.IsSuccess())
         {
-        return LockStatus::Success;//NEEDSWORK: Can delete locks partially
+        return RepositoryStatus::Success;//NEEDSWORK: Can delete locks partially
         }
     else
         {
-        return LockStatus::ServerUnavailable;//NEEDSWORK: Use appropriate status
+        return RepositoryStatus::ServerUnavailable;//NEEDSWORK: Use appropriate status
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus DgnDbRepositoryManager::_Relinquish(Resources which, DgnDbR db)
+    {
+    // NEEDSWORK_LOCKS: Handle codes
+    return (Resources::Locks == (which & Resources::Locks)) ? _RelinquishLocks(db) : RepositoryStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
-LockStatus DgnDbLocks::_QueryLocks(DgnLockSet& locks, DgnDbR db)
+RepositoryStatus DgnDbRepositoryManager::_QueryLocks(DgnLockSet& locks, DgnDbR db)
     {
     if (!m_connection)
-        return LockStatus::ServerUnavailable;
+        return RepositoryStatus::ServerUnavailable;
 
     auto result = m_connection->QueryLocks(db.GetBriefcaseId(), m_cancellationToken)->GetResult();
     if (result.IsSuccess())
         {
         locks = result.GetValue ().GetLocks ();
-        return LockStatus::Success;
+        return RepositoryStatus::Success;
         }
     else
         {
-        return LockStatus::ServerUnavailable;//NEEDSWORK: Use appropriate status
+        return RepositoryStatus::ServerUnavailable;//NEEDSWORK: Use appropriate status
         }
     }
 
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             12/2015
-//---------------------------------------------------------------------------------------
-LockStatus DgnDbLocks::_QueryLocksHeld(bool& held, LockRequestCR locks, DgnDbR db)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus DgnDbRepositoryManager::_QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnDbR db)
     {
-    held = false;
-
-    if (!m_connection)
-        return LockStatus::ServerUnavailable;
-
-    LockableIdSet ids;
-    for (auto& lock : locks)
-        ids.insert (lock.GetLockableId ());
-
-    auto result = m_connection->QueryLocksById (ids, db.GetBriefcaseId (), m_cancellationToken)->GetResult ();
-    if (result.IsSuccess ())
-        {
-        held = result.GetValue ().GetLocks ().size () == locks.Size ();
-        return LockStatus::Success;
-        }
-    else
-        {
-        return LockStatus::ServerUnavailable;//NEEDSWORK: Use appropriate status
-        }
+    // NEEDSWORK_LOCKS: Handle codes
+    return _QueryLocks(locks, db);
     }
 
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             12/2015
-//---------------------------------------------------------------------------------------
-LockStatus DgnDbLocks::_QueryLockLevels(DgnLockSet& levels, LockableIdSet const& lockIds, DgnDbR db)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus DgnDbRepositoryManager::_QueryStates(DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes)
     {
-    if (!m_connection)
-        return LockStatus::ServerUnavailable;
-
-    auto result = m_connection->QueryLocksById (lockIds, db.GetBriefcaseId (), m_cancellationToken)->GetResult ();
-    if (result.IsSuccess ())
-        {
-        levels = result.GetValue ().GetLocks ();
-        return LockStatus::Success;
-        }
-    else
-        {
-        return LockStatus::ServerUnavailable;//NEEDSWORK: Use appropriate status
-        }
+    // NEEDSWORK_LOCKS
+    return RepositoryStatus::InvalidResponse;
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
-LockStatus DgnDbLocks::_QueryOwnerships(DgnOwnedLockSet& ownerships, LockableIdSet const& ids)
-    {
-    if (!m_connection)
-        return LockStatus::ServerUnavailable;
-
-    auto result = m_connection->QueryLocksById (ids, m_cancellationToken)->GetResult ();
-    if (result.IsSuccess ())
-        {
-        ownerships = result.GetValue ().GetOwners ();
-        return LockStatus::Success;
-        }
-    else
-        {
-        return LockStatus::ServerUnavailable;//NEEDSWORK: Use appropriate status
-        }
-    }
-
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             12/2015
-//---------------------------------------------------------------------------------------
-DgnDbLocks::DgnDbLocks(WebServices::ClientInfoPtr clientInfo)
+DgnDbRepositoryManager::DgnDbRepositoryManager(WebServices::ClientInfoPtr clientInfo)
     {
     m_clientInfo = clientInfo;
     }
@@ -216,17 +194,16 @@ DgnDbLocks::DgnDbLocks(WebServices::ClientInfoPtr clientInfo)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
-std::shared_ptr<DgnDbLocks> DgnDbLocks::Create(WebServices::ClientInfoPtr clientInfo)
+std::shared_ptr<DgnDbRepositoryManager> DgnDbRepositoryManager::Create(WebServices::ClientInfoPtr clientInfo)
     {
-    return std::shared_ptr<DgnDbLocks>(new DgnDbLocks(clientInfo));
+    return std::shared_ptr<DgnDbRepositoryManager>(new DgnDbRepositoryManager(clientInfo));
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
-void DgnDbLocks::SetCancellationToken(ICancellationTokenPtr cancellationToken)
+void DgnDbRepositoryManager::SetCancellationToken(ICancellationTokenPtr cancellationToken)
     {
     m_cancellationToken = cancellationToken;
     }
 
-#endif // NEEDSWORK_LOCKS

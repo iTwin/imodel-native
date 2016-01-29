@@ -50,9 +50,7 @@ AsyncTaskPtr<DgnDbRepositoryConnectionResult> DgnDbClient::ConnectToRepository(R
 DgnDbClient::DgnDbClient(ClientInfoPtr clientInfo)
     : m_clientInfo(clientInfo)
     {
-#ifdef NEEDSWORK_LOCKS
-    m_locks = DgnDbLocks::Create(clientInfo);
-#endif // NEEDSWORK_LOCKS
+    m_repositoryManager = DgnDbRepositoryManager::Create(clientInfo);
     }
 
 //---------------------------------------------------------------------------------------
@@ -77,9 +75,7 @@ void DgnDbClient::SetServerURL(Utf8StringCR serverUrl)
 void DgnDbClient::SetCredentials(DgnClientFx::Utils::CredentialsCR credentials)
     {
     m_credentials = credentials;
-#ifdef NEEDSWORK_LOCKS
-    m_locks->SetCredentials(credentials);
-#endif // NEEDSWORK_LOCKS
+    m_repositoryManager->SetCredentials(credentials);
     }
 
 //---------------------------------------------------------------------------------------
@@ -512,14 +508,11 @@ AsyncTaskPtr<DgnDbFileNameResult> DgnDbClient::AquireBriefcase(Utf8StringCR repo
             });
     }
 
-#ifdef NEEDSWORK_LOCKS
-
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
-Dgn::ILocksServer* DgnDbClient::GetLocksServerP()
+Dgn::IRepositoryManager* DgnDbClient::GetRepositoryManagerP()
     {
-    return dynamic_cast<Dgn::ILocksServer*>(m_locks.get());
+    return dynamic_cast<Dgn::IRepositoryManager*>(m_repositoryManager.get());
     }
 
-#endif // NEEDSWORK_LOCKS
