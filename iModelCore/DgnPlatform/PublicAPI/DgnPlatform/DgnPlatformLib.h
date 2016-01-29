@@ -873,15 +873,13 @@ public:
             virtual bool    _AllowDgnCoordinateReadout() const {return true;}
             };
 
-        //! Supplies locking functionality for elements, models, etc
-        struct ServerAdmin : IHostObject
+        //! Supplies functionality for coordinating multi-user DgnDb repositories
+        struct RepositoryAdmin : IHostObject
             {
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
-            DGNPLATFORM_EXPORT virtual ILocksManagerPtr _CreateLocksManager(DgnDbR db) const;
-            virtual ILocksServerP _GetLocksServer(DgnDbR db) const { return nullptr; }
-            DGNPLATFORM_EXPORT virtual IDgnCodesManagerPtr _CreateCodesManager(DgnDbR db) const;
-            virtual IDgnCodesServerP _GetCodesServer(DgnDbR db) const { return nullptr; }
+            DGNPLATFORM_EXPORT virtual IBriefcaseManagerPtr _CreateBriefcaseManager(DgnDbR db) const;
+            virtual IRepositoryManagerP _GetRepositoryManager(DgnDbR db) const { return nullptr; }
             };
 
         typedef bvector<DgnDomain*> T_RegisteredDomains;
@@ -903,7 +901,7 @@ public:
         FormatterAdmin*         m_formatterAdmin;
         RealityDataAdmin*       m_realityDataAdmin;
         ScriptAdmin*            m_scriptingAdmin;
-        ServerAdmin*            m_serverAdmin;
+        RepositoryAdmin*        m_repositoryAdmin;
         Utf8String              m_productName;
         T_RegisteredDomains     m_registeredDomains;
         bvector<CopyrightSupplier*> m_copyrights;
@@ -953,8 +951,8 @@ public:
         //! Supply the ScriptAdmin
         DGNPLATFORM_EXPORT virtual ScriptAdmin& _SupplyScriptingAdmin();
 
-        //! Supply the ServerAdmin
-        DGNPLATFORM_EXPORT virtual ServerAdmin& _SupplyServerAdmin();
+        //! Supply the RepositoryAdmin
+        DGNPLATFORM_EXPORT virtual RepositoryAdmin& _SupplyRepositoryAdmin();
 
         //! Supply the product name to be used to describe the host.
         virtual void _SupplyProductName(Utf8StringR) = 0;
@@ -979,7 +977,7 @@ public:
             m_formatterAdmin = nullptr;
             m_realityDataAdmin = nullptr;
             m_scriptingAdmin = nullptr;
-            m_serverAdmin = nullptr;
+            m_repositoryAdmin = nullptr;
             };
 
         virtual ~Host() {}
@@ -1001,7 +999,7 @@ public:
         FormatterAdmin&         GetFormatterAdmin()        {return *m_formatterAdmin;}
         RealityDataAdmin&       GetRealityDataAdmin()      {return *m_realityDataAdmin;}
         ScriptAdmin&            GetScriptAdmin()           {return *m_scriptingAdmin;}
-        ServerAdmin&            GetServerAdmin()           {return *m_serverAdmin;}
+        RepositoryAdmin&        GetRepositoryAdmin()       {return *m_repositoryAdmin;}
         Utf8CP                  GetProductName()           {return m_productName.c_str();}
 
         void ChangeNotificationAdmin(NotificationAdmin& newAdmin) {m_notificationAdmin = &newAdmin;}
