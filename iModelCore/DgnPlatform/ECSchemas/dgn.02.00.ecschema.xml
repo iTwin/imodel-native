@@ -909,6 +909,15 @@
                     <Strategy>SharedTable</Strategy>
                     <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
+                <!-- We must index the Priority column, so that we can do selects with ... ORDERBY Priority. Priority may be 0. That's why it's not unique. -->
+                <Indexes>
+                    <DbIndex>
+                        <IsUnique>False</IsUnique>
+                        <Properties>
+                            <string>Priority</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
             </ClassMap>
             <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
                 <AllowDuplicateRelationships>True</AllowDuplicateRelationships>
