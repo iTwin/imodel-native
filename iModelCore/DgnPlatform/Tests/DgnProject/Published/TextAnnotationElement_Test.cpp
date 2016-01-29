@@ -66,7 +66,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
         DgnCategoryId categoryId = category.GetCategoryId();
         ASSERT_TRUE(categoryId.IsValid());
 
-        DgnModelPtr model = new DgnModel2d(DgnModel2d::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Model2d)), DgnModel::CreateModelCode("2D Model")));
+        DgnModelPtr model = new GeometricModel2d(GeometricModel2d::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_GeometricModel2d)), DgnModel::CreateModelCode("2D Model")));
         ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
 
         modelId = model->GetModelId();

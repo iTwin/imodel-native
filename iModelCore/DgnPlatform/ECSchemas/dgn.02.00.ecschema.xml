@@ -294,10 +294,10 @@
     <ECEntityClass typeName="GeometricModel" modifier="Abstract">
         <BaseClass>Model</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="Model3d" modifier="Abstract">
+    <ECEntityClass typeName="GeometricModel3d" modifier="Abstract">
         <BaseClass>GeometricModel</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="Model2d">
+    <ECEntityClass typeName="GeometricModel2d">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
@@ -308,19 +308,19 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>Model3d</BaseClass>
+        <BaseClass>GeometricModel3d</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="SectionDrawingModel">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>Model2d</BaseClass>
+        <BaseClass>GeometricModel2d</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="SheetModel">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>Model2d</BaseClass>
+        <BaseClass>GeometricModel2d</BaseClass>
         <ECProperty propertyName="SheetSize" displayLabel="Sheet Size" typeName="point2d"/>
     </ECEntityClass>
     <ECEntityClass typeName="RedlineModel">
@@ -339,7 +339,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>Model3d</BaseClass>
+        <BaseClass>GeometricModel3d</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="DefinitionModel">
         <ECCustomAttributes>

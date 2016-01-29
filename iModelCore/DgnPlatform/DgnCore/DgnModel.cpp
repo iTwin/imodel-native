@@ -317,7 +317,7 @@ DgnModel::~DgnModel()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel2d::_OnInsertElement(DgnElementR element)
+DgnDbStatus GeometricModel2d::_OnInsertElement(DgnElementR element)
     {
     DgnDbStatus status = T_Super::_OnInsertElement(element);
     if (DgnDbStatus::Success != status)
@@ -354,7 +354,7 @@ DgnDbStatus SectionDrawingModel::_OnInsertElement(DgnElementR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel3d::_OnInsertElement(DgnElementR element)
+DgnDbStatus GeometricModel3d::_OnInsertElement(DgnElementR element)
     {
     auto status = T_Super::_OnInsertElement(element);
     if (DgnDbStatus::Success == status && element.IsGeometricElement() && !element.Is3d())
