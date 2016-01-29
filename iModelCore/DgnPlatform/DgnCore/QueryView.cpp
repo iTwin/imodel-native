@@ -279,7 +279,7 @@ Utf8String QueryViewController::_GetQuery(DgnViewportR) const
     {
     return Utf8String("SELECT e.Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e, " 
                       DGN_TABLE(DGN_CLASSNAME_SpatialElement) " AS g "
-                      "WHERE g.ElementId=e.Id AND InVirtualSet(@vSet,e.ModelId,g.CategoryId)");
+                      "WHERE g.Id=e.Id AND InVirtualSet(@vSet,e.ModelId,g.CategoryId)");
     }
 
 /*---------------------------------------------------------------------------------**//**
