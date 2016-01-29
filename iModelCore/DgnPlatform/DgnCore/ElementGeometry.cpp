@@ -3783,10 +3783,32 @@ BentleyStatus ElementGeometryBuilder::SetGeomStream(DgnGeometryPartR part)
         return ERROR;
 
     part.GetGeomStreamR().SaveData(&m_writer.m_buffer.front(), (uint32_t) m_writer.m_buffer.size());
-    part.SetBoundingBox(m_is3d ? m_placement3d.GetElementBox() : ElementAlignedBox3d(m_placement2d.GetElementBox()));
+    ElementAlignedBox3d localRange = (m_is3d ? m_placement3d.GetElementBox() : ElementAlignedBox3d(m_placement2d.GetElementBox()));
+
+    // NOTE: GeometryBuilder::CreateGeomPart doesn't supply range...need to compute it...
+    if (!localRange.IsValid())
+        {
+        ElementGeometryCollection collection(m_dgnDb, part.GetGeomStream());
+
+        collection.SetBRepOutput(ElementGeometryCollection::BRepOutput::Mesh); // Can just use the mesh and avoid creating the ISolidKernelEntity...
+
+        for (auto iter : collection)
+            {
+            DRange3d range;
+
+            if (iter.IsValid() && iter->GetRange(range))
+                localRange.Extend(range);
+            }
+
+        if (!localRange.IsValid())
+            return ERROR;
+        }
+
+    part.SetBoundingBox(localRange);
 
     return SUCCESS;
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015

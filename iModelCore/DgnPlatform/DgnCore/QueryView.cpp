@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/QueryView.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -443,7 +443,7 @@ Utf8String QueryViewController::_GetRTreeMatchSql(DgnViewportR)
 
     return Utf8String("SELECT rTreeAccept(r.ElementId) FROM "
            DGN_VTABLE_RTree3d " AS r, " DGN_TABLE(DGN_CLASSNAME_Element) " AS e, " DGN_TABLE(DGN_CLASSNAME_SpatialElement) " AS g "
-           "WHERE r.ElementId MATCH rTreeMatch(1) AND e.Id=r.ElementId AND g.Id=r.ElementId"
+           "WHERE r.ElementId MATCH rTreeMatch(1) AND e.Id=r.ElementId AND g.ElementId=r.ElementId"
            " AND InVirtualSet(@vSet,e.ModelId,g.CategoryId)");
     }
 

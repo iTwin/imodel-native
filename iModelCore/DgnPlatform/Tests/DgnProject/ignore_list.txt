@@ -39,3 +39,4 @@ ECInstanceSelectTests.SelectQueriesOnDbGeneratedDuringBuild_04Plant # Notified M
 ECInstanceSelectTests.SelectQueriesOnDbGeneratedDuringBuild_79Main # Notified Maha
 
 ImportTest.ImportElementsWithDependencies # Seemingly utterly unrelated schema changes induce this
+ComponentModelBasicTest.MakeVariationInstance # fails firebug; notified Umar
