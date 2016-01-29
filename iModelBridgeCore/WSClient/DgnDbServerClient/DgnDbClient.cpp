@@ -77,7 +77,9 @@ void DgnDbClient::SetServerURL(Utf8StringCR serverUrl)
 void DgnDbClient::SetCredentials(DgnClientFx::Utils::CredentialsCR credentials)
     {
     m_credentials = credentials;
+#ifdef NEEDSWORK_LOCKS
     m_locks->SetCredentials(credentials);
+#endif // NEEDSWORK_LOCKS
     }
 
 //---------------------------------------------------------------------------------------
