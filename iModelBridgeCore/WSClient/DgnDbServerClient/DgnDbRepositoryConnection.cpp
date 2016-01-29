@@ -17,6 +17,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
+#ifdef NEEDSWORK_LOCKS
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              01/2016
@@ -41,6 +42,8 @@ const DgnLockSet& DgnDbLockSetResultInfo::GetLocks () const { return m_locks; }
 //@bsimethod                                     Eligijus.Mauragas              01/2016
 //---------------------------------------------------------------------------------------
 const DgnOwnedLockSet& DgnDbLockSetResultInfo::GetOwners () const { return m_owners; }
+
+#endif // NEEDSWORK_LOCKS
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
@@ -239,6 +242,8 @@ ICancellationTokenPtr           cancellationToken
             });
         }
     }
+
+#ifdef NEEDSWORK_LOCKS
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
@@ -535,6 +540,8 @@ ICancellationTokenPtr cancellationToken
             return DgnDbLockSetResult::Error(result.GetError());
         });
     }
+
+#endif // NEEDSWORK_LOCKS
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
