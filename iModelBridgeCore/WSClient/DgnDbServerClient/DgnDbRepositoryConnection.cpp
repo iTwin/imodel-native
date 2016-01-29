@@ -263,8 +263,8 @@ LockLevel                level
     properties[ServerSchema::Property::Description]          = description;
     properties[ServerSchema::Property::BriefcaseId]          = briefcaseId.GetValue();
     properties[ServerSchema::Property::ReleasedWithRevision] = releasedWithRevisionId;
-    DgnLocksJson::LockableTypeToJson(properties[ServerSchema::Property::LockType], type);
-    DgnLocksJson::LockLevelToJson(properties[ServerSchema::Property::LockLevel], level);
+    RepositoryJson::LockableTypeToJson(properties[ServerSchema::Property::LockType], type);
+    RepositoryJson::LockLevelToJson(properties[ServerSchema::Property::LockLevel], level);
 
     properties[ServerSchema::Property::ObjectIds] = Json::arrayValue;
     int i = 0;
@@ -531,7 +531,7 @@ ICancellationTokenPtr cancellationToken
                 lock.FromJson(lockJson);
 
                 BeBriefcaseId briefcaseId;
-                DgnLocksJson::BriefcaseIdFromJson (briefcaseId, value[ServerSchema::Properties][ServerSchema::Property::BriefcaseId]);
+                RepositoryJson::BriefcaseIdFromJson (briefcaseId, value[ServerSchema::Properties][ServerSchema::Property::BriefcaseId]);
 
                 if (lock.GetLevel() != LockLevel::None)
                     locks.AddLock (lock, briefcaseId);
