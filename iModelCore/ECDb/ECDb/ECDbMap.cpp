@@ -1536,7 +1536,7 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(IClassMap const& 
         {
         RelationshipClassEndTableMap const& relClassMap = static_cast<RelationshipClassEndTableMap const&> (classMap);
         ECDbSqlTable const& endTable = relClassMap.GetPrimaryTable();
-        const ECDbMap::LightweightCache::RelationshipEnd thisEnd = relClassMap.GetThisEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? ECDbMap::LightweightCache::RelationshipEnd::Source : ECDbMap::LightweightCache::RelationshipEnd::Target;
+        const ECDbMap::LightweightCache::RelationshipEnd foreignEnd = relClassMap.GetForeignEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? ECDbMap::LightweightCache::RelationshipEnd::Source : ECDbMap::LightweightCache::RelationshipEnd::Target;
 
         Partition* hp = storageDescription->AddHorizontalPartition(endTable, true);
 
@@ -1545,7 +1545,7 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(IClassMap const& 
             ECClassId constraintClassId = kvpair.first;
             ECDbMap::LightweightCache::RelationshipEnd end = kvpair.second;
 
-            if (end == ECDbMap::LightweightCache::RelationshipEnd::Both || end == thisEnd)
+            if (end == ECDbMap::LightweightCache::RelationshipEnd::Both || end == foreignEnd)
                 hp->AddClassId(constraintClassId);
             }
 

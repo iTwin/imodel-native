@@ -714,7 +714,7 @@ ECDbMapAnalyser::Relationship::PersistanceLocation ECDbMapAnalyser::Relationship
         return PersistanceLocation::Self;
 
     auto& endTable = static_cast<RelationshipClassEndTableMapCR>(GetRelationshipClassMap ());
-    if (endTable.GetThisEnd () == ECN::ECRelationshipEnd::ECRelationshipEnd_Source)
+    if (endTable.GetForeignEnd () == ECN::ECRelationshipEnd::ECRelationshipEnd_Source)
         {
         if (endTable.GetRelationshipClass ().GetStrengthDirection () == ECN::ECRelatedInstanceDirection::Forward)
             return PersistanceLocation::From;
@@ -866,8 +866,8 @@ void ECDbMapAnalyser::Storage::HandleCascadeLinkTable (std::vector<ECDbMapAnalys
                 .AppendEscaped (storage->GetTable ().GetName ().c_str ())
                 .Append (" WHERE ");
 
-            auto otherEndPrimaryKey = storage->GetTable ().GetFilteredColumnFirst (ColumnKind::ECInstanceId);
-            body.AppendFormatted ("(OLD.[%s] = [%s])", relationship->To ().GetInstanceId ()->GetFirstColumn ()->GetName ().c_str (), otherEndPrimaryKey->GetName ().c_str ());
+            auto primaryEndPrimaryKey = storage->GetTable ().GetFilteredColumnFirst (ColumnKind::ECInstanceId);
+            body.AppendFormatted ("(OLD.[%s] = [%s])", relationship->To ().GetInstanceId ()->GetFirstColumn ()->GetName ().c_str (), primaryEndPrimaryKey->GetName ().c_str ());
             if (relationship->IsHolding ())
                 {
                 body.AppendFormatted (" AND (SELECT COUNT (*) FROM " ECDB_HOLDING_VIEW "  WHERE ECInstanceId = OLD.[%s]) = 0", relationship->To ().GetInstanceId ()->GetFirstColumn ()->GetName ().c_str());
@@ -2229,7 +2229,7 @@ BentleyStatus ECClassViewGenerator::BuildEndTableRelationshipView(NativeSqlBuild
         sqlBuilder.Append(" WHERE (");
         sqlBuilder.AppendEscaped(tableAlias.c_str());
         sqlBuilder.AppendDot();
-        sqlBuilder.Append(endClassMap->GetOtherEndECInstanceIdPropMap()->GetFirstColumn()->GetName().c_str());
+        sqlBuilder.Append(endClassMap->GetPrimaryEndECInstanceIdPropMap()->GetFirstColumn()->GetName().c_str());
         sqlBuilder.Append(" IS NOT NULL)");
 
         if (topLevel)
