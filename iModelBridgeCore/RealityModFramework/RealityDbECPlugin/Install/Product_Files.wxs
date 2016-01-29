@@ -2,7 +2,7 @@
 <!--
 #  $Source: RealityDbECPlugin/Install/Product_Files.wxs $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 -->
 <?include Defines.wxi?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
@@ -50,7 +50,7 @@
         </util:XmlConfig>
         <util:XmlConfig Id="CreateElementwebconfig13" Action="create" Node="element" ElementPath="//microsoft.identityModel/service/federatedAuthentication" Name="wsFederation" File="[INSTALLDIR]web.config" On="install" Sequence="12">
           <util:XmlConfig Id="CreateElementwebconfig14" ElementId="CreateElementwebconfig13" Name="passiveRedirectEnabled" Value="false" File="[INSTALLDIR]web.config" />
-          <util:XmlConfig Id="CreateElementwebconfig15" ElementId="CreateElementwebconfig13" Name="issuer" Value="https://ims-testing.bentley.com/" File="[INSTALLDIR]web.config" />
+          <util:XmlConfig Id="CreateElementwebconfig15" ElementId="CreateElementwebconfig13" Name="issuer" Value="https://ims.bentley.com/" File="[INSTALLDIR]web.config" />
           <util:XmlConfig Id="CreateElementwebconfig16" ElementId="CreateElementwebconfig13" Name="realm" Value="https://dev-wsg20-eus.cloudapp.net/" File="[INSTALLDIR]web.config" />
           <util:XmlConfig Id="CreateElementwebconfig17" ElementId="CreateElementwebconfig13" Name="requireHttps" Value="true" File="[INSTALLDIR]web.config" />
         </util:XmlConfig>
@@ -62,7 +62,7 @@
         </util:XmlConfig>
         <util:XmlConfig Id="CreateElementwebconfig22" Action="create" Node="element" ElementPath="//microsoft.identityModel/service/issuerNameRegistry" Name="trustedIssuers" File="[INSTALLDIR]web.config" On="install" Sequence="15" />
         <util:XmlConfig Id="CreateElementwebconfig23" Action="create" Node="element" ElementPath="//microsoft.identityModel/service/issuerNameRegistry/trustedIssuers" Name="add" File="[INSTALLDIR]web.config" On="install" Sequence="16">
-          <util:XmlConfig Id="CreateElementwebconfig24" ElementId="CreateElementwebconfig23" Name="thumbprint" Value="74dcf3da6dc654bceae79403d7848db29e350f10" File="[INSTALLDIR]web.config" />
+          <util:XmlConfig Id="CreateElementwebconfig24" ElementId="CreateElementwebconfig23" Name="thumbprint" Value="043349d0e3890dbb83208b52ad2b135a3d2c5042" File="[INSTALLDIR]web.config" />
           <util:XmlConfig Id="CreateElementwebconfig25" ElementId="CreateElementwebconfig23" Name="name" Value="https://auth.bentley.com/" File="[INSTALLDIR]web.config" />
         </util:XmlConfig>
       </Component>

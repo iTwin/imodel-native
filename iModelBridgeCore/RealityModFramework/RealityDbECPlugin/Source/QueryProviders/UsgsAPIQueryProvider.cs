@@ -922,7 +922,8 @@ namespace IndexECPlugin.Source.QueryProviders
                     JToken jtoken = item.jToken;
 
                     instance.InstanceId = jtoken.TryToGetString("sourceId");
-                    instance["Id"].StringValue = jtoken.TryToGetString("sourceId");
+                    instance["Id"].StringValue = instance.InstanceId;
+                    instance["SpatialDataSourceId"].StringValue = instance.InstanceId;
 
                     //instance["Name"].StringValue = jtoken.TryToGetString("title");
                     instance["Name"].StringValue = item.Title;
@@ -972,7 +973,6 @@ namespace IndexECPlugin.Source.QueryProviders
                         }
 
                     instance["FileSize"].NativeValue = jtoken["sizeInBytes"].Value<long>() / 1024;
-
 
                     instanceList.Add(instance);
                     }

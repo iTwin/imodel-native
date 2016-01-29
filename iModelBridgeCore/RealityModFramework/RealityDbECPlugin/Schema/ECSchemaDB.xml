@@ -972,6 +972,14 @@
             </ECCustomAttributes>
         </ECProperty>
         
+        <ECProperty propertyName="SpatialDataSourceId" typeName="string" >
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>SpatialDataSourceId</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
         <ECProperty propertyName="ResolutionInMeters" typeName="string" />
         <!--ECProperty propertyName="ParentDatasetIdStr" typeName="string" /-->
         <ECProperty propertyName="DataProvider" typeName="string" />
@@ -1204,6 +1212,7 @@
         
     <ECClass typeName="RequestedEntity" isStruct="true" isDomainClass="true">
         <ECProperty propertyName="ID" typeName="string" />
+        <ECProperty propertyName="SpatialDataSourceID" typeName="string" />
         <ECProperty propertyName="SelectedFormat" typeName="string" />
         <ECProperty propertyName="SelectedStyle" typeName="string" />
     </ECClass>
