@@ -324,7 +324,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
     //This end's ecinstanceid is ecinstanceid of relationship instance (by nature of end table mapping)
     int foreignEndECInstanceIdIndex = specialTokenExpIndexMap.GetIndex(foreignEnd == ECRelationshipEnd_Source ? ECSqlSystemProperty::SourceECInstanceId : ECSqlSystemProperty::TargetECInstanceId);
     int foreignEndECClassIdIndex = specialTokenExpIndexMap.GetIndex(foreignEnd == ECRelationshipEnd_Source ? ECSqlSystemProperty::SourceECClassId : ECSqlSystemProperty::TargetECClassId);
-    int primaryEndECClassIdIndex = specialTokenExpIndexMap.GetIndex(foreignEnd == ECRelationshipEnd_Target ? ECSqlSystemProperty::SourceECClassId : ECSqlSystemProperty::TargetECClassId);
+    int referencedEndECClassIdIndex = specialTokenExpIndexMap.GetIndex(foreignEnd == ECRelationshipEnd_Target ? ECSqlSystemProperty::SourceECClassId : ECSqlSystemProperty::TargetECClassId);
     auto preparedStatement = ctx.GetECSqlStatementR().GetPreparedStatementP<ECSqlInsertPreparedStatement>();
 
     if (foreignEndECInstanceIdIndex >= 0)
@@ -398,12 +398,12 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
             }
         }
 
-    if (primaryEndECClassIdIndex >= 0)
+    if (referencedEndECClassIdIndex >= 0)
         {
-        expIndexSkipList.push_back((size_t)primaryEndECClassIdIndex);
+        expIndexSkipList.push_back((size_t)referencedEndECClassIdIndex);
         //if this end was parametrized we must turn the respective binder into a no-op binder
         //so that clients binding values to it will not try to access a SQLite parameter which does not exist
-        auto parameterExp = exp.GetValuesExp()->TryGetAsParameterExpP(primaryEndECClassIdIndex);
+        auto parameterExp = exp.GetValuesExp()->TryGetAsParameterExpP(referencedEndECClassIdIndex);
         if (parameterExp != nullptr)
             {
             ECSqlBinder* binder = nullptr;
@@ -416,23 +416,23 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
 
     std::sort(expIndexSkipList.begin(), expIndexSkipList.end());
 
-    auto primaryEndClassId = foreignEnd == ECRelationshipEnd_Source ? targetECClassId : sourceECClassId;
-    if (primaryEndClassId >= ECClass::UNSET_ECCLASSID)
+    auto referencedEndClassId = foreignEnd == ECRelationshipEnd_Source ? targetECClassId : sourceECClassId;
+    if (referencedEndClassId >= ECClass::UNSET_ECCLASSID)
         {
-        if (primaryEndECClassIdIndex > 0)
+        if (referencedEndECClassIdIndex > 0)
             {
-            auto& r = nativeSqlSnippets.m_propertyNamesNativeSqlSnippets[primaryEndECClassIdIndex];
+            auto& r = nativeSqlSnippets.m_propertyNamesNativeSqlSnippets[referencedEndECClassIdIndex];
             if (!r.empty())
                 {
                 Utf8String column = r.front().ToString();
                 if (column == "[ECClassId]") //Self case where source/target classid is in same table and user provided value for source/target classid
                     {
-                    expIndexSkipList.push_back((size_t)primaryEndECClassIdIndex);
+                    expIndexSkipList.push_back((size_t)referencedEndECClassIdIndex);
                     }
                 }
             }
 
-        ECSqlStatus stat = PrepareConstraintClassId(nativeSqlSnippets, ctx, *relationshipEndTableMap.GetPrimaryEndECClassIdPropMap(), primaryEndClassId);
+        ECSqlStatus stat = PrepareConstraintClassId(nativeSqlSnippets, ctx, *relationshipEndTableMap.GetReferencedEndECClassIdPropMap(), referencedEndClassId);
         if (!stat.IsSuccess())
             return stat;
         }
@@ -767,10 +767,10 @@ RelationshipClassEndTableMapCR classMap
     updateBuilder.Append(" WHERE ").Append(insertSqlSnippets.m_pkColumnNamesNativeSqlSnippets, " = ", insertSqlSnippets.m_pkValuesNativeSqlSnippets, " AND ");
     //add expression to WHERE clause that only updates the row if the other end id is NULL. If it wasn't NULL, it would mean
     //a cardinality constraint violation, as by definition the other end's cardinality in an end table mapping is 0 or 1.
-    auto primaryEndECInstanceIdColumnSqlSnippets = classMap.GetPrimaryEndECInstanceIdPropMap()->ToNativeSql(nullptr, ECSqlType::Update, false);
-    for (auto const& primaryEndECInstanceIdColSnippet : primaryEndECInstanceIdColumnSqlSnippets)
+    auto referencedEndECInstanceIdColumnSqlSnippets = classMap.GetReferencedEndECInstanceIdPropMap()->ToNativeSql(nullptr, ECSqlType::Update, false);
+    for (auto const& referencedEndECInstanceIdColSnippet : referencedEndECInstanceIdColumnSqlSnippets)
         {
-        updateBuilder.Append(" AND ").Append(primaryEndECInstanceIdColSnippet).Append(" IS NULL");
+        updateBuilder.Append(" AND ").Append(referencedEndECInstanceIdColSnippet).Append(" IS NULL");
         }
     }
 

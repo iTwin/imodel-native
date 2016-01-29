@@ -433,10 +433,10 @@ int findRelatedDirections
                     // Get related instance (key)
                     if (relatedInstanceKeyMap != nullptr)
                         {
-                        ECClassId primaryEndClassId = (ECClassId) statement->GetValueInt64 (1);
-                        ECInstanceId primaryEndInstanceId = statement->GetValueId<ECInstanceId> (2);
-                        POSTCONDITION (primaryEndClassId > 0 && primaryEndInstanceId.IsValid (), ERROR);
-                        ECInstanceKeyMultiMapPair relatedInstanceEntry (primaryEndClassId, primaryEndInstanceId);
+                        ECClassId referencedEndClassId = (ECClassId) statement->GetValueInt64 (1);
+                        ECInstanceId referencedEndInstanceId = statement->GetValueId<ECInstanceId> (2);
+                        POSTCONDITION (referencedEndClassId > 0 && referencedEndInstanceId.IsValid (), ERROR);
+                        ECInstanceKeyMultiMapPair relatedInstanceEntry (referencedEndClassId, referencedEndInstanceId);
                         if (relatedInstanceKeyMap->end() == std::find (relatedInstanceKeyMap->begin(), relatedInstanceKeyMap->end(), relatedInstanceEntry))
                             relatedInstanceKeyMap->insert (relatedInstanceEntry);
                         }

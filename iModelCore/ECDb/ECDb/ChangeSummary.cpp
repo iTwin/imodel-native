@@ -1276,25 +1276,25 @@ void ChangeExtractor::ExtractRelInstanceInEndTable(RelationshipClassEndTableMapC
 
     ECInstanceKey foreignEndInstanceKey(foreignEndClassId, relInstanceId);
 
-    ECInstanceKey oldPrimaryEndInstanceKey, newPrimaryEndInstanceKey;
-    ECN::ECRelationshipEnd primaryEnd = (foreignEnd == ECRelationshipEnd_Source) ? ECRelationshipEnd_Target : ECRelationshipEnd_Source;
-    GetRelEndInstanceKeys(oldPrimaryEndInstanceKey, newPrimaryEndInstanceKey, relClassMap, relInstanceId, primaryEnd);
+    ECInstanceKey oldReferencedEndInstanceKey, newReferencedEndInstanceKey;
+    ECN::ECRelationshipEnd referencedEnd = (foreignEnd == ECRelationshipEnd_Source) ? ECRelationshipEnd_Target : ECRelationshipEnd_Source;
+    GetRelEndInstanceKeys(oldReferencedEndInstanceKey, newReferencedEndInstanceKey, relClassMap, relInstanceId, referencedEnd);
 
-    if (!newPrimaryEndInstanceKey.IsValid() && !oldPrimaryEndInstanceKey.IsValid())
+    if (!newReferencedEndInstanceKey.IsValid() && !oldReferencedEndInstanceKey.IsValid())
         return;
 
     // Check if the other end of the relationship matches the actual class found. 
-    if (newPrimaryEndInstanceKey.IsValid() && !relClassMap.GetConstraintMap(primaryEnd).ClassIdMatchesConstraint(newPrimaryEndInstanceKey.GetECClassId()))
+    if (newReferencedEndInstanceKey.IsValid() && !relClassMap.GetConstraintMap(referencedEnd).ClassIdMatchesConstraint(newReferencedEndInstanceKey.GetECClassId()))
         return;
-    if (oldPrimaryEndInstanceKey.IsValid() && !relClassMap.GetConstraintMap(primaryEnd).ClassIdMatchesConstraint(oldPrimaryEndInstanceKey.GetECClassId()))
+    if (oldReferencedEndInstanceKey.IsValid() && !relClassMap.GetConstraintMap(referencedEnd).ClassIdMatchesConstraint(oldReferencedEndInstanceKey.GetECClassId()))
         return;
 
     DbOpcode relDbOpcode;
-    if (newPrimaryEndInstanceKey.IsValid() && !oldPrimaryEndInstanceKey.IsValid())
+    if (newReferencedEndInstanceKey.IsValid() && !oldReferencedEndInstanceKey.IsValid())
         relDbOpcode = DbOpcode::Insert;
-    else if (!newPrimaryEndInstanceKey.IsValid() && oldPrimaryEndInstanceKey.IsValid())
+    else if (!newReferencedEndInstanceKey.IsValid() && oldReferencedEndInstanceKey.IsValid())
         relDbOpcode = DbOpcode::Delete;
-    else /* if (newPrimaryEndInstanceKey.IsValid() && oldPrimaryEndInstanceKey.IsValid()) */
+    else /* if (newReferencedEndInstanceKey.IsValid() && oldReferencedEndInstanceKey.IsValid()) */
         relDbOpcode = DbOpcode::Update;
 
     ECInstanceKeyCP oldSourceInstanceKey, newSourceInstanceKey, oldTargetInstanceKey, newTargetInstanceKey;
@@ -1303,15 +1303,15 @@ void ChangeExtractor::ExtractRelInstanceInEndTable(RelationshipClassEndTableMapC
     if (foreignEnd == ECRelationshipEnd_Source)
         {
         oldSourceInstanceKey = (relDbOpcode != DbOpcode::Insert) ? &foreignEndInstanceKey : &invalidKey;
-        oldTargetInstanceKey = &oldPrimaryEndInstanceKey;
+        oldTargetInstanceKey = &oldReferencedEndInstanceKey;
         newSourceInstanceKey = (relDbOpcode != DbOpcode::Delete) ? &foreignEndInstanceKey : &invalidKey;
-        newTargetInstanceKey = &newPrimaryEndInstanceKey;
+        newTargetInstanceKey = &newReferencedEndInstanceKey;
         }
     else
         {
-        oldSourceInstanceKey = &oldPrimaryEndInstanceKey;
+        oldSourceInstanceKey = &oldReferencedEndInstanceKey;
         oldTargetInstanceKey = (relDbOpcode != DbOpcode::Insert) ? &foreignEndInstanceKey : &invalidKey;
-        newSourceInstanceKey = &newPrimaryEndInstanceKey;
+        newSourceInstanceKey = &newReferencedEndInstanceKey;
         newTargetInstanceKey = (relDbOpcode != DbOpcode::Delete) ? &foreignEndInstanceKey : &invalidKey;
         }
 

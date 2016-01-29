@@ -62,15 +62,15 @@ NativeSqlSnippets& nativeSqlSnippets,
 RelationshipClassEndTableMapCR classMap
 )
     {
-    auto primaryEndECInstanceIdPropMap = classMap.GetPrimaryEndECInstanceIdPropMap ();
-    auto primaryEndECClassIdPropMap = classMap.GetPrimaryEndECInstanceIdPropMap ();
+    auto referencedEndECInstanceIdPropMap = classMap.GetReferencedEndECInstanceIdPropMap ();
+    auto referencedEndECClassIdPropMap = classMap.GetReferencedEndECInstanceIdPropMap ();
 
     NativeSqlBuilder::List propertyNamesToUnsetSqlSnippets;
     classMap.GetPropertyMaps ().Traverse (
-        [&propertyNamesToUnsetSqlSnippets, &primaryEndECInstanceIdPropMap, &primaryEndECClassIdPropMap] (TraversalFeedback& feedback, PropertyMapCP propMap)
+        [&propertyNamesToUnsetSqlSnippets, &referencedEndECInstanceIdPropMap, &referencedEndECClassIdPropMap] (TraversalFeedback& feedback, PropertyMapCP propMap)
         {
         //virtual prop maps map to non-existing columns. So they don't need to be considered in the list of columns to be nulled out
-        if (!propMap->IsVirtual () && (!propMap->IsSystemPropertyMap () || propMap == primaryEndECInstanceIdPropMap || propMap == primaryEndECClassIdPropMap))
+        if (!propMap->IsVirtual () && (!propMap->IsSystemPropertyMap () || propMap == referencedEndECInstanceIdPropMap || propMap == referencedEndECClassIdPropMap))
             {
             auto sqlSnippets = propMap->ToNativeSql (nullptr, ECSqlType::Delete, false);
             propertyNamesToUnsetSqlSnippets.insert (propertyNamesToUnsetSqlSnippets.end (), sqlSnippets.begin (), sqlSnippets.end ());

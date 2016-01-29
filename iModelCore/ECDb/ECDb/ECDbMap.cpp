@@ -863,7 +863,7 @@ void ECDbMap::GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>& classMa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                      12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-std::set<ECDbSqlTable const*> ECDbMap::GetTablesFromRelationshipEnd(ECRelationshipConstraintCR relationshipEnd) const
+std::set<ECDbSqlTable const*> ECDbMap::GetTablesFromRelationshipEnd(ECRelationshipConstraintCR relationshipEnd, bool returnVirtualTables) const
     {
     bool hasAnyClass = false;
     std::set<ClassMap const*> classMaps = GetClassMapsFromRelationshipEnd(relationshipEnd, &hasAnyClass);
@@ -885,7 +885,10 @@ std::set<ECDbSqlTable const*> ECDbMap::GetTablesFromRelationshipEnd(ECRelationsh
     if (tables[PersistenceType::Persisted].size() > 0)
         return tables[PersistenceType::Persisted];
 
-    return tables[PersistenceType::Virtual];
+    if (returnVirtualTables)
+        return tables[PersistenceType::Virtual];
+
+    return std::set<ECDbSqlTable const*>();
     }
 
 //---------------------------------------------------------------------------------------

@@ -764,13 +764,31 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
     ECRelationshipConstraintR target = relationshipClass->GetTarget();
 
     DetermineCardinality(source, target);
+    
+    m_sourceTables = m_ecdbMap.GetTablesFromRelationshipEnd(source, false);
+    m_targetTables = m_ecdbMap.GetTablesFromRelationshipEnd(target, false);
+    auto join = [] (std::set<ECDbSqlTable const*> const& list)
+        {
+        Utf8String str;
+        for (auto itor = list.begin(); itor != list.end(); ++itor)
+            {
+            if (itor != list.begin())
+                str.append(", ");
 
-    const size_t sourceTableCount = m_ecdbMap.GetTableCountOnRelationshipEnd(source);
-    const size_t targetTableCount = m_ecdbMap.GetTableCountOnRelationshipEnd(target);
+            str.append((*itor)->GetName().c_str());
+            }
+
+        return str;
+        };
+
+    const Utf8String sourceTableStr = join(m_sourceTables);
+    const Utf8String targetTableStr = join(m_targetTables);
+    const size_t sourceTableCount = m_sourceTables.size();
+    const size_t targetTableCount = m_targetTables.size();
 
     if (sourceTableCount == 0 || targetTableCount == 0)
         {
-        LogClassNotMapped(NativeLogging::LOG_WARNING, *relationshipClass, "Source or target constraint classes are not mapped.");
+        LogClassNotMapped(NativeLogging::LOG_WARNING, *relationshipClass, "Source or target constraint classes are not mapped or has no concrete implementation");
         m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, false);
         return MapStatus::Success;
         }
@@ -789,6 +807,21 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
         return MapStatus::Success;
         }
 
+    if (m_cardinality == Cardinality::ManyToMany)
+        {
+        if (relationshipClass->GetStrength() == StrengthType::Embedding) {
+            LOG.errorv("Embedding type relationship with cardianlity ManyToMany is not supported. Error occured while mappign ECRelationshipClass '%s'.",
+                GetECClass().GetFullName());
+            return MapStatus::Error;
+            }
+
+        if (relationshipClass->GetStrength() == StrengthType::Holding) {
+            LOG.errorv("Holding type relationship with cardianlity ManyToMany is not supported. Error occured while mappign ECRelationshipClass '%s'.",
+                GetECClass().GetFullName());
+            return MapStatus::Error;
+            }
+        }
+
     if (m_customMapType == CustomMapType::LinkTable ||
         m_cardinality == Cardinality::ManyToMany ||
         GetECClass().GetPropertyCount() > 0)
@@ -797,6 +830,13 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
             {
             LOG.errorv("The ECRelationshipClass '%s' implies a link table relationship with because of its cardinality or because it has ECProperties. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
                        GetECClass().GetFullName());
+            return MapStatus::Error;
+            }
+
+        if (relationshipClass->GetStrength() == StrengthType::Embedding)
+            {
+            LOG.errorv("The ECRelationshipClass '%s' embedding type relationship cannot be mapped to a LinkTable.",
+                GetECClass().GetFullName());
             return MapStatus::Error;
             }
 
@@ -847,25 +887,35 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
                     return MapStatus::Error;
                     }
 
-                if (targetTableCount > 1)
+                if (sourceTableCount > 1)
                     {
-                    if (userStrategyIsForeignKeyMapping)
-                        {
-                        LOG.errorv("ECRelationshipClass %s implies a link table relationship as the target constraint is mapped to more than one end table. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
-                                   GetECClass().GetFullName());
-                        return MapStatus::Error;
-                        }
+                    LOG.errorv("ECRelationshipClass %s resolve into more than one primary tables (%s) on source side, which is not supported in ECDb. Apply MapStrategy=SharedTable on baseClass of source or remodel relationship.",
+                        GetECClass().GetFullName() , sourceTableStr.c_str());
 
-                    resolvedStrategy = ECDbMapStrategy::Strategy::OwnTable;
+                    return MapStatus::Error;
                     }
-                else
-                    resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable;
 
+                resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable;
                 break;
                 }
 
             case Cardinality::ManyToOne:
                 {
+                if (m_customMapType == CustomMapType::ForeignKeyOnTarget)
+                    {
+                    LOG.errorv("ECRelationshipClass %s implies a foreign key relationship on the source's table. Therefore the 'End' property in the ForeignKeyRelationshipMap custom attribute must not be set to 'Target'.",
+                        GetECClass().GetFullName());
+                    return MapStatus::Error;
+                    }
+
+                if (targetTableCount > 1)
+                    {
+                    LOG.errorv("ECRelationshipClass %s resolve into more than one primary tables (%s) on target side, which is not supported in ECDb. Apply MapStrategy=SharedTable on baseClass of source or remodel relationship.",
+                        GetECClass().GetFullName(), targetTableStr.c_str());
+
+                    return MapStatus::Error;
+                    }
+
                 resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable;
                 break;
                 }
