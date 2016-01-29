@@ -59,7 +59,7 @@ DgnDbRepositoryManager::Response DgnDbRepositoryManager::_AcquireLocks(LockReque
         if (DgnDbServerError::Id::LockOwnedByAnotherBriefcase == error.GetId())
             {
             Json::Value deniedLocks;
-            DgnLocksJson::RepositoryStatusToJson(deniedLocks[Locks::Status], RepositoryStatus::LockAlreadyHeld);
+            RepositoryJson::RepositoryStatusToJson(deniedLocks[Locks::Status], RepositoryStatus::LockAlreadyHeld);
             deniedLocks[Locks::DeniedLocks] = Json::arrayValue;
             JsonValueCR errorData = error.GetExtendedData();
             uint32_t i = 0;
