@@ -33,6 +33,41 @@ ECSqlStatus ECSqlDeletePreparer::Prepare (ECSqlPrepareContext& ctx, DeleteStatem
     else
         stat = PrepareForClass (ctx, deleteNativeSqlSnippets);
 
+    //Create child delete step task for delete
+    ECSqlNonSelectPreparedStatement* nonSelectPreparedStmt = ctx.GetECSqlStatementR().GetPreparedStatementP <ECSqlNonSelectPreparedStatement>();
+    BeAssert(nonSelectPreparedStmt != nullptr && "Expecting ECSqlNonSelectPreparedStatement");
+    ECSqlStepTaskCreateStatus status = ECSqlStepTaskFactory::CreateClassStepTask(nonSelectPreparedStmt->GetStepTasks(), StepTaskType::Delete, ctx,
+            classMap.GetECDbMap().GetECDbR(), classMap, classNameExp->IsPolymorphic());
+    if (status != ECSqlStepTaskCreateStatus::NothingToDo && status != ECSqlStepTaskCreateStatus::Success)
+        {
+        BeAssert(false && "Failed to create delete step tasks for struct array properties");
+        return ECSqlStatus::InvalidECSql;
+        }
+    
+    ECSqlParameterMap& ecsqlParameterMap = ctx.GetECSqlStatementR().GetPreparedStatementP()->GetParameterMapR();
+    Utf8String selectorQuery = ECSqlPrepareContext::CreateECInstanceIdSelectionQuery(ctx, *exp.GetClassNameExp(), exp.GetWhereClauseExp());
+    EmbeddedECSqlStatement* selectorStmt = nonSelectPreparedStmt->GetStepTasks().GetSelector(true);
+    selectorStmt->Initialize(ctx, ctx.GetParentArrayProperty(), nullptr);
+    stat = selectorStmt->Prepare(classMap.GetECDbMap().GetECDbR(), selectorQuery.c_str());
+    if (stat != ECSqlStatus::Success)
+        {
+        BeAssert(false && "Fail to prepared statement for ECInstanceIdSelect. Possible case of struct array containing struct array");
+        return stat;
+        }
+    
+    int parameterIndex = ECSqlPrepareContext::FindLastParameterIndexBeforeWhereClause(exp, exp.GetWhereClauseExp());
+    int nParamterToBind = static_cast<int>(ecsqlParameterMap.Count()) - parameterIndex;
+    for (int j = 1; j <= nParamterToBind; j++)
+        {
+        IECSqlBinder& sink = selectorStmt->GetBinder(j);
+        ECSqlBinder* source = nullptr;
+        ECSqlStatus status = ecsqlParameterMap.TryGetBinder(source, j + parameterIndex);
+        if (!status.IsSuccess())
+            return status;
+
+        source->SetOnBindEventHandler(sink);
+        }
+
     ctx.PopScope ();
     return stat;
     }

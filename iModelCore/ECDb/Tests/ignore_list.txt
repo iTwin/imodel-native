@@ -36,12 +36,19 @@ ECSqlDeleteTestFramework.WhereRelationshipWithAdditionalPropsTests
 ECSqlSelectTestFramework.WhereRelationshipWithAdditionalPropsTests
 ECSqlUpdateTestFramework.WhereRelationshipWithAdditionalPropsTests
 
-TFS#359449 (Affan)
+# TFS359449 (Affan)
 ECSqlNavigationPropertyTestFixture.SingleInstanceNavProp_ForeignKeyMappingWithJoinedTable
 
-#Struct arrays are not deleted when doing a polymorphic delete
+# TFS365784 Struct arrays are not deleted when doing a polymorphic delete
 ECSqlStatementTestFixture.PolymorphicDelete_PolymorphicSharedTable
 ECSqlStatementTestFixture.PolymorphicDeleteTestWithStructArrays
 ECSqlStatementTestFixture.DeleteStructArray
+
+#For Hassan. TFS 365787
+#Tests that use the eB Schema which is not compatible at all with EC3 and the new relationship rules.
+#Use another schema for the tests
+JsonInserterTests.InsertJsonCppJSON
+JsonInserterTests.insertRapidJson
+RapidJsonTests.InsertIntoECDb
 
 
