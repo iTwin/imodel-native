@@ -130,9 +130,9 @@ const SpatioTemporalSelector::ResolutionMap SpatioTemporalSelector::GetIDsByResF
 
     bvector<Utf8String> lowResIDs = bvector<Utf8String>();
     if (!lowResImageryIDs.empty())
-        lowResIDs.insert(highResIDs.end(), lowResImageryIDs.begin(), lowResImageryIDs.end());
+        lowResIDs.insert(lowResIDs.end(), lowResImageryIDs.begin(), lowResImageryIDs.end());
     if (!lowResTerrainIDs.empty())
-        lowResIDs.insert(highResIDs.end(), lowResTerrainIDs.begin(), lowResTerrainIDs.end());
+        lowResIDs.insert(lowResIDs.end(), lowResTerrainIDs.begin(), lowResTerrainIDs.end());
 
     // Create resolution map.
     selectedIDsByRes.Insert(ResolutionCriteria::High, highResIDs);
