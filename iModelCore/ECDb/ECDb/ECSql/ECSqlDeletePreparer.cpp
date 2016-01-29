@@ -114,7 +114,7 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
             ECDbSqlTable& primaryTable = currentClassMap.GetPrimaryTable();
             ECDbSqlTable& joinedTable = currentClassMap.GetJoinedTable();
 
-            /* WIP Needs fixes as the prepare picks the joined table when it should actually pick the primary table
+            // * WIP Needs fixes as the prepare picks the joined table when it should actually pick the primary table
             std::set<ECDbSqlTable const*> tablesReferencedByWhereClause = whereExp->GetReferencedTables();
             const bool primaryTableIsReferencedByWhereClause = (tablesReferencedByWhereClause.find(&primaryTable) != tablesReferencedByWhereClause.end());
             const bool joinedTableIsReferencedByWhereClause = (tablesReferencedByWhereClause.find(&joinedTable) != tablesReferencedByWhereClause.end());
@@ -140,7 +140,7 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
 
                 deleteSqlSnippets.m_whereClauseNativeSqlSnippet = whereClause;
                 }
-            else*/
+            else
                 {
                 status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, whereExp);
                 if (!status.IsSuccess())

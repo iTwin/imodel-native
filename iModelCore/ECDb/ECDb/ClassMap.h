@@ -184,7 +184,14 @@ public:
     IClassMap const* FindSharedTableRootClassMap() const;
     IClassMap const* FindClassMapOfParentOfJoinedTable() const;
     BentleyStatus GetPathToParentOfJoinedTable(std::vector<IClassMap const*>& path) const;
+    IClassMap const* GetParentOfJoinedTable() const
+        {
+        std::vector<IClassMap const*> path;
+        if (GetPathToParentOfJoinedTable(path) != SUCCESS)
+            return nullptr;
 
+        return path.front();
+        }
     PropertyMapCP GetPropertyMap (Utf8CP propertyName) const;
 
     //! Returns a collection of this class map's property maps.
