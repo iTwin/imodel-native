@@ -11,6 +11,8 @@
 #include <DgnDbServer/Client/DgnDbRepositoryConnection.h>
 #include <DgnPlatform/LocksManager.h>
 
+#ifdef NEEDSWORK_LOCKS
+
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
@@ -45,3 +47,5 @@ public:
     void SetCredentials(CredentialsCR credentials) { m_credentials = credentials; };
     };
 END_BENTLEY_DGNDBSERVER_NAMESPACE
+
+#endif // NEEDSWORK_LOCKS

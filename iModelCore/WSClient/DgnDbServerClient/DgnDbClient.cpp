@@ -50,7 +50,9 @@ AsyncTaskPtr<DgnDbRepositoryConnectionResult> DgnDbClient::ConnectToRepository(R
 DgnDbClient::DgnDbClient(ClientInfoPtr clientInfo)
     : m_clientInfo(clientInfo)
     {
+#ifdef NEEDSWORK_LOCKS
     m_locks = DgnDbLocks::Create(clientInfo);
+#endif // NEEDSWORK_LOCKS
     }
 
 //---------------------------------------------------------------------------------------
@@ -508,6 +510,8 @@ AsyncTaskPtr<DgnDbFileNameResult> DgnDbClient::AquireBriefcase(Utf8StringCR repo
             });
     }
 
+#ifdef NEEDSWORK_LOCKS
+
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
@@ -515,3 +519,5 @@ Dgn::ILocksServer* DgnDbClient::GetLocksServerP()
     {
     return dynamic_cast<Dgn::ILocksServer*>(m_locks.get());
     }
+
+#endif // NEEDSWORK_LOCKS

@@ -31,7 +31,9 @@ struct DgnDbClient
 {
 //__PUBLISH_SECTION_END__
 private:
+#ifdef NEEDSWORK_LOCKS
     DgnDbLocksPtr m_locks;
+#endif // NEEDSWORK_LOCKS
     Utf8String m_serverUrl;
     Credentials m_credentials;
     WebServices::ClientInfoPtr m_clientInfo;
@@ -103,6 +105,8 @@ public:
     DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnDbBriefcaseResult> OpenBriefcase(Dgn::DgnDbPtr db, bool doSync = false,
     HttpRequest::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
 
+#ifdef NEEDSWORK_LOCKS
     DGNDBSERVERCLIENT_EXPORT Dgn::ILocksServer* GetLocksServerP();
+#endif // NEEDSWORK_LOCKS
 };
 END_BENTLEY_DGNDBSERVER_NAMESPACE

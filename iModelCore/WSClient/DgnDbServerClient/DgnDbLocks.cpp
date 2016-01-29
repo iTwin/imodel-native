@@ -8,6 +8,8 @@
 #include <DgnDbServer/Client/DgnDbLocks.h>
 #include "DgnDbServerUtils.h"
 
+#ifdef NEEDSWORK_LOCKS
+
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
@@ -226,3 +228,5 @@ void DgnDbLocks::SetCancellationToken(ICancellationTokenPtr cancellationToken)
     {
     m_cancellationToken = cancellationToken;
     }
+
+#endif // NEEDSWORK_LOCKS
