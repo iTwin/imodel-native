@@ -1018,8 +1018,6 @@ static ECN::ECSchemaCP importECSchema(ECN::ECObjectsStatus& ecstatus, DgnDbR db,
         updateExistingSchemas = false;
         }
 
-    ECDbSchemaManager::ImportOptions options(false, updateExistingSchemas);
-
     ECN::ECSchemaReadContextPtr contextPtr = ECN::ECSchemaReadContext::CreateContext();
 
 #ifdef NEEDS_WORK_ECDB // *** If schemaIn is a real schema (from another file), then I will get an assertion failure in ECDbMapStorage::InsertOrReplace
