@@ -40,7 +40,7 @@ ECSqlStatus ECSqlDeletePreparer::Prepare (ECSqlPrepareContext& ctx, DeleteStatem
             classMap.GetECDbMap().GetECDbR(), classMap, classNameExp->IsPolymorphic());
     if (status != ECSqlStepTaskCreateStatus::NothingToDo && status != ECSqlStepTaskCreateStatus::Success)
         {
-        BeAssert(false && "Failed to create delete step tasks for struct array properties");
+        LOG.errorv("Failed to create delete struct array step task for ECSQL '%s'.", ctx.GetSqlBuilder().ToString());
         return ECSqlStatus::InvalidECSql;
         }
     
@@ -49,7 +49,7 @@ ECSqlStatus ECSqlDeletePreparer::Prepare (ECSqlPrepareContext& ctx, DeleteStatem
     EmbeddedECSqlStatement* selectorStmt = nonSelectPreparedStmt->GetStepTasks().GetSelector(true);
     selectorStmt->Initialize(ctx, ctx.GetParentArrayProperty(), nullptr);
     stat = selectorStmt->Prepare(classMap.GetECDbMap().GetECDbR(), selectorQuery.c_str());
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         {
         BeAssert(false && "Fail to prepared statement for ECInstanceIdSelect. Possible case of struct array containing struct array");
         return stat;

@@ -487,7 +487,7 @@ BentleyStatus ECSqlParser::parse_opt_ecsqloptions_clause(std::unique_ptr<Options
          return ERROR;
          }
 
-     //first node is OPTIONS keyword, second node is option list
+     //first node is ECSQLOPTIONS keyword, second node is option list
      OSQLParseNode const* optionListNode = parseNode->getChild(1);
 
      const size_t childCount = optionListNode->count();
