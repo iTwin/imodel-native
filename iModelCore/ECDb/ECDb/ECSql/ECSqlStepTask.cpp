@@ -154,7 +154,7 @@ ECSqlStepTaskCreateStatus UpdateStructArrayStepTask::Create(unique_ptr<UpdateStr
     unique_ptr<InsertStructArrayStepTask> insertStepTask;
     unique_ptr<DeleteStructArrayStepTask> deleteStepTask;
 
-    auto status = InsertStructArrayStepTask::Create(insertStepTask, preparedContext, ecdb, classMap, property);
+    ECSqlStepTaskCreateStatus status = InsertStructArrayStepTask::Create(insertStepTask, preparedContext, ecdb, classMap, property);
     if (status != ECSqlStepTaskCreateStatus::Success)
         return status;
 
@@ -346,8 +346,8 @@ ECSqlStepTaskCreateStatus DeleteStructArrayStepTask::Create(unique_ptr<DeleteStr
     if (structArrayPropertyMap == nullptr)
         return ECSqlStepTaskCreateStatus::PropertyNotStructArrayType;
 
-    auto& arrayElementType = structArrayPropertyMap->GetElementType();
-    auto arrayElementTypeMap = ecdb.GetECDbImplR().GetECDbMap().GetClassMap(arrayElementType);
+    ECClassCR arrayElementType = structArrayPropertyMap->GetElementType();
+    ClassMap const* arrayElementTypeMap = ecdb.GetECDbImplR().GetECDbMap().GetClassMap(arrayElementType);
     if (arrayElementTypeMap == nullptr)
         return ECSqlStepTaskCreateStatus::ArrayElementTypeMapNotFound;
 
@@ -355,17 +355,17 @@ ECSqlStepTaskCreateStatus DeleteStructArrayStepTask::Create(unique_ptr<DeleteStr
         return ECSqlStepTaskCreateStatus::ArrayElementTypeIsUnmapped;
 
     Utf8String ecsql; 
-    ecsql.Sprintf("DELETE FROM ONLY [%s].[%s] WHERE " ECDB_COL_ParentECInstanceId " = ? AND " 
-                  ECDB_COL_ECPropertyPathId " = %llu AND " ECDB_COL_ECArrayIndex " IS NOT NULL", 
+    ecsql.Sprintf("DELETE FROM ONLY [%s].[%s] WHERE " ECDB_COL_ParentECInstanceId "=? AND " 
+                  ECDB_COL_ECPropertyPathId "=%llu AND " ECDB_COL_ECArrayIndex " IS NOT NULL", 
                   arrayElementType.GetSchema().GetName().c_str(), arrayElementType.GetName().c_str(), propertyMap->GetPropertyPathId());
 
-    unique_ptr<DeleteStructArrayStepTask>  aDeleteStepTask = unique_ptr<DeleteStructArrayStepTask> (new DeleteStructArrayStepTask(*structArrayPropertyMap, classMap));
-    aDeleteStepTask->GetStatement().Initialize(preparedContext, propertyMap->GetProperty().GetAsArrayProperty(), nullptr);
-    auto ecsqlStatus = aDeleteStepTask->GetStatement().Prepare(ecdb, ecsql.c_str());
-    if (ecsqlStatus != ECSqlStatus::Success)
+    unique_ptr<DeleteStructArrayStepTask> stepTask = unique_ptr<DeleteStructArrayStepTask> (new DeleteStructArrayStepTask(*structArrayPropertyMap, classMap));
+    stepTask->GetStatement().Initialize(preparedContext, propertyMap->GetProperty().GetAsArrayProperty(), nullptr);
+    ECSqlStatus stat = stepTask->GetStatement().Prepare(ecdb, ecsql.c_str());
+    if (!stat.IsSuccess())
         return ECSqlStepTaskCreateStatus::ECSqlError;
 
-    deleteStepTask = std::move(aDeleteStepTask);
+    deleteStepTask = std::move(stepTask);
     return ECSqlStepTaskCreateStatus::Success;
     }
 
@@ -518,11 +518,11 @@ ECSqlStepTaskCreateStatus ECSqlStepTaskFactory::CreateUpdateStepTask(ECSqlStepTa
 ECSqlStepTaskCreateStatus ECSqlStepTaskFactory::CreateStepTaskList(ECSqlStepTask::Collection& taskList, ECSqlPrepareContext& preparedContext, StepTaskType taskType, ECDbR ecdb, IClassMap const& classMap, bool isPolymorphicStatement)
     {
     ECSqlStepTaskCreateStatus status = ECSqlStepTaskCreateStatus::Success;
-    auto processStructArrayProperties = [&] (TraversalFeedback& feedback, PropertyMapCP propMap)
+    auto processStructArrayProperties = [&taskList, &preparedContext, &taskType, &ecdb, &classMap, &status] (TraversalFeedback& feedback, PropertyMapCP propMap)
         {
-        if (propMap->GetAsPropertyMapStructArray())
+        if (propMap->GetAsPropertyMapStructArray() != nullptr)
             {
-            unique_ptr<ECSqlStepTask> task;
+            unique_ptr<ECSqlStepTask> task = nullptr;
             status = ECSqlStepTaskFactory::CreatePropertyStepTask(task, taskType, preparedContext, ecdb, classMap, propMap->GetPropertyAccessString());
             if (status == ECSqlStepTaskCreateStatus::Success)
                 taskList.Add(move(task));
