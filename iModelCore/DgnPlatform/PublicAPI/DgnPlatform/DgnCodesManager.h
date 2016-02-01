@@ -78,6 +78,9 @@ public:
 
     //! Returns the ID of the briefcase which has reserved the code, or an invalid ID.
     BeSQLite::BeBriefcaseId GetReservedBy() const { return m_reservedBy; }
+
+    DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
+    DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
 };
 
 //=======================================================================================
@@ -99,6 +102,9 @@ public:
         {
         return GetCode() < rhs.GetCode();
         }
+
+    DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
+    DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
 };
 
 typedef bset<DgnCodeInfo> DgnCodeInfoSet;
