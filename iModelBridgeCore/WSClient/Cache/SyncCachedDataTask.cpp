@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/SyncCachedDataTask.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -27,16 +27,27 @@ CachingDataSourcePtr ds,
 bvector<ECInstanceKey> initialInstances,
 bvector<IQueryProvider::Query> initialQueries,
 bvector<IQueryProviderPtr> queryProviders,
-ICachingDataSource::ProgressCallback onProgress,
+ICachingDataSource::SyncProgressCallback onProgress,
 ICancellationTokenPtr ct
 ) :
 CachingTaskBase(ds, ct),
 m_queryProviders(queryProviders),
 m_initialInstances(initialInstances),
 m_queriesToCache(initialQueries.begin(), initialQueries.end()),
-m_onProgress(onProgress ? onProgress : [] (double, double)
-    {})
+m_onProgress(onProgress ? onProgress : [] (double, Utf8StringCR, double, double) {})
     {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void SyncCachedDataTask::ReportProgress(Utf8StringCR label)
+    {
+    size_t total = m_initialInstances.size() + m_instancesToRedownload.size() + m_totalQueries;
+    size_t synced = m_syncedInitialInstances + m_syncedRejectedInstances + m_syncedQueries;
+    double progress = 0 == total ? 1 : (double) synced / (double) total;
+
+    m_onProgress(progress, label, m_syncedBytes, m_totalBytes);
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2015
@@ -53,7 +64,8 @@ void SyncCachedDataTask::_OnExecute()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SyncCachedDataTask::StartCaching()
     {
-    m_onProgress(0, 0);
+    m_totalQueries = m_queriesToCache.size();
+    ReportProgress();
 
     if (IsTaskCanceled())
         {
@@ -63,7 +75,7 @@ void SyncCachedDataTask::StartCaching()
     auto txn = m_ds->StartCacheTransaction();
 
     bset<ECInstanceKey> instancesToCache(m_initialInstances.begin(), m_initialInstances.end());
-    CacheInstances(txn, instancesToCache);
+    CacheInitialInstances(txn, instancesToCache);
     ContinueCachingQueries(txn);
 
     txn.Commit();
@@ -72,7 +84,7 @@ void SyncCachedDataTask::StartCaching()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SyncCachedDataTask::CacheInstances(CacheTransactionCR txn, const bset<ECInstanceKey>& instanceKeys)
+void SyncCachedDataTask::CacheInitialInstances(CacheTransactionCR txn, const bset<ECInstanceKey>& instanceKeys)
     {
     if (IsTaskCanceled() || instanceKeys.empty())
         {
@@ -85,7 +97,14 @@ void SyncCachedDataTask::CacheInstances(CacheTransactionCR txn, const bset<ECIns
         objectIds.insert(txn.GetCache().FindInstance(instanceKey));
         }
 
-    SyncCachedInstancesTask::Run(m_ds, objectIds, GetCancellationToken())
+    auto onProgress = [=] (size_t synced)
+        {
+        m_syncedInitialInstances = synced;
+        if (0 != synced)
+            ReportProgress();
+        };
+
+    SyncCachedInstancesTask::Run(m_ds, objectIds, onProgress, GetCancellationToken())
         ->Then(m_ds->GetCacheAccessThread(), [=] (ICachingDataSource::BatchResult result)
         {
         AddResult(result);
@@ -116,7 +135,14 @@ void SyncCachedDataTask::CacheRejectedInstances()
         return;
         }
 
-    SyncCachedInstancesTask::Run(m_ds, m_instancesToRedownload, GetCancellationToken())
+    auto onProgress = [=] (size_t synced)
+        {
+        m_syncedRejectedInstances = synced;
+        if (0 != synced)
+            ReportProgress();
+        };
+
+    SyncCachedInstancesTask::Run(m_ds, m_instancesToRedownload, onProgress, GetCancellationToken())
         ->Then(m_ds->GetCacheAccessThread(), [=] (ICachingDataSource::BatchResult result)
         {
         AddResult(result);
@@ -145,7 +171,9 @@ void SyncCachedDataTask::CacheFiles()
 
     auto onProgress = [=] (double bytesTransfered, double bytesTotal, Utf8StringCR fileName)
         {
-        m_onProgress(bytesTransfered, bytesTotal);
+        m_syncedBytes = bytesTransfered;
+        m_totalBytes = bytesTotal;
+        ReportProgress(fileName);
         };
 
     auto task = std::make_shared<DownloadFilesTask>(m_ds, filesToDownload, FileCache::Persistent, onProgress, GetCancellationToken());
@@ -184,7 +212,7 @@ void SyncCachedDataTask::ContinueCachingQueries(CacheTransactionCR txn)
     auto ct = GetCancellationToken();
 
     m_ds->CacheObjects(responseKey, *query, CachingDataSource::DataOrigin::RemoteData, IWSRepositoryClient::InitialSkipToken, 0, ct)
-    ->Then(m_ds->GetCacheAccessThread(), [=] (CachingDataSource::DataOriginResult result)
+        ->Then(m_ds->GetCacheAccessThread(), [=] (CachingDataSource::DataOriginResult result)
         {
         if (IsTaskCanceled())
             {
@@ -195,7 +223,7 @@ void SyncCachedDataTask::ContinueCachingQueries(CacheTransactionCR txn)
         if (result.IsSuccess())
             {
             InvalidatePersistentInstances();
-            
+
             ECInstanceKeyMultiMap cachedInstances;
             if (CacheStatus::OK != txn.GetCache().ReadResponseInstanceKeys(responseKey, cachedInstances))
                 {
@@ -217,7 +245,10 @@ void SyncCachedDataTask::ContinueCachingQueries(CacheTransactionCR txn)
             {
             RegisterError(txn, responseKey, result.GetError());
             }
-
+        
+        m_syncedQueries++;
+        ReportProgress();
+        
         ContinueCachingQueries(txn);
         txn.Commit();
         });
@@ -256,11 +287,16 @@ void SyncCachedDataTask::PrepareCachingQueries(CacheTransactionCR txn, ECInstanc
             {
             auto queries = queryProviderPtr->GetQueries(txn, instanceKey, isPersistent);
             m_queriesToCache.insert(m_queriesToCache.end(), queries.begin(), queries.end());
+            m_totalQueries += queries.size();
             }
 
         if (queryProviderPtr->DoUpdateFile(txn, instanceKey, isPersistent))
             {
             m_filesToDownload.insert(instanceKey);
+
+            uint64_t fileSize = 0;
+            txn.GetCache().ReadFileProperties(instanceKey, nullptr, &fileSize);
+            m_totalBytes += fileSize;
             }
         }
 

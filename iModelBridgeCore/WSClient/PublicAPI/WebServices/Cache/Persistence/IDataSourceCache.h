@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Cache/Persistence/IDataSourceCache.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -238,7 +238,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
         //! @param instanceKey
         //! @param[out] fileName will be filled with file name or instance label if found.
         //! @param[out] fileSize will be filled with file size property value or 0 if not found.
-        virtual BentleyStatus ReadFileProperties(ECInstanceKeyCR instanceKey, Utf8StringR fileName, uint64_t& fileSize) = 0;
+        virtual BentleyStatus ReadFileProperties(ECInstanceKeyCR instanceKey, Utf8String* fileName, uint64_t* fileSize) = 0;
 
         //! Check if final response page was cached and caching is finished for it.
         virtual bool IsResponseCached(CachedResponseKeyCR responseKey) = 0;

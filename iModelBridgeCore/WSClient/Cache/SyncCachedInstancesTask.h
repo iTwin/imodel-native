@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/SyncCachedInstancesTask.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -23,12 +23,14 @@ struct SyncCachedInstancesTask : public CachingTaskBase
         const bset<ObjectId>  m_objectsToCache;
         std::deque<ObjectId>  m_objectsLeftToCache;
         bset<ECInstanceKey>   m_cachedInstances;
+        ProgressCallback      m_onProgress;
 
     private:
         SyncCachedInstancesTask
             (
             CachingDataSourcePtr ds,
             const bset<ObjectId>& objects,
+            ProgressCallback onProgress,
             ICancellationTokenPtr ct
             );
 
@@ -43,6 +45,7 @@ struct SyncCachedInstancesTask : public CachingTaskBase
             (
             CachingDataSourcePtr ds,
             const bset<ObjectId>& instanceIds,
+            ProgressCallback onProgress,
             ICancellationTokenPtr ct
             );
     };
