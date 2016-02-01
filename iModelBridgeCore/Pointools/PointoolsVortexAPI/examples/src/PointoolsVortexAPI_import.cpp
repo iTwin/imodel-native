@@ -86,7 +86,6 @@ PTNUMUSERMETATAGSINSECTION ptNumUserMetaTagsInSection=0;
 PTGETUSERMETATAGBYINDEX ptGetUserMetaTagByIndex=0;
 PTGETUSERMETATAGBYNAME ptGetUserMetaTagByName=0;
 
-
 PTSHOWSCENE ptShowScene = 0;
 PTSHOWCLOUD ptShowCloud = 0;
 
@@ -374,8 +373,6 @@ PTISCLIPPINGPLANEENABLED ptIsClippingPlaneEnabled = 0;
 PTENABLECLIPPINGPLANE ptEnableClippingPlane = 0;
 PTDISABLECLIPPINGPLANE ptDisableClippingPlane = 0;
 PTSETCLIPPINGPLANEPARAMETERS ptSetClippingPlaneParameters = 0;
-
-_PTDIAGNOSTIC _ptDiagnostic = 0;
 
 #endif
 
@@ -755,8 +752,6 @@ bool LoadPointoolsDLL(const TCHAR*filepath)
 		ptSetClippingPlaneParameters = (PTSETCLIPPINGPLANEPARAMETERS) GetAPIFunc( "ptSetClippingPlaneParameters" );
 
 		ptRelease = (PTRELEASE) GetAPIFunc("ptRelease");
-
-		_ptDiagnostic = (_PTDIAGNOSTIC) GetAPIFunc("_ptDiagnostic");
 		return !_failed;
 	}
 	else

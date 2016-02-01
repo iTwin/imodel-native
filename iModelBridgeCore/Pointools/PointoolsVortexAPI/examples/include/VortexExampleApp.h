@@ -212,6 +212,8 @@ protected:
 	void	addStatisticMessage(const char *mess);
 	void	viewRedraw();
 	void	viewUpdate();
+	PThandle getLastScene( void ) const;
+
 private:
 	int		cmdRangeStart;
 	int		cmdRangeEnd;
@@ -252,6 +254,11 @@ public:
 
 	void					notifySceneUpdate( void );
 
+	virtual void			setupFrustum();
+
+	HGLRC					getRC();
+	HDC						getDC();
+	
 protected:
 	
 	void					drawLogo();
@@ -261,8 +268,6 @@ protected:
 	void					drawBoundingBox();
 	virtual void			drawPointClouds();
 	
-	virtual void			setupFrustum();
-
 	// glut handlers
 	static void				glutIdleHandler_stub();
 	virtual void			glutIdleHandler();
@@ -292,6 +297,9 @@ protected:
 	Mouse					m_mouse;
 	UI						m_ui;
 	View					m_view;
+
+	HGLRC					m_rc;
+	HDC						m_dc;
 
 private:
 

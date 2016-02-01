@@ -27,6 +27,9 @@ public:
 
 	void drawPreDisplay();
 
+	void getCameraPosition( float &x, float &y, float &z ) const;
+	void setCameraPosition( float x, float y, float z );
+
 	enum MouseMode
 	{
 		MouseNone = 0, 
@@ -34,6 +37,8 @@ public:
 		MousePan = 2,
 		MouseZoom = 3
 	};
+
+	static CameraNavigation *instance();
 
 private:
 	MouseMode	m_mode;
@@ -52,6 +57,8 @@ private:
 	float		m_posXtmp;
 	float		m_posYtmp;
 	float		m_posZtmp;
+
+	static		CameraNavigation*	s_instance;
 };
 
 #endif

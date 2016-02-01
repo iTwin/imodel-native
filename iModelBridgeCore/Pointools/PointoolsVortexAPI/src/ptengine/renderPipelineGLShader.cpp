@@ -230,6 +230,7 @@ void RenderPipeline_GLShader::renderPoints( PointsBufferI *buffer, RenderContext
 	context->effectsMan()->startBuffer( context, m_avalBuffers, (ShaderObj*)shader );
 
 	//glColor3fv( buffer->baseColor() );
+
 	renderMethod()->renderPoints( buffer, context->settings() );
 
 	context->effectsMan()->endBuffer( context, m_avalBuffers, (ShaderObj*)shader );

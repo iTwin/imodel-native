@@ -304,7 +304,7 @@ bool DataChannel::resize(int sz)
 	if (_data)
 	{
 		int transfer = _typesize * _multiple * (_count > sz ? sz : _count);
-		memset(&d[transfer], 0, newsize - transfer - 1);
+		memset(&d[transfer], 0, newsize - transfer);
 		memcpy(d, _data, transfer);
 		delete [] _data;
 	}

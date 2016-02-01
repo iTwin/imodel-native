@@ -224,15 +224,10 @@ bool VortexExampleApp::setupGL(int argc, char* argv[])
 	glEnable(GL_DEPTH_TEST);
 
 	// setup lighting
-	GLfloat light0_ambient[] =  {0.1f, 0.1f, 0.3f, 1.0f};
-	GLfloat light0_diffuse[] =  {.6f, .6f, 1.0f, 1.0f};
-	GLfloat light0_position[] = {.5f, .5f, 1.0f, 0.0f};
-
-	GLfloat light1_ambient[] =  {0.1f, 0.1f, 0.3f, 1.0f};
-	GLfloat light1_diffuse[] =  {.9f, .6f, 0.0f, 1.0f};
-	GLfloat light1_position[] = {-1.0f, -1.0f, 1.0f, 0.0f};
-
-	GLfloat lights_rotation[16] = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
+	GLfloat light0_ambient[] =  {0.15f, 0.15f, 0.15f, 1.0f};
+	GLfloat light0_diffuse[] =  {0.8f, 0.8f, 0.8f, 1.0f};
+	GLfloat light0_spec[] =  {1.0f, 1.0f, 1.0f, 1.0f};
+	GLfloat light0_position[] = {1.5f, 1.5f, -2.0f };
 
 	glEnable(GL_LIGHTING);
 
@@ -240,7 +235,10 @@ bool VortexExampleApp::setupGL(int argc, char* argv[])
 	glLightfv(GL_LIGHT0, GL_AMBIENT, light0_ambient);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, light0_diffuse);
 	glLightfv(GL_LIGHT0, GL_POSITION, light0_position);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, light0_spec);
 
+	m_rc =0;
+	m_dc =0 ;
 	return true;
 }
 //-----------------------------------------------------------------------------
@@ -324,7 +322,6 @@ bool VortexExampleApp::initializeVortexAPI(bool debugVortexDll)
 		{
 			std::cout << "Failed to initialize Vortex API" << std::endl;
 			std::cout << wcToAscii(ptGetLastErrorString()) << std::endl;
-			return false;
 		}
 	
 		ptSetWorkingFolder( folder );
@@ -352,6 +349,13 @@ bool VortexExampleApp::initializeVortexAPI(bool debugVortexDll)
 Tool::Tool(int cmdStart, int cmdEnd) : cmdRangeStart(cmdStart), cmdRangeEnd(cmdEnd) 
 //-----------------------------------------------------------------------------
 {
+}
+PThandle Tool::getLastScene( void ) const
+{
+	PThandle handles[1024];
+	int num = ptGetSceneHandles(handles);
+	
+	return num ? handles[num-1] : 0;	
 }
 //-----------------------------------------------------------------------------
 void Tool::viewUpdate()
@@ -882,6 +886,9 @@ void	VortexExampleApp::setupFrustum()
 void	VortexExampleApp::glutDisplay()
 //-----------------------------------------------------------------------------
 {
+	if (!m_rc) m_rc = wglGetCurrentContext();
+	if (!m_dc) m_dc = wglGetCurrentDC();
+
 	if (m_view.freezeDraw) return;
 
 	glDrawBuffer( GL_BACK );
@@ -973,3 +980,16 @@ void	VortexExampleApp::notifySceneUpdate( void )
 		(*i)->onSceneUpdate();
 	}
 }
+//-----------------------------------------------------------------------------
+HGLRC					VortexExampleApp::getRC()
+//-----------------------------------------------------------------------------
+{
+	return m_rc;
+}
+//-----------------------------------------------------------------------------
+HDC						VortexExampleApp::getDC()
+//-----------------------------------------------------------------------------
+{
+	return m_dc;
+}
+

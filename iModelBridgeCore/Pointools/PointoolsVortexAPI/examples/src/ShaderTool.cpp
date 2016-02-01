@@ -13,7 +13,7 @@ Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 #include "ClassificationRender.h"
 
 //-----------------------------------------------------------------------------
-ShaderTool::ShaderTool() : Tool(CmdShaderUpdate, CmdIncIntensity)
+ShaderTool::ShaderTool() : Tool(CmdShaderUpdate, CmdResetPodCol)
 //-----------------------------------------------------------------------------
 {
 	m_lastRenderer=0;
@@ -43,6 +43,20 @@ void ShaderTool::command( int cmdId )
 
 		handleClassificationShader();
 
+		viewRedraw();
+	}
+	else if (cmdId == CmdSetPodCol )
+	{
+		float r = (float)rand()/RAND_MAX;
+		float b = (float)rand()/RAND_MAX;
+		float col[] = { r, 1.0f - r, b };
+
+		ptSetOverrideColor( getLastScene(), col );
+		viewRedraw();
+	}
+	else if (cmdId == CmdResetPodCol )
+	{
+		ptRemoveOverrideColor( getLastScene() );
 		viewRedraw();
 	}
 }
@@ -249,6 +263,12 @@ void ShaderTool::buildUserInterface(GLUI_Node *parent)
 		sb = new GLUI_Scrollbar( rolloutOptions, "Frame Rate", GLUI_SCROLL_HORIZONTAL, &m_shader.fps );
 
 		sb->set_float_limits(1,30);
+
+		GLUI_Panel *scene_col = new GLUI_Panel( rolloutOptions, "Scene Override Color" );
+		new GLUI_Button( scene_col, "Set Random", CmdSetPodCol, &Tool::dispatchCmd );
+		new GLUI_Column( scene_col, false );
+		new GLUI_Button( scene_col, "Reset", CmdResetPodCol, &Tool::dispatchCmd );
+
 }
 
 
