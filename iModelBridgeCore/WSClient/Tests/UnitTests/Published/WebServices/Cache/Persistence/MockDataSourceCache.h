@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Persistence/MockDataSourceCache.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -110,7 +110,7 @@ struct MockDataSourceCache : public IDataSourceCache
         MOCK_METHOD1 (ReadFilePath,
             BeFileName (ECInstanceKeyCR instanceKey));
         MOCK_METHOD3 (ReadFileProperties,
-            BentleyStatus (ECInstanceKeyCR instanceKey, Utf8StringR fileName, uint64_t& fileSize));
+            BentleyStatus (ECInstanceKeyCR instanceKey, Utf8String* fileName, uint64_t* fileSize));
         MOCK_METHOD1 (IsResponseCached,
             bool (CachedResponseKeyCR responseKey));
         MOCK_METHOD2 (ReadResponseCacheTag,

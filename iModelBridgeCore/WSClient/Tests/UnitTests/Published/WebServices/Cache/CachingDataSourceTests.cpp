@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/CachingDataSourceTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -4300,7 +4300,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_QueryProviderReturnsToUpdateFile_D
 
     // Download & cache file
     EXPECT_CALL(*cache, ReadFileCacheTag(objectId)).WillOnce(Return("TestTag"));
-    EXPECT_CALL(*cache, ReadFileProperties(instanceKey, _, _)).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(*cache, ReadFileProperties(instanceKey, _, _)).WillRepeatedly(Return(SUCCESS));
     EXPECT_CALL(*client, SendGetFileRequest(objectId, _, Utf8String("TestTag"), _, _))
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR fileName, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
@@ -4419,7 +4419,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueriesSuppliedAndServerRes
     ON_CALL(*cache, ReadResponseCacheTag(_, _)).WillByDefault(Return(""));
     ON_CALL(*cache, CacheResponse(_, _, _, _, _, _)).WillByDefault(Return(SUCCESS));
     ON_CALL(*cache, ReadResponseInstanceKeys(_, _)).WillByDefault(Return(CacheStatus::OK));
-    
+
     InSequence callsInSeq;
 
     EXPECT_CALL(*client, SendQueryRequest(_, _, WSRepositoryClient::InitialSkipToken, _))
@@ -4448,9 +4448,11 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstance_CallbackCalledWith
     ON_CALL(*cache, ReadFullyPersistedInstanceKeys(_)).WillByDefault(Return(SUCCESS));
 
     int progressCalled = 0;
-    auto onProgress = [&] (double bytesTransfered, double bytesTotal)
+    double expectedSyncedValues[2] = {0, 1};
+    auto onProgress = [&] (double synced, Utf8StringCR label, double bytesTransfered, double bytesTotal)
         {
-        EXPECT_THAT(progressCalled, 0);
+        EXPECT_EQ(expectedSyncedValues[progressCalled], synced);
+        EXPECT_THAT(label, IsEmpty());
         EXPECT_THAT(bytesTransfered, 0);
         EXPECT_THAT(bytesTotal, 0);
         progressCalled++;
@@ -4459,7 +4461,134 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstance_CallbackCalledWith
     auto result = ds->SyncCachedData(StubBVector(instanceKey), bvector<IQueryProvider::Query>(), StubBVector<IQueryProviderPtr>(provider), onProgress, nullptr)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_THAT(result.GetValue(), IsEmpty());
-    EXPECT_THAT(progressCalled, 1);
+    EXPECT_THAT(progressCalled, 2);
+    }
+
+TEST_F(CachingDataSourceTests, SyncCachedData_WSG1AndInitialInstances_OnProgressCallsWithEachInstanceProgressWithoutLabels)
+    {
+    auto cache = std::make_shared<NiceMock<MockDataSourceCache>>();
+    auto client = std::make_shared<NiceMock<MockWSRepositoryClient>>();
+    auto store = std::make_shared<StubRepositoryInfoStore>(StubWSInfoWebApi({1, 3}));
+    auto ds = CreateMockedCachingDataSource(client, cache, store);
+
+    auto instanceA = StubECInstanceKey(1, 2);
+    auto instanceB = StubECInstanceKey(3, 4);
+    auto instanceC = StubECInstanceKey(5, 6);
+    auto instanceD = StubECInstanceKey(7, 8);
+
+    ON_CALL(*cache, FindInstance(instanceA)).WillByDefault(Return(ObjectId("TestSchema.TestClass", "A")));
+    ON_CALL(*cache, FindInstance(instanceB)).WillByDefault(Return(ObjectId("TestSchema.TestClass", "B")));
+    ON_CALL(*cache, FindInstance(instanceC)).WillByDefault(Return(ObjectId("TestSchema.TestClass", "C")));
+    ON_CALL(*cache, FindInstance(instanceD)).WillByDefault(Return(ObjectId("TestSchema.TestClass", "D")));
+    ON_CALL(*cache, ReadFullyPersistedInstanceKeys(_)).WillByDefault(Return(SUCCESS));
+    ON_CALL(*cache, ReadInstanceCacheTag(_)).WillByDefault(Return(nullptr));
+    ON_CALL(*cache, UpdateInstance(_, _)).WillByDefault(Return(SUCCESS));
+    ON_CALL(*client, SendGetObjectRequest(_, _, _)).WillByDefault(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
+
+    int progressCalled = 0;
+    double expectedSyncedValues[5] = {0, 0.25, 0.50, 0.75, 1};
+    auto onProgress = [&] (double synced, Utf8StringCR label, double bytesTransfered, double bytesTotal)
+        {
+        EXPECT_EQ(expectedSyncedValues[progressCalled], synced);
+        EXPECT_EQ("", label);
+        EXPECT_THAT(bytesTransfered, 0);
+        EXPECT_THAT(bytesTotal, 0);
+        progressCalled++;
+        };
+
+    auto instances = StubBVector({instanceA, instanceB, instanceC, instanceD});
+    auto result = ds->SyncCachedData(instances, bvector<IQueryProvider::Query>(), bvector<IQueryProviderPtr>(), onProgress, nullptr)->GetResult();
+
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_THAT(result.GetValue(), IsEmpty());
+    EXPECT_THAT(progressCalled, 5);
+    }
+
+TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstancesAndQueries_OnProgressCallsWithEachpartProgress)
+    {
+    auto cache = std::make_shared<NiceMock<MockDataSourceCache>>();
+    auto client = std::make_shared<NiceMock<MockWSRepositoryClient>>();
+    auto store = std::make_shared<StubRepositoryInfoStore>(StubWSInfoWebApi({1, 3}));
+    auto ds = CreateMockedCachingDataSource(client, cache, store);
+
+    auto instanceA = StubECInstanceKey(1, 2);
+    auto instanceB = StubECInstanceKey(3, 4);
+    IQueryProvider::Query queryA(CachedResponseKey(StubECInstanceKey(5, 6), "A"), std::make_shared<WSQuery>("SchemaA", "ClassA"));
+    IQueryProvider::Query queryB(CachedResponseKey(StubECInstanceKey(7, 8), "B"), std::make_shared<WSQuery>("SchemaB", "ClassB"));
+
+    ON_CALL(*cache, CacheResponse(_, _, _, _, _, _)).WillByDefault(Return(SUCCESS));
+    ON_CALL(*cache, FindInstance(instanceA)).WillByDefault(Return(ObjectId("TestSchema.TestClass", "A")));
+    ON_CALL(*cache, FindInstance(instanceB)).WillByDefault(Return(ObjectId("TestSchema.TestClass", "B")));
+    ON_CALL(*cache, ReadFullyPersistedInstanceKeys(_)).WillByDefault(Return(SUCCESS));
+    ON_CALL(*cache, ReadInstanceCacheTag(_)).WillByDefault(Return(nullptr));
+    ON_CALL(*cache, ReadResponseCacheTag(_, _)).WillByDefault(Return(nullptr));
+    ON_CALL(*cache, ReadResponseInstanceKeys(_, _)).WillByDefault(Return(CacheStatus::OK));
+    ON_CALL(*cache, UpdateInstance(_, _)).WillByDefault(Return(SUCCESS));
+    ON_CALL(*client, SendGetObjectRequest(_, _, _)).WillByDefault(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
+    ON_CALL(*client, SendQueryRequest(_, _, _, _)).WillByDefault(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
+
+    int progressCalled = 0;
+    double expectedSyncedValues[5] = {0, 0.25, 0.50, 0.75, 1};
+    auto onProgress = [&] (double synced, Utf8StringCR label, double bytesTransfered, double bytesTotal)
+        {
+        EXPECT_EQ(expectedSyncedValues[progressCalled], synced);
+        EXPECT_THAT(bytesTransfered, 0);
+        EXPECT_THAT(bytesTotal, 0);
+        progressCalled++;
+        };
+
+    auto result = ds->SyncCachedData(StubBVector({instanceA, instanceB}), StubBVector({queryA, queryB}),
+                                     bvector<IQueryProviderPtr>(), onProgress, nullptr)->GetResult();
+
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_THAT(result.GetValue(), IsEmpty());
+    EXPECT_THAT(progressCalled, 5);
+    }
+
+TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstancesWithProviders_OnProgressCallsWithInitialAndNewQuery)
+    {
+    auto cache = std::make_shared<NiceMock<MockDataSourceCache>>();
+    auto client = std::make_shared<NiceMock<MockWSRepositoryClient>>();
+    auto store = std::make_shared<StubRepositoryInfoStore>(StubWSInfoWebApi({1, 3}));
+    auto ds = CreateMockedCachingDataSource(client, cache, store);
+    auto provider = std::make_shared<MockQueryProvider>();
+
+    auto instanceA = StubECInstanceKey(1, 2);
+    auto instanceB = StubECInstanceKey(3, 4);
+    IQueryProvider::Query queryA(CachedResponseKey(StubECInstanceKey(5, 6), "A"), std::make_shared<WSQuery>("SchemaA", "ClassA"));
+    IQueryProvider::Query queryB(CachedResponseKey(StubECInstanceKey(7, 8), "B"), std::make_shared<WSQuery>("SchemaB", "ClassB"));
+
+    ON_CALL(*cache, CacheResponse(_, _, _, _, _, _)).WillByDefault(Return(SUCCESS));
+    ON_CALL(*cache, FindInstance(instanceA)).WillByDefault(Return(ObjectId("TestSchema.TestClass", "A")));
+    ON_CALL(*cache, FindInstance(instanceB)).WillByDefault(Return(ObjectId("TestSchema.TestClass", "B")));
+    ON_CALL(*cache, ReadFullyPersistedInstanceKeys(_)).WillByDefault(Return(SUCCESS));
+    ON_CALL(*cache, ReadInstanceCacheTag(_)).WillByDefault(Return(nullptr));
+    ON_CALL(*cache, ReadResponseCacheTag(_, _)).WillByDefault(Return(nullptr));
+    ON_CALL(*cache, ReadResponseInstanceKeys(_, _)).WillByDefault(Return(CacheStatus::OK));
+    ON_CALL(*cache, UpdateInstance(_, _)).WillByDefault(Return(SUCCESS));
+    ON_CALL(*client, SendGetObjectRequest(_, _, _)).WillByDefault(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
+    ON_CALL(*client, SendQueryRequest(_, _, _, _)).WillByDefault(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
+
+    EXPECT_CALL(*provider, GetQueries(_, instanceA, _)).WillOnce(Return(StubBVector({queryA})));
+    EXPECT_CALL(*provider, GetQueries(_, instanceB, _)).WillOnce(Return(StubBVector({queryB})));
+    ON_CALL(*provider, DoUpdateFile(_, _, _)).WillByDefault(Return(false));
+
+    int progressCalled = 0;
+    double expectedSyncedValues[5] = {0, 0.50, 1.00, 0.75, 1};
+    auto onProgress = [&] (double synced, Utf8StringCR label, double bytesTransfered, double bytesTotal)
+        {
+        EXPECT_EQ(expectedSyncedValues[progressCalled], synced);
+        EXPECT_THAT(bytesTransfered, 0);
+        EXPECT_THAT(bytesTotal, 0);
+        progressCalled++;
+        };
+
+    auto result = ds->SyncCachedData(StubBVector({instanceA, instanceB}), bvector<IQueryProvider::Query>(),
+                                     StubBVector<IQueryProviderPtr>(provider), onProgress, nullptr)->GetResult();
+
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_THAT(result.GetValue(), IsEmpty());
+    EXPECT_THAT(progressCalled, 5);
     }
 
 TEST_F(CachingDataSourceTests, SyncCachedData_FilesBeingDownloaded_CallbackCalledWithFileProgress)
@@ -4473,14 +4602,20 @@ TEST_F(CachingDataSourceTests, SyncCachedData_FilesBeingDownloaded_CallbackCalle
     ObjectId objectId("TestSchema.TestClass", "TestId");
     ON_CALL(*cache, FindInstance(instanceKey)).WillByDefault(Return(objectId));
     ON_CALL(*cache, FindInstance(objectId)).WillByDefault(Return(instanceKey));
-    ON_CALL(*client, SendQueryRequest(_, _, _, _)).WillByDefault(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
     ON_CALL(*cache, UpdateInstances(_, _, _, _)).WillByDefault(DoAll(SetArgPointee<2>(StubBSet({instanceKey})), Return(SUCCESS)));
-    ON_CALL(*provider, GetQueries(_, instanceKey, _)).WillByDefault(Return(bvector<IQueryProvider::Query>()));
+    ON_CALL(*client, SendQueryRequest(_, _, _, _)).WillByDefault(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
     ON_CALL(*provider, DoUpdateFile(_, instanceKey, _)).WillByDefault(Return(true));
+    ON_CALL(*provider, GetQueries(_, instanceKey, _)).WillByDefault(Return(bvector<IQueryProvider::Query>()));
 
     // Download & cache file
     EXPECT_CALL(*cache, ReadFileCacheTag(objectId)).WillOnce(Return(nullptr));
-    EXPECT_CALL(*cache, ReadFileProperties(instanceKey, _, _)).WillOnce(DoAll(SetArgReferee<2>(42), Return(SUCCESS)));
+    EXPECT_CALL(*cache, ReadFileProperties(instanceKey, _, _)).WillRepeatedly(Invoke([&] (ECInstanceKeyCR, Utf8String* fileNameP, uint64_t* fileSizeP)
+        {
+        if (nullptr != fileNameP)
+            *fileNameP = "TestFile.txt";
+        *fileSizeP = 42;
+        return SUCCESS;
+        }));
     EXPECT_CALL(*client, SendGetFileRequest(objectId, _, _, _, _))
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR fileName, Utf8StringCR, HttpRequest::ProgressCallbackCR onProgress, ICancellationTokenPtr)
         {
@@ -4493,10 +4628,13 @@ TEST_F(CachingDataSourceTests, SyncCachedData_FilesBeingDownloaded_CallbackCalle
     ON_CALL(*cache, ReadFullyPersistedInstanceKeys(_)).WillByDefault(Return(SUCCESS));
 
     int progressCalled = 0;
-    auto onProgress = [&] (double bytesTransfered, double bytesTotal)
+    double expectedSyncedValues[3] = {0, 1, 1};
+    auto onProgress = [&] (double synced, Utf8StringCR label, double bytesTransfered, double bytesTotal)
         {
-        if (progressCalled == 1)
+        EXPECT_EQ(expectedSyncedValues[progressCalled], synced);
+        if (progressCalled == 2)
             {
+            EXPECT_EQ("TestFile.txt", label);
             EXPECT_THAT(bytesTransfered, 5);
             EXPECT_THAT(bytesTotal, 42);
             }
@@ -4506,7 +4644,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_FilesBeingDownloaded_CallbackCalle
     auto result = ds->SyncCachedData(StubBVector(instanceKey), bvector<IQueryProvider::Query>(), StubBVector<IQueryProviderPtr>(provider), onProgress, nullptr)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_THAT(result.GetValue(), IsEmpty());
-    EXPECT_THAT(progressCalled, 2);
+    EXPECT_THAT(progressCalled, 3);
     }
 
 #endif // USE_GTEST

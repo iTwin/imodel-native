@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/CachingDataSource.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -745,7 +745,7 @@ ICancellationTokenPtr ct
 
                 if (!rejected.empty())
                     {
-                    SyncCachedInstancesTask::Run(this->shared_from_this(), rejected, ct)
+                    SyncCachedInstancesTask::Run(this->shared_from_this(), rejected, nullptr, ct)
                         ->Then(m_cacheAccessThread, [=] (BatchResult instancesResult)
                         {
                         if (instancesResult.IsSuccess())
@@ -1429,7 +1429,7 @@ AsyncTaskPtr<CachingDataSource::BatchResult> CachingDataSource::SyncCachedData
 bvector<ECInstanceKey> initialInstances,
 bvector<IQueryProvider::Query> initialQueries,
 bvector<IQueryProviderPtr> queryProviders,
-ProgressCallback onProgress,
+SyncProgressCallback onProgress,
 ICancellationTokenPtr ct
 )
     {

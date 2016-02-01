@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Cache/Persistence/DataSourceCache.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -175,7 +175,7 @@ struct DataSourceCache : public IDataSourceCache
 
         WSCACHE_EXPORT BeFileName ReadFilePath(ObjectIdCR objectId) override;
         WSCACHE_EXPORT BeFileName ReadFilePath(ECInstanceKeyCR instanceKey) override;
-        WSCACHE_EXPORT BentleyStatus ReadFileProperties(ECInstanceKeyCR instanceKey, Utf8StringR fileName, uint64_t& fileSize) override;
+        WSCACHE_EXPORT BentleyStatus ReadFileProperties(ECInstanceKeyCR instanceKey, Utf8String* fileName, uint64_t* fileSize) override;
 
         WSCACHE_EXPORT bool IsResponseCached(CachedResponseKeyCR responseKey) override;
 

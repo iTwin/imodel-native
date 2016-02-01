@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/DataSourceCache.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1511,7 +1511,7 @@ ICancellationTokenPtr ct
 
     bool wasCompleted = m_state->GetCachedResponseManager().IsResponseCompleted(responseKey);
     bool nowCompleted = wasCompleted;
-    
+
     if (response.IsFinal())
         {
         nowCompleted = true;
@@ -1775,7 +1775,7 @@ Utf8String DataSourceCache::ReadInstanceLabel(ObjectIdCR objectId)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DataSourceCache::ReadFileProperties(ECInstanceKeyCR instanceKey, Utf8StringR fileName, uint64_t& fileSize)
+BentleyStatus DataSourceCache::ReadFileProperties(ECInstanceKeyCR instanceKey, Utf8String* fileNameP, uint64_t* fileSizeP)
     {
     ECClassCP ecClass = m_state->GetECDbAdapter().GetECClass(instanceKey);
     if (nullptr == ecClass)
@@ -1783,11 +1783,15 @@ BentleyStatus DataSourceCache::ReadFileProperties(ECInstanceKeyCR instanceKey, U
         return ERROR;
         }
 
-    Utf8PrintfString key("DataSourceCache::ReadFileProperties:%lld", ecClass->GetId());
+    Utf8PrintfString key("DataSourceCache::ReadFileProperties:%lld:%d:%d", ecClass->GetId(), !!fileNameP, !!fileSizeP);
     auto statement = m_state->GetStatementCache().GetPreparedStatement(key, [&]
         {
-        Utf8String fileNamePropertyName = ECCustomAttributeHelper::GetPropertyName(ecClass, L"FileDependentProperties", L"FileName");
-        Utf8String fileSizePropertyName = ECCustomAttributeHelper::GetPropertyName(ecClass, L"FileDependentProperties", L"FileSize");
+        Utf8String fileNamePropertyName, fileSizePropertyName;
+        if (nullptr != fileNameP)
+            fileNamePropertyName = ECCustomAttributeHelper::GetPropertyName(ecClass, L"FileDependentProperties", L"FileName");
+
+        if (nullptr != fileSizeP)
+            fileSizePropertyName = ECCustomAttributeHelper::GetPropertyName(ecClass, L"FileDependentProperties", L"FileSize");
 
         if (fileNamePropertyName.empty())
             {
@@ -1816,8 +1820,11 @@ BentleyStatus DataSourceCache::ReadFileProperties(ECInstanceKeyCR instanceKey, U
         return ERROR;
         }
 
-    fileName = statement->GetValueText(0);
-    fileSize = statement->GetValueInt64(1);
+    if (nullptr != fileNameP)
+        *fileNameP = statement->GetValueText(0);
+
+    if (nullptr != fileSizeP)
+        *fileSizeP = statement->GetValueInt64(1);
 
     return SUCCESS;
     }
