@@ -22,9 +22,6 @@
         <Bindings>
             <PublicAPI Domain="DgnPlatform" />
             <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/Dgn" SubPartDirectory="ECSchemas/Dgn">
-                ECSchemas/Bentley_Markup.01.00.ecschema.xml
-                ECSchemas/Bentley_MarkupExtension.01.01.ecschema.xml
-                ECSchemas/DgnMarkupSchema.01.00.ecschema.xml
                 ECSchemas/dgn.02.00.ecschema.xml
                 ECSchemas/Generic.01.00.ecschema.xml
             </Files>
