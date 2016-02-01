@@ -46,7 +46,7 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceInserter::ECInstanceInserter (ECDbCR ecdb, ECN::ECClassCR ecClass)
+ECInstanceInserter::ECInstanceInserter(ECDbCR ecdb, ECN::ECClassCR ecClass)
     {
     m_impl = new ECInstanceInserter::Impl (ecdb, ecClass);
     }
@@ -66,7 +66,7 @@ ECInstanceInserter::~ECInstanceInserter ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECInstanceInserter::IsValid () const
+bool ECInstanceInserter::IsValid() const
     {
     return m_impl->IsValid ();
     }
@@ -74,7 +74,7 @@ bool ECInstanceInserter::IsValid () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECInstanceInserter::Insert (ECInstanceKey& newInstanceKey, ECN::IECInstanceCR instance, bool autogenerateECInstanceId, ECInstanceId const* userprovidedECInstanceId) const
+BentleyStatus ECInstanceInserter::Insert(ECInstanceKey& newInstanceKey, ECN::IECInstanceCR instance, bool autogenerateECInstanceId, ECInstanceId const* userprovidedECInstanceId) const
     {
     return m_impl->Insert (newInstanceKey, instance, autogenerateECInstanceId, userprovidedECInstanceId);
     }
@@ -82,7 +82,7 @@ BentleyStatus ECInstanceInserter::Insert (ECInstanceKey& newInstanceKey, ECN::IE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECInstanceInserter::Insert (ECN::IECInstanceR instance, bool autogenerateECInstanceId) const
+BentleyStatus ECInstanceInserter::Insert(ECN::IECInstanceR instance, bool autogenerateECInstanceId) const
     {
     return m_impl->Insert (instance, autogenerateECInstanceId);
     }
@@ -93,16 +93,16 @@ BentleyStatus ECInstanceInserter::Insert (ECN::IECInstanceR instance, bool autog
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle      06/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceInserter::Impl::Impl (ECDbCR ecdb, ECClassCR ecClass)
-    : m_ecdb (ecdb), m_ecClass (ecClass), m_ecinstanceIdBindingInfo (nullptr), m_needsCalculatedPropertyEvaluation (false), m_isValid (false)
+ECInstanceInserter::Impl::Impl(ECDbCR ecdb, ECClassCR ecClass)
+    : m_ecdb(ecdb), m_ecClass(ecClass), m_ecinstanceIdBindingInfo(nullptr), m_needsCalculatedPropertyEvaluation(false), m_isValid(false)
     {
-    Initialize ();
+    Initialize();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECInstanceInserter::Impl::Initialize ()
+void ECInstanceInserter::Impl::Initialize()
     {
     Utf8String ecsql("INSERT INTO ");
     //add ECInstanceId. If NULL is bound to it, ECDb will auto-generate one

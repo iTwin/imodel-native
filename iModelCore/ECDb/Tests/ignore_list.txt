@@ -41,7 +41,7 @@ ECSqlStatementTestFixture.PolymorphicDeleteTestWithStructArrays
 #Tests that use the eB Schema which is not compatible at all with EC3 and the new relationship rules.
 #Use another schema for the tests
 JsonInserterTests.InsertJsonCppJSON
-JsonInserterTests.insertRapidJson
+JsonInserterTests.InsertRapidJson
 RapidJsonTests.InsertIntoECDb
 
 #TFS 366270

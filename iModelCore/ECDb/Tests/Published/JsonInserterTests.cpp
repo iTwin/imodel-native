@@ -59,7 +59,7 @@ TEST_F (JsonInserterTests, InsertJsonCppJSON)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (JsonInserterTests, insertRapidJson)
+TEST_F (JsonInserterTests, InsertRapidJson)
     {
     ECDbR ecdb = SetupECDb("InsertUsingRapidJson.ecdb", BeFileName(L"eB_PW_CommonSchema_WSB.01.00.ecschema.xml"));
     ASSERT_TRUE(ecdb.IsDbOpen());
@@ -94,5 +94,6 @@ TEST_F (JsonInserterTests, insertRapidJson)
     ASSERT_EQ (ECSqlStatus::Success, statement.BindText (2, "A-Model.pdf", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ (DbResult::BE_SQLITE_ROW, statement.Step ());
     }
+
 
 END_ECDBUNITTESTS_NAMESPACE

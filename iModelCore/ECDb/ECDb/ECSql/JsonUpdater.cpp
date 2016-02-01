@@ -16,8 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 JsonUpdater::JsonUpdater (ECDbR ecdb, ECN::ECClassCR ecClass)
 : m_ecdb (ecdb), m_ecClass (ecClass), m_ecinstanceUpdater (ecdb, ecClass)
-    {
-    }
+    {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
@@ -56,7 +55,7 @@ IECInstancePtr JsonUpdater::CreateEmptyRelInstance(ECRelationshipClassCR ecRelCl
     {
     IECInstancePtr sourceInst = CreateEmptyInstance(sourceKey);
     IECInstancePtr targetInst = CreateEmptyInstance(targetKey);
-    if (sourceInst.IsNull() || targetInst.IsNull())
+    if (sourceInst == nullptr || targetInst == nullptr)
         return nullptr;
 
     StandaloneECRelationshipInstancePtr relInst = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(ecRelClass)->CreateRelationshipInstance();
