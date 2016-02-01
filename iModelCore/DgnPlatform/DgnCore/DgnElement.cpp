@@ -695,7 +695,7 @@ void GeometrySource::SetUndisplayed(bool yesNo) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometrySource::SetHilited(DgnElement::Hilited newState) const
+void GeometrySource::_SetHilited(DgnElement::Hilited newState) const
     {
     DgnElementP el = const_cast<DgnElementP>(_ToElement());
 
