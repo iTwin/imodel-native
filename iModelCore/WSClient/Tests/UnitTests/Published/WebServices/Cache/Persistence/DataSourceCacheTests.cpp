@@ -3820,7 +3820,7 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_NonExistingInstance_Error)
     auto cache = GetTestCache();
     Utf8String fileName;
     uint64_t fileSize;
-    EXPECT_EQ(ERROR, cache->ReadFileProperties(StubNonExistingInstanceKey(*cache), fileName, fileSize));
+    EXPECT_EQ(ERROR, cache->ReadFileProperties(StubNonExistingInstanceKey(*cache), &fileName, &fileSize));
     }
 
 TEST_F(DataSourceCacheTests, ReadFileProperties_NonFileInstance_SuccessAndEmptyValues)
@@ -3832,7 +3832,7 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_NonFileInstance_SuccessAndEmptyV
     Utf8String fileName = "NoValue";
     uint64_t fileSize = 99;
 
-    ASSERT_EQ(SUCCESS, cache->ReadFileProperties(instanceKey, fileName, fileSize));
+    ASSERT_EQ(SUCCESS, cache->ReadFileProperties(instanceKey, &fileName, &fileSize));
 
     EXPECT_EQ("", fileName);
     EXPECT_EQ(0, fileSize);
@@ -3847,7 +3847,7 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_LabeledInstance_SuccessAndReturn
     Utf8String fileName = "NoValue";
     uint64_t fileSize = 99;
 
-    ASSERT_EQ(SUCCESS, cache->ReadFileProperties(instanceKey, fileName, fileSize));
+    ASSERT_EQ(SUCCESS, cache->ReadFileProperties(instanceKey, &fileName, &fileSize));
 
     EXPECT_EQ("TestName", fileName);
     EXPECT_EQ(0, fileSize);
@@ -3862,7 +3862,7 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithFileDepe
     Utf8String fileName = "NoValue";
     uint64_t fileSize = 99;
 
-    ASSERT_EQ(SUCCESS, cache->ReadFileProperties(instanceKey, fileName, fileSize));
+    ASSERT_EQ(SUCCESS, cache->ReadFileProperties(instanceKey, &fileName, &fileSize));
 
     EXPECT_EQ("TestName", fileName);
     EXPECT_EQ(42, fileSize);
@@ -3877,7 +3877,7 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithOnlyFile
     Utf8String fileName = "NoValue";
     uint64_t fileSize = 99;
 
-    ASSERT_EQ(SUCCESS, cache->ReadFileProperties(instanceKey, fileName, fileSize));
+    ASSERT_EQ(SUCCESS, cache->ReadFileProperties(instanceKey, &fileName, &fileSize));
 
     EXPECT_EQ("TestName", fileName);
     EXPECT_EQ(0, fileSize);
@@ -3892,7 +3892,7 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithOnlyFile
     Utf8String fileName = "NoValue";
     uint64_t fileSize = 99;
 
-    ASSERT_EQ(SUCCESS, cache->ReadFileProperties(instanceKey, fileName, fileSize));
+    ASSERT_EQ(SUCCESS, cache->ReadFileProperties(instanceKey, &fileName, &fileSize));
 
     EXPECT_EQ("", fileName);
     EXPECT_EQ(42, fileSize);
@@ -3907,7 +3907,7 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithFileDepe
     Utf8String fileName = "NoValue";
     uint64_t fileSize = 99;
 
-    ASSERT_EQ(SUCCESS, cache->ReadFileProperties(instanceKey, fileName, fileSize));
+    ASSERT_EQ(SUCCESS, cache->ReadFileProperties(instanceKey, &fileName, &fileSize));
 
     EXPECT_EQ("TestName", fileName);
     EXPECT_EQ(0, fileSize);

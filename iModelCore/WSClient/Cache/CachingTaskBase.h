@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/CachingTaskBase.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -21,6 +21,9 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct CachingTaskBase : public PackagedAsyncTask<void>
     {
+    public:
+        typedef std::function<void(size_t synced)> ProgressCallback;
+
     protected:
         CachingDataSourcePtr        m_ds;
 
