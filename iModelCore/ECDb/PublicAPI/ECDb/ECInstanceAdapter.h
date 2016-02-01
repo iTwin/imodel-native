@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/ECInstanceAdapter.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -26,7 +26,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ECInstanceECSqlSelectAdapter : NonCopyableClass
     {
 private:
-    typedef BentleyStatus (ECInstanceECSqlSelectAdapter::*ColumnHandler)(ECN::IECInstanceR instance, IECSqlValue const& value) const;
+    typedef BentleyStatus(ECInstanceECSqlSelectAdapter::*ColumnHandler)(ECN::IECInstanceR instance, IECSqlValue const& value) const;
     bvector<ColumnHandler> m_columnHandlers;
 
     ECSqlStatementCR m_ecSqlStatement;
@@ -36,44 +36,43 @@ private:
     int m_ecClassIdColumnIndex;
     bool m_isSingleClassSelectClause;
 
-    bool Initialize ();
-    void CreateColumnHandlers ();
+    bool Initialize();
+    void CreateColumnHandlers();
     //column handlers
-    BentleyStatus SetInstanceId (ECN::IECInstanceR instance, IECSqlValue const& value) const;
-    BentleyStatus SetPropertyData (ECN::IECInstanceR instance, IECSqlValue const& value) const;
-    BentleyStatus SetPropertyData (ECN::IECInstanceR instance, Utf8CP parentPropertyAccessString, IECSqlValue const& value) const;
-    BentleyStatus SetRelationshipSource (ECN::IECInstanceR instance, IECSqlValue const& value) const;
-    BentleyStatus SetRelationshipTarget (ECN::IECInstanceR instance, IECSqlValue const& value) const;
+    BentleyStatus SetInstanceId(ECN::IECInstanceR instance, IECSqlValue const& value) const;
+    BentleyStatus SetPropertyData(ECN::IECInstanceR instance, IECSqlValue const& value) const;
+    BentleyStatus SetPropertyData(ECN::IECInstanceR instance, Utf8CP parentPropertyAccessString, IECSqlValue const& value) const;
+    BentleyStatus SetRelationshipSource(ECN::IECInstanceR instance, IECSqlValue const& value) const;
+    BentleyStatus SetRelationshipTarget(ECN::IECInstanceR instance, IECSqlValue const& value) const;
 
-    BentleyStatus SetInstanceData (ECN::IECInstanceR instance, bool usesClassIdFilter) const;
-    BentleyStatus SetStructArrayElement (ECN::ECValueR val, ECN::ECClassCR structType, IECSqlValue const& value) const;
-    BentleyStatus SetPrimitiveValue (ECN::ECValueR val, ECN::PrimitiveType primitiveType, IECSqlValue const& value) const;
-    ECN::IECInstancePtr FindRelationshipEndpoint (int64_t endpointInstanceId, int64_t endpointClassId, ECN::StandaloneECRelationshipInstance*, bool isSource) const;
-    ECN::IECInstancePtr FindRelationshipEndpoint (int64_t endpointInstanceId, ECN::ECClassCP endpointClass) const;
+    BentleyStatus SetInstanceData(ECN::IECInstanceR instance, bool usesClassIdFilter) const;
+    BentleyStatus SetStructArrayElement(ECN::ECValueR val, ECN::ECClassCR structType, IECSqlValue const& value) const;
+    BentleyStatus SetPrimitiveValue(ECN::ECValueR val, ECN::PrimitiveType primitiveType, IECSqlValue const& value) const;
+    ECN::IECInstancePtr FindRelationshipEndpoint(int64_t endpointInstanceId, int64_t endpointClassId, ECN::StandaloneECRelationshipInstance*, bool isSource) const;
 
 public:
     //! Creates a new instance of the adapter
     //! @param[in] ecSqlStatement Prepared statement
     //! @see ECSqlStatement
-    ECDB_EXPORT ECInstanceECSqlSelectAdapter (ECSqlStatementCR ecSqlStatement);
+    ECDB_EXPORT ECInstanceECSqlSelectAdapter(ECSqlStatementCR ecSqlStatement);
 
     //! Creates an IECInstancePtr from the current row of the ecSqlStatement.  
     //! This method can only be used if the ECSQL select clause is made up of properties of a single ECClass.
     //! If the ECSQL select clause is made up of properties from more than one ECClass, this method
     //! returns nullptr. Consider calling ECInstanceECSqlSelectAdapter::GetInstance(ECN::ECClassId) instead.
     //! @return the ECInstance from the current row, or nullptr in case of errors
-    ECDB_EXPORT ECN::IECInstancePtr GetInstance () const;
+    ECDB_EXPORT ECN::IECInstancePtr GetInstance() const;
 
     //! Creates an IECInstancePtr from the current row of the ecSqlStatement for the given ECClass.  If there are properties from multiple ECClasses in the row, 
     //! only those from the requested ECClass are used and all others are ignored
-    ECDB_EXPORT ECN::IECInstancePtr GetInstance (ECN::ECClassId ecClassid) const;
+    ECDB_EXPORT ECN::IECInstancePtr GetInstance(ECN::ECClassId) const;
 
     //! Retrieves the ECInstanceId from the current row in the ecSqlStatement.  
     //! The SELECT clause must specifically request the ECInstanceId property in order for this to work
     //! (unless doing 'SELECT *', in which case the ECInstanceId will be retrieved automatically).
     //! @param[out] id  the ECInstanceId of the instance for the current row
     //! @returns true if the ECInstanceId was found in the current row, false otherwise
-    ECDB_EXPORT bool GetInstanceId (ECInstanceId& id) const;
+    ECDB_EXPORT bool GetInstanceId(ECInstanceId& id) const;
     };
 
 //======================================================================================
@@ -98,13 +97,13 @@ public:
     //! Instantiates a new ECInstanceInserter.
     //! @param[in] ecdb ECDb file handle
     //! @param[in] ecClass ECClass of ECInstances this inserter can insert
-    ECDB_EXPORT ECInstanceInserter (ECDbCR ecdb, ECN::ECClassCR ecClass);
-    ECDB_EXPORT ~ECInstanceInserter ();
+    ECDB_EXPORT ECInstanceInserter(ECDbCR ecdb, ECN::ECClassCR ecClass);
+    ECDB_EXPORT ~ECInstanceInserter();
 
     //! Indicates whether this ECInstanceInserter is valid and can be used to insert ECInstances.
     //! It is not valid, if @p ecClass is not mapped or not instantiable for example.
     //! @return true if the inserter is valid and can be used for inserting. false if it cannot be used for inserting.
-    ECDB_EXPORT bool IsValid () const;
+    ECDB_EXPORT bool IsValid() const;
 
     //! Inserts an instance into the @ref ECDbFile "ECDb file".
     //! @param[out] newInstanceKey ECInstanceKey of the inserted instance.
@@ -118,7 +117,7 @@ public:
     //! When disabling auto-generation the caller is responsible for handling primary key constraint 
     //! violations, and generally uniqueness of ECInstanceIds within the ECDb file is no longer guaranteed.
     //! @return SUCCESS in case of success, ERROR otherwise
-    ECDB_EXPORT BentleyStatus Insert (ECInstanceKey& newInstanceKey, ECN::IECInstanceCR instance, bool autogenerateECInstanceId = true, ECInstanceId const* userProvidedECInstanceId = nullptr) const;
+    ECDB_EXPORT BentleyStatus Insert(ECInstanceKey& newInstanceKey, ECN::IECInstanceCR instance, bool autogenerateECInstanceId = true, ECInstanceId const* userProvidedECInstanceId = nullptr) const;
 
     //! Inserts an instance into the @ref ECDbFile "ECDb file".
     //! @param[in, out] instance Instance to insert. If @p autogenerateECInstanceId is true, 
@@ -129,7 +128,7 @@ public:
     //! When disabling auto-generation the caller is responsible for handling primary key constraint 
     //! violations, and generally uniqueness of ECInstanceIds within the ECDb file is no longer guaranteed.
     //! @return SUCCESS in case of success, ERROR otherwise
-    ECDB_EXPORT BentleyStatus Insert (ECN::IECInstanceR instance, bool autogenerateECInstanceId = true) const;
+    ECDB_EXPORT BentleyStatus Insert(ECN::IECInstanceR instance, bool autogenerateECInstanceId = true) const;
     };
 
 //======================================================================================
@@ -154,34 +153,34 @@ public:
     //! Instantiates a new ECInstanceUpdater.
     //! @param[in] ecdb ECDb file handle
     //! @param[in] ecClass ECClass of ECInstances this updater can update
-    ECDB_EXPORT ECInstanceUpdater (ECDbCR ecdb, ECN::ECClassCR ecClass);
+    ECDB_EXPORT ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass);
 
     //! Instantiates a new ECInstanceUpdater.
     //! @param[in] ecdb ECDb file handle
     //! @param[in] instance The property values that are set on this IECInstance will be used to create column bindings.
     //! @remarks All instances that subsequently use this Updater are presumed to have the same property values set.
-    ECDB_EXPORT ECInstanceUpdater (ECDbCR ecdb, ECN::IECInstanceCR instance);
+    ECDB_EXPORT ECInstanceUpdater(ECDbCR ecdb, ECN::IECInstanceCR instance);
 
     //! Instantiates a new ECInstanceUpdater.
     //! @param[in] ecdb ECDb file handle
     //! @param[in] ecClass ECClass if ECInstances this updater can update
     //! @param[in] propertiesToBind A list of property indices that should be used to create the column bindings.  Properties are assumed to all come from the same class.
     //! @remarks All instances that subsequently use this Updater are presumed to have the same property values set.
-    ECDB_EXPORT ECInstanceUpdater (ECDbCR ecdb, ECN::ECClassCR ecClass, bvector<uint32_t>& propertiesToBind);
+    ECDB_EXPORT ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, bvector<uint32_t>& propertiesToBind);
 
-    ECDB_EXPORT ~ECInstanceUpdater ();
+    ECDB_EXPORT ~ECInstanceUpdater();
 
     //! Indicates whether this ECInstanceUpdater is valid and can be used to update ECInstances.
     //! It is not valid, if @p ecClass is not mapped for example.
     //! @return true if the updater is valid and can be used for updating. false if it cannot be used for updating.
-    ECDB_EXPORT bool IsValid () const;
+    ECDB_EXPORT bool IsValid() const;
 
 
     //! Updates the data in the ECDb file that corresponds to the specified ECInstance.
     //! @param[in] instance ECInstance for which the corresponding row is to be updated.
     //! @return SUCCESS in case of successful update. ERROR if no ECInstance existed in 
     //! the ECDb file for the specified @p instance or in case of other errors.
-    ECDB_EXPORT BentleyStatus Update (ECN::IECInstanceCR instance) const;
+    ECDB_EXPORT BentleyStatus Update(ECN::IECInstanceCR instance) const;
     };
 
 //======================================================================================
@@ -194,8 +193,6 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct ECInstanceDeleter : NonCopyableClass
     {
-public:
-
 private:
     ECDbCR m_ecdb;
     ECN::ECClassCR m_ecClass;
@@ -211,25 +208,23 @@ public:
     //! @param[in] ecdb ECDb file handle
     //! @param[in] ecClass ECClass of ECInstances this deleter can delete
     ECDB_EXPORT ECInstanceDeleter(ECDbCR ecdb, ECN::ECClassCR ecClass);
-;
-
-    ECDB_EXPORT ~ECInstanceDeleter ();
+    ECDB_EXPORT ~ECInstanceDeleter();
 
     //! Indicates whether this ECInstanceDeleter is valid and can be used to delete ECInstances.
     //! It is not valid, if @p ecClass is not mapped for example.
     //! @return true if the deleter is valid and can be used for deleting. false if it cannot be used for delete.
-    ECDB_EXPORT bool IsValid () const;
+    ECDB_EXPORT bool IsValid() const;
 
     //! Deletes the ECInstance with the specified ECInstanceId.
     //! @param[in] ecInstanceId Id of the ECInstance to delete
     //! @return SUCCESS in case of successful deletion. ERROR if no ECInstance existed for
     //! the specified @p ecInstanceId or in case of other errors.
-    ECDB_EXPORT BentleyStatus Delete (ECInstanceId const& ecInstanceId) const;
+    ECDB_EXPORT BentleyStatus Delete(ECInstanceId const& ecInstanceId) const;
 
     //! Deletes the given ECInstance.
     //! @param[in] ecInstance ECInstance to delete
     //! @return SUCCESS in case of successful deletion. ERROR if no ECInstance existed for
     //! the specified @p ecInstance or in case of other errors.
-    ECDB_EXPORT BentleyStatus Delete (ECN::IECInstanceCR ecInstance) const;
+    ECDB_EXPORT BentleyStatus Delete(ECN::IECInstanceCR ecInstance) const;
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

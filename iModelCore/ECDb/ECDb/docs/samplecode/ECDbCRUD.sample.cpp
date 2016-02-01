@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/docs/samplecode/ECDbCRUD.sample.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECDb/ECDbApi.h>
@@ -49,7 +49,7 @@ BentleyStatus ECDb_ECSqlSelect ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   11/13
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb_ECSqlSelectStructProps ()
+BentleyStatus ECDb_ECSqlSelectStructProps()
     {
     ECDb ecdb;
     //__PUBLISH_EXTRACT_START__ Overview_ECDb_ECSqlSelectStructProps.sampleCode
@@ -57,39 +57,39 @@ BentleyStatus ECDb_ECSqlSelectStructProps ()
     Utf8CP ecsql = "SELECT FirstName, Address FROM stco.Employee";
 
     ECSqlStatement statement;
-    statement.Prepare (ecdb, ecsql);
+    statement.Prepare(ecdb, ecsql);
 
-    while (BE_SQLITE_ROW == statement.Step ())
+    while (BE_SQLITE_ROW == statement.Step())
         {
-        Utf8CP firstName = statement.GetValueText (0);
+        Utf8CP firstName = statement.GetValueText(0);
         //second item in select clause is a struct prop, so call GetStructReader
-        IECSqlStructValue const& addressStructValue = statement.GetValueStruct (1);
-        
+        IECSqlStructValue const& addressStructValue = statement.GetValueStruct(1);
+
         // Print out the address for each employee
-        printf ("Employee %s:\n", firstName);
-        const int addressMemberCount = addressStructValue.GetMemberCount ();
+        printf("Employee %s:\n", firstName);
+        const int addressMemberCount = addressStructValue.GetMemberCount();
         for (int i = 0; i < addressMemberCount; i++)
             {
-            IECSqlValue const& addressMemberValue = addressStructValue.GetValue (i);
-            ECSqlColumnInfoCR addressMemberColumnInfo = addressMemberValue.GetColumnInfo ();
-            
+            IECSqlValue const& addressMemberValue = addressStructValue.GetValue(i);
+            ECSqlColumnInfoCR addressMemberColumnInfo = addressMemberValue.GetColumnInfo();
+
             //print out name of address member
-            Utf8StringCR addressMemberColumnName = addressMemberColumnInfo.GetProperty ()->GetName ();
-            printf ("   %s: ", Utf8String (addressMemberColumnName).c_str ());
+            Utf8StringCR addressMemberColumnName = addressMemberColumnInfo.GetProperty()->GetName();
+            printf("   %s: ", addressMemberColumnName.c_str());
             //print out value of address member
-            PrimitiveType type = addressMemberColumnInfo.GetDataType ().GetPrimitiveType ();
+            PrimitiveType type = addressMemberColumnInfo.GetDataType().GetPrimitiveType();
             switch (type)
                 {
-                case PRIMITIVETYPE_String:
-                    printf ("%s", addressMemberValue.GetText ());
-                    break;
-                case PRIMITIVETYPE_Integer:
-                    printf ("%d", addressMemberValue.GetInt ());
-                    break;
-                default:
-                    //For the sake of simplicity the struct in this example has only properties of type String and Integer. 
-                    //In other cases you might have to switch on the other data types, too 
-                    break;
+                    case PRIMITIVETYPE_String:
+                        printf("%s", addressMemberValue.GetText());
+                        break;
+                    case PRIMITIVETYPE_Integer:
+                        printf("%d", addressMemberValue.GetInt());
+                        break;
+                    default:
+                        //For the sake of simplicity the struct in this example has only properties of type String and Integer. 
+                        //In other cases you might have to switch on the other data types, too 
+                        break;
                 }
 
             printf("\n");
@@ -170,54 +170,54 @@ BentleyStatus ECDb_ECSqlSelectPrimArrayProps ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   11/13
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb_ECSqlSelectStructArrayProps ()
+BentleyStatus ECDb_ECSqlSelectStructArrayProps()
     {
     ECDb ecdb;
     //__PUBLISH_EXTRACT_START__ Overview_ECDb_ECSqlSelectStructArrayProps.sampleCode
 
     Utf8CP ecsql = "SELECT FirstName, Certifications FROM stco.Employee";
     ECSqlStatement statement;
-    statement.Prepare (ecdb, ecsql);
+    statement.Prepare(ecdb, ecsql);
 
     while (BE_SQLITE_ROW == statement.Step())
         {
-        Utf8CP firstName = statement.GetValueText (0);
-        IECSqlArrayValue const& certStructArray = statement.GetValueArray (1);
+        Utf8CP firstName = statement.GetValueText(0);
+        IECSqlArrayValue const& certStructArray = statement.GetValueArray(1);
         //now iterate over struct array elements. Each steps moves one struct element further in the array.
         // Print out the certifications for each employee
-        printf ("Employee %s\n", firstName);
-        printf ("  Certifications:\n");
+        printf("Employee %s\n", firstName);
+        printf("  Certifications:\n");
         int arrayIndex = 0;
         for (IECSqlValue const* arrayElement : certStructArray)
             {
-            printf ("  #%d:\n", arrayIndex + 1);
-            IECSqlStructValue const& certStructArrayElement = arrayElement->GetStruct ();
-            const int memberCount = certStructArrayElement.GetMemberCount ();
+            printf("  #%d:\n", arrayIndex + 1);
+            IECSqlStructValue const& certStructArrayElement = arrayElement->GetStruct();
+            const int memberCount = certStructArrayElement.GetMemberCount();
             for (int i = 0; i < memberCount; i++)
                 {
-                IECSqlValue const& certMember = certStructArrayElement.GetValue (i);
-                ECSqlColumnInfoCR certMemberColumnInfo = certMember.GetColumnInfo ();
+                IECSqlValue const& certMember = certStructArrayElement.GetValue(i);
+                ECSqlColumnInfoCR certMemberColumnInfo = certMember.GetColumnInfo();
 
                 //print out name of cert member
-                Utf8StringCR certMemberColumnName = certMemberColumnInfo.GetProperty ()->GetName ();
-                printf ("   %s: ", Utf8String (certMemberColumnName).c_str ());
+                Utf8StringCR certMemberColumnName = certMemberColumnInfo.GetProperty()->GetName();
+                printf("   %s: ", certMemberColumnName.c_str());
                 //print out value of cert member
-                PrimitiveType type = certMemberColumnInfo.GetDataType ().GetPrimitiveType ();
+                PrimitiveType type = certMemberColumnInfo.GetDataType().GetPrimitiveType();
                 switch (type)
                     {
-                    case PRIMITIVETYPE_String:
-                        printf ("%s", certMember.GetText ());
-                        break;
-                    case PRIMITIVETYPE_Integer:
-                        printf ("%d", certMember.GetInt ());
-                        break;
-                    case PRIMITIVETYPE_DateTime:
-                        printf ("%s", certMember.GetDateTime ().ToUtf8String ().c_str ());
-                        break;
-                    default:
-                        //For the sake of simplicity the struct in this example has only properties of type String, Integer,
-                        //and DateTime. In other cases you might have to switch on the other data types, too 
-                        break;
+                        case PRIMITIVETYPE_String:
+                            printf("%s", certMember.GetText());
+                            break;
+                        case PRIMITIVETYPE_Integer:
+                            printf("%d", certMember.GetInt());
+                            break;
+                        case PRIMITIVETYPE_DateTime:
+                            printf("%s", certMember.GetDateTime().ToUtf8String().c_str());
+                            break;
+                        default:
+                            //For the sake of simplicity the struct in this example has only properties of type String, Integer,
+                            //and DateTime. In other cases you might have to switch on the other data types, too 
+                            break;
                     }
                 printf("\n");
                 arrayIndex++;
