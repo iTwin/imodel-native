@@ -182,7 +182,7 @@ TEST_F (JsonUpdaterTests, UpdateProperties)
         "    <ECEntityClass typeName='A' >"
         "        <ECProperty propertyName='P1' typeName='int' />"
         "        <ECProperty propertyName='P2' typeName='string' />"
-        "        <ECProperty propertyName='P3' typeName='double' />"
+        "        <ECProperty propertyName='P3' typeName='double' readOnly='True'/>"
         "    </ECEntityClass>"
         "</ECSchema>",
         true, "");
