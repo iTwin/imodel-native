@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/TxnManager.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -61,7 +61,7 @@ struct TxnMonitor
     virtual void _OnUndoRedo(TxnManager&, TxnAction) {}
 };
 
-namespace dgn_TxnTable {struct Element; struct ElementDep;}
+namespace dgn_TxnTable {struct Element; struct ElementDep; struct Model;}
 
 //=======================================================================================
 //! An instance of a TxnTable is created for a single SQLite table of a DgnDb via a DgnDomain::TableHandler.
@@ -118,6 +118,13 @@ struct TxnTable : RefCountedBase
 
     //! @name Reversing previously committed changesets via undo/redo.
     //@{
+    //! Called before a set of Txns are undone/redone. TxnTables that use temporary tables can prepare them in this method.
+    //! After this method is called one or more _OnReversedxxx methods will be called, followed finally by a call to _OnReversed
+    virtual void _OnReverse() { }
+
+    //! Called after undo/redo of a set of Txns is complete. TxnTables that create temporary tables can empty them in this method.
+    virtual void _OnReversed() { }
+
     //! Called when an add of a row in this TxnTable was reversed via undo or redo.
     //! @param[in] change The data for a previously added row that is now deleted. All data will be in the "old values" of change.
     //! @note If you wish to determine whether the action that caused this call was an undo or a redo, call m_txnMgr.GetCurrentAction()
@@ -280,6 +287,8 @@ private:
     bool IsMultiTxnMember(TxnId rowid);
     BentleyStatus MergeChanges(BeSQLite::ChangeStream& changeStream);
     void CancelDynamics();
+    void OnBeginApplyChanges();
+    void OnEndApplyChanges();
 
 public:
     DgnDbStatus DeleteFromStartTo(TxnId lastId);
@@ -314,6 +323,9 @@ public:
 
     //! Get the dgn_TxnTable::ElementDep TxnTable for this TxnManager
     DGNPLATFORM_EXPORT dgn_TxnTable::ElementDep& ElementDependencies() const;
+
+    //! Get the dgn_TxnTable::Model TxnTable for this TxnManager
+    DGNPLATFORM_EXPORT dgn_TxnTable::Model& Models() const;
 
     //! Get the description of a previously committed Txn, given its TxnId.
     DGNPLATFORM_EXPORT Utf8String GetTxnDescription(TxnId txnId);
@@ -350,6 +362,10 @@ public:
     //! Get the current Action being processed by the TxnManager. This can be called from inside TxnTable methods only,
     //! otherwise it will always return TxnAction::None
     TxnAction GetCurrentAction() const {return m_action;}
+
+    //! Returns true if the TxnManager is in the process of undoing or redoing txns. This can be called from inside TxnTable methods only,
+    //! otherwise it will always return false
+    bool IsInUndoRedo() const {return TxnAction::Reverse==m_action || TxnAction::Reinstate==m_action;}
 
     //! Get the TxnId of the current Txn.
     //! @return the current TxnId. This value can be saved and later used to reverse changes that happen after this time.
@@ -490,9 +506,11 @@ namespace dgn_TxnTable
         void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete);}
         void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Update);}
         void _OnValidated() override;
+        void _OnReverse() override {_OnValidate();}
         void _OnReversedDelete(BeSQLite::Changes::Change const&) override;
         void _OnReversedAdd(BeSQLite::Changes::Change const&) override;
         void _OnReversedUpdate(BeSQLite::Changes::Change const&) override;
+        void _OnReversed() override {_OnValidated();}
 
         void AddChange(BeSQLite::Changes::Change const& change, ChangeType changeType);
         void AddElement(DgnElementId, DgnModelId, ChangeType changeType);
@@ -521,6 +539,7 @@ namespace dgn_TxnTable
             const_iterator end() const {return Entry(nullptr, false);}
         };
 
+    bool HasChanges() const {return m_changes;}
     Iterator MakeIterator() const {return Iterator(m_txnMgr.GetDgnDb());}
     };
 
@@ -539,10 +558,38 @@ namespace dgn_TxnTable
         void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete);}
         void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Update);}
         void _OnValidated() override;
+        void _OnReverse() override {_OnValidate();}
+        void _OnReversedDelete(BeSQLite::Changes::Change const&) override;
         void _OnReversedAdd(BeSQLite::Changes::Change const&) override;
         void _OnReversedUpdate(BeSQLite::Changes::Change const&) override;
+        void _OnReversed() override {_OnValidated();}
 
         void AddChange(BeSQLite::Changes::Change const& change, ChangeType changeType);
+
+        //! iterator for models that are directly changed. Only valid during _PropagateChanges.
+        struct Iterator : BeSQLite::DbTableIterator
+        {
+        public:
+            Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) { }
+            struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+            {
+            private:
+                friend struct Iterator;
+                Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
+            public:
+                DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
+                DGNPLATFORM_EXPORT ChangeType GetChangeType() const;
+                Entry const& operator*() const {return *this;}
+            };
+
+            typedef Entry const_iterator;
+            typedef Entry iterator;
+            DGNPLATFORM_EXPORT const_iterator begin() const;
+            const_iterator end() const {return Entry(nullptr, false);}
+        };
+
+        Iterator MakeIterator() const {return Iterator(m_txnMgr.GetDgnDb());}
+        bool HasChanges() const {return m_changes;}
     };
 
     struct ElementDep : TxnTable
@@ -566,6 +613,7 @@ namespace dgn_TxnTable
         void AddDependency(BeSQLite::EC::ECInstanceId const&, ChangeType);
         void AddFailedTarget(DgnElementId id) {m_failedTargets.insert(id);}
         DgnElementIdSet const& GetFailedTargets() const {return m_failedTargets;}
+        bool HasChanges() const {return m_changes;}
     };
 
     struct ModelDep : TxnTable

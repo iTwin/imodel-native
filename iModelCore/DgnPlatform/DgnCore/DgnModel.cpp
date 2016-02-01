@@ -21,7 +21,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelId DgnModels::QueryModelId(DgnModel::Code code) const
+DgnModelId DgnModels::QueryModelId(DgnCode code) const
     {
     CachedStatementPtr stmt;
     GetDgnDb().GetCachedStatement(stmt, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Code_AuthorityId=? AND Code_Namespace=? AND Code_Value=? LIMIT 1");
@@ -57,7 +57,7 @@ BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnModels::GetModelCode(DgnModel::Code& code, DgnModelId id) const
+BentleyStatus DgnModels::GetModelCode(DgnCode& code, DgnModelId id) const
     {
     Statement stmt(m_dgndb, "SELECT Code_AuthorityId,Code_Namespace,Code_Value FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
     stmt.BindId(1, id);
@@ -72,9 +72,9 @@ BentleyStatus DgnModels::GetModelCode(DgnModel::Code& code, DgnModelId id) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModel::Code DgnModels::GetModelCode(Iterator::Entry const& entry)
+DgnCode DgnModels::GetModelCode(Iterator::Entry const& entry)
     {
-    DgnModel::Code code;
+    DgnCode code;
     code.From(entry.GetCodeAuthorityId(), entry.GetCodeValue(), entry.GetCodeNamespace());
     return code;
     }
@@ -537,10 +537,8 @@ DgnDbStatus DgnModel::_OnUpdate()
             return stat;
         }
 
-    if (LockStatus::Success != GetDgnDb().Locks().LockModel(*this, LockLevel::Exclusive))
-        return DgnDbStatus::LockNotHeld;
-
-    return DgnDbStatus::Success;
+    // Ensure code is reserved and lock acquired
+    return GetDgnDb().BriefcaseManager().OnModelUpdate(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -652,10 +650,11 @@ DgnDbStatus DgnModel::_OnInsertElement(DgnElementR element)
     {
     if (m_dgndb.IsReadonly())
         return DgnDbStatus::ReadOnly;
-    else if (GetModelHandler()._IsRestrictedAction(RestrictedAction::InsertElement))
+
+    if (GetModelHandler()._IsRestrictedAction(RestrictedAction::InsertElement))
         return DgnDbStatus::MissingHandler;
-    else
-        return DgnDbStatus::Success;
+
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -681,10 +680,8 @@ DgnDbStatus DgnModel::_OnDeleteElement(DgnElementCR element)
     {
     if (m_dgndb.IsReadonly())
         return DgnDbStatus::ReadOnly;
-    else if (GetModelHandler()._IsRestrictedAction(RestrictedAction::DeleteElement))
-        return DgnDbStatus::MissingHandler;
-    else
-        return DgnDbStatus::Success;
+
+    return GetModelHandler()._IsRestrictedAction(RestrictedAction::DeleteElement) ? DgnDbStatus::MissingHandler : DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -730,10 +727,8 @@ DgnDbStatus DgnModel::_OnUpdateElement(DgnElementCR modified, DgnElementCR origi
     {
     if (m_dgndb.IsReadonly())
         return DgnDbStatus::ReadOnly;
-    else if (GetModelHandler()._IsRestrictedAction(RestrictedAction::UpdateElement))
-        return DgnDbStatus::MissingHandler;
-    else
-        return DgnDbStatus::Success;
+
+    return GetModelHandler()._IsRestrictedAction(RestrictedAction::UpdateElement) ? DgnDbStatus::MissingHandler : DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -780,8 +775,9 @@ DgnDbStatus DgnModel::_OnDelete()
     if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Delete))
         return DgnDbStatus::MissingHandler;
 
-    if (LockStatus::Success != GetDgnDb().Locks().LockModel(*this, LockLevel::Exclusive))
-        return DgnDbStatus::LockNotHeld;
+    DgnDbStatus stat = GetDgnDb().BriefcaseManager().OnModelDelete(*this);
+    if (DgnDbStatus::Success != stat)
+        return stat;
 
     for (auto appdata : m_appData)
         appdata.second->_OnDelete(*this);
@@ -807,7 +803,7 @@ DgnDbStatus DgnModel::_OnDelete()
         }
 
     // delete all views which use this model as their base model
-    DgnDbStatus stat = DeleteAllViews();
+    stat = DeleteAllViews();
     if (DgnDbStatus::Success != stat)
         return stat;
 
@@ -860,11 +856,8 @@ DgnDbStatus DgnModel::_OnInsert()
     if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Insert))
         return DgnDbStatus::MissingHandler;
 
-    // If db is exclusively locked, cannot create models in it
-    if (LockStatus::Success != GetDgnDb().Locks().LockDb(LockLevel::Shared))
-        return DgnDbStatus::LockNotHeld;
-
-    return DgnDbStatus::Success;
+    // Ensure db is not exclusively locked and code reserved
+    return GetDgnDb().BriefcaseManager().OnModelInsert(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -937,7 +930,7 @@ DgnDbStatus DgnModel::Insert()
         
     // NB: We do this here rather than in _OnInserted() because Update() is going to request a lock too, and the server doesn't need to be
     // involved in locks for models created locally.
-    GetDgnDb().Locks().OnModelInserted(GetModelId());
+    GetDgnDb().BriefcaseManager().OnModelInserted(GetModelId());
     status = Update();
     BeAssert(status == DgnDbStatus::Success);
 
@@ -1126,7 +1119,7 @@ void DgnModel::_FillModel()
             continue;
             }
 
-        DgnElement::Code code;
+        DgnCode code;
         code.From(stmt.GetValueId<DgnAuthorityId>(Column::Code_AuthorityId), stmt.GetValueText(Column::Code_Value), stmt.GetValueText(Column::Code_Namespace));
         DgnElement::CreateParams createParams(m_dgndb, m_modelId,
             stmt.GetValueId<DgnClassId>(Column::ClassId), 
@@ -1224,7 +1217,7 @@ AxisAlignedBox3d GeometricModel::_QueryModelRange() const
                         "g.BBoxLow_X,g.BBoxLow_Y,g.BBoxLow_Z,"
                         "g.BBoxHigh_X,g.BBoxHigh_Y,g.BBoxHigh_Z))))"
         " FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e," DGN_TABLE(DGN_CLASSNAME_SpatialElement) " As g"
-        " WHERE e.ModelId=? AND e.Id=g.Id");
+        " WHERE e.ModelId=? AND e.Id=g.ElementId");
 
     stmt.BindId(1, GetModelId());
     auto rc = stmt.Step();
@@ -1281,10 +1274,9 @@ DgnDbStatus SheetModel::_ReadSelectParams(ECSqlStatement& statement, ECSqlClassP
         return status;
 
     m_size = statement.GetValuePoint2D(params.GetSelectIndex(SHEET_MODEL_PROP_SheetSize));
-
     return DgnDbStatus::Success;
     }
-	
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                 Ramanujam.Raman   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1323,7 +1315,7 @@ DgnModel::CreateParams DgnModel::GetCreateParamsForImport(DgnImportContext& impo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelPtr DgnModel::Clone(Code newCode) const
+DgnModelPtr DgnModel::Clone(DgnCode newCode) const
     {
     if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Clone))
         return nullptr;
@@ -1415,45 +1407,6 @@ DgnDbStatus DgnModel::_ImportElementAspectsFrom(DgnModelCR sourceModel, DgnImpor
     // This base class implementation of _ImportElementAspectsFrom knows only the ElementAspect subclasses that are defined by the
     //  base Dgn schema. 
     
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-    
-    // That is, only DgnItem.
-
-
-    // Step through all items in the source model
-    Statement stmt(sourceModel.GetDgnDb(), "SELECT ele.Id FROM " DGN_TABLE(DGN_CLASSNAME_ElementItem) " item JOIN " DGN_TABLE(DGN_CLASSNAME_Element) " ele ON (item.ElementId=ele.Id) WHERE ele.ModelId=?");
-    stmt.BindId(1, sourceModel.GetModelId());
-    while (BE_SQLITE_ROW == stmt.Step())
-        {
-        //  Get a source element and its Item
-        DgnElementCPtr sourceEl = sourceModel.GetDgnDb().Elements().GetElement(stmt.GetValueId<DgnElementId>(0));
-        DgnElement::Item const* sourceitem = DgnElement::Item::GetItem(*sourceEl);
-        if (nullptr == sourceitem)
-            {
-            BeDataAssert(false && "Element has item, but item can't be loaded");
-            continue;
-            }
-
-        //  Get the corresponding element in the destination model
-        DgnElementId ccelid = importer.FindElementId(sourceEl->GetElementId());
-        DgnElementPtr ccel = GetDgnDb().Elements().GetForEdit<DgnElement>(ccelid);
-        if (!ccel.IsValid())
-            continue;       // I guess the source element wasn't copied.
-
-        //  Make a copy of the source item 
-        RefCountedPtr<DgnElement::Item> ccitem = dynamic_cast<DgnElement::Item*>(sourceitem->_CloneForImport(*sourceEl, importer).get());
-        if (!ccitem.IsValid())
-            {
-            // *** TBD: Record failure somehow
-            BeDataAssert(false && "item import failure");
-            continue;
-            }
-
-        // Write the copy of the Item to the destination element
-        DgnElement::Item::SetItem(*ccel, *ccitem);
-        ccel->Update();
-        }
-#endif
     return DgnDbStatus::Success;
     }
 
@@ -1536,7 +1489,7 @@ DgnDbStatus DgnModel::_ImportECRelationshipsFrom(DgnModelCR sourceModel, DgnImpo
     // ElementGeomUsesParts are created automatically as a side effect of inserting GeometricElements 
 
     importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, DGN_TABLE(DGN_RELNAME_ElementGroupsMembers), "GroupId", "MemberId");
-    importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, DGN_TABLE(DGN_RELNAME_ElementDrivesElement), "RootElementId", "DependentElementId", "ECClassId", {"Status", "Priority"});
+    importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, DGN_TABLE(DGN_RELNAME_ElementDrivesElement), "SourceECInstanceId", "TargetECInstanceId", "ECClassId", {"Status", "Priority"});
 
     // *** WIP_IMPORT *** ElementHasLinks -- should we deep-copy links?
 
@@ -1594,7 +1547,7 @@ DgnModelPtr DgnModel::ImportModel(DgnDbStatus* statIn, DgnModelCR sourceModel, D
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-DgnModelPtr DgnModel::CopyModel(DgnModelCR model, Code newCode)
+DgnModelPtr DgnModel::CopyModel(DgnModelCR model, DgnCode newCode)
     {
     DgnDbR db = model.GetDgnDb();
 
@@ -1637,8 +1590,10 @@ uint64_t DgnModel::RestrictedAction::Parse(Utf8CP name)
         };
 
     for (auto const& pair : s_pairs)
+        {
         if (0 == BeStringUtilities::Stricmp(pair.name, name))
             return pair.value;
+        }
 
     return T_Super::Parse(name);
     }
@@ -1646,45 +1601,11 @@ uint64_t DgnModel::RestrictedAction::Parse(Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::_SetCode(Code const& code)
+DgnDbStatus DgnModel::_SetCode(DgnCode const& code)
     {
-    if (!DgnModels::IsValidName(m_code.GetValue()))
-        return DgnDbStatus::InvalidName;
-    else if (GetModelHandler()._IsRestrictedAction(RestrictedAction::SetCode))
+    if (GetModelHandler()._IsRestrictedAction(RestrictedAction::SetCode))
         return DgnDbStatus::MissingHandler;
 
     m_code = code;
     return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-SystemModelPtr SystemModel::Create(DgnDbR db, DgnModel::Code const& code)
-    {
-    ModelHandlerR handler = dgn_ModelHandler::System::GetHandler();
-    DgnClassId classId = db.Domains().GetClassId(handler);
-    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, code));
-    
-    if (!model.IsValid())
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    return model->ToSystemModelP();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus SystemModel::_OnInsertElement(DgnElementR element)
-    {
-    if (!element.IsSystemElement())
-        {
-        BeAssert(false);
-        return DgnDbStatus::WrongModel;
-        }
-
-    return T_Super::_OnInsertElement(element);
     }

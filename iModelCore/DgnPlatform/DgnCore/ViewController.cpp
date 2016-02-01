@@ -88,7 +88,7 @@ void ViewFlags::From3dJson(JsonValueCR val)
 
     m_renderMode = RenderMode(val[VIEWFLAG_renderMode].asUInt());
 
-#if defined (TEST_RENDER_MODE)
+#if defined (TEST_FORCE_SMOOTH_SHADE)
     static bool s_forceSmooth=true;
     if (s_forceSmooth)
         m_renderMode = RenderMode::SmoothShade;
@@ -112,6 +112,7 @@ void ViewFlags::ToBaseJson(JsonValueR val) const
     if (acs) val[VIEWFLAG_acs] = true;
     if (bgImage) val[VIEWFLAG_useBgImage] = true;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -201,7 +202,7 @@ void ViewController::LoadCategories(JsonValueCR settings)
 
     // load all SubCategories (even for categories not currently on)
     for (auto const& id : DgnSubCategory::QuerySubCategories(m_dgndb))
-        {
+        {           
         DgnSubCategory::Appearance appearance;
         DgnSubCategoryCPtr subCat = DgnSubCategory::QuerySubCategory(id, m_dgndb);
         if (subCat.IsValid())
@@ -258,10 +259,13 @@ DbResult ViewController::Load()
     m_viewedModels.insert(m_baseModelId);
 
     Utf8String settingsStr;
-    //  The QueryModel calls GetModel in the QueryModel thread.  produces a thread race condition if it calls QueryModelById and
     DbResult rc = entry->QuerySettings(settingsStr);
     if (BE_SQLITE_ROW != rc)
-        return rc;
+        {
+        Json::Value json;
+        _RestoreFromSettings(json);
+        return BE_SQLITE_OK;
+        }
 
     Json::Value json;
     Json::Reader::Parse(settingsStr, json);
@@ -269,7 +273,7 @@ DbResult ViewController::Load()
 
     //  The QueryModel calls GetModel in the QueryModel thread.  produces a thread race condition if it calls QueryModelById and
     //  the model is not already loaded.
-    for (auto&id : GetViewedModels())
+    for (auto& id : GetViewedModels())
         m_dgndb.Models().GetModel(id);
 
     return BE_SQLITE_OK;
@@ -614,7 +618,7 @@ ViewportStatus ViewController::_SetupFromFrustum(Frustum const& frustum)
     DVec3d viewDelta;
     viewRot.Multiply(viewDelta, viewDiagRoot);
 
-    ViewportStatus validSize = DgnViewport::ValidateWindowSize(viewDelta, false);
+    ViewportStatus validSize = DgnViewport::ValidateViewDelta(viewDelta, false);
     if (validSize != ViewportStatus::Success)
         return validSize;
 
@@ -627,7 +631,7 @@ ViewportStatus ViewController::_SetupFromFrustum(Frustum const& frustum)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewportStatus CameraViewController::_SetupFromFrustum(Frustum const& frustum)
+ViewportStatus  CameraViewController::_SetupFromFrustum(Frustum const& frustum)
     {
     auto stat = T_Super::_SetupFromFrustum(frustum);
     if (ViewportStatus::Success != stat)
@@ -712,7 +716,7 @@ void ViewController::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
         newDelta.z = minimumDepth;
         }
 
-    SpatialViewControllerP physView =(SpatialViewControllerP) _ToSpatialView();
+    SpatialViewControllerP physView = (SpatialViewControllerP) _ToSpatialView();
     CameraViewControllerP cameraView =(CameraViewControllerP) _ToCameraView();
     DPoint3d origNewDelta = newDelta;
 
@@ -758,7 +762,7 @@ void ViewController::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
             newDelta.z = diag;
         }
 
-    DgnViewport::ValidateWindowSize(newDelta, true);
+    DgnViewport::ValidateViewDelta(newDelta, true);
 
     SetDelta(newDelta);
     if (aspect)
@@ -860,9 +864,9 @@ void SpatialViewController::TransformBy(TransformCR trans)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SpatialViewController::SetTargetModel(GeometricModelP target)
+BentleyStatus SpatialViewController::_SetTargetModel(GeometricModelP target)
     {
-    if (!m_viewedModels.Contains(target->GetModelId()))
+    if (nullptr == target || !m_viewedModels.Contains(target->GetModelId()))
         return  ERROR;
 
     m_targetModelId = target->GetModelId();
@@ -1359,7 +1363,7 @@ ViewportStatus CameraViewController::LookAt(DPoint3dCR eyePoint, DPoint3dCR targ
     delta.z =(backDist - frontDist);
 
     DVec3d frontDelta = DVec3d::FromScale(delta, frontDist/focusDist);
-    ViewportStatus stat = DgnViewport::ValidateWindowSize(frontDelta, false); // validate window size on front (smallest) plane
+    ViewportStatus stat = DgnViewport::ValidateViewDelta(frontDelta, false); // validate window size on front (smallest) plane
     if (ViewportStatus::Success != stat)
         return  stat;
 
@@ -1542,10 +1546,10 @@ void SpatialViewController::_RestoreFromSettings(JsonValueCR jsonObj)
     JsonUtils::DPoint3dFromJson(m_delta, jsonObj[VIEW_SETTING_Delta]);
     JsonUtils::RotMatrixFromJson(m_rotation, jsonObj[VIEW_SETTING_Rotation]);
 
-    //  Anything is better than garbage
-    if (m_delta.x <= DBL_EPSILON) m_delta.x = (m_delta.y + m_delta.z)/2;
-    if (m_delta.y <= DBL_EPSILON) m_delta.y = (m_delta.x + m_delta.z)/2;
-    if (m_delta.z <= DBL_EPSILON) m_delta.z = (m_delta.x + m_delta.y)/2;
+    if (!m_rotation.SquareAndNormalizeColumns(m_rotation, 0, 1))   
+        m_rotation.InitIdentity();
+
+    DgnViewport::ValidateViewDelta(m_delta, false);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1988,18 +1992,18 @@ double ViewController::_GetGridScaleFactor(DgnViewportR vp) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_GetGridSpacing (DgnViewportR vp, DPoint2dR spacing, uint32_t& gridsPerRef) const
+void ViewController::_GetGridSpacing(DgnViewportR vp, DPoint2dR spacing, uint32_t& gridsPerRef) const
     {
 #if defined DGNV10FORMAT_CHANGES_WIP
-    DgnModelRefP targetModelRef = GetTargetModel ();
+    DgnModelRefP targetModelRef = GetTargetModel();
 
     if (NULL == targetModelRef)
         return ERROR;
 
     double      uorPerGrid, gridRatio;
-    double      scaleFactor = GetGridScaleFactor ();
+    double      scaleFactor = GetGridScaleFactor();
 
-    if (SUCCESS != dgnModel_getGridParams (targetModelRef->GetDgnModelP (), &uorPerGrid, &gridsPerRef, &gridRatio, NULL, NULL) || 0.0 >= uorPerGrid)
+    if (SUCCESS != dgnModel_getGridParams(targetModelRef->GetDgnModelP (), &uorPerGrid, &gridsPerRef, &gridRatio, NULL, NULL) || 0.0 >= uorPerGrid)
         return ERROR;
 
     uorPerGrid *= scaleFactor;
@@ -2009,7 +2013,7 @@ void ViewController::_GetGridSpacing (DgnViewportR vp, DPoint2dR spacing, uint32
 
     double      refScale = (0 == gridsPerRef) ? 1.0 : (double) gridsPerRef;
 
-    spacing.scale (&spacing, refScale);
+    spacing.scale(&spacing, refScale);
 #else
     gridsPerRef = 10;
     spacing.x = spacing.y = 10.0;

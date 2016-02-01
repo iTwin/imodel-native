@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: Tests/DgnProject/Published/TextAnnotationElement_Test.cpp $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include "DgnHandlersTests.h"
@@ -188,6 +188,25 @@ TEST(TextAnnotationElementTest, BasicCrud)
         ASSERT_TRUE(AnnotationRunType::Text == existingRuns[0]->GetType());
         EXPECT_TRUE(0 == strcmp(ANNOTATION_TEXT_2, ((AnnotationTextRunCP)existingRuns[0].get())->GetContent().c_str()));
         }
+    
+    // Delete the element.
+    //.............................................................................................
+        {
+        //.........................................................................................
+        DbResult openStatus;
+        DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+        ASSERT_TRUE(BE_SQLITE_OK == openStatus);
+        ASSERT_TRUE(db.IsValid());
+
+        //.........................................................................................
+        TextAnnotationElementCPtr annotationElementC = TextAnnotationElement::Get(*db, insertedElementId);
+        ASSERT_TRUE(annotationElementC.IsValid());
+
+        annotationElementC->Delete();
+
+        annotationElementC = TextAnnotationElement::Get(*db, insertedElementId);
+        ASSERT_TRUE(!annotationElementC.IsValid());
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -346,5 +365,24 @@ TEST(SpatialTextAnnotationElementTest, BasicCrud)
 
         ASSERT_TRUE(AnnotationRunType::Text == existingRuns[0]->GetType());
         EXPECT_TRUE(0 == strcmp(ANNOTATION_TEXT_2, ((AnnotationTextRunCP)existingRuns[0].get())->GetContent().c_str()));
+        }
+    
+    // Delete the element.
+    //.............................................................................................
+        {
+        //.........................................................................................
+        DbResult openStatus;
+        DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+        ASSERT_TRUE(BE_SQLITE_OK == openStatus);
+        ASSERT_TRUE(db.IsValid());
+
+        //.........................................................................................
+        SpatialTextAnnotationElementCPtr annotationElementC = SpatialTextAnnotationElement::Get(*db, insertedElementId);
+        ASSERT_TRUE(annotationElementC.IsValid());
+
+        annotationElementC->Delete();
+
+        annotationElementC = SpatialTextAnnotationElement::Get(*db, insertedElementId);
+        ASSERT_TRUE(!annotationElementC.IsValid());
         }
     }

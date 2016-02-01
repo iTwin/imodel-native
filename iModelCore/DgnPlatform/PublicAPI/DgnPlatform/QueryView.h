@@ -23,13 +23,9 @@ struct EXPORT_VTABLE_ATTRIBUTE QueryViewController : CameraViewController, BeSQL
 {
     DEFINE_T_SUPER (CameraViewController)
 
-#if !defined (DOCUMENTATION_GENERATOR)
-//__PUBLISH_SECTION_END__
-    friend struct QueryModel::Processor; // For BindModelAndCategory()...
-//__PUBLISH_SECTION_START__
-protected:
+    friend struct QueryModel::Processor;
 
-    bool        m_notifyOnViewUpdated;
+protected:
     bool        m_forceNewQuery;    //!< If true, before doing the next view update, repopulate the QueryModel with the result of the query 
     bool        m_noQuery;          //!< If true, *only* draw the "always drawn" list - do not query for other elements
     bool        m_needProgressiveDisplay;
@@ -56,22 +52,13 @@ protected:
 protected:
     //! Called at the beginning of a full update to populate the QueryModel.
     //! @param[in] viewport    The viewport that will display the graphics
-    //! @param[in] context     The context that is processing the graphics.
     //! @param[in] plan The update plan
-    //! @remarks Applications that override this method normally perform any additional work that is required and then call QueryViewController::_OnFullUpdate to 
+    //! @remarks Applications that override this method normally perform any additional work that is required and then call QueryViewController::_OnUpdate to 
     //!  let it decide if is necessary to repopulate the QueryModel.
     //! @remarks An application may use this and _OnFullUpdate to decide when to display some indication such as a spinner to 
     //! let the user know that the update is in progress.  The application can override SpatialViewController::_OnUpdateComplete
     //! to know when to stop the spinner.
-    DGNPLATFORM_EXPORT virtual void _OnFullUpdate(DgnViewportR viewport, UpdatePlan const& plan) override;
-
-    //! Called at the beginning of a dynamic update to populate the QueryModel.
-    //! @param[in]  viewport    The viewport that will display the graphics
-    //! @param[in]  context     The context that is processing the graphics.
-    //! @param[in]  plan        The update plan
-    //! @remarks  Although an application can override this method, the decision on whether or not to repopulate the QueryModel in a dynamic update is typically left to
-    //! QueryViewController::_OnDynamicUpdate. It in turn defers the decision to _WantElementLoadStart.
-    DGNPLATFORM_EXPORT virtual void _OnDynamicUpdate(DgnViewportR viewport, UpdatePlan const& plan) override;
+    DGNPLATFORM_EXPORT virtual void _OnUpdate(DgnViewportR viewport, UpdatePlan const& plan) override;
 
     //! Called when the visibility of a category is changed.
     DGNPLATFORM_EXPORT virtual void _OnCategoryChange(bool singleEnabled) override;
@@ -89,9 +76,21 @@ protected:
 
     //! Allow the supplied ViewContext to visit every element in the view, not just the best elements in the query model.
     DGNPLATFORM_EXPORT void _VisitAllElements(ViewContextR) override;
-#endif
 
 protected:
+    //! Compute the range of the elements and graphics in the QueryModel.
+    //! @remarks This function may also load elements to determine the range.
+    //! @param[out] range    the computed range 
+    //! @param[in]  viewport the viewport that will display the graphics
+    //! @param[in]  params   options for computing the range.
+    //! @return \a true if the returned \a range is complete. Otherwise the caller will compute the tightest fit for all loaded elements.
+    DGNPLATFORM_EXPORT virtual FitComplete _ComputeFitRange(DRange3dR range, DgnViewportR viewport, FitViewParamsR params) override;
+
+    //! Return the maximum number of bytes of memory that should be used to hold loaded element data. Element data may exceed this limit at times and is trimmed back at intervals.
+    //! It is recommended that applications use this default implementation and instead control memory usage by overriding _GetMaxElementFactor
+    virtual uint64_t _GetMaxElementMemory(DgnViewportCR vp) {return ComputeMaxElementMemory(vp);}
+
+public:
     //! The premise of a QueryModel is that it holds only a small subset of the potential elements in a DgnDb, limited to a maximum number of 
     //! elements and bytes. Obviously, the criteria that determines which elements are loaded at a given time must combine business logic (e.g. elements that meet 
     //! a certain property test), display logic (e.g. which models and categories are turned on), plus spatial criteria (i.e. the position of the camera).
@@ -108,32 +107,17 @@ protected:
 __PUBLISH_INSERT_FILE__  QueryView_GetRTreeMatchSql.sampleCode
        $SAMPLECODE_END
      */
-    DGNPLATFORM_EXPORT virtual Utf8String _GetRTreeMatchSql(DgnViewportR viewport);
+    DGNPLATFORM_EXPORT virtual Utf8String _GetQuery(DgnViewportR viewport) const;
 
-    void BindModelAndCategory(BeSQLite::StatementR stmt, RTreeTester& matcher) const;
+    void BindModelAndCategory(BeSQLite::StatementR stmt) const;
 
-    //! Compute the range of the elements and graphics in the QueryModel.
-    //! @remarks This function may also load elements to determine the range.
-    //! @param[out] range    the computed range 
-    //! @param[in]  viewport the viewport that will display the graphics
-    //! @param[in]  params   options for computing the range.
-    //! @return \a true if the returned \a range is complete. Otherwise the caller will compute the tightest fit for all loaded elements.
-    DGNPLATFORM_EXPORT virtual FitComplete _ComputeFitRange(DRange3dR range, DgnViewportR viewport, FitViewParamsR params) override;
-
-    //! Return the maximum number of bytes of memory that should be used to hold loaded element data. Element data may exceed this limit at times and is trimmed back at intervals.
-    //! It is recommended that applications use this default implementation and instead control memory usage by overriding _GetMaxElementFactor
-    virtual uint64_t _GetMaxElementMemory(DgnViewportCR vp) {return ComputeMaxElementMemory(vp);}
-
-public:
     //! Construct the view controller.                          
     //! @param dgndb  The DgnDb for the view
     //! @param viewId Id of view to be displayed
     DGNPLATFORM_EXPORT QueryViewController(DgnDbR dgndb, DgnViewId viewId);
     DGNPLATFORM_EXPORT ~QueryViewController();
 
-//__PUBLISH_SECTION_END__
-    void SetForceNewQuery(bool newValue) { m_forceNewQuery = newValue; }
-//__PUBLISH_SECTION_START__
+    void SetForceNewQuery(bool newValue) {m_forceNewQuery = newValue;}
 
     //! Computes and returns the maximum number of bytes of memory that should be used to hold loaded element data. Element data may exceed this limit at times and is trimmed back at intervals.
     DGNPLATFORM_EXPORT uint64_t ComputeMaxElementMemory(DgnViewportCR vp);

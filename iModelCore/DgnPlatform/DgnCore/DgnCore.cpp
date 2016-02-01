@@ -343,7 +343,8 @@ void DgnPlatformLib::Host::InitializeDgnCore()
     AdoptHost(*this);
     BeAssert(NULL != DgnPlatformLib::QueryHost());
 
-    DgnDomains::RegisterDomain(DgnBaseDomain::GetDomain()); 
+    DgnDomains::RegisterDomain(DgnBaseDomain::GetDomain());
+    DgnDomains::RegisterDomain(GenericDomain::GetDomain());
 
     _SupplyProductName(m_productName);
 
@@ -379,8 +380,6 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
     TERMINATE_HOST_OBJECT(m_exceptionHandler, onProgramExit);
     TERMINATE_HOST_OBJECT(m_knownLocationsAdmin, onProgramExit);
 
-    BeStringUtilities::Terminate();
-
     ForgetHost();
     BeAssert(NULL == DgnPlatformLib::QueryHost());
 
@@ -399,7 +398,7 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
     BeAssert(NULL == m_realityDataAdmin);
     BeAssert(NULL == m_exceptionHandler);
     BeAssert(NULL == m_knownLocationsAdmin);
-    BeAssert(NULL == m_locksAdmin);
+    BeAssert(NULL == m_repositoryAdmin);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -446,7 +445,7 @@ DgnPlatformLib::Host::TxnAdmin& DgnPlatformLib::Host::_SupplyTxnAdmin() {return 
 DgnPlatformLib::Host::FormatterAdmin&        DgnPlatformLib::Host::_SupplyFormatterAdmin()        {return *new FormatterAdmin();}
 DgnPlatformLib::Host::RealityDataAdmin&      DgnPlatformLib::Host::_SupplyRealityDataAdmin()      {return *new RealityDataAdmin();}
 DgnPlatformLib::Host::ScriptAdmin&           DgnPlatformLib::Host::_SupplyScriptingAdmin()        {return *new ScriptAdmin();}
-DgnPlatformLib::Host::LocksAdmin&            DgnPlatformLib::Host::_SupplyLocksAdmin()            {return *new LocksAdmin();}
+DgnPlatformLib::Host::RepositoryAdmin&       DgnPlatformLib::Host::_SupplyRepositoryAdmin()       {return *new RepositoryAdmin();}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      10/2014

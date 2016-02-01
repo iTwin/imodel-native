@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnPlatformErrors.r.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,7 +24,7 @@ enum DgnErrorCategories
     LINESTYLE_ERROR_BASE            = 0x12000,
     GEOREFERENCE_ERROR_BASE         = 0x13000,
     MARKUPPROJECT_ERROR_BASE        = 0x14000,
-    LOCK_ERROR_BASE                 = 0x15000,
+    REPOSITORY_ERROR_BASE           = 0x15000,
     REVISION_ERROR_BASE             = 0x16000,
     };
 
@@ -91,6 +91,8 @@ enum class DgnDbStatus : int
     DeletionProhibited,
     InDynamicTransaction,
     NoMultiTxnOperation,
+    InvalidCodeAuthority,
+    CodeNotReserved,
     };
 
 //! Status Values for DgnViewport methods
@@ -114,18 +116,22 @@ enum class ViewportStatus : int
     InvalidViewport,
 };
 
-//! Return codes for methods which perform locking operations
-enum class LockStatus : int
+//! Return codes for methods which perform repository management operations
+enum class RepositoryStatus : int
 {
     Success = SUCCESS,
-    ServerUnavailable = LOCK_ERROR_BASE + 1, //!< The locks server did not respond to a lock request
-    AlreadyHeld, //!< A requested lock was already held by another briefcase
-    SyncError, //!< Failed to sync local locks with server
+    ServerUnavailable = REPOSITORY_ERROR_BASE + 1, //!< The repository server did not respond to a request
+    LockAlreadyHeld, //!< A requested lock was already held by another briefcase
+    SyncError, //!< Failed to sync briefcase manager with server
     InvalidResponse, //!< Response from server not understood
     PendingTransactions, //!< An operation requires local changes to be committed or abandoned
     LockUsed, //!< A lock cannot be relinquished because the associated object has been modified
     CannotCreateRevision, //!< An operation required creation of a DgnRevision, which failed
     InvalidRequest, //!< Request to server not understood
+    RevisionRequired, //!< A revision committed to the server must be integrated into the briefcase before the operation can be completed
+    CodeUnavailable, //!< A requested DgnCode is reserved by another briefcase or in use
+    CodeNotReserved, //!< A DgnCode cannot be released because it has not been reserved by the requesting briefcase
+    CodeUsed, //!< A DgnCode cannot be relinquished because it has been used locally
 };
 
 //! Status codes for the Revision API

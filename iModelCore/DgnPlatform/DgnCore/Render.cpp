@@ -84,6 +84,22 @@ void Render::Queue::AddTask(Task& task)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool Render::Queue::HasPending(Task::Operation op)
+    {
+    DgnDb::VerifyClientThread();
+
+    BeMutexHolder holder(m_cv.GetMutex());
+    for (auto entry : m_tasks)
+        {
+        if (entry->GetOperation() == op)
+            return true;
+        }
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 void Render::Queue::WaitForIdle()
     {
     DgnDb::VerifyClientThread();
@@ -170,11 +186,10 @@ void DgnViewport::StartRenderThread()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::Plan::Plan(DgnViewportCR vp, PaintScene paintScene)
+Render::Plan::Plan(DgnViewportCR vp)
     {
     m_viewFlags = vp.GetViewFlags();
     m_is3d      = vp.Is3dView();
-    m_paintScene = paintScene;
     m_frustum   = vp.GetFrustum(DgnCoordSystem::World, true);
     m_bgColor   = vp.GetBackgroundColor();
     m_fraction  = vp.GetFrustumFraction();

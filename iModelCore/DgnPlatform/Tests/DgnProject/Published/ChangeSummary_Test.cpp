@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/ChangeSummary_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ChangeTestFixture.h"
@@ -20,30 +20,45 @@ USING_NAMESPACE_BENTLEY_EC
 // @bsiclass                                                 Ramanujam.Raman   10/15
 //=======================================================================================
 struct ChangeSummaryTestFixture : ChangeTestFixture
+{
+DEFINE_T_SUPER(ChangeTestFixture)
+protected:
+    void ModifyElement(DgnElementId elementId);
+    void DeleteElement(DgnElementId elementId);
+
+    void DumpChangeSummary(ChangeSummary const& changeSummary, Utf8CP label);
+    void DumpSqlChanges(DgnDbCR dgnDb, Changes const& sqlChanges, Utf8CP label);
+
+    void GetChangeSummaryFromCurrentTransaction(ChangeSummary& changeSummary);
+    void GetChangeSummaryFromSavedTransactions(ChangeSummary& changeSummary);
+
+    bool ChangeSummaryContainsInstance(ChangeSummary const& changeSummary, ECInstanceId instanceId, Utf8CP schemaName, Utf8CP className, DbOpcode dbOpcode);
+    BentleyStatus ImportECInstance(ECInstanceKey& instanceKey, IECInstanceR instance, DgnDbR dgndb);
+
+    int GetChangeSummaryInstanceCount(BeSQLite::EC::ChangeSummaryCR changeSummary, Utf8CP qualifiedClassName) const;
+
+public:
+    ChangeSummaryTestFixture() : T_Super(L"ChangeSummaryTest.dgndb") {}
+};
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    12/2015
+//---------------------------------------------------------------------------------------
+int ChangeSummaryTestFixture::GetChangeSummaryInstanceCount(ChangeSummaryCR changeSummary, Utf8CP qualifiedClassName) const
     {
-    DEFINE_T_SUPER(ChangeTestFixture)
-    protected:
-        WCharCP m_testFileName = L"ChangeSummaryTest.dgndb";
+    Utf8PrintfString ecSql("SELECT COUNT(*) FROM %s WHERE IsChangedInstance(?, GetECClassId(), ECInstanceId)", qualifiedClassName);
 
-        void CreateDgnDb() { T_Super::CreateDgnDb(m_testFileName); }
-        void OpenDgnDb() { T_Super::OpenDgnDb(m_testFileName); }
+    ECSqlStatement stmt;
+    ECSqlStatus ecSqlStatus = stmt.Prepare(*m_testDb, ecSql.c_str());
+    BeAssert(ecSqlStatus.IsSuccess());
 
-        void ModifyElement(DgnElementId elementId);
-        void DeleteElement(DgnElementId elementId);
+    stmt.BindInt64(1, (int64_t) &changeSummary);
 
-        void DumpChangeSummary(ChangeSummary const& changeSummary, Utf8CP label);
-        void DumpSqlChanges(DgnDbCR dgnDb, Changes const& sqlChanges, Utf8CP label);
+    DbResult ecSqlStepStatus = stmt.Step();
+    BeAssert(ecSqlStepStatus == BE_SQLITE_ROW);
 
-        void GetChangeSummaryFromCurrentTransaction(ChangeSummary& changeSummary);
-        void GetChangeSummaryFromSavedTransactions(ChangeSummary& changeSummary);
-
-        bool ChangeSummaryContainsInstance(ChangeSummary const& changeSummary, ECInstanceId instanceId, Utf8CP schemaName, Utf8CP className, DbOpcode dbOpcode);
-        BentleyStatus ImportECInstance(ECInstanceKey& instanceKey, IECInstanceR instance, DgnDbR dgndb);
-
-    public:
-        virtual void SetUp() override {}
-        virtual void TearDown() override { if (m_testDb.IsValid()) m_testDb->SaveChanges(); }
-    };
+    return stmt.GetValueInt(0);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
@@ -209,9 +224,12 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
     ChangeSummary changeSummary(*m_testDb);
 
     m_testDb->SaveChanges();
-    InsertModel();
-    InsertCategory();
-    DgnElementId elementId = InsertElement(0, 0, 0);
+    
+    DgnModelId csModelId = InsertSpatialModel("ChangeSummaryModel");
+    SpatialModelPtr csModel = m_testDb->Models().Get<SpatialModel>(csModelId);
+    DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
+
+    DgnElementId elementId = InsertPhysicalElement(*csModel, csCategoryId, 0, 0, 0);
     GetChangeSummaryFromCurrentTransaction(changeSummary);
 
     DumpChangeSummary(changeSummary, "ChangeSummary after inserts");
@@ -220,73 +238,81 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
 	ChangeSummary after inserts:
 	BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
 		AccessString;OldValue;NewValue
-	0:1;dgn:SpatialModel:196;Insert;No
-		Code.AuthorityId;NULL;6
-		Code.Namespace;NULL;""
-		Code.Value;NULL;"ChangeSetModel"
-		DependencyIndex;NULL;-1
-		Properties;NULL;"{"DisplayInfo":{"azimuth":-9.2559631349317831e+061,"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
-		Visibility;NULL;1
-	0:2;dgn:Category:160;Insert;No
-		Code.AuthorityId;NULL;3
-		Code.Namespace;NULL;""
-		Code.Value;NULL;"ChangeSetTestCategory"
-		Descr;NULL;""
-		LastMod;NULL;2.45737e+006
-		ModelId;NULL;1
-		Rank;NULL;2
-		Scope;NULL;1
-	0:3;dgn:SubCategory:211;Insert;No
-		Code.AuthorityId;NULL;3
-		Code.Namespace;NULL;"10000000002"
-		Code.Value;NULL;"ChangeSetTestCategory"
-		LastMod;NULL;2.45737e+006
-		ModelId;NULL;1
-		ParentId;NULL;1099511627778
-		Props;NULL;"{"color":16777215}"
-	0:4;dgn:PhysicalElement:194;Insert;No
-		Code.AuthorityId;NULL;1
-		Code.Namespace;NULL;""
-		LastMod;NULL;2.45737e+006
-		ModelId;NULL;1099511627777
-	0:4;dgn:ElementGeom:162;Insert;No
-		CategoryId;NULL;1099511627778
-		Geom;NULL;...
-		InPhysicalSpace;NULL;1
-		Placement;NULL;...
-	0:2;dgn:ModelContainsElements:191;Insert;No
-		SourceECClassId;NULL;dgn:DictionaryModel:167
-		SourceECInstanceId;NULL;0:1
-		TargetECClassId;NULL;dgn:Category:160
-		TargetECInstanceId;NULL;0:2
-	0:3;dgn:ElementOwnsChildElements:180;Insert;No
-		SourceECClassId;NULL;dgn:Category:160
-		SourceECInstanceId;NULL;0:2
-		TargetECClassId;NULL;dgn:SubCategory:211
-		TargetECInstanceId;NULL;0:3
-	0:3;dgn:ModelContainsElements:191;Insert;No
-		SourceECClassId;NULL;dgn:DictionaryModel:167
-		SourceECInstanceId;NULL;0:1
-		TargetECClassId;NULL;dgn:SubCategory:211
-		TargetECInstanceId;NULL;0:3
-	0:4;dgn:ModelContainsElements:191;Insert;No
-		SourceECClassId;NULL;dgn:SpatialModel:196
-		SourceECInstanceId;NULL;0:1
-		TargetECClassId;NULL;dgn:PhysicalElement:194
-		TargetECInstanceId;NULL;0:4
-	0:4;dgn:CategoryContainsElementGeom:161;Insert;No
-		SourceECClassId;NULL;dgn:Category:160
-		SourceECInstanceId;NULL;0:2
-		TargetECClassId;NULL;dgn:ElementGeom:162
-		TargetECInstanceId;NULL;0:4
-	0:4;dgn:ElementOwnsGeom:183;Insert;No
-		SourceECClassId;NULL;dgn:PhysicalElement:194
-		SourceECInstanceId;NULL;0:4
-		TargetECClassId;NULL;dgn:ElementGeom:162
-		TargetECInstanceId;NULL;0:4
+        ChangeSummary after inserts:
+        BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+                AccessString;OldValue;NewValue
+        0:1;dgn:SpatialModel:208;Insert;No
+                Code.AuthorityId;NULL;6
+                Code.Namespace;NULL;""
+                Code.Value;NULL;"ChangeSetModel"
+                DependencyIndex;NULL;-1
+                Properties;NULL;"{"DisplayInfo":{"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
+                Visibility;NULL;1
+        0:2;dgn:Category:133;Insert;No
+                Code.AuthorityId;NULL;3
+                Code.Namespace;NULL;""
+                Code.Value;NULL;"ChangeSetTestCategory"
+                Descr;NULL;""
+                LastMod;NULL;2.4574e+006
+                ModelId;NULL;1
+                Rank;NULL;2
+                Scope;NULL;1
+        0:3;dgn:SubCategory:215;Insert;No
+                Code.AuthorityId;NULL;3
+                Code.Namespace;NULL;"10000000002"
+                Code.Value;NULL;"ChangeSetTestCategory"
+                LastMod;NULL;2.4574e+006
+                ModelId;NULL;1
+                ParentId;NULL;1099511627778
+                Props;NULL;"{"color":16777215}"
+        0:4;dgn:PhysicalElement:195;Insert;No
+                BBoxHigh.X;NULL;0.5
+                BBoxHigh.Y;NULL;0.5
+                BBoxHigh.Z;NULL;0.5
+                BBoxLow.X;NULL;-0.5
+                BBoxLow.Y;NULL;-0.5
+                BBoxLow.Z;NULL;-0.5
+                CategoryId;NULL;1099511627778
+                Code.AuthorityId;NULL;1
+                Code.Namespace;NULL;""
+                Geometry;NULL;...
+                InPhysicalSpace;NULL;1
+                LastMod;NULL;2.4574e+006
+                ModelId;NULL;1099511627777
+                Origin.X;NULL;0
+                Origin.Y;NULL;0
+                Origin.Z;NULL;0
+                Pitch;NULL;0
+                Roll;NULL;0
+                Yaw;NULL;0
+        0:2;dgn:ModelContainsElements:193;Insert;No
+                SourceECClassId;NULL;dgn:DictionaryModel:168
+                SourceECInstanceId;NULL;0:1
+                TargetECClassId;NULL;dgn:Category:133
+                TargetECInstanceId;NULL;0:2
+        0:3;dgn:ElementOwnsChildElements:179;Insert;No
+                SourceECClassId;NULL;dgn:Category:133
+                SourceECInstanceId;NULL;0:2
+                TargetECClassId;NULL;dgn:SubCategory:215
+                TargetECInstanceId;NULL;0:3
+        0:3;dgn:ModelContainsElements:193;Insert;No
+                SourceECClassId;NULL;dgn:DictionaryModel:168
+                SourceECInstanceId;NULL;0:1
+                TargetECClassId;NULL;dgn:SubCategory:215
+                TargetECInstanceId;NULL;0:3
+        0:4;dgn:ModelContainsElements:193;Insert;No
+                SourceECClassId;NULL;dgn:SpatialModel:208
+                SourceECInstanceId;NULL;0:1
+                TargetECClassId;NULL;dgn:PhysicalElement:195
+                TargetECInstanceId;NULL;0:4
+        0:4;dgn:SpatialElementIsInCategory:205;Insert;No
+                SourceECClassId;NULL;dgn:PhysicalElement:195
+                SourceECInstanceId;NULL;0:4
+                TargetECClassId;NULL;dgn:Category:133
+                TargetECInstanceId;NULL;0:2
     */
-    EXPECT_EQ(8, changeSummary.MakeInstanceIterator().QueryCount());
-    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(m_testModel->GetModelId().GetValueUnchecked()), DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel, DbOpcode::Insert));
+    EXPECT_EQ(9, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(csModelId.GetValueUnchecked()), DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel, DbOpcode::Insert));
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(m_testCategoryId.GetValueUnchecked()), DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Category, DbOpcode::Insert));
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(elementId.GetValueUnchecked()), DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement, DbOpcode::Insert));
 
@@ -297,11 +323,17 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
     DumpChangeSummary(changeSummary, "ChangeSummary after updates");
 
     /*
-	ChangeSummary after updates:
-	BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
-		AccessString;OldValue;NewValue
-	0:4;dgn:PhysicalElement:194;Update;No
-		LastMod;2.45737e+006;2.45737e+006
+       ChangeSummary after updates:
+       BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+               AccessString;OldValue;NewValue
+       0:4;dgn:PhysicalElement:195;Update;No
+               LastMod;2.4574e+006;2.4574e+006
+               Origin.X;0;0
+               Origin.Y;0;0
+               Origin.Z;0;0
+               Pitch;0;0
+               Roll;0;0
+               Yaw;0;0
     */
     EXPECT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(elementId.GetValueUnchecked()), DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement, DbOpcode::Update));
@@ -313,36 +345,41 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
     DumpChangeSummary(changeSummary, "ChangeSummary after deletes");
 
     /*
-	ChangeSummary after deletes:
-	BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
-		AccessString;OldValue;NewValue
-	0:4;dgn:PhysicalElement:194;Delete;No
-		Code.AuthorityId;1;NULL
-		Code.Namespace;"";NULL
-		LastMod;2.45737e+006;NULL
-		ModelId;1099511627777;NULL
-	0:4;dgn:ElementGeom:162;Delete;Yes
-		CategoryId;1099511627778;NULL
-		Geom;...;NULL
-		InPhysicalSpace;1;NULL
-		Placement;...;NULL
-	0:4;dgn:ModelContainsElements:191;Delete;No
-		SourceECClassId;dgn:SpatialModel:196;NULL
-		SourceECInstanceId;0:1;NULL
-		TargetECClassId;dgn:PhysicalElement:194;NULL
-		TargetECInstanceId;0:4;NULL
-	0:4;dgn:CategoryContainsElementGeom:161;Delete;Yes
-		SourceECClassId;dgn:Category:160;NULL
-		SourceECInstanceId;0:2;NULL
-		TargetECClassId;dgn:ElementGeom:162;NULL
-		TargetECInstanceId;0:4;NULL
-	0:4;dgn:ElementOwnsGeom:183;Delete;Yes
-		SourceECClassId;dgn:PhysicalElement:194;NULL
-		SourceECInstanceId;0:4;NULL
-		TargetECClassId;dgn:ElementGeom:162;NULL
-		TargetECInstanceId;0:4;NULL
+        ChangeSummary after deletes:
+        BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+                AccessString;OldValue;NewValue
+        0:4;dgn:PhysicalElement:195;Delete;No
+                BBoxHigh.X;0.5;NULL
+                BBoxHigh.Y;0.5;NULL
+                BBoxHigh.Z;0.5;NULL
+                BBoxLow.X;-0.5;NULL
+                BBoxLow.Y;-0.5;NULL
+                BBoxLow.Z;-0.5;NULL
+                CategoryId;1099511627778;NULL
+                Code.AuthorityId;1;NULL
+                Code.Namespace;"";NULL
+                Geometry;...;NULL
+                InPhysicalSpace;1;NULL
+                LastMod;2.4574e+006;NULL
+                ModelId;1099511627777;NULL
+                Origin.X;0;NULL
+                Origin.Y;0;NULL
+                Origin.Z;0;NULL
+                Pitch;0;NULL
+                Roll;0;NULL
+                Yaw;0;NULL
+        0:4;dgn:ModelContainsElements:193;Delete;No
+                SourceECClassId;dgn:SpatialModel:208;NULL
+                SourceECInstanceId;0:1;NULL
+                TargetECClassId;dgn:PhysicalElement:195;NULL
+                TargetECInstanceId;0:4;NULL
+        0:4;dgn:SpatialElementIsInCategory:205;Delete;Yes
+                SourceECClassId;dgn:PhysicalElement:195;NULL
+                SourceECInstanceId;0:4;NULL
+                TargetECClassId;dgn:Category:133;NULL
+                TargetECInstanceId;0:2;NULL
     */
-    EXPECT_EQ(2, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_EQ(3, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(elementId.GetValueUnchecked()), DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement, DbOpcode::Delete));
     }
 
@@ -355,9 +392,11 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
 
     ChangeSummary changeSummary(*m_testDb);
 
-    InsertModel();
-    InsertCategory();
-    DgnElementId elementId = InsertElement(0, 0, 0);
+    DgnModelId csModelId = InsertSpatialModel("ChangeSummaryModel");
+    SpatialModelPtr csModel = m_testDb->Models().Get<SpatialModel>(csModelId);
+    DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
+
+    DgnElementId elementId = InsertPhysicalElement(*csModel, csCategoryId, 0, 0, 0);
 
     m_testDb->SaveChanges();
 
@@ -366,75 +405,83 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
     DumpChangeSummary(changeSummary, "After inserts");
 
     /* 
-	After inserts:
-	BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
-		AccessString;OldValue;NewValue
-	0:1;dgn:SpatialModel:196;Insert;No
-		Code.AuthorityId;NULL;6
-		Code.Namespace;NULL;""
-		Code.Value;NULL;"ChangeSetModel"
-		DependencyIndex;NULL;-1
-		Properties;NULL;"{"DisplayInfo":{"azimuth":-9.2559631349317831e+061,"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
-		Visibility;NULL;1
-	0:2;dgn:Category:160;Insert;No
-		Code.AuthorityId;NULL;3
-		Code.Namespace;NULL;""
-		Code.Value;NULL;"ChangeSetTestCategory"
-		Descr;NULL;""
-		LastMod;NULL;2.45737e+006
-		ModelId;NULL;1
-		Rank;NULL;2
-		Scope;NULL;1
-	0:3;dgn:SubCategory:211;Insert;No
-		Code.AuthorityId;NULL;3
-		Code.Namespace;NULL;"10000000002"
-		Code.Value;NULL;"ChangeSetTestCategory"
-		LastMod;NULL;2.45737e+006
-		ModelId;NULL;1
-		ParentId;NULL;1099511627778
-		Props;NULL;"{"color":16777215}"
-	0:4;dgn:PhysicalElement:194;Insert;No
-		Code.AuthorityId;NULL;1
-		Code.Namespace;NULL;""
-		LastMod;NULL;2.45737e+006
-		ModelId;NULL;1099511627777
-	0:4;dgn:ElementGeom:162;Insert;No
-		CategoryId;NULL;1099511627778
-		Geom;NULL;...
-		InPhysicalSpace;NULL;1
-		Placement;NULL;...
-	0:2;dgn:ModelContainsElements:191;Insert;No
-		SourceECClassId;NULL;dgn:DictionaryModel:167
-		SourceECInstanceId;NULL;0:1
-		TargetECClassId;NULL;dgn:Category:160
-		TargetECInstanceId;NULL;0:2
-	0:3;dgn:ElementOwnsChildElements:180;Insert;No
-		SourceECClassId;NULL;dgn:Category:160
-		SourceECInstanceId;NULL;0:2
-		TargetECClassId;NULL;dgn:SubCategory:211
-		TargetECInstanceId;NULL;0:3
-	0:3;dgn:ModelContainsElements:191;Insert;No
-		SourceECClassId;NULL;dgn:DictionaryModel:167
-		SourceECInstanceId;NULL;0:1
-		TargetECClassId;NULL;dgn:SubCategory:211
-		TargetECInstanceId;NULL;0:3
-	0:4;dgn:ModelContainsElements:191;Insert;No
-		SourceECClassId;NULL;dgn:SpatialModel:196
-		SourceECInstanceId;NULL;0:1
-		TargetECClassId;NULL;dgn:PhysicalElement:194
-		TargetECInstanceId;NULL;0:4
-	0:4;dgn:CategoryContainsElementGeom:161;Insert;No
-		SourceECClassId;NULL;dgn:Category:160
-		SourceECInstanceId;NULL;0:2
-		TargetECClassId;NULL;dgn:ElementGeom:162
-		TargetECInstanceId;NULL;0:4
-	0:4;dgn:ElementOwnsGeom:183;Insert;No
-		SourceECClassId;NULL;dgn:PhysicalElement:194
-		SourceECInstanceId;NULL;0:4
-		TargetECClassId;NULL;dgn:ElementGeom:162
-		TargetECInstanceId;NULL;0:4
+        After inserts:
+        BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+                AccessString;OldValue;NewValue
+        0:1;dgn:SpatialModel:208;Insert;No
+                Code.AuthorityId;NULL;6
+                Code.Namespace;NULL;""
+                Code.Value;NULL;"ChangeSetModel"
+                DependencyIndex;NULL;-1
+                Properties;NULL;"{"DisplayInfo":{"fmtDir":0.0,"fmtFlags":{"angMo
+de":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0}
+,"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"r
+ndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
+                Visibility;NULL;1
+        0:2;dgn:Category:133;Insert;No
+                Code.AuthorityId;NULL;3
+                Code.Namespace;NULL;""
+                Code.Value;NULL;"ChangeSetTestCategory"
+                Descr;NULL;""
+                LastMod;NULL;2.4574e+006
+                ModelId;NULL;1
+                Rank;NULL;2
+                Scope;NULL;1
+        0:3;dgn:SubCategory:215;Insert;No
+                Code.AuthorityId;NULL;3
+                Code.Namespace;NULL;"10000000002"
+                Code.Value;NULL;"ChangeSetTestCategory"
+                LastMod;NULL;2.4574e+006
+                ModelId;NULL;1
+                ParentId;NULL;1099511627778
+                Props;NULL;"{"color":16777215}"
+        0:4;dgn:PhysicalElement:195;Insert;No
+                BBoxHigh.X;NULL;0.5
+                BBoxHigh.Y;NULL;0.5
+                BBoxHigh.Z;NULL;0.5
+                BBoxLow.X;NULL;-0.5
+                BBoxLow.Y;NULL;-0.5
+                BBoxLow.Z;NULL;-0.5
+                CategoryId;NULL;1099511627778
+                Code.AuthorityId;NULL;1
+                Code.Namespace;NULL;""
+                Geometry;NULL;...
+                InPhysicalSpace;NULL;1
+                LastMod;NULL;2.4574e+006
+                ModelId;NULL;1099511627777
+                Origin.X;NULL;0
+                Origin.Y;NULL;0
+                Origin.Z;NULL;0
+                Pitch;NULL;0
+                Roll;NULL;0
+                Yaw;NULL;0
+        0:2;dgn:ModelContainsElements:193;Insert;No
+                SourceECClassId;NULL;dgn:DictionaryModel:168
+                SourceECInstanceId;NULL;0:1
+                TargetECClassId;NULL;dgn:Category:133
+                TargetECInstanceId;NULL;0:2
+        0:3;dgn:ElementOwnsChildElements:179;Insert;No
+                SourceECClassId;NULL;dgn:Category:133
+                SourceECInstanceId;NULL;0:2
+                TargetECClassId;NULL;dgn:SubCategory:215
+                TargetECInstanceId;NULL;0:3
+        0:3;dgn:ModelContainsElements:193;Insert;No
+                SourceECClassId;NULL;dgn:DictionaryModel:168
+                SourceECInstanceId;NULL;0:1
+                TargetECClassId;NULL;dgn:SubCategory:215
+                TargetECInstanceId;NULL;0:3
+        0:4;dgn:ModelContainsElements:193;Insert;No
+                SourceECClassId;NULL;dgn:SpatialModel:208
+                SourceECInstanceId;NULL;0:1
+                TargetECClassId;NULL;dgn:PhysicalElement:195
+                TargetECInstanceId;NULL;0:4
+        0:4;dgn:SpatialElementIsInCategory:205;Insert;No
+                SourceECClassId;NULL;dgn:PhysicalElement:195
+                SourceECInstanceId;NULL;0:4
+                TargetECClassId;NULL;dgn:Category:133
+                TargetECInstanceId;NULL;0:2
     */
-    EXPECT_EQ(8, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_EQ(9, changeSummary.MakeInstanceIterator().QueryCount());
 
     ModifyElement(elementId);
 
@@ -445,75 +492,80 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
     DumpChangeSummary(changeSummary, "After updates");
 
     /*
-	After updates:
-	BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
-		AccessString;OldValue;NewValue
-	0:1;dgn:SpatialModel:196;Insert;No
-		Code.AuthorityId;NULL;6
-		Code.Namespace;NULL;""
-		Code.Value;NULL;"ChangeSetModel"
-		DependencyIndex;NULL;-1
-		Properties;NULL;"{"DisplayInfo":{"azimuth":-9.2559631349317831e+061,"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
-		Visibility;NULL;1
-	0:2;dgn:Category:160;Insert;No
-		Code.AuthorityId;NULL;3
-		Code.Namespace;NULL;""
-		Code.Value;NULL;"ChangeSetTestCategory"
-		Descr;NULL;""
-		LastMod;NULL;2.45737e+006
-		ModelId;NULL;1
-		Rank;NULL;2
-		Scope;NULL;1
-	0:3;dgn:SubCategory:211;Insert;No
-		Code.AuthorityId;NULL;3
-		Code.Namespace;NULL;"10000000002"
-		Code.Value;NULL;"ChangeSetTestCategory"
-		LastMod;NULL;2.45737e+006
-		ModelId;NULL;1
-		ParentId;NULL;1099511627778
-		Props;NULL;"{"color":16777215}"
-	0:4;dgn:PhysicalElement:194;Insert;No
-		Code.AuthorityId;NULL;1
-		Code.Namespace;NULL;""
-		LastMod;NULL;2.45737e+006
-		ModelId;NULL;1099511627777
-	0:4;dgn:ElementGeom:162;Insert;No
-		CategoryId;NULL;1099511627778
-		Geom;NULL;...
-		InPhysicalSpace;NULL;1
-		Placement;NULL;...
-	0:2;dgn:ModelContainsElements:191;Insert;No
-		SourceECClassId;NULL;dgn:DictionaryModel:167
-		SourceECInstanceId;NULL;0:1
-		TargetECClassId;NULL;dgn:Category:160
-		TargetECInstanceId;NULL;0:2
-	0:3;dgn:ElementOwnsChildElements:180;Insert;No
-		SourceECClassId;NULL;dgn:Category:160
-		SourceECInstanceId;NULL;0:2
-		TargetECClassId;NULL;dgn:SubCategory:211
-		TargetECInstanceId;NULL;0:3
-	0:3;dgn:ModelContainsElements:191;Insert;No
-		SourceECClassId;NULL;dgn:DictionaryModel:167
-		SourceECInstanceId;NULL;0:1
-		TargetECClassId;NULL;dgn:SubCategory:211
-		TargetECInstanceId;NULL;0:3
-	0:4;dgn:ModelContainsElements:191;Insert;No
-		SourceECClassId;NULL;dgn:SpatialModel:196
-		SourceECInstanceId;NULL;0:1
-		TargetECClassId;NULL;dgn:PhysicalElement:194
-		TargetECInstanceId;NULL;0:4
-	0:4;dgn:CategoryContainsElementGeom:161;Insert;No
-		SourceECClassId;NULL;dgn:Category:160
-		SourceECInstanceId;NULL;0:2
-		TargetECClassId;NULL;dgn:ElementGeom:162
-		TargetECInstanceId;NULL;0:4
-	0:4;dgn:ElementOwnsGeom:183;Insert;No
-		SourceECClassId;NULL;dgn:PhysicalElement:194
-		SourceECInstanceId;NULL;0:4
-		TargetECClassId;NULL;dgn:ElementGeom:162
-		TargetECInstanceId;NULL;0:4
+        After updates:
+        BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+                AccessString;OldValue;NewValue
+        0:1;dgn:SpatialModel:208;Insert;No
+                Code.AuthorityId;NULL;6
+                Code.Namespace;NULL;""
+                Code.Value;NULL;"ChangeSetModel"
+                DependencyIndex;NULL;-1
+                Properties;NULL;"{"DisplayInfo":{"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
+                Visibility;NULL;1
+        0:2;dgn:Category:133;Insert;No
+                Code.AuthorityId;NULL;3
+                Code.Namespace;NULL;""
+                Code.Value;NULL;"ChangeSetTestCategory"
+                Descr;NULL;""
+                LastMod;NULL;2.4574e+006
+                ModelId;NULL;1
+                Rank;NULL;2
+                Scope;NULL;1
+        0:3;dgn:SubCategory:215;Insert;No
+                Code.AuthorityId;NULL;3
+                Code.Namespace;NULL;"10000000002"
+                Code.Value;NULL;"ChangeSetTestCategory"
+                LastMod;NULL;2.4574e+006
+                ModelId;NULL;1
+                ParentId;NULL;1099511627778
+                Props;NULL;"{"color":16777215}"
+        0:4;dgn:PhysicalElement:195;Insert;No
+                BBoxHigh.X;NULL;0.5
+                BBoxHigh.Y;NULL;0.5
+                BBoxHigh.Z;NULL;0.5
+                BBoxLow.X;NULL;-0.5
+                BBoxLow.Y;NULL;-0.5
+                BBoxLow.Z;NULL;-0.5
+                CategoryId;NULL;1099511627778
+                Code.AuthorityId;NULL;1
+                Code.Namespace;NULL;""
+                Geometry;NULL;...
+                InPhysicalSpace;NULL;1
+                LastMod;NULL;2.4574e+006
+                ModelId;NULL;1099511627777
+                Origin.X;NULL;0
+                Origin.Y;NULL;0
+                Origin.Z;NULL;0
+                Pitch;NULL;0
+                Roll;NULL;0
+                Yaw;NULL;0
+        0:2;dgn:ModelContainsElements:193;Insert;No
+                SourceECClassId;NULL;dgn:DictionaryModel:168
+                SourceECInstanceId;NULL;0:1
+                TargetECClassId;NULL;dgn:Category:133
+                TargetECInstanceId;NULL;0:2
+        0:3;dgn:ElementOwnsChildElements:179;Insert;No
+                SourceECClassId;NULL;dgn:Category:133
+                SourceECInstanceId;NULL;0:2
+                TargetECClassId;NULL;dgn:SubCategory:215
+                TargetECInstanceId;NULL;0:3
+        0:3;dgn:ModelContainsElements:193;Insert;No
+                SourceECClassId;NULL;dgn:DictionaryModel:168
+                SourceECInstanceId;NULL;0:1
+                TargetECClassId;NULL;dgn:SubCategory:215
+                TargetECInstanceId;NULL;0:3
+        0:4;dgn:ModelContainsElements:193;Insert;No
+                SourceECClassId;NULL;dgn:SpatialModel:208
+                SourceECInstanceId;NULL;0:1
+                TargetECClassId;NULL;dgn:PhysicalElement:195
+                TargetECInstanceId;NULL;0:4
+        0:4;dgn:SpatialElementIsInCategory:205;Insert;No
+                SourceECClassId;NULL;dgn:PhysicalElement:195
+                SourceECInstanceId;NULL;0:4
+                TargetECClassId;NULL;dgn:Category:133
+                TargetECInstanceId;NULL;0:2
     */
-    EXPECT_EQ(8, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_EQ(9, changeSummary.MakeInstanceIterator().QueryCount());
 
     DeleteElement(elementId);
 
@@ -577,9 +629,11 @@ TEST_F(ChangeSummaryTestFixture, ValidateInstanceIterator)
     {
     CreateDgnDb();
 
-    InsertModel();
-    InsertCategory();
-    InsertElement(0, 0, 0);
+    DgnModelId csModelId = InsertSpatialModel("ChangeSummaryModel");
+    SpatialModelPtr csModel = m_testDb->Models().Get<SpatialModel>(csModelId);
+    DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
+
+    DgnElementId elementId = InsertPhysicalElement(*csModel, csCategoryId, 0, 0, 0);
 
     ChangeSummary changeSummary(*m_testDb);
     GetChangeSummaryFromCurrentTransaction(changeSummary);
@@ -590,10 +644,10 @@ TEST_F(ChangeSummaryTestFixture, ValidateInstanceIterator)
         countIter++;
         UNUSED_VARIABLE(entry);
         }
-    EXPECT_EQ(countIter, 8);
+    EXPECT_EQ(countIter, 9);
 
     int countQuery = changeSummary.MakeInstanceIterator().QueryCount();
-    EXPECT_EQ(countQuery, 8);
+    EXPECT_EQ(countQuery, 9);
     }
 
 extern ECSchemaPtr ReadECSchemaFromDisk(WCharCP schemaPathname);
@@ -1272,10 +1326,12 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
     {
     CreateDgnDb();
 
-    InsertModel();
-    InsertCategory();
-    DgnElementId parentElementId = InsertElement(0, 0, 0);
-    DgnElementId childElementId = InsertElement(1, 1, 1);
+    DgnModelId csModelId = InsertSpatialModel("ChangeSummaryModel");
+    SpatialModelPtr csModel = m_testDb->Models().Get<SpatialModel>(csModelId);
+    DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
+
+    DgnElementId parentElementId = InsertPhysicalElement(*csModel, csCategoryId, 0, 0, 0);
+    DgnElementId childElementId = InsertPhysicalElement(*csModel, csCategoryId, 1, 1, 1);
 
     m_testDb->SaveChanges();
 
@@ -1346,7 +1402,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
     ASSERT_EQ(parentElementId.GetValueUnchecked(), instance.GetNewValue("ParentId").GetValueInt64());
 
     EXPECT_EQ(4, relInstance.MakeValueIterator(changeSummary).QueryCount());
-    EXPECT_EQ(2, instance.MakeValueIterator(changeSummary).QueryCount());
+    EXPECT_EQ(8, instance.MakeValueIterator(changeSummary).QueryCount());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1358,13 +1414,14 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
 
     ChangeSummary changeSummary(*m_testDb);
 
-    InsertModel();
-    InsertCategory();
+    DgnModelId csModelId = InsertSpatialModel("ChangeSummaryModel");
+    SpatialModelPtr csModel = m_testDb->Models().Get<SpatialModel>(csModelId);
+    DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
 
     bset<DgnElementId> insertedElements;
     for (int ii = 0; ii < 10; ii++)
         {
-        DgnElementId elementId = InsertElement(ii, 0, 0);
+        DgnElementId elementId = InsertPhysicalElement(*csModel, csCategoryId, ii, 0, 0);
         insertedElements.insert(elementId);
         }
 
@@ -1409,8 +1466,11 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
 TEST_F(ChangeSummaryTestFixture, QueryMultipleSessions)
     {
     CreateDgnDb();
-    InsertModel();
-    InsertCategory();
+
+    DgnModelId csModelId = InsertSpatialModel("ChangeSummaryModel");
+    SpatialModelPtr csModel = m_testDb->Models().Get<SpatialModel>(csModelId);
+    DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
+
     m_testDb->SaveChanges();
     CloseDgnDb();
 
@@ -1422,7 +1482,7 @@ TEST_F(ChangeSummaryTestFixture, QueryMultipleSessions)
 
         for (int jj = 0; jj < nTransactionsPerSession; jj++)
             {
-            InsertElement(ii, jj, 0);
+            InsertPhysicalElement(*csModel, csCategoryId, ii, jj, 0);
             m_testDb->SaveChanges();
             }
 

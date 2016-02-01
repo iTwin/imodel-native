@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ViewAttachment.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -76,7 +76,7 @@ public:
         //! @param[in]      placement The element's placement within the sheet
         //! @param[in]      code      Optional element code
         //! @param[in]      label     Optional element label
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Data const& data, Placement2dCR placement=Placement2d(), Code const& code=Code(), Utf8CP label=nullptr)
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Data const& data, Placement2dCR placement=Placement2d(), DgnCode const& code=DgnCode(), Utf8CP label=nullptr)
             : T_Super(db, modelId, classId, category, placement, code, label), m_data(data) { }
 
         //! Constructor from base class. Chiefly for internal use.

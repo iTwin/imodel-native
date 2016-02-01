@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/DgnProject/BackDoor/BackDoor.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicAPI/BackDoor/DgnProject/BackDoor.h"
@@ -88,19 +88,25 @@ namespace DirectionParser
                 }));
             }
 
+        
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                    Grigas.Petraitis                01/2016
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void Terminate(IRealityDataStorageBase& storage) {storage.Terminate();}
+
     }; // RealityData
 
     /*---------------------------------------------------------------------------------**//**
     * @bsinamespace
     +---------------+---------------+---------------+---------------+---------------+------*/
-    namespace ILocksManager
+    namespace IBriefcaseManager
     {
         /*---------------------------------------------------------------------------------**//**
         * @bsimethod                                                    Paul.Connelly   11/15
         +---------------+---------------+---------------+---------------+---------------+------*/
-        void SetLockingEnabled(bool enabled)
+        void SetEnabled(bool enabled)
             {
-            Dgn::ILocksManager::BackDoor_SetLockingEnabled(enabled);
+            Dgn::IBriefcaseManager::BackDoor_SetEnabled(enabled);
             }
     };
 }

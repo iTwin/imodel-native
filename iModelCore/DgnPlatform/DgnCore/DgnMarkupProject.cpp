@@ -315,19 +315,10 @@ void SpatialRedlineViewController::_OnAttachedToViewport(DgnViewportR vp)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2014
 //---------------------------------------------------------------------------------------
-void SpatialRedlineViewController::_OnFullUpdate(DgnViewportR viewport, UpdatePlan const& plan)
+void SpatialRedlineViewController::_OnUpdate(DgnViewportR viewport, UpdatePlan const& plan)
     {
-    T_Super::_OnFullUpdate(viewport, plan);
-    m_subjectView._OnFullUpdate(viewport, plan);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    08/2014
-//---------------------------------------------------------------------------------------
-void SpatialRedlineViewController::_OnDynamicUpdate(DgnViewportR viewport, UpdatePlan const& plan)
-    {
-    T_Super::_OnDynamicUpdate(viewport, plan);
-    m_subjectView._OnDynamicUpdate(viewport, plan);
+    T_Super::_OnUpdate(viewport, plan);
+    m_subjectView._OnUpdate(viewport, plan);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1141,12 +1132,12 @@ void DgnMarkupProject::CreateModelECProperties (DgnModelId modelId, Utf8CP model
     }
 +---------------+---------------+---------------+---------------+---------------+------*/
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RedlineModel::StoreImageData(ByteStream const& imageData, Target::CapturedImageInfo const& imageInfo, bool fitToX, bool compressImageProperty)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     //  Grab possibly updated image definition data
     if (imageInfo.hasAlpha)
         m_imageDef.m_format = imageInfo.isBGR? QV_BGRA_FORMAT: QV_RGBA_FORMAT; 
@@ -1210,7 +1201,6 @@ BeAssert(def1x1.GetSizeofPixelInBytes() == 3);
     bytes1x1.assign(def, def+strlen(def));
     DefineImageTextures(def1x1, bytes1x1);
 #endif
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1224,6 +1214,7 @@ void RedlineModel::StoreImageDataFromJPEG (uint8_t const* jpegData, size_t jpegD
         return;
     StoreImageData(rgbData, imageInfo, fitToX, /*compresssImageProperty*/false);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13

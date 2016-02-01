@@ -2,13 +2,14 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnScript.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/DgnElement.h>
+#include <DgnPlatform/DgnModel.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -19,7 +20,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //! @section JavaScriptLibrary The JavaScript Library
 //! JavaScript programs are loaded from the JavaScript library. The \a myNamespace portion of the myNamespace.myEgaPublicName EGA identifier string must identify a program in the library.
 //! <p>The JavaScript library is a virtual storage. An application may use the DgnJavaScriptLibrary class to store a JavaScript program inside a DgnDb. 
-//! Or, an application may override the Dgn::DgnPlatformLib::Host::ScriptAdmin::_FetchJavaScript method in order to locate and supply the text of JavaScript programs from some other source.
+//! Or, an application may override the DgnPlatformLib::Host::ScriptAdmin::_FetchJavaScript method in order to locate and supply the text of JavaScript programs from some other source.
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
 struct DgnScript
@@ -56,7 +57,7 @@ struct DgnScript
     @param[in] parms        Any additional parameters to pass to the EGA function. 
     @return non-zero if the EGA is not in JavaScript, if the egaInstance properties are invalid, or if the JavaScript function could not be found or failed to execute.
     **/
-    DGNPLATFORM_EXPORT static DgnDbStatus ExecuteEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms);
+    DGNPLATFORM_EXPORT static DgnDbStatus ExecuteEga(int& functionReturnStatus, DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms);
 
     /**
     Call a ComponentModel element generator function that is implemented in JavaScript.
@@ -67,10 +68,14 @@ struct DgnScript
 
     @return non-zero if the specified namespace is not found in the JavaScript library or if the specified function could not be found or failed to execute.
     **/
-    DGNPLATFORM_EXPORT static DgnDbStatus ExecuteComponentGenerateElements(int& functionReturnStatus, Dgn::ComponentModelR componentModel, Dgn::DgnModelR destModel, ECN::IECInstanceR instance, Dgn::ComponentDefR cdef, Utf8StringCR functionName);
+    DGNPLATFORM_EXPORT static DgnDbStatus ExecuteComponentGenerateElements(int& functionReturnStatus, ComponentModelR componentModel, DgnModelR destModel, ECN::IECInstanceR instance, ComponentDefR cdef, Utf8StringCR functionName);
 
-    DGNPLATFORM_EXPORT static DgnDbStatus ExecuteDgnDbScript(int& functionReturnStatus, Dgn::DgnDbR db, Utf8StringCR functionName, Json::Value const& parms);
+    DGNPLATFORM_EXPORT static DgnDbStatus ExecuteDgnDbScript(int& functionReturnStatus, DgnDbR db, Utf8StringCR functionName, Json::Value const& parms);
 
+    //! Make sure that the script referenced by \a tsFunctionSpec is loaded.
+    //! @param db   The DgnDb that is in use. The script does not have to be stored in the db.
+    //! @param tsFunctionSpec Specifies a script in the library, optionally followed by the name of a function, separated with '.'  
+    DGNPLATFORM_EXPORT static DgnDbStatus LoadScript(DgnDbR db, Utf8CP tsFunctionSpec);
 }; 
 
 END_BENTLEY_DGN_NAMESPACE

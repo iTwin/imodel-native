@@ -2,7 +2,7 @@
 |
 |  $Source: PublicAPI/DgnPlatform/Annotations/TextAnnotationSeed.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -85,7 +85,7 @@ private:
     Utf8String m_description;
     TextAnnotationSeedPropertyBag m_data;
 
-    DGNPLATFORM_EXPORT static Code CreateCodeFromName(Utf8CP);
+    DGNPLATFORM_EXPORT static DgnCode CreateCodeFromName(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, DGN_CLASSNAME_TextAnnotationSeed); }
 
 protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
@@ -94,14 +94,14 @@ protected:
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source) override;
     virtual DgnDbStatus _OnDelete() const override { return DgnDbStatus::DeletionProhibited; /* Must be "purged" */ }
     virtual uint32_t _GetMemSize() const override { return (uint32_t)(m_description.size() + 1 + m_data.GetMemSize()); }
-    virtual Code _GenerateDefaultCode() override { return Code(); }
-    virtual DgnDbStatus _SetCode(Code const&) override { return DgnDbStatus::BadArg; /* Restricted to an internal DgnAuthority; use GetName/SetName. */ }
+    virtual DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
+    virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override { return ResourceAuthority::IsResourceAuthority(auth); }
 
 public:
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_TextAnnotationSeed); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
 
-    explicit TextAnnotationSeed(DgnDbR db) : T_Super(CreateParams(db, QueryDgnClassId(db), Code())) {}
+    explicit TextAnnotationSeed(DgnDbR db) : T_Super(CreateParams(db, QueryDgnClassId(db), DgnCode())) {}
     explicit TextAnnotationSeed(CreateParams const& params) : T_Super(params) {}
     static TextAnnotationSeedPtr Create(DgnDbR project) { return new TextAnnotationSeed(project); }
     TextAnnotationSeedPtr CreateCopy() const { return MakeCopy<TextAnnotationSeed>(); }

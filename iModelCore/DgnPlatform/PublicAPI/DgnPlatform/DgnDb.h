@@ -12,7 +12,7 @@
 #include "QueryModel.h"
 #include "DgnDomain.h"
 #include "MemoryManager.h"
-#include "LocksManager.h"
+#include "RepositoryManager.h"
 #include <Bentley/BeFileName.h>
 
 /** @addtogroup DgnDbGroup
@@ -116,6 +116,29 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
         DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _DoUpgrade(DgnDbR, DgnVersion& from) const;
     };
 
+    //=======================================================================================
+    // Used internally as a local cache for serer-issued data like codes and locks.
+    //! @private
+    // @bsiclass                                                    Paul.Connelly   01/16
+    //=======================================================================================
+    struct LocalStateDb
+    {
+        friend struct DgnDb;
+    private:
+        enum class DbState { New, Ready, Invalid };
+
+        BeSQLite::Db    m_db;
+        DbState         m_state;
+
+        LocalStateDb() : m_state(DbState::New) { }
+        ~LocalStateDb() { Destroy(); }
+
+        bool Validate(DgnDbR dgndb);
+        void Destroy();
+    public:
+        BeSQLite::Db& GetDb() { return m_db; }
+        bool IsValid() const { return DbState::Ready == m_state; }
+    };
 private:
     void Destroy();
 
@@ -131,16 +154,17 @@ protected:
     DgnFonts        m_fonts;
     DgnStyles       m_styles;
     DgnUnits        m_units;
-    DgnGeomParts    m_geomParts;
+    DgnGeometryParts    m_geomParts;
     DgnLinks        m_links;
     DgnAuthorities  m_authorities;
     TxnManagerPtr   m_txnManager;
     MemoryManager   m_memoryManager;
-    ILocksManagerPtr    m_locksManager;
+    IBriefcaseManagerPtr    m_briefcaseManager;
     DgnSearchableText   m_searchableText;
     mutable RevisionManagerP m_revisionManager;
     BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
     QueryModel::Queue m_queryQueue;
+    LocalStateDb    m_localStateDb;
 
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _VerifySchemaVersion(BeSQLite::Db::OpenParams const& params) override;
     DGNPLATFORM_EXPORT virtual void _OnDbClose() override;
@@ -190,7 +214,7 @@ public:
     DgnElements& Elements() const{return const_cast<DgnElements&>(m_elements);}          //!< The DgnElements of this DgnDb
     DgnUnits& Units() const {return const_cast<DgnUnits&>(m_units);}                     //!< The units for this DgnDb
     DgnStyles& Styles() const {return const_cast<DgnStyles&>(m_styles);}                 //!< The styles for this DgnDb
-    DgnGeomParts& GeomParts() const {return const_cast<DgnGeomParts&>(m_geomParts);}     //!< The the geometry parts for this DgnDb
+    DgnGeometryParts& GeometryParts() const {return const_cast<DgnGeometryParts&>(m_geomParts);}     //!< The the geometry parts for this DgnDb
     DgnFonts& Fonts() const {return const_cast<DgnFonts&>(m_fonts); }                    //!< The fonts for this DgnDb
     DgnLinks& Links() const{return const_cast<DgnLinks&>(m_links);}                      //!< The DgnLinks for this DgnDb
     DgnDomains& Domains() const {return const_cast<DgnDomains&>(m_domains);}             //!< The DgnDomains associated with this DgnDb.
@@ -199,8 +223,9 @@ public:
     DGNPLATFORM_EXPORT TxnManagerR Txns();                    //!< The Txns for this DgnDb.
     DGNPLATFORM_EXPORT RevisionManagerR Revisions() const; //!< The Revisions for this DgnDb.
     MemoryManager& Memory() const { return const_cast<MemoryManager&>(m_memoryManager);} //!< Manages memory associated with this DgnDb.
-    DGNPLATFORM_EXPORT ILocksManager& Locks(); //!< Manages this DgnDb's locks.
+    DGNPLATFORM_EXPORT IBriefcaseManager& BriefcaseManager(); //!< Manages this briefcase's held locks and codes
     QueryModel::Queue& QueryQueue() const {return const_cast<QueryModel::Queue&>(m_queryQueue);}
+    LocalStateDb& GetLocalStateDb(); //!< @private
 
     //! Gets a cached and prepared ECSqlStatement.
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetPreparedECSqlStatement(Utf8CP ecsql) const;

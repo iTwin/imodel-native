@@ -2,7 +2,7 @@
 #
 #     $Source: Tests/DgnProject/prewire.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 %include mdl.mki
@@ -19,6 +19,9 @@ $(BuildContext)Delivery/UnitTests/ignore_list.txt : $(baseDir)ignore_list.txt
     $(LinkFirstDepToFirstTarget)
 
 $(BuildContext)Delivery/UnitTests/ScopedDgnHost.h : $(DgnPlatformAPISrc)UnitTests/ScopedDgnHost.h
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/UnitTests/DgnDbTestUtils.h : $(DgnPlatformAPISrc)UnitTests/DgnDbTestUtils.h
     $(LinkFirstDepToFirstTarget)
 
 #   -------------------------------------------------------------------------------------------

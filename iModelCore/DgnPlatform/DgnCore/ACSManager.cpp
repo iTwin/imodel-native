@@ -224,12 +224,6 @@ virtual StatusInt    /*AuxCoordSys::*/_SetOrigin(DPoint3dCR pOrigin) override
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual StatusInt   /*AuxCoordSys::*/_SetRotation(RotMatrixCR pRot) override
     {
-    // Also clear view independent flag when rotation being explicitly set...
-    ACSFlags    flags = m_acsData.m_flags;
-
-    flags = flags & ~ACSFlags::ViewIndependent;
-    m_acsData.m_flags = flags;
-
     m_acsData.m_rotation = pRot;
 
     return SUCCESS;
@@ -251,12 +245,6 @@ virtual StatusInt    /*AuxCoordSys::*/_SetFlags(ACSFlags flags) override
 virtual StatusInt   /*AuxCoordSys::*/_CompleteSetupFromViewController (SpatialViewControllerCP info)
     {
     m_attachedToView = true;
-
-    // Make sure view independent ACS has CURRENT view rotation...
-    if (ACSFlags::None != (ACSFlags::ViewIndependent & m_acsData.m_flags))
-        {
-        m_acsData.m_rotation = info->GetRotation();
-        }
 
     return SUCCESS;
     }
@@ -866,6 +854,7 @@ StatusInt       IAuxCoordSys::GetGridSpacing(DPoint2dR spacing, uint32_t& gridPe
 bool            IAuxCoordSys::Locate(DPoint3dR hitPt, DgnViewportR vp, DPoint3dCR borePt, double radius)
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    // Going to have to create CurveVectors and locate similiar to edit manipulator locate code...
     OutputP  output = vp.GetIViewOutput();
 
     if (NULL == output)
@@ -899,19 +888,19 @@ bool            IAuxCoordSys::Locate(DPoint3dR hitPt, DgnViewportR vp, DPoint3dC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   02/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-ColorDef IAuxCoordSys::_GetColor(DgnViewportP viewport, ColorDef menuColor, uint32_t transparency, ACSDisplayOptions options) const
+ColorDef IAuxCoordSys::_GetColor(DgnViewportCR viewport, ColorDef inColor, uint32_t transparency, ACSDisplayOptions options) const
     {
-    ColorDef      color;
+    ColorDef    color;
 
     if (ACSDisplayOptions::None != (options & ACSDisplayOptions::Hilite))
-        color = viewport->GetHiliteColor();
+        color = viewport.GetHiliteColor();
     else if (ACSDisplayOptions::None != (options & ACSDisplayOptions::Active))
-        color = ColorDef::White() == menuColor ? viewport->GetContrastToBackgroundColor() : menuColor;
+        color = ColorDef::White() == inColor ? viewport.GetContrastToBackgroundColor() : inColor;
     else
         color = ColorDef(150, 150, 150, 0);
 
-    color = viewport->AdjustColorForContrast(color, viewport->GetBackgroundColor());
-    color = viewport->MakeColorTransparency(color, transparency);
+    color = viewport.AdjustColorForContrast(color, viewport.GetBackgroundColor());
+    color = viewport.MakeColorTransparency(color, transparency);
 
     return color;
     }
@@ -919,109 +908,88 @@ ColorDef IAuxCoordSys::_GetColor(DgnViewportP viewport, ColorDef menuColor, uint
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IAuxCoordSys::_DrawAxisText(DgnViewportP viewport, GraphicR cached, WCharCP labelStr, bool isAxisLabel, double userOrgX, double userOrgY, double scale, double angle, ACSDisplayOptions options) const
+void IAuxCoordSys::_AddAxisText(GraphicR graphic, WCharCP labelStr, bool isAxisLabel, double userOrgX, double userOrgY, double scale, double angle, ACSDisplayOptions options) const
     {
-    DPoint3d textPt;
-    textPt.x = userOrgX; textPt.y = userOrgY; textPt.z = 0.0;
+    DPoint3d    textPt;
+    RotMatrix   textMatrix;
+    TextString  textStr;
 
-    RotMatrix textMatrix;
+    textPt.x = userOrgX; textPt.y = userOrgY; textPt.z = 0.0;
     textMatrix.InitFromAxisAndRotationAngle(2, angle);
 
-    TextString textStr;
     textStr.SetText(Utf8String(labelStr).c_str());
     textStr.SetOrientation(textMatrix);
     textStr.GetStyleR().SetFont(DgnFontManager::GetDecoratorFont());
     textStr.GetStyleR().SetSize(scale);
     textStr.SetOriginFromJustificationOrigin(textPt, TextString::HorizontalJustification::Center, TextString::VerticalJustification::Middle);
 
-    GraphicParams elemMatSymb;
-
     // Draw background fill for hilited ACS for select ACS tool, in case multiple ACS share common origin...
     if (!isAxisLabel && ACSDisplayOptions::None != (options & ACSDisplayOptions::Hilite))
         {
         DPoint3d pts[5];
+
         textStr.ComputeBoundingShape(pts, (scale / 10.0));
         textStr.ComputeTransform().Multiply(pts, _countof(pts));
 
-        elemMatSymb.SetFillColor(viewport->GetBackgroundColor());
-        elemMatSymb.SetIsBlankingRegion(true);
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-        cached->ActivateGraphicParams(&elemMatSymb);
-        cached->AddShape(5, pts, true, NULL);
-#endif
+        graphic.SetBlankingFill(graphic.GetViewport()->GetBackgroundColor());
+        graphic.AddShape(5, pts, true, NULL);
         }
 
-    elemMatSymb.SetLineColor(_GetColor(viewport, ColorDef::White(), _GetTransparency(false, options), options));
-    elemMatSymb.SetFillColor(_GetColor(viewport, ColorDef::White(), _GetTransparency(false, options), options));
-    elemMatSymb.SetWidth(isAxisLabel ? 2 : 1);
-    elemMatSymb.SetIsBlankingRegion(false);
+    ColorDef    lineColor = _GetColor(*graphic.GetViewport(), ColorDef::White(), _GetTransparency(false, options), options);
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    cached->ActivateGraphicParams(&elemMatSymb);
-    cached->AddTextString(textStr);
-#endif
+    graphic.SetSymbology(lineColor, lineColor, isAxisLabel ? 2 : 1);
+    graphic.AddTextString(textStr);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IAuxCoordSys::_DrawZAxis (DgnViewportP viewport, GraphicR cached, Transform* transformP, ACSDisplayOptions options) const
+void IAuxCoordSys::_AddZAxis (GraphicR graphic, ColorDef color, ACSDisplayOptions options) const
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DPoint3d    linePts[2];
 
     memset(linePts, 0, sizeof (linePts));
     linePts[1].z = 0.65;
 
-    GraphicParams elemMatSymb;
+    ColorDef    lineColor = _GetColor(*graphic.GetViewport(), color, _GetTransparency(false, options), options);
+    ColorDef    fillColor = _GetColor(*graphic.GetViewport(), color, _GetTransparency(true, options), options);
 
-    elemMatSymb.SetLineColor(_GetColor(viewport, ColorDef::Blue(), _GetTransparency(false, options), options));
-    elemMatSymb.SetFillColor(_GetColor(viewport, ColorDef::Blue(), _GetTransparency(true, options), options));
-    elemMatSymb.SetWidth(2);
+    graphic.SetSymbology(lineColor, lineColor, 6);
+    graphic.AddPointString(2, linePts, nullptr);
 
-    cached->ActivateGraphicParams(&elemMatSymb);
-    cached->AddLineString(2, linePts, NULL);
-
-    elemMatSymb.SetWidth(6);
-    cached->ActivateGraphicParams(&elemMatSymb);
-    cached->AddPointString(2, linePts, NULL);
+    graphic.SetSymbology(lineColor, lineColor, 1);
+    graphic.AddLineString(2, linePts, nullptr);
 
     double      start = 0.0, sweep = msGeomConst_2pi, scale = ARROW_TIP_WIDTH/2.0;
     DVec3d      xVec, yVec;
     DPoint3d    center;
-    RotMatrix   viewRMatrix = viewport->GetRotMatrix();
+    RotMatrix   viewRMatrix = graphic.GetViewport()->GetRotMatrix();
 
     memset(&center, 0, sizeof (center));
 
     viewRMatrix.GetRow(xVec, 0);
     viewRMatrix.GetRow(yVec, 1);
 
-    transformP->MultiplyTransposeMatrixOnly(xVec);
-    transformP->MultiplyTransposeMatrixOnly(yVec);
+    graphic.GetLocalToWorldTransform().MultiplyTransposeMatrixOnly(xVec);
+    graphic.GetLocalToWorldTransform().MultiplyTransposeMatrixOnly(yVec);
 
     xVec.Normalize();
     yVec.Normalize();
 
-    elemMatSymb.SetWidth(1);
-    cached->ActivateGraphicParams(&elemMatSymb);
-
     DEllipse3d  ellipse;
 
     ellipse.InitFromDGNFields3d(center, xVec, yVec, scale, scale, start, sweep);
+    graphic.AddArc(ellipse, false, false, nullptr);
 
-    cached->AddArc(ellipse, true, true, NULL);
-    cached->AddArc(ellipse, false, false, NULL);
-#endif
+    graphic.SetBlankingFill(fillColor);
+    graphic.AddArc(ellipse, true, true, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   07/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IAuxCoordSys::_DrawAxisArrow (DgnViewportP viewport, GraphicR cached, Transform* transformP, ColorDef menuColor, WCharCP labelStrP, bool swapAxis, ACSDisplayOptions options, ACSFlags flags) const
+void IAuxCoordSys::_AddXYAxis (GraphicR graphic, ColorDef color, WCharCP labelStrP, bool swapAxis, ACSDisplayOptions options, ACSFlags flags) const
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    double      scale = 0.35, angle = swapAxis ? 0.0 : -msGeomConst_pi/2.0;
     DPoint2d    userOrg;
     DPoint3d    shapePts[8];
 
@@ -1046,131 +1014,110 @@ void IAuxCoordSys::_DrawAxisArrow (DgnViewportP viewport, GraphicR cached, Trans
         std::swap(userOrg.x, userOrg.y);
         }
 
-    GraphicParams elemMatSymb;
+    ColorDef    lineColor = _GetColor(*graphic.GetViewport(), color, _GetTransparency(false, options), options);
+    ColorDef    fillColor = _GetColor(*graphic.GetViewport(), color, _GetTransparency(true, options), options);
 
-    elemMatSymb.SetLineColor(_GetColor(viewport, menuColor, _GetTransparency(false, options), options));
-    elemMatSymb.SetFillColor(_GetColor(viewport, menuColor, _GetTransparency(true, options), options));
-    elemMatSymb.SetWidth(1);
+    graphic.SetSymbology(lineColor, lineColor, 1);
+    graphic.AddLineString(8, shapePts, nullptr);
 
-    if (ACSFlags::None != (flags & ACSFlags::ViewIndependent))
-        elemMatSymb.SetIndexedRasterPattern(2, viewport->GetIndexedLinePattern(2));
+    if (nullptr != labelStrP)
+        _AddAxisText(graphic, labelStrP, true, userOrg.x, userOrg.y, 0.35, swapAxis ? 0.0 : -msGeomConst_pi/2.0, options);
 
-    if (NULL != labelStrP)
-        {
-        // Add text and arrow outline...
-        cached->ActivateGraphicParams(&elemMatSymb);
-        cached->AddLineString(8, shapePts, NULL);
-
-        _DrawAxisText(viewport, cached, labelStrP, true, userOrg.x, userOrg.y, scale, angle, options);
-
-        return;
-        }
-
-    // Draw arrow fill as blanking region...
-    elemMatSymb.SetIsBlankingRegion(true);
-    cached->ActivateGraphicParams(&elemMatSymb);
-    cached->AddShape(8, shapePts, true, NULL);
-#endif
+    graphic.SetBlankingFill(fillColor);
+    graphic.AddShape(8, shapePts, true, nullptr);
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-GraphicsPtr     IAuxCoordSys::_CreateQvElems
+GraphicPtr     IAuxCoordSys::_CreateGraphic
 (
-DgnViewportP        viewport,
-DPoint3dCP          drawOrigin,
+DecorateContextR    context,
+DPoint3dCR          drawOrigin,
 double              acsSizePixels,
 ACSDisplayOptions   options,
 bool                drawName
 ) const
     {
-    double      scale;
+    double      scale = context.GetPixelSizeAtPoint(&drawOrigin) * acsSizePixels;
+    double      exagg = context.GetViewport()->GetViewController().GetAspectRatioSkew();
     RotMatrix   rMatrix;
     Transform   transform;
 
     _GetRotation(rMatrix);
 
-    scale = viewport->GetPixelSizeAtPoint(drawOrigin, DgnCoordSystem::World) * acsSizePixels;
-
-    double exagg = 1.0;//viewport->GetViewController().GetAspectRatioSkew();
     rMatrix.InverseOf(rMatrix);
     rMatrix.ScaleRows(rMatrix,  scale,  scale / exagg,  scale);
-    transform.InitFrom(rMatrix, *drawOrigin);
+    transform.InitFrom(rMatrix, drawOrigin);
 
-    ISceneDrawP    cached = viewport->GetICachedDraw();
-
-    cached->BeginCacheElement(T_HOST.GetGraphicsAdmin()._GetTempElementCache());
-
-    cached->PushTransform(transform);
+    Render::GraphicPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), transform));
 
     ACSFlags    flags = _GetFlags();
-    WChar     axisLabel[128];
+    WChar       axisLabel[128];
 
-    _DrawZAxis(viewport, cached, &transform, options);
-    _DrawAxisArrow(viewport, cached, &transform, ColorDef::Red(), NULL, false, options, flags);
-    _DrawAxisArrow(viewport, cached, &transform, ColorDef::Green(), NULL, true, options, flags);
-    _DrawAxisArrow(viewport, cached, &transform, ColorDef::Red(), _GetAxisLabel(0, axisLabel, 128), false, options, flags);
-    _DrawAxisArrow(viewport, cached, &transform, ColorDef::Green(), _GetAxisLabel(1, axisLabel, 128), true, options, flags);
-
-    cached->PopTransform();
+    _AddZAxis(*graphic, ColorDef::Blue(), options);
+    _AddXYAxis(*graphic, ColorDef::Red(), _GetAxisLabel(0, axisLabel, 128), false, options, flags);
+    _AddXYAxis(*graphic, ColorDef::Green(), _GetAxisLabel(1, axisLabel, 128), true, options, flags);
 
     if (drawName)
         {
-        rMatrix = viewport->GetRotMatrix();
+        rMatrix = context.GetViewport()->GetRotMatrix();
         rMatrix.InverseOf(rMatrix);
-        rMatrix.ScaleRows(rMatrix,  scale,  scale,  scale);
-        transform.InitFrom(rMatrix, *drawOrigin);
+        rMatrix.ScaleRows(rMatrix, scale, scale, scale);
 
-        cached->PushTransform(transform);
+        Transform   invTransform;
+        Transform   subToGraphic = Transform::From(rMatrix, drawOrigin);
 
-        _DrawAxisText(viewport, cached, _GetName().data(), false, 0.0, -0.5, 0.25, 0.0, options);
+        invTransform.InverseOf(transform);
+        subToGraphic = Transform::FromProduct(subToGraphic, invTransform);
 
-        cached->PopTransform();
+        Render::GraphicPtr labelGraphic = graphic->CreateSubGraphic(subToGraphic);
+        GraphicParams graphicParams;
+
+        _AddAxisText(*labelGraphic, _GetName().data(), false, 0.0, -0.5, 0.25, 0.0, options);
+        graphic->AddSubGraphic(*labelGraphic, subToGraphic, graphicParams);
         }
 
-    return cached->EndCacheElement();
+    return graphic;
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            IAuxCoordSys::_IsOriginInView(DPoint3dR drawOrigin, DgnViewportP viewport, bool adjustOrigin) const
+bool            IAuxCoordSys::_IsOriginInView(DPoint3dR drawOrigin, DgnViewportCR viewport, bool adjustOrigin) const
     {
     DPoint3d    testPtView, screenRange;
-    viewport->WorldToView(&testPtView, &drawOrigin, 1);
+    Frustum     frustum = viewport.GetFrustum(DgnCoordSystem::Screen, false);
 
-    Frustum frustum = viewport->GetFrustum(DgnCoordSystem::Screen, false);
+    viewport.WorldToView(&testPtView, &drawOrigin, 1);
 
     screenRange.x = frustum.GetCorner(NPC_000).Distance(frustum.GetCorner(NPC_100));
     screenRange.y = frustum.GetCorner(NPC_000).Distance(frustum.GetCorner(NPC_010));
     screenRange.z = frustum.GetCorner(NPC_000).Distance(frustum.GetCorner(NPC_001));
 
     // Check if current acs origin is outside view...
-    bool        inView = (!((testPtView.x < 0 || testPtView.x > screenRange.x) || (testPtView.y < 0 || testPtView.y > screenRange.y)));
+    bool inView = (!((testPtView.x < 0 || testPtView.x > screenRange.x) || (testPtView.y < 0 || testPtView.y > screenRange.y)));
 
     if (!adjustOrigin)
         return inView;
 
     if (!inView)
         {
-        double      offset = (ACS_SIZE_OFFSCREEN+15);
+        double offset = (ACS_SIZE_OFFSCREEN+15);
 
         LIMIT_RANGE (offset, screenRange.x-offset, testPtView.x);
         LIMIT_RANGE (offset, screenRange.y-offset, testPtView.y);
         }
 
     // Limit point to NPC box to prevent triad from being clipped from display...
-    DPoint3d    originPtNpc;
+    DPoint3d originPtNpc;
 
-    viewport->ViewToNpc(&originPtNpc, &testPtView, 1);
+    viewport.ViewToNpc(&originPtNpc, &testPtView, 1);
     LIMIT_RANGE (0.0, 1.0, originPtNpc.x);
     LIMIT_RANGE (0.0, 1.0, originPtNpc.y);
     LIMIT_RANGE (0.0, 1.0, originPtNpc.z);
-    viewport->NpcToView(&testPtView, &originPtNpc, 1);
-    viewport->ViewToWorld(&drawOrigin, &testPtView, 1);
+    viewport.NpcToView(&testPtView, &originPtNpc, 1);
+    viewport.ViewToWorld(&drawOrigin, &testPtView, 1);
 
     return inView;
     }
@@ -1178,15 +1125,14 @@ bool            IAuxCoordSys::_IsOriginInView(DPoint3dR drawOrigin, DgnViewportP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            IAuxCoordSys::_DisplayInView(DgnViewportP viewport, ACSDisplayOptions options, bool drawName) const
+void            IAuxCoordSys::_DisplayInView(DecorateContextR context, ACSDisplayOptions options, bool drawName) const
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DPoint3d    drawOrigin;
     bool        checkOutOfView = (ACSDisplayOptions::None != (options & ACSDisplayOptions::CheckVisible));
 
     _GetOrigin(drawOrigin);
 
-    if (checkOutOfView && !_IsOriginInView(drawOrigin, viewport, true))
+    if (checkOutOfView && !_IsOriginInView(drawOrigin, *context.GetViewport(), true))
         options = options | ACSDisplayOptions::Deemphasized;
 
     double      screenSize;
@@ -1198,16 +1144,12 @@ void            IAuxCoordSys::_DisplayInView(DgnViewportP viewport, ACSDisplayOp
     else
         screenSize = ACS_SIZE_INACTIVE;
 
-    QvElem*     qvElem;
+    Render::GraphicPtr graphic = _CreateGraphic(context, drawOrigin, screenSize, options, drawName);
 
-    if (NULL == (qvElem = _CreateQvElems(viewport, &drawOrigin, screenSize, options, drawName)))
+    if (!graphic.IsValid())
         return;
 
-    IViewOutputP    output = viewport->GetIViewOutput();
-
-    output->DrawQvElem(qvElem, 0);
-    T_HOST.GetGraphicsAdmin()._DeleteQvElem(qvElem);
-#endif
+    context.AddWorldOverlay(*graphic);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1314,17 +1256,17 @@ StatusInt       IACSManager::Delete(WCharCP name, DgnModelP modelRef)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            IACSManager::DisplayCurrent(DgnViewportP viewport, bool isCursorView)
+void            IACSManager::DisplayCurrent(DecorateContextR context, bool isCursorView)
     {
-    if (GetInhibitCurrentACSDisplay() || !viewport || !viewport->GetViewFlags().acs)
+    if (GetInhibitCurrentACSDisplay() || !context.GetViewport()->GetViewFlags().acs)
         return;
 
-    IAuxCoordSysP   acs = GetActive(*viewport);
+    IAuxCoordSysP acs = GetActive(*context.GetViewport());
 
     if (!acs)
         return;
 
-    acs->DisplayInView(viewport, (ACSDisplayOptions::CheckVisible | (isCursorView ? ACSDisplayOptions::Active : ACSDisplayOptions::Inactive)), false);
+    acs->DisplayInView(context, (ACSDisplayOptions::CheckVisible | (isCursorView ? ACSDisplayOptions::Active : ACSDisplayOptions::Inactive)), false);
     }
 
 /*---------------------------------------------------------------------------------**//**

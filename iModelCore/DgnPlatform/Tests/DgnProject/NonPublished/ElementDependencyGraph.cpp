@@ -2,12 +2,13 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/ElementDependencyGraph.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <Bentley/BeTest.h>
 #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
+#include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
 #include "../TestFixture/GenericDgnModelTestFixture.h"
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnElementHelpers.h"
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnDbUtilities.h"
@@ -17,7 +18,12 @@
 #include <ECDb/ECSqlBuilder.h>
 #include <DgnPlatform/DgnElementDependency.h>
 
-#define LOCALIZED_STR(str) str
+#define GROUP_SUBDIR L"ElementDependencyGraph"
+#define GROUP_SEED_FILENAME GROUP_SUBDIR L"/Test.dgndb"
+#define DEFAULT_MODEL_NAME "Default"
+#define DEFAULT_CATEGORY_NAME "DefaultCat"
+#define DEFAULT_VIEW_NAME "DefaultView"
+
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_DGNDB_UNIT_TESTS_NAMESPACE
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -54,35 +60,33 @@ struct TestElementDrivesElementHandlerShouldFail
 /*=================================================================================**//**
 * @bsiclass                                                     Sam.Wilson      01/15
 +===============+===============+===============+===============+===============+======*/
-struct TransactionManagerTests : public ::testing::Test
+struct ElementDependencyGraph : ::testing::Test
 {
-public:
-    ScopedDgnHost m_host;
-    DgnDbPtr      m_db;
-    DgnModelId    m_defaultModelId;
-    DgnCategoryId m_defaultCategoryId;
+    enum class ElementDrivesElementColumn {TargetECInstanceId,TargetECClassId,SourceECInstanceId,SourceECClassId,Status};
 
-    TransactionManagerTests();
-    ~TransactionManagerTests();
-    void CloseDb() {m_db->CloseDb();}
-    DgnModelR GetDefaultModel() {return *m_db->Models().GetModel(m_defaultModelId);}
-    void SetupProject(WCharCP projFile, WCharCP testFile, Db::OpenMode mode, bool needBriefcase = true);
-    DgnElementCPtr InsertElement(Utf8CP elementCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId());
-    void TwiddleTime(DgnElementCPtr);
-};
-
-/*=================================================================================**//**
-* @bsiclass                                                     Sam.Wilson      01/15
-+===============+===============+===============+===============+===============+======*/
-struct ElementDependencyGraph : TransactionManagerTests
-{
-    enum class ElementDrivesElementColumn {DependentElementId,DependentElementClassId,RootElementId,RootElementClassId,Status};
+    BETEST_DECLARE_TC_SETUP
+    BETEST_DECLARE_TC_TEARDOWN
 
     struct ElementsAndRelationships
         {
         DgnElementCPtr e99, e3, e31, e2, e1;
         ECInstanceKey r99_3, r99_31, r3_2, r31_2, r2_1;
         };
+
+    ScopedDgnHost m_host;
+    DgnDbPtr      m_db;
+    DgnModelId    m_defaultModelId;
+    DgnCategoryId m_defaultCategoryId;
+    static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
+
+    ElementDependencyGraph();
+    ~ElementDependencyGraph();
+    void CloseDb() {m_db->CloseDb();}
+    DgnModelR GetDefaultModel() {return *m_db->Models().GetModel(m_defaultModelId);}
+    DgnElementCPtr InsertElement(Utf8CP elementCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId());
+    void TwiddleTime(DgnElementCPtr);
+
+    void SetupProject(WCharCP testFile, Db::OpenMode mode, bool needBriefcase = true);
 
     WString GetTestFileName(WCharCP testname);
     ECN::ECClassCR GetElementDrivesElementClass();
@@ -96,7 +100,33 @@ struct ElementDependencyGraph : TransactionManagerTests
     void TestRelationships(DgnDb& db, ElementsAndRelationships const&);
 };
 
+DgnDbTestUtils::SeedDbInfo ElementDependencyGraph::s_seedFileInfo;
+
 END_UNNAMED_NAMESPACE
+
+//---------------------------------------------------------------------------------------
+// Do one-time setup for all tests in this group
+// In this case, I just request the (root) seed file that my tests will use and make a note of it.
+// @bsimethod                                           Sam.Wilson             01/2016
+//---------------------------------------------------------------------------------------
+BETEST_TC_SETUP(ElementDependencyGraph) 
+    {
+    ScopedDgnHost tempHost;
+    ElementDependencyGraph::s_seedFileInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(true, true));
+    }
+
+//---------------------------------------------------------------------------------------
+// Clean up what I did in my one-time setup
+// @bsimethod                                           Sam.Wilson             01/2016
+//---------------------------------------------------------------------------------------
+BETEST_TC_TEARDOWN(ElementDependencyGraph)
+    {
+    // Note: leave your subdirectory in place. Don't remove it. That allows the 
+    // base class to detect and throw an error if two groups try to use a directory of the same name.
+    // Don't worry about stale data. The test runner will clean out everything at the start of the program.
+    // You can empty the directory, if you want to save space.
+    DgnDbTestUtils::EmptySubDirectory(GROUP_SUBDIR);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/15
@@ -156,7 +186,7 @@ static bvector<ECInstanceId>::const_iterator findRelId(bvector<ECInstanceId> con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TransactionManagerTests::TransactionManagerTests()
+ElementDependencyGraph::ElementDependencyGraph()
     {
     // Must register my domain whenever I initialize a host
     DgnPlatformTestDomain::Register();
@@ -165,7 +195,7 @@ TransactionManagerTests::TransactionManagerTests()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TransactionManagerTests::~TransactionManagerTests()
+ElementDependencyGraph::~ElementDependencyGraph()
     {
     if (m_db.IsValid())
         m_db->SaveChanges();
@@ -175,36 +205,33 @@ TransactionManagerTests::~TransactionManagerTests()
 * set up method that opens an existing .dgndb project file after copying it to out
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, Db::OpenMode mode, bool needBriefcase)
+void ElementDependencyGraph::SetupProject(WCharCP testFile, Db::OpenMode mode, bool needBriefcase)
     {
-    BeFileName outFileName;
-    ASSERT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(outFileName, projFile, testFile, __FILE__));
-    DbResult result;
-    m_db = DgnDb::OpenDgnDb(&result, outFileName, DgnDb::OpenParams(mode));
+    // Note: We know that our group's TC_SETUP function has already created the group seed file. We can just ask for it.
+    if (Db::OpenMode::ReadWrite == mode)
+        m_db = DgnDbTestUtils::OpenSeedDbCopy(s_seedFileInfo.fileName, testFile);
+    else
+        m_db = DgnDbTestUtils::OpenSeedDb(s_seedFileInfo.fileName);
     ASSERT_TRUE(m_db.IsValid());
-    ASSERT_TRUE( result == BE_SQLITE_OK);
 
     if (needBriefcase)
         {
-        TestDataManager::MustBeBriefcase(m_db, mode);
         ASSERT_TRUE(m_db->IsBriefcase());
         ASSERT_TRUE(m_db->Txns().IsTracking());
         }
 
-    ASSERT_EQ( DgnDbStatus::Success , DgnPlatformTestDomain::ImportSchema(*m_db) );
-
-    m_defaultModelId = m_db->Models().QueryFirstModelId();
+    m_defaultModelId = m_db->Models().QueryModelId(s_seedFileInfo.modelCode);
     DgnModelPtr defaultModel = m_db->Models().GetModel(m_defaultModelId);
     ASSERT_TRUE(defaultModel.IsValid());
     GetDefaultModel().FillModel();
 
-    m_defaultCategoryId = DgnCategory::QueryFirstCategoryId(*m_db);
+    m_defaultCategoryId = DgnCategory::QueryCategoryId(s_seedFileInfo.categoryName, *m_db);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr TransactionManagerTests::InsertElement(Utf8CP elementCode, DgnModelId mid, DgnCategoryId categoryId )
+DgnElementCPtr ElementDependencyGraph::InsertElement(Utf8CP elementCode, DgnModelId mid, DgnCategoryId categoryId )
     {
     if (!mid.IsValid())
         mid = m_defaultModelId;
@@ -219,7 +246,7 @@ DgnElementCPtr TransactionManagerTests::InsertElement(Utf8CP elementCode, DgnMod
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TransactionManagerTests::TwiddleTime(DgnElementCPtr el)
+void ElementDependencyGraph::TwiddleTime(DgnElementCPtr el)
     {
     BeThreadUtilities::BeSleep(1); // make sure the new timestamp is after the one that's on the Element now
     DgnElementPtr mod = el->CopyForEdit();
@@ -231,7 +258,7 @@ void TransactionManagerTests::TwiddleTime(DgnElementCPtr el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString ElementDependencyGraph::GetTestFileName(WCharCP testname)
     {
-    return WPrintfString(L"ElementDependencyGraph_%ls.idgndb",testname);
+    return WPrintfString(L"%ls.idgndb",testname);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -248,12 +275,7 @@ ECN::ECClassCR ElementDependencyGraph::GetElementDrivesElementClass()
 CachedECSqlStatementPtr ElementDependencyGraph::GetSelectElementDrivesElementById()
     {
     ECSqlSelectBuilder b;
-    #ifdef WIP_ECSQL_BUG
-        // ERROR ECDb - Invalid ECSQL 'SELECT DependentElementId,DependentElementClassId,RootElementId,RootElementClassId,HandlerId,Status FROM ONLY [dgn].[ElementDrivesElement] WHERE ECInstanceId=?': ECProperty 'DependentElementId' not found in any of the ECClasses used in the ECSQL statement.
-        b.Select("DependentElementId,DependentElementClassId,RootElementId,RootElementClassId,Status").From(GetElementDrivesElementClass(),false).Where("ECInstanceId=?");
-    #else
-        b.Select("TargetECInstanceId,TargetECClassId,SourceECInstanceId,SourceECClassId,Status").From(GetElementDrivesElementClass(),false).Where("ECInstanceId=?");
-    #endif
+    b.Select("TargetECInstanceId,TargetECClassId,SourceECInstanceId,SourceECClassId,Status").From(GetElementDrivesElementClass(),false).Where("ECInstanceId=?");
 
     return m_db->GetPreparedECSqlStatement(b.ToString().c_str());
     }
@@ -263,7 +285,7 @@ CachedECSqlStatementPtr ElementDependencyGraph::GetSelectElementDrivesElementByI
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementDependencyGraph::SetUpForRelationshipTests(WCharCP testname)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", GetTestFileName(testname).c_str(), Db::OpenMode::ReadWrite);
+    SetupProject(GetTestFileName(testname).c_str(), Db::OpenMode::ReadWrite);
     ASSERT_TRUE(m_db->IsBriefcase());
     ASSERT_TRUE(m_db->Txns().IsTracking());
     }

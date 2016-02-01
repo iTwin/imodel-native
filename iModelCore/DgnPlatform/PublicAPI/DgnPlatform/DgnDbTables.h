@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnDbTables.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,10 +21,13 @@
 #define DGN_CLASSNAME_AnnotationTextStyle   "AnnotationTextStyle"
 #define DGN_CLASSNAME_Authority             "Authority"
 #define DGN_CLASSNAME_TrueColor             "TrueColor"
+#define DGN_CLASSNAME_CategoryAuthority     "CategoryAuthority"
+#define DGN_CLASSNAME_ComponentAuthority    "ComponentAuthority"
 #define DGN_CLASSNAME_ComponentModel        "ComponentModel"
 #ifdef WIP_COMPONENT_MODEL // *** Pending redesign
 #define DGN_CLASSNAME_ComponentSolution     "ComponentSolution"
 #endif
+#define DGN_CLASSNAME_DefinitionElement     "DefinitionElement"
 #define DGN_CLASSNAME_DefinitionModel       "DefinitionModel"
 #define DGN_CLASSNAME_DictionaryElement     "DictionaryElement"
 #define DGN_CLASSNAME_DictionaryModel       "DictionaryModel"
@@ -33,21 +36,24 @@
 #define DGN_CLASSNAME_DrawingModel          "DrawingModel"
 #define DGN_CLASSNAME_Element               "Element"
 #define DGN_CLASSNAME_ElementAspect         "ElementAspect"
-#define DGN_CLASSNAME_ElementDescription    "ElementDescription"
 #define DGN_CLASSNAME_ElementExternalKey    "ElementExternalKey"
 #define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
 #define DGN_CLASSNAME_GeometricModel        "GeometricModel"
 #define DGN_CLASSNAME_GeometrySource        "GeometrySource"
-#define DGN_CLASSNAME_GeomPart              "GeomPart"
+#define DGN_CLASSNAME_GeometryPart          "GeometryPart"
+#define DGN_CLASSNAME_GeometryPartAuthority "GeometryPartAuthority"
 #define DGN_CLASSNAME_LineStyle             "LineStyle"
 #define DGN_CLASSNAME_Link                  "Link"
 #define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"
+#define DGN_CLASSNAME_MaterialAuthority     "MaterialAuthority"
 #define DGN_CLASSNAME_Model                 "Model"
+#define DGN_CLASSNAME_ModelAuthority        "ModelAuthority"
 #define DGN_CLASSNAME_Model2d               "Model2d"
 #define DGN_CLASSNAME_Model3d               "Model3d"
 #define DGN_CLASSNAME_VolumeElement         "VolumeElement"
 #define DGN_CLASSNAME_NamespaceAuthority    "NamespaceAuthority"
 #define DGN_CLASSNAME_PhysicalElement       "PhysicalElement"
+#define DGN_CLASSNAME_ResourceAuthority     "ResourceAuthority"
 #define DGN_CLASSNAME_SpatialModel          "SpatialModel"
 #define DGN_CLASSNAME_SectionDrawingModel   "SectionDrawingModel"
 #define DGN_CLASSNAME_SheetElement          "SheetElement"
@@ -55,10 +61,9 @@
 #define DGN_CLASSNAME_SpatialElement        "SpatialElement"
 #define DGN_CLASSNAME_SpatialGroupElement   "SpatialGroupElement"
 #define DGN_CLASSNAME_SpatialRedlineModel   "SpatialRedlineModel"
-#define DGN_CLASSNAME_SystemElement         "SystemElement"
-#define DGN_CLASSNAME_SystemModel           "SystemModel"
 #define DGN_CLASSNAME_TextAnnotationSeed    "TextAnnotationSeed"
 #define DGN_CLASSNAME_Texture               "Texture"
+#define DGN_CLASSNAME_TrueColorAuthority    "TrueColorAuthority"
 
 //-----------------------------------------------------------------------------------------
 // DgnDb table names
@@ -73,7 +78,7 @@
 // ECRelationshipClass names (combine with DGN_SCHEMA macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
 #define DGN_RELNAME_ElementDrivesElement        "ElementDrivesElement"
-#define DGN_RELNAME_ElementUsesGeomParts        "ElementUsesGeomParts"
+#define DGN_RELNAME_ElementUsesGeometryParts    "ElementUsesGeometryParts"
 #define DGN_RELNAME_ElementGroupsMembers        "ElementGroupsMembers"
 #define DGN_RELNAME_ElementOwnsChildElements    "ElementOwnsChildElements"
 #define DGN_RELNAME_SolutionOfComponent         "SolutionOfComponent"
@@ -87,6 +92,7 @@
 #include "DgnFont.h"
 #include "DgnCoreEvent.h"
 #include "ECSqlClassParams.h"
+#include "ECSqlStatementIterator.h"
 #include <Bentley/HeapZone.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
@@ -97,12 +103,12 @@ namespace dgn_TxnTable {struct Element; struct Model;};
 struct DgnImportContext;
 
 //=======================================================================================
-//! A Code is an identifier associated with some object in a DgnDb and issued by a
-//! DgnAuthority according to some scheme. The meaning of a Code is determined by the
+//! A DgnCode is an identifier associated with some object in a DgnDb and issued by a
+//! DgnAuthority according to some scheme. The meaning of a DgnCode is determined by the
 //! issuing authority. The issuing authority determines
 //! how (or if) an object's code is transformed when the object is cloned.
 //!
-//! The Code is stored as a three-part identifier: DgnAuthorityId, namespace, and value.
+//! The DgnCode is stored as a three-part identifier: DgnAuthorityId, namespace, and value.
 //! The combination of the three must be unique within all objects of a given type
 //! (e.g., Elements, Models) within a DgnDb. 
 //!
@@ -112,50 +118,80 @@ struct DgnImportContext;
 //! assigns no special meaning to the object's code.
 //! The value may not be an empty string.
 //!
-//! To obtain a Code, talk to the relevant DgnAuthority.
+//! To obtain a DgnCode, talk to the relevant DgnAuthority.
 // @bsiclass                                                     Paul.Connelly  09/15
 //=======================================================================================
-struct AuthorityIssuedCode
+struct DgnCode
 {
 private:
     DgnAuthorityId  m_authority;
     Utf8String      m_value;
     Utf8String      m_nameSpace;
 
-    friend struct DgnAuthority;
-    friend struct SystemAuthority;
-
-    AuthorityIssuedCode(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) : m_authority(authorityId), m_value(value), m_nameSpace(nameSpace) { }
 public:
-    //! Constructs an empty, invalid code
-    AuthorityIssuedCode() { }
+    //! Constructs an invalid code
+    DgnCode() { }
 
-    //! Determine whether this Code is valid. A valid code has a valid authority ID and either:
+    //! Constructor
+    DgnCode(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) : m_authority(authorityId), m_value(value), m_nameSpace(nameSpace) { }
+
+    //! Construct a code with the specified ID as its namespace
+    DGNPLATFORM_EXPORT DgnCode(DgnAuthorityId authorityId, Utf8StringCR value, BeSQLite::BeInt64Id namespaceId);
+
+    //! Determine whether this DgnCode is valid. A valid code has a valid authority ID and either:
     //!     - An empty namespace and value; or
     //!     - A non-empty value
     bool IsValid() const {return m_authority.IsValid() && (IsEmpty() || !m_value.empty());}
     //! Determine if this code is valid but not otherwise meaningful (and therefore not necessarily unique)
     bool IsEmpty() const {return m_authority.IsValid() && m_nameSpace.empty() && m_value.empty();}
-    //! Determine if two Codes are equivalent
-    bool operator==(AuthorityIssuedCode const& other) const {return m_authority==other.m_authority && m_value==other.m_value && m_nameSpace==other.m_nameSpace;}
-    //! Determine if two Codes are not equivalent
-    bool operator!=(AuthorityIssuedCode const& other) const {return !(*this == other);}
+    //! Determine if two DgnCodes are equivalent
+    bool operator==(DgnCode const& other) const {return m_authority==other.m_authority && m_value==other.m_value && m_nameSpace==other.m_nameSpace;}
+    //! Determine if two DgnCodes are not equivalent
+    bool operator!=(DgnCode const& other) const {return !(*this == other);}
     //! Perform ordered comparison, e.g. for inclusion in associative containers
-    DGNPLATFORM_EXPORT bool operator<(AuthorityIssuedCode const& rhs) const;
+    DGNPLATFORM_EXPORT bool operator<(DgnCode const& rhs) const;
 
-    //! Get the value for this Code
+    //! Get the value for this DgnCode
     Utf8StringCR GetValue() const {return m_value;}
     Utf8CP GetValueCP() const {return !m_value.empty() ? m_value.c_str() : nullptr;}
-    //! Get the namespace for this Code
+    //! Get the namespace for this DgnCode
     Utf8StringCR GetNamespace() const {return m_nameSpace;}
-    //! Get the DgnAuthorityId of the DgnAuthority that issued this Code.
+    //! Get the DgnAuthorityId of the DgnAuthority that issued this DgnCode.
     DgnAuthorityId GetAuthority() const {return m_authority;}
     void RelocateToDestinationDb(DgnImportContext&);
 
-    void From(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace); //!< @private DO NOT EXPORT
+    //! Re-initialize to the specified values.
+    void From(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace);
+
+    //! Create an empty, non-unique code with no special meaning.
+    DGNPLATFORM_EXPORT static DgnCode CreateEmpty();
+
+    struct Entry : ECSqlStatementEntry
+    {
+        friend struct ECSqlStatementIterator<Entry>;
+        friend struct DgnCode;
+    private:
+        Entry(BeSQLite::EC::ECSqlStatement* stmt=nullptr) : ECSqlStatementEntry(stmt) { }
+    public:
+        DgnAuthorityId GetAuthorityId() const { return m_statement->GetValueId<DgnAuthorityId>(0); }
+        Utf8CP GetValue() const { return m_statement->GetValueText(1); }
+        Utf8CP GetNamespace() const { return m_statement->GetValueText(2); }
+        DgnCode GetCode() const { return DgnCode(GetAuthorityId(), GetValue(), GetNamespace()); }
+    };
+
+    struct Iterator : ECSqlStatementIterator<Entry>
+    {
+    public:
+        DGNPLATFORM_EXPORT explicit Iterator(DgnDbR db);
+    };
+
+    static Iterator MakeIterator(DgnDbR db) { return Iterator(db); }
+
+    DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
+    DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
 };
 
-typedef bset<AuthorityIssuedCode> AuthorityIssuedCodeSet;
+typedef bset<DgnCode> DgnCodeSet;
 
 //=======================================================================================
 //! A base class for api's that access a table in a DgnDb
@@ -229,7 +265,7 @@ public:
     private:
         DgnModelId          m_id;
         DgnClassId          m_classId;
-        AuthorityIssuedCode m_code;
+        DgnCode             m_code;
         Utf8String          m_label;
         bool                m_inGuiList;
 
@@ -239,19 +275,19 @@ public:
             m_inGuiList = true;
             };
 
-        Model(AuthorityIssuedCode code, DgnClassId classid, DgnModelId id=DgnModelId()) : m_id(id), m_classId(classid), m_code(code)
+        Model(DgnCode code, DgnClassId classid, DgnModelId id=DgnModelId()) : m_id(id), m_classId(classid), m_code(code)
             {
             m_inGuiList = true;
             }
 
-        void SetCode(AuthorityIssuedCode code) {m_code = code;}
+        void SetCode(DgnCode code) {m_code = code;}
         void SetLabel(Utf8CP label) { m_label.AssignOrClear(label); }
         void SetInGuiList(bool inGuiList) { m_inGuiList = inGuiList; }
         void SetId(DgnModelId id) {m_id = id;}
         void SetClassId(DgnClassId classId) {m_classId = classId;}
         void SetModelType(DgnClassId classId) {m_classId = classId;}
 
-        AuthorityIssuedCode const& GetCode() const {return m_code;}
+        DgnCode const& GetCode() const {return m_code;}
         Utf8CP GetLabel() const { return m_label.c_str(); }
         bool GetInGuiList() const { return m_inGuiList; }
         DgnModelId GetId() const { return m_id; }
@@ -274,7 +310,7 @@ public:
 
         public:
             DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
-            DGNPLATFORM_EXPORT AuthorityIssuedCode GetCode() const;
+            DGNPLATFORM_EXPORT DgnCode GetCode() const;
             DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const;
             DGNPLATFORM_EXPORT Utf8CP GetCodeNamespace() const;
             DGNPLATFORM_EXPORT DgnAuthorityId GetCodeAuthorityId() const;
@@ -294,7 +330,7 @@ public:
     };
 
 public:
-    static AuthorityIssuedCode GetModelCode(Iterator::Entry const& entry); //!< @private
+    static DgnCode GetModelCode(Iterator::Entry const& entry); //!< @private
     //! Determine the Id of the first non-dictionary model in this DgnDb.
     DGNPLATFORM_EXPORT DgnModelId QueryFirstModelId() const;
 
@@ -315,11 +351,11 @@ public:
     T_DgnModelMap const& GetLoadedModels() const {return m_models;}
 
     DGNPLATFORM_EXPORT BentleyStatus QueryModelById(Model* out, DgnModelId id) const;
-    DGNPLATFORM_EXPORT BentleyStatus GetModelCode(AuthorityIssuedCode& code, DgnModelId id) const;
+    DGNPLATFORM_EXPORT BentleyStatus GetModelCode(DgnCode& code, DgnModelId id) const;
 
     //! Find the ModelId of the model with the specified code.
     //! @return The model's ModelId. Check dgnModelId.IsValid() to see if the DgnModelId was found.
-    DGNPLATFORM_EXPORT DgnModelId QueryModelId(AuthorityIssuedCode code) const;
+    DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnCode code) const;
 
     //! Query for the dependency index of the specified model
     //! @param[out] dependencyIndex  The model's DependencyIndex property value
@@ -349,53 +385,57 @@ public:
 
 
 //=======================================================================================
-//! Each GeomPart has a row in the DgnGeomParts table
-//! @see DgnDb::GeomParts
+//! Each GeometryPart has a row in the DgnGeometryParts table
+//! @see DgnDb::GeometryParts
 //! @ingroup GeometricPrimitiveGroup
 //=======================================================================================
-struct DgnGeomParts : DgnDbTable
+struct DgnGeometryParts : DgnDbTable
 {
     friend struct DgnDb;
 
 private:
-    explicit DgnGeomParts(DgnDbR db) : DgnDbTable(db) {}
-    DgnGeomPartId m_highestGeomPartId; // 0 means not yet valid. Highest DgnGeomPartId (for current briefcaseId)
+    explicit DgnGeometryParts(DgnDbR db) : DgnDbTable(db), m_snappyFrom(m_snappyFromBuffer, _countof(m_snappyFromBuffer)) {}
+    DgnGeometryPartId m_highestGeometryPartId; // 0 means not yet valid. Highest DgnGeometryPartId (for current briefcaseId)
+
+    Byte m_snappyFromBuffer[BeSQLite::SnappyReader::SNAPPY_UNCOMPRESSED_BUFFER_SIZE];
+    BeSQLite::SnappyFromMemory m_snappyFrom;
+    BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;}
 
 public:
-    DgnGeomPartId MakeNewGeomPartId();
+    DgnGeometryPartId MakeNewGeometryPartId();
 
 public:
     //! Load a geometry part by ID.
     //! @param[in] geomPartId the ID of the geometry part to load
-    DGNPLATFORM_EXPORT DgnGeomPartPtr LoadGeomPart(DgnGeomPartId geomPartId);
+    DGNPLATFORM_EXPORT DgnGeometryPartPtr LoadGeometryPart(DgnGeometryPartId geomPartId);
 
-    //! Query for a DgnGeomPartId by code.
-    DGNPLATFORM_EXPORT DgnGeomPartId QueryGeomPartId(Utf8CP code);
+    //! Query for a DgnGeometryPartId by code.
+    DGNPLATFORM_EXPORT DgnGeometryPartId QueryGeometryPartId(DgnCodeCR code);
 
-    //! Query the range of a DgnGeomPart by ID.
-    //! @param[out]     range      On successful return, holds the DgnGeomPart's range
-    //! @param[in]      geomPartId The ID of the DgnGeomPart to query
-    //! @return SUCCESS if the range was retrieved, or else ERROR if e.g. no DgnGeomPart exists with the specified ID
-    DGNPLATFORM_EXPORT BentleyStatus QueryGeomPartRange(DRange3dR range, DgnGeomPartId geomPartId);
+    //! Query the range of a DgnGeometryPart by ID.
+    //! @param[out]     range      On successful return, holds the DgnGeometryPart's range
+    //! @param[in]      geomPartId The ID of the DgnGeometryPart to query
+    //! @return SUCCESS if the range was retrieved, or else ERROR if e.g. no DgnGeometryPart exists with the specified ID
+    DGNPLATFORM_EXPORT BentleyStatus QueryGeometryPartRange(DRange3dR range, DgnGeometryPartId geomPartId);
 
     //! Insert a geometry part into the DgnDb.
     //! @param[in] geomPart geometry part to insert
-    //! @return The DgnGeomPartId for the newly inserted part. Will be invalid if part could not be added.
-    //! @note This method will update the DgnGeomPartId in geomPart.
-    DGNPLATFORM_EXPORT BentleyStatus InsertGeomPart(DgnGeomPartR geomPart);
+    //! @return The DgnGeometryPartId for the newly inserted part. Will be invalid if part could not be added.
+    //! @note This method will update the DgnGeometryPartId in geomPart.
+    DGNPLATFORM_EXPORT BentleyStatus InsertGeometryPart(DgnGeometryPartR geomPart);
 
     //! Update an existing geometry part in the DgnDb.
     //! @param[in] geomPart geometry part. Its ID identifies the existing geom part. Its geometry is written to the DgnDb.
     //! @return non-zero error status if the geom part does not exist or if its ID is invalid
-    DGNPLATFORM_EXPORT BentleyStatus UpdateGeomPart(DgnGeomPartR geomPart);
+    DGNPLATFORM_EXPORT BentleyStatus UpdateGeometryPart(DgnGeometryPartR geomPart);
 
     //! Insert the ElementGeomUsesParts relationship between an element and the geom parts it uses.
     //! @note Most apps will not need to call this directly.
     //! @private
-    DGNPLATFORM_EXPORT BentleyStatus InsertElementGeomUsesParts(DgnElementId elementId, DgnGeomPartId geomPartId);
+    DGNPLATFORM_EXPORT BentleyStatus InsertElementGeomUsesParts(DgnElementId elementId, DgnGeometryPartId geomPartId);
 
     //! Delete the geometry part associated with the specified ID
-    DGNPLATFORM_EXPORT BentleyStatus DeleteGeomPart(DgnGeomPartId);
+    DGNPLATFORM_EXPORT BentleyStatus DeleteGeometryPart(DgnGeometryPartId);
 };
 
 //=======================================================================================

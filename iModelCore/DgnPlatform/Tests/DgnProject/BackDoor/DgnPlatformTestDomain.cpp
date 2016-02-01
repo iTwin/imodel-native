@@ -2,11 +2,12 @@
 |
 |     $Source: Tests/DgnProject/BackDoor/DgnPlatformTestDomain.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
 #include "PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
+#include "TestDomainElements.h"
 #include <DgnPlatform/GeomPart.h>
 #include <DgnPlatform/ElementGeometry.h>
 #include <ECDb/ECDbApi.h>
@@ -18,41 +19,13 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 HANDLER_DEFINE_MEMBERS(TestElementHandler)
 HANDLER_DEFINE_MEMBERS(TestElement2dHandler)
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-HANDLER_DEFINE_MEMBERS(TestItemHandler)
-#endif
 HANDLER_DEFINE_MEMBERS(TestUniqueAspectHandler)
 HANDLER_DEFINE_MEMBERS(TestMultiAspectHandler)
 HANDLER_DEFINE_MEMBERS(TestGroupHandler)
-HANDLER_DEFINE_MEMBERS(TestRequirementHandler)
 DOMAIN_DEFINE_MEMBERS(DgnPlatformTestDomain)
 HANDLER_DEFINE_MEMBERS(TestElementDrivesElementHandler)
 
 bool TestElementDrivesElementHandler::s_shouldFail;
-
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestItem::_GenerateGeometricPrimitive(GeometricElementR el, GenerateReason)
-    {
-    GeometryBuilderPtr builder = GeometryBuilder::CreateWorld(el);
-    
-    // We make the element geometry depend on the item's property. 
-    //  In a real app, of course, this property would be something realistic, not a string.
-    if (m_testItemProperty.EqualsI("Line"))
-        builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1,1,1))));
-    else if (m_testItemProperty.EqualsI("Circle"))
-        builder->Append(*ICurvePrimitive::CreateArc(DEllipse3d::FromXYMajorMinor(0,0,0, 10,10, 0,0, Angle::PiOver2())));
-    else
-        return DgnDbStatus::WriteError;
-    
-    if (BSISUCCESS != builder->SetGeometryStreamAndPlacement(el))
-        return DgnDbStatus::WriteError;
-
-    return DgnDbStatus::Success;
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
@@ -66,7 +39,7 @@ TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId cate
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code const& elementCode)
+TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, DgnCode const& elementCode)
     {
     TestElementPtr testElement = new TestElement(CreateParams(db, mid, QueryClassId(db), categoryId, Placement3d(), elementCode));
     return testElement;
@@ -108,7 +81,7 @@ TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId cate
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Majd.Uddin    06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TestElementPtr TestElement::Create(Dgn::DgnDbR db, Render::GeometryParamsCR ep, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, DgnElement::Code elementCode, double shapeSize)
+TestElementPtr TestElement::Create(Dgn::DgnDbR db, Render::GeometryParamsCR ep, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, DgnCode elementCode, double shapeSize)
     {
     TestElementPtr testElement = new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), elementCode));
 
@@ -127,7 +100,7 @@ TestElementPtr TestElement::Create(Dgn::DgnDbR db, Render::GeometryParamsCR ep, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestElementPtr TestElement::CreateWithoutGeometry(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId)
     {
-    return new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), DgnElement::Code()));
+    return new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), DgnCode()));
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
@@ -137,13 +110,6 @@ DgnDbStatus TestElement::_InsertInDb()
     DgnDbStatus stat = T_Super::_InsertInDb();
     if (DgnDbStatus::Success != stat)
         return stat;
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-    CachedECSqlStatementPtr insertStmt = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " DPTEST_SCHEMA_NAME "." DPTEST_TEST_ITEM_CLASS_NAME "(ECInstanceId," DPTEST_TEST_ITEM_TestItemProperty ") VALUES(?,?)");
-    insertStmt->BindId(1, GetElementId());
-    insertStmt->BindText(2, m_testItemProperty.c_str(), IECSqlBinder::MakeCopy::No);
-    if (BE_SQLITE_DONE != insertStmt->Step())
-        return DgnDbStatus::WriteError;
-#endif
     return DgnDbStatus::Success;
 }
 
@@ -200,20 +166,6 @@ DgnDbStatus TestElement::_UpdateInDb()
     DgnDbStatus status = T_Super::_UpdateInDb();
     if (DgnDbStatus::Success != status)
         return status;
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-    Utf8String stmt("UPDATE " DPTEST_SCHEMA_NAME "." DPTEST_TEST_ITEM_CLASS_NAME);
-    stmt.append(" SET " DPTEST_TEST_ITEM_TestItemProperty "=? WHERE ECInstanceId = ?;");
-
-    CachedECSqlStatementPtr upStmt = GetDgnDb().GetPreparedECSqlStatement(stmt.c_str());
-    if (upStmt.IsNull())
-        return DgnDbStatus::SQLiteError;
-    if (upStmt->BindId(2, GetElementId()) != ECSqlStatus::Success)
-        return DgnDbStatus::SQLiteError;
-    if (upStmt->BindText(1, ECN::ECValue(m_testItemProperty.c_str()).GetUtf8CP(), BeSQLite::EC::IECSqlBinder::MakeCopy::No) != ECSqlStatus::Success)
-        return DgnDbStatus::SQLiteError;
-    if (upStmt->Step() != BE_SQLITE_DONE)
-        return DgnDbStatus::WriteError;
-#endif
     return DgnDbStatus::Success;
 }
 
@@ -225,18 +177,6 @@ DgnDbStatus TestElement::_DeleteInDb() const
     DgnDbStatus status = T_Super::_DeleteInDb();
     if (DgnDbStatus::Success != status)
         return status;
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-    Utf8String stmt("DELETE FROM " DPTEST_SCHEMA_NAME "." DPTEST_TEST_ITEM_CLASS_NAME);
-    stmt.append(" WHERE ECInstanceId = ?;");
-
-    CachedECSqlStatementPtr delStmt = GetDgnDb().GetPreparedECSqlStatement(stmt.c_str());
-    if (delStmt.IsNull())
-        return DgnDbStatus::SQLiteError;
-    if (delStmt->BindId(1, GetElementId()) != ECSqlStatus::Success)
-        return DgnDbStatus::SQLiteError;
-    if (delStmt->Step() != BE_SQLITE_DONE)
-        return DgnDbStatus::WriteError;
-#endif
     return DgnDbStatus::Success;
 
 }
@@ -284,7 +224,7 @@ static CurveVectorPtr computeShape2d(double len)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TestElement2dPtr TestElement2d::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Code elementCode, double length)
+TestElement2dPtr TestElement2d::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, DgnCode elementCode, double length)
 {
     DgnElementPtr testElement = TestElement2dHandler::GetHandler().Create(TestElement2d::CreateParams(db, mid, db.Domains().GetClassId(TestElement2dHandler::GetHandler()), categoryId, Placement2d(), elementCode));
     if (!testElement.IsValid())
@@ -308,46 +248,6 @@ TestGroupPtr TestGroup::Create(DgnDbR db, DgnModelId modelId, DgnCategoryId cate
     BeAssert(group.IsValid());
     return group;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall    12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TestRequirementPtr TestRequirement::Create(DgnDbR db, DgnModelId modelId)
-    {
-    ElementHandlerR handler = TestRequirementHandler::GetHandler();
-    DgnClassId classId = db.Domains().GetClassId(handler);
-    DgnElementPtr requirement = handler.Create(CreateParams(db, modelId, classId));
-    BeAssert(requirement.IsValid());
-    return static_cast<TestRequirementP>(requirement.get());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-DgnDbStatus TestItem::_LoadProperties(DgnElementCR el)
-    {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT " DPTEST_TEST_ITEM_TestItemProperty "," DPTEST_TEST_ITEM_TestItemLength " FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
-    stmt->BindId(1, el.GetElementId());
-    if (BE_SQLITE_ROW != stmt->Step())
-        return DgnDbStatus::ReadError;
-    m_testItemProperty = stmt->GetValueText(0);
-    m_length = stmt->GetValueDouble(1);
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestItem::_UpdateProperties(DgnElementCR el)
-    {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("UPDATE %s SET " DPTEST_TEST_ITEM_TestItemProperty "=?," DPTEST_TEST_ITEM_TestItemLength "=? WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
-    stmt->BindText(1, m_testItemProperty.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    stmt->BindDouble(2, m_length);
-    stmt->BindId(3, el.GetElementId());
-    return (BE_SQLITE_DONE != stmt->Step())? DgnDbStatus::WriteError: DgnDbStatus::Success;
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
@@ -453,13 +353,15 @@ DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(DPTEST_SCHEMA_NAME, "
     RegisterHandler(TestElementHandler::GetHandler());
     RegisterHandler(TestElement2dHandler::GetHandler());
     RegisterHandler(TestGroupHandler::GetHandler());
-    RegisterHandler(TestRequirementHandler::GetHandler());
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-    RegisterHandler(TestItemHandler::GetHandler());
-#endif
     RegisterHandler(TestUniqueAspectHandler::GetHandler());
     RegisterHandler(TestMultiAspectHandler::GetHandler());
     RegisterHandler(TestElementDrivesElementHandler::GetHandler());
+
+
+    RegisterHandler(TestElementSub1Handler::GetHandler());
+    RegisterHandler(TestElementSub2Handler::GetHandler());
+    RegisterHandler(TestElementSub3Handler::GetHandler()); 
+    RegisterHandler(TestElementComplexHandler::GetHandler());
     }
 
 /*---------------------------------------------------------------------------------**//**

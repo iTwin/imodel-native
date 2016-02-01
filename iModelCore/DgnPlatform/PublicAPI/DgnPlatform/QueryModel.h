@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include "DgnModel.h"
+#include "UpdatePlan.h"
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/BeThread.h>
 #include <BeSQLite/RTreeMatch.h>
@@ -48,7 +49,10 @@ struct OverlapScorer
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct RTreeTester
 {
+    BeSQLite::CachedStatementPtr m_rangeStmt;
     virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) = 0;
+    Utf8String GetAcceptSql();
+    uint64_t StepRtree();
 };
 
 //=======================================================================================
@@ -64,19 +68,20 @@ struct RTreeFilter : RTreeTester
     DVec3d                  m_viewVec;  // vector from front face to back face
     ClipVectorPtr           m_clips;
     DgnElementIdSet const*  m_exclude;
+    DgnDbR                  m_dgndb;
 
     bool AllPointsClippedByOnePlane(ConvexClipPlaneSetCR cps, size_t nPoints, DPoint3dCP points) const;
     void SetClipVector(ClipVectorR clip) {m_clips = &clip;}
     void SetFrustum(FrustumCR);
     void SetViewport(DgnViewportCR, double minimumSizeScreenPixels, double frustumScale);
     bool SkewTest(BeSQLite::RTree3dValCP);
-    RTreeFilter(DgnElementIdSet const* exclude) {m_exclude=exclude;}
+    RTreeFilter(DgnDbR db, DgnElementIdSet const* exclude=nullptr);
     };
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/11
 //=======================================================================================
-struct DgnDbRTreeFitFilter : RTreeTester
+struct RTreeFitFilter : RTreeTester
     {
     DRange3d m_fitRange;
     DRange3d m_lastRange;
@@ -84,7 +89,7 @@ struct DgnDbRTreeFitFilter : RTreeTester
     DGNPLATFORM_EXPORT virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
 
 public:
-    DgnDbRTreeFitFilter() {m_fitRange = DRange3d::NullRange();}
+    RTreeFitFilter() {m_fitRange = DRange3d::NullRange();}
     DRange3dCR GetRange() const {return m_fitRange;}
     };
 
@@ -112,7 +117,6 @@ struct QueryModel : SpatialModel
     //=======================================================================================
     struct Filter : RTreeFilter
     {
-        bool                    m_passedPrimaryTest;
         bool                    m_needsProgressive = false;
         uint32_t                m_hitLimit;
         uint32_t                m_occlusionMapCount;
@@ -121,7 +125,7 @@ struct QueryModel : SpatialModel
         double                  m_occlusionMapMinimum;
         double                  m_lastScore;
         DgnElementIdSet const*  m_alwaysDraw;
-        QueryModel&             m_model;
+        QueryModelR             m_model;
 
         bool CheckAbort();
         virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
@@ -137,17 +141,10 @@ struct QueryModel : SpatialModel
     //=======================================================================================
     struct AllElementsFilter : RTreeFilter
     {
-        friend struct QueryViewController;
-
-        uint64_t       m_elementReleaseTrigger;
-        uint64_t       m_purgeTrigger;
-        DgnDbR         m_dgndb;
-        QueryModelR    m_queryModel;
-        AllElementsFilter(QueryModelR queryModel, DgnElementIdSet const* exclude, uint64_t maxMemory)
-             : RTreeFilter(exclude), m_dgndb(queryModel.GetDgnDb()), m_queryModel(queryModel), m_elementReleaseTrigger(maxMemory), m_purgeTrigger(maxMemory)
-            {
-            }
-                                                                                                            
+        uint64_t  m_elementReleaseTrigger;
+        uint64_t  m_purgeTrigger;
+        QueryModelR  m_model;
+        AllElementsFilter(QueryModelR model, DgnElementIdSet const* exclude, uint64_t maxMemory) : RTreeFilter(model.GetDgnDb(), exclude), m_model(model), m_elementReleaseTrigger(maxMemory), m_purgeTrigger(maxMemory) {}
         bool AcceptElement(ViewContextR context, DgnElementId elementId);
         virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
     };
@@ -157,17 +154,14 @@ struct QueryModel : SpatialModel
     //=======================================================================================
     struct ProgressiveFilter : AllElementsFilter, ProgressiveDisplay
     {
-        uint32_t       m_thisBatch = 0;
-        uint32_t       m_batchSize = 0;
-        bool           m_setTimeout = false;
-        BeSQLite::CachedStatementPtr m_rangeStmt;
-        ProgressiveFilter(DgnViewportCR vp, QueryModelR queryModel, DgnElementIdSet const* exclude, uint64_t maxMemory, BeSQLite::CachedStatement* stmt, double minPixelSize)
-            : AllElementsFilter(queryModel, exclude, maxMemory), m_rangeStmt(stmt)
-            {
-            SetViewport(vp, minPixelSize, 1.0);
-            }
-
-        virtual Completion _Process(ViewContextR context, uint32_t batchSize) override;
+        enum {SHOW_PROGRESS_INTERVAL = 1000}; // once per second.
+        uint32_t m_total = 0;
+        uint32_t m_thisBatch = 0;
+        uint32_t m_batchSize = 0;
+        uint64_t m_nextShow  = 0;
+        bool     m_setTimeout = false;
+        ProgressiveFilter(QueryModelR model, DgnElementIdSet const* exclude, uint64_t maxMemory) : AllElementsFilter(model, exclude, maxMemory) {}
+        virtual Completion _Process(ViewContextR context, uint32_t batchSize, WantShow&) override;
     };
 
     struct Processor;
@@ -184,7 +178,6 @@ struct QueryModel : SpatialModel
         bvector<DgnElementCPtr> m_elements;
         bool     m_needsProgressive;
         uint32_t m_drawnBeforePurge;
-
         uint32_t GetCount() const {return (uint32_t) m_elements.size();}
     };
 
@@ -209,7 +202,7 @@ struct QueryModel : SpatialModel
             Params(QueryModelR model, DgnViewportCR vp, Utf8StringCR sql, UpdatePlan::Query const& plan, uint64_t maxMem, DgnElementIdSet* highPriority,
                     DgnElementIdSet* neverDraw, bool highPriorityOnly, ClipVectorP clipVector)
                 : m_model(model), m_vp(vp), m_searchSql(sql), m_plan(plan), m_maxMemory(maxMem), m_highPriority(highPriority),
-                    m_neverDraw(neverDraw), m_highPriorityOnly(highPriorityOnly), m_clipVector(clipVector) {}
+                  m_neverDraw(neverDraw), m_highPriorityOnly(highPriorityOnly), m_clipVector(clipVector) {}
         };
 
     protected:
@@ -218,7 +211,7 @@ struct QueryModel : SpatialModel
 
         void ProcessRequest();
         void SearchIdSet(DgnElementIdSet& idList, Filter& filter);
-        bool SearchRangeTree(Filter& filter);
+        void SearchRangeTree(Filter& filter);
         bool LoadElements(OcclusionScores& scores, bvector<DgnElementCPtr>& elements); // return false if we halted before finishing iteration
         void DoQuery(StopWatch&);
 
@@ -290,7 +283,6 @@ public:
 
     //! Requests that any active or pending processing of the model be canceled, optionally not returning until the request is satisfied
     void RequestAbort(bool waitUntilFinished);
-
     void WaitUntilFinished(CheckStop* checkStop); //!< @private
 };
 

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/DgnProject/BackDoor/PublicAPI/BackDoor/DgnProject/BackDoor.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -123,19 +123,23 @@ namespace BackDoor
         * @bsimethod                                    Grigas.Petraitis                07/15
         +---------------+---------------+---------------+---------------+---------------+------*/
         void RunOnAnotherThread(std::function<void()> const&);
+        
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                    Grigas.Petraitis                01/2016
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void Terminate(IRealityDataStorageBase& storage);
     }; // RealityData
 
     /*---------------------------------------------------------------------------------**//**
     * @bsinamespace
     +---------------+---------------+---------------+---------------+---------------+------*/
-    namespace ILocksManager
+    namespace IBriefcaseManager
     {
         /*---------------------------------------------------------------------------------**//**
         * @bsimethod                                                    Paul.Connelly   11/15
         +---------------+---------------+---------------+---------------+---------------+------*/
-        void SetLockingEnabled(bool enabled);
+        void SetEnabled(bool enabled);
     };
-
 }
 
 END_DGNDB_UNIT_TESTS_NAMESPACE

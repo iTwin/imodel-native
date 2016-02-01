@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnView.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -115,7 +115,7 @@ void ViewDefinition::_CopyFrom(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewDefinition::CreateParams::CreateParams(DgnDbR db, Code const& code, DgnClassId classId, Data const& data)
+ViewDefinition::CreateParams::CreateParams(DgnDbR db, DgnCode const& code, DgnClassId classId, Data const& data)
     : T_Super(db, classId, code), m_data(data)
     {
     //
@@ -124,7 +124,7 @@ ViewDefinition::CreateParams::CreateParams(DgnDbR db, Code const& code, DgnClass
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnViewId ViewDefinition::QueryViewId(Code const& code, DgnDbR db)
+DgnViewId ViewDefinition::QueryViewId(DgnCode const& code, DgnDbR db)
     {
     DgnElementId elemId = db.Elements().QueryElementIdByCode(code);
     return DgnViewId(elemId.GetValueUnchecked());
@@ -157,12 +157,11 @@ ViewControllerPtr ViewDefinition::LoadViewController(bool allowOverrides, FillMo
     if (controller.IsNull())
         controller = _SupplyController();
 
-    if (controller.IsValid())
-        {
-        controller->Load();
-        if (FillModels::Yes == fillModels)
-            controller->_FillModels();
-        }
+    if (!controller.IsValid() || BE_SQLITE_OK != controller->Load())
+        return nullptr;
+
+    if (FillModels::Yes == fillModels)
+        controller->_FillModels();
 
     return controller;
     }
@@ -281,13 +280,15 @@ void ViewDefinition::_RemapIds(DgnImportContext& importer)
         }
     }
 
+#ifdef TODO_CODES
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewDefinition::_SetCode(Code const& code)
+DgnDbStatus ViewDefinition::_SetCode(DgnCode const& code)
     {
     return IsValidCode(code) ? T_Super::_SetCode(code) : DgnDbStatus::InvalidName;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15

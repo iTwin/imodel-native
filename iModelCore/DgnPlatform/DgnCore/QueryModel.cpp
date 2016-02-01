@@ -88,7 +88,10 @@ void QueryModel::SaveQueryResults()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t QueryModel::GetElementCount() const {return m_currQueryResults.IsValid() ? m_currQueryResults->GetCount() : 0;}
+uint32_t QueryModel::GetElementCount() const 
+    {
+    return m_currQueryResults.IsValid() ? m_currQueryResults->GetCount() : 0;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
@@ -257,7 +260,8 @@ void QueryModel::Queue::Process()
         }
 
         m_cv.notify_all();
-        BeThreadUtilities::BeSleep(delay);
+        if (delay) // optionally, wait before starting the next task
+            BeThreadUtilities::BeSleep(delay);
         }
 
     m_state = State::Terminated;
@@ -307,16 +311,14 @@ void QueryModel::Processor::DoQuery(StopWatch& watch)
 
     m_results = new Results();
     if (m_params.m_highPriorityOnly)
-        {
         SearchIdSet(*m_params.m_highPriority, filter);
-        }
     else
+        SearchRangeTree(filter);
+
+    if (filter.CheckAbort())
         {
-        if (!SearchRangeTree(filter))
-            {
-            DEBUG_PRINTF("Query aborted");
-            return;
-            }
+        DEBUG_PRINTF("query aborted");
+        return;
         }
 
     m_results->m_needsProgressive = filter.m_needsProgressive;
@@ -376,37 +378,49 @@ void QueryModel::Processor::SearchIdSet(DgnElementIdSet& idList, Filter& filter)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool QueryModel::Processor::SearchRangeTree(Filter& filter)
+void QueryModel::Processor::SearchRangeTree(Filter& filter)
     {
-    CachedStatementPtr rangeStmt;
-    GetModel().GetDgnDb().GetCachedStatement(rangeStmt, m_params.m_searchSql.c_str());
+    CachedStatementPtr viewStmt;
+    Utf8String acceptSql = m_params.m_searchSql.c_str() + filter.GetAcceptSql();
+    GetModel().GetDgnDb().GetCachedStatement(viewStmt, acceptSql.c_str());
 
-    static_cast<QueryViewControllerCP>(&m_params.m_vp.GetViewController())->BindModelAndCategory(*rangeStmt, filter);
+    QueryViewControllerCR qViewController = static_cast<QueryViewControllerCR>(m_params.m_vp.GetViewController());
+    qViewController.BindModelAndCategory(*viewStmt);
 
     uint64_t endTime = BeTimeUtilities::QueryMillisecondsCounter() + m_params.m_plan.GetTimeout();
 
-    while (BE_SQLITE_ROW == rangeStmt->Step())
-        {
-        if (filter.CheckAbort())
-            return false;
+    int idCol = viewStmt->GetParameterIndex("@elId");
+    BeAssert(0 != idCol);
 
-        filter.AcceptElement(rangeStmt->GetValueId<DgnElementId>(0));
-        if (filter.GetCount() >= m_params.m_plan.GetMinElements() && (BeTimeUtilities::QueryMillisecondsCounter() > endTime))
+    uint64_t thisId;
+    while (0 != (thisId=filter.StepRtree()))
+        {
+        viewStmt->Reset();
+        viewStmt->BindInt64(idCol, thisId);
+
+        if (filter.CheckAbort())
+            {
+            DEBUG_ERRORLOG("Query aborted");
+            return;
+            }
+
+        if (BE_SQLITE_ROW == viewStmt->Step())
+            filter.AcceptElement(DgnElementId(thisId));
+
+        if (BeTimeUtilities::QueryMillisecondsCounter() > endTime)
             {
             DEBUG_ERRORLOG("Query timeout");
             filter.m_needsProgressive = true;
-            return true;
+            break;
             }
-    
-        }
-    return true;
+        };
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 QueryModel::Filter::Filter(QueryModelR model, uint32_t hitLimit, DgnElementIdSet const* alwaysDraw, DgnElementIdSet const* exclude)
-    : m_model(model), m_alwaysDraw(nullptr), RTreeFilter(exclude)
+    : m_model(model), m_alwaysDraw(nullptr), RTreeFilter(model.GetDgnDb(), exclude)
     {
     m_hitLimit = hitLimit;
     m_occlusionMapMinimum = 1.0e20;
@@ -416,16 +430,10 @@ QueryModel::Filter::Filter(QueryModelR model, uint32_t hitLimit, DgnElementIdSet
         {
         m_lastScore = DBL_MAX;
         for (auto const& id : *alwaysDraw)
-            {
-            if (nullptr != m_exclude && m_exclude->find(id) != m_exclude->end())
-                continue;
-
-            m_passedPrimaryTest = true;
             AcceptElement(id);
-            }
         }
 
-    //  We do this as the last step. Otherwise, the calls to RangeAccept in the previous step would not have any effect.
+    //  We do this as the last step. Otherwise, the calls to AcceptElement in the previous step would not have any effect.
     m_alwaysDraw = alwaysDraw;
     }
 
@@ -456,9 +464,7 @@ int QueryModel::Filter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
         return BE_SQLITE_ERROR;
 
     RTree3dValCP pt = (RTree3dValCP) info.m_coords;
-    m_passedPrimaryTest = m_boundingRange.Intersects(*pt) && SkewTest(pt);
-
-    if (!m_passedPrimaryTest)
+    if (!m_boundingRange.Intersects(*pt) || !SkewTest(pt))
         return BE_SQLITE_OK;
 
     DPoint3d localCorners[8];
@@ -485,32 +491,24 @@ int QueryModel::Filter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
     bool overlap, spansEyePlane;
 
     if (!m_scorer.ComputeOcclusionScore(&m_lastScore, overlap, spansEyePlane, localCorners))
-        {
-        m_passedPrimaryTest = false;
-        }
-    else if (m_occlusionMapCount >= m_hitLimit && m_lastScore <= m_occlusionMapMinimum)
-        {
-        // this box is smaller than the smallest entry we already have, skip it.
-        m_passedPrimaryTest = false;
-        }
+        return BE_SQLITE_OK;
 
-    if (m_passedPrimaryTest)
-        {
-        m_lastId = info.m_rowid;  // for debugging - make sure we get entries immediately after we score them.
+    if (m_occlusionMapCount >= m_hitLimit && m_lastScore <= m_occlusionMapMinimum)
+        return BE_SQLITE_OK; // this one is smaller than the smallest entry we already have, skip it (and children).
 
-        if (info.m_level>0)
-            {
-            // For nodes, return 'level-score' (the "-" is because for occlusion score higher is better. But for rtree priority, lower means better).
-            info.m_score = info.m_level - m_lastScore;
-            }
-        else
-            {
-            // For entries (ilevel==0), we return 0 so they are processed immediately (lowest score has highest priority).
-            info.m_score = 0;
-            }
-        info.m_within = RTreeMatchFunction::Within::Partly;
+    m_lastId = info.m_rowid;  // for debugging - make sure we get entries immediately after we score them.
+    if (info.m_level>0)
+        {
+        // For nodes, return 'level-score' (the "-" is because for occlusion score higher is better. But for rtree priority, lower means better).
+        info.m_score = info.m_level - m_lastScore;
+        }
+    else
+        {
+        // For entries (ilevel==0), we return 0 so they are processed immediately (lowest score has highest priority).
+        info.m_score = 0;
         }
 
+    info.m_within = RTreeMatchFunction::Within::Partly;
     return BE_SQLITE_OK;
     }
 
@@ -524,25 +522,21 @@ void QueryModel::Filter::AcceptElement(DgnElementId elementId)
     if (nullptr != m_exclude && m_exclude->find(elementId) != m_exclude->end())
         return;
 
-    if (m_passedPrimaryTest)
+    //  Don't add it if the constructor already added it.
+    if (nullptr != m_alwaysDraw && m_alwaysDraw->find(elementId) != m_alwaysDraw->end())
+        return;
+
+    if (m_occlusionMapCount >= m_hitLimit)
         {
-        //  Don't add it if the constructor already added it.
-        if (nullptr == m_alwaysDraw || m_alwaysDraw->find(elementId) == m_alwaysDraw->end())
-            {
-            if (m_occlusionMapCount >= m_hitLimit)
-                {
-                m_scorer.SetTestLOD(true); // now that we've found a minimum number of elements, start skipping small ones
-                m_occlusionScores.erase(m_occlusionScores.begin());
-                m_needsProgressive = true;
-                }
-            else
-                m_occlusionMapCount++;
-
-            m_occlusionScores.Insert(m_lastScore, elementId.GetValueUnchecked());
-            m_occlusionMapMinimum = m_occlusionScores.begin()->first;
-            }
+        m_scorer.SetTestLOD(true); // now that we've found a minimum number of elements, start skipping small ones
+        m_occlusionScores.erase(m_occlusionScores.begin());
+        m_needsProgressive = true;
         }
+    else
+        m_occlusionMapCount++;
 
+    m_occlusionScores.Insert(m_lastScore, elementId.GetValueUnchecked());
+    m_occlusionMapMinimum = m_occlusionScores.begin()->first;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -554,7 +548,7 @@ int QueryModel::AllElementsFilter::_TestRTree(RTreeMatchFunction::QueryInfo cons
     info.m_within = RTreeMatchFunction::Within::Outside;
 
     RTree3dValCP pt = (RTree3dValCP) info.m_coords;
-    if (!(m_boundingRange.Intersects(*pt) && SkewTest(pt)))
+    if (!m_boundingRange.Intersects(*pt) || !SkewTest(pt))
         return BE_SQLITE_OK;
 
 #if defined (NEEDS_WORK_CLIPPING)
@@ -571,23 +565,19 @@ int QueryModel::AllElementsFilter::_TestRTree(RTreeMatchFunction::QueryInfo cons
         }
 #endif
 
-    if (info.m_level > 0) // only score nodes, not elements
-        {
-        bool   overlap, spansEyePlane;
+    DPoint3d localCorners[8];
+    toLocalCorners(localCorners, pt);
 
-        DPoint3d localCorners[8];
-        toLocalCorners(localCorners, pt);
+    double score = 0.0;
+    bool   overlap, spansEyePlane;
 
-        double score = 0.0;
-        if (m_doOcclusionScore && !m_scorer.ComputeOcclusionScore(&score, overlap, spansEyePlane, localCorners))
-            return BE_SQLITE_OK;
+    // NOTE: m_doOcclusionScore is off if we're trying to visit all elements. ComputeOcclusionScore returns false if the
+    // size is smaller than our minimum NPC area.
+    if (m_doOcclusionScore && !m_scorer.ComputeOcclusionScore(&score, overlap, spansEyePlane, localCorners))
+        return BE_SQLITE_OK;
 
-        info.m_score = info.m_maxLevel - info.m_level - score;
-        }
-    else
-        {
-        info.m_score = 0;
-        }                                                                                                                                  
+    // For entries (m_level==0), we return 0 so they are processed immediately (lowest score has highest priority).
+    info.m_score = (info.m_level>0) ? (info.m_maxLevel - info.m_level - score) : 0;
     info.m_within = RTreeMatchFunction::Within::Partly;
     return BE_SQLITE_OK;
     }
@@ -595,7 +585,7 @@ int QueryModel::AllElementsFilter::_TestRTree(RTreeMatchFunction::QueryInfo cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveDisplay::Completion QueryModel::ProgressiveFilter::_Process(ViewContextR context, uint32_t batchSize)
+ProgressiveDisplay::Completion QueryModel::ProgressiveFilter::_Process(ViewContextR context, uint32_t batchSize, WantShow& wantShow)
     {
     DgnDb::VerifyClientThread();
 
@@ -615,31 +605,64 @@ ProgressiveDisplay::Completion QueryModel::ProgressiveFilter::_Process(ViewConte
 
     m_scorer.SetTestLOD(true);  
 
-    DbResult rc;
-    DEBUG_PRINTF("begin progressive display");
-    while (BE_SQLITE_ROW == (rc=m_rangeStmt->Step()))
-        {
-        if (context._CheckStop())
-            {
-            DEBUG_PRINTF("aborted progressive display");
-            return Completion::Aborted;
-            }
+    CachedStatementPtr viewStmt;              
+    DgnViewportR vp = *context.GetViewport();
+    QueryViewControllerCR queryView = static_cast<QueryViewControllerCR>(vp.GetViewController());
 
-        if (AcceptElement(context, m_rangeStmt->GetValueId<DgnElementId>(0)))
+    Utf8String viewSql = queryView._GetQuery(vp) + GetAcceptSql();
+    m_dgndb.GetCachedStatement(viewStmt, viewSql.c_str());
+    queryView.BindModelAndCategory(*viewStmt);
+
+    DEBUG_PRINTF("begin progressive display");
+
+    uint64_t thisId;
+    int idCol = viewStmt->GetParameterIndex("@elId");
+    BeAssert(0 != idCol);
+
+    while (0 != (thisId=StepRtree()))
+        {
+        viewStmt->Reset();
+        viewStmt->BindInt64(idCol, thisId);
+
+        if (BE_SQLITE_ROW == viewStmt->Step())
             {
-            if (!m_setTimeout)
-                { // don't set the timeout until after we've drawn one element
-                context.EnableStopAfterTimout(1000);
+            AcceptElement(context, DgnElementId(thisId));
+
+            if (!m_setTimeout) // don't set the timeout until after we've drawn one element
+                {
+                context.EnableStopAfterTimout(SHOW_PROGRESS_INTERVAL);
                 m_setTimeout = true;
                 }
+        }
 
-            if (m_batchSize && ++m_thisBatch >= m_batchSize) // limit the number or elements added per batch (optionally)
-                context.SetAborted();
+        if (context._CheckStop())
+            break;
+
+        if (m_batchSize && ++m_thisBatch >= m_batchSize) // limit the number or elements added per batch (optionally)
+            {
+            context.SetAborted();
+            break;
             }
         }
 
-    BeAssert(rc == BE_SQLITE_DONE);
-    DEBUG_PRINTF("finished progressive display");
+    if (context.WasAborted())
+        {
+        // We only want to show the progress of ProgressiveDisplay once per second. 
+        // See if its been more than a second since the last time we showed something.
+        uint64_t now = BeTimeUtilities::QueryMillisecondsCounter();                                                                                                         
+        if (now > m_nextShow)
+            {
+            m_nextShow = now + SHOW_PROGRESS_INTERVAL;
+            wantShow = WantShow::Yes;
+            }
+
+        DEBUG_PRINTF("aborted progressive display");
+        return Completion::Aborted;
+        }
+
+    // alway show the last batch.
+    wantShow = WantShow::Yes;
+    DEBUG_PRINTF("finished progressive. Total=%d", m_total);
     return Completion::Finished;
     }
 
@@ -648,7 +671,7 @@ ProgressiveDisplay::Completion QueryModel::ProgressiveFilter::_Process(ViewConte
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool QueryModel::AllElementsFilter::AcceptElement(ViewContextR context, DgnElementId elementId) 
     {
-    if (m_queryModel.FindElementById(elementId))
+    if (m_model.FindElementById(elementId))
         return false;
 
     if (nullptr != m_exclude && m_exclude->find(elementId) != m_exclude->end())

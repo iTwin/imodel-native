@@ -35,6 +35,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
   @see DgnCoordSystem
 */
 
+
 //=======================================================================================
 //! Parameters for the "fit view" operation
 // @bsiclass                                                    Keith.Bentley   06/15
@@ -63,7 +64,6 @@ enum class ViewportResizeMode
     AspectRatio      = 2, //!< The viewport is resized to match the aspect ratio of the viewInfo.
     Size             = 3, //!< The viewport is resized to match the exact size 
     };
-
 
 /*=================================================================================**//**
 * @bsiclass
@@ -115,7 +115,7 @@ public:
 //! @private
 typedef bpair<Render::GraphicSet, ElementAlignedBox3d> GraphicSetRangePair;
 //! @private
-typedef bmap<DgnGeomPartId, GraphicSetRangePair> PartGraphicMap;
+typedef bmap<DgnGeometryPartId, GraphicSetRangePair> PartGraphicMap;
 
 protected:
     typedef std::deque<Utf8String> ViewStateStack;
@@ -158,17 +158,28 @@ protected:
     DGNPLATFORM_EXPORT virtual void _AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewControllerCR) const;
     virtual bool _IsVisible() const {return true;}
     DGNPLATFORM_EXPORT virtual void _CallDecorators(DecorateContextR);
-    virtual Render::Plan::AntiAliasPref _WantAntiAliasLines() const {return Render::Plan::AntiAliasPref::Detect;}
+    virtual Render::Plan::AntiAliasPref _WantAntiAliasLines() const {return Render::Plan::AntiAliasPref::Off;}
     virtual Render::Plan::AntiAliasPref _WantAntiAliasText() const {return Render::Plan::AntiAliasPref::Detect;}
     virtual void _AdjustFencePts(RotMatrixCR viewRot, DPoint3dCR oldOrg, DPoint3dCR newOrg) const {}
     virtual void _SynchViewTitle() {}
     virtual void _Destroy() {DestroyViewport();}
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(ViewControllerR, bool expandView);
     DGNPLATFORM_EXPORT virtual int _GetIndexedLineWidth(int index) const;
+
     DGNPLATFORM_EXPORT static void StartRenderThread();
     DMap4d CalcNpcToView();
-    void QueueDrawFrame(Render::Plan::PaintScene);
+    void QueueDrawFrame();
     void CalcTargetNumElements(UpdatePlan const& plan, bool isForProgressive);
+
+    enum class CloseMe {No=0, Yes=1};
+    //! called when one or more models are deleted
+    //! Default implementation does:
+    //! - Removes deleted models from viewed model list
+    //! - Chooses a new target model arbitrarily from viewed model list if target model deleted
+    //! - Closes viewport if no viewed models remain
+    //! Override this method to change this behavior
+    //! @return true to close this viewport
+    DGNPLATFORM_EXPORT virtual CloseMe _OnModelsDeleted(bset<Dgn::DgnModelId> const&, Dgn::DgnDbR db);
 
 public:
     DgnViewport(Render::TargetP target) : m_renderTarget(target) {}
@@ -193,7 +204,7 @@ public:
     DGNPLATFORM_EXPORT StatusInt RootToNpcFromViewDef(DMap4d&, double&, CameraInfo const*, DPoint3dCR, DPoint3dCR, RotMatrixCR) const;
     DGNPLATFORM_EXPORT static int32_t GetMaxDisplayPriority();
     DGNPLATFORM_EXPORT static int32_t GetDisplayPriorityFrontPlane();
-    DGNPLATFORM_EXPORT static ViewportStatus ValidateWindowSize(DPoint3dR delta, bool displayMessage);
+    DGNPLATFORM_EXPORT static ViewportStatus ValidateViewDelta(DPoint3dR delta, bool displayMessage);
     DGNPLATFORM_EXPORT static void FixFrustumOrder(Frustum&);
     DGNPLATFORM_EXPORT ViewportStatus SetupFromViewController();
     DGNPLATFORM_EXPORT ViewportStatus ChangeArea(DPoint3dCP pts);
@@ -223,8 +234,9 @@ public:
     bool IsUndoActive() {return m_undoActive;}
     void ClearUndo();
     void ChangeDynamics(Render::GraphicListP list);
+    void ChangeRenderPlan();
     void ApplyViewState(Utf8StringCR val, int animationTime);
-    void Refresh(Render::Plan::PaintScene);
+    void Refresh();
     DGNVIEW_EXPORT void ApplyNext(int animationTime);
     DGNVIEW_EXPORT void ApplyPrevious(int animationTime);
     DGNPLATFORM_EXPORT void CheckForChanges();
@@ -294,6 +306,10 @@ public:
     //! @return the current TBGR hilite color.
     ColorDef GetHiliteColor() const {return m_hiliteColor;}
 
+    //! Set the current TGBR color value of the user-selected hilite color for this DgnViewport.
+    //! @param color The new TBGR hilite color
+    void SetHiliteColor(ColorDef color) {m_hiliteColor=color;}
+
 /** @} */
 
 /** @name Coordinate Query and Conversion */
@@ -348,7 +364,7 @@ public:
     DGNPLATFORM_EXPORT void NpcToView(DPoint3dP viewPts, DPoint3dCP npcPts, int nPts) const;
 
     //! Transforma a point from DgnCoordSystem::Npc into DgnCoordSystem::View.
-    DPoint3d NpcToView(DPoint3dCR npcPt) {DPoint3d viewPt; NpcToView(&viewPt, &npcPt, 1); return viewPt;}
+    DPoint3d NpcToView(DPoint3dCR npcPt) const {DPoint3d viewPt; NpcToView(&viewPt, &npcPt, 1); return viewPt;}
 
     //! Transfrom an array of points in DgnCoordSystem::View into DgnCoordSystem::Npc.
     //! @param[out] npcPts An array to receive the points in DgnCoordSystem::Npc. Must be dimensioned to hold \c nPts points.
@@ -357,7 +373,7 @@ public:
     DGNPLATFORM_EXPORT void ViewToNpc(DPoint3dP npcPts, DPoint3dCP viewPts, int nPts) const;
 
     //! Transforma a point from DgnCoordSystem::View into DgnCoordSystem::Npc.
-    DPoint3d ViewToNpc(DPoint3dCR viewPt) {DPoint3d npcPt; ViewToNpc(&npcPt, &viewPt, 1); return npcPt;}
+    DPoint3d ViewToNpc(DPoint3dCR viewPt) const {DPoint3d npcPt; ViewToNpc(&npcPt, &viewPt, 1); return npcPt;}
 
     //! Transfrom an array of points in DgnCoordSystem::View into DgnCoordSystem::Screen.
     //! @param[out] screenPts An array to receive the points in DgnCoordSystem::Screen. Must be dimensioned to hold \c nPts points.
@@ -378,7 +394,7 @@ public:
     DGNPLATFORM_EXPORT void NpcToWorld(DPoint3dP worldPts, DPoint3dCP npcPts, int nPts) const;
 
     //! Transforma a point from DgnCoordSystem::Npc into DgnCoordSystem::World.
-    DPoint3d NpcToWorld(DPoint3dCR npcPt) {DPoint3d worldPt; NpcToWorld(&worldPt, &npcPt, 1); return worldPt;}
+    DPoint3d NpcToWorld(DPoint3dCR npcPt) const {DPoint3d worldPt; NpcToWorld(&worldPt, &npcPt, 1); return worldPt;}
 
     //! Transfrom an array of points in DgnCoordSystem::World into DgnCoordSystem::Npc.
     //! @param[out] npcPts An array to receive the points in DgnCoordSystem::Npc. Must be dimensioned to hold \c nPts points.
@@ -387,7 +403,7 @@ public:
     DGNPLATFORM_EXPORT void WorldToNpc(DPoint3dP npcPts, DPoint3dCP worldPts, int nPts) const;
 
     //! Transforma a point from DgnCoordSystem::World into DgnCoordSystem::Npc.
-    DPoint3d WorldToNpc(DPoint3dCR worldPt) {DPoint3d npcPt; WorldToNpc(&npcPt, &worldPt, 1); return npcPt;}
+    DPoint3d WorldToNpc(DPoint3dCR worldPt) const {DPoint3d npcPt; WorldToNpc(&npcPt, &worldPt, 1); return npcPt;}
 
     //! Transfrom an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
     //! @param[out] viewPts  An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
@@ -407,8 +423,8 @@ public:
     //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void WorldToView(DPoint3dP viewPts, DPoint3dCP worldPts, int nPts) const;
 
-    //! Transforma a point from DgnCoordSystem::World into DgnCoordSystem::View.
-    DPoint3d WorldToView(DPoint3dCR worldPt) {DPoint3d viewPt; WorldToView(&viewPt, &worldPt, 1); return viewPt;}
+    //! Transform a point from DgnCoordSystem::World into DgnCoordSystem::View.
+    DPoint3d WorldToView(DPoint3dCR worldPt) const {DPoint3d viewPt; WorldToView(&viewPt, &worldPt, 1); return viewPt;}
 
     //! Transfrom an array of points in DgnCoordSystem::World into an array of 2D points in DgnCoordSystem::View.
     //! @param[out] viewPts An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
@@ -423,7 +439,7 @@ public:
     DGNPLATFORM_EXPORT void ViewToWorld(DPoint3dP worldPts, DPoint3dCP viewPts, int nPts) const;
 
     //! Transform a point from DgnCoordSystem::View into DgnCoordSystem::World.
-    DPoint3d ViewToWorld(DPoint3dCR viewPt) {DPoint3d worldPt; ViewToWorld(&worldPt, &viewPt, 1); return worldPt;}
+    DPoint3d ViewToWorld(DPoint3dCR viewPt) const {DPoint3d worldPt; ViewToWorld(&worldPt, &viewPt, 1); return worldPt;}
 /** @} */
 
 /** @name DgnViewport Parameters */

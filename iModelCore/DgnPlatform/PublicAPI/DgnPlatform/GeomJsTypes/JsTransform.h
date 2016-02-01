@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/GeomJsTypes/JsTransform.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -36,7 +36,7 @@ public:
             );
         }
     JsTransformP Clone() {return new JsTransform(m_data);}
-    
+    static JsTransformP Create (ValidatedTransform const &source){ return source.IsValid () ? new JsTransform (source.Value ()) : nullptr;}
     static JsTransformP CreateIdentity (){return new JsTransform (Transform::FromIdentity ());}
     static JsTransformP CreateMatrix (JsRotMatrixP matrix)
                 {return new JsTransform (Transform::From (matrix->Get ()));}

@@ -83,7 +83,7 @@ DGNPLATFORM_TYPEDEFS(DgnElement)
 DGNPLATFORM_TYPEDEFS(DgnElementExpressionContext);
 DGNPLATFORM_TYPEDEFS(DgnFont)
 DGNPLATFORM_TYPEDEFS(DgnGCS)
-DGNPLATFORM_TYPEDEFS(DgnGeomPart)
+DGNPLATFORM_TYPEDEFS(DgnGeometryPart)
 DGNPLATFORM_TYPEDEFS(DgnGestureEvent)
 DGNPLATFORM_TYPEDEFS(DgnGlyph)
 DGNPLATFORM_TYPEDEFS(DgnGlyph)
@@ -106,6 +106,7 @@ DGNPLATFORM_TYPEDEFS(DictionaryElement)
 DGNPLATFORM_TYPEDEFS(DisplayStyle)
 DGNPLATFORM_TYPEDEFS(DisplayStyleFlags)
 DGNPLATFORM_TYPEDEFS(DrawingElement)
+DGNPLATFORM_TYPEDEFS (DgnCode)
 DGNPLATFORM_TYPEDEFS(DrawingModel)
 DGNPLATFORM_TYPEDEFS(DrawingViewDefinition)
 DGNPLATFORM_TYPEDEFS(DropGeometry)
@@ -133,6 +134,7 @@ DGNPLATFORM_TYPEDEFS(HitDetail)
 DGNPLATFORM_TYPEDEFS(HitList)
 DGNPLATFORM_TYPEDEFS(IACSManager)
 DGNPLATFORM_TYPEDEFS(IAuxCoordSys)
+DGNPLATFORM_TYPEDEFS(IBriefcaseManager)
 DGNPLATFORM_TYPEDEFS(IDgnFontData)
 DGNPLATFORM_TYPEDEFS(IEditAction)
 DGNPLATFORM_TYPEDEFS(IEditActionArray)
@@ -146,11 +148,10 @@ DGNPLATFORM_TYPEDEFS(IGeoCoordinateServices)
 DGNPLATFORM_TYPEDEFS(IGeometryProcessor)
 DGNPLATFORM_TYPEDEFS(ILineStyle)
 DGNPLATFORM_TYPEDEFS(ILineStyleComponent)
-DGNPLATFORM_TYPEDEFS(ILocksManager)
-DGNPLATFORM_TYPEDEFS(ILocksServer)
 DGNPLATFORM_TYPEDEFS(IPickGeom)
 DGNPLATFORM_TYPEDEFS(IRedrawAbort)
 DGNPLATFORM_TYPEDEFS(IRedrawOperation)
+DGNPLATFORM_TYPEDEFS(IRepositoryManager)
 DGNPLATFORM_TYPEDEFS(ISolidKernelEntity)
 DGNPLATFORM_TYPEDEFS(ISubEntity)
 DGNPLATFORM_TYPEDEFS(ITransactionHandler)
@@ -210,7 +211,7 @@ DGNPLATFORM_REF_COUNTED_PTR(DgnElement)
 DGNPLATFORM_REF_COUNTED_PTR(DgnElementExpressionContext)
 DGNPLATFORM_REF_COUNTED_PTR(DgnFont)
 DGNPLATFORM_REF_COUNTED_PTR(DgnGCS)
-DGNPLATFORM_REF_COUNTED_PTR(DgnGeomPart)
+DGNPLATFORM_REF_COUNTED_PTR(DgnGeometryPart)
 DGNPLATFORM_REF_COUNTED_PTR(DgnMarkupProject)
 DGNPLATFORM_REF_COUNTED_PTR(DgnModel)
 DGNPLATFORM_REF_COUNTED_PTR(DgnRevision)
@@ -219,9 +220,8 @@ DGNPLATFORM_REF_COUNTED_PTR(DictionaryElement)
 DGNPLATFORM_REF_COUNTED_PTR(DisplayStyleHandlerSettings)
 DGNPLATFORM_REF_COUNTED_PTR(DrawingElement)
 DGNPLATFORM_REF_COUNTED_PTR(DrawingViewDefinition)
+DGNPLATFORM_REF_COUNTED_PTR(IBriefcaseManager)
 DGNPLATFORM_REF_COUNTED_PTR(IElemTopology)
-DGNPLATFORM_REF_COUNTED_PTR(ILocksManager)
-DGNPLATFORM_REF_COUNTED_PTR(ImageBuffer)
 DGNPLATFORM_REF_COUNTED_PTR(PatternParams)
 DGNPLATFORM_REF_COUNTED_PTR(PatternParams)
 DGNPLATFORM_REF_COUNTED_PTR(PhysicalElement)
@@ -284,7 +284,7 @@ END_BENTLEY_RENDER_NAMESPACE
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 BEBRIEFCASEBASED_ID_CLASS(DgnElementId)       //!< An Id that is assigned to an Element. @ingroup DgnElementGroup
-BEBRIEFCASEBASED_ID_CLASS(DgnGeomPartId)      //!< An Id that is assigned to a DgnGeomPart.
+BEBRIEFCASEBASED_ID_CLASS(DgnGeometryPartId)      //!< An Id that is assigned to a DgnGeometryPart.
 BEBRIEFCASEBASED_ID_CLASS(DgnModelId)         //!< An Id that is assigned to a DgnModel.  A DgnModel is a container for DgnElements. @ingroup DgnModelGroup
 BEBRIEFCASEBASED_ID_CLASS(DgnLinkId)          //!< An Id that is assigned to a DGN link. See DgnLinkTable.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnMaterialId, DgnElementId) //!< An element Id that refers to a material.
@@ -377,7 +377,6 @@ struct DgnClassId : BeSQLite::BeInt64Id
     DgnClassId& operator=(DgnClassId const& rhs) {m_id = rhs.m_id; return *this;}
 };
 
-//=======================================================================================
 //! The GeometryStreamEntryId class identifies a geometric primitive in a GeometryStream.
 //=======================================================================================
 struct GeometryStreamEntryId
@@ -390,7 +389,7 @@ struct GeometryStreamEntryId
 
 private:
     Type            m_type;
-    DgnGeomPartId   m_partId;
+    DgnGeometryPartId   m_partId;
     uint32_t        m_index;
     uint32_t        m_partIndex;
 
@@ -402,38 +401,19 @@ public:
     DGNPLATFORM_EXPORT bool operator!=(GeometryStreamEntryIdCR rhs) const;
     DGNPLATFORM_EXPORT GeometryStreamEntryIdR operator=(GeometryStreamEntryIdCR rhs);
 
-    void Init() {m_type = Type::Invalid; m_index = 0; m_partIndex = 0; m_partId = DgnGeomPartId();}
+    void Init() {m_type = Type::Invalid; m_index = 0; m_partIndex = 0; m_partId = DgnGeometryPartId();}
     void SetType(Type type) {m_type = type;}
-    void SetGeomPartId(DgnGeomPartId partId) {m_partId = partId; m_partIndex = 0;}
+    void SetGeometryPartId(DgnGeometryPartId partId) {m_partId = partId; m_partIndex = 0;}
     void SetIndex(uint32_t index) {m_index = index;}
     void SetPartIndex(uint32_t partIndex) {m_partIndex = partIndex;}
 
     Type GetType() const {return m_type;}
-    DgnGeomPartId GetGeomPartId() const {return m_partId;}
+    DgnGeometryPartId GetGeometryPartId() const {return m_partId;}
     uint32_t GetIndex() const {return m_index;}
     uint32_t GetPartIndex() const {return m_partIndex;}
 };
 
 //=======================================================================================
-//! DEPRECATED: Use DgnElementId (preferred) or ECInstanceKey (for ECRelationships) instead
-//! @private
-//=======================================================================================
-struct DgnElementKey : BeSQLite::EC::ECInstanceKey
-{
-    DgnElementKey() : BeSQLite::EC::ECInstanceKey() {}
-    DgnElementKey(ECN::ECClassId classId, BeSQLite::EC::ECInstanceId instanceId) : BeSQLite::EC::ECInstanceKey(classId, instanceId) {}
-    DgnElementKey(DgnClassId classId, BeSQLite::EC::ECInstanceId instanceId) : BeSQLite::EC::ECInstanceKey(classId.GetValue(), instanceId) {}
-
-    //! Converts an ECInstanceKey to a DgnElementKey.
-    //! @note Does a simple type conversion without checking if the specified ECInstanceKey is a valid DgnElementKey
-    explicit DgnElementKey(BeSQLite::EC::ECInstanceKeyCR key) : BeSQLite::EC::ECInstanceKey(key) {}
-
-    DgnClassId GetClassId() const {return DgnClassId(GetECClassId());}
-    DgnElementId GetElementId() const {return DgnElementId(GetECInstanceId().GetValue());}
-};
-
-typedef DgnElementKey const& DgnElementKeyCR; //!< @private
-
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
 //=======================================================================================
 //! The key (classId,instanceId) of a the Item aspect.
@@ -648,198 +628,6 @@ enum class ConfigurationVariableLevel
     User          = 6,         //!< user defined
     };
 
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   01/12
-//=======================================================================================
-struct CheckStop
-{  
-private:
-    bool m_aborted;
-
-public:
-    bool InitAborted(bool val) {return m_aborted = val;}
-    bool ClearAborted() {return m_aborted = false;}
-    bool WasAborted()  {return m_aborted;}
-    bool SetAborted() {return m_aborted = true;}
-    bool AddAbortTest(bool val) {return  m_aborted |= val;}
-
-    CheckStop() {m_aborted=false;}
-
-    //! return true to abort the current operation.
-    //! @note Overrides MUST call SetAborted or use AddAbortTest since WasAborted may be directly tested!
-    virtual bool _CheckStop() {return m_aborted;}
-};
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   04/14
-//=======================================================================================
-struct ProgressiveDisplay : RefCounted<NonCopyableClass>
-{
-    enum class Completion {Finished=0, Aborted=1, Failed=2};
-    virtual Completion _Process(ViewContextR, uint32_t batchSize) = 0;  // if this returns Finished, it is removed from the viewport
-};
-
-/*=================================================================================**//**
-* @bsiclass                                                     Keith.Bentley   02/04
-+===============+===============+===============+===============+===============+======*/
-struct StopEvents
-    {
-    bool    m_keystrokes;
-    bool    m_wheel;
-    bool    m_button;
-    bool    m_buttonUp;
-    bool    m_paint;
-    bool    m_focus;
-    bool    m_modifierKeyTransition;
-    bool    m_sensor;
-    bool    m_abortUpdateRequest;
-    bool    m_touchMotion;          //  Ignored unless the motion exceeds range.
-    bool    m_anyEvent;
-    uint32_t m_touchLimit;
-    uint32_t m_numTouches;
-    BentleyApi::Point2d m_touches[3];
-
-    enum StopMask
-        {
-        None        = 0,
-        OnKeystrokes  = 1<<0,
-        OnWheel       = 1<<2,
-        OnButton      = 1<<3,
-        OnPaint       = 1<<4,
-        OnFocus       = 1<<5,
-        OnModifierKey = 1<<6,
-        OnTouch       = 1<<7,
-        OnAbortUpdate = 1<<8,
-        OnSensor      = 1<<9,   //  GPS, Gyro
-        OnButtonUp    = 1<<10,
-        AnyEvent      = 1<<11,   //  includes all of the other events plus unknown events
-
-        ForFullUpdate  = OnWheel | OnAbortUpdate,             // doesn't stop on keystrokes, buttons, or touch
-        ForQuickUpdate = ForFullUpdate | OnKeystrokes | OnButton | OnTouch,
-        };
-
-    void Clear()
-        {
-        m_keystrokes = m_wheel = m_button = m_paint = m_focus = m_modifierKeyTransition = m_abortUpdateRequest = m_touchMotion = m_anyEvent = false;
-        m_touchLimit = 0;
-        }
-
-    StopEvents(int mask)
-        {
-        if (mask & AnyEvent)
-            mask = -1;
-
-        m_keystrokes = TO_BOOL(mask & OnKeystrokes);
-        m_wheel      = TO_BOOL(mask & OnWheel);
-        m_button     = TO_BOOL(mask & OnButton);
-        m_buttonUp   = TO_BOOL(mask & OnButtonUp);
-        m_paint      = TO_BOOL(mask & OnPaint);
-        m_focus      = TO_BOOL(mask & OnFocus);
-        m_sensor     = TO_BOOL(mask & OnSensor);
-        m_modifierKeyTransition = TO_BOOL(mask & OnModifierKey);
-        m_touchMotion = TO_BOOL(mask & OnTouch);
-        m_abortUpdateRequest = TO_BOOL(mask & OnAbortUpdate);
-        m_anyEvent   = TO_BOOL(mask & AnyEvent);
-        m_touchLimit = 0;
-        }
-
-    void SetTouchLimit(uint32_t limit, uint32_t numTouches, Point2dCP touches);
-
-    // Stop when the ctrl or shift key is pressed or released.
-    void SetStopOnModifierKey(bool stop) {m_modifierKeyTransition = stop;}
-    };
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   01/12
-//=======================================================================================
-struct UpdatePlan
-{
-    friend struct ViewSet;
-
-    struct Query
-    {
-        uint32_t    m_maxTime = 2000;    // maximum time query should run (milliseconds)
-        double      m_minPixelSize = 50;
-        double      m_frustumScale = 1.25;
-        bool        m_wait = false;
-        uint32_t    m_minElements = 300;
-        uint32_t    m_maxElements = 50000;
-        mutable uint32_t m_delayAfter = 0;
-        mutable uint32_t m_targetNumElements;
-
-        uint32_t GetTimeout() const {return m_maxTime;}
-        uint32_t GetMinElements() const {return m_minElements;}
-        uint32_t GetMaxElements() const {return m_maxElements;}
-        void SetMinjElements(uint32_t val) {m_minElements = val;}
-        void SetMaxElements(uint32_t val) {m_maxElements = val;}
-        double GetMinimumSizePixels() const {return m_minPixelSize;}
-        void SetMinimumSizePixels(double val) {m_minPixelSize=val;}
-        void SetTargetNumElements(uint32_t val) const {m_targetNumElements=val;}
-        uint32_t GetTargetNumElements() const {return m_targetNumElements;}
-        void SetWait(bool val) {m_wait=val;}
-        bool WantWait() const {return m_wait;}
-        uint32_t GetDelayAfter() const {return m_delayAfter;}
-        void SetDelayAfter (uint32_t val) const {m_delayAfter=val;}
-    };
-
-    struct Scene
-    {   
-        double m_timeout = 0.0; // abort create scene after this time. If 0, no timeout
-        double GetTimeout() const {return m_timeout;}
-        void SetTimeout(double seconds) {m_timeout=seconds;}
-    };
-
-    struct AbortFlags
-    {
-        struct Motion
-        {
-            int     m_tolerance = 0;
-            int     m_total = 0;
-            Point2d m_cursorPos;
-            void Clear() {m_total=0; m_cursorPos.x = m_cursorPos.y = 0;}
-
-            void AddMotion(int val) {m_total += val;}
-            int GetTotalMotion() {return m_total;}
-            void SetCursorPos(Point2d pt) {m_cursorPos=pt;}
-            void SetTolerance(int val) {m_tolerance=val;}
-            int GetTolerance() {return m_tolerance;}
-            Point2d GetCursorPos() {return m_cursorPos;}
-        };
-
-        StopEvents  m_stopEvents = StopEvents::ForFullUpdate;
-        mutable Motion m_motion;
-
-        void SetTouchCheckStopLimit(bool enabled, uint32_t pixels, uint32_t numberTouches, Point2dCP touches);
-        void SetStopEvents(StopEvents stopEvents) {m_stopEvents = stopEvents;}
-        StopEvents GetStopEvents() const {return m_stopEvents;}
-        Motion& GetMotion() const {return m_motion;}
-        bool WantMotionAbort() const {return 0 != m_motion.GetTolerance();}
-    };
-
-    double      m_targetFPS = 10.0; // Frames Per second
-    Query       m_query;
-    Scene       m_scene;
-    AbortFlags  m_abortFlags;
-
-public:
-    double GetTargetFramesPerSecond() const {return m_targetFPS;}
-    void SetTargetFramesPerSecond(double fps) {m_targetFPS = fps;}
-    Query& GetQueryR() {return m_query;}
-    Query const& GetQuery() const {return m_query;}
-    Scene& GetSceneR() {return m_scene;}
-    Scene const& GetScene() const {return m_scene;}
-    AbortFlags const& GetAbortFlags() const {return m_abortFlags;}
-    AbortFlags& GetAbortFlagsR() {return m_abortFlags;}
-};
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   01/12
-//=======================================================================================
-struct DynamicUpdatePlan : UpdatePlan
-    {
-    DynamicUpdatePlan() {m_abortFlags.SetStopEvents(StopEvents::ForQuickUpdate);}
-    };
-
 
 //! @private
 enum DgnPlatformConstants
@@ -1050,13 +838,9 @@ enum class DrawPurpose
 {
     NotSpecified = 0,
     CreateScene,
-    Hilite,
-    Unhilite,
-    Dynamics,
     Plot,
     Pick,
     CaptureGeometry,
-    GenerateThumbnail,
     Decorate,
     FenceAccept,
     RegionFlood,                 //!< Collect graphics to find closed regions/flood...
@@ -1066,7 +850,7 @@ enum class DrawPurpose
     ModelFacet,
     Measure,
     VisibilityCalculation,
-    UpdateDynamic,
+    Dynamics,
 };
 
 //! Used to communicate the result of handling an event from a GPS.

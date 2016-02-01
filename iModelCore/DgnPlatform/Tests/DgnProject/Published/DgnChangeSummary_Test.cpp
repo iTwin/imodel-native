@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/DgnChangeSummary_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ChangeTestFixture.h"
@@ -18,6 +18,7 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 //=======================================================================================
 struct DgnChangeSummaryTestFixture : public ChangeTestFixture
 {
+    DEFINE_T_SUPER(ChangeTestFixture)
     struct ChangedElements
     {
     DgnElementIdSet m_inserts;
@@ -34,13 +35,15 @@ struct DgnChangeSummaryTestFixture : public ChangeTestFixture
         }
     };
 
+private:
+    virtual void _CreateDgnDb() override;
+ 
 protected:
-    DgnAuthority::Code CreateCode(int iFloor, int iQuadrant);
+    DgnCode CreateCode(int iFloor, int iQuadrant);
         
     DgnElementId QueryElementId(int iFloor, int iQuadrant);
 
     void CreateSampleBuilding(WCharCP fileName);
-    void InsertEmptyBuilding(WCharCP filename);
     void InsertFloor(int iFloor);
     void UpdateFloorGeometry(int iFloor);
     void DeleteFloor(int iFloor);
@@ -51,14 +54,23 @@ protected:
     void CompareSessions(DgnChangeSummaryTestFixture::ChangedElements& changedElements, uint32_t startSession, uint32_t endSession);
 
 public:
-    virtual void SetUp() override {}
-    virtual void TearDown() override {}
+    DgnChangeSummaryTestFixture() : T_Super(L"DgnChangeSummaryTest.dgndb") {}
 };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    01/2016
+//---------------------------------------------------------------------------------------
+void DgnChangeSummaryTestFixture::_CreateDgnDb()
+    {
+    T_Super::_CreateDgnDb();
+    CreateDefaultView(m_testModel->GetModelId());
+    UpdateDgnDbExtents();
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    08/2015
 //---------------------------------------------------------------------------------------
-DgnAuthority::Code DgnChangeSummaryTestFixture::CreateCode(int iFloor, int iQuadrant)
+DgnCode DgnChangeSummaryTestFixture::CreateCode(int iFloor, int iQuadrant)
     {
     Utf8PrintfString codeStr("Floor %d,Quadrant %d", iFloor, iQuadrant);
     return m_testAuthority->CreateCode(codeStr);
@@ -67,23 +79,9 @@ DgnAuthority::Code DgnChangeSummaryTestFixture::CreateCode(int iFloor, int iQuad
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    08/2015
 //---------------------------------------------------------------------------------------
-void DgnChangeSummaryTestFixture::InsertEmptyBuilding(WCharCP filename)
-    {
-    CreateDgnDb(filename);
-    InsertModel();
-    InsertCategory();
-    InsertAuthority();
-    CreateDefaultView();
-    UpdateDgnDbExtents();
-    m_testDb->SaveChanges("Inserted empty building");
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    08/2015
-//---------------------------------------------------------------------------------------
 DgnElementId DgnChangeSummaryTestFixture::QueryElementId(int iFloor, int iQuadrant)
     {
-    DgnAuthority::Code code = CreateCode(iFloor, iQuadrant);
+    DgnCode code = CreateCode(iFloor, iQuadrant);
     return m_testDb->Elements().QueryElementIdByCode(code);
     }
 
@@ -224,25 +222,25 @@ TxnManager::TxnId DgnChangeSummaryTestFixture::QueryLastTxnId(DgnDbR dgndb, uint
 //---------------------------------------------------------------------------------------
 void DgnChangeSummaryTestFixture::CreateSampleBuilding(WCharCP fileName)
     {
-    InsertEmptyBuilding(fileName);
-    CloseDgnDb();
+    m_testFileName = fileName;
+    CreateDgnDb();
 
     for (int ii = 0; ii < 5; ii++)
         {
-        OpenDgnDb(fileName);
+        OpenDgnDb();
         InsertFloor(ii);
         CloseDgnDb();
         }
 
-    OpenDgnDb(fileName);
+    OpenDgnDb();
     UpdateFloorGeometry(1);
     CloseDgnDb();
 
-    OpenDgnDb(fileName);
+    OpenDgnDb();
     DeleteFloor(3);
     CloseDgnDb();
 
-    OpenDgnDb(fileName);
+    OpenDgnDb();
     InsertFloor(5);
     CloseDgnDb();
     }
@@ -311,7 +309,7 @@ TEST_F(DgnChangeSummaryTestFixture, ValidateChangeSummaries)
     {
     WCharCP fileName = L"SampleBuildingTest.dgndb";
     CreateSampleBuilding(fileName);
-    OpenDgnDb(fileName);
+    OpenDgnDb();
 
     /*
     Dump of TxnTable - 

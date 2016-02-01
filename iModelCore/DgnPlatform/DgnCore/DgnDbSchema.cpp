@@ -56,7 +56,7 @@ DbResult DgnDb::CreateDictionaryModel()
     {
     Utf8String dictionaryName = DgnCoreL10N::GetString(DgnCoreL10N::MODELNAME_Dictionary());
     
-    DgnModel::Code modelCode = DgnModel::CreateModelCode(dictionaryName);
+    DgnCode modelCode = DgnModel::CreateModelCode(dictionaryName);
     Statement stmt(*this, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) " (Id,Code_Value,Label,ECClassId,Visibility,Code_AuthorityId,Code_Namespace) VALUES(?,?,'',?,0,?,?)");
     stmt.BindId(1, DgnModel::DictionaryId());
     stmt.BindText(2, modelCode.GetValueCP(), Statement::MakeCopy::No);
@@ -103,22 +103,29 @@ DbResult DgnDb::CreateDgnDbTables()
     // Every DgnDb has a dictionary model
     CreateDictionaryModel();
 
+    // The Generic domain is used when a conversion process doesn't have enough information to pick something better
+    if (DgnDbStatus::Success != GenericDomain::ImportSchema(*this, DgnDomain::ImportSchemaOptions::ImportOnly)) // Let an upper layer decide whether or not to create ECClassViews
+        {
+        BeAssert(false);
+        return BE_SQLITE_NOTFOUND;
+        }
+
     ExecuteSql("CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON " DGN_TABLE(DGN_CLASSNAME_SpatialElement)
-               " BEGIN DELETE FROM " DGN_VTABLE_RTree3d " WHERE ElementId=old.Id;END");
+               " BEGIN DELETE FROM " DGN_VTABLE_RTree3d " WHERE ElementId=old.ElementId;END");
 
     ExecuteSql("CREATE TRIGGER dgn_rtree_upd AFTER UPDATE ON " DGN_TABLE(DGN_CLASSNAME_SpatialElement) 
                " WHEN new.Origin_X IS NOT NULL AND " GEOM_IN_PHYSICAL_SPACE_CLAUSE
-               "BEGIN INSERT OR REPLACE INTO " DGN_VTABLE_RTree3d "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.Id,"
+               "BEGIN INSERT OR REPLACE INTO " DGN_VTABLE_RTree3d "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,"
                "DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5)"
                " FROM (SELECT " AABB_FROM_PLACEMENT " as bb);END");
 
     ExecuteSql("CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE ON " DGN_TABLE(DGN_CLASSNAME_SpatialElement) 
                 " WHEN OLD.Origin_X IS NOT NULL AND NEW.Origin_X IS NULL"
-                " BEGIN DELETE FROM " DGN_VTABLE_RTree3d " WHERE ElementId=OLD.Id;END");
+                " BEGIN DELETE FROM " DGN_VTABLE_RTree3d " WHERE ElementId=OLD.ElementId;END");
 
     ExecuteSql("CREATE TRIGGER dgn_rtree_ins AFTER INSERT ON " DGN_TABLE(DGN_CLASSNAME_SpatialElement) 
                " WHEN new.Origin_X IS NOT NULL AND " GEOM_IN_PHYSICAL_SPACE_CLAUSE
-               "BEGIN INSERT INTO " DGN_VTABLE_RTree3d "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.Id,"
+               "BEGIN INSERT INTO " DGN_VTABLE_RTree3d "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,"
                "DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5)"
                " FROM (SELECT " AABB_FROM_PLACEMENT " as bb);END");
 

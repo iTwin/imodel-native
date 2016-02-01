@@ -60,6 +60,8 @@ void DgnDb::Destroy()
         m_revisionManager = nullptr;
         }
     m_ecsqlCache.Empty();
+    m_briefcaseManager = nullptr;
+    m_localStateDb.Destroy();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -94,15 +96,14 @@ DbResult DgnDb::_OnDbOpened()
     if (BE_SQLITE_OK != rc)
         return rc;
 
-    Fonts().Update(); // ensure the font ID cache is loaded; if you wait for on-demand, it may need to query during an update, which we'd like to avoid
-
-    m_units.Load();
-    
     if (BE_SQLITE_OK != (rc = Domains().OnDbOpened()))
         return rc;
 
     if (BE_SQLITE_OK != (rc = Txns().InitializeTableHandlers())) // make sure txnmanager is allocated and that all txn-related temp tables are created. 
         return rc;                                               // NB: InitializeTableHandlers calls SaveChanges!
+
+    Fonts().Update(); // ensure the font ID cache is loaded; if you wait for on-demand, it may need to query during an update, which we'd like to avoid
+    m_units.Load();
 
     return BE_SQLITE_OK;
     }
@@ -121,17 +122,17 @@ TxnManagerR DgnDb::Txns()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ILocksManagerR DgnDb::Locks()
+IBriefcaseManagerR DgnDb::BriefcaseManager()
     {
-    // This is here rather than in the constructor because _CreateLocksManager() requires briefcase ID, which is obtained from m_dbFile,
+    // This is here rather than in the constructor because _CreateBriefcaseManager() requires briefcase ID, which is obtained from m_dbFile,
     // which is not initialized in constructor.
-    if (m_locksManager.IsNull())
+    if (m_briefcaseManager.IsNull())
         {
-        m_locksManager = T_HOST.GetLocksAdmin()._CreateLocksManager(*this);
-        BeAssert(m_locksManager.IsValid());
+        m_briefcaseManager = T_HOST.GetRepositoryAdmin()._CreateBriefcaseManager(*this);
+        BeAssert(m_briefcaseManager.IsValid());
         }
 
-    return *m_locksManager;
+    return *m_briefcaseManager;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -471,5 +472,127 @@ DictionaryModelR DgnDb::GetDictionaryModel()
     DictionaryModelPtr dict = Models().Get<DictionaryModel>(DgnModel::DictionaryId());
     BeAssert(dict.IsValid() && "A DgnDb always has a dictionary model");
     return *dict;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnDb::LocalStateDb::Validate(DgnDbR dgndb)
+    {
+    switch (m_state)
+        {
+        case DbState::Ready:    return true;
+        case DbState::Invalid:  return false;
+        default:                BeAssert(DbState::New == m_state); break;
+        }
+
+    m_state = DbState::Invalid;
+
+    // Stored alongside the dgndb itself
+    BeFileName filename = dgndb.GetFileName();
+    filename.AppendExtension(L"local");
+
+    // Don't assume existing file contains valid data...
+    filename.BeDeleteFile();
+
+    DbResult result = m_db.CreateNewDb(filename);
+    if (BE_SQLITE_OK == result)
+        m_state = DbState::Ready;
+
+    return IsValid();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnDb::LocalStateDb::Destroy()
+    {
+    if (IsValid())
+        {
+        m_db.CloseDb();
+        BeFileName filename(m_db.GetDbFileName());
+        filename.BeDeleteFile();
+        }
+
+    m_state = DbState::New;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDb::LocalStateDb& DgnDb::GetLocalStateDb()
+    {
+    m_localStateDb.Validate(*this);
+    return m_localStateDb;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSqlStatement* ECSqlStatementIteratorBase::PrepareStatement(DgnDbCR dgndb, Utf8CP ecSql, uint32_t idSelectColumnIndex)
+    {
+    m_statement = dgndb.GetPreparedECSqlStatement(ecSql);
+    if (m_statement.IsNull())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    m_isAtEnd = false;
+    m_idSelectColumnIndex = (int) idSelectColumnIndex;
+    return m_statement.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSqlStatementIteratorBase::IsEqual(ECSqlStatementIteratorBase const& rhs) const
+    {
+    if (m_isAtEnd && rhs.m_isAtEnd)
+        return true;
+    if (m_isAtEnd != rhs.m_isAtEnd)
+        return false;
+
+    BeAssert(m_statement.IsValid() && rhs.m_statement.IsValid());
+    ECInstanceId thisId = m_statement->GetValueId<ECInstanceId>(m_idSelectColumnIndex);
+    
+    // Do NOT delete the next line and simply use rhs.m_statement on the subsequent.
+    // Android GCC 4.9 and clang 6.1.0 cannot deduce the templates when you try to combine it all up.
+    CachedECSqlStatementPtr rhsStatement = rhs.m_statement;
+    ECInstanceId rhsId = rhsStatement->GetValueId<ECInstanceId>(rhs.m_idSelectColumnIndex);
+    
+    return thisId == rhsId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECSqlStatementIteratorBase::MoveNext()
+    {
+    if (m_isAtEnd)
+        {
+        BeAssert(false && "Do not attempt to iterate beyond the end of the instances.");
+        return;
+        }
+    DbResult stepStatus = m_statement->Step();
+    BeAssert(stepStatus == BE_SQLITE_ROW || stepStatus == BE_SQLITE_DONE);
+    if (stepStatus != BE_SQLITE_ROW)
+        m_isAtEnd = true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECSqlStatementIteratorBase::MoveFirst()
+    {
+    if (!m_statement.IsValid())
+        {
+        m_isAtEnd = true;
+        return;
+        }
+
+    m_statement->Reset();
+    m_isAtEnd = false;
+    MoveNext();
     }
 

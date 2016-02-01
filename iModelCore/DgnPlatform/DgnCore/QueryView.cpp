@@ -21,30 +21,12 @@
 #   define DEBUG_PRINTF(fmt, ...)
 #endif
 
-#if defined (TRACE_QUERY_LOGIC)
-static void initRenderLogging()
-    {
-    static bool s_inited;
-    if (s_inited)
-        return;
-
-    s_inited = true;
-    NativeLogging::LoggingConfig::SetSeverity ("ClientThread", NativeLogging::LOG_DEBUG);
-    NativeLogging::LoggingConfig::SetSeverity ("RenderThread", NativeLogging::LOG_DEBUG);
-    NativeLogging::LoggingConfig::SetSeverity ("QueryThread", NativeLogging::LOG_DEBUG);
-    NativeLogging::LoggingConfig::SetSeverity ("UnknownThread", NativeLogging::LOG_DEBUG);
-    }
-#endif
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 QueryViewController::QueryViewController(DgnDbR dgndb, DgnViewId id) : CameraViewController(dgndb, id), m_queryModel(*new QueryModel(dgndb))
     {
-#if defined (TRACE_QUERY_LOGIC)
-    initRenderLogging();
-#endif
     m_forceNewQuery = true; 
     m_maxElementMemory = 0;
     m_noQuery = false;
@@ -62,16 +44,7 @@ QueryViewController::~QueryViewController()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::_OnDynamicUpdate(DgnViewportR vp, UpdatePlan const& plan)
-    {
-    PickUpResults();
-    QueueQuery(vp, plan);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::_OnFullUpdate(DgnViewportR vp, UpdatePlan const& plan)
+void QueryViewController::_OnUpdate(DgnViewportR vp, UpdatePlan const& plan)
     {
     if (m_forceNewQuery || FrustumChanged(vp))
         QueueQuery(vp, plan);
@@ -96,12 +69,18 @@ bool QueryViewController::FrustumChanged(DgnViewportCR vp) const
 //---------------------------------------------------------------------------------------
 void QueryViewController::QueueQuery(DgnViewportR viewport, UpdatePlan const& plan)
     {
+#if defined (DEBUG_QUERY)
+    static bool s_blockQuery = false;   // turn this on to "freeze" the content of a QueryView
+    if (s_blockQuery)
+        return;
+#endif
+
     m_startQueryFrustum = viewport.GetFrustum(DgnCoordSystem::World, true);
     m_saveQueryFrustum.Invalidate();
 
     m_forceNewQuery = false;
 
-    QueryModel::Processor::Params params(m_queryModel, viewport, _GetRTreeMatchSql(viewport), plan.GetQuery(), ComputeMaxElementMemory(viewport), 
+    QueryModel::Processor::Params params(m_queryModel, viewport, _GetQuery(viewport), plan.GetQuery(), ComputeMaxElementMemory(viewport), 
             m_alwaysDrawn.empty() ? nullptr : &m_alwaysDrawn, m_neverDrawn.empty() ? nullptr : &m_neverDrawn, m_noQuery,
             GetClipVector().get());
 
@@ -263,15 +242,21 @@ void QueryViewController::_OnCategoryChange(bool singleEnabled)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryViewController::QueryModelExtents(DRange3dR range, DgnViewportR vp)
     {
-    // make sure this is local variable so it is removed before the call to LoadElementsForUpdate below.
-    DgnDbRTreeFitFilter filter;
+    RTreeFitFilter filter;
+    CachedStatementPtr viewStmt;              
+    Utf8String viewSql = _GetQuery(vp) + filter.GetAcceptSql();
+    GetDgnDb().GetCachedStatement(viewStmt, viewSql.c_str());
+    BindModelAndCategory(*viewStmt);
 
-    Statement getRange;
-    getRange.Prepare(m_dgndb, _GetRTreeMatchSql(vp).c_str());
-    BindModelAndCategory(getRange, filter);
-
-    while (BE_SQLITE_ROW == getRange.Step())
-        range.Extend(filter.m_lastRange);
+    uint64_t thisId;
+    int idCol = viewStmt->GetParameterIndex("@elId");
+    while (0 != (thisId=filter.StepRtree()))
+        {
+        viewStmt->Reset();
+        viewStmt->BindInt64(idCol, thisId);
+        if (BE_SQLITE_ROW == viewStmt->Step())
+            range.Extend(filter.m_lastRange);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -291,12 +276,11 @@ ViewController::FitComplete QueryViewController::_ComputeFitRange(DRange3dR rang
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String QueryViewController::_GetRTreeMatchSql(DgnViewportR) 
+Utf8String QueryViewController::_GetQuery(DgnViewportR) const
     {
-    return Utf8String("SELECT r.ElementId FROM "
-           DGN_VTABLE_RTree3d " AS r, " DGN_TABLE(DGN_CLASSNAME_Element) " AS e, " DGN_TABLE(DGN_CLASSNAME_SpatialElement) " AS g "
-           "WHERE r.ElementId MATCH DGN_rTree(@matcher) AND e.Id=r.ElementId AND g.Id=r.ElementId"
-           " AND InVirtualSet(@vSet,e.ModelId,g.CategoryId)");
+    return Utf8String("SELECT e.Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e, " 
+                      DGN_TABLE(DGN_CLASSNAME_SpatialElement) " AS g "
+                      "WHERE g.ElementId=e.Id AND InVirtualSet(@vSet,e.ModelId,g.CategoryId)");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -321,17 +305,11 @@ void QueryViewController::_OnAttachedToViewport(DgnViewportR)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::BindModelAndCategory(StatementR stmt, RTreeTester& matcher) const
+void QueryViewController::BindModelAndCategory(StatementR stmt) const
     {
-    int matcherIdx = stmt.GetParameterIndex("@matcher");
-    BeAssert(0 != matcherIdx);
-    stmt.BindInt64(matcherIdx, (int64_t) &matcher);
-
     int vSetIdx = stmt.GetParameterIndex("@vSet");
-    if (0 == vSetIdx)
-        return;
-
-    stmt.BindVirtualSet(vSetIdx, *this);
+    if (0 != vSetIdx)
+        stmt.BindVirtualSet(vSetIdx, *this);
     }
 
 //---------------------------------------------------------------------------------------
@@ -373,11 +351,7 @@ void QueryViewController::_DrawView(ViewContextR context)
 
     const uint64_t maxMem = GetMaxElementMemory();
     UNUSED_VARIABLE(maxMem);
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     const int64_t purgeTrigger = static_cast <int64_t> (1.5 * static_cast <double> (maxMem));
-#else
-    const int64_t purgeTrigger = 2000 * 1024 * 1024;
-#endif
 
     // this vector is sorted by occlusion score, so we use it to determine the order to draw the view
     uint32_t numDrawn = 0;
@@ -453,11 +427,8 @@ void QueryViewController::_DrawView(ViewContextR context)
         {
         m_needProgressiveDisplay = true;
         DgnViewportP vp = context.GetViewport();
-        CachedStatementPtr rangeStmt;
-        m_queryModel.GetDgnDb().GetCachedStatement(rangeStmt, _GetRTreeMatchSql(*context.GetViewport()).c_str());
-
-        QueryModel::ProgressiveFilter* filter = new QueryModel::ProgressiveFilter(*vp, m_queryModel, m_neverDrawn.empty() ? nullptr : &m_neverDrawn, maxMem, rangeStmt.get(), 30.0);
-        BindModelAndCategory(*rangeStmt, *filter);
+        QueryModel::ProgressiveFilter* filter = new QueryModel::ProgressiveFilter(m_queryModel, m_neverDrawn.empty() ? nullptr : &m_neverDrawn, maxMem);
+        filter->SetViewport(*vp, 6.0, 1.0);
 
         if (GetClipVector().IsValid())
             filter->SetClipVector(*GetClipVector());
@@ -466,31 +437,45 @@ void QueryViewController::_DrawView(ViewContextR context)
         }
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      06/2015
-//---------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* Visit all of the elements in a QueryView. This is used for picking, etc.
+* @bsimethod                                    Keith.Bentley                   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
 void QueryViewController::_VisitAllElements(ViewContextR context)
     {
-    // Visit the elements that were actually loaded
+    // Visit the elements that were actually loaded. Stop if this fails
     if (SUCCESS != context.VisitDgnModel(&m_queryModel))
         return;
 
+    // then, see if there are elements that were drawn by progressive display
     if (!m_needProgressiveDisplay || context.CheckStop())
         return;
 
-    // And step through the rest of the elements that were not loaded (but would be displayed by progressive display).
-    CachedStatementPtr rangeStmt;
-    m_queryModel.GetDgnDb().GetCachedStatement(rangeStmt, _GetRTreeMatchSql(*context.GetViewport()).c_str());
-
     QueryModel::AllElementsFilter filter(m_queryModel, m_neverDrawn.empty() ? nullptr : &m_neverDrawn, GetMaxElementMemory());
+
+    CachedStatementPtr viewStmt;              
+    Utf8String viewSql = _GetQuery(*context.GetViewport()) + filter.GetAcceptSql();
+    m_queryModel.GetDgnDb().GetCachedStatement(viewStmt, viewSql.c_str());
+    BindModelAndCategory(*viewStmt);
+
     filter.SetFrustum(context.GetFrustum());
-    BindModelAndCategory(*rangeStmt, filter);
 
     int count=0;
-    while (BE_SQLITE_ROW == rangeStmt->Step())
+    uint64_t thisId;
+    int idCol = viewStmt->GetParameterIndex("@elId");
+    BeAssert(0 != idCol);
+
+    // the range tree will return all elements in the volume. Filter them by the view criteria
+    while (0 != (thisId=filter.StepRtree()))
         {
-        ++count;
-        filter.AcceptElement(context, rangeStmt->GetValueId<DgnElementId>(0));
+        viewStmt->Reset();
+        viewStmt->BindInt64(idCol, thisId);
+        if (BE_SQLITE_ROW == viewStmt->Step())
+            {
+            ++count;
+            filter.AcceptElement(context, DgnElementId(thisId));
+            }
+
         if (context.CheckStop())
             {
             DEBUG_PRINTF("pick aborted %d", count);

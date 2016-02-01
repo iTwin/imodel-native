@@ -78,43 +78,6 @@ public:
     };
 
 //=======================================================================================
-//! The Render::Queue is accessed through DgnViewport::GetRenderQueue. It holds an array of Render::Tasks waiting
-//! to to be processed on the render thread. Render::Tasks may be added to the Render::Queue only
-//! on the main (work) thread, and may only be processed on the Render thread.
-// @bsiclass                                                    Keith.Bentley   09/15
-//=======================================================================================
-struct Queue
-{
-    friend DgnViewport;
-private:
-    BeConditionVariable m_cv;
-    std::deque<TaskPtr> m_tasks;
-    TaskPtr             m_currTask;
-
-    void WaitForWork();
-    void Process();
-    THREAD_MAIN_DECL Main(void*);
-
-public:
-    //! Add a Render::Task to the render queue. The Task will replace any existing pending entries in the Queue
-    //! for the same Render::Target for which task._CanReplace(existing) returns true.
-    //! @param[in] task The Render::Task to add to the queue.
-    //! @note This method may only be called from the main thread.
-    DGNPLATFORM_EXPORT void AddTask(Task& task);
-
-    //! Wait for all Tasks in the Queue to be processed.
-    //! @note This method may only be called from the main thread and will wait indefinitely for the existing render tasks
-    //! to complete.
-    DGNPLATFORM_EXPORT void WaitForIdle();
-
-    //! Add a task to the Queue and wait for it (and all previously queued Tasks) to complete.
-    //! @param[in] task The Render::Task to add to the queue.
-    //! @note This method may only be called from the main thread and will wait indefinitely for the existing render tasks
-    //! to complete.
-    void AddAndWait(Task& task) {AddTask(task); WaitForIdle();}
-};
-
-//=======================================================================================
 //! A rendering task to be performed on the render thread.
 // @bsiclass                                                    Keith.Bentley   07/15
 //=======================================================================================
@@ -125,6 +88,7 @@ struct Task : RefCounted<NonCopyableClass>
     {
         Initialize,
         ChangeScene,
+        ChangeRenderPlan,
         ChangeDynamics,
         ChangeDecorations,
         DrawProgressive,
@@ -172,6 +136,46 @@ public:
 
     Task(Target* target, Operation operation) : m_target(target), m_operation(operation) {}
 };
+
+//=======================================================================================
+//! The Render::Queue is accessed through DgnViewport::GetRenderQueue. It holds an array of Render::Tasks waiting
+//! to to be processed on the render thread. Render::Tasks may be added to the Render::Queue only
+//! on the main (work) thread, and may only be processed on the Render thread.
+// @bsiclass                                                    Keith.Bentley   09/15
+//=======================================================================================
+struct Queue
+{
+    friend DgnViewport;
+private:
+    BeConditionVariable m_cv;
+    std::deque<TaskPtr> m_tasks;
+    TaskPtr             m_currTask;
+
+    void WaitForWork();
+    void Process();
+    THREAD_MAIN_DECL Main(void*);
+
+public:
+    //! Add a Render::Task to the render queue. The Task will replace any existing pending entries in the Queue
+    //! for the same Render::Target for which task._CanReplace(existing) returns true.
+    //! @param[in] task The Render::Task to add to the queue.
+    //! @note This method may only be called from the main thread.
+    DGNPLATFORM_EXPORT void AddTask(Task& task);
+
+    //! Wait for all Tasks in the Queue to be processed.
+    //! @note This method may only be called from the main thread and will wait indefinitely for the existing render tasks
+    //! to complete.
+    DGNPLATFORM_EXPORT void WaitForIdle();
+
+    //! Add a task to the Queue and wait for it (and all previously queued Tasks) to complete.
+    //! @param[in] task The Render::Task to add to the queue.
+    //! @note This method may only be called from the main thread and will wait indefinitely for the existing render tasks
+    //! to complete.
+    void AddAndWait(Task& task) {AddTask(task); WaitForIdle();}
+
+    DGNPLATFORM_EXPORT bool HasPending(Task::Operation op);
+};
+
 
 //=======================================================================================
 // @bsiclass                                                    BentleySystems
@@ -1072,6 +1076,15 @@ public:
         ActivateGraphicParams(graphicParams);
         }
 
+    //! Set blanking fill symbology for decorations that are only used for display purposes. Pickable decorations require a category, must initialize
+    //! a GeometryParams and cook it into a GraphicParams to have a locatable decoration.
+    void SetBlankingFill(ColorDef fillColor)
+        {
+        GraphicParams graphicParams;
+        graphicParams.SetFillColor(fillColor);
+        graphicParams.SetIsBlankingRegion(true);
+        ActivateGraphicParams(graphicParams);
+        }
 };
 
 //=======================================================================================
@@ -1119,21 +1132,17 @@ struct Decorations
 struct Plan
 {
     enum class AntiAliasPref {Detect=0, On=1, Off=2};
-    enum class PaintScene : bool {No=0, Yes=1,};
 
     ViewFlags     m_viewFlags;
     bool          m_is3d;
-    mutable PaintScene m_paintScene;
     Frustum       m_frustum;
     double        m_fraction;
     ColorDef      m_bgColor;
     AntiAliasPref m_aaLines;
     AntiAliasPref m_aaText;
 
-    DGNPLATFORM_EXPORT Plan(DgnViewportCR, PaintScene);
-    bool WantScene() const {return PaintScene::Yes == m_paintScene;}
+    DGNPLATFORM_EXPORT Plan(DgnViewportCR);
 };
-
 
 //=======================================================================================
 //! A Render::Target is the renderer-specific factory for creating Render::Graphics.
@@ -1145,8 +1154,6 @@ struct Plan
 //=======================================================================================
 struct Target : RefCounted<NonCopyableClass>
 {
-    typedef ImageUtilities::RgbImageInfo CapturedImageInfo;
-
 protected:
     bool               m_abortProgressive;
     Display::DevicePtr m_device;
@@ -1160,7 +1167,6 @@ protected:
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) = 0;
     virtual void _AdjustBrightness(bool useFixedAdaptation, double brightness) = 0;
     virtual void _OnResized() {}
-    virtual ByteStream _FillImageCaptureBuffer(CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) = 0;
     virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const = 0;
     virtual TexturePtr _GetTexture(DgnTextureId, DgnDbR) const = 0;
     virtual TexturePtr _CreateTileSection(Image*, bool enableAlpha) const = 0;
@@ -1185,7 +1191,8 @@ public:
     virtual void _ChangeScene(GraphicListR scene) {VerifyRenderThread(); m_currentScene = &scene;}
     virtual void _ChangeDynamics(GraphicListR dynamics) {VerifyRenderThread(); m_dynamics = &dynamics;}
     virtual void _ChangeDecorations(Decorations& decorations) {VerifyRenderThread(); m_decorations = decorations;}
-    virtual void _DrawFrame(PlanCR, StopWatch&) = 0;
+    virtual void _ChangeRenderPlan(PlanCR) = 0;
+    virtual void _DrawFrame(StopWatch&) = 0;
     virtual void _DrawProgressive(GraphicListR progressiveList, StopWatch&) = 0;
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
@@ -1198,7 +1205,6 @@ public:
     GraphicPtr CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) {return _CreateSprite(sprite, location, xVec, transparency);}
     Display::DeviceCP GetDevice() const {return m_device.get();}
     void OnResized() {_OnResized();}
-    ByteStream FillImageCaptureBuffer(CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) {return _FillImageCaptureBuffer(info, screenBufferRange, outputImageSize, topDown);}
     void* ResolveOverrides(OvrGraphicParamsCP ovr) {return ovr ? _ResolveOverrides(*ovr) : nullptr;}
     MaterialPtr GetMaterial(DgnMaterialId id, DgnDbR dgndb) const {return _GetMaterial(id, dgndb);}
     TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return _GetTexture(id, dgndb);}

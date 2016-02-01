@@ -11,6 +11,7 @@
 #include <DgnPlatform/RealityDataCache.h>
 #include <DgnPlatform/DgnViewport.h>
 #include <DgnPlatform/DgnDbTables.h>
+#include <DgnPlatform/ImageUtilities.h>
 
 //#define WEBMERCATOR_DEBUG_TILES
 
@@ -259,7 +260,7 @@ protected:
     //! This function returns Finished if m_missingTiles becomes empty.
     //! This function stops whenever view.CheckStop is true.
     //! OUTPUT: This function removes 0 or more items from m_missingTiles.
-    DGNPLATFORM_EXPORT virtual Completion _Process(ViewContextR, uint32_t batchSize) override;
+    DGNPLATFORM_EXPORT virtual Completion _Process(ViewContextR, uint32_t batchSize, WantShow&) override;
 
     DGNPLATFORM_EXPORT void DrawView (ViewContextR);
 

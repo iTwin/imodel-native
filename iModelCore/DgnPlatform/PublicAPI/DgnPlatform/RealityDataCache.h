@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/RealityDataCache.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -274,7 +274,7 @@ public:
                        RealityDataWork& DoWork(RealityDataWork& work) {_DoWork(work); return work;}
     DGNPLATFORM_EXPORT bool IsBusy(uint64_t* busyTime = NULL) const;
     DGNPLATFORM_EXPORT bool IsIdle(uint64_t* idleTime = NULL) const;
-    DGNPLATFORM_EXPORT void Terminate();
+    DGNPLATFORM_EXPORT bool Terminate();
     //! Create a new RealityDataWorkerThread thread.
     //! note This function does not start the new thrdad. You must call the Start method on the returned thread object in order to start it.
     static RealityDataWorkerThreadPtr Create(IStateListener* stateListener = NULL, Utf8CP threadName = NULL) {return new RealityDataWorkerThread(stateListener, threadName);}
@@ -1017,12 +1017,13 @@ private:
     RefCountedPtr<BeSQLiteStorageThreadPool> m_threadPool;
     BeAtomic<bool>              m_hasChanges;
     BeMutex           m_saveChangesCS;
-    BeSQLite::Db&               m_database;
+    BeSQLite::Db*               m_database;
     BeMutex           m_databaseCS;
     bset<Utf8String> m_activeRequests;
     BeMutex m_activeRequestsCS;
     uint32_t m_idleTime; 
     uint64_t m_cacheSize;
+    RefCountedPtr<BeSQLite::BusyRetry> m_retry;
 
 private:
     BeSQLiteRealityDataStorage(BeFileName const& filename, uint32_t idleTime, uint64_t cacheSize);
@@ -1045,6 +1046,8 @@ protected:
 public:
     //! The id of this storage.
     static Utf8String StorageId() {return "BeSQLite";}
+
+    DGNPLATFORM_EXPORT ~BeSQLiteRealityDataStorage();
 
     //! Creates a new BeSQLiteRealityDataStorage.
     //! @param[in] filename     File name.

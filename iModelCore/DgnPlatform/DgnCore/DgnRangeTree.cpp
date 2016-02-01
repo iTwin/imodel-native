@@ -928,7 +928,7 @@ bool OcclusionScorer::ComputeEyeSpanningRangeOcclusionScore(double* score, DPoin
     if (npcRange.high.y > 1.0)
         npcRange.high.y = 1.0;
 
-    *score = (npcRange.high.x - npcRange.low.x) * (npcRange.high.y - npcRange.low.y);      // Double score as the area calculation below doubles.
+    *score = (npcRange.high.x - npcRange.low.x) * (npcRange.high.y - npcRange.low.y);  // Double score as the area calculation below doubles.
 
     return true;
     }
@@ -1055,9 +1055,9 @@ bool OcclusionScorer::ComputeOcclusionScore(double* score, bool& overlap, bool& 
 
     if (m_testLOD && 0.0 != m_lodFilterNPCArea)
         {
-        //  In the cases where this does exclude the element it would be faster to do the other filtering first.  However, even when we exclude something due
-        //  to LOD filtering we want to know if it should be drawn by the progressive display.  We want progressive display to draw zero-length line strings
-        //  and points.
+        // In the cases where this does exclude the element it would be faster to do the other filtering first. However, even when we exclude something due
+        // to LOD filtering we want to know if it should be drawn by the progressive display. We want progressive display to draw zero-length line strings
+        // and points.
         int        diagonalVertex = nVertices/2;
         DPoint3dR  diagonalNPC    = npcVertices[diagonalVertex];
 
@@ -1272,9 +1272,33 @@ bool RTreeFilter::AllPointsClippedByOnePlane(ConvexClipPlaneSetCR cps, size_t nP
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+RTreeFilter::RTreeFilter(DgnDbR db, DgnElementIdSet const* exclude) : m_dgndb(db)
+    {
+    m_exclude=exclude;
+    db.GetCachedStatement(m_rangeStmt, "SELECT ElementId FROM " DGN_VTABLE_RTree3d " WHERE ElementId MATCH DGN_rTree(?1)");
+    m_rangeStmt->BindInt64(1, (uint64_t) this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String RTreeTester::GetAcceptSql() {return " AND e.Id=@elId";}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+uint64_t RTreeTester::StepRtree()
+    {
+    auto rc=m_rangeStmt->Step();
+    return (rc != BE_SQLITE_ROW) ? 0 : m_rangeStmt->GetValueInt64(0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-int DgnDbRTreeFitFilter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
+int RTreeFitFilter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
     {
     RTree3dValCP testRange = (RTree3dValCP) info.m_coords;
 
@@ -1293,4 +1317,5 @@ int DgnDbRTreeFitFilter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
 
     return  BE_SQLITE_OK;
     }
+
 

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/ElementMaterial_tests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -21,27 +21,6 @@ struct GeometryBuilderTests : public DgnDbTestFixture
 {
 
 };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void setUpView(DgnDbR dgnDb, DgnModelR model, ElementAlignedBox3d elementBox, DgnCategoryId categoryId)
-    {
-    CameraViewDefinition view(CameraViewDefinition::CreateParams(dgnDb, "TestView", ViewDefinition::Data(model.GetModelId(), DgnViewSource::Generated)));
-    EXPECT_TRUE(view.Insert().IsValid());
-    EXPECT_TRUE(view.GetViewId().IsValid());
-
-    ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
-
-    SpatialViewController viewController (dgnDb, view.GetViewId());
-    viewController.SetStandardViewRotation(StandardView::Iso);
-    viewController.LookAtVolume(elementBox, nullptr, &viewMargin);
-    viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::SmoothShade);
-    viewController.ChangeCategoryDisplay(categoryId, true);
-    viewController.ChangeModelDisplay(model.GetModelId(), true);
-
-    EXPECT_TRUE(BE_SQLITE_OK == viewController.Save());
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2015
@@ -67,13 +46,17 @@ static DgnMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, W
         imageData.ReserveMemory(width * height * 4);
         Byte* p = imageData.GetDataP(); 
         Byte* s = fileImageData.GetDataP(); 
-        for (uint32_t i=0; i<imageData.GetSize(); ++i)
+        for (uint32_t i=0; i<imageData.GetSize(); i += 4)
             {
             *p++ = *s++;
             *p++ = *s++;
             *p++ = *s++;
             *p++ = 255;     // Alpha.
+            ++s;
             }
+
+        EXPECT_EQ(p, imageData.GetDataP() + imageData.GetSize());
+        EXPECT_EQ(s, fileImageData.GetDataP() + imageData.GetSize());
         }
     else
         {
@@ -150,7 +133,7 @@ TEST_F(GeometryBuilderTests, CreateElementWithMaterials)
     {
     SetupProject(L"3dMetricGeneral.idgndb", L"ElemGeometryBuilderWithMaterials.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
-    DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnElement::Code());
+    DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnCode());
 
     DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
     GeometrySourceP geomElem = el->ToGeometrySourceP();
@@ -178,6 +161,6 @@ TEST_F(GeometryBuilderTests, CreateElementWithMaterials)
 
     Placement3d placement = builder->GetPlacement3d();
 
-    setUpView(*m_db, *model, placement.GetElementBox(), m_defaultCategoryId);
+    SetUpSpatialView(*m_db, *model, placement.GetElementBox(), m_defaultCategoryId);
     m_db->SaveSettings();   
     }

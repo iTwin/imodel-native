@@ -35,7 +35,6 @@ DGNPLATFORM_REF_COUNTED_PTR(HypermodelingViewController)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-struct UpdatePlan;
 
 enum class OrientationMode
 {
@@ -226,13 +225,9 @@ protected:
 
     DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitDetailCR hit, DecorateContextR context) const;
 
-    //! Used to notify derived classes when a dynamic update begins.
-    //! <p>See QueryViewController::_OnDynamicUpdate
-    virtual void _OnDynamicUpdate(DgnViewportR vp, UpdatePlan const&) {}    
-
-    //! Used to notify derived classes when a full update begins.
+    //! Used to notify derived classes when an update begins.
     //! <p>See QueryViewController::_OnFullUpdate
-    virtual void _OnFullUpdate(DgnViewportR vp, UpdatePlan const&) {}
+    virtual void _OnUpdate(DgnViewportR vp, UpdatePlan const&) {}
 
     //! Used to notify derived classes of an attempt to locate the viewport around the specified
     //! WGS84 location. Override to change how these points are interpreted.
@@ -250,6 +245,9 @@ protected:
     //! Used as the writable model in which new elements can be placed.
     //! A subclass can override this function to get the target model some other way.
     DGNPLATFORM_EXPORT virtual GeometricModelP _GetTargetModel() const;
+
+    //! Used to change the writable model in which new elements are to be placed.
+    virtual BentleyStatus _SetTargetModel(GeometricModelP model) {return GetTargetModel()==model ? SUCCESS : ERROR;}
 
     //! Returns the project that is being viewed
     virtual DgnDbR _GetDgnDb() const {return m_dgndb;}
@@ -305,8 +303,7 @@ public:
     DGNPLATFORM_EXPORT void LookAtViewAlignedVolume(DRange3dCR volume, double const* aspectRatio=nullptr, MarginPercent const* margin=nullptr, bool expandClippingPlanes=true);
     void SaveToSettings(JsonValueR val) const {_SaveToSettings(val);}
     void RestoreFromSettings(JsonValueCR val) {_RestoreFromSettings(val);}
-    void OnFullUpdate(DgnViewportR vp, UpdatePlan const& plan) {_OnFullUpdate(vp, plan);}
-    void OnDynamicUpdate(DgnViewportR vp, UpdatePlan const& plan) {_OnDynamicUpdate(vp, plan);}
+    void OnUpdate(DgnViewportR vp, UpdatePlan const& plan) {_OnUpdate(vp, plan);}
 
 public:
     DgnClassId GetClassId() const {return m_classId;}
@@ -459,6 +456,9 @@ public:
     //! Gets the DgnModel that will be the target of tools that add new elements.
     GeometricModelP GetTargetModel() const {return _GetTargetModel();}
 
+    //! Sets the DgnModel that will be the target of tools that add new elements.
+    BentleyStatus SetTargetModel(GeometricModelP model) {return _SetTargetModel(model);}
+
     //! Tests whether a rotation matrix corresponds to one of the StandardView orientations.
     //! @param[in] rotation  The matrix to test.
     //! @param[in] check3D   True to check the 3D members of StandardRotation.
@@ -550,6 +550,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _OnTransform(TransformCR);
     DGNPLATFORM_EXPORT virtual void _SaveToSettings(JsonValueR) const override;
     DGNPLATFORM_EXPORT virtual void _RestoreFromSettings(JsonValueCR) override;
+    DGNPLATFORM_EXPORT virtual BentleyStatus _SetTargetModel(GeometricModelP target) override;
 
 public:
     DGNPLATFORM_EXPORT bool ViewVectorsFromOrientation(DVec3dR forward, DVec3dR up, RotMatrixCR orientation, OrientationMode mode, UiOrientation ui);
@@ -572,10 +573,6 @@ public:
     //! Sets the Auxiliary Coordinate System to use for this view.
     //! @param[in] acs The new Auxiliary Coordinate System.
     void SetAuxCoordinateSystem(IAuxCoordSysP acs) {m_auxCoordSys = acs;}
-
-    //! Sets the Target DgnModel for this SpatialViewController.
-    //! @param[in] target The model to which new elements are added by modification tools.
-    DGNPLATFORM_EXPORT BentleyStatus SetTargetModel(GeometricModelP target);
 };
 
 /** @addtogroup DgnViewGroup

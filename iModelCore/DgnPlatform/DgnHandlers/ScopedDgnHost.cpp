@@ -2,7 +2,7 @@
 |
 |  $Source: DgnHandlers/ScopedDgnHost.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -93,20 +93,20 @@ struct TestingDgnScriptingAdmin : Dgn::DgnPlatformLib::Host::ScriptAdmin
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ProxyLocksAdmin : Dgn::DgnPlatformLib::Host::LocksAdmin
+struct ProxyRepositoryAdmin : Dgn::DgnPlatformLib::Host::RepositoryAdmin
 {
-    DEFINE_T_SUPER(LocksAdmin);
+    DEFINE_T_SUPER(RepositoryAdmin);
 
-    LocksAdmin* m_impl;
+    RepositoryAdmin* m_impl;
 
-    ProxyLocksAdmin() : m_impl(nullptr) { }
-    virtual ILocksManagerPtr _CreateLocksManager(DgnDbR db) const override
+    ProxyRepositoryAdmin() : m_impl(nullptr) { }
+    virtual IBriefcaseManagerPtr _CreateBriefcaseManager(DgnDbR db) const override
         {
-        return nullptr != m_impl ? m_impl->_CreateLocksManager(db) : T_Super::_CreateLocksManager(db);
+        return nullptr != m_impl ? m_impl->_CreateBriefcaseManager(db) : T_Super::_CreateBriefcaseManager(db);
         }
-    virtual ILocksServerP _GetLocksServer(DgnDbR db) const override
+    virtual IRepositoryManagerP _GetRepositoryManager(DgnDbR db) const override
         {
-        return nullptr != m_impl ? m_impl->_GetLocksServer(db) : T_Super::_GetLocksServer(db);
+        return nullptr != m_impl ? m_impl->_GetRepositoryManager(db) : T_Super::_GetRepositoryManager(db);
         }
 };
 
@@ -127,12 +127,12 @@ struct ScopedDgnHostImpl : DgnPlatformLib::Host
     NotificationAdmin& _SupplyNotificationAdmin () override;
     IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override;
     ScriptAdmin& _SupplyScriptingAdmin() override {return *new TestingDgnScriptingAdmin();}
-    LocksAdmin& _SupplyLocksAdmin() override {return *new ProxyLocksAdmin();}
+    RepositoryAdmin& _SupplyRepositoryAdmin() override {return *new ProxyRepositoryAdmin();}
     void _SupplyProductName(Utf8StringR s) override {s="BeTest";}
     L10N::SqlangFiles _SupplySqlangFiles() override {return L10N::SqlangFiles(BeFileName());} // users must have already initialized L10N to use ScopedDgnHost
 
     void SetFetchScriptCallback(ScopedDgnHost::FetchScriptCallback* cb) {((TestingDgnScriptingAdmin*)m_scriptingAdmin)->m_callback = cb;}
-    void SetLocksAdmin(DgnPlatformLib::Host::LocksAdmin* admin) {((ProxyLocksAdmin*)m_locksAdmin)->m_impl = admin;}
+    void SetRepositoryAdmin(DgnPlatformLib::Host::RepositoryAdmin* admin) {((ProxyRepositoryAdmin*)m_repositoryAdmin)->m_impl = admin;}
 };
 END_BENTLEY_DGN_NAMESPACE
 
@@ -163,9 +163,9 @@ void ScopedDgnHost::SetFetchScriptCallback(FetchScriptCallback* cb)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ScopedDgnHost::SetLocksAdmin(DgnPlatformLib::Host::LocksAdmin* admin)
+void ScopedDgnHost::SetRepositoryAdmin(DgnPlatformLib::Host::RepositoryAdmin* admin)
     {
-    m_pimpl->SetLocksAdmin(admin);
+    m_pimpl->SetRepositoryAdmin(admin);
     }
 
 /*---------------------------------------------------------------------------------**//**

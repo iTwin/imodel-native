@@ -48,7 +48,6 @@
 #define GEOM3_Pitch "Pitch"
 #define GEOM3_Roll "Roll"
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -158,9 +157,9 @@ ECClassCP DgnElement::GetElementClass() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::Code DgnElement::_GenerateDefaultCode()
+DgnCode DgnElement::_GenerateDefaultCode() const
     {
-    return DgnAuthority::CreateDefaultCode();
+    return DgnCode::CreateEmpty();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -211,9 +210,10 @@ DgnDbStatus DgnElement::_OnInsert()
             return stat;
         }
 
-    // If model is exclusively locked we cannot insert elements into it
-    if (LockStatus::Success != GetDgnDb().Locks().LockModel(*GetModel(), LockLevel::Shared))
-        return DgnDbStatus::LockNotHeld;
+    // Ensure model not exclusively locked, and code reserved
+    DgnDbStatus stat = GetDgnDb().BriefcaseManager().OnElementInsert(*this);
+    if (DgnDbStatus::Success != stat)
+        return stat;
 
     return GetModel()->_OnInsertElement(*this);
     }
@@ -244,7 +244,7 @@ void DgnElement::_OnInserted(DgnElementP copiedFrom) const
         copiedFrom->CallAppData(OnInsertedCaller(*this));
 
     GetModel()->_OnInsertedElement(*this);
-    GetDgnDb().Locks().OnElementInserted(GetElementId());
+    GetDgnDb().BriefcaseManager().OnElementInserted(GetElementId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -254,6 +254,7 @@ void DgnElement::_OnReversedDelete() const
     {
     GetModel()->_OnReversedDeleteElement(*this);
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -262,7 +263,8 @@ DgnDbStatus DgnElement::_SetParentId(DgnElementId parentId)
     // Check for direct cycle...will check indirect cycles on update.
     if (parentId.IsValid() && parentId == GetElementId())
         return DgnDbStatus::InvalidParent;
-    else if (GetElementHandler()._IsRestrictedAction(RestrictedAction::SetParent))
+
+    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::SetParent))
         return DgnDbStatus::MissingHandler;
 
     m_parentId = parentId;
@@ -277,7 +279,8 @@ static bool parentCycleExists(DgnElementId parentId, DgnElementId elemId, DgnDbR
     // simple checks first...
     if (!parentId.IsValid() || !elemId.IsValid())
         return false;
-    else if (parentId == elemId)
+
+    if (parentId == elemId)
         return true;
 
     CachedStatementPtr stmt = db.Elements().GetStatement("SELECT ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
@@ -305,7 +308,8 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
     {
     if (m_classId != original.m_classId)
         return DgnDbStatus::WrongClass;
-    else if (GetElementHandler()._IsRestrictedAction(RestrictedAction::Update))
+
+    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::Update))
         return DgnDbStatus::MissingHandler;
 
     auto parentId = GetParentId();
@@ -319,8 +323,10 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
             return stat;
         }
 
-    if (LockStatus::Success != GetDgnDb().Locks().LockElement(*this, LockLevel::Exclusive, original.GetModelId()))
-        return DgnDbStatus::LockNotHeld;
+    // Ensure lock acquired and code reserved
+    DgnDbStatus stat = GetDgnDb().BriefcaseManager().OnElementUpdate(*this, original.GetModelId());
+    if (DgnDbStatus::Success != stat)
+        return stat;
 
     return GetModel()->_OnUpdateElement(*this, original);
     }
@@ -382,8 +388,10 @@ DgnDbStatus DgnElement::_OnDelete() const
             return stat;
         }
 
-    if (LockStatus::Success != GetDgnDb().Locks().LockElement(*this, LockLevel::Exclusive))
-        return DgnDbStatus::LockNotHeld;
+    // Ensure lock acquired
+    DgnDbStatus stat = GetDgnDb().BriefcaseManager().OnElementDelete(*this);
+    if (DgnDbStatus::Success != stat)
+        return stat;
 
     return GetModel()->_OnDeleteElement(*this);
     }
@@ -600,10 +608,8 @@ GeometrySource3dCP DgnElement::ToGeometrySource3d() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometryStream::WriteGeometryStreamAndStep(DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId, Statement& stmt, int stmtcolidx) const
+DgnDbStatus GeometryStream::WriteGeometryStreamAndStep(SnappyToBlob& snappy, DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId, Statement& stmt, int stmtcolidx) const
     {
-    SnappyToBlob& snappy = dgnDb.Elements().GetSnappyTo();
-
     snappy.Init();
     if (0 < GetSize())
         {
@@ -634,12 +640,11 @@ DgnDbStatus GeometryStream::WriteGeometryStreamAndStep(DgnDbR dgnDb, Utf8CP tabl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometryStream::ReadGeometryStream(DgnDbR dgnDb, void const* blob, int blobSize)
+DgnDbStatus GeometryStream::ReadGeometryStream(SnappyFromMemory& snappy, DgnDbR dgnDb, void const* blob, int blobSize)
     {
     if (0 == blobSize && nullptr == blob)
         return DgnDbStatus::Success;
 
-    SnappyFromMemory& snappy = dgnDb.Elements().GetSnappyFrom();
     snappy.Init(const_cast<void*>(blob), static_cast<uint32_t>(blobSize));
     GeomBlobHeader header(snappy);
     if ((GeomBlobHeader::Signature != header.m_signature) || 0 == header.m_size)
@@ -760,9 +765,9 @@ void DgnElement::CreateParams::RelocateToDestinationDb(DgnImportContext& importe
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::CopyForCloneFrom(DgnElementCR src)
     {
-    DgnElement::Code code = GetCode();
+    DgnCode code = GetCode();
     _CopyFrom(src);
-    SetCode(code);
+    m_code = code;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -788,7 +793,7 @@ DgnElementPtr DgnElement::_Clone(DgnDbStatus* inStat, DgnElement::CreateParams c
             }
         }
 
-    DgnElementPtr cloneElem = GetElementHandler().Create(nullptr != params ? *params : DgnElement::CreateParams(GetDgnDb(), GetModelId(), GetElementClassId(), Code(), GetLabel()));
+    DgnElementPtr cloneElem = GetElementHandler().Create(nullptr != params ? *params : DgnElement::CreateParams(GetDgnDb(), GetModelId(), GetElementClassId(), DgnCode(), GetLabel()));
     if (!cloneElem.IsValid())
         {
         stat = DgnDbStatus::BadRequest;
@@ -848,7 +853,7 @@ void DgnElement::_CopyFrom(DgnElementCR other)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::Code::RelocateToDestinationDb(DgnImportContext& importer)
+void DgnCode::RelocateToDestinationDb(DgnImportContext& importer)
     {
     m_authority = importer.RemapAuthorityId(m_authority);
     }
@@ -871,7 +876,7 @@ DgnElement::CreateParams DgnElement::GetCreateParamsForImport(DgnModelR destMode
     CreateParams parms(importer.GetDestinationDb(), GetModelId(), GetElementClassId());
     DgnAuthorityCPtr authority = GetCode().IsValid() ? GetDgnDb().Authorities().GetAuthority(GetCode().GetAuthority()) : nullptr;
     if (authority.IsValid())
-        parms.m_code = authority->CloneCodeForImport(*this, destModel, importer);
+        authority->CloneCodeForImport(parms.m_code, *this, destModel, importer);
 
     if (importer.IsBetweenDbs())
         parms.RelocateToDestinationDb(importer);
@@ -973,9 +978,6 @@ DgnElementCPtr DgnElement::Import(DgnDbStatus* stat, DgnModelR destModel, DgnImp
         parent->_OnChildImported(*ccp, *this, importer);
 
     ccp->_OnImported(*this, importer);
-
-    // *** WIP_COMPONENT_MODEL - we must generalize this support for deep-copying other kinds of relationships
-    ComponentModel::OnElementImported(*ccp, *this, importer);
 
     return ccp;
     }
@@ -1552,13 +1554,6 @@ DgnElement::UniqueAspect* DgnElement::UniqueAspect::Find(DgnElementCR el, ECClas
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::UniqueAspect::SetAspect(DgnElementR el, UniqueAspect& newAspect)
     {
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-        if (nullptr != dynamic_cast<Item*>(&newAspect))
-        {
-        BeAssert(false && "You must use the DgnElement::Item class to work with Items");
-        return;
-        }
-#endif
     SetAspect0(el, newAspect);
     newAspect.m_changeType = ChangeType::Write;
     }
@@ -1635,14 +1630,6 @@ DgnElement::UniqueAspect* DgnElement::UniqueAspect::Load(DgnElementCR el, DgnCla
     if (!aspect.IsValid())
         return nullptr;
 
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-    if (nullptr != dynamic_cast<Item*>(aspect.get()))
-        {
-        BeAssert(false); // You must use the DgnElement::Item class to load Items
-        return nullptr;
-        }
-#endif
-
     SetAspect0(el, *aspect);
     aspect->m_changeType = ChangeType::None; // aspect starts out clean
     return aspect.get();
@@ -1671,19 +1658,6 @@ DgnDbStatus DgnElement::UniqueAspect::_DeleteInstance(DgnElementCR el)
     return (BE_SQLITE_DONE == status) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
     }
     
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-DgnDbStatus DgnElement::Item::_DeleteInstance(DgnElementCR el)
-    {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementItem) " WHERE ECInstanceId=?");
-    stmt->BindId(1, GetAspectInstanceId(el));
-    DbResult status = stmt->Step();
-    return (BE_SQLITE_DONE == status) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
-    }
-#endif
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Sam.Wilson                    03/2015
 //---------------------------------------------------------------------------------------
@@ -1700,314 +1674,6 @@ ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR e
     // And we know the ID. See if such an instance actually exists.
     return ECInstanceKey(classId.GetValue(), GetAspectInstanceId(el));
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                  Sam.Wilson                    03/2015
-//---------------------------------------------------------------------------------------
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-ECInstanceKey DgnElement::Item::_QueryExistingInstanceKey(DgnElementCR el)
-    {
-    // We know the ID, and we know that the instance will be in the dgn.ElementItem table if it exists. See if it's there.
-    DgnClassId classId = QueryExistingItemClass(el);
-    if (!classId.IsValid())
-        return ECInstanceKey();
-    return ECInstanceKey(classId.GetValue(), el.GetElementId());
-    }
-#endif
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                  Sam.Wilson                    03/2015
-//---------------------------------------------------------------------------------------
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-DgnClassId DgnElement::Item::QueryExistingItemClass(DgnElementCR el)
-    {
-    // We know the ID, and we know that the instance will be in the dgn.ElementItem table if it exists. See if it's there.
-    CachedStatementPtr getItemClass;
-    el.GetDgnDb().GetCachedStatement(getItemClass, "SELECT ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_ElementItem) " WHERE ElementId=?");
-    getItemClass->BindId(1, el.GetElementId());
-    if (BE_SQLITE_ROW != getItemClass->Step())
-        return DgnClassId();
-    return DgnClassId(getItemClass->GetValueId<DgnClassId>(0));
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-DgnDbStatus DgnElement::Item::LoadPropertiesIntoInstance(IECInstancePtr& instance, DgnElementCR el)
-    {
-    DgnDbR db = el.GetDgnDb();
-
-    ECInstanceKey key = _QueryExistingInstanceKey(el);
-    ECClassCP ecclass = db.Schemas().GetECClass(key.GetECClassId());
-    if (nullptr == ecclass)
-        return DgnDbStatus::NotFound;
-
-    ECSqlSelectBuilder b;
-    b.Select("*").From(*ecclass).Where("ECInstanceId=?");
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(b.ToString().c_str());
-    stmt->BindId(1, el.GetElementId());
-    if (BE_SQLITE_ROW != stmt->Step())
-        return DgnDbStatus::ReadError;
-
-    ECInstanceECSqlSelectAdapter reader(*stmt);     // *** NEEDS WORK: Use a cached ECInstanceECSqlSelectAdapter!!!!!
-    instance = reader.GetInstance();
-    if (!instance.IsValid())
-        return DgnDbStatus::ReadError;
-    
-    Utf8Char idStrBuffer[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
-    ECInstanceIdHelper::ToString(idStrBuffer, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, el.GetElementId());
-    instance->SetInstanceId(idStrBuffer);
-
-    return DgnDbStatus::Success;
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-Utf8CP DgnElement::Item::GetECSchemaNameOfInstance(IECInstanceCP instance)
-    {
-    if (nullptr == instance)
-        {
-        BeAssert(false && "Item has no instance");
-        return nullptr;
-        }
-    
-    return instance->GetClass().GetSchema().GetName().c_str();
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-Utf8CP DgnElement::Item::GetECClassNameOfInstance(IECInstanceCP instance)
-    {
-    if (nullptr == instance)
-        {
-        BeAssert(false && "Item has no instance");
-        return nullptr;
-        }
-    
-    return instance->GetClass().GetName().c_str();
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-DgnElement::Item* DgnElement::Item::Find(DgnElementCR el)
-    {
-    return (DgnElement::Item*)el.FindAppData(GetKey());
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-void DgnElement::Item::SetItem0(DgnElementCR el, Item& newItem)
-    {
-    el.DropAppData(GetKey());  // remove any existing cached Item
-    el.AddAppData(GetKey(), &newItem);
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-void DgnElement::Item::SetItem(DgnElementR el, Item& newItem)
-    {
-    SetItem0(el, newItem);
-    newItem.m_changeType = ChangeType::Write;
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-DgnElement::Item const* DgnElement::Item::GetItem(DgnElementCR el)
-    {
-    Item const* item = Find(el);
-    if (nullptr == item)
-        {
-        item = Load(el);
-        }
-    else
-        {
-        if (item->m_changeType == ChangeType::Delete)
-            item = nullptr;
-        }
-    return item;
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-DgnElement::Item* DgnElement::Item::GetItemP(DgnElementR el)
-    {
-    Item* item = const_cast<Item*>(GetItem(el));
-    if (nullptr == item)
-        return item;
-    item->m_changeType = ChangeType::Write;
-    return item;
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-DgnElement::Item* DgnElement::Item::Load(DgnElementCR el)
-    {
-    RefCountedPtr<DgnElement::UniqueAspect> aspect = Load0(el, QueryExistingItemClass(el));
-    if (!aspect.IsValid())
-        return nullptr;
-
-    DgnElement::Item* item = dynamic_cast<DgnElement::Item*>(aspect.get());
-    if (nullptr == item)
-        {
-        BeAssert(false && "You may use the DgnElement::Item class to load Items only");
-        return nullptr;
-        }
-
-    SetItem0(el, *item);
-    return item;
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-DgnDbStatus DgnElement::Item::CallGenerateGeometry(DgnElementR el, GenerateReason reason)
-    {
-    GeometricElementP gel = el.ToGeometricElementP();
-    return nullptr == gel ? DgnDbStatus::Success : _GenerateGeometricPrimitive(*gel, reason);
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-DgnDbStatus DgnElement::Item::GenerateGeometricPrimitive(GeometricElementR el, GenerateReason reason)
-    {
-    Item* item = GetItemP(el);
-    return nullptr == item ? DgnDbStatus::NotFound : item->_GenerateGeometricPrimitive(el, reason);
-    }
-#endif
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   BentleySystems
-//---------------------------------------------------------------------------------------
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-DgnDbStatus DgnElement::Item::ExecuteEGA(DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, IECInstanceCR egaInstance)
-    {
-    ECClassCR ecclass = egaInstance.GetClass();
-    IECInstancePtr ca = ecclass.GetCustomAttribute("EGASpecifier");
-    if (!ca.IsValid())
-        return DgnDbStatus::NotEnabled;
-
-    ECValue egaType, egaName, egaInputs;
-    ca->GetValue(egaType, "Type");
-    ca->GetValue(egaName, "Name");
-    ca->GetValue(egaInputs, "Inputs");
-
-    Utf8String tsName(egaName.GetUtf8CP());
-
-    if (0 == BeStringUtilities::Stricmp("JavaScript", egaType.GetUtf8CP()))
-        {
-        //  ----------------------------------------------------------------------------------
-        //  JavaScript EGA
-        //  ----------------------------------------------------------------------------------
-        Json::Value json(Json::objectValue);
-        if (BSISUCCESS != ECUtils::ToJsonPropertiesFromECProperties(json, egaInstance, Utf8String(egaInputs.GetUtf8CP())))
-            return DgnDbStatus::BadArg;
-
-        int retval;
-        DgnDbStatus xstatus = DgnScript::ExecuteEga(retval, el, tsName.c_str(), origin, angles, json);
-        if (xstatus != DgnDbStatus::Success)
-            return xstatus;
-
-        return (0 == retval) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
-        }
-
-    if (0 == BeStringUtilities::Stricmp("ComponentModel", egaType.GetUtf8CP()))
-        {
-        return ExecuteComponentSolutionEGA(el, origin, angles, egaInstance, tsName, Utf8String(egaInputs.GetUtf8CP()), *this);
-        }
-
-    BeAssert(false && "TBD - Unrecognized EGA type.");
-    return DgnDbStatus::NotEnabled;
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-DgnDbStatus InstanceBackedItem::_GenerateGeometricPrimitive(GeometricElementR el, GenerateReason)
-    {
-    Placement3d placement;
-    DgnElement3dP e3d = el.ToElement3dP();
-    if (nullptr != e3d)
-        placement = e3d->GetPlacement();
-    else
-        {
-        AnnotationElementP e2d = el.ToAnnotationElementP();
-        Placement2d p2d = e2d->GetPlacement();
-        DPoint3d o3d = DPoint3d::From(p2d.GetOrigin().x, p2d.GetOrigin().y, 0);
-        YawPitchRollAngles a3d = YawPitchRollAngles::FromDegrees(p2d.GetAngle().Degrees(), 0, 0);
-        ElementAlignedBox2d b2d = p2d.GetElementBoxR();
-        ElementAlignedBox3d b3d;
-        b3d.low = DPoint3d::From(b2d.low.x, b2d.low.y, 0);
-        b3d.high = DPoint3d::From(b2d.high.x, b2d.high.y, 0);
-        placement = Placement3d(o3d, a3d, b3d);
-        }
-    return ExecuteEGA(el, placement.GetOrigin(), placement.GetAngles(), *m_instance);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void InstanceBackedItem::SetInstanceId(ECInstanceId eid)
-    {
-    Utf8Char idStrBuffer[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
-    ECInstanceIdHelper::ToString(idStrBuffer, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, eid);
-    m_instance->SetInstanceId(idStrBuffer);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus InstanceBackedItem::_LoadProperties(DgnElementCR el)
-    {
-    ECInstanceId eid(el.GetElementId().GetValue());
-
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement("SELECT * FROM " DGN_TABLE(DGN_CLASSNAME_ElementItem) " WHERE ECInstanceId=?");
-    stmt->BindId(1, eid);
-    if (BE_SQLITE_ROW != stmt->Step())
-        return DgnDbStatus::ReadError;
-
-    ECInstanceECSqlSelectAdapter reader(*stmt);
-    m_instance = reader.GetInstance();
-    if (!m_instance.IsValid())
-        return DgnDbStatus::ReadError;
-    
-    SetInstanceId(eid);
-
-    return DgnDbStatus::Success;
-    }
-#endif
 
 BEGIN_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
@@ -2066,18 +1732,6 @@ struct CachedECInstanceUpdaters : Db::AppData
 };
 
 END_UNNAMED_NAMESPACE
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-DgnDbStatus InstanceBackedItem::_UpdateProperties(DgnElementCR el)
-    {
-    SetInstanceId(ECInstanceId(el.GetElementId().GetValue()));
-    ECInstanceUpdater& updater = CachedECInstanceUpdaters::GetECInstanceUpdater(el.GetDgnDb(), m_instance->GetClass());
-    return (BSISUCCESS != updater.Update(*m_instance)) ? DgnDbStatus::WriteError : DgnDbStatus::Success;
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/15
@@ -2162,88 +1816,9 @@ DgnDbStatus DgnElement::ExternalKeyAspect::Delete(DgnElementCR element, DgnAutho
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::AppData::Key const& DgnElement::DescriptionAspect::GetAppDataKey()
-    {
-    static Key s_appDataKey;
-    return s_appDataKey;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::DescriptionAspectPtr DgnElement::DescriptionAspect::Create(Utf8CP description)
-    {
-    if (!description || !*description)
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    return new DgnElement::DescriptionAspect(description);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::AppData::DropMe DgnElement::DescriptionAspect::_OnInserted(DgnElementCR element)
-    {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " DGN_SCHEMA(DGN_CLASSNAME_ElementDescription) " (ECInstanceId,[Descr]) VALUES (?,?)");
-    if (!statement.IsValid())
-        return DgnElement::AppData::DropMe::Yes;
-
-    statement->BindId(1, element.GetElementId());
-    statement->BindText(2, GetDescription(), IECSqlBinder::MakeCopy::No);
-
-    ECInstanceKey key;
-    if (BE_SQLITE_DONE != statement->Step(key))
-        {
-        BeAssert(false);
-        }
-
-    return DgnElement::AppData::DropMe::Yes;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::DescriptionAspect::Query(Utf8StringR description, DgnElementCR element)
-    {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("SELECT [Descr] FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementDescription) " WHERE ECInstanceId=?");
-    if (!statement.IsValid())
-        return DgnDbStatus::ReadError;
-
-    statement->BindId(1, element.GetElementId());
-
-    if (BE_SQLITE_ROW != statement->Step())
-        return DgnDbStatus::ReadError;
-
-    description.AssignOrClear(statement->GetValueText(0));
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::DescriptionAspect::Delete(DgnElementCR element)
-    {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementDescription) " WHERE ECInstanceId=?");
-    if (!statement.IsValid())
-        return DgnDbStatus::WriteError;
-
-    statement->BindId(1, element.GetElementId());
-
-    if (BE_SQLITE_DONE != statement->Step())
-        return DgnDbStatus::WriteError;
-
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DictionaryElement::CreateParams::CreateParams(DgnDbR db, DgnClassId classId, Code const& code, Utf8CP label, DgnElementId parentId)
+DictionaryElement::CreateParams::CreateParams(DgnDbR db, DgnClassId classId, DgnCode const& code, Utf8CP label, DgnElementId parentId)
     : T_Super(db, DgnModel::DictionaryId(), classId, code, label, parentId) 
     {
     }
@@ -2285,7 +1860,7 @@ DgnDbStatus DgnElement::_OnChildDelete(DgnElementCR) const { return GetElementHa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_SetCode(Code const& code)
+DgnDbStatus DgnElement::_SetCode(DgnCode const& code)
     {
     if (GetElementHandler()._IsRestrictedAction(RestrictedAction::SetCode))
         return DgnDbStatus::MissingHandler;
@@ -2340,7 +1915,7 @@ ElementCopier::ElementCopier(DgnCloneContext& c) : m_context(c), m_copyChildren(
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, DgnModelR targetModel, DgnElementCR sourceElement, DgnElement::Code const& icode, DgnElementId newParentId)
+DgnElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, DgnModelR targetModel, DgnElementCR sourceElement, DgnCode const& icode, DgnElementId newParentId)
     {
     DgnElementId alreadyCopied = m_context.FindElementId(sourceElement.GetElementId());
     if (alreadyCopied.IsValid())
@@ -2368,9 +1943,6 @@ DgnElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, DgnModelR targetM
 
     m_context.AddElementId(sourceElement.GetElementId(), outputElement->GetElementId());
 
-    // *** WIP_COMPONENT_MODEL - we must generalize this support for deep-copying other kinds of relationships
-    ComponentModel::OnElementCopied(*outputElement, sourceElement, m_context);
-
     if (m_copyChildren)
         {
         for (auto sourceChildid : sourceElement.QueryChildren())
@@ -2379,7 +1951,7 @@ DgnElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, DgnModelR targetM
             if (!sourceChildElement.IsValid())
                 continue;
 
-            MakeCopy(nullptr, m_preserveOriginalModels? *sourceChildElement->GetModel(): targetModel, *sourceChildElement, DgnElement::Code(), outputElement->GetElementId());
+            MakeCopy(nullptr, m_preserveOriginalModels? *sourceChildElement->GetModel(): targetModel, *sourceChildElement, DgnCode(), outputElement->GetElementId());
             }
         }
 
@@ -2391,7 +1963,7 @@ DgnElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, DgnModelR targetM
             DgnElementCPtr sourceMemberElement = sourceElement.GetDgnDb().Elements().GetElement(sourceMemberId);
             if (!sourceMemberElement.IsValid())
                 continue;
-            DgnElementCPtr destMemberElement = MakeCopy(nullptr, *sourceMemberElement->GetModel(), *sourceMemberElement, DgnElement::Code());
+            DgnElementCPtr destMemberElement = MakeCopy(nullptr, *sourceMemberElement->GetModel(), *sourceMemberElement, DgnCode());
             if (destMemberElement.IsValid())
                 ElementGroupsMembers::Insert(*outputElement, *destMemberElement, 0); // *** WIP_GROUPS - is this the right way to re-create the member-of relationship? What about the _OnMemberAdded callbacks? Preserve MemberPriority?
             }
@@ -2570,7 +2142,7 @@ DgnDbStatus ElementGeomData::ReadFrom(ECSqlStatement& stmt, ECSqlClassParams con
 
     int blobSize;
     void const* blob = stmt.GetValueBinary(geomIndex, &blobSize);
-    return m_geom.ReadGeometryStream(el.GetDgnDb(), blob, blobSize);
+    return m_geom.ReadGeometryStream(el.GetDgnDb().Elements().GetSnappyFrom(), el.GetDgnDb(), blob, blobSize);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2760,7 +2332,7 @@ DgnDbStatus ElementGeomData::WriteGeomStream(DgnElementCR el, Utf8CP tableName) 
     // Ideally we would do this in BindTo(), but ECSql does not support binding a zero blob.
     Utf8String sql("UPDATE ");
     sql.append(tableName);
-    sql.append(" SET " GEOM_Geometry "=? WHERE Id=?");
+    sql.append(" SET " GEOM_Geometry "=? WHERE ElementId=?");
     CachedStatementPtr stmt = pool.GetStatement(sql.c_str());
     stmt->BindId(2, el.GetElementId());
     stmt->BindZeroBlob(1, snappyTo.GetCompressedSize());
@@ -2780,13 +2352,13 @@ DgnDbStatus ElementGeomData::InsertGeomStream(DgnElementCR el, Utf8CP tableName)
     if (DgnDbStatus::Success != status)
         return status;
 
-    // Insert ElementUsesGeomParts relationships for any GeomPartIds in the GeomStream
+    // Insert ElementUsesGeometryParts relationships for any GeometryPartIds in the GeomStream
     DgnDbR db = el.GetDgnDb();
-    IdSet<DgnGeomPartId> parts;
-    GeometryStreamIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeomPartIds(parts, db);
-    for (DgnGeomPartId const& partId : parts)
+    IdSet<DgnGeometryPartId> parts;
+    GeometryStreamIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeometryPartIds(parts, db);
+    for (DgnGeometryPartId const& partId : parts)
         {
-        if (BentleyStatus::SUCCESS != db.GeomParts().InsertElementGeomUsesParts(el.GetElementId(), partId))
+        if (BentleyStatus::SUCCESS != db.GeometryParts().InsertElementGeomUsesParts(el.GetElementId(), partId))
             status = DgnDbStatus::WriteError;
         }
 
@@ -2802,31 +2374,31 @@ DgnDbStatus ElementGeomData::UpdateGeomStream(DgnElementCR el, Utf8CP tableName)
     if (DgnDbStatus::Success != status)
         return status;
 
-    // Update ElementUsesGeomParts relationships for any GeomPartIds in the GeomStream
+    // Update ElementUsesGeometryParts relationships for any GeometryPartIds in the GeomStream
     DgnDbR db = el.GetDgnDb();
     DgnElementId eid = el.GetElementId();
-    CachedStatementPtr stmt = db.Elements().GetStatement("SELECT GeomPartId FROM " DGN_TABLE(DGN_RELNAME_ElementUsesGeomParts) " WHERE ElementId=?");
+    CachedStatementPtr stmt = db.Elements().GetStatement("SELECT GeometryPartId FROM " DGN_TABLE(DGN_RELNAME_ElementUsesGeometryParts) " WHERE ElementId=?");
     stmt->BindId(1, eid);
 
-    IdSet<DgnGeomPartId> partsOld;
+    IdSet<DgnGeometryPartId> partsOld;
     while (BE_SQLITE_ROW == stmt->Step())
-        partsOld.insert(stmt->GetValueId<DgnGeomPartId>(0));
+        partsOld.insert(stmt->GetValueId<DgnGeometryPartId>(0));
 
-    IdSet<DgnGeomPartId> partsNew;
-    GeometryStreamIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeomPartIds(partsNew, db);
+    IdSet<DgnGeometryPartId> partsNew;
+    GeometryStreamIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeometryPartIds(partsNew, db);
 
     if (partsOld.empty() && partsNew.empty())
         return status;
 
-    bset<DgnGeomPartId> partsToRemove;
+    bset<DgnGeometryPartId> partsToRemove;
     std::set_difference(partsOld.begin(), partsOld.end(), partsNew.begin(), partsNew.end(), std::inserter(partsToRemove, partsToRemove.end()));
 
     if (!partsToRemove.empty())
         {
-        stmt = db.Elements().GetStatement("DELETE FROM " DGN_TABLE(DGN_RELNAME_ElementUsesGeomParts) " WHERE ElementId=? AND GeomPartId=?");
+        stmt = db.Elements().GetStatement("DELETE FROM " DGN_TABLE(DGN_RELNAME_ElementUsesGeometryParts) " WHERE ElementId=? AND GeometryPartId=?");
         stmt->BindId(1, eid);
 
-        for (DgnGeomPartId const& partId : partsToRemove)
+        for (DgnGeometryPartId const& partId : partsToRemove)
             {
             stmt->BindId(2, partId);
             if (BE_SQLITE_DONE != stmt->Step())
@@ -2834,12 +2406,12 @@ DgnDbStatus ElementGeomData::UpdateGeomStream(DgnElementCR el, Utf8CP tableName)
             }
         }
 
-    bset<DgnGeomPartId> partsToAdd;
+    bset<DgnGeometryPartId> partsToAdd;
     std::set_difference(partsNew.begin(), partsNew.end(), partsOld.begin(), partsOld.end(), std::inserter(partsToAdd, partsToAdd.end()));
 
-    for (DgnGeomPartId const& partId : partsToAdd)
+    for (DgnGeometryPartId const& partId : partsToAdd)
         {
-        if (BentleyStatus::SUCCESS != db.GeomParts().InsertElementGeomUsesParts(eid, partId))
+        if (BentleyStatus::SUCCESS != db.GeometryParts().InsertElementGeomUsesParts(eid, partId))
             status = DgnDbStatus::WriteError;
         }
 

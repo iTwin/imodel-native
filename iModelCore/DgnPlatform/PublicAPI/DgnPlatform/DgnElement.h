@@ -51,7 +51,7 @@ struct DgnRemapTables
 protected:
     // *** NEEDS WORK: We may have to move these remappings into temp tables
     bmap<DgnModelId, DgnModelId> m_modelId;
-    bmap<DgnGeomPartId, DgnGeomPartId> m_geomPartId;
+    bmap<DgnGeometryPartId, DgnGeometryPartId> m_geomPartId;
     bmap<DgnElementId, DgnElementId> m_elementId;
     bmap<DgnClassId, DgnClassId> m_classId;
     bmap<DgnAuthorityId, DgnAuthorityId> m_authorityId;
@@ -68,8 +68,8 @@ public:
     DgnModelId Add(DgnModelId sourceId, DgnModelId targetId) {return m_modelId[sourceId] = targetId;}
     DgnElementId Find(DgnElementId sourceId) const {return Find<DgnElementId>(m_elementId, sourceId);}
     DgnElementId Add(DgnElementId sourceId, DgnElementId targetId) {return m_elementId[sourceId] = targetId;}
-    DgnGeomPartId Find(DgnGeomPartId sourceId) const {return Find<DgnGeomPartId>(m_geomPartId, sourceId);}
-    DgnGeomPartId Add(DgnGeomPartId sourceId, DgnGeomPartId targetId) {return m_geomPartId[sourceId] = targetId;}
+    DgnGeometryPartId Find(DgnGeometryPartId sourceId) const {return Find<DgnGeometryPartId>(m_geomPartId, sourceId);}
+    DgnGeometryPartId Add(DgnGeometryPartId sourceId, DgnGeometryPartId targetId) {return m_geomPartId[sourceId] = targetId;}
     DgnCategoryId Find(DgnCategoryId sourceId) const {return FindElement<DgnCategoryId>(sourceId);}
     DgnCategoryId Add(DgnCategoryId sourceId, DgnCategoryId targetId) {return DgnCategoryId((m_elementId[sourceId] = targetId).GetValueUnchecked());}
     DgnMaterialId Find(DgnMaterialId sourceId) const { return FindElement<DgnMaterialId>(sourceId); }
@@ -139,8 +139,8 @@ public:
     DgnModelId FindModelId(DgnModelId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of a model
     DgnModelId AddModelId(DgnModelId sourceId, DgnModelId targetId) {return m_remap.Add(sourceId, targetId);}
-    //! Make sure that a GeomPart has been imported
-    DGNPLATFORM_EXPORT DgnGeomPartId RemapGeomPartId(DgnGeomPartId sourceId);
+    //! Make sure that a GeometryPart has been imported
+    DGNPLATFORM_EXPORT DgnGeometryPartId RemapGeometryPartId(DgnGeometryPartId sourceId);
     //! Look up a copy of a Category
     DgnCategoryId FindCategory(DgnCategoryId sourceId) const { return m_remap.Find(sourceId); }
     //! Register a copy of a Category
@@ -251,7 +251,7 @@ public:
 //! @ingroup DgnElementGroup
 // @bsiclass                                                     KeithBentley    10/13
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnElement : NonCopyableClass
+struct EXPORT_VTABLE_ATTRIBUTE DgnElement : NonCopyableClass, ICodedObject
 {
 public:
     friend struct DgnElements;
@@ -262,8 +262,6 @@ public:
     friend struct MultiAspect;
     friend struct GeometrySource;
 
-    typedef DgnAuthority::Code Code;
-
     //! Parameters for creating a new DgnElement
     struct CreateParams
     {
@@ -271,16 +269,16 @@ public:
         DgnDbR          m_dgndb;
         DgnModelId      m_modelId;
         DgnClassId      m_classId;
-        Code            m_code;
+        DgnCode         m_code;
         Utf8String      m_label;
         DgnElementId    m_id;
         DgnElementId    m_parentId;
 
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Code const& code=Code(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId())
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCode const& code=DgnCode(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId())
             : m_dgndb(db), m_modelId(modelId), m_classId(classId), m_code(code), m_parentId(parent) {SetLabel(label);}
 
         DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
-        void SetCode(Code code) {m_code = code;}                    //!< Set the Code for elements created with this CreateParams
+        void SetCode(DgnCode code) {m_code = code;}                 //!< Set the DgnCode for elements created with this CreateParams
         void SetLabel(Utf8CP label) {m_label.AssignOrClear(label);} //!< Set the Label for elements created with this CreateParams
         void SetElementId(DgnElementId id) {m_id = id;}             //!< @private
         void SetParentId(DgnElementId parent) {m_parentId=parent;}  //!< Set the ParentId for elements created with this CreateParams
@@ -691,26 +689,6 @@ public:
 
     typedef RefCountedPtr<ExternalKeyAspect> ExternalKeyAspectPtr;
 
-    //! Allows a description to be associated with a DgnElement via a persistent ElementAspect
-    struct EXPORT_VTABLE_ATTRIBUTE DescriptionAspect : AppData
-    {
-    private:
-        Utf8String m_description;
-        explicit DescriptionAspect(Utf8CP description){m_description.AssignOrClear(description);}
-
-    protected:
-        DGNPLATFORM_EXPORT virtual DropMe _OnInserted(DgnElementCR) override;
-
-    public:
-        DGNPLATFORM_EXPORT static Key const& GetAppDataKey();
-        DGNPLATFORM_EXPORT static RefCountedPtr<DescriptionAspect> Create(Utf8CP description);
-        DGNPLATFORM_EXPORT static DgnDbStatus Query(Utf8StringR description, DgnElementCR);
-        DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR);
-        Utf8CP GetDescription() const {return m_description.c_str();}
-    };
-
-    typedef RefCountedPtr<DescriptionAspect> DescriptionAspectPtr;
-
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
 private:
@@ -718,10 +696,11 @@ private:
     template<class T> void CallAppData(T const& caller) const;
 
 protected:
+    //! @private
     struct Flags
     {
         uint32_t m_persistent:1;
-        uint32_t m_lockHeld:1;
+        uint32_t m_forceElementIdForInsert:1;
         uint32_t m_inSelectionSet:1;
         uint32_t m_hilited:3;
         uint32_t m_undisplayed:1;
@@ -734,7 +713,7 @@ protected:
     DgnElementId    m_parentId;
     DgnModelId      m_modelId;
     DgnClassId      m_classId;
-    Code            m_code;
+    DgnCode         m_code;
     Utf8String      m_label;
     mutable Flags   m_flags;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
@@ -744,7 +723,7 @@ protected:
 
     void SetPersistent(bool val) const {m_flags.m_persistent = val;} //!< @private
     void InvalidateElementId() {m_elementId = DgnElementId();} //!< @private
-    void InvalidateCode() {m_code = Code();} //!< @private
+    void InvalidateCode() { m_code = DgnCode(); } //!< @private
     
     //! Invokes _CopyFrom() in the context of _Clone() or _CloneForImport(), preserving this element's code as specified by the CreateParams supplied to those methods.
     void CopyForCloneFrom(DgnElementCR src);
@@ -909,7 +888,7 @@ protected:
     virtual uint32_t _GetMemSize() const {return sizeof(*this);}
 
     //! Virtual writeable deep copy method.
-    //! @remarks If no CreateParams are supplied, a new Code will be generated for the cloned element - it will \em not be copied from this element's Code.
+    //! @remarks If no CreateParams are supplied, a new DgnCode will be generated for the cloned element - it will \em not be copied from this element's DgnCode.
     DGNPLATFORM_EXPORT DgnElementPtr virtual _Clone(DgnDbStatus* stat=nullptr, DgnElement::CreateParams const* params=nullptr) const;
 
     //! Virtual assignment method. If your subclass has member variables, it @b must override this method and copy those values from @a source.
@@ -953,14 +932,12 @@ protected:
     //! Override to validate the parent/child relationship and return a value other than DgnDbStatus::Success to reject proposed new parent.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetParentId(DgnElementId parentId);
 
-    //! Change the code of this DgnElement.
-    //! The default implementation sets the code without doing any checking.
-    //! Override to validate the code.
-    //! @return DgnDbStatus::Success if the code was changed, error status otherwise.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCode(Code const& code);
-
-    //! Override to customize how the DgnElement subclass generates its code.
-    DGNPLATFORM_EXPORT virtual Code _GenerateDefaultCode();
+    virtual DgnCode const& _GetCode() const override final { return m_code; }
+    virtual bool _SupportsCodeAuthority(DgnAuthorityCR) const override { return true; }
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCode(DgnCode const& code) override final;
+    DGNPLATFORM_EXPORT virtual DgnCode _GenerateDefaultCode() const override;
+    virtual DgnElementCP _ToDgnElement() const override final { return this; }
+    virtual DgnDbR _GetDgnDb() const override final { return m_dgndb; }
 
     virtual GeometrySourceCP _ToGeometrySource() const {return nullptr;}
     virtual SpatialElementCP _ToSpatialElement() const {return nullptr;}
@@ -971,7 +948,6 @@ protected:
     virtual DefinitionElementCP _ToDefinitionElement() const {return nullptr;}
     virtual DictionaryElementCP _ToDictionaryElement() const {return nullptr;}
     virtual IElementGroupCP _ToIElementGroup() const {return nullptr;}
-    virtual SystemElementCP _ToSystemElement() const {return nullptr;}
 
     //! Construct a DgnElement from its params
     DGNPLATFORM_EXPORT explicit DgnElement(CreateParams const& params);
@@ -1011,7 +987,6 @@ public:
     DrawingElementCP ToDrawingElement() const {return _ToDrawingElement();}             //!< more efficient substitute for dynamic_cast<DrawingElementCP>(el)
     SheetElementCP ToSheetElement() const {return _ToSheetElement();}                   //!< more efficient substitute for dynamic_cast<SheetElementCP>(el)
     IElementGroupCP ToIElementGroup() const {return _ToIElementGroup();}                //!< more efficient substitute for dynamic_cast<IElementGroup>(el)
-    SystemElementCP ToSystemElement() const {return _ToSystemElement();}                //!< more efficient substitute for dynamic_cast<SystemElementCP>(el)
     
     GeometrySourceP ToGeometrySourceP() {return const_cast<GeometrySourceP>(_ToGeometrySource());} //!< more efficient substitute for dynamic_cast<GeometrySourceP>(el)
     GeometrySource2dP ToGeometrySource2dP() {return const_cast<GeometrySource2dP>(ToGeometrySource2d());} //!< more efficient substitute for dynamic_cast<GeometrySource2dP>(el)
@@ -1024,7 +999,6 @@ public:
     AnnotationElementP ToAnnotationElementP() {return const_cast<AnnotationElementP>(_ToAnnotationElement());}  //!< more efficient substitute for dynamic_cast<AnnotationElementP>(el)
     DrawingElementP ToDrawingElementP() {return const_cast<DrawingElementP>(_ToDrawingElement());}              //!< more efficient substitute for dynamic_cast<DrawingElementP>(el)
     SheetElementP ToSheetElementP() {return const_cast<SheetElementP>(_ToSheetElement());}                      //!< more efficient substitute for dynamic_cast<SheetElementP>(el)
-    SystemElementP ToSystemElementP() {return const_cast<SystemElementP>(_ToSystemElement());}                  //!< more efficient substitute for dynamic_cast<SystemElementP>(el)
     //! @}
 
     bool Is3d() const {return nullptr != ToGeometrySource3d();}                     //!< Determine whether this element is 3d or not
@@ -1032,7 +1006,6 @@ public:
     bool IsGeometricElement() const {return nullptr != ToGeometrySource();}         //!< Determine whether this element is geometric or not
     bool IsDefinitionElement() const {return nullptr != ToDefinitionElement();}     //!< Determine whether this element is a definition or not
     bool IsDictionaryElement() const {return nullptr != ToDictionaryElement();}
-    bool IsSystemElement() const {return nullptr != ToSystemElement();}             //!< Determine whether this element is a SystemElement or not
     bool IsAnnotationElement() const {return nullptr != ToAnnotationElement();}     //!< Determine whether this element is an AnnotationElement
     bool IsDrawingElement() const {return nullptr != ToDrawingElement();}           //!< Determine whether this element is an DrawingElement
     bool IsSheetElement() const {return nullptr != ToSheetElement();}               //!< Determine whether this element is an SheetElement
@@ -1045,7 +1018,7 @@ public:
     //! Create a writeable deep copy of a DgnElement for insert into the same or new model.
     //! @param[out] stat Optional status to describe failures, a valid DgnElementPtr will only be returned if successful.
     //! @param[in] params Optional CreateParams. Might specify a different destination model, etc.
-    //! @remarks If no CreateParams are supplied, a new Code will be generated for the cloned element - it will \em not be copied from this element's Code.
+    //! @remarks If no CreateParams are supplied, a new DgnCode will be generated for the cloned element - it will \em not be copied from this element's DgnCode.
     DGNPLATFORM_EXPORT DgnElementPtr Clone(DgnDbStatus* stat=nullptr, DgnElement::CreateParams const* params=nullptr) const;
 
     //! Copy the content of another DgnElement into this DgnElement.
@@ -1118,18 +1091,15 @@ public:
     //! Get the DgnModel of this DgnElement.
     DGNPLATFORM_EXPORT DgnModelPtr GetModel() const;
 
-    //! Get the DgnDb of this element.
-    DgnDbR GetDgnDb() const {return m_dgndb;}
-
     //! Get the DgnElementId of this DgnElement
     DgnElementId GetElementId() const {return m_elementId;}
 
+    //! Only valid to be used in very specific synchronization workflows. All other workflows should allow Insert to use next available DgnElementId.
+    //! @private
+    DGNPLATFORM_EXPORT void ForceElementIdForInsert(DgnElementId);
+
     //! Get the DgnClassId of this DgnElement.
     DgnClassId GetElementClassId() const {return m_classId;}
-
-    //! DEPRECATED: use GetElementId (preferred) or GetECInstanceKey (for ECRelationships) instead
-    //! @private
-    DgnElementKey GetElementKey() const {return DgnElementKey(GetElementClassId(), GetElementId());}
 
     //! Get the ECInstanceKey (the element DgnClassId and DgnElementId) of this DgnElement
     //! @see GetElementClassId, GetElementId
@@ -1147,14 +1117,6 @@ public:
     //! @return DgnDbStatus::Success if the parent was set
     //! @note This call can fail if a DgnElement subclass overrides _SetParentId and rejects the parent.
     DgnDbStatus SetParentId(DgnElementId parentId) {return parentId == GetParentId() ? DgnDbStatus::Success : _SetParentId(parentId);}
-
-    //! Get the code (business key) of this DgnElement.
-    Code GetCode() const {return m_code;}
-    //! Set the code (business key) of this DgnElement.
-    //! @see GetCode, _SetCode
-    //! @return DgnDbStatus::Success if the code was set
-    //! @note This call can fail if a subclass overrides _SetCode and rejects the code.
-    DgnDbStatus SetCode(Code const& code) {return _SetCode(code);}
 
     //! Query the database for the last modified time of this DgnElement.
     DGNPLATFORM_EXPORT DateTime QueryTimeStamp() const;
@@ -1187,8 +1149,8 @@ struct GeometryStream : ByteStream
 public:
     bool HasGeometry() const {return HasData();}  //!< return false if this GeometryStream is empty.
 
-    DgnDbStatus WriteGeometryStreamAndStep(DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId, BeSQLite::Statement& stmt, int stmtcolidx) const;
-    DgnDbStatus ReadGeometryStream(DgnDbR dgnDb, void const* blob, int blobSize);
+    DgnDbStatus WriteGeometryStreamAndStep(BeSQLite::SnappyToBlob& snappy, DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId, BeSQLite::Statement& stmt, int stmtcolidx) const;
+    DgnDbStatus ReadGeometryStream(BeSQLite::SnappyFromMemory& snappy, DgnDbR dgnDb, void const* blob, int blobSize);
 };
 
 //=======================================================================================
@@ -1513,7 +1475,7 @@ template<typename T_Placement> struct GeometricElementCreateParams : DgnElement:
     DgnCategoryId m_categoryId;
     T_Placement const& m_placement;
 
-    GeometricElementCreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, T_Placement const& placement=T_Placement(), DgnElement::Code const& code=DgnElement::Code(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId()) :
+    GeometricElementCreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, T_Placement const& placement=T_Placement(), DgnCode const& code=DgnCode(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId()) :
             T_Super(db, modelId, classId, code, label, parent), m_categoryId(category), m_placement(placement) {}
 
     explicit GeometricElementCreateParams(T_Super const& params, DgnCategoryId category=DgnCategoryId(), T_Placement const& placement=T_Placement()) : T_Super(params), m_categoryId(category), m_placement(placement) {}
@@ -1694,21 +1656,6 @@ protected:
 }; // SheetElement
 
 //=======================================================================================
-//! A SystemElement is used to model functional systems
-//! @see SystemModel
-//! @ingroup DgnElementGroup
-// @bsiclass                                                    Shaun.Sewall    12/25
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SystemElement : DgnElement
-{
-    DEFINE_T_SUPER(DgnElement);
-
-protected:
-    virtual SystemElementCP _ToSystemElement() const override final {return this;}
-    explicit SystemElement(CreateParams const& params) : T_Super(params) {}
-};
-
-//=======================================================================================
 //! Helper class for maintaining and querying the ElementGroupsMembers relationship
 //! @see IElementGroup
 //! @private
@@ -1884,13 +1831,13 @@ public:
         //! @param[in] code     The element's unique code.
         //! @param[in] label    The element's label
         //! @param[in] parentId The ID of the element's parent element.
-        DGNPLATFORM_EXPORT CreateParams(DgnDbR db, DgnClassId classId, Code const& code, Utf8CP label=nullptr, DgnElementId parentId=DgnElementId());
+        DGNPLATFORM_EXPORT CreateParams(DgnDbR db, DgnClassId classId, DgnCode const& code, Utf8CP label=nullptr, DgnElementId parentId=DgnElementId());
 
         //! Constructor from base class. Primarily for internal use.
         explicit CreateParams(DgnElement::CreateParams const& params) : T_Super(params) {}
 
         //! Constructs parameters for a dictionary element with the specified values. Chiefly for internal use.
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Code code, Utf8CP label=nullptr, DgnElementId parent=DgnElementId())
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCode code, Utf8CP label=nullptr, DgnElementId parent=DgnElementId())
             : T_Super(db, modelId, classId, code, label, parent) {}
     };
 protected:
@@ -1919,6 +1866,7 @@ struct DgnElements : DgnDbTable, IMemoryConsumer
     friend struct TxnManager;
     friend struct ProgressiveViewFilter;
     friend struct dgn_TxnTable::Element;
+    friend struct ElementGeomData;
 
     //! The totals for persistent DgnElements in this DgnDb. These values reflect the current state of the loaded elements.
     struct Totals
@@ -1991,9 +1939,10 @@ private:
     virtual int64_t _CalculateBytesConsumed() const override {return GetTotalAllocated();}
     virtual int64_t _Purge(int64_t memTarget) override;
 
-public:
     BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;} // NB: Not to be used during loading of a geometric element!
     BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;} // NB: Not to be used during insert or update of a geometric element!
+
+public:
     DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const;
     DGNPLATFORM_EXPORT void ChangeMemoryUsed(int32_t delta) const;
     DGNPLATFORM_EXPORT void DropFromPool(DgnElementCR) const;
@@ -2008,7 +1957,7 @@ public:
     DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnElementId elementId) const;
 
     //! Query for the DgnElementId of the element that has the specified code
-    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(DgnElement::Code const& code) const;
+    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(DgnCode const& code) const;
 
     //! Query for the DgnElementId of the element that has the specified code
     DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(DgnAuthorityId codeAuthorityId, Utf8StringCR codeValue, Utf8StringCR nameSpace="") const;
@@ -2145,7 +2094,7 @@ public:
     //! @param[in] newParentId  Optional. The element that should be the parent of the new element. If not specified, then the parent of the new element
     //!                             will either be the parent of the source element or the element to which the source parent has been remapped. See DgnCloneContext.
     //! @return a new element if successful
-    DGNPLATFORM_EXPORT DgnElementCPtr MakeCopy(DgnDbStatus* stat, DgnModelR targetModel, DgnElementCR sourceElement, DgnElement::Code const& code, DgnElementId newParentId = DgnElementId());
+    DGNPLATFORM_EXPORT DgnElementCPtr MakeCopy(DgnDbStatus* stat, DgnModelR targetModel, DgnElementCR sourceElement, DgnCode const& code, DgnElementId newParentId = DgnElementId());
 };
 
 //=======================================================================================
