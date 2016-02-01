@@ -38,6 +38,7 @@ ECSqlUpdateTestFramework.WhereRelationshipWithAdditionalPropsTests
 
 # TFS359449 (Affan)
 ECSqlNavigationPropertyTestFixture.SingleInstanceNavProp_ForeignKeyMappingWithJoinedTable
+ECSqlNavigationPropertyTestFixture.SingleInstanceNavProp_ForeignKeyMapping_ECInstanceAdapter
 
 #For Hassan. TFS 365787
 #Tests that use the eB Schema which is not compatible at all with EC3 and the new relationship rules.
