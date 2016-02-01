@@ -559,9 +559,8 @@ BentleyStatus ECDb_ECSqlColumnInfoOnNestedLevels ()
     ECDb ecdb;
     //__PUBLISH_EXTRACT_START__ Overview_ECDb_ECSqlColumnInfoOnNestedLevels.sampleCode
 
-    Utf8CP ecsql = "SELECT FirstName, Certifications FROM stco.Employee WHERE ECInstanceId = 123";
     ECSqlStatement statement;
-    statement.Prepare (ecdb, ecsql);
+    statement.Prepare (ecdb, "SELECT FirstName, Certifications FROM stco.Employee WHERE ECInstanceId = 123");
 
     auto printColumnInfoCategoryLambda = [] (ECSqlColumnInfoCR columnInfo)
         {
@@ -619,12 +618,10 @@ BentleyStatus ECDb_ECSqlInsert ()
     //__PUBLISH_EXTRACT_START__ Overview_ECDb_ECSqlInsert.sampleCode
 
     // ECSQL
-    // Use binding parameters so that the prepared statement can be reused with different values
-    Utf8CP ecsql = "INSERT INTO stco.Employee (FirstName, LastName, Birthday) VALUES (?, ?, ?)";
-
     // Prepare statement
+    // Use binding parameters so that the prepared statement can be reused with different values
     ECSqlStatement statement;
-    ECSqlStatus stat = statement.Prepare (ecdb, ecsql);
+    ECSqlStatus stat = statement.Prepare (ecdb, "INSERT INTO stco.Employee(FirstName,LastName,Birthday) VALUES (?,?,?)");
     if (!stat.IsSuccess())
         {
         // do error handling here...
@@ -688,11 +685,8 @@ BentleyStatus ECDb_ECSqlInsertRelation ()
     // In the ECRelationship CompanyHasEmployees the Company class is the source end and the Employee class is
     // the target end.
     // Use binding parameters so that the prepared statement can be reused with different values.
-    Utf8CP ecsql = "INSERT INTO stco.CompanyHasEmployees (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)";
-
-    // Prepare statement
     ECSqlStatement statement;
-    ECSqlStatus stat = statement.Prepare (ecdb, ecsql);
+    ECSqlStatus stat = statement.Prepare (ecdb, "INSERT INTO stco.CompanyHasEmployees (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
     if (!stat.IsSuccess())
         {
         // do error handling here...
