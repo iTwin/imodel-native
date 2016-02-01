@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnMarkupProject.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -567,12 +567,6 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileNameIn, Creat
         stmt.Step();
         }
 
-    //  ------------------------------------------------------------------
-    //  Import the needed ECSchema(s).
-    //  ------------------------------------------------------------------
-    if (ImportMarkupEcschema() != SUCCESS)
-        return BE_SQLITE_ERROR;
-
     SaveSettings();
     SaveChanges();
 
@@ -733,89 +727,6 @@ bool DgnMarkupProject::IsSpatialRedlineProject() const
     Utf8String rdlPropVal;
     return QueryProperty(rdlPropVal, DgnProjectProperty::IsSpatialRedline()) == BE_SQLITE_ROW  &&  rdlPropVal == "true";
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnMarkupProject::ImportMarkupEcschema()
-    {
-    BeFileName ecSchemasDir = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-    ecSchemasDir.AppendToPath(L"ECSchemas");   // *** WIP_MARKUP - I don't want to have this hard-wired knowledge here. 
-
-    BeFileName stdSchemasDir(ecSchemasDir);
-    stdSchemasDir.AppendToPath(L"Standard");
-    
-    BeFileName dgnSchemasDir(ecSchemasDir);
-    dgnSchemasDir.AppendToPath(L"Dgn");   // *** WIP_MARKUP - I don't want to have this hard-wired knowledge here. 
-
-    BeFileName dgnMarkupEcSchemaFileName(NULL, dgnSchemasDir, L"DgnMarkupSchema.01.00.ecschema", L"xml"); // *** WIP_MARKUP - I don't want to have the version number hard-wired.
-    BeFileName markupEcSchemaFileName(NULL, dgnSchemasDir, L"Bentley_Markup.01.00.ecschema", L"xml"); // *** WIP_MARKUP - I don't want to have the version number hard-wired.
-    BeFileName markupExtEcSchemaFileName(NULL, dgnSchemasDir, L"Bentley_MarkupExtension.01.01.ecschema", L"xml"); // *** WIP_MARKUP - I don't want to have the version number hard-wired.
-
-    // 1) Deserialize ECSchema from XML file
-    ECN::ECSchemaReadContextPtr schemaContext = ECN::ECSchemaReadContext::CreateContext();
-    // add schema search paths for referenced schemas.
-    // This is needed in case the schema references classes from other schemas in other locations.
-    schemaContext->AddSchemaPath(ecSchemasDir);
-    schemaContext->AddSchemaPath(stdSchemasDir);
-    schemaContext->AddSchemaPath(dgnSchemasDir);
-
-    // Read specified schema. All referenced schemas will also be read. Schema and references
-    // are available in the cache of the schemaContext
-    ECN::ECSchemaPtr schema = NULL;
-    ECN::SchemaReadStatus deserializeStat = ECN::ECSchema::ReadFromXmlFile(schema, markupEcSchemaFileName, *schemaContext);
-    if (ECN::SchemaReadStatus::Success != deserializeStat)
-        {
-        // Schema could not be read into memory. Do error handling here
-        BeAssert(false && "Markup schemas should be a delivered asset");
-        return ERROR;
-        }
-    schema = NULL;
-    deserializeStat = ECN::ECSchema::ReadFromXmlFile(schema, markupExtEcSchemaFileName, *schemaContext);
-    if (ECN::SchemaReadStatus::Success != deserializeStat)
-        {
-        // Schema could not be read into memory. Do error handling here
-        BeAssert(false && "Markup schemas should be a delivered asset");
-        return ERROR;
-        }
-    schema = NULL;
-    deserializeStat = ECN::ECSchema::ReadFromXmlFile(schema, dgnMarkupEcSchemaFileName, *schemaContext);
-    if (ECN::SchemaReadStatus::Success != deserializeStat)
-        {
-        // Schema could not be read into memory. Do error handling here
-        BeAssert(false && "Markup schemas should be a delivered asset");
-        return ERROR;
-        }
-
-    // 2) Import ECSchema (and its references) into DgnDb file. The schema and its references are available in the cache
-    //    of the schema context from the XML deserialization step.
-    ECDbSchemaManagerCR schemaManager = Schemas();
-    BentleyStatus importStat = schemaManager.ImportECSchemas(schemaContext->GetCache());
-    if (SUCCESS != importStat)
-        {
-        // Schema(s) could not be imported into the DgnDb file. Do error handling here
-        BeAssert(false && "MarkupSchema.ecschema.xml should be a delivered asset");
-        return ERROR;
-        }
-
-    // commits the changes in the DgnDb file (the imported ECSchema) to disk
-    return SaveChanges() == BE_SQLITE_OK? SUCCESS: ERROR;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/13
-ECN::ECClassCP DgnMarkupProject::GetRedlineECClass()
-    {
-    ECN::ECClassCP redlineClass = Schemas ().GetECClass ("DgnMarkupSchema", "Redline");
-    if (redlineClass == nullptr)
-        {
-        BeAssert (false);
-        return NULL;
-        }
-    return redlineClass;
-    }
-+---------------+---------------+---------------+---------------+---------------+------*/
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/13
@@ -1117,63 +1028,6 @@ SpatialRedlineModelPtr SpatialRedlineModel::Create(DgnMarkupProjectR markupProje
 
     return rdlModel;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/13
-void DgnMarkupProject::CreateModelECProperties (DgnModelId modelId, Utf8CP modelName)
-    {
-    // --------------------------------------------------------------
-    //  Define as many of the redline ECProperties as we can
-    ECN::ECClassCP ecclass = GetRedlineECClass();
-    if (NULL == ecclass)
-        return;
-
-    Utf8String ecsql ("INSERT INTO ");
-    ecsql.append (ecclass->GetECSqlName()).append (" (RedlineModelId, [Name], CreateDate) VALUES (?, ?, ?)");
-    
-    ECSqlStatement statement;
-    ECSqlStatus stat = statement.Prepare (*this, ecsql.c_str ());
-    if (stat != ECSqlStatus::Success())
-        {
-        BeAssert (false);
-        return;
-        }
-    
-    stat = statement.BindInt64 (1, modelId.GetValue ());
-    if (stat != ECSqlStatus::Success())
-        {
-        BeAssert (false);
-        return;
-        }
-        
-    stat = statement.BindText (2, modelName, IECSqlBinder::MakeCopy::No);
-    if (stat != ECSqlStatus::Success())
-        {
-        BeAssert (false);
-        return;
-        }
-        
-    stat = statement.BindDateTime (3, DateTime::GetCurrentTimeUtc());
-    if (stat != ECSqlStatus::Success())
-        {
-        BeAssert (false);
-        return;
-        }
-
-    ECInstanceKey newECInstanceKey;
-    DbResult stepStat = statement.Step (newECInstanceKey);
-    if (stepStat != BE_SQLITE_DONE)
-        {
-        BeAssert (false);
-        return;
-        }
-    
-    // --------------------------------------------------------------
-    // Associate the redline model with the ECInstance.
-    ECInstanceId const& newECInstanceId = newECInstanceKey.GetECInstanceId ();
-    SaveProperty (RedlineModelProperty::RedlineECInstanceId(), &newECInstanceId, sizeof(ECInstanceId), modelId.GetValue());
-    }
-+---------------+---------------+---------------+---------------+---------------+------*/
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnMarkupProject.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -40,11 +40,6 @@
 * static image of a view of the DgnDb or some other static image. The redline model in that case is a (2-D) SheetModel, and the 
 * associated redline view is a SheetViewController.
 */
-
-#ifdef WIP_REDLINE_ECINSTANCE
-* Markups and both types of redlines have EC properties. These properties can be checked and modified using normal ECDb functions. 
-* See RedlineModel::GetRedlineECClass and RedlineModel::GetECInstanceId for redlines. Use the Bentley_Markup:Markup ECClass for markups.
-#endif
 
 DGNPLATFORM_REF_COUNTED_PTR(RedlineModel)
 DGNPLATFORM_REF_COUNTED_PTR(SpatialRedlineModel)
@@ -203,14 +198,6 @@ public:
 public:
 
     DGNPLATFORM_EXPORT uintptr_t GetBackDropTextureId() const;
-
-#ifdef WIP_REDLINE_ECINSTANCE
-    //! Get the ECClass of the ECInstance that holds the properties of this model.
-    DGNPLATFORM_EXPORT ECN::ECClassCP GetECClass() const;
-
-    //! Get the ID if the ECInstance that holds the properties of this model.
-    DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceId GetECInstanceId() const;
-#endif
 
     //! Get the DgnMarkupProject that contains this redline model
     DGNPLATFORM_EXPORT DgnMarkupProject* GetDgnMarkupProject() const;
@@ -482,7 +469,6 @@ private:
     virtual ~DgnMarkupProject() {}
     BeSQLite::DbResult ConvertToMarkupProject(BeFileNameCR fileName, CreateDgnDbParams const& params);
 
-    BentleyStatus ImportMarkupEcschema();
     BentleyStatus QueryPropertyAsJson(JsonValueR json, DgnMarkupProjectProperty::ProjectProperty const& propSpec, uint64_t id=0) const;
     void SavePropertyFromJson(DgnMarkupProjectProperty::ProjectProperty const& propSpec, JsonValueCR json, uint64_t id=0);
 
@@ -490,11 +476,6 @@ public:
     BentleyStatus CheckIsOpen();
 
     DgnViewId GetFirstViewOf(DgnModelId);
-
-#ifdef WIP_REDLINE_ECINSTANCE
-    ECN::IECInstancePtr CreateRedlineInstance();
-    BeSQLite::EC::ECInstanceId GetECInstanceId(DgnModelCR) const;
-#endif
 
     BentleyStatus QueryPropertyAsJson(JsonValueR json, RedlineModelProperty::ProjectProperty const&, uint64_t id=0) const;
     void SavePropertyFromJson(RedlineModelProperty::ProjectProperty const& propSpec, JsonValueCR json, uint64_t id=0) const;
@@ -552,8 +533,6 @@ public:
     //! @param name             A unique identifier for the redline model.
     //! @param templateModel    Optional. Identifies the model in this DgnMarkupProject to be used a template for the redline model. Must be a sheet model.
     //! @see OpenRedlineModel, RedlineModel::StoreImageData
-    //! @note: This function also creates an ECInstance associated with the new redline model. The instance is from the DgnMarkupSchema:Redline class.
-    //! After calling this function, the caller should then finish the job of defining the properties of the DgnMarkupSchema:Redline instance.
     DGNPLATFORM_EXPORT RedlineModelP CreateRedlineModel(Utf8CP name, DgnModelId templateModel);
 
     //! Create a view of the redline model that is as similar as possible to the specified DgnDb view.
