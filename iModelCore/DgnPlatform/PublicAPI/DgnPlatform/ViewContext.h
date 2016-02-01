@@ -455,8 +455,6 @@ public:
     DGNPLATFORM_EXPORT DMatrix4d GetLocalToView() const;
     DGNPLATFORM_EXPORT DMatrix4d GetViewToLocal() const;
     DGNPLATFORM_EXPORT bool ValidateScanRange();
-    DGNPLATFORM_EXPORT StatusInt Attach(DgnViewportP, DrawPurpose purpose);
-    DGNPLATFORM_EXPORT void Detach();
     DGNPLATFORM_EXPORT bool VisitAllModelElements(bool includeTransients); // DgnModelListP includeList, bool useUpdateSequence, bool includeRefs, bool includeTransients);
     DGNPLATFORM_EXPORT bool VisitAllViewElements(bool includeTransients, BSIRectCP updateRect); // DgnModelListP includeList, bool useUpdateSequence, bool includeRefs, bool includeTransients);
     DGNPLATFORM_EXPORT StatusInt VisitHit(HitDetailCR hit);
@@ -514,6 +512,12 @@ public:
     DGNPLATFORM_EXPORT static void DirectPopTransClipOutput(IDrawGeomR); //<! @private
 
 public:
+
+//__PUBLISH_SECTION_END__
+// !!! published for PKPM !!!
+//__PUBLISH_SECTION_START__
+DGNPLATFORM_EXPORT StatusInt Attach (DgnViewportP, DrawPurpose purpose);
+DGNPLATFORM_EXPORT void Detach ();
 
 DGNPLATFORM_EXPORT StatusInt VisitElement(GeometrySourceCR);    
 
