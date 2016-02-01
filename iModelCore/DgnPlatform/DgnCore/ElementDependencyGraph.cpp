@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ElementDependencyGraph.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -277,7 +277,7 @@ void DgnElementDependencyGraph::WriteDot(BeFileNameCR dotFilename, bvector<bvect
     fwprintf(fp, L"digraph G {\n");
 
     Statement edges;
-    edges.Prepare(GetDgnDb(), "SELECT RootElementId, DependentElementId, ECInstanceId, Status FROM " DGN_TABLE(DGN_RELNAME_ElementDrivesElement));
+    edges.Prepare(GetDgnDb(), "SELECT SourceECInstanceId, TargetECInstanceId, ECInstanceId, Status FROM " DGN_TABLE(DGN_RELNAME_ElementDrivesElement));
 
     while (edges.Step() == BE_SQLITE_ROW)
         {
@@ -600,12 +600,12 @@ DgnElementDependencyGraph::EdgeQueue::EdgeQueue(DgnElementDependencyGraph& g)
     // NB: All select statements must specify the same columns and in the same order, as they are all processed by a single function, "SelectEdge"
 
                   // 0                  1               2                    3           4        5      
-#define Q_SEL_COLS " Q.ECRelationshipId,E.RootElementId,E.DependentElementId,E.ECClassId,E.status,E.Priority"
+#define Q_SEL_COLS " Q.ECRelationshipId,E.SourceECInstanceId,E.TargetECInstanceId,E.ECClassId,E.status,E.Priority"
 #define Q_TABLES   " " EDGE_QUEUE " AS Q JOIN " DGN_TABLE(DGN_RELNAME_ElementDrivesElement) " AS E ON (Q.ECRelationshipId = E.ECInstanceId)"
 
     GetDgnDb().GetCachedStatement(m_select, "SELECT " Q_SEL_COLS " FROM " Q_TABLES);
     GetDgnDb().GetCachedStatement(m_selbyp, "SELECT " Q_SEL_COLS " FROM " Q_TABLES " ORDER BY E.Priority DESC");
-    GetDgnDb().GetCachedStatement(m_selbyo, "SELECT " Q_SEL_COLS " FROM " Q_TABLES " WHERE (E.DependentElementId=?) ORDER BY E.Priority DESC");
+    GetDgnDb().GetCachedStatement(m_selbyo, "SELECT " Q_SEL_COLS " FROM " Q_TABLES " WHERE (E.TargetECInstanceId=?) ORDER BY E.Priority DESC");
     GetDgnDb().GetCachedStatement(m_selbyso,"SELECT " Q_SEL_COLS " FROM " Q_TABLES " WHERE (Q.shared_output > 1)");
     }
 
@@ -780,30 +780,30 @@ DbResult DgnElementDependencyGraph::ElementDrivesElement::DoPrepare(DgnModelId m
     //  NB All Select statements must specify the same columns in the same order
 
     m_selectByRootInDirectChanges = GetTxnMgr().GetTxnStatement(
-        "SELECT RootElementId,DependentElementId,ECInstanceId as relid,ECClassId,Status,Priority FROM " DGN_TABLE(DGN_RELNAME_ElementDrivesElement)
-        " WHERE (RootElementId IN (SELECT ElementId FROM " TEMP_TABLE(TXN_TABLE_Elements) " WHERE ModelId=?))");
+        "SELECT SourceECInstanceId,TargetECInstanceId,ECInstanceId as relid,ECClassId,Status,Priority FROM " DGN_TABLE(DGN_RELNAME_ElementDrivesElement)
+        " WHERE (SourceECInstanceId IN (SELECT ElementId FROM " TEMP_TABLE(TXN_TABLE_Elements) " WHERE ModelId=?))");
 
     m_selectByRootInDirectChanges->BindId(1, mid);
 
     m_selectByDependentInDirectChanges = GetTxnMgr().GetTxnStatement(
-        "SELECT RootElementId,DependentElementId,ECInstanceId as relid,ECClassId,Status,Priority FROM " DGN_TABLE(DGN_RELNAME_ElementDrivesElement)
-        " WHERE (DependentElementId IN (SELECT ElementId FROM " TEMP_TABLE(TXN_TABLE_Elements) " WHERE ModelId=?))");
+        "SELECT SourceECInstanceId,TargetECInstanceId,ECInstanceId as relid,ECClassId,Status,Priority FROM " DGN_TABLE(DGN_RELNAME_ElementDrivesElement)
+        " WHERE (TargetECInstanceId IN (SELECT ElementId FROM " TEMP_TABLE(TXN_TABLE_Elements) " WHERE ModelId=?))");
 
     m_selectByDependentInDirectChanges->BindId(1, mid);
 
     m_selectByRelationshipInDirectChanges = GetTxnMgr().GetTxnStatement(
-        "SELECT RootElementId,DependentElementId,ECInstanceId as relid,ECClassId,Status,Priority FROM " DGN_TABLE(DGN_RELNAME_ElementDrivesElement)
+        "SELECT SourceECInstanceId,TargetECInstanceId,ECInstanceId as relid,ECClassId,Status,Priority FROM " DGN_TABLE(DGN_RELNAME_ElementDrivesElement)
         " WHERE (ECInstanceId IN (SELECT ECInstanceId FROM " TEMP_TABLE(TXN_TABLE_Depend) " WHERE ModelId=?))");
 
     m_selectByRelationshipInDirectChanges->BindId(1, mid);
 
     m__selectByRoot__ = GetTxnMgr().GetTxnStatement(
-        "SELECT RootElementId,DependentElementId,ECInstanceId as relid,ECClassId,Status,Priority FROM " DGN_TABLE(DGN_RELNAME_ElementDrivesElement)
-        " WHERE RootElementId=?");
+        "SELECT SourceECInstanceId,TargetECInstanceId,ECInstanceId as relid,ECClassId,Status,Priority FROM " DGN_TABLE(DGN_RELNAME_ElementDrivesElement)
+        " WHERE SourceECInstanceId=?");
 
     m__selectByDependent__ = GetTxnMgr().GetTxnStatement(
-        "SELECT RootElementId,DependentElementId,ECInstanceId as relid,ECClassId,Status,Priority FROM " DGN_TABLE(DGN_RELNAME_ElementDrivesElement)
-        " WHERE DependentElementId=?");
+        "SELECT SourceECInstanceId,TargetECInstanceId,ECInstanceId as relid,ECClassId,Status,Priority FROM " DGN_TABLE(DGN_RELNAME_ElementDrivesElement)
+        " WHERE TargetECInstanceId=?");
 
     m__updateStatus__ = GetTxnMgr().GetTxnStatement("UPDATE " DGN_TABLE(DGN_RELNAME_ElementDrivesElement) " SET Status=? WHERE ECInstanceId=?");
     
@@ -816,7 +816,7 @@ DbResult DgnElementDependencyGraph::ElementDrivesElement::DoPrepare(DgnModelId m
 DbResult DgnElementDependencyGraph::ElementDrivesElement::SelectEdgeByRelId(Edge& edge, EC::ECInstanceId eid)
     {
     CachedStatementPtr selectByRelId = GetTxnMgr().GetTxnStatement(
-        "SELECT RootElementId,DependentElementId,ECInstanceId as relid,ECClassId,Status,Priority FROM " DGN_TABLE(DGN_RELNAME_ElementDrivesElement) " WHERE ECInstanceId=?");
+        "SELECT SourceECInstanceId,TargetECInstanceId,ECInstanceId as relid,ECClassId,Status,Priority FROM " DGN_TABLE(DGN_RELNAME_ElementDrivesElement) " WHERE ECInstanceId=?");
 
     selectByRelId->BindId(1, eid);
     return SelectEdge(edge, *selectByRelId);

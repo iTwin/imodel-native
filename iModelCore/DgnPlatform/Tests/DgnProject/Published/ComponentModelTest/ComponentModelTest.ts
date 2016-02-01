@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/ComponentModelTest/ComponentModelTest.ts $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /** 
@@ -25,7 +25,7 @@ module ComponentModelTest
         var box = be.DgnBox.CreateCenteredBox (new be.DPoint3d(0,0,0), boxSize, true); // NB: the *geometry* is always defined in an LCS w/ origin 0,0,0. The placement below puts where we want it.
 
         var builder = new be.ElementGeometryBuilder(element, origin, angles);
-        builder.Append(box);
+        builder.AppendSolidPrimitive (box);
         builder.SetGeomStreamAndPlacement(element);
     }
 
@@ -85,7 +85,16 @@ module ComponentModelTest
             element2.Insert();
 
             element.SetParent(element2);
-            element.Update();
+            element.Insert();
+
+
+            var element3 = makeElement(componentModel, cdef);
+
+            var builder = new be.ElementGeometryBuilder(element, new be.DPoint3d(0,0,0), angles);
+
+            builder.Append(new be.LineSegment (new be.DPoint3d (0,0,0), new be.DPoint3d(1,0,0)));
+            builder.SetGeomStreamAndPlacement(element3);
+            element3.Update ();
 
             return 0;
         }
@@ -112,7 +121,7 @@ module ComponentModelTest
             element.Insert();
 
             var gadgetComponentDef = be.ComponentDef.FindByName(db, TEST_JS_NAMESPACE + '.' + TEST_GADGET_COMPONENT_NAME);
-            var gparams = gadgetComponentDef.ComponentECClass.MakeInstance();
+            var gparams = gadgetComponentDef.MakeParameters();
             gparams.SetValue('Q', be.ECValue.FromDouble(A + 1));
             gparams.SetValue('W', be.ECValue.FromDouble(B + 1));
             gparams.SetValue('R', be.ECValue.FromDouble(C + 1));

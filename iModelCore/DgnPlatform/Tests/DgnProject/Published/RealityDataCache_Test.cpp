@@ -2,12 +2,13 @@
 |
 |     $Source: Tests/DgnProject/Published/RealityDataCache_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <Bentley/BeTest.h>
+#include <Bentley/BeTimeUtilities.h>
 #include <DgnPlatform/RealityDataCache.h>
 
 #include <functional>
@@ -487,6 +488,7 @@ public:
         }
     virtual void TearDown() override
         {
+        BackDoor::RealityData::Terminate(*m_storage);
         m_storage = nullptr;
         }
 };
@@ -638,10 +640,15 @@ public:
 
         BeFileName sourceFile;
         BeTest::GetHost().GetOutputRoot(sourceFile);
+        sourceFile.AppendToPath(WPrintfString(L"%f", BeTimeUtilities::GetCurrentTimeAsUnixMillisDoubleWithDelay()).c_str());
         sourceFile.AppendToPath(L"FileRealityDataSourceTests.Request_WithDataOutOfScope");
         sourceFile.BeDeleteFile();
         BeAssert(!sourceFile.DoesPathExist());
         m_filePath = sourceFile.GetNameUtf8();
+
+        BeFileName dir(BeFileName::FileNameParts::DevAndDir, sourceFile.c_str());
+        BeFileName::CreateNewDirectory(dir.c_str());
+        BeAssert(dir.DoesPathExist());
 
         // write some data to source file
         m_fileContent = "Test data";

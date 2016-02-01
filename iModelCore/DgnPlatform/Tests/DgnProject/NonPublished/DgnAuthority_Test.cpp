@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/DgnAuthority_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/BlankDgnDbTestFixture.h"
@@ -40,6 +40,19 @@ struct DgnAuthoritiesTest : public BlankDgnDbTestFixture
 
         return auth;
         }
+
+    bool CodeExists(DgnCodeCR toFind)
+        {
+        DgnCode::Iterator iter = DgnCode::MakeIterator(GetDb());
+        for (auto const& entry : iter)
+            {
+            DgnCode code = entry.GetCode();
+            if (code == toFind)
+                return true;
+            }
+
+        return false;
+        }
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -63,4 +76,27 @@ TEST_F (DgnAuthoritiesTest, Authorities)
     EXPECT_FALSE(badAuth->GetAuthorityId().IsValid());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnAuthoritiesTest, IterateCodes)
+    {
+    SetupProject(L"IterateCodes.idgndb");
+
+    EXPECT_TRUE(CodeExists(GetDb().GetDictionaryModel().GetCode()));
+
+    AnnotationTextStyle style(GetDb());
+    style.SetName("MyStyle");
+    DgnCode originalStyleCode = style.GetCode();
+    EXPECT_TRUE(style.Insert().IsValid());
+
+    EXPECT_TRUE(CodeExists(originalStyleCode));
+
+    AnnotationTextStylePtr pStyle = AnnotationTextStyle::Get(GetDb(), "MyStyle")->CreateCopy();
+    pStyle->SetName("RenamedStyle");
+    EXPECT_TRUE(pStyle->Update().IsValid());
+
+    EXPECT_TRUE(CodeExists(pStyle->GetCode()));
+    EXPECT_FALSE(CodeExists(originalStyleCode));
+    }
 

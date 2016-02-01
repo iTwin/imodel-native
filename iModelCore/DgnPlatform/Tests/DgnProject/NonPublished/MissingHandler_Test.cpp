@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/MissingHandler_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -18,7 +18,7 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 static PhysicalElement::CreateParams makeCreateParams(DgnDbR db, DgnModelId model, DgnClassId classId, DgnCategoryId cat, DgnElementId parentId=DgnElementId())
     {
-    return PhysicalElement::CreateParams(db, model, classId, cat, Placement3d(), DgnElement::Code(), nullptr, parentId);
+    return PhysicalElement::CreateParams(db, model, classId, cat, Placement3d(), DgnCode(), nullptr, parentId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -101,7 +101,7 @@ public:
         {
         BeFileName schemaFile = schemasDir;
         schemaFile.AppendToPath(L"ECSchemas/" MHTEST_SCHEMAW L".01.00.ecschema.xml");
-        ASSERT_TRUE(DgnDbStatus::Success == DgnBaseDomain::GetDomain().ImportSchema(db, schemaFile));
+        ASSERT_TRUE(DgnDbStatus::Success == DgnDomain::ImportSchema(db, schemaFile));
         }
 };
 
@@ -363,13 +363,13 @@ TEST_F(MissingHandlerTest, HandlerRestrictions)
     // Reopen the dgndb once more, with handlers loaded again
         {
         ScopedDgnHost host;
-        DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, fullDgnDbFileName, DgnDb::OpenParams(BeSQLite::Db::OpenMode::ReadWrite));
-        ASSERT_TRUE(db.IsValid());
 
         // register domain and handlers
         MissingHandlerDomain domain;
         DgnDomains::RegisterDomain(domain);
-        domain.ImportSchema(*db, T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
+
+        DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, fullDgnDbFileName, DgnDb::OpenParams(BeSQLite::Db::OpenMode::ReadWrite));
+        ASSERT_TRUE(db.IsValid());
 
         // Confirm operations are all supported again now that handler is available
         TestRestrictions(m_elem1Info, *db, 0);

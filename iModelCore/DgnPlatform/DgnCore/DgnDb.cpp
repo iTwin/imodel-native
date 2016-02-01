@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnDb.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -58,6 +58,9 @@ void DgnDb::Destroy()
         m_revisionManager = nullptr;
         }
     m_ecsqlCache.Empty();
+    m_locksManager = nullptr;
+    m_codesManager = nullptr;
+    m_localStateDb.Destroy();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -125,11 +128,25 @@ ILocksManagerR DgnDb::Locks()
     // which is not initialized in constructor.
     if (m_locksManager.IsNull())
         {
-        m_locksManager = T_HOST.GetLocksAdmin()._CreateLocksManager(*this);
+        m_locksManager = T_HOST.GetServerAdmin()._CreateLocksManager(*this);
         BeAssert(m_locksManager.IsValid());
         }
 
     return *m_locksManager;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+IDgnCodesManagerR DgnDb::Codes()
+    {
+    if (m_codesManager.IsNull())
+        {
+        m_codesManager = T_HOST.GetServerAdmin()._CreateCodesManager(*this);
+        BeAssert(m_codesManager.IsValid());
+        }
+
+    return *m_codesManager;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -499,5 +516,127 @@ DictionaryModelR DgnDb::GetDictionaryModel()
     DictionaryModelPtr dict = Models().Get<DictionaryModel>(DgnModel::DictionaryId());
     BeAssert(dict.IsValid() && "A DgnDb always has a dictionary model");
     return *dict;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnDb::LocalStateDb::Validate(DgnDbR dgndb)
+    {
+    switch (m_state)
+        {
+        case DbState::Ready:    return true;
+        case DbState::Invalid:  return false;
+        default:                BeAssert(DbState::New == m_state); break;
+        }
+
+    m_state = DbState::Invalid;
+
+    // Stored alongside the dgndb itself
+    BeFileName filename = dgndb.GetFileName();
+    filename.AppendExtension(L"local");
+
+    // Don't assume existing file contains valid data...
+    filename.BeDeleteFile();
+
+    DbResult result = m_db.CreateNewDb(filename);
+    if (BE_SQLITE_OK == result)
+        m_state = DbState::Ready;
+
+    return IsValid();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnDb::LocalStateDb::Destroy()
+    {
+    if (IsValid())
+        {
+        m_db.CloseDb();
+        BeFileName filename(m_db.GetDbFileName());
+        filename.BeDeleteFile();
+        }
+
+    m_state = DbState::New;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDb::LocalStateDb& DgnDb::GetLocalStateDb()
+    {
+    m_localStateDb.Validate(*this);
+    return m_localStateDb;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSqlStatement* ECSqlStatementIteratorBase::PrepareStatement(DgnDbCR dgndb, Utf8CP ecSql, uint32_t idSelectColumnIndex)
+    {
+    m_statement = dgndb.GetPreparedECSqlStatement(ecSql);
+    if (m_statement.IsNull())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    m_isAtEnd = false;
+    m_idSelectColumnIndex = (int) idSelectColumnIndex;
+    return m_statement.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSqlStatementIteratorBase::IsEqual(ECSqlStatementIteratorBase const& rhs) const
+    {
+    if (m_isAtEnd && rhs.m_isAtEnd)
+        return true;
+    if (m_isAtEnd != rhs.m_isAtEnd)
+        return false;
+
+    BeAssert(m_statement.IsValid() && rhs.m_statement.IsValid());
+    ECInstanceId thisId = m_statement->GetValueId<ECInstanceId>(m_idSelectColumnIndex);
+    
+    // Do NOT delete the next line and simply use rhs.m_statement on the subsequent.
+    // Android GCC 4.9 and clang 6.1.0 cannot deduce the templates when you try to combine it all up.
+    CachedECSqlStatementPtr rhsStatement = rhs.m_statement;
+    ECInstanceId rhsId = rhsStatement->GetValueId<ECInstanceId>(rhs.m_idSelectColumnIndex);
+    
+    return thisId == rhsId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECSqlStatementIteratorBase::MoveNext()
+    {
+    if (m_isAtEnd)
+        {
+        BeAssert(false && "Do not attempt to iterate beyond the end of the instances.");
+        return;
+        }
+    DbResult stepStatus = m_statement->Step();
+    BeAssert(stepStatus == BE_SQLITE_ROW || stepStatus == BE_SQLITE_DONE);
+    if (stepStatus != BE_SQLITE_ROW)
+        m_isAtEnd = true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECSqlStatementIteratorBase::MoveFirst()
+    {
+    if (!m_statement.IsValid())
+        {
+        m_isAtEnd = true;
+        return;
+        }
+
+    m_statement->Reset();
+    m_isAtEnd = false;
+    MoveNext();
     }
 

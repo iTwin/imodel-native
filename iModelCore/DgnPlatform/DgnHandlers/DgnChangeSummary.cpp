@@ -2,7 +2,7 @@
 |
 |     $Source: DgnHandlers/DgnChangeSummary.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -172,9 +172,9 @@ DgnModelId DgnChangeSummary::ElementEntry::GetModelId(bool old) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> static AuthorityIssuedCode getOriginalCode(T const& entry, DbOpcode op)
+template<typename T> static DgnCode getOriginalCode(T const& entry, DbOpcode op)
     {
-    AuthorityIssuedCode code, currentCode;
+    DgnCode code, currentCode;
     switch (op)
         {
         case DbOpcode::Insert:
@@ -215,37 +215,37 @@ template<typename T> static AuthorityIssuedCode getOriginalCode(T const& entry, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-AuthorityIssuedCode DgnChangeSummary::ElementEntry::GetCode(bool old) const
+DgnCode DgnChangeSummary::ElementEntry::GetCode(bool old) const
     {
     auto op = GetDbOpcode();
     if (old)
         return getOriginalCode(*this, op);
 
     if (DbOpcode::Delete == op)
-        return AuthorityIssuedCode(); // no new code...
+        return DgnCode(); // no new code...
 
     DgnDbR db = static_cast<DgnChangeSummary const&>(GetImpl().GetChangeSummary()).GetDgnDb();
     auto elem = db.Elements().GetElement(GetElementId());
     BeAssert(elem.IsValid());
-    return elem.IsValid() ? elem->GetCode() : AuthorityIssuedCode();
+    return elem.IsValid() ? elem->GetCode() : DgnCode();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-AuthorityIssuedCode DgnChangeSummary::ModelEntry::GetCode(bool old) const
+DgnCode DgnChangeSummary::ModelEntry::GetCode(bool old) const
     {
     auto op = GetDbOpcode();
     if (old)
         return getOriginalCode(*this, op);
 
     if (DbOpcode::Delete == op)
-        return AuthorityIssuedCode();
+        return DgnCode();
 
     DgnDbR db = static_cast<DgnChangeSummary const&>(GetImpl().GetChangeSummary()).GetDgnDb();
     auto model = db.Models().GetModel(GetModelId());
     BeAssert(model.IsValid());
-    return model.IsValid() ? model->GetCode() : AuthorityIssuedCode();
+    return model.IsValid() ? model->GetCode() : DgnCode();
     }
 
 //---------------------------------------------------------------------------------------
@@ -320,6 +320,7 @@ BentleyStatus DgnChangeSummary::GetElementsWithAspectUpdates(DgnElementIdSet& el
 //---------------------------------------------------------------------------------------
 void DgnChangeSummary::GetElementsWithGeometryUpdates(DgnElementIdSet& elementIds)
     {
+#ifdef NEEDSWORK_ELEMENT_GEOM_DOES_NOT_EXIST
     // Element -> ElementOwnsGeom -> ElementGeom
     BentleyStatus status = GetElementsWithAspectUpdates(elementIds, "dgn.Element", "dgn.ElementOwnsGeom", "dgn.ElementGeom");
     BeAssert(status == SUCCESS);
@@ -330,17 +331,20 @@ void DgnChangeSummary::GetElementsWithGeometryUpdates(DgnElementIdSet& elementId
     Utf8CP ecsql = "SELECT el.ECInstanceId FROM dgn.Element el JOIN dgn.ElementGeom elg USING dgn.ElementOwnsGeom WHERE InVirtualSet(?, elg.ECInstanceId)";
     FindRelatedInstanceIds(elementIds, ecsql, changedGeomUsesPartEnds);
 
-    // GeomPart
-    ECInstanceIdSet updatedGeomParts;
-    FindUpdatedInstanceIds(updatedGeomParts, "dgn", "GeomPart");
-    ecsql = "SELECT el.ECInstanceId FROM dgn.Element el JOIN dgn.ElementGeom USING dgn.ElementOwnsGeom  JOIN dgn.GeomPart gp USING dgn.ElementGeomUsesParts WHERE InVirtualSet(?, gp.ECInstanceId)";
-    FindRelatedInstanceIds(elementIds, ecsql, updatedGeomParts);
+    // GeometryPart
+    ECInstanceIdSet updatedGeometryParts;
+    FindUpdatedInstanceIds(updatedGeometryParts, "dgn", "GeometryPart");
+    ecsql = "SELECT el.ECInstanceId FROM dgn.Element el JOIN dgn.ElementGeom USING dgn.ElementOwnsGeom  JOIN dgn.GeometryPart gp USING dgn.ElementGeomUsesParts WHERE InVirtualSet(?, gp.ECInstanceId)";
+    FindRelatedInstanceIds(elementIds, ecsql, updatedGeometryParts);
+#else
+    elementIds.clear();
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void insertCode(AuthorityIssuedCodeSet& into, AuthorityIssuedCode const& code, AuthorityIssuedCodeSet& ifNotIn)
+static void insertCode(DgnCodeSet& into, DgnCode const& code, DgnCodeSet& ifNotIn)
     {
     if (code.IsEmpty() || !code.IsValid())
         return;
@@ -362,7 +366,7 @@ static void insertCode(AuthorityIssuedCodeSet& into, AuthorityIssuedCode const& 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> static void collectCodes(AuthorityIssuedCodeSet& assigned, AuthorityIssuedCodeSet& discarded, T& collection)
+template<typename T> static void collectCodes(DgnCodeSet& assigned, DgnCodeSet& discarded, T& collection)
     {
     for (auto const& entry : collection)
         {
@@ -383,7 +387,7 @@ template<typename T> static void collectCodes(AuthorityIssuedCodeSet& assigned, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnChangeSummary::GetCodes(AuthorityIssuedCodeSet& assigned, AuthorityIssuedCodeSet& discarded) const
+void DgnChangeSummary::GetCodes(DgnCodeSet& assigned, DgnCodeSet& discarded) const
     {
     assigned.clear();
     discarded.clear();

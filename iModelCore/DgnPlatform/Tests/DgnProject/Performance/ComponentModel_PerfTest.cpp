@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Performance/ComponentModel_PerfTest.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #ifndef BENTLEYCONFIG_NO_JAVASCRIPT
@@ -55,10 +55,10 @@ static void openDb (DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus createSpatialModel(SpatialModelPtr& catalogModel, DgnDbR db, DgnModel::Code const& code)
+static DgnDbStatus createSpatialModel(SpatialModelPtr& catalogModel, DgnDbR db, DgnCode const& code)
     {
     DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
-    catalogModel = new SpatialModel(DgnModel3d::CreateParams(db, mclassId, code));
+    catalogModel = new SpatialModel(SpatialModel::CreateParams(db, mclassId, code));
     catalogModel->SetInGuiList(false);
     return catalogModel->Insert();
     }
@@ -167,11 +167,13 @@ void ComponentModelPerfTest::Developer_CreateCMs()
 
     ECN::ECClassCP baseClass = m_componentDb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
 
-    ComponentDefCreator creator(*m_componentDb, *testSchema, TEST_BOXES_COMPONENT_NAME, *baseClass, TEST_JS_NAMESPACE "." TEST_BOXES_COMPONENT_NAME, "Boxes", "");
-    creator.AddPropertySpec(ComponentDefCreator::PropertySpec("H", ECN::PrimitiveType::PRIMITIVETYPE_Double, ComponentDef::ParameterVariesPer::Instance));
-    creator.AddPropertySpec(ComponentDefCreator::PropertySpec("W", ECN::PrimitiveType::PRIMITIVETYPE_Double, ComponentDef::ParameterVariesPer::Instance));
-    creator.AddPropertySpec(ComponentDefCreator::PropertySpec("D", ECN::PrimitiveType::PRIMITIVETYPE_Double, ComponentDef::ParameterVariesPer::Instance));
-    creator.AddPropertySpec(ComponentDefCreator::PropertySpec("box_count", ECN::PrimitiveType::PRIMITIVETYPE_Double, ComponentDef::ParameterVariesPer::Instance));
+    TsComponentParameterSet params;
+    params["H"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(1.0));
+    params["W"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(1.0));
+    params["D"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(1.0));
+    params["box_count"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue("text"));
+
+    ComponentDefCreator creator(*m_componentDb, *testSchema, TEST_BOXES_COMPONENT_NAME, *baseClass, TEST_JS_NAMESPACE "." TEST_BOXES_COMPONENT_NAME, "Boxes", "", params);
     ECN::ECClassCP ecClass = creator.GenerateECClass();
     ASSERT_TRUE(nullptr != ecClass);
 
@@ -247,7 +249,7 @@ void ComponentModelPerfTest::PlaceInstances(int ninstances, int boxCount, DPoint
         m_componentDb->Schemas().GetECSchema(TEST_JS_NAMESPACE, true);
         ComponentDefPtr sourceCdef = ComponentDef::FromECSqlName(nullptr, *m_componentDb, Utf8PrintfString("%s.%s", TEST_JS_NAMESPACE, TEST_BOXES_COMPONENT_NAME));
         DgnImportContext ctx(*m_componentDb, *m_clientDb);
-        ASSERT_EQ( DgnDbStatus::Success , sourceCdef->Export(ctx, true, true));
+        ASSERT_EQ( DgnDbStatus::Success , sourceCdef->Export(ctx));
         CloseComponentDb();
 
         m_clientDb->SaveChanges();

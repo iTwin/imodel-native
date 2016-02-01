@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,7 +21,6 @@
 #define DPTEST_TEST_ELEMENT_CLASS_NAME                   "TestElement"
 #define DPTEST_TEST_ELEMENT2d_CLASS_NAME                 "TestElement2d"
 #define DPTEST_TEST_GROUP_CLASS_NAME                     "TestGroup"
-#define DPTEST_TEST_REQUIREMENT_CLASS_NAME               "TestRequirement"
 #define DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME    "TestElementDrivesElement"
 #define DPTEST_TEST_ELEMENT_TestElementProperty          "TestElementProperty"
 #define DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME   "TestElementWithNoHandler"
@@ -81,13 +80,13 @@ public:
     
     // This Create function does not put any geometry on the new element. The caller is expected to add a TestItem.
     static RefCountedPtr<TestElement> Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Utf8CP elementCode="");
-    static RefCountedPtr<TestElement> Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, DgnElement::Code const& elementCode);
+    static RefCountedPtr<TestElement> Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Dgn::DgnCode const& elementCode);
 
     // This Create function sets the element's geometry to a shape
     static RefCountedPtr<TestElement> Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Utf8CP elementCode, double shapeSize);
 
     // Create element with display params 
-    static RefCountedPtr<TestElement> Create(Dgn::DgnDbR db, Dgn::ElemDisplayParamsCR ep, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, DgnElement::Code elementCode, double shapeSize);
+    static RefCountedPtr<TestElement> Create(Dgn::DgnDbR db, Dgn::ElemDisplayParamsCR ep, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Dgn::DgnCode elementCode, double shapeSize);
     static RefCountedPtr<TestElement> CreateWithoutGeometry(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId);
 
     // Change the shape size
@@ -123,7 +122,7 @@ struct TestElement2d : Dgn::AnnotationElement
 
 public:
     TestElement2d(CreateParams const& params) : T_Super(params) {}
-    static RefCountedPtr<TestElement2d> Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Code elementCode, double length);
+    static RefCountedPtr<TestElement2d> Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Dgn::DgnCode elementCode, double length);
 };
 
 typedef RefCountedPtr<TestElement2d> TestElement2dPtr;
@@ -172,35 +171,6 @@ struct TestGroupHandler : Dgn::dgn_ElementHandler::Physical
 };
 
 //=======================================================================================
-// @bsiclass                                                     Shaun.Sewall    12/15
-//=======================================================================================
-struct TestRequirement : Dgn::SystemElement
-{
-    DGNELEMENT_DECLARE_MEMBERS(DPTEST_TEST_REQUIREMENT_CLASS_NAME, Dgn::SystemElement)
-    friend struct TestRequirementHandler;
-
-protected:
-    explicit TestRequirement(CreateParams const& params) : T_Super(params) {}
-
-public:
-    static RefCountedPtr<TestRequirement> Create(Dgn::DgnDbR, Dgn::DgnModelId);
-};
-
-typedef RefCountedPtr<TestRequirement> TestRequirementPtr;
-typedef RefCountedCPtr<TestRequirement> TestRequirementCPtr;
-typedef TestRequirement* TestRequirementP;
-typedef TestRequirement& TestRequirementR;
-typedef TestRequirement const& TestRequirementCR;
-
-//=======================================================================================
-// @bsiclass                                                     Shaun.Sewall    12/15
-//=======================================================================================
-struct TestRequirementHandler : Dgn::dgn_ElementHandler::Element
-{
-    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_REQUIREMENT_CLASS_NAME, TestRequirement, TestRequirementHandler, Dgn::dgn_ElementHandler::Element, )
-};
-
-//=======================================================================================
 //! Make sure GeometricElement2d can be introduced at an arbitrary point in the class hierarchy
 // @bsiclass                                                     Shaun.Sewall    12/15
 //=======================================================================================
@@ -227,57 +197,9 @@ protected:
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      06/15
 //=======================================================================================
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-struct TestItem : Dgn::DgnElement::Item
-{
-    DEFINE_T_SUPER(Dgn::DgnElement::Item)
-private:
-    friend struct TestItemHandler;
-
-    double m_length;
-    Utf8String m_testItemProperty;
-
-    explicit TestItem(Utf8CP prop) : m_testItemProperty(prop) {;}
-
-    Utf8CP _GetECSchemaName() const override {return DPTEST_SCHEMA_NAME;}
-    Utf8CP _GetECClassName() const override {return DPTEST_TEST_ITEM_CLASS_NAME;}
-    Dgn::DgnDbStatus _GenerateElementGeometry(Dgn::GeometricElementR el, GenerateReason) override;
-    Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
-    Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el) override;
-
-public:
-    static RefCountedPtr<TestItem> Create(Utf8CP prop) {return new TestItem(prop);}
-
-    Utf8StringCR GetTestItemProperty() const {return m_testItemProperty;}
-    void SetTestItemProperty(Utf8CP s) {m_testItemProperty = s;}
-
-    double GetLength() const {return m_length;}
-    void SetLength(double v) {m_length=v;}
-};
-
-typedef RefCountedPtr<TestItem> TestItemPtr;
-typedef RefCountedCPtr<TestItem> TestItemCPtr;
-typedef TestItem& TestItemR;
-typedef TestItem const& TestItemCR;
-typedef TestItem const* TestItemCP;
-typedef TestItem* TestItemP;
-
-//=======================================================================================
-// @bsiclass                                                     Sam.Wilson      06/15
-//=======================================================================================
-struct TestItemHandler : Dgn::dgn_AspectHandler::Aspect
-{
-    DOMAINHANDLER_DECLARE_MEMBERS(DPTEST_TEST_ITEM_CLASS_NAME, TestItemHandler, Dgn::dgn_AspectHandler::Aspect, )
-    RefCountedPtr<Dgn::DgnElement::Aspect> _CreateInstance() override {return new TestItem("");}
-};
-#endif
-
-//=======================================================================================
-// @bsiclass                                                     Sam.Wilson      06/15
-//=======================================================================================
 struct TestUniqueAspect : Dgn::DgnElement::UniqueAspect
 {
-    DEFINE_T_SUPER(Dgn::DgnElement::UniqueAspect)
+    DGNASPECT_DECLARE_MEMBERS(DPTEST_SCHEMA_NAME, DPTEST_TEST_UNIQUE_ASPECT_CLASS_NAME, Dgn::DgnElement::UniqueAspect);
 private:
     friend struct TestUniqueAspectHandler;
 
@@ -285,8 +207,6 @@ private:
 
     explicit TestUniqueAspect(Utf8CP prop) : m_testUniqueAspectProperty(prop) {;}
 
-    Utf8CP _GetECSchemaName() const override {return DPTEST_SCHEMA_NAME;}
-    Utf8CP _GetECClassName() const override {return DPTEST_TEST_UNIQUE_ASPECT_CLASS_NAME;}
     Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
     Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el) override;
 
@@ -320,7 +240,7 @@ struct TestUniqueAspectHandler : Dgn::dgn_AspectHandler::Aspect
 //=======================================================================================
 struct TestMultiAspect : Dgn::DgnElement::MultiAspect
 {
-    DEFINE_T_SUPER(Dgn::DgnElement::MultiAspect)
+    DGNASPECT_DECLARE_MEMBERS(DPTEST_SCHEMA_NAME, DPTEST_TEST_MULTI_ASPECT_CLASS_NAME, Dgn::DgnElement::MultiAspect);
 private:
     friend struct TestMultiAspectHandler;
 
@@ -328,8 +248,6 @@ private:
 
     explicit TestMultiAspect(Utf8CP prop) : m_testMultiAspectProperty(prop) {;}
 
-    Utf8CP _GetECSchemaName() const override {return DPTEST_SCHEMA_NAME;}
-    Utf8CP _GetECClassName() const override {return DPTEST_TEST_MULTI_ASPECT_CLASS_NAME;}
     Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
     Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el) override;
 

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnPlatformLib.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -993,12 +993,14 @@ public:
             };
 
         //! Supplies locking functionality for elements, models, etc
-        struct LocksAdmin : IHostObject
+        struct ServerAdmin : IHostObject
             {
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
             DGNPLATFORM_EXPORT virtual ILocksManagerPtr _CreateLocksManager(DgnDbR db) const;
             virtual ILocksServerP _GetLocksServer(DgnDbR db) const { return nullptr; }
+            DGNPLATFORM_EXPORT virtual IDgnCodesManagerPtr _CreateCodesManager(DgnDbR db) const;
+            virtual IDgnCodesServerP _GetCodesServer(DgnDbR db) const { return nullptr; }
             };
 
         typedef bvector<DgnDomain*> T_RegisteredDomains;
@@ -1021,7 +1023,7 @@ public:
         FormatterAdmin*         m_formatterAdmin;
         RealityDataAdmin*       m_realityDataAdmin;
         ScriptAdmin*            m_scriptingAdmin;
-        LocksAdmin*             m_locksAdmin;
+        ServerAdmin*            m_serverAdmin;
         Utf8String              m_productName;
         T_RegisteredDomains     m_registeredDomains;
         bvector<CopyrightSupplier*> m_copyrights;
@@ -1074,8 +1076,8 @@ public:
         //! Supply the ScriptAdmin
         DGNPLATFORM_EXPORT virtual ScriptAdmin& _SupplyScriptingAdmin();
 
-        //! Supply the LocksAdmin
-        DGNPLATFORM_EXPORT virtual LocksAdmin& _SupplyLocksAdmin();
+        //! Supply the ServerAdmin
+        DGNPLATFORM_EXPORT virtual ServerAdmin& _SupplyServerAdmin();
 
         //! Supply the product name to be used to describe the host.
         virtual void _SupplyProductName(Utf8StringR) = 0;
@@ -1102,7 +1104,7 @@ public:
             m_formatterAdmin = nullptr;
             m_realityDataAdmin = nullptr;
             m_scriptingAdmin = nullptr;
-            m_locksAdmin = nullptr;
+            m_serverAdmin = nullptr;
             };
 
         virtual ~Host() {}
@@ -1126,7 +1128,7 @@ public:
         FormatterAdmin&         GetFormatterAdmin()        {return *m_formatterAdmin;}
         RealityDataAdmin&       GetRealityDataAdmin()      {return *m_realityDataAdmin;}
         ScriptAdmin&            GetScriptAdmin()           {return *m_scriptingAdmin;}
-        LocksAdmin&             GetLocksAdmin()            {return *m_locksAdmin;}
+        ServerAdmin&            GetServerAdmin()           {return *m_serverAdmin;}
         Utf8CP                  GetProductName()           {return m_productName.c_str();}
 
         void ChangeNotificationAdmin(NotificationAdmin& newAdmin) {m_notificationAdmin = &newAdmin;}

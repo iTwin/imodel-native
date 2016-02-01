@@ -284,7 +284,7 @@ protected:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE WebMercatorModel : SpatialModel
 {
-    DEFINE_T_SUPER(SpatialModel)
+    DGNMODEL_DECLARE_MEMBERS("WebMercatorModel", SpatialModel);
 
 public:
     struct Mercator
@@ -329,9 +329,9 @@ namespace dgn_ModelHandler
     //! Specifically, then will need to call the _CreateUrl method.
     // @bsiclass                                                    Sam.Wilson      10/2014
     //=======================================================================================
-    struct EXPORT_VTABLE_ATTRIBUTE WebMercator : Model
+    struct EXPORT_VTABLE_ATTRIBUTE WebMercator : Spatial
     {
-        MODELHANDLER_DECLARE_MEMBERS ("WebMercatorModel", WebMercatorModel, WebMercator, Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS ("WebMercatorModel", WebMercatorModel, WebMercator, Spatial, DGNPLATFORM_EXPORT)
 
     public:
         //! Create the URL to request the specified tile from a map service.
@@ -357,7 +357,8 @@ namespace dgn_ModelHandler
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE StreetMapModel : WebMercatorModel
 {
-    DEFINE_T_SUPER(WebMercatorModel)
+    DGNMODEL_DECLARE_MEMBERS("StreetMapModel", WebMercatorModel);
+public:
     StreetMapModel(CreateParams const& params) : T_Super(params) {}
 };
 

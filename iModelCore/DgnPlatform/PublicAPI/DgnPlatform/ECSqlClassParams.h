@@ -10,6 +10,40 @@
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
+//! Interface adopted by a DgnDomain::Handler which can supply ECSqlClassParams
+// @bsiclass                                                     Paul.Connelly   09/15
+//=======================================================================================
+struct IECSqlClassParamsProvider
+{
+    virtual void _GetClassParams(ECSqlClassParamsR ecSqlParams) = 0;
+};
+
+//=======================================================================================
+//! Encapsulates ECSql statement strings specific to an ECClass.
+// @bsiclass                                                     Paul.Connelly   09/15
+//=======================================================================================
+struct ECSqlClassInfo
+{
+private:
+    friend struct ECSqlClassParams;
+
+    Utf8String  m_select;
+    Utf8String  m_insert;
+    Utf8String  m_update;
+    uint16_t    m_updateParameterIndex;
+public:
+    ECSqlClassInfo() : m_updateParameterIndex(0xffff) { }
+
+    Utf8StringCR GetSelectECSql() const { return m_select; }
+    Utf8StringCR GetInsertECSql() const { return m_insert; }
+    Utf8StringCR GetUpdateECSql() const { return m_update; }
+
+    BeSQLite::EC::CachedECSqlStatementPtr GetSelectStmt(DgnDbCR dgndb, BeSQLite::EC::ECInstanceId instanceId) const;
+    BeSQLite::EC::CachedECSqlStatementPtr GetInsertStmt(DgnDbCR dgndb) const;
+    BeSQLite::EC::CachedECSqlStatementPtr GetUpdateStmt(DgnDbCR dgndb, BeSQLite::EC::ECInstanceId instanceId) const;
+};
+
+//=======================================================================================
 //! A list of parameters used in ECSql SELECT, INSERT, and UPDATE statements for a
 //! specific ECClass. Maps names to indices in the results of a SELECT statement or in
 //! the bindings of an INSERT or UPDATE statement.
@@ -18,7 +52,6 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 struct ECSqlClassParams
 {
-friend struct ECSqlClassInfo;
 public:
     enum class StatementType
         {
@@ -42,12 +75,29 @@ public:
     typedef bvector<Entry> Entries;
 
 private:
-    Entries m_entries;
+    Entries     m_entries;
+    Utf8String  m_selectTemplate;
+    Utf8String  m_insertTemplate;
+    Utf8String  m_updateTemplate;
+    uint16_t    m_numUpdateParams;
+    bool        m_initialized;
 
     Entries const& GetEntries() const { return m_entries; }
 
     void RemoveAllButSelect();
+    static bool AppendClassName(Utf8StringR className, DgnDbCR db, DgnClassId classId);
 public:
+    ECSqlClassParams() : m_numUpdateParams(0), m_initialized(false) { }
+
+    bool IsInitialized() const { return m_initialized; }
+    void Initialize(IECSqlClassParamsProvider& paramsProvider);
+    uint16_t GetNumUpdateParams() const { return m_numUpdateParams; }
+
+    bool BuildInsertECSql(Utf8StringR ecsql, DgnDbCR dgndb, DgnClassId classId) const;
+    bool BuildUpdateECSql(Utf8StringR ecsql, DgnDbCR dgndb, DgnClassId classId) const;
+    bool BuildSelectECSql(Utf8StringR ecsql, DgnDbCR dgndb, DgnClassId classId) const;
+    bool BuildClassInfo(ECSqlClassInfo& info, DgnDbCR dgndb, DgnClassId classId) const;
+
     //! Adds a parameter to the list
     //! @param[in]      parameterName The name of the parameter. @em Must be a pointer to a string with static storage duration.
     //! @param[in]      type          The type(s) of statements in which this parameter is used.
@@ -60,42 +110,5 @@ public:
 };
 
 ENUM_IS_FLAGS(ECSqlClassParams::StatementType);
-
-//=======================================================================================
-//! Stores information about an ECClass used in ECSql SELECT, INSERT, and UPDATE statements.
-//! An ECSqlClassInfo is constructed once and cached for each ElementHandler/ModelHandler, 
-//! based onthe results of _GetClassParams(). The cached information is
-//! subsequently used for efficient CRUD operations when loading, inserting, and updating 
-//! elements or models in the DgnDb.
-//! @ingroup DgnElementGroup
-// @bsiclass                                                     Paul.Connelly   09/15
-//=======================================================================================
-struct ECSqlClassInfo
-{
-private:
-    Utf8String m_select;
-    Utf8String m_insert;
-    Utf8String m_update;
-    ECSqlClassParams m_params;
-    uint16_t m_numUpdateParams;
-    bool m_initialized;
-
-public:
-    ECSqlClassInfo() : m_numUpdateParams(0), m_initialized(false) {}
-
-    void Initialize(Utf8StringCR fullClassName, ECSqlClassParamsCR ecSqlParams);
-    bool IsInitialized() const { return m_initialized; }
-
-    Utf8String GetInsertECSql(DgnDbCR dgndb, DgnClassId classId) const;
-    Utf8StringCR GetSelectECSql() const { return m_select; }
-    Utf8StringCR GetUpdateECSql() const { return m_update; }
-
-    BeSQLite::EC::CachedECSqlStatementPtr GetInsertStmt(DgnDbCR dgndb, DgnClassId classId) const;
-    BeSQLite::EC::CachedECSqlStatementPtr GetSelectStmt(DgnDbCR dgndb, BeSQLite::EC::ECInstanceId id) const;
-    BeSQLite::EC::CachedECSqlStatementPtr GetUpdateStmt(DgnDbCR dgndb, BeSQLite::EC::ECInstanceId id) const;
-
-    ECSqlClassParamsCR GetParams() const { return m_params; }
-    uint16_t GetNumUpdateParams() const { return m_numUpdateParams; }
-};
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

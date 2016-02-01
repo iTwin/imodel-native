@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnTexture.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -116,7 +116,8 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete() const override;
 
     virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize() + static_cast<uint32_t>(m_descr.length()); }
-    DGNPLATFORM_EXPORT virtual Code _GenerateDefaultCode() override;
+    virtual DgnCode _GenerateDefaultCode() const override { return DgnCode::CreateEmpty(); }
+    virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override { return ResourceAuthority::IsResourceAuthority(auth); }
 public:
     //! Construct a new DgnTexture with the specified parameters
     explicit DgnTexture(CreateParams const& params) : T_Super(params), m_data(params.m_data), m_descr(params.m_descr) { }
@@ -138,11 +139,11 @@ public:
     DgnTextureCPtr Insert(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Insert<DgnTexture>(*this, status); } //!< Inserts the texture into the DgnDb and returns the persistent copy.
     DgnTextureCPtr Update(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Update<DgnTexture>(*this, status); } //!< Updates the texture in the DgnDb and returns the persistent copy.
 
-    // Creates a Code for a texture with the specified name.
-    DGNPLATFORM_EXPORT static Code CreateTextureCode(Utf8StringCR textureName);
+    // Creates a DgnCode for a texture with the specified name.
+    DGNPLATFORM_EXPORT static DgnCode CreateTextureCode(Utf8StringCR textureName);
 
-    //! Looks up the ID of a texture by Code
-    DGNPLATFORM_EXPORT static DgnTextureId QueryTextureId(Code const& code, DgnDbR db);
+    //! Looks up the ID of a texture by DgnCode
+    DGNPLATFORM_EXPORT static DgnTextureId QueryTextureId(DgnCode const& code, DgnDbR db);
 
     //! Looks up the ID of a texture by name
     static DgnTextureId QueryTextureId(Utf8StringCR textureName, DgnDbR db) { return QueryTextureId(CreateTextureCode(textureName), db); }

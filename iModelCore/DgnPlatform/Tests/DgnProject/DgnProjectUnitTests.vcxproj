@@ -30,7 +30,7 @@
     <ClCompile Include="BackDoor\DgnDbUtilities.cpp" />
     <ClCompile Include="BackDoor\DgnElementHelpers.cpp" />
     <ClCompile Include="BackDoor\DgnPlatformTestDomain.cpp" />
-    <ClCompile Include="NonPublished\BeTextFile_Test.cpp" />
+    <ClCompile Include="BackDoor\TestDomainElements.cpp" />
     <ClCompile Include="NonPublished\Category_Test.cpp" />
     <ClCompile Include="NonPublished\ConfigurationManager_Test.cpp" />
     <ClCompile Include="NonPublished\DgnAuthority_Test.cpp" />
@@ -60,6 +60,7 @@
     <ClCompile Include="NonPublished\RealityDataCache_Test.cpp" />
     <ClCompile Include="NonPublished\TransactionManager_Test.cpp" />
     <ClCompile Include="NonPublished\ValidatePublishing_Test.cpp" />
+    <ClCompile Include="Performance\ComponentModel_PerfTest.cpp" />
     <ClCompile Include="Performance\DgnECPerformanceTests.cpp" />
     <ClCompile Include="Performance\ElementDependencyGraphPerformance.cpp" />
     <ClCompile Include="Performance\ElementInsertPerformance.cpp" />
@@ -70,15 +71,16 @@
     <ClCompile Include="Performance\RelationshipPerformance_Test.cpp" />
     <ClCompile Include="Performance\TestSchemaHelper.cpp" />
     <ClCompile Include="Published\AnnotationFrameStyle_Test.cpp" />
+    <ClCompile Include="Published\AnnotationFrame_Test.cpp" />
     <ClCompile Include="Published\AnnotationLeaderStyle_Test.cpp" />
     <ClCompile Include="Published\AnnotationLeader_Test.cpp" />
     <ClCompile Include="Published\AnnotationTable_Test.cpp" />
     <ClCompile Include="Published\AnnotationTestFixture.cpp" />
     <ClCompile Include="Published\AnnotationTextBlock_Test.cpp" />
     <ClCompile Include="Published\AnnotationTextStyle_Test.cpp" />
-    <ClCompile Include="Published\BackwardsCompatibility_Tests.cpp" />
     <ClCompile Include="Published\ChangeSummary_Test.cpp" />
     <ClCompile Include="Published\ChangeTestFixture.cpp" />
+    <ClCompile Include="Published\ComponentModelBasicTest.cpp" />
     <ClCompile Include="Published\ComponentModelTest.cpp" />
     <ClCompile Include="Published\DgnChangeSummary_Test.cpp" />
     <ClCompile Include="Published\DgnECNavigator_Test.cpp" />
@@ -114,6 +116,7 @@
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\DgnDbUtilities.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\DgnElementHelpers.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\DgnPlatformTestDomain.h" />
+    <ClInclude Include="BackDoor\TestDomainElements.h" />
     <ClInclude Include="NonPublished\DgnHandlersTests.h" />
     <ClInclude Include="NonPublished\DgnSqlTestDomain.h" />
     <ClInclude Include="Performance\DgnECPerformanceTests.h" />
@@ -171,11 +174,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeOutput>$(OutRoot)Winx86\Product\BeGTest\bin\BeGTest.exe</NMakeOutput>
+    <NMakeOutput>$(OutRoot)Winx86\Product\DgnPlatform-Gtest\DgnPlatformTest.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -a x86 rebuild DgnProjectUnitTests BeGTestExe</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -a x86 rebuild DgnProjectUnitTests BeGTestExe</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -a x86 rebuild DgnProjectUnitTests BeGTestExe -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>bb -ax86 -r DgnPlatform -p DgnPlatform:RunGtest b</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -ax86 -r DgnPlatform -p DgnPlatform:RunGtest re DgnPlatform:BackdoorForUnitTests DgnPlatform:TestFixtureForUnitTests DgnPlatform:UnitTest* DgnPlatform:GTest</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>
+    </NMakeCleanCommandLine>
     <IncludePath>$(IncludePath);$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\;$(SrcRoot)DgnPlatform\DgnCore\ECDb\</IncludePath>
     <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\DgnPlatform\PublicAPI\;$(OutRoot)Winx64\BuildContexts\DgnPlatform\VendorAPI\;$(OutRoot)Winx64\build\UnitTests\DgnProject\BackDoorDgnProjectUnitTests\PublicAPI\;$(SrcRoot)DgnPlatform\PublicAPI\</NMakeIncludeSearchPath>
   </PropertyGroup>

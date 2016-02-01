@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnElements.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -879,7 +879,7 @@ void DgnElements::Destroy()
     m_tree->Destroy();
     m_heapZone.EmptyAll();
     m_stmts.Empty();
-    m_handlerStmts.Empty();
+    m_classInfos.clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1007,7 +1007,7 @@ void DgnElements::ResetStatistics() {m_tree->m_stats.Reset();}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_heapZone(0, false), m_mutex(BeDbMutex::MutexType::Recursive), m_stmts(20)
+DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_heapZone(0, false), m_mutex(BeDbMutex::MutexType::Recursive), m_stmts(20), m_snappyFrom(m_snappyFromBuffer, _countof(m_snappyFromBuffer))
     {
     m_tree = new ElemIdTree(dgndb);
     }
@@ -1017,6 +1017,9 @@ DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_heapZone(0, false)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_TxnTable::Element::_OnReversedDelete(BeSQLite::Changes::Change const& change)
     {
+    if (m_txnMgr.IsInUndoRedo())
+        AddChange(change, ChangeType::Insert);
+
     DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::New).GetValueUInt64());
 
     // We need to load this element, since filled models need to register it 
@@ -1030,6 +1033,9 @@ void dgn_TxnTable::Element::_OnReversedDelete(BeSQLite::Changes::Change const& c
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_TxnTable::Element::_OnReversedAdd(BeSQLite::Changes::Change const& change)
     {
+    if (m_txnMgr.IsInUndoRedo())
+        AddChange(change, ChangeType::Delete);
+
     DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::Old).GetValueUInt64());
 
     // see if we have this element in memory, if so call its _OnDelete method.
@@ -1043,6 +1049,9 @@ void dgn_TxnTable::Element::_OnReversedAdd(BeSQLite::Changes::Change const& chan
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_TxnTable::Element::_OnReversedUpdate(BeSQLite::Changes::Change const& change) 
     {
+    if (m_txnMgr.IsInUndoRedo())
+        AddChange(change, ChangeType::Update);
+
     auto& elements = m_txnMgr.GetDgnDb().Elements();
     DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::Old).GetValueUInt64());
     DgnElementP el = (DgnElementP) elements.FindElement(elementId);
@@ -1104,7 +1113,7 @@ DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersist
     if (BE_SQLITE_ROW != result)
         return nullptr;
 
-    DgnElement::Code code;
+    DgnCode code;
     code.From(stmt->GetValueId<DgnAuthorityId>(Column::Code_AuthorityId), stmt->GetValueText(Column::Code_Value), stmt->GetValueText(Column::Code_Namespace));
 
     DgnElement::CreateParams createParams(m_dgndb, stmt->GetValueId<DgnModelId>(Column::ModelId), 
@@ -1147,10 +1156,12 @@ void DgnElements::InitNextId()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat)
     {
-    InitNextId();
-    m_nextAvailableId.UseNext(m_dgndb);
-
-    element.m_elementId = m_nextAvailableId; 
+    if (!element.m_flags.m_forceElementIdForInsert)
+        {
+        InitNextId();
+        m_nextAvailableId.UseNext(m_dgndb);
+        element.m_elementId = m_nextAvailableId; 
+        }
 
     if (DgnDbStatus::Success != (stat = element._OnInsert()))
         return nullptr;
@@ -1189,8 +1200,8 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnDbStatus* outS
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(stat,outStat);
 
-    // don't allow elements that already have an id.
-    if (element.m_elementId.IsValid()) 
+    // don't allow elements that already have an id unless the forceElementIdForInsert flag is set (PKPM requested a "back door" for sync workflows)
+    if (element.m_elementId.IsValid() && !element.m_flags.m_forceElementIdForInsert)
         {
         stat = DgnDbStatus::WrongElement; // this element must already be persistent
         return nullptr;
@@ -1218,7 +1229,21 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnDbStatus* outS
     if (!newEl.IsValid())
         element.m_elementId = DgnElementId(); // Insert failed, make sure to invalidate the DgnElementId so they don't accidentally use it
 
+    element.m_flags.m_forceElementIdForInsert = 0; // ensure flag is set to default value
     return newEl;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* PKPM requested a "back door" for sync workflows that need to force an DgnElementId for Insert
+* @bsimethod                                                    ShaunSewall     01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::ForceElementIdForInsert(DgnElementId elementId)
+    {
+    if (!IsPersistent())
+        {
+        m_flags.m_forceElementIdForInsert = 1;
+        m_elementId = elementId;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1354,7 +1379,7 @@ DgnModelId DgnElements::QueryModelId(DgnElementId elementId) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    06/2015
 //---------------------------------------------------------------------------------------
-DgnElementId DgnElements::QueryElementIdByCode(DgnElement::Code const& code) const
+DgnElementId DgnElements::QueryElementIdByCode(DgnCode const& code) const
     {
     if (!code.IsValid() || code.IsEmpty())
         return DgnElementId(); // An invalid code won't be found; an empty code won't be unique. So don't bother.
@@ -1381,21 +1406,34 @@ DgnElementId DgnElements::QueryElementIdByCode(DgnAuthorityId authority, Utf8Str
     statement->BindText(3, nameSpace, Statement::MakeCopy::No);
     return (BE_SQLITE_ROW != statement->Step()) ? DgnElementId() : statement->GetValueId<DgnElementId>(0);
     }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElements::HandlerStatementCache::Entry* DgnElements::HandlerStatementCache::FindEntry(ElementHandlerR handler) const
-    {
-    auto found = std::find_if(m_entries.begin(), m_entries.end(), [&handler](Entry& arg) { return &handler == arg.m_handler; });
-    return m_entries.end() != found ? found : nullptr;
-    }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
+* @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::HandlerStatementCache::Empty()
+DgnElements::ClassInfo& DgnElements::FindClassInfo(DgnElementCR el) const
     {
-    m_entries.clear();
+    DgnClassId classId = el.GetElementClassId();
+    auto found = m_classInfos.find(classId);
+    if (m_classInfos.end() != found)
+        return found->second;
+
+    ClassInfo& classInfo = m_classInfos[classId];
+    bool populated = el.GetElementHandler().GetECSqlClassParams().BuildClassInfo(classInfo, GetDgnDb(), classId);
+    BeAssert(populated);
+    UNUSED_VARIABLE(populated);
+
+    Utf8StringCR selectECSql = classInfo.GetSelectECSql();
+    if (!selectECSql.empty())
+        {
+        classInfo.m_selectStmt = new CachedECSqlStatement();
+        if (ECSqlStatus::Success != classInfo.m_selectStmt->Prepare(GetDgnDb(), selectECSql.c_str()))
+            {
+            BeAssert(false);
+            classInfo.m_selectStmt = nullptr;
+            }
+        }
+
+    return classInfo;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1403,9 +1441,26 @@ void DgnElements::HandlerStatementCache::Empty()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElements::ElementSelectStatement DgnElements::GetPreparedSelectStatement(DgnElementR el) const
     {
+    // Cached per ECClass to make speed up loading of elements.
     BeDbMutexHolder _v(m_mutex);
-    auto& handler = el.GetElementHandler();
-    return m_handlerStmts.GetPreparedSelectStatement(el, handler, handler.GetECSqlClassInfo());
+
+    auto& classInfo = FindClassInfo(el);
+    CachedECSqlStatementPtr stmt = classInfo.m_selectStmt;
+    if (stmt.IsValid() && stmt->GetRefCount() > 2)  // +1 from above line, +1 from bmap...
+        {
+        // The cached statement is already in use...create a new one for this caller
+        stmt = new CachedECSqlStatement();
+        if (ECSqlStatus::Success != stmt->Prepare(GetDgnDb(), classInfo.GetSelectECSql().c_str()))
+            {
+            BeAssert(false);
+            stmt = nullptr;
+            }
+        }
+
+    if (stmt.IsValid())
+        stmt->BindId(1, el.GetElementId());
+
+    return ElementSelectStatement(stmt.get(), el.GetElementHandler().GetECSqlClassParams());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1414,7 +1469,7 @@ DgnElements::ElementSelectStatement DgnElements::GetPreparedSelectStatement(DgnE
 CachedECSqlStatementPtr DgnElements::GetPreparedInsertStatement(DgnElementR el) const
     {
     // Not bothering to cache per handler...use our general-purpose ECSql statement cache
-    return el.GetElementHandler().GetECSqlClassInfo().GetInsertStmt(GetDgnDb(), el.GetElementClassId());
+    return FindClassInfo(el).GetInsertStmt(GetDgnDb());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1423,78 +1478,18 @@ CachedECSqlStatementPtr DgnElements::GetPreparedInsertStatement(DgnElementR el) 
 CachedECSqlStatementPtr DgnElements::GetPreparedUpdateStatement(DgnElementR el) const
     {
     // Not bothering to cache per handler...use our general-purpose ECSql statement cache
-    return el.GetElementHandler().GetECSqlClassInfo().GetUpdateStmt(GetDgnDb(), el.GetElementId());
+    return FindClassInfo(el).GetUpdateStmt(GetDgnDb(), el.GetElementId());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElements::ElementSelectStatement DgnElements::HandlerStatementCache::GetPreparedSelectStatement(DgnElementR el, ElementHandlerR handler, ECSqlClassInfo const& classInfo) const
+ECSqlClassParams const& dgn_ElementHandler::Element::GetECSqlClassParams()
     {
-    CachedECSqlStatementPtr stmt;
-    Utf8StringCR selectECSql = classInfo.GetSelectECSql();
-    if (!selectECSql.empty())
-        {
-        Entry* entry = FindEntry(handler);
-        if (nullptr != entry)
-            {
-            if (entry->m_select.IsNull() || entry->m_select->GetRefCount() <= 1)
-                {
-                stmt = entry->m_select;
-                }
-            else
-                {
-                // The cached statement is already in use...create a new one for this caller
-                stmt = new CachedECSqlStatement();
-                if (ECSqlStatus::Success != stmt->Prepare(el.GetDgnDb(), selectECSql.c_str()))
-                    {
-                    BeAssert(false);
-                    stmt = nullptr;
-                    }
-                }
-            }
-        else
-            {
-            // First request for this handler...create an entry
-            m_entries.push_back(Entry(&handler));
-            entry = &m_entries.back();
-            entry->m_select = new CachedECSqlStatement();
-            if (ECSqlStatus::Success != entry->m_select->Prepare(el.GetDgnDb(), selectECSql.c_str()))
-                {
-                BeAssert(false);
-                entry->m_select = nullptr;
-                }
+    if (!m_classParams.IsInitialized())
+        m_classParams.Initialize(*this);
 
-            stmt = entry->m_select;
-            }
-        }
-
-    if (stmt.IsValid())
-        {
-        BeAssert(el.GetElementId().IsValid());
-        stmt->BindId(1, el.GetElementId());
-        }
-
-    return ElementSelectStatement(stmt.get(), classInfo.GetParams());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSqlClassInfo const& dgn_ElementHandler::Element::GetECSqlClassInfo()
-    {
-    if (!m_classInfo.IsInitialized())
-        {
-        Utf8String fullClassName("[");
-        fullClassName.append(GetDomain().GetDomainName()).append("].[").append(GetClassName()).append(1, ']');
-
-        ECSqlClassParams classParams;
-        _GetClassParams(classParams);
-
-        m_classInfo.Initialize(fullClassName, classParams);
-        }
-
-    return m_classInfo;
+    return m_classParams;
     }
 
 

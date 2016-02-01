@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/LineStyle.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -476,8 +476,8 @@ struct          LsSymbolComponent : public LsComponent
 private:
     bool                m_isModified;
 
-    DgnGeomPartId       m_geomPartId;
-    mutable DgnGeomPartPtr m_geomPart;
+    DgnGeometryPartId       m_geomPartId;
+    mutable DgnGeometryPartPtr m_geomPart;
     double              m_storedScale;              //
     double              m_muDef;                    // Set to m_storedScale if it is non-zero. Otherwise, it is 1/uorPerMaster for the model ref used in the PostProcessLoad step;
     DPoint3d            m_symSize;
@@ -518,9 +518,9 @@ public:
     void                _Draw               (ViewContextR) override;
     StatusInt           _GetRange           (DRange3dR range) const override;
 
-    void                SetGeomPartId       (DgnGeomPartId id) {m_geomPartId = id;}
-    DgnGeomPartId       GetGeomPartId       () const {return m_geomPartId;}
-    DgnGeomPartPtr      GetGeomPart         () const;
+    void                SetGeometryPartId   (DgnGeometryPartId id) {m_geomPartId = id;}
+    DgnGeometryPartId   GetGeometryPartId   () const {return m_geomPartId;}
+    DgnGeometryPartPtr  GetGeometryPart     () const;
     DgnModelP           GetSymbolDgnModel   (ViewContextCP context) const;
     void                SetMuDef            (double mudef) {m_muDef = mudef;}
     void                SetSymSize          (DPoint3dCP sz){m_symSize = *sz;}
@@ -533,7 +533,7 @@ public:
     virtual LsComponentPtr _GetForTextureGeneration() const override { return const_cast<LsSymbolComponentP>(this); }
     virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override { return LsOkayForTextureGeneration::NoChangeRequired; }
     virtual void _StartTextureGeneration() const override {}
-    DGNPLATFORM_EXPORT static void SaveSymbolDataToJson(Json::Value& result, DPoint3dCR base, DPoint3dCR size, DgnGeomPartId const& geomPartId, int32_t flags, double storedScale, 
+    DGNPLATFORM_EXPORT static void SaveSymbolDataToJson(Json::Value& result, DPoint3dCR base, DPoint3dCR size, DgnGeometryPartId const& geomPartId, int32_t flags, double storedScale, 
                                              bool colorBySubcategory, ColorDefCR lineColor, ColorDefCR fillColor, bool weightBySubcategory, int weight);
 
 //__PUBLISH_SECTION_START__
@@ -1591,7 +1591,7 @@ private:
     Utf8String m_description;
     Utf8String m_data;
 
-    DGNPLATFORM_EXPORT static Code CreateCodeFromName(Utf8CP);
+    static DgnCode CreateCodeFromName(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, DGN_CLASSNAME_LineStyle); }
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
 
 protected:
@@ -1601,14 +1601,14 @@ protected:
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
     virtual DgnDbStatus _OnDelete() const override { return DgnDbStatus::DeletionProhibited; /* Must be "purged" */ }
     virtual uint32_t _GetMemSize() const override { return (uint32_t)(m_description.size() + m_data.size() + 2); }
-    virtual Code _GenerateDefaultCode() override { return Code(); }
-    virtual DgnDbStatus _SetCode(Code const&) override { return DgnDbStatus::BadArg; /* Restricted to an internal DgnAuthority; use GetName/SetName. */ }
+    virtual DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
+    virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override { return ResourceAuthority::IsResourceAuthority(auth); }
 
 public:
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_LineStyle); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
     
-    explicit LineStyleElement(DgnDbR db) : T_Super(CreateParams(db, QueryDgnClassId(db), Code())) {}
+    explicit LineStyleElement(DgnDbR db) : T_Super(CreateParams(db, QueryDgnClassId(db), DgnCode())) {}
     explicit LineStyleElement(CreateParams const& params) : T_Super(params) {}
     static LineStyleElementPtr Create(DgnDbR db) { return new LineStyleElement(db); }
     LineStyleElementPtr CreateCopy() const { return MakeCopy<LineStyleElement>(); }

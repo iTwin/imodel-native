@@ -145,7 +145,7 @@ struct DgnViewAssociationData : DgnProjectAssociationData
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RedlineModel : SheetModel
     {
-    DEFINE_T_SUPER(SheetModel)
+    DGNMODEL_DECLARE_MEMBERS("RedlineModel", SheetModel);
 
 public:
     //! Describes the format, size, and display location of the static image to be displayed as the background of a redline model.
@@ -403,8 +403,8 @@ public:
 //=======================================================================================
 struct SpatialRedlineModel : SpatialModel
     {
+    DGNMODEL_DECLARE_MEMBERS("SpatialRedlineModel", SpatialModel);
 private:
-    DEFINE_T_SUPER(SpatialModel)
 
     friend struct DgnMarkupProject;
     friend struct SpatialRedlineModelHandler;

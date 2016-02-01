@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: Tests/DgnProject/Published/ChangeTestFixture.cpp $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include "ChangeTestFixture.h"
@@ -31,12 +31,12 @@ void ChangeTestFixture::CreateSeedDgnDb(BeFileNameR seedPathname)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
-void ChangeTestFixture::CreateDgnDb(WCharCP testFileName)
+void ChangeTestFixture::_CreateDgnDb()
     {
     // Note: Since creating the DgnDb everytime consumes too much time, we instead
     // just copy one we have created the first time around. 
 
-    BeFileName pathname = DgnDbTestDgnManager::GetOutputFilePath(testFileName);
+    BeFileName pathname = DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str());
     if (pathname.DoesPathExist())
         BeFileName::BeDeleteFile(pathname);
 
@@ -46,24 +46,44 @@ void ChangeTestFixture::CreateDgnDb(WCharCP testFileName)
     BeFileNameStatus fileStatus = BeFileName::BeCopyFile(seedPathname.c_str(), pathname.c_str());
     ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
 
-    OpenDgnDb(testFileName);
+    DbResult openStatus;
+    DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite);
+    m_testDb = DgnDb::OpenDgnDb(&openStatus, DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str()), openParams);
+    ASSERT_TRUE(m_testDb.IsValid()) << "Could not open test project";
+
+    TestDataManager::MustBeBriefcase(m_testDb, Db::OpenMode::ReadWrite);
+
+    m_testModelId = InsertSpatialModel("TestModel");
+    ASSERT_TRUE(m_testModelId.IsValid());
+
+    m_testModel = m_testDb->Models().Get<SpatialModel>(m_testModelId);
+    ASSERT_TRUE(m_testModel.IsValid());
+
+    m_testCategoryId = InsertCategory("TestCategory");
+    ASSERT_TRUE(m_testCategoryId.IsValid());
+
+    m_testAuthorityId = InsertNamespaceAuthority("TestAuthority");
+    ASSERT_TRUE(m_testAuthorityId.IsValid());
+    
+    m_testAuthority = m_testDb->Authorities().Get<NamespaceAuthority>(m_testAuthorityId);
+    ASSERT_TRUE(m_testAuthority.IsValid());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
-void ChangeTestFixture::OpenDgnDb(WCharCP testFileName)
+void ChangeTestFixture::OpenDgnDb()
     {
     DbResult openStatus;
     DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite);
-    m_testDb = DgnDb::OpenDgnDb(&openStatus, DgnDbTestDgnManager::GetOutputFilePath(testFileName), openParams);
+    m_testDb = DgnDb::OpenDgnDb(&openStatus, DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str()), openParams);
     ASSERT_TRUE(m_testDb.IsValid()) << "Could not open test project";
 
-    DgnModelId modelId = m_testDb->Models().QueryFirstModelId();
-    if (modelId.IsValid())
-        m_testModel = m_testDb->Models().GetModel(modelId).get();
+    m_testModel = m_testDb->Models().Get<SpatialModel>(m_testModelId);
+    ASSERT_TRUE(m_testModel.IsValid());
 
-    TestDataManager::MustBeBriefcase(m_testDb, Db::OpenMode::ReadWrite);
+    m_testAuthority = m_testDb->Authorities().Get<NamespaceAuthority>(m_testAuthorityId);
+    ASSERT_TRUE(m_testAuthority.IsValid());
     }
 
 //---------------------------------------------------------------------------------------
@@ -72,31 +92,83 @@ void ChangeTestFixture::OpenDgnDb(WCharCP testFileName)
 void ChangeTestFixture::CloseDgnDb()
     {
     m_testDb->CloseDb();
-    m_testModel = nullptr;
     m_testDb = nullptr;
+    m_testModel = nullptr;
+    m_testAuthority = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
-void ChangeTestFixture::InsertModel()
+DgnModelId ChangeTestFixture::InsertSpatialModel(Utf8CP modelName)
     {
     ModelHandlerR handler = dgn_ModelHandler::Spatial::GetHandler();
     DgnClassId classId = m_testDb->Domains().GetClassId(handler);
-    m_testModel = handler.Create(DgnModel::CreateParams(*m_testDb, classId, DgnModel::CreateModelCode("ChangeSetModel")));
+    DgnModelPtr testModel = handler.Create(DgnModel::CreateParams(*m_testDb, classId, DgnModel::CreateModelCode(modelName)));
 
-    DgnDbStatus status = m_testModel->Insert();
-    ASSERT_TRUE(DgnDbStatus::Success == status);
+    DgnDbStatus status = testModel->Insert();
+    BeAssert(status == DgnDbStatus::Success);
+
+    return testModel->GetModelId();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    06/2015
+//---------------------------------------------------------------------------------------
+DgnCategoryId ChangeTestFixture::InsertCategory(Utf8CP categoryName)
+    {
+    DgnCategory category(DgnCategory::CreateParams(*m_testDb, categoryName, DgnCategory::Scope::Physical, DgnCategory::Rank::Application));
+
+    DgnSubCategory::Appearance appearance;
+    appearance.SetColor(ColorDef::White());
+
+    auto persistentCategory = category.Insert(appearance);
+    BeAssert(persistentCategory.IsValid());
+
+    return persistentCategory->GetCategoryId();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    08/2015
+//---------------------------------------------------------------------------------------
+DgnAuthorityId ChangeTestFixture::InsertNamespaceAuthority(Utf8CP authorityName)
+    {
+    RefCountedPtr<NamespaceAuthority> testAuthority = NamespaceAuthority::CreateNamespaceAuthority(authorityName, *m_testDb);
+
+    DgnDbStatus status = testAuthority->Insert();
+    BeAssert(status == DgnDbStatus::Success);
+
+    return testAuthority->GetAuthorityId();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    06/2015
+//---------------------------------------------------------------------------------------
+DgnElementId ChangeTestFixture::InsertPhysicalElement(SpatialModelR model, DgnCategoryId categoryId, int x, int y, int z)
+    {
+    PhysicalElementPtr testElement = PhysicalElement::Create(model, categoryId);
+
+    DPoint3d sizeOfBlock = DPoint3d::From(1, 1, 1);
+    DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(DPoint3d::From(0, 0, 0), sizeOfBlock, true);
+    ISolidPrimitivePtr testGeomPtr = ISolidPrimitive::CreateDgnBox(blockDetail);
+    BeAssert(testGeomPtr.IsValid());
+
+    DPoint3d centerOfBlock = DPoint3d::From(x, y, z);
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(model, categoryId, centerOfBlock, YawPitchRollAngles());
+    builder->Append(*testGeomPtr);
+    BentleyStatus status = builder->SetGeomStreamAndPlacement(*testElement);
+    BeAssert(status == SUCCESS);
+
+    DgnElementId elementId = m_testDb->Elements().Insert(*testElement)->GetElementId();
+    return elementId;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    03/2015
 //---------------------------------------------------------------------------------------
-void ChangeTestFixture::CreateDefaultView()
+void ChangeTestFixture::CreateDefaultView(DgnModelId defaultModelId)
     {
-    ASSERT_TRUE(m_testModel.IsValid());
-
-    CameraViewDefinition viewRow(CameraViewDefinition::CreateParams(*m_testDb, "Default", ViewDefinition::Data(m_testModel->GetModelId(), DgnViewSource::Generated)));
+    CameraViewDefinition viewRow(CameraViewDefinition::CreateParams(*m_testDb, "Default", ViewDefinition::Data(defaultModelId, DgnViewSource::Generated)));
     ASSERT_TRUE(viewRow.Insert().IsValid());
 
     SpatialViewController viewController(*m_testDb, viewRow.GetViewId());
@@ -140,74 +212,4 @@ void ChangeTestFixture::UpdateDgnDbExtents()
     ASSERT_TRUE(result == BE_SQLITE_OK);
 
     m_testDb->SaveSettings();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    06/2015
-//---------------------------------------------------------------------------------------
-void ChangeTestFixture::InsertCategory()
-    {
-    DgnCategory category(DgnCategory::CreateParams(*m_testDb, "ChangeSetTestCategory", DgnCategory::Scope::Physical, DgnCategory::Rank::Application));
-
-    DgnSubCategory::Appearance appearance;
-    appearance.SetColor(ColorDef::White());
-
-    auto persistentCategory = category.Insert(appearance);
-    ASSERT_TRUE(persistentCategory.IsValid());
-
-    m_testCategoryId = persistentCategory->GetCategoryId();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    08/2015
-//---------------------------------------------------------------------------------------
-void ChangeTestFixture::InsertAuthority()
-    {
-    m_testAuthority = NamespaceAuthority::CreateNamespaceAuthority("ChangeTestAuthority", *m_testDb);
-    ASSERT_TRUE(DgnDbStatus::Success == m_testAuthority->Insert());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    06/2015
-//---------------------------------------------------------------------------------------
-DgnElementId ChangeTestFixture::InsertElement(int x, int y, int z)
-    {
-    SpatialModelP physicalTestModel = dynamic_cast<SpatialModelP> (m_testModel.get());
-    BeAssert(physicalTestModel != nullptr);
-    BeAssert(m_testCategoryId.IsValid());
-
-    PhysicalElementPtr testElement = PhysicalElement::Create(*physicalTestModel, m_testCategoryId);
-
-    DPoint3d sizeOfBlock = DPoint3d::From(1, 1, 1);
-    DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(DPoint3d::From(0, 0, 0), sizeOfBlock, true);
-    ISolidPrimitivePtr testGeomPtr = ISolidPrimitive::CreateDgnBox(blockDetail);
-    BeAssert(testGeomPtr.IsValid());
-
-    DPoint3d centerOfBlock = DPoint3d::From(x, y, z);
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*physicalTestModel, m_testCategoryId, centerOfBlock, YawPitchRollAngles());
-    builder->Append(*testGeomPtr);
-    BentleyStatus status = builder->SetGeomStreamAndPlacement(*testElement);
-    BeAssert(status == SUCCESS);
-
-    DgnElementId elementId = m_testDb->Elements().Insert(*testElement)->GetElementId();
-    return elementId;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    12/2015
-//---------------------------------------------------------------------------------------
-int ChangeTestFixture::GetChangeSummaryInstanceCount(ChangeSummaryCR changeSummary, Utf8CP qualifiedClassName) const
-    {
-    Utf8PrintfString ecSql("SELECT COUNT(*) FROM %s WHERE IsChangedInstance(?, GetECClassId(), ECInstanceId)", qualifiedClassName);
-
-    ECSqlStatement stmt;
-    ECSqlStatus ecSqlStatus = stmt.Prepare(*m_testDb, ecSql.c_str());
-    BeAssert(ecSqlStatus.IsSuccess());
-
-    stmt.BindInt64(1, (int64_t) &changeSummary);
-
-    DbResult ecSqlStepStatus = stmt.Step();
-    BeAssert(ecSqlStepStatus == BE_SQLITE_ROW);
-
-    return stmt.GetValueInt(0);
     }

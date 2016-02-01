@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnDomain.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -127,8 +127,8 @@ void DgnDomains::SyncWithSchemas()
 
         if (thisDomain->second->GetVersion() < stmt.GetValueInt(1))
             {
-            BeAssert(false);
             LOG.errorv("Wrong Domain version [%s]", stmt.GetValueText(0));
+            BeAssert(false && "DgnDomains::SyncWithSchemas() failed. Check log for details");
             continue;
             }
 
@@ -169,7 +169,7 @@ DgnDbStatus DgnDomain::VerifySuperclass(Handler& handler)
 
     if (nullptr == superclass || (nullptr == superclass->GetDomain().FindHandler(superclass->m_ecClassName.c_str())))
         {
-        BeAssert(false);
+        BeAssert(false && "Could not locate handler superclass");
         return DgnDbStatus::MissingHandler;
         }
 
@@ -196,7 +196,7 @@ DgnDbStatus DgnDomain::RegisterHandler(Handler& handler, bool reregister)
         {
         if (thisHandler==m_handlers.end()) // reregister only works if we DO already have this handler
             {
-            BeAssert(false);
+            BeAssert(false && "Cannot re-register a handler which was not previously registered");
             return DgnDbStatus::NotFound;
             }
 
@@ -204,7 +204,7 @@ DgnDbStatus DgnDomain::RegisterHandler(Handler& handler, bool reregister)
         }
     else if (thisHandler!=m_handlers.end()) // register only works if we DON'T already have this handler.
         {
-        BeAssert(false);
+        BeAssert(false && "Handler already registered");
         return DgnDbStatus::AlreadyLoaded;
         }
 
@@ -238,11 +238,12 @@ void DgnDomains::OnDbClose()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile) const
+DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile, ImportSchemaOptions options) const
     {
     if (!schemaFile.DoesPathExist())
         {
-        BeAssert(false);
+        LOG.errorv("DgnDomain::ImportSchema(): Schema file '%s' does not exist", schemaFile.c_str());
+        BeAssert(false && "DgnDomain::ImportSchema(): Schema file does not exist");
         return DgnDbStatus::FileNotFound;
         }
 
@@ -252,7 +253,8 @@ DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile) const
 
     if (0 != BeStringUtilities::Strnicmp(schemaBaseName.c_str(), GetDomainName(), strlen(GetDomainName()))) // ECSchema base name and DgnDomain name must match
         {
-        BeAssert(false);
+        LOG.errorv("Schema name '%s' does not match Domain name '%s'", schemaBaseName.c_str(), GetDomainName());
+        BeAssert(false && "Schema name and DgnDomain name must match");
         return DgnDbStatus::WrongDomain;
         }
 
@@ -270,7 +272,7 @@ DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile) const
     if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(contextPtr->GetCache()))
         return DgnDbStatus::BadSchema;
 
-    if (BentleyStatus::SUCCESS != db.Schemas().CreateECClassViewsInDb())
+    if ((ImportSchemaOptions::CreateECClassViews == (options & ImportSchemaOptions::CreateECClassViews)) && (BentleyStatus::SUCCESS != db.Schemas().CreateECClassViewsInDb()))
         return DgnDbStatus::WriteError;
 
     db.Domains().SyncWithSchemas();
@@ -348,7 +350,6 @@ DgnDomain::Handler* DgnDomains::FindHandler(DgnClassId handlerId, DgnClassId bas
     ECN::ECClassCP superClass = FindBaseOfType(handlerId, baseClassId);
     if (nullptr == superClass)
         {
-        //BeAssert(false);
         return nullptr;
         }
 
@@ -367,7 +368,9 @@ DgnDomain::Handler* DgnDomains::FindHandler(DgnClassId handlerId, DgnClassId bas
             if (BE_SQLITE_ROW == stmt.Step())
                 restrictions = stmt.GetValueUInt64(0);
 
-            handler = handler->_CreateMissingHandler(restrictions);
+            ECN::ECClassCP ecClass = m_dgndb.Schemas().GetECClass(handlerId.GetValue());
+            BeAssert(nullptr != ecClass && "It is impossible to end up here with a null ECClass unless the preceding code was later modified");
+            handler = handler->_CreateMissingHandler(restrictions, ecClass->GetSchema().GetName(), ecClass->GetName());
             BeAssert(nullptr != handler);
             }
 
@@ -379,7 +382,7 @@ DgnDomain::Handler* DgnDomains::FindHandler(DgnClassId handlerId, DgnClassId bas
         }
 
     // the handlerId supplied must not derive from baseClassId or no registered handlers exist for any baseclasses
-    BeAssert(false);
+    BeAssert(false && "Handler not found");
     return nullptr;
     }
 
@@ -451,7 +454,6 @@ DbResult DgnDomains::InsertHandler(DgnDomain::Handler& handler)
     DgnClassId id = GetClassId(handler);
     if (!id.IsValid())
         {
-        // BeAssert(false);
         // handler is registered against a class that doesn't exist
         return BE_SQLITE_ERROR;
         }
@@ -463,7 +465,7 @@ DbResult DgnDomains::InsertHandler(DgnDomain::Handler& handler)
         BeAssert(false && "You cannot register a handler unless its ECClass has a ClassHasHandler custom attribute");
 
 #if !defined (NDEBUG)
-        printf("ERROR: HANDLER [%s] handles ECClass '%s' which lacks a ClassHasHandler custom attribute. Handler not registered.",
+        LOG.errorv("ERROR: HANDLER [%s] handles ECClass '%s' which lacks a ClassHasHandler custom attribute. Handler not registered.",
                 typeid(handler).name(), handler.GetClassName().c_str());
 #endif
 
@@ -517,12 +519,12 @@ DgnDbStatus DgnDomain::Handler::_VerifySchema(DgnDomains& domains)
 
     if (!myEcClass->Is(superEcClass))
         {
-        printf("ERROR: HANDLER hiearchy does not match ECSCHMA hiearchy:\n"
+        LOG.errorv("ERROR: HANDLER hiearchy does not match ECSCHMA hiearchy:\n"
                " Handler [%s] says it handles ECClass '%s', \n"
                " but that class does not derive from its superclass handler's ECClass '%s'\n", 
                 typeid(*this).name(), GetClassName().c_str(), handlerSuperClass->GetClassName().c_str());
 
-        BeAssert(false);
+        BeAssert(false && "Handler::_VerifySchema() failed. Check log for details");
         }
     else
         {
@@ -531,10 +533,10 @@ DgnDbStatus DgnDomain::Handler::_VerifySchema(DgnDomains& domains)
         BeAssert(nullptr != rootEcClass);
         if (nullptr != rootEcClass && rootEcClass != myEcClass && !myEcClass->IsSingularlyDerivedFrom(*rootEcClass))
             {
-            printf("ERROR: HANDLER [%s] handles ECClass '%s' which derives more than once from root ECClass '%s'.\n",
+            LOG.errorv("ERROR: HANDLER [%s] handles ECClass '%s' which derives more than once from root ECClass '%s'.\n",
             typeid(*this).name(), GetClassName().c_str(), rootClass->GetClassName().c_str());
 
-            BeAssert(false);
+            BeAssert(false && "Handler::_VerifySchema() failed. Check log for details");
             }
         }
 #endif
@@ -643,63 +645,188 @@ ElementHandlerP dgn_ElementHandler::Element::FindHandler(DgnDb const& db, DgnCla
 
     // not there, check via base classes
     handler = db.Domains().FindHandler(handlerId, db.Domains().GetClassId(dgn_ElementHandler::Element::GetHandler()));
-    return handler ? handler->_ToElementHandler() : (BeAssert(false), nullptr);
+    return handler ? handler->_ToElementHandler() : (BeAssert(false && "Element handler not found"), nullptr);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> struct HandlerTraits { };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+template<> struct HandlerTraits<dgn_ElementHandler::Element>
+{
+    typedef DgnElement T_Instantiation;
+
+    static DgnDomain::Handler* GetBaseHandler() { return &dgn_ElementHandler::Element::GetHandler(); }
+    static DgnElementPtr CreateInstance(dgn_ElementHandler::Element& handler, DgnDbR db) { return handler.Create(DgnElement::CreateParams(db, DgnModelId(), DgnClassId())); }
+    static Utf8CP GetECClassName(DgnElementCR el) { return el.GetECClassName(); }
+    static Utf8CP GetSuperECClassName(DgnElementCR el) { return el.GetSuperECClassName(); }
+    static Utf8CP GetCppClassName() { return "DgnElement"; }
+    static Utf8CP GetMacroName() { return "DGNELEMENT_DECLARE_MEMBERS"; }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+template<> struct HandlerTraits<dgn_AspectHandler::Aspect>
+{
+    typedef DgnElement::Aspect T_Instantiation;
+
+    static DgnDomain::Handler* GetBaseHandler() { return &dgn_AspectHandler::Aspect::GetHandler(); }
+    static RefCountedPtr<DgnElement::Aspect> CreateInstance(dgn_AspectHandler::Aspect& handler, DgnDbR db) { return handler._CreateInstance(); }
+    static Utf8CP GetECClassName(DgnElement::Aspect const& aspect) { return aspect.GetECClassName(); }
+    static Utf8CP GetSuperECClassName(DgnElement::Aspect const& aspect) { return aspect.GetSuperECClassName(); }
+    static Utf8CP GetCppClassName() { return "DgnElement::Aspect"; }
+    static Utf8CP GetMacroName() { return "DGNASPECT_DECLARE_MEMBERS"; }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+template<> struct HandlerTraits<dgn_ModelHandler::Model>
+{
+    typedef DgnModel T_Instantiation;
+
+    static DgnDomain::Handler* GetBaseHandler() { return &dgn_ModelHandler::Model::GetHandler(); }
+    static DgnModelPtr CreateInstance(dgn_ModelHandler::Model& handler, DgnDbR db) { return handler.Create(DgnModel::CreateParams(db, DgnClassId(), DgnCode())); }
+    static Utf8CP GetECClassName(DgnModelCR model) { return model._GetECClassName(); }
+    static Utf8CP GetSuperECClassName(DgnModelCR model) { return model._GetSuperECClassName(); }
+    static Utf8CP GetCppClassName() { return "DgnModel"; }
+    static Utf8CP GetMacroName() { return "DGNMODEL_DECLARE_MEMBERS"; }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T_Handler> struct HandlerVerifier
+{
+private:
+    DgnDomains& m_domains;
+    T_Handler&  m_handler;
+
+    typedef HandlerTraits<T_Handler> T_Traits;
+    typedef typename T_Traits::T_Instantiation T_Instantiation;
+
+public:
+    HandlerVerifier(DgnDomains& domains, T_Handler& handler) : m_domains(domains), m_handler(handler) { }
+
+    DgnDbStatus Verify()
+        {
+#if !defined (NDEBUG)
+        if (&DgnDomain::Handler::GetHandler() == &m_handler) // Handler is always ok
+            return DgnDbStatus::Success;
+
+        // Verify Handler inheritance
+        DgnClassId classId = m_domains.GetClassId(m_handler);
+        BeAssert(classId.IsValid());
+
+        DgnDomain::Handler* handlerSuperClass = m_handler.GetSuperClass();
+        if (&DgnDomain::Handler::GetHandler() == handlerSuperClass)
+            return DgnDbStatus::Success;
+
+        DgnClassId superClassId = m_domains.GetClassId(*handlerSuperClass);
+
+        auto const& schemas = m_domains.GetDgnDb().Schemas();
+        ECN::ECClassCP myECClass = schemas.GetECClass(classId.GetValue());
+        ECN::ECClassCP superECClass = schemas.GetECClass(superClassId.GetValue());
+
+        if (!myECClass->Is(superECClass))
+            {
+            LOG.errorv("ERROR: HANDLER hiearchy does not match ECSCHMA hiearchy:\n"
+                   " Handler [%s] says it handles ECClass '%s', \n"
+                   " but that class does not derive from its superclass handler's ECClass '%s'\n", 
+                    typeid(m_handler).name(), m_handler.GetClassName().c_str(), handlerSuperClass->GetClassName().c_str());
+
+            BeAssert(false && "Incorrect handler hierarchy - see log for details");
+            }
+        else
+            {
+            DgnDomain::Handler* rootClass = m_handler.GetRootClass();
+            ECN::ECClassCP rootEcClass = schemas.GetECClass(m_domains.GetClassId(*rootClass).GetValue());
+            BeAssert(nullptr != rootEcClass);
+            if (nullptr != rootEcClass && rootEcClass != myECClass && !myECClass->IsSingularlyDerivedFrom(*rootEcClass))
+                {
+                LOG.errorv("ERROR: HANDLER [%s] handles ECClass '%s' which derives more than once from root ECClass '%s'.\n",
+                typeid(m_handler).name(), m_handler.GetClassName().c_str(), rootClass->GetClassName().c_str());
+
+                BeAssert(false && "Handler derives more than once from root ECClass - see log for details");
+                }
+            }
+
+        if (T_Traits::GetBaseHandler() == &m_handler)
+            return DgnDbStatus::Success;
+
+        // Verify inheritance of the type instantiated by this handler
+        auto instance = T_Traits::CreateInstance(m_handler, m_domains.GetDgnDb());
+        BeAssert(instance.IsValid());
+        if (0 != strcmp(T_Traits::GetECClassName(*instance), m_handler.GetClassName().c_str()))
+            {
+            Utf8PrintfString msg("HANDLER SETUP ERROR: Handler [%s] says it handles ECClass '%s', \n"
+                "    but its instantiated class [%s] says its ECClass is '%s'\n"
+                "    (make sure you have a %s macro in your %s class).\n",
+                typeid(m_handler).name(), m_handler.GetClassName().c_str(),
+                typeid(*instance).name(), T_Traits::GetECClassName(*instance),
+                T_Traits::GetMacroName(), T_Traits::GetCppClassName());
+            
+            LOG.errorv("%s", msg.c_str());
+            BeAssert(false && "Inconsistent handler class hierarchy - see log for details");
+            }
+
+        if (0 != strcmp(T_Traits::GetSuperECClassName(*instance), handlerSuperClass->GetClassName().c_str()))
+            {
+            Utf8PrintfString msg("HANDLER SUPERCLASS ERROR: Handler [%s] says its superclass ECClass is '%s', \n"
+                   "    but its %s class [%s] says its ECClass superclass is '%s'\n", 
+                    typeid(m_handler).name(), handlerSuperClass->GetClassName().c_str(), 
+                    T_Traits::GetCppClassName(), typeid(*instance).name(), T_Traits::GetSuperECClassName(*instance));
+            
+            LOG.errorv("%s", msg.c_str());
+            BeAssert(false && "Inconsistent handler class hierarchy - see log for details");
+            }
+
+        DgnClassId instanceClassId(schemas.GetECClassId(m_handler.GetDomain().GetDomainName(), T_Traits::GetECClassName(*instance)));
+        DgnClassId instanceSuperClassId(schemas.GetECClassId(handlerSuperClass->GetDomain().GetDomainName(), T_Traits::GetSuperECClassName(*instance)));
+
+        ECN::ECClassCP instanceECClass = schemas.GetECClass(instanceClassId.GetValue());
+        ECN::ECClassCP instanceSuperECClass = schemas.GetECClass(instanceSuperClassId.GetValue());
+        if (!instanceECClass->Is(instanceSuperECClass))
+            {
+            LOG.errorv("C++ INHERITANCE ERROR: %s class [%s] handlers ECClass '%s', but it does not derive from ECClass '%s'\n",
+                T_Traits::GetCppClassName(), typeid(*instance).name(), T_Traits::GetECClassName(*instance), T_Traits::GetSuperECClassName(*instance));
+            BeAssert(false && "Inconsistent handler class hierarchy - see log for details");
+            }
+#endif
+        return DgnDbStatus::Success;
+        }
+};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus dgn_ElementHandler::Element::_VerifySchema(DgnDomains& domains)
     {
-#if !defined (NDEBUG)
-    T_Super::_VerifySchema(domains);
+    HandlerVerifier<dgn_ElementHandler::Element> verifier(domains, *this);
+    return verifier.Verify();
+    }
 
-    if (&dgn_ElementHandler::Element::GetHandler() == this) // Element base class is always ok
-        return DgnDbStatus::Success;
-    
-    auto const& schemas = domains.GetDgnDb().Schemas();
-    dgn_ElementHandler::Element* handlerSuperClass = (dgn_ElementHandler::Element*) GetSuperClass();
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus dgn_AspectHandler::Aspect::_VerifySchema(DgnDomains& domains)
+    {
+    HandlerVerifier<dgn_AspectHandler::Aspect> verifier(domains, *this);
+    return verifier.Verify();
+    }
 
-    DgnElement::CreateParams params(domains.GetDgnDb(), DgnModelId(), DgnClassId());
-    DgnElementPtr thisEl = _CreateInstance(params);
-    if (0 != strcmp(thisEl->_GetECClassName(), GetClassName().c_str()))
-        {
-        Utf8PrintfString msg("HANDLER SETUP ERROR: Handler [%s] says it handles ECClass '%s', \n"
-            "    but its DgnElement class [%s] says its ECClass is '%s'\n"
-            "    (make sure you have a DGNELEMENT_DECLARE_MEMBERS macro in your DgnElement class).\n",
-            typeid(*this).name(), GetClassName().c_str(),
-            typeid(*thisEl).name(), thisEl->_GetECClassName());
-        
-        printf("%s", msg.c_str());
-        BeAssert(false);
-        }
-
-    if (0 != strcmp(thisEl->_GetSuperECClassName(), handlerSuperClass->GetClassName().c_str()))
-        {
-        Utf8PrintfString msg("HANDLER SUPERCLASS ERROR: Handler [%s] says its superclass ECClass is '%s', \n"
-               "    but its DgnElement class [%s] says its ECClass superclass is '%s'\n", 
-                typeid(*this).name(), handlerSuperClass->GetClassName().c_str(), 
-                typeid(*thisEl).name(), thisEl->_GetSuperECClassName());
-        
-        printf("%s", msg.c_str());
-        BeAssert(false);
-        }
-
-    DgnClassId classId(schemas.GetECClassId(GetDomain().GetDomainName(), thisEl->_GetECClassName()));
-    DgnClassId superClassId(schemas.GetECClassId(handlerSuperClass->GetDomain().GetDomainName(), thisEl->_GetSuperECClassName()));
-
-    ECN::ECClassCP myEcClass    = schemas.GetECClass(classId.GetValue());
-    ECN::ECClassCP superEcClass = schemas.GetECClass(superClassId.GetValue());
-
-    if (!myEcClass->Is(superEcClass))
-        {
-        printf("ELEMENT INHERITANCE ERROR: Element class [%s] handles ECClass '%s', but it does not derive from ECClass '%s'\n", typeid(*thisEl).name(), 
-                thisEl->_GetECClassName(), thisEl->_GetSuperECClassName());
-        BeAssert(false);
-        }
-#endif
-    
-    return DgnDbStatus::Success;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus dgn_ModelHandler::Model::_VerifySchema(DgnDomains& domains)
+    {
+    HandlerVerifier<dgn_ModelHandler::Model> verifier(domains, *this);
+    return verifier.Verify();
     }
 
 /*---------------------------------------------------------------------------------**//**

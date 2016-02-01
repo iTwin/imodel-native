@@ -2,7 +2,7 @@
 |
 |     $Source: DgnScript/DgnScript.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -60,14 +60,14 @@ DgnDbStatus DgnScriptContext::LoadProgram(Dgn::DgnDbR db, Utf8CP jsFunctionSpec)
     {
     Utf8String jsProgramName;
     Utf8CP dot = strrchr(jsFunctionSpec, '.');
-    if (nullptr == dot)
+    if (nullptr == dot || 0==BeStringUtilities::Stricmp(".js", dot) || 0 == BeStringUtilities::Stricmp(".ts", dot))
         {
-        NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv ("[%s] is an illegal Script function spec. Must be of the form program.function", jsFunctionSpec);
-        BeAssert(false && "illegal Script function spec");
-        return DgnDbStatus::BadArg;
+        jsProgramName = jsFunctionSpec;
         }
-
-    jsProgramName.assign(jsFunctionSpec, dot);
+    else
+        {
+        jsProgramName.assign(jsFunctionSpec, dot);
+        }
 
     if (m_jsScriptsExecuted.find(jsProgramName) != m_jsScriptsExecuted.end())
         return DgnDbStatus::Success;
@@ -118,9 +118,20 @@ DgnDbStatus DgnScriptContext::LoadProgram(Dgn::DgnDbR db, Utf8CP jsFunctionSpec)
             T_HOST.GetScriptAdmin().HandleScriptError(DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::ParseError, jsProgramName.c_str(), jsException.message.c_str());
         else
             T_HOST.GetScriptAdmin().HandleScriptError(DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::Other, jsProgramName.c_str(), "");
+
+        return DgnDbStatus::BadRequest;
         }
 
     return DgnDbStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   BentleySystems
+//---------------------------------------------------------------------------------------
+DgnDbStatus DgnScript::LoadScript(Dgn::DgnDbR db, Utf8CP jsFunctionSpec)
+    {
+    DgnScriptContext& ctx = static_cast<DgnScriptContext&>(T_HOST.GetScriptAdmin().GetDgnScriptContext());
+    return ctx.LoadProgram(db, jsFunctionSpec);
     }
 
 //---------------------------------------------------------------------------------------
@@ -188,6 +199,15 @@ DgnDbStatus DgnScriptContext::ExecuteDgnDbScript(int& functionReturnStatus, Dgn:
     functionReturnStatus = -1;
 
     BeJsFunction jsfunc = m_dgndbScriptRegistry.GetFunctionProperty(functionName.c_str());
+    if (jsfunc.IsUndefined())
+        {
+        DgnDbStatus status = LoadProgram(db, functionName.c_str());
+        if (DgnDbStatus::Success != status)
+            return status;
+        
+        jsfunc = m_dgndbScriptRegistry.GetFunctionProperty(functionName.c_str());
+        }
+
     if (jsfunc.IsUndefined() || !jsfunc.IsFunction())
         {
         NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv ("[%s] is not registered as a DgnDbScript", functionName.c_str());
@@ -279,10 +299,9 @@ DgnPlatformLib::Host::ScriptAdmin::~ScriptAdmin()
     {
     if (nullptr != m_jsContext)
         delete m_jsContext;
-#ifdef WIP_BEJAVASCRIPT // *** This triggers an assertion failure because JsDisposeRuntime returns JsErrorRuntimeInUse
+
     if (nullptr != m_jsenv)
         delete m_jsenv;
-#endif
     }
 
 //---------------------------------------------------------------------------------------

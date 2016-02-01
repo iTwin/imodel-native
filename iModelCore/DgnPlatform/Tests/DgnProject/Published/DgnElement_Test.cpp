@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/DgnElement_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -120,16 +120,6 @@ TEST_F (DgnElementTests, UpdateElement)
     DgnElementId e1id = keyE1->GetElementId();
     DgnElementCPtr e1 = m_db->Elements().GetElement(e1id);
     EXPECT_TRUE(e1 != nullptr);
-
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-    //Creating a copy of element to edit.
-    DgnElementPtr e1Copy = e1->CopyForEdit();
-    dynamic_cast<TestElement*>(e1Copy.get())->SetTestElementProperty("Updated Test Element");
-
-    DgnElementCPtr updatedElement = e1Copy->Update();
-
-    EXPECT_STREQ("Updated Test Element", dynamic_cast<TestElement const*>(updatedElement.get())->GetTestElementProperty().c_str());
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -241,10 +231,10 @@ TEST_F(DgnElementTests, DgnElementTransformer)
         DgnElementPtr ec11 = all.FindElementById(c11->GetElementId());
         Placement3d eparentplacement = eparent1->ToGeometrySource3dP()->GetPlacement();
         Placement3d ec11placement = ec11->ToGeometrySource3dP()->GetPlacement();
-        ASSERT_EQ(45, eparentplacement.GetAngles().GetYaw().Degrees());
-        ASSERT_EQ(45, ec11placement.GetAngles().GetYaw().Degrees());
-        ASSERT_EQ( 0, ec11placement.GetAngles().GetPitch().Degrees()) << "pitch should have been unaffected";
-        ASSERT_EQ( 0, ec11placement.GetAngles().GetRoll().Degrees()) << "roll should have been unaffected";
+        EXPECT_DOUBLE_EQ(45, eparentplacement.GetAngles().GetYaw().Degrees());
+        EXPECT_DOUBLE_EQ(45, ec11placement.GetAngles().GetYaw().Degrees());
+        EXPECT_DOUBLE_EQ( 0, ec11placement.GetAngles().GetPitch().Degrees()) << "pitch should have been unaffected";
+        EXPECT_DOUBLE_EQ( 0, ec11placement.GetAngles().GetRoll().Degrees()) << "roll should have been unaffected";
         ASSERT_TRUE(eparentplacement.GetOrigin().AlmostEqual(DPoint3d::FromZero()));
         ASSERT_TRUE(ec11placement.GetOrigin().AlmostEqual(DPoint3d::From(0,sqrt(2),0)));
         }
@@ -428,7 +418,7 @@ TEST_F(DgnElementTests, ElementCopierTests)
         DgnCloneContext ccontext;
         ElementCopier copier(ccontext);
         copier.SetCopyChildren(true);
-        DgnElementCPtr parent_cc = copier.MakeCopy(nullptr, *destModel, *parent, DgnElement::Code());
+        DgnElementCPtr parent_cc = copier.MakeCopy(nullptr, *destModel, *parent, DgnCode());
         ASSERT_TRUE(parent_cc.IsValid());
         auto c1ccId = copier.GetCloneContext().FindElementId(c1->GetElementId());
         ASSERT_TRUE(c1ccId.IsValid());
@@ -447,9 +437,9 @@ TEST_F(DgnElementTests, ElementCopierTests)
         ASSERT_EQ(2, cccount);
 
         // Verify that a second attempt to copy an already copied element does nothing
-        ASSERT_TRUE(parent_cc.get() == copier.MakeCopy(nullptr, *destModel, *parent, DgnElement::Code()).get());
-        ASSERT_TRUE(c1ccId == copier.MakeCopy(nullptr, *destModel, *c1, DgnElement::Code())->GetElementId());
-        ASSERT_TRUE(c2ccId == copier.MakeCopy(nullptr, *destModel, *c2, DgnElement::Code())->GetElementId());
+        ASSERT_TRUE(parent_cc.get() == copier.MakeCopy(nullptr, *destModel, *parent, DgnCode()).get());
+        ASSERT_TRUE(c1ccId == copier.MakeCopy(nullptr, *destModel, *c1, DgnCode())->GetElementId());
+        ASSERT_TRUE(c2ccId == copier.MakeCopy(nullptr, *destModel, *c2, DgnCode())->GetElementId());
         }
 
     // Verify that children are NOT copied
@@ -457,7 +447,7 @@ TEST_F(DgnElementTests, ElementCopierTests)
         DgnCloneContext ccontext;
         ElementCopier copier(ccontext);
         copier.SetCopyChildren(false);
-        DgnElementCPtr parent_cc = copier.MakeCopy(nullptr, *destModel, *parent, DgnElement::Code());
+        DgnElementCPtr parent_cc = copier.MakeCopy(nullptr, *destModel, *parent, DgnCode());
         ASSERT_TRUE(parent_cc.IsValid());
         auto c1ccId = copier.GetCloneContext().FindElementId(c1->GetElementId());
         ASSERT_FALSE(c1ccId.IsValid());
@@ -477,8 +467,8 @@ TEST_F(DgnElementTests, ElementCopierTests_Group)
     DgnElementCPtr group = TestGroup::Create(*m_db, m_defaultModelId, m_defaultCategoryId)->Insert();
     DgnElementCPtr m1 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId)->Insert();
     DgnElementCPtr m2 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId)->Insert();
-    ElementGroupsMembers::Insert(*group, *m1);
-    ElementGroupsMembers::Insert(*group, *m2);
+    ElementGroupsMembers::Insert(*group, *m1, 0);
+    ElementGroupsMembers::Insert(*group, *m2, 0);
     ASSERT_TRUE(group->ToIElementGroup()->QueryMembers().size() == 2);
 
     DgnModelPtr destModel = group->GetModel();
@@ -488,7 +478,7 @@ TEST_F(DgnElementTests, ElementCopierTests_Group)
         DgnCloneContext ccontext;
         ElementCopier copier(ccontext);
         copier.SetCopyGroups(true);
-        DgnElementCPtr group_cc = copier.MakeCopy(nullptr, *destModel, *group, DgnElement::Code());
+        DgnElementCPtr group_cc = copier.MakeCopy(nullptr, *destModel, *group, DgnCode());
         ASSERT_TRUE(group_cc.IsValid());
         auto m1ccId = copier.GetCloneContext().FindElementId(m1->GetElementId());
         ASSERT_TRUE(m1ccId.IsValid());
@@ -507,9 +497,9 @@ TEST_F(DgnElementTests, ElementCopierTests_Group)
         ASSERT_EQ(2, cccount);
 
         // Verify that a second attempt to copy an already copied element does nothing
-        ASSERT_TRUE(group_cc.get() == copier.MakeCopy(nullptr, *destModel, *group, DgnElement::Code()).get());
-        ASSERT_TRUE(m1ccId == copier.MakeCopy(nullptr, *destModel, *m1, DgnElement::Code())->GetElementId());
-        ASSERT_TRUE(m2ccId == copier.MakeCopy(nullptr, *destModel, *m2, DgnElement::Code())->GetElementId());
+        ASSERT_TRUE(group_cc.get() == copier.MakeCopy(nullptr, *destModel, *group, DgnCode()).get());
+        ASSERT_TRUE(m1ccId == copier.MakeCopy(nullptr, *destModel, *m1, DgnCode())->GetElementId());
+        ASSERT_TRUE(m2ccId == copier.MakeCopy(nullptr, *destModel, *m2, DgnCode())->GetElementId());
         }
 
     // Verify that members are NOT copied
@@ -517,11 +507,55 @@ TEST_F(DgnElementTests, ElementCopierTests_Group)
         DgnCloneContext ccontext;
         ElementCopier copier(ccontext);
         copier.SetCopyGroups(false);
-        DgnElementCPtr group_cc = copier.MakeCopy(nullptr, *destModel, *group, DgnElement::Code());
+        DgnElementCPtr group_cc = copier.MakeCopy(nullptr, *destModel, *group, DgnCode());
         ASSERT_TRUE(group_cc.IsValid());
         ASSERT_EQ(0, group_cc->ToIElementGroup()->QueryMembers().size());
         }
 
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    01/2016
+//---------------------------------------------------------------------------------------
+TEST_F(DgnElementTests, ForceElementIdForInsert)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"ForceElementIdForInsert.dgndb", Db::OpenMode::ReadWrite);
+
+    DgnModelId modelId = m_db->Models().QueryFirstModelId();
+    DgnClassId classId = m_db->Domains().GetClassId(generic_ElementHandler::GenericPhysicalObjectHandler::GetHandler());
+    DgnElementId elementId;
+
+    // Test creating an element the "normal" way (by letting the DgnElementId be assigned by the framework)
+        {
+        GenericPhysicalObjectPtr element = new GenericPhysicalObject(GenericPhysicalObject::CreateParams(*m_db, modelId, classId, m_defaultCategoryId));
+        ASSERT_TRUE(element.IsValid());
+        ASSERT_TRUE(element->Insert().IsValid());
+        ASSERT_TRUE(element->GetElementId().IsValid());
+        ASSERT_FALSE(element->Insert().IsValid()) << "Second insert of the same element should fail";
+        elementId = element->GetElementId();
+        }
+
+    DgnElementId forcedElementId(elementId.GetValue() + 100);
+
+    // Confirm that supplying a DgnElementId in CreateParams for Insert does not work (not intended to work)
+        {
+        GenericPhysicalObject::CreateParams createParams(*m_db, modelId, classId, m_defaultCategoryId);
+        createParams.SetElementId(DgnElementId(elementId.GetValue() + 100));
+    
+        GenericPhysicalObjectPtr element = new GenericPhysicalObject(createParams);
+        ASSERT_TRUE(element.IsValid());
+        ASSERT_FALSE(element->Insert().IsValid()) << "It is not valid to supply a DgnElementId for Insert via CreateParams";
+        }
+
+    // Test PKPM's synchronization workflow where they must force a DgnElementId on Insert.
+        {
+        GenericPhysicalObjectPtr element = new GenericPhysicalObject(GenericPhysicalObject::CreateParams(*m_db, modelId, classId, m_defaultCategoryId));
+        ASSERT_TRUE(element.IsValid());
+        element->ForceElementIdForInsert(forcedElementId);
+        ASSERT_EQ(element->GetElementId(), forcedElementId);
+        ASSERT_TRUE(element->Insert().IsValid());
+        ASSERT_EQ(element->GetElementId(), forcedElementId);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -614,7 +648,7 @@ TEST_F(ElementGeomAndPlacementTests, ValidateOnInsert)
         noPlacementNoGeomId = el->GetElementId();
 
         // Non-null placement + non-null geom
-        el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnElement::Code());
+        el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnCode());
         auto geom = CreateGeom();
         EXPECT_EQ(SUCCESS, geom->SetGeomStreamAndPlacement(*el));
         placement = el->GetPlacement();
@@ -629,7 +663,7 @@ TEST_F(ElementGeomAndPlacementTests, ValidateOnInsert)
         placementAndNoGeomId = el->GetElementId();
 
         // Null placement + non-null geom
-        el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnElement::Code());
+        el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnCode());
         EXPECT_EQ(SUCCESS, geom->SetGeomStreamAndPlacement(*el));
         el->SetPlacement(Placement3d());
         DgnDbStatus status;
@@ -665,7 +699,7 @@ TEST_F(DgnElementTests, HandlerlessClass)
     SetupProject(L"3dMetricGeneral.idgndb", L"HandlerlessClass.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
-    TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnElement::Code());
+    TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
     TestElement el(params);
     EXPECT_TRUE(el.Insert().IsValid());
 

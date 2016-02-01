@@ -2,10 +2,13 @@
 |
 |  $Source: Tests/DgnProject/Performance/PerformanceElementsCRUDTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceElementsCRUDTests.h"
+
+// Uncomment this if you want elapsed time of each test case logged to console in addition to the log file.
+// #define PERF_ELEM_CRUD_LOG_TO_CONSOLE 1
 
 HANDLER_DEFINE_MEMBERS (PerformanceElement1Handler)
 HANDLER_DEFINE_MEMBERS (PerformanceElement2Handler)
@@ -66,7 +69,6 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb (WCharCP destFileName, U
             element->Insert (&stat);
             ASSERT_EQ (DgnDbStatus::Success, stat);
             }
-
         m_db->SaveChanges ();
         m_db->CloseDb ();
         }
@@ -88,6 +90,7 @@ int64_t PerformanceElementsCRUDTestFixture::s_elementId = INT64_C(2000000);
 Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
     "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECSchemaReference name = 'dgn' version = '02.00' prefix = 'dgn' />"
+        "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
         "  <ECClass typeName='Element1' >"
         "    <ECCustomAttributes>"
         "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
@@ -134,6 +137,40 @@ Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
         "    <ECProperty propertyName='Prop4b_3' typeName='double' />"
         "    <ECProperty propertyName='Prop4b_4' typeName='point3d' />"
         "  </ECClass>"
+        "  <ECClass typeName='TestMultiAspect' isDomainClass='True'>"
+        "    <BaseClass>dgn:ElementMultiAspect</BaseClass>"
+        "    <ECCustomAttributes>"
+        "       <ClassMap xmlns = 'ECDbMap.01.00'>"
+        "           <Indexes>"
+        "               <DbIndex>"
+        "                   <Name>IDX_TMAspect</Name>"
+        "                   <IsUnique>False</IsUnique>"
+        "                   <Properties>"
+        "                       <string>ElementId</string>"
+        "                   </Properties>"
+        "               </DbIndex>"
+        "           </Indexes>"
+        "       </ClassMap>"
+        "    </ECCustomAttributes>"
+        "    <ECProperty propertyName='TestMultiAspectProperty' typeName='string' />"
+        "  </ECClass>"
+        "  <ECRelationshipClass typeName = 'ElementOwnsTestMultiAspect' strength = 'embedding'>"
+        "    <ECCustomAttributes>"
+        "      <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
+        "        <OnDeleteAction>Cascade</OnDeleteAction>"
+        "      </ForeignKeyRelationshipMap>"
+        "    </ECCustomAttributes>"
+        "    <Source cardinality = '(1,1)' polymorphic = 'true'>"
+        "      <Class class = 'Element1' />"
+        "    </Source>"
+        "    <Target cardinality = '(0,N)' polymorphic = 'true'>"
+        "      <Class class = 'TestMultiAspect'>"
+        "        <Key>"
+        "          <Property name = 'ElementId' />"
+        "        </Key>"
+        "      </Class>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
         "</ECSchema>";
 
 //---------------------------------------------------------------------------------------
@@ -176,6 +213,7 @@ DgnDbStatus PerformanceElement1::_BindInsertParams (BeSQLite::EC::ECSqlStatement
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus PerformanceElement1::_ReadSelectParams (ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
+    EXPECT_EQ (DgnDbStatus::Success, T_Super::_ReadSelectParams (stmt, params));
     EXPECT_EQ (0, strcmp (stmt.GetValueText (params.GetSelectIndex ("Prop1_1")), "Element1 - InitValue"));
     EXPECT_EQ (10000000, stmt.GetValueInt64 (params.GetSelectIndex ("Prop1_2")));
     EXPECT_EQ (-3.1415, stmt.GetValueDouble (params.GetSelectIndex ("Prop1_3")));
@@ -202,9 +240,9 @@ DgnDbStatus PerformanceElement1::_BindUpdateParams (BeSQLite::EC::ECSqlStatement
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            08/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-PerformanceElement1Ptr PerformanceElement1::Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyProperyValues)
+PerformanceElement1Ptr PerformanceElement1::Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyPropertyValues)
     {
-    if (specifyProperyValues)
+    if (specifyPropertyValues)
         return new PerformanceElement1 (PhysicalElement::CreateParams (db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415);
     else
         return new PerformanceElement1 (PhysicalElement::CreateParams (db, modelId, classId, category));
@@ -224,6 +262,81 @@ PerformanceElement1CPtr PerformanceElement1::Insert ()
 PerformanceElement1CPtr PerformanceElement1::Update ()
     {
     return GetDgnDb ().Elements ().Update<PerformanceElement1> (*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool appendEllipse3d(ElementGeometryBuilder& builder, double cx, double cy, double cz)
+    {
+    DEllipse3d ellipseData = DEllipse3d::From(cx, cy, cz,
+        0, 0, 2,
+        0, 3, 0,
+        0.0, Angle::TwoPi());
+    ICurvePrimitivePtr ellipse = ICurvePrimitive::CreateArc(ellipseData);
+    return builder.Append(*ellipse);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Majd.Uddin            01/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+static bool appendSolidPrimitive(ElementGeometryBuilder& builder, double dz, double radius)
+{
+    DgnConeDetail cylinderDetail(DPoint3d::From(0, 0, 0), DPoint3d::From(0, 0, dz), radius, radius, true);
+    ISolidPrimitivePtr solidPrimitive = ISolidPrimitive::CreateDgnCone(cylinderDetail);
+    ElementGeometryPtr elmGeom3 = ElementGeometry::Create(*solidPrimitive);
+    EXPECT_TRUE(elmGeom3.IsValid());
+    EXPECT_TRUE(ElementGeometry::GeometryType::SolidPrimitive == elmGeom3->GetGeometryType());
+    ISolidPrimitivePtr getAsSolid = elmGeom3->GetAsISolidPrimitive();
+    EXPECT_TRUE(getAsSolid.IsValid());
+    
+    return builder.Append(*getAsSolid);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TestMultiAspect::_LoadProperties(DgnElementCR el)
+{
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT TestMultiAspectProperty FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
+    stmt->BindId(1, GetAspectInstanceId());
+    if (BE_SQLITE_ROW != stmt->Step())
+        return DgnDbStatus::ReadError;
+    m_testMultiAspectProperty = stmt->GetValueText(0);
+    return DgnDbStatus::Success;
+}
+
+static bool useEllipse = true;
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Majd.Uddin            12/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+void PerformanceElement1::AddGeomtry()
+{
+    GeometrySourceP geomElem = this->ToGeometrySourceP();
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*this->GetModel(), this->GetCategoryId(), DPoint3d::From(0.0, 0.0, 0.0));
+    if (useEllipse)
+        ASSERT_TRUE(appendEllipse3d(*builder, 1, 2, 3));
+    else
+        ASSERT_TRUE(appendSolidPrimitive(*builder, 3.0, 1.5));
+    ASSERT_EQ(SUCCESS, builder->SetGeomStreamAndPlacement(*geomElem));
+
+    ASSERT_TRUE(this->HasGeometry());
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void PerformanceElement1::ExtendGeometry()
+    {
+    GeometrySourceP geomElem = this->ToGeometrySourceP();
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*this->GetModel(), this->GetCategoryId(), DPoint3d::From(0.0, 0.0, 0.0));
+    if (useEllipse)
+        ASSERT_TRUE(appendEllipse3d(*builder, 3, 2, 1));
+    else
+        ASSERT_TRUE(appendSolidPrimitive(*builder, 6.0, 3.0));
+
+    ASSERT_EQ(SUCCESS, builder->SetGeomStreamAndPlacement(*geomElem));
+    ASSERT_TRUE(this->HasGeometry());
     }
 
 //---------------------------------------------------------------------------------------
@@ -293,9 +406,9 @@ DgnDbStatus PerformanceElement2::_BindUpdateParams (BeSQLite::EC::ECSqlStatement
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-PerformanceElement2Ptr PerformanceElement2::Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyProperyValues)
+PerformanceElement2Ptr PerformanceElement2::Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyPropertyValues)
     {
-    if (specifyProperyValues)
+    if (specifyPropertyValues)
         return new PerformanceElement2 (PhysicalElement::CreateParams (db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415, "Element2 - InitValue", 20000000LL, 2.71828);
     else
         return new PerformanceElement2 (PhysicalElement::CreateParams (db, modelId, classId, category));
@@ -384,9 +497,9 @@ DgnDbStatus PerformanceElement3::_BindUpdateParams (BeSQLite::EC::ECSqlStatement
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-PerformanceElement3Ptr PerformanceElement3::Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyProperyValues)
+PerformanceElement3Ptr PerformanceElement3::Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyPropertyValues)
     {
-    if (specifyProperyValues)
+    if (specifyPropertyValues)
         return new PerformanceElement3 (PhysicalElement::CreateParams (db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415, "Element2 - InitValue", 20000000LL, 2.71828, "Element3 - InitValue", 30000000LL, 1.414121);
     else
         return new PerformanceElement3 (PhysicalElement::CreateParams (db, modelId, classId, category));
@@ -475,9 +588,9 @@ DgnDbStatus PerformanceElement4::_BindUpdateParams (BeSQLite::EC::ECSqlStatement
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-PerformanceElement4Ptr PerformanceElement4::Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyProperyValues)
+PerformanceElement4Ptr PerformanceElement4::Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyPropertyValues)
     {
-    if (specifyProperyValues)
+    if (specifyPropertyValues)
         return new PerformanceElement4 (PhysicalElement::CreateParams (db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415, "Element2 - InitValue", 20000000LL, 2.71828, "Element3 - InitValue", 30000000LL, 1.414121, "Element4 - InitValue", 40000000LL, 1.61803398874);
     else
         return new PerformanceElement4 (PhysicalElement::CreateParams (db, modelId, classId, category));
@@ -502,7 +615,7 @@ PerformanceElement4CPtr PerformanceElement4::Update ()
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementsCRUDTestFixture::CreateElements (int numInstances, Utf8CP className, bvector<DgnElementPtr>& elements, Utf8String modelCode, bool specifyProperyValues) const
+void PerformanceElementsCRUDTestFixture::CreateElements (int numInstances, Utf8CP className, bvector<DgnElementPtr>& elements, Utf8String modelCode, bool specifyPropertyValues) const
     {
     DgnClassId mclassId = DgnClassId (m_db->Schemas ().GetECClassId (DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
     SpatialModelPtr targetModel = new SpatialModel (SpatialModel::CreateParams (*m_db, mclassId, DgnModel::CreateModelCode (modelCode)));
@@ -510,11 +623,23 @@ void PerformanceElementsCRUDTestFixture::CreateElements (int numInstances, Utf8C
     DgnCategoryId catid = DgnCategory::QueryHighestCategoryId (*m_db);
     DgnClassId classId = DgnClassId (m_db->Schemas ().GetECClassId (ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className));
 
+    bool addMultiAspect = false;
+    bool addExtKey = false;
+
     if (0 == strcmp (className, ELEMENT_PERFORMANCE_ELEMENT1_CLASS))
         {
         for (int i = 0; i < numInstances; i++)
             {
-            PerformanceElement1Ptr element = PerformanceElement1::Create (*m_db, targetModel->GetModelId (), classId, catid, specifyProperyValues);
+            PerformanceElement1Ptr element = PerformanceElement1::Create (*m_db, targetModel->GetModelId (), classId, catid, specifyPropertyValues);
+            element->AddGeomtry();
+            if (addMultiAspect)
+                DgnElement::MultiAspect::AddAspect(*element, *TestMultiAspect::Create("Initial Value"));
+            if (addExtKey)
+            {
+                DgnElement::ExternalKeyAspectPtr extkeyAspect = DgnElement::ExternalKeyAspect::Create(DgnAuthorityId((uint64_t)1), "TestExtKey");
+                ASSERT_TRUE(extkeyAspect.IsValid());
+                element->AddAppData(DgnElement::ExternalKeyAspect::GetAppDataKey(), extkeyAspect.get());
+            }
             ASSERT_TRUE (element != nullptr);
             elements.push_back (element);
             }
@@ -523,7 +648,16 @@ void PerformanceElementsCRUDTestFixture::CreateElements (int numInstances, Utf8C
         {
         for (int i = 0; i < numInstances; i++)
             {
-            PerformanceElement2Ptr element = PerformanceElement2::Create (*m_db, targetModel->GetModelId (), classId, catid, specifyProperyValues);
+            PerformanceElement2Ptr element = PerformanceElement2::Create (*m_db, targetModel->GetModelId (), classId, catid, specifyPropertyValues);
+            element->AddGeomtry();
+            if (addMultiAspect)
+                DgnElement::MultiAspect::AddAspect(*element, *TestMultiAspect::Create("Initial Value"));
+            if (addExtKey)
+            {
+                DgnElement::ExternalKeyAspectPtr extkeyAspect = DgnElement::ExternalKeyAspect::Create(DgnAuthorityId((uint64_t)1), "TestExtKey");
+                ASSERT_TRUE(extkeyAspect.IsValid());
+                element->AddAppData(DgnElement::ExternalKeyAspect::GetAppDataKey(), extkeyAspect.get());
+            }
             ASSERT_TRUE (element != nullptr);
             elements.push_back (element);
             }
@@ -532,7 +666,16 @@ void PerformanceElementsCRUDTestFixture::CreateElements (int numInstances, Utf8C
         {
         for (int i = 0; i < numInstances; i++)
             {
-            PerformanceElement3Ptr element = PerformanceElement3::Create (*m_db, targetModel->GetModelId (), classId, catid, specifyProperyValues);
+            PerformanceElement3Ptr element = PerformanceElement3::Create (*m_db, targetModel->GetModelId (), classId, catid, specifyPropertyValues);
+            element->AddGeomtry();
+            if (addMultiAspect)
+                DgnElement::MultiAspect::AddAspect(*element, *TestMultiAspect::Create("Initial Value"));
+            if (addExtKey)
+            {
+                DgnElement::ExternalKeyAspectPtr extkeyAspect = DgnElement::ExternalKeyAspect::Create(DgnAuthorityId((uint64_t)1), "TestExtKey");
+                ASSERT_TRUE(extkeyAspect.IsValid());
+                element->AddAppData(DgnElement::ExternalKeyAspect::GetAppDataKey(), extkeyAspect.get());
+            }
             ASSERT_TRUE (element != nullptr);
             elements.push_back (element);
             }
@@ -541,7 +684,16 @@ void PerformanceElementsCRUDTestFixture::CreateElements (int numInstances, Utf8C
         {
         for (int i = 0; i < numInstances; i++)
             {
-            PerformanceElement4Ptr element = PerformanceElement4::Create (*m_db, targetModel->GetModelId (), classId, catid, specifyProperyValues);
+            PerformanceElement4Ptr element = PerformanceElement4::Create (*m_db, targetModel->GetModelId (), classId, catid, specifyPropertyValues);
+            element->AddGeomtry();
+            if (addMultiAspect)
+                DgnElement::MultiAspect::AddAspect(*element, *TestMultiAspect::Create("Initial Value"));
+            if (addExtKey)
+            {
+                DgnElement::ExternalKeyAspectPtr extkeyAspect = DgnElement::ExternalKeyAspect::Create(DgnAuthorityId((uint64_t)1), "TestExtKey");
+                ASSERT_TRUE(extkeyAspect.IsValid());
+                element->AddAppData(DgnElement::ExternalKeyAspect::GetAppDataKey(), extkeyAspect.get());
+            }
             ASSERT_TRUE (element != nullptr);
             elements.push_back (element);
             }
@@ -675,7 +827,7 @@ void PerformanceElementsCRUDTestFixture::BindParams (DgnElementPtr& element, BeS
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindId (stmt.GetParameterIndex (":Id"), id));
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindId (stmt.GetParameterIndex (":ModelId"), element->GetModelId ()));
 
-    DgnAuthority::Code elementCode = DgnAuthority::CreateDefaultCode ();
+    DgnCode elementCode = DgnCode::CreateEmpty ();
     if (elementCode.IsEmpty ())
         {
         ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindNull (stmt.GetParameterIndex (":Code_Value")));
@@ -862,6 +1014,19 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::BindElement4PropertyParams (ECSq
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                      Muhammad Hassan                  01/16
+//+---------------+---------------+---------------+---------------+---------------+------
+struct GeomBlobHeader
+    {
+    enum { Signature = 0x0600, };
+
+    uint32_t m_signature;
+    uint32_t m_size;
+    GeomBlobHeader (GeomStream const& geom) { m_signature = Signature; m_size = geom.GetSize (); }
+    GeomBlobHeader (SnappyReader& in) { uint32_t actuallyRead; in._Read ((Byte*) this, sizeof (*this), actuallyRead); }
+    };
+
+//---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
@@ -873,22 +1038,22 @@ void PerformanceElementsCRUDTestFixture::BindParams (DgnElementPtr& element, ECS
     ASSERT_EQ (ECSqlStatus::Success, stmt.BindId (stmt.GetParameterIndex ("ModelId"), element->GetModelId ()));
 
     // Bind Code
+    {
+        DgnCode elementCode = DgnCode::CreateEmpty ();
+    IECSqlStructBinder& codeBinder = stmt.BindStruct (stmt.GetParameterIndex ("Code"));
+
+    if (elementCode.IsEmpty ())
         {
-        DgnAuthority::Code elementCode = DgnAuthority::CreateDefaultCode ();
-        IECSqlStructBinder& codeBinder = stmt.BindStruct(stmt.GetParameterIndex("Code"));
-
-        if (elementCode.IsEmpty())
-            {
-            ASSERT_EQ(ECSqlStatus::Success, codeBinder.GetMember("Value").BindNull());
-            }
-        else
-            {
-            ASSERT_EQ(ECSqlStatus::Success, codeBinder.GetMember("Value").BindText(elementCode.GetValue().c_str(), IECSqlBinder::MakeCopy::No));
-            }
-
-        ASSERT_EQ (ECSqlStatus::Success, codeBinder.GetMember("AuthorityId").BindId(elementCode.GetAuthority()));
-        ASSERT_EQ (ECSqlStatus::Success, codeBinder.GetMember("Namespace").BindText(elementCode.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ (ECSqlStatus::Success, codeBinder.GetMember ("Value").BindNull ());
         }
+    else
+        {
+        ASSERT_EQ (ECSqlStatus::Success, codeBinder.GetMember ("Value").BindText (elementCode.GetValue ().c_str (), IECSqlBinder::MakeCopy::No));
+        }
+
+    ASSERT_EQ (ECSqlStatus::Success, codeBinder.GetMember ("AuthorityId").BindId (elementCode.GetAuthority ()));
+    ASSERT_EQ (ECSqlStatus::Success, codeBinder.GetMember ("Namespace").BindText (elementCode.GetNamespace ().c_str (), IECSqlBinder::MakeCopy::No));
+    }
 
     if (element->HasLabel())
         {
@@ -900,6 +1065,66 @@ void PerformanceElementsCRUDTestFixture::BindParams (DgnElementPtr& element, ECS
         }
 
     ASSERT_EQ (ECSqlStatus::Success, stmt.BindId (stmt.GetParameterIndex ("ParentId"), element->GetParentId ()));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.BindId (stmt.GetParameterIndex ("CategoryId"), element->ToGeometrySource ()->GetCategoryId ()));
+
+    //bind Geometry
+    {
+    ASSERT_TRUE (element->ToGeometrySourceP ()->HasGeometry ());
+
+    // Compress the serialized GeomStream
+    bool m_multiChunkGeomStream = false;
+    SnappyToBlob& snappyTo = element->GetDgnDb ().Elements ().GetSnappyTo ();
+    snappyTo.Init ();
+
+    GeomStream geom = element->ToGeometrySource ()->GetGeomStream ();
+    if (0 < geom.GetSize ())
+        {
+        GeomBlobHeader header (geom);
+        snappyTo.Write ((Byte const*)&header, sizeof (header));
+        snappyTo.Write (geom.GetData (), geom.GetSize ());
+        }
+
+    auto geomIndex = stmt.GetParameterIndex ("Geometry");
+    uint32_t zipSize = snappyTo.GetCompressedSize ();
+    if (0 < zipSize)
+        {
+        if (1 == snappyTo.GetCurrChunk ())
+            {
+            ASSERT_EQ (ECSqlStatus::Success, stmt.BindBinary (geomIndex, snappyTo.GetChunkData (0), zipSize, IECSqlBinder::MakeCopy::No));
+            }
+        else
+            {
+            m_multiChunkGeomStream = true;
+            ASSERT_EQ (ECSqlStatus::Success, stmt.BindNull (geomIndex));
+            }
+        }
+    else
+        {
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindNull (geomIndex));
+        }
+    }
+
+    ASSERT_EQ (ECSqlStatus::Success, stmt.BindInt (stmt.GetParameterIndex ("InPhysicalSpace"), CoordinateSpace::World == element->GetModel ()->ToGeometricModel ()->GetCoordinateSpace () ? 1 : 0));
+
+    Placement3dCR placement = element->ToGeometrySource3d ()->GetPlacement ();
+    if (!placement.IsValid ())
+        {
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindNull (stmt.GetParameterIndex ("Origin")));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindNull (stmt.GetParameterIndex ("Yaw")));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindNull (stmt.GetParameterIndex ("Pitch")));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindNull (stmt.GetParameterIndex ("Roll")));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindNull (stmt.GetParameterIndex ("BBoxLow")));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindNull (stmt.GetParameterIndex ("BBoxHigh")));
+        }
+    else
+        {
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindPoint3D (stmt.GetParameterIndex ("Origin"), placement.GetOrigin ()));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindDouble (stmt.GetParameterIndex ("Yaw"), placement.GetAngles ().GetYaw ().Degrees ()));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindDouble (stmt.GetParameterIndex ("Pitch"), placement.GetAngles ().GetPitch ().Degrees ()));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindDouble (stmt.GetParameterIndex ("Roll"), placement.GetAngles ().GetRoll ().Degrees ()));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindPoint3D (stmt.GetParameterIndex ("BBoxLow"), placement.GetElementBox ().low));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindPoint3D (stmt.GetParameterIndex ("BBoxHigh"), placement.GetElementBox ().high));
+        }
 
     if (0 == strcmp (className, ELEMENT_PERFORMANCE_ELEMENT1_CLASS))
         {
@@ -923,9 +1148,99 @@ void PerformanceElementsCRUDTestFixture::BindParams (DgnElementPtr& element, ECS
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-void PerformanceElementsCRUDTestFixture::BindUpdateParams (ECSqlStatement& stmt, Utf8CP className)
+void PerformanceElementsCRUDTestFixture::BindUpdateParams (DgnElementPtr& element, ECSqlStatement& stmt, Utf8CP className)
     {
     bool updateParams = true;
+    // Bind Code
+    {
+    DgnCode elementCode = element->GetCode ();
+    IECSqlStructBinder& codeBinder = stmt.BindStruct (stmt.GetParameterIndex ("Code"));
+    if (elementCode.IsEmpty ())
+        {
+        ASSERT_EQ (ECSqlStatus::Success, codeBinder.GetMember ("Value").BindNull ());
+        }
+    else
+        {
+        ASSERT_EQ (ECSqlStatus::Success, codeBinder.GetMember ("Value").BindText (elementCode.GetValue ().c_str (), IECSqlBinder::MakeCopy::No));
+        }
+
+    ASSERT_EQ (ECSqlStatus::Success, codeBinder.GetMember ("AuthorityId").BindId (elementCode.GetAuthority ()));
+    ASSERT_EQ (ECSqlStatus::Success, codeBinder.GetMember ("Namespace").BindText (elementCode.GetNamespace ().c_str (), IECSqlBinder::MakeCopy::No));
+    }
+
+    if (element->HasLabel ())
+        {
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindText (stmt.GetParameterIndex ("Label"), element->GetLabel (), IECSqlBinder::MakeCopy::No));
+        }
+    else
+        {
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindNull (stmt.GetParameterIndex ("Label")));
+        }
+    ASSERT_EQ (ECSqlStatus::Success, stmt.BindId (stmt.GetParameterIndex ("ParentId"), element->GetParentId ()));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.BindId (stmt.GetParameterIndex ("CategoryId"), element->ToGeometrySource ()->GetCategoryId ()));
+
+    //bind Geometry
+    {
+    ASSERT_TRUE (element->ToGeometrySourceP ()->HasGeometry ());
+
+    // Compress the serialized GeomStream
+    bool m_multiChunkGeomStream = false;
+    SnappyToBlob& snappyTo = element->GetDgnDb ().Elements ().GetSnappyTo ();
+    snappyTo.Init ();
+
+    GeomStream geom = element->ToGeometrySource ()->GetGeomStream ();
+    if (0 < geom.GetSize ())
+        {
+        GeomBlobHeader header (geom);
+        snappyTo.Write ((Byte const*)&header, sizeof (header));
+        snappyTo.Write (geom.GetData (), geom.GetSize ());
+        }
+
+    auto geomIndex = stmt.GetParameterIndex ("Geometry");
+    uint32_t zipSize = snappyTo.GetCompressedSize ();
+    if (0 < zipSize)
+        {
+        if (1 == snappyTo.GetCurrChunk ())
+            {
+            // Common case - only one chunk in geom stream. Bind it directly.
+            // NB: This requires that no other code uses DgnElements::SnappyToBlob() until our ECSqlStatement is executed...
+            stmt.BindBinary (geomIndex, snappyTo.GetChunkData (0), zipSize, IECSqlBinder::MakeCopy::No);
+            }
+        else
+            {
+            // More than one chunk in geom stream. Avoid expensive alloc+copy by deferring writing geom stream until ECSqlStatement executes.
+            m_multiChunkGeomStream = true;
+            stmt.BindNull (geomIndex);
+            }
+        }
+    else
+        {
+        // No geometry
+        stmt.BindNull (geomIndex);
+        }
+    }
+    ASSERT_EQ (ECSqlStatus::Success, stmt.BindInt (stmt.GetParameterIndex ("InPhysicalSpace"), CoordinateSpace::World == element->GetModel()->ToGeometricModel()->GetCoordinateSpace() ? 1 : 0));
+
+    Placement3dCR placement = element->ToGeometrySource3d ()->GetPlacement ();
+    if (!placement.IsValid ())
+        {
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindNull (stmt.GetParameterIndex ("Origin")));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindNull (stmt.GetParameterIndex ("Yaw")));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindNull (stmt.GetParameterIndex ("Pitch")));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindNull (stmt.GetParameterIndex ("Roll")));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindNull (stmt.GetParameterIndex ("BBoxLow")));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindNull (stmt.GetParameterIndex ("BBoxHigh")));
+        }
+    else
+        {
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindPoint3D (stmt.GetParameterIndex ("Origin"), placement.GetOrigin()));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindDouble (stmt.GetParameterIndex ("Yaw"), placement.GetAngles ().GetYaw ().Degrees ()));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindDouble (stmt.GetParameterIndex ("Pitch"), placement.GetAngles ().GetPitch ().Degrees ()));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindDouble (stmt.GetParameterIndex ("Roll"), placement.GetAngles ().GetRoll ().Degrees ()));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindPoint3D (stmt.GetParameterIndex ("BBoxLow"), placement.GetElementBox ().low));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindPoint3D (stmt.GetParameterIndex ("BBoxHigh"), placement.GetElementBox ().high));
+        }
+
     if (0 == strcmp (className, ELEMENT_PERFORMANCE_ELEMENT1_CLASS))
         {
         ASSERT_EQ (DgnDbStatus::Success, BindElement1PropertyParams (stmt, updateParams));
@@ -1035,13 +1350,13 @@ void PerformanceElementsCRUDTestFixture::ExtractSelectParams (BeSQLite::Statemen
 //static
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement1SelectParams (ECSqlStatement& stmt)
     {
-    //printf ("\n String Prop : %s", stmt.GetValueText (4));
-    //printf ("\n int Prop : %d", stmt.GetValueInt64 (5));
-    //printf ("\n double Prop : %f", stmt.GetValueDouble (6));
+    //printf ("\n String Prop : %s", stmt.GetValueText (14));
+    //printf ("\n int Prop : %lld", stmt.GetValueInt64 (15));
+    //printf ("\n double Prop : %f", stmt.GetValueDouble (16));
 
-    if ((0 != strcmp ("Element1 - InitValue", stmt.GetValueText (5))) ||
-        (stmt.GetValueInt64 (6) != 10000000) ||
-        (stmt.GetValueDouble (7) != -3.1415))
+    if ((0 != strcmp ("Element1 - InitValue", stmt.GetValueText (14))) ||
+        (stmt.GetValueInt64 (15) != 10000000) ||
+        (stmt.GetValueDouble (16) != -3.1415))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -1054,9 +1369,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement1SelectParams (ECS
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement2SelectParams (ECSqlStatement& stmt)
     {
     if ((DgnDbStatus::Success != ExtractElement1SelectParams (stmt)) ||
-        (0 != strcmp ("Element2 - InitValue", stmt.GetValueText (8))) ||
-        (stmt.GetValueInt64 (9) != 20000000) ||
-        (stmt.GetValueDouble (10) != 2.71828))
+        (0 != strcmp ("Element2 - InitValue", stmt.GetValueText (17))) ||
+        (stmt.GetValueInt64 (18) != 20000000) ||
+        (stmt.GetValueDouble (19) != 2.71828))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -1069,9 +1384,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement2SelectParams (ECS
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement3SelectParams (ECSqlStatement& stmt)
     {
     if ((DgnDbStatus::Success != ExtractElement2SelectParams (stmt)) ||
-        (0 != strcmp ("Element3 - InitValue", stmt.GetValueText (11))) ||
-        (stmt.GetValueInt64 (12) != 30000000) ||
-        (stmt.GetValueDouble (13) != 1.414121))
+        (0 != strcmp ("Element3 - InitValue", stmt.GetValueText (20))) ||
+        (stmt.GetValueInt64 (21) != 30000000) ||
+        (stmt.GetValueDouble (22) != 1.414121))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -1084,9 +1399,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement3SelectParams (ECS
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement4SelectParams (ECSqlStatement& stmt)
     {
     if ((DgnDbStatus::Success != ExtractElement3SelectParams (stmt)) ||
-        (0 != strcmp ("Element4 - InitValue", stmt.GetValueText (14))) ||
-        (stmt.GetValueInt64 (15) != 40000000) ||
-        (stmt.GetValueDouble (16) != 1.61803398874))
+        (0 != strcmp ("Element4 - InitValue", stmt.GetValueText (23))) ||
+        (stmt.GetValueInt64 (24) != 40000000) ||
+        (stmt.GetValueDouble (25) != 1.61803398874))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -1207,7 +1522,7 @@ void PerformanceElementsCRUDTestFixture::GetSelectSql (Utf8CP className, Utf8Str
                 }
             }
 
-        selectSql.append(" FROM dgn_Element e, dgn_PhysicalElement p WHERE e.Id=p.ECInstanceId AND e.ECClassId=p.ECClassId AND e.Id=?");
+        selectSql.append(" FROM dgn_Element e, dgn_SpatialElement p WHERE e.Id=p.ElementId AND e.ECClassId=p.ECClassId AND e.Id=?");
         if (!omitClassIdFilter)
             {
             Utf8String classIdFilter;
@@ -1341,12 +1656,12 @@ void PerformanceElementsCRUDTestFixture::GetUpdateECSql (Utf8CP className, Utf8S
     ECN::ECClassCP ecClass = m_db->Schemas ().GetECClass (ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className);
     ASSERT_TRUE(ecClass != nullptr);
 
-    updateECSql = "UPDATE ";
+    updateECSql = "UPDATE ONLY ";
     updateECSql.append (ecClass->GetECSqlName()).append (" SET ");
     bool isFirstItem = true;
     for (auto prop : ecClass->GetProperties (true))
         {
-        if (0 == strcmp("ModelId", prop->GetName().c_str()) || 0 == strcmp("Code", prop->GetName().c_str()) || 0 == strcmp("Label", prop->GetName().c_str()) || 0 == strcmp("ParentId", prop->GetName().c_str()) || 0 == strcmp("LastMod", prop->GetName().c_str()))
+        if (0 == strcmp("ModelId", prop->GetName().c_str()) || 0 == strcmp("LastMod", prop->GetName().c_str()))
             continue;
         if (!isFirstItem)
             {
@@ -1435,15 +1750,24 @@ void PerformanceElementsCRUDTestFixture::ApiUpdateTime(Utf8CP className, int ini
 
     const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
 
-    StopWatch timer (true);
+    //First build dgnelements with modified Geomtry
+    bvector<DgnElementPtr> elements;
     for (uint64_t i = 0; i < opCount; i++)
         {
         const DgnElementId id(s_firstElementId + i*elementIdIncrement);
-        DgnElementPtr element = m_db->Elements().GetForEdit<DgnElement>(id);
+        PerformanceElement1Ptr element = m_db->Elements().GetForEdit<PerformanceElement1>(id);
         ASSERT_TRUE(element != nullptr);
 
+        element->ExtendGeometry();
+        elements.push_back(element);
+        }
+    
+    //Now update and record time
+    StopWatch timer (true);
+    for (DgnElementPtr& element : elements)
+        {
         DgnDbStatus stat = DgnDbStatus::Success;
-        element->Update (&stat);
+        element->DgnElement::Update (&stat);
         ASSERT_EQ (DgnDbStatus::Success, stat);
         }
 
@@ -1493,6 +1817,7 @@ void PerformanceElementsCRUDTestFixture::ECSqlInsertTime(Utf8CP className, int i
 
     StopWatch timer (true);
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (*m_db, insertECSql.c_str ()));
+    //printf ("\n Native Sql: %s", stmt.GetNativeSql ());
     for (DgnElementPtr& element : testElements)
         {
         BindParams (element, stmt, className);
@@ -1552,15 +1877,25 @@ void PerformanceElementsCRUDTestFixture::ECSqlUpdateTime(Utf8CP className, bool 
     GetUpdateECSql (className, updateECSql, omitClassIdFilter);
     //printf ("\n Update ECSql %s : %s \n", className, updateECSql.c_str ());
 
-    const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
+    bvector<DgnElementPtr> elements;
+    const int elementIdIncrement = DetermineElementIdIncrement (initialInstanceCount, opCount);
+    for (uint64_t i = 0; i < opCount; i++)
+        {
+        DgnElementId id (s_firstElementId + i*elementIdIncrement);
+        PerformanceElement1Ptr element = m_db->Elements ().GetForEdit<PerformanceElement1> (id);
+        ASSERT_TRUE (element != nullptr);
+
+        element->ExtendGeometry ();
+        elements.push_back (element);
+        }
 
     StopWatch timer (true);
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (*m_db, updateECSql.c_str ()));
-    for (int i = 0; i < opCount; i++)
+    //printf ("\n Native Sql: %s", stmt.GetNativeSql ());
+    for (DgnElementPtr& element : elements)
         {
-        const ECInstanceId id(s_firstElementId + i*elementIdIncrement);
-        ASSERT_EQ (ECSqlStatus::Success, stmt.BindId (stmt.GetParameterIndex ("ecInstanceId"), id));
-        BindUpdateParams (stmt, className);
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindId (stmt.GetParameterIndex ("ecInstanceId"), element->GetElementId()));
+        BindUpdateParams (element, stmt, className);
         if (DbResult::BE_SQLITE_DONE != stmt.Step () || m_db->GetModifiedRowCount () == 0)
             ASSERT_TRUE (false);
         stmt.Reset ();
@@ -1745,6 +2080,9 @@ void PerformanceElementsCRUDTestFixture::LogTiming(StopWatch& timer, Utf8CP desc
     Utf8String totalDescription;
     totalDescription.Sprintf("%s %s '%s' [Initial count: %d]", description, noClassIdFilterStr, testClassName, initialInstanceCount);
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), totalDescription.c_str(), opCount);
+#ifdef PERF_ELEM_CRUD_LOG_TO_CONSOLE
+    printf("%.8f %s\n", timer.GetElapsedSeconds(), totalDescription.c_str());
+#endif
     }
 
 //---------------------------------------------------------------------------------------

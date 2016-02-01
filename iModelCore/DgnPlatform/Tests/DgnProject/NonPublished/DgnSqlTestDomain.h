@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/DgnSqlTestDomain.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -29,12 +29,12 @@ struct RobotElement : PhysicalElement
 private:
     friend struct RobotElementHandler;
     RobotElement(PhysicalElement::CreateParams const& params) : PhysicalElement(params) {;}
-    RobotElement(SpatialModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, Code elementCode);
+    RobotElement(SpatialModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, DgnCode elementCode);
 public:
     //! Factory method that creates an instance of a RobotElement
     //! @param[in] model Create the RobotElement in this SpatialModel
     //! @param[in] categoryId specifies the category for the RobotElement.
-    static RefCountedPtr<RobotElement> Create(SpatialModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, DgnElement::Code elementCode)
+    static RefCountedPtr<RobotElement> Create(SpatialModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, DgnCode elementCode)
         {return new RobotElement(model, categoryId, origin, yaw, elementCode);}
 
     //! Query the DgnClassId for the Robot ECClass in the specified DgnDb.
@@ -53,12 +53,12 @@ struct ObstacleElement : PhysicalElement
 private:
     friend struct ObstacleElementHandler;
     ObstacleElement(PhysicalElement::CreateParams const& params) : PhysicalElement(params) {;}
-    ObstacleElement(SpatialModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, DgnElement::Code elementCode);
+    ObstacleElement(SpatialModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, DgnCode elementCode);
 public:
     //! Factory method that creates an instance of a ObstacleElement
     //! @param[in] model Create the ObstacleElement in this SpatialModel
     //! @param[in] categoryId specifies the category for the ObstacleElement.
-    static RefCountedPtr<ObstacleElement> Create(SpatialModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, DgnElement::Code elementCode)
+    static RefCountedPtr<ObstacleElement> Create(SpatialModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, DgnCode elementCode)
         {return new ObstacleElement(model, categoryId, origin, yaw, elementCode);}
 
     //! Query the DgnClassId for the Obstacle ECClass in the specified DgnDb.

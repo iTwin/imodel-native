@@ -2,7 +2,7 @@
 #
 #     $Source: DgnScript/GeomJsApi/GenerateTypeScript.mki $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %ifdef BENTLEYCONFIG_NO_JAVASCRIPT
@@ -28,6 +28,7 @@ dgnScriptGen =% $(OutDgnPlatformBuild)DgnScriptGen/
 always:
     !~@mkdir $(dgnScriptGen)
     !~@mkdir $(dgnScriptGen)DgnPlatform
+    !~@mkdir $(dgnScriptGen)_doc
 
 geomJsApiTsDir = $(dgnScriptDir)GeomJsApi/ts/
 
@@ -67,6 +68,7 @@ $(dgnScriptGen)GeomJsApiCallbacks.cpp : $(geomJsApiTsDir)GeomJsApi.d.ts\
         --projectionTypeName "BentleyApi::Dgn::GeomJsApiProjection" \
         --refCountedBaseType "BentleyApi::Dgn::RefCountedBaseWithCreate" \
         --platformTsLibPath "$(BuildContext)SubParts/BeJavaScriptJs/BeJavaScriptTypes.ts" \
+        --exportMacroName "DGNPLATFORM_EXPORT" \
         --forceBuiltInTsTypes \
         --suppressTypeAliases \
         --tscCommand "$(TypeScriptCompile)"
@@ -85,7 +87,12 @@ tsSourceFiles = $(dgnScriptGen)GeomJsApi.ts $(geomJsApiTsDir)_references.ts
 
 $(dgnScriptGen)GeomJsApi.js : $(tsSourceFiles)
     $(msg)
-    $(TypeScriptCompile) $(tsSourceFiles) --target ES5 --noImplicitAny --removeComments --declaration $(DEBUG_PARMS) --out $(dgnScriptGen)GeomJsApi.js
+    $(TypeScriptCompile) $(tsSourceFiles) --target ES5 --noImplicitAny --declaration $(DEBUG_PARMS) --out $(dgnScriptGen)GeomJsApi.js
+    ~time
+
+$(dgnScriptGen)_doc/GeomJsApi_doc.h: $(dgnScriptGen)GeomJsApi.d.ts
+    $(msg)
+    $(_MakeFilePath)generateTypeScriptDoxygenInput.py --input=$< --output=$@ --extractionsPath=$(OutputRootDir)build/DgnPlatform/Extractions/
     ~time
 
 $(dgnScriptGen)GeomJsApiBootstrap.cpp : $(dgnScriptGen)GeomJsApi.js $(geomJsApiTsDir)GeomJsApiBootstrap.cpp
@@ -99,3 +106,6 @@ $(dgnScriptGen)GeomJsApiBootstrap.cpp : $(dgnScriptGen)GeomJsApi.js $(geomJsApiT
 
 $(BuildContext)Delivery/GeomJsApi.d.ts : $(dgnScriptGen)GeomJsApi.d.ts
     $(LinkFirstDepToFirstTarget)
+
+ $(BuildContext)Delivery/internal-docs/GeomJsApi : $(dgnScriptGen)_doc
+    $(LinkFirstDepToFirstTargetAsDirectory)

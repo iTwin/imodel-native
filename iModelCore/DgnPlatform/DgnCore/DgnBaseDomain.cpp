@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnBaseDomain.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -35,8 +35,7 @@ HANDLER_DEFINE_MEMBERS(StreetMap)
 HANDLER_DEFINE_MEMBERS(WebMercator)
 HANDLER_DEFINE_MEMBERS(Definition)
 HANDLER_DEFINE_MEMBERS(Dictionary)
-HANDLER_DEFINE_MEMBERS(Model2d)
-HANDLER_DEFINE_MEMBERS(System)
+HANDLER_DEFINE_MEMBERS(Geometric2d)
 };
 
 namespace dgn_ElementHandler
@@ -59,6 +58,13 @@ namespace dgn_AuthorityHandler
 HANDLER_DEFINE_MEMBERS(Authority)
 HANDLER_DEFINE_MEMBERS(Local)
 HANDLER_DEFINE_MEMBERS(Namespace)
+HANDLER_DEFINE_MEMBERS(Material)
+HANDLER_DEFINE_MEMBERS(Component)
+HANDLER_DEFINE_MEMBERS(Model)
+HANDLER_DEFINE_MEMBERS(TrueColor)
+HANDLER_DEFINE_MEMBERS(Resource)
+HANDLER_DEFINE_MEMBERS(Category)
+HANDLER_DEFINE_MEMBERS(GeometryPart)
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -80,7 +86,7 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ModelHandler::Model::GetHandler());
     RegisterHandler(dgn_ModelHandler::Spatial::GetHandler());
     RegisterHandler(dgn_ModelHandler::Component::GetHandler());
-    RegisterHandler(dgn_ModelHandler::Model2d::GetHandler());
+    RegisterHandler(dgn_ModelHandler::Geometric2d::GetHandler());
     RegisterHandler(dgn_ModelHandler::Sheet::GetHandler());
     RegisterHandler(dgn_ModelHandler::SectionDrawing::GetHandler());
     RegisterHandler(dgn_ModelHandler::Redline::GetHandler());
@@ -89,7 +95,6 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ModelHandler::StreetMap::GetHandler());
     RegisterHandler(dgn_ModelHandler::Definition::GetHandler());
     RegisterHandler(dgn_ModelHandler::Dictionary::GetHandler());
-    RegisterHandler(dgn_ModelHandler::System::GetHandler());
 
     RegisterHandler(dgn_ElementHandler::Element::GetHandler());
     RegisterHandler(dgn_ElementHandler::Physical::GetHandler());
@@ -98,8 +103,8 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ElementHandler::Sheet::GetHandler());
     RegisterHandler(dgn_ElementHandler::SpatialGroup::GetHandler());
     RegisterHandler(dgn_ElementHandler::VolumeElementHandler::GetHandler());
-    RegisterHandler(dgn_ElementHandler::TextAnnotationHandler::GetHandler());
-    RegisterHandler(dgn_ElementHandler::SpatialTextAnnotationHandler::GetHandler());
+    RegisterHandler(dgn_ElementHandler::TextAnnotation2dHandler::GetHandler());
+    RegisterHandler(dgn_ElementHandler::TextAnnotation3dHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::AnnotationTableHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::Material::GetHandler());
     RegisterHandler(dgn_ElementHandler::Texture::GetHandler());
@@ -125,6 +130,13 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_AuthorityHandler::Authority::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Local::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Namespace::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::Material::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::Component::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::Model::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::TrueColor::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::Resource::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::Category::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::GeometryPart::GetHandler());
 
     RegisterTableHandler(dgn_TableHandler::Element::GetHandler());
     RegisterTableHandler(dgn_TableHandler::Model::GetHandler());

@@ -92,58 +92,126 @@ template<typename T> static uint16_t buildParamString(Utf8StringR str, ECSqlClas
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ECSqlClassInfo::GetInsertECSql(DgnDbCR dgndb, DgnClassId classId) const
+bool ECSqlClassParams::AppendClassName(Utf8StringR classname, DgnDbCR db, DgnClassId classId)
     {
-    ECClassCP ecClass = dgndb.Schemas().GetECClass(classId.GetValue());
-    BeAssert(nullptr != ecClass);
-    if (nullptr == ecClass)
-        return "";
+    ECClassCP ecclass = db.Schemas().GetECClass(classId.GetValue());
+    BeAssert(nullptr != ecclass);
+    if (nullptr == ecclass)
+        return false;
 
-    Utf8String ecsql("INSERT INTO [");
-    ecsql.append(ecClass->GetSchema().GetName());
-    ecsql.append("].[");
-    ecsql.append(ecClass->GetName());
-    ecsql.append(1, ']');
+    classname.append(1, '[');
+    classname.append(ecclass->GetSchema().GetName());
+    classname.append("].[");
+    classname.append(ecclass->GetName());
+    classname.append(1, ']');
 
-    ecsql.append(m_insert);
+    return true;
+    }
 
-    return ecsql;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSqlClassParams::BuildInsertECSql(Utf8StringR ecsql, DgnDbCR dgndb, DgnClassId classId) const
+    {
+    ecsql.clear();
+    if (m_insertTemplate.empty())
+        return true;
+
+    ecsql.append("INSERT INTO ");
+    if (!AppendClassName(ecsql, dgndb, classId))
+        {
+        ecsql.clear();
+        return false;
+        }
+
+    ecsql.append(m_insertTemplate);
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSqlClassParams::BuildSelectECSql(Utf8StringR ecsql, DgnDbCR dgndb, DgnClassId classId) const
+    {
+    ecsql.clear();
+    if (m_selectTemplate.empty())
+        return true;
+
+    ecsql.append(m_selectTemplate);
+    ecsql.append(" FROM ONLY ");
+    if (!AppendClassName(ecsql, dgndb, classId))
+        {
+        ecsql.clear();
+        return false;
+        }
+
+    ecsql.append(" WHERE ECInstanceId=?");
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSqlClassParams::BuildUpdateECSql(Utf8StringR ecsql, DgnDbCR dgndb, DgnClassId classId) const
+    {
+    ecsql.clear();
+    if (m_updateTemplate.empty())
+        return true;
+
+    ecsql.append("UPDATE ONLY ");
+    if (!AppendClassName(ecsql, dgndb, classId))
+        {
+        ecsql.clear();
+        return false;
+        }
+
+    ecsql.append(m_updateTemplate);
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSqlClassParams::BuildClassInfo(ECSqlClassInfo& info, DgnDbCR dgndb, DgnClassId classId) const
+    {
+    Utf8String select, insert, update;
+    if (!BuildSelectECSql(select, dgndb, classId) || !BuildInsertECSql(insert, dgndb, classId) || !BuildUpdateECSql(update, dgndb, classId))
+        return false;
+
+    info.m_updateParameterIndex = m_numUpdateParams + 1;
+    info.m_select = select;
+    info.m_insert = insert;
+    info.m_update = update;
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Ramanujam.Raman   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSqlClassInfo::Initialize(Utf8StringCR fullClassName, ECSqlClassParamsCR params)
+void ECSqlClassParams::Initialize(IECSqlClassParamsProvider& provider)
     {
     if (m_initialized)
         return;
     
-    m_params = params;
-    auto const& entries = m_params.GetEntries();
+    provider._GetClassParams(*this);
+    auto const& entries = GetEntries();
 
     // Build SELECT statement
-    m_select = "SELECT ";
-    uint16_t numSelectParams = buildParamString(m_select, entries, ECSqlClassParams::StatementType::Select,
-                                                [&] (Utf8CP name, uint16_t count) { m_select.append(1, '[').append(name).append(1, ']'); });
+    m_selectTemplate = "SELECT ";
+    uint16_t numSelectParams = buildParamString(m_selectTemplate, entries, ECSqlClassParams::StatementType::Select,
+                                                [&] (Utf8CP name, uint16_t count) { m_selectTemplate.append(1, '[').append(name).append(1, ']'); });
 
-    if (0 < numSelectParams)
-        {
-        m_select.append(" FROM ONLY ").append(fullClassName);
-        m_select.append(" WHERE ECInstanceId=?");
-        }
-    else
-        {
-        m_select.clear();
-        }
+    if (0 == numSelectParams)
+        m_selectTemplate.clear();
 
-    // Build bulk INSERT statement sans INSERT INTO [schema].[class] - schema+class may vary for subclasses without their own handlers.
-    // (That variance only matters for INSERT statements)
-    m_insert.append(1, '(');
+    // Build INSERT statement
+    m_insertTemplate.append(1, '(');
     Utf8String insertValues;
-    uint16_t numInsertParams = buildParamString(m_insert, entries, ECSqlClassParams::StatementType::Insert,
+    uint16_t numInsertParams = buildParamString(m_insertTemplate, entries, ECSqlClassParams::StatementType::Insert,
                                                 [&] (Utf8CP name, uint16_t count)
         {
-        m_insert.append(1, '[').append(name).append(1, ']');
+        m_insertTemplate.append(1, '[').append(name).append(1, ']');
         if (0 < count)
             insertValues.append(1, ',');
 
@@ -151,26 +219,25 @@ void ECSqlClassInfo::Initialize(Utf8StringCR fullClassName, ECSqlClassParamsCR p
         });
 
     if (0 < numInsertParams)
-        m_insert.append(")VALUES(").append(insertValues).append(1, ')');
+        m_insertTemplate.append(")VALUES(").append(insertValues).append(1, ')');
     else
-        m_insert.clear();
+        m_insertTemplate.clear();
 
     // Build UPDATE statement
-    m_update.append("UPDATE ONLY ").append(fullClassName).append(" SET ");
-    m_numUpdateParams = buildParamString(m_update, entries, ECSqlClassParams::StatementType::Update,
+    m_updateTemplate.append(" SET ");
+    m_numUpdateParams = buildParamString(m_updateTemplate, entries, ECSqlClassParams::StatementType::Update,
                                                      [&] (Utf8CP name, uint16_t count)
         {
-        m_update.append(1, '[').append(name).append("]=:[").append(name).append(1, ']');
+        m_updateTemplate.append(1, '[').append(name).append("]=:[").append(name).append(1, ']');
         });
+
     if (0 < m_numUpdateParams)
-        {
-        m_update.append("WHERE ECInstanceId=?");
-        }
+        m_updateTemplate.append("WHERE ECInstanceId=?");
     else
-        m_update.clear();
+        m_updateTemplate.clear();
 
     // We no longer need any param names except those used in INSERT.
-    m_params.RemoveAllButSelect();
+    RemoveAllButSelect();
 
     m_initialized = true;
     }
@@ -178,9 +245,9 @@ void ECSqlClassInfo::Initialize(Utf8StringCR fullClassName, ECSqlClassParamsCR p
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Ramanujam.Raman   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-CachedECSqlStatementPtr ECSqlClassInfo::GetInsertStmt(DgnDbCR dgndb, DgnClassId classId) const
+CachedECSqlStatementPtr ECSqlClassInfo::GetInsertStmt(DgnDbCR dgndb) const
     {
-    return m_insert.empty() ? nullptr : dgndb.GetPreparedECSqlStatement(GetInsertECSql(dgndb, classId).c_str());
+    return m_insert.empty() ? nullptr : dgndb.GetPreparedECSqlStatement(m_insert.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -191,6 +258,7 @@ CachedECSqlStatementPtr ECSqlClassInfo::GetSelectStmt(DgnDbCR dgndb, ECInstanceI
     CachedECSqlStatementPtr stmt = m_select.empty() ? nullptr : dgndb.GetPreparedECSqlStatement(m_select.c_str());
     if (stmt.IsValid())
         stmt->BindId(1, id);
+
     return stmt;
     }
 
@@ -201,6 +269,8 @@ CachedECSqlStatementPtr ECSqlClassInfo::GetUpdateStmt(DgnDbCR dgndb, ECInstanceI
     {
     CachedECSqlStatementPtr stmt = m_update.empty() ? nullptr : dgndb.GetPreparedECSqlStatement(m_update.c_str());
     if (stmt.IsValid())
-        stmt->BindId(m_numUpdateParams + 1, id);
+        stmt->BindId(m_updateParameterIndex, id);
+
     return stmt;
     }
+

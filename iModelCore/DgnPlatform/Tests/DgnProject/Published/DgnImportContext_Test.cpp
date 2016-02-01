@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/DgnImportContext_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -527,7 +527,7 @@ TEST_F(ImportTest, ImportElementsWithAuthorities)
 
     // Put an element with an Item into moddel1
     {
-        DgnElement::Code code = auth1->CreateCode("TestElement");
+        DgnCode code = auth1->CreateCode("TestElement");
         DgnCategoryId gcatid = DgnCategory::QueryHighestCategoryId(*m_db);
         TestElementPtr tempEl = TestElement::Create(*m_db, model1->GetModelId(), gcatid, code);
         ASSERT_TRUE(m_db->Elements().Insert(*tempEl).IsValid());
@@ -569,68 +569,6 @@ TEST_F(ImportTest, ImportElementsWithAuthorities)
         db2->SaveChanges();
     }
 }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      05/15
-//---------------------------------------------------------------------------------------
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-TEST_F(ImportTest, ImportElementsWithItems)
-{
-    SetupProject(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
-    DgnDbP db = m_db.get();
-
-    // ******************************
-    //  Create model1
-
-    DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
-    SpatialModelPtr model1 = new SpatialModel(SpatialModel::CreateParams(*m_db, mclassId, DgnModel::CreateModelCode("Model1")));
-    ASSERT_EQ(DgnDbStatus::Success, model1->Insert());
-
-    // Put an element with an Item into moddel1
-    {
-        DgnCategoryId gcatid = DgnCategory::QueryHighestCategoryId(*m_db);
-        TestElementPtr tempEl = TestElement::Create(*m_db, model1->GetModelId(), gcatid, "TestElement");
-        DgnElement::Item::SetItem(*tempEl, *TestItem::Create("Line"));
-        ASSERT_TRUE(m_db->Elements().Insert(*tempEl).IsValid());
-        m_db->SaveChanges();
-    }
-
-    if (true)
-    {
-        DgnElementCPtr el = getSingleElementInModel(*model1);
-        ASSERT_NE(nullptr, DgnElement::Item::GetItem(*el));
-    }
-
-    //  ******************************
-    //  Create model2 as a copy of model1
-    if (true)
-    {
-        SpatialModelPtr model2 = copySpatialModelSameDb(*model1, "Model2");
-        ASSERT_TRUE(model2.IsValid());
-
-        DgnElementCPtr el = getSingleElementInModel(*model2);
-        ASSERT_NE(nullptr, DgnElement::Item::GetItem(*el));
-    }
-
-    //  *******************************
-    //  Import into separate db
-    if (true)
-    {
-        DgnDbPtr db2 = openCopyOfDb(L"DgnDb/3dMetricGeneral.idgndb", L"3dMetricGeneralcc.idgndb", DgnDb::OpenMode::ReadWrite);
-        ASSERT_TRUE(db2.IsValid());
-
-        DgnImportContext import3(*m_db, *db2);
-        DgnDbStatus stat;
-        SpatialModelPtr model3 = DgnModel::Import(&stat, *model1, import3);
-        ASSERT_TRUE(model3.IsValid());
-        ASSERT_EQ(DgnDbStatus::Success, stat);
-
-        DgnElementCPtr el = getSingleElementInModel(*model3);
-        ASSERT_NE(nullptr, DgnElement::Item::GetItem(*el));
-        db2->SaveChanges();
-    }
-}
-#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15

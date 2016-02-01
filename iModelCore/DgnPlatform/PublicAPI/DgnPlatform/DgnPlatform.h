@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnPlatform.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -67,7 +67,7 @@ DGNPLATFORM_TYPEDEFS (DictionaryElement)
 DGNPLATFORM_TYPEDEFS (DgnDb)
 DGNPLATFORM_TYPEDEFS (DgnElement)
 DGNPLATFORM_TYPEDEFS (DgnFont)
-DGNPLATFORM_TYPEDEFS (DgnGeomPart)
+DGNPLATFORM_TYPEDEFS (DgnGeometryPart)
 DGNPLATFORM_TYPEDEFS (DgnGlyph)
 DGNPLATFORM_TYPEDEFS (DgnGlyphLayoutContext)
 DGNPLATFORM_TYPEDEFS (DgnGlyphLayoutResult)
@@ -100,6 +100,8 @@ DGNPLATFORM_TYPEDEFS (IElementGroup)
 DGNPLATFORM_TYPEDEFS (IElemTopology)
 DGNPLATFORM_TYPEDEFS (ILocksServer)
 DGNPLATFORM_TYPEDEFS (ILocksManager)
+DGNPLATFORM_TYPEDEFS (IDgnCodesManager)
+DGNPLATFORM_TYPEDEFS (IDgnCodesServer)
 DGNPLATFORM_TYPEDEFS (IRedrawOperation)
 DGNPLATFORM_TYPEDEFS (IRedrawAbort)
 DGNPLATFORM_TYPEDEFS (ITransientGeometryHandler)
@@ -113,7 +115,6 @@ DGNPLATFORM_TYPEDEFS (PlotInfo)
 DGNPLATFORM_TYPEDEFS (RedlineModel)
 DGNPLATFORM_TYPEDEFS (SpatialElement)
 DGNPLATFORM_TYPEDEFS (SpatialGroupElement)
-DGNPLATFORM_TYPEDEFS (SystemElement)
 DGNPLATFORM_TYPEDEFS (ViewContext)
 DGNPLATFORM_TYPEDEFS (ViewController)
 DGNPLATFORM_TYPEDEFS (ViewFlags)
@@ -136,6 +137,7 @@ DGNPLATFORM_TYPEDEFS (ComponentModel)
 DGNPLATFORM_TYPEDEFS (CutGraphicsCachedKey)
 DGNPLATFORM_TYPEDEFS (Dgn3DInputEvent)
 DGNPLATFORM_TYPEDEFS (DgnButtonEvent)
+DGNPLATFORM_TYPEDEFS (DgnCode)
 DGNPLATFORM_TYPEDEFS (DgnColorMap)
 DGNPLATFORM_TYPEDEFS (DgnDimStyle)
 DGNPLATFORM_TYPEDEFS (DgnDomain)
@@ -252,7 +254,7 @@ DGNPLATFORM_REF_COUNTED_PTR (DgnElement)
 DGNPLATFORM_REF_COUNTED_PTR (DgnElementExpressionContext)
 DGNPLATFORM_REF_COUNTED_PTR (DgnFont)
 DGNPLATFORM_REF_COUNTED_PTR (DgnGCS)
-DGNPLATFORM_REF_COUNTED_PTR (DgnGeomPart)
+DGNPLATFORM_REF_COUNTED_PTR (DgnGeometryPart)
 DGNPLATFORM_REF_COUNTED_PTR (DgnMarkupProject)
 DGNPLATFORM_REF_COUNTED_PTR (DgnModel)
 DGNPLATFORM_REF_COUNTED_PTR (DgnRevision)
@@ -262,6 +264,7 @@ DGNPLATFORM_REF_COUNTED_PTR (SheetElement)
 DGNPLATFORM_REF_COUNTED_PTR (SpatialElement)
 DGNPLATFORM_REF_COUNTED_PTR (SpatialGroupElement)
 DGNPLATFORM_REF_COUNTED_PTR (ILocksManager)
+DGNPLATFORM_REF_COUNTED_PTR (IDgnCodesManager)
 DGNPLATFORM_REF_COUNTED_PTR (PatternParams)
 DGNPLATFORM_REF_COUNTED_PTR (PhysicalElement)
 DGNPLATFORM_REF_COUNTED_PTR (ComponentDef)
@@ -294,7 +297,7 @@ DGNPLATFORM_REF_COUNTED_PTR (ViewController)
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 BEBRIEFCASEBASED_ID_CLASS(DgnElementId)       //!< An Id that is assigned to an Element. @ingroup DgnElementGroup
-BEBRIEFCASEBASED_ID_CLASS(DgnGeomPartId)      //!< An Id that is assigned to a DgnGeomPart.
+BEBRIEFCASEBASED_ID_CLASS(DgnGeometryPartId)  //!< An Id that is assigned to a DgnGeometryPart.
 BEBRIEFCASEBASED_ID_CLASS(DgnModelId)         //!< An Id that is assigned to a DgnModel.  A DgnModel is a container for DgnElements. @ingroup DgnModelGroup
 BEBRIEFCASEBASED_ID_CLASS(DgnLinkId)          //!< An Id that is assigned to a DGN link. See DgnLinkTable.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnMaterialId, DgnElementId) //!< An element Id that refers to a material.
@@ -386,26 +389,6 @@ struct DgnClassId : BeSQLite::BeInt64Id
     DgnClassId(DgnClassId const& rhs) : BeInt64Id(rhs) {}
     DgnClassId& operator=(DgnClassId const& rhs) {m_id = rhs.m_id; return *this;}
 };
-
-//=======================================================================================
-//! DEPRECATED: Use DgnElementId (preferred) or ECInstanceKey (for ECRelationships) instead
-//! @private
-//=======================================================================================
-struct DgnElementKey : BeSQLite::EC::ECInstanceKey
-{
-    DgnElementKey() : BeSQLite::EC::ECInstanceKey() {}
-    DgnElementKey(ECN::ECClassId classId, BeSQLite::EC::ECInstanceId instanceId) : BeSQLite::EC::ECInstanceKey(classId, instanceId) {}
-    DgnElementKey(DgnClassId classId, BeSQLite::EC::ECInstanceId instanceId) : BeSQLite::EC::ECInstanceKey(classId.GetValue(), instanceId) {}
-
-    //! Converts an ECInstanceKey to a DgnElementKey.
-    //! @note Does a simple type conversion without checking if the specified ECInstanceKey is a valid DgnElementKey
-    explicit DgnElementKey(BeSQLite::EC::ECInstanceKeyCR key) : BeSQLite::EC::ECInstanceKey(key) {}
-
-    DgnClassId GetClassId() const {return DgnClassId(GetECClassId());}
-    DgnElementId GetElementId() const {return DgnElementId(GetECInstanceId().GetValue());}
-};
-
-typedef DgnElementKey const& DgnElementKeyCR; //!< @private
 
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
 //=======================================================================================

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/AnnotationTable_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -162,7 +162,7 @@ public:
 /*=================================================================================**//**
 * @bsistruct
 +===============+===============+===============+===============+===============+======*/
-struct AnnotationTableTest : public GenericDgnModelTestFixture /* public testing::Test*/
+struct AnnotationTableTest : public GenericDgnModelTestFixture
 {
 private:
     const    Utf8CP m_modelName     = "TestModel";
@@ -202,7 +202,7 @@ void SetUp () override
     ASSERT_TRUE(m_textStyleId.IsValid());
 
     // Create a 2d model
-    DgnModelPtr model = new DgnModel2d(DgnModel2d::CreateParams(GetDgnDb(), DgnClassId(GetDgnDb().Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Model2d)), DgnModel::CreateModelCode(m_modelName)));
+    DgnModelPtr model = new GeometricModel2d(GeometricModel2d::CreateParams(GetDgnDb(), DgnClassId(GetDgnDb().Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_GeometricModel2d)), DgnModel::CreateModelCode(m_modelName)));
     ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
 
     m_modelId = model->GetModelId();

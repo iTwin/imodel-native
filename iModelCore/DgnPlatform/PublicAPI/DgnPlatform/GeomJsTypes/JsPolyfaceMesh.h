@@ -30,7 +30,9 @@ public:
         m_data->CopyTo (*clone);
         return new JsPolyfaceMesh (clone);
         }
-    
+
+    virtual JsPolyfaceMeshP AsPolyfaceMesh () {return this;}
+
     JsPolyfaceMesh ()
         {
         m_data = PolyfaceHeader::CreateVariableSizeIndexed ();
