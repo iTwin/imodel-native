@@ -16,14 +16,14 @@
 
 DGNPLATFORM_TYPEDEFS(TextAnnotationData);
 DGNPLATFORM_REF_COUNTED_PTR(TextAnnotationData);
-DGNPLATFORM_TYPEDEFS(TextAnnotationElement);
-DGNPLATFORM_REF_COUNTED_PTR(TextAnnotationElement);
-DGNPLATFORM_TYPEDEFS(SpatialTextAnnotationElement);
-DGNPLATFORM_REF_COUNTED_PTR(SpatialTextAnnotationElement);
+DGNPLATFORM_TYPEDEFS(TextAnnotation2d);
+DGNPLATFORM_REF_COUNTED_PTR(TextAnnotation2d);
+DGNPLATFORM_TYPEDEFS(TextAnnotation3d);
+DGNPLATFORM_REF_COUNTED_PTR(TextAnnotation3d);
 
 #define DGN_CLASSNAME_TextAnnotationData "TextAnnotationData"
-#define DGN_CLASSNAME_TextAnnotationElement "TextAnnotationElement"
-#define DGN_CLASSNAME_SpatialTextAnnotationElement "SpatialTextAnnotationElement"
+#define DGN_CLASSNAME_TextAnnotation2d "TextAnnotation2d"
+#define DGN_CLASSNAME_TextAnnotation3d "TextAnnotation3d"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -85,9 +85,9 @@ namespace dgn_AspectHandler
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     09/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TextAnnotationElement : AnnotationElement
+struct EXPORT_VTABLE_ATTRIBUTE TextAnnotation2d : AnnotationElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotationElement, AnnotationElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotation2d, AnnotationElement);
 
 protected:
     virtual bool _DrawHit(HitDetailCR, ViewContextR) const override { return false; } // Don't flash text box...
@@ -99,20 +99,20 @@ protected:
     DGNPLATFORM_EXPORT TextAnnotationDataR GetItemR();
 
 public:
-    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_TextAnnotationElement); }
+    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_TextAnnotation2d); }
     static ECN::ECClassCP QueryECClass(DgnDbR db) { return db.Schemas().GetECClass(QueryECClassId(db)); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
-    static TextAnnotationElementCPtr Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<TextAnnotationElement>(id); }
-    static TextAnnotationElementPtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<TextAnnotationElement>(id); }
+    static TextAnnotation2dCPtr Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<TextAnnotation2d>(id); }
+    static TextAnnotation2dPtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<TextAnnotation2d>(id); }
 
-    explicit TextAnnotationElement(CreateParams const& params) : T_Super(params) {}
-    static TextAnnotationElementPtr Create(CreateParams const& params) { return new TextAnnotationElement(params); }
+    explicit TextAnnotation2d(CreateParams const& params) : T_Super(params) {}
+    static TextAnnotation2dPtr Create(CreateParams const& params) { return new TextAnnotation2d(params); }
 
     TextAnnotationCP GetAnnotation() const { TextAnnotationDataCP item = GetItemCP(); return item ? item->GetAnnotation() : nullptr; }
     void SetAnnotation(TextAnnotationCP value) { GetItemR().SetAnnotation(value); }
     
-    TextAnnotationElementCPtr Insert() { return GetDgnDb().Elements().Insert<TextAnnotationElement>(*this); }
-    TextAnnotationElementCPtr Update() { return GetDgnDb().Elements().Update<TextAnnotationElement>(*this); }
+    TextAnnotation2dCPtr Insert() { return GetDgnDb().Elements().Insert<TextAnnotation2d>(*this); }
+    TextAnnotation2dCPtr Update() { return GetDgnDb().Elements().Update<TextAnnotation2d>(*this); }
 };
 
 namespace dgn_ElementHandler
@@ -120,18 +120,18 @@ namespace dgn_ElementHandler
     //=======================================================================================
     // @bsiclass                                                    Jeff.Marker     09/2015
     //=======================================================================================
-    struct TextAnnotationHandler : Annotation
+    struct TextAnnotation2dHandler : Annotation
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotationElement, TextAnnotationElement, TextAnnotationHandler, Annotation, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotation2d, TextAnnotation2d, TextAnnotation2dHandler, Annotation, DGNPLATFORM_EXPORT);
     };
 }
 
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     09/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SpatialTextAnnotationElement : SpatialElement
+struct EXPORT_VTABLE_ATTRIBUTE TextAnnotation3d : SpatialElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialTextAnnotationElement, SpatialElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotation3d, SpatialElement);
 
 protected:
     virtual bool _DrawHit(HitDetailCR, ViewContextR) const override { return false; } // Don't flash text box...
@@ -143,20 +143,20 @@ protected:
     DGNPLATFORM_EXPORT TextAnnotationDataR GetItemR();
 
 public:
-    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialTextAnnotationElement); }
+    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_TextAnnotation3d); }
     static ECN::ECClassCP QueryECClass(DgnDbR db) { return db.Schemas().GetECClass(QueryECClassId(db)); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
-    static SpatialTextAnnotationElementCPtr Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<SpatialTextAnnotationElement>(id); }
-    static SpatialTextAnnotationElementPtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<SpatialTextAnnotationElement>(id); }
+    static TextAnnotation3dCPtr Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<TextAnnotation3d>(id); }
+    static TextAnnotation3dPtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<TextAnnotation3d>(id); }
 
-    explicit SpatialTextAnnotationElement(CreateParams const& params) : T_Super(params) {}
-    static SpatialTextAnnotationElementPtr Create(CreateParams const& params) { return new SpatialTextAnnotationElement(params); }
+    explicit TextAnnotation3d(CreateParams const& params) : T_Super(params) {}
+    static TextAnnotation3dPtr Create(CreateParams const& params) { return new TextAnnotation3d(params); }
     
     TextAnnotationCP GetAnnotation() const { TextAnnotationDataCP item = GetItemCP(); return item ? item->GetAnnotation() : nullptr; }
     void SetAnnotation(TextAnnotationCP value) { GetItemR().SetAnnotation(value); }
     
-    SpatialTextAnnotationElementCPtr Insert() { return GetDgnDb().Elements().Insert<SpatialTextAnnotationElement>(*this); }
-    SpatialTextAnnotationElementCPtr Update() { return GetDgnDb().Elements().Update<SpatialTextAnnotationElement>(*this); }
+    TextAnnotation3dCPtr Insert() { return GetDgnDb().Elements().Insert<TextAnnotation3d>(*this); }
+    TextAnnotation3dCPtr Update() { return GetDgnDb().Elements().Update<TextAnnotation3d>(*this); }
 };
 
 namespace dgn_ElementHandler
@@ -164,9 +164,9 @@ namespace dgn_ElementHandler
     //=======================================================================================
     // @bsiclass                                                    Jeff.Marker     09/2015
     //=======================================================================================
-    struct SpatialTextAnnotationHandler : Element
+    struct TextAnnotation3dHandler : Element
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialTextAnnotationElement, SpatialTextAnnotationElement, SpatialTextAnnotationHandler, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotation3d, TextAnnotation3d, TextAnnotation3dHandler, Element, DGNPLATFORM_EXPORT);
         virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); ElementGeom3d::AddClassParams(params); }
     };
 }

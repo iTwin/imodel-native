@@ -537,16 +537,16 @@
     </ECEntityClass>
 
     <!-- 2D text element -->
-    <ECEntityClass typeName="TextAnnotationElement">
+    <ECEntityClass typeName="TextAnnotation2d">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
         <BaseClass>AnnotationElement</BaseClass>
     </ECEntityClass>
-    <ECRelationshipClass typeName="TextAnnotationElementOwnsTextAnnotationData" strength="embedding">
+    <ECRelationshipClass typeName="TextAnnotation2dOwnsTextAnnotationData" strength="embedding">
         <!-- only exists to get automatic deletion of a text element's unique aspect -->
         <Source cardinality="(1,1)" polymorphic="true">
-            <Class class="TextAnnotationElement"/>
+            <Class class="TextAnnotation2d"/>
         </Source>
         <Target cardinality="(0,1)" polymorphic="true">
             <Class class="TextAnnotationData">
@@ -558,16 +558,16 @@
     </ECRelationshipClass>
     
     <!-- 3D text element -->
-    <ECEntityClass typeName="SpatialTextAnnotationElement">
+    <ECEntityClass typeName="TextAnnotation3d">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
         <BaseClass>SpatialElement</BaseClass>
     </ECEntityClass>
-    <ECRelationshipClass typeName="SpatialTextAnnotationElementOwnsTextAnnotationData" strength="embedding">
+    <ECRelationshipClass typeName="TextAnnotation3dOwnsTextAnnotationData" strength="embedding">
         <!-- only exists to get automatic deletion of a text element's unique aspect -->
         <Source cardinality="(1,1)" polymorphic="true">
-            <Class class="SpatialTextAnnotationElement"/>
+            <Class class="TextAnnotation3d"/>
         </Source>
         <Target cardinality="(0,1)" polymorphic="true">
             <Class class="TextAnnotationData">

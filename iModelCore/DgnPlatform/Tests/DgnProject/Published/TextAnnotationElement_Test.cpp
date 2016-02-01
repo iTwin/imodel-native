@@ -34,7 +34,7 @@ static DgnElementId ensureAnnotationTextStyle1(DgnDbR db)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2015
 //---------------------------------------------------------------------------------------
-TEST(TextAnnotationElementTest, BasicCrud)
+TEST(TextAnnotation2dTest, BasicCrud)
     {
     // The goal of this is to exercise persistence into and out of the database.
     // To defeat element caching, liberally open and close the DB.
@@ -42,7 +42,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
     ScopedDgnHost host;
 
     BeFileName dbPath;
-    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"2dMetricGeneral.idgndb", L"TextAnnotationElementTest-BasicCrud.dgndb", __FILE__));
+    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"2dMetricGeneral.idgndb", L"TextAnnotation2dTest-BasicCrud.dgndb", __FILE__));
 
     DgnModelId modelId;
     DgnElementId textStyleId;
@@ -80,11 +80,11 @@ TEST(TextAnnotationElementTest, BasicCrud)
         ASSERT_TRUE(nullptr != annotation.GetTextCP());
 
         //.........................................................................................
-        TextAnnotationElementPtr annotationElement = new TextAnnotationElement(TextAnnotationElement::CreateParams(*db, modelId, TextAnnotationElement::QueryDgnClassId(*db), categoryId));
+        TextAnnotation2dPtr annotationElement = new TextAnnotation2d(TextAnnotation2d::CreateParams(*db, modelId, TextAnnotation2d::QueryDgnClassId(*db), categoryId));
         annotationElement->SetAnnotation(&annotation);
         ASSERT_TRUE(nullptr != annotationElement->GetAnnotation());
 
-        TextAnnotationElementCPtr insertedAnnotationElement = annotationElement->Insert();
+        TextAnnotation2dCPtr insertedAnnotationElement = annotationElement->Insert();
         ASSERT_TRUE(insertedAnnotationElement.IsValid());
         
         insertedElementId = insertedAnnotationElement->GetElementId();
@@ -92,7 +92,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
 
         // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
         //.........................................................................................
-        DrawingViewDefinition view(DrawingViewDefinition::CreateParams(*db, "TextAnnotationElementTest-BasicCrud",
+        DrawingViewDefinition view(DrawingViewDefinition::CreateParams(*db, "TextAnnotation2dTest-BasicCrud",
                     ViewDefinition::Data(modelId, DgnViewSource::Generated)));
         EXPECT_TRUE(view.Insert().IsValid());
 
@@ -119,7 +119,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
         ASSERT_TRUE(db.IsValid());
         
         //.........................................................................................
-        TextAnnotationElementCPtr annotationElementC = TextAnnotationElement::Get(*db, insertedElementId);
+        TextAnnotation2dCPtr annotationElementC = TextAnnotation2d::Get(*db, insertedElementId);
         ASSERT_TRUE(annotationElementC.IsValid());
 
         // Spot check some properties; rely on other TextAnnotation tests to more fully test serialization, which should be relatively pass/fail on the element itself.
@@ -146,12 +146,12 @@ TEST(TextAnnotationElementTest, BasicCrud)
         TextAnnotation annotation(*db);
         annotation.SetText(AnnotationTextBlock::Create(*db, textStyleId, ANNOTATION_TEXT_2).get());
 
-        TextAnnotationElementPtr annotationElement = TextAnnotationElement::GetForEdit(*db, insertedElementId);
+        TextAnnotation2dPtr annotationElement = TextAnnotation2d::GetForEdit(*db, insertedElementId);
         ASSERT_TRUE(annotationElement.IsValid());
 
         annotationElement->SetAnnotation(&annotation);
         
-        TextAnnotationElementCPtr updatedAnnotationElement = annotationElement->Update();
+        TextAnnotation2dCPtr updatedAnnotationElement = annotationElement->Update();
         ASSERT_TRUE(updatedAnnotationElement.IsValid());
         EXPECT_TRUE(updatedAnnotationElement->GetElementId().IsValid());
         }
@@ -166,7 +166,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
         ASSERT_TRUE(db.IsValid());
 
         //.........................................................................................
-        TextAnnotationElementCPtr annotationElementC = TextAnnotationElement::Get(*db, insertedElementId);
+        TextAnnotation2dCPtr annotationElementC = TextAnnotation2d::Get(*db, insertedElementId);
         ASSERT_TRUE(annotationElementC.IsValid());
 
         // Spot check some properties; rely on other TextAnnotation tests to more fully test serialization, which should be relatively pass/fail on the element itself.
@@ -199,12 +199,12 @@ TEST(TextAnnotationElementTest, BasicCrud)
         ASSERT_TRUE(db.IsValid());
 
         //.........................................................................................
-        TextAnnotationElementCPtr annotationElementC = TextAnnotationElement::Get(*db, insertedElementId);
+        TextAnnotation2dCPtr annotationElementC = TextAnnotation2d::Get(*db, insertedElementId);
         ASSERT_TRUE(annotationElementC.IsValid());
 
         annotationElementC->Delete();
 
-        annotationElementC = TextAnnotationElement::Get(*db, insertedElementId);
+        annotationElementC = TextAnnotation2d::Get(*db, insertedElementId);
         ASSERT_TRUE(!annotationElementC.IsValid());
         }
     }
@@ -212,7 +212,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2015
 //---------------------------------------------------------------------------------------
-TEST(SpatialTextAnnotationElementTest, BasicCrud)
+TEST(TextAnnotation3dTest, BasicCrud)
     {
     // The goal of this is to exercise persistence into and out of the database.
     // To defeat element caching, liberally open and close the DB.
@@ -220,7 +220,7 @@ TEST(SpatialTextAnnotationElementTest, BasicCrud)
     ScopedDgnHost host;
 
     BeFileName dbPath;
-    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"3dMetricGeneral.idgndb", L"SpatialTextAnnotationElementTest-BasicCrud.dgndb", __FILE__));
+    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"3dMetricGeneral.idgndb", L"TextAnnotation3dTest-BasicCrud.dgndb", __FILE__));
 
     DgnModelId modelId;
     DgnElementId textStyleId;
@@ -258,11 +258,11 @@ TEST(SpatialTextAnnotationElementTest, BasicCrud)
         ASSERT_TRUE(nullptr != annotation.GetTextCP());
 
         //.........................................................................................
-        SpatialTextAnnotationElementPtr annotationElement = new SpatialTextAnnotationElement(SpatialTextAnnotationElement::CreateParams(*db, modelId, SpatialTextAnnotationElement::QueryDgnClassId(*db), categoryId));
+        TextAnnotation3dPtr annotationElement = new TextAnnotation3d(TextAnnotation3d::CreateParams(*db, modelId, TextAnnotation3d::QueryDgnClassId(*db), categoryId));
         annotationElement->SetAnnotation(&annotation);
         ASSERT_TRUE(nullptr != annotationElement->GetAnnotation());
 
-        SpatialTextAnnotationElementCPtr insertedAnnotationElement = annotationElement->Insert();
+        TextAnnotation3dCPtr insertedAnnotationElement = annotationElement->Insert();
         ASSERT_TRUE(insertedAnnotationElement.IsValid());
         
         insertedElementId = insertedAnnotationElement->GetElementId();
@@ -270,7 +270,7 @@ TEST(SpatialTextAnnotationElementTest, BasicCrud)
 
         // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
         //.........................................................................................
-        CameraViewDefinition view(CameraViewDefinition::CreateParams(*db, "SpatialTextAnnotationElementTest-BasicCrud",
+        CameraViewDefinition view(CameraViewDefinition::CreateParams(*db, "TextAnnotation3dTest-BasicCrud",
                     ViewDefinition::Data(modelId, DgnViewSource::Generated)));
         EXPECT_TRUE(view.Insert().IsValid());
 
@@ -297,7 +297,7 @@ TEST(SpatialTextAnnotationElementTest, BasicCrud)
         ASSERT_TRUE(db.IsValid());
         
         //.........................................................................................
-        SpatialTextAnnotationElementCPtr annotationElementC = SpatialTextAnnotationElement::Get(*db, insertedElementId);
+        TextAnnotation3dCPtr annotationElementC = TextAnnotation3d::Get(*db, insertedElementId);
         ASSERT_TRUE(annotationElementC.IsValid());
 
         // Spot check some properties; rely on other TextAnnotation tests to more fully test serialization, which should be relatively pass/fail on the element itself.
@@ -324,12 +324,12 @@ TEST(SpatialTextAnnotationElementTest, BasicCrud)
         TextAnnotation annotation(*db);
         annotation.SetText(AnnotationTextBlock::Create(*db, textStyleId, ANNOTATION_TEXT_2).get());
 
-        SpatialTextAnnotationElementPtr annotationElement = SpatialTextAnnotationElement::GetForEdit(*db, insertedElementId);
+        TextAnnotation3dPtr annotationElement = TextAnnotation3d::GetForEdit(*db, insertedElementId);
         ASSERT_TRUE(annotationElement.IsValid());
 
         annotationElement->SetAnnotation(&annotation);
         
-        SpatialTextAnnotationElementCPtr updatedAnnotationElement = annotationElement->Update();
+        TextAnnotation3dCPtr updatedAnnotationElement = annotationElement->Update();
         ASSERT_TRUE(updatedAnnotationElement.IsValid());
         EXPECT_TRUE(updatedAnnotationElement->GetElementId().IsValid());
         }
@@ -344,7 +344,7 @@ TEST(SpatialTextAnnotationElementTest, BasicCrud)
         ASSERT_TRUE(db.IsValid());
 
         //.........................................................................................
-        SpatialTextAnnotationElementCPtr annotationElementC = SpatialTextAnnotationElement::Get(*db, insertedElementId);
+        TextAnnotation3dCPtr annotationElementC = TextAnnotation3d::Get(*db, insertedElementId);
         ASSERT_TRUE(annotationElementC.IsValid());
 
         // Spot check some properties; rely on other TextAnnotation tests to more fully test serialization, which should be relatively pass/fail on the element itself.
@@ -377,12 +377,12 @@ TEST(SpatialTextAnnotationElementTest, BasicCrud)
         ASSERT_TRUE(db.IsValid());
 
         //.........................................................................................
-        SpatialTextAnnotationElementCPtr annotationElementC = SpatialTextAnnotationElement::Get(*db, insertedElementId);
+        TextAnnotation3dCPtr annotationElementC = TextAnnotation3d::Get(*db, insertedElementId);
         ASSERT_TRUE(annotationElementC.IsValid());
 
         annotationElementC->Delete();
 
-        annotationElementC = SpatialTextAnnotationElement::Get(*db, insertedElementId);
+        annotationElementC = TextAnnotation3d::Get(*db, insertedElementId);
         ASSERT_TRUE(!annotationElementC.IsValid());
         }
     }

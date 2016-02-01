@@ -103,8 +103,8 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ElementHandler::Sheet::GetHandler());
     RegisterHandler(dgn_ElementHandler::SpatialGroup::GetHandler());
     RegisterHandler(dgn_ElementHandler::VolumeElementHandler::GetHandler());
-    RegisterHandler(dgn_ElementHandler::TextAnnotationHandler::GetHandler());
-    RegisterHandler(dgn_ElementHandler::SpatialTextAnnotationHandler::GetHandler());
+    RegisterHandler(dgn_ElementHandler::TextAnnotation2dHandler::GetHandler());
+    RegisterHandler(dgn_ElementHandler::TextAnnotation3dHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::AnnotationTableHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::Material::GetHandler());
     RegisterHandler(dgn_ElementHandler::Texture::GetHandler());
