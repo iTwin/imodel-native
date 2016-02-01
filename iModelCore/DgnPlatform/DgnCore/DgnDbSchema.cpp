@@ -38,7 +38,7 @@ static void importDgnSchema(DgnDbR db)
     ECSchemaPtr dgnschema = ECSchema::LocateSchema(dgnschemaKey, *ecSchemaContext);
     BeAssert(dgnschema != NULL);
 
-    BentleyStatus status = db.Schemas().ImportECSchemas(ecSchemaContext->GetCache(), ECDbSchemaManager::ImportOptions(false));
+    BentleyStatus status = db.Schemas().ImportECSchemas(ecSchemaContext->GetCache());
     BeAssert(status == SUCCESS);
     }
 
