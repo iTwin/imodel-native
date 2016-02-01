@@ -2029,34 +2029,6 @@ public:
 };
 
 //=======================================================================================
-//! Can be used as the base class for an Item that uses an IECInstance to cache its properties in memory.
-//! @note There is no AspectHandler for InstanceBackedItem. A class that derives from InstanceBackedItem must
-//! register its own handler.
-// @bsiclass                                                BentleySystems
-//=======================================================================================
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-struct InstanceBackedItem : DgnElement::Item
-{
-    ECN::IECInstancePtr m_instance;
-
-    Utf8CP _GetECSchemaName() const override {return m_instance->GetClass().GetSchema().GetName().c_str();}
-    Utf8CP _GetECClassName() const override {return m_instance->GetClass().GetName().c_str();}
-    DGNPLATFORM_EXPORT DgnDbStatus _LoadProperties(DgnElementCR) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _UpdateProperties(DgnElementCR) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _GenerateGeometricPrimitive(GeometricElementR el, GenerateReason) override;
-
-    InstanceBackedItem() {}
-
-    void SetInstanceId(BeSQLite::EC::ECInstanceId eid);
-};
-#endif
-
-#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
-// *** WIP_ELEMENT_ITEM - move this back into ComponentSolution after making ElementItem a top-level class
-DgnDbStatus ExecuteComponentSolutionEGA(DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, ECN::IECInstanceCR itemInstance, Utf8StringCR cmName, Utf8StringCR paramNames, DgnElement::Item& item);
-#endif
-
-//=======================================================================================
 //! The basic element copier. Makes a persistent copy of elements and their children.
 // @bsiclass                                                BentleySystems
 //=======================================================================================
