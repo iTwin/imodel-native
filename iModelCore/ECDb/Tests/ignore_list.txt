@@ -20,12 +20,6 @@ ECDbMappingTestFixture.PropertiesWithoutColumnsInExistingTable
 #TFS353210 will adress this (Raman)
 JsonUpdaterTests.CommonGeometryJsonSerialization
 
-#For Hassan
-#should be either removed or inverted
-JoinedTableECDbMapStrategyTests.MultiInheritence1  
-#should be either removed or inverted
-ECDbMappingTestFixture.RelationshipWithAbstractClassAsConstraintOnParentEnd
-
 #Hassan TFS#356965
 #should use dynamically read ECInstanceId from db instead of hardcode ones
 ECSqlInsertTestFramework.RelationshipLinkTableMappingTests
@@ -46,5 +40,8 @@ ECSqlNavigationPropertyTestFixture.SingleInstanceNavProp_ForeignKeyMapping_ECIns
 JsonInserterTests.InsertJsonCppJSON
 JsonInserterTests.InsertRapidJson
 RapidJsonTests.InsertIntoECDb
+
+#TFS 366270
+JoinedTableECDbMapStrategyTests.PolymorphicRelationshipWithStandAloneClass
 
 
