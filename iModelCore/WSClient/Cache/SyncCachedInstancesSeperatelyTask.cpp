@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/SyncCachedInstancesSeperatelyTask.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -17,10 +17,13 @@ SyncCachedInstancesSeperatelyTask::SyncCachedInstancesSeperatelyTask
 (
 CachingDataSourcePtr ds,
 const bset<ObjectId>& objects,
+ProgressCallback onProgress,
 ICancellationTokenPtr ct
 ) :
 CachingTaskBase(ds, ct),
-m_objectsLeftToCache(objects.begin(), objects.end())
+m_objectsLeftToCache(objects.begin(), objects.end()),
+m_onProgress(onProgress ? onProgress : [] (size_t) {}),
+m_totalToCache(m_objectsLeftToCache.size())
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -45,6 +48,8 @@ void SyncCachedInstancesSeperatelyTask::_OnExecute()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SyncCachedInstancesSeperatelyTask::CacheNextObjects(CacheTransactionCR txn)
     {
+    m_onProgress(m_totalToCache - m_objectsLeftToCache.size());
+
     if (IsTaskCanceled() || m_objectsLeftToCache.empty())
         {
         return;

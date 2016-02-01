@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/SyncCachedInstancesSeperatelyTask.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -21,6 +21,8 @@ struct SyncCachedInstancesSeperatelyTask : public CachingTaskBase
     {
     private:
         std::deque<ObjectId>  m_objectsLeftToCache;
+        ProgressCallback      m_onProgress;
+        size_t                m_totalToCache;
 
     private:
         virtual void _OnExecute();
@@ -31,6 +33,7 @@ struct SyncCachedInstancesSeperatelyTask : public CachingTaskBase
             (
             CachingDataSourcePtr ds,
             const bset<ObjectId>& objects,
+            ProgressCallback onProgress,
             ICancellationTokenPtr ct
             );
     };
