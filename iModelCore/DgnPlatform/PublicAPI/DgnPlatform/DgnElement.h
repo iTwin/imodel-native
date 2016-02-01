@@ -1270,6 +1270,8 @@ protected:
     DGNPLATFORM_EXPORT virtual void _GetInfoString(HitDetailCR, Utf8StringR descr, Utf8CP delimiter) const;
     DGNPLATFORM_EXPORT virtual SnapStatus _OnSnap(SnapContextR) const;
     GeometryStreamR GetGeometryStreamR() {return const_cast<GeometryStreamR>(_GetGeometryStream());} // Only GeometryBuilder should have write access to the GeometryStream...
+    virtual DgnElement::Hilited _IsHilited() const {if (nullptr == ToElement()) return DgnElement::Hilited::None; return (DgnElement::Hilited) ToElement()->m_flags.m_hilited;} //!< Get the current Hilited state of this element
+    DGNPLATFORM_EXPORT virtual void _SetHilited(DgnElement::Hilited newState) const; //!< Change the current Hilited state of this element
 
 public:
     bool HasGeometry() const {return _GetGeometryStream().HasGeometry();} //!< return false if this geometry source currently has no geometry (is empty).
@@ -1286,14 +1288,12 @@ public:
     AxisAlignedBox3d CalculateRange3d() const {return _CalculateRange3d();}
     DGNPLATFORM_EXPORT Transform GetPlacementTransform() const;
 
-    // NOT_NOW_GEOMETRY_SOURCE - Make hilite/undisplayed virtual so transients can use them...
-    bool IsUndisplayed() const {if (nullptr == ToElement()) return false; return ToElement()->m_flags.m_undisplayed;}
-    DgnElement::Hilited IsHilited() const {if (nullptr == ToElement()) return DgnElement::Hilited::None; return (DgnElement::Hilited) ToElement()->m_flags.m_hilited;} //!< Get the current Hilited state of this element
+    DgnElement::Hilited IsHilited() const {return _IsHilited();}
     bool IsInSelectionSet() const {if (nullptr == ToElement()) return false; return ToElement()->m_flags.m_inSelectionSet;}
-
-    DGNPLATFORM_EXPORT void SetUndisplayed(bool yesNo) const;
-    DGNPLATFORM_EXPORT void SetHilited(DgnElement::Hilited newState) const; //!< Change the current Hilited state of this element
+    bool IsUndisplayed() const {if (nullptr == ToElement()) return false; return ToElement()->m_flags.m_undisplayed;} //!< @private
+    void SetHilited(DgnElement::Hilited newState) const {_SetHilited(newState);} //!< Change the current Hilited state of this element
     DGNPLATFORM_EXPORT void SetInSelectionSet(bool yesNo) const; //!< @private
+    DGNPLATFORM_EXPORT void SetUndisplayed(bool yesNo) const; //!< @private
 
     Render::GraphicSet& Graphics() const {return _Graphics();}
     Render::GraphicPtr Stroke(ViewContextR context, double pixelSize) const {return _Stroke(context, pixelSize);}

@@ -139,7 +139,6 @@ protected:
     DVec3d          m_viewDeltaUnexpanded;      // view delta (from ViewController, unexpanded for "no clip")
     RotMatrix       m_rotMatrix;                // rotation matrix (from ViewController)
     CameraInfo      m_camera;
-    Render::ViewFlags m_viewFlags;
     Render::TargetPtr m_renderTarget;
     ColorDef        m_hiliteColor = ColorDef::Magenta();
     DMap4d          m_rootToView;
@@ -457,7 +456,7 @@ public:
 
     //! Determine whether the Grid display is currently enabled in this DgnViewport.
     //! @return true if the grid display is on.
-    bool IsGridOn() const {return m_viewFlags.grid;}
+    bool IsGridOn() const {return m_viewController->GetViewFlags().grid;}
 
     //! Determine whether this viewport is a 3D view.
     //! @remarks Will be true only for a physical view.
@@ -502,7 +501,7 @@ public:
 
     //! Get the View Flags for this DgnViewport.
     //! @return the View flags for this DgnViewport.
-    Render::ViewFlags GetViewFlags() const {return m_viewFlags;}
+    Render::ViewFlags GetViewFlags() const {return m_viewController->GetViewFlags();}
 
     //! Synchronized this DgnViewport with the current state of its ViewController. A DgnViewport may hold local copies of the information
     //! in its ViewController. Therefore, when changes are made to the state of a ViewController, it must be synchronized with the

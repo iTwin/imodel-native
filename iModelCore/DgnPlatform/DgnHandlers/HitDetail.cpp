@@ -524,6 +524,12 @@ DgnElement::Hilited HitDetail::IsHilited() const
     DgnElementCPtr   element = GetElement();
     GeometrySourceCP source = (element.IsValid() ? element->ToGeometrySource() : nullptr);
 
+    if (nullptr == source)
+        {
+        IElemTopologyCP elemTopo = GetElemTopology();
+        source = (nullptr != elemTopo ? elemTopo->_ToGeometrySource() : nullptr);
+        }
+
     return (nullptr != source ? source->IsHilited() : DgnElement::Hilited::None);
     }
 
@@ -534,6 +540,12 @@ void HitDetail::_SetHilited(DgnElement::Hilited newState) const
     {
     DgnElementCPtr   element = GetElement();
     GeometrySourceCP source = (element.IsValid() ? element->ToGeometrySource() : nullptr);
+
+    if (nullptr == source)
+        {
+        IElemTopologyCP elemTopo = GetElemTopology();
+        source = (nullptr != elemTopo ? elemTopo->_ToGeometrySource() : nullptr);
+        }
 
     if (nullptr == source)
         return;
