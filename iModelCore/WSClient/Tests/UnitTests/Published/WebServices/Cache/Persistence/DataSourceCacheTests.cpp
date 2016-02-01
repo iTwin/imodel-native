@@ -3041,6 +3041,26 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCalculatedProperty_Caches
     EXPECT_EQ("NewValue", properties["TestCalculatedProperty"]);
     }
 
+TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCalculatedProperty_CachesAndUpdatesCalculatedPropertyValue)
+    {
+    auto cache = GetTestCache();
+    auto key = StubCachedResponseKey(*cache);
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass4", "Foo"}, {{"TestProperty", "OldValue"}});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+
+    Json::Value properties = ReadInstance(*cache, cache->FindInstance({"TestSchema.TestClass4", "Foo"}));
+    EXPECT_EQ("OldValue", properties["TestCalculatedProperty"].asString());
+
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass4", "Foo"}, {{"TestProperty", "NewValue"}});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+
+    properties = ReadInstance(*cache, cache->FindInstance({"TestSchema.TestClass4", "Foo"}));
+    EXPECT_EQ("NewValue", properties["TestCalculatedProperty"].asString());
+    }
+
 TEST_F(DataSourceCacheTests, IsResponseCached_ParentDoesNotExist_False)
     {
     auto cache = GetTestCache();
