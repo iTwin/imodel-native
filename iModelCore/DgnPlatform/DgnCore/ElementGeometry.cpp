@@ -2269,7 +2269,7 @@ DgnDbStatus ElementGeomIO::Import(GeomStreamR dest, GeomStreamCR source, DgnImpo
 
                 DgnStyleId lineStyleId((uint64_t)ppfb->lineStyleId());
                 DgnStyleId remappedLineStyleId = (lineStyleId.IsValid() ? importer.RemapLineStyleId(lineStyleId) : DgnStyleId());
-                BeAssert((lineStyleId.IsValid() == remappedLineStyleId.IsValid()));
+                //BeAssert((lineStyleId.IsValid() == remappedLineStyleId.IsValid()));
 
                 FlatBufferBuilder remappedfbb;
 
