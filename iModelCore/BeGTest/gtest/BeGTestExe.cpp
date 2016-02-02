@@ -2,7 +2,7 @@
 |
 |     $Source: gtest/BeGTestExe.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)
@@ -226,10 +226,12 @@ int main (int argc, char **argv)
     //  Make sure output directies exist
     BeFileName outputDir;
     hostPtr->GetOutputRoot(outputDir);
+    BeFileName::EmptyAndRemoveDirectory(outputDir.c_str());
     BeFileName::CreateNewDirectory(outputDir.c_str());
 
     BeFileName tempDir;
     hostPtr->GetTempDir(tempDir);
+    BeFileName::EmptyAndRemoveDirectory(tempDir.c_str());
     BeFileName::CreateNewDirectory(tempDir.c_str());
 
     //  Finish initializing libraries
