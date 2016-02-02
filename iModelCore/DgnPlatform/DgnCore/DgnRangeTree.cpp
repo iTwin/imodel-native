@@ -1099,25 +1099,6 @@ bool OcclusionScorer::ComputeOcclusionScore(double* score, bool& overlap, bool& 
     return true;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    05/2012
-//--------------+------------------------------------------------------------------------
-void OverlapScorer::Initialize(DRange3dCR boundingRange) {m_boundingRange.FromRange(boundingRange);}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2013
-//---------------------------------------------------------------------------------------
-bool OverlapScorer::ComputeScore(double* score, BeSQLite::RTree3dValCR testRange)
-    {
-    RTree3dVal  intersection;
-    bool intersects = intersection.Intersection(m_boundingRange, testRange);
-
-    BeAssert(intersects);
-
-    *score = rangeExtentSquared(intersection);
-    return intersects;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1289,10 +1270,10 @@ Utf8String RTreeTester::GetAcceptSql() {return " AND e.Id=@elId";}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint64_t RTreeTester::StepRtree()
+DgnElementId RTreeTester::StepRtree()
     {
     auto rc=m_rangeStmt->Step();
-    return (rc != BE_SQLITE_ROW) ? 0 : m_rangeStmt->GetValueInt64(0);
+    return (rc != BE_SQLITE_ROW) ? DgnElementId() : m_rangeStmt->GetValueId<DgnElementId>(0);
     }
 
 /*---------------------------------------------------------------------------------**//**

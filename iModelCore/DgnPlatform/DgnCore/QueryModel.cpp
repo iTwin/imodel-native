@@ -23,11 +23,12 @@
 //--------------+------------------------------------------------------------------------
 void QueryModel::ClearQueryResults()
     {
-    m_currQueryResults = nullptr;
-
+    m_results = nullptr;
     EmptyModel();
     RequestAbort(true);
     }
+
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    01/2013
@@ -43,6 +44,7 @@ void QueryModel::ResizeElementList(uint32_t newCount)
     for (auto result :  m_currQueryResults->m_elements)
         _OnLoadedElement(*result);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
@@ -59,6 +61,7 @@ void QueryModel::RequestAbort(bool wait)
         queue.WaitForIdle();
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * Move the QueryResults object from the Processor (where it is created on the other thread) to the QueryModel object
 * where it can be accessed from the main thread. 
@@ -84,14 +87,7 @@ void QueryModel::SaveQueryResults()
     for (auto const& result : m_currQueryResults->m_elements)
         _OnLoadedElement(*result);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t QueryModel::GetElementCount() const 
-    {
-    return m_currQueryResults.IsValid() ? m_currQueryResults->GetCount() : 0;
-    }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
@@ -131,20 +127,6 @@ void QueryModel::Queue::Terminate()
         m_cv.notify_all();
         m_cv.RelativeWait(lock, 1000);
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool QueryModel::Filter::CheckAbort() 
-    {
-    if (m_model.AbortRequested())
-        {
-        DEBUG_PRINTF("Query aborted");
-        return true;
-        }
-
-    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -268,6 +250,7 @@ void QueryModel::Queue::Process()
     m_cv.notify_all();
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -293,6 +276,7 @@ bool QueryModel::Processor::LoadElements(OcclusionScores& scores, bvector<DgnEle
 
     return true;    // finished
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
@@ -304,12 +288,11 @@ void QueryModel::Processor::DoQuery(StopWatch& watch)
     GetModel().SetAbortQuery(false); // gets turned on by client thread
 
     DEBUG_PRINTF("Query started");
-    Filter filter(GetModel(), m_params.m_plan.m_targetNumElements, m_params.m_highPriorityOnly ? nullptr : m_params.m_highPriority, m_params.m_neverDraw);
+    Filter filter(GetModel(), *new Results(), m_params.m_plan.m_targetNumElements, m_params.m_highPriorityOnly ? nullptr : m_params.m_highPriority, m_params.m_neverDraw);
     filter.SetViewport(m_params.m_vp, m_params.m_plan.m_minPixelSize, m_params.m_plan.m_frustumScale);
     if (m_params.m_clipVector.IsValid())
         filter.SetClipVector(*m_params.m_clipVector);
 
-    m_results = new Results();
     if (m_params.m_highPriorityOnly)
         SearchIdSet(*m_params.m_highPriority, filter);
     else
@@ -321,12 +304,16 @@ void QueryModel::Processor::DoQuery(StopWatch& watch)
         return;
         }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     m_results->m_needsProgressive = filter.m_needsProgressive;
-    DEBUG_PRINTF("loading elements, progressive=%d", m_results->m_needsProgressive);
+    double loadStartTime = watch.GetCurrentSeconds();
     LoadElements(filter.m_occlusionScores, m_results->m_elements);
+#endif
 
-    m_params.m_model.m_updatedResults = m_results;
-    DEBUG_PRINTF("Query completed, %f seconds", watch.GetCurrentSeconds());
+    m_params.m_model.m_results = filter.m_results;
+
+    double total = watch.GetCurrentSeconds();
+    DEBUG_PRINTF("Query completed, total=%d, progressive=%d, time=%f", filter.m_results->m_count, filter.m_results->m_incomplete, total);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -337,10 +324,12 @@ void QueryModel::Processor::Query(StopWatch& watch)
     DgnDb::VerifyQueryThread();
     DoQuery(watch);
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // This is not strictly thread-safe. The worst that can happen is that the work thread reads false from it, or sets it to false, while the query thread sets it to true.
     // In that case we skip an update.
     // Alternative is to go through contortions to queue up a "heal viewport" task on the DgnClientFx work thread.
     m_params.m_vp.SetNeedsHeal();
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -392,11 +381,11 @@ void QueryModel::Processor::SearchRangeTree(Filter& filter)
     int idCol = viewStmt->GetParameterIndex("@elId");
     BeAssert(0 != idCol);
 
-    uint64_t thisId;
-    while (0 != (thisId=filter.StepRtree()))
+    DgnElementId thisId;
+    while ((thisId=filter.StepRtree()).IsValid())
         {
         viewStmt->Reset();
-        viewStmt->BindInt64(idCol, thisId);
+        viewStmt->BindId(idCol, thisId);
 
         if (filter.CheckAbort())
             {
@@ -405,26 +394,25 @@ void QueryModel::Processor::SearchRangeTree(Filter& filter)
             }
 
         if (BE_SQLITE_ROW == viewStmt->Step())
-            filter.AcceptElement(DgnElementId(thisId));
+            filter.AcceptElement(thisId);
 
         if (BeTimeUtilities::QueryMillisecondsCounter() > endTime)
             {
             DEBUG_ERRORLOG("Query timeout");
-            filter.m_needsProgressive = true;
+            filter.m_results->m_incomplete = true;
             break;
             }
         };
+
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-QueryModel::Filter::Filter(QueryModelR model, uint32_t hitLimit, DgnElementIdSet const* alwaysDraw, DgnElementIdSet const* exclude)
-    : m_model(model), m_alwaysDraw(nullptr), RTreeFilter(model.GetDgnDb(), exclude)
+QueryModel::Filter::Filter(QueryModelR model, Results& results, uint32_t hitLimit, DgnElementIdSet const* alwaysDraw, DgnElementIdSet const* exclude)
+    : m_model(model), m_results(&results), m_hitLimit(hitLimit), m_alwaysDraw(nullptr), RTreeFilter(model.GetDgnDb(), exclude)
     {
-    m_hitLimit = hitLimit;
-    m_occlusionMapMinimum = 1.0e20;
-    m_occlusionMapCount = 0;
+    m_minScore = 1.0e20;
 
     if (nullptr != alwaysDraw)
         {
@@ -435,6 +423,20 @@ QueryModel::Filter::Filter(QueryModelR model, uint32_t hitLimit, DgnElementIdSet
 
     //  We do this as the last step. Otherwise, the calls to AcceptElement in the previous step would not have any effect.
     m_alwaysDraw = alwaysDraw;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool QueryModel::Filter::CheckAbort() 
+    {
+    if (m_model.AbortRequested())
+        {
+        DEBUG_PRINTF("Query aborted");
+        return true;
+        }
+
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -493,7 +495,7 @@ int QueryModel::Filter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
     if (!m_scorer.ComputeOcclusionScore(&m_lastScore, overlap, spansEyePlane, localCorners))
         return BE_SQLITE_OK;
 
-    if (m_occlusionMapCount >= m_hitLimit && m_lastScore <= m_occlusionMapMinimum)
+    if (m_results->m_count >= m_hitLimit && m_lastScore <= m_minScore)
         return BE_SQLITE_OK; // this one is smaller than the smallest entry we already have, skip it (and children).
 
     m_lastId = info.m_rowid;  // for debugging - make sure we get entries immediately after we score them.
@@ -526,17 +528,16 @@ void QueryModel::Filter::AcceptElement(DgnElementId elementId)
     if (nullptr != m_alwaysDraw && m_alwaysDraw->find(elementId) != m_alwaysDraw->end())
         return;
 
-    if (m_occlusionMapCount >= m_hitLimit)
+    if (++m_results->m_count >= m_hitLimit)
         {
         m_scorer.SetTestLOD(true); // now that we've found a minimum number of elements, start skipping small ones
-        m_occlusionScores.erase(m_occlusionScores.begin());
-        m_needsProgressive = true;
+        m_results->m_scores.erase(m_results->m_scores.begin());
+        m_results->m_incomplete = true;
+        m_results->m_count = m_hitLimit;
         }
-    else
-        m_occlusionMapCount++;
 
-    m_occlusionScores.Insert(m_lastScore, elementId.GetValueUnchecked());
-    m_occlusionMapMinimum = m_occlusionScores.begin()->first;
+    m_results->m_scores.Insert(m_lastScore, elementId);
+    m_minScore = m_results->m_scores.begin()->first;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -585,22 +586,10 @@ int QueryModel::AllElementsFilter::_TestRTree(RTreeMatchFunction::QueryInfo cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveDisplay::Completion QueryModel::ProgressiveFilter::_Process(ViewContextR context, uint32_t batchSize, WantShow& wantShow)
+ProgressiveTask::Completion QueryModel::ProgressiveFilter::_DoProgressive(SceneContext& context, WantShow& wantShow)
     {
-    DgnDb::VerifyClientThread();
-
-    // Progressive display happens on the client thread. It uses SQLite, and therefore contends with 
-    // the query thread. This test is the only necessary 
-    // synchronization to ensure that they do not run at the same time. It tests (unsynchronized) whether the query 
-    // queue is currently idle. If not, we simply return "aborted" and wait for the next chance to begin. If the 
-    // query queue is empty and inactive, it can't be restarted during this call because only this thread can add entries to it.
-    // NOTE: this test is purposely for whether the query thread has work for ANY QueryModel, not just the one we're 
-    // attempting to display - that's necessary.  KAB
-    if (!m_dgndb.QueryQueue().IsIdle())
-        return Completion::Aborted;
-
     m_thisBatch = 0; // restart every pass
-    m_batchSize = batchSize;
+    m_batchSize = context.GetUpdatePlan().GetQuery().GetTargetNumElements();
     m_setTimeout = false;
 
     m_scorer.SetTestLOD(true);  
@@ -615,18 +604,19 @@ ProgressiveDisplay::Completion QueryModel::ProgressiveFilter::_Process(ViewConte
 
     DEBUG_PRINTF("begin progressive display");
 
-    uint64_t thisId;
     int idCol = viewStmt->GetParameterIndex("@elId");
     BeAssert(0 != idCol);
 
-    while (0 != (thisId=StepRtree()))
+    DgnElementId thisId;
+    while ((thisId=StepRtree()).IsValid())
         {
-        viewStmt->Reset();
-        viewStmt->BindInt64(idCol, thisId);
+        viewStmt->Reset(); // we now have an element that satisfies the range criteria, see if it passes view criteria
+        viewStmt->BindId(idCol, thisId);
 
         if (BE_SQLITE_ROW == viewStmt->Step())
             {
-            AcceptElement(context, DgnElementId(thisId));
+            if (!m_inScene.Contains(thisId)) // see if it was already drawn in the scene
+                AcceptElement(context, thisId); // no, draw it now
 
             if (!m_setTimeout) // don't set the timeout until after we've drawn one element
                 {
@@ -635,14 +625,11 @@ ProgressiveDisplay::Completion QueryModel::ProgressiveFilter::_Process(ViewConte
                 }
         }
 
-        if (context._CheckStop())
-            break;
-
-        if (m_batchSize && ++m_thisBatch >= m_batchSize) // limit the number or elements added per batch (optionally)
-            {
+        if (m_batchSize && ++m_thisBatch >= m_batchSize) // limit the number or elements added per batch
             context.SetAborted();
+
+        if (context.CheckStop())
             break;
-            }
         }
 
     if (context.WasAborted())
@@ -671,8 +658,10 @@ ProgressiveDisplay::Completion QueryModel::ProgressiveFilter::_Process(ViewConte
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool QueryModel::AllElementsFilter::AcceptElement(ViewContextR context, DgnElementId elementId) 
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (m_model.FindElementById(elementId))
         return false;
+#endif
 
     if (nullptr != m_exclude && m_exclude->find(elementId) != m_exclude->end())
         return false;
@@ -689,6 +678,7 @@ bool QueryModel::AllElementsFilter::AcceptElement(ViewContextR context, DgnEleme
     if (nullptr != geomElem)
         context.VisitElement(*geomElem);
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (pool.GetTotalAllocated() < (int64_t) m_elementReleaseTrigger)
         return true;
 
@@ -707,5 +697,6 @@ bool QueryModel::AllElementsFilter::AcceptElement(ViewContextR context, DgnEleme
     // growth is caused.  It allows some growth between calls to purge to avoid spending too much time in purge.
     uint64_t newTotalAllocated = (uint64_t)pool.GetTotalAllocated();
     m_purgeTrigger = (uint64_t)(s_purgeFactor * std::max(newTotalAllocated, m_elementReleaseTrigger));
+#endif
     return true;
     }

@@ -206,6 +206,8 @@ protected:
     //! @remarks It is very rare that an applications needs to call this or to override it.
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR);
 
+    DGNPLATFORM_EXPORT virtual void _CreateScene(SceneContextR context) {_DrawView(context);}
+
     virtual void _OverrideGraphicParams(Render::OvrGraphicParamsR, GeometrySourceCP) {}
 
     //! Invokes the _VisitElement on \a context for <em>each element</em> that is in the view.
@@ -291,6 +293,7 @@ public:
     };
 
     StatusInt VisitHit(HitDetailCR hit, DecorateContextR context) const{return _VisitHit(hit, context);}
+    void CreateScene(SceneContextR context) {return _CreateScene(context);}
     void DrawView(ViewContextR context) {return _DrawView(context);}
     void VisitAllElements(ViewContextR context) {return _VisitAllElements(context);}
     void ChangeModelDisplay(DgnModelId modelId, bool onOff) {_ChangeModelDisplay(modelId, onOff);}

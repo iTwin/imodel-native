@@ -253,7 +253,7 @@ $(CoreObjs)DgnCore$(oext) :                         $(DgnCoreDir)DgnCore.cpp $(D
 
 $(CoreObjs)HandlerTypeInfo$(oext) :                 $(DgnCoreDir)HandlerTypeInfo.cpp $(contextDepends) $(HandlerDepends) ${MultiCompileDepends}
 
-$(CoreObjs)ViewContext$(oext) :                     $(DgnCoreDir)ViewContext.cpp $(contextDepends) $(HandlerDepends) $(DgnPlatformAPISrc)DgnModel.h $(DgnPlatformAPISrc)ScanCriteria.h $(DgnCoreDir)UpdateLogging.h ${MultiCompileDepends}
+$(CoreObjs)ViewContext$(oext) :                     $(DgnCoreDir)ViewContext.cpp $(contextDepends) $(HandlerDepends) $(DgnPlatformAPISrc)DgnModel.h $(DgnPlatformAPISrc)ScanCriteria.h ${MultiCompileDepends}
 
 $(CoreObjs)RangeContext$(oext) :                    $(DgnCoreDir)RangeContext.cpp $(DgnPlatformAPISrc)NullContext.h $(DgnPlatformAPISrc)SimplifyGraphic.h $(HandlerDepends) ${MultiCompileDepends}
 
@@ -345,11 +345,9 @@ $(CoreObjs)DgnDomain$(oext) :                       $(DgnCoreDir)DgnDomain.cpp $
 
 $(CoreObjs)GenericDomain$(oext) :                   $(DgnCoreDir)GenericDomain.cpp $(DgnPlatformAPISrc)GenericDomain.h ${MultiCompileDepends}
 
-$(CoreObjs)QueryModel$(oext) :                      $(DgnCoreDir)QueryModel.cpp $(DgnPlatformAPISrc)QueryModel.h $(DgnPlatformAPISrc)DgnRangeTree.h  $(DgnCoreDir)UpdateLogging.h ${MultiCompileDepends}
+$(CoreObjs)QueryModel$(oext) :                      $(DgnCoreDir)QueryModel.cpp $(DgnPlatformAPISrc)QueryModel.h $(DgnPlatformAPISrc)DgnRangeTree.h ${MultiCompileDepends}
 
-$(CoreObjs)QueryView$(oext) :                       $(DgnCoreDir)QueryView.cpp $(DgnPlatformAPISrc)QueryModel.h $(DgnPlatformAPISrc)QueryView.h $(ViewControllerDepends) $(DgnCoreDir)UpdateLogging.h ${MultiCompileDepends}
-
-$(CoreObjs)UpdateLogging$(oext) :                   $(DgnCoreDir)UpdateLogging.cpp $(DgnCoreDir)UpdateLogging.h ${MultiCompileDepends}
+$(CoreObjs)QueryView$(oext) :                       $(DgnCoreDir)QueryView.cpp $(DgnPlatformAPISrc)QueryModel.h $(DgnPlatformAPISrc)QueryView.h $(ViewControllerDepends) ${MultiCompileDepends}
 
 $(CoreObjs)DgnLink$(oext) :                         $(DgnCoreDir)DgnLink.cpp $(DgnPlatformAPISrc)DgnDbTables.h $(DgnPlatformAPISrc)DgnLink.h ${MultiCompileDepends}
 

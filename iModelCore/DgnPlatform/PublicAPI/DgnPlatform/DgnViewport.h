@@ -65,29 +65,6 @@ enum class ViewportResizeMode
     Size             = 3, //!< The viewport is resized to match the exact size 
     };
 
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-enum class UpdateAbort : int
-    {
-    None          = 0,
-    BadView       = 1,
-    Motion        = 2,
-    MotionStopped = 3,
-    Keystroke     = 4,
-    ReachedLimit  = 5,
-    MouseWheel    = 6,
-    Timeout       = 7,
-    Button        = 8,
-    Paint         = 9,
-    Focus         = 10,
-    ModifierKey   = 11,
-    Gesture       = 12,
-    Command       = 13,
-    Sensor        = 14,
-    Unknown       = 15
-    };
-
 //=======================================================================================
 /**
  A DgnViewport maps a set of DgnModels to an output device through a camera (a view frustum) and filters (e.g. categories, view flags, etc). 
@@ -146,7 +123,7 @@ protected:
     double          m_frustFraction;
     Utf8String      m_viewTitle;
     ViewControllerPtr m_viewController;
-    bvector<ProgressiveDisplayPtr> m_progressiveDisplay;    // list of progressive display suppliers
+    bvector<ProgressiveTaskPtr> m_progressiveTasks;
     DPoint3d        m_viewCmdTargetCenter;
     Utf8String      m_currentBaseline;
     ViewStateStack  m_forwardStack;
@@ -196,9 +173,9 @@ public:
     Render::Plan::AntiAliasPref WantAntiAliasLines() const {return _WantAntiAliasLines();}
     Render::Plan::AntiAliasPref WantAntiAliasText() const {return _WantAntiAliasText();}
     void AlignWithRootZ();
-    ProgressiveDisplay::Completion DoProgressiveDisplay();
-    void ClearProgressiveDisplay() {m_progressiveDisplay.clear();}
-    DGNPLATFORM_EXPORT void ScheduleProgressiveDisplay(ProgressiveDisplay& pd);
+    ProgressiveTask::Completion DoProgressiveTasks();
+    void ClearProgressiveTasks() {m_progressiveTasks.clear();}
+    DGNPLATFORM_EXPORT void ScheduleProgressiveTask(ProgressiveTask& pd);
     DGNPLATFORM_EXPORT double GetFocusPlaneNpc();
     DGNPLATFORM_EXPORT StatusInt RootToNpcFromViewDef(DMap4d&, double&, CameraInfo const*, DPoint3dCR, DPoint3dCR, RotMatrixCR) const;
     DGNPLATFORM_EXPORT static int32_t GetMaxDisplayPriority();
@@ -363,7 +340,7 @@ public:
     DGNPLATFORM_EXPORT void NpcToView(DPoint3dP viewPts, DPoint3dCP npcPts, int nPts) const;
 
     //! Transforma a point from DgnCoordSystem::Npc into DgnCoordSystem::View.
-    DPoint3d NpcToView(DPoint3dCR npcPt) const {DPoint3d viewPt; NpcToView(&viewPt, &npcPt, 1); return viewPt;}
+    DPoint3d NpcToView(DPoint3dCR npcPt) {DPoint3d viewPt; NpcToView(&viewPt, &npcPt, 1); return viewPt;}
 
     //! Transfrom an array of points in DgnCoordSystem::View into DgnCoordSystem::Npc.
     //! @param[out] npcPts An array to receive the points in DgnCoordSystem::Npc. Must be dimensioned to hold \c nPts points.
@@ -372,7 +349,7 @@ public:
     DGNPLATFORM_EXPORT void ViewToNpc(DPoint3dP npcPts, DPoint3dCP viewPts, int nPts) const;
 
     //! Transforma a point from DgnCoordSystem::View into DgnCoordSystem::Npc.
-    DPoint3d ViewToNpc(DPoint3dCR viewPt) const {DPoint3d npcPt; ViewToNpc(&npcPt, &viewPt, 1); return npcPt;}
+    DPoint3d ViewToNpc(DPoint3dCR viewPt) {DPoint3d npcPt; ViewToNpc(&npcPt, &viewPt, 1); return npcPt;}
 
     //! Transfrom an array of points in DgnCoordSystem::View into DgnCoordSystem::Screen.
     //! @param[out] screenPts An array to receive the points in DgnCoordSystem::Screen. Must be dimensioned to hold \c nPts points.
@@ -393,7 +370,7 @@ public:
     DGNPLATFORM_EXPORT void NpcToWorld(DPoint3dP worldPts, DPoint3dCP npcPts, int nPts) const;
 
     //! Transforma a point from DgnCoordSystem::Npc into DgnCoordSystem::World.
-    DPoint3d NpcToWorld(DPoint3dCR npcPt) const {DPoint3d worldPt; NpcToWorld(&worldPt, &npcPt, 1); return worldPt;}
+    DPoint3d NpcToWorld(DPoint3dCR npcPt) {DPoint3d worldPt; NpcToWorld(&worldPt, &npcPt, 1); return worldPt;}
 
     //! Transfrom an array of points in DgnCoordSystem::World into DgnCoordSystem::Npc.
     //! @param[out] npcPts An array to receive the points in DgnCoordSystem::Npc. Must be dimensioned to hold \c nPts points.
@@ -402,7 +379,7 @@ public:
     DGNPLATFORM_EXPORT void WorldToNpc(DPoint3dP npcPts, DPoint3dCP worldPts, int nPts) const;
 
     //! Transforma a point from DgnCoordSystem::World into DgnCoordSystem::Npc.
-    DPoint3d WorldToNpc(DPoint3dCR worldPt) const {DPoint3d npcPt; WorldToNpc(&npcPt, &worldPt, 1); return npcPt;}
+    DPoint3d WorldToNpc(DPoint3dCR worldPt) {DPoint3d npcPt; WorldToNpc(&npcPt, &worldPt, 1); return npcPt;}
 
     //! Transfrom an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
     //! @param[out] viewPts  An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
@@ -422,8 +399,8 @@ public:
     //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void WorldToView(DPoint3dP viewPts, DPoint3dCP worldPts, int nPts) const;
 
-    //! Transform a point from DgnCoordSystem::World into DgnCoordSystem::View.
-    DPoint3d WorldToView(DPoint3dCR worldPt) const {DPoint3d viewPt; WorldToView(&viewPt, &worldPt, 1); return viewPt;}
+    //! Transforma a point from DgnCoordSystem::World into DgnCoordSystem::View.
+    DPoint3d WorldToView(DPoint3dCR worldPt) {DPoint3d viewPt; WorldToView(&viewPt, &worldPt, 1); return viewPt;}
 
     //! Transfrom an array of points in DgnCoordSystem::World into an array of 2D points in DgnCoordSystem::View.
     //! @param[out] viewPts An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
@@ -438,7 +415,7 @@ public:
     DGNPLATFORM_EXPORT void ViewToWorld(DPoint3dP worldPts, DPoint3dCP viewPts, int nPts) const;
 
     //! Transform a point from DgnCoordSystem::View into DgnCoordSystem::World.
-    DPoint3d ViewToWorld(DPoint3dCR viewPt) const {DPoint3d worldPt; ViewToWorld(&worldPt, &viewPt, 1); return worldPt;}
+    DPoint3d ViewToWorld(DPoint3dCR viewPt) {DPoint3d worldPt; ViewToWorld(&worldPt, &viewPt, 1); return worldPt;}
 /** @} */
 
 /** @name DgnViewport Parameters */

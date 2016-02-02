@@ -191,7 +191,6 @@ protected:
     virtual void _OutputGraphic(Render::GraphicR, GeometrySourceCP) {}
     virtual Render::GraphicP _GetCachedGraphic(GeometrySourceCR, double pixelSize) {return nullptr;}
     virtual void _SaveGraphic(GeometrySourceCR, Render::GraphicR graphic) {}
-    virtual bool _AbortProgressiveDisplay() {return false;}
     DGNPLATFORM_EXPORT virtual bool _WantAreaPatterns();
     DGNPLATFORM_EXPORT virtual void _DrawAreaPattern(ClipStencil& boundary);
     DGNPLATFORM_EXPORT virtual void _DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed = false);
@@ -478,6 +477,34 @@ public:
     void _PushFrustumClip() override {}
     Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return m_target.CreateGraphic(params);}
     void _SavePartGraphic(DgnGeometryPartId partId, Render::GraphicR graphic, ElementAlignedBox3dCR localRange) override;
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   10/15
+//=======================================================================================
+struct SceneContext : RenderContext
+{
+    DEFINE_T_SUPER(RenderContext);
+
+private:
+    int32_t        m_checkStopInterval;
+    int32_t        m_checkStopElementSkip = 10;
+    int32_t        m_checkStopElementCount = 0;
+    uint64_t       m_nextCheckStop;
+    Render::GraphicListR m_scene;
+    UpdateAbort    m_abortReason;
+    UpdatePlan const& m_plan;
+
+    void _OutputGraphic(Render::GraphicR graphic, GeometrySourceCP) override;
+    bool _CheckStop() override;
+    int AccumulateMotion();
+    bool DoCheckStop();
+
+public:
+    SceneContext(DgnViewportR vp, Render::GraphicListR scene, UpdatePlan const& plan) : m_scene(scene), RenderContext(vp, DrawPurpose::CreateScene), m_plan(plan) {}
+    void EnableCheckStop(int stopInterval, int const* motionTolerance);
+    StatusInt CreateScene();
+    UpdatePlan const& GetUpdatePlan() const {return m_plan;}
 };
 
 //=======================================================================================

@@ -34,17 +34,41 @@ public:
     virtual bool _CheckStop() {return m_aborted;}
 };
 
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+enum class UpdateAbort : int
+    {
+    None          = 0,
+    BadView       = 1,
+    Motion        = 2,
+    MotionStopped = 3,
+    Keystroke     = 4,
+    ReachedLimit  = 5,
+    MouseWheel    = 6,
+    Timeout       = 7,
+    Button        = 8,
+    Paint         = 9,
+    Focus         = 10,
+    ModifierKey   = 11,
+    Gesture       = 12,
+    Command       = 13,
+    Sensor        = 14,
+    Unknown       = 15
+    };
+
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/14
 //=======================================================================================
-struct ProgressiveDisplay : RefCounted<NonCopyableClass>
+struct ProgressiveTask : RefCounted<NonCopyableClass>
 {
     enum class Completion {Finished=0, Aborted=1, Failed=2};
     enum class WantShow : bool {No=0, Yes=1};
-    virtual Completion _Process(ViewContextR, uint32_t batchSize, WantShow& showFrame) = 0;  // if this returns Finished, it is removed from the viewport
+    virtual Completion _DoProgressive(struct SceneContext& context, WantShow& showFrame) = 0;  // if this returns Finished, it is removed from the viewport
 };
 
 /*=================================================================================**//**
+* The types of events that cause ViewContext operations to abort early.
 * @bsiclass                                                     Keith.Bentley   02/04
 +===============+===============+===============+===============+===============+======*/
 struct StopEvents
@@ -147,13 +171,6 @@ struct UpdatePlan
         void SetDelayAfter (uint32_t val) const {m_delayAfter=val;}
     };
 
-    struct Scene
-    {   
-        double m_timeout = 0.0; // abort create scene after this time. If 0, no timeout
-        double GetTimeout() const {return m_timeout;}
-        void SetTimeout(double seconds) {m_timeout=seconds;}
-    };
-
     struct AbortFlags
     {
         struct Motion
@@ -182,8 +199,8 @@ struct UpdatePlan
     };
 
     double      m_targetFPS = 20.0; // Frames Per second
+    double      m_timeout = 0; // seconds
     Query       m_query;
-    Scene       m_scene;
     AbortFlags  m_abortFlags;
 
 public:
@@ -191,10 +208,10 @@ public:
     void SetTargetFramesPerSecond(double fps) {m_targetFPS = fps;}
     Query& GetQueryR() {return m_query;}
     Query const& GetQuery() const {return m_query;}
-    Scene& GetSceneR() {return m_scene;}
-    Scene const& GetScene() const {return m_scene;}
     AbortFlags const& GetAbortFlags() const {return m_abortFlags;}
     AbortFlags& GetAbortFlagsR() {return m_abortFlags;}
+    void SetTimeout(double seconds) {m_timeout=seconds;}
+    double GetTimeout() const {return m_timeout;}
 };
 
 //=======================================================================================

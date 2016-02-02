@@ -41,8 +41,10 @@ protected:
 
     //! Populate the QueryModel with the results of the query.
     void LoadElementsForUpdate(DgnViewportR viewport, DrawPurpose updateType, CheckStopP checkStop, bool needNewQuery, bool waitForQueryToFinish, bool stopQueryOnAbort);
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     void SaveSelectResults();
     void PickUpResults();
+#endif
     bool FrustumChanged(DgnViewportCR vp) const;
     void QueueQuery(DgnViewportR, UpdatePlan const&);
     DGNPLATFORM_EXPORT virtual bool _IsInSet(int nVal, BeSQLite::DbValue const*) const override;
@@ -68,10 +70,10 @@ protected:
     //! @param onOff    If true, elements in the model are candidates for display; else elements in the model are not displayed.
     DGNPLATFORM_EXPORT virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff) override;
 
-    //! Draw the elements in the query model.
-    //! @param context The context that is processing the graphics. Sometimes this is a ViewContext, when the output is a DgnViewport. Sometimes, this is a PickContext, when
-    //! the purpose is to identify an element or snap location.
     //! @remarks It not normally necessary for apps to override this function.
+    DGNPLATFORM_EXPORT virtual void _CreateScene(SceneContextR context) override;
+
+    //! Draw the elements in the query model.
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR context) override;
 
     //! Allow the supplied ViewContext to visit every element in the view, not just the best elements in the query model.

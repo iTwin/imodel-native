@@ -51,7 +51,7 @@ void QueryViewController::_OnUpdate(DgnViewportR vp, UpdatePlan const& plan)
     if (plan.GetQuery().WantWait())
         m_queryModel.GetDgnDb().QueryQueue().WaitForIdle();
 
-    PickUpResults();
+//    PickUpResults();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -86,6 +86,7 @@ void QueryViewController::QueueQuery(DgnViewportR viewport, UpdatePlan const& pl
     m_queryModel.GetDgnDb().QueryQueue().Add(params);
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -150,6 +151,7 @@ void QueryViewController::SaveSelectResults()
     m_queryModel.RequestAbort(true);
 #endif
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/12
@@ -242,17 +244,19 @@ void QueryViewController::_OnCategoryChange(bool singleEnabled)
 void QueryViewController::QueryModelExtents(DRange3dR range, DgnViewportR vp)
     {
     RTreeFitFilter filter;
-    CachedStatementPtr viewStmt;              
     Utf8String viewSql = _GetQuery(vp) + filter.GetAcceptSql();
+    CachedStatementPtr viewStmt;              
     GetDgnDb().GetCachedStatement(viewStmt, viewSql.c_str());
     BindModelAndCategory(*viewStmt);
 
-    uint64_t thisId;
     int idCol = viewStmt->GetParameterIndex("@elId");
-    while (0 != (thisId=filter.StepRtree()))
+    BeAssert(0 != idCol);
+
+    DgnElementId thisId;
+    while ((thisId = filter.StepRtree()).IsValid())
         {
         viewStmt->Reset();
-        viewStmt->BindInt64(idCol, thisId);
+        viewStmt->BindId(idCol, thisId);
         if (BE_SQLITE_ROW == viewStmt->Step())
             range.Extend(filter.m_lastRange);
         }
@@ -264,7 +268,6 @@ void QueryViewController::QueryModelExtents(DRange3dR range, DgnViewportR vp)
 ViewController::FitComplete QueryViewController::_ComputeFitRange(DRange3dR range, DgnViewportR vp, FitViewParamsR params) 
     {
     range = GetViewedExtents();
-
     Transform  transform;
     transform.InitFrom((nullptr == params.m_rMatrix) ? vp.GetRotMatrix() : *params.m_rMatrix);
     transform.Multiply(range, range);
@@ -307,132 +310,83 @@ void QueryViewController::_OnAttachedToViewport(DgnViewportR)
 void QueryViewController::BindModelAndCategory(StatementR stmt) const
     {
     int vSetIdx = stmt.GetParameterIndex("@vSet");
+    BeAssert(0!=vSetIdx);
     if (0 != vSetIdx)
         stmt.BindVirtualSet(vSetIdx, *this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void QueryViewController::_DrawView(ViewContextR context) 
+    {
+    _VisitAllElements(context);
+
+    // Allow models to participate in picking
+    for (DgnModelId modelId : GetViewedModels())
+        {
+        if (context.CheckStop())
+            return;
+
+        DgnModelPtr model = GetDgnDb().Models().GetModel(modelId);
+        auto geomModel = model.IsValid() ? model->ToGeometricModelP() : nullptr;
+
+        if (nullptr != geomModel)
+            geomModel->DrawModel(context);
+        }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2012
 //--------------+------------------------------------------------------------------------
-void QueryViewController::_DrawView(ViewContextR context) 
+void QueryViewController::_CreateScene(SceneContextR context) 
     {
-    QueryModel::Results* results = m_queryModel.GetCurrentResults();
-    if (nullptr == results)
-        return;
+    BeAssert(m_queryModel.m_results.IsValid());
 
-    // use the in-memory range tree for picks (to limit to sub-range)
-    if (DrawPurpose::Pick == context.GetDrawPurpose() )
-        {
-        if (!m_queryModel.IsEmpty())    // if we have no elements, nothing to do.
-            _VisitAllElements(context);
-
-        if (context.CheckStop())
-            return;
-
-        // Allow models to participate in picking
-        for (DgnModelId modelId : GetViewedModels())
-            {
-            DgnModelPtr model = GetDgnDb().Models().GetModel(modelId);
-            auto geomModel = model.IsValid() ? model->ToGeometricModelP() : nullptr;
-
-            if (nullptr != geomModel)
-                geomModel->AddGraphicsToScene(context);
-
-            if (context.CheckStop())
-                break;
-            }
-
-        return;
-        }
-
-    m_needProgressiveDisplay = false;
-    context.GetViewport()->ClearProgressiveDisplay();
-
-    const uint64_t maxMem = GetMaxElementMemory();
-    UNUSED_VARIABLE(maxMem);
-    const int64_t purgeTrigger = static_cast <int64_t> (1.5 * static_cast <double> (maxMem));
+    QueryModel::ResultsPtr currQueryResults;
+    std::swap(currQueryResults, m_queryModel.m_results);
 
     // this vector is sorted by occlusion score, so we use it to determine the order to draw the view
-    uint32_t numDrawn = 0;
-    for (auto& thisElement : results->m_elements)
-        {
-        BeAssert(thisElement->IsPersistent());
-        GeometrySourceCP geom = thisElement->ToGeometrySource();
+    DgnElements& pool = GetDgnDb().Elements();
 
+    RefCountedPtr<QueryModel::ProgressiveFilter> filter = new QueryModel::ProgressiveFilter(m_queryModel, m_neverDrawn.empty() ? nullptr : &m_neverDrawn);
+    for (auto& thisScore : currQueryResults->m_scores)
+        {
+        filter->m_inScene.insert(thisScore.second);
+        DgnElementCPtr thisElement = pool.GetElement(thisScore.second);
+        if (!thisElement.IsValid())
+            continue;
+
+        GeometrySourceCP geom = thisElement->ToGeometrySource();
         if (nullptr != geom)
             context.VisitElement(*geom);
 
-        ++numDrawn;
-
         if (context.WasAborted())
             break;
-
-        DgnElements& pool = m_queryModel.GetDgnDb().Elements();
-        if (numDrawn > results->m_drawnBeforePurge && pool.GetTotalAllocated() > purgeTrigger)
-            {
-            // Testing for HasSelectResults prevents this logic from purging elements that
-            // are in the selected-elements list. Adding elements to that list does not increment the reference 
-            // count. DgnElements use reference counting that is not thread safe so all reference counting is done
-            // in the work thread.
-            if (!m_queryModel.HasSelectResults())
-                {
-                results->m_drawnBeforePurge = numDrawn;
-                pool.Purge(maxMem);  //  the pool may contain unused elements
-
-                int64_t lastTotalAllocated;
-                while ((lastTotalAllocated = pool.GetTotalAllocated()) > purgeTrigger && results->m_elements.size() > numDrawn)
-                    {
-                    if (context.CheckStop())
-                        break;
-
-                    uint32_t entriesToRemove = (uint32_t)results->m_elements.size() - numDrawn;
-                    if (entriesToRemove > 25)
-                        entriesToRemove /= 2;
-
-                    if (entriesToRemove > results->m_elements.size()/4)
-                        entriesToRemove = (uint32_t)results->m_elements.size()/4;
-
-                    uint32_t newSize = (uint32_t)results->m_elements.size() - entriesToRemove;
-                    BeAssert((int32_t)newSize > 0);
-                    m_queryModel.ResizeElementList(newSize);
-                    pool.Purge(maxMem);  //  the pool may contain unused elements
-                    //  This happens if entriesToRemove is 0 (exceeded maximum memory with fewer than 4 elements).
-                    //  It could also happen if there is a bug in ResizeElementList or Purge.
-                    if (pool.GetTotalAllocated() == lastTotalAllocated)
-                        break;
-                    }
-
-                if (pool.GetTotalAllocated() > purgeTrigger)
-                    break;   //  Unable to get low enough
-                }
-            }
         }
-
-    UpdateLogging::RecordDoneUpdate(numDrawn, context.GetDrawPurpose());
-
-    if (context.WasAborted())
-        return;
 
     // Next, allow external data models to draw or schedule external data.
     for (DgnModelId modelId : GetViewedModels())
         {
+        if (context.WasAborted())
+            break;
+
         DgnModelPtr model = GetDgnDb().Models().GetModel(modelId);
         auto geomModel = model.IsValid() ? model->ToGeometricModelP() : nullptr;
         if (nullptr != geomModel)
             geomModel->AddGraphicsToScene(context);
         }
 
-    if ((DrawPurpose::CreateScene == context.GetDrawPurpose()) && results->m_needsProgressive && !m_noQuery)
+    if (currQueryResults->m_incomplete && !m_noQuery)
         {
         m_needProgressiveDisplay = true;
         DgnViewportP vp = context.GetViewport();
-        QueryModel::ProgressiveFilter* filter = new QueryModel::ProgressiveFilter(m_queryModel, m_neverDrawn.empty() ? nullptr : &m_neverDrawn, maxMem);
         filter->SetViewport(*vp, 6.0, 1.0);
 
         if (GetClipVector().IsValid())
             filter->SetClipVector(*GetClipVector());
 
-        vp->ScheduleProgressiveDisplay(*filter);
+        vp->ScheduleProgressiveTask(*filter);
         }
     }
 
@@ -442,6 +396,7 @@ void QueryViewController::_DrawView(ViewContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryViewController::_VisitAllElements(ViewContextR context)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // Visit the elements that were actually loaded. Stop if this fails
     if (SUCCESS != context.VisitDgnModel(&m_queryModel))
         return;
@@ -449,8 +404,9 @@ void QueryViewController::_VisitAllElements(ViewContextR context)
     // then, see if there are elements that were drawn by progressive display
     if (!m_needProgressiveDisplay || context.CheckStop())
         return;
+#endif
 
-    QueryModel::AllElementsFilter filter(m_queryModel, m_neverDrawn.empty() ? nullptr : &m_neverDrawn, GetMaxElementMemory());
+    QueryModel::AllElementsFilter filter(m_queryModel, m_neverDrawn.empty() ? nullptr : &m_neverDrawn);
 
     CachedStatementPtr viewStmt;              
     Utf8String viewSql = _GetQuery(*context.GetViewport()) + filter.GetAcceptSql();
@@ -460,19 +416,19 @@ void QueryViewController::_VisitAllElements(ViewContextR context)
     filter.SetFrustum(context.GetFrustum());
 
     int count=0;
-    uint64_t thisId;
     int idCol = viewStmt->GetParameterIndex("@elId");
     BeAssert(0 != idCol);
 
     // the range tree will return all elements in the volume. Filter them by the view criteria
-    while (0 != (thisId=filter.StepRtree()))
+    DgnElementId thisId;
+    while ((thisId=filter.StepRtree()).IsValid())
         {
         viewStmt->Reset();
-        viewStmt->BindInt64(idCol, thisId);
+        viewStmt->BindId(idCol, thisId);
         if (BE_SQLITE_ROW == viewStmt->Step())
             {
             ++count;
-            filter.AcceptElement(context, DgnElementId(thisId));
+            filter.AcceptElement(context, thisId);
             }
 
         if (context.CheckStop())

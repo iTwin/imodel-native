@@ -34,16 +34,6 @@ struct OcclusionScorer
     bool ComputeOcclusionScore(double* score, bool& overlap, bool& spansEyePlane, DPoint3dCP localCorners);
 };
 
-//=======================================================================================
-// @bsiclass                                                    John.Gooding    10/13
-//=======================================================================================
-struct OverlapScorer
-{
-    BeSQLite::RTree3dVal m_boundingRange;
-    void Initialize(DRange3dCR boundingRange);
-    bool ComputeScore(double* score, BeSQLite::RTree3dValCR range);
-};
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -52,7 +42,7 @@ struct RTreeTester
     BeSQLite::CachedStatementPtr m_rangeStmt;
     virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) = 0;
     Utf8String GetAcceptSql();
-    uint64_t StepRtree();
+    DgnElementId StepRtree();
 };
 
 //=======================================================================================
@@ -101,39 +91,44 @@ A QueryModel caches the results of the query.
 A QueryModel is used in conjunction with a QueryViewController to display the results of the query. 
 Applications do not directly deal with QueryModel's. Instead, the query that populates them is supplied by a QueryViewController.
 
-The method DgnClientFx::DgnClientApp::OpenDgnDb creates a default QueryModel for an application. 
-Applications may use DgnClientFx::DgnClientApp::GetQueryModel to retrieve a reference to that QueryModel. 
-QueryModels are associated with a QueryViewController by passing a QueryModel to the QueryViewController constructor.
 */
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
 struct QueryModel : SpatialModel
 {
     friend struct QueryViewController;
-    typedef bmultimap<double, uint64_t> OcclusionScores;
+    typedef bmultimap<double, DgnElementId> OcclusionScores;
     
+    //! Holds the results of a query.
+    struct Results : RefCountedBase
+    {
+       friend struct Processor;
+        bool            m_incomplete = false;
+        uint32_t        m_count = 0;
+        OcclusionScores m_scores;
+
+    };
+    typedef RefCountedPtr<Results> ResultsPtr;
+
     //=======================================================================================
     // @bsiclass                                                    Keith.Bentley   12/11
     //=======================================================================================
     struct Filter : RTreeFilter
     {
-        bool                    m_needsProgressive = false;
         uint32_t                m_hitLimit;
-        uint32_t                m_occlusionMapCount;
         uint64_t                m_lastId;
-        OcclusionScores         m_occlusionScores;
-        double                  m_occlusionMapMinimum;
+        double                  m_minScore;
         double                  m_lastScore;
         DgnElementIdSet const*  m_alwaysDraw;
         QueryModelR             m_model;
+        ResultsPtr              m_results;
 
         bool CheckAbort();
         virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
         void AcceptElement(DgnElementId elementId);
 
     public:
-        Filter(QueryModelR model, uint32_t hitLimit, DgnElementIdSet const* alwaysDraw, DgnElementIdSet const* exclude);
-        uint32_t GetCount() const {return m_occlusionMapCount;}
+        Filter(QueryModelR model, Results& results, uint32_t hitLimit, DgnElementIdSet const* alwaysDraw, DgnElementIdSet const* exclude);
     };
     
     //=======================================================================================
@@ -141,10 +136,8 @@ struct QueryModel : SpatialModel
     //=======================================================================================
     struct AllElementsFilter : RTreeFilter
     {
-        uint64_t  m_elementReleaseTrigger;
-        uint64_t  m_purgeTrigger;
         QueryModelR  m_model;
-        AllElementsFilter(QueryModelR model, DgnElementIdSet const* exclude, uint64_t maxMemory) : RTreeFilter(model.GetDgnDb(), exclude), m_model(model), m_elementReleaseTrigger(maxMemory), m_purgeTrigger(maxMemory) {}
+        AllElementsFilter(QueryModelR model, DgnElementIdSet const* exclude) : RTreeFilter(model.GetDgnDb(), exclude), m_model(model) {}
         bool AcceptElement(ViewContextR context, DgnElementId elementId);
         virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
     };
@@ -152,20 +145,22 @@ struct QueryModel : SpatialModel
     //=======================================================================================
     // @bsiclass                                                    Keith.Bentley   04/14
     //=======================================================================================
-    struct ProgressiveFilter : AllElementsFilter, ProgressiveDisplay
+    struct ProgressiveFilter : ProgressiveTask, AllElementsFilter
     {
         enum {SHOW_PROGRESS_INTERVAL = 1000}; // once per second.
+        bool     m_setTimeout = false;
         uint32_t m_total = 0;
         uint32_t m_thisBatch = 0;
         uint32_t m_batchSize = 0;
         uint64_t m_nextShow  = 0;
-        bool     m_setTimeout = false;
-        ProgressiveFilter(QueryModelR model, DgnElementIdSet const* exclude, uint64_t maxMemory) : AllElementsFilter(model, exclude, maxMemory) {}
-        virtual Completion _Process(ViewContextR context, uint32_t batchSize, WantShow&) override;
+        DgnElementIdSet m_inScene;
+        ProgressiveFilter(QueryModelR model, DgnElementIdSet const* exclude) : AllElementsFilter(model, exclude) {}
+        virtual Completion _DoProgressive(SceneContext& context, WantShow&) override;
     };
 
-    struct Processor;
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    struct Processor;
     //! Holds the results of a QueryModel's query.
     struct Results : RefCountedBase
     {
@@ -180,8 +175,8 @@ struct QueryModel : SpatialModel
         uint32_t m_drawnBeforePurge;
         uint32_t GetCount() const {return (uint32_t) m_elements.size();}
     };
+#endif
 
-    typedef RefCountedPtr<Results> ResultsPtr;
 
     //! Executes a query on a separate thread to load elements for a QueryModel
     struct Processor : RefCounted<NonCopyableClass>
@@ -207,7 +202,6 @@ struct QueryModel : SpatialModel
 
     protected:
         Params      m_params;
-        ResultsPtr  m_results;
 
         void ProcessRequest();
         void SearchIdSet(DgnElementIdSet& idList, Filter& filter);
@@ -262,24 +256,15 @@ struct QueryModel : SpatialModel
 
 private:
     bool        m_abortQuery;
-    ResultsPtr  m_updatedResults;
-    ResultsPtr  m_currQueryResults;
+    ResultsPtr  m_results;
 
-    void ResetResults() {ReleaseAllElements(); ClearRangeIndex(); m_filled=true;}
     DGNPLATFORM_EXPORT explicit QueryModel(DgnDbR);
     virtual void _FillModel() override {} // QueryModels are never filled.
 
 public:
-    bool AbortRequested() const { return m_abortQuery; } //!< @private
+    bool AbortRequested() const {return m_abortQuery;} //!< @private
     void SetAbortQuery(bool val) {m_abortQuery=val;} //!< @private
-    Results* GetCurrentResults() {return m_currQueryResults.get();} //!< @private
-    void SaveQueryResults(); //!< @private
-    void ResizeElementList(uint32_t newCount); //!< @private
-    void ClearQueryResults(); //!< @private
-
-    //! Returns a count of elements held by the QueryModel. This is the count of elements returned by the most recent query.
-    uint32_t GetElementCount() const; //!< @private
-    bool HasSelectResults() const { return m_updatedResults.IsValid(); } //!< @private
+    void ClearQueryResults();
 
     //! Requests that any active or pending processing of the model be canceled, optionally not returning until the request is satisfied
     void RequestAbort(bool waitUntilFinished);

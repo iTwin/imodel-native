@@ -23,7 +23,7 @@ void DgnViewport::Initialize(ViewControllerR viewController)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::DestroyViewport()
     {
-    m_progressiveDisplay.clear();
+    m_progressiveTasks.clear();
     if (m_viewController.IsValid())
         {
         m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);
@@ -1135,9 +1135,9 @@ ColorDef DgnViewport::GetBackgroundColor() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::ScheduleProgressiveDisplay(ProgressiveDisplay& pd)
+void DgnViewport::ScheduleProgressiveTask(ProgressiveTask& pd)
     {
-    m_progressiveDisplay.push_back(&pd);
+    m_progressiveTasks.push_back(&pd);
     }
 
 /*---------------------------------------------------------------------------------**//**
