@@ -1250,18 +1250,18 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipLinkTableMappingTests (ECDb
 
     {
     Utf8String ecsqlStr;
-    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPSA (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (%lld, ?, %lld, ?);", psaIds[i], psaIds[i+4]);
+    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPSA (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (%lld, ?, %lld, ?);", psaIds[i].GetValue(), psaIds[i+4].GetValue());
     auto& testItem = ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsqlStr.c_str(), ECSqlExpectedResult::Category::Invalid);
     testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (th3ClassId)));
     testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (thBaseClassId)));
-        }
+    }
 
     //specifying invalid class ids
     for (Utf8StringCR invalidClassIdValue : s_invalidClassIdValues)
         {
         Utf8String ecsqlStr;
-        ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPSA (SourceECInstanceId, SourceECClassId, TargetECInstanceId) VALUES (%lld, %s, %lld);", psaIds[i++],
-            invalidClassIdValue.c_str (), psaIds[i+1]);
+        ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPSA (SourceECInstanceId, SourceECClassId, TargetECInstanceId) VALUES (%lld, %s, %lld);", psaIds[i++].GetValue(),
+            invalidClassIdValue.c_str (), psaIds[i+1].GetValue());
         ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsqlStr.c_str (), ECSqlExpectedResult::Category::Invalid);
 
         ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (%lld, %lld, %s);", psaIds[i].GetValue (), psaIds[i + 1].GetValue (), invalidClassIdValue.c_str ());
