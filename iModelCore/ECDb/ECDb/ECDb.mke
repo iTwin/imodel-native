@@ -464,3 +464,5 @@ $(BuildContext)ECSchemas/ECDb/ECDb_FileInfo.02.00.ecschema.xml : $(_MakeFilePath
 $(BuildContext)Delivery/openoffice-notice.txt : $(baseDir)ECSql/Parser/NOTICE
     $(LinkFirstDepToFirstTarget)
 
+$(BuildContext)Delivery/openoffice-license.txt : $(baseDir)ECSql/Parser/LICENSE
+    $(LinkFirstDepToFirstTarget)

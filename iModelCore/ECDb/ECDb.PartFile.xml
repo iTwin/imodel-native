@@ -27,7 +27,10 @@
         <Bindings>
             <Libs>Delivery/$(libprefix)BeSQLiteEC$(libext)</Libs>
             <Assemblies ProductDirectoryName="BentleyNativeAssemblies">Delivery/$(libprefix)BeSQLiteEC$(ApiNumber)$(shlibext)</Assemblies>
-            <Files ProductDirectoryName="VendorNotices" Required="true">Delivery/openoffice-notice.txt</Files>
+            <VendorNotices>
+                Delivery/openoffice-notice.txt
+                Delivery/openoffice-license.txt
+            </VendorNotices>
             <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/ECDb" SubPartDirectory="ECSchemas/ECDb">
                 ECSchemas/ECDb/*.ecschema.xml
             </Files>
