@@ -227,59 +227,59 @@ IECSqlValue const& value
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECInstanceECSqlSelectAdapter::SetPropertyData
 (
-IECInstanceR instance,
-Utf8CP parentPropertyAccessString,
-IECSqlValue const& value
-) const
+    IECInstanceR instance,
+    Utf8CP parentPropertyAccessString,
+    IECSqlValue const& value
+    ) const
     {
-    auto const& columnInfo = value.GetColumnInfo ();
-    auto prop = columnInfo.GetProperty ();
-    BeAssert (prop != nullptr && "TODO: ECInstanceECSqlSelectAdapter expects that GetColumnInfo ().GetProperty is never null. This is not the case for prim arrays. Please double-check the code.");
+    auto const& columnInfo = value.GetColumnInfo();
+    auto prop = columnInfo.GetProperty();
+    BeAssert(prop != nullptr && "TODO: ECInstanceECSqlSelectAdapter expects that GetColumnInfo ().GetProperty is never null. This is not the case for prim arrays. Please double-check the code.");
 
-    if (columnInfo.IsGeneratedProperty () || prop->IsCalculated ()) // WIP_ECSQL: is this true? do we need to set for last calculated and other scenarios?
+    if (columnInfo.IsGeneratedProperty() || prop->IsCalculated()) // WIP_ECSQL: is this true? do we need to set for last calculated and other scenarios?
         return SUCCESS;
 
     Utf8String accessString;
-    if (!Utf8String::IsNullOrEmpty (parentPropertyAccessString))
+    if (!Utf8String::IsNullOrEmpty(parentPropertyAccessString))
         {
         accessString = parentPropertyAccessString;
-        accessString.append (".");
+        accessString.append(".");
         }
 
-    accessString.append (prop->GetName ());
+    accessString.append(prop->GetName());
 
     ECN::ECValue ecVal;
-    if (prop->GetIsPrimitive ())
+    if (prop->GetIsPrimitive())
         {
-        auto primitiveProp = prop->GetAsPrimitiveProperty ();
-        SetPrimitiveValue (ecVal, primitiveProp->GetType (), value);
-        ECObjectsStatus ecStatus = instance.SetValue (accessString.c_str (), ecVal);
+        auto primitiveProp = prop->GetAsPrimitiveProperty();
+        SetPrimitiveValue(ecVal, primitiveProp->GetType(), value);
+        ECObjectsStatus ecStatus = instance.SetValue(accessString.c_str(), ecVal);
         if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
             {
-            BeAssert (false);
+            BeAssert(false);
             return ERROR;
             }
         }
-    else if (prop->GetIsStruct ())
+    else if (prop->GetIsStruct())
         {
-        IECSqlStructValue const& structValue = value.GetStruct ();
-        int memberCount = structValue.GetMemberCount ();
+        IECSqlStructValue const& structValue = value.GetStruct();
+        int memberCount = structValue.GetMemberCount();
         for (int i = 0; i < memberCount; i++)
             {
-            if (SUCCESS != SetPropertyData (instance, accessString.c_str (), structValue.GetValue (i)))
+            if (SUCCESS != SetPropertyData(instance, accessString.c_str(), structValue.GetValue(i)))
                 return ERROR;
             }
         }
     else if (prop->GetIsArray())
         {
-        auto arrayProperty = prop->GetAsArrayProperty ();
+        auto arrayProperty = prop->GetAsArrayProperty();
         auto structArrayProperty = prop->GetAsStructArrayProperty();
-        IECSqlArrayValue const& arrayValue = value.GetArray ();
-        int arrayLength = arrayValue.GetArrayLength ();
+        IECSqlArrayValue const& arrayValue = value.GetArray();
+        int arrayLength = arrayValue.GetArrayLength();
         if (arrayLength <= 0)
             return SUCCESS;
 
-        instance.AddArrayElements (accessString.c_str (), arrayLength);
+        instance.AddArrayElements(accessString.c_str(), arrayLength);
         int arrayIndex = 0;
         for (IECSqlValue const* arrayElementValue : arrayValue)
             {
@@ -294,10 +294,10 @@ IECSqlValue const& value
                     return ERROR;
                 }
 
-            ECObjectsStatus ecStatus = instance.SetValue (accessString.c_str (), ecVal, arrayIndex);
+            ECObjectsStatus ecStatus = instance.SetValue(accessString.c_str(), ecVal, arrayIndex);
             if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
                 {
-                BeAssert (false);
+                BeAssert(false);
                 return ERROR;
                 }
             arrayIndex++;
@@ -305,8 +305,36 @@ IECSqlValue const& value
         }
     else if (prop->GetIsNavigation())
         {
-        //WIP_NAVPROP Not implemented yet
-        return SUCCESS;
+        NavigationECPropertyCP navProp = prop->GetAsNavigationProperty();
+        PrimitiveType navPropIdType = navProp->GetType();
+        if (!navProp->IsMultiple())
+            {
+            SetPrimitiveValue(ecVal, navPropIdType, value);
+            ECObjectsStatus ecStatus = instance.SetValue(accessString.c_str(), ecVal);
+            return (ecStatus == ECObjectsStatus::Success || ecStatus == ECObjectsStatus::PropertyValueMatchesNoChange) ? SUCCESS : ERROR;
+            }
+
+        IECSqlArrayValue const& arrayValue = value.GetArray();
+        int arrayLength = arrayValue.GetArrayLength();
+        if (arrayLength <= 0)
+            return SUCCESS;
+
+        instance.AddArrayElements(accessString.c_str(), arrayLength);
+        int arrayIndex = 0;
+        for (IECSqlValue const* arrayElementValue : arrayValue)
+            {
+            if (SUCCESS != SetPrimitiveValue(ecVal, navPropIdType, *arrayElementValue))
+                return ERROR;
+
+            ECObjectsStatus ecStatus = instance.SetValue(accessString.c_str(), ecVal, arrayIndex);
+            if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
+                {
+                BeAssert(false);
+                return ERROR;
+                }
+            arrayIndex++;
+            }
+
         }
 
     return SUCCESS;

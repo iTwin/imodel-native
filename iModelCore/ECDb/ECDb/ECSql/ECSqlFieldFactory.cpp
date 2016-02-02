@@ -308,45 +308,41 @@ ECSqlColumnInfo&& structFieldColumnInfo
     auto newStructField = unique_ptr<StructMappedToColumnsECSqlField>(new StructMappedToColumnsECSqlField(ctx.GetECSqlStatementR (), move(structFieldColumnInfo)));
 
     ECSqlStatus status = ECSqlStatus::Success;
-    for(PropertyMapCP childPropertyMap : childPropertyMaps)
+    for (PropertyMapCP childPropertyMap : childPropertyMaps)
         {
-        ECSqlColumnInfo childColumnInfo = ECSqlColumnInfo::CreateChild (newStructField->GetColumnInfo (), childPropertyMap->GetProperty ());
+        ECSqlColumnInfo childColumnInfo = ECSqlColumnInfo::CreateChild(newStructField->GetColumnInfo(), childPropertyMap->GetProperty());
 
         std::unique_ptr<ECSqlField> childField = nullptr;
         if (PropertyMapStructCP childStructPropMap = dynamic_cast<PropertyMapStructCP>(childPropertyMap))
             {
-            status = CreateStructMemberFields (childField, sqlColumnIndex, ctx, *childStructPropMap, move (childColumnInfo));
-            if ( !status.IsSuccess())
+            status = CreateStructMemberFields(childField, sqlColumnIndex, ctx, *childStructPropMap, move(childColumnInfo));
+            if (!status.IsSuccess())
                 return status;
             }
-        else
-            {           
-            if (childPropertyMap->GetProperty().GetIsPrimitive())
-                {          
-                PrimitiveType primitiveType = childPropertyMap->GetProperty().GetAsPrimitiveProperty()->GetType();
-                status = CreatePrimitiveField(childField, sqlColumnIndex, ctx, move (childColumnInfo), nullptr, primitiveType);
-                }
-            if (childPropertyMap->GetProperty().GetIsStruct())
+        else if (childPropertyMap->GetProperty().GetIsPrimitive())
+            {
+            PrimitiveType primitiveType = childPropertyMap->GetProperty().GetAsPrimitiveProperty()->GetType();
+            status = CreatePrimitiveField(childField, sqlColumnIndex, ctx, move(childColumnInfo), nullptr, primitiveType);
+            }
+        else if (childPropertyMap->GetProperty().GetIsArray())
+            {
+            ArrayECPropertyCP arrayProperty = childPropertyMap->GetProperty().GetAsArrayProperty();
+            if (arrayProperty->GetKind() == ArrayKind::ARRAYKIND_Primitive)
                 {
-                BeAssert(false && "Struct is always mapped inline so control should not drop here");
+                PrimitiveType primitiveType = arrayProperty->GetPrimitiveElementType();
+                status = CreatePrimitiveArrayField(childField, sqlColumnIndex, ctx, move(childColumnInfo), nullptr, primitiveType);
                 }
-            else if (childPropertyMap->GetProperty().GetIsArray())
-                {          
-                ArrayECPropertyCP arrayProperty = childPropertyMap->GetProperty().GetAsArrayProperty();
-                if (arrayProperty->GetKind() == ArrayKind::ARRAYKIND_Primitive)
-                    {
-                    PrimitiveType primitiveType = arrayProperty->GetPrimitiveElementType();
-                    status = CreatePrimitiveArrayField(childField, sqlColumnIndex, ctx, move (childColumnInfo), nullptr, primitiveType);
-                    }
-                else
-                    status = CreateStructArrayField(childField, sqlColumnIndex, ctx, move(childColumnInfo), *childPropertyMap);
-                }
-            else if (childPropertyMap->GetProperty().GetIsNavigation())
-                {
-                //WIP_NAVPROP Not implemented yet
-                BeAssert(false && "NavProps not implemented yet.");
-                return ECSqlStatus::Error;
-                }
+            else
+                status = CreateStructArrayField(childField, sqlColumnIndex, ctx, move(childColumnInfo), *childPropertyMap);
+            }
+        else if (childPropertyMap->GetProperty().GetIsNavigation())
+            {
+            NavigationECPropertyCP navProp = childPropertyMap->GetProperty().GetAsNavigationProperty();
+            PrimitiveType navPropIdType = navProp->GetType();
+            if (!navProp->IsMultiple())
+                status = CreatePrimitiveArrayField(childField, sqlColumnIndex, ctx, move(childColumnInfo), nullptr, navPropIdType);
+            else
+                status = CreatePrimitiveArrayField(childField, sqlColumnIndex, ctx, move(childColumnInfo), nullptr, navPropIdType);
             }
 
         if (childField == nullptr)

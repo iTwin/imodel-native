@@ -54,7 +54,9 @@ ECSqlStatus ECSqlDeletePreparer::Prepare (ECSqlPrepareContext& ctx, DeleteStatem
         BeAssert(false && "Fail to prepared statement for ECInstanceIdSelect. Possible case of struct array containing struct array");
         return stat;
         }
-    
+
+    LOG.infov("Prepared step task selector query: %s", selectorQuery.c_str());
+
     int parameterIndex = ECSqlPrepareContext::FindLastParameterIndexBeforeWhereClause(exp, exp.GetWhereClauseExp());
     int nParamterToBind = static_cast<int>(ecsqlParameterMap.Count()) - parameterIndex;
     for (int j = 1; j <= nParamterToBind; j++)

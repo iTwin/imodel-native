@@ -29,16 +29,14 @@ EmbeddedECSqlStatement* ECSqlStepTask::Collection::GetSelector(bool create)
 //---------------------------------------------------------------------------------------
 DbResult ECSqlStepTask::Collection::ExecuteBeforeStepTaskList()
     {
-    //even if no tasks exist, but if event handlers are registered
-    //we need to execute the selector so that event can return the correct instances affected.
     if (IsEmpty() ||  m_selector == nullptr)
         return BE_SQLITE_OK;
 
-    auto stmt = m_selector->GetPreparedStatementP<ECSqlSelectPreparedStatement> ();
-    BeAssert(stmt != nullptr && "m_selector statement is null");
+    BeAssert(m_selector->GetPreparedStatementP<ECSqlSelectPreparedStatement>() != nullptr && "m_selector statement is null");
+
     while (BE_SQLITE_ROW == m_selector->Step())
         {
-        ECInstanceId iId = stmt->GetValue(0).GetId<ECInstanceId>();
+        const ECInstanceId iId = m_selector->GetValue(0).GetId<ECInstanceId>();
         DbResult stat = Execute(ExecutionCategory::ExecuteBeforeParentStep, iId);
         if (BE_SQLITE_OK != stat)
             return stat;
@@ -76,29 +74,9 @@ void ECSqlStepTask::Collection::ResetSelector()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-ECSqlStepTask const* ECSqlStepTask::Collection::Find(Utf8CP name) const
+void ECSqlStepTask::Collection::Add(std::unique_ptr<ECSqlStepTask> stepTask)
     {
-    auto stepTask = m_stepTasks.find(name);
-    if (stepTask != m_stepTasks.end())
-        return stepTask->second.get();
-
-    return nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Affan.Khan         02/2014
-//---------------------------------------------------------------------------------------
-bool ECSqlStepTask::Collection::Add(std::unique_ptr<ECSqlStepTask> stepTask)
-    {
-    auto name = stepTask->GetName().c_str();
-    if (Find(name) != nullptr)
-        {
-        BeAssert(false && "Already have a property with same name");
-        return false;
-        }
-
-    m_stepTasks[name] = std::move(stepTask);
-    return true;
+    m_stepTasks.push_back(std::move(stepTask));
     }
 
 //---------------------------------------------------------------------------------------
@@ -106,9 +84,8 @@ bool ECSqlStepTask::Collection::Add(std::unique_ptr<ECSqlStepTask> stepTask)
 //---------------------------------------------------------------------------------------
 DbResult ECSqlStepTask::Collection::Execute(ExecutionCategory category, ECInstanceId const& instanceId)
     {
-    for (auto& pair : m_stepTasks)
+    for (std::unique_ptr<ECSqlStepTask>& stepTask : m_stepTasks)
         {
-        auto stepTask = pair.second.get();
         if (stepTask->GetExecutionCategory() == category)
             {
             DbResult status = stepTask->Execute(instanceId);
@@ -149,16 +126,16 @@ DbResult UpdateStructArrayStepTask::_Execute(ECInstanceId const& instanceId)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-ECSqlStepTaskCreateStatus UpdateStructArrayStepTask::Create(unique_ptr<UpdateStructArrayStepTask>& updateStepTask, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, Utf8CP property)
+ECSqlStepTaskCreateStatus UpdateStructArrayStepTask::Create(unique_ptr<UpdateStructArrayStepTask>& updateStepTask, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, Utf8CP propAccessString)
     {
     unique_ptr<InsertStructArrayStepTask> insertStepTask;
     unique_ptr<DeleteStructArrayStepTask> deleteStepTask;
 
-    ECSqlStepTaskCreateStatus status = InsertStructArrayStepTask::Create(insertStepTask, preparedContext, ecdb, classMap, property);
+    ECSqlStepTaskCreateStatus status = InsertStructArrayStepTask::Create(insertStepTask, preparedContext, ecdb, classMap, propAccessString);
     if (status != ECSqlStepTaskCreateStatus::Success)
         return status;
 
-    status = DeleteStructArrayStepTask::Create(deleteStepTask, preparedContext, ecdb, classMap, property);
+    status = DeleteStructArrayStepTask::Create(deleteStepTask, preparedContext, ecdb, classMap, propAccessString);
     if (status != ECSqlStepTaskCreateStatus::Success)
         return status;
 
@@ -252,9 +229,9 @@ DbResult InsertStructArrayStepTask::_Execute(ECInstanceId const& instanceId)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-ECSqlStepTaskCreateStatus InsertStructArrayStepTask::Create(unique_ptr<InsertStructArrayStepTask>& insertStepTask, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, Utf8CP property)
+ECSqlStepTaskCreateStatus InsertStructArrayStepTask::Create(unique_ptr<InsertStructArrayStepTask>& insertStepTask, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, Utf8CP propAccessString)
     {
-    PropertyMapCP propertyMap = classMap.GetPropertyMap(property);
+    PropertyMapCP propertyMap = classMap.GetPropertyMap(propAccessString);
     if (propertyMap == nullptr)
         return ECSqlStepTaskCreateStatus::PropertyNotFound;
 
@@ -315,7 +292,7 @@ ECSqlStepTaskCreateStatus InsertStructArrayStepTask::Create(unique_ptr<InsertStr
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
 DeleteStructArrayStepTask::DeleteStructArrayStepTask(PropertyMapStructArrayCR propertyMap, IClassMap const& classMap)
-: ECSqlPropertyStepTask(ExecutionCategory::ExecuteBeforeParentStep, propertyMap, classMap), m_deleteStmt(new EmbeddedECSqlStatement())
+: ECSqlStepTask(ExecutionCategory::ExecuteBeforeParentStep, propertyMap, classMap), m_deleteStmt(new EmbeddedECSqlStatement())
     {}
 
 
@@ -336,9 +313,9 @@ DbResult DeleteStructArrayStepTask::_Execute(ECInstanceId const& instanceId)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-ECSqlStepTaskCreateStatus DeleteStructArrayStepTask::Create(unique_ptr<DeleteStructArrayStepTask>& deleteStepTask, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, Utf8CP property)
+ECSqlStepTaskCreateStatus DeleteStructArrayStepTask::Create(unique_ptr<DeleteStructArrayStepTask>& deleteStepTask, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, Utf8CP propAccessString)
     {
-    PropertyMapCP propertyMap = classMap.GetPropertyMap(property);
+    PropertyMapCP propertyMap = classMap.GetPropertyMap(propAccessString);
     if (propertyMap == nullptr)
         return ECSqlStepTaskCreateStatus::PropertyNotFound;
 
@@ -375,28 +352,28 @@ ECSqlStepTaskCreateStatus DeleteStructArrayStepTask::Create(unique_ptr<DeleteStr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-ECSqlStepTaskCreateStatus ECSqlStepTaskFactory::CreatePropertyStepTask(std::unique_ptr<ECSqlStepTask>& stepTask, StepTaskType taskType, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, Utf8CP property)
+ECSqlStepTaskCreateStatus ECSqlStepTaskFactory::CreatePropertyStepTask(std::unique_ptr<ECSqlStepTask>& stepTask, StepTaskType taskType, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, Utf8CP propertyAccessPath)
     {
     switch (taskType)
         {
         case StepTaskType::Insert:
             {
             auto task = std::unique_ptr<InsertStructArrayStepTask> ();
-            auto status = InsertStructArrayStepTask::Create(task, preparedContext, ecdb, classMap, property);
+            auto status = InsertStructArrayStepTask::Create(task, preparedContext, ecdb, classMap, propertyAccessPath);
             stepTask = std::move(task);
             return status;
             }
         case StepTaskType::Update:
             {
             auto task = std::unique_ptr<UpdateStructArrayStepTask> ();
-            auto status = UpdateStructArrayStepTask::Create(task, preparedContext, ecdb, classMap, property);
+            auto status = UpdateStructArrayStepTask::Create(task, preparedContext, ecdb, classMap, propertyAccessPath);
             stepTask = std::move(task);
             return status;
             }
         case StepTaskType::Delete:
             {
             auto task = std::unique_ptr<DeleteStructArrayStepTask> ();
-            auto status = DeleteStructArrayStepTask::Create(task, preparedContext, ecdb, classMap, property);
+            auto status = DeleteStructArrayStepTask::Create(task, preparedContext, ecdb, classMap, propertyAccessPath);
             stepTask = std::move(task);
             return status;
             }
@@ -518,26 +495,55 @@ ECSqlStepTaskCreateStatus ECSqlStepTaskFactory::CreateUpdateStepTask(ECSqlStepTa
 ECSqlStepTaskCreateStatus ECSqlStepTaskFactory::CreateStepTaskList(ECSqlStepTask::Collection& taskList, ECSqlPrepareContext& preparedContext, StepTaskType taskType, ECDbR ecdb, IClassMap const& classMap, bool isPolymorphicStatement)
     {
     ECSqlStepTaskCreateStatus status = ECSqlStepTaskCreateStatus::Success;
-    auto processStructArrayProperties = [&taskList, &preparedContext, &taskType, &ecdb, &classMap, &status] (TraversalFeedback& feedback, PropertyMapCP propMap)
+    bset<ECDbPropertyPathId> ids;
+    auto processStructArrayProperties = [&taskList, &preparedContext, &taskType, &ecdb, &classMap, &status, &ids] (TraversalFeedback& feedback, PropertyMapCP propMap)
         {
-        if (propMap->GetAsPropertyMapStructArray() != nullptr)
+        if (propMap->GetAsPropertyMapStructArray() == nullptr)
             {
-            unique_ptr<ECSqlStepTask> task = nullptr;
-            status = ECSqlStepTaskFactory::CreatePropertyStepTask(task, taskType, preparedContext, ecdb, classMap, propMap->GetPropertyAccessString());
-            if (status == ECSqlStepTaskCreateStatus::Success)
-                taskList.Add(move(task));
-            else
-                {
-                BeAssert(false && "Failed to create property step task");
-                feedback = TraversalFeedback::Cancel;
-                }
-
-            feedback = TraversalFeedback::NextSibling;
+            feedback = TraversalFeedback::Next;
+            return;
             }
+
+        ECDbPropertyPathId propPathId = propMap->GetPropertyPathId();
+        if (ids.find(propPathId) != ids.end())
+            {
+            feedback = TraversalFeedback::NextSibling;
+            return;
+            }
+
+        unique_ptr<ECSqlStepTask> task = nullptr;
+        status = ECSqlStepTaskFactory::CreatePropertyStepTask(task, taskType, preparedContext, ecdb, classMap, propMap->GetPropertyAccessString());
+        if (status != ECSqlStepTaskCreateStatus::Success)
+            {
+            BeAssert(false && "Failed to create property step task");
+            feedback = TraversalFeedback::Cancel;
+            return;
+            }
+
+        ids.insert(propPathId);
+        taskList.Add(move(task));
+        feedback = TraversalFeedback::NextSibling;
         };
 
     classMap.GetPropertyMaps().Traverse(processStructArrayProperties, false);
-    return status;
+    if (!isPolymorphicStatement || status != ECSqlStepTaskCreateStatus::Success)
+        return status;
+
+    vector<IClassMap const*> derivedClassMaps = classMap.GetDerivedClassMaps();
+    for (IClassMap const* derivedClassMap : derivedClassMaps)
+        {
+        if (derivedClassMap == nullptr)
+            {
+            BeAssert(false && "classMap.GetDerivedClassMaps() should't return nullptr derived class maps");
+            return ECSqlStepTaskCreateStatus::Error;
+            }
+
+        status = CreateStepTaskList(taskList, preparedContext, taskType, ecdb, *derivedClassMap, isPolymorphicStatement);
+        if (status != ECSqlStepTaskCreateStatus::Success)
+            return status;
+        }
+
+    return ECSqlStepTaskCreateStatus::Success;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

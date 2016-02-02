@@ -15,11 +15,10 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECDbSchemaPersistenceHelper::ContainsECClass(ECDbCR db, ECClassCR ecClass)
     {
-    if (ecClass.HasId()) //This is unsafe but since we donot delete ecclass any class that hasId does exist in db
+    if (ecClass.HasId()) //This is unsafe but since we do not delete ecclass any class that hasId does exist in db
         return true;
 
-    const ECClassId classId = GetECClassId(db, Utf8String(ecClass.GetSchema().GetName().c_str()).c_str(),
-                                            Utf8String(ecClass.GetName().c_str()).c_str(), ResolveSchema::BySchemaName);
+    const ECClassId classId = GetECClassId(db, ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str(), ResolveSchema::BySchemaName);
 
     return classId > ECClass::UNSET_ECCLASSID;
     }
