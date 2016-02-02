@@ -47,9 +47,6 @@ ECDbAdapterTests.DeleteInstances_DeletedInstanceIsInHoldingCircularRelationships
 # Fails because ECDb holding relationship deletion deletes child but not subchildren
 ECDbAdapterTests.DeleteInstances_DeletingRelationshipThatHoldsHierarchy_HierarchyDeleted
 
-# Fails because ECDb does not update read-only and calculated properties
-DataSourceCacheTests.CacheResponse_ExistingInstanceWithReadOnlyProperty_UpdatesPropertyValueForSameInstanceInCache
-
 #Need adjustments to 06 ECRelationship limitations in ECDb
 #Test schema with relationship where end maps to multiple tables
 ExtendedDataAdapterTests.*

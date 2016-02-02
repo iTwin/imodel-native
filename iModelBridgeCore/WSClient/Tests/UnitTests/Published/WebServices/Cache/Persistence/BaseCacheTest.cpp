@@ -53,7 +53,6 @@ ECSchemaPtr BaseCacheTest::GetTestSchema()
                 <BaseClass>TestClass</BaseClass>
             </ECClass>
             <ECClass typeName="TestClass3" >
-                <ECProperty propertyName="PlaceholderPropertyForECDbMappingToWork" typeName="string" />
                 <ECProperty propertyName="TestReadOnlyProperty" typeName="string" readOnly="True" />
                 <ECProperty propertyName="TestCalculatedProperty" typeName="string" >
                     <ECCustomAttributes>
