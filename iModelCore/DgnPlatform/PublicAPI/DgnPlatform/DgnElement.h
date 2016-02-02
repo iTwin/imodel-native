@@ -251,7 +251,7 @@ public:
 //! @ingroup DgnElementGroup
 // @bsiclass                                                     KeithBentley    10/13
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnElement : NonCopyableClass, ICodedObject
+struct EXPORT_VTABLE_ATTRIBUTE DgnElement : NonCopyableClass, ICodedEntity
 {
 public:
     friend struct DgnElements;

@@ -846,7 +846,7 @@ enum class DrawPurpose
     RegionFlood,                 //!< Collect graphics to find closed regions/flood...
     FitView,
     ExportVisibleEdges,
-    InterferenceDetection,
+    ClashDetection,
     ModelFacet,
     Measure,
     VisibilityCalculation,

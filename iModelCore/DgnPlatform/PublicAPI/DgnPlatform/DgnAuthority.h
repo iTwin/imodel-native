@@ -10,7 +10,7 @@
 
 #include "DgnDomain.h"
 
-DGNPLATFORM_TYPEDEFS(ICodedObject);
+DGNPLATFORM_TYPEDEFS(ICodedEntity);
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -19,7 +19,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //! or element.
 // @bsistruct                                                    Paul.Connelly   01/16
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ICodedObject
+struct EXPORT_VTABLE_ATTRIBUTE ICodedEntity
 {
 protected:
     virtual DgnDbR _GetDgnDb() const = 0;
@@ -89,8 +89,8 @@ protected:
 
     DGNPLATFORM_EXPORT virtual DgnDbStatus _CloneCodeForImport(DgnCodeR clonedCode, DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const;
 
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _ValidateCode(ICodedObjectCR codedObject) const;
-    virtual DgnDbStatus _RegenerateCode(DgnCodeR regeneratedCode, ICodedObjectCR codedObject) const { regeneratedCode = codedObject.GetCode(); return DgnDbStatus::Success; }
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ValidateCode(ICodedEntityCR codedEntity) const;
+    virtual DgnDbStatus _RegenerateCode(DgnCodeR regeneratedCode, ICodedEntityCR codedEntity) const { regeneratedCode = codedEntity.GetCode(); return DgnDbStatus::Success; }
 
     static DgnCode CreateCode(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) { return DgnCode(authorityId, value, nameSpace); }
 
@@ -105,8 +105,8 @@ public:
 
     DGNPLATFORM_EXPORT DgnDbStatus Insert();
 
-    DGNPLATFORM_EXPORT DgnDbStatus ValidateCode(ICodedObjectCR obj) const;
-    DGNPLATFORM_EXPORT DgnDbStatus RegenerateCode(DgnCodeR newCode, ICodedObjectCR obj) const;
+    DGNPLATFORM_EXPORT DgnDbStatus ValidateCode(ICodedEntityCR entity) const;
+    DGNPLATFORM_EXPORT DgnDbStatus RegenerateCode(DgnCodeR newCode, ICodedEntityCR entity) const;
     DGNPLATFORM_EXPORT DgnDbStatus CloneCodeForImport(DgnCodeR newCode, DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const;
 
     DGNPLATFORM_EXPORT static DgnAuthorityPtr Import(DgnDbStatus* status, DgnAuthorityCR sourceAuthority, DgnImportContext& importer);
@@ -160,7 +160,7 @@ struct ModelAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority);
 protected:
-    virtual DgnDbStatus _ValidateCode(ICodedObjectCR obj) const override;
+    virtual DgnDbStatus _ValidateCode(ICodedEntityCR entity) const override;
 public:
     ModelAuthority(CreateParams const& params) : T_Super(params) { }
 
@@ -189,7 +189,7 @@ struct CategoryAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority);
 protected:
-    virtual DgnDbStatus _ValidateCode(ICodedObjectCR obj) const override;
+    virtual DgnDbStatus _ValidateCode(ICodedEntityCR entity) const override;
 public:
     CategoryAuthority(CreateParams const& params) : T_Super(params) { }
 
@@ -206,7 +206,7 @@ struct ResourceAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority);
 protected:
-    virtual DgnDbStatus _ValidateCode(ICodedObjectCR obj) const override;
+    virtual DgnDbStatus _ValidateCode(ICodedEntityCR entity) const override;
 public:
     ResourceAuthority(CreateParams const& params) : T_Super(params) { }
 
@@ -250,7 +250,7 @@ struct GeometryPartAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority);
 protected:
-    virtual DgnDbStatus _ValidateCode(ICodedObjectCR obj) const override;
+    virtual DgnDbStatus _ValidateCode(ICodedEntityCR entity) const override;
 public:
     GeometryPartAuthority(CreateParams const& params) : T_Super(params) { }
 
