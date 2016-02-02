@@ -182,9 +182,6 @@ class BeGTestListener : public ::testing::EmptyTestEventListener
     // Called after a failed assertion or a SUCCEED() invocation.
     virtual void OnTestPartResult(const ::testing::TestPartResult& test_part_result) 
         {
-        if (test_part_result.failed())
-            fprintf(stderr, "Test %s.%s failed at %s:%d: %s\n", m_currTestCaseName.c_str(), m_currTestName.c_str(), 
-                test_part_result.file_name(), test_part_result.line_number(), test_part_result.summary());
         }
 
     virtual void OnTestProgramEnd(const ::testing::UnitTest& unit_test) override
