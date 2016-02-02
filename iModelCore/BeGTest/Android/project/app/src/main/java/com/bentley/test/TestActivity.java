@@ -16,6 +16,7 @@ import org.json.JSONTokener;
 import android.app.Activity;
 import android.app.KeyguardManager;
 import android.app.KeyguardManager.KeyguardLock;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 import android.view.Surface;
@@ -32,6 +33,7 @@ public class TestActivity extends Activity implements SurfaceHolder.Callback
     private Surface     m_surface = null;
     private WakeLock    m_wakeLock = null;
     private static boolean s_didExtractAssets;
+    private static boolean s_didInitialize;
 
     private static final String     ASSETS_MANIFEST = "BeTestAndroid.manifest";
     private static final String     ASSETS_HASH_KEY = "BeTestAndroidAssetsHashes";
@@ -70,42 +72,15 @@ public class TestActivity extends Activity implements SurfaceHolder.Callback
     public void extractAssets ()
     	{
     	if (s_didExtractAssets)
-            {
-            File dataDir = new File (getApplicationInfo ().dataDir);
-        	if (!dataDir.isDirectory())
-        		Log.e (LOG_TAG, "dataDir does not exist!");
     		return;
+
+        if (!s_didInitialize)
+            {
+            Log.e (LOG_TAG, "Extracting assets before initialization!");
+            return;
             }
-    	
-        String appDataDir = getApplicationInfo ().dataDir;
-        String cacheDir = getCacheDir().getAbsolutePath();
 
-        try {
-        	File fileInDataDir = new File (appDataDir, "test_test");
-        	fileInDataDir.createNewFile();
-        	if (fileInDataDir.exists())
-        		Log.d (LOG_TAG, "Created file in dataDir");
-        	}
-        catch (IOException e)
-        	{
-        	Log.d (LOG_TAG, "Failed to create file in dataDir");
-        	}
-
-        try {
-        	File fileInCacheDir = new File (getCacheDir(), "test_test");
-        	fileInCacheDir.createNewFile();
-        	if (fileInCacheDir.exists())
-        		Log.d (LOG_TAG, "Created file in cacheDir");
-        	}
-        catch (IOException e)
-        	{
-        	Log.d (LOG_TAG, "Failed to create file in cacheDir");
-        	}
-        
-                    /* assets       docs                    temp      localState */
-        initializeJni (appDataDir, appDataDir+"/Documents", cacheDir, appDataDir);
-
-    	extractAssets (this, appDataDir, ASSETS_MANIFEST);
+    	extractAssets(this, getApplicationInfo().dataDir, ASSETS_MANIFEST);
     	s_didExtractAssets = true;
     	}
     
@@ -221,7 +196,46 @@ public class TestActivity extends Activity implements SurfaceHolder.Callback
         else
             Log.e (LOG_TAG, "Not all resources were extracted.");
         }
-            
+
+    public static void initialize(Context context)
+        {
+        if (s_didInitialize)
+            {
+            File dataDir = new File (context.getApplicationInfo ().dataDir);
+            if (!dataDir.isDirectory())
+                Log.e (LOG_TAG, "dataDir does not exist!");
+            return;
+            }
+
+        String appDataDir = context.getApplicationInfo().dataDir;
+        String cacheDir = context.getCacheDir().getAbsolutePath();
+
+        try {
+            File fileInDataDir = new File (appDataDir, "test_test");
+            fileInDataDir.createNewFile();
+            if (fileInDataDir.exists())
+                Log.d (LOG_TAG, "Created file in dataDir");
+            }
+        catch (IOException e)
+            {
+            Log.d (LOG_TAG, "Failed to create file in dataDir");
+            }
+
+        try {
+            File fileInCacheDir = new File (context.getCacheDir(), "test_test");
+            fileInCacheDir.createNewFile();
+            if (fileInCacheDir.exists())
+                Log.d (LOG_TAG, "Created file in cacheDir");
+            }
+        catch (IOException e)
+            {
+            Log.d (LOG_TAG, "Failed to create file in cacheDir");
+            }
+
+                    /* assets       docs                    temp      localState */
+        initializeJni (appDataDir, appDataDir+"/Documents", cacheDir, appDataDir);
+        s_didInitialize = true;
+        }
     private static native void initializeJni (String appDir, String docsDir, String tempDir, String localStateDir);
     
     public static native void initializeSqlang ();
