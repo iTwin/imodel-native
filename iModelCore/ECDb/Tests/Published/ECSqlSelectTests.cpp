@@ -14,7 +14,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST (ECSqlStatementTests, Select)
+TEST (ECSqlSelectTests, Select)
     {
     ECTEST_SETUP ("ECSqlStatementTests", "ECSqlStatementTests.01.00.ecschema.xml", L"Select.ecdb");
 
@@ -30,7 +30,7 @@ TEST (ECSqlStatementTests, Select)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST (ECSqlStatementTests, CountWithDistinctClause)
+TEST (ECSqlSelectTests, CountWithDistinctClause)
     {
     ECTEST_SETUP ("CountWithDistinctClause", "ECSqlStatementTests.01.00.ecschema.xml", L"CountWithDistinctClause.ecdb");
 
@@ -49,7 +49,7 @@ TEST (ECSqlStatementTests, CountWithDistinctClause)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST (ECSqlStatementTests, RelationalOperatorsOnPointProperties)
+TEST (ECSqlSelectTests, RelationalOperatorsOnPointProperties)
     {
     ECTEST_SETUP ("RelationalOperatorsOnPointProperties", "ECSqlTest.01.00.ecschema.xml", L"RelationalOperatorsOnPointProperties.ecdb");
 

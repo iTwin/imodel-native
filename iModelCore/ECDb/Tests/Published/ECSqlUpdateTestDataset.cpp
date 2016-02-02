@@ -753,10 +753,17 @@ ECSqlTestDataset ECSqlUpdateTestDataset::RelationshipLinkTableMappingTests(int r
 ECSqlTestDataset ECSqlUpdateTestDataset::RelationshipWithAdditionalPropsTests (ECDbR ecdb, int rowCountPerClass)
     {
     ECSqlTestDataset dataset;
+    bvector<ECInstanceId> psaIds = ECSqlTestFrameworkHelper::GetValidECInstanceIds (ecdb, "SELECT ECInstanceId FROM ecsql.PSA");
+    bvector<ECInstanceId> pIds = ECSqlTestFrameworkHelper::GetValidECInstanceIds (ecdb, "SELECT ECInstanceId FROM ecsql.P");
+
+    int i = 0; //used as indexNumber for class PSA
+    int j = 0; //used as indexNumber for class P
 
         {
         Savepoint savepoint (ecdb, "Inserting test instances");
-        const auto ecInstanceId = ECSqlTestFrameworkHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, TargetECInstanceId) VALUES (113, 83)");
+        Utf8String ecsqlStr;
+        ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, TargetECInstanceId) VALUES (%lld, %lld)", psaIds[i].GetValue (), pIds[j].GetValue ());
+        const ECInstanceId ecInstanceId = ECSqlTestFrameworkHelper::InsertTestInstance (ecdb, ecsqlStr.c_str());
         if (!ecInstanceId.IsValid ())
             {
             savepoint.Cancel ();

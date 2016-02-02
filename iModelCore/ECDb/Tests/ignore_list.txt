@@ -20,16 +20,6 @@ ECDbMappingTestFixture.PropertiesWithoutColumnsInExistingTable
 #TFS353210 will adress this (Raman)
 JsonUpdaterTests.CommonGeometryJsonSerialization
 
-#Hassan TFS#356965
-#should use dynamically read ECInstanceId from db instead of hardcode ones
-ECSqlInsertTestFramework.RelationshipLinkTableMappingTests
-ECSqlInsertTestFramework.RelationshipWithAdditionalPropsTests 
-ECSqlUpdateTestFramework.RelationshipWithAdditionalPropsTests
-ECSqlStatementTests.MiscTests
-ECSqlDeleteTestFramework.WhereRelationshipWithAdditionalPropsTests
-ECSqlSelectTestFramework.WhereRelationshipWithAdditionalPropsTests
-ECSqlUpdateTestFramework.WhereRelationshipWithAdditionalPropsTests
-
 # TFS359449 (Affan)
 ECSqlNavigationPropertyTestFixture.SingleInstanceNavProp_ForeignKeyMappingWithJoinedTable
 
