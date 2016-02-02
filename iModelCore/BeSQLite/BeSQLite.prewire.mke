@@ -2,7 +2,7 @@
 #
 #     $Source: BeSQLite.prewire.mke $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 PolicyFile = $(InternalSystemPolicy)
@@ -11,8 +11,8 @@ PolicyFile = $(InternalSystemPolicy)
 $(BuildContext)PublicAPI/BeSQLite : $(_MakeFilePath)PublicAPI/BeSQLite
     $(LinkFirstDepToFirstTargetAsDirectory)
 
-$(BuildContext)Delivery/sqlite-notice.txt : $(_MakeFilePath)SQLite/sqlite-notice.txt
+$(BuildContext)Delivery/sqlite-license.txt : $(_MakeFilePath)SQLite/sqlite-notice.txt
     $(LinkFirstDepToFirstTarget)
 
-$(BuildContext)Delivery/snappy-notice.txt : $(_MakeFilePath)snappy/snappy-notice.txt
+$(BuildContext)Delivery/snappy-license.txt : $(_MakeFilePath)snappy/snappy-notice.txt
     $(LinkFirstDepToFirstTarget)
