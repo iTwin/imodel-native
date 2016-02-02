@@ -139,8 +139,6 @@ private:
     BentleyStatus TryGetConstraintIdColumnNameFromNavigationProperty(Utf8StringR, ECN::ECRelationshipConstraintCR, ECN::ECRelationshipClassCR, ECN::ECRelationshipEnd constraintEnd) const;
 
     MapStatus CreateConstraintColumns(ECDbSqlColumn*& foreignKeyIdColumn, RelationshipMapInfo const&, ECN::ECRelationshipEnd constraintEnd, ECN::ECRelationshipConstraintCR);
-    MapStatus CreateConstraintPropMaps (ECN::ECRelationshipEnd foreignEnd, ECN::ECClassId defaultForeignEndClassId, ECDbSqlColumn* const& referencedEndECInstanceIdColumn, ECDbSqlColumn* const& referencedEndECClassIdColumn, ECN::ECClassId defaultReferencedEndClassId);
-    ECDbSqlColumn* ConfigureForeignECClassIdKey(RelationshipMapInfo const&, ECN::ECRelationshipConstraintCR referencedEndConstraint, ECDbSqlTable const& otheEndTable, size_t referencedEndTableCount);
     ECN::ECRelationshipEnd GetReferencedEnd () const;
 
     virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ClassMapLoadContext&, ECDbClassMapInfo const&, IClassMap const* parentClassMap) override;

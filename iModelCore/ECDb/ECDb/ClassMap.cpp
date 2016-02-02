@@ -1028,7 +1028,7 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
     localPropSet.insert(ECDbSystemSchemaHelper::ECPROPERTYPATHID_PROPNAME);
     localPropSet.insert(ECDbSystemSchemaHelper::OWNERECINSTANCEID_PROPNAME);
     localPropSet.insert(ECDbSystemSchemaHelper::PARENTECINSTANCEID_PROPNAME);
-
+    std::set<ECDbSqlTable*> tables;
     if (allPropertyInfos.empty())
         {
         SetTable(*const_cast<ECDbSqlTable*>(GetECDbMap().GetSQLManager().GetNullTable()));
@@ -1038,8 +1038,11 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
         for (auto propertyInfo : allPropertyInfos)
             {
             bool isLocal = localPropSet.find(propertyInfo->GetPropertyPath().GetName().c_str()) != localPropSet.end();
-            if (propertyInfo->ExpectingSingleColumn()->GetKind() == ColumnKind::ECClassId)
+            if (propertyInfo->GetColumns().front()->GetKind() == ColumnKind::ECClassId)
                 continue;
+           
+            for (auto column : propertyInfo->GetColumnsPList())
+                tables.insert(&column->GetTableR());
 
             if (isLocal && !secondaryTable)
                 secondaryTable = const_cast<ECDbSqlTable*>(&propertyInfo->ExpectingSingleColumn()->GetTable());
@@ -1047,10 +1050,16 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
                 primaryTable = const_cast<ECDbSqlTable*>(&propertyInfo->ExpectingSingleColumn()->GetTable());
             }
 
+        tables.erase(secondaryTable);
+        tables.erase(primaryTable);
+
         if (secondaryTable)
             {
             if (primaryTable && primaryTable != secondaryTable)
                 SetTable(*primaryTable);
+
+            for (auto table : tables)
+                SetTable(*table, true);
 
             SetTable(*secondaryTable, true);
             }
@@ -1063,13 +1072,20 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
 
     if (GetECInstanceIdPropertyMap() != nullptr)
         return BentleyStatus::ERROR;
+    
+    if (auto propInfo = mapInfo.FindPropertyMapByAccessString(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME))
+        {
+        PropertyMapPtr ecInstanceIdPropertyMap = PropertyMapECInstanceId::Create(Schemas(), *this, propInfo->GetColumnsPList());
+        if (ecInstanceIdPropertyMap == nullptr)
+            return BentleyStatus::ERROR;
 
-    PropertyMapPtr ecInstanceIdPropertyMap = PropertyMapECInstanceId::Create(Schemas(), *this);
-    if (ecInstanceIdPropertyMap == nullptr)
-        return BentleyStatus::ERROR;
-
-    GetPropertyMapsR().AddPropertyMap(ecInstanceIdPropertyMap);
-
+        GetPropertyMapsR().AddPropertyMap(ecInstanceIdPropertyMap);
+        }
+    else
+        {
+        BeAssert(false && "Failed to deserialize ECInstanceId");
+        return ERROR;
+        }
     return AddPropertyMaps(ctx, parentClassMap, &mapInfo, nullptr) == MapStatus::Success ? SUCCESS : ERROR;
     }
 

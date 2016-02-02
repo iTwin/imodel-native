@@ -741,8 +741,10 @@ struct ECDbClassMapInfo : NonCopyableClass
         std::vector<ECDbClassMapInfo*> const& GetChildren () const { return m_childClassMaps; }
         ECDbPropertyMapInfo const * FindPropertyMap (Utf8CP columnName) const;
         ECDbPropertyMapInfo const* FindPropertyMap (ECN::ECPropertyId rootPropertyId, Utf8CP accessString) const;
+        ECDbPropertyMapInfo const* FindPropertyMapByAccessString(Utf8CP accessString) const;
         ECDbPropertyMapInfo* CreatePropertyMap (ECDbPropertyPath const& propertyPath);
-        ECDbPropertyMapInfo* CreatePropertyMap (ECN::ECPropertyId rootPropertyId, Utf8CP accessString, ECDbSqlColumn const& column);
+        ECDbPropertyMapInfo* CreatePropertyMap (ECN::ECPropertyId rootPropertyId, Utf8CP accessString, std::vector<ECDbSqlColumn const*> const& columns);
+
     };
 
 //======================================================================================

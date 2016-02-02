@@ -301,8 +301,8 @@ Utf8String PropertyMapStructArrayTableKey::_ToString () const
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                08/2013
 //+---------------+---------------+---------------+---------------+---------------+-
-PropertyMapRelationshipConstraint::PropertyMapRelationshipConstraint(ECN::ECPropertyCR constraintProperty, std::vector<ECDbSqlColumn*> columns, ECSqlSystemProperty kind)
-    : PropertyMapSystem(constraintProperty, std::move(columns), kind)
+PropertyMapRelationshipConstraint::PropertyMapRelationshipConstraint(ECN::ECPropertyCR constraintProperty, std::vector<ECDbSqlColumn*> columns, ECSqlSystemProperty kind, Utf8CP endTableColumnAlias)
+    : PropertyMapSystem(constraintProperty, std::move(columns), kind),m_viewColumnAlias(endTableColumnAlias)
     {}
 
 //---------------------------------------------------------------------------------------
@@ -311,6 +311,8 @@ PropertyMapRelationshipConstraint::PropertyMapRelationshipConstraint(ECN::ECProp
 void PropertyMapRelationshipConstraint::AppendSelectClauseSqlSnippetForView (NativeSqlBuilder& viewSql) const
     {
     viewSql.Append (GetColumn ().GetName ().c_str());
+    if (HasViewColumnAlias ())
+        viewSql.AppendSpace ().Append (GetViewColumnAlias ());
     }
 
 
@@ -319,21 +321,21 @@ void PropertyMapRelationshipConstraint::AppendSelectClauseSqlSnippetForView (Nat
 //----------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle             01/2014
 //+---------------+---------------+---------------+---------------+---------------+-
-PropertyMapRelationshipConstraintECInstanceId::PropertyMapRelationshipConstraintECInstanceId (ECPropertyCR constraintProperty, std::vector<ECDbSqlColumn*> columns, ECSqlSystemProperty kind)
-: PropertyMapRelationshipConstraint (constraintProperty, columns, kind)
+PropertyMapRelationshipConstraintECInstanceId::PropertyMapRelationshipConstraintECInstanceId (ECPropertyCR constraintProperty, std::vector<ECDbSqlColumn*> columns, ECSqlSystemProperty kind, Utf8CP endTableColumnAlias)
+: PropertyMapRelationshipConstraint (constraintProperty, columns, kind, endTableColumnAlias)
     {}
 
 
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                08/2013
 //+---------------+---------------+---------------+---------------+---------------+-
-PropertyMapPtr PropertyMapRelationshipConstraintECInstanceId::Create (ECRelationshipEnd constraintEnd, ECDbSchemaManagerCR schemaManager, std::vector<ECDbSqlColumn*> columns)
+PropertyMapPtr PropertyMapRelationshipConstraintECInstanceId::Create (ECRelationshipEnd constraintEnd, ECDbSchemaManagerCR schemaManager, std::vector<ECDbSqlColumn*> columns, Utf8CP endTableColumnAlias)
     {
     auto kind = constraintEnd == ECN::ECRelationshipEnd_Source ? ECSqlSystemProperty::SourceECInstanceId : ECSqlSystemProperty::TargetECInstanceId;
     auto prop = ECDbSystemSchemaHelper::GetSystemProperty (schemaManager, kind);
     PRECONDITION (prop != nullptr, nullptr);
 
-    return new PropertyMapRelationshipConstraintECInstanceId (*prop, columns, kind);
+    return new PropertyMapRelationshipConstraintECInstanceId (*prop, columns, kind, endTableColumnAlias);
     }
 
 //---------------------------------------------------------------------------------------
@@ -345,8 +347,10 @@ NativeSqlBuilder::List PropertyMapRelationshipConstraintECInstanceId::_ToNativeS
 
     if (wrapInParentheses)
         nativeSqlSnippet.AppendParenLeft();
-
-    nativeSqlSnippet.Append (classIdentifier, GetColumn().GetName().c_str());
+    //view column alias is only relevant for SELECT as in the native SQL the FROM table is a view
+    //whose columns differ from the actual DbColumn name for end table mappings
+    auto columnExp = ecsqlType == ECSqlType::Select && HasViewColumnAlias () ? GetViewColumnAlias () : GetColumn ().GetName ().c_str();
+    nativeSqlSnippet.Append (classIdentifier, columnExp);
 
     if (wrapInParentheses)
         nativeSqlSnippet.AppendParenRight();
@@ -361,8 +365,8 @@ NativeSqlBuilder::List PropertyMapRelationshipConstraintECInstanceId::_ToNativeS
 //+---------------+---------------+---------------+---------------+---------------+-
 Utf8String PropertyMapRelationshipConstraintECInstanceId::_ToString () const
     {
-    return Utf8PrintfString ("PropertyMapRelationshipConstraintECInstanceId: Column name=%s",
-        GetColumn ().GetName ().c_str());
+    return Utf8PrintfString ("PropertyMapRelationshipConstraintECInstanceId: Column name=%s View column alias=%s",
+        GetColumn ().GetName ().c_str(), GetViewColumnAlias ());
     }
 
 //******************************** PropertyMapRelationshipConstraintClassId ****************************************
@@ -376,10 +380,11 @@ ECN::ECPropertyCR constraintProperty,
 std::vector<ECDbSqlColumn*> columns,
 ECSqlSystemProperty kind,
 ECClassId defaultConstraintECClassId,
-ClassMap const& classMap,
+ClassMap const& classMap, 
+Utf8CP endTableColumnAlias,
 bool colIsDelayGenerated
 )
-: PropertyMapRelationshipConstraint (constraintProperty, columns, kind),
+: PropertyMapRelationshipConstraint (constraintProperty, columns, kind, endTableColumnAlias),
 m_defaultConstraintClassId (defaultConstraintECClassId), m_isMappedToClassMapTables(false)
     {
     for (auto& column : columns)
@@ -420,13 +425,13 @@ m_defaultConstraintClassId (defaultConstraintECClassId), m_isMappedToClassMapTab
 // @bsimethod                                 Affan.Khan                11/2013
 //+---------------+---------------+---------------+---------------+---------------+-
 RefCountedPtr<PropertyMapRelationshipConstraintClassId> PropertyMapRelationshipConstraintClassId::Create(ECRelationshipEnd constraintEnd, ECDbSchemaManagerCR schemaManager,
-                        std::vector<ECDbSqlColumn*> columns, ECClassId defaultSourceECClassId, ClassMap const& classMap, bool colIsDelayGenerated)
+                        std::vector<ECDbSqlColumn*> columns, ECClassId defaultSourceECClassId, ClassMap const& classMap, Utf8CP endTableColumnAlias, bool colIsDelayGenerated)
     {
     auto kind = constraintEnd == ECN::ECRelationshipEnd_Source ? ECSqlSystemProperty::SourceECClassId : ECSqlSystemProperty::TargetECClassId;
     auto prop = ECDbSystemSchemaHelper::GetSystemProperty(schemaManager, kind);
     PRECONDITION(prop != nullptr, nullptr);
 
-    return new PropertyMapRelationshipConstraintClassId(*prop, columns, kind, defaultSourceECClassId, classMap, colIsDelayGenerated);
+    return new PropertyMapRelationshipConstraintClassId(*prop, columns, kind, defaultSourceECClassId, classMap,endTableColumnAlias, colIsDelayGenerated);
     }
 
 //---------------------------------------------------------------------------------------
@@ -441,7 +446,10 @@ NativeSqlBuilder::List PropertyMapRelationshipConstraintClassId::_ToNativeSql (U
 
     if (ecsqlType == ECSqlType::Select)
         {
-        nativeSqlSnippet.Append (classIdentifier, GetColumn().GetName().c_str());
+        //view column alias is only relevant for SELECT as in the native SQL the FROM table is a view
+        //whose columns differ from the actual DbColumn name for end table mappings
+        auto columnExp = ecsqlType == ECSqlType::Select && HasViewColumnAlias () ? GetViewColumnAlias () : GetColumn ().GetName ().c_str();
+        nativeSqlSnippet.Append (classIdentifier, columnExp);
         }
     else
         {
@@ -464,8 +472,8 @@ NativeSqlBuilder::List PropertyMapRelationshipConstraintClassId::_ToNativeSql (U
 //+---------------+---------------+---------------+---------------+---------------+-
 Utf8String PropertyMapRelationshipConstraintClassId::_ToString () const
     {
-    return Utf8PrintfString ("PropertyMapRelationshipConstraintClassId: Column name=%s Default constraint ECClassId=%lld",
-        GetColumn ().GetName ().c_str(), m_defaultConstraintClassId);
+    return Utf8PrintfString ("PropertyMapRelationshipConstraintClassId: Column name=%s View column alias=%s Default constraint ECClassId=%lld",
+        GetColumn ().GetName ().c_str(), GetViewColumnAlias (), m_defaultConstraintClassId);
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

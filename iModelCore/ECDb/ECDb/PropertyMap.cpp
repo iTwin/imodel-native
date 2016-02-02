@@ -214,13 +214,7 @@ BentleyStatus PropertyMap::_Save(ECDbClassMapInfo & classMapInfo) const
     if (columns.size() == 0)
         return SUCCESS;
 
-    if (columns.size() > 1)
-        {
-        BeAssert(false && "Override this funtion for multicolumn mapping");
-        return ERROR;
-        }
-
-    ECDbPropertyMapInfo* mapInfo = classMapInfo.CreatePropertyMap(GetRoot().GetProperty().GetId(), GetPropertyAccessString(), *columns.at(0));
+    ECDbPropertyMapInfo* mapInfo = classMapInfo.CreatePropertyMap(GetRoot().GetProperty().GetId(), GetPropertyAccessString(), columns);
     if (mapInfo == nullptr)
         return ERROR;
 
@@ -898,14 +892,14 @@ BentleyStatus PropertyMapPoint::_Save (ECDbClassMapInfo & classMapInfo) const
 
     auto rootPropertyId = GetRoot ().GetProperty ().GetId ();
     Utf8String accessString = GetPropertyAccessString ();
-    auto pm = classMapInfo.CreatePropertyMap (rootPropertyId, (accessString + ".X").c_str (), *m_xColumn);
+    auto pm = classMapInfo.CreatePropertyMap(rootPropertyId, (accessString + ".X").c_str(), {m_xColumn});
     if (pm == nullptr)
         {
         BeAssert (false && "Failed to create propertymap");
         return ERROR;
         }
 
-    classMapInfo.CreatePropertyMap (rootPropertyId, (accessString + ".Y").c_str (), *m_yColumn);
+    classMapInfo.CreatePropertyMap(rootPropertyId, (accessString + ".Y").c_str(), {m_yColumn});
     if (pm == nullptr)
         {
         BeAssert (false && "Failed to create propertymap");
@@ -915,7 +909,7 @@ BentleyStatus PropertyMapPoint::_Save (ECDbClassMapInfo & classMapInfo) const
     if (m_is3d)
         {
         BeAssert (m_zColumn != nullptr);
-        classMapInfo.CreatePropertyMap (rootPropertyId, (accessString + ".Z").c_str (), *m_zColumn);
+        classMapInfo.CreatePropertyMap(rootPropertyId, (accessString + ".Z").c_str(), {m_zColumn});
         if (pm == nullptr)
             {
             BeAssert (false && "Failed to create propertymap");

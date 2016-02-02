@@ -301,6 +301,7 @@ TEST (ECDbRelationships, ImportECRelationshipInstances)
     relInstance = CreateRelationship (test, "StartupCompany", "Employee", "Phone", "EmployeePhone");
     ASSERT_TRUE (relInstance.IsValid());
     ASSERT_EQ(SUCCESS, PersistRelationship(*relInstance, db));
+    db.SaveChanges();
     ValidatePersistingRelationship (db, "sc_Asset", InstanceToId (*relInstance->GetTarget()), 
         "Employee__src_01_id", InstanceToId (*relInstance->GetSource()).GetValue ());
     ValidateReadingRelationship (db,"StartupCompany", "EmployeePhone", *relInstance);

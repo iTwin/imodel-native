@@ -3011,6 +3011,20 @@ ECDbPropertyMapInfo const* ECDbClassMapInfo::FindPropertyMap (ECN::ECPropertyId 
 
     return nullptr;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        01/2015
+//---------------------------------------------------------------------------------------
+ECDbPropertyMapInfo const* ECDbClassMapInfo::FindPropertyMapByAccessString(Utf8CP accessString) const
+    {
+    for (auto kp : GetPropertyMaps(false))
+        {
+        if (kp->GetPropertyPath().GetAccessString() == accessString)
+            return kp;
+        }
+
+    return nullptr;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
@@ -3024,7 +3038,7 @@ ECDbPropertyMapInfo* ECDbClassMapInfo::CreatePropertyMap (ECDbPropertyPath const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-ECDbPropertyMapInfo* ECDbClassMapInfo::CreatePropertyMap (ECN::ECPropertyId rootPropertyId, Utf8CP accessString, ECDbSqlColumn const& column)
+ECDbPropertyMapInfo* ECDbClassMapInfo::CreatePropertyMap (ECN::ECPropertyId rootPropertyId, Utf8CP accessString, std::vector<ECDbSqlColumn const*> const& columns)
     {
     auto propertyPath = m_map.FindPropertyPath (rootPropertyId, accessString);
     if (propertyPath == nullptr)
@@ -3034,7 +3048,9 @@ ECDbPropertyMapInfo* ECDbClassMapInfo::CreatePropertyMap (ECN::ECPropertyId root
 
     auto prop = CreatePropertyMap(*propertyPath);
     BeAssert(prop != nullptr);
-    prop->GetColumnsR().push_back(&column);
+    for(auto column : columns)
+        prop->GetColumnsR().push_back(const_cast<ECDbSqlColumn*>(column));
+
     return prop;
     }
 
