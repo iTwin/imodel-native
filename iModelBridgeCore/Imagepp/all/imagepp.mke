@@ -110,8 +110,6 @@ HRasterDepends = $(ippAllInc)HRARaster.h \
 #PchExtraOptions = -YcImagePPInternal/hstdcpp.h -Fp$(o)$(appName).pch -Zm110
 
 
-
-
 #PchCompiland                    = $(baseDir)ConverterInternal.cpp
 #PchOutputDir                    = $(o)
 #PchExtraOptions                 = -Zm220
@@ -146,29 +144,17 @@ $(o)HFCCallbacks$(oext) : $(ippUtlDir)hfc/src/HFCCallbacks.cpp $(ippAllInc)HFCCa
 
 $(o)HFCCapabilities$(oext) : $(ippUtlDir)hfc/src/HFCCapabilities.cpp $(ippAllInc)HFCCapabilities.h $(ippAllInc)HFCCapabilities.h ${MultiCompileDepends}
 
-$(o)HFCConnection$(oext) : $(ippUtlDir)hfc/src/HFCConnection.cpp $(ippAllInc)HFCConnection.h $(ippAllInc)HFCConnection.h ${MultiCompileDepends}
-
 $(o)HFCEncodeDecodeASCII$(oext) : $(ippUtlDir)hfc/src/HFCEncodeDecodeASCII.cpp $(ippAllInc)HFCEncodeDecodeASCII.h ${MultiCompileDepends}
-
-$(o)HFCEvent$(oext) : $(ippUtlDir)hfc/src/HFCEvent.cpp $(ippAllInc)HFCEvent.h ${MultiCompileDepends}
 
 $(o)HFCException$(oext) : $(ippUtlDir)hfc/src/HFCException.cpp $(ippAllInc)HFCException.h ${MultiCompileDepends}
 
 $(o)HFCExceptionHandler$(oext) : $(ippUtlDir)hfc/src/HFCExceptionHandler.cpp $(ippAllInc)HFCExceptionHandler.h ${MultiCompileDepends}
 
-$(o)HFCHTTPConnection$(oext) : $(ippUtlDir)hfc/src/HFCHTTPConnection.cpp $(ippAllInc)HFCHTTPConnection.h ${MultiCompileDepends}
-
 $(o)HFCIniFileBrowser$(oext) : $(ippUtlDir)hfc/src/HFCIniFileBrowser.cpp $(ippAllInc)HFCIniFileBrowser.h ${MultiCompileDepends}
-
-$(o)HFCInternetConnection$(oext) : $(ippUtlDir)hfc/src/HFCInternetConnection.cpp $(ippAllInc)HFCInternetConnection.h ${MultiCompileDepends}
 
 $(o)HFCLocalBinStream$(oext) : $(ippUtlDir)hfc/src/HFCLocalBinStream.cpp $(ippAllInc)HFCLocalBinStream.h ${MultiCompileDepends}
 
-$(o)HFCLocalConnection$(oext) : $(ippUtlDir)hfc/src/HFCLocalConnection.cpp $(ippAllInc)HFCLocalConnection.h ${MultiCompileDepends}
-
 $(o)HFCMath$(oext) : $(ippUtlDir)hfc/src/HFCMath.cpp $(ippAllInc)HFCMath.h ${MultiCompileDepends}
-
-$(o)HFCMemcpy$(oext) : $(ippUtlDir)hfc/src/HFCMemcpy.cpp $(ippAllInc)HFCMemcpy.h ${MultiCompileDepends}
 
 $(o)HFCMemoryBinStream$(oext) : $(ippUtlDir)hfc/src/HFCMemoryBinStream.cpp $(ippAllInc)HFCMemoryBinStream.h ${MultiCompileDepends}
 
@@ -176,19 +162,11 @@ $(o)HFCMemoryLineStream$(oext) : $(ippUtlDir)hfc/src/HFCMemoryLineStream.cpp $(i
 
 $(o)HFCEmbedBinStream$(oext) : $(ippUtlDir)hfc/src/HFCEmbedBinStream.cpp $(ippAllInc)HFCEmbedBinStream.h ${MultiCompileDepends}
 
-$(o)HFCNode$(oext) : $(ippUtlDir)hfc/src/HFCNode.cpp $(ippAllInc)HFCNode.h ${MultiCompileDepends}
-
-$(o)HFCNodeIterator$(oext) : $(ippUtlDir)hfc/src/HFCNodeIterator.cpp $(ippAllInc)HFCNodeIterator.h ${MultiCompileDepends}
-
 $(o)HFCProgressEvaluator$(oext) : $(ippUtlDir)hfc/src/HFCProgressEvaluator.cpp $(ippAllInc)HFCProgressEvaluator.h ${MultiCompileDepends}
 
 $(o)HFCProgressIndicator$(oext) : $(ippUtlDir)hfc/src/HFCProgressIndicator.cpp $(ippAllInc)HFCProgressIndicator.h ${MultiCompileDepends}
 
-$(o)HFCSemaphore$(oext) : $(ippUtlDir)hfc/src/HFCSemaphore.cpp $(ippAllInc)HFCSemaphore.h ${MultiCompileDepends}
-
 $(o)HFCStat$(oext) : $(ippUtlDir)hfc/src/HFCStat.cpp $(ippAllInc)HFCStat.h ${MultiCompileDepends}
-
-$(o)HFCThread$(oext) : $(ippUtlDir)hfc/src/HFCThread.cpp $(ippAllInc)HFCThread.h ${MultiCompileDepends}
 
 $(o)HFCURL$(oext) : $(ippUtlDir)hfc/src/HFCURL.cpp $(ippAllInc)HFCURL.h ${MultiCompileDepends}
 
@@ -207,8 +185,6 @@ $(o)HFCURLHTTP$(oext) : $(ippUtlDir)hfc/src/HFCURLHTTP.cpp $(ippAllInc)HFCURLHTT
 $(o)HFCURLHTTPBase$(oext) : $(ippUtlDir)hfc/src/HFCURLHTTPBase.cpp $(ippAllInc)HFCURLHTTPBase.h ${MultiCompileDepends}
 
 $(o)HFCURLHTTPS$(oext) : $(ippUtlDir)hfc/src/HFCURLHTTPS.cpp $(ippAllInc)HFCURLHTTPS.h ${MultiCompileDepends}
-
-$(o)HFCURLInternetImagingSocket$(oext) : $(ippUtlDir)hfc/src/HFCURLInternetImagingSocket.cpp $(ippAllInc)HFCURLInternetImagingSocket.h ${MultiCompileDepends}
 
 $(o)HFCURLMemFile$(oext) : $(ippUtlDir)hfc/src/HFCURLMemFile.cpp $(ippAllInc)HFCURLMemFile.h ${MultiCompileDepends}
 
@@ -303,14 +279,6 @@ $(o)HCDLZWEncoder$(oext) : $(ippUtlDir)hcd/src/HCDLZWEncoder.cpp $(ippAllInc)HCD
 $(o)HCDPacket$(oext) : $(ippUtlDir)hcd/src/HCDPacket.cpp $(ippAllInc)HCDPacket.h ${MultiCompileDepends}
 
 $(o)HCDPacketRLE$(oext) : $(ippUtlDir)hcd/src/HCDPacketRLE.cpp $(ippAllInc)HCDPacketRLE.h ${MultiCompileDepends}
-
-$(o)HFSFileSystem$(oext) : $(ippUtlDir)hfs/src/HFSFileSystem.cpp $(ippAllInc)HFSFileSystem.h ${MultiCompileDepends}
-
-$(o)HFSItem$(oext) : $(ippUtlDir)hfs/src/HFSItem.cpp $(ippAllInc)HFSItem.h ${MultiCompileDepends}
-
-$(o)HFSItemIterator$(oext) : $(ippUtlDir)hfs/src/HFSItemIterator.cpp $(ippAllInc)HFSItemIterator.h ${MultiCompileDepends}
-
-$(o)HFSException$(oext) : $(ippUtlDir)hfs/src/HFSException.cpp $(ippAllInc)HFSException.h ${MultiCompileDepends}
 
 $(o)HIDXSearchCriteria$(oext) : $(ippUtlDir)hidx/src/HIDXSearchCriteria.cpp $(ippAllInc)HIDXSearchCriteria.h ${MultiCompileDepends}
 
@@ -1160,9 +1128,9 @@ $(o)HRFNitfEditor$(oext) : $(ippGraDir)hrf/src/HRFNitfEditor.cpp $(ippAllInc)HRF
 
 $(o)HRFNitfFile$(oext) : $(ippGraDir)hrf/src/HRFNitfFile.cpp $(ippAllInc)HRFNitfFile.h $(ippAllInc)HRFGdalSupportedFile.h ${MultiCompileDepends}
 
-$(o)HRFOGCService$(oext) : $(ippGraDir)hrf/src/HRFOGCService.cpp $(ippAllInc)HRFOGCService.h ${MultiCompileDepends}
+$(o)HRFOGCService$(oext) : $(ippGraDir)hrf/src/HRFOGCService.cpp $(ippAllInc)HRFOGCService.h $(ippGraDir)hrf/src/HRFOGCServiceEditor.h ${MultiCompileDepends}
 
-$(o)HRFOGCServiceEditor$(oext) : $(ippGraDir)hrf/src/HRFOGCServiceEditor.cpp $(ippAllInc)HRFOGCServiceEditor.h ${MultiCompileDepends}
+$(o)HRFOGCServiceEditor$(oext) : $(ippGraDir)hrf/src/HRFOGCServiceEditor.cpp $(ippGraDir)hrf/src/HRFOGCServiceEditor.h ${MultiCompileDepends}
 
 $(o)HRFPcxFile$(oext) : $(ippGraDir)hrf/src/HRFPcxFile.cpp $(ippAllInc)HRFPcxFile.h ${MultiCompileDepends}
 
@@ -1250,7 +1218,8 @@ $(o)HRFWbmpLineEditor$(oext) : $(ippGraDir)hrf/src/HRFWbmpLineEditor.cpp $(ippAl
 
 $(o)HRFWebFile$(oext) : $(ippGraDir)hrf/src/HRFWebFile.cpp $(ippAllInc)HRFWebFile.h ${MultiCompileDepends}
 
-$(o)HRFWCSFile$(oext) : $(ippGraDir)hrf/src/HRFWCSFile.cpp $(ippAllInc)HRFWCSFile.h ${MultiCompileDepends}
+# Disabled &&MM cleanup?
+#$(o)HRFWCSFile$(oext) : $(ippGraDir)hrf/src/HRFWCSFile.cpp $(ippAllInc)HRFWCSFile.h ${MultiCompileDepends}
 
 $(o)HRFWMSFile$(oext) : $(ippGraDir)hrf/src/HRFWMSFile.cpp $(ippAllInc)HRFWMSFile.h ${MultiCompileDepends}
 
@@ -1435,12 +1404,6 @@ DLMLINK_WARNINGS_AS_ERRORS  = 1
 
 # creatlib.mki common options
 LIB_TMP_DIR                 = $(o)
-LINKER_LIBRARIES_DELAYLOADED =  \
-                        $(ntPlatformLib)wsock32.lib $(ntPlatformLib)ws2_32.lib  \
-                        $(ntPlatformLib)Crypt32.lib $(ntPlatformLib)Dbghelp.lib \
-                        $(ntPlatformLib)shlwapi.lib $(BaseGeocoordLibExportLib) \
-                        $(ntPlatformLib)Winmm$(libext)
-
 
 %if defined (__IPP_EXTERNAL_THIRD_PARTY_SUPPORTED)
     # Adobe pdf support 
@@ -1467,18 +1430,25 @@ LINKER_LIBRARIES =  $(BeLibJpegTurbo) \
                     $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
                     $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext) \
                     $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
-                    $(ntPlatformLib)Urlmon.lib \
+                    $(BaseGeocoordLibExportLib) \
                     $(ContextSubpartsLibs)NCSEcw.lib
 
                     # Delaying the load of NCSEcw.lib creates a linker error 
                     # due to the import of the data symbol 
                     # "__declspec(dllimport) const NCS::CMutex::`vftable". 
-                    # This is why the dll is added above without delay-load. 
-
+                    # This is why the dll is added above without delay-load.                   
 
 %if defined (CREATE_STATIC_LIBRARIES)
     # embed our private external static lib into gralib.
     DLM_OBJECT_FILES + $(ContextSubpartsLibs)$(libprefix)MatrixFromTiePts$(stlibext) $(IppGdalLib) $(BeLibJpegTurbo) $(IppJpegLib12Bits) $(ContextSubpartsLibs)$(libprefix)BePng$(stlibext) $(ContextSubpartsLibs)$(libprefix)BeZLib$(stlibext)
+%else
+    %if $(TARGET_PLATFORM)=="Windows" || $(TARGET_PLATFORM)=="WinRT"
+        # For HRFWebFile.cpp
+        LINKER_LIBRARIES + Urlmon.lib
+
+        # For GDAL
+        LINKER_LIBRARIES + wsock32.lib ws2_32.lib
+    %endif
 %endif
 
 %if !defined(IPP_OBJ_ONLY)

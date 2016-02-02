@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLECWPS.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCURLECWPS
@@ -59,7 +59,6 @@ public:
         }
 
     //:> constructor
-    IMAGEPP_EXPORT                         HFCURLECWPS() { } //:> required for persistence
     IMAGEPP_EXPORT                         HFCURLECWPS(const WString& pi_URL);
     IMAGEPP_EXPORT                         HFCURLECWPS(const WString& pi_User,
                                                const WString& pi_Password,

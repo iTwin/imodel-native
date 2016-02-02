@@ -2,24 +2,25 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFOGCService.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Support all type of OGC files. (WMS and WCS)
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include "HFCAccessMode.h"
-
 #include "HRFRasterFile.h"
-#include "HRFRasterFileCapabilities.h"
-#include "HRFTilePool.h"
-
-#include <Imagepp/all/h/HFCHTTPConnection.h>
 
 BEGIN_IMAGEPP_NAMESPACE
-class HFCURL;
 
+class HFCURL;
+struct HttpRequest;
+struct HttpSession;
+struct OGCBlockQuery;
+struct OGCTile;
+struct WorkerPool;
+struct ThreadLocalHttp;
+    
 //-----------------------------------------------------------------------------
 // HRFOGCServiceCapabilities class
 //-----------------------------------------------------------------------------
@@ -27,37 +28,6 @@ class HRFOGCServiceCapabilities : public HRFRasterFileCapabilities
     {
 public:
     HRFOGCServiceCapabilities();
-    };
-
-//-----------------------------------------------------------------------------
-// HRFOGCServiceConnection class
-//-----------------------------------------------------------------------------
-class HRFOGCServiceConnection : public HFCHTTPConnection
-    {
-public:
-    HRFOGCServiceConnection(const WString& pi_rServer,
-                            const WString& pi_Usr = L"",
-                            const WString& pi_Pwd = L"");
-
-    HRFOGCServiceConnection(const HRFOGCServiceConnection& pi_rObj);
-    virtual ~HRFOGCServiceConnection();
-
-    void    NewRequest();
-    bool   RequestEnded() const;
-
-protected:
-    //--------------------------------------
-    // methods
-    //--------------------------------------
-
-    // called when a request is finished
-    virtual void    RequestHasEnded(bool pi_Success);
-
-private:
-    HFCInterlockedValue<bool>  m_RequestEnded;
-
-    // disable methods
-    HRFOGCServiceConnection& operator=(const HRFOGCServiceConnection);
     };
 
 //-----------------------------------------------------------------------------
@@ -91,7 +61,7 @@ public:
     HDECLARE_CLASS_ID(HRFOGCServiceId, HRFRasterFile)
 
     friend class HRFOGCServiceEditor;
-    friend class BlockReaderThread;
+    friend struct OGCBlockQuery;
 
     virtual                                 ~HRFOGCService();
 
@@ -120,14 +90,7 @@ public:
 
 protected:
 
-    typedef enum
-        {
-        WCS,
-        WMS
-        } OGCServiceType;
-
     HRFOGCService           (const HFCPtr<HFCURL>&      pi_rpURL,
-                             OGCServiceType             pi_OGCServiceType,
                              HFCAccessMode              pi_AccessMode,
                              uint64_t                  pi_Offset);
 
@@ -144,6 +107,7 @@ protected:
 
     void                                    CancelLookAhead         (uint32_t                   pi_Page);
 
+    virtual Utf8String _GetValidateConnectionRequest() const = 0;
 
     struct BitmapDimension
         {
@@ -155,20 +119,16 @@ protected:
     HAutoPtr<HFCBinStream>      m_pFile;
 
     // OGC file tags
-    string                      m_BaseRequest;
-    string                      m_Format;
+    Utf8String                 m_BaseRequest;
+    Utf8String                 m_Format;
     double                     m_BBoxMinX;
     double                     m_BBoxMinY;
     double                     m_BBoxMaxX;
     double                     m_BBoxMaxY;
     uint64_t                   m_Width;
     uint64_t                   m_Height;
-    WString                     m_ServerURL;
-    WString                     m_URLSearchPart;
-    string                      m_Request;
-    OGCServiceType              m_OGCServiceType;
-
-
+    WString                    m_ServerURL;
+    Utf8String                 m_Request;
 
     // image size
     BitmapDimension             m_MinImageSize;
@@ -181,28 +141,15 @@ protected:
     unsigned short             m_GTModelType;
     HFCPtr<HGF2DTransfoModel>   m_pModel;
 
-    HFCPtr<HRFOGCServiceConnection>    m_pConnection;
     bool                       m_NeedAuthentification;
 
+    std::unique_ptr<HttpRequest> m_requestTemplate;
     uint32_t                    m_ConnectionTimeOut;
-
-    HRFTilePool                 m_TilePool;
 
     HFCPtr<HGF2DTransfoModel>   CreateTransfoModel(GeoCoordinates::BaseGCSP pi_pGeocoding, uint64_t pi_Width, uint64_t pi_Height);
 
-
-    enum AUTHENTICATION_STATUS
-        {
-        AUTH_SUCCESS,
-        AUTH_PERMISSION_DENIED,
-        AUTH_USER_CANCELLED,
-        AUTH_MAX_RETRY_COUNT_REACHED,
-        };
-
-    virtual  AUTHENTICATION_STATUS       AuthorizeConnection();
-
-    AUTHENTICATION_STATUS AuthorizeConnectionSpecificRequest(string SpecificRequest);
-
+    void ValidateConnection(bool authenticate);
+    
     // Methods Disabled
     HRFOGCService                        (const HRFOGCService& pi_rObj);
     HRFOGCService&             operator= (const HRFOGCService& pi_rObj);

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ImagePP/all/h/ImageppLib.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -339,28 +339,23 @@ public:
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual BentleyStatus  _GetDefaultTempDirectory(BeFileName& tempFileName) const
         {
-        BentleyStatus Result = BSIERROR;
-
-#ifdef _WIN32 
-        // Try to get the HMR temp directory ("HMRTempDirectory")
-        WCharP pDir = 0;
-        if (pDir = _wgetenv (L"HMRTempDirectory"))
+#ifndef BENTLEY_WINRT 
+        // Try to get the HMR temp directory
+        char* pDir = getenv ("HMRTempDirectory");
+        if (nullptr != pDir)
             {
-            // Use default returned value.
-            tempFileName = BeFileName(pDir);
+            tempFileName.AssignA(pDir);
             return BSISUCCESS;
             }
-        if (pDir = _wgetenv (L"TEMP"))
-            {
-            // Use default returned value.
-            tempFileName = BeFileName(pDir);
-            return BSISUCCESS;
-            }
-#else
-        BeAssert(!"_GetDefaultTempDirectory must be implemented by Imagepp Host in ImageppLibAdmin implementation.");
 #endif
 
-        return Result;
+        // non-portable but work on some platform.
+        if(BeFileNameStatus::Success == BeFileName::BeGetTempPath(tempFileName))
+            return BSISUCCESS;
+            
+        BeAssert(!"_GetDefaultTempDirectory must be implemented by Imagepp Host in ImageppLibAdmin implementation.");
+
+        return BSIERROR;
         }
 
     /*---------------------------------------------------------------------------------**//**

@@ -14,9 +14,6 @@
 #include "HRFVirtualEarthEditor.h"
 #include <Imagepp/all/h/HRFVirtualEarthFile.h>
 #include <Imagepp/all/h/HRPPixelConverter.h>
-#include <Imagepp/all/h/HFCExceptionHandler.h>
-#include <Imagepp/all/h/HFCURLMemFile.h>
-#include <Imagepp/all/h/HRFJpegFile.h>
 #include <Imagepp/all/h/HRFPngFile.h>
 #include <ImagePPInternal/gra/Task.h>
 #include <ImagePPInternal/HttpConnection.h>
@@ -27,7 +24,7 @@
 //----------------------------------------------------------------------------------------
 void VirtualEarthTileQuery::_Run()
     {
-    HttpSession session;        //&&MM must keep that alive. one per thread.
+    HttpSession& session = m_rasterFile.GetThreadLocalHttpSession();
     HttpRequest request(m_tileUri.c_str());
     HttpResponsePtr response;
     if(HttpRequestStatus::Success != session.Request(response, request) || response.IsNull() || response->GetBody().empty())

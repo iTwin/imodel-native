@@ -14,7 +14,6 @@
 #include "HFCAccessMode.h"
 #include "HFCMonitor.h"
 
-#include "HFCInterlockedValue.h"
 #include "HFCURL.h"
 
 #include "HGF2DWorld.h"

@@ -50,6 +50,10 @@
 #include <ImagePP/all/h/HFCExclusiveKey.h>
 #include <ImagePP/all/h/HRFException.h>
 
+#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
+#include <urlmon.h>
+#endif
+
 
 //-----------------------------------------------------------------------------
 // Macros
@@ -225,18 +229,30 @@ HRFWebFile::HRFWebFile
 
     WChar filename[MAX_PATH];
 
+#ifdef BENTLEY_WIN32        // Keep using URLDownloadToCacheFile since it provides a cache mechanism.
     // URLDownloadToCacheFile(...)
     // - always return a file path if SUCCESS
     // Flags :
     //  URLOSTRM_GETNEWESTVERSION       Download the resource from the Internet, if it is newer, and store it in the cache.
     //  URLOSTRM_USECACHEDCOPY          Download the resource from the cache if it is available; otherwise, download it from the Internet.
     //  URLOSTRM_USECACHEDCOPY_ONLY     Only download the resource from the cache.
-#ifdef _WIN32
+
     if(0 != URLDownloadToCacheFileW(NULL, pi_rpURL->GetURL().c_str(), filename, URLOSTRM_GETNEWESTVERSION, 0, NULL))
-#endif
         {
         throw HRFCannotDownloadToInternetCacheException(pi_rpURL->GetURL());
         }
+#else
+//     HttpSession session;
+//     HttpRequest request(Utf8String(pi_rpURL->GetURL()).c_str());
+//     HttpResponsePtr response;
+//     if(HttpRequestStatus::Success != session.Request(response, request) || response.IsNull() || response->GetBody().empty())
+//         throw HRFCannotDownloadToInternetCacheException(pi_rpURL->GetURL());
+
+// We have a stream and need a file. Not all HRF support a MemoryBinStream and BeGetTempFileName will fail on non-windows. Were can we dump that file?
+    BeAssert(!"TODO dump file to temp and open it from there");
+
+#endif
+
 
     // compute local URL
     WString  localURL(L"file://");

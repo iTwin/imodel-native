@@ -8,7 +8,7 @@
 #include <ImagePPInternal/hstdcpp.h>
 #include <ImagePPInternal/HttpConnection.h>
 
-static std::atomic<uint32_t> s_curl_initTermCount = 0;
+static std::atomic<uint32_t> s_curl_initTermCount(0);
 
 //----------------------------------------------------------------------------------------
 // @bsiclass
@@ -136,10 +136,40 @@ HttpSession::~HttpSession()
 //         curl_global_cleanup();
     }
 
+    //! CURL handle is not reliable after a connectOnly request. So we use a static function that will make sure that the Curl handle won't be reuse. 
+    //! From CURL KNOWN_BUGS file:
+    //! 63. When CURLOPT_CONNECT_ONLY is used, the handle cannot reliably be re-used
+    //! for any further requests or transfers. The work-around is then to close that
+    //! handle with curl_easy_cleanup() and create a new. Some more details:
+    //! http://curl.haxx.se/mail/lib-2009-04/0300.html
+    static bool TestConnection(HttpRequest const& request);
+
+    
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  12/2015
 //----------------------------------------------------------------------------------------
 HttpRequestStatus HttpSession::Request(HttpResponsePtr& response, HttpRequest const& request, IHttpRequestCancellationToken const* cancellationToken)
+    {
+    if(request.GetConnectOnly())
+        {
+        // CURL handle is not reliable after a connectOnly request so we use a temporary session and never reuse it.
+        // From CURL 'KNOWN_BUGS' file:
+        // 63. When CURLOPT_CONNECT_ONLY is used, the handle cannot reliably be re-used
+        // for any further requests or transfers. The work-around is then to close that
+        // handle with curl_easy_cleanup() and create a new. Some more details:
+        // http://curl.haxx.se/mail/lib-2009-04/0300.html
+
+        HttpSession tempSession;
+        return tempSession.InternalRequest(response, request, cancellationToken);
+        }
+
+    return InternalRequest(response, request, cancellationToken); 
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  12/2015
+//----------------------------------------------------------------------------------------
+HttpRequestStatus HttpSession::InternalRequest(HttpResponsePtr& response, HttpRequest const& request, IHttpRequestCancellationToken const* cancellationToken)
     {
     curl_easy_reset (m_curl);   // reset to original state for the incoming connection.
 
@@ -160,6 +190,18 @@ HttpRequestStatus HttpSession::Request(HttpResponsePtr& response, HttpRequest co
         curl_easy_setopt(m_curl, CURLOPT_XFERINFODATA, cancellationToken);
         curl_easy_setopt(m_curl, CURLOPT_NOPROGRESS, 0);
         }
+
+    //&&MM todo we need to provide certificate authorities. For now ignore in debug build.
+    //From http://curl.haxx.se/docs/caextract.html
+    //curl_easy_setopt(m_curl, CURLOPT_CAINFO, "C:\\down\\!Ca_certificate\\cacert.perm");
+#ifndef NDEBUG
+    curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYPEER, 0L);
+    curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYHOST, 0L);
+    curl_easy_setopt(m_curl, CURLOPT_CAINFO, nullptr);
+#endif
+    
+    if(request.GetConnectOnly())
+        curl_easy_setopt(m_curl, CURLOPT_CONNECT_ONLY, 1L);
     
     // user/password
     if (!request.GetCredentials ().GetUsername().empty())
@@ -173,8 +215,7 @@ HttpRequestStatus HttpSession::Request(HttpResponsePtr& response, HttpRequest co
     if (!request.GetProxyCredentials ().GetPassword().empty())
         curl_easy_setopt (m_curl, CURLOPT_PROXYPASSWORD, request.GetProxyCredentials ().GetPassword().c_str ());
         
-    // if we ever need it a Millisecond version exist: CURLOPT_CONNECTTIMEOUT_MS
-    curl_easy_setopt (m_curl, CURLOPT_CONNECTTIMEOUT, (long)request.GetTimeoutSeconds ());
+    curl_easy_setopt (m_curl, CURLOPT_TIMEOUT_MS, (long)request.GetTimeoutMs ());
 
     curl_slist* curlRequestHeader = NULL;
     for (auto& line : request.GetHeader())
@@ -187,14 +228,14 @@ HttpRequestStatus HttpSession::Request(HttpResponsePtr& response, HttpRequest co
         return HttpRequestStatusFromCURLcode(resquestCode);        
 
     long responseCode;
-    if (CURLE_OK != curl_easy_getinfo(m_curl, CURLINFO_RESPONSE_CODE, &responseCode) || (0 == responseCode))
+    if (CURLE_OK != curl_easy_getinfo(m_curl, CURLINFO_RESPONSE_CODE, &responseCode))
         return HttpRequestStatus::UnknownError;
 
     response = new HttpResponse(HttpStatusFromResponseCode(responseCode), std::move(responseHeader), std::move(responseBody));
 
     // A request may return CURLE_OK but with an invalid responseCode(ex: 401). 
     // A 2xx code is a success : http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
-    if(!IN_RANGE(responseCode, 200, 299))
+    if(!request.GetConnectOnly() && !IN_RANGE(responseCode, 200, 299))
         return HttpRequestStatus::ResponseCodeError;
 
     return HttpRequestStatus::Success;

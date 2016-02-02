@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLEmbedFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -37,7 +37,6 @@ public:
 
     IMAGEPP_EXPORT                  HFCURLEmbedFile(const WString& pi_rURL, IFileReaderHandler* pi_pHandler);
 
-    HFCURLEmbedFile() { } // required for persistence
     IMAGEPP_EXPORT virtual         ~HFCURLEmbedFile();
 
     // Content access methods

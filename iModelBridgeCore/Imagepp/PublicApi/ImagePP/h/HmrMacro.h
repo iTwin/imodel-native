@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/h/HmrMacro.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -11,7 +11,7 @@
 #include <Bentley/Bentley.h>
 #include <Bentley/RefCounted.h>
 #include <Bentley/BeDebugLog.h>
-
+#include <math.h>       // For round()
 
 #if !defined(MAX)
 #   define MAX(a,b)                 ((a)>(b)?(a):(b))
@@ -570,7 +570,7 @@ inline void RedirectedAssert(bool pi_Success, WCharCP pi_pExpr, WCharCP pi_pFile
 ** --------------------------------------------------------------------------
 */
 
-#if defined(__HMR_DEBUG) && defined(_WIN32)
+#if defined(__HMR_DEBUG)
 #define HDEBUGTEXT(text)  BeDebugLogFunctions::PerformBeDebugLog(text, __FILE__, __LINE__);
 #else
 #define HDEBUGTEXT(text)
@@ -585,7 +585,7 @@ inline void RedirectedAssert(bool pi_Success, WCharCP pi_pExpr, WCharCP pi_pFile
 ** --------------------------------------------------------------------------
 */
 
-#if defined(__HMR_DEBUG) && defined(_WIN32)
+#if defined(__HMR_DEBUG)
 #define HWARNING(condition, text)  if (!(int)(condition))     \
                                        {                          \
                                            HDEBUGTEXT(text)       \
@@ -713,24 +713,6 @@ inline void RedirectedAssert(bool pi_Success, WCharCP pi_pExpr, WCharCP pi_pFile
 
 #endif
 
-#if !defined(hmin)
-#    define hmin(a,b) ((a)<(b)?(a):(b))
-#endif
-
-#if !defined(hmax)
-#   define hmax(a,b) ((a)>(b)?(a):(b))
-#endif
-
-#if defined (ANDROID) || defined (__APPLE__)
-
-#elif defined (_WIN32)
-#   if !defined(round)
-#       define round(a) ((long)((a)<0.0?(a)-0.5:(a)+0.5))
-#   endif
-#else
-#   error Unknown compiler.
-#endif
-
 /*
 ** --------------------------------------------------------------------------
 **  HNOVTABLEINIT
@@ -739,7 +721,7 @@ inline void RedirectedAssert(bool pi_Success, WCharCP pi_pExpr, WCharCP pi_pFile
 **  instantiated directly (virtual base classes).
 ** --------------------------------------------------------------------------
 */
-#ifdef _WIN32
+#if defined (BENTLEY_WIN32) ||defined(BENTLEY_WINRT)
 #    define HNOVTABLEINIT   __declspec(novtable)
 #else
 #    define HNOVTABLEINIT

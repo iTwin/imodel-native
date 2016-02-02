@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFJpegFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -32,9 +32,6 @@ public:
     HRFJpegCapabilities();
 
     };
-
-static void HRFJpegErrorExit(j_common_ptr cinfo);
-
 class HRFJpegFile : public HRFRasterFile
     {
 public:
@@ -42,14 +39,6 @@ public:
     HDECLARE_CLASS_ID(HRFFileId_Jpeg, HRFRasterFile)
 
     friend class HRFJpegLineEditor;
-
-#if defined (ANDROID) || defined (__APPLE__)
-    friend void HRFJpegErrorExit(j_common_ptr cinfo); 
-#elif defined (_WIN32)
-    friend static void HRFJpegErrorExit(j_common_ptr cinfo); 
-#endif
-
-
 
     // allow to Open an image file
     HRFJpegFile           (const HFCPtr<HFCURL>&          pi_rpURL,
@@ -132,6 +121,8 @@ private:
     bool                   Create();
 
     HFCPtr<HRPPixelType>    CreatePixelTypeFromFile() const;
+
+    static void JpegLibErrorExit(j_common_ptr cinfo); 
 
     // Methods Disabled
     HRFJpegFile(const HRFJpegFile& pi_rObj);

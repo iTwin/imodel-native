@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCBinStream.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCBinStream
@@ -49,12 +49,6 @@ public:
     IMAGEPP_EXPORT HFCException const*     GetLastException() const;
     IMAGEPP_EXPORT bool             IsOpened() const;
     IMAGEPP_EXPORT void ThrowOnError() const;
-
-
-    // Multiuser access
-
-    virtual void            Lock(uint64_t pi_Pos, uint64_t pi_Size, bool pi_Share) = 0;
-    virtual void            Unlock(uint64_t pi_Pos, uint64_t pi_Size) = 0;
 
     // File pointer management
 

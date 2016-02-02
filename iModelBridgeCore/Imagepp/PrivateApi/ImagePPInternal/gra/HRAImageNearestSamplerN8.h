@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PrivateApi/ImagePPInternal/gra/HRAImageNearestSamplerN8.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -78,8 +78,8 @@ private:
     template<class Surface_T>
     ImagePPStatus Warp_T(HRAImageSampleR outData, PixelOffset const& outOffset, Surface_T& inData, PixelOffset const& inOffset);
     
-    template<class Surface_T, class Allocator_T>
-    ImagePPStatus Warp_T(HRAImageSampleR outData, PixelOffset const& outOffset, Surface_T& inData, PixelOffset const& inOffset, Allocator_T& allocator);
+    template<class Surface_T, class Executor_T>
+    ImagePPStatus Warp_T(HRAImageSampleR outData, PixelOffset const& outOffset, Surface_T& inData, PixelOffset const& inOffset, Executor_T& executor);
     };
 
 END_IMAGEPP_NAMESPACE

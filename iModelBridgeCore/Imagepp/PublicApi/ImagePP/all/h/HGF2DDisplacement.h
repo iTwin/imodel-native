@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DDisplacement.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DDisplacement
@@ -17,7 +17,6 @@
 #include "HGFBearing.h"
 
 BEGIN_IMAGEPP_NAMESPACE
-//typedef BentleyApi::ImagePP::HGF2DCoord<double> HGF2DPosition;
 
 /** -----------------------------------------------------------------------------
     @version 1.0

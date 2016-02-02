@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCLocalBinStream.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCLocalBinStream
@@ -338,54 +338,6 @@ size_t HFCLocalBinStream::Write(const void* pi_pData, size_t pi_DataSize)
 
     return BytesWritten;
     }
-
-//---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
-void HFCLocalBinStream::Lock(uint64_t pi_Pos, uint64_t pi_Size, bool pi_Share)
-    {
-#if defined (ANDROID) || defined (__APPLE__)      
-    //DM-Android
-
-#elif defined (_WIN32)
-    OVERLAPPED info;
-    info.Offset = (DWORD)pi_Pos;
-    info.OffsetHigh = (DWORD)(pi_Pos >> 32);
-    info.hEvent = 0;
-    DWORD flags = pi_Share ? (LOCKFILE_FAIL_IMMEDIATELY) : (LOCKFILE_EXCLUSIVE_LOCK | LOCKFILE_FAIL_IMMEDIATELY);
-    while (!LockFileEx(m_BeFile.GetHandle(), flags, 0, (DWORD)pi_Size, (DWORD)(pi_Size >> 32), &info))
-        {
-        DWORD LastError=GetLastError();
-        if (LastError == 6 /* ERROR_INVALID_HANDLE */)
-            break;
-
-        // We are not sure the lock have been complete,
-        // but be sure to unlock the file....
-        Unlock(pi_Pos, pi_Size);
-        Sleep(SLEEP_TIME);
-        }
-#endif
-    }
-
-
-//---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
-void HFCLocalBinStream::Unlock(uint64_t pi_Pos, uint64_t pi_Size)
-    {
-#if defined (ANDROID) || defined (__APPLE__)      
-        //DM-Android
-
-#elif defined (_WIN32)
-    OVERLAPPED info;
-    info.Offset = (DWORD)pi_Pos;
-    info.OffsetHigh = (DWORD)(pi_Pos >> 32);
-    info.hEvent = 0;
-    if (!UnlockFileEx(m_BeFile.GetHandle(), 0, (DWORD)pi_Size, (DWORD)(pi_Size >> 32), &info))
-        {
-        SetLastExceptionClassID();
-        }
-#endif
-    }
-
 
 
 void HFCLocalBinStream::SetLastExceptionClassID()

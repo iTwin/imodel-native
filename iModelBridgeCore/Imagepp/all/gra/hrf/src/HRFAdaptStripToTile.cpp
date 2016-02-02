@@ -11,7 +11,6 @@
 
 #include <ImagePPInternal/hstdcpp.h>
 
-#include <Imagepp/all/h/HFCMemcpy.h>
 #include <Imagepp/all/h/HFCAccessMode.h>
 
 #include <Imagepp/all/h/HRFRasterFile.h>
@@ -157,7 +156,7 @@ HSTATUS HRFAdaptStripToTile::ReadBlock(uint64_t pi_PosBlockX,
     Alloc_m_ppBlocks();
 
     // Copy the data to the client buffer
-    HFCMemcpy(po_pData, m_ppBlocks[pi_PosBlockX/m_BlockWidth], m_ExactBytesPerBlockWidth*m_BlockHeight);
+    memcpy(po_pData, m_ppBlocks[pi_PosBlockX/m_BlockWidth], m_ExactBytesPerBlockWidth*m_BlockHeight);
 
     return Status;
     }
@@ -192,7 +191,7 @@ HSTATUS HRFAdaptStripToTile::WriteBlock(uint64_t     pi_PosBlockX,
     Alloc_m_ppBlocks();
 
     // Copy the client buffer to the intern blocks
-    HFCMemcpy(m_ppBlocks[pi_PosBlockX/m_BlockWidth], pi_pData, m_ExactBytesPerBlockWidth*m_BlockHeight);
+    memcpy(m_ppBlocks[pi_PosBlockX/m_BlockWidth], pi_pData, m_ExactBytesPerBlockWidth*m_BlockHeight);
 
     m_IsBlocksOverwritten = true;
     m_IsBlocksEmpty = false;
@@ -277,9 +276,7 @@ HSTATUS HRFAdaptStripToTile::LoadBlocks(uint32_t pi_PosBlockX,
                     {
                     uint32_t LinePosInTile = (StartPositionInTile+NoLine)*m_ExactBytesPerBlockWidth;
 
-                    HFCMemcpy(m_ppBlocks[NoTile]+LinePosInTile,
-                              pInLineBuffer,
-                              ExactBytesToCopy);
+                    memcpy(m_ppBlocks[NoTile]+LinePosInTile, pInLineBuffer, ExactBytesToCopy);
                     pInLineBuffer += m_ExactBytesPerWidth;
                     }
                 }
@@ -366,9 +363,7 @@ HSTATUS HRFAdaptStripToTile::SaveBlocks()
                 {
                 uint32_t LinePosInTile = (StartPositionInTile+NoLine)*m_ExactBytesPerBlockWidth;
 
-                HFCMemcpy(pInLineBuffer,
-                          m_ppBlocks[NoTile]+LinePosInTile,
-                          ExactBytesToCopy);
+                memcpy(pInLineBuffer, m_ppBlocks[NoTile]+LinePosInTile, ExactBytesToCopy);
                 pInLineBuffer += m_ExactBytesPerWidth;
                 }
             }

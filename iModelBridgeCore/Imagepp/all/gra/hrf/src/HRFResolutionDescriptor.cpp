@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFResolutionDescriptor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -907,10 +907,10 @@ double HRFResolutionDescriptor::RoundResolutionRatio(uint32_t pi_MainSize, uint3
     {
     double ResCurrent = (double)pi_SubResSize / (double)pi_MainSize;
 
-    int32_t Exposent = round(log(1.0 / ResCurrent) / log(2.0));
+    int32_t Exposent = (int32_t)round(log(1.0 / ResCurrent) / log(2.0));
     double Val2Exposent = pow(2.0, Exposent);
     double ResSize = pi_MainSize / Val2Exposent;
-
+    
     if (fabs(ResSize - (double)pi_SubResSize) < 1.0 && (double)pi_SubResSize > ResSize)
         ResCurrent = 1.0 / Val2Exposent;
 

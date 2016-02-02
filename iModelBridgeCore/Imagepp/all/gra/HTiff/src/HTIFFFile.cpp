@@ -28,7 +28,6 @@
 #include <Imagepp/all/h/HCDCodecJBIG.h>
 #include <Imagepp/all/h/HCDCodecIJG.h>
 
-#include <Imagepp/all/h/HFCMemcpy.h>
 #include <Imagepp/all/h/HFCMonitor.h>
 #include <Imagepp/all/h/HFCLocalBinStream.h>
 #include <Imagepp/all/h/HFCURL.h>
@@ -3189,7 +3188,7 @@ void HTIFFFile::PrepareForJPEG(Byte* pio_pData,
         for (uint32_t Y = 0; Y < pi_RelevantHeight; ++Y, pDest += LineWidth, pSrc += LineWidth)
             {
             for (Pixel = 0; Pixel < PaddingWidth; ++Pixel)
-                HFCMemcpy(pDest + Pixel * BytesPerPixel, pSrc, BytesPerPixel);
+                memcpy(pDest + Pixel * BytesPerPixel, pSrc, BytesPerPixel);
             }
         }
 
@@ -3205,7 +3204,7 @@ void HTIFFFile::PrepareForJPEG(Byte* pio_pData,
         Byte* pSrc  = pio_pData + (pi_RelevantHeight - 1) * LineWidth;
         Byte* pDest = pio_pData + pi_RelevantHeight * LineWidth;
         for (uint32_t Y = 0; Y < PaddingHeight; ++Y, pDest += LineWidth)
-            HFCMemcpy(pDest, pSrc, LineWidth);
+            memcpy(pDest, pSrc, LineWidth);
         }
     }
 

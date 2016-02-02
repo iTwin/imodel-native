@@ -11,8 +11,6 @@
 
 #include <ImagePPInternal/hstdcpp.h>
 
-
-#include <Imagepp/all/h/HFCMemcpy.h>
 #include <Imagepp/all/h/HFCAccessMode.h>
 
 #include <Imagepp/all/h/HRFRasterFile.h>
@@ -154,7 +152,7 @@ HSTATUS HRFAdaptLineToTile::ReadBlock(uint64_t pi_PosBlockX,
     Alloc_m_ppBlocks();
 
     // Copy the data to the client buffer
-    HFCMemcpy(po_pData, m_ppBlocks[pi_PosBlockX/m_BlockWidth], m_ExactBytesPerBlockWidth*m_BlockHeight);
+    memcpy(po_pData, m_ppBlocks[pi_PosBlockX/m_BlockWidth], m_ExactBytesPerBlockWidth*m_BlockHeight);
 
     return Status;
     }

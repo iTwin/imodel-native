@@ -2,7 +2,7 @@
 |
 |     $Source: ext/MatrixFromTiePts/src/oldhmrmacro.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -156,14 +156,6 @@
 
 #define HDOUBLE_SMALLER_EPSILON(v1, v2) (v1 < (v2-HGLOBAL_EPSILON))
 #define HDOUBLE_SMALLER(v1, v2, precision) (v1 < (v2-precision))
-
-
-#if !defined(round)
-#if defined (_WIN32) && (_MSC_VER < 1800)
-/* #   define round(a) ((long)((a)<0.0?(a)-0.5:(a)+0.5)) */
-#   define round(a) ((long)(HDOUBLE_SMALLER_EPSILON((a),0.0)?(a)-0.5:(a)+0.5))
-#endif
-#endif
 
 #if !defined(SIGN)
 #   define SIGN(a, b) ((b) >= 0.0 ? fabs(a) : -fabs(a))

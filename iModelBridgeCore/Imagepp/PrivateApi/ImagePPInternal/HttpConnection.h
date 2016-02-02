@@ -35,6 +35,8 @@ enum class HttpResponseStatus : long
     {
     Unknown = -1,
 
+    NoResponceCode = 0,     // Will be zero if no server response code has been received
+
     // Successful
     Success = 200,
     Created = 201,
@@ -99,7 +101,7 @@ public:
     Credentials (Utf8CP username, Utf8CP password):m_username(username), m_password(password) {}
 
     Credentials (const Credentials&) = default;   
-    Credentials& Credentials::operator= (const Credentials&) = default;
+    Credentials& operator= (const Credentials&) = default;
 
     ~Credentials (){};
 
@@ -123,11 +125,12 @@ private:
 
     Credentials m_credentials;
     Credentials m_proxyCredentials;
-    uint32_t    m_connectionTimeOut;            // in seconds.
+    uint32_t    m_timeOutMs;            // in milliseconds.
+    bool        m_connectOnly;
 
 public:
-    HttpRequest(Utf8CP url) : m_url(url) {}
-    HttpRequest(Utf8CP url, bmap<Utf8String, Utf8String> const& header) : m_url(url), m_header(header) {}
+    HttpRequest(Utf8CP url) : m_url(url), m_connectOnly(false), m_timeOutMs(0){}
+    HttpRequest(Utf8CP url, bmap<Utf8String, Utf8String> const& header) : m_url(url), m_header(header), m_connectOnly(false), m_timeOutMs(0){}
 
     Utf8StringCR        GetUrl() const {return m_url;}
     void                SetUrl(Utf8StringCR url) {m_url = url;}
@@ -141,8 +144,11 @@ public:
     Credentials const&  GetProxyCredentials() const {return m_proxyCredentials;}
     void                SetProxyCredentials(Credentials const& credentials) {m_proxyCredentials = credentials;}
 
-    uint32_t            GetTimeoutSeconds() const {return m_connectionTimeOut;}
-    void                SetTimeoutSeconds(uint32_t timeOutInSeconds) {m_connectionTimeOut = timeOutInSeconds;}
+    uint32_t            GetTimeoutMs() const {return m_timeOutMs;}
+    void                SetTimeoutMs(uint32_t timeOutInMs) {m_timeOutMs = timeOutInMs;}
+
+    bool                GetConnectOnly() const {return m_connectOnly;}
+    void                SetConnectOnly(bool connect) {m_connectOnly= connect;}
 };
 
 //----------------------------------------------------------------------------------------
@@ -201,6 +207,8 @@ public:
     HttpRequestStatus Request(HttpResponsePtr& response, HttpRequest const& request, IHttpRequestCancellationToken const* cancellationToken = nullptr);
 
 private:
+    HttpRequestStatus InternalRequest(HttpResponsePtr& response, HttpRequest const& request, IHttpRequestCancellationToken const* cancellationToken);
+
     // disable methods
     HttpSession(const HttpSession& object) = delete;
     HttpSession& operator=(const HttpSession&) = delete;

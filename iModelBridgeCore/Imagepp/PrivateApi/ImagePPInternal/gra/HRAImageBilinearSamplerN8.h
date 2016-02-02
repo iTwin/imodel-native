@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PrivateApi/ImagePPInternal/gra/HRAImageBilinearSamplerN8.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -82,8 +82,8 @@ private:
     template<typename Surface_T>
     void Warp_T(HRAImageSampleR outData, PixelOffset const& outOffset, Surface_T& inData, PixelOffset const& inOffset);
 
-    template<typename Surface_T, bool HasNoData_T, class Allocator_T>
-    void Warp_T(HRAImageSampleR outData, PixelOffset const& outOffset, Surface_T& inData, PixelOffset const& inOffset, Allocator_T& allocator);
+    template<typename Surface_T, bool HasNoData_T, class Executor_T>
+    void Warp_T(HRAImageSampleR outData, PixelOffset const& outOffset, Surface_T& inData, PixelOffset const& inOffset, Executor_T& executor);
 
     // ***** Begin Not-thread safe *****
     float* GetRealPixelOffSetBuffer(size_t size);

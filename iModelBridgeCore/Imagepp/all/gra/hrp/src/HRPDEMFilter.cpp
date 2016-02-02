@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPDEMFilter.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -244,7 +244,7 @@ public:
             // compute index
             size_t firstIdx = (size_t)((itr_from->first - m_minKey) * m_factor);
             size_t lastIdx =  (size_t)((itr_to->first - m_minKey) * m_factor);
-            lastIdx = hmin(lastIdx, maxIdx);    // Fix possible rounding error
+            lastIdx = MIN(lastIdx, maxIdx);    // Fix possible rounding error
             size_t idx = firstIdx;
 
             do

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/h/HTypes.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 /**  htypes.h
@@ -13,17 +13,11 @@
 #include "HmrMacro.h"
 #include "ImagePPErrors.r.h"
 #include <float.h>
+#include <limits>
 
 // Math constants
 #ifndef PI
 #   define PI (3.141592653589793238462643)
-#endif
-
-// The following is only applicable in C++
-#if defined (ANDROID) || defined (__APPLE__)
-
-#elif defined (_WIN32)
-#   include <limits>
 #endif
 
 BEGIN_IMAGEPP_NAMESPACE
