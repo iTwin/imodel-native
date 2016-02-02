@@ -508,29 +508,38 @@
         </ECCustomAttributes>
         <BaseClass>SpatialLocationElement</BaseClass>
     </ECEntityClass>
+    <ECEntityClass typeName="GeometricElement2d" modifier="Abstract">
+        <!-- Base class for elements with 2d geometry -->
+        <BaseClass>Element</BaseClass> <!-- WIP: should inherit from GeometricElement, waiting for table split control -->
+        <BaseClass>GeometrySource2d</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="GraphicalElement2d">
+        <!-- 2D geometric element that is used to convey information within graphical presentations (like drawings). -->
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>GeometricElement2d</BaseClass>
+    </ECEntityClass>
     <ECEntityClass typeName="AnnotationElement">
         <!-- 2D element used to annotate drawings and sheets -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>Element</BaseClass>
-        <BaseClass>GeometrySource2d</BaseClass>
+        <BaseClass>GraphicalElement2d</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="DrawingElement">
         <!-- 2D element used in drawings -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>Element</BaseClass>
-        <BaseClass>GeometrySource2d</BaseClass>
+        <BaseClass>GraphicalElement2d</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="SheetElement">
         <!-- 2D element used in sheets -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>Element</BaseClass>
-        <BaseClass>GeometrySource2d</BaseClass>
+        <BaseClass>GraphicalElement2d</BaseClass>
     </ECEntityClass>
 
     <!-- Text element data (shared by 2D and 3D) -->

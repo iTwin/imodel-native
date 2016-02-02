@@ -22,7 +22,7 @@ BENTLEY_NAMESPACE_TYPEDEFS(HeapZone);
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-namespace dgn_ElementHandler {struct Element; struct Physical; struct Annotation; struct Drawing; struct Sheet; struct Group;};
+namespace dgn_ElementHandler {struct Element; struct Physical; struct Graphical2d; struct Annotation; struct Drawing; struct Sheet; struct Group;};
 namespace dgn_TxnTable {struct Element; struct Model;};
 
 DEFINE_REF_COUNTED_PTR(ElementGeometry)
@@ -1418,6 +1418,7 @@ public:
 
 //=======================================================================================
 //! A PhysicalElement is a SpatialElement that has mass and can be physically "touched".
+//! Examples (which would be subclasses) include pumps, walls, and light posts.
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
@@ -1455,20 +1456,34 @@ public:
 };
 
 //=======================================================================================
+//! A 2-dimensional geometric element that is used to convey information within graphical presentations (like drawings).
+//! @ingroup DgnElementGroup
+// @bsiclass                                                    Shaun.Sewall    02/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GraphicalElement2d : GeometricElement2d
+{
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_GraphicalElement2d, GeometricElement2d)
+    friend struct dgn_ElementHandler::Graphical2d;
+protected:
+    virtual Utf8CP _GetGeometryColumnTableName() const override final {return DGN_TABLE(DGN_CLASSNAME_GeometricElement2d);}
+public:
+    explicit GraphicalElement2d(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
 //! A 2-dimensional geometric element used to annotate drawings and sheets.
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Paul.Connelly   12/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE AnnotationElement : GeometricElement2d
+struct EXPORT_VTABLE_ATTRIBUTE AnnotationElement : GraphicalElement2d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationElement, GeometricElement2d)
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationElement, GraphicalElement2d)
     friend struct dgn_ElementHandler::Annotation;
 public:
     //! Create a AnnotationElement from CreateParams.
     static AnnotationElementPtr Create(CreateParams const& params) {return new AnnotationElement(params);}
 protected:
     virtual AnnotationElementCP _ToAnnotationElement() const override final {return this;}
-    virtual Utf8CP _GetGeometryColumnTableName() const override final { return DGN_TABLE(DGN_CLASSNAME_AnnotationElement); }
 
     explicit AnnotationElement(CreateParams const& params) : T_Super(params) { }
 }; // AnnotationElement
@@ -1478,16 +1493,15 @@ protected:
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Paul.Connelly   12/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DrawingElement : GeometricElement2d
+struct EXPORT_VTABLE_ATTRIBUTE DrawingElement : GraphicalElement2d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, GeometricElement2d)
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, GraphicalElement2d)
     friend struct dgn_ElementHandler::Drawing;
 public:
     //! Create a DrawingElement from CreateParams.
     static DrawingElementPtr Create(CreateParams const& params) {return new DrawingElement(params);}
 protected:
     virtual DrawingElementCP _ToDrawingElement() const override final {return this;}
-    virtual Utf8CP _GetGeometryColumnTableName() const override final { return DGN_TABLE(DGN_CLASSNAME_DrawingElement); }
 
     explicit DrawingElement(CreateParams const& params) : T_Super(params) { }
 }; // DrawingElement
@@ -1497,16 +1511,15 @@ protected:
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Paul.Connelly   12/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SheetElement : GeometricElement2d
+struct EXPORT_VTABLE_ATTRIBUTE SheetElement : GraphicalElement2d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_SheetElement, GeometricElement2d)
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_SheetElement, GraphicalElement2d)
     friend struct dgn_ElementHandler::Sheet;
 public:
     //! Create a SheetElement from CreateParams.
     static SheetElementPtr Create(CreateParams const& params) {return new SheetElement(params);}
 protected:
     virtual SheetElementCP _ToSheetElement() const override final {return this;}
-    virtual Utf8CP _GetGeometryColumnTableName() const override final { return DGN_TABLE(DGN_CLASSNAME_SheetElement); }
 
     explicit SheetElement(CreateParams const& params) : T_Super(params) { }
 }; // SheetElement

@@ -2603,4 +2603,3 @@ void GeometricElement3d::AddClassParams(ECSqlClassParams& params)
     params.Add(GEOM3_Pitch);
     params.Add(GEOM3_Roll);
     }
-
