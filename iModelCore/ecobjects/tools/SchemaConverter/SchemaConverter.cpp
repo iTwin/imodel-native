@@ -151,7 +151,7 @@ static int ConvertSchema
 ConversionOptions options
 )
     {
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext(true);
     context->AddSchemaPath(options.InputFile.GetDirectoryName().GetName());
     for (auto const& refDir: options.ReferenceDirectories)
         context->AddSchemaPath(refDir.GetName());
