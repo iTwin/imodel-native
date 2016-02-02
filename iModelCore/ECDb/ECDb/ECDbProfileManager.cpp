@@ -153,7 +153,7 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
             return BE_SQLITE_ERROR_ProfileUpgradeFailed; //context dtor ensures that changes are rolled back
         }
 
-    stat = ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ecdb, true);
+    stat = ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ecdb);
     if (stat != BE_SQLITE_OK)
         return BE_SQLITE_ERROR_ProfileUpgradeFailed; //context dtor ensures that changes are rolled back
 

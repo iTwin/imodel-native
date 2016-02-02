@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/ECDb.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -45,7 +45,9 @@ public:
     //+===============+===============+===============+===============+===============+======
     enum class PurgeMode
         {
-        OrphanedFileInfos = 1 //!< Purges orphaned FileInfo instances (see also @ref ECDbFileInfo)
+        OrphanedFileInfos = 1, //!< Purges orphaned FileInfo instances (see also @ref ECDbFileInfo)
+        HoldingRelationships = 2, //!< Purges all holding relationship ends.
+        All = OrphanedFileInfos | HoldingRelationships
         };
 
     struct Impl;
@@ -133,7 +135,6 @@ public:
     //! Deletes orphaned ECInstances left over from operations specified by @p mode.
     //! @param[in] mode Purge mode
     //! @return SUCCESS or ERROR
-    //! @see @ref ECDbFileInfo
     ECDB_EXPORT BentleyStatus Purge(PurgeMode mode) const;
 
     //! Adds a listener that listens to issues reported by this ECDb object.

@@ -24,6 +24,24 @@ bool ECDbSchemaPersistenceHelper::ContainsECClass(ECDbCR db, ECClassCR ecClass)
     return classId > ECClass::UNSET_ECCLASSID;
     }
     
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    01/2016
+//---------------------------------------------------------------------------------------
+bool ECDbSchemaPersistenceHelper::TryGetECSchemaKey(SchemaKey& key, ECDbCR ecdb, ECSchemaId schemaId)
+    {
+    CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != ecdb.GetCachedStatement(stmt, "SELECT Name, VersionMajor, VersionMinor FROM ec_Schema WHERE Id=?"))
+        return false;
+
+    if (BE_SQLITE_OK != stmt->BindInt64(1, schemaId))
+        return false;
+
+    if (stmt->Step() != BE_SQLITE_ROW)
+        return false;
+
+    key = SchemaKey(stmt->GetValueText(0), stmt->GetValueInt(1), stmt->GetValueInt(2));
+    return true;
+    }
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/

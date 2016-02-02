@@ -714,7 +714,7 @@ ECDbMapAnalyser::Relationship::PersistanceLocation ECDbMapAnalyser::Relationship
         return PersistanceLocation::Self;
 
     auto& endTable = static_cast<RelationshipClassEndTableMapCR>(GetRelationshipClassMap ());
-    if (endTable.GetThisEnd () == ECN::ECRelationshipEnd::ECRelationshipEnd_Source)
+    if (endTable.GetForeignEnd () == ECN::ECRelationshipEnd::ECRelationshipEnd_Source)
         {
         if (endTable.GetRelationshipClass ().GetStrengthDirection () == ECN::ECRelatedInstanceDirection::Forward)
             return PersistanceLocation::From;
@@ -866,8 +866,8 @@ void ECDbMapAnalyser::Storage::HandleCascadeLinkTable (std::vector<ECDbMapAnalys
                 .AppendEscaped (storage->GetTable ().GetName ().c_str ())
                 .Append (" WHERE ");
 
-            auto otherEndPrimaryKey = storage->GetTable ().GetFilteredColumnFirst (ColumnKind::ECInstanceId);
-            body.AppendFormatted ("(OLD.[%s] = [%s])", relationship->To ().GetInstanceId ()->GetFirstColumn ()->GetName ().c_str (), otherEndPrimaryKey->GetName ().c_str ());
+            auto referencedEndPrimaryKey = storage->GetTable ().GetFilteredColumnFirst (ColumnKind::ECInstanceId);
+            body.AppendFormatted ("(OLD.[%s] = [%s])", relationship->To ().GetInstanceId ()->GetFirstColumn ()->GetName ().c_str (), referencedEndPrimaryKey->GetName ().c_str ());
             if (relationship->IsHolding ())
                 {
                 body.AppendFormatted (" AND (SELECT COUNT (*) FROM " ECDB_HOLDING_VIEW "  WHERE ECInstanceId = OLD.[%s]) = 0", relationship->To ().GetInstanceId ()->GetFirstColumn ()->GetName ().c_str());
@@ -1501,9 +1501,9 @@ DbResult ECDbMapAnalyser::ExecuteDDL (Utf8CP sql)
 DbResult ECDbMapAnalyser::ApplyChanges ()
     {
     Utf8String sql;
-    DbResult r = UpdateHoldingView ();
-    if (r != BE_SQLITE_OK)
-        return r;
+    DbResult r = BE_SQLITE_OK;// UpdateHoldingView();
+    //if (r != BE_SQLITE_OK)
+    //    return r;
 
     for (auto& i : m_viewInfos)
         {
@@ -1542,29 +1542,29 @@ DbResult ECDbMapAnalyser::ApplyChanges ()
 
         }
 
-    for (auto& i : m_storage)
-        {
-        Storage const& storage = *i.second;
-        if (storage.IsVirtual() || storage.GetTable ().GetTableType () == TableType::Existing)
-            continue;
+    //for (auto& i : m_storage)
+    //    {
+    //    Storage const& storage = *i.second;
+    //    if (storage.IsVirtual() || storage.GetTable ().GetTableType () == TableType::Existing)
+    //        continue;
 
-        for (SqlTriggerBuilder const& trigger : storage.GetTriggerList ().GetTriggers ())
-            {
-            sql = trigger.ToString (SqlOption::DropIfExists, true);
-            r = ExecuteDDL (sql.c_str ());
-            if (r != BE_SQLITE_OK)
-                return r;
+    //    for (SqlTriggerBuilder const& trigger : storage.GetTriggerList ().GetTriggers ())
+    //        {
+    //        sql = trigger.ToString (SqlOption::DropIfExists, true);
+    //        r = ExecuteDDL (sql.c_str ());
+    //        if (r != BE_SQLITE_OK)
+    //            return r;
 
-            //WIP: can't we catch this (the incompleteness of the trigger def) right when the trigger is defined?
-            if (trigger.IsEmpty())
-                continue;
+    //        //WIP: can't we catch this (the incompleteness of the trigger def) right when the trigger is defined?
+    //        if (trigger.IsEmpty())
+    //            continue;
 
-            sql = trigger.ToString (SqlOption::Create, true);
-            r = ExecuteDDL (sql.c_str ());
-            if (r != BE_SQLITE_OK)
-                return r;
-            }
-        }
+    //        sql = trigger.ToString (SqlOption::Create, true);
+    //        r = ExecuteDDL (sql.c_str ());
+    //        if (r != BE_SQLITE_OK)
+    //            return r;
+    //        }
+    //    }
 
     return r;
     }
@@ -1897,12 +1897,12 @@ void ECDbMapAnalyser::ProcessEndTableRelationships ()
                 builder.GetOnBuilder().Append(foreignEnd->GetTable().GetName().c_str());
                 auto& body = builder.GetBodyBuilder();
                 body.Append("--11").Append(relationship->GetRelationshipClassMap().GetRelationshipClass().GetFullName()).AppendEOL();
-                for (auto primaryEnd : relationship->PrimaryEnd().GetStorages())
+                for (auto referencedEnd : relationship->ReferencedEnd().GetStorages())
                     {
                     body.Append("UPDATE ")
-                        .AppendEscaped(primaryEnd->GetTable().GetName().c_str())
+                        .AppendEscaped(referencedEnd->GetTable().GetName().c_str())
                         .Append(" SET ")
-                        .AppendEscaped(relationship->PrimaryEnd().GetInstanceId()->GetFirstColumn()->GetName().c_str())
+                        .AppendEscaped(relationship->ReferencedEnd().GetInstanceId()->GetFirstColumn()->GetName().c_str())
                         .Append(" = NULL");
 
                     if (!relationship->To().GetClassId()->IsVirtual()
@@ -1910,14 +1910,14 @@ void ECDbMapAnalyser::ProcessEndTableRelationships ()
                         && relationship->To().GetClassId()->GetFirstColumn()->GetKind() != ColumnKind::ECClassId)
                         {
                         body.Append(", ")
-                            .AppendEscaped(relationship->PrimaryEnd().GetClassId()->GetFirstColumn()->GetName().c_str())
+                            .AppendEscaped(relationship->ReferencedEnd().GetClassId()->GetFirstColumn()->GetName().c_str())
                             .Append(" = NULL");
                         }
 
                     body.Append(" WHERE OLD.")
                         .AppendEscaped(relationship->ForeignEnd().GetInstanceId()->GetFirstColumn()->GetName().c_str())
                         .Append(" = ")
-                        .AppendEscaped(relationship->PrimaryEnd().GetInstanceId()->GetFirstColumn()->GetName().c_str());
+                        .AppendEscaped(relationship->ReferencedEnd().GetInstanceId()->GetFirstColumn()->GetName().c_str());
                     body.Append(";").AppendEOL();
                     }
                 }
@@ -2229,7 +2229,7 @@ BentleyStatus ECClassViewGenerator::BuildEndTableRelationshipView(NativeSqlBuild
         sqlBuilder.Append(" WHERE (");
         sqlBuilder.AppendEscaped(tableAlias.c_str());
         sqlBuilder.AppendDot();
-        sqlBuilder.Append(endClassMap->GetOtherEndECInstanceIdPropMap()->GetFirstColumn()->GetName().c_str());
+        sqlBuilder.Append(endClassMap->GetReferencedEndECInstanceIdPropMap()->GetFirstColumn()->GetName().c_str());
         sqlBuilder.Append(" IS NOT NULL)");
 
         if (topLevel)

@@ -300,20 +300,13 @@ ECN::ECSchemaPtr CopyECSchema(ECN::ECSchemaCR schemaIn)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECN::ECSchemaCP ImportECSchema(ECN::ECObjectsStatus& ecstatus, ECDbR db, ECN::ECSchemaCR schemaIn, bool updateExistingSchemas)
+ECN::ECSchemaCP ImportECSchema(ECN::ECObjectsStatus& ecstatus, ECDbR db, ECN::ECSchemaCR schemaIn)
     {
     ECN::ECSchemaCP existing = db.Schemas().GetECSchema(schemaIn.GetName().c_str());
     if (nullptr != existing)
-        {
-        if (!updateExistingSchemas)
-            return existing;
-        }
-    else
-        {
-        updateExistingSchemas = false;
-        }
+       return existing;
 
-    ECDbSchemaManager::ImportOptions options(false, updateExistingSchemas);
+    ECDbSchemaManager::ImportOptions options(false);
 
     ECN::ECSchemaPtr imported = CopyECSchema(schemaIn);
 
@@ -349,7 +342,7 @@ TEST(ECDbTests, SelectAfterImport)
         ASSERT_TRUE( nullptr != GenerateECClass(*schema, "C1") );
 
         ECN::ECObjectsStatus ecstatus;
-        ImportECSchema(ecstatus, ecdbr, *schema, false);
+        ImportECSchema(ecstatus, ecdbr, *schema);
         }
 
     EC::ECSqlStatement selectC1;

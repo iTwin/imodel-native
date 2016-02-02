@@ -123,7 +123,7 @@ public:
     ~ECDbSchemaReader() {}
 
     ECSchemaCP            GetECSchema(ECSchemaId ecSchemaId, bool loadClasses) const;
-    ECClassCP              GetECClass (ECClassId ecClassId) const;
+    ECClassCP             GetECClass (ECClassId ecClassId) const;
     ECEnumerationCP       GetECEnumeration(Utf8CP schemaName, Utf8CP enumName) const;
 
     BentleyStatus         EnsureDerivedClassesExist(ECClassId baseClassId) const;

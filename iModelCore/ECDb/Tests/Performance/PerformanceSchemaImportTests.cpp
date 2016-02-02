@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Performance/PerformanceSchemaImportTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTests.h"
@@ -335,7 +335,7 @@ TEST_F (PerformanceSchemaImportTests, ImportSimpleSchema)
     schemaCache->AddSchema (*schemaptr);
 
     StopWatch timer (true);
-    auto stat = testecdb.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions (false, false));
+    auto stat = testecdb.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions (false));
     timer.Stop ();
     ASSERT_EQ (SUCCESS, stat);
 

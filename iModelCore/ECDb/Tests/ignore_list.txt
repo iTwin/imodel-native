@@ -10,9 +10,7 @@ InstanceCRUDTests.* 	# No need to run with the build, used by testing after buil
 # TFS 178486 will address these (Affan): (ECSchema Update not working in 06 yet.)
 ECDbSchemas.UpdatingSchemaShouldNotDeleteExistingRelationshipsOrIndexes
 ECDbInstances.CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST
-ECDbSchemaManagerTests.UpdateExistingSchemaDifferentCache
 ECDbSchemas.UpdateExistingECSchemaWithNewProperties
-ECDbSchemas.UpdatingExistingECSchema
 ECDbSchemas.Verify_TFS_14829_A
 
 #TFS268976 will address this (Affan)
@@ -21,12 +19,6 @@ ECDbMappingTestFixture.PropertiesWithoutColumnsInExistingTable
 
 #TFS353210 will adress this (Raman)
 JsonUpdaterTests.CommonGeometryJsonSerialization
-
-#For Hassan
-#should be either removed or inverted
-JoinedTableECDbMapStrategyTests.MultiInheritence1  
-#should be either removed or inverted
-ECDbMappingTestFixture.RelationshipWithAbstractClassAsConstraintOnParentEnd
 
 #Hassan TFS#356965
 #should use dynamically read ECInstanceId from db instead of hardcode ones
@@ -38,6 +30,18 @@ ECSqlDeleteTestFramework.WhereRelationshipWithAdditionalPropsTests
 ECSqlSelectTestFramework.WhereRelationshipWithAdditionalPropsTests
 ECSqlUpdateTestFramework.WhereRelationshipWithAdditionalPropsTests
 
-TFS#359449 (Affan)
+# TFS359449 (Affan)
 ECSqlNavigationPropertyTestFixture.SingleInstanceNavProp_ForeignKeyMappingWithJoinedTable
+ECSqlNavigationPropertyTestFixture.SingleInstanceNavProp_ForeignKeyMapping_ECInstanceAdapter
+
+#For Hassan. TFS 365787
+#Tests that use the eB Schema which is not compatible at all with EC3 and the new relationship rules.
+#Use another schema for the tests
+JsonInserterTests.InsertJsonCppJSON
+JsonInserterTests.InsertRapidJson
+RapidJsonTests.InsertIntoECDb
+
+#TFS 366270
+JoinedTableECDbMapStrategyTests.PolymorphicRelationshipWithStandAloneClass
+
 

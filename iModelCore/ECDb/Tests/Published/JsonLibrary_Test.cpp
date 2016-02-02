@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
-#include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestProject.h"
 #include <rapidjson/BeRapidJson.h>
 
 USING_NAMESPACE_BENTLEY_EC
@@ -14,10 +13,71 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //---------------------------------------------------------------------------------------
+// Test NaN handling 
+// Expected behavior (after a Bentley change to JsonCpp) is conversion to a null value.
+// @bsitest                                    Shaun.Sewall                     03/14
+//---------------------------------------------------------------------------------------
+TEST(JsonCpp, NaN)
+    {
+    Json::Value obj1(Json::objectValue);
+    Json::Value obj2(Json::objectValue);
+
+    BeTest::SetFailOnAssert(false);
+    obj1["nan"] = std::numeric_limits<double>::quiet_NaN();
+    BeTest::SetFailOnAssert(true);
+
+    Utf8String str = Json::FastWriter().write(obj1);
+
+    bool parseSuccessful = Json::Reader().parse(str.c_str(), obj2);
+
+    ASSERT_TRUE(parseSuccessful);
+    ASSERT_TRUE(obj2.isMember("nan"));
+    ASSERT_TRUE(obj2["nan"].isNull());
+    }
+
+//---------------------------------------------------------------------------------------
+// Make sure there is no loss of precision roundtripping double values.
+// @bsitest                                    Shaun.Sewall                     01/14
+//---------------------------------------------------------------------------------------
+TEST(JsonCpp, RoundTripDoubles)
+    {
+    Json::Value obj1(Json::objectValue);
+    Json::Value obj2(Json::objectValue);
+
+    double d1 = PI;
+    obj1["pi"] = d1;
+
+    double n1 = -1.0 / 17.0;
+    obj1["negative"] = n1;
+
+    Utf8String str = Json::FastWriter().write(obj1);
+
+    bool parseSuccessful = Json::Reader().parse(str.c_str(), obj2);
+    ASSERT_TRUE(parseSuccessful);
+
+    double d2 = obj2["pi"].asDouble();
+    double n2 = obj2["negative"].asDouble();
+    (void) n2;
+
+#if 0
+    printf("d1=%#.17g\n", d1);
+    printf("n1=%#.17g\n", n1);
+    printf("JsonCpp.RoundTripDoubles - %s\n", str.c_str());
+    printf("d2=%#.17g\n", d2);
+    printf("n2=%#.17g\n", n2);
+#endif
+
+    ASSERT_EQ(d1, d2);
+    }
+
+struct RapidJsonTests : public ECDbTestFixture
+    {};
+
+//---------------------------------------------------------------------------------------
 // Test code grabbed (and refactored) from rapidjson/examples/tutorial/tutorial.cpp
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST (RapidJson, FromRapidJsonTutorialCpp)
+TEST_F(RapidJsonTests, FromRapidJsonTutorialCpp)
     {
     ////////////////////////////////////////////////////////////////////////////
     // 1. Parse a JSON text string to a document.
@@ -118,7 +178,7 @@ TEST (RapidJson, FromRapidJsonTutorialCpp)
 // Demonstrate unfortunate add member behavior
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST (RapidJson, AddMemberBehavior)
+TEST_F(RapidJsonTests, AddMemberBehavior)
     {
     rapidjson::Document document;
     document.SetObject();
@@ -155,69 +215,12 @@ TEST (RapidJson, AddMemberBehavior)
     ASSERT_EQ (2, document["y"].GetInt());
     }
 
-//---------------------------------------------------------------------------------------
-// Test NaN handling 
-// Expected behavior (after a Bentley change to JsonCpp) is conversion to a null value.
-// @bsitest                                    Shaun.Sewall                     03/14
-//---------------------------------------------------------------------------------------
-TEST (JsonCpp, NaN)
-    {
-    Json::Value obj1 (Json::objectValue);
-    Json::Value obj2 (Json::objectValue);
-
-    BeTest::SetFailOnAssert (false);
-    obj1["nan"] = std::numeric_limits<double>::quiet_NaN();
-    BeTest::SetFailOnAssert (true);
-
-    Utf8String str = Json::FastWriter().write (obj1);
-
-    bool parseSuccessful = Json::Reader().parse (str.c_str(), obj2);
-
-    ASSERT_TRUE (parseSuccessful);
-    ASSERT_TRUE (obj2.isMember ("nan"));
-    ASSERT_TRUE (obj2["nan"].isNull());
-    }
 
 //---------------------------------------------------------------------------------------
 // Make sure there is no loss of precision roundtripping double values.
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST (JsonCpp, RoundTripDoubles)
-    {
-    Json::Value obj1 (Json::objectValue);
-    Json::Value obj2 (Json::objectValue);
-
-    double d1 = PI;
-    obj1["pi"] = d1;
-
-    double n1 = -1.0 / 17.0;
-    obj1["negative"] = n1;
-
-    Utf8String str = Json::FastWriter().write (obj1);
-
-    bool parseSuccessful = Json::Reader().parse (str.c_str(), obj2);
-    ASSERT_TRUE (parseSuccessful);
-
-    double d2 = obj2["pi"].asDouble();
-    double n2 = obj2["negative"].asDouble();
-    (void) n2;
-
-#if 0
-    printf ("d1=%#.17g\n", d1);
-    printf ("n1=%#.17g\n", n1);
-    printf ("JsonCpp.RoundTripDoubles - %s\n", str.c_str());
-    printf ("d2=%#.17g\n", d2);
-    printf ("n2=%#.17g\n", n2);
-#endif
-
-    ASSERT_EQ (d1, d2);
-    }
-
-//---------------------------------------------------------------------------------------
-// Make sure there is no loss of precision roundtripping double values.
-// @bsitest                                    Shaun.Sewall                     01/14
-//---------------------------------------------------------------------------------------
-TEST (RapidJson, RoundTripDoubles)
+TEST_F (RapidJsonTests, RoundTripDoubles)
     {
     rapidjson::Document document1;
     document1.SetObject();
@@ -258,10 +261,10 @@ TEST (RapidJson, RoundTripDoubles)
 // Variation of PerformanceECJsonInserter.Insert from PerformanceECJsonInserterTests.cpp
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST (RapidJson, InsertIntoECDb)
+TEST_F(RapidJsonTests, InsertIntoECDb)
     {
-    ECDbTestProject testProject;
-    auto& db = testProject.Create ("RapidJson.InsertIntoECDb", L"eB_PW_CommonSchema_WSB.01.00.ecschema.xml", false);
+    ECDbR ecdb = SetupECDb("RapidJsonInsertIntoECDb.ecdb", BeFileName(L"eB_PW_CommonSchema_WSB.01.00.ecschema.xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
 
     // Read JSON input from file
     BeFileName jsonInputFile;
@@ -278,24 +281,24 @@ TEST (RapidJson, InsertIntoECDb)
     bool parseSuccessful = !rapidJsonInput.Parse<0>(Json::FastWriter().write(jsonInput).c_str()).HasParseError();
     ASSERT_TRUE (parseSuccessful);
 
-    ECClassCP documentClass = db.Schemas().GetECClass ("eB_PW_CommonSchema_WSB", "Document");
+    ECClassCP documentClass = ecdb.Schemas().GetECClass ("eB_PW_CommonSchema_WSB", "Document");
     ASSERT_TRUE (documentClass != nullptr);
-    JsonInserter inserter (db, *documentClass);
+    JsonInserter inserter (ecdb, *documentClass);
 
     // insert 1 row using JsonCpp
     auto insertStatus = inserter.Insert (jsonInput);
     ASSERT_EQ (SUCCESS, insertStatus);
-    db.SaveChanges();
+    ecdb.SaveChanges();
 
     // insert 1 row using RapidJson
     ECInstanceKey ecInstanceKey;
     insertStatus = inserter.Insert (ecInstanceKey, rapidJsonInput);
     ASSERT_EQ (SUCCESS, insertStatus);
     ASSERT_TRUE (ecInstanceKey.IsValid ());
-    db.SaveChanges();
+    ecdb.SaveChanges();
 
     // now update the row that was just inserted
-    JsonUpdater updater (db, *documentClass);
+    JsonUpdater updater (ecdb, *documentClass);
 
     rapidJsonInput["$ECInstanceId"].SetNull();
     rapidJsonInput["Urx"].SetDouble (3.3);
@@ -303,14 +306,14 @@ TEST (RapidJson, InsertIntoECDb)
 
     auto updateStatus = updater.Update (ecInstanceKey.GetECInstanceId (), rapidJsonInput);
     ASSERT_EQ (SUCCESS, updateStatus);
-    db.SaveChanges();
+    ecdb.SaveChanges();
     }
 
 //---------------------------------------------------------------------------------------
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST (RapidJson, ValueDefaultConstructor)
+TEST_F(RapidJsonTests, ValueDefaultConstructor)
     {
     rapidjson::Value x;
     ASSERT_EQ (rapidjson::kNullType, x.GetType());
@@ -321,7 +324,7 @@ TEST (RapidJson, ValueDefaultConstructor)
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST (RapidJson, ValueAssignmentOperator) 
+TEST_F(RapidJsonTests, ValueAssignmentOperator)
     {
     rapidjson::Value x (1234);
     rapidjson::Value y;
@@ -334,7 +337,7 @@ TEST (RapidJson, ValueAssignmentOperator)
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST (RapidJson, ValueNull) 
+TEST_F(RapidJsonTests, ValueNull)
     {
     // default constructor
     rapidjson::Value x;
@@ -362,7 +365,7 @@ TEST (RapidJson, ValueNull)
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST (RapidJson, ValueTrue) 
+TEST_F(RapidJsonTests, ValueTrue)
     {
     // Constructor with bool
     rapidjson::Value x (true);
@@ -392,7 +395,7 @@ TEST (RapidJson, ValueTrue)
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST (RapidJson, ValueFalse) 
+TEST_F(RapidJsonTests, ValueFalse)
     {
     // Constructor with bool
     rapidjson::Value x (false);
@@ -422,7 +425,7 @@ TEST (RapidJson, ValueFalse)
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST(RapidJson, ValueInt) 
+TEST_F(RapidJsonTests, ValueInt)
     {
     // Constructor with int
     rapidjson::Value x (1234);
@@ -475,7 +478,7 @@ TEST(RapidJson, ValueInt)
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST (RapidJson, ValueUint) 
+TEST_F(RapidJsonTests, ValueUint)
     {
     // Constructor with int
     rapidjson::Value x (1234u);
@@ -519,7 +522,7 @@ TEST (RapidJson, ValueUint)
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST (RapidJson, ValueInt64) 
+TEST_F(RapidJsonTests, ValueInt64)
     {
     // Constructor with int
     rapidjson::Value x (INT64_C(1234));
@@ -569,7 +572,7 @@ TEST (RapidJson, ValueInt64)
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST (RapidJson, ValueUint64) 
+TEST_F(RapidJsonTests, ValueUint64)
     {
     // Constructor with int
     rapidjson::Value x (INT64_C(1234));
@@ -617,7 +620,7 @@ TEST (RapidJson, ValueUint64)
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST (RapidJson, ValueDouble) 
+TEST_F(RapidJsonTests, ValueDouble)
     {
     // Constructor with double
     rapidjson::Value x (12.34);
@@ -648,7 +651,7 @@ TEST (RapidJson, ValueDouble)
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST (RapidJson, ValueString) 
+TEST_F(RapidJsonTests, ValueString)
     {
     // Constructor with const string
     rapidjson::Value x ("Hello", 5);
@@ -697,7 +700,7 @@ TEST (RapidJson, ValueString)
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST (RapidJson, ValueArray) 
+TEST_F(RapidJsonTests, ValueArray)
     {
     rapidjson::Value x (rapidjson::kArrayType);
     const rapidjson::Value& y = x;
@@ -798,7 +801,7 @@ TEST (RapidJson, ValueArray)
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST (RapidJson, ValueObject) 
+    TEST_F(RapidJsonTests, ValueObject)
     {
     rapidjson::Value x (rapidjson::kObjectType);
     RapidJsonValueCR y = x; // const version
@@ -874,7 +877,7 @@ TEST (RapidJson, ValueObject)
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST (RapidJson, ValueBigNestedArray) 
+TEST_F(RapidJsonTests, ValueBigNestedArray)
     {
     rapidjson::MemoryPoolAllocator<> allocator;
     rapidjson::Value x (rapidjson::kArrayType);
@@ -906,7 +909,7 @@ TEST (RapidJson, ValueBigNestedArray)
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST (RapidJson, ValueBigNestedObject) 
+TEST_F(RapidJsonTests, ValueBigNestedObject)
     {
     rapidjson::MemoryPoolAllocator<> allocator;
     rapidjson::Value x (rapidjson::kObjectType);
@@ -952,7 +955,7 @@ TEST (RapidJson, ValueBigNestedObject)
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST (RapidJson, ValueRemoveLastElement) 
+TEST_F(RapidJsonTests, ValueRemoveLastElement)
     {
     rapidjson::Document doc;
     rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
@@ -970,7 +973,7 @@ TEST (RapidJson, ValueRemoveLastElement)
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST (RapidJson, DocumentCrtAllocator) 
+TEST_F(RapidJsonTests, DocumentCrtAllocator)
     {
     typedef rapidjson::GenericValue<rapidjson::UTF8<>, rapidjson::CrtAllocator> V;
 
@@ -986,7 +989,7 @@ TEST (RapidJson, DocumentCrtAllocator)
 // From libsrc/rapidjson/test/unittest/documenttest.cpp
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST (RapidJson, DocumentParse) 
+TEST_F(RapidJsonTests, DocumentParse)
     {
     rapidjson::Document doc;
 
@@ -1034,7 +1037,7 @@ TEST (RapidJson, DocumentParse)
 // From libsrc/rapidjson/test/unittest/documenttest.cpp
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST (RapidJson, DocumentAcceptWriter) 
+TEST_F(RapidJsonTests, DocumentAcceptWriter)
     {
     rapidjson::Document doc;
     doc.Parse<0>(" { \"hello\" : \"world\", \"t\" : true , \"f\" : false, \"n\": null, \"i\":123, \"a\":[1, 2, 3, 4] } ");
@@ -1050,7 +1053,7 @@ TEST (RapidJson, DocumentAcceptWriter)
 // From libsrc/rapidjson/test/unittest/writertest.cpp
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST (RapidJson, WriterCompact) 
+TEST_F(RapidJsonTests, WriterCompact)
     {
     rapidjson::StringStream s("{ \"hello\" : \"world\", \"t\" : true , \"f\" : false, \"n\": null, \"i\":123, \"a\":[1, 2, 3] } ");
     rapidjson::StringBuffer buffer;
@@ -1081,7 +1084,7 @@ TEST (RapidJson, WriterCompact)
 // From libsrc/rapidjson/test/unittest/writertest.cpp
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST (RapidJson, WriterInt) 
+TEST_F(RapidJsonTests, WriterInt)
     {
     RAPIDJSON_TEST_ROUNDTRIP("[-1]");
     RAPIDJSON_TEST_ROUNDTRIP("[-123]");
@@ -1092,7 +1095,7 @@ TEST (RapidJson, WriterInt)
 // From libsrc/rapidjson/test/unittest/writertest.cpp
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST (RapidJson, WriterUInt) 
+TEST_F(RapidJsonTests, WriterUInt)
     {
     RAPIDJSON_TEST_ROUNDTRIP("[0]");
     RAPIDJSON_TEST_ROUNDTRIP("[1]");
@@ -1105,7 +1108,7 @@ TEST (RapidJson, WriterUInt)
 // From libsrc/rapidjson/test/unittest/writertest.cpp
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST (RapidJson, WriterInt64) 
+TEST_F(RapidJsonTests, WriterInt64)
     {
     RAPIDJSON_TEST_ROUNDTRIP("[-1234567890123456789]");
     RAPIDJSON_TEST_ROUNDTRIP("[-9223372036854775808]");
@@ -1115,7 +1118,7 @@ TEST (RapidJson, WriterInt64)
 // From libsrc/rapidjson/test/unittest/writertest.cpp
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST (RapidJson, WriterUint64) 
+TEST_F(RapidJsonTests, WriterUint64)
     {
     RAPIDJSON_TEST_ROUNDTRIP("[1234567890123456789]");
     RAPIDJSON_TEST_ROUNDTRIP("[9223372036854775807]");
@@ -1125,7 +1128,7 @@ TEST (RapidJson, WriterUint64)
 // From libsrc/rapidjson/test/unittest/writertest.cpp
 // @bsitest                                    Shaun.Sewall                     01/14
 //---------------------------------------------------------------------------------------
-TEST (RapidJson, WriterString) 
+TEST_F(RapidJsonTests, WriterString)
     {
     RAPIDJSON_TEST_ROUNDTRIP("[\"Hello\"]");
     RAPIDJSON_TEST_ROUNDTRIP("[\"Hello\\u0000World\"]");

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ChangeSummary.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -222,7 +222,7 @@ private:
     void ExtractInstance(IClassMapCR primaryClassMap, ECInstanceId instanceId);
 
     void ExtractRelInstance(IClassMapCR classMap, ECInstanceId relInstanceId);
-    void ExtractRelInstanceInEndTable(RelationshipClassEndTableMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECClassId thisEndClassId);
+    void ExtractRelInstanceInEndTable(RelationshipClassEndTableMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECClassId foreignEndClassId);
     void ExtractRelInstanceInLinkTable(RelationshipClassLinkTableMapCR relClassMap, ECInstanceId relInstanceId);
     void GetRelEndInstanceKeys(ECInstanceKey& oldInstanceKey, ECInstanceKey& newInstanceKey, RelationshipClassMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd) const;
     ECN::ECClassId GetRelEndClassId(RelationshipClassMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd, ECInstanceId endInstanceId) const;
@@ -1267,55 +1267,55 @@ void ChangeExtractor::ExtractRelInstance(IClassMapCR classMap, ECInstanceId relI
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-void ChangeExtractor::ExtractRelInstanceInEndTable(RelationshipClassEndTableMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECClassId thisEndClassId)
+void ChangeExtractor::ExtractRelInstanceInEndTable(RelationshipClassEndTableMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECClassId foreignEndClassId)
     {
     // Check that this end of the relationship matches the actual class found. 
-    ECN::ECRelationshipEnd thisEnd = relClassMap.GetThisEnd();
-    if (!relClassMap.GetConstraintMap(thisEnd).ClassIdMatchesConstraint(thisEndClassId))
+    ECN::ECRelationshipEnd foreignEnd = relClassMap.GetForeignEnd();
+    if (!relClassMap.GetConstraintMap(foreignEnd).ClassIdMatchesConstraint(foreignEndClassId))
         return;
 
-    ECInstanceKey thisEndInstanceKey(thisEndClassId, relInstanceId);
+    ECInstanceKey foreignEndInstanceKey(foreignEndClassId, relInstanceId);
 
-    ECInstanceKey oldOtherEndInstanceKey, newOtherEndInstanceKey;
-    ECN::ECRelationshipEnd otherEnd = (thisEnd == ECRelationshipEnd_Source) ? ECRelationshipEnd_Target : ECRelationshipEnd_Source;
-    GetRelEndInstanceKeys(oldOtherEndInstanceKey, newOtherEndInstanceKey, relClassMap, relInstanceId, otherEnd);
+    ECInstanceKey oldReferencedEndInstanceKey, newReferencedEndInstanceKey;
+    ECN::ECRelationshipEnd referencedEnd = (foreignEnd == ECRelationshipEnd_Source) ? ECRelationshipEnd_Target : ECRelationshipEnd_Source;
+    GetRelEndInstanceKeys(oldReferencedEndInstanceKey, newReferencedEndInstanceKey, relClassMap, relInstanceId, referencedEnd);
 
-    if (!newOtherEndInstanceKey.IsValid() && !oldOtherEndInstanceKey.IsValid())
+    if (!newReferencedEndInstanceKey.IsValid() && !oldReferencedEndInstanceKey.IsValid())
         return;
 
     // Check if the other end of the relationship matches the actual class found. 
-    if (newOtherEndInstanceKey.IsValid() && !relClassMap.GetConstraintMap(otherEnd).ClassIdMatchesConstraint(newOtherEndInstanceKey.GetECClassId()))
+    if (newReferencedEndInstanceKey.IsValid() && !relClassMap.GetConstraintMap(referencedEnd).ClassIdMatchesConstraint(newReferencedEndInstanceKey.GetECClassId()))
         return;
-    if (oldOtherEndInstanceKey.IsValid() && !relClassMap.GetConstraintMap(otherEnd).ClassIdMatchesConstraint(oldOtherEndInstanceKey.GetECClassId()))
+    if (oldReferencedEndInstanceKey.IsValid() && !relClassMap.GetConstraintMap(referencedEnd).ClassIdMatchesConstraint(oldReferencedEndInstanceKey.GetECClassId()))
         return;
 
     DbOpcode relDbOpcode;
-    if (newOtherEndInstanceKey.IsValid() && !oldOtherEndInstanceKey.IsValid())
+    if (newReferencedEndInstanceKey.IsValid() && !oldReferencedEndInstanceKey.IsValid())
         relDbOpcode = DbOpcode::Insert;
-    else if (!newOtherEndInstanceKey.IsValid() && oldOtherEndInstanceKey.IsValid())
+    else if (!newReferencedEndInstanceKey.IsValid() && oldReferencedEndInstanceKey.IsValid())
         relDbOpcode = DbOpcode::Delete;
-    else /* if (newOtherEndInstanceKey.IsValid() && oldOtherEndInstanceKey.IsValid()) */
+    else /* if (newReferencedEndInstanceKey.IsValid() && oldReferencedEndInstanceKey.IsValid()) */
         relDbOpcode = DbOpcode::Update;
 
     ECInstanceKeyCP oldSourceInstanceKey, newSourceInstanceKey, oldTargetInstanceKey, newTargetInstanceKey;
     ECInstanceKey invalidKey;
     oldSourceInstanceKey = newSourceInstanceKey = oldTargetInstanceKey = newTargetInstanceKey = nullptr;
-    if (thisEnd == ECRelationshipEnd_Source)
+    if (foreignEnd == ECRelationshipEnd_Source)
         {
-        oldSourceInstanceKey = (relDbOpcode != DbOpcode::Insert) ? &thisEndInstanceKey : &invalidKey;
-        oldTargetInstanceKey = &oldOtherEndInstanceKey;
-        newSourceInstanceKey = (relDbOpcode != DbOpcode::Delete) ? &thisEndInstanceKey : &invalidKey;
-        newTargetInstanceKey = &newOtherEndInstanceKey;
+        oldSourceInstanceKey = (relDbOpcode != DbOpcode::Insert) ? &foreignEndInstanceKey : &invalidKey;
+        oldTargetInstanceKey = &oldReferencedEndInstanceKey;
+        newSourceInstanceKey = (relDbOpcode != DbOpcode::Delete) ? &foreignEndInstanceKey : &invalidKey;
+        newTargetInstanceKey = &newReferencedEndInstanceKey;
         }
     else
         {
-        oldSourceInstanceKey = &oldOtherEndInstanceKey;
-        oldTargetInstanceKey = (relDbOpcode != DbOpcode::Insert) ? &thisEndInstanceKey : &invalidKey;
-        newSourceInstanceKey = &newOtherEndInstanceKey;
-        newTargetInstanceKey = (relDbOpcode != DbOpcode::Delete) ? &thisEndInstanceKey : &invalidKey;
+        oldSourceInstanceKey = &oldReferencedEndInstanceKey;
+        oldTargetInstanceKey = (relDbOpcode != DbOpcode::Insert) ? &foreignEndInstanceKey : &invalidKey;
+        newSourceInstanceKey = &newReferencedEndInstanceKey;
+        newTargetInstanceKey = (relDbOpcode != DbOpcode::Delete) ? &foreignEndInstanceKey : &invalidKey;
         }
 
-    RecordRelInstance(relClassMap, thisEndInstanceKey.GetECInstanceId(), relDbOpcode, *oldSourceInstanceKey, *newSourceInstanceKey, *oldTargetInstanceKey, *newTargetInstanceKey);
+    RecordRelInstance(relClassMap, foreignEndInstanceKey.GetECInstanceId(), relDbOpcode, *oldSourceInstanceKey, *newSourceInstanceKey, *oldTargetInstanceKey, *newTargetInstanceKey);
     }
 
 //---------------------------------------------------------------------------------------

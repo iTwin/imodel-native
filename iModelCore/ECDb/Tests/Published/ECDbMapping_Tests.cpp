@@ -3923,7 +3923,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
             "      </Class>"
             "    </Target>"
             "  </ECRelationshipClass>"
-            "   <ECRelationshipClass typeName='RelNN' modifier='None' strength='embedding'>"
+            "   <ECRelationshipClass typeName='RelNN' modifier='None' strength='referencing'>"
             "    <Source cardinality='(1,N)' polymorphic='True'>"
             "      <Class class='A' />"
             "    </Source>"
@@ -4477,8 +4477,8 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWhereLinkTableIsRequired)
         "    </Source>"
         "    <Target cardinality='(0,N)' polymorphic='True'>"
         "      <Class class = 'Child' />"
-        "      <Class class = 'Child2' />"
         "    </Target>"
+        "    <ECProperty propertyName='ForcingToLinkTable' typeName='string' />"
         "  </ECRelationshipClass>"
         "</ECSchema>", false,"Cannot apply ForeignKeyRelationshipMap when a link table is required.");
 
@@ -5333,7 +5333,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipMapCAOnSubclasses)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnParentEnd)
+TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractBaseClass)
     {
     auto getGeometrySourceHasGeometryRowCount = [] (ECDbCR ecdb)
         {
@@ -5349,7 +5349,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnParent
 
     {
     //GeometrySource is abstract and doesn't have subclasses
-    SchemaItem testItem(
+    SchemaItem testItem (
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
         "  <ECEntityClass typeName='Element' modifier='Abstract'>"
@@ -5384,7 +5384,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnParent
 
     ECDb ecdb;
     bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testItem, "RelationshipWithAbstractClassAsConstraintOnParentEnd.ecdb");
+    AssertSchemaImport(ecdb, asserted, testItem, "RelationshipWithAbstractBaseClass.ecdb");
     ASSERT_FALSE(asserted);
 
     ASSERT_EQ(0, getGeometrySourceHasGeometryRowCount(ecdb));
@@ -5432,75 +5432,23 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnParent
         "      <Class class='ElementGeometry' />"
         "    </Target>"
         "  </ECRelationshipClass>"
-        "</ECSchema>", true, "");
+        "</ECSchema>", false, "Multiple Tables on either end of the relationship are not supported");
 
     ECDb ecdb;
     bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testItem, "RelationshipWithAbstractClassAsConstraintOnParentEnd.ecdb");
+    AssertSchemaImport(ecdb, asserted, testItem, "RelationshipWithAbstractBaseClass.ecdb");
     ASSERT_FALSE(asserted);
-
-    ASSERT_EQ(0, getGeometrySourceHasGeometryRowCount(ecdb));
-
-    ECInstanceKey elem1Key, elem2Key, loose1Key, loose2Key, geom1Key, geom2Key;
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.GeometricElement (Code,Name) VALUES('0001','GeomElem1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(elem1Key));
-    stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.GeometricElement (Code,Name) VALUES('0002','GeomElem2')"));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(elem2Key));
-    stmt.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.LooseGeometry (Name) VALUES('LooseGeom1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(loose1Key));
-    stmt.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.LooseGeometry (Name) VALUES('LooseGeom2')"));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(loose2Key));
-    stmt.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.ElementGeometry (Geom) VALUES('0x13124')"));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(geom1Key));
-    stmt.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.ElementGeometry (Geom) VALUES('0x42343')"));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(geom2Key));
-    stmt.Finalize();
-    ecdb.SaveChanges();
-
-    //now do actual tests with relationship
-    ASSERT_EQ(0, getGeometrySourceHasGeometryRowCount(ecdb));
-
-    ECSqlStatement insertStmt;
-    ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(ecdb, "INSERT INTO ts.GeometrySourceHasGeometry(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)"));
-
-    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(1, elem1Key.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindInt64(2, elem1Key.GetECClassId()));
-    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(3, geom1Key.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindInt64(4, geom1Key.GetECClassId()));
-
-    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step()) << "Inserting GeometrySourceHasGeometry against GeometricElement is expected to succeed";
-    insertStmt.Reset();
-    insertStmt.ClearBindings();
-
-    ASSERT_EQ(1, getGeometrySourceHasGeometryRowCount(ecdb));
-
-    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(1, loose1Key.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindInt64(2, loose1Key.GetECClassId()));
-    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(3, geom2Key.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindInt64(4, geom2Key.GetECClassId()));
-    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step()) << "Inserting GeometrySourceHasGeometry against LooseGeometry is expected to succeed";
-    insertStmt.Reset();
-    insertStmt.ClearBindings();
-
-    ASSERT_EQ(2, getGeometrySourceHasGeometryRowCount(ecdb));
     }
 
-    {
-    std::vector<SchemaItem> testSchemas;
-    testSchemas.push_back(SchemaItem("GeometrySource is abstract and has subclasses pointing to a single table",
+        {
+        std::vector<SchemaItem> testSchemas;
+        testSchemas.push_back (SchemaItem ("GeometrySource is abstract and has concrete subclasses pointing to a single table",
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-        "  <ECEntityClass typeName='Element' modifier='Abstract'>"
+        "  <ECEntityClass typeName='Element' modifier='Abstract' >"
+        "    <ECProperty propertyName='Code' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='GeometrySource' modifier='Abstract'>"
         "    <ECCustomAttributes>"
         "        <ClassMap xmlns='ECDbMap.01.00'>"
         "            <MapStrategy>"
@@ -5510,19 +5458,17 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnParent
         "            </MapStrategy>"
         "        </ClassMap>"
         "    </ECCustomAttributes>"
-        "    <ECProperty propertyName='Code' typeName='string' />"
+        "    <BaseClass>Element</BaseClass>"
         "  </ECEntityClass>"
-        "  <ECEntityClass typeName='GeometrySource' modifier='Abstract' />"
         "  <ECEntityClass typeName='ElementGeometry'>"
         "    <ECProperty propertyName='Geom' typeName='binary' />"
         "  </ECEntityClass>"
         "  <ECEntityClass typeName='ExtendedElement'>"
-        "    <BaseClass>Element</BaseClass>"
+        "    <BaseClass>GeometrySource</BaseClass>"
         "    <ECProperty propertyName='Name' typeName='string' />"
         "  </ECEntityClass>"
         "  <ECEntityClass typeName='GeometricElement'>"
         "    <BaseClass>ExtendedElement</BaseClass>"
-        "    <BaseClass>GeometrySource</BaseClass>"
         "  </ECEntityClass>"
         "  <ECRelationshipClass typeName='GeometrySourceHasGeometry' strength='embedding'>"
         "    <Source cardinality='(1,1)' polymorphic='True'>"
@@ -5534,127 +5480,50 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnParent
         "  </ECRelationshipClass>"
         "</ECSchema>"));
 
-    testSchemas.push_back(SchemaItem("GeometrySource is abstract and has subclasses pointing to a single table and joined table",
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-        "  <ECEntityClass typeName='Element' modifier='Abstract'>"
-        "    <ECCustomAttributes>"
-        "        <ClassMap xmlns='ECDbMap.01.00'>"
-        "            <MapStrategy>"
-        "               <Strategy>SharedTable</Strategy>"
-        "               <AppliesToSubclasses>True</AppliesToSubclasses>"
-        "               <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
-        "            </MapStrategy>"
-        "        </ClassMap>"
-        "    </ECCustomAttributes>"
-        "    <ECProperty propertyName='Code' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='GeometrySource' modifier='Abstract' />"
-        "  <ECEntityClass typeName='ElementGeometry'>"
-        "    <ECProperty propertyName='Geom' typeName='binary' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='ExtendedElement'>"
-        "    <BaseClass>Element</BaseClass>"
-        "    <ECProperty propertyName='Name' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='GeometricElement'>"
-        "    <BaseClass>ExtendedElement</BaseClass>"
-        "    <BaseClass>GeometrySource</BaseClass>"
-        "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='GeometrySourceHasGeometry' strength='embedding'>"
-        "    <Source cardinality='(1,1)' polymorphic='True'>"
-        "      <Class class='GeometrySource' />"
-        "    </Source>"
-        "    <Target cardinality='(0,N)' polymorphic='True'>"
-        "      <Class class='ElementGeometry' />"
-        "    </Target>"
-        "  </ECRelationshipClass>"
-        "</ECSchema>"));
-
-    testSchemas.push_back(SchemaItem("GeometrySource is abstract and subclass of Element and Element (no joined tables)",
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-        "  <ECEntityClass typeName='Element' modifier='Abstract'>"
-        "    <ECCustomAttributes>"
-        "        <ClassMap xmlns='ECDbMap.01.00'>"
-        "            <MapStrategy>"
-        "               <Strategy>SharedTable</Strategy>"
-        "               <AppliesToSubclasses>True</AppliesToSubclasses>"
-        "               <Options>SharedColumnsForSubclasses</Options>"
-        "            </MapStrategy>"
-        "        </ClassMap>"
-        "    </ECCustomAttributes>"
-        "    <ECProperty propertyName='Code' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='GeometrySource' modifier='Abstract'>"
-        "    <BaseClass>Element</BaseClass>"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='ElementGeometry'>"
-        "    <ECProperty propertyName='Geom' typeName='binary' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='ExtendedElement'>"
-        "    <BaseClass>Element</BaseClass>"
-        "    <ECProperty propertyName='Name' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='GeometricElement'>"
-        "    <BaseClass>ExtendedElement</BaseClass>"
-        "    <BaseClass>GeometrySource</BaseClass>"
-        "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='GeometrySourceHasGeometry' strength='embedding'>"
-        "    <Source cardinality='(1,1)' polymorphic='True'>"
-        "      <Class class='GeometrySource' />"
-        "    </Source>"
-        "    <Target cardinality='(0,N)' polymorphic='True'>"
-        "      <Class class='ElementGeometry' />"
-        "    </Target>"
-        "  </ECRelationshipClass>"
-        "</ECSchema>"));
-
-    testSchemas.push_back(SchemaItem("GeometrySource is abstract and subclass of Element and Element (with joined tables)",
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-        "  <ECEntityClass typeName='Element' modifier='Abstract'>"
-        "    <ECCustomAttributes>"
-        "        <ClassMap xmlns='ECDbMap.01.00'>"
-        "            <MapStrategy>"
-        "               <Strategy>SharedTable</Strategy>"
-        "               <AppliesToSubclasses>True</AppliesToSubclasses>"
-        "               <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
-        "            </MapStrategy>"
-        "        </ClassMap>"
-        "    </ECCustomAttributes>"
-        "    <ECProperty propertyName='Code' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='GeometrySource' modifier='Abstract'>"
-        "    <BaseClass>Element</BaseClass>"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='ElementGeometry'>"
-        "    <ECProperty propertyName='Geom' typeName='binary' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='ExtendedElement'>"
-        "    <BaseClass>Element</BaseClass>"
-        "    <ECProperty propertyName='Name' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='GeometricElement'>"
-        "    <BaseClass>ExtendedElement</BaseClass>"
-        "    <BaseClass>GeometrySource</BaseClass>"
-        "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='GeometrySourceHasGeometry' strength='embedding'>"
-        "    <Source cardinality='(1,1)' polymorphic='True'>"
-        "      <Class class='GeometrySource' />"
-        "    </Source>"
-        "    <Target cardinality='(0,N)' polymorphic='True'>"
-        "      <Class class='ElementGeometry' />"
-        "    </Target>"
-        "  </ECRelationshipClass>"
-        "</ECSchema>"));
+        testSchemas.push_back (SchemaItem ("GeometrySource is abstract and subClass of Element and Element has JoinedTable CA",
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+            "  <ECEntityClass typeName='Element' modifier='Abstract'>"
+            "    <ECCustomAttributes>"
+            "        <ClassMap xmlns='ECDbMap.01.00'>"
+            "            <MapStrategy>"
+            "               <Strategy>SharedTable</Strategy>"
+            "               <AppliesToSubclasses>True</AppliesToSubclasses>"
+            "               <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
+            "            </MapStrategy>"
+            "        </ClassMap>"
+            "    </ECCustomAttributes>"
+            "    <ECProperty propertyName='Code' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='GeometrySource' modifier='Abstract'>"
+            "   <BaseClass>Element</BaseClass>"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='ElementGeometry'>"
+            "    <ECProperty propertyName='Geom' typeName='binary' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='ExtendedElement'>"
+            "    <BaseClass>GeometrySource</BaseClass>"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='GeometricElement'>"
+            "    <BaseClass>ExtendedElement</BaseClass>"
+            "  </ECEntityClass>"
+            "  <ECRelationshipClass typeName='GeometrySourceHasGeometry' strength='embedding'>"
+            "    <Source cardinality='(1,1)' polymorphic='True'>"
+            "      <Class class='GeometrySource' />"
+            "    </Source>"
+            "    <Target cardinality='(0,N)' polymorphic='True'>"
+            "      <Class class='ElementGeometry' />"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>"));
 
     for (SchemaItem const& testSchema : testSchemas)
         {
         ECDb ecdb;
         bool asserted = false;
-        AssertSchemaImport(ecdb, asserted, testSchema, "RelationshipWithAbstractClassAsConstraintOnParentEnd.ecdb");
-        ASSERT_FALSE(asserted);
+        AssertSchemaImport (ecdb, asserted, testSchema, "RelationshipWithAbstractBaseClass.ecdb");
+        ASSERT_FALSE (asserted);
 
         ecdb.Schemas().CreateECClassViewsInDb();
 
@@ -5702,11 +5571,12 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnParent
         ASSERT_EQ(1, getGeometrySourceHasGeometryRowCount(ecdb)) << "After inserting one relationship [Scenario: " << testSchema.m_name << "]";
 
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(1, elem1Key.GetECInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Error, insertStmt.BindInt64(2, elem1Key.GetECClassId()));
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(3, geom1Key.GetECInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindInt64(4, geom1Key.GetECClassId()));
-        insertStmt.Reset();
-        insertStmt.ClearBindings();
+        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindInt64(2, elem1Key.GetECClassId()));
+        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(3, geom2Key.GetECInstanceId()));
+        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindInt64(4, geom2Key.GetECClassId()));
+        ASSERT_EQ (BE_SQLITE_DONE, insertStmt.Step ()) << "Inserting GeometrySourceHasGeometry against ExtendedElement is also expected to succeed";
+        insertStmt.Reset ();
+        insertStmt.ClearBindings ();
         }
     }
     }

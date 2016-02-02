@@ -285,7 +285,7 @@ struct ECDbMapAnalyser
                 BeAssert(!IsLinkTable());
                 return GetPersistanceLocation() == PersistanceLocation::From ? From() : To();
                 }
-            EndPoint& PrimaryEnd()
+            EndPoint& ReferencedEnd()
                 {
                 BeAssert(!IsLinkTable());
                 return GetPersistanceLocation() == PersistanceLocation::To ? From() : To();

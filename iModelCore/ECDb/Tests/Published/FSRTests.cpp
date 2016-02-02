@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/FSRTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -65,7 +65,7 @@ struct FSRTests : public ::testing::Test
         ecSchema = ECSchema::LocateSchema(key, *schemaReadContext);
         ASSERT_TRUE(ecSchema != NULL);
         LOG.infov("Loaded schema %s", currentSchemaName.GetName());
-        auto importSchemaStatus = m_db.Schemas().ImportECSchemas(schemaReadContext->GetCache(), ECDbSchemaManager::ImportOptions(true, true));
+        auto importSchemaStatus = m_db.Schemas().ImportECSchemas(schemaReadContext->GetCache(), ECDbSchemaManager::ImportOptions());
         ASSERT_EQ(SUCCESS, importSchemaStatus);
 
 

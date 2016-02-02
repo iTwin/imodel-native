@@ -40,31 +40,31 @@ private:
     PropertyMapsByAccessString m_dictionary;
     std::vector<PropertyMapCP> m_orderedCollection;
 
-    bool TryGetPropertyMap (PropertyMapPtr& propertyMap, bvector<Utf8String>::const_iterator& propertyAccessStringTokenIterator, bvector<Utf8String>::const_iterator& propertyAccessStringTokenEndIterator) const;
-    bool TryGetPropertyMapNonRecursively (PropertyMapPtr& propertyMap, Utf8CP propertyAccessString) const;
+    bool TryGetPropertyMap(PropertyMapPtr& propertyMap, bvector<Utf8String>::const_iterator& propertyAccessStringTokenIterator, bvector<Utf8String>::const_iterator& propertyAccessStringTokenEndIterator) const;
+    bool TryGetPropertyMapNonRecursively(PropertyMapPtr& propertyMap, Utf8CP propertyAccessString) const;
 
-    static void Traverse (std::set<PropertyMapCollection const*>& doneList, PropertyMapCollection const& childPropMaps, std::function<void (TraversalFeedback&, PropertyMapCP)> const& nodeOperation, bool recursive);
+    static void Traverse(std::set<PropertyMapCollection const*>& doneList, PropertyMapCollection const& childPropMaps, std::function<void(TraversalFeedback&, PropertyMapCP)> const& nodeOperation, bool recursive);
 
 public:
-    PropertyMapCollection ();
-    ~PropertyMapCollection () {}
-    PropertyMapCollection (PropertyMapCollection&& rhs);
+    PropertyMapCollection() {}
+    ~PropertyMapCollection() {}
+    PropertyMapCollection(PropertyMapCollection&& rhs);
 
     PropertyMapCollection& operator= (PropertyMapCollection&& rhs);
 
-    void AddPropertyMap (PropertyMapPtr const& propertyMap);
-    void AddPropertyMap (Utf8CP propertyAccessString, PropertyMapPtr const& propertyMap);
+    void AddPropertyMap(PropertyMapPtr const& propertyMap);
+    void AddPropertyMap(Utf8CP propertyAccessString, PropertyMapPtr const& propertyMap);
 
-    size_t Size () const;
-    bool IsEmpty () const;
+    size_t Size() const { return m_orderedCollection.size();}
+    bool IsEmpty() const { return Size() == 0; }
 
-    bool TryGetPropertyMap (PropertyMapCP& propertyMap, Utf8CP propertyAccessString, bool recursive = false) const;
-    bool TryGetPropertyMap (PropertyMapPtr& propertyMap, Utf8CP propertyAccessString, bool recursive = false) const;
+    bool TryGetPropertyMap(PropertyMapCP& propertyMap, Utf8CP propertyAccessString, bool recursive = false) const;
+    bool TryGetPropertyMap(PropertyMapPtr& propertyMap, Utf8CP propertyAccessString, bool recursive = false) const;
 
-    void Traverse (std::function<void (TraversalFeedback& feedback, PropertyMapCP propMap)> const& nodeOperation, bool recursive) const;
+    void Traverse(std::function<void(TraversalFeedback& feedback, PropertyMapCP propMap)> const& nodeOperation, bool recursive) const;
 
-    const_iterator begin () const;
-    const_iterator end () const;
+    const_iterator begin() const { return m_orderedCollection.begin(); }
+    const_iterator end() const { return m_orderedCollection.end(); }
     };
 
 struct PropertyMapStructArray;

@@ -169,42 +169,36 @@ void ECSqlPrepareContext::ExpScope::IncrementNativeSqlSelectClauseColumnCount (s
 // @bsimethod                                    Affan.Khan                       02/2014
 //+---------------+---------------+---------------+---------------+---------------+------
 //static 
-Utf8String ECSqlPrepareContext::CreateECInstanceIdSelectionQuery (ECSqlPrepareContext& ctx, ClassNameExp const& classNameExpr, WhereExp const* whereExp)
+Utf8String ECSqlPrepareContext::CreateECInstanceIdSelectionQuery(ECSqlPrepareContext& ctx, ClassNameExp const& classNameExpr, WhereExp const* whereExp)
     {
     NativeSqlBuilder selectBuilder;
-    selectBuilder.Append ("SELECT DISTINCT ");
-    if (!classNameExpr.GetAlias ().empty ())
+    selectBuilder.Append("SELECT DISTINCT ");
+    if (!classNameExpr.GetAlias().empty())
         {
-        selectBuilder.AppendEscaped (classNameExpr.GetAlias ().c_str ());
-        selectBuilder.AppendDot ();
+        selectBuilder.AppendEscaped(classNameExpr.GetAlias().c_str());
+        selectBuilder.AppendDot();
         }
 
-    selectBuilder.Append ("ECInstanceId, GetECClassId() FROM");
+    selectBuilder.Append("ECInstanceId, GetECClassId() FROM ");
 
-    selectBuilder.AppendSpace ();
-    if (!classNameExpr.IsPolymorphic ())
+    if (!classNameExpr.IsPolymorphic())
+        selectBuilder.Append("ONLY ");
+
+    selectBuilder.AppendEscaped(classNameExpr.GetSchemaName().c_str());
+    selectBuilder.AppendDot();
+    selectBuilder.AppendEscaped(classNameExpr.GetClassName().c_str());
+    selectBuilder.AppendSpace();
+
+    if (!classNameExpr.GetAlias().empty())
         {
-        selectBuilder.Append ("ONLY");
-        selectBuilder.AppendSpace ();
+        selectBuilder.AppendEscaped(classNameExpr.GetAlias().c_str());
+        selectBuilder.AppendSpace();
         }
 
-    selectBuilder.AppendEscaped (classNameExpr.GetSchemaName ().c_str ());
-    selectBuilder.AppendDot ();
-    selectBuilder.AppendEscaped (classNameExpr.GetClassName ().c_str ());
-    selectBuilder.AppendSpace ();
+    if (whereExp != nullptr)
+        selectBuilder.Append(whereExp->ToECSql().c_str());
 
-    if (!classNameExpr.GetAlias ().empty ())
-        {
-        selectBuilder.AppendEscaped (classNameExpr.GetAlias ().c_str ());
-        }
-
-    if (whereExp)
-        {
-        selectBuilder.AppendSpace ();
-        selectBuilder.Append (whereExp->ToECSql ().c_str ());
-        }
-
-    return selectBuilder.ToString ();
+    return selectBuilder.ToString();
     }
 
 //-----------------------------------------------------------------------------------------
