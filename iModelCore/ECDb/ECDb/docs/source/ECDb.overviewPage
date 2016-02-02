@@ -216,18 +216,18 @@
     lead to a good database design. ECDb therefore only supports @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClasses" that 
     can be mapped to a reasonable database layout.
 
-    ### ECRelationshipClass Definition Consistency
+    ## ECRelationshipClass Definition Consistency
     Technically, @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClasses" can be defined with incompatible 
     values for cardinality, strength and strength direction. The table shows what is actually allowed.
 
     Cardinality | Supported Strength | Supported Strength Direction
     ----------- | ------------------ | ----------------------------
-    1:1         | Any                | Forward or Backward
-    1:N         | Any                | Forward
-    N:1         | Any                | Backward
-    M:N         | Referencing        | not relevant
+    1:1         | Any                | @ref BentleyApi::ECN::Forward "Forward" or @ref BentleyApi::ECN::Backward "Backward"
+    1:N         | Any                | @ref BentleyApi::ECN::Forward "Forward"
+    N:1         | Any                | @ref BentleyApi::ECN::Backward "Backward"
+    M:N         | @ref BentleyApi::ECN::Referencing "Referencing" | not relevant
 
-    ### Foreign Key mapping versus Link Table mapping
+    ## Foreign Key mapping versus Link Table mapping
     ECDb always attempts to map an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" using a 
     <b>Foreign Key</b> mapping, because this type is more performant and less complex.
     For those cases where a Foreign Key mapping is not possible (because a Link Table is required), 
@@ -245,7 +245,7 @@
     - has the strength @em Embedding
     - has the @b ForeignKeyRelationshipMap custom attribute (see also @ref CustomRelationshipMapDescription)
 
-    ### Mapping Rules
+    ## Mapping Rules
     The <b>number of tables to which the two relationship ends map to</b> is the key criterion for ECDb to decide whether
     an ECRelationshipClass is supported or not.
 
@@ -256,7 +256,7 @@
         - Number of tables on the referenced end must be 1.
         - Number of tables on the Foreign Key end
             - 1: ok
-            - > 1: ok, but relationship cannot be used in ECSQL INSERT, UPDATE, DELETE.
+            - > 1: ok, but <b>relationship becomes read-only</b>, i.e. it cannot be used in ECSQL INSERT, UPDATE, DELETE.
 
     
     #### Counting the tables on the ECRelationshipClass ends
@@ -279,6 +279,15 @@
     each class of the constraint. See @ref CustomClassMapDescription for details.
     - If the <i>Shared Table</i> strategy cannot be applied, consider breaking the ECRelationshipClass apart into several separate
     ECRelationshipClasses.
+
+    ## Referential Integrity
+    ECDb enforces referential integrity via foreign key constraints. 
+    
+    ####Exception
+    For @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClasses" with strength
+    @ref BentleyApi::ECN::Holding "Holding" foreign key constraints exist to delete the relationship @em instances. But ECDb
+    cannot delete the actual orphaned instances automatically. Instead callers must explicitly call @ref BentleyApi::BeSQLite::EC::ECDb::Purge "ECDb::Purge"
+    at their discretion.
 
     @see @ref ECDbOverview
     */
