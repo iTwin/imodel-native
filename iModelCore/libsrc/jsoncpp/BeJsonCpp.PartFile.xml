@@ -23,7 +23,7 @@
             <VendorAPI Domain="json" />
             <Libs ProductDirectoryName="BeJsonCppStaticLibDir" Required="false">Delivery/$(libprefix)BeJsonCpp$(stlibext)</Libs>
             <Libs ProductDirectoryName="BeJsonCppStaticLibDir" Required="false">Delivery/$(libprefix)BeJsonCpp$(stlibdebugext)</Libs>
-            <Files ProductDirectoryName="VendorNotices" Required="true">Delivery/jsoncpp-notice.txt</Files>
+            <VendorNotices>Delivery/jsoncpp-license.txt</VendorNotices>
         </Bindings>
     </Part>
 

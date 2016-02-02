@@ -2,7 +2,7 @@
 #
 #     $Source: BeJsonCpp.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 # Export/make visible all functions in JsonCpp
@@ -83,5 +83,5 @@ CREATE_STATIC_LIBRARIES     = 1
 
 %include $(sharedMki)linkLibrary.mki
 
-$(BuildContext)Delivery/jsoncpp-notice.txt : $(_MakeFilePath)LICENSE
+$(BuildContext)Delivery/jsoncpp-license.txt : $(_MakeFilePath)LICENSE
     $(LinkFirstDepToFirstTarget)
