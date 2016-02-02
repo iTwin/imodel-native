@@ -87,9 +87,9 @@
     </Part>
     
     <Part Name="LoggingManagedInstall" BMakeFile="install\ManagedMergeModule.mke" >
-        <SubPart PartName="LoggingSDK" />
         <RequiredRepository>Bsitools-Wix_3.0.2925.0</RequiredRepository>
         <RequiredRepository>Miscdev-Eula</RequiredRepository>
+        <SubPart PartName="LoggingSDK" />
         <Bindings>
             <MergeModules ProductDirectoryName="LoggingInstallers">
                 Install\ManagedLogClientMergeModule.msm
