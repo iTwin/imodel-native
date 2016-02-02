@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/DownloadFilesTask.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -77,7 +77,7 @@ void DownloadFilesTask::_OnExecute()
             }
 
         DownloadFileProperties fileProperties;
-        if (SUCCESS != txn.GetCache().ReadFileProperties(fileKey, fileProperties.name, fileProperties.size))
+        if (SUCCESS != txn.GetCache().ReadFileProperties(fileKey, &fileProperties.name, &fileProperties.size))
             {
             SetError(ICachingDataSource::Status::DataNotCached);
             return;

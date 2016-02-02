@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Upgrade/UpgraderBase.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -37,7 +37,7 @@ BentleyStatus UpgraderBase::UpgradeCacheSchema(int versionMajor, int versionMino
     schemaCache->AddSchema(*cacheSchema);
 
     return m_adapter.GetECDb().Schemas()
-        .ImportECSchemas(*schemaCache, ECDbSchemaManager::ImportOptions(true, true));
+        .ImportECSchemas(*schemaCache, ECDbSchemaManager::ImportOptions());
     }
 
 /*--------------------------------------------------------------------------------------+

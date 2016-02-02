@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/CacheNavigationTask.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -109,7 +109,7 @@ void CacheNavigationTask::CacheRejectedObjects()
         return;
         }
 
-    SyncCachedInstancesTask::Run(m_ds, m_objectsToRedownload, GetCancellationToken())
+    SyncCachedInstancesTask::Run(m_ds, m_objectsToRedownload, nullptr, GetCancellationToken())
         ->Then(m_ds->GetCacheAccessThread(), [=] (ICachingDataSource::BatchResult result)
         {
         AddResult(result);
