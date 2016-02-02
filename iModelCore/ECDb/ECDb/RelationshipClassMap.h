@@ -168,7 +168,7 @@ public:
         if (!referencedEndClassIdPropertyMap->IsVirtual() && !referencedEndClassIdPropertyMap->IsMappedToClassMapTables())
             return true;
 
-        return  GetTargetECClassIdPropMap()->GetFirstColumn() == GetSourceECClassIdPropMap()->GetFirstColumn()
+        return  GetTargetECClassIdPropMap()->ExpectingSingleColumn() == GetSourceECClassIdPropMap()->ExpectingSingleColumn()
             && !GetTargetECClassIdPropMap()->IsVirtual() && !GetTargetECClassIdPropMap()->IsVirtual();
         }
     };

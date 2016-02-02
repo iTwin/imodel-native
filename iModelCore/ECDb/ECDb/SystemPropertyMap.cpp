@@ -37,11 +37,25 @@ std::vector<std::weak_ptr<ECDbSqlColumn>>&& PropertyMapSystem::ToWeakPtr(std::ve
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
-PropertyMapSystem::PropertyMapSystem(ECPropertyCR ecProperty, std::vector<std::weak_ptr<ECDbSqlColumn>> columns, ECSqlSystemProperty kind)
-    : PropertyMap(ecProperty, ecProperty.GetName().c_str(), nullptr), m_kind(kind), m_columns(columns)
+PropertyMapSystem::PropertyMapSystem(ECPropertyCR ecProperty, std::vector<ECDbSqlColumn*> columns, ECSqlSystemProperty kind)
+    : PropertyMap(ecProperty, ecProperty.GetName().c_str(), nullptr), m_kind(kind)
     {
-    for (std::weak_ptr<ECDbSqlColumn>& column : m_columns)
-        m_mappedTables.push_back(&column.lock()->GetTable());
+    std::set<ECDbSqlTable const*> tables;
+    for (auto column : columns)
+        {
+        if (column)
+            {
+            m_columns.push_back(column->GetWeakPtr());
+            if (tables.find(&column->GetTable()) == tables.end())
+                {
+                m_mappedTables.push_back(&column->GetTable());
+                }
+            }
+        else
+            {
+            BeAssert(false && "Unexpected null column");
+            }
+        }
     }
 
 //----------------------------------------------------------------------------------
@@ -134,7 +148,7 @@ Utf8CP const PropertyMapECInstanceId::PROPERTYACCESSSTRING = "ECInstanceId";
 // @bsimethod                                 Krischan.Eberle                06/2013
 //+---------------+---------------+---------------+---------------+---------------+-
 PropertyMapECInstanceId::PropertyMapECInstanceId (ECPropertyCR ecInstanceIdProperty, ClassMap const& classMap, std::vector<ECDbSqlColumn*> columns)
-: PropertyMapSystem (ecInstanceIdProperty, ToWeakPtr(columns), ECSqlSystemProperty::ECInstanceId)
+: PropertyMapSystem (ecInstanceIdProperty, std::move(columns), ECSqlSystemProperty::ECInstanceId)
     {
    
     std::vector<ECDbSqlTable*> tables = classMap.GetTables();
@@ -142,6 +156,15 @@ PropertyMapECInstanceId::PropertyMapECInstanceId (ECPropertyCR ecInstanceIdPrope
     m_mappedTables.insert(m_mappedTables.begin(), tables.begin(), tables.end());
     }
 
+PropertyMapPtr PropertyMapECInstanceId::Create(ECDbSchemaManagerCR schemaManager, ClassMap const& classMap, std::vector<ECDbSqlColumn*> columns)
+    {
+    ECPropertyCP property = ECDbSystemSchemaHelper::GetSystemProperty(schemaManager, ECSqlSystemProperty::ECInstanceId);
+    if (property == nullptr)
+        //log and assert done in child method
+        return nullptr;
+
+    return new PropertyMapECInstanceId(*property, classMap, columns);
+    }
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                06/2013
 //+---------------+---------------+---------------+---------------+---------------+-
@@ -179,7 +202,7 @@ Utf8String PropertyMapECInstanceId::_ToString () const
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
 PropertyMapStructArrayTableKey::PropertyMapStructArrayTableKey (ECPropertyCR ecProperty, std::vector<ECDbSqlColumn*> columns, ECSqlSystemProperty kind)
-: PropertyMapSystem (ecProperty, ToWeakPtr(columns), kind)
+: PropertyMapSystem (ecProperty, std::move(columns), kind)
  {}
 
 //----------------------------------------------------------------------------------
@@ -279,7 +302,7 @@ Utf8String PropertyMapStructArrayTableKey::_ToString () const
 // @bsimethod                                 Affan.Khan                08/2013
 //+---------------+---------------+---------------+---------------+---------------+-
 PropertyMapRelationshipConstraint::PropertyMapRelationshipConstraint(ECN::ECPropertyCR constraintProperty, std::vector<ECDbSqlColumn*> columns, ECSqlSystemProperty kind)
-    : PropertyMapSystem(constraintProperty, std::move(ToWeakPtr(columns)), kind)
+    : PropertyMapSystem(constraintProperty, std::move(columns), kind)
     {}
 
 //---------------------------------------------------------------------------------------

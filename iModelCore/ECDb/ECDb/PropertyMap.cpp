@@ -330,16 +330,32 @@ void PropertyMap::GetColumns (std::vector<ECDbSqlColumn const*>& columns) const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                    affan.khan      02/2015
+//---------------------------------------------------------------------------------------
+void PropertyMap::GetColumns(std::vector<ECDbSqlColumn const*>& columns, ECDbSqlTable const& table) const
+    {
+    GetColumns(columns);
+
+    auto itor = std::find_if_not(columns.begin(), columns.end(), [&table] (ECDbSqlColumn const* column) { return &column->GetTable() == &table; });
+    while (itor != columns.end())
+        {
+        columns.erase(itor);
+        itor = std::find_if_not(columns.begin(), columns.end(), [&table] (ECDbSqlColumn const* column) { return &column->GetTable() == &table; });
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      08/2013
 //---------------------------------------------------------------------------------------
-ECDbSqlColumn const* PropertyMap::GetFirstColumn() const
+ECDbSqlColumn const* PropertyMap::ExpectingSingleColumn() const
     {
     std::vector<ECDbSqlColumn const*> columns;
     GetColumns(columns);
-    if (columns.empty())
+    BeAssert(columns.size() == 1 && "Expecting Single Column");
+    if (columns.empty() || columns.size() > 1)
         return nullptr;
 
-    return columns.at(0);
+    return columns.front();
     }
 
 
@@ -1172,7 +1188,7 @@ BentleyStatus NavigationPropertyMap::Postprocess(ECDbMapCR ecdbMap)
 
     m_relClassMap = static_cast<RelationshipClassMap const*> (relClassMap);
     
-    ECDbSqlColumn const* constraintIdCol = GetConstraintMap(NavigationEnd::To).GetECInstanceIdPropMap()->GetFirstColumn();
+    ECDbSqlColumn const* constraintIdCol = GetConstraintMap(NavigationEnd::To).GetECInstanceIdPropMap()->ExpectingSingleColumn();
     if (constraintIdCol == nullptr)
         {
         BeAssert(false);

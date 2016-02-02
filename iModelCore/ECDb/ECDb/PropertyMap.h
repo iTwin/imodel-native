@@ -145,9 +145,10 @@ public:
 
     //! Gets the columns (if any) mapped to this property
     void GetColumns(std::vector<ECDbSqlColumn const*>&) const;
+    void GetColumns(std::vector<ECDbSqlColumn const*>&, ECDbSqlTable const&) const;
 
     //! Gets the first column if any
-    ECDbSqlColumn const* GetFirstColumn() const;
+    ECDbSqlColumn const* ExpectingSingleColumn() const;
 
     //! Generates the native SQL snippets from the columns related to this property map.
     //! SQL generation depends on various properties of the property map (e.g whether the property map is virtual)

@@ -464,16 +464,6 @@ MapStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMap
         return MapStatus::Error;
         }
 
-    //Create ECinstanceId for this classMap. This must map to current table for this class evaluate above and set through SetTable();
-    PropertyMapPtr ecInstanceIdPropMap = PropertyMapECInstanceId::Create(GetECDbMap().GetECDbR().Schemas(), *this);
-    if (ecInstanceIdPropMap == nullptr)
-        {
-        BeAssert(false && "Failed to create PropertyMapECInstanceId");
-        return MapStatus::Error;
-        }
-
-    //Add primary key property map
-    GetPropertyMapsR().AddPropertyMap(ecInstanceIdPropMap);
 
     //Create foreign ECInstanceId propertyMap
     auto userRequestedDeleteAction = relationshipClassMapInfo.CreateForeignKeyConstraint() ? relationshipClassMapInfo.GetOnDeleteAction() : ForeignKeyActionType::NotSpecified;
@@ -499,14 +489,36 @@ MapStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMap
 
         //If ECClassId/ForeignEndClassId column is missing create a virtual one
         if (toECClassId == nullptr)
-            toECClassId = toTable.CreateColumn(ECDB_COL_ECClassId, ECDbSqlColumn::Type::Integer, ColumnKind::ECClassId, PersistenceType::Virtual);
-
+            {
+            Utf8CP name = GetForeignEnd() == ECRelationshipEnd_Source ? ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME : ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME;
+            ColumnKind kind = GetForeignEnd() == ECRelationshipEnd_Source ? ColumnKind::SourceECClassId : ColumnKind::TargetECClassId;
+            toECClassId = toTable.FindColumnP(name);
+            if (toECClassId == nullptr)
+                toECClassId = toTable.CreateColumn(name, ECDbSqlColumn::Type::Integer, kind, PersistenceType::Virtual);
+            else {
+                if (toECClassId->GetKind() != kind || toECClassId->GetPersistenceType() != PersistenceType::Virtual)
+                    {
+                    BeAssert(false && "Expecting virtual column");
+                    return MapStatus::Error;
+                    }
+                }
+            }
         //if ECClassId/ReferencedEndClassId column is missing createa  virtual one and local table.
         if (fromECClassId_FK == nullptr)
             {
-            Utf8String foreignECClassIdColumnName;
-            foreignECClassIdColumnName.append("ForeignECClassId_").append(relationshipClass.GetName());
-            fromECClassId_FK = toTable.CreateColumn(foreignECClassIdColumnName.c_str(), ECDbSqlColumn::Type::Integer, GetReferencedEnd() == ECRelationshipEnd_Source ? ColumnKind::SourceECClassId : ColumnKind::TargetECClassId, PersistenceType::Virtual);
+            Utf8CP name = GetReferencedEnd() == ECRelationshipEnd_Source ? ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME : ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME;
+            ColumnKind kind = GetReferencedEnd() == ECRelationshipEnd_Source ? ColumnKind::SourceECClassId : ColumnKind::TargetECClassId;
+
+            fromECClassId_FK = toTable.FindColumnP(name);
+            if (fromECClassId_FK == nullptr)
+                fromECClassId_FK = toTable.CreateColumn(name, ECDbSqlColumn::Type::Integer, kind, PersistenceType::Virtual);
+            else {
+                if (fromECClassId_FK->GetKind() != kind || fromECClassId_FK->GetPersistenceType() != PersistenceType::Virtual)
+                    {
+                    BeAssert(false && "Expecting virtual column");
+                    return MapStatus::Error;
+                    }
+                }
             }
 
         //! Create Foreign Key constraint only if FK is not a virtual or existing table.
@@ -537,6 +549,24 @@ MapStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMap
 
     //SourceECInstanceId 
     //SourcePrimaryECInstanceId
+
+    //Create ECinstanceId for this classMap. This must map to current table for this class evaluate above and set through SetTable();
+    PropertyMapPtr ecInstanceIdPropMap = PropertyMapECInstanceId::Create(GetECDbMap().GetECDbR().Schemas(), *this, std::vector<ECDbSqlColumn*>(toECIds.begin(), toECIds.end()));
+    if (ecInstanceIdPropMap == nullptr)
+        {
+        BeAssert(false && "Failed to create PropertyMapECInstanceId");
+        return MapStatus::Error;
+        }
+
+    //Set tables
+    for (auto ecId : toECIds)
+        {
+        SetTable(ecId->GetTableR(), true);
+        }
+
+    //Add primary key property map
+    GetPropertyMapsR().AddPropertyMap(ecInstanceIdPropMap);
+
 
     { //Setup 
     auto propertyMap = PropertyMapRelationshipConstraintECInstanceId::Create(
@@ -885,8 +915,8 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(SchemaImportContext
         (!isUniqueIndex && !m_autogenerateForeignKeyColumns))
         return;
 
-    BeAssert(GetReferencedEndECInstanceIdPropMap() != nullptr && GetReferencedEndECInstanceIdPropMap()->GetFirstColumn() != nullptr);
-    ECDbSqlColumn const* referencedEndIdColumn = GetReferencedEndECInstanceIdPropMap()->GetFirstColumn();
+    BeAssert(GetReferencedEndECInstanceIdPropMap() != nullptr && GetReferencedEndECInstanceIdPropMap()->ExpectingSingleColumn() != nullptr);
+    ECDbSqlColumn const* referencedEndIdColumn = GetReferencedEndECInstanceIdPropMap()->ExpectingSingleColumn();
 
     // name of the index
     Utf8String name(isUniqueIndex ? "uix_" : "ix_");
@@ -1285,7 +1315,7 @@ MapStatus RelationshipClassLinkTableMap::_MapPart2 (SchemaImportContext& context
         ECDbSqlTable * sourceTable = const_cast<ECDbSqlTable*>(*sourceTables.begin());
         ECDbSqlForeignKeyConstraint* sourceFK = GetPrimaryTable().CreateForeignKeyConstraint(*sourceTable);
         ECDbSqlColumn const* souceColumn = sourceTable->GetFilteredColumnFirst(ColumnKind::ECInstanceId);
-        sourceFK->Add(GetSourceECInstanceIdPropMap()->GetFirstColumn()->GetName().c_str(), souceColumn->GetName().c_str());
+        sourceFK->Add(GetSourceECInstanceIdPropMap()->ExpectingSingleColumn()->GetName().c_str(), souceColumn->GetName().c_str());
         sourceFK->SetOnDeleteAction(ForeignKeyActionType::Cascade);
         sourceFK->RemoveIfDuplicate();
         sourceFK = nullptr;
@@ -1295,7 +1325,7 @@ MapStatus RelationshipClassLinkTableMap::_MapPart2 (SchemaImportContext& context
         ECDbSqlTable * targetTable = const_cast<ECDbSqlTable*>(*targetTables.begin());
         ECDbSqlForeignKeyConstraint* targetFK = GetPrimaryTable().CreateForeignKeyConstraint(*targetTable);
         ECDbSqlColumn const* targetColumn = targetTable->GetFilteredColumnFirst(ColumnKind::ECInstanceId);
-        targetFK->Add(GetTargetECInstanceIdPropMap()->GetFirstColumn()->GetName().c_str(), targetColumn->GetName().c_str());
+        targetFK->Add(GetTargetECInstanceIdPropMap()->ExpectingSingleColumn()->GetName().c_str(), targetColumn->GetName().c_str());
         targetFK->SetOnDeleteAction(ForeignKeyActionType::Cascade);
         targetFK->RemoveIfDuplicate();
         targetFK = nullptr;
@@ -1450,10 +1480,10 @@ void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext& schemaImportCo
                 break;
         }
 
-    auto sourceECInstanceIdColumn = GetSourceECInstanceIdPropMap()->GetFirstColumn();
-    auto sourceECClassIdColumn = GetSourceECClassIdPropMap()->IsMappedToClassMapTables() ? GetSourceECClassIdPropMap()->GetFirstColumn() : nullptr;
-    auto targetECInstanceIdColumn = GetTargetECInstanceIdPropMap()->GetFirstColumn();
-    auto targetECClassIdColumn = GetTargetECClassIdPropMap()->IsMappedToClassMapTables() ? GetTargetECClassIdPropMap()->GetFirstColumn() : nullptr;
+    auto sourceECInstanceIdColumn = GetSourceECInstanceIdPropMap()->ExpectingSingleColumn();
+    auto sourceECClassIdColumn = GetSourceECClassIdPropMap()->IsMappedToClassMapTables() ? GetSourceECClassIdPropMap()->ExpectingSingleColumn() : nullptr;
+    auto targetECInstanceIdColumn = GetTargetECInstanceIdPropMap()->ExpectingSingleColumn();
+    auto targetECClassIdColumn = GetTargetECClassIdPropMap()->IsMappedToClassMapTables() ? GetTargetECClassIdPropMap()->ExpectingSingleColumn() : nullptr;
 
     std::vector<ECDbSqlColumn const*> columns;
     switch (spec)

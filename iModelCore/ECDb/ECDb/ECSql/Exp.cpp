@@ -38,7 +38,7 @@ std::set<ECDbSqlTable const*> Exp::GetReferencedTables() const
             if (propertyNameExp->GetTypeInfo().GetPropertyMap()->GetAsPropertyMapStructArray())
                 continue;
 
-            auto const& table = propertyNameExp->GetTypeInfo().GetPropertyMap()->GetFirstColumn()->GetTable();
+            auto const& table = propertyNameExp->GetTypeInfo().GetPropertyMap()->ExpectingSingleColumn()->GetTable();
             if (table.GetPersistenceType() == PersistenceType::Persisted)
                 tmp.insert(&table);
             }

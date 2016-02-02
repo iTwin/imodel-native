@@ -26,7 +26,7 @@ private:
     virtual void _GetColumns (std::vector<ECDbSqlColumn const*>& columns) const override;
 
 protected:
-    PropertyMapSystem (ECN::ECPropertyCR property, std::vector<std::weak_ptr<ECDbSqlColumn>> columns, ECSqlSystemProperty kind);
+    PropertyMapSystem (ECN::ECPropertyCR property, std::vector<ECDbSqlColumn*> columns, ECSqlSystemProperty kind);
 
     ECDbSqlColumn const& GetColumn () const;
 
@@ -59,6 +59,8 @@ private:
 public:
     ~PropertyMapECInstanceId () {}
     static PropertyMapPtr Create (ECDbSchemaManagerCR, ClassMap const&);
+    static PropertyMapPtr Create(ECDbSchemaManagerCR schemaManager, ClassMap const& classMap, std::vector<ECDbSqlColumn*> columns);
+
     };
 
 
