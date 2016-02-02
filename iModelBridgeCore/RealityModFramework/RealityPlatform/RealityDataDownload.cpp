@@ -87,7 +87,16 @@ static int callback_progress_func(void *pClient,
             else
                 pFileTrans->downloadedSizeStep += (size_t)(pFileTrans->filesize * pFileTrans->progressStep);
 
-            return (pFileTrans->pProgressFunc)((int)pFileTrans->index, pClient, (size_t)dlnow, pFileTrans->filesize);
+            int statusCode = (pFileTrans->pProgressFunc)((int) pFileTrans->index, pClient, (size_t) dlnow, pFileTrans->filesize);
+            if (0 != statusCode)
+                {
+                // An error occurred, delete incomplete file.
+                pFileTrans->fileStream.Close();
+                BeFileName::BeDeleteFile(pFileTrans->filename.c_str());
+                }
+                
+
+            return statusCode;
             }
         }
 
