@@ -106,25 +106,29 @@ namespace dgn_ElementHandler
         virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); PhysicalElement::AddClassParams(params); }
     };
 
-    //! The ElementHandler for AnnotationElement
-    struct EXPORT_VTABLE_ATTRIBUTE Annotation : Element
+    //! The ElementHandler for GraphicalElement2d
+    struct EXPORT_VTABLE_ATTRIBUTE Graphical2d : Element
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationElement, AnnotationElement, Annotation, Element, DGNPLATFORM_EXPORT)
-        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); AnnotationElement::AddClassParams(params); }
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_GraphicalElement2d, GraphicalElement2d, Graphical2d, Element, DGNPLATFORM_EXPORT)
+        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); GraphicalElement2d::AddClassParams(params); }
+    };
+
+    //! The ElementHandler for AnnotationElement
+    struct EXPORT_VTABLE_ATTRIBUTE Annotation : Graphical2d
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationElement, AnnotationElement, Annotation, Graphical2d, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for DrawingElement
-    struct EXPORT_VTABLE_ATTRIBUTE Drawing : Element
+    struct EXPORT_VTABLE_ATTRIBUTE Drawing : Graphical2d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, DrawingElement, Drawing, Element, DGNPLATFORM_EXPORT)
-        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); DrawingElement::AddClassParams(params); }
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, DrawingElement, Drawing, Graphical2d, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for SheetElement
-    struct EXPORT_VTABLE_ATTRIBUTE Sheet : Element
+    struct EXPORT_VTABLE_ATTRIBUTE Sheet : Graphical2d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SheetElement, SheetElement, Sheet, Element, DGNPLATFORM_EXPORT)
-        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); SheetElement::AddClassParams(params); }
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SheetElement, SheetElement, Sheet, Graphical2d, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for SpatialGroupElement
