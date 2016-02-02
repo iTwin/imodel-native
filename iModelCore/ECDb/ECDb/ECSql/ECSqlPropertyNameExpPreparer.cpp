@@ -63,7 +63,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
 
     //in SQLite table aliases are only allowed for SELECT statements
     const ECSqlType currentScopeECSqlType = currentScope.GetECSqlType();
-
+    PropertyMapCP propertyMap = &exp->GetPropertyMap();
     Utf8String classIdentifier = nullptr;
     if (currentScopeECSqlType == ECSqlType::Select)
         {
@@ -73,6 +73,21 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
         {
         if (!currentScope.HasExtendedOption(ECSqlPrepareContext::ExpScope::ExtendedOptions::SkipTableAliasWhenPreparingDeleteWhereClause))
             classIdentifier.assign(exp->GetPropertyMap().GetFirstColumn()->GetTable().GetName());
+        else
+            {
+            if (propertyMap->IsSystemPropertyMap() && propertyMap->GetTables().size() > 1)
+                {
+                BeAssert(exp->GetClassRefExp()->GetType() == Exp::Type::ClassName);
+                if (exp->GetClassRefExp()->GetType() != Exp::Type::ClassName)
+                    return ECSqlStatus::Error;
+
+                auto parentOfJoinedTable = static_cast<ClassNameExp const*>(exp->GetClassRefExp())->GetInfo().GetMap().GetParentOfJoinedTable();
+                propertyMap = parentOfJoinedTable->GetPropertyMap(propertyMap->GetPropertyAccessString());
+                BeAssert(propertyMap != nullptr);
+                if (propertyMap == nullptr)
+                    return ECSqlStatus::Error;
+                }
+            }
 
         if (exp->GetClassRefExp()->GetType() == Exp::Type::ClassName)
             {
@@ -93,7 +108,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
             }
         }
 
-    NativeSqlBuilder::List propNameNativeSqlSnippets = exp->GetPropertyMap().ToNativeSql((classIdentifier.empty()? nullptr : classIdentifier.c_str()), currentScopeECSqlType, exp->HasParentheses());
+    NativeSqlBuilder::List propNameNativeSqlSnippets = propertyMap->ToNativeSql((classIdentifier.empty()? nullptr : classIdentifier.c_str()), currentScopeECSqlType, exp->HasParentheses());
     nativeSqlSnippets.insert(nativeSqlSnippets.end(), propNameNativeSqlSnippets.begin(), propNameNativeSqlSnippets.end());
 
     return ECSqlStatus::Success;

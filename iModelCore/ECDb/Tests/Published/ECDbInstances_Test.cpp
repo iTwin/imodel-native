@@ -445,7 +445,7 @@ TEST_F(ECDbInstances, CreateAndImportSchemaThenInsertInstance)
 
     auto schemaCache = ECSchemaCache::Create ();
     schemaCache->AddSchema(*schema);
-    ASSERT_EQ (SUCCESS, db.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions (true, true)));
+    ASSERT_EQ (SUCCESS, db.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions()));
 
     StandaloneECEnablerPtr struct1Enabler = struct1->GetDefaultStandaloneEnabler ();
     StandaloneECEnablerPtr struct2Enabler = struct2->GetDefaultStandaloneEnabler ();

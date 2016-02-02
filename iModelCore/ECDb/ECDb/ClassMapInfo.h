@@ -8,7 +8,7 @@
 #pragma once
 #include "ECDbInternalTypes.h"
 #include "MapStrategy.h"
-
+#include "ECDbSql.h"
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct IClassMap;
@@ -143,6 +143,8 @@ private:
     ForeignKeyActionType m_onUpdateAction;
     bool m_createIndexOnForeignKey;
     CustomMapType m_customMapType;
+    std::set<ECDbSqlTable const*>  m_sourceTables;
+    std::set<ECDbSqlTable const*>  m_targetTables;
 
     virtual BentleyStatus _InitializeFromSchema() override;
     virtual MapStatus _EvaluateMapStrategy();
@@ -169,6 +171,8 @@ public:
     bool CreateForeignKeyConstraint() const { BeAssert(m_customMapType != CustomMapType::LinkTable && m_resolvedStrategy.IsForeignKeyMapping()); return m_createForeignKeyConstraint;}
     ForeignKeyActionType GetOnDeleteAction() const { BeAssert(CreateForeignKeyConstraint()); return m_onDeleteAction; }
     ForeignKeyActionType GetOnUpdateAction() const { BeAssert(CreateForeignKeyConstraint()); return m_onUpdateAction; }
+    std::set<ECDbSqlTable const*> const& GetSourceTables() const {return m_sourceTables;}
+    std::set<ECDbSqlTable const*> const& GetTargetTables() const {return m_targetTables;}
 
     bool CreateIndexOnForeignKey() const { BeAssert(m_customMapType != CustomMapType::LinkTable && m_resolvedStrategy.IsForeignKeyMapping()); return m_createIndexOnForeignKey; }
     };

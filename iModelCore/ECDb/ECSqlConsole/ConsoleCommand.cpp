@@ -2,7 +2,7 @@
 |
 |     $Source: ECSqlConsole/ConsoleCommand.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECDb/ECDbApi.h>
@@ -566,7 +566,7 @@ void ImportCommand::RunImportSchema(ECSqlConsoleSession& session, BeFileNameCR e
         Console::WriteLine("Reading ECSchema ... %s", ecschemaFilePath.GetNameUtf8());
         if (SUCCESS != DeserializeECSchema(*context, ecschemaFilePath))
             {
-            Console::WriteErrorLine("Import failed. Could not read ECSchema '%s' into memory.", Utf8String(ecschemaFilePath).c_str());
+            Console::WriteErrorLine("Import failed. Could not read ECSchema '%s' into memory.", ecschemaFilePath.GetNameUtf8());
             return;
             }
         }
@@ -574,8 +574,7 @@ void ImportCommand::RunImportSchema(ECSqlConsoleSession& session, BeFileNameCR e
 
 
     Savepoint savepoint(session.GetECDbR (), "import ecschema");
-    ECDbSchemaManager::ImportOptions options(true, true);
-    auto status = session.GetECDbR ().Schemas().ImportECSchemas(context->GetCache(), options);
+    auto status = session.GetECDbR ().Schemas().ImportECSchemas(context->GetCache(), ECDbSchemaManager::ImportOptions());
 
     Utf8CP schemaStr = isFolder ? "ECSchemas in folder" : "ECSchema";
 

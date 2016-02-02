@@ -33,6 +33,43 @@ ECSqlStatus ECSqlDeletePreparer::Prepare (ECSqlPrepareContext& ctx, DeleteStatem
     else
         stat = PrepareForClass (ctx, deleteNativeSqlSnippets);
 
+    //Create child delete step task for delete
+    ECSqlNonSelectPreparedStatement* nonSelectPreparedStmt = ctx.GetECSqlStatementR().GetPreparedStatementP <ECSqlNonSelectPreparedStatement>();
+    BeAssert(nonSelectPreparedStmt != nullptr && "Expecting ECSqlNonSelectPreparedStatement");
+    ECSqlStepTaskCreateStatus status = ECSqlStepTaskFactory::CreateClassStepTask(nonSelectPreparedStmt->GetStepTasks(), StepTaskType::Delete, ctx,
+            classMap.GetECDbMap().GetECDbR(), classMap, classNameExp->IsPolymorphic());
+    if (status != ECSqlStepTaskCreateStatus::NothingToDo && status != ECSqlStepTaskCreateStatus::Success)
+        {
+        LOG.errorv("Failed to create delete struct array step task for ECSQL '%s'.", ctx.GetSqlBuilder().ToString());
+        return ECSqlStatus::InvalidECSql;
+        }
+    
+    ECSqlParameterMap& ecsqlParameterMap = ctx.GetECSqlStatementR().GetPreparedStatementP()->GetParameterMapR();
+    Utf8String selectorQuery = ECSqlPrepareContext::CreateECInstanceIdSelectionQuery(ctx, *exp.GetClassNameExp(), exp.GetWhereClauseExp());
+    EmbeddedECSqlStatement* selectorStmt = nonSelectPreparedStmt->GetStepTasks().GetSelector(true);
+    selectorStmt->Initialize(ctx, ctx.GetParentArrayProperty(), nullptr);
+    stat = selectorStmt->Prepare(classMap.GetECDbMap().GetECDbR(), selectorQuery.c_str());
+    if (!stat.IsSuccess())
+        {
+        BeAssert(false && "Fail to prepared statement for ECInstanceIdSelect. Possible case of struct array containing struct array");
+        return stat;
+        }
+
+    LOG.infov("Prepared step task selector query: %s", selectorQuery.c_str());
+
+    int parameterIndex = ECSqlPrepareContext::FindLastParameterIndexBeforeWhereClause(exp, exp.GetWhereClauseExp());
+    int nParamterToBind = static_cast<int>(ecsqlParameterMap.Count()) - parameterIndex;
+    for (int j = 1; j <= nParamterToBind; j++)
+        {
+        IECSqlBinder& sink = selectorStmt->GetBinder(j);
+        ECSqlBinder* source = nullptr;
+        ECSqlStatus status = ecsqlParameterMap.TryGetBinder(source, j + parameterIndex);
+        if (!status.IsSuccess())
+            return status;
+
+        source->SetOnBindEventHandler(sink);
+        }
+
     ctx.PopScope ();
     return stat;
     }
@@ -62,15 +99,15 @@ NativeSqlSnippets& nativeSqlSnippets,
 RelationshipClassEndTableMapCR classMap
 )
     {
-    auto otherEndECInstanceIdPropMap = classMap.GetOtherEndECInstanceIdPropMap ();
-    auto otherEndECClassIdPropMap = classMap.GetOtherEndECInstanceIdPropMap ();
+    auto referencedEndECInstanceIdPropMap = classMap.GetReferencedEndECInstanceIdPropMap ();
+    auto referencedEndECClassIdPropMap = classMap.GetReferencedEndECInstanceIdPropMap ();
 
     NativeSqlBuilder::List propertyNamesToUnsetSqlSnippets;
     classMap.GetPropertyMaps ().Traverse (
-        [&propertyNamesToUnsetSqlSnippets, &otherEndECInstanceIdPropMap, &otherEndECClassIdPropMap] (TraversalFeedback& feedback, PropertyMapCP propMap)
+        [&propertyNamesToUnsetSqlSnippets, &referencedEndECInstanceIdPropMap, &referencedEndECClassIdPropMap] (TraversalFeedback& feedback, PropertyMapCP propMap)
         {
         //virtual prop maps map to non-existing columns. So they don't need to be considered in the list of columns to be nulled out
-        if (!propMap->IsVirtual () && (!propMap->IsSystemPropertyMap () || propMap == otherEndECInstanceIdPropMap || propMap == otherEndECClassIdPropMap))
+        if (!propMap->IsVirtual () && (!propMap->IsSystemPropertyMap () || propMap == referencedEndECInstanceIdPropMap || propMap == referencedEndECClassIdPropMap))
             {
             auto sqlSnippets = propMap->ToNativeSql (nullptr, ECSqlType::Delete, false);
             propertyNamesToUnsetSqlSnippets.insert (propertyNamesToUnsetSqlSnippets.end (), sqlSnippets.begin (), sqlSnippets.end ());
@@ -114,7 +151,7 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
             ECDbSqlTable& primaryTable = currentClassMap.GetPrimaryTable();
             ECDbSqlTable& joinedTable = currentClassMap.GetJoinedTable();
 
-            /* WIP Needs fixes as the prepare picks the joined table when it should actually pick the primary table
+            // * WIP Needs fixes as the prepare picks the joined table when it should actually pick the primary table
             std::set<ECDbSqlTable const*> tablesReferencedByWhereClause = whereExp->GetReferencedTables();
             const bool primaryTableIsReferencedByWhereClause = (tablesReferencedByWhereClause.find(&primaryTable) != tablesReferencedByWhereClause.end());
             const bool joinedTableIsReferencedByWhereClause = (tablesReferencedByWhereClause.find(&joinedTable) != tablesReferencedByWhereClause.end());
@@ -140,7 +177,7 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
 
                 deleteSqlSnippets.m_whereClauseNativeSqlSnippet = whereClause;
                 }
-            else*/
+            else
                 {
                 status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, whereExp);
                 if (!status.IsSuccess())

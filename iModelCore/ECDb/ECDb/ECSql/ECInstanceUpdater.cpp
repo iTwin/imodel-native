@@ -76,38 +76,25 @@ public:
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Carole.MacDonald                   02 / 14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceUpdater::ECInstanceUpdater
-(
-ECDbCR ecdb, 
-ECN::ECClassCR ecClass
-)
+ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass)
     {
-    m_impl = new ClassUpdaterImpl (ecdb, ecClass);
+    m_impl = new ClassUpdaterImpl(ecdb, ecClass);
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Carole.MacDonald                   08/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceUpdater::ECInstanceUpdater
-(
-ECDbCR ecdb, 
-ECN::IECInstanceCR instance
-)
+ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::IECInstanceCR instance)
     {
-    m_impl = new ClassUpdaterImpl (ecdb, instance);
+    m_impl = new ClassUpdaterImpl(ecdb, instance);
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Carole.MacDonald                   09/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceUpdater::ECInstanceUpdater
-(
-ECDbCR ecdb,
-ECN::ECClassCR ecClass,
-bvector<uint32_t>& propertiesToBind
-)
+ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, bvector<uint32_t>& propertiesToBind)
     {
-    m_impl = new ClassUpdaterImpl (ecdb, ecClass, propertiesToBind);
+    m_impl = new ClassUpdaterImpl(ecdb, ecClass, propertiesToBind);
     }
 
 //---------------------------------------------------------------------------------------
@@ -134,10 +121,7 @@ bool ECInstanceUpdater::IsValid () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECInstanceUpdater::Update
-(
-ECN::IECInstanceCR instance
-) const
+BentleyStatus ECInstanceUpdater::Update(ECN::IECInstanceCR instance) const
     {
     return m_impl->Update (instance);
     }
@@ -184,9 +168,9 @@ bool ECInstanceUpdater::Impl::IsValid () const
 // @bsimethod                                   Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-void ECInstanceUpdater::Impl::LogFailure (ECN::IECInstanceCR instance, Utf8CP errorMessage)
+void ECInstanceUpdater::Impl::LogFailure(ECN::IECInstanceCR instance, Utf8CP errorMessage)
     {
-    ECInstanceAdapterHelper::LogFailure ("update", instance, errorMessage);
+    ECInstanceAdapterHelper::LogFailure("update", instance, errorMessage);
     }
 
 //*************************************************************************************
@@ -201,9 +185,6 @@ ClassUpdaterImpl::ClassUpdaterImpl (ECDbCR ecdb, ECClassCR ecClass)
     bvector<ECPropertyCP> propertiesToBind;
     for (ECPropertyCP ecProperty : GetECClass().GetProperties(true))
         {
-        if (ecProperty->GetIsReadOnly())
-            continue;
-
         propertiesToBind.push_back(ecProperty);
         }
 
@@ -342,7 +323,7 @@ void ClassUpdaterImpl::Initialize(bvector<ECPropertyCP>& propertiesToBind)
             m_needsCalculatedPropertyEvaluation = ECInstanceAdapterHelper::IsOrContainsCalculatedProperty (*ecProperty);
 
         Utf8String propNameSnippet ("[");
-        propNameSnippet.append (Utf8String (ecProperty->GetName ())).append ("]");
+        propNameSnippet.append (ecProperty->GetName ()).append ("]");
         builder.AddSet (propNameSnippet.c_str (), "?");
 
         if (SUCCESS != m_ecValueBindingInfos.AddBindingInfo (GetECClass (), *ecProperty, parameterIndex))
@@ -437,7 +418,7 @@ BentleyStatus ClassUpdaterImpl::_Update (IECInstanceCR instance) const
     if (!ECInstanceIdHelper::FromString (ecinstanceId, instance.GetInstanceId ().c_str ()))
         {
         Utf8String errorMessage;
-        errorMessage.Sprintf("ECInstanceId '%s' is empty or not a valid ECDb ECInstanceId.", Utf8String(instance.GetInstanceId()).c_str());
+        errorMessage.Sprintf("ECInstanceId '%s' is empty or not a valid ECDb ECInstanceId.", instance.GetInstanceId().c_str());
         LogFailure(instance, errorMessage.c_str());
         return ERROR;
         }

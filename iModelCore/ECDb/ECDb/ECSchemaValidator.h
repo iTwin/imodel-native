@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSchemaValidator.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -22,11 +22,11 @@ private:
     ECSchemaValidator ();
     ~ECSchemaValidator ();
 
-    static bool ValidateSchema(ECSchemaValidationResult&, ECN::ECSchemaCR, bool supportLegacySchemas);
-    static bool ValidateClass (ECSchemaValidationResult&, ECN::ECClassCR, bool supportLegacySchemas);
+    static bool ValidateSchema(ECSchemaValidationResult&, ECN::ECSchemaCR);
+    static bool ValidateClass (ECSchemaValidationResult&, ECN::ECClassCR);
 
 public:
-    static bool ValidateSchemas(ECSchemaValidationResult&, bvector<ECN::ECSchemaP> const&, bool supportLegacySchemas);
+    static bool ValidateSchemas(ECSchemaValidationResult&, bvector<ECN::ECSchemaP> const&);
     };
 
 
@@ -130,12 +130,11 @@ public:
 
     private:
         InvalidClasses m_invalidClasses;
-        bool m_supportLegacySchemas;
 
         virtual Utf8String _ToString () const override;
 
     public:
-        explicit Error (Type ruleType, bool supportLegacySchemas) : ECSchemaValidationRule::Error (ruleType), m_supportLegacySchemas (supportLegacySchemas) {}
+        explicit Error (Type ruleType) : ECSchemaValidationRule::Error (ruleType) {}
         ~Error () {}
 
         bset<ECN::ECClassCP> const* TryGetInvalidClasses (ECN::ECClassCR ecClass) const;
@@ -145,7 +144,6 @@ public:
         };
 
 private:
-    bool m_supportLegacySchemas;
     bset<Utf8CP, CompareIUtf8> m_classNameSet;
     mutable std::unique_ptr<Error> m_error;
 
@@ -153,7 +151,7 @@ private:
     virtual std::unique_ptr<ECSchemaValidationRule::Error> _GetError () const override;
 
 public:
-    explicit CaseInsensitiveClassNamesRule (bool supportLegacySchemas);
+    CaseInsensitiveClassNamesRule();
     ~CaseInsensitiveClassNamesRule () {}
     };
 
@@ -175,13 +173,12 @@ private:
     private:
         ECN::ECClassCR m_ecClass;
         InvalidProperties m_invalidProperties;
-        bool m_supportLegacySchemas;
 
         virtual Utf8String _ToString () const override;
 
     public:
-        Error (Type ruleType, ECN::ECClassCR ecClass, bool supportLegacySchemas)
-            : ECSchemaValidationRule::Error (ruleType), m_ecClass (ecClass), m_supportLegacySchemas (supportLegacySchemas)
+        Error (Type ruleType, ECN::ECClassCR ecClass)
+            : ECSchemaValidationRule::Error (ruleType), m_ecClass (ecClass)
             {}
 
         ~Error () {}
@@ -190,7 +187,6 @@ private:
         InvalidProperties& GetInvalidPropertiesR () { return m_invalidProperties; }
         };
 
-    bool m_supportLegacySchemas;
     bset<Utf8CP, CompareIUtf8> m_propertyNameSet;
     mutable std::unique_ptr<Error> m_error;
 
@@ -198,8 +194,7 @@ private:
     virtual std::unique_ptr<ECSchemaValidationRule::Error> _GetError () const override;
 
 public:
-    CaseInsensitivePropertyNamesRule (ECN::ECClassCR ecClass, bool supportLegacySchemas);
-
+    explicit CaseInsensitivePropertyNamesRule (ECN::ECClassCR ecClass);
     ~CaseInsensitivePropertyNamesRule () {}
     };
 

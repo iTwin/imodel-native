@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/OptionsExp.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -77,7 +77,7 @@ Utf8String OptionsExp::_ToECSql() const
     {
     BeAssert(GetChildrenCount() != 0);
 
-    Utf8String ecsql("OPTIONS");
+    Utf8String ecsql("ECSQLOPTIONS");
     for (Exp const* child : GetChildren())
         {
         ecsql.append(" ").append(child->ToECSql());

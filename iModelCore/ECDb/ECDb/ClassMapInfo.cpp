@@ -608,7 +608,7 @@ ECClassCR          ecClass
 void ClassMapInfo::LogClassNotMapped (NativeLogging::SEVERITY severity, ECClassCR ecClass, Utf8CP explanation)
     {
     Utf8CP classTypeStr = ecClass.GetRelationshipClassCP () != nullptr ? "ECRelationshipClass" : "ECClass";
-    LOG.messagev (severity, "Did not map %s '%s': %s", classTypeStr, ecClass.GetFullName (), explanation);
+    LOG.messagev (severity, "Skipped %s '%s' during mapping: %s", classTypeStr, ecClass.GetFullName (), explanation);
     }
 
 //****************************************************************************************************
@@ -764,13 +764,15 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
     ECRelationshipConstraintR target = relationshipClass->GetTarget();
 
     DetermineCardinality(source, target);
-
-    const size_t sourceTableCount = m_ecdbMap.GetTableCountOnRelationshipEnd(source);
-    const size_t targetTableCount = m_ecdbMap.GetTableCountOnRelationshipEnd(target);
+    
+    m_sourceTables = m_ecdbMap.GetTablesFromRelationshipEnd(source);
+    m_targetTables = m_ecdbMap.GetTablesFromRelationshipEnd(target);
+    const size_t sourceTableCount = m_sourceTables.size();
+    const size_t targetTableCount = m_targetTables.size();
 
     if (sourceTableCount == 0 || targetTableCount == 0)
         {
-        LogClassNotMapped(NativeLogging::LOG_WARNING, *relationshipClass, "Source or target constraint classes are not mapped.");
+        LogClassNotMapped(NativeLogging::LOG_WARNING, *relationshipClass, "Source or target constraints don't include any concrete classes or its classes are not mapped to tables.");
         m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, false);
         return MapStatus::Success;
         }
@@ -781,12 +783,20 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
         {
         if (userStrategyIsForeignKeyMapping)
             {
-            LOG.errorv("The ECRelationshipClass '%s' implies a link table relationship with (MapStrategy: SharedTable (AppliesToSubclasses)), but it has a ForeignKeyRelationshipMap custom attribute.",
+            LOG.errorv("Failed to map ECRelationshipClass %s. Is has a ForeignKeyRelationshipClassMap CA and at the same time is part of a class hierarchy with the 'SharedTable (AppliesToSubclasses)' MapStrategy.",
                        GetECClass().GetFullName());
             return MapStatus::Error;
             }
 
         return MapStatus::Success;
+        }
+
+    if (m_cardinality == Cardinality::ManyToMany && (relationshipClass->GetStrength() == StrengthType::Embedding ||
+                                                     relationshipClass->GetStrength() == StrengthType::Holding))
+        {
+        LOG.errorv("Failed to map ECRelationshipClass %s. It has a N:N cardinality and the strength 'Embedding' or 'Holding'. N:N relationships only allow the strength 'Referencing'.",
+                   GetECClass().GetFullName());
+        return MapStatus::Error;
         }
 
     if (m_customMapType == CustomMapType::LinkTable ||
@@ -795,8 +805,15 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
         {
         if (userStrategyIsForeignKeyMapping)
             {
-            LOG.errorv("The ECRelationshipClass '%s' implies a link table relationship with because of its cardinality or because it has ECProperties. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
+            LOG.errorv("Failed to map ECRelationshipClass %s. It implies a link table relationship with because of its cardinality or because it has ECProperties. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
                        GetECClass().GetFullName());
+            return MapStatus::Error;
+            }
+
+        if (relationshipClass->GetStrength() == StrengthType::Embedding)
+            {
+            LOG.errorv("Failed to map ECRelationshipClass %s. It implies a link table relationship, but has the strength 'Embedding' which is not allowed for link tables.",
+                GetECClass().GetFullName());
             return MapStatus::Error;
             }
 
@@ -823,7 +840,7 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
                         else
                             constraintStr = "target constraint is";
 
-                        LOG.errorv("ECRelationshipClass %s implies a link table relationship as the %s mapped to more than one end table. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
+                        LOG.errorv("Failed to map ECRelationshipClass %s. It implies a link table relationship as the %s mapped to more than one end table. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
                                    GetECClass().GetFullName(), constraintStr);
                         return MapStatus::Error;
                         }
@@ -842,30 +859,38 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
                 {
                 if (m_customMapType == CustomMapType::ForeignKeyOnSource)
                     {
-                    LOG.errorv("ECRelationshipClass %s implies a foreign key relationship on the target's table. Therefore the 'End' property in the ForeignKeyRelationshipMap custom attribute must not be set to 'Source'.",
+                    LOG.errorv("Failed to map ECRelationshipClass %s. It implies a foreign key relationship on the target's table. Therefore the 'End' property in the ForeignKeyRelationshipMap custom attribute must not be set to 'Source'.",
                                GetECClass().GetFullName());
                     return MapStatus::Error;
                     }
 
-                if (targetTableCount > 1)
+                if (sourceTableCount > 1)
                     {
-                    if (userStrategyIsForeignKeyMapping)
-                        {
-                        LOG.errorv("ECRelationshipClass %s implies a link table relationship as the target constraint is mapped to more than one end table. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
-                                   GetECClass().GetFullName());
-                        return MapStatus::Error;
-                        }
-
-                    resolvedStrategy = ECDbMapStrategy::Strategy::OwnTable;
+                    LOG.errorv("Failed to map ECRelationshipClass %s. Its foreign key end (Target) references more than one table (Source). This is not supported. Either define the MapStrategy 'SharedTable' on the classes of the referenced constraint or modify the ECRelationshipClass accordingly.",
+                        GetECClass().GetFullName());
+                    return MapStatus::Error;
                     }
-                else
-                    resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable;
 
+                resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable;
                 break;
                 }
 
             case Cardinality::ManyToOne:
                 {
+                if (m_customMapType == CustomMapType::ForeignKeyOnTarget)
+                    {
+                    LOG.errorv("Failed to map ECRelationshipClass %s. It implies a foreign key relationship on the source's table. Therefore the 'End' property in the ForeignKeyRelationshipMap custom attribute must not be set to 'Target'.",
+                        GetECClass().GetFullName());
+                    return MapStatus::Error;
+                    }
+
+                if (targetTableCount > 1)
+                    {
+                    LOG.errorv("Failed to map ECRelationshipClass %s. Its foreign key end (Source) references more than one table (Target). This is not supported. Either define the MapStrategy 'SharedTable' on the classes of the referenced constraint or modify the ECRelationshipClass accordingly.",
+                               GetECClass().GetFullName());
+                    return MapStatus::Error;
+                    }
+
                 resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable;
                 break;
                 }
