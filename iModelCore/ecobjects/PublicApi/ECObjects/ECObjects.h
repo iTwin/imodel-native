@@ -161,6 +161,7 @@ enum class ECObjectsStatus
     DynamicSchemaCustomAttributeWasNotFound,
     Error,
     RelationshipConstraintsNotCompatible,
+    CaseCollision,
     };
 
 //! Result status for deserializing an ECSchema from Xml

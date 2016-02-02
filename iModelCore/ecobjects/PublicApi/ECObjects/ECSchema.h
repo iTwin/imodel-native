@@ -36,7 +36,7 @@ struct less_str
 {
 bool operator()(Utf8CP s1, Utf8CP s2) const
     {
-    if (strcmp(s1, s2) < 0)
+    if (strcmpi(s1, s2) < 0)
         return true;
 
     return false;
@@ -1197,6 +1197,7 @@ private:
 
     ECObjectsStatus AddProperty (ECPropertyP& pProperty);
     ECObjectsStatus RemoveProperty (ECPropertyR pProperty);
+    ECObjectsStatus RenameConflictProperty(ECPropertyP thisProperty, bool renameDerivedProperties);
 
     static bool     SchemaAllowsOverridingArrays(ECSchemaCP schema);
 
@@ -1213,9 +1214,10 @@ private:
     static void     SetErrorHandling (bool doAssert);
     ECObjectsStatus CopyPropertyForSupplementation(ECPropertyP& destProperty, ECPropertyCP sourceProperty, bool copyCustomAttributes);
     ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyP sourceProperty, bool copyCustomAttributes);
+    ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, Utf8CP destPropertyName, bool copyCustomAttributes);
 
     void            OnBaseClassPropertyRemoved (ECPropertyCR baseProperty);
-    ECObjectsStatus OnBaseClassPropertyAdded (ECPropertyCR baseProperty);
+    ECObjectsStatus OnBaseClassPropertyAdded (ECPropertyCR baseProperty, bool resolveConflicts);
 protected:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
     //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
@@ -1381,7 +1383,7 @@ public:
     //! @param[in] baseClass The class to derive from
     //! @param[in] insertAtBeginning true, if @p baseClass is inserted at the beginning of the list. 
     //! false if @p baseClass is added to the end of the list
-    ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass, bool insertAtBeginning);
+    ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false);
     
     //! Returns whether there are any base classes for this class
     ECOBJECTS_EXPORT bool            HasBaseClasses() const;

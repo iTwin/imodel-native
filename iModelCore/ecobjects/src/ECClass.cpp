@@ -325,6 +325,35 @@ ECObjectsStatus ECClass::DeleteProperty (ECPropertyR prop)
     return status;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDerivedProperties)
+    {
+    PropertyMap::iterator iter = m_propertyMap.find(prop->GetName().c_str());
+    if (iter == m_propertyMap.end() || iter->second != prop)
+        return ECObjectsStatus::PropertyNotFound;
+
+    Utf8PrintfString newName("%s_%s", prop->GetClass().GetSchema().GetNamespacePrefix().c_str(), prop->GetName().c_str());
+    ECPropertyP newProperty;
+    CopyProperty(newProperty, prop, newName.c_str(), true);
+
+    iter = m_propertyMap.find(prop->GetName().c_str());
+    m_propertyMap.erase(iter);
+
+    auto iter2 = std::find(m_propertyList.begin(), m_propertyList.end(), prop);
+    if (iter2 != m_propertyList.end())
+        m_propertyList.erase(iter2);
+    InvalidateDefaultStandaloneEnabler();
+
+    if (renameDerivedProperties)
+        for (ECClassP derivedClass : m_derivedClasses)
+            derivedClass->RenameConflictProperty(prop, renameDerivedProperties);
+
+    return ECObjectsStatus::Success;
+    }
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -430,13 +459,24 @@ void ECClass::InvalidateDefaultStandaloneEnabler() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::OnBaseClassPropertyAdded (ECPropertyCR baseProperty)
+ECObjectsStatus ECClass::OnBaseClassPropertyAdded (ECPropertyCR baseProperty, bool resolveConflicts)
     {
     InvalidateDefaultStandaloneEnabler();
+
+    // This is a case-insensitive search
     ECPropertyP derivedProperty = GetPropertyP (baseProperty.GetName(), false);
     ECObjectsStatus status = ECObjectsStatus::Success;
     if (nullptr != derivedProperty)
         {
+        // If the property names do not have the same case, this is an error
+        if (!baseProperty.GetName().Equals(derivedProperty->GetName()))
+            {
+            if (!resolveConflicts)
+                return ECObjectsStatus::CaseCollision;
+            LOG.debugv("Case-collision between %s:%s and %s:%s", baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), GetFullName(), derivedProperty->GetName().c_str());
+            RenameConflictProperty(derivedProperty, true);
+            }
+
         // TFS#246533: Silly multiple inheritance scenarios...does derived property already have a different base property? Does the new property
         // have priority over that one based on the order of base class declarations?
         if (nullptr == derivedProperty->GetBaseProperty() || GetBaseClassPropertyP (baseProperty.GetName().c_str()) == &baseProperty)
@@ -448,7 +488,7 @@ ECObjectsStatus ECClass::OnBaseClassPropertyAdded (ECPropertyCR baseProperty)
     else
         {
         for (ECClassP derivedClass : m_derivedClasses)
-            status = derivedClass->OnBaseClassPropertyAdded (baseProperty);
+            status = derivedClass->OnBaseClassPropertyAdded (baseProperty, resolveConflicts);
         }
 
     return status;
@@ -483,7 +523,7 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty)
     InvalidateDefaultStandaloneEnabler();
 
     for (ECClassP derivedClass : m_derivedClasses)
-        derivedClass->OnBaseClassPropertyAdded (*pProperty);
+        derivedClass->OnBaseClassPropertyAdded (*pProperty, false);
 
     return ECObjectsStatus::Success;
     }
@@ -495,6 +535,20 @@ ECObjectsStatus ECClass::CopyProperty
 (
 ECPropertyP& destProperty, 
 ECPropertyCP sourceProperty,
+bool copyCustomAttributes
+)
+    {
+    return CopyProperty(destProperty, sourceProperty, sourceProperty->GetName().c_str(), copyCustomAttributes);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECClass::CopyProperty
+(
+ECPropertyP& destProperty, 
+ECPropertyCP sourceProperty,
+Utf8CP destPropertyName,
 bool copyCustomAttributes
 )
     {
@@ -558,7 +612,7 @@ bool copyCustomAttributes
     if (copyCustomAttributes)
         sourceProperty->CopyCustomAttributesTo(*destProperty);
 
-    ECObjectsStatus status = AddProperty(destProperty, sourceProperty->GetName());
+    ECObjectsStatus status = AddProperty(destProperty, destPropertyName);
     if (ECObjectsStatus::Success != status)
         delete destProperty;
 
@@ -946,7 +1000,7 @@ ECObjectsStatus ECClass::AddBaseClass (ECClassCR baseClass)
 //-------------------------------------------------------------------------------------
 //* @bsimethod                                              
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECClass::AddBaseClass(ECClassCR baseClass, bool insertAtBeginning)
+ECObjectsStatus ECClass::AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts)
     {
     if (&(baseClass.GetSchema()) != &(this->GetSchema()))
         {
@@ -987,12 +1041,30 @@ ECObjectsStatus ECClass::AddBaseClass(ECClassCR baseClass, bool insertAtBeginnin
     for (ECPropertyP prop : baseClassProperties)
         {
         ECPropertyP thisProperty;
+        // This is a case-insensitive search
         if (NULL != (thisProperty = this->GetPropertyP(prop->GetName())))
             {
-            if (ECObjectsStatus::Success != (status = ECClass::CanPropertyBeOverridden(*prop, *thisProperty)))
+            // If the property names do not have the same case, this is an error
+            if (!prop->GetName().Equals(thisProperty->GetName()))
                 {
-                LOG.errorv("Attempt to override a %s property of class %s with a different type property in derived class %s", thisProperty->GetName().c_str(), baseClass.GetName().c_str(), GetName().c_str());
-                return status;
+                if (!resolveConflicts)
+                    return ECObjectsStatus::CaseCollision;
+                LOG.debugv("Case-collision between %s:%s and %s:%s", prop->GetClass().GetFullName(), prop->GetName().c_str(), GetFullName(), thisProperty->GetName().c_str());
+                RenameConflictProperty(thisProperty, true);
+                }
+
+            else if (ECObjectsStatus::Success != (status = ECClass::CanPropertyBeOverridden(*prop, *thisProperty)))
+                {
+                if (ECObjectsStatus::DataTypeMismatch == status && resolveConflicts)
+                    {
+                    LOG.debugv("Case-collision between %s:%s and %s:%s", prop->GetClass().GetFullName(), prop->GetName().c_str(), GetFullName(), thisProperty->GetName().c_str());
+                    RenameConflictProperty(thisProperty, true);
+                    }
+                else
+                    {
+                    LOG.errorv("Attempt to override a %s property of class %s with a different type property in derived class %s", thisProperty->GetName().c_str(), baseClass.GetName().c_str(), GetName().c_str());
+                    return status;
+                    }
                 }
             }
         }
@@ -1007,7 +1079,7 @@ ECObjectsStatus ECClass::AddBaseClass(ECClassCR baseClass, bool insertAtBeginnin
     InvalidateDefaultStandaloneEnabler();
 
     for (ECPropertyP baseProperty : baseClass.GetProperties())
-        OnBaseClassPropertyAdded(*baseProperty);
+        OnBaseClassPropertyAdded(*baseProperty, resolveConflicts);
 
     baseClass.AddDerivedClass(*this);
 
