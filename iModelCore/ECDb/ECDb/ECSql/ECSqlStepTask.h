@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlStepTask.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -60,43 +60,46 @@ struct ECSqlStepTask : NonCopyableClass
 public:
     struct Collection
         {
-    private:
-        std::map<Utf8CP, std::unique_ptr<ECSqlStepTask>, CompareUtf8> m_stepTasks;
-        std::unique_ptr<EmbeddedECSqlStatement> m_selector;
-        DbResult Execute (ExecutionCategory category, ECInstanceId const& instanceId);
+        private:
+            std::vector<std::unique_ptr<ECSqlStepTask>> m_stepTasks;
+            std::unique_ptr<EmbeddedECSqlStatement> m_selector;
+            DbResult Execute(ExecutionCategory, ECInstanceId const&);
 
-    public:
-        Collection () {}
-        virtual ~Collection (){}
-        DbResult ExecuteBeforeStepTaskList ();
-        DbResult ExecuteAfterStepTaskList (ECInstanceId const& instanceId);
+        public:
+            Collection() {}
+            virtual ~Collection() {}
+            DbResult ExecuteBeforeStepTaskList();
+            DbResult ExecuteAfterStepTaskList(ECInstanceId const&);
 
-        ECSqlStepTask const* Find (Utf8CP name) const;
-        bool HasSelector () const { return m_selector != nullptr;  }
-        EmbeddedECSqlStatement* GetSelector (bool create = false);
-        bool Add (std::unique_ptr<ECSqlStepTask> stepTask);
-        size_t Size () const { return m_stepTasks.size(); }
-        bool IsEmpty () const { return m_stepTasks.empty (); }
-        void Clear() { m_stepTasks.clear(); }
-        void ResetSelector ();
+            bool HasSelector() const { return m_selector != nullptr; }
+            EmbeddedECSqlStatement* GetSelector(bool create = false);
+            void Add(std::unique_ptr<ECSqlStepTask>);
+            size_t Size() const { return m_stepTasks.size(); }
+            bool IsEmpty() const { return m_stepTasks.empty(); }
+            void Clear() { m_stepTasks.clear(); }
+            void ResetSelector();
         };
 
 private:
     ExecutionCategory m_category;
-    Utf8String m_name;
+    PropertyMapStructArrayCR m_propertyMap;
+    IClassMap const& m_classMap;
 
-    virtual DbResult _Execute (ECInstanceId const& instanceId) = 0;
+    virtual DbResult _Execute(ECInstanceId const& instanceId) = 0;
 
 protected:
-    ECSqlStepTask (ExecutionCategory category, Utf8CP name) : m_category(category), m_name(name) {}
+    ECSqlStepTask(ExecutionCategory category, PropertyMapStructArrayCR propertyMap, IClassMap const& classMap)
+        : m_category(category), m_propertyMap(propertyMap), m_classMap(classMap) {}
 
 public:
-    virtual ~ECSqlStepTask () {};
+    virtual ~ECSqlStepTask() {};
 
-    Utf8StringCR GetName () const { return m_name; }
-    ExecutionCategory GetExecutionCategory () const { return m_category; }
+    ExecutionCategory GetExecutionCategory() const { return m_category; }
 
-    DbResult Execute (ECInstanceId const& instanceId) { return _Execute (instanceId); }
+    DbResult Execute(ECInstanceId const& instanceId) { return _Execute(instanceId); }
+
+    IClassMap const& GetClassMap() const { return m_classMap; }
+    PropertyMapStructArrayCR GetPropertyMap() const { return m_propertyMap; }
     };
 
 
@@ -109,45 +112,24 @@ private:
     ECSqlStepTaskFactory ();
     ~ECSqlStepTaskFactory ();
 
-    static ECSqlStepTaskCreateStatus CreateDeleteStepTask(ECSqlStepTask::Collection& taskList, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, bool isPolymorphicStatement);
-    static ECSqlStepTaskCreateStatus CreateInsertStepTask (ECSqlStepTask::Collection& taskList, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap);
-    static ECSqlStepTaskCreateStatus CreateUpdateStepTask(ECSqlStepTask::Collection& taskList, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, bool isPolymorphicStatement);
+    static ECSqlStepTaskCreateStatus CreateDeleteStepTask(ECSqlStepTask::Collection& taskList, ECSqlPrepareContext&, ECDbR, IClassMap const&, bool isPolymorphicStatement);
+    static ECSqlStepTaskCreateStatus CreateInsertStepTask (ECSqlStepTask::Collection& taskList, ECSqlPrepareContext&, ECDbR, IClassMap const&);
+    static ECSqlStepTaskCreateStatus CreateUpdateStepTask(ECSqlStepTask::Collection& taskList, ECSqlPrepareContext&, ECDbR, IClassMap const&, bool isPolymorphicStatement);
 
-    static ECSqlStepTaskCreateStatus CreateStepTaskList(ECSqlStepTask::Collection& taskList, ECSqlPrepareContext& preparedContext, StepTaskType taskType, ECDbR ecdb, IClassMap const& classMap, bool isPolymorphicStatement);
-    static void GetSubclasses (ECSqlParseContext::ClassListById& classes, ECClassCR ecClass, ECDbSchemaManagerCR schemaManager);
-    static void GetConstraintClasses (ECSqlParseContext::ClassListById& classes, ECRelationshipConstraintCR constraintEnd, ECDbSchemaManagerCR schemaManager, bool* containAnyClass);
-
-public:
-    static ECSqlStepTaskCreateStatus CreatePropertyStepTask (std::unique_ptr<ECSqlStepTask>& stepTask, StepTaskType taskType, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, Utf8CP property);
-    static ECSqlStepTaskCreateStatus CreateClassStepTask(ECSqlStepTask::Collection& taskList, StepTaskType taskType, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, bool isPolymorphicStatement);
-    };
-
-//=======================================================================================
-//! ECSqlPropertyStepTask Base class for a task that handle a single property
-//! @bsiclass                                                Affan.Khan      02/2014
-//+===============+===============+===============+===============+===============+======
-struct ECSqlPropertyStepTask : public ECSqlStepTask
-    {
-private:
-    PropertyMapStructArrayCR m_propertyMap;
-    IClassMap const& m_classMap;
-
-protected:
-    ECSqlPropertyStepTask (ExecutionCategory category, PropertyMapStructArrayCR propertyMap, IClassMap const& classMap)
-        :ECSqlStepTask (category, propertyMap.GetPropertyAccessString ()), m_propertyMap (propertyMap), m_classMap (classMap) {}
+    static ECSqlStepTaskCreateStatus CreateStepTaskList(ECSqlStepTask::Collection& taskList, ECSqlPrepareContext&, StepTaskType, ECDbR, IClassMap const&, bool isPolymorphicStatement);
+    static void GetSubclasses (ECSqlParseContext::ClassListById& classes, ECClassCR, ECDbSchemaManagerCR);
+    static void GetConstraintClasses (ECSqlParseContext::ClassListById& classes, ECRelationshipConstraintCR, ECDbSchemaManagerCR, bool* containAnyClass);
 
 public:
-    virtual ~ECSqlPropertyStepTask (){}
-
-    IClassMap const& GetClassMap () const { return m_classMap; }
-    PropertyMapStructArrayCR GetPropertyMap () const { return m_propertyMap; }
+    static ECSqlStepTaskCreateStatus CreatePropertyStepTask (std::unique_ptr<ECSqlStepTask>&, StepTaskType, ECSqlPrepareContext&, ECDbR, IClassMap const&, Utf8CP propertyAccessPath);
+    static ECSqlStepTaskCreateStatus CreateClassStepTask(ECSqlStepTask::Collection& taskList, StepTaskType, ECSqlPrepareContext&, ECDbR, IClassMap const&, bool isPolymorphicStatement);
     };
 
 //=======================================================================================
 //! ParametericStepTask Accepts a paramter source
 //! @bsiclass                                                Affan.Khan      04/2014
 //+===============+===============+===============+===============+===============+=====
-struct ParametericStepTask : public ECSqlPropertyStepTask
+struct ParametericStepTask : public ECSqlStepTask
     {
 private: 
     virtual void _SetParameterSource (ECSqlParameterValue& parameterSource) = 0;
@@ -155,7 +137,7 @@ private:
 
 protected:
     ParametericStepTask (ExecutionCategory category, PropertyMapStructArrayCR propertyMap, IClassMap const& classMap)
-        :ECSqlPropertyStepTask (category, propertyMap, classMap) {}
+        :ECSqlStepTask(category, propertyMap, classMap) {}
 
 public:
     virtual ~ParametericStepTask (){}
@@ -191,14 +173,14 @@ public:
     virtual ~InsertStructArrayStepTask (){}
 
     EmbeddedECSqlStatement& GetStatement () { return *m_insertStmt; }
-    static ECSqlStepTaskCreateStatus Create (std::unique_ptr<InsertStructArrayStepTask>& insertStepTask, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, Utf8CP property);
+    static ECSqlStepTaskCreateStatus Create (std::unique_ptr<InsertStructArrayStepTask>& insertStepTask, ECSqlPrepareContext&, ECDbR, IClassMap const&, Utf8CP propAccessString);
     };
 
 //=======================================================================================
 //! DeleteStructArrayECSqlStepTask delete struct array elements
 //! @bsiclass                                                Affan.Khan      02/2014
 //+===============+===============+===============+===============+===============+======
-struct DeleteStructArrayStepTask : public ECSqlPropertyStepTask
+struct DeleteStructArrayStepTask : public ECSqlStepTask
     {
 private:
     static const int PARAMETER_OWNERECINSTANCEID = 1;
@@ -212,7 +194,7 @@ private:
     ~DeleteStructArrayStepTask (){}
 
     EmbeddedECSqlStatement& GetStatement () { return *m_deleteStmt; }
-    static ECSqlStepTaskCreateStatus Create (std::unique_ptr<DeleteStructArrayStepTask>& deleteStepTask, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, Utf8CP property);
+    static ECSqlStepTaskCreateStatus Create (std::unique_ptr<DeleteStructArrayStepTask>& deleteStepTask, ECSqlPrepareContext&, ECDbR, IClassMap const&, Utf8CP propAccessString);
     };
 
 //=======================================================================================
@@ -233,7 +215,7 @@ private:
 public:
     ~UpdateStructArrayStepTask (){};
 
-    static ECSqlStepTaskCreateStatus Create (std::unique_ptr<UpdateStructArrayStepTask>& updateStepTask, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, Utf8CP property);
+    static ECSqlStepTaskCreateStatus Create(std::unique_ptr<UpdateStructArrayStepTask>& updateStepTask, ECSqlPrepareContext&, ECDbR, IClassMap const&, Utf8CP propAccessString);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

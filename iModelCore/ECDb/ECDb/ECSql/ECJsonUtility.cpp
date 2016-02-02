@@ -107,8 +107,14 @@ StatusInt ECJsonCppUtility::ECPrimitiveValueFromJsonValue (ECValueR ecValue, con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 1/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ECJsonCppUtility::ECArrayValueFromJsonValue (IECInstanceR instance, const Json::Value& jsonValue, ArrayECPropertyCR arrayProperty, Utf8StringCR accessString)
+StatusInt ECJsonCppUtility::ECArrayValueFromJsonValue (IECInstanceR instance, const Json::Value& jsonValue, ECPropertyCR property, Utf8StringCR accessString)
     {
+    ArrayECPropertyCP arrayProp = property.GetAsArrayProperty();
+    NavigationECPropertyCP navProp = property.GetAsNavigationProperty();
+
+    if ((arrayProp == nullptr && navProp == nullptr) || (navProp != nullptr && !navProp->IsMultiple()))
+        return ERROR;
+
     if (!EXPECTED_CONDITION (jsonValue.isArray()))
         return ERROR;
 
@@ -120,40 +126,45 @@ StatusInt ECJsonCppUtility::ECArrayValueFromJsonValue (IECInstanceR instance, co
     ECObjectsStatus status = instance.AddArrayElements (accessString.c_str(), length);
     POSTCONDITION (ECObjectsStatus::Success == status, ERROR);
 
-    if (arrayProperty.GetKind() == ARRAYKIND_Primitive)
+    if (arrayProp != nullptr && arrayProp->GetKind() == ARRAYKIND_Struct)
         {
-        PrimitiveType primitiveType = arrayProperty.GetPrimitiveElementType();
-        for (uint32_t ii=0; ii<length; ii++)
-            {
-            ECValue ecPrimitiveValue;
-            StatusInt status = ECPrimitiveValueFromJsonValue (ecPrimitiveValue, jsonValue[ii], primitiveType);
-            if (SUCCESS != status)
-                {
-                r_status = status;
-                continue;
-                }
-            ECObjectsStatus ecStatus = instance.SetInternalValue (accessString.c_str(), ecPrimitiveValue, ii);
-            if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
-                { BeAssert(false); }
-            }
-        }
-    else /* if (arrayProperty.GetKind() == ARRAYKIND_Struct) */
-        {
-        auto structArrayProperty = arrayProperty.GetAsStructArrayProperty();
+        auto structArrayProperty = arrayProp->GetAsStructArrayProperty();
         if (nullptr == structArrayProperty)
             return ERROR;
 
         ECClassCP structType = structArrayProperty->GetStructElementType();
-        BeAssert (structType != nullptr);
-        for (uint32_t ii=0; ii<length; ii++)
+        BeAssert(structType != nullptr);
+        for (uint32_t ii = 0; ii < length; ii++)
             {
-            IECInstancePtr structInstance = structType->GetDefaultStandaloneEnabler()->CreateInstance (0);
-            ECInstanceFromJsonValue (*structInstance, jsonValue[ii], *structType, "");
+            IECInstancePtr structInstance = structType->GetDefaultStandaloneEnabler()->CreateInstance(0);
+            ECInstanceFromJsonValue(*structInstance, jsonValue[ii], *structType, "");
             ECValue ecStructValue;
-            ecStructValue.SetStruct (structInstance.get());
-            ECObjectsStatus ecStatus = instance.SetInternalValue (accessString.c_str(), ecStructValue, ii);
+            ecStructValue.SetStruct(structInstance.get());
+            ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), ecStructValue, ii);
             if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
-                { BeAssert(false); }
+                {
+                BeAssert(false);
+                }
+            }
+
+        return SUCCESS;
+        }
+
+    PrimitiveType primType = arrayProp != nullptr ? arrayProp->GetPrimitiveElementType() : navProp->GetType();
+
+    for (uint32_t ii = 0; ii < length; ii++)
+        {
+        ECValue ecPrimitiveValue;
+        StatusInt status = ECPrimitiveValueFromJsonValue(ecPrimitiveValue, jsonValue[ii], primType);
+        if (SUCCESS != status)
+            {
+            r_status = status;
+            continue;
+            }
+        ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), ecPrimitiveValue, ii);
+        if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
+            {
+            BeAssert(false);
             }
         }
 
@@ -219,8 +230,7 @@ StatusInt ECJsonCppUtility::ECInstanceFromJsonValue (IECInstanceR instance, cons
             }
         else if (ecProperty->GetIsArray())
             {
-            ArrayECPropertyCP arrayProperty = ecProperty->GetAsArrayProperty();
-            if (SUCCESS != ECArrayValueFromJsonValue (instance, childJsonValue, *arrayProperty, accessString))
+            if (SUCCESS != ECArrayValueFromJsonValue (instance, childJsonValue, *ecProperty, accessString))
                 {
                 status = ERROR;
                 continue;
@@ -228,7 +238,25 @@ StatusInt ECJsonCppUtility::ECInstanceFromJsonValue (IECInstanceR instance, cons
             }
         else if (ecProperty->GetIsNavigation())
             {
-            //WIP_NAVPROP Not implemented yet
+            NavigationECPropertyCP navProp = ecProperty->GetAsNavigationProperty();
+            PrimitiveType navPropIdType = navProp->GetType();
+            if (!navProp->IsMultiple())
+                {
+                ECValue ecValue;
+                if (SUCCESS != ECPrimitiveValueFromJsonValue(ecValue, childJsonValue, navPropIdType))
+                    {
+                    status = ERROR;
+                    continue;
+                    }
+
+                ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), ecValue);
+                if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
+                    status = ERROR;
+
+                continue;
+                }
+
+            status = ECArrayValueFromJsonValue(instance, childJsonValue, *navProp, accessString);
             continue;
             }
         }
@@ -344,7 +372,7 @@ StatusInt ECRapidJsonUtility::ECPrimitiveValueFromJsonValue (ECValueR ecValue, R
             rapidjson::Writer<rapidjson::StringBuffer> writer(stringBuffer);
             jsonValue.Accept(writer);
 
-            Utf8String jsonStr = stringBuffer.GetString();
+            Utf8String jsonStr(stringBuffer.GetString());
 
             bvector<IGeometryPtr> geometry;
             if (!BentleyGeometryJson::TryJsonStringToGeometry(jsonStr, geometry))
@@ -362,72 +390,71 @@ StatusInt ECRapidJsonUtility::ECPrimitiveValueFromJsonValue (ECValueR ecValue, R
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ECRapidJsonUtility::ECArrayValueFromJsonValue (IECInstanceR instance, RapidJsonValueCR jsonValue, ArrayECPropertyCR arrayProperty, Utf8StringCR accessString)
+StatusInt ECRapidJsonUtility::ECArrayValueFromJsonValue(IECInstanceR instance, RapidJsonValueCR jsonValue, ECPropertyCR property, Utf8StringCR accessString)
     {
+    ArrayECPropertyCP arrayProp = property.GetAsArrayProperty();
+    NavigationECPropertyCP navProp = property.GetAsNavigationProperty();
+
     if (!jsonValue.IsArray())
+        return ERROR;
+
+    if ((arrayProp == nullptr && navProp == nullptr) || (navProp != nullptr && !navProp->IsMultiple()))
         return ERROR;
 
     rapidjson::SizeType size = jsonValue.Size();
     if (0 == size)
         return SUCCESS;
 
-    if (ECObjectsStatus::Success != instance.AddArrayElements (accessString.c_str(), size))
+    if (ECObjectsStatus::Success != instance.AddArrayElements(accessString.c_str(), size))
         return ERROR;
 
-    switch (arrayProperty.GetKind())
+    if (arrayProp != nullptr && arrayProp->GetKind() == ARRAYKIND_Struct)
         {
-        case ARRAYKIND_Primitive:
+        StructArrayECPropertyCP structArrayProperty = arrayProp->GetAsStructArrayProperty();
+        BeAssert(nullptr != structArrayProperty);
+
+        ECClassCP structType = structArrayProperty->GetStructElementType();
+        BeAssert(nullptr != structType);
+
+        for (rapidjson::SizeType i = 0; i < size; i++)
             {
-            StatusInt returnStatus = SUCCESS;
+            IECInstancePtr structInstance = structType->GetDefaultStandaloneEnabler()->CreateInstance(0);
+            ECInstanceFromJsonValue(*structInstance, jsonValue[i], *structType, "");
 
-            for (rapidjson::SizeType i=0; i<size; i++)
+            ECValue structValue;
+            structValue.SetStruct(structInstance.get());
+
+            ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), structValue, i);
+            if ((ECObjectsStatus::Success != ecStatus) && (ECObjectsStatus::PropertyValueMatchesNoChange != ecStatus))
                 {
-                ECValue primitiveValue;
-                if (SUCCESS != ECPrimitiveValueFromJsonValue (primitiveValue, jsonValue[i], arrayProperty.GetPrimitiveElementType()))
-                    {
-                    returnStatus = ERROR;
-                    continue;
-                    }
-
-                ECObjectsStatus ecStatus = instance.SetInternalValue (accessString.c_str(), primitiveValue, i);
-                if ((ECObjectsStatus::Success != ecStatus) && (ECObjectsStatus::PropertyValueMatchesNoChange != ecStatus))
-                    { 
-                    BeAssert (false);
-                    returnStatus = ERROR;
-                    }
+                BeAssert(false);
                 }
-
-            return returnStatus;
             }
 
-        case ARRAYKIND_Struct:
-            {
-            StructArrayECPropertyCP structArrayProperty = arrayProperty.GetAsStructArrayProperty();
-            BeAssert(nullptr != structArrayProperty);
-
-            ECClassCP structType = structArrayProperty->GetStructElementType();
-            BeAssert (nullptr != structType);
-
-            for (rapidjson::SizeType i=0; i<size; i++)
-                {
-                IECInstancePtr structInstance = structType->GetDefaultStandaloneEnabler()->CreateInstance (0);
-                ECInstanceFromJsonValue (*structInstance, jsonValue[i], *structType, "");
-
-                ECValue structValue;
-                structValue.SetStruct (structInstance.get());
-                
-                ECObjectsStatus ecStatus = instance.SetInternalValue (accessString.c_str(), structValue, i);
-                if ((ECObjectsStatus::Success != ecStatus) && (ECObjectsStatus::PropertyValueMatchesNoChange != ecStatus))
-                    { BeAssert(false); }
-                }
-
-            return SUCCESS;
-            }
-
-        default:
-            BeAssert (false);
-            return ERROR;
+        return SUCCESS;
         }
+
+    PrimitiveType primType = arrayProp != nullptr ? arrayProp->GetPrimitiveElementType() : navProp->GetType();
+
+    StatusInt returnStatus = SUCCESS;
+    for (rapidjson::SizeType i = 0; i < size; i++)
+        {
+        ECValue primitiveValue;
+        if (SUCCESS != ECPrimitiveValueFromJsonValue(primitiveValue, jsonValue[i], primType))
+            {
+            returnStatus = ERROR;
+            continue;
+            }
+
+        ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), primitiveValue, i);
+        if ((ECObjectsStatus::Success != ecStatus) && (ECObjectsStatus::PropertyValueMatchesNoChange != ecStatus))
+            {
+            BeAssert(false);
+            returnStatus = ERROR;
+            }
+        }
+
+    return returnStatus;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -455,8 +482,8 @@ StatusInt ECRapidJsonUtility::ECInstanceFromJsonValue (ECN::IECInstanceR instanc
         if ('$' == it->name.GetString()[0])
             continue;
 
-        Utf8String propertyName (it->name.GetString());
-        ECPropertyP propertyP = currentClass.GetPropertyP (propertyName.c_str());
+        Utf8CP propertyName = it->name.GetString();
+        ECPropertyP propertyP = currentClass.GetPropertyP (propertyName);
         if (nullptr == propertyP)
             {
             status = ERROR;
@@ -474,7 +501,7 @@ StatusInt ECRapidJsonUtility::ECInstanceFromJsonValue (ECN::IECInstanceR instanc
                 }
 
             ECObjectsStatus ecStatus = instance.SetInternalValue (accessString.c_str(), ecValue);
-            BeAssert ((ECObjectsStatus::Success == ecStatus) || (ECObjectsStatus::PropertyValueMatchesNoChange == ecStatus)); (void) ecStatus;
+            BeAssert ((ECObjectsStatus::Success == ecStatus) || (ECObjectsStatus::PropertyValueMatchesNoChange == ecStatus));
             }
         else if (propertyP->GetIsStruct())
             {
@@ -483,12 +510,32 @@ StatusInt ECRapidJsonUtility::ECInstanceFromJsonValue (ECN::IECInstanceR instanc
             }
         else if (propertyP->GetIsArray())
             {
-            if (SUCCESS != ECArrayValueFromJsonValue (instance, it->value, *propertyP->GetAsArrayProperty(), accessString))
+            if (SUCCESS != ECArrayValueFromJsonValue (instance, it->value, *propertyP, accessString))
                 status = ERROR;
             }
         else if (propertyP->GetIsNavigation())
             {
-            //WIP_NAVPROP Not implemented yet
+            NavigationECPropertyCP navProp = propertyP->GetAsNavigationProperty();
+            PrimitiveType navPropIdType = navProp->GetType();
+            if (!navProp->IsMultiple())
+                {
+                ECValue ecValue;
+                if (SUCCESS != ECPrimitiveValueFromJsonValue(ecValue, it->value, navPropIdType))
+                    {
+                    status = ERROR;
+                    continue;
+                    }
+
+                ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), ecValue);
+                if (ECObjectsStatus::Success != ecStatus && ECObjectsStatus::PropertyValueMatchesNoChange != ecStatus)
+                    status = ERROR;
+
+                continue;
+                }
+
+            if (SUCCESS != ECArrayValueFromJsonValue(instance, it->value, *propertyP, accessString))
+                status = ERROR;
+
             continue;
             }
         }

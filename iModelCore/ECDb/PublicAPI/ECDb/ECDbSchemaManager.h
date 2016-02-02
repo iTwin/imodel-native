@@ -116,65 +116,25 @@ public:
     //+===============+===============+===============+===============+===============+======
     struct ImportOptions : NonCopyableClass
         {
-    private:
-        bool m_doSupplementation;
-        bool m_updateExistingSchemas;
-        bool m_supportLegacySchemas;
+        private:
+            bool m_doSupplementation;
 
-    public:
-        //! Initializes an ImportOptions object with default settings:
-        //!     - ImportOptions::DoSupplementation : true
-        //!     - ImportOptions::UpdateExistingSchemas : false        
-        ECDB_EXPORT ImportOptions ();
+        public:
+            //! Initializes an ImportOptions object with default settings:
+            //!     - ImportOptions::DoSupplementation : true
+            ECDB_EXPORT ImportOptions();
 
-        //! Initializes an ImportOptions object
-        //! @param[in] doSupplementation Normally true. If the list of schemas to be imported contain supplemental ECSchemas, use 
-        //!                         them to supplement primary ECSchemas in the list of schemas to be imported.
-        //!                         Otherwise, supplemental ECSchemas will be ignored
-        //! @param[in] updateExistingSchemas Attempts to update any existing schema that is found in the list of schemas to import.
-        //!                         @b WARNING: List of supported features:
-        //!                           1. If a ECSchema already exist in ECDb and importing schema cache has same schema with minor version greater than existing ECSchema. 
-        //!                              The ECSchema would be marked for upgrade.
-        //!                           2. Add new ECClass to existing ECSchema
-        //!                           3. Add new ECProperties to existing ECClass  
-        //!                           4. Update only "DisplayLabel" and "Description" property of existing ECSchema.
-        //!                           5. Update only "DisplayLabel" and "Description" property of existing ECClass.
-        //!                           6. Update only "DisplayLabel" and "Description" property of existing ECProperty.
-        //!                           7. If existing schema have different value of customAttribute for a container then it will be replaced with its new value.
-        //!                          Updating of ECDb Mapping Hint custom attribute on existing ECClasses or ECProperties will be ignored with warning.
-        //!                          Any other kind of change will cause operation to fail. After upgrade the schemas cached by ECDb has been cleared. 
-        //!                          Any existing references to ECSchemas, ECClasses, or ECSqlStatements become invalid.  
-        ECDB_EXPORT ImportOptions (bool doSupplementation, bool updateExistingSchemas);
+            //! Initializes an ImportOptions object
+            //! @param[in] doSupplementation Normally true. If the list of schemas to be imported contain supplemental ECSchemas, use 
+            //!                         them to supplement primary ECSchemas in the list of schemas to be imported.
+            //!                         Otherwise, supplemental ECSchemas will be ignored
+            ECDB_EXPORT explicit ImportOptions(bool doSupplementation);
 
-        //! Gets a value indicating whether supplementation should be performed or not.
-        //! If the list of schemas to be imported contain supplemental ECSchemas, use
-        //! them to supplement primary ECSchemas in the list of schemas to be imported.
-        //! Otherwise, supplemental ECSchemas will be ignored        
-        ECDB_EXPORT bool DoSupplementation () const;
-
-        //!Gets a value indicating whether existing ECSchemas should be updated or not.
-        //!If true, %ECDb attempts to update any existing schema that is found in the list of schemas to import.
-        //!
-        //!@b WARNING: List of supported features:
-        //!     1. If a ECSchema already exist in ECDb and importing schema cache has same schema with minor version greater than existing ECSchema. 
-        //!        The ECSchema would be marked for upgrade.
-        //!     2. Add new ECClass to existing ECSchema
-        //!     3. Add new ECProperties to existing ECClass  
-        //!     4. Update only "DisplayLabel" and "Description" property of existing ECSchema.
-        //!     5. Update only "DisplayLabel" and "Description" property of existing ECClass.
-        //!     6. Update only "DisplayLabel" and "Description" property of existing ECProperty.
-        //!     7. If existing schema have different value of customAttribute for a container then it will be replaced with its new value.
-        //!        Updating of ECDb Mapping Hint custom attribute on existing ECClasses or ECProperties will be ignored with warning.
-        //!     Any other kind of change will cause operation to fail. After upgrade the schemas cached by ECDb has been cleared. 
-        //!     Any existing references to ECSchemas, ECClasses, or ECSqlStatements become invalid.  
-        ECDB_EXPORT bool UpdateExistingSchemas () const;
-
-#if !defined (DOCUMENTATION_GENERATOR)
-        //only to be used by publisher scenarios which have to support v8i legacy ECSchemas which do not comply to the current ECSchema design
-        //standards
-        ECDB_EXPORT void SetSupportLegacySchemas ();
-        ECDB_EXPORT bool SupportLegacySchemas () const;
-#endif
+            //! Gets a value indicating whether supplementation should be performed or not.
+            //! If the list of schemas to be imported contain supplemental ECSchemas, use
+            //! them to supplement primary ECSchemas in the list of schemas to be imported.
+            //! Otherwise, supplemental ECSchemas will be ignored        
+            ECDB_EXPORT bool DoSupplementation() const;
         };
 
 private:
@@ -183,9 +143,7 @@ private:
     RefCountedPtr<ECDbSchemaReader> m_ecReader;
     mutable BeMutex m_criticalSection;
 
-    BentleyStatus BatchImportOrUpdateECSchemas (SchemaImportContext const&, bvector<ECN::ECSchemaCP>& importedSchemas, bvector<ECN::ECDiffPtr>&  diffs, ECN::ECSchemaCacheR, ImportOptions const&) const;
-    BentleyStatus UpdateECSchema (ECN::ECDiffPtr&, ECN::ECSchemaCR) const;
-    void ReportUpdateError (ECN::ECSchemaCR newSchema, ECN::ECSchemaCR existingSchema, Utf8CP reason) const;
+    BentleyStatus BatchImportECSchemas (SchemaImportContext const&, bvector<ECN::ECSchemaCP>& importedSchemas, ECN::ECSchemaCacheR, ImportOptions const&) const;
     
     ECN::ECSchemaCP GetECSchema (ECN::ECSchemaId, bool ensureAllClassesLoaded) const;
     //! Ensure that all direct subclasses of @p ecClass are loaded. Subclasses of its subclasses are not loaded

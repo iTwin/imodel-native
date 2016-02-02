@@ -282,11 +282,12 @@ DataIntegrityEnforcementMethod RelationshipClassEndTableMap::GetDataIntegrityEnf
         || GetRelationshipClass().GetSource().GetClasses().empty() || GetRelationshipClass().GetTarget().GetClasses().empty() )
         return DataIntegrityEnforcementMethod::None;
 
-    if (GetRelationshipClass().GetStrength() == StrengthType::Referencing || GetRelationshipClass().GetStrength() == StrengthType::Embedding)
+    if (GetRelationshipClass().GetStrength() == StrengthType::Referencing || GetRelationshipClass().GetStrength() == StrengthType::Embedding || GetRelationshipClass().GetStrength() == StrengthType::Holding)
         {
         return DataIntegrityEnforcementMethod::ForeignKey;
         }
 
+    BeAssert(false && "Trigger are not supported");
     return DataIntegrityEnforcementMethod::Trigger;
     }
 
@@ -1157,7 +1158,8 @@ DataIntegrityEnforcementMethod RelationshipClassLinkTableMap::GetDataIntegrityEn
     size_t nSourceTables = GetECDbMap().GetTableCountOnRelationshipEnd(GetRelationshipClass().GetSource());
     size_t nTargetTables = GetECDbMap().GetTableCountOnRelationshipEnd(GetRelationshipClass().GetTarget());
 
-    if (GetRelationshipClass().GetStrength() == StrengthType::Referencing)
+    if (GetRelationshipClass().GetStrength() == StrengthType::Referencing ||
+        GetRelationshipClass().GetStrength() == StrengthType::Holding)
         {
         if (nSourceTables == 1 && nTargetTables == 1)
             {
@@ -1165,6 +1167,7 @@ DataIntegrityEnforcementMethod RelationshipClassLinkTableMap::GetDataIntegrityEn
             }
         }
 
+    BeAssert(false && "Trigger not supported");
     return DataIntegrityEnforcementMethod::Trigger;
     }
 //---------------------------------------------------------------------------------------
@@ -1176,23 +1179,31 @@ MapStatus RelationshipClassLinkTableMap::_MapPart2 (SchemaImportContext& context
     if (stat != MapStatus::Success)
         return stat;
 
-    if (GetDataIntegrityEnforcementMethod() == DataIntegrityEnforcementMethod::ForeignKey)
+    std::set<ECDbSqlTable const*> sourceTables = GetECDbMap().GetTablesFromRelationshipEnd(GetRelationshipClass().GetSource());
+    std::set<ECDbSqlTable const*> targetTables = GetECDbMap().GetTablesFromRelationshipEnd(GetRelationshipClass().GetTarget());
+    const size_t sourceTableCount = sourceTables.size();
+    const size_t targetTableCount = targetTables.size();
+    if (sourceTableCount > 1 || targetTableCount > 1)
         {
-        if (GetRelationshipClass().GetStrength() == StrengthType::Embedding)
-            {
-            GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter().Report(
-                ECDbIssueSeverity::Error,
-                "Relationship %s is of type embedding and desgniated to be mapped as LinkTable which is not supported in ECDb",
-                GetRelationshipClass().GetFullName()
-                );
+        Utf8CP constraintStr = nullptr;
+        if (sourceTableCount > 1 && targetTableCount > 1)
+            constraintStr = "source and target constraints are";
+        else if (sourceTableCount > 1)
+            constraintStr = "source constraint is";
+        else
+            constraintStr = "target constraint is";
 
-            BeAssert(false);
-            return MapStatus::Error;
-            }
+        GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+            "The ECRelationshipClass '%s' is mapped to a link table, but the %s mapped to more than one table, which is not supported for link tables.",
+            GetRelationshipClass().GetFullName(), constraintStr);
 
-        std::set<ECDbSqlTable const*> sourceTables = GetECDbMap().GetTablesFromRelationshipEnd(GetRelationshipClass().GetSource());
-        std::set<ECDbSqlTable const*> targetTables = GetECDbMap().GetTablesFromRelationshipEnd(GetRelationshipClass().GetTarget());
-        
+        return MapStatus::Error;
+        }
+
+    BeAssert(GetRelationshipClass().GetStrength() != StrengthType::Embedding && "Should have caught already in ClassMapInfo");
+
+    if (GetPrimaryTable().GetTableType() != TableType::Existing)
+        {
         //Create FK from Source-Primary to LinkTable
         ECDbSqlTable * sourceTable = const_cast<ECDbSqlTable*>(*sourceTables.begin());
         ECDbSqlForeignKeyConstraint* sourceFK = GetPrimaryTable().CreateForeignKeyConstraint(*sourceTable);

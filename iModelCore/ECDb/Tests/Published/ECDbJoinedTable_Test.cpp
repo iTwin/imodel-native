@@ -2272,6 +2272,195 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipWithStandAloneClass1)
     }
 
 //---------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
+//                 IFace  (JoinedTablePerDirectSubclass)          Body(Standalone Class) 
+//                   |                                                                  
+//                  Foo                                                                 
+//                   |                                                                  
+//                  Goo                              Goo<>Body                          
+//                   |                               Roo<>Body                          
+//                  Roo                                                                 
+//------ Relationship of a class having JoinedTable strategy with standalone class ------
+//      IFace <- IFaceHasBody(REFERENCING) -> Body
+//      IFace <- IFaceHasManyBody(REFERENCING) -> Body
+//      IFace <- ManyIFaceHaveManyBody(REFERENCING) -> Body
+// @bsiMethod                                      Muhammad Hassan                  01/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (JoinedTableECDbMapStrategyTests, PolymorphicRelationshipWithStandAloneClass)
+    {
+    SchemaItem testSchema (
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='dgn' version='1.0'"
+        "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "   <ECEntityClass typeName='IFace' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                    <Strategy>SharedTable</Strategy>"
+        "                    <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                    <Options>JoinedTablePerDirectSubclass</Options>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "   </ECEntityClass>"
+        "    <ECEntityClass typeName='Foo'>"
+        "        <BaseClass>IFace</BaseClass>"
+        "        <ECProperty propertyName='Foo_L' typeName='long'/>"
+        "        <ECProperty propertyName='Foo_S' typeName='string'/>"
+        "    </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo'>"
+        "        <BaseClass>Foo</BaseClass>"
+        "        <ECProperty propertyName='Goo_L' typeName='long'/>"
+        "        <ECProperty propertyName='Goo_S' typeName='string'/>"
+        "    </ECEntityClass>"
+        "   <ECEntityClass typeName='Boo'>"
+        "        <BaseClass>Goo</BaseClass>"
+        "        <ECProperty propertyName='Boo_L' typeName='long'/>"
+        "        <ECProperty propertyName='Boo_S' typeName='string'/>"
+        "    </ECEntityClass>"
+        "   <ECEntityClass typeName='Body'>"
+        "        <ECProperty propertyName='Body_L' typeName='long'/>"
+        "        <ECProperty propertyName='Body_S' typeName='string'/>"
+        "    </ECEntityClass>"
+        "    <ECRelationshipClass typeName='IFaceHasBody' strength='referencing'>"
+        "    <Source cardinality='(0,1)' polymorphic='True'>"
+        "      <Class class = 'IFace' />"
+        "    </Source>"
+        "    <Target cardinality='(0,1)' polymorphic='True'>"
+        "      <Class class = 'Body' >"
+        "      </Class>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "    <ECRelationshipClass typeName='IFaceHasManyBody' strength='referencing'>"
+        "    <Source cardinality='(0,1)' polymorphic='True'>"
+        "      <Class class = 'IFace' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Body' >"
+        "      </Class>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "   <ECRelationshipClass typeName='ManyIFaceHaveManyBody' strength='referencing'>"
+        "       <Source cardinality='(0,N)' polymorphic='True'>"
+        "           <Class class = 'IFace' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' polymorphic='True'>"
+        "           <Class class = 'Body' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>");
+
+    ECDbR db = SetupECDb ("JoinedTableTest.ecdb", testSchema);
+    ASSERT_TRUE (db.IsDbOpen ());
+
+    ECClassId booClassId = db.Schemas ().GetECClassId ("JoinedTableTest", "Boo");
+    ECClassId gooClassId = db.Schemas ().GetECClassId ("JoinedTableTest", "Goo");
+    ECClassId bodyClassId = db.Schemas ().GetECClassId ("JoinedTableTest", "Body");
+
+    EC::ECInstanceId gooInstanceId1;
+    EC::ECInstanceId gooInstanceId2;
+    EC::ECInstanceId booInstanceId1;
+    EC::ECInstanceId booInstanceId2;
+    EC::ECInstanceId bodyInstanceId1;
+    EC::ECInstanceId bodyInstanceId2;
+
+    //Insert Instances for Constraint classes of Relationships
+    {
+    gooInstanceId1 = InsertTestInstance (db, "INSERT INTO dgn.Goo(Foo_L, Foo_S, Goo_L, Goo_S) VALUES(101, '::101', 102, '::102')");
+    gooInstanceId2 = InsertTestInstance (db, "INSERT INTO dgn.Goo(Foo_L, Foo_S, Goo_L, Goo_S) VALUES(102, '::102', 103, '::103')");
+    booInstanceId1 = InsertTestInstance (db, "INSERT INTO dgn.Boo(Foo_L, Foo_S, Boo_L, Boo_S) VALUES(201, '::201', 202, '::202')");
+    booInstanceId2 = InsertTestInstance (db, "INSERT INTO dgn.Boo(Foo_L, Foo_S, Boo_L, Boo_S) VALUES(202, '::202', 203, '::203')");
+    bodyInstanceId1 = InsertTestInstance (db, "INSERT INTO dgn.Body(Body_L, Body_S) VALUES(301, '::302')");
+    bodyInstanceId2 = InsertTestInstance (db, "INSERT INTO dgn.Body(Body_L, Body_S) VALUES(302, '::303')");
+
+    if (!gooInstanceId1.IsValid () || !gooInstanceId2.IsValid () || !booInstanceId1.IsValid () || !booInstanceId2.IsValid ())
+        ASSERT_TRUE (false) << "Instance Id's not valid";
+    }
+
+    //Insert 1-1 Relationship
+    {
+    EC::ECInstanceId IFaceHasBodyInstanceId1;
+    EC::ECInstanceId IFaceHasBodyInstanceId2;
+    Savepoint savePoint (db, "1-1 Relationship Instances");
+
+    Utf8String ecsql;
+    ecsql.Sprintf (ToInsertECSql (db, "IFaceHasBody"), gooInstanceId1.GetValue (), bodyInstanceId1.GetValue (), gooClassId, bodyClassId);
+    IFaceHasBodyInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
+
+    ecsql.Sprintf (ToInsertECSql (db, "IFaceHasBody"), booInstanceId1.GetValue (), bodyInstanceId2.GetValue (), booClassId, bodyClassId);
+    IFaceHasBodyInstanceId2 = InsertTestInstance (db, ecsql.c_str ());
+
+    savePoint.Commit ();
+
+    ecsql.Sprintf (ToSelectECSql (db, "IFaceHasBody"), IFaceHasBodyInstanceId1.GetValue ());
+    VerifyInsertedInstance (db, ecsql.c_str (), gooInstanceId1, bodyInstanceId1, gooClassId, bodyClassId);
+
+    ecsql.Sprintf (ToSelectECSql (db, "IFaceHasBody"), IFaceHasBodyInstanceId2.GetValue ());
+    VerifyInsertedInstance (db, ecsql.c_str (), booInstanceId1, bodyInstanceId2, booClassId, bodyClassId);
+    }
+
+    //Insert 1-N Relationship
+    {
+    EC::ECInstanceId IFaceHasManyBodyInstanceId1;
+    EC::ECInstanceId IFaceHasManyBodyInstanceId2;
+    Savepoint savePoint (db, "1-N Relationship Instances");
+
+    Utf8String ecsql;
+    ecsql.Sprintf (ToInsertECSql (db, "IFaceHasManyBody"), gooInstanceId1.GetValue (), bodyInstanceId1.GetValue (), gooClassId, bodyClassId);
+    IFaceHasManyBodyInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
+
+    ecsql.Sprintf (ToInsertECSql (db, "IFaceHasManyBody"), booInstanceId1.GetValue (), bodyInstanceId2.GetValue (), booClassId, bodyClassId);
+    IFaceHasManyBodyInstanceId2 = InsertTestInstance (db, ecsql.c_str ());
+
+    savePoint.Commit ();
+
+    ecsql.Sprintf (ToSelectECSql (db, "IFaceHasManyBody"), IFaceHasManyBodyInstanceId1.GetValue ());
+    VerifyInsertedInstance (db, ecsql.c_str (), gooInstanceId1, bodyInstanceId1, gooClassId, bodyClassId);
+
+    ecsql.Sprintf (ToSelectECSql (db, "IFaceHasManyBody"), IFaceHasManyBodyInstanceId2.GetValue ());
+    VerifyInsertedInstance (db, ecsql.c_str (), booInstanceId1, bodyInstanceId2, booClassId, bodyClassId);
+    }
+
+    //Insert N-N Relationship
+    {
+    EC::ECInstanceId ManyIFaceHaveManyBodyInstanceId1;
+    EC::ECInstanceId ManyIFaceHaveManyBodyInstanceId2;
+    EC::ECInstanceId ManyIFaceHaveManyBodyInstanceId3;
+    EC::ECInstanceId ManyIFaceHaveManyBodyInstanceId4;
+    Savepoint savePoint (db, "N-N Relationship Instances");
+
+    Utf8String ecsql;
+    ecsql.Sprintf (ToInsertECSql (db, "ManyIFaceHaveManyBody"), gooInstanceId1.GetValue (), bodyInstanceId1.GetValue (), gooClassId, bodyClassId);
+    ManyIFaceHaveManyBodyInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
+
+    ecsql.Sprintf (ToInsertECSql (db, "ManyIFaceHaveManyBody"), gooInstanceId2.GetValue (), bodyInstanceId2.GetValue (), gooClassId, bodyClassId);
+    ManyIFaceHaveManyBodyInstanceId2 = InsertTestInstance (db, ecsql.c_str ());
+
+    ecsql.Sprintf (ToInsertECSql (db, "ManyIFaceHaveManyBody"), booInstanceId1.GetValue (), bodyInstanceId1.GetValue (), booClassId, bodyClassId);
+    ManyIFaceHaveManyBodyInstanceId3 = InsertTestInstance (db, ecsql.c_str ());
+
+    ecsql.Sprintf (ToInsertECSql (db, "ManyIFaceHaveManyBody"), booInstanceId2.GetValue (), bodyInstanceId2.GetValue (), booClassId, bodyClassId);
+    ManyIFaceHaveManyBodyInstanceId4 = InsertTestInstance (db, ecsql.c_str ());
+
+    savePoint.Commit ();
+
+    ecsql.Sprintf (ToSelectECSql (db, "ManyIFaceHaveManyBody"), ManyIFaceHaveManyBodyInstanceId1.GetValue ());
+    VerifyInsertedInstance (db, ecsql.c_str (), gooInstanceId1, bodyInstanceId1, gooClassId, bodyClassId);
+
+    ecsql.Sprintf (ToSelectECSql (db, "ManyIFaceHaveManyBody"), ManyIFaceHaveManyBodyInstanceId2.GetValue ());
+    VerifyInsertedInstance (db, ecsql.c_str (), gooInstanceId2, bodyInstanceId2, gooClassId, bodyClassId);
+
+    ecsql.Sprintf (ToSelectECSql (db, "ManyIFaceHaveManyBody"), ManyIFaceHaveManyBodyInstanceId3.GetValue ());
+    VerifyInsertedInstance (db, ecsql.c_str (), booInstanceId1, bodyInstanceId1, booClassId, bodyClassId);
+
+    ecsql.Sprintf (ToSelectECSql (db, "ManyIFaceHaveManyBody"), ManyIFaceHaveManyBodyInstanceId4.GetValue ());
+    VerifyInsertedInstance (db, ecsql.c_str (), booInstanceId2, bodyInstanceId2, booClassId, bodyClassId);
+    }
+    db.Schemas ().CreateECClassViewsInDb ();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
 void ApplyCustomAttributeAndImportSchema (ECDbR ecdb, ECSchemaPtr ecSchema)
@@ -2335,135 +2524,6 @@ TEST_F (JoinedTableECDbMapStrategyTests, VerifyECSqlOnAbstractBaseClass)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(JoinedTableECDbMapStrategyTests, MultiInheritence1)
-    {
-    SchemaItem testSchema(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='dgn' version='1.0'"
-        "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-        "    <ECEntityClass typeName='Foo'>"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.01.00'>"
-        "                <MapStrategy>"
-        "                    <Strategy>SharedTable</Strategy>"
-        "                    <AppliesToSubclasses>True</AppliesToSubclasses>"
-        "                    <Options>JoinedTablePerDirectSubclass</Options>"
-        "                </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Foo_L' typeName='long'/>"
-        "        <ECProperty propertyName='Foo_S' typeName='string'/>"
-        "    </ECEntityClass>"
-        "   <ECEntityClass typeName='IFace' modifier='Abstract' />"
-        "   <ECEntityClass typeName='Goo'>"
-        "        <BaseClass>Foo</BaseClass>"
-        "        <BaseClass>IFace</BaseClass>"
-        "        <ECProperty propertyName='Goo_L' typeName='long'/>"
-        "        <ECProperty propertyName='Goo_S' typeName='string'/>"
-        "    </ECEntityClass>"
-        "   <ECEntityClass typeName='Boo'>"
-        "        <BaseClass>Foo</BaseClass>"
-        "        <BaseClass>IFace</BaseClass>"
-        "        <ECProperty propertyName='Boo_L' typeName='long'/>"
-        "        <ECProperty propertyName='Boo_S' typeName='string'/>"
-        "    </ECEntityClass>"
-        "   <ECEntityClass typeName='Moo'>"
-        "        <BaseClass>Foo</BaseClass>"
-        "        <ECProperty propertyName='Moo_L' typeName='long'/>"
-        "        <ECProperty propertyName='Moo_S' typeName='string'/>"
-        "    </ECEntityClass>"
-        "   <ECEntityClass typeName='Body'>"
-        "        <ECProperty propertyName='Body_L' typeName='long'/>"
-        "        <ECProperty propertyName='Body_S' typeName='string'/>"
-        "    </ECEntityClass>"
-        "   <ECRelationshipClass typeName='IFaceHasBody' strength='referencing'>"
-        "       <Source cardinality='(1,1)' polymorphic='True'>"
-        "           <Class class = 'IFace' />"
-        "       </Source>"
-        "       <Target cardinality='(0,N)' polymorphic='True'>"
-        "           <Class class = 'Body' />"
-        "       </Target>"
-        "   </ECRelationshipClass>"
-        "</ECSchema>");
-
-    ECDbR db = SetupECDb("JoinedTableTest101.ecdb", testSchema);
-    ASSERT_TRUE(db.IsDbOpen());
-
-    ECClassId gooId = db.Schemas().GetECClassId("dgn", "Goo", ResolveSchema::BySchemaNamespacePrefix);
-    ECClassId booId = db.Schemas().GetECClassId("dgn", "Boo", ResolveSchema::BySchemaNamespacePrefix);
-    //ECClassId mooId = db.Schemas().GetECClassId("dgn", "Moo", ResolveSchema::BySchemaNamespacePrefix);
-    ECClassId bodyId = db.Schemas().GetECClassId("dgn", "Body", ResolveSchema::BySchemaNamespacePrefix);
-    ECClassId ifaceHasBodyId = db.Schemas().GetECClassId("dgn", "IFaceHasBody", ResolveSchema::BySchemaNamespacePrefix);
-
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO dgn.Goo(ECInstanceId, Foo_L, Foo_S, Goo_L, Goo_S) VALUES(1, 101, '::101', 102, '::102')"));
-    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
-    stmt.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO dgn.Boo(ECInstanceId, Foo_L, Foo_S, Boo_L, Boo_S) VALUES(2, 201, '::201', 202, '::202')"));
-    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
-    stmt.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO dgn.Moo(ECInstanceId, Foo_L, Foo_S, Moo_L, Moo_S) VALUES(3, 301, '::301', 302, '::302')"));
-    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
-    stmt.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO dgn.Body(ECInstanceId, Body_L, Body_S) VALUES(4, 401, '::401')"));
-    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
-    stmt.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO dgn.Body(ECInstanceId, Body_L, Body_S) VALUES(5, 401, '::401')"));
-    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
-    stmt.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db,SqlPrintfString("INSERT INTO dgn.IFaceHasBody(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(%d,%lld,%d,%lld)", 1, gooId, 4, bodyId).GetUtf8CP()));
-    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
-    stmt.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, SqlPrintfString("INSERT INTO dgn.IFaceHasBody(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(%d,%lld,%d,%lld)", 2, booId, 5, bodyId).GetUtf8CP()));
-    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
-    stmt.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT ECInstanceId, GetECClassId(), SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM dgn.IFaceHasBody ORDER BY ECInstanceId"));
-    int count = 0;
-    while(stmt.Step() == BE_SQLITE_ROW)
-        {
-        auto ecInstanceId = stmt.GetValueInt64(0);
-        auto ecClassId = stmt.GetValueInt64(1);
-        auto sourceECInstanceId = stmt.GetValueInt64(2);
-        auto sourceECClassId = stmt.GetValueInt64(3);
-        auto targetECInstanceId = stmt.GetValueInt64(4);
-        auto targetECClassId = stmt.GetValueInt64(5);
-        if (count == 0)
-            {
-            //    5	135	2	131	5	130
-            ASSERT_EQ(4, ecInstanceId);
-            ASSERT_EQ(ifaceHasBodyId, ecClassId);
-            ASSERT_EQ(1, sourceECInstanceId);
-            ASSERT_EQ(gooId, sourceECClassId);
-            ASSERT_EQ(4, targetECInstanceId);
-            ASSERT_EQ(bodyId, targetECClassId);
-            }
-        else if (count == 1)
-            {
-            //    5	135	2	131	5	130
-            ASSERT_EQ(5, ecInstanceId);
-            ASSERT_EQ(ifaceHasBodyId, ecClassId);
-            ASSERT_EQ(2, sourceECInstanceId);
-            ASSERT_EQ(booId, sourceECClassId);
-            ASSERT_EQ(5, targetECInstanceId);
-            ASSERT_EQ(bodyId, targetECClassId);
-            }
-
-        count++;
-        }
-    stmt.Finalize();
-
-    db.Schemas().CreateECClassViewsInDb();
-
-    }
-
 TEST_F (JoinedTableECDbMapStrategyTests, JoinedTableForClassesWithoutBusinessProperties)
     {
     SchemaItem testSchema (
@@ -2505,4 +2565,5 @@ TEST_F (JoinedTableECDbMapStrategyTests, JoinedTableForClassesWithoutBusinessPro
     ASSERT_EQ (DbResult::BE_SQLITE_ROW, statement.Step ());
     ASSERT_EQ (2, statement.GetValueInt (0));
     }
+
 END_ECDBUNITTESTS_NAMESPACE

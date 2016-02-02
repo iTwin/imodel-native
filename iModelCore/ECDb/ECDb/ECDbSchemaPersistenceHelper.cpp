@@ -15,15 +15,32 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECDbSchemaPersistenceHelper::ContainsECClass(ECDbCR db, ECClassCR ecClass)
     {
-    if (ecClass.HasId()) //This is unsafe but since we donot delete ecclass any class that hasId does exist in db
+    if (ecClass.HasId()) //This is unsafe but since we do not delete ecclass any class that hasId does exist in db
         return true;
 
-    const ECClassId classId = GetECClassId(db, Utf8String(ecClass.GetSchema().GetName().c_str()).c_str(),
-                                            Utf8String(ecClass.GetName().c_str()).c_str(), ResolveSchema::BySchemaName);
+    const ECClassId classId = GetECClassId(db, ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str(), ResolveSchema::BySchemaName);
 
     return classId > ECClass::UNSET_ECCLASSID;
     }
     
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    01/2016
+//---------------------------------------------------------------------------------------
+bool ECDbSchemaPersistenceHelper::TryGetECSchemaKey(SchemaKey& key, ECDbCR ecdb, ECSchemaId schemaId)
+    {
+    CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != ecdb.GetCachedStatement(stmt, "SELECT Name, VersionMajor, VersionMinor FROM ec_Schema WHERE Id=?"))
+        return false;
+
+    if (BE_SQLITE_OK != stmt->BindInt64(1, schemaId))
+        return false;
+
+    if (stmt->Step() != BE_SQLITE_ROW)
+        return false;
+
+    key = SchemaKey(stmt->GetValueText(0), stmt->GetValueInt(1), stmt->GetValueInt(2));
+    return true;
+    }
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/

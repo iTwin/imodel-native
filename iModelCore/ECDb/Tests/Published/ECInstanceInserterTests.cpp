@@ -283,6 +283,55 @@ TEST_F (ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiMethod                                      Krischan.Eberle                  02/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECInstanceInserterTests, InsertReadonlyProperty)
+    {
+    ECDbR ecdb = SetupECDb("insertreadonlyproperty.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                                                     "<ECSchema schemaName='testSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                                                     "    <ECEntityClass typeName='A' >"
+                                                                     "        <ECProperty propertyName='P1' typeName='int' readOnly='True'/>"
+                                                                     "        <ECProperty propertyName='P2' typeName='string' readOnly='True'/>"
+                                                                     "        <ECProperty propertyName='P3' typeName='long' />"
+                                                                     "    </ECEntityClass>"
+                                                                     "</ECSchema>"));
+
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    const int p1Value = 100;
+    Utf8CP p2Value = "sample string";
+    const int64_t p3Value = INT64_C(1000);
+
+    ECClassCP ecClass = ecdb.Schemas().GetECClass("testSchema", "A");
+    ASSERT_TRUE(ecClass != nullptr);
+
+    IECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECValue v;
+    v.SetInteger(p1Value);
+    ASSERT_EQ(ECObjectsStatus::Success, instance->SetValue("P1", v));
+
+    v.Clear();
+    v.SetUtf8CP(p2Value);
+    ASSERT_EQ(ECObjectsStatus::Success, instance->SetValue("P2", v));
+
+    v.Clear();
+    v.SetLong(p3Value);
+    ASSERT_EQ(ECObjectsStatus::Success, instance->SetValue("P3", v));
+
+    ECInstanceInserter inserter(ecdb, *ecClass);
+    ECInstanceKey key;
+    ASSERT_EQ(SUCCESS, inserter.Insert(key, *instance));
+
+    Utf8String validateECSql;
+    validateECSql.Sprintf("SELECT NULL FROM ts.A WHERE ECInstanceId=%lld AND P1=%d AND P2 LIKE '%s' AND P3=%lld",
+                          key.GetECInstanceId().GetValue(), p1Value, p2Value, p3Value);
+
+    ECSqlStatement validateStmt;
+    ASSERT_EQ(ECSqlStatus::Success, validateStmt.Prepare(ecdb, validateECSql.c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, validateStmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/15
 //+---------------+---------------+---------------+---------------+---------------+------
 void ExecuteECSqlCommand (ECSqlStatement& stmt, ECDbR db, Utf8CP ecsql)

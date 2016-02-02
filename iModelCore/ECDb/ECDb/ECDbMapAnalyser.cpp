@@ -1501,9 +1501,9 @@ DbResult ECDbMapAnalyser::ExecuteDDL (Utf8CP sql)
 DbResult ECDbMapAnalyser::ApplyChanges ()
     {
     Utf8String sql;
-    DbResult r = UpdateHoldingView ();
-    if (r != BE_SQLITE_OK)
-        return r;
+    DbResult r = BE_SQLITE_OK;// UpdateHoldingView();
+    //if (r != BE_SQLITE_OK)
+    //    return r;
 
     for (auto& i : m_viewInfos)
         {
@@ -1542,29 +1542,29 @@ DbResult ECDbMapAnalyser::ApplyChanges ()
 
         }
 
-    for (auto& i : m_storage)
-        {
-        Storage const& storage = *i.second;
-        if (storage.IsVirtual() || storage.GetTable ().GetTableType () == TableType::Existing)
-            continue;
+    //for (auto& i : m_storage)
+    //    {
+    //    Storage const& storage = *i.second;
+    //    if (storage.IsVirtual() || storage.GetTable ().GetTableType () == TableType::Existing)
+    //        continue;
 
-        for (SqlTriggerBuilder const& trigger : storage.GetTriggerList ().GetTriggers ())
-            {
-            sql = trigger.ToString (SqlOption::DropIfExists, true);
-            r = ExecuteDDL (sql.c_str ());
-            if (r != BE_SQLITE_OK)
-                return r;
+    //    for (SqlTriggerBuilder const& trigger : storage.GetTriggerList ().GetTriggers ())
+    //        {
+    //        sql = trigger.ToString (SqlOption::DropIfExists, true);
+    //        r = ExecuteDDL (sql.c_str ());
+    //        if (r != BE_SQLITE_OK)
+    //            return r;
 
-            //WIP: can't we catch this (the incompleteness of the trigger def) right when the trigger is defined?
-            if (trigger.IsEmpty())
-                continue;
+    //        //WIP: can't we catch this (the incompleteness of the trigger def) right when the trigger is defined?
+    //        if (trigger.IsEmpty())
+    //            continue;
 
-            sql = trigger.ToString (SqlOption::Create, true);
-            r = ExecuteDDL (sql.c_str ());
-            if (r != BE_SQLITE_OK)
-                return r;
-            }
-        }
+    //        sql = trigger.ToString (SqlOption::Create, true);
+    //        r = ExecuteDDL (sql.c_str ());
+    //        if (r != BE_SQLITE_OK)
+    //            return r;
+    //        }
+    //    }
 
     return r;
     }

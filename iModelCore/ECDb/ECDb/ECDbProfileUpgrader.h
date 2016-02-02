@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbProfileUpgrader.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -73,7 +73,7 @@ private:
     static BentleyStatus ReadECDbFileInfoSchema (ECN::ECSchemaReadContextR readContext, Utf8CP ecdbFileName);
 
 public:
-    static DbResult ImportProfileSchemas (ECDbR ecdb, bool updateSchema = true);
+    static DbResult ImportProfileSchemas (ECDbR ecdb);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

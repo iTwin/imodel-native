@@ -117,9 +117,9 @@ private:
 
     ClassMapPtr                 LoadClassMap(ClassMapLoadContext& ctx, ECN::ECClassCR) const;
 
-    MapStatus                   DoMapSchemas(bvector<ECN::ECSchemaCP> const& mapSchemas, bool forceMapStrategyReevaluation);
+    MapStatus                   DoMapSchemas(bvector<ECN::ECSchemaCP> const& mapSchemas);
     
-    MapStatus                   MapClass(ECN::ECClassCR, bool forceRevaluationOfMapStrategy);
+    MapStatus                   MapClass(ECN::ECClassCR);
     MapStatus                   AddClassMap(ClassMapPtr&) const;
     void                        RemoveClassMap(IClassMap const&);
     BentleyStatus               FinishTableDefinition() const;
@@ -128,7 +128,7 @@ private:
     BentleyStatus               CreateOrUpdateRequiredTables();
     ClassMapByTable             GetClassMapByTable() const;
     void                        GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>&, ECN::ECClassCR) const;
-
+    DbResult                    UpdateHoldingView();
 public:
     explicit ECDbMap(ECDbR ecdb);
     ~ECDbMap() {}
@@ -145,7 +145,7 @@ public:
 
     ECDbSQLManager const& GetSQLManager() const { return m_ecdbSqlManager; }
 
-    MapStatus MapSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&, bool forceMapStrategyReevaluation);
+    MapStatus MapSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&);
 
     BentleyStatus CreateECClassViewsInDb() const;
     ECDbSqlTable* FindOrCreateTable(SchemaImportContext*, Utf8CP tableName, TableType, bool isVirtual, Utf8CP primaryKeyColumnName);
@@ -245,5 +245,51 @@ public:
 
         BentleyStatus GenerateECClassIdFilter(NativeSqlBuilder& filter, ECDbSqlTable const&, ECDbSqlColumn const& classIdColumn, bool polymorphic, bool fullyQualifyColumnName = false, Utf8CP tableAlias =nullptr) const;
         static std::unique_ptr<StorageDescription> Create(IClassMap const&, ECDbMap::LightweightCache const& lwmc);
+        };
+    
+
+    //!Purge Holding type relationship end.
+    struct RelationshipPurger
+        {
+        private:
+            struct SqlSpec
+                {
+                typedef std::unique_ptr<SqlSpec> Ptr;
+                typedef std::map<Utf8CP, Ptr, CompareUtf8> SpecByTableMap;
+                private:
+                    Utf8CP m_table;
+                    Utf8CP m_table_pk;
+                    Utf8CP m_table_classId;
+                    std::set<ECN::ECClassId> m_filter;
+                    SqlSpec(Utf8CP table, Utf8CP pk, Utf8CP classId)
+                        :m_table(table), m_table_pk(pk), m_table_classId(classId)
+                        {}
+                public:
+
+                    Utf8CP GetTable() const;
+                    Utf8CP GetTablePrimaryKey() const;
+                    void PushClassId(ECN::ECClassId id);
+                    Utf8String ToSQL() const;
+                    static Ptr Create(Utf8CP table, Utf8CP pk, Utf8CP classId = nullptr);
+                };
+
+        private:
+            std::vector<std::unique_ptr<Statement>> m_stmts;
+
+        public:
+            enum class Commands
+                {
+                Purge = 1,
+                UpdateHoldingView = 2,  //! view is updated dure Prepare() 
+                PurgeAndUpdateHoldingView = 3
+                };
+
+        public:
+            RelationshipPurger() {}
+            virtual ~RelationshipPurger();
+            DbResult Prepare(ECDbR ecdb, Commands commands = Commands::PurgeAndUpdateHoldingView);
+            DbResult Reset();
+            DbResult Step();
+            void Finialize();
         };
 END_BENTLEY_SQLITE_EC_NAMESPACE

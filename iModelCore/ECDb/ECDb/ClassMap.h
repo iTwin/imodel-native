@@ -229,6 +229,8 @@ public:
     static BentleyStatus DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR);
     static bool IsAnyClass (ECN::ECClassCR);
     virtual bool SupportECSql(ECSqlType ecsqlType, Utf8StringP reason = nullptr) const { BeAssert(false); return false;}
+
+
     };
 
 //======================================================================================

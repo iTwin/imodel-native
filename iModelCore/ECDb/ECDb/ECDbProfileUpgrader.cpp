@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbProfileUpgrader.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -197,7 +197,7 @@ SchemaKey ECDbProfileECSchemaUpgrader::s_ecdbfileinfoSchemaKey = SchemaKey ("ECD
 // @bsimethod                                                    Krischan.Eberle        07/2012
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ECDbProfileECSchemaUpgrader::ImportProfileSchemas (ECDbR ecdb, bool updateSchema)
+DbResult ECDbProfileECSchemaUpgrader::ImportProfileSchemas (ECDbR ecdb)
     {
     StopWatch timer (true);
     auto context = ECSchemaReadContext::CreateContext ();
@@ -208,16 +208,14 @@ DbResult ECDbProfileECSchemaUpgrader::ImportProfileSchemas (ECDbR ecdb, bool upd
     ecdbStandardSchemasFolder.AppendToPath (L"ECDb");
     context->AddSchemaPath (ecdbStandardSchemasFolder);
 
-    if (BSISUCCESS != ReadECDbSystemSchema (*context, ecdb.GetDbFileName ()))
+    if (SUCCESS != ReadECDbSystemSchema (*context, ecdb.GetDbFileName ()))
         return BE_SQLITE_ERROR;
 
-    if (BSISUCCESS != ReadECDbFileInfoSchema (*context, ecdb.GetDbFileName ()))
+    if (SUCCESS != ReadECDbFileInfoSchema (*context, ecdb.GetDbFileName ()))
         return BE_SQLITE_ERROR;
 
     //import / update if already existing
-    ECDbSchemaManager::ImportOptions options (false, updateSchema);
-    auto importStat = ecdb.Schemas ().ImportECSchemas (context->GetCache (), options);
-
+    BentleyStatus importStat = ecdb.Schemas ().ImportECSchemas (context->GetCache (), ECDbSchemaManager::ImportOptions());
     timer.Stop ();
     if (importStat != SUCCESS)
         {

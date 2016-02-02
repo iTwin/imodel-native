@@ -357,14 +357,8 @@ ECDbSqlColumn const* PropertyMap::ExpectingSingleColumn() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    06/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-PropertyMapCollection::PropertyMapCollection () 
-    {}
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    06/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-PropertyMapCollection::PropertyMapCollection (PropertyMapCollection&& rhs) 
-    : m_dictionary (std::move (rhs.m_dictionary)), m_orderedCollection (std::move (rhs.m_orderedCollection))
+PropertyMapCollection::PropertyMapCollection(PropertyMapCollection&& rhs)
+    : m_dictionary(std::move(rhs.m_dictionary)), m_orderedCollection(std::move(rhs.m_orderedCollection))
     {}
 
 //-----------------------------------------------------------------------------------------
@@ -374,8 +368,8 @@ PropertyMapCollection& PropertyMapCollection::operator= (PropertyMapCollection&&
     {
     if (this != &rhs)
         {
-        m_dictionary = std::move (rhs.m_dictionary);
-        m_orderedCollection = std::move (rhs.m_orderedCollection);
+        m_dictionary = std::move(rhs.m_dictionary);
+        m_orderedCollection = std::move(rhs.m_orderedCollection);
         }
 
     return *this;
@@ -384,47 +378,31 @@ PropertyMapCollection& PropertyMapCollection::operator= (PropertyMapCollection&&
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-void PropertyMapCollection::AddPropertyMap (PropertyMapPtr const& propertyMap)
+void PropertyMapCollection::AddPropertyMap(PropertyMapPtr const& propertyMap)
     {
-    AddPropertyMap (propertyMap->GetPropertyAccessString (), propertyMap);
+    AddPropertyMap(propertyMap->GetPropertyAccessString(), propertyMap);
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    12/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-void PropertyMapCollection::AddPropertyMap (Utf8CP propertyAccessString, PropertyMapPtr const& propertyMap)
+void PropertyMapCollection::AddPropertyMap(Utf8CP propertyAccessString, PropertyMapPtr const& propertyMap)
     {
     m_dictionary[propertyAccessString] = propertyMap;
-    m_orderedCollection.push_back (propertyMap.get ());
+    m_orderedCollection.push_back(propertyMap.get());
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-bool PropertyMapCollection::IsEmpty () const
-    {
-    return Size () == 0;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    11/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-size_t PropertyMapCollection::Size () const
-    {
-    return m_orderedCollection.size ();
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    11/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool PropertyMapCollection::TryGetPropertyMap (PropertyMapCP& propertyMap, Utf8CP propertyAccessString, bool recursive) const
+bool PropertyMapCollection::TryGetPropertyMap(PropertyMapCP& propertyMap, Utf8CP propertyAccessString, bool recursive) const
     {
     propertyMap = nullptr;
 
     PropertyMapPtr propertyMapPtr = nullptr;
-    const auto found = TryGetPropertyMap (propertyMapPtr, propertyAccessString, recursive);
+    const bool found = TryGetPropertyMap(propertyMapPtr, propertyAccessString, recursive);
     if (found)
-        propertyMap = propertyMapPtr.get ();
+        propertyMap = propertyMapPtr.get();
 
     return found;
     }
@@ -432,28 +410,28 @@ bool PropertyMapCollection::TryGetPropertyMap (PropertyMapCP& propertyMap, Utf8C
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-bool PropertyMapCollection::TryGetPropertyMap (PropertyMapPtr& propertyMap, Utf8CP propertyAccessString, bool recursive) const
+bool PropertyMapCollection::TryGetPropertyMap(PropertyMapPtr& propertyMap, Utf8CP propertyAccessString, bool recursive) const
     {
     propertyMap = nullptr;
-    bool found = TryGetPropertyMapNonRecursively (propertyMap, propertyAccessString);
+    bool found = TryGetPropertyMapNonRecursively(propertyMap, propertyAccessString);
     if (found || !recursive)
         return found;
 
-    BeAssert (recursive && !found);
+    BeAssert(recursive && !found);
 
     //recurse into access string and look up prop map for first member in access string
     bvector<Utf8String> tokens;
     ECDbMap::ParsePropertyAccessString(tokens, propertyAccessString);
 
-    bvector<Utf8String>::const_iterator tokenIt = tokens.begin ();
-    bvector<Utf8String>::const_iterator tokenEndIt = tokens.end ();
-    return TryGetPropertyMap (propertyMap, tokenIt, tokenEndIt);
+    bvector<Utf8String>::const_iterator tokenIt = tokens.begin();
+    bvector<Utf8String>::const_iterator tokenEndIt = tokens.end();
+    return TryGetPropertyMap(propertyMap, tokenIt, tokenEndIt);
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-bool PropertyMapCollection::TryGetPropertyMap (PropertyMapPtr& propertyMap, bvector<Utf8String>::const_iterator& accessStringTokenIterator, bvector<Utf8String>::const_iterator& accessStringTokenEndIterator) const
+bool PropertyMapCollection::TryGetPropertyMap(PropertyMapPtr& propertyMap, bvector<Utf8String>::const_iterator& accessStringTokenIterator, bvector<Utf8String>::const_iterator& accessStringTokenEndIterator) const
     {
     if (accessStringTokenIterator == accessStringTokenEndIterator)
         return false;
@@ -461,7 +439,7 @@ bool PropertyMapCollection::TryGetPropertyMap (PropertyMapPtr& propertyMap, bvec
     Utf8StringCR currentAccessItem = *accessStringTokenIterator;
 
     PropertyMapPtr currentAccessPropMap = nullptr;
-    bool found = TryGetPropertyMapNonRecursively (currentAccessPropMap, currentAccessItem.c_str ());
+    bool found = TryGetPropertyMapNonRecursively(currentAccessPropMap, currentAccessItem.c_str());
     if (!found)
         return false;
 
@@ -474,19 +452,19 @@ bool PropertyMapCollection::TryGetPropertyMap (PropertyMapPtr& propertyMap, bvec
         }
 
     //now recurse into children
-    return currentAccessPropMap->GetChildren ().TryGetPropertyMap (propertyMap, accessStringTokenIterator, accessStringTokenEndIterator);
+    return currentAccessPropMap->GetChildren().TryGetPropertyMap(propertyMap, accessStringTokenIterator, accessStringTokenEndIterator);
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-bool PropertyMapCollection::TryGetPropertyMapNonRecursively (PropertyMapPtr& propertyMap, Utf8CP propertyAccessString) const
+bool PropertyMapCollection::TryGetPropertyMapNonRecursively(PropertyMapPtr& propertyMap, Utf8CP propertyAccessString) const
     {
     propertyMap = nullptr;
-    auto it = m_dictionary.find (propertyAccessString);
-    if (it != m_dictionary.end ())
+    auto it = m_dictionary.find(propertyAccessString);
+    if (it != m_dictionary.end())
         {
-        BeAssert (it->second.IsValid () && it->second.get () != nullptr);
+        BeAssert(it->second.IsValid() && it->second.get() != nullptr);
         propertyMap = it->second;
         return true;
         }
@@ -497,52 +475,35 @@ bool PropertyMapCollection::TryGetPropertyMapNonRecursively (PropertyMapPtr& pro
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   12/2013
 //---------------------------------------------------------------------------------------
-void PropertyMapCollection::Traverse (std::function<void (TraversalFeedback& cancel, PropertyMapCP propMap)> const& nodeOperation, bool recursive) const
+void PropertyMapCollection::Traverse(std::function<void(TraversalFeedback& cancel, PropertyMapCP propMap)> const& nodeOperation, bool recursive) const
     {
     std::set<PropertyMapCollection const*> doneList;
-    Traverse (doneList, *this, nodeOperation, recursive);
+    Traverse(doneList, *this, nodeOperation, recursive);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   12/2013
 //---------------------------------------------------------------------------------------
 //static 
-void PropertyMapCollection::Traverse (std::set<PropertyMapCollection const*>& doneList, PropertyMapCollection const& childPropMaps, std::function<void (TraversalFeedback& feedback, PropertyMapCP propMap)> const& nodeOperation, bool recursive)
+void PropertyMapCollection::Traverse(std::set<PropertyMapCollection const*>& doneList, PropertyMapCollection const& childPropMaps, std::function<void(TraversalFeedback& feedback, PropertyMapCP propMap)> const& nodeOperation, bool recursive)
     {
-    if (doneList.find (&childPropMaps) != doneList.end ())
+    if (doneList.find(&childPropMaps) != doneList.end())
         return;
 
-    doneList.insert (&childPropMaps);
-    for (auto propMap : childPropMaps)
+    doneList.insert(&childPropMaps);
+    for (PropertyMapCP propMap : childPropMaps)
         {
-        auto feedback = TraversalFeedback::Next;
-        nodeOperation (feedback, propMap);
+        TraversalFeedback feedback = TraversalFeedback::Next;
+        nodeOperation(feedback, propMap);
         if (feedback == TraversalFeedback::Cancel)
             return;
 
         if (feedback == TraversalFeedback::NextSibling)
             continue;
 
-        Traverse (doneList, propMap->GetChildren (), nodeOperation, recursive);
+        Traverse(doneList, propMap->GetChildren(), nodeOperation, recursive);
         }
     }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    06/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-PropertyMapCollection::const_iterator PropertyMapCollection::begin () const
-    {
-    return m_orderedCollection.begin();
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    06/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-PropertyMapCollection::const_iterator PropertyMapCollection::end () const
-    {
-    return m_orderedCollection.end ();
-    }
-
 
 //**************************************************************************
 //---------------------------------------------------------------------------------------
