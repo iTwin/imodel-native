@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityPackage/RealityDataSource.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -42,6 +42,10 @@ public:
     REALITYPACKAGE_EXPORT Utf8StringCR GetCopyright() const;
     REALITYPACKAGE_EXPORT void         SetCopyright(Utf8CP copyright);
 
+    //! Get/Set the id. Might be empty.
+    REALITYPACKAGE_EXPORT Utf8StringCR GetId() const;
+    REALITYPACKAGE_EXPORT void         SetId(Utf8CP id);
+
     //! Get/Set the provider. Might be empty.
     REALITYPACKAGE_EXPORT Utf8StringCR GetProvider() const;
     REALITYPACKAGE_EXPORT void         SetProvider(Utf8CP provider);
@@ -77,6 +81,7 @@ private:
     Utf8String m_uri;
     Utf8String m_type;
     Utf8String m_copyright;
+    Utf8String m_id;
     Utf8String m_provider;
     uint64_t m_filesize;
     Utf8String m_fileInCompound;

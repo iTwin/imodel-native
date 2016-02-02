@@ -308,7 +308,7 @@ bool RealityDataDownload::SetupCurlandFile(size_t pi_index)
         /* Set a pointer to our struct to pass to the callback */
         curl_easy_setopt(pCurl, CURLOPT_WRITEDATA, &(m_pEntries[pi_index]));
 
-        curl_easy_setopt(pCurl, CURLOPT_FTPPORT, "-");
+//        curl_easy_setopt(pCurl, CURLOPT_FTPPORT, "-");    // FTP active
 
         /* Switch on full protocol/debug output set 1L*/
         curl_easy_setopt(pCurl, CURLOPT_VERBOSE, 0L);
