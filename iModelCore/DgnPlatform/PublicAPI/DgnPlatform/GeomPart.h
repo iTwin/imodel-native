@@ -21,7 +21,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //! @ingroup ElementGeometryGroup
 // @bsiclass                                                BentleySystems
 //=======================================================================================
-struct DgnGeometryPart : RefCountedBase, ICodedObject
+struct DgnGeometryPart : RefCountedBase, ICodedEntity
 {
 //__PUBLISH_SECTION_END__
     friend struct DgnGeometryParts;

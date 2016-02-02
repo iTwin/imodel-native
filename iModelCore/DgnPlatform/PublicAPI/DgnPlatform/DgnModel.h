@@ -17,8 +17,8 @@
 
 DGNPLATFORM_TYPEDEFS(GeometricModel)
 DGNPLATFORM_TYPEDEFS(DefinitionModel)
-DGNPLATFORM_TYPEDEFS(DgnModel2d)
-DGNPLATFORM_TYPEDEFS(DgnModel3d)
+DGNPLATFORM_TYPEDEFS(GeometricModel2d)
+DGNPLATFORM_TYPEDEFS(GeometricModel3d)
 DGNPLATFORM_TYPEDEFS(DgnRangeTree)
 DGNPLATFORM_TYPEDEFS(ICheckStop)
 DGNPLATFORM_TYPEDEFS(SectionDrawingModel)
@@ -63,7 +63,7 @@ struct DgnElementMap : bmap<DgnElementId, DgnElementCPtr>
 //! @ingroup DgnModelGroup
 // @bsiclass                                                     KeithBentley    10/00
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase, ICodedObject
+struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase, ICodedEntity
     {
     friend struct DgnModels;
     friend struct DgnElement;
@@ -340,8 +340,8 @@ protected:
     /** @{ */
     virtual GeometricModelCP _ToGeometricModel() const {return nullptr;}
     virtual DefinitionModelCP _ToDefinitionModel() const {return nullptr;}
-    virtual DgnModel2dCP _ToDgnModel2d() const {return nullptr;}
-    virtual DgnModel3dCP _ToDgnModel3d() const {return nullptr;}
+    virtual GeometricModel2dCP _ToGeometricModel2d() const {return nullptr;}
+    virtual GeometricModel3dCP _ToGeometricModel3d() const {return nullptr;}
     virtual SpatialModelCP _ToSpatialModel() const {return nullptr;}
     virtual SectionDrawingModelCP _ToSectionDrawingModel() const {return nullptr;}
     virtual SheetModelCP _ToSheetModel() const {return nullptr;}
@@ -404,7 +404,7 @@ public:
     DgnRangeTree* GetRangeIndexP(bool create) const {return _GetRangeIndexP(create);}
 
     //! Returns true if this is a 3d model.
-    bool Is3d() const {return nullptr != ToDgnModel3d();}
+    bool Is3d() const {return nullptr != ToGeometricModel3d();}
 
     DGNPLATFORM_EXPORT DgnElementCP FindElementById(DgnElementId id); //!< @private
 
@@ -450,23 +450,23 @@ public:
     //@{
     GeometricModelCP ToGeometricModel() const {return _ToGeometricModel();} //!< more efficient substitute for dynamic_cast<GeometricModelCP>(model)
     DefinitionModelCP ToDefinitionModel() const {return _ToDefinitionModel();} //!< more efficient substitute for dynamic_cast<DefinitionModelCP>(model)
-    DgnModel2dCP ToDgnModel2d() const {return _ToDgnModel2d();} //!< more efficient substitute for dynamic_cast<DgnModel2dCP>(model)
-    DgnModel3dCP ToDgnModel3d() const {return _ToDgnModel3d();} //!< more efficient substitute for dynamic_cast<DgnModel3dCP>(model)
+    GeometricModel2dCP ToGeometricModel2d() const {return _ToGeometricModel2d();} //!< more efficient substitute for dynamic_cast<GeometricModel2dCP>(model)
+    GeometricModel3dCP ToGeometricModel3d() const {return _ToGeometricModel3d();} //!< more efficient substitute for dynamic_cast<GeometricModel3dCP>(model)
     SpatialModelCP ToSpatialModel() const {return _ToSpatialModel();} //!< more efficient substitute for dynamic_cast<SpatialModelCP>(model)
     SectionDrawingModelCP ToSectionDrawingModel() const {return _ToSectionDrawingModel();} //!< more efficient substitute for dynamic_cast<SectionDrawingModelCP>(model)
     SheetModelCP ToSheetModel() const {return _ToSheetModel();} //!< more efficient substitute for dynamic_cast<SheetModelCP>(model)
     GeometricModelP ToGeometricModelP() {return const_cast<GeometricModelP>(_ToGeometricModel());} //!< more efficient substitute for dynamic_cast<GeometricModelP>(model)
     DefinitionModelP ToDefinitionModelP() {return const_cast<DefinitionModelP>(_ToDefinitionModel());} //!< more efficient substitute for dynamic_cast<DefinitionModelP>(model)
-    DgnModel2dP ToDgnModel2dP() {return const_cast<DgnModel2dP>(_ToDgnModel2d());} //!< more efficient substitute for dynamic_cast<DgnModel2dP>(model)
-    DgnModel3dP ToDgnModel3dP() {return const_cast<DgnModel3dP>(_ToDgnModel3d());} //!< more efficient substitute for dynamic_cast<DgnModel3dP>(model)
+    GeometricModel2dP ToGeometricModel2dP() {return const_cast<GeometricModel2dP>(_ToGeometricModel2d());} //!< more efficient substitute for dynamic_cast<GeometricModel2dP>(model)
+    GeometricModel3dP ToGeometricModel3dP() {return const_cast<GeometricModel3dP>(_ToGeometricModel3d());} //!< more efficient substitute for dynamic_cast<GeometricModel3dP>(model)
     SpatialModelP ToSpatialModelP() {return const_cast<SpatialModelP>(_ToSpatialModel());} //!< more efficient substitute for dynamic_cast<SpatialModelP>(model)
     SectionDrawingModelP ToSectionDrawingModelP() {return const_cast<SectionDrawingModelP>(_ToSectionDrawingModel());} //!< more efficient substitute for dynamic_cast<SectionDrawingModelP>(model)
     SheetModelP ToSheetModelP() {return const_cast<SheetModelP>(_ToSheetModel());}//!< more efficient substitute for dynamic_cast<SheetModelP>(model)
 
     bool IsGeometricModel() const { return nullptr != ToGeometricModel(); }
     bool IsSpatialModel() const { return nullptr != ToSpatialModel(); }
-    bool Is2dModel() const { return nullptr != ToDgnModel2d(); }
-    bool Is3dModel() const { return nullptr != ToDgnModel3d(); }
+    bool Is2dModel() const { return nullptr != ToGeometricModel2d(); }
+    bool Is3dModel() const { return nullptr != ToGeometricModel3d(); }
     bool IsDefinitionModel() const { return nullptr != ToDefinitionModel(); }
     bool IsSheetModel() const { return nullptr != ToSheetModel(); }
     bool IsDictionaryModel() const { return DictionaryId() == GetModelId(); }
@@ -767,7 +767,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _WriteJsonProperties(Json::Value&) const override;
     DGNPLATFORM_EXPORT virtual void _ReadJsonProperties(Json::Value const&) override;
 
-    virtual GeometricModelCP _ToGeometricModel() const override {return this;}
+    virtual GeometricModelCP _ToGeometricModel() const override final {return this;}
     
     explicit GeometricModel(CreateParams const& params) : T_Super(params), m_rangeIndex(nullptr), m_displayInfo(params.m_displayInfo) {}
 
@@ -792,50 +792,50 @@ public:
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   03/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnModel3d : GeometricModel
+struct EXPORT_VTABLE_ATTRIBUTE GeometricModel3d : GeometricModel
 {
     DEFINE_T_SUPER(GeometricModel);
 
 protected:
-    virtual DgnModel3dCP _ToDgnModel3d() const override {return this;}
+    virtual GeometricModel3dCP _ToGeometricModel3d() const override final {return this;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
 
 public:
-    explicit DgnModel3d(CreateParams const& params) : T_Super(params) {}
+    explicit GeometricModel3d(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
-//! A DgnModel2d is a infinite planar model that holds only 2-dimensional DgnElements. Coordinates values are X,Y.
+//! A GeometricModel2d is a infinite planar model that holds only 2-dimensional DgnElements. Coordinates values are X,Y.
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnModel2d : GeometricModel
+struct EXPORT_VTABLE_ATTRIBUTE GeometricModel2d : GeometricModel
 {
-    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_Model2d, GeometricModel);
+    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_GeometricModel2d, GeometricModel);
 
 protected:
-    DgnModel2dCP _ToDgnModel2d() const override {return this;}
+    GeometricModel2dCP _ToGeometricModel2d() const override final {return this;}
 
-    CoordinateSpace _GetCoordinateSpace() const override {return CoordinateSpace::Local;}
+    CoordinateSpace _GetCoordinateSpace() const override final {return CoordinateSpace::Local;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element);
 
 public:
-    explicit DgnModel2d(CreateParams const& params, DPoint2dCR origin=DPoint2d::FromZero()) : T_Super(params) {}
+    explicit GeometricModel2d(CreateParams const& params, DPoint2dCR origin=DPoint2d::FromZero()) : T_Super(params) {}
 };
 
 //=======================================================================================
-//! A DgnModel3d that occupies physical space in the DgnDb. All SpatialModels in a DgnDb have the same coordinate
+//! A GeometricModel3d that occupies physical space in the DgnDb. All SpatialModels in a DgnDb have the same coordinate
 //! space (CoordinateSpace::World), aka "Physical Space".
 //! DgnElements from SpatialModels are indexed in the persistent range tree of the DgnDb (the DGN_VTABLE_RTree3d).
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SpatialModel : DgnModel3d
+struct EXPORT_VTABLE_ATTRIBUTE SpatialModel : GeometricModel3d
 {
-    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialModel, DgnModel3d);
+    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialModel, GeometricModel3d);
 protected:
-    SpatialModelCP _ToSpatialModel() const override {return this;}
-    CoordinateSpace _GetCoordinateSpace() const override {return CoordinateSpace::World;}
+    SpatialModelCP _ToSpatialModel() const override final {return this;}
+    CoordinateSpace _GetCoordinateSpace() const override final {return CoordinateSpace::World;}
 
 public:
     explicit SpatialModel(CreateParams const& params) : T_Super(params) {}
@@ -850,7 +850,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DefinitionModel : DgnModel
 {
     DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_DefinitionModel, DgnModel);
 protected:
-    DefinitionModelCP _ToDefinitionModel() const override {return this;}
+    DefinitionModelCP _ToDefinitionModel() const override final {return this;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
 public:
     explicit DefinitionModel(CreateParams const& params) : T_Super(params) { }
@@ -887,9 +887,9 @@ struct ComponentDef;
 * A ComponentModel is used by a ComponentDef 
 * @bsiclass                                                    Keith.Bentley   10/11
 **//*=======================================================================================*/
-struct EXPORT_VTABLE_ATTRIBUTE ComponentModel : DgnModel3d
+struct EXPORT_VTABLE_ATTRIBUTE ComponentModel : GeometricModel3d
 {
-    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_ComponentModel, DgnModel3d);
+    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_ComponentModel, GeometricModel3d);
     
     friend struct ComponentDef;
 
@@ -907,7 +907,7 @@ protected:
     DGNPLATFORM_EXPORT ComponentModel(DgnDbR db, DgnCode, Utf8StringCR defName);
 
 public:
-    ComponentModel(CreateParams const& params) : DgnModel3d(params) {;} //!< @private
+    ComponentModel(CreateParams const& params) : GeometricModel3d(params) {;} //!< @private
 
     //! Create a ComponentModel that can be used by a component definition
     //! @param db The DgnDb that is intended to hold the new model
@@ -1255,9 +1255,9 @@ public:
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingModel : DgnModel2d
+struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingModel : GeometricModel2d
 {
-    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_SectionDrawingModel, DgnModel2d);
+    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_SectionDrawingModel, GeometricModel2d);
 protected:
     SectionDrawingModelCP _ToSectionDrawingModel() const override final {return this;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
@@ -1266,19 +1266,19 @@ public:
 };
 
 //=======================================================================================
-//! A sheet model is a DgnModel2d that has the following characteristics:
+//! A sheet model is a GeometricModel2d that has the following characteristics:
 //!     - Has fixed extents (is not infinite), specified in meters.
 //!     - Can contain @b views of other models, like pictures pasted on a photo album.
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SheetModel : DgnModel2d
+struct EXPORT_VTABLE_ATTRIBUTE SheetModel : GeometricModel2d
 {
-    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_SheetModel, DgnModel2d);
+    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_SheetModel, GeometricModel2d);
 public:
-    struct CreateParams : DgnModel2d::CreateParams
+    struct CreateParams : GeometricModel2d::CreateParams
     {
-        DEFINE_T_SUPER(DgnModel2d::CreateParams);
+        DEFINE_T_SUPER(GeometricModel2d::CreateParams);
         DPoint2d m_size;
 
         //! Parameters for creating a new SheetModel.
@@ -1305,7 +1305,7 @@ private:
 protected:
     DPoint2d m_size;
 
-    SheetModelCP _ToSheetModel() const override {return this;}
+    SheetModelCP _ToSheetModel() const override final {return this;}
 
     DGNPLATFORM_EXPORT virtual void _InitFrom(DgnModelCR other) override;
 
@@ -1351,7 +1351,7 @@ namespace dgn_ModelHandler
 
         ECSqlClassParams const& GetECSqlClassParams();
     protected:
-        ModelHandlerP _ToModelHandler() override {return this;}
+        ModelHandlerP _ToModelHandler() override final {return this;}
         virtual DgnModelP _CreateInstance(DgnModel::CreateParams const& params) {return nullptr;}
         virtual uint64_t _ParseRestrictedAction(Utf8CP name) const override { return DgnModel::RestrictedAction::Parse(name); }
         DGNPLATFORM_EXPORT virtual DgnDbStatus _VerifySchema(DgnDomains&) override;
@@ -1370,10 +1370,10 @@ namespace dgn_ModelHandler
         DgnModelPtr Create(DgnModel::CreateParams const& params) {return _CreateInstance(params);}
     };
 
-    //! The ModelHandler for Model2d
-    struct EXPORT_VTABLE_ATTRIBUTE Model2d : Model
+    //! The ModelHandler for Geometric2d
+    struct EXPORT_VTABLE_ATTRIBUTE Geometric2d : Model
     {
-        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_Model2d, DgnModel2d, Model2d, Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_GeometricModel2d, GeometricModel2d, Geometric2d, Model, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for SpatialModel
@@ -1389,15 +1389,15 @@ namespace dgn_ModelHandler
     };
 
     //! The ModelHandler for SectionDrawingModel
-    struct EXPORT_VTABLE_ATTRIBUTE SectionDrawing : Model2d
+    struct EXPORT_VTABLE_ATTRIBUTE SectionDrawing : Geometric2d
     {
-        MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_SectionDrawingModel, SectionDrawingModel, SectionDrawing, Model2d, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_SectionDrawingModel, SectionDrawingModel, SectionDrawing, Geometric2d, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for SheetModel
-    struct EXPORT_VTABLE_ATTRIBUTE Sheet : Model2d
+    struct EXPORT_VTABLE_ATTRIBUTE Sheet : Geometric2d
     {
-        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SheetModel, SheetModel, Sheet, Model2d, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SheetModel, SheetModel, Sheet, Geometric2d, DGNPLATFORM_EXPORT)
     protected:
         DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParamsR params) override;
     };

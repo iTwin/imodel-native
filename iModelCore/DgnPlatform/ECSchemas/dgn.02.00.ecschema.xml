@@ -34,7 +34,7 @@
             </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="CategoryId" typeName="long"/><!-- should be non-nullable but shared table... -->
-        <ECProperty propertyName="Geometry" typeName="binary"/>
+        <ECProperty propertyName="GeometryStream" typeName="binary"/>
     </ECEntityClass>
     
     <ECRelationshipClass typeName="GeometrySourceIsInCategory" description="Element is in Category" strength="referencing">
@@ -186,7 +186,7 @@
         </ECProperty>
     </ECStructClass>
 
-    <ECEntityClass typeName="CodedObject" modifier="Abstract">
+    <ECEntityClass typeName="CodedEntity" modifier="Abstract">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <Indexes>
@@ -207,7 +207,7 @@
     <!-- NEEDSWORK This breaks everything. Why.
     <ECRelationshipClass typeName="CodeIssuedByAuthority" description="Object has a code which was issued by the specified authority" strength="referencing">
         <Source cardinality="(0,N)" roleLabel="has N codes" polymorphic="true">
-            <Class class="CodedObject">
+            <Class class="CodedEntity">
                 <Key>
                     <Property name="Code.AuthorityId" />
                 </Key>
@@ -271,7 +271,7 @@
     </ECRelationshipClass>
 
     <ECEntityClass typeName="Model" modifier="Abstract">
-        <BaseClass>CodedObject</BaseClass>
+        <BaseClass>CodedEntity</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00">
                 <Restrictions>
@@ -294,10 +294,10 @@
     <ECEntityClass typeName="GeometricModel" modifier="Abstract">
         <BaseClass>Model</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="Model3d" modifier="Abstract">
+    <ECEntityClass typeName="GeometricModel3d" modifier="Abstract">
         <BaseClass>GeometricModel</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="Model2d">
+    <ECEntityClass typeName="GeometricModel2d">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
@@ -308,19 +308,19 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>Model3d</BaseClass>
+        <BaseClass>GeometricModel3d</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="SectionDrawingModel">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>Model2d</BaseClass>
+        <BaseClass>GeometricModel2d</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="SheetModel">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>Model2d</BaseClass>
+        <BaseClass>GeometricModel2d</BaseClass>
         <ECProperty propertyName="SheetSize" displayLabel="Sheet Size" typeName="point2d"/>
     </ECEntityClass>
     <ECEntityClass typeName="RedlineModel">
@@ -339,7 +339,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>Model3d</BaseClass>
+        <BaseClass>GeometricModel3d</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="DefinitionModel">
         <ECCustomAttributes>
@@ -385,7 +385,8 @@
     </ECRelationshipClass>
 
     <ECEntityClass typeName="Element" modifier="Abstract">
-        <BaseClass>CodedObject</BaseClass>
+        <!-- NOTE: Element subclasses should drop the "Element" suffix from their name once the concept becomes "user facing" -->
+        <BaseClass>CodedEntity</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
@@ -536,16 +537,16 @@
     </ECEntityClass>
 
     <!-- 2D text element -->
-    <ECEntityClass typeName="TextAnnotationElement">
+    <ECEntityClass typeName="TextAnnotation2d">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
         <BaseClass>AnnotationElement</BaseClass>
     </ECEntityClass>
-    <ECRelationshipClass typeName="TextAnnotationElementOwnsTextAnnotationData" strength="embedding">
+    <ECRelationshipClass typeName="TextAnnotation2dOwnsTextAnnotationData" strength="embedding">
         <!-- only exists to get automatic deletion of a text element's unique aspect -->
         <Source cardinality="(1,1)" polymorphic="true">
-            <Class class="TextAnnotationElement"/>
+            <Class class="TextAnnotation2d"/>
         </Source>
         <Target cardinality="(0,1)" polymorphic="true">
             <Class class="TextAnnotationData">
@@ -557,16 +558,16 @@
     </ECRelationshipClass>
     
     <!-- 3D text element -->
-    <ECEntityClass typeName="SpatialTextAnnotationElement">
+    <ECEntityClass typeName="TextAnnotation3d">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
         <BaseClass>SpatialElement</BaseClass>
     </ECEntityClass>
-    <ECRelationshipClass typeName="SpatialTextAnnotationElementOwnsTextAnnotationData" strength="embedding">
+    <ECRelationshipClass typeName="TextAnnotation3dOwnsTextAnnotationData" strength="embedding">
         <!-- only exists to get automatic deletion of a text element's unique aspect -->
         <Source cardinality="(1,1)" polymorphic="true">
-            <Class class="SpatialTextAnnotationElement"/>
+            <Class class="TextAnnotation3d"/>
         </Source>
         <Target cardinality="(0,1)" polymorphic="true">
             <Class class="TextAnnotationData">
@@ -723,7 +724,7 @@
         <ECProperty propertyName="SymbologyKey" typeName="int"/>
     </ECEntityClass>
 
-    <ECEntityClass typeName="ViewAttachmentElement">
+    <ECEntityClass typeName="ViewAttachment">
         <!-- A reference to a ViewDefinition, placed onto a sheet -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
@@ -742,7 +743,7 @@
             <Class class="ViewDefinition"/>
         </Source>
         <Target cardinality="(1,1)" roleLabel="references" polymorphic="true">
-            <Class class="ViewAttachmentElement">
+            <Class class="ViewAttachment">
                 <Key>
                     <Property name="ViewId"/>
                 </Key>
@@ -1184,13 +1185,13 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="GeometryPart">
-        <BaseClass>CodedObject</BaseClass>
+        <BaseClass>CodedEntity</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
-        <ECProperty propertyName="Geom" typeName="binary">
+        <ECProperty propertyName="GeometryStream" typeName="binary">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>False</IsNullable>
