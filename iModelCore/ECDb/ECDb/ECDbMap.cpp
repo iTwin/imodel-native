@@ -133,7 +133,7 @@ DbResult RelationshipPurger::Prepare(ECDbR ecdb, RelationshipPurger::Commands co
             ECRelationshipConstraintR fkEnd = r->GetRelationshipClass().GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? r->GetRelationshipClass().GetSource() : r->GetRelationshipClass().GetTarget();
             PropertyMapCP fkInstanceId = r->GetRelationshipClass().GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? r->GetSourceECInstanceIdPropMap() : r->GetTargetECInstanceIdPropMap();
             //PropertyMapCP fkClassId = r->GetRelationshipClass().GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? r->GetSourceECClassIdPropMap() : r->GetTargetECClassIdPropMap();
-            auto fkColumn = fkInstanceId->GetFirstColumn()->GetName().c_str();
+            auto fkColumn = fkInstanceId->ExpectingSingleColumn()->GetName().c_str();
 
             if (r->GetClassMapType() == IClassMap::Type::RelationshipEndTable)
                 {
