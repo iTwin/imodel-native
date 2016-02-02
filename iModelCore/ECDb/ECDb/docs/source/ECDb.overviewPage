@@ -94,10 +94,11 @@
     - @ref ECSqlStatementOverview
     - @ref ECSQLOverview
     - @ref ECSQLSamples
-    - @ref ECDbCreatingECDbFromScratch
     - @ref ECDbCodeSamples "Code examples": Illustrates typical workflows when working with business
     data in the @ref ECDbFile "ECDb file".
+    - @ref ECDbRelationshipMappingRules
     - @ref ECDbSchemaMappingCustomization
+    - @ref ECDbCreatingECDbFromScratch
 
     */
 
