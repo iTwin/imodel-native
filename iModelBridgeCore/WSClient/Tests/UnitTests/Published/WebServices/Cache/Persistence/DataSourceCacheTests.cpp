@@ -360,7 +360,7 @@ TEST_F(DataSourceCacheTests, RemoveInstance_InstanceNotCached_ReturnsDataNotCach
     EXPECT_EQ(CacheStatus::DataNotCached, cache->RemoveInstance({"TestSchema.TestClass", "Foo"}));
     }
 
-TEST_F(DataSourceCacheTests, RemoveInstance_InstanceCached_Deletes)
+TEST_F(DataSourceCacheTests, RemoveInstance_InstanceCached_DeletesCachedInstanceFromECDb)
     {
     auto cache = GetTestCache();
 
@@ -368,11 +368,15 @@ TEST_F(DataSourceCacheTests, RemoveInstance_InstanceCached_Deletes)
     instances.Add({"TestSchema.TestClass", "Foo"});
     ASSERT_EQ(SUCCESS, cache->CacheInstanceAndLinkToRoot({"TestSchema.TestClass", "Foo"}, instances.ToWSObjectsResponse(), "foo_root"));
 
+    auto instanceKey = cache->FindInstance({"TestSchema.TestClass", "Foo"});
+    EXPECT_TRUE(DoesInstanceExist(*cache, instanceKey));
+
     EXPECT_EQ(CacheStatus::OK, cache->RemoveInstance({"TestSchema.TestClass", "Foo"}));
-    EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
+    EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "Foo"}).IsValid());
+    EXPECT_FALSE(DoesInstanceExist(*cache, instanceKey));
     }
 
-TEST_F(DataSourceCacheTests, RemoveInstance_NavigationBaseObject_Deletes)
+TEST_F(DataSourceCacheTests, RemoveInstance_NavigationBaseObject_DeletesCachedInstanceFromECDb)
     {
     auto cache = GetTestCache();
 

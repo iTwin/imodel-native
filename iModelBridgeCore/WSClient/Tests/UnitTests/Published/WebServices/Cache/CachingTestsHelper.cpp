@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/CachingTestsHelper.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -89,6 +89,15 @@ ECInstanceKeyCR target
 int CountClassInstances(IDataSourceCache& ds, Utf8StringCR classKey)
     {
     return ds.GetAdapter().CountClassInstances(ds.GetAdapter().GetECClass(classKey));
+    }
+
+bool DoesInstanceExist(IDataSourceCache& ds, ECInstanceKeyCR key)
+    {
+    EXPECT_TRUE(key.IsValid());
+    auto ecClass = ds.GetAdapter().GetECClass(key);
+    EXPECT_TRUE(nullptr != ecClass);
+    auto ecInstanceId = ds.GetAdapter().FindInstance(ecClass, Utf8PrintfString("ECInstanceId = %llu", key.GetECInstanceId().GetValue()));
+    return ecInstanceId.IsValid();
     }
 
 Json::Value ReadInstance(IDataSourceCache& ds, ECInstanceKeyCR key)
