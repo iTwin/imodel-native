@@ -945,7 +945,7 @@ BentleyStatus PropertyMapPoint::_Load(ECDbClassMapInfo const& classMapInfo)
             }
         }
 
-    return SetColumns(xPropMap->GetColumn(), yPropMap->GetColumn(), m_is3d ? &zPropMap->GetColumn() : nullptr);
+    return SetColumns(*xPropMap->ExpectingSingleColumn(), *yPropMap->ExpectingSingleColumn(), m_is3d ? zPropMap->ExpectingSingleColumn() : nullptr);
     }
 
 //----------------------------------------------------------------------------------

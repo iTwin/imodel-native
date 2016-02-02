@@ -685,15 +685,27 @@ struct ECDbPropertyMapInfo : NonCopyableClass
     private:
         ECDbClassMapInfo const&  m_classMap;
         ECDbPropertyPath const& m_propertyPath;
-        ECDbSqlColumn const& m_column;
+        std::vector<ECDbSqlColumn const*> m_columns;
     public:
-        ECDbPropertyMapInfo (ECDbClassMapInfo const& classMap, ECDbPropertyPath const& propertyPath, ECDbSqlColumn const& column)
-            :m_classMap (classMap), m_propertyPath (propertyPath), m_column (column)
+        ECDbPropertyMapInfo (ECDbClassMapInfo const& classMap, ECDbPropertyPath const& propertyPath)
+            :m_classMap (classMap), m_propertyPath (propertyPath)
             {
             }
-        ECDbSqlColumn const& GetColumn () const { return m_column; }
+        std::vector<ECDbSqlColumn const*>& GetColumnsR(){return m_columns;}
+        std::vector<ECDbSqlColumn const*> const& GetColumns() const {return m_columns;}
+        std::vector<ECDbSqlColumn*> GetColumnsPList() const
+            {
+            std::vector<ECDbSqlColumn*> columns;
+            for (auto c : m_columns)
+                columns.push_back(const_cast<ECDbSqlColumn*>(c));
+
+            return columns;
+            }
         ECDbPropertyPath const& GetPropertyPath () const { return m_propertyPath; }
         ECDbClassMapInfo const& GetClassMap () const { return m_classMap; }
+        ECDbSqlColumn const* ExpectingSingleColumn() const {
+            BeAssert(m_columns.size() == 1 && "Expecting exactly one column"); return m_columns.front();
+            }
     };
 
 //======================================================================================
@@ -729,7 +741,7 @@ struct ECDbClassMapInfo : NonCopyableClass
         std::vector<ECDbClassMapInfo*> const& GetChildren () const { return m_childClassMaps; }
         ECDbPropertyMapInfo const * FindPropertyMap (Utf8CP columnName) const;
         ECDbPropertyMapInfo const* FindPropertyMap (ECN::ECPropertyId rootPropertyId, Utf8CP accessString) const;
-        ECDbPropertyMapInfo* CreatePropertyMap (ECDbPropertyPath const& propertyPath, ECDbSqlColumn const& column);
+        ECDbPropertyMapInfo* CreatePropertyMap (ECDbPropertyPath const& propertyPath);
         ECDbPropertyMapInfo* CreatePropertyMap (ECN::ECPropertyId rootPropertyId, Utf8CP accessString, ECDbSqlColumn const& column);
     };
 

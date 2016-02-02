@@ -2713,10 +2713,20 @@ DbResult ECDbMapStorage::InsertPropertyMap (ECDbPropertyMapInfo const& o) const
         return BE_SQLITE_ERROR;
         }
 
-    stmt->BindInt64 (1, o.GetClassMap ().GetId ());
-    stmt->BindInt64 (2, o.GetPropertyPath ().GetId ());
-    stmt->BindInt64 (3, o.GetColumn ().GetId ());
-    const DbResult stat = stmt->Step();
+    DbResult stat = BE_SQLITE_DONE;
+    for (auto column : o.GetColumns())
+        {
+        stmt->BindInt64(1, o.GetClassMap().GetId());
+        stmt->BindInt64(2, o.GetPropertyPath().GetId());
+        stmt->BindInt64(3, column->GetId());
+        stat = stmt->Step();
+        if (stat != BE_SQLITE_DONE)
+            return stat;
+
+        stmt->Reset();
+        stmt->ClearBindings();
+        }
+
     return stat == BE_SQLITE_DONE ? BE_SQLITE_OK : stat;
     }
 
@@ -2796,6 +2806,7 @@ DbResult ECDbMapStorage::ReadPropertyMap (ECDbClassMapInfo& o) const
         return BE_SQLITE_ERROR;
         }
     stmt->BindInt64 (1, o.GetId ());
+    std::map<ECDbPropertyPathId, ECDbPropertyMapInfo*> infoCache;
     while (stmt->Step () == BE_SQLITE_ROW)
         {
         auto propertyPathId = stmt->GetValueInt64 (0);
@@ -2823,12 +2834,23 @@ DbResult ECDbMapStorage::ReadPropertyMap (ECDbClassMapInfo& o) const
             return BE_SQLITE_ERROR;
             }
 
-        auto propertyMap = o.CreatePropertyMap (*propertyPath, *column);
-        if (propertyMap == nullptr)
-            {
-            BeAssert (false && "Failed to create propertyMap");
-            return BE_SQLITE_ERROR;
+        ECDbPropertyMapInfo* info = nullptr;
+        auto itor = infoCache.find(propertyPathId);
+        if (itor == infoCache.end())
+            { 
+            info = o.CreatePropertyMap(*propertyPath);
+            if (info == nullptr)
+                {
+                BeAssert(false && "Failed to create propertyMap");
+                return BE_SQLITE_ERROR;
+                }
             }
+        else
+            {
+            info = itor->second;
+            }
+
+        info->GetColumnsR().push_back(column);
         }
 
     return BE_SQLITE_OK;
@@ -2937,7 +2959,8 @@ const std::map<Utf8CP, ECDbPropertyMapInfo const*, CompareIUtf8> ECDbClassMapInf
     {
     std::map<Utf8CP, ECDbPropertyMapInfo const*, CompareIUtf8> map;
     for (auto propertyMap : GetPropertyMaps (onlyLocal))
-        map[propertyMap->GetColumn ().GetName ().c_str ()] = propertyMap;
+        for(auto column: propertyMap->GetColumns())
+        map[column->GetName ().c_str ()] = propertyMap;
 
     return map;
     }
@@ -2954,7 +2977,7 @@ void ECDbClassMapInfo::GetPropertyMaps (std::vector<ECDbPropertyMapInfo const*>&
     propertyMaps.erase(
         std::remove_if(
             propertyMaps.begin(), 
-            propertyMaps.end(), [] (ECDbPropertyMapInfo const* minfo) { return minfo->GetColumn().GetKind() != ColumnKind::DataColumn; }), 
+            propertyMaps.end(), [] (ECDbPropertyMapInfo const* minfo) { return minfo->ExpectingSingleColumn()->GetKind() != ColumnKind::DataColumn; }),
         propertyMaps.end());
 
     for (auto& localPropertyMap : m_localPropertyMaps)
@@ -2991,9 +3014,9 @@ ECDbPropertyMapInfo const* ECDbClassMapInfo::FindPropertyMap (ECN::ECPropertyId 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-ECDbPropertyMapInfo* ECDbClassMapInfo::CreatePropertyMap (ECDbPropertyPath const& propertyPath, ECDbSqlColumn const& column)
+ECDbPropertyMapInfo* ECDbClassMapInfo::CreatePropertyMap (ECDbPropertyPath const& propertyPath)
     {
-    auto propertyMap = std::unique_ptr<ECDbPropertyMapInfo> (new ECDbPropertyMapInfo (*this, propertyPath, column));
+    auto propertyMap = std::unique_ptr<ECDbPropertyMapInfo> (new ECDbPropertyMapInfo (*this, propertyPath));
     auto p = propertyMap.get ();
     m_localPropertyMaps.push_back (std::move (propertyMap));
     return p;
@@ -3009,7 +3032,10 @@ ECDbPropertyMapInfo* ECDbClassMapInfo::CreatePropertyMap (ECN::ECPropertyId root
         propertyPath = m_map.CreatePropertyPath (rootPropertyId, accessString);
         }
 
-    return CreatePropertyMap (*propertyPath, column);
+    auto prop = CreatePropertyMap(*propertyPath);
+    BeAssert(prop != nullptr);
+    prop->GetColumnsR().push_back(&column);
+    return prop;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

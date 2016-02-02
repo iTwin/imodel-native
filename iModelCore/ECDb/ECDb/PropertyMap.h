@@ -216,7 +216,7 @@ private:
             return ERROR;
             }
 
-        SetColumn(*const_cast<ECDbSqlColumn*>(&info->GetColumn ()));
+        SetColumn(*const_cast<ECDbSqlColumn*>(info->ExpectingSingleColumn()));
         return SUCCESS;
         }
 

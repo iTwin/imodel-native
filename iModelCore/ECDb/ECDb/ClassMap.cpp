@@ -1038,13 +1038,13 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
         for (auto propertyInfo : allPropertyInfos)
             {
             bool isLocal = localPropSet.find(propertyInfo->GetPropertyPath().GetName().c_str()) != localPropSet.end();
-            if (propertyInfo->GetColumn().GetKind() == ColumnKind::ECClassId)
+            if (propertyInfo->ExpectingSingleColumn()->GetKind() == ColumnKind::ECClassId)
                 continue;
 
             if (isLocal && !secondaryTable)
-                secondaryTable = const_cast<ECDbSqlTable*>(&propertyInfo->GetColumn().GetTable());
+                secondaryTable = const_cast<ECDbSqlTable*>(&propertyInfo->ExpectingSingleColumn()->GetTable());
             else if (!primaryTable)
-                primaryTable = const_cast<ECDbSqlTable*>(&propertyInfo->GetColumn().GetTable());
+                primaryTable = const_cast<ECDbSqlTable*>(&propertyInfo->ExpectingSingleColumn()->GetTable());
             }
 
         if (secondaryTable)
