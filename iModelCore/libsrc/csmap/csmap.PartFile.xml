@@ -60,7 +60,7 @@
     <Part Name="PublicAPI" BentleyBuildMakeFile="prewire.mke">
         <Bindings>
             <VendorAPI Domain="csmap" />
-            <Files ProductDirectoryName="VendorNotices" Required="true">Delivery/csmap-notice.txt</Files>
+            <VendorNotices>Delivery/csmap-license.txt</VendorNotices>
         </Bindings>
     </Part>
 

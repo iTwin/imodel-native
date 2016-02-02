@@ -6,7 +6,7 @@
 #       $Date: 2010/04/21 15:09:58 $
 #     $Author: Alain.Robert $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 %include mdl.mki
@@ -14,5 +14,5 @@
 $(BuildContext)VendorAPI/csmap : $(_MakeFilePath)Include
     $(LinkFirstDepToFirstTargetAsDirectory)
 
-$(BuildContext)Delivery/csmap-notice.txt : $(_MakeFilePath)license.txt
+$(BuildContext)Delivery/csmap-license.txt : $(_MakeFilePath)license.txt
     $(LinkFirstDepToFirstTarget)
