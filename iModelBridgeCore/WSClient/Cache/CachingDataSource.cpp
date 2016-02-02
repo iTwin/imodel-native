@@ -705,7 +705,7 @@ ICancellationTokenPtr ct
 
                 if (!rejected.empty())
                     {
-                    SyncCachedInstancesTask::Run(this->shared_from_this(), rejected, ct)
+                    SyncCachedInstancesTask::Run(this->shared_from_this(), rejected, nullptr, ct)
                         ->Then(m_cacheAccessThread, [=] (BatchResult instancesResult)
                         {
                         if (instancesResult.IsSuccess())
@@ -1389,7 +1389,7 @@ AsyncTaskPtr<CachingDataSource::BatchResult> CachingDataSource::SyncCachedData
 bvector<ECInstanceKey> initialInstances,
 bvector<IQueryProvider::Query> initialQueries,
 bvector<IQueryProviderPtr> queryProviders,
-ProgressCallback onProgress,
+SyncProgressCallback onProgress,
 ICancellationTokenPtr ct
 )
     {

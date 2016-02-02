@@ -73,7 +73,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         typedef FailedObjects& FailedObjectsR;
         typedef const FailedObjects& FailedObjectsCR;
 
-        typedef std::function<void(double bytesTransfered, double bytesTotal)> ProgressCallback;
         typedef std::function<void(double bytesTransfered, double bytesTotal, Utf8StringCR taskLabel)> LabeledProgressCallback;
 
         //! synced - percentage (0.0 -> 1.0) of total sync done based on instances count
@@ -251,7 +250,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         //! @param initialInstances - list of instances that should be used to start syncing
         //! @param initialQueries - list of queries that should be used to start syncing
         //! @param queryProviders - list of query providers to get queries for each instance that is being synced
-        //! @param onProgress
+        //! @param onProgress - progress callback. 
+        //! Synced parameter - reports instances + queries synced. File sync represented by bytes synced.
+        //! Note that synced value will fluctuate if query providers return more queries to sync.
+        //! Label parameter can be empty or file label being synced. 
         //! @param ct - cancelling sync task
         //! @return fatal error (like server error or connection is lost) - sync is stopped and error is returned. 
         //! If server returns error specific to instances being synced (forbidden, conflict, etc) – it is put into return value list and returned as “FailedObject” 
@@ -261,7 +263,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             bvector<ECInstanceKey> initialInstances,
             bvector<IQueryProvider::Query> initialQueries,
             bvector<IQueryProviderPtr> queryProviders,
-            ProgressCallback onProgress,
+            SyncProgressCallback onProgress,
             ICancellationTokenPtr ct
             ) = 0;
 

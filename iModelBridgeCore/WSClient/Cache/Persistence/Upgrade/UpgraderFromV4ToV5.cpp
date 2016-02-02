@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Upgrade/UpgraderFromV4ToV5.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -89,7 +89,7 @@ BentleyStatus UpgraderFromV4ToV5::Upgrade()
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
     schemaCache->AddSchema(*joinSchema);
 
-    return m_adapter.GetECDb().Schemas().ImportECSchemas(*schemaCache, ECDbSchemaManager::ImportOptions(true, true));
+    return m_adapter.GetECDb().Schemas().ImportECSchemas(*schemaCache, ECDbSchemaManager::ImportOptions());
     }
 
 /*--------------------------------------------------------------------------------------+
