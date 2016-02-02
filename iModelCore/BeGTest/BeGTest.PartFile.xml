@@ -154,6 +154,7 @@
         <ProductDirectory Name="ECObjectsTestSeedDataV3Conversion"  Path="Assets/SeedData/V3Conversion" LibType="static"/>
         
         <ProductDirectory Name="WSClientTestAssets"                 Path="Assets/WSClientTestAssets"/>
+        <ProductDirectory Name="WSClientTestAssets"                 Path="Assets/WSClientTestAssets" LibType="static"/>
 
         <ProductDirectory Name="DgnClientSdkIncludeDirectory" Deliver="false"/>
         <ProductDirectory Name="DgnClientSdkIncludeDirectory" Deliver="false" LibType="static"/>
