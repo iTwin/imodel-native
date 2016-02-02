@@ -910,6 +910,7 @@
                     <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
                 <!-- We must index the Priority column, so that we can do selects with ... ORDERBY Priority. Priority may be 0. That's why it's not unique. -->
+                <!-- WIP_ELEMENT_DEPENDENCY_GRAPH Incredibly, adding this index causes priority-order tests to fail. Must look into this soon.
                 <Indexes>
                     <DbIndex>
                         <IsUnique>False</IsUnique>
@@ -918,6 +919,7 @@
                         </Properties>
                     </DbIndex>
                 </Indexes>
+                -->
             </ClassMap>
             <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
                 <AllowDuplicateRelationships>True</AllowDuplicateRelationships>
