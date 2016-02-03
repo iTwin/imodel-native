@@ -68,7 +68,7 @@
     <Part Name="google_gtest_lib" BentleyBuildMakeFile="gtestlib.mke" BMakeOptions="" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86,iOSARM,iOSX86,WinRTx86,WinRTx64,WinRTARM">
         <SubPart PartName="google_gtest"/>
         <Bindings>
-            <Libs>Delivery/$(stlibprefix)gtest$(stlibext)</Libs>
+            <Libs ProductDirectoryName="UnitTestLibs" Required="false">Delivery/$(stlibprefix)gtest$(stlibext)</Libs>
         </Bindings>
     </Part>
 
