@@ -2,12 +2,15 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HRPFilterTester.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 
 #include "../imagepptestpch.h"
+
+#ifdef USE_GTEST        // TEST_P only available when using gtest.
+
 #include <ImagePP/all/h/HRAImageOp.h>
 #include <ImagePP/all/h/HRPFunctionFilters.h>
 #include <ImagePP/all/h/HRPFilter.h>
@@ -140,9 +143,9 @@ class HRPFilterTester : public ::testing::TestWithParam< ::std::tr1::tuple<HFCPt
     HFCPtr<HRARaster> CreateRaster(HFCPtr<HRPPixelType> pPixelType, uint32_t width, uint32_t height)
         {
         //Creates a valid empty raster
-        HFCPtr<HRARaster> pRaster = HRABitmap::Create(width, height, NULL, s_pHMRWorld->GetCoordSysReference(HGF2DWorld_UNKNOWNWORLD),
+        HFCPtr<HRABitmap> pRaster = HRABitmap::Create(width, height, NULL, s_pHMRWorld->GetCoordSysReference(HGF2DWorld_UNKNOWNWORLD),
                                                         pPixelType, pPixelType->CountPixelRawDataBits());
-        return pRaster;
+        return pRaster.GetPtr();
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -248,3 +251,9 @@ INSTANTIATE_TEST_CASE_P(HRPFilterTests,
                         ::testing::Combine(::testing::ValuesIn(s_GetPixelTypeVector()),
                                            ::testing::Values(static_cast<uint32_t>(11)),
                                            ::testing::Values(static_cast<uint32_t>(8))));
+
+#else
+
+#pragma message("Warining: Disabling HRPFilterTester because TEST_P/INSTANTIATE_TEST_CASE_P are not available")
+
+#endif

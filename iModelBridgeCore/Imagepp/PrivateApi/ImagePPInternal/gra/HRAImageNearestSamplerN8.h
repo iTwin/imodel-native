@@ -9,6 +9,7 @@
 #pragma once
 
 #include "HRAImageSampler.h" //<ImagePPInternal/gra/HRAImageSampler.h>
+#include "HRAImageSurface.h"
 
 BEGIN_IMAGEPP_NAMESPACE
 

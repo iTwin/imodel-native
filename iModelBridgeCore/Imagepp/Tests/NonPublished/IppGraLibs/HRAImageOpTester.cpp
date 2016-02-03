@@ -2,10 +2,13 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HRAImageOpTester.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #include "../imagepptestpch.h"
+
+#ifdef USE_GTEST        // TEST_P only available when using gtest.
+
 #include "HRAImageOpTester.h"
 #include <Logging\bentleylogging.h>
 
@@ -405,7 +408,7 @@ TEST_P(HRAImageOpCombinePixelTypes, TestFilterVsPixelTypes)
                     {
                     WChar err[1024];
                     BeStringUtilities::Snwprintf (err, L"Could not set output to pixel type %ls, but it is among the available ones. Input pixel type: %ls, Filter:%ls", 
-                                                       pixelTypeOutName, pixelTypeInName, filterCreator.GetOperationName());
+                                                       pixelTypeOutName.c_str(), pixelTypeInName.c_str(), filterCreator.GetOperationName());
                     FAIL() << err;
                     }
                 pixelTypeIndex++;
@@ -417,7 +420,7 @@ TEST_P(HRAImageOpCombinePixelTypes, TestFilterVsPixelTypes)
 
     // Log information about filter being tested
     ILogger* pLogger = LoggingManager::GetLogger ( L"TestFilterVsPixelTypes" );
-    pLogger->infov(L"In TestFilterVsPixelTypes - Testing filter: %ls, pixel types in/out: %ls/%ls", filterCreator.GetOperationName(), pixelTypeInName, pixelTypeOutName);
+    pLogger->infov(L"In TestFilterVsPixelTypes - Testing filter: %ls, pixel types in/out: %ls/%ls", filterCreator.GetOperationName(), pixelTypeInName.c_str(), pixelTypeOutName.c_str());
 
     // Create input and output images
     HRAImageSamplePtr pImageIn;
@@ -440,7 +443,7 @@ TEST_P(HRAImageOpCombinePixelTypes, TestFilterVsPixelTypes)
         {
         WChar err[1024];
         BeStringUtilities::Snwprintf (err, L"%ls Filter:%ls, input pixel type: %ls, output pixel type: %ls", 
-                                      errorMsg, filterCreator.GetOperationName(), pixelTypeInName, pixelTypeOutName);
+                                      errorMsg.c_str(), filterCreator.GetOperationName(), pixelTypeInName.c_str(), pixelTypeOutName.c_str());
         FAIL() << err;
         }
 
@@ -619,7 +622,7 @@ bool BufferAllocator::VerifyBuffer(HRAImageSamplePtr& prImageSample, HFCPtr<HRPP
         if (PADDING_BYTE != pInternalBuffer[i])
             {
             BeStringUtilities::Snwprintf (error, L"TEST: (%ls, %ls) - In VerifyBuffer: pInternalBuffer[%d] == %d; it should be equal to %d.", 
-                                            testCaseName, testName, i, (Byte) pInternalBuffer[i], PADDING_BYTE);
+                                            testCaseName.c_str(), testName.c_str(), i, (Byte) pInternalBuffer[i], PADDING_BYTE);
             errorMsg = WString (error);
             return false;
             }
@@ -635,7 +638,7 @@ bool BufferAllocator::VerifyBuffer(HRAImageSamplePtr& prImageSample, HFCPtr<HRPP
             if (PADDING_BYTE != pLineBuffer[i])
                 {
                 BeStringUtilities::Snwprintf (error, L"TEST: (%ls, %ls) - In VerifyBuffer: idxLine == %d, pLineBuffer[%d] == %d; it should be equal to %d.", 
-                                              testCaseName, testName, idxLine, i, (Byte) pLineBuffer[i], PADDING_BYTE);
+                                              testCaseName.c_str(), testName.c_str(), idxLine, i, (Byte) pLineBuffer[i], PADDING_BYTE);
                 errorMsg = WString (error);
                 return false;
                 }
@@ -649,7 +652,7 @@ bool BufferAllocator::VerifyBuffer(HRAImageSamplePtr& prImageSample, HFCPtr<HRPP
             if (PADDING_BYTE != pEndLinePadding[i])
                 {
                 BeStringUtilities::Snwprintf (error, L"TEST: (%ls, %ls) - In VerifyBuffer: idxLine == %d, pEndLinePadding[%d] == %d; it should be equal to %d.", 
-                                              testCaseName, testName, idxLine, i, (Byte) pEndLinePadding[i], PADDING_BYTE);
+                                              testCaseName.c_str(), testName.c_str(), idxLine, i, (Byte) pEndLinePadding[i], PADDING_BYTE);
                 errorMsg = WString (error);
                 return false;
                 }
@@ -664,7 +667,7 @@ bool BufferAllocator::VerifyBuffer(HRAImageSamplePtr& prImageSample, HFCPtr<HRPP
         if (PADDING_BYTE != pLineBuffer[i])
             {
             BeStringUtilities::Snwprintf (error, L"TEST: (%ls, %ls) - In VerifyBuffer: pLineBuffer[%d] == %d; it should be equal to %d.", 
-                                            testCaseName, testName, i, (Byte) pLineBuffer[i], PADDING_BYTE);
+                                            testCaseName.c_str(), testName.c_str(), i, (Byte) pLineBuffer[i], PADDING_BYTE);
             errorMsg = WString (error);
             return false;
             }
@@ -994,3 +997,8 @@ TEST_P(ImageOpPipelineTest, PixelTypeConnection)
         }
     }
 
+#else
+
+#pragma message("Warining: Disabling HRAImageOpTester because TEST_P/INSTANTIATE_TEST_CASE_P are not available")
+
+#endif

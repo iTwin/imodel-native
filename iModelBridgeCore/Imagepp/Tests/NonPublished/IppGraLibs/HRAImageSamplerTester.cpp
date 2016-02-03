@@ -2,11 +2,14 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HRAImageSamplerTester.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 #include "../imagepptestpch.h"
+
+#ifdef USE_GTEST        // TEST_P only available when using gtest.
+
 #include <ImagePP/all/h/HCDPacketRLE.h>
 #include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>
 #include <ImagePP/all/h/HRAImageOp.h>
@@ -1551,3 +1554,8 @@ TEST_F(EditorN1Tester, EditorN1TesterTest)
     ClearPixelsTest();
     }
 
+#else
+
+#pragma message("Warining: Disabling HRAImageSamplerTester because TEST_P/INSTANTIATE_TEST_CASE_P are not available")
+
+#endif

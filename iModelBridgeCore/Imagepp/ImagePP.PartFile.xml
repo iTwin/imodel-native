@@ -12,7 +12,7 @@
     <!-- ////////////////////////////// IPP external libs  ////////////////////////////////////// -->
     <Part Name="Base64Lib"  BentleyBuildMakeFile="ext/Base64/Base64.mke"> </Part>
     
-    <Part Name="GdalLib"  BentleyBuildMakeFile="ext/gdal/gdal.mke">
+    <Part Name="GdalLib"  BentleyBuildMakeFile="ext/gdal/gdal.mke" ExcludePlatforms="WinRT*">
         <SubPart PartName="png"                     PartFile="png"              Repository="libsrc-png"/>
         <SubPart PartName="Zlib"                    PartFile="Zlib"             Repository="Libsrc-Compress" />
         <SubPart PartName="BeLibJpegTurbo"          PartFile="BeLibJpegTurbo"   Repository="libsrc-libjpegturbo"/>
@@ -160,15 +160,18 @@
     <Part Name="ImagePP-Android" OnlyPlatforms="Android*">
         <SubPart PartName="ImagePPDll" LibType="Static"/>
     </Part>    
-        
-    <Part Name="ImagePP-Tested">
-        <SubPart PartName="RunGtest"/>
-    </Part>
-    
+            
     <Part Name="ImagePP-Dev">
         <SubPart PartName= "ImagePP" />
         <SubPart PartName= "ImagePP-Tested" />
         <SubProduct ProductName="ImageppApps" PartFile="ImageppApps" Repository="ImageppApps" />
+    </Part>
+
+    <Part Name="ImagePP-Tested">
+        <SubPart PartName="RunGtest" />
+        <SubProduct ProductName="AndroidJUnit-ImagePP-TestCollection"/>
+        <SubProduct ProductName="iOSXCTest-ImagePP-TestCollection"/>
+        <SubProduct ProductName="WinRTCppUnitTest-ImagePP-TestCollection"/>
     </Part>
 
     <!-- Use this part to validate that everything that use(and we maintain) IPP build
@@ -196,7 +199,7 @@
          <SubPart PartName="UnitTests-NonPublished"/>
         <!-- Not yet SubPart PartName="UnitTests-Published"/-->
     </Part>
-    
+   
     <Product Name="ImagePP-Tests">
         <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base"/>
         <SubPart PartName="Tests"/>
@@ -204,23 +207,23 @@
         <Directories DirectoryListName="ImagePPGTestsDir"/>
     </Product>    
     
-    <!-- Define a gtest program to run the tests Urlmon.lib -dGUNITTEST_LIBS="wininet.lib Urlmon.lib"' -->
-    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ImagePPTest -dTEST_COLLECTION_PRODUCT=ImagePP-Tests -dGUNITTEST_NTLIBS=Urlmon.lib" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <!-- Define a gtest program to run the tests -->
+    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ImagePPTests -dTEST_COLLECTION_PRODUCT=ImagePP-Tests -dGUNITTEST_NTLIBS=Urlmon.lib" OnlyPlatforms="x86,x64,Linux*,MacOS*">
          <SubProduct ProductName="ImagePP-Tests"/>
          <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
-            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/ImagePPTest/Assemblies/*</Files>
-            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/ImagePPTest/Assets" />
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/ImagePPTests/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/ImagePPTests/Assets" />
         </Bindings>
-    </Part>   
-    
+    </Part>
+
     <Product Name="ImagePP-Gtest">
         <SubPart PartName="Gtest"/>
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
         <Directories DirectoryListName="ImagePPGTestsDir"/>
     </Product>    
 
-    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ImagePP-GTest/ImagePPTest -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/ImagePP -dGTEST_SHOW_PROGRESS" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ImagePP-GTest/ImagePPTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/ImagePP -dGTEST_SHOW_PROGRESS" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="ImagePP-GTest"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     </Part>
@@ -229,6 +232,80 @@
         <ProductDirectory Name="MrSidAssemblies"                Deliver="false" />
         <ProductDirectory Name="ErdasEcwJpeg2000Assemblies"     Deliver="false" />
         <ProductDirectory Name="GDalData"                       Deliver="false"/>
+        <ProductDirectory Name="GDalData"                       Deliver="false" LibType="static"/>
     </ProductDirectoryList>
 
+
+    <!-- ******************************************************************************************* -->
+    <!-- *******************              Test Collection                      ********************* -->
+    <!-- ******************************************************************************************* -->
+    
+    <!-- (There must be a static and a dynamic version to support how we build for the various platforms.) -->
+    <Part Name="TestCollection-Dynamic" OnlyPlatforms="x86,x64,Linux*,MacOS*,WinRT*">
+        <SubPart PartName="Tests"/>
+    </Part>
+
+    <Part Name="TestCollection-Static" ExcludePlatforms="x86,x64,Linux*,MacOS*,WinRT*">
+        <SubPart PartName="Tests" LibType="Static"/>
+    </Part>
+
+    <Product Name="ImagePP-TestCollection" >
+        <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="TestCollection-Static"/>
+        <SubPart PartName="TestCollection-Dynamic"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="ImagePPGTestsDir"/>
+    </Product>
+
+    <!--                ********************** -->
+    <!--                **** AndroidJUnit **** -->
+    <!--                ********************** -->
+    <Part Name="AndroidJUnit-TestCollection" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=ImagePPTests -dTEST_COLLECTION_PRODUCT=ImagePP-TestCollection -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+        <SubProduct ProductName="ImagePP-TestCollection"/>
+        <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJU/ImagePPTests/Project" />
+        </Bindings>
+    </Part>
+
+    <Product Name="AndroidJUnit-ImagePP-TestCollection" >
+        <SubPart PartName="AndroidJUnit-TestCollection" LibType="Static"/>
+        <Directories DirectoryListName="AndroidJUnitProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="ImagePPGTestsDir"/>
+    </Product>
+
+    <!--                ********************** -->
+    <!--                **** iOSXCTest ******* -->
+    <!--                ********************** -->
+    <Part Name="iOSXCTest-TestCollection" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=ImagePPTests -dTEST_COLLECTION_PRODUCT=ImagePP-TestCollection -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="ImagePP-TestCollection"/>
+        <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/ImagePPTests/Project" />
+        </Bindings>
+    </Part>
+
+    <Product Name="iOSXCTest-ImagePP-TestCollection" >
+        <SubPart PartName="iOSXCTest-TestCollection" LibType="Static"/>
+        <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="ImagePPGTestsDir"/>
+    </Product>
+
+    <!--                ************************** -->
+    <!--                **** WinRTCppUnitTest **** -->
+    <!--                ************************** -->
+    <Part Name="WinRTCppUnitTest-TestCollection" BentleyBuildMakeFile="${SrcRoot}BeGTest/WinRT/MakeCppUnitProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=ImagePPTests -dTEST_COLLECTION_PRODUCT=ImagePP-TestCollection -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="WinRT*">
+        <SubProduct ProductName="ImagePP-TestCollection"/>
+        <SubPart PartName="WinRTCppUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="WinRTCppUnitTestProject" SourceName="Delivery/WnRTCpU/ImagePPTests/Project" />
+        </Bindings>
+    </Part>
+
+    <Product Name="WinRTCppUnitTest-ImagePP-TestCollection" >
+        <SubPart PartName="WinRTCppUnitTest-TestCollection" LibType="Static"/>
+        <Directories DirectoryListName="WinRTCppUnitTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="ImagePPGTestsDir"/>
+    </Product>
+    
 </BuildContext>

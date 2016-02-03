@@ -244,12 +244,30 @@
 #include <ImagePP\all\h\HRSObjectStore.h>
 
 
-// Extra STL no included by hstdcpp.h
-// #include <stack>
-// #include <functional>
-// #include <iomanip>
+// General compiler Include files
+#if defined (BENTLEY_WIN32) ||defined(BENTLEY_WINRT)
+
 #include <concrt.h>
 #include <ppl.h>
+#define HAVE_CONCURRENCY_RUNTIME 
+
+#elif defined(__unix__)
+
+    #if defined (__APPLE__)
+    // apple specific here
+    #endif
+   
+    #if defined (ANDROID)
+    // android specific here
+    #endif
+
+#else
+    #error unknown compiler
+#endif
+
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 // Private APIs
 #include "../../PrivateApi/ImagePPInternal/gra/HRAImageNearestSamplerN8.h"

@@ -238,6 +238,8 @@ $(o)ogrgeometrycollection$(oext) : $(ippGdalDir)ogr/ogrgeometrycollection.cpp ${
 
 $(o)ogrgeometryfactory$(oext) : $(ippGdalDir)ogr/ogrgeometryfactory.cpp ${MultiCompileDepends}
 
+$(o)ogrgeomfielddefn$(oext) : $(ippGdalDir)ogr/ogrgeomfielddefn.cpp ${MultiCompileDepends}
+
 $(o)ogrlinearring$(oext) : $(ippGdalDir)ogr/ogrlinearring.cpp ${MultiCompileDepends}
 
 $(o)ogrlinestring$(oext) : $(ippGdalDir)ogr/ogrlinestring.cpp ${MultiCompileDepends}
@@ -793,7 +795,8 @@ $(o)gdalrescaledalphaband$(oext) : $(ippGdalDir)gcore/gdalrescaledalphaband.cpp 
 
 $(o)gdalvirtualmem$(oext) : $(ippGdalDir)gcore/gdalvirtualmem.cpp ${MultiCompileDepends}
 
-$(o)jp2dump$(oext) : $(ippGdalDir)gcore/jp2dump.cpp ${MultiCompileDepends}
+# junk!
+#$(o)jp2dump$(oext) : $(ippGdalDir)gcore/jp2dump.cpp ${MultiCompileDepends}
 
 $(o)overview$(oext) : $(ippGdalDir)gcore/overview.cpp ${MultiCompileDepends}
 

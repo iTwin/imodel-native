@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HRAImageOpContrastStretchTester.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -21,7 +21,14 @@ class HRAImageOpContrastStretchTester : public testing::Test
         void TestFiltering(HRAImageOpPtr imageOp, HRAImageSampleCR imageSampleIn, HRAImageSampleCR imageSampleOutExpected);
         void TestAvailableInputPixelType(HRAImageOpPtr pImageOp, uint32_t pixelTypeId, uint32_t pixelTypeIndex, HFCPtr<HRPPixelType> pixelTypeToMatch, uint32_t expectedStatus);
         void TestAvailableOutputPixelType(HRAImageOpPtr pImageOp, uint32_t pixelTypeId, uint32_t pixelTypeIndex, HFCPtr<HRPPixelType> pixelTypeToMatch, uint32_t expectedStatus);
-        static const ::testing::TestInfo* TestInfo();
+        
+#ifdef USE_GTEST   
+        CharCP GetTestName() const {return ::testing::UnitTest::GetInstance()->current_test_info()->name();}
+        CharCP GetTestCaseName() const {return ::testing::UnitTest::GetInstance()->current_test_info()->test_case_name();}
+#else
+        CharCP GetTestName() const { return GetTestNameA();}
+        CharCP GetTestCaseName() const { return GetTestCaseNameA();}
+#endif
 
         IImageAllocator& GetMemoryManager();
 
@@ -106,16 +113,19 @@ TEST_F(HRAImageOpContrastStretchTester, LightnessContrastStretchTest)
     TestAvailableInputPixelType(pNewOp, HRPPixelTypeV24R8G8B8::CLASS_ID, 1, new HRPPixelTypeV24R8G8B8(), IMAGEOP_STATUS_NoMorePixelType);
 
     //Test Get/Set
-    float MinValue, MaxValue, MinContrastValue, MaxContrastValue;
-    double GammaFactor;
+    float MinValue, MaxValue;
     pNewOp->GetInterval(MinValue, MaxValue);
-    ASSERT_FLOAT_EQ(20, MinValue);
-    ASSERT_FLOAT_EQ(87, MaxValue);
+    ASSERT_DOUBLE_EQ(20.0, MinValue);
+    ASSERT_DOUBLE_EQ(87.0, MaxValue);
+
+    float MinContrastValue, MaxContrastValue;
     pNewOp->GetContrastInterval(MinContrastValue, MaxContrastValue);
-    ASSERT_FLOAT_EQ(0, MinContrastValue);
-    ASSERT_FLOAT_EQ(99, MaxContrastValue);
+    ASSERT_DOUBLE_EQ(0.0, MinContrastValue);
+    ASSERT_DOUBLE_EQ(99.0, MaxContrastValue);
+
+    double GammaFactor;
     pNewOp->GetGammaFactor(GammaFactor);
-    ASSERT_DOUBLE_EQ(1, GammaFactor);
+    ASSERT_DOUBLE_EQ(1.0, GammaFactor);
 
     //TODO #JB
     //TestFiltering
@@ -157,9 +167,9 @@ void HRAImageOpContrastStretchTester::TestAvailableInputPixelType(HRAImageOpPtr 
 
     if (imageOpStatus != expectedStatus)
         {
-        wchar_t errorMsg[512];
-        BeStringUtilities::Snwprintf (errorMsg, L"TEST: (%hs, %hs) - In TestAvailableInputPixelType: ImagePPStatus:%d expectedStatus:%d", 
-                                      TestInfo()->test_case_name(), TestInfo()->name(), imageOpStatus, expectedStatus);
+        char errorMsg[512];
+        BeStringUtilities::Snprintf (errorMsg, "TEST: (%s, %s) - In TestAvailableInputPixelType: ImagePPStatus:%d expectedStatus:%d", 
+                                      GetTestCaseName(), GetTestName(), imageOpStatus, expectedStatus);
         FAIL() << errorMsg;
         }
 
@@ -168,9 +178,9 @@ void HRAImageOpContrastStretchTester::TestAvailableInputPixelType(HRAImageOpPtr 
         {
         if (!pixelType->IsCompatibleWith(pixelTypeId))
             {
-            wchar_t errorMsg[512];
-            BeStringUtilities::Snwprintf (errorMsg, L"TEST: (%hs, %hs) - In TestAvailableInputPixelType: pixel type not compatible with:%d", 
-                                          TestInfo()->test_case_name(), TestInfo()->name(), pixelTypeId);
+            char errorMsg[512];
+            BeStringUtilities::Snprintf (errorMsg, "TEST: (%s, %s) - In TestAvailableInputPixelType: pixel type not compatible with:%d", 
+                                          GetTestCaseName(), GetTestName(), pixelTypeId);
             FAIL() << errorMsg;
             }
         }
@@ -187,9 +197,9 @@ void HRAImageOpContrastStretchTester::TestAvailableOutputPixelType(HRAImageOpPtr
 
     if (imageOpStatus != expectedStatus)
         {
-        wchar_t errorMsg[512];
-        BeStringUtilities::Snwprintf (errorMsg, L"TEST: (%hs, %hs) - In TestAvailableOutputPixelType: ImagePPStatus:%d expectedStatus:%d", 
-                                      TestInfo()->test_case_name(), TestInfo()->name(), imageOpStatus, expectedStatus);
+        char errorMsg[512];
+        BeStringUtilities::Snprintf (errorMsg, "TEST: (%s, %s) - In TestAvailableOutputPixelType: ImagePPStatus:%d expectedStatus:%d", 
+                                      GetTestCaseName(), GetTestName(), imageOpStatus, expectedStatus);
         FAIL() << errorMsg;
         }
 
@@ -198,9 +208,9 @@ void HRAImageOpContrastStretchTester::TestAvailableOutputPixelType(HRAImageOpPtr
         {
         if (!pixelType->IsCompatibleWith(pixelTypeId))
             {
-            wchar_t errorMsg[512];
-            BeStringUtilities::Snwprintf (errorMsg, L"TEST: (%hs, %hs) - In TestAvailableOutputPixelType: pixel type not compatible with:%d", 
-                                          TestInfo()->test_case_name(), TestInfo()->name(), pixelTypeId);
+            char errorMsg[512];
+            BeStringUtilities::Snprintf (errorMsg, "TEST: (%s, %s) - In TestAvailableOutputPixelType: pixel type not compatible with:%d", 
+                                          GetTestCaseName(), GetTestName(), pixelTypeId);
             FAIL() << errorMsg;
             }
         }
@@ -235,7 +245,7 @@ void HRAImageOpContrastStretchTester::TestFiltering(HRAImageOpPtr pImageOp, HRAI
     Byte* pOutBuffer = pImageOut->GetBufferP()->GetDataP(pitch);
     size_t pitchExpected;
     const Byte* pOutBufferExpected = imageSampleOutExpected.GetBufferCP()->GetDataCP(pitchExpected);
-    ASSERT_EQ(pitch, pitchExpected) << L"TEST: (" << TestInfo()->test_case_name() << ", " << TestInfo()->name() << ") - In TestFiltering.";
+    ASSERT_EQ(pitch, pitchExpected) << "TEST: (" << GetTestCaseName() << ", " << GetTestName() << ") - In TestFiltering.";
 
     uint32_t posBuffer = 0;
     for(uint32_t row=0; row < height; ++row)
@@ -246,9 +256,9 @@ void HRAImageOpContrastStretchTester::TestFiltering(HRAImageOpPtr pImageOp, HRAI
                 {
                 if (pOutBuffer[posBuffer] != pOutBufferExpected[posBuffer])
                     {
-                    wchar_t errorMsg[512];
-                    BeStringUtilities::Snwprintf (errorMsg, L"TEST: (%hs, %hs) - In TestFiltering: pOutBuffer[%d]:%d pOutBufferExpected[%d]:%d", 
-                                                  TestInfo()->test_case_name(), TestInfo()->name(),
+                    char errorMsg[512];
+                    BeStringUtilities::Snprintf (errorMsg, "TEST: (%s, %s) - In TestFiltering: pOutBuffer[%d]:%d pOutBufferExpected[%d]:%d", 
+                                                  GetTestCaseName(), GetTestName(),
                                                   posBuffer, pOutBuffer[posBuffer], posBuffer, pOutBufferExpected[posBuffer]);
                     FAIL() << errorMsg;
                     }
@@ -257,13 +267,6 @@ void HRAImageOpContrastStretchTester::TestFiltering(HRAImageOpPtr pImageOp, HRAI
             }
         }
     }    
-    
-//==================================================================================
-// Utility method that returns TestInfo
-//==================================================================================
-const ::testing::TestInfo* HRAImageOpContrastStretchTester::TestInfo()
-    {
-    return ::testing::UnitTest::GetInstance()->current_test_info();
-    }
+
 
 
