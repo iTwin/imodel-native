@@ -281,8 +281,6 @@ $(CoreObjs)FenceParams$(oext) :                     $(DgnCoreDir)FenceParams.cpp
 
 $(CoreObjs)GParray$(oext) :                         $(DgnCoreDir)GParray.cpp $(DgnPlatformAPISrc)GPArray.h ${MultiCompileDepends}
 
-$(CoreObjs)IAuxSystem$(oext) :                      $(DgnCoreDir)IAuxSystem.cpp $(contextDepends) ${MultiCompileDepends}
-
 $(CoreObjs)GradientSettings$(oext) :                $(DgnCoreDir)GradientSettings.cpp $(DgnPlatformAPISrc)GradientSettings.h ${MultiCompileDepends}
 
 $(CoreObjs)UnitManager$(oext) :                     $(DgnCoreDir)UnitManager.cpp $(DgnPlatformAPISrc)UnitDefinition.h ${MultiCompileDepends}

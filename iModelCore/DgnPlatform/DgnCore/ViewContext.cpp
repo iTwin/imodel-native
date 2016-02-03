@@ -1507,6 +1507,11 @@ enum
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int getGridPlaneViewIntersections(DPoint3dP intersections, DPoint3dCP planePoint, DPoint3dCP planeNormal, double spacing, DgnViewportCR vp)
     {
+    DRange3d range = vp.GetViewController().GetViewedExtents(); // Limit grid to project extents...
+
+    if (range.IsEmpty())
+        return 0;
+
     static int const index[12][2] = {
                         {NPC_000, NPC_001},     // lines connecting front to back
                         {NPC_100, NPC_101},
@@ -1525,11 +1530,15 @@ static int getGridPlaneViewIntersections(DPoint3dP intersections, DPoint3dCP pla
                         };
 
     Frustum frust = vp.GetFrustum(DgnCoordSystem::World, true);
-    int     nIntersections = 0;
+
+    range.IntersectionOf(range, frust.ToRange());
+    range.Get8Corners(frust.m_pts);
+
+    int nIntersections = 0;
 
     for (int i=0; i<12; i++)
         {
-        double  param;
+        double param;
 
         if (bsiGeom_linePlaneIntersection(&param, intersections+nIntersections, &frust.GetCorner(index[i][0]), &frust.GetCorner(index[i][1]), planePoint, planeNormal) && param >= 0.0 && param <= 1.0)
             ++nIntersections;

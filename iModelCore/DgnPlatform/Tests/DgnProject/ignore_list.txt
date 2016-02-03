@@ -44,6 +44,8 @@ ComponentModelBasicTest.MakeVariationInstance # fails firebug; notified Umar
 ViewAttachmentTest.Geom                                 # NonVisibleViewport
 VolumeElementTestFixture.QueryTest                      # FenceParams::AcceptElement
 
+#Uses the eb ECschema which has to be refactored for EC3 and ECDb06. Notified Raman
+JsonTests.FieldEngineerStructArray
 
 # WIP_MERGE_0600
 RevisionTestFixture.* # notified Raman

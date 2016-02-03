@@ -123,7 +123,7 @@ DGNPLATFORM_EXPORT IAuxCoordSystemExtender* FindExtender (uint32_t extenderID);
 DGNPLATFORM_EXPORT void SaveSettings (SpatialViewControllerCP viewController);
 DGNPLATFORM_EXPORT void ReadSettings (SpatialViewControllerP viewController);
 
-DGNPLATFORM_EXPORT IAuxCoordSysPtr CreateACS (ACSType type, DPoint3dCR origin, RotMatrixCR rot, double scale, WCharCP name, WCharCP descr);
+DGNPLATFORM_EXPORT IAuxCoordSysPtr CreateACS (ACSType type, DPoint3dCR origin, RotMatrixCR rot, double scale, Utf8CP name, Utf8CP descr);
 
 DGNPLATFORM_EXPORT void SendEvent (IAuxCoordSysP acs, ACSEventType eventType, DgnModelP modelRef);
 DGNPLATFORM_EXPORT void DisplayCurrent (DecorateContextR, bool isCursorView);
@@ -167,7 +167,7 @@ DGNPLATFORM_EXPORT StatusInt SetActive (IAuxCoordSysP auxCoordSys, DgnViewportR 
 //! @param[in]      modelRef    The preferred model in which to search
 //! @param[in]      options     Options to control searching
 //! @return ACS if found, NULL otherwise.
-DGNPLATFORM_EXPORT IAuxCoordSysPtr GetByName (WCharCP name, DgnModelP modelRef, uint32_t options);
+DGNPLATFORM_EXPORT IAuxCoordSysPtr GetByName (Utf8CP name, DgnModelP modelRef, uint32_t options);
 
 //! Save and ACS persistently in a model.
 //! @param[in]      auxCoordSys ACS to save.
@@ -181,7 +181,7 @@ DGNPLATFORM_EXPORT StatusInt Save(IAuxCoordSysP auxCoordSys, DgnModelP modelRef,
 //! @param[in]      name        Name of the ACS to delete.
 //! @param[in]      modelRef    Model that contains the ACS to delete.
 //! @return status
-DGNPLATFORM_EXPORT StatusInt Delete (WCharCP name, DgnModelP modelRef);
+DGNPLATFORM_EXPORT StatusInt Delete (Utf8CP name, DgnModelP modelRef);
 
 DGNPLATFORM_EXPORT static IACSManagerR GetManager ();
 
@@ -198,18 +198,18 @@ protected:
 
 virtual IAuxCoordSysPtr _Clone() const = 0;
 virtual bool _Equals(IAuxCoordSysCP other) const = 0;
-virtual WString _GetName() const = 0;
-virtual WString _GetDescription() const = 0;
+virtual Utf8String _GetName() const = 0;
+virtual Utf8String _GetDescription() const = 0;
 virtual ACSType _GetType() const = 0;
-virtual WString _GetTypeName() const = 0;
+virtual Utf8String _GetTypeName() const = 0;
 virtual double _GetScale() const = 0;
 virtual DPoint3dR _GetOrigin(DPoint3dR pOrigin) const = 0;
 virtual RotMatrixR _GetRotation(RotMatrixR pRot) const = 0;
 virtual RotMatrixR _GetRotation(RotMatrixR pRot, DPoint3dR pPosition) const = 0;
 virtual bool _GetIsReadOnly() const = 0;
 virtual ACSFlags _GetFlags() const = 0;
-virtual StatusInt _SetName(WCharCP name) = 0;
-virtual StatusInt _SetDescription(WCharCP descr) = 0;
+virtual StatusInt _SetName(Utf8CP name) = 0;
+virtual StatusInt _SetDescription(Utf8CP descr) = 0;
 virtual StatusInt _SetType(ACSType type) = 0;
 virtual StatusInt _SetScale(double scale) = 0;
 virtual StatusInt _SetOrigin(DPoint3dCR pOrigin) = 0;
@@ -231,11 +231,11 @@ virtual StatusInt _SetStandardGridParams (Point2dCR gridReps, Point2dCR gridOffs
 DGNPLATFORM_EXPORT virtual bool _IsOriginInView (DPoint3dR drawOrigin, DgnViewportCR, bool adjustOrigin) const;
 DGNPLATFORM_EXPORT virtual ColorDef _GetColor (DgnViewportCR, ColorDef color, uint32_t transparency, ACSDisplayOptions options) const;
 DGNPLATFORM_EXPORT virtual uint32_t _GetTransparency (bool isFill, ACSDisplayOptions options) const;
-DGNPLATFORM_EXPORT virtual WCharCP _GetAxisLabel (uint32_t axis, WCharP axisLabel, uint32_t length) const;
+DGNPLATFORM_EXPORT virtual Utf8String _GetAxisLabel (uint32_t axis) const;
 
 DGNPLATFORM_EXPORT virtual void _AddZAxis (Render::GraphicR, ColorDef color, ACSDisplayOptions options) const;
-DGNPLATFORM_EXPORT virtual void _AddXYAxis (Render::GraphicR, ColorDef color, WCharCP label, bool swapAxis, ACSDisplayOptions options, ACSFlags flags) const;
-DGNPLATFORM_EXPORT virtual void _AddAxisText (Render::GraphicR, WCharCP label, bool isAxisLabel, double userOrgX, double userOrgY, double scale, double angle, ACSDisplayOptions options) const;
+DGNPLATFORM_EXPORT virtual void _AddXYAxis (Render::GraphicR, ColorDef color, Utf8CP label, bool swapAxis, ACSDisplayOptions options, ACSFlags flags) const;
+DGNPLATFORM_EXPORT virtual void _AddAxisText (Render::GraphicR, Utf8CP label, bool isAxisLabel, double userOrgX, double userOrgY, double scale, double angle, ACSDisplayOptions options) const;
 DGNPLATFORM_EXPORT virtual Render::GraphicPtr _CreateGraphic(DecorateContextR, DPoint3dCR drawOrigin, double acsSizePixels, ACSDisplayOptions options, bool drawName) const;
 DGNPLATFORM_EXPORT virtual void _DisplayInView (DecorateContextR, ACSDisplayOptions options, bool drawName) const;
 
@@ -262,16 +262,16 @@ DGNPLATFORM_EXPORT IAuxCoordSysPtr Clone () const;
 DGNPLATFORM_EXPORT bool Equals (IAuxCoordSysCP other) const;
 
 //! Return name of the ACS object.
-DGNPLATFORM_EXPORT WString GetName () const;
+DGNPLATFORM_EXPORT Utf8String GetName () const;
 
 //! Return description of the ACS object.
-DGNPLATFORM_EXPORT WString GetDescription () const;
+DGNPLATFORM_EXPORT Utf8String GetDescription () const;
 
 //! Return type of the ACS object.
 DGNPLATFORM_EXPORT ACSType GetType () const;
 
 //! Return localized name of the Type of the ACS object.
-DGNPLATFORM_EXPORT WString GetTypeName () const;
+DGNPLATFORM_EXPORT Utf8String GetTypeName () const;
 
 //! Return the scale factor stored in the ACS object.
 DGNPLATFORM_EXPORT double GetScale () const;
@@ -289,10 +289,10 @@ DGNPLATFORM_EXPORT bool GetIsReadOnly () const;
 DGNPLATFORM_EXPORT ACSFlags GetFlags () const;
 
 //! Change the name stored in the ACS object.
-DGNPLATFORM_EXPORT StatusInt SetName (WCharCP name);
+DGNPLATFORM_EXPORT StatusInt SetName (Utf8CP name);
 
 //! Change the description stored in the ACS object.
-DGNPLATFORM_EXPORT StatusInt SetDescription (WCharCP descr);
+DGNPLATFORM_EXPORT StatusInt SetDescription (Utf8CP descr);
 
 //! Change the type stored in the ACS object.
 DGNPLATFORM_EXPORT StatusInt SetType (ACSType type);
