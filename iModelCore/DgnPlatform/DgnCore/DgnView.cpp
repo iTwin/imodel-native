@@ -171,7 +171,7 @@ ViewControllerPtr ViewDefinition::LoadViewController(bool allowOverrides, FillMo
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewControllerPtr SpatialViewDefinition::_SupplyController() const
     {
-    return new QueryViewController(GetDgnDb(), GetViewId());
+    return new DgnQueryView(GetDgnDb(), GetViewId());
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -228,7 +228,7 @@ protected:
     DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitDetailCR hit, DecorateContextR context) const;
 
     //! Used to notify derived classes when an update begins.
-    //! <p>See QueryViewController::_OnFullUpdate
+    //! <p>See QueryView::_OnFullUpdate
     virtual void _OnUpdate(DgnViewportR vp, UpdatePlan const&) {}
 
     //! Used to notify derived classes of an attempt to locate the viewport around the specified

@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include "DgnPlatform.h"
+#include <Bentley/BeTimeUtilities.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -150,6 +151,7 @@ struct UpdatePlan
         uint32_t    m_maxTime = 2000;    // maximum time query should run (milliseconds)
         double      m_minPixelSize = 50;
         double      m_frustumScale = 1.25;
+        bool        m_onlyAlwaysDrawn = false;
         bool        m_wait = false;
         uint32_t    m_minElements = 300;
         uint32_t    m_maxElements = 50000;
@@ -221,6 +223,58 @@ struct DynamicUpdatePlan : UpdatePlan
     {
     DynamicUpdatePlan() {m_abortFlags.SetStopEvents(StopEvents::ForQuickUpdate);}
     };
+
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   02/16
+//=======================================================================================
+struct DgnQueryQueue
+{
+    //! Executes a query on a separate thread to load elements for a QueryModel
+    struct Task : RefCounted<NonCopyableClass>
+    {
+        DgnQueryViewR m_view;
+        DgnViewportCR m_vp;
+        UpdatePlan::Query const& m_plan;
+
+    public:
+        Task(DgnQueryViewR view, DgnViewportCR vp, UpdatePlan::Query const& plan) : m_view(view), m_vp(vp), m_plan(plan) {}
+        void Process(StopWatch&);
+        uint32_t GetDelayAfter() {return m_plan.GetDelayAfter();}
+        bool IsForView(DgnQueryViewR view) const {return &m_view == &view;}
+    };
+
+    typedef RefCountedPtr<Task> TaskPtr;
+
+private:
+    enum class State { Active, TerminateRequested, Terminated };
+
+    DgnDbR              m_db;
+    BeConditionVariable m_cv;
+    std::deque<TaskPtr> m_pending;
+    TaskPtr             m_active;
+    State               m_state;
+    bool WaitForWork();
+    void Process();
+    THREAD_MAIN_DECL Main(void* arg);
+
+public:
+    DgnQueryQueue(DgnDbR db);
+
+    void Terminate();
+
+    //! Enqueue a request to execute the query for a QueryModel
+    DGNPLATFORM_EXPORT void Add(Task& task);
+
+    //! Cancel any pending requests to process the specified QueryView.
+    //! @param[in] model The model whose processing is to be canceled
+    DGNPLATFORM_EXPORT void RemovePending(DgnQueryViewR view);
+
+    //! Suspends the calling thread until the specified model is in the idle state
+    DGNPLATFORM_EXPORT void WaitForIdle();
+
+    DGNPLATFORM_EXPORT bool IsIdle() const;
+};
 
 END_BENTLEY_DGN_NAMESPACE
 

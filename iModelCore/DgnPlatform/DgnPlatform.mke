@@ -345,9 +345,7 @@ $(CoreObjs)DgnDomain$(oext) :                       $(DgnCoreDir)DgnDomain.cpp $
 
 $(CoreObjs)GenericDomain$(oext) :                   $(DgnCoreDir)GenericDomain.cpp $(DgnPlatformAPISrc)GenericDomain.h ${MultiCompileDepends}
 
-$(CoreObjs)QueryModel$(oext) :                      $(DgnCoreDir)QueryModel.cpp $(DgnPlatformAPISrc)QueryModel.h $(DgnPlatformAPISrc)DgnRangeTree.h ${MultiCompileDepends}
-
-$(CoreObjs)QueryView$(oext) :                       $(DgnCoreDir)QueryView.cpp $(DgnPlatformAPISrc)QueryModel.h $(DgnPlatformAPISrc)QueryView.h $(ViewControllerDepends) ${MultiCompileDepends}
+$(CoreObjs)QueryView$(oext) :                       $(DgnCoreDir)QueryView.cpp $(DgnPlatformAPISrc)QueryView.h $(ViewControllerDepends) ${MultiCompileDepends}
 
 $(CoreObjs)DgnLink$(oext) :                         $(DgnCoreDir)DgnLink.cpp $(DgnPlatformAPISrc)DgnDbTables.h $(DgnPlatformAPISrc)DgnLink.h ${MultiCompileDepends}
 
@@ -377,7 +375,6 @@ $(o)ECUtils$(oext) :                                $(DgnCoreDir)ECUtils.cpp $(D
 
 $(o)RenderMaterial$(oext) :                         $(DgnCoreDir)RenderMaterial.cpp $(DgnPlatformAPISrc)RenderMaterial.h ${MultiCompileDepends}
 
-#$(o)SolarUtility$(oext) :                          $(DgnCoreDir)SolarUtility.cpp $(DgnPlatformAPISrc)SolarUtility.h ${MultiCompileDepends}
 
 #----------------------------------------------------------------------
 #   DgnGeoCoord
@@ -385,11 +382,8 @@ $(o)RenderMaterial$(oext) :                         $(DgnCoreDir)RenderMaterial.
 
 $(o)DgnGeoCoord$(oext) :                            $(DgnGeoCoordDir)DgnGeoCoord.cpp $(DgnPlatformAPISrc)DgnGeoCoord.h $(BaseGeoCoordAPISrc)BaseGeoCoord.h ${MultiCompileDepends}
 
-#$(o)ReprojectCache$(oext) :                        $(DgnGeoCoordDir)ReprojectCache.cpp $(DgnPlatformAPISrc)DgnGeoCoord.h $(BaseGeoCoordAPISrc)BaseGeoCoord.h ${MultiCompileDepends}
-
 $(o)GeoCoordServices$(oext) :                       $(DgnGeoCoordDir)GeoCoordServices.cpp $(DgnPlatformAPISrc)DgnGeoCoord.h $(BaseGeoCoordAPISrc)BaseGeoCoord.h ${MultiCompileDepends}
 
-#$(o)AuxCoordSysProcessor$(oext) :                  $(DgnGeoCoordDir)AuxCoordSysProcessor.cpp $(DgnPlatformAPISrc)DgnGeoCoord.h $(BaseGeoCoordAPISrc)BaseGeoCoord.h ${MultiCompileDepends}
 
 #----------------------------------------------------------------------
 #   Configuration

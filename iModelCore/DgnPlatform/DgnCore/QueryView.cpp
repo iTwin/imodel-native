@@ -12,44 +12,58 @@
     #include <Bentley/BeSystemInfo.h>
 #endif
 
-#include "UpdateLogging.h"
-
 #define TRACE_QUERY_LOGIC 1
 #ifdef TRACE_QUERY_LOGIC
 #   define DEBUG_PRINTF THREADLOG.debugv
+#   define DEBUG_ERRORLOG THREADLOG.errorv
 #else
 #   define DEBUG_PRINTF(fmt, ...)
+#   define DEBUG_ERRORLOG(fmt, ...)
 #endif
+#define TRACE_QUERY_LOGIC 1
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-QueryViewController::QueryViewController(DgnDbR dgndb, DgnViewId id) : CameraViewController(dgndb, id), m_queryModel(*new QueryModel(dgndb))
+DgnQueryView::DgnQueryView(DgnDbR dgndb, DgnViewId id) : CameraViewController(dgndb, id)
     {
     m_forceNewQuery = true; 
-    m_maxElementMemory = 0;
     m_noQuery = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-QueryViewController::~QueryViewController()
+DgnQueryView::~DgnQueryView()
     {
-    m_queryModel.RequestAbort(true);
-    delete &m_queryModel;
+    RequestAbort(true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnQueryView::RequestAbort(bool wait) 
+    {
+    DgnDb::VerifyClientThread();
+    SetAbortQuery(true);
+
+    auto& queue = m_dgndb.GetQueryQueue();
+    queue.RemovePending(*this);
+
+    if (wait)
+        queue.WaitForIdle();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::_OnUpdate(DgnViewportR vp, UpdatePlan const& plan)
+void DgnQueryView::_OnUpdate(DgnViewportR vp, UpdatePlan const& plan)
     {
     if (m_forceNewQuery || FrustumChanged(vp))
         QueueQuery(vp, plan);
 
     if (plan.GetQuery().WantWait())
-        m_queryModel.GetDgnDb().QueryQueue().WaitForIdle();
+        GetDgnDb().GetQueryQueue().WaitForIdle();
 
 //    PickUpResults();
     }
@@ -57,7 +71,7 @@ void QueryViewController::_OnUpdate(DgnViewportR vp, UpdatePlan const& plan)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool QueryViewController::FrustumChanged(DgnViewportCR vp) const
+bool DgnQueryView::FrustumChanged(DgnViewportCR vp) const
     {
     Frustum newFrustumPoints = vp.GetFrustum(DgnCoordSystem::World, true);
     return newFrustumPoints != m_saveQueryFrustum;
@@ -66,31 +80,20 @@ bool QueryViewController::FrustumChanged(DgnViewportCR vp) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2013
 //---------------------------------------------------------------------------------------
-void QueryViewController::QueueQuery(DgnViewportR viewport, UpdatePlan const& plan)
+void DgnQueryView::QueueQuery(DgnViewportR viewport, UpdatePlan const& plan)
     {
-#if defined (DEBUG_QUERY)
-    static bool s_blockQuery = false;   // turn this on to "freeze" the content of a QueryView
-    if (s_blockQuery)
-        return;
-#endif
-
     m_startQueryFrustum = viewport.GetFrustum(DgnCoordSystem::World, true);
     m_saveQueryFrustum.Invalidate();
 
     m_forceNewQuery = false;
-
-    QueryModel::Processor::Params params(m_queryModel, viewport, _GetQuery(viewport), plan.GetQuery(), ComputeMaxElementMemory(viewport), 
-            m_alwaysDrawn.empty() ? nullptr : &m_alwaysDrawn, m_neverDrawn.empty() ? nullptr : &m_neverDrawn, m_noQuery,
-            GetClipVector().get());
-
-    m_queryModel.GetDgnDb().QueryQueue().Add(params);
+    m_dgndb.GetQueryQueue().Add(*new DgnQueryQueue::Task(*this, viewport, plan.GetQuery()));
     }
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::PickUpResults()
+void DgnQueryView::PickUpResults()
     {
     if (!m_queryModel.HasSelectResults())
         return;
@@ -108,7 +111,7 @@ void QueryViewController::PickUpResults()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2013
 //---------------------------------------------------------------------------------------
-void QueryViewController::SaveSelectResults()
+void DgnQueryView::SaveSelectResults()
     {
     if (!m_queryModel.HasSelectResults())
         {
@@ -153,21 +156,23 @@ void QueryViewController::SaveSelectResults()
     }
 #endif
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::EmptyQueryModel() 
+void DgnQueryView::EmptyQueryModel() 
     {
     m_forceNewQuery = true;
     m_queryModel.ClearQueryResults();
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::SetAlwaysDrawn(DgnElementIdSet const& newSet, bool exclusive)
+void DgnQueryView::SetAlwaysDrawn(DgnElementIdSet const& newSet, bool exclusive)
     {
-    m_queryModel.RequestAbort(true);
+    RequestAbort(true);
     m_noQuery = exclusive;
     m_alwaysDrawn = newSet;
     m_forceNewQuery = true;
@@ -176,9 +181,9 @@ void QueryViewController::SetAlwaysDrawn(DgnElementIdSet const& newSet, bool exc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::ClearAlwaysDrawn()
+void DgnQueryView::ClearAlwaysDrawn()
     {
-    m_queryModel.RequestAbort(true);
+    RequestAbort(true);
     m_noQuery = false;
     m_alwaysDrawn.clear();
     m_forceNewQuery = true;
@@ -187,9 +192,9 @@ void QueryViewController::ClearAlwaysDrawn()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::SetNeverDrawn(DgnElementIdSet const& newSet)
+void DgnQueryView::SetNeverDrawn(DgnElementIdSet const& newSet)
     {
-    m_queryModel.RequestAbort(true);
+    RequestAbort(true);
     m_neverDrawn = newSet;
     m_forceNewQuery = true;
     }
@@ -197,9 +202,9 @@ void QueryViewController::SetNeverDrawn(DgnElementIdSet const& newSet)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::ClearNeverDrawn()
+void DgnQueryView::ClearNeverDrawn()
     {
-    m_queryModel.RequestAbort(true);
+    RequestAbort(true);
     m_neverDrawn.clear();
     m_forceNewQuery = true;
     }
@@ -207,7 +212,7 @@ void QueryViewController::ClearNeverDrawn()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff) 
+void DgnQueryView::_ChangeModelDisplay(DgnModelId modelId, bool onOff) 
     {
     if (onOff == m_viewedModels.Contains(modelId))
         return;
@@ -223,28 +228,25 @@ void QueryViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
     else
         {
         m_viewedModels.erase(modelId);
-        EmptyQueryModel();
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::_OnCategoryChange(bool singleEnabled) 
+void DgnQueryView::_OnCategoryChange(bool singleEnabled) 
     {
     T_Super::_OnCategoryChange(singleEnabled); 
     m_forceNewQuery = true;
-    if (!singleEnabled)
-        EmptyQueryModel();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::QueryModelExtents(DRange3dR range, DgnViewportR vp)
+void DgnQueryView::QueryModelExtents(DRange3dR range, DgnViewportR vp)
     {
     RTreeFitFilter filter;
-    Utf8String viewSql = _GetQuery(vp) + filter.GetAcceptSql();
+    Utf8String viewSql = _GetQuery() + filter.GetAcceptSql();
     CachedStatementPtr viewStmt;              
     GetDgnDb().GetCachedStatement(viewStmt, viewSql.c_str());
     BindModelAndCategory(*viewStmt);
@@ -265,7 +267,7 @@ void QueryViewController::QueryModelExtents(DRange3dR range, DgnViewportR vp)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewController::FitComplete QueryViewController::_ComputeFitRange(DRange3dR range, DgnViewportR vp, FitViewParamsR params) 
+ViewController::FitComplete DgnQueryView::_ComputeFitRange(DRange3dR range, DgnViewportR vp, FitViewParamsR params) 
     {
     range = GetViewedExtents();
     Transform  transform;
@@ -278,7 +280,7 @@ ViewController::FitComplete QueryViewController::_ComputeFitRange(DRange3dR rang
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String QueryViewController::_GetQuery(DgnViewportR) const
+Utf8String DgnQueryView::_GetQuery() const
     {
     return Utf8String("SELECT e.Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e, " 
                       DGN_TABLE(DGN_CLASSNAME_SpatialElement) " AS g "
@@ -288,7 +290,7 @@ Utf8String QueryViewController::_GetQuery(DgnViewportR) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool QueryViewController::_IsInSet(int nVals, DbValue const* vals) const 
+bool DgnQueryView::_IsInSet(int nVals, DbValue const* vals) const 
     {
     BeAssert(nVals == 2);   // we need ModelId and Category
 
@@ -299,7 +301,7 @@ bool QueryViewController::_IsInSet(int nVals, DbValue const* vals) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::_OnAttachedToViewport(DgnViewportR) 
+void DgnQueryView::_OnAttachedToViewport(DgnViewportR) 
     {
     m_forceNewQuery = true;
     }
@@ -307,7 +309,7 @@ void QueryViewController::_OnAttachedToViewport(DgnViewportR)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::BindModelAndCategory(StatementR stmt) const
+void DgnQueryView::BindModelAndCategory(StatementR stmt) const
     {
     int vSetIdx = stmt.GetParameterIndex("@vSet");
     BeAssert(0!=vSetIdx);
@@ -318,7 +320,7 @@ void QueryViewController::BindModelAndCategory(StatementR stmt) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::_DrawView(ViewContextR context) 
+void DgnQueryView::_DrawView(ViewContextR context) 
     {
     _VisitAllElements(context);
 
@@ -339,17 +341,19 @@ void QueryViewController::_DrawView(ViewContextR context)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2012
 //--------------+------------------------------------------------------------------------
-void QueryViewController::_CreateScene(SceneContextR context) 
+void DgnQueryView::_CreateScene(SceneContextR context) 
     {
-    BeAssert(m_queryModel.m_results.IsValid());
+    if (!m_results.IsValid())
+        {
+        }
 
-    QueryModel::ResultsPtr currQueryResults;
-    std::swap(currQueryResults, m_queryModel.m_results);
+    QueryResultsPtr currQueryResults;
+    std::swap(currQueryResults, m_results);
 
     // this vector is sorted by occlusion score, so we use it to determine the order to draw the view
-    DgnElements& pool = GetDgnDb().Elements();
+    DgnElements& pool = m_dgndb.Elements();
 
-    RefCountedPtr<QueryModel::ProgressiveFilter> filter = new QueryModel::ProgressiveFilter(m_queryModel, m_neverDrawn.empty() ? nullptr : &m_neverDrawn);
+    RefCountedPtr<ProgressiveFilter> filter = new ProgressiveFilter(*this, m_neverDrawn.empty() ? nullptr : &m_neverDrawn);
     for (auto& thisScore : currQueryResults->m_scores)
         {
         filter->m_inScene.insert(thisScore.second);
@@ -391,26 +395,16 @@ void QueryViewController::_CreateScene(SceneContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Visit all of the elements in a QueryView. This is used for picking, etc.
+* Visit all of the elements in a DgnQueryView. This is used for picking, etc.
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::_VisitAllElements(ViewContextR context)
+void DgnQueryView::_VisitAllElements(ViewContextR context)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    // Visit the elements that were actually loaded. Stop if this fails
-    if (SUCCESS != context.VisitDgnModel(&m_queryModel))
-        return;
-
-    // then, see if there are elements that were drawn by progressive display
-    if (!m_needProgressiveDisplay || context.CheckStop())
-        return;
-#endif
-
-    QueryModel::AllElementsFilter filter(m_queryModel, m_neverDrawn.empty() ? nullptr : &m_neverDrawn);
+    AllElementsFilter filter(m_dgndb, m_neverDrawn.empty() ? nullptr : &m_neverDrawn);
 
     CachedStatementPtr viewStmt;              
-    Utf8String viewSql = _GetQuery(*context.GetViewport()) + filter.GetAcceptSql();
-    m_queryModel.GetDgnDb().GetCachedStatement(viewStmt, viewSql.c_str());
+    Utf8String viewSql = _GetQuery() + filter.GetAcceptSql();
+    m_dgndb.GetCachedStatement(viewStmt, viewSql.c_str());
     BindModelAndCategory(*viewStmt);
 
     filter.SetFrustum(context.GetFrustum());
@@ -421,8 +415,8 @@ void QueryViewController::_VisitAllElements(ViewContextR context)
 
     // the range tree will return all elements in the volume. Filter them by the view criteria
     DgnElementId thisId;
-    while ((thisId=filter.StepRtree()).IsValid())
-        {
+    while ((thisId = filter.StepRtree()).IsValid())
+        {           
         viewStmt->Reset();
         viewStmt->BindId(idCol, thisId);
         if (BE_SQLITE_ROW == viewStmt->Step())
@@ -440,10 +434,11 @@ void QueryViewController::_VisitAllElements(ViewContextR context)
     DEBUG_PRINTF("pick finished %d", count);
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
-uint64_t QueryViewController::GetMaxElementMemory()
+uint64_t DgnQueryView::GetMaxElementMemory()
     {
     BeAssert(m_maxElementMemory != 0);
     return m_maxElementMemory != 0 ? m_maxElementMemory : 20 * 1024 * 1024;
@@ -453,7 +448,7 @@ uint64_t QueryViewController::GetMaxElementMemory()
 // @bsimethod                                                   John.Gooding    02/2013
 //---------------------------------------------------------------------------------------
 #if defined (_X64_)
-uint64_t QueryViewController::ComputeMaxElementMemory(DgnViewportCR vp)
+uint64_t DgnQueryView::ComputeMaxElementMemory(DgnViewportCR vp)
     {
     uint64_t oneGig = 1024 * 1024 * 1024;
     m_maxElementMemory = 8 * oneGig;
@@ -463,7 +458,7 @@ uint64_t QueryViewController::ComputeMaxElementMemory(DgnViewportCR vp)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    02/2013
 //---------------------------------------------------------------------------------------
-uint64_t QueryViewController::ComputeMaxElementMemory(DgnViewportCR vp)
+uint64_t DgnQueryView::ComputeMaxElementMemory(DgnViewportCR vp)
     {
     uint64_t oneMeg = 1024 * 1024;
 #if defined (BENTLEYCONFIG_VIRTUAL_MEMORY)
@@ -501,4 +496,553 @@ uint64_t QueryViewController::ComputeMaxElementMemory(DgnViewportCR vp)
     return baseValue;
     }
 #endif
+#endif
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+THREAD_MAIN_IMPL DgnQueryQueue::Main(void* arg)
+    {
+    BeThreadUtilities::SetCurrentThreadName("QueryModel");
+    DgnDb::SetThreadId(DgnDb::ThreadId::Query);
+
+    ((DgnQueryQueue*)arg)->Process();
+
+    // After the owning DgnDb calls Terminate()
+    return 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnQueryQueue::Terminate()
+    {
+    DgnDb::VerifyClientThread();
+
+    BeMutexHolder lock(m_cv.GetMutex());
+    if (State::Active != m_state)
+        return;
+
+    m_state = State::TerminateRequested;
+    while (State::TerminateRequested == m_state)
+        {
+        m_cv.notify_all();
+        m_cv.RelativeWait(lock, 1000);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnQueryQueue::RemovePending(DgnQueryViewR view)
+    {
+    DgnDb::VerifyClientThread();
+
+    // We may currently be processing a query for this model. If so, let it complete and queue up another one.
+    // But remove any other previously-queued processing requests for this model.
+    BeMutexHolder lock(m_cv.GetMutex());
+
+    for (auto iter = m_pending.begin(); iter != m_pending.end(); /*...*/)
+        {
+        if ((*iter)->IsForView(view))
+            iter = m_pending.erase(iter);
+        else
+            ++iter;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnQueryQueue::Add(Task& task)
+    {
+    DgnDb::VerifyClientThread();
+
+    if (&task.m_view.GetDgnDb() != &m_db)
+        {
+        BeAssert(false);
+        return;
+        }
+
+    BeMutexHolder mux(m_cv.GetMutex());
+
+    RemovePending(task.m_view);
+    m_pending.push_back(&task);
+
+    mux.unlock(); // release lock before notify so other thread will start immediately vs. "hurry up and wait" problem
+    m_cv.notify_all();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnQueryQueue::WaitForIdle()
+    {
+    DgnDb::VerifyClientThread();
+
+    BeMutexHolder holder(m_cv.GetMutex());
+    while (m_active.IsValid() || !m_pending.empty())
+        m_cv.InfiniteWait(holder);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnQueryQueue::DgnQueryQueue(DgnDbR db) : m_db(db), m_state(State::Active)
+    {
+    BeThreadUtilities::StartNewThread(50*1024, Main, this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnQueryQueue::IsIdle() const
+    {
+    BeMutexHolder holder(m_cv.GetMutex());
+    return m_pending.empty() && !m_active.IsValid();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnQueryQueue::WaitForWork()
+    {
+    BeMutexHolder holder(m_cv.GetMutex());
+    while (m_pending.empty() && State::Active == m_state)
+        m_cv.InfiniteWait(holder);
+
+    if (State::Active != m_state)
+        return false;
+
+    m_active = m_pending.front();
+    m_pending.pop_front();
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnQueryQueue::Process()
+    {
+    DgnDb::VerifyQueryThread();
+
+    StopWatch timer(false);
+
+    while (WaitForWork())
+        {
+        if (!m_active.IsValid())
+            continue;
+
+        m_active->Process(timer);
+        uint32_t delay = m_active->GetDelayAfter();
+
+        {
+        BeMutexHolder holder(m_cv.GetMutex());
+        m_active = nullptr;
+        }
+
+        m_cv.notify_all();
+        if (delay) // optionally, wait before starting the next task
+            BeThreadUtilities::BeSleep(delay);
+        }
+
+    m_state = State::Terminated;
+    m_cv.notify_all();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnQueryView::DoQuery(DgnViewportCR vp, UpdatePlan::Query const& plan, StopWatch& watch)
+    {
+    watch.Start();
+
+    SetAbortQuery(false); // gets turned on by client thread
+
+    DEBUG_PRINTF("Query started");
+    Filter filter(m_dgndb, *new QueryResults(), plan.m_targetNumElements, plan.m_onlyAlwaysDrawn ? nullptr : &m_alwaysDrawn, &m_neverDrawn);
+    filter.SetViewport(vp, plan.m_minPixelSize, plan.m_frustumScale);
+    if (m_clipVector.IsValid())
+        filter.SetClipVector(*m_clipVector);
+
+    if (plan.m_onlyAlwaysDrawn)
+        SearchIdSet(m_alwaysDrawn, filter);
+    else
+        SearchRangeTree(filter, plan.GetTimeout());
+
+    if (m_abortQuery)
+        {
+        DEBUG_PRINTF("query aborted");
+        return;
+        }
+
+    m_results = filter.m_results;
+
+    double total = watch.GetCurrentSeconds();
+    DEBUG_PRINTF("Query completed, total=%d, progressive=%d, time=%f", filter.m_results->m_count, filter.m_results->m_incomplete, total);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnQueryQueue::Task::Process(StopWatch& watch)
+    {
+    DgnDb::VerifyQueryThread();
+    m_view.DoQuery(m_vp, m_plan, watch);
+
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    // This is not strictly thread-safe. The worst that can happen is that the work thread reads false from it, or sets it to false, while the query thread sets it to true.
+    // In that case we skip an update.
+    // Alternative is to go through contortions to queue up a "heal viewport" task on the DgnClientFx work thread.
+    m_params.m_vp.SetNeedsHeal();
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnQueryView::SearchIdSet(DgnElementIdSet& idList, Filter& filter)
+    {
+    DgnElements& pool = m_dgndb.Elements();
+    for (auto const& curr : idList)
+        {
+        if (AbortRequested())
+            break;
+
+        DgnElementCPtr el = pool.GetElement(curr);
+        GeometrySourceCP geom = el.IsValid() ? el->ToGeometrySource() : nullptr;
+        if (nullptr == geom || !geom->HasGeometry())
+            continue;
+
+        RTree3dVal rtreeRange;
+        rtreeRange.FromRange(geom->CalculateRange3d());
+
+        RTreeMatchFunction::QueryInfo info;
+        info.m_nCoord = 6;
+        info.m_coords = &rtreeRange.m_minx;
+        info.m_parentWithin = info.m_within = RTreeMatchFunction::Within::Partly;
+        info.m_parentScore  = info.m_score  = 1.0;
+        info.m_rowid = curr.GetValue();
+        info.m_level = 0;
+        filter._TestRTree(info);
+        if (RTreeMatchFunction::Within::Outside != info.m_within)
+            filter.AcceptElement(curr);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnQueryView::SearchRangeTree(Filter& filter, uint32_t timeout)
+    {
+    CachedStatementPtr viewStmt;
+    Utf8String viewSql = _GetQuery() + filter.GetAcceptSql();
+    m_dgndb.GetCachedStatement(viewStmt, viewSql.c_str());
+
+    BindModelAndCategory(*viewStmt);
+
+    uint64_t endTime = timeout ? (BeTimeUtilities::QueryMillisecondsCounter() + timeout) : 0;
+
+    int idCol = viewStmt->GetParameterIndex("@elId");
+    BeAssert(0 != idCol);
+
+    DgnElementId thisId;
+    while ((thisId=filter.StepRtree()).IsValid())
+        {
+        viewStmt->Reset();
+        viewStmt->BindId(idCol, thisId);
+
+        if (m_abortQuery)
+            {
+            DEBUG_ERRORLOG("Query aborted");
+            return;
+            }
+
+        if (BE_SQLITE_ROW == viewStmt->Step())
+            filter.AcceptElement(thisId);
+
+        if (endTime && (BeTimeUtilities::QueryMillisecondsCounter() > endTime))
+            {
+            DEBUG_ERRORLOG("Query timeout");
+            filter.m_results->m_incomplete = true;
+            break;
+            }
+        };
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnQueryView::Filter::Filter(DgnDbR db, QueryResults& results, uint32_t hitLimit, DgnElementIdSet const* alwaysDraw, DgnElementIdSet const* exclude)
+    :  m_results(&results), m_hitLimit(hitLimit), m_alwaysDraw(nullptr), RTreeFilter(db, exclude)
+    {
+    m_minScore = 1.0e20;
+
+    if (nullptr != alwaysDraw)
+        {
+        m_lastScore = DBL_MAX;
+        for (auto const& id : *alwaysDraw)
+            AcceptElement(id);
+        }
+
+    //  We do this as the last step. Otherwise, the calls to AcceptElement in the previous step would not have any effect.
+    m_alwaysDraw = alwaysDraw;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+inline static void toLocalCorners(DPoint3dP localCorners, RTree3dValCP pt)
+    {
+    localCorners[0].x = localCorners[3].x = localCorners[4].x = localCorners[7].x = pt->m_minx;     //       7+------+6
+    localCorners[1].x = localCorners[2].x = localCorners[5].x = localCorners[6].x = pt->m_maxx;     //       /|     /|
+                                                                                                    //      / |    / |
+    localCorners[0].y = localCorners[1].y = localCorners[4].y = localCorners[5].y = pt->m_miny;     //     / 4+---/--+5
+    localCorners[2].y = localCorners[3].y = localCorners[6].y = localCorners[7].y = pt->m_maxy;     //   3+------+2 /    y   z
+                                                                                                    //    | /    | /     |  /
+    localCorners[0].z = localCorners[1].z = localCorners[2].z = localCorners[3].z = pt->m_minz;     //    |/     |/      |/
+    localCorners[4].z = localCorners[5].z = localCorners[6].z = localCorners[7].z = pt->m_maxz;     //   0+------+1      *---x
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+int DgnQueryView::Filter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
+    {
+    BeAssert(6 == info.m_nCoord);
+    info.m_within = RTreeMatchFunction::Within::Outside;
+
+    RTree3dValCP pt = (RTree3dValCP) info.m_coords;
+    if (!m_boundingRange.Intersects(*pt) || !SkewTest(pt))
+        return BE_SQLITE_OK;
+
+    DPoint3d localCorners[8];
+    toLocalCorners(localCorners, pt);
+
+#if defined (NEEDS_WORK_CLIPPING)
+    if (m_clips.IsValid())
+        {
+        bool allClippedByOnePlane = false;
+        for (ConvexClipPlaneSetCR cps : *m_clips)
+            {
+            if (allClippedByOnePlane = AllPointsClippedByOnePlane(cps, 8, localCorners))
+                break;
+            }
+
+        if (allClippedByOnePlane)
+            {
+            m_passedPrimaryTest = false;
+            return BE_SQLITE_OK;
+            }
+        }
+#endif
+
+    bool overlap, spansEyePlane;
+
+    if (!m_scorer.ComputeOcclusionScore(&m_lastScore, overlap, spansEyePlane, localCorners))
+        return BE_SQLITE_OK;
+
+    if (m_results->m_count >= m_hitLimit && m_lastScore <= m_minScore)
+        return BE_SQLITE_OK; // this one is smaller than the smallest entry we already have, skip it (and children).
+
+    m_lastId = info.m_rowid;  // for debugging - make sure we get entries immediately after we score them.
+    if (info.m_level>0)
+        {
+        // For nodes, return 'level-score' (the "-" is because for occlusion score higher is better. But for rtree priority, lower means better).
+        info.m_score = info.m_level - m_lastScore;
+        }
+    else
+        {
+        // For entries (ilevel==0), we return 0 so they are processed immediately (lowest score has highest priority).
+        info.m_score = 0;
+        }
+
+    info.m_within = RTreeMatchFunction::Within::Partly;
+    return BE_SQLITE_OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                     04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnQueryView::Filter::AcceptElement(DgnElementId elementId)
+    {
+    BeAssert(m_lastId == elementId.GetValueUnchecked());
+    
+    if (nullptr != m_exclude && m_exclude->find(elementId) != m_exclude->end())
+        return;
+
+    //  Don't add it if the constructor already added it.
+    if (nullptr != m_alwaysDraw && m_alwaysDraw->find(elementId) != m_alwaysDraw->end())
+        return;
+
+    if (++m_results->m_count >= m_hitLimit)
+        {
+        m_scorer.SetTestLOD(true); // now that we've found a minimum number of elements, start skipping small ones
+        m_results->m_scores.erase(m_results->m_scores.begin());
+        m_results->m_incomplete = true;
+        m_results->m_count = m_hitLimit;
+        }
+
+    m_results->m_scores.Insert(m_lastScore, elementId);
+    m_minScore = m_results->m_scores.begin()->first;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+int DgnQueryView::AllElementsFilter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
+    {
+    BeAssert(6 == info.m_nCoord);
+    info.m_within = RTreeMatchFunction::Within::Outside;
+
+    RTree3dValCP pt = (RTree3dValCP) info.m_coords;
+    if (!m_boundingRange.Intersects(*pt) || !SkewTest(pt))
+        return BE_SQLITE_OK;
+
+#if defined (NEEDS_WORK_CLIPPING)
+    if (m_clips.IsValid())
+        {
+        bool allClippedByOnePlane = false;
+        for (ConvexClipPlaneSetCR cps : *m_clips)
+            {
+            if (allClippedByOnePlane = AllPointsClippedByOnePlane(cps, 8, localCorners))
+                break;
+            }
+        if (allClippedByOnePlane)
+            return BE_SQLITE_OK;
+        }
+#endif
+
+    DPoint3d localCorners[8];
+    toLocalCorners(localCorners, pt);
+
+    double score = 0.0;
+    bool   overlap, spansEyePlane;
+
+    // NOTE: m_doOcclusionScore is off if we're trying to visit all elements. ComputeOcclusionScore returns false if the
+    // size is smaller than our minimum NPC area.
+    if (m_doOcclusionScore && !m_scorer.ComputeOcclusionScore(&score, overlap, spansEyePlane, localCorners))
+        return BE_SQLITE_OK;
+
+    // For entries (m_level==0), we return 0 so they are processed immediately (lowest score has highest priority).
+    info.m_score = (info.m_level>0) ? (info.m_maxLevel - info.m_level - score) : 0;
+    info.m_within = RTreeMatchFunction::Within::Partly;
+    return BE_SQLITE_OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ProgressiveTask::Completion DgnQueryView::ProgressiveFilter::_DoProgressive(SceneContext& context, WantShow& wantShow)
+    {
+    m_thisBatch = 0; // restart every pass
+    m_batchSize = context.GetUpdatePlan().GetQuery().GetTargetNumElements();
+    m_setTimeout = false;
+
+    m_scorer.SetTestLOD(true);  
+
+    CachedStatementPtr viewStmt;              
+
+    Utf8String viewSql = m_view._GetQuery() + GetAcceptSql();
+    m_dgndb.GetCachedStatement(viewStmt, viewSql.c_str());
+    m_view.BindModelAndCategory(*viewStmt);
+
+    DEBUG_PRINTF("begin progressive display");
+
+    int idCol = viewStmt->GetParameterIndex("@elId");
+    BeAssert(0 != idCol);
+
+    DgnElementId thisId;
+    while ((thisId=StepRtree()).IsValid())
+        {
+        viewStmt->Reset(); // we now have an element that satisfies the range criteria, see if it passes view criteria
+        viewStmt->BindId(idCol, thisId);
+
+        if (BE_SQLITE_ROW == viewStmt->Step())
+            {
+            if (!m_inScene.Contains(thisId)) // see if it was already drawn in the scene
+                AcceptElement(context, thisId); // no, draw it now
+
+            if (!m_setTimeout) // don't set the timeout until after we've drawn one element
+                {
+                context.EnableStopAfterTimout(SHOW_PROGRESS_INTERVAL);
+                m_setTimeout = true;
+                }
+        }
+
+        if (m_batchSize && ++m_thisBatch >= m_batchSize) // limit the number or elements added per batch
+            context.SetAborted();
+
+        if (context.CheckStop())
+            break;
+        }
+
+    if (context.WasAborted())
+        {
+        // We only want to show the progress of ProgressiveDisplay once per second. 
+        // See if its been more than a second since the last time we showed something.
+        uint64_t now = BeTimeUtilities::QueryMillisecondsCounter();                                                                                                         
+        if (now > m_nextShow)
+            {
+            m_nextShow = now + SHOW_PROGRESS_INTERVAL;
+            wantShow = WantShow::Yes;
+            }
+
+        DEBUG_PRINTF("aborted progressive display");
+        return Completion::Aborted;
+        }
+
+    // alway show the last batch.
+    wantShow = WantShow::Yes;
+    DEBUG_PRINTF("finished progressive. Total=%d", m_total);
+    return Completion::Finished;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnQueryView::AllElementsFilter::AcceptElement(ViewContextR context, DgnElementId elementId) 
+    {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    if (m_model.FindElementById(elementId))
+        return false;
+#endif
+
+    if (nullptr != m_exclude && m_exclude->find(elementId) != m_exclude->end())
+        return false;
+
+    DgnElements& pool = m_dgndb.Elements();
+    DgnElementCPtr el = pool.GetElement(elementId);
+    if (!el.IsValid())
+        {
+        BeAssert(false);
+        return false;
+        }
+
+    GeometrySourceCP geomElem = el->ToGeometrySource();
+    if (nullptr != geomElem)
+        context.VisitElement(*geomElem);
+
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    if (pool.GetTotalAllocated() < (int64_t) m_elementReleaseTrigger)
+        return true;
+
+    pool.DropFromPool(*el);
+
+    // Purging the element does not purge the symbols so it may be necessary to do a full purge
+    if (pool.GetTotalAllocated() < (int64_t) m_purgeTrigger)
+        return true;
+
+    pool.Purge(m_elementReleaseTrigger);   // Try to get back to the elementPurgeTrigger
+
+    static const double s_purgeFactor = 1.3;
+
+    // The purge may not have succeeded if there are elements in the QueryView's list of elements and those elements hold symbol references.
+    // When that is true, we leave it to QueryView::_DrawView to try to clean up.  This logic just tries to recover from the
+    // growth is caused.  It allows some growth between calls to purge to avoid spending too much time in purge.
+    uint64_t newTotalAllocated = (uint64_t)pool.GetTotalAllocated();
+    m_purgeTrigger = (uint64_t)(s_purgeFactor * std::max(newTotalAllocated, m_elementReleaseTrigger));
+#endif
+    return true;
+    }
