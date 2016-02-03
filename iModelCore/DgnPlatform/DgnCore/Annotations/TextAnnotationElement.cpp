@@ -14,8 +14,8 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 namespace dgn_ElementHandler
 {
-    HANDLER_DEFINE_MEMBERS(TextAnnotationHandler);
-    HANDLER_DEFINE_MEMBERS(SpatialTextAnnotationHandler);
+    HANDLER_DEFINE_MEMBERS(TextAnnotation2dHandler);
+    HANDLER_DEFINE_MEMBERS(TextAnnotation3dHandler);
 }
 
 namespace dgn_AspectHandler
@@ -149,8 +149,8 @@ static TextAnnotationDataR getItemR(DgnElementR el)
 
     return *item;
     }
-TextAnnotationDataR TextAnnotationElement::GetItemR() { return getItemR(*this); }
-TextAnnotationDataR SpatialTextAnnotationElement::GetItemR() { return getItemR(*this); }
+TextAnnotationDataR TextAnnotation2d::GetItemR() { return getItemR(*this); }
+TextAnnotationDataR TextAnnotation3d::GetItemR() { return getItemR(*this); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     10/2015
@@ -165,7 +165,7 @@ static DgnDbStatus updateGeometryOnChange(DgnDbStatus superStatus, DgnElementR e
 
     return DgnDbStatus::Success;
     }
-DgnDbStatus TextAnnotationElement::_OnInsert() { return updateGeometryOnChange(T_Super::_OnInsert(), *this, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Insert); }
-DgnDbStatus SpatialTextAnnotationElement::_OnInsert() { return updateGeometryOnChange(T_Super::_OnInsert(), *this, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Insert); }
-DgnDbStatus TextAnnotationElement::_OnUpdate(DgnElementCR el) { return updateGeometryOnChange(T_Super::_OnUpdate(el), *this, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Update); }
-DgnDbStatus SpatialTextAnnotationElement::_OnUpdate(DgnElementCR el) { return updateGeometryOnChange(T_Super::_OnUpdate(el), *this, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Update); }
+DgnDbStatus TextAnnotation2d::_OnInsert() { return updateGeometryOnChange(T_Super::_OnInsert(), *this, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Insert); }
+DgnDbStatus TextAnnotation3d::_OnInsert() { return updateGeometryOnChange(T_Super::_OnInsert(), *this, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Insert); }
+DgnDbStatus TextAnnotation2d::_OnUpdate(DgnElementCR el) { return updateGeometryOnChange(T_Super::_OnUpdate(el), *this, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Update); }
+DgnDbStatus TextAnnotation3d::_OnUpdate(DgnElementCR el) { return updateGeometryOnChange(T_Super::_OnUpdate(el), *this, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Update); }

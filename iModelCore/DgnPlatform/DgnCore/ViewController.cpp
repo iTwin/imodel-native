@@ -2163,7 +2163,7 @@ StatusInt ViewController::_VisitHit(HitDetailCR hit, DecorateContextR context) c
     if (geom->DrawHit(hit, context))
         return SUCCESS;
 
-    return context.VisitElement(*geom);
+    return context.VisitGeometry(*geom);
     }
 
 /*---------------------------------------------------------------------------------**//**

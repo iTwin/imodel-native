@@ -217,6 +217,9 @@ public:
     DgnLockOwnershipR GetOwnership() { return m_ownership; } //!< Get a writable reference to the ownership details
     void SetRevisionId(Utf8StringCR revId) { m_revisionId=revId; } //!< Set the revision ID associated with the lock
     void Reset() { Init(false); } //!< Reset to default (untracked) state
+
+    DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
+    DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
 };
 
 //=======================================================================================
@@ -235,6 +238,9 @@ public:
 
     //! Compare based on IDs
     bool operator<(DgnLockInfo const& rhs) const { return GetLockableId() < rhs.GetLockableId(); }
+
+    DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
+    DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
 };
 
 typedef bset<DgnLockInfo> DgnLockInfoSet;
@@ -322,27 +328,6 @@ public:
     void FromChangeSummary(DgnChangeSummary const& changes, bool stopOnFirst=false); //!< @private
     void ExtractLockSet(DgnLockSet& locks); //!< @private
     DGNPLATFORM_EXPORT void FromRevision(DgnRevision& revision); //!< @private
-};
-
-//=======================================================================================
-//! Utilities for converting lock-related values to/from JSON.
-//! See also To/FromJson() methods on classes like LockRequest, LockableId, etc.
-// @bsiclass                                                      Paul.Connelly   12/15
-//=======================================================================================
-struct DgnLocksJson
-{
-public:
-    DGNPLATFORM_EXPORT static bool BriefcaseIdFromJson(BeSQLite::BeBriefcaseId& id, JsonValueCR value);
-    DGNPLATFORM_EXPORT static bool BeInt64IdFromJson(BeSQLite::BeInt64Id& id, JsonValueCR value);
-    DGNPLATFORM_EXPORT static bool LockLevelFromJson(LockLevel& level, JsonValueCR value);
-    DGNPLATFORM_EXPORT static bool LockableTypeFromJson(LockableType& type, JsonValueCR value);
-    DGNPLATFORM_EXPORT static bool RepositoryStatusFromJson(RepositoryStatus& status, JsonValueCR value);
-
-    DGNPLATFORM_EXPORT static void BriefcaseIdToJson(JsonValueR value, BeSQLite::BeBriefcaseId id);
-    DGNPLATFORM_EXPORT static void BeInt64IdToJson(JsonValueR value, BeSQLite::BeInt64Id id);
-    DGNPLATFORM_EXPORT static void LockLevelToJson(JsonValueR value, LockLevel level);
-    DGNPLATFORM_EXPORT static void LockableTypeToJson(JsonValueR value, LockableType type);
-    DGNPLATFORM_EXPORT static void RepositoryStatusToJson(JsonValueR value, RepositoryStatus status);
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

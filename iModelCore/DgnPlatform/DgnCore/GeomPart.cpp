@@ -7,8 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
-#define GEOMPART_BBOX "BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z"
-#define GEOMPART_CODE "Code_AuthorityId,Code_Namespace,Code_Value"
+#define GEOMPART_BBox "BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z"
+#define GEOMPART_Code "Code_AuthorityId,Code_Namespace,Code_Value"
+#define GEOMPART_GeometryStream "GeometryStream"
 
 //=======================================================================================
 // @bsiclass                                                    Brien.Bastings  03/15
@@ -39,7 +40,7 @@ public:
         Authority = 2,
         Namespace = 3,
         Name = 4,
-        Geom = 5,
+        GeometryStream = 5,
         LowX = 6,
         LowY = 7,
         LowZ = 8,
@@ -56,10 +57,10 @@ void DbGeometryPartsWriter::PrepareInsertStatement()
     {
     Utf8CP insertSql =
             "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_GeometryPart) "("
-                "Id,"   // 1
-                GEOMPART_CODE ","       // 2,3,4
-                "Geom,"                 // 5
-                GEOMPART_BBOX           // 6..11
+                "Id,"                       // 1
+                GEOMPART_Code ","           // 2,3,4
+                GEOMPART_GeometryStream "," // 5
+                GEOMPART_BBox               // 6..11
             ")VALUES(?,?,?,?,?,?,?,?,?,?,?)";
 
     m_dgndb.GetCachedStatement(m_stmt, insertSql);
@@ -75,7 +76,7 @@ void DbGeometryPartsWriter::PrepareUpdateStatement()
                 "Code_AuthorityId=?2,"
                 "Code_Namespace=?3,"
                 "Code_Value=?4,"
-                "Geom=?5,"
+                GEOMPART_GeometryStream "=?5,"
                 "BBoxLow_X=?6,BBoxLow_Y=?7,BBoxLow_Z=?8,"
                 "BBoxHigh_X=?9,BBoxHigh_Y=?10,BBoxHigh_Z=?11"
             " WHERE Id=?1";
@@ -140,7 +141,7 @@ StatusInt DbGeometryPartsWriter::SaveGeometryPartToRow(GeometryStreamCR geom, Dg
         return SUCCESS; // Is this an error?!?
         }
 
-    return (DgnDbStatus::Success == geom.WriteGeometryStreamAndStep(m_snappy, m_dgndb, DGN_TABLE(DGN_CLASSNAME_GeometryPart), "Geom", geomPartId.GetValue(), *m_stmt, Column::Geom))? BSISUCCESS: BSIERROR;
+    return (DgnDbStatus::Success == geom.WriteGeometryStreamAndStep(m_snappy, m_dgndb, DGN_TABLE(DGN_CLASSNAME_GeometryPart), GEOMPART_GeometryStream, geomPartId.GetValue(), *m_stmt, Column::GeometryStream))? BSISUCCESS: BSIERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -255,7 +256,7 @@ DgnGeometryPartPtr DgnGeometryParts::LoadGeometryPart(DgnGeometryPartId geomPart
    
     auto& elements = m_dgndb.Elements();
 
-    CachedStatementPtr stmt=elements.GetStatement("SELECT " GEOMPART_CODE "," GEOMPART_BBOX ",Geom FROM " DGN_TABLE(DGN_CLASSNAME_GeometryPart) " WHERE Id=?");
+    CachedStatementPtr stmt=elements.GetStatement("SELECT " GEOMPART_Code "," GEOMPART_BBox "," GEOMPART_GeometryStream " FROM " DGN_TABLE(DGN_CLASSNAME_GeometryPart) " WHERE Id=?");
     stmt->BindId(1, geomPartId);
 
     DbResult result = stmt->Step();
@@ -301,7 +302,7 @@ BentleyStatus DgnGeometryParts::QueryGeometryPartRange(DRange3dR range, DgnGeome
     if (!geomPartId.IsValid())
         return ERROR;
 
-    CachedStatementPtr stmt = GetDgnDb().Elements().GetStatement("SELECT " GEOMPART_BBOX " FROM " DGN_TABLE(DGN_CLASSNAME_GeometryPart) " WHERE Id=?");
+    CachedStatementPtr stmt = GetDgnDb().Elements().GetStatement("SELECT " GEOMPART_BBox " FROM " DGN_TABLE(DGN_CLASSNAME_GeometryPart) " WHERE Id=?");
     stmt->BindId(1, geomPartId);
 
     if (BE_SQLITE_ROW != stmt->Step())

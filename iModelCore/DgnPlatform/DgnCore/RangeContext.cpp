@@ -903,7 +903,7 @@ bool _ScanRangeFromPolyhedron()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt _VisitElement(GeometrySourceCR source) override
+StatusInt _VisitGeometry(GeometrySourceCR source) override
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DPoint3d corners[8];
@@ -986,7 +986,7 @@ StatusInt DgnViewport::ComputeFittedElementRange(DRange3dR rangeUnion, DgnElemen
 
         ViewContext::ContextMark mark(&context);
 
-        context.VisitElement(*geomElem);
+        context.VisitGeometry(*geomElem);
         }
     
     context.Detach();
@@ -1008,13 +1008,13 @@ struct DepthFitContext : public FitContext
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt _VisitElement(GeometrySourceCR element)
+virtual StatusInt _VisitGeometry(GeometrySourceCR element)
     {
     // Check range - this is much less expensive than clipping and accumulating ranges for geometry outside the view.
     if (_FilterRangeIntersection(element))
         return SUCCESS;
 
-    return T_Super::_VisitElement(element);
+    return T_Super::_VisitGeometry(element);
     }
 
 /*---------------------------------------------------------------------------------**//**

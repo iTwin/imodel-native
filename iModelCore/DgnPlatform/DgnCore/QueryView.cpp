@@ -360,7 +360,7 @@ void QueryViewController::_DrawView(ViewContextR context)
         GeometrySourceCP geom = thisElement->ToGeometrySource();
 
         if (nullptr != geom)
-            context.VisitElement(*geom);
+            context.VisitGeometry(*geom);
 
         ++numDrawn;
 

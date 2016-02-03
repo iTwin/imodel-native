@@ -251,7 +251,7 @@ public:
 //! @ingroup DgnElementGroup
 // @bsiclass                                                     KeithBentley    10/13
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnElement : NonCopyableClass, ICodedObject
+struct EXPORT_VTABLE_ATTRIBUTE DgnElement : NonCopyableClass, ICodedEntity
 {
 public:
     friend struct DgnElements;
@@ -1270,6 +1270,8 @@ protected:
     DGNPLATFORM_EXPORT virtual void _GetInfoString(HitDetailCR, Utf8StringR descr, Utf8CP delimiter) const;
     DGNPLATFORM_EXPORT virtual SnapStatus _OnSnap(SnapContextR) const;
     GeometryStreamR GetGeometryStreamR() {return const_cast<GeometryStreamR>(_GetGeometryStream());} // Only GeometryBuilder should have write access to the GeometryStream...
+    virtual DgnElement::Hilited _IsHilited() const {if (nullptr == ToElement()) return DgnElement::Hilited::None; return (DgnElement::Hilited) ToElement()->m_flags.m_hilited;} //!< Get the current Hilited state of this element
+    DGNPLATFORM_EXPORT virtual void _SetHilited(DgnElement::Hilited newState) const; //!< Change the current Hilited state of this element
 
 public:
     bool HasGeometry() const {return _GetGeometryStream().HasGeometry();} //!< return false if this geometry source currently has no geometry (is empty).
@@ -1286,14 +1288,12 @@ public:
     AxisAlignedBox3d CalculateRange3d() const {return _CalculateRange3d();}
     DGNPLATFORM_EXPORT Transform GetPlacementTransform() const;
 
-    // NOT_NOW_GEOMETRY_SOURCE - Make hilite/undisplayed virtual so transients can use them...
-    bool IsUndisplayed() const {if (nullptr == ToElement()) return false; return ToElement()->m_flags.m_undisplayed;}
-    DgnElement::Hilited IsHilited() const {if (nullptr == ToElement()) return DgnElement::Hilited::None; return (DgnElement::Hilited) ToElement()->m_flags.m_hilited;} //!< Get the current Hilited state of this element
+    DgnElement::Hilited IsHilited() const {return _IsHilited();}
     bool IsInSelectionSet() const {if (nullptr == ToElement()) return false; return ToElement()->m_flags.m_inSelectionSet;}
-
-    DGNPLATFORM_EXPORT void SetUndisplayed(bool yesNo) const;
-    DGNPLATFORM_EXPORT void SetHilited(DgnElement::Hilited newState) const; //!< Change the current Hilited state of this element
+    bool IsUndisplayed() const {if (nullptr == ToElement()) return false; return ToElement()->m_flags.m_undisplayed;} //!< @private
+    void SetHilited(DgnElement::Hilited newState) const {_SetHilited(newState);} //!< Change the current Hilited state of this element
     DGNPLATFORM_EXPORT void SetInSelectionSet(bool yesNo) const; //!< @private
+    DGNPLATFORM_EXPORT void SetUndisplayed(bool yesNo) const; //!< @private
 
     Render::GraphicSet& Graphics() const {return _Graphics();}
     Render::GraphicPtr Stroke(ViewContextR context, double pixelSize) const {return _Stroke(context, pixelSize);}
@@ -2027,34 +2027,6 @@ public:
     //! @param[in]      viewport The viewport for which to drop graphics
     DGNPLATFORM_EXPORT void DropGraphicsForViewport(DgnViewportCR viewport);
 };
-
-//=======================================================================================
-//! Can be used as the base class for an Item that uses an IECInstance to cache its properties in memory.
-//! @note There is no AspectHandler for InstanceBackedItem. A class that derives from InstanceBackedItem must
-//! register its own handler.
-// @bsiclass                                                BentleySystems
-//=======================================================================================
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-struct InstanceBackedItem : DgnElement::Item
-{
-    ECN::IECInstancePtr m_instance;
-
-    Utf8CP _GetECSchemaName() const override {return m_instance->GetClass().GetSchema().GetName().c_str();}
-    Utf8CP _GetECClassName() const override {return m_instance->GetClass().GetName().c_str();}
-    DGNPLATFORM_EXPORT DgnDbStatus _LoadProperties(DgnElementCR) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _UpdateProperties(DgnElementCR) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _GenerateGeometricPrimitive(GeometricElementR el, GenerateReason) override;
-
-    InstanceBackedItem() {}
-
-    void SetInstanceId(BeSQLite::EC::ECInstanceId eid);
-};
-#endif
-
-#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
-// *** WIP_ELEMENT_ITEM - move this back into ComponentSolution after making ElementItem a top-level class
-DgnDbStatus ExecuteComponentSolutionEGA(DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, ECN::IECInstanceCR itemInstance, Utf8StringCR cmName, Utf8StringCR paramNames, DgnElement::Item& item);
-#endif
 
 //=======================================================================================
 //! The basic element copier. Makes a persistent copy of elements and their children.

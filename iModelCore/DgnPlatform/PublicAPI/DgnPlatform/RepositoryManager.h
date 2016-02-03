@@ -74,6 +74,11 @@ public:
         LockRequest& Locks() { return m_locks; } //!< A writable reference to the requested locks
         DgnCodeSet& Codes() { return m_codes; } //!< A writable reference to the requested codes
         void SetOptions(ResponseOptions opts) { m_options = opts; } //!< Customize the data to be included in the response to this request
+
+        void Reset() { m_options = ResponseOptions::None; m_codes.clear(); m_locks.Clear(); }
+
+        DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
+        DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
     };
 
     //! A response to a Request, containing the overall result as a RepositoryStatus, and any additional information as specified by ResponseOptions accompanying the request
@@ -97,6 +102,9 @@ public:
 
         //! Reset to default state ("invalid response")
         void Invalidate() { m_status = RepositoryStatus::InvalidResponse; m_lockStates.clear(); m_codeStates.clear(); }
+
+        DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
+        DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
     };
         
 private:
@@ -357,6 +365,28 @@ public:
 
 ENUM_IS_FLAGS(IBriefcaseManager::ResponseOptions);
 ENUM_IS_FLAGS(IBriefcaseManager::Resources);
+
+//=======================================================================================
+//! Utilities for converting IRepositoryManager-related values to/from JSON.
+//! See also To/FromJson() methods on classes like LockRequest, LockableId, etc.
+// @bsiclass                                                      Paul.Connelly   12/15
+//=======================================================================================
+namespace RepositoryJson
+{
+    DGNPLATFORM_EXPORT bool BriefcaseIdFromJson(BeSQLite::BeBriefcaseId& id, JsonValueCR value);
+    DGNPLATFORM_EXPORT bool BeInt64IdFromJson(BeSQLite::BeInt64Id& id, JsonValueCR value);
+    DGNPLATFORM_EXPORT bool LockLevelFromJson(LockLevel& level, JsonValueCR value);
+    DGNPLATFORM_EXPORT bool LockableTypeFromJson(LockableType& type, JsonValueCR value);
+    DGNPLATFORM_EXPORT bool RepositoryStatusFromJson(RepositoryStatus& status, JsonValueCR value);
+    DGNPLATFORM_EXPORT bool ResponseOptionsFromJson(IBriefcaseManager::ResponseOptions& options, JsonValueCR value);
+
+    DGNPLATFORM_EXPORT void BriefcaseIdToJson(JsonValueR value, BeSQLite::BeBriefcaseId id);
+    DGNPLATFORM_EXPORT void BeInt64IdToJson(JsonValueR value, BeSQLite::BeInt64Id id);
+    DGNPLATFORM_EXPORT void LockLevelToJson(JsonValueR value, LockLevel level);
+    DGNPLATFORM_EXPORT void LockableTypeToJson(JsonValueR value, LockableType type);
+    DGNPLATFORM_EXPORT void RepositoryStatusToJson(JsonValueR value, RepositoryStatus status);
+    DGNPLATFORM_EXPORT void ResponseOptionsToJson(JsonValueR value, IBriefcaseManager::ResponseOptions options);
+} // namespace RepositoryJson
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

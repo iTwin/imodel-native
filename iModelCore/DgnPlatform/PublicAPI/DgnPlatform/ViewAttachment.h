@@ -16,7 +16,7 @@
 DGNPLATFORM_TYPEDEFS(ViewAttachment);
 DGNPLATFORM_REF_COUNTED_PTR(ViewAttachment);
 
-#define DGN_CLASSNAME_ViewAttachment "ViewAttachmentElement"
+#define DGN_CLASSNAME_ViewAttachment "ViewAttachment"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 

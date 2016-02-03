@@ -208,7 +208,7 @@ protected:
 
     virtual void _OverrideGraphicParams(Render::OvrGraphicParamsR, GeometrySourceCP) {}
 
-    //! Invokes the _VisitElement on \a context for <em>each element</em> that is in the view.
+    //! Invokes the _VisitGeometry on \a context for <em>each element</em> that is in the view.
     //! For normal views, this does the same thing as _DrawView.
     virtual void _VisitAllElements(ViewContextR& context) {_DrawView(context);}
 
