@@ -202,7 +202,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _DrawStyledBSplineCurve2d(MSBsplineCurveCR, double zDepth);
     DGNPLATFORM_EXPORT virtual void _AddTextString(TextStringCR);
     DGNPLATFORM_EXPORT virtual StatusInt _InitContextForView();
-    DGNPLATFORM_EXPORT virtual StatusInt _VisitElement(GeometrySourceCR);
+    DGNPLATFORM_EXPORT virtual StatusInt _VisitGeometry(GeometrySourceCR);
     DGNPLATFORM_EXPORT virtual void _InitScanRangeAndPolyhedron();
     DGNPLATFORM_EXPORT virtual bool _VisitAllModelElements();
     DGNPLATFORM_EXPORT virtual StatusInt _VisitDgnModel(DgnModelP);
@@ -253,7 +253,7 @@ public:
 
     Render::GraphicPtr CreateGraphic(Render::Graphic::CreateParams const& params=Render::Graphic::CreateParams()) {return _CreateGraphic(params);}
     void AddSubGraphic(Render::GraphicR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams) {_AddSubGraphic(graphic, partId, subToGraphic, geomParams);}
-    StatusInt VisitElement(GeometrySourceCR elem) {return _VisitElement(elem);}
+    StatusInt VisitGeometry(GeometrySourceCR elem) {return _VisitGeometry(elem);}
 
     /// @name Coordinate Query and Conversion
     //@{
@@ -378,11 +378,11 @@ public:
 
     /// @name Identifying element "topology".
     //@{
-    //! Query the current IElementTopology.
+    //! Query the current IElemTopology.
     //! @return An object that holds additional information about the graphics that are currently being drawn.
     IElemTopologyCP GetElemTopology() const {return (m_currElemTopo.IsValid() ? m_currElemTopo.get() : nullptr);}
 
-    //! Set the current IElementTopology.
+    //! Set the current IElemTopology.
     //! @param topo An object holding additional information about the graphics to be drawn or nullptr to clear the current topology pointer.
     void SetElemTopology(IElemTopologyCP topo) {m_currElemTopo = topo;}
 

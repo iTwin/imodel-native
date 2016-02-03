@@ -513,7 +513,7 @@ bool ViewContext::IsUndisplayed(GeometrySourceCR source)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ViewContext::_VisitElement(GeometrySourceCR source)
+StatusInt ViewContext::_VisitGeometry(GeometrySourceCR source)
     {
     if (_CheckStop())
         return ERROR;
@@ -537,7 +537,7 @@ static StatusInt visitElementFunc(DgnElementCR element, void* inContext, ScanCri
         return SUCCESS;
     
     ViewContextR context = *(ViewContext*)inContext;
-    return context.VisitElement(*geomElement);
+    return context.VisitGeometry(*geomElement);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/FenceParams.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -777,14 +777,14 @@ virtual void _DrawAreaPattern(ClipStencil& boundary) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt _VisitElement(GeometrySourceCR source) override
+virtual StatusInt _VisitGeometry(GeometrySourceCR source) override
     {
     if (!m_collectContents)
-        return T_Super::_VisitElement(source);
+        return T_Super::_VisitGeometry(source);
 
     m_graphic->OnNewElement(); // Initialize accept status for top-level element...
 
-    if (SUCCESS == T_Super::_VisitElement(source) && m_graphic->GetCurrentAccept())
+    if (SUCCESS == T_Super::_VisitGeometry(source) && m_graphic->GetCurrentAccept())
         {
         if (nullptr != source.ToElement())
             m_contents.insert(source.ToElement()->GetElementId());
@@ -820,7 +820,7 @@ bool            AcceptElement(GeometrySourceCR element, FenceParamsR fp)
     m_graphic->Init();
     _Detach();
 
-    return (SUCCESS == _VisitElement(element) && m_graphic->GetCurrentAccept());
+    return (SUCCESS == _VisitGeometry(element) && m_graphic->GetCurrentAccept());
     }
 
 /*---------------------------------------------------------------------------------**//**
