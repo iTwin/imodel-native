@@ -543,7 +543,7 @@ void DgnSubCategory::Appearance::RelocateToDestinationDb(DgnImportContext& conte
 
     if (m_style.IsValid())
         {
-        BeAssert(false && "*** TBD: remap style id");
+        //BeAssert(false && "*** TBD: remap style id");
         }
 
     if (m_material.IsValid())
