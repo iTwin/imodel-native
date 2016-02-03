@@ -1084,7 +1084,7 @@ void PerformanceElementsCRUDTestFixture::BindParams (DgnElementPtr& element, ECS
         snappyTo.Write (geom.GetData (), geom.GetSize ());
         }
 
-    auto geomIndex = stmt.GetParameterIndex ("Geometry");
+    auto geomIndex = stmt.GetParameterIndex ("GeometryStream");
     uint32_t zipSize = snappyTo.GetCompressedSize ();
     if (0 < zipSize)
         {
@@ -1196,7 +1196,7 @@ void PerformanceElementsCRUDTestFixture::BindUpdateParams (DgnElementPtr& elemen
         snappyTo.Write (geom.GetData (), geom.GetSize ());
         }
 
-    auto geomIndex = stmt.GetParameterIndex ("Geometry");
+    auto geomIndex = stmt.GetParameterIndex ("GeometryStream");
     uint32_t zipSize = snappyTo.GetCompressedSize ();
     if (0 < zipSize)
         {
