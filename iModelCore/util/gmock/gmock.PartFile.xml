@@ -6,7 +6,7 @@
         <SubPart PartName="google_gmock"/>
         <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
         <Bindings>
-            <Libs>Delivery/$(stlibprefix)gmock$(stlibext)</Libs>
+            <Libs ProductDirectoryName="UnitTestLibs" Required="false">Delivery/$(stlibprefix)gmock$(stlibext)</Libs>
         </Bindings>
     </Part>
     
