@@ -109,7 +109,7 @@
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=BentleyTest -dTEST_COLLECTION_PRODUCT=Bentley-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=BentleyTest -dTEST_COLLECTION_PRODUCT=Bentley-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*,Android*">
         <SubProduct ProductName="Bentley-Tests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
