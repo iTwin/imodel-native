@@ -36,7 +36,7 @@ struct less_str
 {
 bool operator()(Utf8CP s1, Utf8CP s2) const
     {
-    if (strcmpi(s1, s2) < 0)
+    if (BeStringUtilities::Stricmp(s1, s2) < 0)
         return true;
 
     return false;
