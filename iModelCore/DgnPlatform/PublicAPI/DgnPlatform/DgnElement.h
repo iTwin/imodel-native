@@ -1335,6 +1335,7 @@ protected:
     virtual DgnElementCP _ToElement() const override final { return this; }
     virtual GeometrySourceCP _ToGeometrySource() const override final { return this; }
     virtual GeometrySource3dCP _ToGeometrySource3d() const override final { return this; }
+    virtual Utf8CP _GetGeometryColumnTableName() const override final { return DGN_TABLE(DGN_CLASSNAME_GeometricElement3d); }
     virtual DgnCategoryId _GetCategoryId() const override final { return m_categoryId; }
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { return DoSetCategoryId(categoryId); }
     virtual GeomStreamCR _GetGeomStream() const override final { return m_geom; }
@@ -1384,6 +1385,7 @@ protected:
     virtual DgnElementCP _ToElement() const override final { return this; }
     virtual GeometrySourceCP _ToGeometrySource() const override final { return this; }
     virtual GeometrySource2dCP _ToGeometrySource2d() const override final { return this; }
+    virtual Utf8CP _GetGeometryColumnTableName() const override final { return DGN_TABLE(DGN_CLASSNAME_GeometricElement2d); }
     virtual DgnCategoryId _GetCategoryId() const override final { return m_categoryId; }
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { return DoSetCategoryId(categoryId); }
     virtual GeomStreamCR _GetGeomStream() const override final { return m_geom; }
@@ -1411,7 +1413,6 @@ struct EXPORT_VTABLE_ATTRIBUTE SpatialElement : GeometricElement3d
     DEFINE_T_SUPER(GeometricElement3d);
 protected:
     SpatialElementCP _ToSpatialElement() const override final {return this;}
-    virtual Utf8CP _GetGeometryColumnTableName() const override final { return DGN_TABLE(DGN_CLASSNAME_SpatialElement); }
 public:
     explicit SpatialElement(CreateParams const& params) : T_Super(params) {}
 };
@@ -1464,8 +1465,6 @@ struct EXPORT_VTABLE_ATTRIBUTE GraphicalElement2d : GeometricElement2d
 {
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_GraphicalElement2d, GeometricElement2d)
     friend struct dgn_ElementHandler::Graphical2d;
-protected:
-    virtual Utf8CP _GetGeometryColumnTableName() const override final {return DGN_TABLE(DGN_CLASSNAME_GeometricElement2d);}
 public:
     explicit GraphicalElement2d(CreateParams const& params) : T_Super(params) {}
 };
