@@ -2,7 +2,7 @@
 |
 |     $Source: Android/betest_static_initialize.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BeTestHost.h"
@@ -147,6 +147,15 @@ jstring         localStateDir
     BeJStringUtilities::InitWStringFromJString (env, s_docsDir, docsDir);
     BeJStringUtilities::InitWStringFromJString (env, s_tempDir, tempDir);
     BeJStringUtilities::InitWStringFromJString (env, s_localStateDir, localStateDir);
+
+    static bool s_cleaned;
+    if (!s_cleaned)
+        {
+        // Delete any files that may be hanging around since the last run
+        s_cleaned = true;
+        BeFileName::EmptyDirectory(s_tempDir);
+        BeFileName::EmptyDirectory(s_localStateDir);
+        }
 
     // ensure known locations have trailing separators for consistency with DgnClientFx
     s_assetsDir.AppendSeparator();
