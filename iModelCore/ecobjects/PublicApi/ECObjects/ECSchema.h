@@ -1382,6 +1382,7 @@ public:
     //! Note: baseClass must be of same derived class type
     //! @param[in] baseClass The class to derive from
     //! @param[in] insertAtBeginning true, if @p baseClass is inserted at the beginning of the list. 
+    //! @param[in] resolveConflicts if true, will automatically resolve conflicts with property names by renaming the property in the current (and derived) class
     //! false if @p baseClass is added to the end of the list
     ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false);
     
