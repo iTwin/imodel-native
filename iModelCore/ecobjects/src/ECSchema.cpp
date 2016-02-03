@@ -19,9 +19,6 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-extern ECObjectsStatus GetSchemaFileName (WStringR fullFileName, uint32_t& foundVersionMinor, WCharCP schemaPath, bool useLatestCompatibleMatch);
-
-
 // If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.
 // Test programs generally want to get error status back and not assert, so they call ECSchema::AssertOnXmlError (false);
 static  bool        s_noAssert = false;
@@ -1604,51 +1601,6 @@ bvector<ECSchemaP>& supplementalSchemas
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr     SearchPathSchemaFileLocater::LocateSchemaByPath (SchemaKeyR key, ECSchemaReadContextR schemaContext, SchemaMatchType matchType, bvector<WString>& searchPaths)
-    {
-    Utf8String twoDigitExpression;
-    Utf8String threeDigitExpression;
-
-    if (matchType == SCHEMAMATCHTYPE_Latest)
-        {
-        twoDigitExpression = ".*.*.ecschema.xml";
-        threeDigitExpression = ".*.*.*.ecschema.xml";
-        }
-    else if (matchType == SCHEMAMATCHTYPE_LatestCompatible)
-        {
-        twoDigitExpression.Sprintf(".%02d.*.ecschema.xml", key.m_versionMajor);
-        threeDigitExpression.Sprintf(".%02d.%02d.*.ecschema.xml", key.m_versionMajor, key.m_versionMiddle);
-        }
-    else if (matchType == SCHEMAMATCHTYPE_LatestReadCompatible)
-        {
-        twoDigitExpression.Sprintf(".%02d.*.ecschema.xml", key.m_versionMajor);
-        threeDigitExpression.Sprintf(".%02d.*.*.ecschema.xml", key.m_versionMajor);
-        }
-    else //MatchType_Exact
-        {
-        twoDigitExpression.Sprintf(".%02d.%02d.ecschema.xml", key.m_versionMajor, key.m_versionMinor);
-        threeDigitExpression.Sprintf(".%02d.%02d.%02d.ecschema.xml", key.m_versionMajor, key.m_versionMiddle, key.m_versionMinor);
-        }
-
-    Utf8CP schemaName = key.m_schemaName.c_str();
-    WString schemaMatchExpression;
-    schemaMatchExpression.AssignUtf8(schemaName);
-    schemaMatchExpression.AppendUtf8(twoDigitExpression.c_str());
-
-    WString schemaMatchExpression2;
-    schemaMatchExpression2.AssignUtf8(schemaName);
-    schemaMatchExpression2.AppendUtf8(threeDigitExpression.c_str());
-
-    ECSchemaPtr   schemaOut = FindMatchingSchema (schemaMatchExpression, key, schemaContext, matchType, searchPaths);
-    if(!schemaOut.IsValid())
-        schemaOut = FindMatchingSchema(schemaMatchExpression2, key, schemaContext, matchType, searchPaths);
-
-    return schemaOut;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Casey.Mullen                09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 SearchPathSchemaFileLocater::SearchPathSchemaFileLocater (bvector<WString> const& searchPaths) : m_searchPaths(searchPaths) {};
@@ -1666,12 +1618,119 @@ SearchPathSchemaFileLocaterPtr SearchPathSchemaFileLocater::CreateSearchPathSche
     return new SearchPathSchemaFileLocater(searchPaths);
     }
 
+void SearchPathSchemaFileLocater::AddCandidateSchemas
+(
+bvector<CandidateSchema>& foundFiles,
+BeFileName& fileExpression,
+SchemaKeyR desiredSchemaKey,
+SchemaMatchType matchType
+)
+    {
+    LOG.debugv(L"Checking for existence of %ls...", fileExpression.GetName());
+
+    BeFileListIterator  fileList(fileExpression.c_str(), false);
+    BeFileName          filePath;
+
+    while (SUCCESS == fileList.GetNextFileName(filePath))
+        {
+        Utf8String fileName = filePath.GetNameUtf8();
+
+        SchemaKey key;
+        if (SchemaKey::ParseSchemaFullName(key, fileName.c_str()) != ECObjectsStatus::Success)
+            {
+            LOG.warningv(L"Failed to parse schema file name %s. Skipping that file.", fileName.c_str());
+            continue;
+            }
+
+        if (!key.Matches(desiredSchemaKey, matchType))
+            continue;
+
+        foundFiles.push_back(CandidateSchema());
+        auto& candidate = foundFiles.back();
+        candidate.FileName = filePath;
+        candidate.Key = key;
+        }
+    }
+
+void SearchPathSchemaFileLocater::FindEligibleSchemaFiles(bvector<CandidateSchema>& foundFiles, SchemaKeyR desiredSchemaKey, SchemaMatchType matchType)
+    {
+    Utf8CP schemaName = desiredSchemaKey.m_schemaName.c_str();
+    WString twoVersionExpression;
+    WString threeVersionExpression;
+    twoVersionExpression.AssignUtf8(schemaName);
+    threeVersionExpression.AssignUtf8(schemaName);
+
+    Utf8String twoVersionSuffix;
+    Utf8String threeVersionSuffix;
+    
+    if (matchType == SCHEMAMATCHTYPE_Latest)
+        {
+        twoVersionSuffix = ".*.*.ecschema.xml";
+        threeVersionSuffix = ".*.*.*.ecschema.xml";
+        }
+    else if (matchType == SCHEMAMATCHTYPE_LatestCompatible)
+        {
+        twoVersionSuffix.Sprintf(".%02d.*.ecschema.xml", desiredSchemaKey.m_versionMajor);
+        threeVersionSuffix.Sprintf(".%02d.%02d.*.ecschema.xml", desiredSchemaKey.m_versionMajor, desiredSchemaKey.m_versionMiddle);
+        }
+    else if (matchType == SCHEMAMATCHTYPE_LatestReadCompatible)
+        {
+        twoVersionSuffix.Sprintf(".%02d.*.ecschema.xml", desiredSchemaKey.m_versionMajor);
+        threeVersionSuffix.Sprintf(".%02d.*.*.ecschema.xml", desiredSchemaKey.m_versionMajor);
+        }
+    else //MatchType_Exact
+        {
+        twoVersionSuffix.Sprintf(".%02d.%02d.ecschema.xml", desiredSchemaKey.m_versionMajor, desiredSchemaKey.m_versionMinor);
+        threeVersionSuffix.Sprintf(".%02d.%02d.%02d.ecschema.xml",
+                                   desiredSchemaKey.m_versionMajor, desiredSchemaKey.m_versionMiddle, desiredSchemaKey.m_versionMinor);
+        }
+
+    twoVersionExpression.AppendUtf8(twoVersionSuffix.c_str());
+    threeVersionExpression.AppendUtf8(threeVersionSuffix.c_str());
+
+    for (WString schemaPathStr : m_searchPaths)
+        {
+        BeFileName schemaPath(schemaPathStr.c_str());
+        schemaPath.AppendToPath(twoVersionExpression.c_str());
+        AddCandidateSchemas(foundFiles, schemaPath, desiredSchemaKey, matchType);
+        
+        BeFileName threeVersionSchemaPath(schemaPathStr.c_str());
+        threeVersionSchemaPath.AppendToPath(threeVersionExpression.c_str());
+        AddCandidateSchemas(foundFiles, threeVersionSchemaPath, desiredSchemaKey, matchType);
+        }
+    }
+
+//Returns true if the first element goes before the second
+bool SearchPathSchemaFileLocater::SchemyKeyIsLessByVersion(CandidateSchema const& first, CandidateSchema const& second)
+    {
+    auto& left = first.Key;
+    auto& right = second.Key;
+
+    if (left.m_versionMajor != right.m_versionMajor)
+        return left.m_versionMajor < right.m_versionMajor;
+
+    if (left.m_versionMiddle != right.m_versionMiddle)
+        return left.m_versionMiddle < right.m_versionMiddle;
+
+    return left.m_versionMinor < right.m_versionMinor;
+    }
+
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Casey.Mullen                09/2011
+* @bsimethod                                    Robert.Schili                   02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext)
     {
-    return LocateSchemaByPath (key, schemaContext, matchType, m_searchPaths);
+    bvector<CandidateSchema> eligibleSchemaFiles;
+    FindEligibleSchemaFiles(eligibleSchemaFiles, key, matchType);
+    
+    size_t resultCount = eligibleSchemaFiles.size();
+    if (resultCount == 0)
+        return nullptr;
+
+    auto& schemaToLoad = *std::max_element(eligibleSchemaFiles.begin(), eligibleSchemaFiles.end(), SchemyKeyIsLessByVersion);
+    LOG.debugv(L"Attempting to load schema %ls...", schemaToLoad.FileName.GetName());
+
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2784,6 +2843,9 @@ bool SchemaKey::LessThan (SchemaKeyCR rhs, SchemaMatchType matchType) const
 
             if (m_versionMajor != rhs.m_versionMajor)
                 return m_versionMajor < rhs.m_versionMajor;
+
+            if (m_versionMiddle != rhs.m_versionMiddle)
+                return m_versionMiddle < rhs.m_versionMiddle;
 
             return m_versionMinor < rhs.m_versionMinor;
             break;

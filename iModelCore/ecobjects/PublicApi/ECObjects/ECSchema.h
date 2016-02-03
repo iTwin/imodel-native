@@ -2640,20 +2640,27 @@ public:
 
 /*__PUBLISH_SECTION_END__*/
 
+
 //=======================================================================================
 //! Locates schemas by looking in a given set of file system folder for ECSchemaXml files
 //=======================================================================================
 struct SearchPathSchemaFileLocater : IECSchemaLocater, RefCountedBase, NonCopyableClass
 {
 private:
+    struct CandidateSchema
+        {
+        BeFileName FileName;
+        SchemaKey Key;
+        };
+
     bvector<WString> m_searchPaths;
     SearchPathSchemaFileLocater (bvector<WString> const& searchPaths);
     virtual ~SearchPathSchemaFileLocater();
     static bool TryLoadingSupplementalSchemas(Utf8StringCR schemaName, WStringCR schemaFilePath, ECSchemaReadContextR schemaContext, bvector<ECSchemaP>& supplementalSchemas);
 
-    static ECSchemaPtr                  LocateSchemaByPath (SchemaKeyR key, ECSchemaReadContextR context, SchemaMatchType matchType, bvector<WString>& searchPaths);
-
-    static ECSchemaPtr                  FindMatchingSchema (WStringCR schemaMatchExpression, SchemaKeyR key, ECSchemaReadContextR schemaContext, SchemaMatchType matchType, bvector<WString>& searchPaths);
+    void FindEligibleSchemaFiles(bvector<CandidateSchema>& foundFiles, SchemaKeyR desiredSchemaKey, SchemaMatchType matchType);
+    void AddCandidateSchemas(bvector<CandidateSchema>& foundFiles, BeFileName& fileExpression, SchemaKeyR desiredSchemaKey, SchemaMatchType matchType);
+    static bool SchemyKeyIsLessByVersion(CandidateSchema const& first, CandidateSchema const& second);
 
 protected:
     virtual ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override;
