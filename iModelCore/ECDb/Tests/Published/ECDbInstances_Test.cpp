@@ -852,7 +852,7 @@ TEST_F(ECDbInstances, AdapterCheckClassBeforeOperation)
     BeFileName jsonInputFile;
     BeTest::GetHost().GetDocumentsRoot(jsonInputFile);
     jsonInputFile.AppendToPath(L"ECDb");
-    jsonInputFile.AppendToPath(L"FieldEngineerStructArray.json");
+    jsonInputFile.AppendToPath(L"JsonTestClass.json");
 
     BeTest::SetFailOnAssert(false);
     // Parse JSON value using JsonCpp
@@ -871,8 +871,6 @@ TEST_F(ECDbInstances, AdapterCheckClassBeforeOperation)
     ECInstanceId instanceId;
     ECInstanceIdHelper::FromString(instanceId, instance->GetInstanceId().c_str());
     sms = jsonDeleter.Delete(instanceId);
-    //ECDB_RowCount
-    //EXPECT_EQ(ERROR, sms);
 
     BeTest::SetFailOnAssert(true);
     }

@@ -1099,11 +1099,576 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                 false, "Multiple classes in a constraint with key properties are not supported")
         };
 
-    for (SchemaItem const& testItem : testItems)
-        {
-        AssertSchemaImport(testItem, "ecdbschemarules.ecdb");
-        }
+    AssertSchemaImport(testItems, "ecdbschemarules.ecdb");
     }
 
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  02/16
+//+---------------+---------------+---------------+---------------+---------------+------
+void AssertRelationship(ECDbCR ecdb, ECDbTestFixture::SchemaItem const& schemaItem, Utf8CP schemaName, Utf8CP relationshipClassName, bool expectedReadonly, ECInstanceKey const& sourceKey, ECInstanceKey const& targetKey)
+    {
+    //insert relationship
+    Utf8String ecsql;
+    ecsql.Sprintf("INSERT INTO %s.%s(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(%lld,%lld,%lld,%lld)",
+                  schemaName, relationshipClassName, sourceKey.GetECInstanceId().GetValue(), sourceKey.GetECClassId(),
+                  targetKey.GetECInstanceId().GetValue(), targetKey.GetECClassId());
+
+    ECSqlStatement stmt;
+    if (expectedReadonly)
+        {
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, ecsql.c_str())) << schemaItem.m_name.c_str() << ": Readonly ECRelationship cannot be modified. ECSQL: " << ecsql.c_str();
+        }
+    else
+        {
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << schemaItem.m_name.c_str() << ": ECSQL: " << ecsql.c_str();
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << schemaItem.m_name.c_str() << ": ECSQL: " << ecsql.c_str();
+        }
+    stmt.Finalize();
+
+    //select
+    ecsql.Sprintf("SELECT SourceECInstanceId, SourceECClassId FROM %s.%s WHERE TargetECInstanceId=%lld",
+                  schemaName, relationshipClassName, targetKey.GetECInstanceId().GetValue());
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << schemaItem.m_name.c_str() << ": ECSQL: " << ecsql.c_str();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << schemaItem.m_name.c_str() << ": ECSQL: " << ecsql.c_str();
+    ASSERT_EQ(sourceKey.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue()) << schemaItem.m_name.c_str() << ": ECSQL: " << ecsql.c_str();
+    ASSERT_EQ(sourceKey.GetECClassId(), stmt.GetValueInt64(1)) << schemaItem.m_name.c_str() << ": ECSQL: " << ecsql.c_str();
+    stmt.Finalize();
+
+    ecsql.Sprintf("SELECT TargetECInstanceId, TargetECClassId FROM %s.%s WHERE SourceECInstanceId=%lld",
+                  schemaName, relationshipClassName, sourceKey.GetECInstanceId().GetValue());
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << schemaItem.m_name.c_str() << ": ECSQL: " << ecsql.c_str();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << schemaItem.m_name.c_str() << ": ECSQL: " << ecsql.c_str();
+    ASSERT_EQ(targetKey.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue()) << schemaItem.m_name.c_str() << ": ECSQL: " << ecsql.c_str();
+    ASSERT_EQ(targetKey.GetECClassId(), stmt.GetValueInt64(1)) << schemaItem.m_name.c_str() << ": ECSQL: " << ecsql.c_str();
+    stmt.Finalize();
+
+    //delete relationship
+    ecsql.Sprintf("DELETE FROM %s.%s WHERE SourceECInstanceId=%lld AND SourceECClassId=%lld AND TargetECInstanceId=%lld AND TargetECClassId=%lld",
+                  schemaName, relationshipClassName, sourceKey.GetECInstanceId().GetValue(), sourceKey.GetECClassId(),
+                  targetKey.GetECInstanceId().GetValue(), targetKey.GetECClassId());
+
+    if (expectedReadonly)
+        {
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, ecsql.c_str())) << schemaItem.m_name.c_str() << ": Readonly ECRelationship cannot be modified. ECSQL: " << ecsql.c_str();
+        }
+    else
+        {
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << schemaItem.m_name.c_str() << ": ECSQL: " << ecsql.c_str();
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << schemaItem.m_name.c_str() << ": ECSQL: " << ecsql.c_str();
+        ASSERT_EQ(1, ecdb.GetModifiedRowCount()) << schemaItem.m_name.c_str() << ": ECSQL: " << ecsql.c_str();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  02/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_UnsupportedCases)
+    {
+    std::vector<SchemaItem> unsupportedSchemas;
+    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                            "  <ECEntityClass typeName='Parent' >"
+                                            "    <ECProperty propertyName='Name' typeName='string' />"
+                                            "  </ECEntityClass>"
+                                            "  <ECEntityClass typeName='ParentA' >"
+                                            "     <BaseClass>Parent</BaseClass>"
+                                            "    <ECProperty propertyName='PA' typeName='long' />"
+                                            "  </ECEntityClass>"
+                                            "  <ECEntityClass typeName='ParentB' >"
+                                            "     <BaseClass>Parent</BaseClass>"
+                                            "    <ECProperty propertyName='PB' typeName='long' />"
+                                            "  </ECEntityClass>"
+                                            "  <ECEntityClass typeName='Child' >"
+                                            "    <ECProperty propertyName='C1' typeName='long' />"
+                                            "  </ECEntityClass>"
+                                            "  <ECRelationshipClass typeName='ParentHasChildren' strength='embedding'>"
+                                            "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                            "        <Class class='Parent' />"
+                                            "     </Source>"
+                                            "     <Target cardinality='(0,N)' polymorphic='True'>"
+                                            "         <Class class='Child' />"
+                                            "     </Target>"
+                                            "  </ECRelationshipClass>"
+                                            "</ECSchema>", false, "Referenced end maps to more than one table"));
+
+    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                            "  <ECEntityClass typeName='Parent1' >"
+                                            "    <ECProperty propertyName='Name' typeName='string' />"
+                                            "  </ECEntityClass>"
+                                            "  <ECEntityClass typeName='Parent2' >"
+                                            "    <ECProperty propertyName='PA' typeName='long' />"
+                                            "  </ECEntityClass>"
+                                            "  <ECEntityClass typeName='Child' >"
+                                            "    <ECProperty propertyName='C1' typeName='long' />"
+                                            "  </ECEntityClass>"
+                                            "  <ECRelationshipClass typeName='ParentHasChildren' strength='embedding'>"
+                                            "    <Source cardinality='(0,1)' polymorphic='False'>"
+                                            "        <Class class='Parent1' />"
+                                            "        <Class class='Parent2' />"
+                                            "     </Source>"
+                                            "     <Target cardinality='(0,N)' polymorphic='True'>"
+                                            "         <Class class='Child' />"
+                                            "     </Target>"
+                                            "  </ECRelationshipClass>"
+                                            "</ECSchema>", false, "Referenced end maps to more than one table"));
+
+    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                            "  <ECEntityClass typeName='Parent' >"
+                                            "    <ECProperty propertyName='Name' typeName='string' />"
+                                            "  </ECEntityClass>"
+                                            "  <ECEntityClass typeName='ParentA' >"
+                                            "     <BaseClass>Parent</BaseClass>"
+                                            "    <ECProperty propertyName='PA' typeName='long' />"
+                                            "  </ECEntityClass>"
+                                            "  <ECEntityClass typeName='ParentB' >"
+                                            "     <BaseClass>Parent</BaseClass>"
+                                            "    <ECProperty propertyName='PB' typeName='long' />"
+                                            "  </ECEntityClass>"
+                                            "  <ECEntityClass typeName='Child' >"
+                                            "    <ECProperty propertyName='C1' typeName='long' />"
+                                            "  </ECEntityClass>"
+                                            "  <ECRelationshipClass typeName='ChildHasParent' strength='embedding' strengthDirection='backward'>"
+                                            "     <Source cardinality='(0,N)' polymorphic='True'>"
+                                            "         <Class class='Child' />"
+                                            "     </Source>"
+                                            "    <Target cardinality='(0,1)' polymorphic='True'>"
+                                            "        <Class class='Parent' />"
+                                            "     </Target>"
+                                            "  </ECRelationshipClass>"
+                                            "</ECSchema>", false, "Referenced end maps to more than one table"));
+
+    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                            "  <ECEntityClass typeName='Parent' >"
+                                            "    <ECProperty propertyName='Name' typeName='string' />"
+                                            "  </ECEntityClass>"
+                                            "  <ECEntityClass typeName='ParentA' >"
+                                            "     <BaseClass>Parent</BaseClass>"
+                                            "    <ECProperty propertyName='PA' typeName='long' />"
+                                            "  </ECEntityClass>"
+                                            "  <ECEntityClass typeName='ParentB' >"
+                                            "     <BaseClass>Parent</BaseClass>"
+                                            "    <ECProperty propertyName='PB' typeName='long' />"
+                                            "  </ECEntityClass>"
+                                            "  <ECEntityClass typeName='Child' >"
+                                            "    <ECProperty propertyName='C1' typeName='long' />"
+                                            "  </ECEntityClass>"
+                                            "  <ECRelationshipClass typeName='ChildHasParent' strength='referencing'>"
+                                            "     <Source cardinality='(0,N)' polymorphic='True'>"
+                                            "         <Class class='Child' />"
+                                            "     </Source>"
+                                            "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                            "        <Class class='Parent' />"
+                                            "     </Target>"
+                                            "  </ECRelationshipClass>"
+                                            "</ECSchema>", false, "Target end of link table maps to more than one table"));
+
+    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                            "  <ECEntityClass typeName='Parent' >"
+                                            "    <ECProperty propertyName='Name' typeName='string' />"
+                                            "  </ECEntityClass>"
+                                            "  <ECEntityClass typeName='ParentA' >"
+                                            "     <BaseClass>Parent</BaseClass>"
+                                            "    <ECProperty propertyName='PA' typeName='long' />"
+                                            "  </ECEntityClass>"
+                                            "  <ECEntityClass typeName='ParentB' >"
+                                            "     <BaseClass>Parent</BaseClass>"
+                                            "    <ECProperty propertyName='PB' typeName='long' />"
+                                            "  </ECEntityClass>"
+                                            "  <ECEntityClass typeName='Child' >"
+                                            "    <ECProperty propertyName='C1' typeName='long' />"
+                                            "  </ECEntityClass>"
+                                            "  <ECRelationshipClass typeName='ChildHasParent' strength='referencing'>"
+                                            "     <Source cardinality='(0,N)' polymorphic='True'>"
+                                            "         <Class class='Parent' />"
+                                            "     </Source>"
+                                            "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                            "        <Class class='Child' />"
+                                            "     </Target>"
+                                            "  </ECRelationshipClass>"
+                                            "</ECSchema>", false, "Source end of link table maps to more than one table"));
+
+    AssertSchemaImport(unsupportedSchemas, "ecdbrelationshipmappingrules.ecdb");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  02/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_SupportedCases)
+    {
+
+    {
+    SchemaItem testSchema("Child hierarchy in SharedTable", 
+                          "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                          "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                          "  <ECEntityClass typeName='Parent' >"
+                          "    <ECProperty propertyName='ParentProp' typeName='int' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='Child' >"
+                          "     <ECCustomAttributes>"
+                          "         <ClassMap xmlns='ECDbMap.01.00'>"
+                          "             <MapStrategy>"
+                          "                 <Strategy>SharedTable</Strategy>"
+                          "                 <AppliesToSubclasses>True</AppliesToSubclasses>"
+                          "             </MapStrategy>"
+                          "         </ClassMap>"
+                          "     </ECCustomAttributes>"
+                          "    <ECProperty propertyName='ChildProp' typeName='int' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='ChildA' >"
+                          "     <BaseClass>Child</BaseClass>"
+                          "    <ECProperty propertyName='ChildAProp' typeName='int' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='ChildB' >"
+                          "     <BaseClass>Child</BaseClass>"
+                          "    <ECProperty propertyName='ChildBProp' typeName='int' />"
+                          "  </ECEntityClass>"
+                          "  <ECRelationshipClass typeName='ParentHasChildren' strength='embedding'>"
+                          "     <Source cardinality='(0,1)' polymorphic='True'>"
+                          "         <Class class='Parent' />"
+                          "     </Source>"
+                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "        <Class class='Child' />"
+                          "     </Target>"
+                          "  </ECRelationshipClass>"
+                          "</ECSchema>");
+    
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testSchema, "ecdbrelationshipmappingrules_childhierarchyinsharedtable.ecdb");
+    ASSERT_FALSE(asserted);
+
+    ECInstanceKey parentKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Parent(ParentProp) VALUES(1)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(parentKey));
+    }
+
+    ECInstanceKey childKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.ChildA(ChildAProp,ChildProp) VALUES(2,2)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(childKey));
+    }
+
+    //WIP_REL: Fails because ECSQL DELETE is incorrectly prepared (exp: 126=129)
+    //ECSQL: DELETE FROM TestSchema.ParentHasChildren WHERE SourceECInstanceId=1 AND SourceECClassId=129 AND TargetECInstanceId=2 AND TargetECClassId=127
+    //->SQL: UPDATE [ts_Child] SET [ForeignECInstanceId_ParentHasChildren] = NULL
+    //       WHERE [ts_Child].[ForeignECInstanceId_ParentHasChildren] = 1 AND 126 = 129 AND [ts_Child].[ECInstanceId] = 2 AND [ts_Child].[ECClassId] = 127
+    //AssertRelationship(ecdb, testSchema, "TestSchema", "ParentHasChildren", false, parentKey, childKey);
+    }
+
+    {
+    SchemaItem testSchema("Parent hierarchy in SharedTable",
+                          "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                          "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                          "  <ECEntityClass typeName='Parent' >"
+                          "     <ECCustomAttributes>"
+                          "         <ClassMap xmlns='ECDbMap.01.00'>"
+                          "             <MapStrategy>"
+                          "                 <Strategy>SharedTable</Strategy>"
+                          "                 <AppliesToSubclasses>True</AppliesToSubclasses>"
+                          "             </MapStrategy>"
+                          "         </ClassMap>"
+                          "     </ECCustomAttributes>"
+                          "    <ECProperty propertyName='ParentProp' typeName='int' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='ParentA' >"
+                          "     <BaseClass>Parent</BaseClass>"
+                          "    <ECProperty propertyName='ParentAProp' typeName='int' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='ParentB' >"
+                          "     <BaseClass>Parent</BaseClass>"
+                          "    <ECProperty propertyName='ParentBProp' typeName='int' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='Child' >"
+                          "    <ECProperty propertyName='ChildProp' typeName='int' />"
+                          "  </ECEntityClass>"
+                          "  <ECRelationshipClass typeName='ParentHasChildren' strength='embedding'>"
+                          "     <Source cardinality='(0,1)' polymorphic='True'>"
+                          "         <Class class='Parent' />"
+                          "     </Source>"
+                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "        <Class class='Child' />"
+                          "     </Target>"
+                          "  </ECRelationshipClass>"
+                          "</ECSchema>");
+
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testSchema, "ecdbrelationshipmappingrules_parenthierarchyinsharedtable.ecdb");
+    ASSERT_FALSE(asserted);
+
+    ECInstanceKey parentKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.ParentA(ParentAProp,ParentProp) VALUES(1,1)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(parentKey));
+    }
+
+    ECInstanceKey childKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Child(ChildProp) VALUES(2)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(childKey));
+    }
+
+    //WIP_REL: Fails because ECSQL DELETE fails to prepare
+    //ECSQL: DELETE FROM TestSchema.ParentHasChildren WHERE SourceECInstanceId=1 AND SourceECClassId=128 AND TargetECInstanceId=2 AND TargetECClassId=126
+    //->SQL: UPDATE [ts_Child] SET [ForeignECInstanceId_ParentHasChildren] = NULL WHERE [ts_Child].[ForeignECInstanceId_ParentHasChildren] = 1 AND [ts_Parent].[ECClassId] = 128 AND [ts_Child].[ECInstanceId] = 2 AND 126 = 126
+    //failed to prepare with error code BE_SQLITE_ERROR : no such column : ts_Parent.ECClassId(BE_SQLITE_ERROR)    
+    //AssertRelationship(ecdb, testSchema, "TestSchema", "ParentHasChildren", false, parentKey, childKey);
+    }
+
+    {
+    SchemaItem testSchema("Different Parents in SharedTable", 
+                          "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                          "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                          "  <ECEntityClass typeName='Parent1' >"
+                          "     <ECCustomAttributes>"
+                          "         <ClassMap xmlns='ECDbMap.01.00'>"
+                          "             <MapStrategy>"
+                          "                 <Strategy>SharedTable</Strategy>"
+                          "                 <AppliesToSubclasses>False</AppliesToSubclasses>"
+                          "             </MapStrategy>"
+                          "             <TableName>ts_Parent</TableName>"
+                          "         </ClassMap>"
+                          "     </ECCustomAttributes>"
+                          "    <ECProperty propertyName='Parent1Prop' typeName='int' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='Parent2' >"
+                          "     <ECCustomAttributes>"
+                          "         <ClassMap xmlns='ECDbMap.01.00'>"
+                          "             <MapStrategy>"
+                          "                 <Strategy>SharedTable</Strategy>"
+                          "                 <AppliesToSubclasses>False</AppliesToSubclasses>"
+                          "             </MapStrategy>"
+                          "             <TableName>ts_Parent</TableName>"
+                          "         </ClassMap>"
+                          "     </ECCustomAttributes>"
+                          "    <ECProperty propertyName='Parent2Prop' typeName='int' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='Child' >"
+                          "    <ECProperty propertyName='ChildProp' typeName='int' />"
+                          "  </ECEntityClass>"
+                          "  <ECRelationshipClass typeName='ParentHasChildren' strength='embedding'>"
+                          "    <Source cardinality='(0,1)' polymorphic='False'>"
+                          "        <Class class='Parent1' />"
+                          "        <Class class='Parent2' />"
+                          "     </Source>"
+                          "     <Target cardinality='(0,N)' polymorphic='True'>"
+                          "         <Class class='Child' />"
+                          "     </Target>"
+                          "  </ECRelationshipClass>"
+                          "</ECSchema>");
+
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testSchema, "ecdbrelationshipmappingrules_differentparentsinsharedtable.ecdb");
+    ASSERT_FALSE(asserted);
+
+    ECInstanceKey parentKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Parent1(Parent1Prop) VALUES(1)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(parentKey));
+    }
+
+    ECInstanceKey childKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Child(ChildProp) VALUES(2)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(childKey));
+    }
+
+    //WIP_REL: Fails because ECSQL DELETE fails to prepare
+    //ECSQL: DELETE FROM TestSchema.ParentHasChildren WHERE SourceECInstanceId=1 AND SourceECClassId=127 AND TargetECInstanceId=2 AND TargetECClassId=126.
+    //->SQL: UPDATE [ts_Child] SET [ForeignECInstanceId_ParentHasChildren] = NULL WHERE [ts_Child].[ForeignECInstanceId_ParentHasChildren] = 1 AND [ts_Parent].[ECClassId] = 127 AND [ts_Child].[ECInstanceId] = 2 AND 126 = 126
+    //failed to prepare with error code BE_SQLITE_ERROR: no such column: ts_Parent.ECClassId (BE_SQLITE_ERROR)
+    //AssertRelationship(ecdb, testSchema, "TestSchema", "ParentHasChildren", false, parentKey, childKey);
+    }
+
+    {
+    SchemaItem testSchema("Children in different joined tables, but FK in primary table",
+                          "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                          "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                          "  <ECEntityClass typeName='Parent' >"
+                          "    <ECProperty propertyName='ParentProp' typeName='int' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='Child' >"
+                          "     <ECCustomAttributes>"
+                          "         <ClassMap xmlns='ECDbMap.01.00'>"
+                          "             <MapStrategy>"
+                          "                 <Strategy>SharedTable</Strategy>"
+                          "                 <Options>JoinedTablePerDirectSubclass</Options>"
+                          "                 <AppliesToSubclasses>True</AppliesToSubclasses>"
+                          "             </MapStrategy>"
+                          "         </ClassMap>"
+                          "     </ECCustomAttributes>"
+                          "    <ECProperty propertyName='ChildProp' typeName='int' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='ChildA' >"
+                          "     <BaseClass>Child</BaseClass>"
+                          "    <ECProperty propertyName='ChildAProp' typeName='int' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='ChildB' >"
+                          "     <BaseClass>Child</BaseClass>"
+                          "    <ECProperty propertyName='ChildBProp' typeName='int' />"
+                          "  </ECEntityClass>"
+                          "  <ECRelationshipClass typeName='ParentHasChildren' strength='embedding'>"
+                          "     <Source cardinality='(0,1)' polymorphic='True'>"
+                          "         <Class class='Parent' />"
+                          "     </Source>"
+                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "        <Class class='Child' />"
+                          "     </Target>"
+                          "  </ECRelationshipClass>"
+                          "</ECSchema>");
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testSchema, "ecdbrelationshipmappingrules_childreninseparatejoinedtables_fknotinjoinedtable.ecdb");
+    ASSERT_FALSE(asserted);
+
+    ECInstanceKey parentKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Parent(ParentProp) VALUES(1)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(parentKey));
+    }
+
+    ECInstanceKey childKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.ChildA(ChildAProp) VALUES(2)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(childKey));
+    }
+
+    //WIP_REL: Fails because ECSQL DELETE is incorrectly prepared (exp: 126=129)
+    //ECSQL: DELETE FROM TestSchema.ParentHasChildren WHERE SourceECInstanceId=1 AND SourceECClassId=129 AND TargetECInstanceId=2 AND TargetECClassId=127
+    //AssertRelationship(ecdb, testSchema, "TestSchema", "ParentHasChildren", false, parentKey, childKey);
+    }
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  02/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_ReadonlyCases)
+    {
+            {
+            SchemaItem testSchema("Children in different tables",
+                                  "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                  "  <ECEntityClass typeName='Parent' >"
+                                  "    <ECProperty propertyName='ParentProp' typeName='int' />"
+                                  "  </ECEntityClass>"
+                                  "  <ECEntityClass typeName='Child' >"
+                                  "    <ECProperty propertyName='ChildProp' typeName='int' />"
+                                  "  </ECEntityClass>"
+                                  "  <ECEntityClass typeName='ChildA' >"
+                                  "     <BaseClass>Child</BaseClass>"
+                                  "    <ECProperty propertyName='ChildAProp' typeName='int' />"
+                                  "  </ECEntityClass>"
+                                  "  <ECEntityClass typeName='ChildB' >"
+                                  "     <BaseClass>Child</BaseClass>"
+                                  "    <ECProperty propertyName='ChildBProp' typeName='int' />"
+                                  "  </ECEntityClass>"
+                                  "  <ECRelationshipClass typeName='ParentHasChildren' strength='embedding'>"
+                                  "     <Source cardinality='(0,1)' polymorphic='True'>"
+                                  "         <Class class='Parent' />"
+                                  "     </Source>"
+                                  "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                  "        <Class class='Child' />"
+                                  "     </Target>"
+                                  "  </ECRelationshipClass>"
+                                  "</ECSchema>");
+            ECDb ecdb;
+            bool asserted = false;
+            AssertSchemaImport(ecdb, asserted, testSchema, "ecdbrelationshipmappingrules_childreninseparatetables.ecdb");
+            ASSERT_FALSE(asserted);
+
+            ECInstanceKey parentKey;
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Parent(ParentProp) VALUES(1)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(parentKey));
+            }
+
+            ECInstanceKey childKey;
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.ChildA(ChildAProp) VALUES(2)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(childKey));
+            }
+
+            //WIP_REL: Fails because ECSQL SELECT fails with assertion
+            //ECSQL: SELECT SourceECInstanceId, SourceECClassId FROM TestSchema.ParentHasChildren WHERE TargetECInstanceId=2
+            //->SQL: SELECT [ParentHasChildren].[SourceECInstanceId], [ParentHasChildren].[SourceECClassId] FROM (SELECT [ts_Child].[ECInstanceId], 130 ECClassId, [ts_Child].ForeignECInstanceId_ParentHasChildren SourceECInstanceId, 129 [SourceECClassId], [ts_Child].ECInstanceId TargetECInstanceId,  FROM [ts_Child] WHERE [SourceECInstanceId] IS NOT NULL) [ParentHasChildren]  WHERE [ParentHasChildren].[TargetECInstanceId] = 2
+            //failed to prepare with error code BE_SQLITE_ERROR : near "FROM" : syntax error(BE_SQLITE_ERROR)
+            //AssertRelationship(ecdb, testSchema, "TestSchema", "ParentHasChildren", true, parentKey, childKey);
+            }
+
+            {
+            SchemaItem testSchema("Children in different joined tables, FK in joined tables",
+                                  "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                  "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                                  "  <ECEntityClass typeName='Parent' >"
+                                  "    <ECProperty propertyName='ParentProp' typeName='int' />"
+                                  "  </ECEntityClass>"
+                                  "  <ECEntityClass typeName='Child' >"
+                                  "     <ECCustomAttributes>"
+                                  "         <ClassMap xmlns='ECDbMap.01.00'>"
+                                  "             <MapStrategy>"
+                                  "                 <Strategy>SharedTable</Strategy>"
+                                  "                 <Options>JoinedTablePerDirectSubclass</Options>"
+                                  "                 <AppliesToSubclasses>True</AppliesToSubclasses>"
+                                  "             </MapStrategy>"
+                                  "         </ClassMap>"
+                                  "     </ECCustomAttributes>"
+                                  "    <ECProperty propertyName='ChildProp' typeName='int' />"
+                                  "  </ECEntityClass>"
+                                  "  <ECEntityClass typeName='GrandchildA' >"
+                                  "     <BaseClass>Child</BaseClass>"
+                                  "    <ECProperty propertyName='GrandchildAProp' typeName='int' />"
+                                  "  </ECEntityClass>"
+                                  "  <ECEntityClass typeName='GrandchildB' >"
+                                  "     <BaseClass>Child</BaseClass>"
+                                  "    <ECProperty propertyName='GrandchildBProp' typeName='int' />"
+                                  "  </ECEntityClass>"
+                                  "  <ECRelationshipClass typeName='ParentHasGrandchildren' strength='embedding'>"
+                                  "     <Source cardinality='(0,1)' polymorphic='True'>"
+                                  "         <Class class='Parent' />"
+                                  "     </Source>"
+                                  "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                  "        <Class class='GrandchildA' />"
+                                  "        <Class class='GrandchildB' />"
+                                  "     </Target>"
+                                  "  </ECRelationshipClass>"
+                                  "</ECSchema>");
+            ECDb ecdb;
+            bool asserted = false;
+            AssertSchemaImport(ecdb, asserted, testSchema, "ecdbrelationshipmappingrules_childreninseparatejoinedtables_fkinjoinedtable.ecdb");
+            ASSERT_FALSE(asserted);
+
+            ECInstanceKey parentKey;
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Parent(ParentProp) VALUES(1)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(parentKey));
+            }
+
+            ECInstanceKey childKey;
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.GrandchildA(GrandchildAProp) VALUES(2)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(childKey));
+            }
+
+            //WIP_REL DELETE is fails
+            //ECSQL: DELETE FROM TestSchema.ParentHasGrandchildren WHERE SourceECInstanceId=1 AND SourceECClassId=129 AND TargetECInstanceId=2 AND TargetECClassId=127
+            //AssertRelationship(ecdb, testSchema, "TestSchema", "ParentHasGrandchildren", false, parentKey, childKey);
+            }
+
+    }
 END_ECDBUNITTESTS_NAMESPACE
