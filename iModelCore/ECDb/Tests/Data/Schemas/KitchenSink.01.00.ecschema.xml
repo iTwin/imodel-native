@@ -337,7 +337,7 @@
             </ECCustomAttributes>
             <Class class="TestClass">
                 <Key>
-                    <Property name="StringMember"/>
+                    <Property name="ECInstanceId"/>
                 </Key>
             </Class>
         </Source>

@@ -746,7 +746,20 @@ BentleyStatus RelationshipMapInfo::_InitializeFromSchema()
 
     return SUCCESS;
     }
-    
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                01 / 2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus RelationshipMapInfo::ResolveEndTables(EndTablesOptimizationOptions source, EndTablesOptimizationOptions target)
+    {
+    ECRelationshipClassCP relationshipClass = GetECClass().GetRelationshipClassCP();
+    if (source != EndTablesOptimizationOptions::Skip)
+        m_sourceTables = m_ecdbMap.GetTablesFromRelationshipEnd(relationshipClass->GetSource(), source);
+
+    if (target != EndTablesOptimizationOptions::Skip)
+        m_targetTables = m_ecdbMap.GetTablesFromRelationshipEnd(relationshipClass->GetTarget(), target);
+
+    return m_sourceTables.empty() || m_targetTables.empty() ? ERROR : SUCCESS;
+    }
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Ramanujam.Raman                07 / 2012
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -764,38 +777,33 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
     ECRelationshipConstraintR target = relationshipClass->GetTarget();
 
     DetermineCardinality(source, target);
-    
-    m_sourceTables = m_ecdbMap.GetTablesFromRelationshipEnd(source);
-    m_targetTables = m_ecdbMap.GetTablesFromRelationshipEnd(target);
-    const size_t sourceTableCount = m_sourceTables.size();
-    const size_t targetTableCount = m_targetTables.size();
-
-    if (sourceTableCount == 0 || targetTableCount == 0)
-        {
-        LogClassNotMapped(NativeLogging::LOG_WARNING, *relationshipClass, "Source or target constraints don't include any concrete classes or its classes are not mapped to tables.");
-        m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, false);
-        return MapStatus::Success;
-        }
-
     const bool userStrategyIsForeignKeyMapping = m_customMapType == CustomMapType::ForeignKeyOnSource || m_customMapType == CustomMapType::ForeignKeyOnTarget;
-
     if (m_resolvedStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && m_resolvedStrategy.AppliesToSubclasses())
         {
         if (userStrategyIsForeignKeyMapping)
             {
             LOG.errorv("Failed to map ECRelationshipClass %s. Is has a ForeignKeyRelationshipClassMap CA and at the same time is part of a class hierarchy with the 'SharedTable (AppliesToSubclasses)' MapStrategy.",
-                       GetECClass().GetFullName());
+                GetECClass().GetFullName());
+
             return MapStatus::Error;
+            }
+
+        if (ResolveEndTables(EndTablesOptimizationOptions::ReferencedEnd, EndTablesOptimizationOptions::ReferencedEnd) == ERROR)
+            {
+            LogClassNotMapped(NativeLogging::LOG_WARNING, *relationshipClass, "Source or target constraints don't include any concrete classes or its classes are not mapped to tables.");
+            m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, false);
+            return MapStatus::Success;
             }
 
         return MapStatus::Success;
         }
 
     if (m_cardinality == Cardinality::ManyToMany && (relationshipClass->GetStrength() == StrengthType::Embedding ||
-                                                     relationshipClass->GetStrength() == StrengthType::Holding))
+        relationshipClass->GetStrength() == StrengthType::Holding))
         {
         LOG.errorv("Failed to map ECRelationshipClass %s. It has a N:N cardinality and the strength 'Embedding' or 'Holding'. N:N relationships only allow the strength 'Referencing'.",
-                   GetECClass().GetFullName());
+            GetECClass().GetFullName());
+
         return MapStatus::Error;
         }
 
@@ -806,7 +814,7 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
         if (userStrategyIsForeignKeyMapping)
             {
             LOG.errorv("Failed to map ECRelationshipClass %s. It implies a link table relationship with because of its cardinality or because it has ECProperties. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
-                       GetECClass().GetFullName());
+                GetECClass().GetFullName());
             return MapStatus::Error;
             }
 
@@ -817,11 +825,28 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
             return MapStatus::Error;
             }
 
+        if (ResolveEndTables(EndTablesOptimizationOptions::ReferencedEnd, EndTablesOptimizationOptions::ReferencedEnd) == ERROR)
+            {
+            LogClassNotMapped(NativeLogging::LOG_WARNING, *relationshipClass, "Source or target constraints don't include any concrete classes or its classes are not mapped to tables.");
+            m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, false);
+            return MapStatus::Success;
+            }
+
         return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::OwnTable, false) == SUCCESS ? MapStatus::Success : MapStatus::Error;
         }
 
-    BeAssert(!m_allowDuplicateRelationships && "This can only be true if CustomMapType is LinkTable. That condition was already handled before though.");
+   
 
+    if (ResolveEndTables(EndTablesOptimizationOptions::ForeignEnd, EndTablesOptimizationOptions::ForeignEnd) == ERROR)
+        {
+        LogClassNotMapped(NativeLogging::LOG_WARNING, *relationshipClass, "Source or target constraints don't include any concrete classes or its classes are not mapped to tables.");
+        m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, false);
+        return MapStatus::Success;
+        }
+
+    BeAssert(!m_allowDuplicateRelationships && "This can only be true if CustomMapType is LinkTable. That condition was already handled before though.");
+    const size_t sourceTableCount = m_sourceTables.size();
+    const size_t targetTableCount = m_targetTables.size();
     ECDbMapStrategy::Strategy resolvedStrategy;
     switch (m_cardinality)
         {
@@ -898,6 +923,19 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
             default:
                 BeAssert(false && "ManyToMany case should have been handled already.");
                 return MapStatus::Error;
+        }
+
+    if (resolvedStrategy == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable)
+        {
+        ResolveEndTables(EndTablesOptimizationOptions::Skip, EndTablesOptimizationOptions::ReferencedEnd);
+        }
+    else if (resolvedStrategy == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable)
+        {
+        ResolveEndTables(EndTablesOptimizationOptions::ReferencedEnd, EndTablesOptimizationOptions::Skip);
+        }
+    else
+        {
+        ResolveEndTables(EndTablesOptimizationOptions::ReferencedEnd, EndTablesOptimizationOptions::ReferencedEnd);
         }
 
     return m_resolvedStrategy.Assign(resolvedStrategy, false) == SUCCESS ? MapStatus::Success : MapStatus::Error;

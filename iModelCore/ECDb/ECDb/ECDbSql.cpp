@@ -2844,6 +2844,8 @@ DbResult ECDbMapStorage::ReadPropertyMap (ECDbClassMapInfo& o) const
                 BeAssert(false && "Failed to create propertyMap");
                 return BE_SQLITE_ERROR;
                 }
+
+            infoCache[propertyPathId] = info;
             }
         else
             {

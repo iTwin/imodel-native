@@ -1010,8 +1010,8 @@ bool ChangeExtractor::ChangeAffectsClass(IClassMapCR classMap) const
     ECDbSqlTable const* ecDbSqlTable = m_tableMap->GetECDbSqlTable();
     for (PropertyMapCP propertyMap : classMap.GetPropertyMaps())
         {
-        ECDbSqlColumn const* column = propertyMap->ExpectingSingleColumn();
-        if (!column || column->GetTable().GetId() != ecDbSqlTable->GetId())
+        ECDbSqlTable const* table = propertyMap->ExpectingSingleTable();
+        if (!table || table->GetId() != ecDbSqlTable->GetId())
             continue;
 
         if (ChangeAffectsProperty(*propertyMap))
@@ -1483,8 +1483,8 @@ void ChangeExtractor::RecordInstance(IClassMapCR classMap, ECInstanceId instance
     ECDbSqlTable const* ecDbSqlTable = m_tableMap->GetECDbSqlTable();
     for (PropertyMapCP propertyMap : classMap.GetPropertyMaps())
         {
-        ECDbSqlColumn const* column = propertyMap->ExpectingSingleColumn();
-        if (!column || column->GetTable().GetId() != ecDbSqlTable->GetId())
+        ECDbSqlTable const* table = propertyMap->ExpectingSingleTable();
+        if (!table || table->GetId() != ecDbSqlTable->GetId())
             continue;
 
         RecordPropertyValue(instance, *propertyMap);

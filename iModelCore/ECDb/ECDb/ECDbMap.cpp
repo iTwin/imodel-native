@@ -114,7 +114,7 @@ DbResult RelationshipPurger::Prepare(ECDbR ecdb, RelationshipPurger::Commands co
     for (RelationshipClassMapCP r : relationships)
         {
         ECRelationshipConstraintR endToDeleteFrom = r->GetRelationshipClass().GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? r->GetRelationshipClass().GetTarget() : r->GetRelationshipClass().GetSource();
-        std::set<ECDbSqlTable const*> tables = map.GetTablesFromRelationshipEnd(endToDeleteFrom);
+        std::set<ECDbSqlTable const*> tables = map.GetTablesFromRelationshipEnd(endToDeleteFrom, EndTablesOptimizationOptions::ForeignEnd);
         for (auto table : tables)
             {
             auto aTable = table->GetBaseTable() ? table->GetBaseTable() : table;
@@ -1195,32 +1195,71 @@ void ECDbMap::GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>& classMa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                      12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-std::set<ECDbSqlTable const*> ECDbMap::GetTablesFromRelationshipEnd(ECRelationshipConstraintCR relationshipEnd, bool returnVirtualTables) const
+std::set<ECDbSqlTable const*> ECDbMap::GetTablesFromRelationshipEnd(ECRelationshipConstraintCR relationshipEnd, EndTablesOptimizationOptions options) const
     {
+    BeAssert(options != EndTablesOptimizationOptions::Skip);
+
     bool hasAnyClass = false;
     std::set<ClassMap const*> classMaps = GetClassMapsFromRelationshipEnd(relationshipEnd, &hasAnyClass);
 
     if (hasAnyClass)
         return std::set<ECDbSqlTable const*>();
 
-    std::map<PersistenceType, std::set<ECDbSqlTable const*>> tables;
-    bool singleEndClass = relationshipEnd.GetClasses().size() == 1;
-    std::vector<ECClassCP> classes = GetClassesFromRelationshipEnd(relationshipEnd);
+    std::map<ECDbSqlTable const*, std::set<ECDbSqlTable const*>> joinedTables;
+    std::set<ECDbSqlTable const*> tables;
     for (IClassMap const* classMap : classMaps)
         {
-        if (singleEndClass)
-            tables[classMap->GetPrimaryTable().GetPersistenceType()].insert(&classMap->GetJoinedTable());
+        IClassMap::TableListR classPersistInTables = classMap->GetTables();
+        if (classPersistInTables.size() == 1)
+            {
+            tables.insert(classPersistInTables.front());
+            }
         else
-            tables[classMap->GetPrimaryTable().GetPersistenceType()].insert(&classMap->GetPrimaryTable());
+            {
+            for (ECDbSqlTable const* table : classPersistInTables)
+                {
+                if (auto baseTable = table->GetBaseTable())
+                    {
+                    joinedTables[baseTable].insert(table);
+                    tables.insert(table);
+                    }
+                }
+            }
         }
 
-    if (tables[PersistenceType::Persisted].size() > 0)
-        return tables[PersistenceType::Persisted];
+    for (auto const& pair : joinedTables)
+        {
+        ECDbSqlTable const* baseTable = pair.first;
+        std::set<ECDbSqlTable const*> const& childTables = pair.second;
+        bool isBaseTableSelected = tables.find(baseTable) != tables.end();
+        if (options == EndTablesOptimizationOptions::ReferencedEnd)
+            {
+            for (auto childTable : baseTable->GetChildTables())
+                tables.erase(childTable);
 
-    if (returnVirtualTables)
-        return tables[PersistenceType::Virtual];
+            tables.insert(baseTable);
+            }
+        else
+            {
+            if (isBaseTableSelected)
+                {
+                for (auto childTable : childTables)
+                    tables.erase(childTable);
+                }
+            }
+        }
 
-    return std::set<ECDbSqlTable const*>();
+    if (options == EndTablesOptimizationOptions::ForeignEnd)
+        return tables;
+
+    std::map<PersistenceType, std::set<ECDbSqlTable const*>> finalListOfTables;
+    for (ECDbSqlTable const* table : tables)
+        {
+        finalListOfTables[table->GetPersistenceType()].insert(table);
+        }
+
+
+    return finalListOfTables[PersistenceType::Persisted];
     }
 
 //---------------------------------------------------------------------------------------
@@ -1870,21 +1909,24 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(IClassMap const& 
     if (classMap.GetClassMapType() == IClassMap::Type::RelationshipEndTable)
         {
         RelationshipClassEndTableMap const& relClassMap = static_cast<RelationshipClassEndTableMap const&> (classMap);
-        ECDbSqlTable const& endTable = relClassMap.GetPrimaryTable();
-        const ECDbMap::LightweightCache::RelationshipEnd foreignEnd = relClassMap.GetForeignEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? ECDbMap::LightweightCache::RelationshipEnd::Source : ECDbMap::LightweightCache::RelationshipEnd::Target;
-
-        Partition* hp = storageDescription->AddHorizontalPartition(endTable, true);
-
-        for (bpair<ECClassId, ECDbMap::LightweightCache::RelationshipEnd> const& kvpair : lwmc.GetConstraintClassesForRelationship(classId))
+        for (ECDbSqlTable const* endTable : relClassMap.GetTables())
             {
-            ECClassId constraintClassId = kvpair.first;
-            ECDbMap::LightweightCache::RelationshipEnd end = kvpair.second;
+            const ECDbMap::LightweightCache::RelationshipEnd foreignEnd = relClassMap.GetForeignEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? ECDbMap::LightweightCache::RelationshipEnd::Source : ECDbMap::LightweightCache::RelationshipEnd::Target;
 
-            if (end == ECDbMap::LightweightCache::RelationshipEnd::Both || end == foreignEnd)
-                hp->AddClassId(constraintClassId);
+            Partition* hp = storageDescription->AddHorizontalPartition(*endTable, true);
+
+            for (bpair<ECClassId, ECDbMap::LightweightCache::RelationshipEnd> const& kvpair : lwmc.GetConstraintClassesForRelationship(classId))
+                {
+                ECClassId constraintClassId = kvpair.first;
+                ECDbMap::LightweightCache::RelationshipEnd end = kvpair.second;
+
+                if (end == ECDbMap::LightweightCache::RelationshipEnd::Both || end == foreignEnd)
+                    hp->AddClassId(constraintClassId);
+                }
+
+            hp->GenerateClassIdFilter(lwmc.GetClassesForTable(*endTable));
             }
-
-        hp->GenerateClassIdFilter(lwmc.GetClassesForTable(endTable));
+    
         }
     else
         {

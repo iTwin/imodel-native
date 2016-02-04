@@ -607,10 +607,10 @@ MapStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, IClassMap const* p
             propertiesToMap.push_back(property);
         else
             {
-            if (!isJoinedTable)
+            if (!isJoinedTable && propMap->GetAsNavigationPropertyMap() == nullptr)
                 GetPropertyMapsR().AddPropertyMap(propMap);
             else
-                GetPropertyMapsR().AddPropertyMap(PropertyMap::Clone(m_ecDbMap, *propMap, nullptr));
+                GetPropertyMapsR().AddPropertyMap(PropertyMap::Clone(m_ecDbMap, *propMap, GetClass(), nullptr));
             }
         }
 
@@ -1015,8 +1015,6 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
 
     auto& allPropertyInfos = mapInfo.GetPropertyMaps(false);
 
-    ECDbSqlTable* primaryTable = nullptr;
-    ECDbSqlTable* secondaryTable = nullptr;
     std::set<Utf8CP, CompareUtf8> localPropSet;
     for (auto property : GetClass().GetProperties(false))
         {
@@ -1029,45 +1027,34 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
     localPropSet.insert(ECDbSystemSchemaHelper::OWNERECINSTANCEID_PROPNAME);
     localPropSet.insert(ECDbSystemSchemaHelper::PARENTECINSTANCEID_PROPNAME);
     std::set<ECDbSqlTable*> tables;
+    std::set<ECDbSqlTable*> joinedTables;
+
     if (allPropertyInfos.empty())
         {
         SetTable(*const_cast<ECDbSqlTable*>(GetECDbMap().GetSQLManager().GetNullTable()));
         }
     else
         {
+
         for (auto propertyInfo : allPropertyInfos)
             {
-            bool isLocal = localPropSet.find(propertyInfo->GetPropertyPath().GetName().c_str()) != localPropSet.end();
             if (propertyInfo->GetColumns().front()->GetKind() == ColumnKind::ECClassId)
                 continue;
            
             for (auto column : propertyInfo->GetColumnsPList())
-                tables.insert(&column->GetTableR());
-
-            if (isLocal && !secondaryTable)
-                secondaryTable = const_cast<ECDbSqlTable*>(&propertyInfo->ExpectingSingleColumn()->GetTable());
-            else if (!primaryTable)
-                primaryTable = const_cast<ECDbSqlTable*>(&propertyInfo->ExpectingSingleColumn()->GetTable());
+                if (column->GetTable().GetTableType() == TableType::Joined)
+                    joinedTables.insert(&column->GetTableR());
+                else
+                    tables.insert(&column->GetTableR());
             }
 
-        tables.erase(secondaryTable);
-        tables.erase(primaryTable);
+        for (auto table : tables)
+            SetTable(*table, true);
 
-        if (secondaryTable)
-            {
-            if (primaryTable && primaryTable != secondaryTable)
-                SetTable(*primaryTable);
+        for (auto table : joinedTables)
+            SetTable(*table, true);
 
-            for (auto table : tables)
-                SetTable(*table, true);
-
-            SetTable(*secondaryTable, true);
-            }
-        else
-            {
-            BeAssert(secondaryTable != nullptr);
-            return ERROR;
-            }
+        BeAssert(!GetTables().empty());
         }
 
     if (GetECInstanceIdPropertyMap() != nullptr)
