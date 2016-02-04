@@ -382,6 +382,23 @@ TEST (BeStringUtilitiesTests, BeStringUtilWmemcpy)
     BeStringUtilities::Wmemcpy(dest, _countof(dest), src,  _countof(src));
     EXPECT_EQ(SUCCESS,BeStringUtilities::Wmemcpy(dest, _countof(dest), src,  _countof(src)));
     }
+//---------------------------------------------------------------------------------------
+// @betest                                     Hassan.Arshad                  10/13
+// Desc: Testing of Wmemcpy method.
+// 
+//---------------------------------------------------------------------------------------
+TEST (BeStringUtilitiesTests, BeStringUtilMemcpy)
+    {
+    const wchar_t src[]= L"DELETE";
+    wchar_t dest[]= L"123456";
+ 
+    VERIFY( BentleyStatus::SUCCESS == BeStringUtilities::Memcpy(dest, 12, src,  6) );
+    ASSERT_STREQ(L"DEL456", dest);
+    VERIFY(BentleyStatus::SUCCESS == BeStringUtilities::Memcpy(dest, 12, src, 0));
+    ASSERT_STREQ(L"DEL456", dest);
+    VERIFY(BentleyStatus::SUCCESS == BeStringUtilities::Memcpy(dest, 12, src, 20));
+    ASSERT_STREQ(L"123456", dest);
+    }
 
 //---------------------------------------------------------------------------------------
 // @betest                                     Hassan.Arshad                  10/13
@@ -803,7 +820,6 @@ TEST (BeStringUtilitiesTests, FormatUInt64)
         BeStringUtilities::FormatUInt64 ((WCharP) str.data(), number);
         ASSERT_STREQ (L"43123", str.c_str ());
         }
-
         {
         uint64_t number = 14235263432521323ULL;
         WString str;
