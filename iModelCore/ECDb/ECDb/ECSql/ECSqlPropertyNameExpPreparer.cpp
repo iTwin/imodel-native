@@ -73,7 +73,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
         {
         if (!currentScope.HasExtendedOption(ECSqlPrepareContext::ExpScope::ExtendedOptions::SkipTableAliasWhenPreparingDeleteWhereClause))
             {
-            classIdentifier.assign(exp->GetPropertyMap().ExpectingSingleTable()->GetName());
+            classIdentifier.assign(exp->GetPropertyMap().GetSingleTable()->GetName());
             }
         else
             {

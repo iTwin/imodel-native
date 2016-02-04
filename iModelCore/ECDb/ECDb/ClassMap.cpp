@@ -517,7 +517,7 @@ MapStatus ClassMap::_MapPart2(SchemaImportContext& schemaImportContext, ClassMap
         PropertyMapCP propertyMap = GetPropertyMap(mapInfo.GetClassHasCurrentTimeStampProperty()->GetName().c_str());
         if (propertyMap != nullptr)
             {
-            ECDbSqlColumn* column = const_cast<ECDbSqlColumn*>(propertyMap->ExpectingSingleColumn());
+            ECDbSqlColumn* column = const_cast<ECDbSqlColumn*>(propertyMap->GetSingleColumn());
             BeAssert(column != nullptr && "TimeStamp column cannot be null");
             if (column != nullptr)
                 {
@@ -529,7 +529,7 @@ MapStatus ClassMap::_MapPart2(SchemaImportContext& schemaImportContext, ClassMap
                 Utf8CP lastModName = column->GetName().c_str();
                 whenCondtion.Sprintf("old.%s=new.%s AND old.%s!=julianday('now')", lastModName, lastModName, lastModName);
                 Utf8String body;
-                Utf8CP instanceId = GetPropertyMap("ECInstanceId")->ExpectingSingleColumn()->GetName().c_str();
+                Utf8CP instanceId = GetPropertyMap("ECInstanceId")->GetSingleColumn()->GetName().c_str();
                 body.Sprintf("BEGIN UPDATE %s SET %s=julianday('now') WHERE %s=new.%s; END", column->GetTableR().GetName().c_str(), lastModName, instanceId, instanceId);
                 Utf8String triggerName;
                 triggerName.Sprintf("%s_CurrentTimeStamp", column->GetTableR().GetName().c_str());
@@ -1578,10 +1578,10 @@ PropertyMapSet::Ptr PropertyMapSet::Create (IClassMap const& classMap)
         RelationshipClassMapCR relationshipMap = static_cast<RelationshipClassMapCR>(classMap);
         auto const& sourceConstraints = relationshipMap.GetRelationshipClass ().GetSource ().GetClasses ();
         auto const& targetConstraints = relationshipMap.GetRelationshipClass ().GetTarget ().GetClasses ();
-        auto sourceECInstanceIdColumn = relationshipMap.GetSourceECInstanceIdPropMap ()->ExpectingSingleColumn ();
-        auto sourceECClassIdColumn = relationshipMap.GetSourceECInstanceIdPropMap ()->ExpectingSingleColumn ();
-        auto targetECInstanceIdColumn = relationshipMap.GetTargetECInstanceIdPropMap ()->ExpectingSingleColumn ();
-        auto targetECClassIdColumn = relationshipMap.GetTargetECClassIdPropMap ()->ExpectingSingleColumn ();
+        auto sourceECInstanceIdColumn = relationshipMap.GetSourceECInstanceIdPropMap ()->GetSingleColumn ();
+        auto sourceECClassIdColumn = relationshipMap.GetSourceECInstanceIdPropMap ()->GetSingleColumn ();
+        auto targetECInstanceIdColumn = relationshipMap.GetTargetECInstanceIdPropMap ()->GetSingleColumn ();
+        auto targetECClassIdColumn = relationshipMap.GetTargetECClassIdPropMap ()->GetSingleColumn ();
 
 
         AddSystemEndPoint (*propertySet, classMap, ColumnKind::SourceECInstanceId, defaultValue, sourceECInstanceIdColumn);
@@ -1617,7 +1617,7 @@ PropertyMapSet::Ptr PropertyMapSet::Create (IClassMap const& classMap)
             }
         else if (!propMap->IsSystemPropertyMap () && !propMap->GetProperty().GetAsStructProperty())
             {
-            propertySet->m_orderedEndPoints.push_back (std::unique_ptr<EndPoint> (new EndPoint (propMap->GetPropertyAccessString (), *propMap->ExpectingSingleColumn (), ECValue ())));
+            propertySet->m_orderedEndPoints.push_back (std::unique_ptr<EndPoint> (new EndPoint (propMap->GetPropertyAccessString (), *propMap->GetSingleColumn (), ECValue ())));
             }
         feedback = TraversalFeedback::Next;
         }, true);

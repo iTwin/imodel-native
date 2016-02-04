@@ -814,7 +814,7 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(SchemaImportContext
     BeAssert(GetReferencedEndECInstanceIdPropMap() != nullptr);
     std::vector<ECDbSqlColumn const*> referencedEndIdColumns;
     GetReferencedEndECInstanceIdPropMap()->GetColumns(referencedEndIdColumns);
-    for (auto referencedEndIdColumn : referencedEndIdColumns)
+    for (ECDbSqlColumn const* referencedEndIdColumn : referencedEndIdColumns)
         {
         ECDbSqlTable& persistenceEndTable = const_cast<ECDbSqlTable&>(referencedEndIdColumn->GetTable());
         if (persistenceEndTable.GetTableType() == TableType::Existing)
@@ -879,28 +879,12 @@ bool RelationshipClassEndTableMap::GetReferencedEndKeyColumnName (Utf8StringR co
     return GetRelationshipColumnName (columnName, table, "ForeignECInstanceId_", mappingInProgress);
     }
     
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool RelationshipClassEndTableMap::GetReferencedEndECClassIdColumnName (Utf8StringR columnName, ECDbSqlTable const& table, bool mappingInProgress) const
-    {
-    return GetRelationshipColumnName (columnName, table, "ForeignECClassId_", mappingInProgress);
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       11/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 PropertyMapCP RelationshipClassEndTableMap::GetForeignEndECInstanceIdPropMap () const
     {
     return GetConstraintMap (GetForeignEnd ()).GetECInstanceIdPropMap ();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                               Krischan.Eberle       11/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-PropertyMapRelationshipConstraintClassId const* RelationshipClassEndTableMap::GetForeignEndECClassIdPropMap () const
-    {
-    return GetConstraintMap (GetForeignEnd ()).GetECClassIdPropMap ();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1231,7 +1215,7 @@ MapStatus RelationshipClassLinkTableMap::_MapPart2 (SchemaImportContext& context
         ECDbSqlTable * sourceTable = const_cast<ECDbSqlTable*>(*sourceTables.begin());
         ECDbSqlForeignKeyConstraint* sourceFK = GetPrimaryTable().CreateForeignKeyConstraint(*sourceTable);
         ECDbSqlColumn const* souceColumn = sourceTable->GetFilteredColumnFirst(ColumnKind::ECInstanceId);
-        sourceFK->Add(GetSourceECInstanceIdPropMap()->ExpectingSingleColumn()->GetName().c_str(), souceColumn->GetName().c_str());
+        sourceFK->Add(GetSourceECInstanceIdPropMap()->GetSingleColumn()->GetName().c_str(), souceColumn->GetName().c_str());
         sourceFK->SetOnDeleteAction(ForeignKeyActionType::Cascade);
         sourceFK->RemoveIfDuplicate();
         sourceFK = nullptr;
@@ -1241,7 +1225,7 @@ MapStatus RelationshipClassLinkTableMap::_MapPart2 (SchemaImportContext& context
         ECDbSqlTable * targetTable = const_cast<ECDbSqlTable*>(*targetTables.begin());
         ECDbSqlForeignKeyConstraint* targetFK = GetPrimaryTable().CreateForeignKeyConstraint(*targetTable);
         ECDbSqlColumn const* targetColumn = targetTable->GetFilteredColumnFirst(ColumnKind::ECInstanceId);
-        targetFK->Add(GetTargetECInstanceIdPropMap()->ExpectingSingleColumn()->GetName().c_str(), targetColumn->GetName().c_str());
+        targetFK->Add(GetTargetECInstanceIdPropMap()->GetSingleColumn()->GetName().c_str(), targetColumn->GetName().c_str());
         targetFK->SetOnDeleteAction(ForeignKeyActionType::Cascade);
         targetFK->RemoveIfDuplicate();
         targetFK = nullptr;
@@ -1396,10 +1380,10 @@ void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext& schemaImportCo
                 break;
         }
 
-    auto sourceECInstanceIdColumn = GetSourceECInstanceIdPropMap()->ExpectingSingleColumn();
-    auto sourceECClassIdColumn = GetSourceECClassIdPropMap()->IsMappedToClassMapTables() ? GetSourceECClassIdPropMap()->ExpectingSingleColumn() : nullptr;
-    auto targetECInstanceIdColumn = GetTargetECInstanceIdPropMap()->ExpectingSingleColumn();
-    auto targetECClassIdColumn = GetTargetECClassIdPropMap()->IsMappedToClassMapTables() ? GetTargetECClassIdPropMap()->ExpectingSingleColumn() : nullptr;
+    auto sourceECInstanceIdColumn = GetSourceECInstanceIdPropMap()->GetSingleColumn();
+    auto sourceECClassIdColumn = GetSourceECClassIdPropMap()->IsMappedToClassMapTables() ? GetSourceECClassIdPropMap()->GetSingleColumn() : nullptr;
+    auto targetECInstanceIdColumn = GetTargetECInstanceIdPropMap()->GetSingleColumn();
+    auto targetECClassIdColumn = GetTargetECClassIdPropMap()->IsMappedToClassMapTables() ? GetTargetECClassIdPropMap()->GetSingleColumn() : nullptr;
 
     std::vector<ECDbSqlColumn const*> columns;
     switch (spec)

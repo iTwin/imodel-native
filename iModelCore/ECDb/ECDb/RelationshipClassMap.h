@@ -126,7 +126,6 @@ private:
     RelationshipEndColumns const& GetEndColumnsMapping(RelationshipMapInfo const&) const;
 
     bool GetReferencedEndKeyColumnName (Utf8StringR columnName, ECDbSqlTable const& table, bool mappingInProgress) const;
-    bool GetReferencedEndECClassIdColumnName (Utf8StringR columnName, ECDbSqlTable const& table, bool mappingInProgress) const;
     virtual MapStatus _MapPart1 (SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
     virtual MapStatus _MapPart2 (SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
 
@@ -145,15 +144,15 @@ private:
 public:
     ~RelationshipClassEndTableMap () {}
 
-    ECN::ECRelationshipEnd GetForeignEnd () const;
+    //!Gets the end in which the ForeignKey is persisted
+    ECN::ECRelationshipEnd GetForeignEnd() const;
+    //!Gets the end the ForeignKey end references
     ECN::ECRelationshipEnd GetReferencedEnd() const;
 
     PropertyMapCP GetForeignEndECInstanceIdPropMap () const;
-    PropertyMapRelationshipConstraintClassId const* GetForeignEndECClassIdPropMap () const;
     PropertyMapCP GetReferencedEndECInstanceIdPropMap () const;
     PropertyMapRelationshipConstraintClassId const* GetReferencedEndECClassIdPropMap () const;
 
-    bool GetReferencedEndECClassIdColumnName (Utf8StringR columnName, ECDbSqlTable const& table) const { return GetReferencedEndECClassIdColumnName (columnName, table, false);}
     static ClassMapPtr Create (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) { return new RelationshipClassEndTableMap (ecRelClass, ecDbMap, mapStrategy, setIsDirty); }
     virtual DataIntegrityEnforcementMethod GetDataIntegrityEnforcementMethod() const override;
     bool RequiresJoin(ECN::ECRelationshipEnd endPoint) const override
@@ -166,7 +165,7 @@ public:
         if (!referencedEndClassIdPropertyMap->IsVirtual() && !referencedEndClassIdPropertyMap->IsMappedToClassMapTables())
             return true;
 
-        return  GetTargetECClassIdPropMap()->ExpectingSingleColumn() == GetSourceECClassIdPropMap()->ExpectingSingleColumn()
+        return  GetTargetECClassIdPropMap()->GetSingleColumn() == GetSourceECClassIdPropMap()->GetSingleColumn()
             && !GetTargetECClassIdPropMap()->IsVirtual() && !GetTargetECClassIdPropMap()->IsVirtual();
         }
     };

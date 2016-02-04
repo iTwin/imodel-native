@@ -148,8 +148,9 @@ public:
     void GetColumns(std::vector<ECDbSqlColumn const*>&, ECDbSqlTable const&) const;
 
     //! Gets the first column if any
-    ECDbSqlColumn const* ExpectingSingleColumn() const;
-    ECDbSqlTable const* ExpectingSingleTable() const;
+    ECDbSqlColumn const* GetSingleColumn() const;
+    ECDbSqlTable const* GetSingleTable() const;
+
     //! Generates the native SQL snippets from the columns related to this property map.
     //! SQL generation depends on various properties of the property map (e.g whether the property map is virtual)
     //! and the ECSQL type. So the result of this method is not always just the column name(s).

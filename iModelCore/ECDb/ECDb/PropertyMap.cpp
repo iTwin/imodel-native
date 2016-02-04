@@ -341,7 +341,7 @@ void PropertyMap::GetColumns(std::vector<ECDbSqlColumn const*>& columns, ECDbSql
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      08/2013
 //---------------------------------------------------------------------------------------
-ECDbSqlColumn const* PropertyMap::ExpectingSingleColumn() const
+ECDbSqlColumn const* PropertyMap::GetSingleColumn() const
     {
     std::vector<ECDbSqlColumn const*> columns;
     GetColumns(columns);
@@ -354,7 +354,7 @@ ECDbSqlColumn const* PropertyMap::ExpectingSingleColumn() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      08/2013
 //---------------------------------------------------------------------------------------
-ECDbSqlTable const* PropertyMap::ExpectingSingleTable() const
+ECDbSqlTable const* PropertyMap::GetSingleTable() const
     {
     std::vector<ECDbSqlColumn const*> columns;
     GetColumns(columns);

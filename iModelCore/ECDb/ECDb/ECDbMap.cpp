@@ -8,11 +8,9 @@
 #include "ECDbPch.h"
 #include <vector>
 
-
 USING_NAMESPACE_BENTLEY_EC
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
-
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Casey.Mullen      11/2011
@@ -1911,12 +1909,19 @@ BentleyStatus RelationshipPurger::Initialize(ECDbR ecdb)
             {
             RelationshipClassEndTableMapCP endTableRelClassMap = static_cast<RelationshipClassEndTableMapCP>(relClassMap);
             PropertyMapCP foreignIdPropMap = endTableRelClassMap->GetConstraintECInstanceIdPropMap(endTableRelClassMap->GetReferencedEnd());
-            //assumption: col name is same for all joined tables
-            Utf8CP foreignIdColName = foreignIdPropMap->GetFirstColumn()->GetName().c_str();
+
+            ColumnKind foreignIdColKind = endTableRelClassMap->GetReferencedEnd() == ECRelationshipEnd_Source ? ColumnKind::SourceECInstanceId : ColumnKind::TargetECInstanceId;
             NativeSqlBuilder unionClauseBuilder;
             for (ECDbSqlTable const* table : foreignIdPropMap->GetTables())
                 {
-                unionClauseBuilder.AppendFormatted("SELECT [%s] " ECDB_HOLDING_VIEW_HELDID_COLNAME " FROM [%s] WHERE [%s] IS NOT NULL", foreignIdColName, table->GetName().c_str(), foreignIdColName);
+                ECDbSqlColumn const* foreignIdCol = table->GetFilteredColumnFirst(foreignIdColKind);
+                if (foreignIdCol == nullptr)
+                    {
+                    BeAssert(false);
+                    return ERROR;
+                    }
+
+                unionClauseBuilder.AppendFormatted("SELECT [%s] " ECDB_HOLDING_VIEW_HELDID_COLNAME " FROM [%s] WHERE [%s] IS NOT NULL", foreignIdCol->GetName().c_str(), table->GetName().c_str(), foreignIdCol->GetName().c_str());
                 }
 
             if (!unionClauseBuilder.IsEmpty())
@@ -1939,10 +1944,12 @@ BentleyStatus RelationshipPurger::Initialize(ECDbR ecdb)
                 }
 
             PropertyMapCP heldConstraintIdPropMap = relClass.GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? relClassMap->GetTargetECInstanceIdPropMap() : relClassMap->GetSourceECInstanceIdPropMap();
-            Utf8CP heldConstraintIdColumnName = heldConstraintIdPropMap->GetFirstColumn()->GetName().c_str();
+            ECDbSqlColumn const* heldIdCol = heldConstraintIdPropMap->GetSingleColumn();
+            if (heldIdCol == nullptr)
+                return ERROR;
 
             NativeSqlBuilder unionClauseBuilder;
-            unionClauseBuilder.AppendFormatted("SELECT [%s] " ECDB_HOLDING_VIEW_HELDID_COLNAME " FROM [%s]", heldConstraintIdColumnName, primaryTable.GetName().c_str());
+            unionClauseBuilder.AppendFormatted("SELECT [%s] " ECDB_HOLDING_VIEW_HELDID_COLNAME " FROM [%s]", heldIdCol->GetName().c_str(), primaryTable.GetName().c_str());
             unionClauseList.push_back(std::move(unionClauseBuilder));
             }
         }

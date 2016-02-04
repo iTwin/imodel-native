@@ -266,7 +266,6 @@ public:
     RelationshipPurger() {}
     ~RelationshipPurger() { Finalize(); }
 
-
     BentleyStatus Purge(ECDbR);
     void Finalize();
     };

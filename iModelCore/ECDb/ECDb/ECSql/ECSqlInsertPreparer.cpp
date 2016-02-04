@@ -608,7 +608,7 @@ ECN::ECRelationshipEnd constraintEnd
         }
     //Sometime SourceECClassId/TargetECClassId  propertyMap is mapped to another table where ECClassId exist.
     //In this case if user did not specify it is not a error..
-    if (!constraintClassIdPropMap->IsMappedToClassMapTables() || Enum::Contains(constraintClassIdPropMap->ExpectingSingleColumn()->GetKind(), ColumnKind::ECClassId))
+    if (!constraintClassIdPropMap->IsMappedToClassMapTables() || Enum::Contains(constraintClassIdPropMap->GetSingleColumn()->GetKind(), ColumnKind::ECClassId))
         {
         return ECSqlStatus::Success;
         }
@@ -682,7 +682,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareConstraintClassId(NativeSqlSnippets& ins
     if (constraintClassIdPropMap.IsVirtual())
         return ECSqlStatus::Success;
 
-    if (!constraintClassIdPropMap.IsMappedToClassMapTables() || Enum::Contains(constraintClassIdPropMap.ExpectingSingleColumn()->GetKind(), ColumnKind::ECClassId))
+    if (!constraintClassIdPropMap.IsMappedToClassMapTables() || Enum::Contains(constraintClassIdPropMap.GetSingleColumn()->GetKind(), ColumnKind::ECClassId))
         return ECSqlStatus::Success;
 
     auto classIdColSqlSnippet = constraintClassIdPropMap.ToNativeSql(nullptr, ECSqlType::Insert, false);

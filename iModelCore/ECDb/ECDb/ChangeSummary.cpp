@@ -1010,7 +1010,7 @@ bool ChangeExtractor::ChangeAffectsClass(IClassMapCR classMap) const
     ECDbSqlTable const* ecDbSqlTable = m_tableMap->GetECDbSqlTable();
     for (PropertyMapCP propertyMap : classMap.GetPropertyMaps())
         {
-        ECDbSqlTable const* table = propertyMap->ExpectingSingleTable();
+        ECDbSqlTable const* table = propertyMap->GetSingleTable();
         if (!table || table->GetId() != ecDbSqlTable->GetId())
             continue;
 
@@ -1063,7 +1063,7 @@ int ChangeExtractor::GetFirstColumnIndex(PropertyMapCP propertyMap) const
     if (!propertyMap)
         return -1;
 
-    ECDbSqlColumnCP firstColumn = propertyMap->ExpectingSingleColumn();
+    ECDbSqlColumnCP firstColumn = propertyMap->GetSingleColumn();
     if (!firstColumn)
         return -1;
 
@@ -1376,7 +1376,7 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassId(RelationshipClassMapCR relClass
         return (ECClassId) -1;
         }
 
-    ECDbSqlColumnCP classIdColumn = classIdPropMap->ExpectingSingleColumn();
+    ECDbSqlColumnCP classIdColumn = classIdPropMap->GetSingleColumn();
     BeAssert(classIdColumn != nullptr);
 
     /*
@@ -1483,7 +1483,7 @@ void ChangeExtractor::RecordInstance(IClassMapCR classMap, ECInstanceId instance
     ECDbSqlTable const* ecDbSqlTable = m_tableMap->GetECDbSqlTable();
     for (PropertyMapCP propertyMap : classMap.GetPropertyMaps())
         {
-        ECDbSqlTable const* table = propertyMap->ExpectingSingleTable();
+        ECDbSqlTable const* table = propertyMap->GetSingleTable();
         if (!table || table->GetId() != ecDbSqlTable->GetId())
             continue;
 
