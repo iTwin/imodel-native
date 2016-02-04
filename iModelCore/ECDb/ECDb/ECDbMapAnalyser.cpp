@@ -1633,8 +1633,6 @@ BentleyStatus ECDbMapAnalyser::Analyse(bool applyChanges)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-            column = holdingRelationshipClassMap->GetTargetECInstanceIdPropMap ()->GetFirstColumn ()->GetName ().c_str ();
-            column = holdingRelationshipClassMap->GetSourceECInstanceIdPropMap ()->GetFirstColumn ()->GetName ().c_str ();
 void ECDbMapAnalyser::HandleLinkTable (Storage* fromStorage, std::map<ECDbMapAnalyser::Storage*, std::set<ECDbMapAnalyser::Relationship*>> const& relationshipsByStorage, bool isFrom)
     {
     // table_delete_linkTable

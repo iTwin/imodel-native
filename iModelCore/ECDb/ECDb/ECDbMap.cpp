@@ -13,8 +13,6 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 
-        std::set<ECDbSqlTable const*> tables = map.GetTablesFromRelationshipEnd(endToDeleteFrom);
-            auto fkColumn = fkInstanceId->GetFirstColumn()->GetName().c_str();
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Casey.Mullen      11/2011
@@ -1893,7 +1891,7 @@ BentleyStatus RelationshipPurger::Initialize(ECDbR ecdb)
         ECRelationshipClassCR relClass = relClassMap->GetRelationshipClass();
         ECRelationshipConstraintCR heldConstraint = relClass.GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? relClass.GetTarget() : relClass.GetSource();
 
-        std::set<ECDbSqlTable const*> heldTables = map.GetTablesFromRelationshipEnd(heldConstraint);
+        std::set<ECDbSqlTable const*> heldTables = map.GetTablesFromRelationshipEnd(heldConstraint, EndTablesOptimizationOptions::ForeignEnd);
         for (ECDbSqlTable const* table : heldTables)
             {
             ECDbSqlTable const* heldTable = table->GetBaseTable() != nullptr ? table->GetBaseTable() : table;
@@ -1909,7 +1907,7 @@ BentleyStatus RelationshipPurger::Initialize(ECDbR ecdb)
 
         ECRelationshipConstraintCR holdingConstraint = relClass.GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? relClass.GetSource() : relClass.GetTarget();
         PropertyMapCP holdingConstraintIdPropMap = relClass.GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? relClassMap->GetSourceECInstanceIdPropMap() : relClassMap->GetTargetECInstanceIdPropMap();
-        Utf8CP holdingConstraintIdColumnName = holdingConstraintIdPropMap->GetFirstColumn()->GetName().c_str();
+        Utf8CP holdingConstraintIdColumnName = holdingConstraintIdPropMap->ExpectingSingleColumn()->GetName().c_str();
 
         if (relClassMap->GetClassMapType() == IClassMap::Type::RelationshipEndTable)
             {
