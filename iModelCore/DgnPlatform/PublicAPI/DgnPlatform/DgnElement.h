@@ -1296,7 +1296,7 @@ protected:
     virtual Utf8CP _GetGeometryColumnTableName() const override final { return DGN_TABLE(DGN_CLASSNAME_GeometricElement3d); }
     virtual DgnCategoryId _GetCategoryId() const override final { return m_categoryId; }
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { return DoSetCategoryId(categoryId); }
-    virtual GeometryStreamCR _GetGeometryStream() const override final {return m_geom.GetGeometryStream();}
+    virtual GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
     virtual Placement3dCR _GetPlacement() const override final { return m_placement; }
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPlacement(Placement3dCR placement) override;
 
@@ -1308,7 +1308,7 @@ protected:
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement&);
 public:
-    virtual void _OnUpdateFinished() const override {T_Base::_OnUpdateFinished(); m_graphics.Clear();}
+    virtual void _OnUpdateFinished() const override {T_Super::_OnUpdateFinished(); m_graphics.Clear();}
     DGNPLATFORM_EXPORT static void AddClassParams(ECSqlClassParams& params);
 };
 
@@ -1346,7 +1346,7 @@ protected:
     virtual Utf8CP _GetGeometryColumnTableName() const override final { return DGN_TABLE(DGN_CLASSNAME_GeometricElement2d); }
     virtual DgnCategoryId _GetCategoryId() const override final { return m_categoryId; }
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { return DoSetCategoryId(categoryId); }
-    virtual GeomStreamCR _GetGeomStream() const override final { return m_geom; }
+    virtual GeometryStreamCR _GetGeometryStream() const override final { return m_geom; }
     virtual Placement2dCR _GetPlacement() const override final { return m_placement; }
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPlacement(Placement2dCR placement) override;
 
@@ -1423,6 +1423,9 @@ struct EXPORT_VTABLE_ATTRIBUTE GraphicalElement2d : GeometricElement2d
 {
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_GraphicalElement2d, GeometricElement2d)
     friend struct dgn_ElementHandler::Graphical2d;
+protected:
+    virtual Render::GraphicSet& _Graphics() const override {Render::GraphicSet* g = nullptr; return *g;}
+
 public:
     explicit GraphicalElement2d(CreateParams const& params) : T_Super(params) {}
 };
@@ -1441,6 +1444,7 @@ public:
     static AnnotationElementPtr Create(CreateParams const& params) {return new AnnotationElement(params);}
 protected:
     virtual AnnotationElementCP _ToAnnotationElement() const override final {return this;}
+    virtual Render::GraphicSet& _Graphics() const override {Render::GraphicSet* g = nullptr; return *g;}
 
     explicit AnnotationElement(CreateParams const& params) : T_Super(params) { }
 }; // AnnotationElement
@@ -1459,6 +1463,7 @@ public:
     static DrawingElementPtr Create(CreateParams const& params) {return new DrawingElement(params);}
 protected:
     virtual DrawingElementCP _ToDrawingElement() const override final {return this;}
+    virtual Render::GraphicSet& _Graphics() const override {Render::GraphicSet* g = nullptr; return *g;}
 
     explicit DrawingElement(CreateParams const& params) : T_Super(params) { }
 }; // DrawingElement
@@ -1478,6 +1483,7 @@ public:
     static SheetElementPtr Create(CreateParams const& params) {return new SheetElement(params);}
 protected:
     virtual SheetElementCP _ToSheetElement() const override final {return this;}
+    virtual Render::GraphicSet& _Graphics() const override {Render::GraphicSet* g = nullptr; return *g;}
 
     explicit SheetElement(CreateParams const& params) : T_Super(params) { }
 }; // SheetElement
@@ -1847,7 +1853,7 @@ public:
 
     DgnElementIdSet const& GetSelectionSet() const {return m_selectionSet;}
     DgnElementIdSet& GetSelectionSetR() {return m_selectionSet;}
-
+};
 
 //=======================================================================================
 //! The basic element copier. Makes a persistent copy of elements and their children.

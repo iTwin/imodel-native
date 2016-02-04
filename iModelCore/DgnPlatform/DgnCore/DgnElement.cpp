@@ -2145,9 +2145,13 @@ DgnDbStatus GeometricElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
     if (stmt.IsValueNull(geomIndex))
         return DgnDbStatus::Success;    // no geometry...
 
+#ifdef WIP_MERGE
     int blobSize;
     void const* blob = stmt.GetValueBinary(geomIndex, &blobSize);
-    return m_geom.ReadGeometryStream(GetDgnDb().Elements().GetSnappyFrom(), el.GetDgnDb(), blob, blobSize);
+    return m_geom.ReadGeometryStream(GetDgnDb().GeometryParts().GetSnappyFrom(), el.GetDgnDb(), blob, blobSize);
+#else
+    return DgnDbStatus::BadArg;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2173,6 +2177,7 @@ DgnDbStatus GeometricElement::_BindUpdateParams(ECSqlStatement& stmt)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement::BindParams(ECSqlStatement& stmt)
     {
+#ifdef WIP_MERGE
     stmt.BindId(stmt.GetParameterIndex(GEOM_Category), m_categoryId);
 
     // Compress the serialized GeomStream
@@ -2211,6 +2216,9 @@ DgnDbStatus GeometricElement::BindParams(ECSqlStatement& stmt)
         }
 
     return DgnDbStatus::Success;
+#else
+    return DgnDbStatus::BadArg;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2219,7 +2227,11 @@ DgnDbStatus GeometricElement::BindParams(ECSqlStatement& stmt)
 DgnDbStatus GeometricElement::_InsertInDb()
     {
     auto stat = T_Super::_InsertInDb();
+#ifdef WIP_MERGE
     return DgnDbStatus::Success == stat ? InsertGeomStream() : stat;
+#else
+    return stat;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2402,6 +2414,7 @@ DgnDbStatus GeometricElement3d::_BindUpdateParams(ECSqlStatement& stmt)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement::WriteGeomStream() const
     {
+#ifdef WIP_MERGE
     if (!m_multiChunkGeomStream)
         return DgnDbStatus::Success;
 
@@ -2429,11 +2442,15 @@ DgnDbStatus GeometricElement::WriteGeomStream() const
 
     StatusInt status = snappyTo.SaveToRow(GetDgnDb(), tableName, GEOM_GeometryStream, GetElementId().GetValue());
     return SUCCESS == status ? DgnDbStatus::Success : DgnDbStatus::WriteError;
+#else
+    return DgnDbStatus::BadArg;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef WIP_MERGE
 DgnDbStatus GeometricElement::InsertGeomStream() const
     {
     DgnDbStatus status = WriteGeomStream();
@@ -2452,7 +2469,8 @@ DgnDbStatus GeometricElement::InsertGeomStream() const
 
     return status;
     }
-
+#endif
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/

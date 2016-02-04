@@ -26,7 +26,9 @@ void DgnViewport::DestroyViewport()
     m_progressiveDisplay.clear();
     if (m_viewController.IsValid())
         {
+#ifdef WIP_MERGE
         m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);
+#endif
         m_viewController = nullptr;
         }
 
@@ -1195,9 +1197,11 @@ void DgnViewport::ClearUndo()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::ChangeViewController(ViewControllerR viewController)
     {
+#ifdef WIP_MERGE
     if (m_viewController.IsValid())
         m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);
-
+#endif
+    
     ClearUndo();
 
     m_viewController = &viewController;
