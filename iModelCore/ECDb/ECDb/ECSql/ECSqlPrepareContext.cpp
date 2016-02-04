@@ -302,9 +302,9 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
             ptr->m_parameterMap.GetPrimaryR().Add(thisValueParams);
             ptr->m_parameterMap.GetSecondaryR().Add(thisValueParams);
 
-            if (!ptr->m_userProvidedECInstanceId  && property->GetPropertyMap().GetFirstColumn())
+            if (!ptr->m_userProvidedECInstanceId  && property->GetPropertyMap().ExpectingSingleColumn())
                 {
-                ptr->m_userProvidedECInstanceId = Enum::Contains(property->GetPropertyMap().GetFirstColumn()->GetKind(), ColumnKind::ECInstanceId);
+                ptr->m_userProvidedECInstanceId = Enum::Contains(property->GetPropertyMap().ExpectingSingleColumn()->GetKind(), ColumnKind::ECInstanceId);
                 BeAssert(thisValueParams.size() <= 1);
                 if (thisValueParams.size() == 1)
                     ptr->m_primaryECInstanceIdParameterIndex = ptr->m_parameterMap.GetPrimaryR().Last();

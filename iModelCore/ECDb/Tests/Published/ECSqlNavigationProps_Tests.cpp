@@ -587,13 +587,13 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
 
     ASSERT_GT(rowCount, 0);
     }
-
+    ecdb.SaveChanges();
     //UPDATE
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE np.GeometrySource SET CategoryId=? WHERE Category IS NULL"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, catKey.GetECInstanceId()));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    ASSERT_EQ(ECSqlStatus::Error, stmt.Prepare(ecdb, "UPDATE np.GeometrySource SET CategoryId=? WHERE CategoryId IS NULL"));
+    //ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, catKey.GetECInstanceId()));
+    //ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
     //Verify via SELECT
