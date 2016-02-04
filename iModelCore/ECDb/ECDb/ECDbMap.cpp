@@ -1865,18 +1865,16 @@ BentleyStatus RelationshipPurger::Initialize(ECDbR ecdb)
                 }
             }
 
-
-        ECRelationshipConstraintCR holdingConstraint = relClass.GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? relClass.GetSource() : relClass.GetTarget();
-        PropertyMapCP holdingConstraintIdPropMap = relClass.GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? relClassMap->GetSourceECInstanceIdPropMap() : relClassMap->GetTargetECInstanceIdPropMap();
-        Utf8CP holdingConstraintIdColumnName = holdingConstraintIdPropMap->GetFirstColumn()->GetName().c_str();
-
         if (relClassMap->GetClassMapType() == IClassMap::Type::RelationshipEndTable)
             {
+            RelationshipClassEndTableMapCP endTableRelClassMap = static_cast<RelationshipClassEndTableMapCP>(relClassMap);
+            PropertyMapCP foreignIdPropMap = endTableRelClassMap->GetConstraintECInstanceIdPropMap(endTableRelClassMap->GetReferencedEnd());
+            //assumption: col name is same for all joined tables
+            Utf8CP foreignIdColName = foreignIdPropMap->GetFirstColumn()->GetName().c_str();
             NativeSqlBuilder unionClauseBuilder;
-            std::set<ECDbSqlTable const*> tables = map.GetTablesFromRelationshipEndWithColumn(holdingConstraint, holdingConstraintIdColumnName);
-            for (ECDbSqlTable const* table : tables)
+            for (ECDbSqlTable const* table : foreignIdPropMap->GetTables())
                 {
-                unionClauseBuilder.AppendFormatted("SELECT [%s] " ECDB_HOLDING_VIEW_HELDID_COLNAME " FROM [%s] WHERE [%s] IS NOT NULL", holdingConstraintIdColumnName, table->GetName().c_str(), holdingConstraintIdColumnName);
+                unionClauseBuilder.AppendFormatted("SELECT [%s] " ECDB_HOLDING_VIEW_HELDID_COLNAME " FROM [%s] WHERE [%s] IS NOT NULL", foreignIdColName, table->GetName().c_str(), foreignIdColName);
                 }
 
             if (!unionClauseBuilder.IsEmpty())
@@ -1886,20 +1884,23 @@ BentleyStatus RelationshipPurger::Initialize(ECDbR ecdb)
             {
             ECDbSqlTable const& primaryTable = static_cast<RelationshipClassLinkTableMapCP>(relClassMap)->GetPrimaryTable();
 
-            ECDbMap::LightweightCache::RelationshipEnd holdingEnd = relClass.GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? ECDbMap::LightweightCache::RelationshipEnd::Source : ECDbMap::LightweightCache::RelationshipEnd::Target;
+            ECDbMap::LightweightCache::RelationshipEnd heldEnd = relClass.GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? ECDbMap::LightweightCache::RelationshipEnd::Target : ECDbMap::LightweightCache::RelationshipEnd::Source;
             auto it = linkTables.find(&primaryTable);
             if (it == linkTables.end())
-                linkTables[&primaryTable] = holdingEnd;
+                linkTables[&primaryTable] = heldEnd;
             else
                 {
-                if (Enum::Contains(it->second, holdingEnd))
+                if (Enum::Contains(it->second, heldEnd))
                     continue;
 
-                linkTables[&primaryTable] = Enum::Or(linkTables[&primaryTable], holdingEnd);
+                linkTables[&primaryTable] = Enum::Or(linkTables[&primaryTable], heldEnd);
                 }
 
+            PropertyMapCP heldConstraintIdPropMap = relClass.GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? relClassMap->GetTargetECInstanceIdPropMap() : relClassMap->GetSourceECInstanceIdPropMap();
+            Utf8CP heldConstraintIdColumnName = heldConstraintIdPropMap->GetFirstColumn()->GetName().c_str();
+
             NativeSqlBuilder unionClauseBuilder;
-            unionClauseBuilder.AppendFormatted("SELECT [%s] " ECDB_HOLDING_VIEW_HELDID_COLNAME " FROM [%s]", holdingConstraintIdColumnName, primaryTable.GetName().c_str());
+            unionClauseBuilder.AppendFormatted("SELECT [%s] " ECDB_HOLDING_VIEW_HELDID_COLNAME " FROM [%s]", heldConstraintIdColumnName, primaryTable.GetName().c_str());
             unionClauseList.push_back(std::move(unionClauseBuilder));
             }
         }

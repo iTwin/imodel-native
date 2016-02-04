@@ -1475,8 +1475,8 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_SupportedCases)
     ASSERT_EQ(SUCCESS, ecdb.Purge(ECDb::PurgeMode::HoldingRelationships));
     ASSERT_TRUE(instanceExists(ecdb, "ts.Geometry", geomKey2));
     ASSERT_TRUE(instanceExists(ecdb, "ts.GeometryPart", partKey1)) << "Part 1 is still held by Geom2";
+    ASSERT_TRUE(relationshipExists(ecdb, "ts.GeometryHoldsParts", geomKey2, partKey1)) << "Part 1 is still held by Geom2";
     ASSERT_FALSE(instanceExists(ecdb, "ts.GeometryPart", partKey2)) << "Part 2 has never been held by anybody, so it should be purged";
-    ASSERT_FALSE(relationshipExists(ecdb, "ts.GeometryHoldsParts", geomKey2, partKey1));
 
     //delete Geom2
     ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.BindId(1, geomKey2.GetECInstanceId()));
