@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/ECJsonUtility.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,13 +24,13 @@ private:
     ~ECJsonCppUtility();
 
 #if !defined (DOCUMENTATION_GENERATOR)
-    static StatusInt ECInstanceFromJsonValue(ECN::IECInstanceR instance, const Json::Value& jsonValue, ECN::ECClassCR currentClass, Utf8StringCR currentAccessString);
-    static StatusInt ECArrayValueFromJsonValue(ECN::IECInstanceR instance, const Json::Value& jsonValue, ECN::ArrayECPropertyCR arrayProperty, Utf8StringCR currentAccessString);
-    static StatusInt ECPrimitiveValueFromJsonValue(ECN::ECValueR ecValue, const Json::Value& jsonValue, ECN::PrimitiveType primitiveType);
+    static StatusInt ECInstanceFromJsonValue(ECN::IECInstanceR, Json::Value const&, ECN::ECClassCR currentClass, Utf8StringCR currentAccessString);
+    static StatusInt ECArrayValueFromJsonValue(ECN::IECInstanceR, Json::Value const&, ECN::ECPropertyCR, Utf8StringCR currentAccessString);
+    static StatusInt ECPrimitiveValueFromJsonValue(ECN::ECValueR, Json::Value const&, ECN::PrimitiveType);
 #endif
 
 public:
-    ECDB_EXPORT static StatusInt ECInstanceFromJsonValue(ECN::IECInstanceR instance, const Json::Value& jsonValue);
+    ECDB_EXPORT static StatusInt ECInstanceFromJsonValue(ECN::IECInstanceR, Json::Value const&);
     };
 
 /*=================================================================================**//**
@@ -44,7 +44,7 @@ private:
 
 #if !defined (DOCUMENTATION_GENERATOR)
     static StatusInt ECInstanceFromJsonValue(ECN::IECInstanceR instance, RapidJsonValueCR jsonValue, ECN::ECClassCR currentClass, Utf8StringCR currentAccessString);
-    static StatusInt ECArrayValueFromJsonValue(ECN::IECInstanceR instance, RapidJsonValueCR jsonValue, ECN::ArrayECPropertyCR arrayProperty, Utf8StringCR currentAccessString);
+    static StatusInt ECArrayValueFromJsonValue(ECN::IECInstanceR instance, RapidJsonValueCR jsonValue, ECN::ECPropertyCR, Utf8StringCR currentAccessString);
     static StatusInt ECPrimitiveValueFromJsonValue(ECN::ECValueR ecValue, RapidJsonValueCR jsonValue, ECN::PrimitiveType primitiveType);
 #endif
 

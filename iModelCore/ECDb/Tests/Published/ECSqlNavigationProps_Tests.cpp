@@ -269,6 +269,8 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     ECClassCP elementClass = ecdb.Schemas().GetECClass("np", "DgnElement");
     ASSERT_TRUE(elementClass != nullptr);
 
+    ECInstanceKey elementKey;
+    {
     ECInstanceInserter elementInserter(ecdb, *elementClass);
     ASSERT_TRUE(elementInserter.IsValid());
 
@@ -280,9 +282,9 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     v.SetLong(modelKey.GetECInstanceId().GetValue());
     ASSERT_EQ(ECObjectsStatus::Success, elementInst->SetValue("ModelId", v));
 
-    ECInstanceKey elementKey;
     ASSERT_EQ(SUCCESS, elementInserter.Insert(elementKey, *elementInst));
     ecdb.SaveChanges();
+    }
 
     //verify relationship was inserted
     {
@@ -305,7 +307,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     }
 
     ECSqlStatement selStmt;
-    ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(ecdb, "SELECT ECInstanceId, GetECClassId(), Code, ModelId FROM np.DgnElement"));
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(ecdb, "SELECT ECInstanceId, GetECClassId() AS ECClassId, Code, ModelId FROM np.DgnElement"));
 
     ECInstanceECSqlSelectAdapter selAdapter(selStmt);
     bool verifiedElementWithSetNavProp = false;
@@ -318,16 +320,129 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
             {
             verifiedElementWithSetNavProp = true;
 
+            ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), selStmt.GetValueInt64(3)) << "ModelId via plain ECSQL";
             ECValue v;
             ASSERT_EQ(ECObjectsStatus::Success, inst->GetValue(v, "ModelId"));
-            ASSERT_FALSE(v.IsNull());
+            ASSERT_FALSE(v.IsNull()) << "ModelId is not expected to be null in the read ECInstance";
             ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), v.GetLong());
             }
         else
             {
+            ASSERT_TRUE(selStmt.IsValueNull(3)) << "ModelId via plain ECSQL";
+
             ECValue v;
             ASSERT_EQ(ECObjectsStatus::Success, inst->GetValue(v, "ModelId"));
             ASSERT_TRUE(v.IsNull());
+            }
+        }
+
+    ASSERT_TRUE(verifiedElementWithSetNavProp);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 12/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMapping_JsonAdapter)
+    {
+    const int rowCount = 3;
+    ECDbR ecdb = SetupECDb("ecsqlnavpropsupport.ecdb",
+                            SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                        "<ECSchema schemaName='np' nameSpacePrefix='np' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                        "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                                        "    <ECEntityClass typeName='DgnModel'>"
+                                        "        <ECProperty propertyName='Name' typeName='string' />"
+                                        "    </ECEntityClass>"
+                                        "    <ECEntityClass typeName='DgnElement'>"
+                                        "        <ECProperty propertyName='Code' typeName='string' />"
+                                        "        <ECNavigationProperty propertyName='ModelId' relationshipName='ParentHasChildren' direction='Backward' />"
+                                        "    </ECEntityClass>"
+                                        "   <ECRelationshipClass typeName='ParentHasChildren' strength='Referencing'>"
+                                        "      <Source cardinality='(0,1)' polymorphic='False'>"
+                                        "          <Class class ='DgnModel' />"
+                                        "      </Source>"
+                                        "      <Target cardinality='(0,N)' polymorphic='False'>"
+                                        "          <Class class ='DgnElement' />"
+                                        "      </Target>"
+                                        "   </ECRelationshipClass>"
+                                        "</ECSchema>"), rowCount);
+
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ECInstanceKey modelKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT GetECClassId(), ECInstanceId FROM np.DgnModel LIMIT 1"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+    modelKey = ECInstanceKey(stmt.GetValueInt64(0), stmt.GetValueId<ECInstanceId>(1));
+    ASSERT_TRUE(modelKey.IsValid());
+    }
+
+    ECClassCP elementClass = ecdb.Schemas().GetECClass("np", "DgnElement");
+    ASSERT_TRUE(elementClass != nullptr);
+
+    ECInstanceKey elementKey;
+    {
+    JsonInserter elementInserter(ecdb, *elementClass);
+    ASSERT_TRUE(elementInserter.IsValid());
+
+    Utf8String newElementJsonStr;
+    newElementJsonStr.Sprintf("{\"Code\": \"TestCode-1\", \"ModelId\": \"%lld\"}", modelKey.GetECInstanceId().GetValue());
+
+    rapidjson::Document newElementJson;
+    ASSERT_FALSE(newElementJson.Parse<0>(newElementJsonStr.c_str()).HasParseError());
+
+    ASSERT_EQ(SUCCESS, elementInserter.Insert(elementKey, newElementJson));
+    ecdb.SaveChanges();
+    }
+    //verify relationship was inserted
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT SourceECInstanceId,SourceECClassId FROM np.ParentHasChildren WHERE TargetECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, elementKey.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue());
+    ASSERT_EQ(modelKey.GetECClassId(), stmt.GetValueInt64(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT TargetECInstanceId,TargetECClassId FROM np.ParentHasChildren WHERE SourceECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, modelKey.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(elementKey.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue());
+    ASSERT_EQ(elementKey.GetECClassId(), stmt.GetValueInt64(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    ECSqlStatement selStmt;
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(ecdb, "SELECT ECInstanceId, Code, ModelId FROM np.DgnElement"));
+
+    JsonECSqlSelectAdapter selAdapter(selStmt);
+    bool verifiedElementWithSetNavProp = false;
+    while (selStmt.Step() == BE_SQLITE_ROW)
+        {
+        Json::Value json;
+        ASSERT_TRUE(selAdapter.GetRowInstance(json));
+
+        Utf8CP idStr = json["$ECInstanceId"].asCString();
+        ECInstanceId id;
+        ASSERT_TRUE(ECInstanceIdHelper::FromString(id, idStr));
+        if (elementKey.GetECInstanceId() == id)
+            {
+            verifiedElementWithSetNavProp = true;
+
+            ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), selStmt.GetValueInt64(2)) << "ModelId via plain ECSQL";
+
+            Json::Value const& modelIdJson = json["ModelId"];
+            ASSERT_FALSE(modelIdJson.isNull()) << "ModelId is not expected to be null in the read ECInstance";
+            
+            ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), BeJsonUtilities::Int64FromValue(modelIdJson));
+            }
+        else
+            {
+            ASSERT_TRUE(selStmt.IsValueNull(2)) << "ModelId via plain ECSQL";
+            ASSERT_TRUE(json["ModelId"].isNull()) << "ModelId is not expected to be null in the read ECInstance";
             }
         }
 

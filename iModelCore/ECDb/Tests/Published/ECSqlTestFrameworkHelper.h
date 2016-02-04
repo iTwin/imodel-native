@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/ECSqlTestFrameworkHelper.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -31,6 +31,7 @@ public:
 
     //Helpers
     static ECInstanceId InsertTestInstance (ECDbCR, Utf8CP ecsql);
+    static bvector<ECInstanceId> GetValidECInstanceIds (ECDbCR ecdb, Utf8CP ecsql);
     };
 
 END_ECSQLTESTFRAMEWORK_NAMESPACE

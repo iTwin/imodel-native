@@ -49,10 +49,10 @@ ECSqlStatus ECSqlPreparedStatement::Prepare(ECSqlPrepareContext& prepareContext,
         return stat;
     if (auto info = prepareContext.GetJoinTableInfo())
         {
-        m_ecsql = Utf8String(info->GetOrignalECSQlStatement());
+        m_ecsql.assign(info->GetOrignalECSQlStatement());
         }
     else
-        m_ecsql = Utf8String(ecsql);
+        m_ecsql.assign(ecsql);
 
     if (prepareContext.NativeStatementIsNoop())
         m_isNoopInSqlite = true;

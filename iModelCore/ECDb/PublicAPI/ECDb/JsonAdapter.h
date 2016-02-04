@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/JsonAdapter.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -195,9 +195,9 @@ private:
 
     bool JsonFromPrimitive (JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const;
     bool JsonFromStruct (JsonValueR jsonValue, IECSqlValue const& ecsqlValue) const;
-    bool JsonFromArray (JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ArrayECPropertyCR arrayProperty) const;
+    bool JsonFromArray (JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR) const;
     bool JsonFromStructArray (JsonValueR jsonValue, IECSqlValue const& ecsqlValue) const;
-    bool JsonFromPrimitiveArray (JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ArrayECPropertyCR ecProperty) const;
+    bool JsonFromPrimitiveArray (JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR ecProperty) const;
     bool JsonFromBinary (JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const;
     bool JsonFromBoolean (JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const;
     bool JsonFromDateTime (JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const;
