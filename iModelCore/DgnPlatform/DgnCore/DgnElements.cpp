@@ -1522,7 +1522,6 @@ ECSqlClassParams const& dgn_ElementHandler::Element::GetECSqlClassParams()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef WIP_MERGE
 void DgnElements::DropGraphicsForViewport(DgnViewportCR viewport)
     {
     viewport.GetPartGraphics().clear();
@@ -1534,4 +1533,3 @@ void DgnElements::DropGraphicsForViewport(DgnViewportCR viewport)
             geom->Graphics().DropFor(viewport);
         });
     }
-#endif

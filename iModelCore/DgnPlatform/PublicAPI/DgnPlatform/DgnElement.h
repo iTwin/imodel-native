@@ -1230,9 +1230,10 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
         explicit CreateParams(DgnElement::CreateParams const& params, DgnCategoryId category=DgnCategoryId()) : T_Super(params), m_category(category) { }
     };
 protected:
-    DgnCategoryId   m_categoryId;
-    GeometryStream  m_geom;
-    mutable bool    m_multiChunkGeomStream;
+    DgnCategoryId               m_categoryId;
+    GeometryStream              m_geom;
+    mutable Render::GraphicSet  m_graphics;
+    mutable bool                m_multiChunkGeomStream;
 
     explicit GeometricElement(CreateParams const& params) : T_Super(params), m_categoryId(params.m_category), m_multiChunkGeomStream(false) { }
 
@@ -1254,6 +1255,7 @@ protected:
     static void AddBaseClassParams(ECSqlClassParams& params);
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
     GeometryStreamCR GetGeometryStream() const {return m_geom;}
+    DgnDbStatus InsertGeomStream() const;
     DgnDbStatus UpdateGeomStream() const;
     DgnDbStatus WriteGeomStream() const;
     DgnDbStatus Validate() const;
@@ -1282,7 +1284,6 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement3d : GeometricElement, GeometrySo
             : T_Super(params, category), m_placement(placement) { }
     };
 protected:
-    mutable Render::GraphicSet m_graphics;
     Placement3d m_placement;
 
     explicit GeometricElement3d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) { }
@@ -1349,6 +1350,7 @@ protected:
     virtual GeometryStreamCR _GetGeometryStream() const override final { return m_geom; }
     virtual Placement2dCR _GetPlacement() const override final { return m_placement; }
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPlacement(Placement2dCR placement) override;
+    virtual Render::GraphicSet& _Graphics() const override final {return m_graphics;}
 
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
     DGNPLATFORM_EXPORT virtual void _AdjustPlacementForImport(DgnImportContext const&) override;
@@ -1358,6 +1360,7 @@ protected:
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement&);
 public:
+    virtual void _OnUpdateFinished() const override {T_Super::_OnUpdateFinished(); m_graphics.Clear();}
     DGNPLATFORM_EXPORT static void AddClassParams(ECSqlClassParams& params);
 };
 
@@ -1423,9 +1426,6 @@ struct EXPORT_VTABLE_ATTRIBUTE GraphicalElement2d : GeometricElement2d
 {
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_GraphicalElement2d, GeometricElement2d)
     friend struct dgn_ElementHandler::Graphical2d;
-protected:
-    virtual Render::GraphicSet& _Graphics() const override {Render::GraphicSet* g = nullptr; return *g;}
-
 public:
     explicit GraphicalElement2d(CreateParams const& params) : T_Super(params) {}
 };
@@ -1444,7 +1444,6 @@ public:
     static AnnotationElementPtr Create(CreateParams const& params) {return new AnnotationElement(params);}
 protected:
     virtual AnnotationElementCP _ToAnnotationElement() const override final {return this;}
-    virtual Render::GraphicSet& _Graphics() const override {Render::GraphicSet* g = nullptr; return *g;}
 
     explicit AnnotationElement(CreateParams const& params) : T_Super(params) { }
 }; // AnnotationElement
@@ -1463,7 +1462,6 @@ public:
     static DrawingElementPtr Create(CreateParams const& params) {return new DrawingElement(params);}
 protected:
     virtual DrawingElementCP _ToDrawingElement() const override final {return this;}
-    virtual Render::GraphicSet& _Graphics() const override {Render::GraphicSet* g = nullptr; return *g;}
 
     explicit DrawingElement(CreateParams const& params) : T_Super(params) { }
 }; // DrawingElement
@@ -1483,7 +1481,6 @@ public:
     static SheetElementPtr Create(CreateParams const& params) {return new SheetElement(params);}
 protected:
     virtual SheetElementCP _ToSheetElement() const override final {return this;}
-    virtual Render::GraphicSet& _Graphics() const override {Render::GraphicSet* g = nullptr; return *g;}
 
     explicit SheetElement(CreateParams const& params) : T_Super(params) { }
 }; // SheetElement
@@ -1699,7 +1696,7 @@ struct DgnElements : DgnDbTable, IMemoryConsumer
     friend struct TxnManager;
     friend struct ProgressiveViewFilter;
     friend struct dgn_TxnTable::Element;
-    friend struct ElementGeomData;
+    friend struct GeometricElement;
 
     //! The totals for persistent DgnElements in this DgnDb. These values reflect the current state of the loaded elements.
     struct Totals
@@ -1853,6 +1850,12 @@ public:
 
     DgnElementIdSet const& GetSelectionSet() const {return m_selectionSet;}
     DgnElementIdSet& GetSelectionSetR() {return m_selectionSet;}
+
+    //! For all loaded elements, drops any cached graphics associated with the specified viewport.
+    //! This is typically invoked by applications when a viewport is closed or its attributes modified such that the cached graphics
+    //! no longer reflect its state.
+    //! @param[in]      viewport The viewport for which to drop graphics
+    DGNPLATFORM_EXPORT void DropGraphicsForViewport(DgnViewportCR viewport);
 };
 
 //=======================================================================================
