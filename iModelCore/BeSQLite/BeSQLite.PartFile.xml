@@ -6,8 +6,10 @@
     <Part Name="PublicAPI" BentleyBuildMakeFile="BeSQLite.prewire.mke">
         <Bindings>
             <PublicAPI Domain="BeSQLite" />
-            <Files ProductDirectoryName="VendorNotices" Required="true">Delivery/sqlite-notice.txt</Files>
-            <Files ProductDirectoryName="VendorNotices" Required="true">Delivery/snappy-notice.txt</Files>
+            <VendorNotices>
+                Delivery/sqlite-license.txt
+                Delivery/snappy-license.txt
+            </VendorNotices>
         </Bindings>
     </Part>
 
