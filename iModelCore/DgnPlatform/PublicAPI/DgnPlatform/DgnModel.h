@@ -1340,8 +1340,6 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
     DGNPLATFORM_EXPORT DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
 
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
-
 public:
     //! construct a new SheetModel
     explicit DGNPLATFORM_EXPORT SheetModel(CreateParams const& params);

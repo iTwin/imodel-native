@@ -330,18 +330,6 @@ DgnDbStatus GeometricModel2d::_OnInsertElement(DgnElementR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus SheetModel::_OnInsertElement(DgnElementR el)
-    {
-    auto stat = T_Super::_OnInsertElement(el);
-    if (DgnDbStatus::Success == stat && el.IsGeometricElement() && !el.IsAnnotationElement() && !el.IsSheetElement())
-        stat = DgnDbStatus::WrongModel;
-
-    return stat;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus SectionDrawingModel::_OnInsertElement(DgnElementR el)
     {
     auto stat = T_Super::_OnInsertElement(el);

@@ -22,7 +22,7 @@ BENTLEY_NAMESPACE_TYPEDEFS(HeapZone);
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometric3d; struct Physical; struct Annotation; struct Drawing; struct Sheet; struct Group;};
+namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometric3d; struct Physical; struct Annotation; struct Drawing; struct Group;};
 namespace dgn_TxnTable {struct Element; struct Model;};
 
 DEFINE_REF_COUNTED_PTR(ElementGeometry)
@@ -819,7 +819,6 @@ protected:
     virtual PhysicalElementCP _ToPhysicalElement() const {return nullptr;}
     virtual AnnotationElementCP _ToAnnotationElement() const {return nullptr;}
     virtual DrawingElementCP _ToDrawingElement() const {return nullptr;}
-    virtual SheetElementCP _ToSheetElement() const {return nullptr;}
     virtual DefinitionElementCP _ToDefinitionElement() const {return nullptr;}
     virtual DictionaryElementCP _ToDictionaryElement() const {return nullptr;}
     virtual IElementGroupCP _ToIElementGroup() const {return nullptr;}
@@ -860,7 +859,6 @@ public:
     PhysicalElementCP ToPhysicalElement() const {return _ToPhysicalElement();}          //!< more efficient substitute for dynamic_cast<PhysicalElementCP>(el)
     AnnotationElementCP ToAnnotationElement() const {return _ToAnnotationElement();}    //!< more efficient substitute for dynamic_cast<AnnotationElementCP>(el)
     DrawingElementCP ToDrawingElement() const {return _ToDrawingElement();}             //!< more efficient substitute for dynamic_cast<DrawingElementCP>(el)
-    SheetElementCP ToSheetElement() const {return _ToSheetElement();}                   //!< more efficient substitute for dynamic_cast<SheetElementCP>(el)
     IElementGroupCP ToIElementGroup() const {return _ToIElementGroup();}                //!< more efficient substitute for dynamic_cast<IElementGroup>(el)
     
     GeometrySourceP ToGeometrySourceP() {return const_cast<GeometrySourceP>(_ToGeometrySource());} //!< more efficient substitute for dynamic_cast<GeometrySourceP>(el)
@@ -873,7 +871,6 @@ public:
     PhysicalElementP ToPhysicalElementP() {return const_cast<PhysicalElementP>(_ToPhysicalElement());}          //!< more efficient substitute for dynamic_cast<PhysicalElementP>(el)
     AnnotationElementP ToAnnotationElementP() {return const_cast<AnnotationElementP>(_ToAnnotationElement());}  //!< more efficient substitute for dynamic_cast<AnnotationElementP>(el)
     DrawingElementP ToDrawingElementP() {return const_cast<DrawingElementP>(_ToDrawingElement());}              //!< more efficient substitute for dynamic_cast<DrawingElementP>(el)
-    SheetElementP ToSheetElementP() {return const_cast<SheetElementP>(_ToSheetElement());}                      //!< more efficient substitute for dynamic_cast<SheetElementP>(el)
     //! @}
 
     bool Is3d() const {return nullptr != ToGeometrySource3d();}                     //!< Determine whether this element is 3d or not
@@ -883,7 +880,6 @@ public:
     bool IsDictionaryElement() const {return nullptr != ToDictionaryElement();}
     bool IsAnnotationElement() const {return nullptr != ToAnnotationElement();}     //!< Determine whether this element is an AnnotationElement
     bool IsDrawingElement() const {return nullptr != ToDrawingElement();}           //!< Determine whether this element is an DrawingElement
-    bool IsSheetElement() const {return nullptr != ToSheetElement();}               //!< Determine whether this element is an SheetElement
     bool IsSameType(DgnElementCR other) {return m_classId == other.m_classId;}      //!< Determine whether this element is the same type (has the same DgnClassId) as another element.
 
     //! Determine whether this is a copy of the "persistent state" (i.e. an exact copy of what is saved in the DgnDb) of a DgnElement.
@@ -1507,24 +1503,6 @@ protected:
 
     explicit DrawingElement(CreateParams const& params) : T_Super(params) { }
 }; // DrawingElement
-
-//=======================================================================================
-//! A 2-dimensional geometric element used in sheets
-//! @ingroup DgnElementGroup
-// @bsiclass                                                    Paul.Connelly   12/15
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SheetElement : GraphicalElement2d
-{
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_SheetElement, GraphicalElement2d)
-    friend struct dgn_ElementHandler::Sheet;
-public:
-    //! Create a SheetElement from CreateParams.
-    static SheetElementPtr Create(CreateParams const& params) {return new SheetElement(params);}
-protected:
-    virtual SheetElementCP _ToSheetElement() const override final {return this;}
-
-    explicit SheetElement(CreateParams const& params) : T_Super(params) { }
-}; // SheetElement
 
 //=======================================================================================
 //! Helper class for maintaining and querying the ElementGroupsMembers relationship

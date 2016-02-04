@@ -530,13 +530,6 @@
         </ECCustomAttributes>
         <BaseClass>GraphicalElement2d</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="SheetElement">
-        <!-- 2D element used in sheets -->
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
-        </ECCustomAttributes>
-        <BaseClass>GraphicalElement2d</BaseClass>
-    </ECEntityClass>
 
     <!-- Text element data (shared by 2D and 3D) -->
     <ECEntityClass typeName="TextAnnotationData">
@@ -740,7 +733,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>SheetElement</BaseClass>
+        <BaseClass>GraphicalElement2d</BaseClass>
         <ECProperty propertyName="ViewId" typeName="long">
             <!-- Foreign key relationship: ViewIsAttached.ViewId -->
             <!-- Should have IsNullable=False but shared table... -->
