@@ -1669,12 +1669,23 @@ public:
 };
 
 //=======================================================================================
+//! @ingroup DgnElementGroup
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE InformationElement : DgnElement
+{
+    DEFINE_T_SUPER(DgnElement);
+
+protected:
+    explicit InformationElement(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
 //! A DefinitionElement which resides in (and only in) a DefinitionModel.
 //! @ingroup DgnElementGroup
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DefinitionElement : DgnElement
+struct EXPORT_VTABLE_ATTRIBUTE DefinitionElement : InformationElement
 {
-    DEFINE_T_SUPER(DgnElement);
+    DEFINE_T_SUPER(InformationElement);
 
 protected:
     virtual DefinitionElementCP _ToDefinitionElement() const override final {return this;}

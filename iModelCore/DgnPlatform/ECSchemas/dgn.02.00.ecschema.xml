@@ -310,13 +310,13 @@
     </ECRelationshipClass>
 
     <ECEntityClass typeName="Element" modifier="Abstract">
+        <!-- NOTE: Only platform can directly subclass from Element. Everyone else should pick the most appropriate superclass. -->
         <!-- NOTE: Element subclasses should drop the "Element" suffix from their name once the concept becomes "user facing" -->
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Strategy>SharedTable</Strategy>
                     <AppliesToSubclasses>True</AppliesToSubclasses>
-                    <Options>JoinedTablePerDirectSubclass</Options>
                 </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <Indexes>
@@ -391,15 +391,35 @@
         </ECProperty>
     </ECEntityClass>
 
-    <ECEntityClass typeName="DefinitionElement" modifier="Abstract">
+    <ECEntityClass typeName="InformationElement" modifier="Abstract">
         <BaseClass>Element</BaseClass>
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Options>JoinedTablePerDirectSubclass</Options>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="DefinitionElement" modifier="Abstract">
+        <BaseClass>InformationElement</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="DictionaryElement" modifier="Abstract">
         <BaseClass>DefinitionElement</BaseClass>
     </ECEntityClass>
+    <ECEntityClass typeName="GeometricElement" modifier="Abstract">
+        <BaseClass>Element</BaseClass>
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Options>JoinedTablePerDirectSubclass</Options>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
     <ECEntityClass typeName="GeometricElement3d" modifier="Abstract">
         <!-- Base class for elements with 3d geometry -->
-        <BaseClass>Element</BaseClass> <!-- WIP: should inherit from GeometricElement, waiting for table split control -->
+        <BaseClass>GeometricElement</BaseClass> <!-- WIP: should inherit from GeometricElement, waiting for table split control -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
             <ClassMap xmlns="ECDbMap.01.00">
@@ -465,7 +485,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="GeometricElement2d" modifier="Abstract">
         <!-- Base class for elements with 2d geometry -->
-        <BaseClass>Element</BaseClass> <!-- WIP: should inherit from GeometricElement, waiting for table split control -->
+        <BaseClass>GeometricElement</BaseClass> <!-- WIP: should inherit from GeometricElement, waiting for table split control -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
             <ClassMap xmlns="ECDbMap.01.00">
