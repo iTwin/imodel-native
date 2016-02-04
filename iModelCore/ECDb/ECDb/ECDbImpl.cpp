@@ -241,13 +241,8 @@ BentleyStatus ECDb::Impl::Purge(ECDb::PurgeMode mode) const
     if (Enum::Contains(mode, ECDb::PurgeMode::HoldingRelationships))
         {
         RelationshipPurger purger;
-        if (purger.Prepare(const_cast<ECDb&>(m_schemaManager->GetECDb()), RelationshipPurger::Commands::PurgeAndUpdateHoldingView) != BE_SQLITE_OK)
+        if (SUCCESS != purger.Purge(m_ecdb))
             return ERROR;
-
-        if (purger.Step() != BE_SQLITE_DONE)
-            return ERROR;
-
-        purger.Finialize();
         }
 
     return SUCCESS;

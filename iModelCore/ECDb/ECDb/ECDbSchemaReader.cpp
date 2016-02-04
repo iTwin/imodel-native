@@ -136,7 +136,7 @@ ECClassP ECDbSchemaReader::GetECClass(Context& ctx, ECClassId ecClassId) const
     const int relStrengthColIx = 6;
     const int relStrengthDirColIx = 7;
 
-    BeSQLite::CachedStatementPtr stmt = m_db.GetCachedStatement("SELECT SchemaId,Name,DisplayLabel,Description,Type,Modifier,RelationStrength,RelationStrengthDirection FROM ec_Class WHERE Id=?");
+    BeSQLite::CachedStatementPtr stmt = m_db.GetCachedStatement("SELECT SchemaId,Name,DisplayLabel,Description,Type,Modifier,RelationshipStrength,RelationshipStrengthDirection FROM ec_Class WHERE Id=?");
     if (stmt == nullptr)
         return nullptr;
 

@@ -225,7 +225,7 @@
     1:1         | Any                | @ref BentleyApi::ECN::Forward "Forward" or @ref BentleyApi::ECN::Backward "Backward"
     1:N         | Any                | @ref BentleyApi::ECN::Forward "Forward"
     N:1         | Any                | @ref BentleyApi::ECN::Backward "Backward"
-    M:N         | @ref BentleyApi::ECN::Referencing "Referencing" | not relevant
+    M:N         | @ref BentleyApi::ECN::Referencing "Referencing" or @ref BentleyApi::ECN::Holding "Holding" | @ref BentleyApi::ECN::Forward "Forward" or @ref BentleyApi::ECN::Backward "Backward"
 
     ## Foreign Key mapping versus Link Table mapping
     ECDb always attempts to map an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" using a 
@@ -241,9 +241,14 @@
 
     Otherwise, the <b>Foreign Key</b> mapping is chosen.
 
-    The ECRelationshipClass is rejected if it evaluates to <b>Link Table</b> mapping and
-    - has the strength @em Embedding
-    - has the @b ForeignKeyRelationshipMap custom attribute (see also @ref CustomRelationshipMapDescription)
+    The ECRelationshipClass is rejected
+    - if it evaluates to <b>Link Table</b> mapping and
+        - has the strength @em Embedding
+        - has the @b ForeignKeyRelationshipMap custom attribute (see also @ref CustomRelationshipMapDescription)
+    - if it evaluates to <b>Foreign Key</b> mapping and the Foreign Key is created in a <b>joined table</b> 
+    (see @ref CustomClassMapDescription) and 
+            - in the @b ForeignKeyRelationshipMap custom attribute the property @b OnDeleteAction is set to @b Cascade or
+            - the @b ForeignKeyRelationshipMap custom attribute is not present and the strength is @b Embedding
 
     ## Mapping Rules
     The <b>number of tables to which the two relationship ends map to</b> is the key criterion for ECDb to decide whether
