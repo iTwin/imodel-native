@@ -527,6 +527,42 @@ StatusInt ViewContext::_VisitGeometry(GeometrySourceCR source)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    KeithBentley    05/01
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt ViewContext::_VisitHit(HitDetailCR hit)
+    {
+    DgnElementCPtr   element = hit.GetElement();
+    GeometrySourceCP source = (element.IsValid() ? element->ToGeometrySource() : nullptr);
+
+    if (nullptr == source)
+        {
+        IElemTopologyCP elemTopo = hit.GetElemTopology();
+        if (nullptr == (source = (nullptr != elemTopo ? elemTopo->_ToGeometrySource() : nullptr)))
+            return ERROR;
+        }
+
+    if (&GetDgnDb() != &source->GetSourceDgnDb())
+        return ERROR;
+
+    if (element.IsValid() && nullptr != m_viewport && !m_viewport->GetViewController().IsModelViewed(element->GetModelId()))
+        return ERROR;
+
+    // Allow sub-class involvement for flashing sub-entities...
+    Render::GraphicPtr graphic = (nullptr != m_viewport ? m_viewport->GetViewControllerR()._StrokeHit(*this, *source, hit) : source->StrokeHit(*this, hit));
+
+    if (WasAborted()) // if we aborted, the graphic may not be complete
+        return ERROR;
+
+    if (graphic.IsValid())
+        {
+        _OutputGraphic(*graphic, source); 
+        return SUCCESS;
+        }
+
+    return VisitGeometry(*source);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * private callback (called from scanner)
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -703,15 +739,6 @@ bool ViewContext::_VisitAllModelElements()
         PopClip();
 
     return WasAborted();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    05/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DecorateContext::VisitHit(HitDetailCR hit)
-    {
-    AutoRestore<bool> flash(&m_isFlash, true);
-    return m_viewport->GetViewController().VisitHit(hit, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**

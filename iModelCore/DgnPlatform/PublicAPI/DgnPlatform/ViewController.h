@@ -216,14 +216,16 @@ protected:
     //! An application can override _StrokeGeometry to change the symbology of a GeometrySource.
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeGeometry(ViewContextR, GeometrySourceCR, double pixelSize);
 
+    //! Stroke a single HitDetail through a ViewContext.
+    //! An application can override _StrokeHit to change how elements are flashed for auto-locate.
+    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeHit(ViewContextR, GeometrySourceCR, HitDetailCR);
+
     //! Invoked just before the locate tooltip is displayed to retrieve the info text. Allows the ViewController to override the default description.
     //! @param[in]  hit The locate HitDetail whose info is needed.
     //! @param[out] descr The info string.
     //! @param[in] delimiter The default delimiter to use when building the info string.
     //! @return true if the info string was set or false to use the default implementation.
     virtual bool _GetInfoString(HitDetailCR hit, Utf8StringR descr, Utf8CP delimiter) const {return false;}
-
-    DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitDetailCR hit, DecorateContextR context) const;
 
     //! Used to notify derived classes when an update begins.
     //! <p>See QueryViewController::_OnFullUpdate
@@ -290,7 +292,6 @@ public:
         double Bottom() const {return m_bottom;}
     };
 
-    StatusInt VisitHit(HitDetailCR hit, DecorateContextR context) const{return _VisitHit(hit, context);}
     void DrawView(ViewContextR context) {return _DrawView(context);}
     void VisitAllElements(ViewContextR context) {return _VisitAllElements(context);}
     void ChangeModelDisplay(DgnModelId modelId, bool onOff) {_ChangeModelDisplay(modelId, onOff);}
@@ -972,7 +973,7 @@ private:
 
     virtual void _DrawView(ViewContextR) override;
     virtual Render::GraphicPtr _StrokeGeometry(ViewContextR, GeometrySourceCR, double) override;
-    virtual StatusInt _VisitHit(HitDetailCR hit, DecorateContextR context) const override;
+    virtual Render::GraphicPtr _StrokeHit(ViewContextR, GeometrySourceCR, HitDetailCR) override;
     virtual DPoint3d _GetOrigin() const override;
     virtual DVec3d _GetDelta() const override;
     virtual RotMatrix _GetRotation() const override;

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/HypermodelingViewController.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -154,8 +154,9 @@ void HypermodelingViewController::PopClipsForInContextViewPass (ViewContextR con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt HypermodelingViewController::_VisitHit(HitDetailCR hit, DecorateContextR context) const
+Render::GraphicPtr HypermodelingViewController::_StrokeHit(ViewContextR context, GeometrySourceCR source, HitDetailCR hit)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     //  If the hit is in the drawing view, draw that view
     for (auto drawing : m_drawings)
         {
@@ -163,18 +164,21 @@ StatusInt HypermodelingViewController::_VisitHit(HitDetailCR hit, DecorateContex
             {
             m_pass = PASS_ForPicking;
             PushClipsForInContextViewPass (context, *drawing);
-            StatusInt status = drawing->VisitHit (hit, context);
+            Render::GraphicPtr graphic = drawing->_StrokeHit (context, source, hit);
             PopClipsForInContextViewPass (context, *drawing);
             m_pass = PASS_None;
-            return status;
+            return graphic;
             }
         }
 
     //  The hit must be in the physical view
     PushClipsForSpatialView (context);
-    StatusInt status = m_currentViewController->VisitHit (hit, context);
+    Render::GraphicPtr graphic = m_currentViewController->_StrokeHit(context, source, hit);
     PopClipsForSpatialView (context);
-    return status;
+    return graphic;
+#endif
+
+    return T_Super::_StrokeHit(context, source, hit);
     }
 
 //---------------------------------------------------------------------------------------

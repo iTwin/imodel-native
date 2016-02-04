@@ -1266,7 +1266,7 @@ protected:
     virtual GeometryStreamCR _GetGeometryStream() const = 0;
     virtual AxisAlignedBox3d _CalculateRange3d() const = 0;
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _Stroke(ViewContextR, double pixelSize) const;
-    DGNPLATFORM_EXPORT virtual bool _DrawHit(HitDetailCR, DecorateContextR) const;
+    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeHit(ViewContextR, HitDetailCR) const;
     DGNPLATFORM_EXPORT virtual void _GetInfoString(HitDetailCR, Utf8StringR descr, Utf8CP delimiter) const;
     DGNPLATFORM_EXPORT virtual SnapStatus _OnSnap(SnapContextR) const;
     GeometryStreamR GetGeometryStreamR() {return const_cast<GeometryStreamR>(_GetGeometryStream());} // Only GeometryBuilder should have write access to the GeometryStream...
@@ -1297,7 +1297,7 @@ public:
 
     Render::GraphicSet& Graphics() const {return _Graphics();}
     Render::GraphicPtr Stroke(ViewContextR context, double pixelSize) const {return _Stroke(context, pixelSize);}
-    bool DrawHit(HitDetailCR hit, DecorateContextR context) const {return _DrawHit(hit, context);}
+    Render::GraphicPtr StrokeHit(ViewContextR context, HitDetailCR hit) const {return _StrokeHit(context, hit);}
     void GetInfoString(HitDetailCR hit, Utf8StringR descr, Utf8CP delimiter) const {_GetInfoString(hit, descr, delimiter);}
     SnapStatus OnSnap(SnapContextR context) const {return _OnSnap(context);}
 };

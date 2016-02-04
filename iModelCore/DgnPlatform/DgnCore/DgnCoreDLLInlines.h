@@ -131,11 +131,6 @@ DG_INLINE DPoint3dCR PatternParams::GetOrigin() const {return origin;}
 DG_INLINE double PatternParams::GetAnnotationScale() const {return annotationscale;}
 
 DG_INLINE void LineStyleParams::SetScale(double inScale) { modifiers |= STYLEMOD_SCALE; scale = inScale; }
-
-DG_INLINE SnapDetailP     SnapContext::GetSnapDetail() {return m_snapPath;}
-DG_INLINE SnapMode      SnapContext::GetSnapMode() {return m_snapMode;}
-DG_INLINE int           SnapContext::GetSnapDivisor() {return m_snapDivisor;}
-
 DG_INLINE DgnPlatformLib::Host& DgnPlatformLib::GetHost() {return *static_cast<DgnPlatformLib::Host*>(g_hostForThread.GetValueAsPointer());}
 
 DG_INLINE WChar AngleFormatter::GetDecimalSeparator() const { return m_decimalSeparator; }
