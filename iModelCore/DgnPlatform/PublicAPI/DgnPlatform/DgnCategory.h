@@ -370,9 +370,6 @@ public:
     DGNPLATFORM_EXPORT static DgnCategoryId QueryFirstCategoryId(DgnDbR db); //!< Returns the ID of the first category found in the DgnDb
     DGNPLATFORM_EXPORT static DgnCategoryId QueryHighestCategoryId(DgnDbR db); //!< Returns the highest category ID found in the DgnDb
 
-    //! Returns the ID of the category to which the element with the specified ID belongs, or invalid if the element does not belong to a category.
-    DGNPLATFORM_EXPORT static DgnCategoryId QueryElementCategoryId(DgnElementId elementId, DgnDbR db);
-
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Category); } //!< Returns the class ID used for categories.
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); } //!< Returns the class ID used for categories
 

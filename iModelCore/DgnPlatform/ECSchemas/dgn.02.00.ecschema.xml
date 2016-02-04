@@ -15,65 +15,6 @@
     </ECCustomAttributeClass>
 
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
-    <!-- // Geometry-related core classes -->
-    <!-- ////////////////////////////////////////////////////////////////////////////// -->
-
-    <ECEntityClass typeName="GeometrySource" modifier="Abstract">
-        <!-- abstract - interface adopted by Elements which have geometry. 
-             NOTE: Derive from GeometrySource2d or GeometrySource3d. -->
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <Indexes>
-                    <DbIndex>
-                        <IsUnique>False</IsUnique>
-                        <Properties>
-                            <string>CategoryId</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
-            </ClassMap>
-        </ECCustomAttributes>
-        <ECProperty propertyName="CategoryId" typeName="long"/><!-- should be non-nullable but shared table... -->
-        <ECProperty propertyName="GeometryStream" typeName="binary"/>
-    </ECEntityClass>
-    
-    <ECRelationshipClass typeName="GeometrySourceIsInCategory" description="Element is in Category" strength="referencing">
-        <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-	    	<End>Source</End>
-                <OnDeleteAction>Restrict</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="true">
-            <Class class="GeometrySource">
-                <Key>
-                    <Property name="CategoryId"/>
-                </Key>
-            </Class>
-        </Source>
-        <Target cardinality="(1,1)" roleLabel="contains elements" polymorphic="false">
-            <Class class="Category"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECEntityClass typeName="GeometrySource2d" modifier="Abstract">
-        <BaseClass>GeometrySource</BaseClass>
-        <ECProperty propertyName="Origin" typeName="point2d" />
-        <ECProperty propertyName="Rotation" typeName="double" />
-        <ECProperty propertyName="BBoxLow" typeName="point2d" />
-        <ECProperty propertyName="BBoxHigh" typeName="point2d" />
-    </ECEntityClass>
-    <ECEntityClass typeName="GeometrySource3d" modifier="Abstract">
-        <BaseClass>GeometrySource</BaseClass>
-        <ECProperty propertyName="InPhysicalSpace" typeName="boolean"/>
-        <ECProperty propertyName="Origin" typeName="point3d" />
-        <ECProperty propertyName="Yaw" typeName="double" />
-        <ECProperty propertyName="Pitch" typeName="double" />
-        <ECProperty propertyName="Roll" typeName="double" />
-        <ECProperty propertyName="BBoxLow" typeName="point3d" />
-        <ECProperty propertyName="BBoxHigh" typeName="point3d" />
-    </ECEntityClass>
-
-    <!-- ////////////////////////////////////////////////////////////////////////////// -->
     <!-- // BIS-related core classes -->
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
 
@@ -204,20 +145,6 @@
         <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
     </ECEntityClass>
 
-    <!-- NEEDSWORK This breaks everything. Why.
-    <ECRelationshipClass typeName="CodeIssuedByAuthority" description="Object has a code which was issued by the specified authority" strength="referencing">
-        <Source cardinality="(0,N)" roleLabel="has N codes" polymorphic="true">
-            <Class class="CodedEntity">
-                <Key>
-                    <Property name="Code.AuthorityId" />
-                </Key>
-            </Class>
-        </Source>
-        <Target cardinality="(1,1)" roleLabel="issues code" polymorphic="true">
-            <Class class="Authority" />
-        </Target>
-    </ECRelationshipClass>
-    -->
     <ECRelationshipClass typeName="AuthorityIssuesElementCode" description="Element has a code which was issued by the given authority" strength="referencing">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
@@ -304,23 +231,29 @@
         <BaseClass>GeometricModel</BaseClass>
         <ECProperty propertyName="GlobalOrigin" displayLabel="Global Origin" typeName="point2d"/>
     </ECEntityClass>
+    <ECEntityClass typeName="GraphicalModel2d" modifier="Abstract">
+        <BaseClass>GeometricModel2d</BaseClass>
+    </ECEntityClass>
     <ECEntityClass typeName="SpatialModel">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
         <BaseClass>GeometricModel3d</BaseClass>
     </ECEntityClass>
+    <ECEntityClass typeName="DrawingModel">
+        <BaseClass>GraphicalModel2d</BaseClass>
+    </ECEntityClass>
     <ECEntityClass typeName="SectionDrawingModel">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>GeometricModel2d</BaseClass>
+        <BaseClass>DrawingModel</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="SheetModel">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>GeometricModel2d</BaseClass>
+        <BaseClass>GraphicalModel2d</BaseClass>
         <ECProperty propertyName="SheetSize" displayLabel="Sheet Size" typeName="point2d"/>
     </ECEntityClass>
     <ECEntityClass typeName="RedlineModel">
@@ -467,10 +400,40 @@
     <ECEntityClass typeName="DictionaryElement" modifier="Abstract">
         <BaseClass>DefinitionElement</BaseClass>
     </ECEntityClass>
+    <ECEntityClass typeName="GeometricElement3d" modifier="Abstract">
+        <!-- Base class for elements with 3d geometry -->
+        <BaseClass>Element</BaseClass> <!-- WIP: should inherit from GeometricElement, waiting for table split control -->
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <Indexes>
+                    <DbIndex>
+                        <IsUnique>False</IsUnique>
+                        <Properties>
+                            <string>CategoryId</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="CategoryId" typeName="long">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="GeometryStream" typeName="binary"/>
+        <ECProperty propertyName="InPhysicalSpace" typeName="boolean"/>
+        <ECProperty propertyName="Origin" typeName="point3d" />
+        <ECProperty propertyName="Yaw" typeName="double" />
+        <ECProperty propertyName="Pitch" typeName="double" />
+        <ECProperty propertyName="Roll" typeName="double" />
+        <ECProperty propertyName="BBoxLow" typeName="point3d" />
+        <ECProperty propertyName="BBoxHigh" typeName="point3d" />
+    </ECEntityClass>
     <ECEntityClass typeName="SpatialElement" modifier="Abstract">
         <!-- An element that occupies real world space -->
-        <BaseClass>Element</BaseClass>
-        <BaseClass>GeometrySource3d</BaseClass>
+        <BaseClass>GeometricElement3d</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="PhysicalElement">
         <!-- A SpatialElement that has mass and can be "touched" -->
@@ -502,29 +465,61 @@
         </ECCustomAttributes>
         <BaseClass>SpatialLocationElement</BaseClass>
     </ECEntityClass>
+    <ECEntityClass typeName="GeometricElement2d" modifier="Abstract">
+        <!-- Base class for elements with 2d geometry -->
+        <BaseClass>Element</BaseClass> <!-- WIP: should inherit from GeometricElement, waiting for table split control -->
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <Indexes>
+                    <DbIndex>
+                        <IsUnique>False</IsUnique>
+                        <Properties>
+                            <string>CategoryId</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="CategoryId" typeName="long">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="GeometryStream" typeName="binary"/>
+        <ECProperty propertyName="Origin" typeName="point2d" />
+        <ECProperty propertyName="Rotation" typeName="double" />
+        <ECProperty propertyName="BBoxLow" typeName="point2d" />
+        <ECProperty propertyName="BBoxHigh" typeName="point2d" />
+    </ECEntityClass>
+    <ECEntityClass typeName="GraphicalElement2d">
+        <!-- 2D geometric element that is used to convey information within graphical presentations (like drawings). -->
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>GeometricElement2d</BaseClass>
+    </ECEntityClass>
     <ECEntityClass typeName="AnnotationElement">
         <!-- 2D element used to annotate drawings and sheets -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>Element</BaseClass>
-        <BaseClass>GeometrySource2d</BaseClass>
+        <BaseClass>GraphicalElement2d</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="DrawingElement">
         <!-- 2D element used in drawings -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>Element</BaseClass>
-        <BaseClass>GeometrySource2d</BaseClass>
+        <BaseClass>GraphicalElement2d</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="SheetElement">
         <!-- 2D element used in sheets -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>Element</BaseClass>
-        <BaseClass>GeometrySource2d</BaseClass>
+        <BaseClass>GraphicalElement2d</BaseClass>
     </ECEntityClass>
 
     <!-- Text element data (shared by 2D and 3D) -->
@@ -953,6 +948,43 @@
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
         <ECProperty propertyName="Props" typeName="string"/>
     </ECEntityClass>
+
+    <ECRelationshipClass typeName="GeometricElement2dIsInCategory" description="Element is in Category" strength="referencing">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <End>Source</End>
+                <OnDeleteAction>Restrict</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="true">
+            <Class class="GeometricElement2d">
+                <Key>
+                    <Property name="CategoryId"/>
+                </Key>
+            </Class>
+        </Source>
+        <Target cardinality="(1,1)" roleLabel="contains elements" polymorphic="false">
+            <Class class="Category"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="GeometricElement3dIsInCategory" description="Element is in Category" strength="referencing">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <End>Source</End>
+                <OnDeleteAction>Restrict</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="true">
+            <Class class="GeometricElement3d">
+                <Key>
+                    <Property name="CategoryId"/>
+                </Key>
+            </Class>
+        </Source>
+        <Target cardinality="(1,1)" roleLabel="contains elements" polymorphic="false">
+            <Class class="Category"/>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="TrueColor">
         <ECCustomAttributes>
