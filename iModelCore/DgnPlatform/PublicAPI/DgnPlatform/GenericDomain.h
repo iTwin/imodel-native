@@ -94,16 +94,16 @@ namespace generic_ElementHandler
 {
     //! The ElementHandler for GenericSpatialObject
     //! @private
-    struct EXPORT_VTABLE_ATTRIBUTE GenericSpatialObjectHandler : dgn_ElementHandler::Element
+    struct EXPORT_VTABLE_ATTRIBUTE GenericSpatialObjectHandler : dgn_ElementHandler::Geometric3d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASSNAME_SpatialObject, GenericSpatialObject, GenericSpatialObjectHandler, dgn_ElementHandler::Element, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASSNAME_SpatialObject, GenericSpatialObject, GenericSpatialObjectHandler, dgn_ElementHandler::Geometric3d, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for GenericSpatialLocation
     //! @private
-    struct EXPORT_VTABLE_ATTRIBUTE GenericSpatialLocationHandler : dgn_ElementHandler::Element
+    struct EXPORT_VTABLE_ATTRIBUTE GenericSpatialLocationHandler : dgn_ElementHandler::Geometric3d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASSNAME_SpatialLocation, GenericSpatialLocation, GenericSpatialLocationHandler, dgn_ElementHandler::Element, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASSNAME_SpatialLocation, GenericSpatialLocation, GenericSpatialLocationHandler, dgn_ElementHandler::Geometric3d, DGNPLATFORM_EXPORT)
     };
     
     //! The ElementHandler for GenericPhysicalObject

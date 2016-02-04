@@ -401,6 +401,7 @@
         <!-- Base class for elements with 3d geometry -->
         <BaseClass>Element</BaseClass> <!-- WIP: should inherit from GeometricElement, waiting for table split control -->
         <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
             <ClassMap xmlns="ECDbMap.01.00">
                 <Indexes>
                     <DbIndex>
@@ -466,6 +467,7 @@
         <!-- Base class for elements with 2d geometry -->
         <BaseClass>Element</BaseClass> <!-- WIP: should inherit from GeometricElement, waiting for table split control -->
         <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
             <ClassMap xmlns="ECDbMap.01.00">
                 <Indexes>
                     <DbIndex>
@@ -492,9 +494,6 @@
     </ECEntityClass>
     <ECEntityClass typeName="GraphicalElement2d">
         <!-- 2D geometric element that is used to convey information within graphical presentations (like drawings). -->
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
-        </ECCustomAttributes>
         <BaseClass>GeometricElement2d</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="AnnotationElement">

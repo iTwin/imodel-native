@@ -180,10 +180,9 @@ public:
 namespace dgn_ElementHandler
 {
     //! The ElementHandler for VolumeElement
-    struct EXPORT_VTABLE_ATTRIBUTE VolumeElementHandler : Element
+    struct EXPORT_VTABLE_ATTRIBUTE VolumeElementHandler : Geometric3d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_VolumeElement, VolumeElement, VolumeElementHandler, Element, DGNPLATFORM_EXPORT)
-        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); VolumeElement::AddClassParams(params); }
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_VolumeElement, VolumeElement, VolumeElementHandler, Geometric3d, DGNPLATFORM_EXPORT)
     };
 }
 

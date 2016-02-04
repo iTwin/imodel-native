@@ -22,7 +22,7 @@ BENTLEY_NAMESPACE_TYPEDEFS(HeapZone);
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-namespace dgn_ElementHandler {struct Element; struct Physical; struct Graphical2d; struct Annotation; struct Drawing; struct Sheet; struct Group;};
+namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometric3d; struct Physical; struct Annotation; struct Drawing; struct Sheet; struct Group;};
 namespace dgn_TxnTable {struct Element; struct Model;};
 
 DEFINE_REF_COUNTED_PTR(ElementGeometry)
@@ -1310,7 +1310,8 @@ protected:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GeometricElement3d : GeometricElement, GeometrySource3d
 {
-    DEFINE_T_SUPER(GeometricElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_GeometricElement3d, GeometricElement)
+    friend struct dgn_ElementHandler::Geometric3d;
 
     struct CreateParams : T_Super::CreateParams
     {
@@ -1360,7 +1361,8 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GeometricElement2d : GeometricElement, GeometrySource2d
 {
-    DEFINE_T_SUPER(GeometricElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_GeometricElement2d, GeometricElement)
+    friend struct dgn_ElementHandler::Geometric2d;
 
     struct CreateParams : T_Super::CreateParams
     {
@@ -1463,8 +1465,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GraphicalElement2d : GeometricElement2d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_GraphicalElement2d, GeometricElement2d)
-    friend struct dgn_ElementHandler::Graphical2d;
+    DEFINE_T_SUPER(GeometricElement2d);
 public:
     explicit GraphicalElement2d(CreateParams const& params) : T_Super(params) {}
 };

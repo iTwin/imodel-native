@@ -99,43 +99,48 @@ namespace dgn_ElementHandler
         DGNPLATFORM_EXPORT static ElementHandlerP FindHandler(DgnDb const& dgndb, DgnClassId classId);
     };
 
-    //! The ElementHandler for PhysicalElement
-    struct EXPORT_VTABLE_ATTRIBUTE Physical : Element
+    //! The ElementHandler for GeometricElement3d
+    struct EXPORT_VTABLE_ATTRIBUTE Geometric3d : Element
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalElement, PhysicalElement, Physical, Element, DGNPLATFORM_EXPORT)
-        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); PhysicalElement::AddClassParams(params); }
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_GeometricElement3d, GeometricElement3d, Geometric3d, Element, DGNPLATFORM_EXPORT)
+        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); GeometricElement3d::AddClassParams(params); }
     };
 
-    //! The ElementHandler for GraphicalElement2d
-    struct EXPORT_VTABLE_ATTRIBUTE Graphical2d : Element
+    //! The ElementHandler for PhysicalElement
+    struct EXPORT_VTABLE_ATTRIBUTE Physical : Geometric3d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_GraphicalElement2d, GraphicalElement2d, Graphical2d, Element, DGNPLATFORM_EXPORT)
-        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); GraphicalElement2d::AddClassParams(params); }
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalElement, PhysicalElement, Physical, Geometric3d, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for GeometricElement2d
+    struct EXPORT_VTABLE_ATTRIBUTE Geometric2d : Element
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_GeometricElement2d, GeometricElement2d, Geometric2d, Element, DGNPLATFORM_EXPORT)
+        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); GeometricElement2d::AddClassParams(params); }
     };
 
     //! The ElementHandler for AnnotationElement
-    struct EXPORT_VTABLE_ATTRIBUTE Annotation : Graphical2d
+    struct EXPORT_VTABLE_ATTRIBUTE Annotation : Geometric2d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationElement, AnnotationElement, Annotation, Graphical2d, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationElement, AnnotationElement, Annotation, Geometric2d, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for DrawingElement
-    struct EXPORT_VTABLE_ATTRIBUTE Drawing : Graphical2d
+    struct EXPORT_VTABLE_ATTRIBUTE Drawing : Geometric2d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, DrawingElement, Drawing, Graphical2d, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, DrawingElement, Drawing, Geometric2d, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for SheetElement
-    struct EXPORT_VTABLE_ATTRIBUTE Sheet : Graphical2d
+    struct EXPORT_VTABLE_ATTRIBUTE Sheet : Geometric2d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SheetElement, SheetElement, Sheet, Graphical2d, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SheetElement, SheetElement, Sheet, Geometric2d, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for SpatialGroupElement
-    struct EXPORT_VTABLE_ATTRIBUTE SpatialGroup : Element
+    struct EXPORT_VTABLE_ATTRIBUTE SpatialGroup : Geometric3d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialGroupElement, SpatialGroupElement, SpatialGroup, Element, DGNPLATFORM_EXPORT)
-        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); SpatialGroupElement::AddClassParams(params); }
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialGroupElement, SpatialGroupElement, SpatialGroup, Geometric3d, DGNPLATFORM_EXPORT)
     };
 };
 
