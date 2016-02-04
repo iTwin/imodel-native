@@ -167,21 +167,77 @@ DgnPlatformLib::Host::IKnownLocationsAdmin& DgnDbServerHost::_SupplyIKnownLocati
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             01/2016
+//@bsimethod                                     Eligijus.Mauragas              01/2016
 //---------------------------------------------------------------------------------------
-void FormatLockFromServer(JsonValueR lockJson, JsonValueCR serverJson)
+bool BeInt64IdFromJson (BeSQLite::BeInt64Id& id, JsonValueCR value)
     {
-    lockJson = Json::objectValue;
-    lockJson[Locks::Level] = serverJson[ServerSchema::Property::LockLevel].asInt();
-    lockJson[Locks::LockableId] = Json::objectValue;
-    if (serverJson[ServerSchema::Property::ObjectId].isString())
+    if (value.isNull ())
+        return false;
+
+    if (value.isString ())
         {
-        uint64_t id;
-        BeStringUtilities::ParseUInt64(id, serverJson[ServerSchema::Property::ObjectId].asCString());
-        lockJson[Locks::LockableId][Locks::Lockable::Id] = id;
+        uint64_t idParssed;
+        if (SUCCESS != BeStringUtilities::ParseUInt64 (idParssed, value.asCString ()))
+            return false;
+        id = BeSQLite::BeInt64Id ((int64_t)idParssed);
         }
     else
-        lockJson[Locks::LockableId][Locks::Lockable::Id] = serverJson[ServerSchema::Property::ObjectId].asUInt64();
-    lockJson[Locks::LockableId][Locks::Lockable::Type] = serverJson[ServerSchema::Property::LockType].asInt();
+        id = BeSQLite::BeInt64Id (value.asInt64 ());
+
+    return true;
     }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Eligijus.Mauragas              01/2016
+//---------------------------------------------------------------------------------------
+bool StringFromJson (Utf8StringR result, JsonValueCR value)
+    {
+    if (value.isNull ())
+        return false;
+
+    result = value.asCString ();
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Eligijus.Mauragas              01/2016
+//---------------------------------------------------------------------------------------
+bool GetLockFromServerJson (JsonValueCR serverJson, DgnLockR lock, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR repositoryId)
+    {
+    BeSQLite::BeInt64Id id;
+    LockLevel           level;
+    LockableType        type;
+
+    if (!BeInt64IdFromJson (id, serverJson[ServerSchema::Property::ObjectId])                             ||
+        !RepositoryJson::LockLevelFromJson (level, serverJson[ServerSchema::Property::LockLevel])           ||
+        !RepositoryJson::LockableTypeFromJson (type, serverJson[ServerSchema::Property::LockType])          ||
+        !RepositoryJson::BriefcaseIdFromJson (briefcaseId, serverJson[ServerSchema::Property::BriefcaseId]) ||
+        !StringFromJson (repositoryId, serverJson[ServerSchema::Property::ReleasedWithRevision]))
+        return false;
+
+    lock = DgnLock (LockableId (type, id), level);
+
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Eligijus.Mauragas              01/2016
+//---------------------------------------------------------------------------------------
+void AddLockInfoToList (DgnLockInfoSet& lockInfos, const DgnLock& dgnLock, const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR repositoryId)
+    {
+    DgnLockInfo&      info = *lockInfos.insert (DgnLockInfo (dgnLock.GetLockableId ())).first;
+    DgnLockOwnershipR ownership = info.GetOwnership ();
+
+    if (LockLevel::Exclusive == dgnLock.GetLevel ())
+        ownership.SetExclusiveOwner (briefcaseId);
+    else if (LockLevel::Shared == dgnLock.GetLevel ())
+        ownership.AddSharedOwner (briefcaseId);
+
+    if (!repositoryId.empty ())
+        info.SetRevisionId (repositoryId);
+
+    if (info.IsOwned () || !repositoryId.empty ())
+        info.SetTracked ();
+    }
+
 END_BENTLEY_DGNDBSERVER_NAMESPACE

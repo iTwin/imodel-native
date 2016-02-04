@@ -21,19 +21,16 @@ typedef std::shared_ptr<struct DgnDbRepositoryConnection> DgnDbRepositoryConnect
 
 struct DgnDbLockSetResultInfo;
 
-typedef AsyncResult<void, DgnDbServerError> DgnDbResult;
-typedef AsyncResult<DgnDbRepositoryConnectionPtr, DgnDbServerError> DgnDbRepositoryConnectionResult;
-typedef AsyncResult<RepositoryInfoPtr, DgnDbServerError> DgnDbRepositoryResult;
-typedef AsyncResult<DgnRevisionPtr, DgnDbServerError> DgnDbRevisionResult;
-typedef AsyncResult<bvector<DgnRevisionPtr>, DgnDbServerError> DgnDbRevisionsResult;
-typedef AsyncResult<uint64_t, DgnDbServerError> DgnDbUInt64Result;
-typedef AsyncResult<uint32_t, DgnDbServerError> DgnDbUInt32Result;
-
-typedef AsyncResult<DgnDbLockSetResultInfo, DgnDbServerError> DgnDbLockSetResult;
-typedef AsyncResult<IRepositoryManager::Response, DgnDbServerError> DgnRepositoryResponseResult;
-
-typedef AsyncResult<DgnDbServerRevisionPtr, DgnDbServerError> DgnDbServerRevisionResult;
-typedef AsyncResult<bvector<DgnDbServerRevisionPtr>, DgnDbServerError> DgnDbServerRevisionsResult;
+typedef AsyncResult<void, DgnDbServerError>                             DgnDbResult;
+typedef AsyncResult<DgnDbRepositoryConnectionPtr, DgnDbServerError>     DgnDbRepositoryConnectionResult;
+typedef AsyncResult<RepositoryInfoPtr, DgnDbServerError>                DgnDbRepositoryResult;
+typedef AsyncResult<DgnRevisionPtr, DgnDbServerError>                   DgnDbRevisionResult;
+typedef AsyncResult<bvector<DgnRevisionPtr>, DgnDbServerError>          DgnDbRevisionsResult;
+typedef AsyncResult<uint64_t, DgnDbServerError>                         DgnDbUInt64Result;
+typedef AsyncResult<uint32_t, DgnDbServerError>                         DgnDbUInt32Result;
+typedef AsyncResult<DgnDbLockSetResultInfo, DgnDbServerError>           DgnDbLockSetResult;
+typedef AsyncResult<DgnDbServerRevisionPtr, DgnDbServerError>           DgnDbServerRevisionResult;
+typedef AsyncResult<bvector<DgnDbServerRevisionPtr>, DgnDbServerError>  DgnDbServerRevisionsResult;
 
 //=======================================================================================
 //! DgnDbLockSet results.
@@ -44,23 +41,19 @@ struct DgnDbLockSetResultInfo
 //__PUBLISH_SECTION_END__
 private:
     DgnLockSet      m_locks;
-#ifdef NEEDSWORK_LOCKS
-    DgnOwnedLockSet m_owners;
-#endif
+    DgnLockInfoSet  m_lockStates;
 
 public:
     DgnDbLockSetResultInfo () {};
-    void AddLock (const DgnLock dgnLock, const BeSQLite::BeBriefcaseId briefcaseId);
+    void AddLock (const DgnLock dgnLock, const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR repositoryId);
 
 //__PUBLISH_SECTION_START__
 public:
     //! Returns the set of locks.
     DGNDBSERVERCLIENT_EXPORT const DgnLockSet& GetLocks () const;
 
-#ifdef NEEDSWORK_LOCKS
-    //! Returns an owners information.
-    DGNDBSERVERCLIENT_EXPORT const DgnOwnedLockSet& GetOwners () const;
-#endif
+    //! Returns lock state information.
+    DGNDBSERVERCLIENT_EXPORT const DgnLockInfoSet& GetLockStates () const;
 };
 
 
@@ -181,7 +174,7 @@ public:
     //! @param[in] briefcaseId
     //! @param[in] lastRevisionId Last pulled revision id
     //! @param[in] cancellationToken
-    DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnRepositoryResponseResult> AcquireLocks (LockRequestCR locks, const BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringCR lastRevisionId, ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnDbResult> AcquireLocks (LockRequestCR locks, const BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringCR lastRevisionId, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Release certain locks.
     //! @param[in] locks Set of locks to release
