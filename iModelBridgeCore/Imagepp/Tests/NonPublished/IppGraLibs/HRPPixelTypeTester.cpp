@@ -11,10 +11,6 @@
 
 #ifdef USE_GTEST        // TEST_P only available when using gtest.
 
-#define TEST_NAME ::testing::UnitTest::GetInstance()->current_test_info()->name()
-#define TEST_CASE_NAME ::testing::UnitTest::GetInstance()->current_test_info()->test_case_name()
-#define TEST_NAME_PRINT L"TEST: (" << TEST_CASE_NAME << ", " << TEST_NAME << ")"
-
 typedef std::pair<HFCPtr<HRPPixelType>, WString>    HRPPixelTypeNamePair;
 typedef std::vector<HRPPixelTypeNamePair>           HRPPixelTypeVector;
 

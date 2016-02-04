@@ -21,12 +21,6 @@
 #include <ImagePP/all/h/HRANearestSamplerRLE1.h>
 #endif
 
-#define TEST_NAME ::testing::UnitTest::GetInstance()->current_test_info()->name()
-#define TEST_CASE_NAME ::testing::UnitTest::GetInstance()->current_test_info()->test_case_name()
-#define TEST_NAME_PRINT L"TEST: (" << TEST_CASE_NAME << ", " << TEST_NAME << ")"
-
-
-
 typedef std::vector<HFCPtr<HRPPixelType>>           HRPPixelTypeVector;
 typedef std::vector<double>                         ScalingsVector;
 typedef std::vector<double>                         OffsetsVector;

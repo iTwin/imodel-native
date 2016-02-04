@@ -12,11 +12,6 @@
 #include "HRAImageOpTester.h"
 #include <Logging\bentleylogging.h>
 
-#define TEST_NAME ::testing::UnitTest::GetInstance()->current_test_info()->name()
-#define TEST_CASE_NAME ::testing::UnitTest::GetInstance()->current_test_info()->test_case_name()
-#define TEST_NAME_PRINT L"TEST: (" << TEST_CASE_NAME << ", " << TEST_NAME << ")"
-
-
 USING_NAMESPACE_BENTLEY_LOGGING
 using namespace ::testing;
 
@@ -614,7 +609,7 @@ bool BufferAllocator::VerifyBuffer(HRAImageSamplePtr& prImageSample, HFCPtr<HRPP
         }
 
     // check first line
-    WString testCaseName(TEST_CASE_NAME, false);
+    WString testCaseName(TEST_FIXTURE_NAME, false);
     WString testName(TEST_NAME, false);
     Byte* pInternalBuffer = pBuffer - m_nbFirstPaddingBytes;
     for (uint32_t i = 0; i < m_pitch; i++)

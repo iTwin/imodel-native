@@ -22,14 +22,6 @@ class HRAImageOpContrastStretchTester : public testing::Test
         void TestAvailableInputPixelType(HRAImageOpPtr pImageOp, uint32_t pixelTypeId, uint32_t pixelTypeIndex, HFCPtr<HRPPixelType> pixelTypeToMatch, uint32_t expectedStatus);
         void TestAvailableOutputPixelType(HRAImageOpPtr pImageOp, uint32_t pixelTypeId, uint32_t pixelTypeIndex, HFCPtr<HRPPixelType> pixelTypeToMatch, uint32_t expectedStatus);
         
-#ifdef USE_GTEST   
-        CharCP GetTestName() const {return ::testing::UnitTest::GetInstance()->current_test_info()->name();}
-        CharCP GetTestCaseName() const {return ::testing::UnitTest::GetInstance()->current_test_info()->test_case_name();}
-#else
-        CharCP GetTestName() const { return GetTestNameA();}
-        CharCP GetTestCaseName() const { return GetTestCaseNameA();}
-#endif
-
         IImageAllocator& GetMemoryManager();
 
     private:
@@ -169,7 +161,7 @@ void HRAImageOpContrastStretchTester::TestAvailableInputPixelType(HRAImageOpPtr 
         {
         char errorMsg[512];
         BeStringUtilities::Snprintf (errorMsg, "TEST: (%s, %s) - In TestAvailableInputPixelType: ImagePPStatus:%d expectedStatus:%d", 
-                                      GetTestCaseName(), GetTestName(), imageOpStatus, expectedStatus);
+                                      TEST_FIXTURE_NAME, TEST_NAME, imageOpStatus, expectedStatus);
         FAIL() << errorMsg;
         }
 
@@ -180,7 +172,7 @@ void HRAImageOpContrastStretchTester::TestAvailableInputPixelType(HRAImageOpPtr 
             {
             char errorMsg[512];
             BeStringUtilities::Snprintf (errorMsg, "TEST: (%s, %s) - In TestAvailableInputPixelType: pixel type not compatible with:%d", 
-                                          GetTestCaseName(), GetTestName(), pixelTypeId);
+                                          TEST_FIXTURE_NAME, TEST_NAME, pixelTypeId);
             FAIL() << errorMsg;
             }
         }
@@ -199,7 +191,7 @@ void HRAImageOpContrastStretchTester::TestAvailableOutputPixelType(HRAImageOpPtr
         {
         char errorMsg[512];
         BeStringUtilities::Snprintf (errorMsg, "TEST: (%s, %s) - In TestAvailableOutputPixelType: ImagePPStatus:%d expectedStatus:%d", 
-                                      GetTestCaseName(), GetTestName(), imageOpStatus, expectedStatus);
+                                      TEST_FIXTURE_NAME, TEST_NAME, imageOpStatus, expectedStatus);
         FAIL() << errorMsg;
         }
 
@@ -210,7 +202,7 @@ void HRAImageOpContrastStretchTester::TestAvailableOutputPixelType(HRAImageOpPtr
             {
             char errorMsg[512];
             BeStringUtilities::Snprintf (errorMsg, "TEST: (%s, %s) - In TestAvailableOutputPixelType: pixel type not compatible with:%d", 
-                                          GetTestCaseName(), GetTestName(), pixelTypeId);
+                                          TEST_FIXTURE_NAME, TEST_NAME, pixelTypeId);
             FAIL() << errorMsg;
             }
         }
@@ -245,7 +237,7 @@ void HRAImageOpContrastStretchTester::TestFiltering(HRAImageOpPtr pImageOp, HRAI
     Byte* pOutBuffer = pImageOut->GetBufferP()->GetDataP(pitch);
     size_t pitchExpected;
     const Byte* pOutBufferExpected = imageSampleOutExpected.GetBufferCP()->GetDataCP(pitchExpected);
-    ASSERT_EQ(pitch, pitchExpected) << "TEST: (" << GetTestCaseName() << ", " << GetTestName() << ") - In TestFiltering.";
+    ASSERT_EQ(pitch, pitchExpected) << "TEST: (" << TEST_FIXTURE_NAME << ", " << TEST_NAME << ") - In TestFiltering.";
 
     uint32_t posBuffer = 0;
     for(uint32_t row=0; row < height; ++row)
@@ -258,7 +250,7 @@ void HRAImageOpContrastStretchTester::TestFiltering(HRAImageOpPtr pImageOp, HRAI
                     {
                     char errorMsg[512];
                     BeStringUtilities::Snprintf (errorMsg, "TEST: (%s, %s) - In TestFiltering: pOutBuffer[%d]:%d pOutBufferExpected[%d]:%d", 
-                                                  GetTestCaseName(), GetTestName(),
+                                                  TEST_FIXTURE_NAME, TEST_NAME,
                                                   posBuffer, pOutBuffer[posBuffer], posBuffer, pOutBufferExpected[posBuffer]);
                     FAIL() << errorMsg;
                     }

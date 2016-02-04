@@ -24,14 +24,6 @@ class HRAImageOpFunctionFiltersTester : public testing::Test
         void TestAvailableInputPixelType(HRAImageOpPtr pImageOp, uint32_t pixelTypeId, uint32_t pixelTypeIndex, HFCPtr<HRPPixelType> pixelTypeToMatch, uint32_t expectedStatus);
         void TestAvailableOutputPixelType(HRAImageOpPtr pImageOp, uint32_t pixelTypeId, uint32_t pixelTypeIndex, HFCPtr<HRPPixelType> pixelTypeToMatch, uint32_t expectedStatus);
 
-#ifdef USE_GTEST   
-        CharCP GetTestName() const {return ::testing::UnitTest::GetInstance()->current_test_info()->name();}
-        CharCP GetTestCaseName() const {return ::testing::UnitTest::GetInstance()->current_test_info()->test_case_name();}
-#else
-        CharCP GetTestName() const { return GetTestNameA();}
-        CharCP GetTestCaseName() const { return GetTestCaseNameA();}
-#endif
-
         void CreateImage_1(HRAImageSamplePtr& prImageSample, uint32_t width, uint32_t height, HFCPtr<HRPPixelType>& prPixelType, Byte alphaValue = 0);
         void CreateImage_2_AlphaWithRanges(HRAImageSamplePtr& prImageSample, uint32_t width, uint32_t height, HFCPtr<HRPPixelType>& prPixelType, Byte alphaValue, const ImagePP::VectorHRPAlphaRange& pi_rRanges);
         void CreateImage_3_RGBA_Specified(HRAImageSamplePtr& prImageSample, uint32_t width, uint32_t height, HFCPtr<HRPPixelType>& prPixelType, Byte redValue, Byte greenValue, Byte blueValue, Byte alphaValue);
@@ -538,7 +530,7 @@ void HRAImageOpFunctionFiltersTester::TestAvailableInputPixelType(HRAImageOpPtr 
         {
         char errorMsg[512];
         BeStringUtilities::Snprintf (errorMsg, "TEST: (%s, %s) - In TestAvailableInputPixelType: ImagePPStatus:%d expectedStatus:%d", 
-                                      GetTestCaseName(), GetTestName(), imageOpStatus, expectedStatus);
+                                      TEST_FIXTURE_NAME, TEST_NAME, imageOpStatus, expectedStatus);
         FAIL() << errorMsg;
         }
 
@@ -549,7 +541,7 @@ void HRAImageOpFunctionFiltersTester::TestAvailableInputPixelType(HRAImageOpPtr 
             {
             char errorMsg[512];
             BeStringUtilities::Snprintf (errorMsg, "TEST: (%s, %s) - In TestAvailableInputPixelType: pixel type not compatible with:%d", 
-                                          GetTestCaseName(),  GetTestName(), pixelTypeId);
+                                          TEST_FIXTURE_NAME,  TEST_NAME, pixelTypeId);
             FAIL() << errorMsg;
             }
         }
@@ -568,7 +560,7 @@ void HRAImageOpFunctionFiltersTester::TestAvailableOutputPixelType(HRAImageOpPtr
         {
         char errorMsg[512];
         BeStringUtilities::Snprintf (errorMsg, "TEST: (%s, %s) - In TestAvailableOutputPixelType: ImagePPStatus:%d expectedStatus:%d", 
-                                      GetTestCaseName(),  GetTestName(), imageOpStatus, expectedStatus);
+                                      TEST_FIXTURE_NAME,  TEST_NAME, imageOpStatus, expectedStatus);
         FAIL() << errorMsg;
         }
 
@@ -579,7 +571,7 @@ void HRAImageOpFunctionFiltersTester::TestAvailableOutputPixelType(HRAImageOpPtr
             {
             char errorMsg[512];
             BeStringUtilities::Snprintf (errorMsg, "TEST: (%s, %s) - In TestAvailableOutputPixelType: pixel type not compatible with:%d", 
-                                          GetTestCaseName(),  GetTestName(), pixelTypeId);
+                                          TEST_FIXTURE_NAME,  TEST_NAME, pixelTypeId);
             FAIL() << errorMsg;
             }
         }
@@ -615,7 +607,7 @@ void HRAImageOpFunctionFiltersTester::TestFiltering(HRAImageOpPtr pImageOp, HRAI
     Byte* pOutBuffer = pImageOut->GetBufferP()->GetDataP(pitch);
     size_t pitchExpected;
     const Byte* pOutBufferExpected = imageSampleOutExpected.GetBufferCP()->GetDataCP(pitchExpected);
-    ASSERT_EQ(pitch, pitchExpected) << "TEST: (" << GetTestCaseName() << ", " <<  GetTestName() << ") - In TestFiltering.";
+    ASSERT_EQ(pitch, pitchExpected) << "TEST: (" << TEST_FIXTURE_NAME << ", " <<  TEST_NAME << ") - In TestFiltering.";
 
     uint32_t posBuffer = 0;
     for(uint32_t row=0; row < height; ++row)
@@ -628,7 +620,7 @@ void HRAImageOpFunctionFiltersTester::TestFiltering(HRAImageOpPtr pImageOp, HRAI
                     {
                     char errorMsg[512];
                     BeStringUtilities::Snprintf (errorMsg, "TEST: (%s, %s) - In TestFiltering: pOutBuffer[%d]:%d pOutBufferExpected[%d]:%d", 
-                                                  GetTestCaseName(),  GetTestName(),
+                                                  TEST_FIXTURE_NAME,  TEST_NAME,
                                                   posBuffer, pOutBuffer[posBuffer], posBuffer, pOutBufferExpected[posBuffer]);
                     FAIL() << errorMsg;
                     }
@@ -685,7 +677,7 @@ void HRAImageOpFunctionFiltersTester::CreateImage_1(HRAImageSamplePtr& prImageSa
         // Pixel type not supported yet by this method
         char errorMsg[512];
         BeStringUtilities::Snprintf (errorMsg, "TEST: (%s, %s) - In CreateImage_1: pixel type not supported.", 
-                                      GetTestCaseName(),  GetTestName());
+                                      TEST_FIXTURE_NAME,  TEST_NAME);
         FAIL() << errorMsg;
         }
     }
@@ -733,7 +725,7 @@ void HRAImageOpFunctionFiltersTester::CreateImage_2_AlphaWithRanges(HRAImageSamp
         // Pixel type not supported yet by this method
         char errorMsg[512];
         BeStringUtilities::Snprintf (errorMsg, "TEST: (%s, %s) - In CreateImage_2_AlphaWithRanges: pixel type not supported.", 
-                                      GetTestCaseName(),  GetTestName());
+                                      TEST_FIXTURE_NAME,  TEST_NAME);
         FAIL() << errorMsg;
         }
     }
@@ -851,7 +843,7 @@ void HRAImageOpFunctionFiltersTester::CreateImage_3_RGBA_Specified
         // Pixel type not supported yet by this method
         char errorMsg[512];
         BeStringUtilities::Snprintf (errorMsg, "TEST: (%s, %s) - In CreateImage_3_RGBA_Specified: pixel type not supported.", 
-                                      GetTestCaseName(),  GetTestName());
+                                      TEST_FIXTURE_NAME,  TEST_NAME);
         FAIL() << errorMsg;
         }
     }
@@ -926,7 +918,7 @@ void HRAImageOpFunctionFiltersTester::CreateImage_ColorReplacer(HRAImageSamplePt
         // Pixel type not supported yet by this method
         char errorMsg[512];
         BeStringUtilities::Snprintf (errorMsg, "TEST: (%s, %s) - In CreateImage_1: pixel type not supported.", 
-                                      GetTestCaseName(),  GetTestName());
+                                      TEST_FIXTURE_NAME,  TEST_NAME);
         FAIL() << errorMsg;
         }
     }
@@ -979,7 +971,7 @@ void HRAImageOpFunctionFiltersTester::CreateImageExpected_ColorReplacer(HRAImage
         // Pixel type not supported yet by this method
         char errorMsg[512];
         BeStringUtilities::Snprintf (errorMsg, "TEST: (%s, %s) - In CreateImage_1: pixel type not supported.", 
-                                      GetTestCaseName(),  GetTestName());
+                                      TEST_FIXTURE_NAME,  TEST_NAME);
         FAIL() << errorMsg;
         }
     }

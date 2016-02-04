@@ -28,11 +28,6 @@
 #include <ImagePP/all/h/HRPMapFilters8.h>
 #include <ImagePP/all/h/HRPMapFilters16.h>
 
-#define TEST_NAME ::testing::UnitTest::GetInstance()->current_test_info()->name()
-#define TEST_CASE_NAME ::testing::UnitTest::GetInstance()->current_test_info()->test_case_name()
-#define TEST_NAME_PRINT L"TEST: (" << TEST_CASE_NAME << ", " << TEST_NAME << ")"
-
-
 
 typedef std::vector<HFCPtr<HRPPixelType>>           HRPPixelTypeVector;
 
