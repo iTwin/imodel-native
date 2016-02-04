@@ -127,24 +127,6 @@
         </ECProperty>
     </ECStructClass>
 
-    <ECEntityClass typeName="CodedEntity" modifier="Abstract">
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <Indexes>
-                    <DbIndex>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
-                            <string>Code.AuthorityId</string>
-                            <string>Code.Namespace</string>
-                            <string>Code.Value</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
-            </ClassMap>
-        </ECCustomAttributes>
-        <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
-    </ECEntityClass>
-
     <ECRelationshipClass typeName="AuthorityIssuesElementCode" description="Element has a code which was issued by the given authority" strength="referencing">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
@@ -198,7 +180,6 @@
     </ECRelationshipClass>
 
     <ECEntityClass typeName="Model" modifier="Abstract">
-        <BaseClass>CodedEntity</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00">
                 <Restrictions>
@@ -206,13 +187,24 @@
                 </Restrictions>
             </ClassHasHandler>
             <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <MapStrategy>
                     <Strategy>SharedTable</Strategy>
                     <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+                <Indexes>
+                    <DbIndex>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>Code.AuthorityId</string>
+                            <string>Code.Namespace</string>
+                            <string>Code.Value</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
             </ClassMap>
         </ECCustomAttributes>
+        <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
         <ECProperty propertyName="Label" typeName="string"/>
         <ECProperty propertyName="Properties" typeName="string"/>
         <ECProperty propertyName="Visibility" typeName="int"/>
@@ -319,7 +311,6 @@
 
     <ECEntityClass typeName="Element" modifier="Abstract">
         <!-- NOTE: Element subclasses should drop the "Element" suffix from their name once the concept becomes "user facing" -->
-        <BaseClass>CodedEntity</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
@@ -330,7 +321,14 @@
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <Indexes>
                     <DbIndex>
-                        <Name>idx_dgn_Element_ParentId</Name>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>Code.AuthorityId</string>
+                            <string>Code.Namespace</string>
+                            <string>Code.Value</string>
+                        </Properties>
+                    </DbIndex>
+                    <DbIndex>
                         <IsUnique>False</IsUnique>
                         <Properties>
                             <string>ParentId</string>
@@ -338,14 +336,12 @@
                         <Where>IndexedColumnsAreNotNull</Where>
                     </DbIndex>
                     <DbIndex>
-                        <Name>idx_dgn_Element_ModelId</Name>
                         <IsUnique>False</IsUnique>
                         <Properties>
                             <string>ModelId</string>
                         </Properties>
                     </DbIndex>
                     <DbIndex>
-                        <Name>idx_dgn_Element_Label</Name>
                         <IsUnique>False</IsUnique>
                         <Properties>
                             <string>Label</string>
@@ -359,6 +355,7 @@
             </ClassHasCurrentTimeStampProperty>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
+        <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
         <ECProperty propertyName="ModelId" typeName="long">
             <!-- Foreign key relationship: ModelContainsElements.ModelId -->
             <ECCustomAttributes>
@@ -1217,12 +1214,22 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="GeometryPart">
-        <BaseClass>CodedEntity</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+                <Indexes>
+                    <DbIndex>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>Code.AuthorityId</string>
+                            <string>Code.Namespace</string>
+                            <string>Code.Value</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
             </ClassMap>
         </ECCustomAttributes>
+        <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
         <ECProperty propertyName="GeometryStream" typeName="binary">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">

@@ -791,7 +791,7 @@ DgnDbStatus DgnAuthority::RegenerateCode(DgnCodeR code, ICodedEntityCR codedEnti
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode::Iterator::Iterator(DgnDbR db)
     {
-    static const Utf8CP s_ecsql = "SELECT Code.AuthorityId,Code.[Value],Code.Namespace,ECInstanceId FROM " DGN_SCHEMA(DGN_CLASSNAME_CodedEntity);
-    Prepare(db, s_ecsql, 3);
+    //static const Utf8CP s_ecsql = "SELECT Code.AuthorityId,Code.[Value],Code.Namespace,ECInstanceId FROM " DGN_SCHEMA(DGN_CLASSNAME_CodedEntity);
+    //Prepare(db, s_ecsql, 3);
+    BeAssert(false); // WIP: Removal of DGN_CLASSNAME_CodedEntity means must individually iterate Element, Model, GeometryPart 
     }
-

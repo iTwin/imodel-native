@@ -21,7 +21,6 @@
 #define DGN_CLASSNAME_AnnotationTextStyle   "AnnotationTextStyle"
 #define DGN_CLASSNAME_Authority             "Authority"
 #define DGN_CLASSNAME_CategoryAuthority     "CategoryAuthority"
-#define DGN_CLASSNAME_CodedEntity           "CodedEntity"
 #define DGN_CLASSNAME_ComponentAuthority    "ComponentAuthority"
 #define DGN_CLASSNAME_ComponentModel        "ComponentModel"
 #define DGN_CLASSNAME_DefinitionElement     "DefinitionElement"
