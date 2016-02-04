@@ -248,48 +248,26 @@ public:
         };
     
 
-    //!Purge Holding type relationship end.
-    struct RelationshipPurger
-        {
-        private:
-            struct SqlSpec
-                {
-                typedef std::unique_ptr<SqlSpec> Ptr;
-                typedef std::map<Utf8CP, Ptr, CompareUtf8> SpecByTableMap;
-                private:
-                    Utf8CP m_table;
-                    Utf8CP m_table_pk;
-                    Utf8CP m_table_classId;
-                    std::set<ECN::ECClassId> m_filter;
-                    SqlSpec(Utf8CP table, Utf8CP pk, Utf8CP classId)
-                        :m_table(table), m_table_pk(pk), m_table_classId(classId)
-                        {}
-                public:
+//=======================================================================================
+//!Purge Holding type relationship end.
+// @bsiclass                                               Affan.Khan           01/2016
+//+===============+===============+===============+===============+===============+======
+struct RelationshipPurger
+    {
+private:
+    typedef std::map<Utf8CP, Utf8String, CompareUtf8> SqlPerTableMap;
 
-                    Utf8CP GetTable() const;
-                    Utf8CP GetTablePrimaryKey() const;
-                    void PushClassId(ECN::ECClassId id);
-                    Utf8String ToSQL() const;
-                    static Ptr Create(Utf8CP table, Utf8CP pk, Utf8CP classId = nullptr);
-                };
+    std::vector<std::unique_ptr<Statement>> m_stmts;
 
-        private:
-            std::vector<std::unique_ptr<Statement>> m_stmts;
+    BentleyStatus Initialize(ECDbR);
+    static Utf8String BuildSql(Utf8CP tableName, Utf8CP pkColumnName);
 
-        public:
-            enum class Commands
-                {
-                Purge = 1,
-                UpdateHoldingView = 2,  //! view is updated dure Prepare() 
-                PurgeAndUpdateHoldingView = 3
-                };
+public:
+    RelationshipPurger() {}
+    ~RelationshipPurger() { Finalize(); }
 
-        public:
-            RelationshipPurger() {}
-            virtual ~RelationshipPurger();
-            DbResult Prepare(ECDbR ecdb, Commands commands = Commands::PurgeAndUpdateHoldingView);
-            DbResult Reset();
-            DbResult Step();
-            void Finialize();
-        };
+
+    BentleyStatus Purge(ECDbR);
+    void Finalize();
+    };
 END_BENTLEY_SQLITE_EC_NAMESPACE

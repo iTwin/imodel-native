@@ -94,10 +94,11 @@
     - @ref ECSqlStatementOverview
     - @ref ECSQLOverview
     - @ref ECSQLSamples
-    - @ref ECDbCreatingECDbFromScratch
     - @ref ECDbCodeSamples "Code examples": Illustrates typical workflows when working with business
     data in the @ref ECDbFile "ECDb file".
+    - @ref ECDbRelationshipMappingRules
     - @ref ECDbSchemaMappingCustomization
+    - @ref ECDbCreatingECDbFromScratch
 
     */
 
@@ -112,8 +113,9 @@
     @li @subpage ECSQLOverview
     @li @subpage ECSQLSamples
     @li @subpage ECSqlStatementOverview
-    @li @subpage ECDbECSchemaRules
     @li @subpage ECDbTransactions
+    @li @subpage ECDbECSchemaRules
+    @li @subpage ECDbRelationshipMappingRules
     @li @subpage ECDbSchemaMappingCustomization
     @li @subpage ECDbFileInfo
     @li @subpage ECDbCreatingECDbFromScratch
@@ -150,45 +152,6 @@
     */
 
     /**
-    @page ECDbECSchemaRules Rules for ECSchemas supported by ECDb
-    
-    There are some rules creators of @ref BentleyApi::ECN::ECSchema "ECSchemas" should follow so that the 
-    %ECSchema can be used in %ECDb. These rules are semantically common sense anyways and might eventually be merged into the 
-    %ECSchema specification, so it should be straightforward to follow them.
-
-    ### Naming
-    Names may not differ only by case. This applies to
-    - %ECSchemas
-    - %ECClasses within a schema
-    - %ECProperties withing a class (including inherited properties)
-    
-    It is suggested that you avoid names that only differ by case throughout the system
-
-    ### Schema
-    - A unique namespace prefix must be defined and the namespace prefix must be a valid ECName and must not be empty.
-
-    ### Class
-    - Consistent class hierarchies:
-        - An @ref BentleyApi::ECN::ECClass "ECClass" may not have an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" as a base class
-          and vice versa
-        - A domain class may not have a struct as subclass or vice versa
-
-    ### Relationship Class
-    - An @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" may not have a regular @ref BentleyApi::ECN::ECClass "ECClass" as a base class
-    - For non-abstract relationship classes, both relationship constraints must be well-defined.
-        - At least one class must be specified for each constraint
-        - Only regular ECClasses and not ECRelationshipClasses may be specified as constraint classes.
-    - For abstract relationship classes constraints must not be specified because they are not inherited.
-    - Abstract relationship classes may not be instantiated or used to relate instances in a repository.
-    
-    ### Properties
-    - @ref BentleyApi::ECN::ECProperty "ECProperties" may not be of the same type as its @ref BentleyApi::ECN::ECClass "ECClass".
-    - @ref BentleyApi::ECN::ArrayECProperty "Array ECProperties'" @b MinOccurs and @b MaxOccurs are enforced.
-
-    @see @ref ECDbOverview
-    */
-
-    /**
     @page ECDbTransactions ECDb and Transactions
     In order to be as efficient and performant as possible ECDb's data modifying operations don't do any
     internal or implicit transaction management. So if you call a data modifying method (e.g. via
@@ -210,6 +173,126 @@
     The default transaction will be automatically restarted after having committed it or rolled it back.
 
     See the @ref BentleyApi::BeSQLite::Db "BeSQLite API" for details about transactions.
+
+    @see @ref ECDbOverview
+    */
+
+    /**
+    @page ECDbECSchemaRules Rules for ECSchemas supported by ECDb
+    
+    There are some rules creators of @ref BentleyApi::ECN::ECSchema "ECSchemas" should follow so that the 
+    %ECSchema can be used in %ECDb. These rules are semantically common sense anyways and might eventually be merged into the 
+    %ECSchema specification, so it should be straightforward to follow them.
+
+    ### Naming
+    Names may not differ only by case. This applies to
+    - %ECSchemas
+    - %ECClasses within a schema
+    - %ECProperties withing a class (including inherited properties)
+    
+    It is suggested that you avoid names that only differ by case throughout the system
+
+    ### Schema
+    - A unique namespace prefix must be defined and the namespace prefix must be a valid ECName and must not be empty.
+
+    ### Relationship Class
+    - For non-abstract relationship classes, both relationship constraints must be well-defined.
+        - At least one class must be specified for each constraint
+    - For abstract relationship classes constraints must not be specified because they are not inherited.
+    - Abstract relationship classes may not be instantiated or used to relate instances in a repository.
+    
+    @see @ref ECDbRelationshipMappingRules for more rules
+
+    ### Properties
+    - @ref BentleyApi::ECN::ECProperty "ECProperties" may not be of the same type as its @ref BentleyApi::ECN::ECClass "ECClass".
+    - @ref BentleyApi::ECN::ArrayECProperty "Array ECProperties'" @b MinOccurs and @b MaxOccurs are enforced.
+
+    @see @ref ECDbOverview
+    */
+
+    /**
+    @page ECDbRelationshipMappingRules Rules for ECRelationshipClasses in ECDb
+    The specification of @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClasses" allows for constructs which don't necessarily
+    lead to a good database design. ECDb therefore only supports @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClasses" that 
+    can be mapped to a reasonable database layout.
+
+    ## ECRelationshipClass Definition Consistency
+    Technically, @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClasses" can be defined with incompatible 
+    values for cardinality, strength and strength direction. The table shows what is actually allowed.
+
+    Cardinality | Supported Strength | Supported Strength Direction
+    ----------- | ------------------ | ----------------------------
+    1:1         | Any                | @ref BentleyApi::ECN::Forward "Forward" or @ref BentleyApi::ECN::Backward "Backward"
+    1:N         | Any                | @ref BentleyApi::ECN::Forward "Forward"
+    N:1         | Any                | @ref BentleyApi::ECN::Backward "Backward"
+    M:N         | @ref BentleyApi::ECN::Referencing "Referencing" or @ref BentleyApi::ECN::Holding "Holding" | @ref BentleyApi::ECN::Forward "Forward" or @ref BentleyApi::ECN::Backward "Backward"
+
+    ## Foreign Key mapping versus Link Table mapping
+    ECDb always attempts to map an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" using a 
+    <b>Foreign Key</b> mapping, because this type is more performant and less complex.
+    For those cases where a Foreign Key mapping is not possible (because a Link Table is required), 
+    ECDb chooses the <b>Link Table</b> mapping.
+    
+    @b Rule:
+    <b>Link Table</b> mapping is chosen if
+    - the cardinality is N:N
+    - ECProperties are defined for the ECRelationshipClass
+    - the @b LinkTableRelationshipMap custom attribute is present on the ECRelationshipClass (see also @ref CustomRelationshipMapDescription)
+
+    Otherwise, the <b>Foreign Key</b> mapping is chosen.
+
+    The ECRelationshipClass is rejected
+    - if it evaluates to <b>Link Table</b> mapping and
+        - has the strength @em Embedding
+        - has the @b ForeignKeyRelationshipMap custom attribute (see also @ref CustomRelationshipMapDescription)
+    - if it evaluates to <b>Foreign Key</b> mapping and the Foreign Key is created in a <b>joined table</b> 
+    (see @ref CustomClassMapDescription) and 
+            - in the @b ForeignKeyRelationshipMap custom attribute the property @b OnDeleteAction is set to @b Cascade or
+            - the @b ForeignKeyRelationshipMap custom attribute is not present and the strength is @b Embedding
+
+    ## Mapping Rules
+    The <b>number of tables to which the two relationship ends map to</b> is the key criterion for ECDb to decide whether
+    an ECRelationshipClass is supported or not.
+
+    <b>Rule of thumb: The ECRelationshipClass is supported, if the number of tables on either end is 1.</b>
+
+    - Link Table mapping: Number of tables must be 1 on both ends.
+    - Foreign Key mapping:
+        - Number of tables on the referenced end must be 1.
+        - Number of tables on the Foreign Key end
+            - 1: ok
+            - > 1: ok, but <b>relationship becomes read-only</b>, i.e. it cannot be used in ECSQL INSERT, UPDATE, DELETE.
+
+    
+    #### Counting the tables on the ECRelationshipClass ends
+    - Count the distinct tables to which each class specified in the 
+    @ref BentleyApi::ECN::ECRelationshipConstraint "ECRelationshipConstraint" maps.
+    - If the @ref BentleyApi::ECN::ECRelationshipConstraint "constraint" is 
+    @ref BentleyApi::ECN::ECRelationshipConstraint::GetIsPolymorphic "polymorphic", 
+    you need to count the subclasses' tables, too.
+    
+    @note ECDb fails the schema import for unsupported ECRelationshipClasses and logs the error. If you are not sure 
+    how to determine the table count on the relationship ends, you can attempt schema import dry-runs and 
+    look at the logged errors.
+    
+    #### How to fix unsupported ECRelationshipClasses
+    - For a polymorphic @ref BentleyApi::ECN::ECRelationshipConstraint "ECRelationshipConstraint" consider to apply
+    the mapping strategy <b>Shared Table</b> with <c>AppliesToSubclasses=True</c> to the root class of the class hierarchy. 
+    See @ref CustomClassMapDescription for details.
+    - If the classes specified in the @ref BentleyApi::ECN::ECRelationshipConstraint "ECRelationshipConstraint" are not members
+    of the same class hierarchy, consider to apply the mapping strategy <b>Shared Table</b> with <c>AppliesToSubclasses=False</c> to 
+    each class of the constraint. See @ref CustomClassMapDescription for details.
+    - If the <i>Shared Table</i> strategy cannot be applied, consider breaking the ECRelationshipClass apart into several separate
+    ECRelationshipClasses.
+
+    ## Referential Integrity
+    ECDb enforces referential integrity via foreign key constraints. 
+    
+    ####Exception
+    For @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClasses" with strength
+    @ref BentleyApi::ECN::Holding "Holding" foreign key constraints exist to delete the relationship @em instances. But ECDb
+    cannot delete the actual orphaned instances automatically. Instead callers must explicitly call @ref BentleyApi::BeSQLite::EC::ECDb::Purge "ECDb::Purge"
+    at their discretion.
 
     @see @ref ECDbOverview
     */
@@ -464,7 +547,9 @@
                 </Class>
             </Target>
         </ECRelationshipClass>
-        */
+
+    @see @ref ECDbOverview
+    */
 
     /**
     @page ECDbFileInfo File-backed ECInstances

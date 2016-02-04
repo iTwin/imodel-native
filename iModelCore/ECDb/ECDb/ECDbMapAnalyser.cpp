@@ -1633,86 +1633,8 @@ BentleyStatus ECDbMapAnalyser::Analyse(bool applyChanges)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-DbResult ECDbMapAnalyser::UpdateHoldingView ()
-    {
-    NativeSqlBuilder viewSql;
-    Utf8CP sql = "SELECT Id FROM ec_Class WHERE ec_Class.RelationStrength = 1"; // Holding relationships       
-    NativeSqlBuilder::List unionList;
-    auto stmt = m_map.GetECDbR ().GetCachedStatement (sql);
-    if (!stmt.IsValid ())
-        {
-        BeAssert (false && "Failed to prepared statement");
-        return DbResult::BE_SQLITE_ERROR;
-        }
-    std::map<ECDbSqlTable const*, ECDbMap::LightweightCache::RelationshipEnd> doneSet;
-    while (stmt->Step () == BE_SQLITE_ROW)
-        {
-        ECClassId ecClassId = stmt->GetValueInt64 (0);
-        auto holdingRelationshipClass = m_map.GetECDbR ().Schemas ().GetECClass (ecClassId);
-        if (holdingRelationshipClass == nullptr)
-            {
-            BeAssert (false && "Fail to find class for holding relationship");
-            return DbResult::BE_SQLITE_ERROR;
-            }
-
-        auto holdingRelationshipClassMap = static_cast<RelationshipClassMapCP>(m_map.GetClassMap (*holdingRelationshipClass));
-        if (holdingRelationshipClassMap == nullptr || holdingRelationshipClassMap->GetJoinedTable().GetPersistenceType () == PersistenceType::Virtual)
-            continue;
-
-
-        Utf8CP column;
-        ECDbMap::LightweightCache::RelationshipEnd filter;
-        if (holdingRelationshipClassMap->GetRelationshipClass ().GetStrengthDirection () == ECRelatedInstanceDirection::Forward)
-            {
-            column = holdingRelationshipClassMap->GetTargetECInstanceIdPropMap ()->ExpectingSingleColumn ()->GetName ().c_str ();
-            filter = ECDbMap::LightweightCache::RelationshipEnd::Source;
-            }
-        else
-            {
-            column = holdingRelationshipClassMap->GetSourceECInstanceIdPropMap ()->ExpectingSingleColumn ()->GetName ().c_str ();
-            filter = ECDbMap::LightweightCache::RelationshipEnd::Target;
-            }
-
-        ECDbSqlTable const* table = &holdingRelationshipClassMap->GetJoinedTable();
-        auto itor = doneSet.find (table);
-        if (itor == doneSet.end () || (((int)(itor->second) & (int)filter) == 0))
-            {
-            NativeSqlBuilder relaitonshipView;
-            relaitonshipView.Append ("SELECT ");
-            relaitonshipView.Append (column);
-            relaitonshipView.Append (" ECInstanceId FROM ").Append (table->GetName ().c_str ());
-            //relaitonshipView.Append (" WHERE (").Append (column).Append(" IS NOT NULL)").AppendEOL();
-            unionList.push_back (std::move (relaitonshipView));
-            if (itor == doneSet.end ())
-                doneSet[table] = filter;
-            else
-                doneSet[table] = static_cast<ECDbMap::LightweightCache::RelationshipEnd>((int)(itor->second) & (int)(filter));
-            }
-        }
-    viewSql.Append ("DROP VIEW IF EXISTS ").Append (ECDB_HOLDING_VIEW).Append (";").AppendEOL ();
-    viewSql.Append ("CREATE VIEW ").Append (ECDB_HOLDING_VIEW).Append (" AS ").AppendEOL ();
-    if (!unionList.empty ())
-        {
-
-        for (auto& select : unionList)
-            {
-            viewSql.Append (select);
-            if (&select != &(unionList.back ()))
-                viewSql.Append (" \r\n UNION ALL \r\n");
-            }
-        viewSql.Append (";\n");
-        }
-    else
-        {
-        viewSql.Append ("SELECT NULL ECInstanceId LIMIT 0;");
-        }
-
-    return ExecuteDDL (viewSql.ToString ());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
+            column = holdingRelationshipClassMap->GetTargetECInstanceIdPropMap ()->GetFirstColumn ()->GetName ().c_str ();
+            column = holdingRelationshipClassMap->GetSourceECInstanceIdPropMap ()->GetFirstColumn ()->GetName ().c_str ();
 void ECDbMapAnalyser::HandleLinkTable (Storage* fromStorage, std::map<ECDbMapAnalyser::Storage*, std::set<ECDbMapAnalyser::Relationship*>> const& relationshipsByStorage, bool isFrom)
     {
     // table_delete_linkTable

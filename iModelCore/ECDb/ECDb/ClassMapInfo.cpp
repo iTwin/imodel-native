@@ -798,14 +798,6 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
         return MapStatus::Success;
         }
 
-    if (m_cardinality == Cardinality::ManyToMany && (relationshipClass->GetStrength() == StrengthType::Embedding ||
-        relationshipClass->GetStrength() == StrengthType::Holding))
-        {
-        LOG.errorv("Failed to map ECRelationshipClass %s. It has a N:N cardinality and the strength 'Embedding' or 'Holding'. N:N relationships only allow the strength 'Referencing'.",
-            GetECClass().GetFullName());
-
-        return MapStatus::Error;
-        }
 
     if (m_customMapType == CustomMapType::LinkTable ||
         m_cardinality == Cardinality::ManyToMany ||
