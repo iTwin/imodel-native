@@ -63,7 +63,7 @@
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Performance\ECXmlPerformanceTests.cpp" />
+    <ClCompile Include="Performance\PerformanceECXmlTests.cpp" />
     <ClCompile Include="Performance\PerformanceTestFixture.cpp" />
     <ClCompile Include="Performance\PropertiesTests.cpp" />
   </ItemGroup>
