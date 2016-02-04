@@ -19,10 +19,14 @@
             <PublicAPI Domain="Bentley" />
             <PublicAPI Domain="Logging" />
             <PublicAPI Domain="BentleyManagedUtil" />
-            <Files ProductDirectoryName="VendorNotices" Required="true">Delivery/bentley-notice.txt</Files>
-            <Files ProductDirectoryName="VendorNotices" Required="true">Delivery/btree-notice.txt</Files>
-            <Files ProductDirectoryName="VendorNotices" Required="true">Delivery/bvector-notice.txt</Files>
             <Files ProductDirectoryName="BentleyApiPublicMki" SubPartDirectory="PublicMki" Required="false">PublicMki/BentleyApi.mki</Files>
+            <VendorNotices>
+                Delivery/bentley-notice.txt
+                Delivery/btree-notice.txt
+                Delivery/btree-license.txt
+                Delivery/bvector-notice.txt
+                Delivery/bvector-license.txt
+            </VendorNotices>
         </Bindings>
     </Part>
 
