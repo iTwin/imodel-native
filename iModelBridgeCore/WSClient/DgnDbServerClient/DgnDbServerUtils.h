@@ -9,6 +9,9 @@
 #include <DgnDbServer/DgnDbServerCommon.h>
 #include <DgnClientFx/Utils/Http/HttpRequest.h>
 #include <DgnPlatform/DgnPlatformLib.h>
+#include <DgnPlatform/LocksManager.h>
+
+USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 namespace ServerSchema
@@ -63,7 +66,8 @@ namespace ServerSchema
         static Utf8CP URL = "URL";
         static Utf8CP IsUploaded = "IsUploaded";
         static Utf8CP ReleasedWithRevision = "ReleasedWithRevision";
-        static Utf8CP ExistingLocks = "ExistingLocks";
+        static Utf8CP ConflictingLocks = "ConflictingLocks";
+        static Utf8CP LocksRequiresPull = "LocksRequiresPull";
         }
     static Utf8CP DeleteAllLocks = "DeleteAll";
     }
@@ -165,5 +169,7 @@ struct DgnDbServerHost : public Dgn::DgnPlatformLib::Host
         static bool IsInitialized();
     };
 
-void FormatLockFromServer(JsonValueR lockJson, JsonValueCR serverJson);
+bool GetLockFromServerJson (JsonValueCR serverJson, DgnLockR lock, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR repositoryId);
+void AddLockInfoToList (DgnLockInfoSet& lockInfos, const DgnLock& dgnLock, const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR repositoryId);
+
 END_BENTLEY_DGNDBSERVER_NAMESPACE

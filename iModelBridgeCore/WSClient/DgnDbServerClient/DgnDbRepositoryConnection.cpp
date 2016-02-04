@@ -21,17 +21,10 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              01/2016
 //---------------------------------------------------------------------------------------
-void DgnDbLockSetResultInfo::AddLock (const DgnLock dgnLock, const BeSQLite::BeBriefcaseId briefcaseId)
+void DgnDbLockSetResultInfo::AddLock (const DgnLock dgnLock, const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR repositoryId)
     {
     m_locks.insert (dgnLock);
-
-#ifdef NEEDSWORK_LOCKS
-    DgnOwnedLock& ownedLock = *m_owners.insert (DgnOwnedLock (dgnLock.GetLockableId ())).first;
-    if (LockLevel::Exclusive == dgnLock.GetLevel ())
-        ownedLock.GetOwnership ().SetExclusiveOwner (briefcaseId);
-    else
-        ownedLock.GetOwnership ().AddSharedOwner (briefcaseId);
-#endif // NEEDSWORK_LOCKS
+    AddLockInfoToList (m_lockStates, dgnLock, briefcaseId, repositoryId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -39,12 +32,10 @@ void DgnDbLockSetResultInfo::AddLock (const DgnLock dgnLock, const BeSQLite::BeB
 //---------------------------------------------------------------------------------------
 const DgnLockSet& DgnDbLockSetResultInfo::GetLocks () const { return m_locks; }
 
-#ifdef NEEDSWORK_LOCKS
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              01/2016
 //---------------------------------------------------------------------------------------
-const DgnOwnedLockSet& DgnDbLockSetResultInfo::GetOwners () const { return m_owners; }
-#endif // NEEDSWORK_LOCKS
+const DgnLockInfoSet& DgnDbLockSetResultInfo::GetLockStates () const { return m_lockStates; }
 
 
 //---------------------------------------------------------------------------------------
@@ -356,7 +347,7 @@ std::shared_ptr<WSChangeset> LockDeleteAllJsonRequest (const BeBriefcaseId& brie
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnRepositoryResponseResult> DgnDbRepositoryConnection::AcquireLocks
+AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::AcquireLocks
 (
 LockRequestCR         locks,
 const BeBriefcaseId&  briefcaseId,
@@ -369,23 +360,13 @@ ICancellationTokenPtr cancellationToken
     Json::Value requestJson;
     changeset->ToRequestJson(requestJson);
     HttpStringBodyPtr request = HttpStringBody::Create(requestJson.toStyledString());
-    return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)->Then<DgnRepositoryResponseResult>
+    return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)->Then<DgnDbResult>
         ([=] (const WSChangesetResult& result)
         {
         if (result.IsSuccess())
-            {
-            IRepositoryManager::Response response;
-            Json::Value responseJson;
-            responseJson[Locks::Status] = static_cast<uint32_t>(RepositoryStatus::Success);
-#ifdef NEEDSWORK_LOCKS
-            response.FromJson(responseJson);
-#endif
-            return DgnRepositoryResponseResult::Success(response);
-            }
+            return DgnDbResult::Success ();
         else
-            {
-            return DgnRepositoryResponseResult::Error(result.GetError());
-            }
+            return DgnDbResult::Error (result.GetError ());
         });
     }
 
@@ -525,16 +506,14 @@ ICancellationTokenPtr cancellationToken
             DgnDbLockSetResultInfo locks;
             for (auto& value : result.GetValue().GetJsonValue()[ServerSchema::Instances])
                 {
-                DgnLock lock;
-                Json::Value lockJson;
-                FormatLockFromServer(lockJson, value[ServerSchema::Properties]);
-                lock.FromJson(lockJson);
-
-                BeBriefcaseId briefcaseId;
-                RepositoryJson::BriefcaseIdFromJson (briefcaseId, value[ServerSchema::Properties][ServerSchema::Property::BriefcaseId]);
+                DgnLock        lock;
+                BeBriefcaseId  briefcaseId;
+                Utf8String     repositoryId;
+                if (!GetLockFromServerJson (value[ServerSchema::Properties], lock, briefcaseId, repositoryId))
+                    continue;//NEEDSWORK: log an error
 
                 if (lock.GetLevel() != LockLevel::None)
-                    locks.AddLock (lock, briefcaseId);
+                    locks.AddLock (lock, briefcaseId, repositoryId);
                 }
             return DgnDbLockSetResult::Success(locks);
             }
