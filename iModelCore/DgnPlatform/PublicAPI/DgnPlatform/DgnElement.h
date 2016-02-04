@@ -1313,6 +1313,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement3d : GeometricElement, GeometrySo
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_GeometricElement3d, GeometricElement)
     friend struct dgn_ElementHandler::Geometric3d;
 
+public:
     struct CreateParams : T_Super::CreateParams
     {
         DEFINE_T_SUPER(GeometricElement3d::T_Super::CreateParams);
@@ -1364,6 +1365,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement2d : GeometricElement, GeometrySo
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_GeometricElement2d, GeometricElement)
     friend struct dgn_ElementHandler::Geometric2d;
 
+public:
     struct CreateParams : T_Super::CreateParams
     {
         DEFINE_T_SUPER(GeometricElement2d::T_Super::CreateParams);
