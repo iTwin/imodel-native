@@ -25,3 +25,6 @@ ECSqlNavigationPropertyTestFixture.SingleInstanceNavProp_ForeignKeyMappingWithJo
 
 #TFS 366270
 JoinedTableECDbMapStrategyTests.PolymorphicRelationshipWithStandAloneClass
+
+#WIP Purge for N:N holding
+ECDbSchemaRules.RelationshipMappingLimitations_SupportedCases

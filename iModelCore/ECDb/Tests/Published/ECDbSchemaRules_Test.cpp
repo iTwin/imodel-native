@@ -1170,6 +1170,66 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_UnsupportedCases)
     std::vector<SchemaItem> unsupportedSchemas;
     unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                             "  <ECEntityClass typeName='Parent' >"
+                                            "    <ECProperty propertyName='ParentProp' typeName='long' />"
+                                            "  </ECEntityClass>"
+                                            "  <ECEntityClass typeName='Child' >"
+                                            "    <ECProperty propertyName='ChildProp' typeName='long' />"
+                                            "  </ECEntityClass>"
+                                            "  <ECRelationshipClass typeName='ParentHasChildren' strength='embedding'>"
+                                            "    <Source cardinality='(0,N)' polymorphic='True'>"
+                                            "        <Class class='Parent' />"
+                                            "     </Source>"
+                                            "     <Target cardinality='(0,N)' polymorphic='True'>"
+                                            "         <Class class='Child' />"
+                                            "     </Target>"
+                                            "  </ECRelationshipClass>"
+                                            "</ECSchema>", false, "Cardinality N:N and Embedding is not supported"));
+
+    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                            "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                                            "  <ECEntityClass typeName='Parent' >"
+                                            "    <ECProperty propertyName='ParentProp' typeName='long' />"
+                                            "  </ECEntityClass>"
+                                            "  <ECEntityClass typeName='Child' >"
+                                            "    <ECProperty propertyName='ChildProp' typeName='long' />"
+                                            "  </ECEntityClass>"
+                                            "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing'>"
+                                            "     <ECCustomAttributes>"
+                                            "         <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00' />"
+                                            "     </ECCustomAttributes>"
+                                            "    <Source cardinality='(0,N)' polymorphic='True'>"
+                                            "        <Class class='Parent' />"
+                                            "     </Source>"
+                                            "     <Target cardinality='(0,N)' polymorphic='True'>"
+                                            "         <Class class='Child' />"
+                                            "     </Target>"
+                                            "  </ECRelationshipClass>"
+                                            "</ECSchema>", false, "ForeignKeyRelationshipMap CA cannot applied to link table (as implied from cardinality N:N)"));
+
+    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                            "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                                            "  <ECEntityClass typeName='Parent' >"
+                                            "    <ECProperty propertyName='ParentProp' typeName='long' />"
+                                            "  </ECEntityClass>"
+                                            "  <ECEntityClass typeName='Child' >"
+                                            "    <ECProperty propertyName='ChildProp' typeName='long' />"
+                                            "  </ECEntityClass>"
+                                            "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing'>"
+                                            "     <ECCustomAttributes>"
+                                            "         <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00' />"
+                                            "     </ECCustomAttributes>"
+                                            "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                            "        <Class class='Parent' />"
+                                            "     </Source>"
+                                            "     <Target cardinality='(0,N)' polymorphic='True'>"
+                                            "         <Class class='Child' />"
+                                            "     </Target>"
+                                            "    <ECProperty propertyName='RelProp' typeName='long' />"
+                                            "  </ECRelationshipClass>"
+                                            "</ECSchema>", false, "ForeignKeyRelationshipMap CA cannot applied to link table (as implied from additional property on relationship class)"));
+
+    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                            "  <ECEntityClass typeName='Parent' >"
                                             "    <ECProperty propertyName='Name' typeName='string' />"
                                             "  </ECEntityClass>"
                                             "  <ECEntityClass typeName='ParentA' >"
@@ -1297,6 +1357,135 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_UnsupportedCases)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_SupportedCases)
     {
+    auto instanceExists = [] (ECDbCR ecdb, Utf8CP classExp, ECInstanceKey const& key)
+        {
+        Utf8String ecsql;
+        ecsql.Sprintf("SELECT NULL FROM %s WHERE ECInstanceId=?", classExp);
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+        EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetECInstanceId()));
+
+        DbResult stat = stmt.Step();
+        EXPECT_TRUE(stat == BE_SQLITE_ROW || stat == BE_SQLITE_DONE);
+        return stat == BE_SQLITE_ROW;
+        };
+
+    auto relationshipExists = [] (ECDbCR ecdb, Utf8CP relClassExp, ECInstanceKey const& sourceKey, ECInstanceKey const& targetKey)
+        {
+        Utf8String ecsql;
+        ecsql.Sprintf("SELECT NULL FROM %s WHERE SourceECInstanceId=? AND SourceECClassId=? AND TargetECInstanceId=? AND TargetECClassId=?", relClassExp);
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+        EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(1, sourceKey.GetECInstanceId()));
+        EXPECT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, sourceKey.GetECClassId()));
+        EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(3, targetKey.GetECInstanceId()));
+        EXPECT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, targetKey.GetECClassId()));
+
+        DbResult stat = stmt.Step();
+        EXPECT_TRUE(stat == BE_SQLITE_ROW || stat == BE_SQLITE_DONE);
+        return stat == BE_SQLITE_ROW;
+        };
+
+    {
+    SchemaItem testSchema("N:N and holding",
+                            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                            "  <ECEntityClass typeName='Geometry' >"
+                            "    <ECProperty propertyName='Type' typeName='string' />"
+                            "  </ECEntityClass>"
+                            "  <ECEntityClass typeName='GeometryPart' >"
+                            "    <ECProperty propertyName='Stream' typeName='binary' />"
+                            "  </ECEntityClass>"
+                            "  <ECRelationshipClass typeName='GeometryHasParts' strength='holding' strengthDirection='Forward'>"
+                            "     <Source cardinality='(0,N)' polymorphic='True'>"
+                            "         <Class class='Geometry' />"
+                            "     </Source>"
+                            "    <Target cardinality='(0,N)' polymorphic='True'>"
+                            "        <Class class='GeometryPart' />"
+                            "     </Target>"
+                            "  </ECRelationshipClass>"
+                            "</ECSchema>");
+
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testSchema, "ecdbrelationshipmappingrules_manytomanyandholding.ecdb");
+    ASSERT_FALSE(asserted);
+
+    ECInstanceKey geomKey1;
+    ECInstanceKey geomKey2;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Geometry(Type) VALUES(?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Polygon", IECSqlBinder::MakeCopy::Yes));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(geomKey1));
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Solid", IECSqlBinder::MakeCopy::Yes));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(geomKey2));
+    }
+
+    ECInstanceKey partKey1;
+    ECInstanceKey partKey2;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.GeometryPart(Stream) VALUES(randomblob(4))"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(partKey1));
+    stmt.Reset();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(partKey2));
+    }
+
+    {
+    //Create relationships:
+    //Geom-Part
+    //1-1
+    //1-2
+    //2-2
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.GeometryHasParts(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, geomKey1.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, geomKey1.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, partKey1.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, partKey1.GetECClassId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, geomKey1.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, geomKey1.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, partKey2.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, partKey2.GetECClassId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, geomKey2.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, geomKey2.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, partKey2.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, partKey2.GetECClassId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    ecdb.SaveChanges();
+
+    //Delete Geom1
+    ECSqlStatement delGeomStmt;
+    ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.Prepare(ecdb, "DELETE FROM ts.Geometry WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.BindId(1, geomKey1.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, delGeomStmt.Step());
+
+    ASSERT_FALSE(instanceExists(ecdb, "ts.Geometry", geomKey1));
+    ASSERT_TRUE(instanceExists(ecdb, "ts.Geometry", geomKey2));
+    ASSERT_TRUE(instanceExists(ecdb, "ts.GeometryPart", partKey1));
+    ASSERT_TRUE(instanceExists(ecdb, "ts.GeometryPart", partKey2));
+    ASSERT_FALSE(relationshipExists(ecdb, "ts.GeometryHasParts", geomKey1, partKey1));
+    ASSERT_FALSE(relationshipExists(ecdb, "ts.GeometryHasParts", geomKey1, partKey2));
+    ASSERT_TRUE(relationshipExists(ecdb, "ts.GeometryHasParts", geomKey2, partKey2));
+
+    ASSERT_EQ(SUCCESS, ecdb.Purge(ECDb::PurgeMode::HoldingRelationships));
+    ASSERT_FALSE(instanceExists(ecdb, "ts.GeometryPart", partKey1)) << "Part 1 was only held by Geom1. After deletion of Geom1 Purge should delete Part 1";
+    ASSERT_TRUE(instanceExists(ecdb, "ts.GeometryPart", partKey2)) << "Part 2 is still held by Geom2. After deletion of Geom1 Purge should not delete Part 2 yet";
+    ASSERT_TRUE(relationshipExists(ecdb, "ts.GeometryHasParts", geomKey2, partKey2));
+    }
 
     {
     SchemaItem testSchema("Child hierarchy in SharedTable", 
