@@ -167,7 +167,7 @@ namespace dgn_ElementHandler
     struct TextAnnotation3dHandler : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotation3d, TextAnnotation3d, TextAnnotation3dHandler, Element, DGNPLATFORM_EXPORT);
-        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); ElementGeom3d::AddClassParams(params); }
+        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); TextAnnotation3d::AddClassParams(params); }
     };
 }
 

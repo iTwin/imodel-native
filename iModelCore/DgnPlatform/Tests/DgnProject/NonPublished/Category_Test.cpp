@@ -603,10 +603,4 @@ TEST_F (CategoryTests, QueryByElementId)
     EXPECT_EQ(SUCCESS, builder->SetGeometryStreamAndPlacement(*geomElem));
     auto elem = m_db->Elements().Insert(*el);
     EXPECT_TRUE(elem.IsValid());
-
-    // Search category by element Id
-    DgnCategoryId tofind = DgnCategory::QueryElementCategoryId(el->GetElementId(), *m_db);
-    EXPECT_TRUE(tofind.IsValid());
-    EXPECT_TRUE(tofind == categoryId);
     }
-

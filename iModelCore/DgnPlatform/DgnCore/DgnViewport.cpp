@@ -1197,7 +1197,7 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
     {
     if (m_viewController.IsValid())
         m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);
-
+    
     ClearUndo();
 
     m_viewController = &viewController;
