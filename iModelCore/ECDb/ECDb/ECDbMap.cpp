@@ -1797,6 +1797,7 @@ void Partition::AppendECClassIdFilterSql(Utf8CP classIdColName, NativeSqlBuilder
     }
 
 #define ECDB_HOLDING_VIEW "ec_RelationshipHoldingStatistics"
+#define ECDB_HOLDING_VIEW_HELDID_COLNAME "HeldECInstanceId"
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan     01/2016
@@ -1840,10 +1841,12 @@ BentleyStatus RelationshipPurger::Initialize(ECDbR ecdb)
             relationships.push_back(relationshipClassMap);
         }
 
+    //reset stmt so that it doesn't hold resources
+    stmt = nullptr;
+
     SqlPerTableMap deleteOrphansSqlPerTableMap;
-    NativeSqlBuilder::List unionList;
-    NativeSqlBuilder viewSql;
-    std::map <ECDbSqlTable const*, ECDbMap::LightweightCache::RelationshipEnd> linkTables;
+    NativeSqlBuilder::List unionClauseList;
+    bmap<ECDbSqlTable const*, ECDbMap::LightweightCache::RelationshipEnd> linkTables;
     for (RelationshipClassMapCP relClassMap : relationships)
         {
         ECRelationshipClassCR relClass = relClassMap->GetRelationshipClass();
@@ -1869,59 +1872,64 @@ BentleyStatus RelationshipPurger::Initialize(ECDbR ecdb)
 
         if (relClassMap->GetClassMapType() == IClassMap::Type::RelationshipEndTable)
             {
+            NativeSqlBuilder unionClauseBuilder;
             std::set<ECDbSqlTable const*> tables = map.GetTablesFromRelationshipEndWithColumn(holdingConstraint, holdingConstraintIdColumnName);
-            for (auto table : tables)
+            for (ECDbSqlTable const* table : tables)
                 {
-                viewSql.AppendFormatted("SELECT [%s] ECInstanceId FROM [%s] WHERE [%s] IS NOT NULL", holdingConstraintIdColumnName, table->GetName().c_str(), holdingConstraintIdColumnName);
+                unionClauseBuilder.AppendFormatted("SELECT [%s] " ECDB_HOLDING_VIEW_HELDID_COLNAME " FROM [%s] WHERE [%s] IS NOT NULL", holdingConstraintIdColumnName, table->GetName().c_str(), holdingConstraintIdColumnName);
                 }
 
-            if (!viewSql.IsEmpty())
-                unionList.push_back(std::move(viewSql));
-
-            viewSql.Reset();
+            if (!unionClauseBuilder.IsEmpty())
+                unionClauseList.push_back(std::move(unionClauseBuilder));
             }
         else
             {
-            ECDbMap::LightweightCache::RelationshipEnd holdingEnd = relClass.GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? ECDbMap::LightweightCache::RelationshipEnd::Source : ECDbMap::LightweightCache::RelationshipEnd::Target;
             ECDbSqlTable const& primaryTable = static_cast<RelationshipClassLinkTableMapCP>(relClassMap)->GetPrimaryTable();
+
+            ECDbMap::LightweightCache::RelationshipEnd holdingEnd = relClass.GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? ECDbMap::LightweightCache::RelationshipEnd::Source : ECDbMap::LightweightCache::RelationshipEnd::Target;
             auto it = linkTables.find(&primaryTable);
             if (it == linkTables.end())
                 linkTables[&primaryTable] = holdingEnd;
-            else if (Enum::Contains(linkTables[&primaryTable], holdingEnd))
-                continue;
+            else
+                {
+                if (Enum::Contains(it->second, holdingEnd))
+                    continue;
 
-            linkTables[&primaryTable] = Enum::Or(linkTables[&primaryTable], holdingEnd);
-            viewSql.AppendFormatted("SELECT [%s] ECInstanceId FROM [%s]", holdingConstraintIdColumnName, primaryTable.GetName().c_str());
-            unionList.push_back(std::move(viewSql));
-            viewSql.Reset();
+                linkTables[&primaryTable] = Enum::Or(linkTables[&primaryTable], holdingEnd);
+                }
+
+            NativeSqlBuilder unionClauseBuilder;
+            unionClauseBuilder.AppendFormatted("SELECT [%s] " ECDB_HOLDING_VIEW_HELDID_COLNAME " FROM [%s]", holdingConstraintIdColumnName, primaryTable.GetName().c_str());
+            unionClauseList.push_back(std::move(unionClauseBuilder));
             }
         }
 
-        viewSql.Reset();
-        viewSql.Append("DROP VIEW IF EXISTS " ECDB_HOLDING_VIEW ";");
-        viewSql.Append("CREATE VIEW " ECDB_HOLDING_VIEW " AS ");
-        if (!unionList.empty())
+    NativeSqlBuilder holdingViewBuilder("DROP VIEW IF EXISTS " ECDB_HOLDING_VIEW "; CREATE VIEW " ECDB_HOLDING_VIEW " AS ");
+    if (!unionClauseList.empty())
+        {
+        bool isFirstItem = true;
+        for (NativeSqlBuilder const& unionClause : unionClauseList)
             {
-            for (auto& select : unionList)
-                {
-                viewSql.Append(select);
-                if (&select != &(unionList.back()))
-                    viewSql.Append(" UNION ALL ");
-                }
+            if (!isFirstItem)
+                holdingViewBuilder.Append(" UNION ALL ");
 
-            viewSql.Append(";");
+            holdingViewBuilder.Append(unionClause);
+            isFirstItem = false;
             }
-        else
-            viewSql.Append("SELECT NULL ECInstanceId LIMIT 0;");
 
-        if (BE_SQLITE_OK != ecdb.ExecuteSql(viewSql.ToString()))
-            {
-            BeAssert(false && "Failed to create holding view");
-            return ERROR;
-            }
-        
+        holdingViewBuilder.Append(";");
+        }
+    else
+        holdingViewBuilder.Append("SELECT NULL " ECDB_HOLDING_VIEW_HELDID_COLNAME " LIMIT 0;");
 
-    for (auto& kvPair : deleteOrphansSqlPerTableMap)
+    if (BE_SQLITE_OK != ecdb.ExecuteSql(holdingViewBuilder.ToString()))
+        {
+        BeAssert(false && "Failed to create holding view");
+        return ERROR;
+        }
+
+
+    for (bpair<Utf8CP,Utf8String> const& kvPair : deleteOrphansSqlPerTableMap)
         {
         std::unique_ptr<Statement> stmt = std::unique_ptr<Statement>(new Statement());
         if (BE_SQLITE_OK != stmt->Prepare(ecdb, kvPair.second.c_str()))
@@ -1960,7 +1968,7 @@ BentleyStatus RelationshipPurger::Purge(ECDbR ecdb)
 Utf8String RelationshipPurger::BuildSql(Utf8CP tableName, Utf8CP pkColumnName)
     {
     Utf8String str;
-    str.Sprintf("DELETE FROM [%s] WHERE [%s] NOT IN (SELECT ECInstanceId FROM " ECDB_HOLDING_VIEW ")", tableName, pkColumnName);
+    str.Sprintf("DELETE FROM [%s] WHERE [%s] NOT IN (SELECT " ECDB_HOLDING_VIEW_HELDID_COLNAME " FROM " ECDB_HOLDING_VIEW ")", tableName, pkColumnName);
     return str;
     }
 

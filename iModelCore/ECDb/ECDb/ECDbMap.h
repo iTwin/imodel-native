@@ -255,7 +255,7 @@ public:
 struct RelationshipPurger
     {
 private:
-    typedef std::map<Utf8CP, Utf8String, CompareUtf8> SqlPerTableMap;
+    typedef bmap<Utf8CP, Utf8String, CompareUtf8> SqlPerTableMap;
 
     std::vector<std::unique_ptr<Statement>> m_stmts;
 
