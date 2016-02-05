@@ -10,6 +10,7 @@
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 // Turn this on for debugging.
 // #define DUMP_REVISION 1
@@ -20,85 +21,94 @@ USING_NAMESPACE_BENTLEY_SQLITE
 // @bsiclass                                                 Ramanujam.Raman   10/15
 //=======================================================================================
 struct RevisionTestFixture : ChangeTestFixture
-    {
-    DEFINE_T_SUPER(ChangeTestFixture)
-    private:
-        int m_z = 0;
+{
+DEFINE_T_SUPER(ChangeTestFixture)
+private:
+    int m_z = 0;
+    WCharCP m_copyTestFileName = L"RevisionTestCopy.idgndb";
 
-    protected:
-        WCharCP m_testFileName = L"RevisionTest.idgndb";
-        WCharCP m_copyTestFileName = L"RevisionTestCopy.idgndb";
+    virtual void _CreateDgnDb() override;
 
-        void CreateDgnDb(int dimension);
-        void OpenDgnDb() { T_Super::OpenDgnDb(m_testFileName); }
+protected:
+    void InsertFloor(int xmax, int ymax);
+    void ModifyElement(DgnElementId elementId);
 
-        void InsertFloor(int xmax, int ymax);
-        void ModifyElement(DgnElementId elementId);
+    DgnRevisionPtr CreateRevision();
+    void DumpRevision(DgnRevisionCR revision);
 
-        DgnRevisionPtr CreateRevision();
-        void DumpRevision(DgnRevisionCR revision);
+    void BackupTestFile();
+    void RestoreTestFile();
 
-        void BackupTestFile();
-        void RestoreTestFile();
+    typedef DgnCodeSet CodeSet;
+    typedef DgnCode Code;
+    void ExtractCodesFromRevision(DgnCodeSet& assigned, CodeSet& discarded);
 
-        typedef DgnCodeSet CodeSet;
-        typedef DgnCode Code;
-        void ExtractCodesFromRevision(DgnCodeSet& assigned, CodeSet& discarded);
+    static Utf8String CodeToString(DgnCode const& code) { return Utf8PrintfString("%s:%s\n", code.GetNamespace().c_str(), code.GetValueCP()); }
+    static void ExpectCode(DgnCode const& code, CodeSet const& codes) { EXPECT_FALSE(codes.end() == codes.find(code)) << CodeToString(code).c_str(); }
+    static void ExpectCodes(DgnCodeSet const& exp, CodeSet const& actual)
+        {
+        EXPECT_EQ(exp.size(), actual.size());
+        for (auto const& code : exp)
+            ExpectCode(code, actual);
+        }
 
-        static Utf8String CodeToString(DgnCode const& code) { return Utf8PrintfString("%s:%s\n", code.GetNamespace().c_str(), code.GetValueCP()); }
-        static void ExpectCode(DgnCode const& code, CodeSet const& codes) { EXPECT_FALSE(codes.end() == codes.find(code)) << CodeToString(code).c_str(); }
-        static void ExpectCodes(DgnCodeSet const& exp, CodeSet const& actual)
-            {
-            EXPECT_EQ(exp.size(), actual.size());
-            for (auto const& code : exp)
-                ExpectCode(code, actual);
-            }
-
-        static void DumpCode(DgnCode const& code) { printf("    %s\n", CodeToString(code).c_str()); }
-        static void DumpCodes(DgnCodeSet const& codes, Utf8StringCR msg="Codes:")
-            {
+    static void DumpCode(DgnCode const& code) { printf("    %s\n", CodeToString(code).c_str()); }
+    static void DumpCodes(DgnCodeSet const& codes, Utf8StringCR msg="Codes:")
+        {
 #ifdef DUMP_CODES
-            printf("%s\n", msg.c_str());
-            for (auto const& code : codes)
-                DumpCode(code);
+        printf("%s\n", msg.c_str());
+        for (auto const& code : codes)
+            DumpCode(code);
 #endif
-            }
+        }
 
-        AnnotationTextStyleCPtr CreateTextStyle(Utf8CP name)
-            {
-            AnnotationTextStyle style(*m_testDb);
-            style.SetName(name);
-            auto pStyle = style.Insert();
-            EXPECT_TRUE(pStyle.IsValid());
-            return pStyle;
-            }
-        AnnotationTextStyleCPtr RenameTextStyle(AnnotationTextStyleCR style, Utf8CP newName)
-            {
-            auto pStyle = style.CreateCopy();
-            pStyle->SetName(newName);
-            auto cpStyle = pStyle->Update();
-            EXPECT_TRUE(cpStyle.IsValid());
-            return cpStyle;
-            }
+    AnnotationTextStyleCPtr CreateTextStyle(Utf8CP name)
+        {
+        AnnotationTextStyle style(*m_testDb);
+        style.SetName(name);
+        auto pStyle = style.Insert();
+        EXPECT_TRUE(pStyle.IsValid());
+        return pStyle;
+        }
+    AnnotationTextStyleCPtr RenameTextStyle(AnnotationTextStyleCR style, Utf8CP newName)
+        {
+        auto pStyle = style.CreateCopy();
+        pStyle->SetName(newName);
+        auto cpStyle = pStyle->Update();
+        EXPECT_TRUE(cpStyle.IsValid());
+        return cpStyle;
+        }
 
-        DgnElementCPtr InsertPhysicalElement(DgnCode const& code)
-            {
-            DgnClassId classId = m_testDb->Domains().GetClassId(dgn_ElementHandler::Physical::GetHandler());
-            PhysicalElement elem(PhysicalElement::CreateParams(*m_testDb, m_testModel->GetModelId(), classId, m_testCategoryId, Placement3d(), code, nullptr, DgnElementId()));
-            return elem.Insert();
-            }
-        DgnElementCPtr RenameElement(DgnElementCR el, Code const& code)
-            {
-            auto pEl = el.CopyForEdit();
-            EXPECT_EQ(DgnDbStatus::Success, pEl->SetCode(code));
-            auto cpEl = pEl->Update();
-            EXPECT_TRUE(cpEl.IsValid());
-            return cpEl;
-            }
-    public:
-        virtual void SetUp() override {}
-        virtual void TearDown() override {}
-    };
+    DgnElementCPtr InsertPhysicalElementByCode(DgnCode const& code)
+        {
+        DgnClassId classId = m_testDb->Domains().GetClassId(dgn_ElementHandler::Physical::GetHandler());
+        PhysicalElement elem(PhysicalElement::CreateParams(*m_testDb, m_testModel->GetModelId(), classId, m_testCategoryId, Placement3d(), code, nullptr, DgnElementId()));
+        return elem.Insert();
+        }
+
+    DgnElementCPtr RenameElement(DgnElementCR el, Code const& code)
+        {
+        auto pEl = el.CopyForEdit();
+        EXPECT_EQ(DgnDbStatus::Success, pEl->SetCode(code));
+        auto cpEl = pEl->Update();
+        EXPECT_TRUE(cpEl.IsValid());
+        return cpEl;
+        }
+public:
+    RevisionTestFixture() : T_Super(L"RevisionTest.idgndb") {}
+};
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    01/2016
+//---------------------------------------------------------------------------------------
+void RevisionTestFixture::_CreateDgnDb()
+    {
+    T_Super::_CreateDgnDb();
+
+    InsertFloor(1, 1);
+    CreateDefaultView(m_testModel->GetModelId());
+    UpdateDgnDbExtents();
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
@@ -108,7 +118,7 @@ void RevisionTestFixture::InsertFloor(int xmax, int ymax)
     int z = m_z++;
     for (int x = 0; x < xmax; x++)
         for (int y = 0; y < ymax; y++)
-            InsertElement(x, y, z);
+            InsertPhysicalElement(*m_testModel, m_testCategoryId, x, y, z);
     }
 
 //---------------------------------------------------------------------------------------
@@ -169,7 +179,7 @@ DgnRevisionPtr RevisionTestFixture::CreateRevision()
 void RevisionTestFixture::BackupTestFile()
     {
     CloseDgnDb();
-    BeFileName originalFile = DgnDbTestDgnManager::GetOutputFilePath(m_testFileName);
+    BeFileName originalFile = DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str());
     BeFileName copyFile = DgnDbTestDgnManager::GetOutputFilePath(m_copyTestFileName);
 
     BeFileNameStatus fileStatus = BeFileName::BeCopyFile(originalFile.c_str(), copyFile.c_str());
@@ -183,7 +193,7 @@ void RevisionTestFixture::BackupTestFile()
 void RevisionTestFixture::RestoreTestFile()
     {
     CloseDgnDb();
-    BeFileName originalFile = DgnDbTestDgnManager::GetOutputFilePath(m_testFileName);
+    BeFileName originalFile = DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str());
     BeFileName copyFile = DgnDbTestDgnManager::GetOutputFilePath(m_copyTestFileName);
 
     BeFileNameStatus fileStatus = BeFileName::BeCopyFile(copyFile.c_str(), originalFile.c_str());
@@ -194,26 +204,10 @@ void RevisionTestFixture::RestoreTestFile()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    07/2015
 //---------------------------------------------------------------------------------------
-void RevisionTestFixture::CreateDgnDb(int dimension)
-    {
-    T_Super::CreateDgnDb(m_testFileName);
-    InsertModel();
-    InsertCategory();
-    InsertFloor(dimension, dimension);
-    CreateDefaultView();
-    UpdateDgnDbExtents();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    07/2015
-//---------------------------------------------------------------------------------------
 TEST_F(RevisionTestFixture, Workflow)
     {
-    int dimension = 5;
-    int numRevisions = 5;
-
     // Setup a model with a few elements
-    CreateDgnDb(dimension);
+    CreateDgnDb();
     m_testDb->SaveChanges("Created Initial Model");
 
     // Create an initial revision
@@ -223,6 +217,8 @@ TEST_F(RevisionTestFixture, Workflow)
     // Create and save multiple revisions
     BackupTestFile();
     bvector<DgnRevisionPtr> revisions;
+    int dimension = 5;
+    int numRevisions = 5;
     for (int revNum = 0; revNum < numRevisions; revNum++)
         {
         InsertFloor(dimension, dimension);
@@ -250,9 +246,8 @@ TEST_F(RevisionTestFixture, Workflow)
 TEST_F(RevisionTestFixture, ConflictError)
     {
     // Setup a model with a few elements
-    int dimension = 1;
-    CreateDgnDb(dimension);
-    DgnElementId elementId = InsertElement(1, 1, 1);
+    CreateDgnDb();
+    DgnElementId elementId = InsertPhysicalElement(*m_testModel, m_testCategoryId, 1, 1, 1);
     m_testDb->SaveChanges("Created Initial Model");
 
     // Create an initial revision
@@ -282,6 +277,61 @@ TEST_F(RevisionTestFixture, ConflictError)
     BeTest::SetFailOnAssert(true);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    01/2016
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, OnDeleteRestrictMergeTest)
+    {
+    // Setup baseline
+    CreateDgnDb();
+
+    // Create Revision 1 inserting an element into the test model
+    BackupTestFile();
+    DgnElementId elementId = InsertPhysicalElement(*m_testModel, m_testCategoryId, 2, 2, 2);
+    ASSERT_TRUE(elementId.IsValid());
+    m_testDb->SaveChanges("Inserted an element");
+
+    DgnRevisionPtr revision1 = CreateRevision();
+    ASSERT_TRUE(revision1.IsValid());
+
+    // Create Revision 2 deleting the test model
+    RestoreTestFile();
+    ASSERT_TRUE(m_testModel.IsValid());
+    DgnDbStatus status = m_testModel->Delete();
+    ASSERT_TRUE(status == DgnDbStatus::Success);
+    m_testModel = nullptr;
+    m_testDb->SaveChanges("Deleted model and contained elements");
+
+    DgnRevisionPtr revision2 = CreateRevision();
+    ASSERT_TRUE(revision2.IsValid());
+
+    // Merge Rev1->Rev2: Should fail since the model has been deleted
+    RestoreTestFile();
+    ASSERT_TRUE(m_testModel.IsValid());
+
+    bvector<DgnRevisionPtr> revisions;
+    revisions.push_back(revision1);
+    revisions.push_back(revision2);
+    BeTest::SetFailOnAssert(false);
+    RevisionStatus revStatus = m_testDb->Revisions().MergeRevisions(revisions);
+    BeTest::SetFailOnAssert(true);
+    
+    ASSERT_TRUE(revStatus == RevisionStatus::MergeError);
+
+    // Merge Rev2->Rev1: Should fail since the model has been deleted
+    RestoreTestFile();
+    ASSERT_TRUE(m_testModel.IsValid());
+
+    revisions.clear();
+    revisions.push_back(revision2);
+    revisions.push_back(revision1);
+    BeTest::SetFailOnAssert(false);
+    revStatus = m_testDb->Revisions().MergeRevisions(revisions);
+    BeTest::SetFailOnAssert(true);
+
+    ASSERT_TRUE(revStatus == RevisionStatus::MergeError);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -305,7 +355,7 @@ void RevisionTestFixture::ExtractCodesFromRevision(DgnCodeSet& assigned, CodeSet
 TEST_F(RevisionTestFixture, Codes)
     {
     // Creating the DgnDb allocates some codes (category, model, view...)
-    CreateDgnDb(1);
+    CreateDgnDb();
     DgnDbR db = *m_testDb;
 
     DgnCategoryCPtr defaultCat = DgnCategory::QueryCategory(m_testCategoryId, db);
@@ -367,9 +417,9 @@ TEST_F(RevisionTestFixture, Codes)
     auto auth = NamespaceAuthority::CreateNamespaceAuthority("MyAuthority", db);
     EXPECT_EQ(DgnDbStatus::Success, auth->Insert());
 
-    auto cpElX1 = InsertPhysicalElement(auth->CreateCode("X", "1")),
-         cpElY2 = InsertPhysicalElement(auth->CreateCode("Y", "2")),
-         cpUncoded = InsertPhysicalElement(defaultCode);
+    auto cpElX1 = InsertPhysicalElementByCode(auth->CreateCode("X", "1")),
+        cpElY2 = InsertPhysicalElementByCode(auth->CreateCode("Y", "2")),
+        cpUncoded = InsertPhysicalElementByCode(defaultCode);
 
     ExtractCodesFromRevision(createdCodes, discardedCodes);
 
@@ -386,7 +436,7 @@ TEST_F(RevisionTestFixture, Codes)
     cpElX1 = RenameElement(*cpElX1, defaultCode);
     auto codeY2 = cpElY2->GetCode();
     EXPECT_EQ(DgnDbStatus::Success, cpElY2->Delete());
-    auto cpNewElY2 = InsertPhysicalElement(codeY2);
+    auto cpNewElY2 = InsertPhysicalElementByCode(codeY2);
 
     // The code that was set to empty should be seen as discarded; the code that replaced empty should be seen as new; the reused code should not appear.
     ExtractCodesFromRevision(createdCodes, discardedCodes);
@@ -399,4 +449,3 @@ TEST_F(RevisionTestFixture, Codes)
     expectedCodes.insert(cpUncoded->GetCode());
     ExpectCodes(expectedCodes, createdCodes);
     }
-

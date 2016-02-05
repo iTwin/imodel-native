@@ -52,13 +52,6 @@ TEST_F(DgnBaseDomainSchemaTests, ValidateDomainSchemaDDL)
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([ModelId]) REFERENCES [dgn_Model] ([Id]) ON DELETE RESTRICT"));
         }
 
-    // dgn_AnnotationElement
-        {
-        Utf8String ddl = GetDDL(DGN_TABLE(DGN_CLASSNAME_AnnotationElement));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([Id]) REFERENCES [dgn_Element] ([Id]) ON DELETE CASCADE"));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([CategoryId]) REFERENCES [dgn_Element] ([Id]) ON DELETE RESTRICT"));
-        }
-
     // dgn_DefinitionElement
         {
         Utf8String ddl = GetDDL(DGN_TABLE(DGN_CLASSNAME_DefinitionElement));
@@ -66,24 +59,17 @@ TEST_F(DgnBaseDomainSchemaTests, ValidateDomainSchemaDDL)
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([BaseModelId]) REFERENCES [dgn_Model] ([Id]) ON DELETE RESTRICT"));
         }
 
-    // dgn_DrawingElement
+    // dgn_GeometricElement2d
         {
-        Utf8String ddl = GetDDL(DGN_TABLE(DGN_CLASSNAME_DrawingElement));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([Id]) REFERENCES [dgn_Element] ([Id]) ON DELETE CASCADE"));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([CategoryId]) REFERENCES [dgn_Element] ([Id]) ON DELETE RESTRICT")); 
+        Utf8String ddl = GetDDL(DGN_TABLE(DGN_CLASSNAME_GeometricElement2d));
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([ElementId]) REFERENCES [dgn_Element] ([Id]) ON DELETE CASCADE"));
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([CategoryId]) REFERENCES [dgn_Element] ([Id]) ON DELETE RESTRICT"));
         }
 
-    // dgn_SheetElement
+    // dgn_GeometricElement3d
         {
-        Utf8String ddl = GetDDL(DGN_TABLE(DGN_CLASSNAME_SheetElement));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([Id]) REFERENCES [dgn_Element] ([Id]) ON DELETE CASCADE"));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([CategoryId]) REFERENCES [dgn_Element] ([Id]) ON DELETE RESTRICT")); 
-        }
-
-    // Validate dgn_SpatialElement DDL
-        {
-        Utf8String ddl = GetDDL(DGN_TABLE(DGN_CLASSNAME_SpatialElement));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([Id]) REFERENCES [dgn_Element] ([Id]) ON DELETE CASCADE"));
+        Utf8String ddl = GetDDL(DGN_TABLE(DGN_CLASSNAME_GeometricElement3d));
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([ElementId]) REFERENCES [dgn_Element] ([Id]) ON DELETE CASCADE"));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([CategoryId]) REFERENCES [dgn_Element] ([Id]) ON DELETE RESTRICT")); 
         }
 
@@ -91,14 +77,12 @@ TEST_F(DgnBaseDomainSchemaTests, ValidateDomainSchemaDDL)
         {
         Statement statement(*m_db, "SELECT sql FROM sqlite_master WHERE type='index' AND sql LIKE 'CREATE INDEX%'");
         bvector<Utf8String> expectedSqlList;
-        expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_Element)           "] ([ECClassId])");
-        expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_Element)           "] ([ParentId]) WHERE ([ParentId] IS NOT NULL)");
-        expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_Element)           "] ([ModelId])");
-        expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_Element)           "] ([Label]) WHERE ([Label] IS NOT NULL)");
-        expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_AnnotationElement) "] ([CategoryId])");
-        expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_DrawingElement)    "] ([CategoryId])");
-        expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_SheetElement)      "] ([CategoryId])");
-        expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_SpatialElement)    "] ([CategoryId])");
+        expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_Element)            "] ([ECClassId])");
+        expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_Element)            "] ([ParentId]) WHERE ([ParentId] IS NOT NULL)");
+        expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_Element)            "] ([ModelId])");
+        expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_Element)            "] ([Label]) WHERE ([Label] IS NOT NULL)");
+        expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_GeometricElement2d) "] ([CategoryId])");
+        expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) "] ([CategoryId])");
 
         for (Utf8String expectedSql : expectedSqlList)
             {

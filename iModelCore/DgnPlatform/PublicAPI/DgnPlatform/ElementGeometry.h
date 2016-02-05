@@ -60,7 +60,7 @@ public:
     DGNPLATFORM_EXPORT ISolidKernelEntityPtr GetAsISolidKernelEntity() const;
     DGNPLATFORM_EXPORT TextStringPtr GetAsTextString() const;
 
-    DGNPLATFORM_EXPORT void AddToGraphic(Render::GraphicR, ViewContextR) const;
+    DGNPLATFORM_EXPORT void AddToGraphic(Render::GraphicR) const;
     DGNPLATFORM_EXPORT bool GetLocalCoordinateFrame(TransformR localToWorld) const;
     DGNPLATFORM_EXPORT bool GetLocalRange(DRange3dR localRange, TransformR localToWorld) const; // Expensive - copies geometry!
     DGNPLATFORM_EXPORT bool GetRange(DRange3dR range, TransformCP transform = nullptr) const;

@@ -128,7 +128,7 @@ void ViewAttachmentTest::AddTextToDrawing(DgnModelId drawingId, Utf8CP text, dou
 
     TextAnnotation anno(db);
     anno.SetText(AnnotationTextBlock::Create(db, m_textStyleId, text).get());
-    TextAnnotationElementPtr annoElem = new TextAnnotationElement(TextAnnotationElement::CreateParams(db, drawingId, TextAnnotationElement::QueryDgnClassId(db), m_attachmentCatId));
+    TextAnnotation2dPtr annoElem = new TextAnnotation2d(TextAnnotation2d::CreateParams(db, drawingId, TextAnnotation2d::QueryDgnClassId(db), m_attachmentCatId));
     annoElem->SetAnnotation(&anno);
     EXPECT_TRUE(annoElem->Insert().IsValid());
 

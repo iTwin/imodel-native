@@ -202,7 +202,8 @@ protected:
     DGNPLATFORM_EXPORT virtual void _DrawStyledBSplineCurve2d(MSBsplineCurveCR, double zDepth);
     DGNPLATFORM_EXPORT virtual void _AddTextString(TextStringCR);
     DGNPLATFORM_EXPORT virtual StatusInt _InitContextForView();
-    DGNPLATFORM_EXPORT virtual StatusInt _VisitElement(GeometrySourceCR);
+    DGNPLATFORM_EXPORT virtual StatusInt _VisitGeometry(GeometrySourceCR);
+    DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitDetailCR);
     DGNPLATFORM_EXPORT virtual void _InitScanRangeAndPolyhedron();
     DGNPLATFORM_EXPORT virtual bool _VisitAllModelElements();
     DGNPLATFORM_EXPORT virtual StatusInt _VisitDgnModel(DgnModelP);
@@ -253,7 +254,8 @@ public:
 
     Render::GraphicPtr CreateGraphic(Render::Graphic::CreateParams const& params=Render::Graphic::CreateParams()) {return _CreateGraphic(params);}
     void AddSubGraphic(Render::GraphicR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams) {_AddSubGraphic(graphic, partId, subToGraphic, geomParams);}
-    StatusInt VisitElement(GeometrySourceCR elem) {return _VisitElement(elem);}
+    StatusInt VisitGeometry(GeometrySourceCR elem) {return _VisitGeometry(elem);}
+    StatusInt VisitHit(HitDetailCR hit) {return _VisitHit(hit);}
 
     /// @name Coordinate Query and Conversion
     //@{
@@ -378,11 +380,11 @@ public:
 
     /// @name Identifying element "topology".
     //@{
-    //! Query the current IElementTopology.
+    //! Query the current IElemTopology.
     //! @return An object that holds additional information about the graphics that are currently being drawn.
     IElemTopologyCP GetElemTopology() const {return (m_currElemTopo.IsValid() ? m_currElemTopo.get() : nullptr);}
 
-    //! Set the current IElementTopology.
+    //! Set the current IElemTopology.
     //! @param topo An object holding additional information about the graphics to be drawn or nullptr to clear the current topology pointer.
     void SetElemTopology(IElemTopologyCP topo) {m_currElemTopo = topo;}
 
@@ -474,8 +476,10 @@ public:
     void _AddContextOverrides(Render::OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source) override;
     Render::GraphicP _GetCachedGraphic(GeometrySourceCR source, double pixelSize) override {return source.Graphics().Find(*m_viewport, pixelSize);}
     DGNVIEW_EXPORT Render::GraphicP _GetCachedPartGraphic(DgnGeometryPartId, double pixelSize, ElementAlignedBox3dR) override;
+    void _SaveGraphic(GeometrySourceCR source, Render::GraphicR graphic) override {graphic.Close(); source.Graphics().Save(graphic);}
     void _PushFrustumClip() override {}
     Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return m_target.CreateGraphic(params);}
+    void _SavePartGraphic(DgnGeometryPartId partId, Render::GraphicR graphic, ElementAlignedBox3dCR localRange) override;
 };
 
 //=======================================================================================
@@ -509,11 +513,10 @@ private:
     Render::Decorations& m_decorations;
     void _AddContextOverrides(Render::OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source) override;
     void _OutputGraphic(Render::GraphicR graphic, GeometrySourceCP) override;
+    StatusInt _VisitHit(HitDetailCR hit) override;
     DecorateContext(DgnViewportR vp, Render::Decorations& decorations) : RenderContext(vp, DrawPurpose::Decorate), m_decorations(decorations) {}
 
 public:
-    StatusInt VisitHit(HitDetailCR hit);
-
     //! Display world coordinate graphic with flash/hilite treatment.
     DGNPLATFORM_EXPORT void AddFlashed(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);
 

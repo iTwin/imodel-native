@@ -1085,7 +1085,7 @@ void PerformanceElementsCRUDTestFixture::BindParams(DgnElementPtr& element, ECSq
         snappyTo.Write(geom.GetData(), geom.GetSize());
         }
 
-    auto geomIndex = stmt.GetParameterIndex("Geometry");
+    auto geomIndex = stmt.GetParameterIndex ("GeometryStream");
     uint32_t zipSize = snappyTo.GetCompressedSize();
     if (0 < zipSize)
         {
@@ -1197,7 +1197,7 @@ void PerformanceElementsCRUDTestFixture::BindUpdateParams(DgnElementPtr& element
         snappyTo.Write(geom.GetData(), geom.GetSize());
         }
 
-    auto geomIndex = stmt.GetParameterIndex("Geometry");
+    auto geomIndex = stmt.GetParameterIndex ("GeometryStream");
     uint32_t zipSize = snappyTo.GetCompressedSize();
     if (0 < zipSize)
         {
@@ -1524,7 +1524,7 @@ void PerformanceElementsCRUDTestFixture::GetSelectSql(Utf8CP className, Utf8Stri
                 }
             }
 
-        selectSql.append(" FROM dgn_Element e, dgn_SpatialElement p WHERE e.Id=p.ECInstanceId AND e.ECClassId=p.ECClassId AND e.Id=?");
+        selectSql.append(" FROM dgn_Element e, dgn_SpatialElement p WHERE e.Id=p.ElementId AND e.ECClassId=p.ECClassId AND e.Id=?");
         if (!omitClassIdFilter)
             {
             Utf8String classIdFilter;

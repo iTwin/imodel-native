@@ -12,8 +12,7 @@
 #include "QueryModel.h"
 #include "DgnDomain.h"
 #include "MemoryManager.h"
-#include "LocksManager.h"
-#include "DgnCodesManager.h"
+#include "RepositoryManager.h"
 #include <Bentley/BeFileName.h>
 
 /** @addtogroup DgnDbGroup
@@ -160,8 +159,7 @@ protected:
     DgnAuthorities  m_authorities;
     TxnManagerPtr   m_txnManager;
     MemoryManager   m_memoryManager;
-    ILocksManagerPtr    m_locksManager;
-    IDgnCodesManagerPtr m_codesManager;
+    IBriefcaseManagerPtr    m_briefcaseManager;
     DgnSearchableText   m_searchableText;
     mutable RevisionManagerP m_revisionManager;
     BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
@@ -225,9 +223,8 @@ public:
     DGNPLATFORM_EXPORT TxnManagerR Txns();                    //!< The Txns for this DgnDb.
     DGNPLATFORM_EXPORT RevisionManagerR Revisions() const; //!< The Revisions for this DgnDb.
     MemoryManager& Memory() const { return const_cast<MemoryManager&>(m_memoryManager);} //!< Manages memory associated with this DgnDb.
-    DGNPLATFORM_EXPORT ILocksManager& Locks(); //!< Manages this DgnDb's locks.
+    DGNPLATFORM_EXPORT IBriefcaseManager& BriefcaseManager(); //!< Manages this briefcase's held locks and codes
     QueryModel::Queue& QueryQueue() const {return const_cast<QueryModel::Queue&>(m_queryQueue);}
-    DGNPLATFORM_EXPORT IDgnCodesManager& Codes(); //!< Manages this DgnDb's reserved authority-issued codes.
     LocalStateDb& GetLocalStateDb(); //!< @private
 
     //! Gets a cached and prepared ECSqlStatement.

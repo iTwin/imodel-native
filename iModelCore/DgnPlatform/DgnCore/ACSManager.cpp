@@ -153,16 +153,16 @@ struct          AuxCoordSys : public IAuxCoordSys
 private:
 
 ACSData         m_acsData;
-WString         m_name;
-WString         m_description;
+Utf8String      m_name;
+Utf8String      m_description;
 bool            m_attachedToView;
 bool            m_viewInfoValidated;
 
 protected:
 
 virtual ACSType     /*AuxCoordSys::*/_GetType() const override {return m_acsData.m_type;}
-virtual WString     /*AuxCoordSys::*/_GetName() const override {return m_name;}
-virtual WString     /*AuxCoordSys::*/_GetDescription() const override {return m_description;}
+virtual Utf8String  /*AuxCoordSys::*/_GetName() const override {return m_name;}
+virtual Utf8String  /*AuxCoordSys::*/_GetDescription() const override {return m_description;}
 virtual bool        /*AuxCoordSys::*/_GetIsReadOnly() const override {return false;}
 virtual uint32_t    /*AuxCoordSys::*/_GetExtenderId() const override {return 0;}
 virtual uint32_t    /*AuxCoordSys::*/_GetSerializedSize() const override {return sizeof (m_acsData);}
@@ -180,7 +180,7 @@ virtual StatusInt   /*AuxCoordSys::*/_SetType(ACSType type) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt   /*AuxCoordSys::*/_SetName(WCharCP name) override
+virtual StatusInt   /*AuxCoordSys::*/_SetName(Utf8CP name) override
     {
     m_name.assign(name);
     TrimWhiteSpace(m_name); // Don't store leading/trailing spaces...
@@ -191,7 +191,7 @@ virtual StatusInt   /*AuxCoordSys::*/_SetName(WCharCP name) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt   /*AuxCoordSys::*/_SetDescription(WCharCP descr) override
+virtual StatusInt   /*AuxCoordSys::*/_SetDescription(Utf8CP descr) override
     {
     m_description.assign(descr);
     TrimWhiteSpace(m_description); // Don't store leading/trailing spaces...
@@ -279,7 +279,7 @@ virtual bool    /*AuxCoordSys::*/_Equals(IAuxCoordSysCP other) const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual WString /*AuxCoordSys::*/_GetTypeName() const override
+virtual Utf8String /*AuxCoordSys::*/_GetTypeName() const override
     {
     L10N::StringId id;
 
@@ -292,7 +292,7 @@ virtual WString /*AuxCoordSys::*/_GetTypeName() const override
         case ACSType::Extended:    id = DgnCoreL10N::ACS_TYPE_EXTEND(); break;
         };
 
-    return DgnCoreL10N::GetStringW(id);
+    return DgnCoreL10N::GetString(id);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -747,7 +747,7 @@ bool            is3D            /* => indicates whether the model to be used wit
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     /*AuxCoordSys::*/TrimWhiteSpace(WStringR inputStr)
+static void     /*AuxCoordSys::*/TrimWhiteSpace(Utf8StringR inputStr)
     {
     // Don't store leading/trailing spaces...
     inputStr.erase(inputStr.find_last_not_of(' ')+1);
@@ -906,9 +906,47 @@ ColorDef IAuxCoordSys::_GetColor(DgnViewportCR viewport, ColorDef inColor, uint3
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   07/06
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t IAuxCoordSys::_GetTransparency(bool isFill, ACSDisplayOptions options) const
+    {
+    uint32_t    transparency;
+
+    if (isFill)
+        transparency = (ACSDisplayOptions::None != (options & ACSDisplayOptions::Deemphasized) ? 215 : 150);
+    else
+        transparency = (ACSDisplayOptions::None != (options & ACSDisplayOptions::Deemphasized) ? 125 : 50);
+
+    return transparency;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BarryBentley    01/07
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String IAuxCoordSys::_GetAxisLabel(uint32_t axis) const
+    {
+    Utf8String axisLabel;
+
+    switch (axis)
+        {
+        case 0:
+            axisLabel.assign("X");
+            break;
+        case 1:
+            axisLabel.assign("Y");
+            break;
+        case 2:
+            axisLabel.assign("Z");
+            break;
+        }
+
+    return axisLabel;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IAuxCoordSys::_AddAxisText(GraphicR graphic, WCharCP labelStr, bool isAxisLabel, double userOrgX, double userOrgY, double scale, double angle, ACSDisplayOptions options) const
+void IAuxCoordSys::_AddAxisText(GraphicR graphic, Utf8CP labelStr, bool isAxisLabel, double userOrgX, double userOrgY, double scale, double angle, ACSDisplayOptions options) const
     {
     DPoint3d    textPt;
     RotMatrix   textMatrix;
@@ -917,7 +955,7 @@ void IAuxCoordSys::_AddAxisText(GraphicR graphic, WCharCP labelStr, bool isAxisL
     textPt.x = userOrgX; textPt.y = userOrgY; textPt.z = 0.0;
     textMatrix.InitFromAxisAndRotationAngle(2, angle);
 
-    textStr.SetText(Utf8String(labelStr).c_str());
+    textStr.SetText(labelStr);
     textStr.SetOrientation(textMatrix);
     textStr.GetStyleR().SetFont(DgnFontManager::GetDecoratorFont());
     textStr.GetStyleR().SetSize(scale);
@@ -988,7 +1026,7 @@ void IAuxCoordSys::_AddZAxis (GraphicR graphic, ColorDef color, ACSDisplayOption
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   07/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IAuxCoordSys::_AddXYAxis (GraphicR graphic, ColorDef color, WCharCP labelStrP, bool swapAxis, ACSDisplayOptions options, ACSFlags flags) const
+void IAuxCoordSys::_AddXYAxis (GraphicR graphic, ColorDef color, Utf8CP labelStrP, bool swapAxis, ACSDisplayOptions options, ACSFlags flags) const
     {
     DPoint2d    userOrg;
     DPoint3d    shapePts[8];
@@ -1053,11 +1091,10 @@ bool                drawName
     Render::GraphicPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), transform));
 
     ACSFlags    flags = _GetFlags();
-    WChar       axisLabel[128];
 
     _AddZAxis(*graphic, ColorDef::Blue(), options);
-    _AddXYAxis(*graphic, ColorDef::Red(), _GetAxisLabel(0, axisLabel, 128), false, options, flags);
-    _AddXYAxis(*graphic, ColorDef::Green(), _GetAxisLabel(1, axisLabel, 128), true, options, flags);
+    _AddXYAxis(*graphic, ColorDef::Red(), _GetAxisLabel(0).c_str(), false, options, flags);
+    _AddXYAxis(*graphic, ColorDef::Green(), _GetAxisLabel(1).c_str(), true, options, flags);
 
     if (drawName)
         {
@@ -1223,7 +1260,7 @@ StatusInt       IACSManager::SetActive(IAuxCoordSysP auxCoordSys, DgnViewportR v
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-IAuxCoordSysPtr IACSManager::GetByName(WCharCP name, DgnModelP modelRef, uint32_t options)
+IAuxCoordSysPtr IACSManager::GetByName(Utf8CP name, DgnModelP modelRef, uint32_t options)
     {
     if (NULL == name)
         { BeAssert(false); return nullptr; }
@@ -1246,7 +1283,7 @@ StatusInt       IACSManager::Save(IAuxCoordSysP acs, DgnModelP modelRef, ACSSave
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       IACSManager::Delete(WCharCP name, DgnModelP modelRef)
+StatusInt       IACSManager::Delete(Utf8CP name, DgnModelP modelRef)
     {
 #if defined (NEEDS_WORK_DGNITEM)
 #endif
@@ -1286,8 +1323,8 @@ ACSType         type,
 DPoint3dCR      pOrigin,
 RotMatrixCR     pRot,
 double          scale,
-WCharCP         name,
-WCharCP         descr
+Utf8CP          name,
+Utf8CP          descr
 )
     {
     IAuxCoordSysPtr auxSys = AuxCoordSys::CreateNew();

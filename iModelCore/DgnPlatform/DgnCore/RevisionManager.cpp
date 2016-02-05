@@ -731,7 +731,7 @@ RevisionStatus RevisionManager::FinishCreateRevision()
     if (RevisionStatus::Success != status)
         return status;
 
-    m_dgndb.Codes().OnFinishRevision(*m_currentRevision);
+    m_dgndb.BriefcaseManager().OnFinishRevision(*m_currentRevision);
 
     m_currentRevisionEndTxnId = TxnManager::TxnId(); // Invalid id
     m_currentRevision = nullptr;

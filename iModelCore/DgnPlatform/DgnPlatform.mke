@@ -187,7 +187,7 @@ $(CoreObjs)ElementDependencyGraph$(oext) :          $(DgnCoreDir)ElementDependen
 
 $(coreObjs)LocksManager$(oext):                     $(DgnCoreDir)LocksManager.cpp $(DgnPlatformAPISrc)LocksManager.h ${MultiCompileDepends}
 
-$(coreObjs)DgnCodesManager$(oext):                  $(DgnCoreDir)DgnCodesManager.cpp $(DgnPlatformAPISrc)DgnCodesManager.h ${MultiCompileDepends}
+$(coreObjs)RepositoryManager$(oext):                $(DgnCoreDir)RepositoryManager.cpp $(DgnPlatformAPISrc)RepositoryManager.h $(DgnPlatformAPISrc)DgnCodesManager.h ${MultiCompileDepends}
 
 $(CoreObjs)LsName$(oext) :                          $(lineStyleDir)LsName.cpp $(LsLocalDepends) ${MultiCompileDepends}
 
@@ -280,8 +280,6 @@ $(CoreObjs)DgnCorePolyfaceClip$(oext) :             $(DgnCoreDir)DgnCorePolyface
 $(CoreObjs)FenceParams$(oext) :                     $(DgnCoreDir)FenceParams.cpp $(DgnPlatformAPISrc)FenceParams.h $(contextDepends) ${MultiCompileDepends}
 
 $(CoreObjs)GParray$(oext) :                         $(DgnCoreDir)GParray.cpp $(DgnPlatformAPISrc)GPArray.h ${MultiCompileDepends}
-
-$(CoreObjs)IAuxSystem$(oext) :                      $(DgnCoreDir)IAuxSystem.cpp $(contextDepends) ${MultiCompileDepends}
 
 $(CoreObjs)GradientSettings$(oext) :                $(DgnCoreDir)GradientSettings.cpp $(DgnPlatformAPISrc)GradientSettings.h ${MultiCompileDepends}
 
