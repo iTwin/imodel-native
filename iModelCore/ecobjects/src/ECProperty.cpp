@@ -395,9 +395,11 @@ SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchem
     if (status != SchemaReadStatus::Success)
         return status;
 
+    Utf8String value;  // needed for macro.
+    READ_OPTIONAL_XML_ATTRIBUTE(propertyNode, KIND_OF_QUANTITY_ATTRIBUTE, this, KindOfQuantity)
+
     // typeName is a required attribute.  If it is missing, an error will be returned.
     // For Primitive & Array properties we ignore parse errors and default to string.  Struct properties will require a resolvable typename.
-    Utf8String value;  // needed for macro.
     if (BEXML_Success != propertyNode.GetAttributeStringValue (value, TYPE_NAME_ATTRIBUTE))
         {
         BeAssert (s_noAssert);
@@ -426,15 +428,10 @@ SchemaWriteStatus PrimitiveECProperty::_WriteXml(BeXmlWriterR xmlWriter, int ecX
         {
         additionalAttributes[EXTENDED_TYPE_NAME_ATTRIBUTE] = m_extendedTypeName.c_str();
         }
-    return T_Super::_WriteXml(xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersionMajor, &additionalAttributes);
-    }
+    if (3 == ecXmlVersionMajor)
+        additionalAttributes["kindOfQuantity"] = GetKindOfQuantity().c_str();
 
-/*---------------------------------------------------------------------------------**//**
- * @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String PrimitiveECProperty::GetExtendedTypeName() const
-    {
-    return m_extendedTypeName;
+    return T_Super::_WriteXml(xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersionMajor, &additionalAttributes);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -449,10 +446,8 @@ ECObjectsStatus PrimitiveECProperty::SetExtendedTypeName(Utf8CP extendedTypeName
     else if (!m_extendedTypeName.Equals(extendedTypeName))
         {
         m_extendedTypeName = extendedTypeName;
-        InvalidateClassLayout();
         }
-    
-        return ECObjectsStatus::Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -621,6 +616,23 @@ ECObjectsStatus PrimitiveECProperty::SetType (ECEnumerationCR enumerationType)
     m_enumeration = &enumerationType;
 
     return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus PrimitiveECProperty::SetKindOfQuantity (Utf8StringCR value)
+    {
+    m_kindOfQuantity = value;
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8StringCR PrimitiveECProperty::GetKindOfQuantity () const
+    {
+    return m_kindOfQuantity;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -890,6 +902,11 @@ SchemaReadStatus ArrayECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaRea
         return SchemaReadStatus::Success;
         }
 
+    if (BEXML_Success == propertyNode.GetAttributeStringValue(value, EXTENDED_TYPE_NAME_ATTRIBUTE))
+        {
+        this->SetExtendedTypeName(value.c_str());
+        }
+
     return SchemaReadStatus::Success;
     }
 
@@ -922,6 +939,11 @@ SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlV
             elementName = EC_STRUCTARRAYPROPERTY_ELEMENT;
         }
 
+    if (this->HasExtendedType())
+        {
+        additionalAttributes[EXTENDED_TYPE_NAME_ATTRIBUTE] = m_extendedTypeName.c_str();
+        }
+
     SchemaWriteStatus status = T_Super::_WriteXml (xmlWriter, elementName, ecXmlVersionMajor, &additionalAttributes);
     if (status != SchemaWriteStatus::Success || m_forSupplementation) // If this property was created during supplementation, don't serialize it
         return status;
@@ -936,6 +958,30 @@ SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlV
 
         
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ArrayECProperty::SetExtendedTypeName(Utf8CP extendedTypeName)
+    {
+    if (Utf8String::IsNullOrEmpty(extendedTypeName))
+        {
+        m_extendedTypeName = Utf8String(); // Resets String
+        }
+    else if (!m_extendedTypeName.Equals(extendedTypeName))
+        {
+        m_extendedTypeName = extendedTypeName;
+        }
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ArrayECProperty::RemoveExtendedTypeName()
+    {
+    return ECObjectsStatus::Success == this->SetExtendedTypeName(nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**

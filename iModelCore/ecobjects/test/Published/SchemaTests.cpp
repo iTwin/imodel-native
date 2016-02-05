@@ -1510,6 +1510,42 @@ TEST_F (SchemaDeserializationTest, TestMultipleConstraintClassesWithKeyPropertie
     ASSERT_EQ (0, constraintClass2->GetKeys ().size ());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Basanta.Kharel   12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaDeserializationTest, KindOfQuantityTest)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "KindOfQuantitySchema", 5, 6);
+    ASSERT_TRUE(schema.IsValid());
+
+    ECEntityClassP entityClass;
+    schema->CreateEntityClass(entityClass, "Class");
+    ASSERT_NE(entityClass, nullptr);
+
+    PrimitiveECPropertyP prop;
+    entityClass->CreatePrimitiveProperty(prop, "Property");
+    ASSERT_NE(prop, nullptr);
+
+    EXPECT_EQ(ECObjectsStatus::Success, prop->SetKindOfQuantity("koq"));
+
+    Utf8String schemaXML;
+    EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(schemaXML, 3));
+
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr refSchema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(refSchema, schemaXML.c_str(), *schemaContext);
+    EXPECT_EQ(SchemaReadStatus::Success, status);
+
+    ECClassCP entityClassDup = refSchema->GetClassCP("Class");
+    ASSERT_NE(entityClassDup, nullptr);
+    PrimitiveECPropertyCP property = entityClassDup->GetPropertyP("Property")->GetAsPrimitiveProperty();
+    ASSERT_NE(property, nullptr);
+
+    EXPECT_EQ("koq", property->GetKindOfQuantity());
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -68,6 +68,7 @@ static Utf8CP      ECXML_URI                           = "http://www.bentley.com
 #define     SCHEMAREF_PREFIX_ATTRIBUTE          "prefix"
 #define     MAXIMUM_VALUE_ATTRIBUTE             "MaximumValue"
 #define     MINIMUM_VALUE_ATTRIBUTE             "MinimumValue"
+#define     KIND_OF_QUANTITY_ATTRIBUTE          "kindOfQuantity"
 
 
 #define     STRENGTH_ATTRIBUTE                  "strength"

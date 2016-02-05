@@ -820,12 +820,12 @@ public:
 struct PrimitiveECProperty : public ECProperty
 {
     DEFINE_T_SUPER(ECProperty)
-/*__PUBLISH_SECTION_END__*/
 friend struct ECClass;
 private:
     PrimitiveType                               m_primitiveType;
     ECEnumerationCP                             m_enumeration;
     mutable CalculatedPropertySpecificationPtr  m_calculatedSpec;   // lazily-initialized
+    Utf8String                                  m_kindOfQuantity;
     Utf8String                                  m_extendedTypeName;
 
     PrimitiveECProperty (ECClassCR ecClass) : m_primitiveType(PRIMITIVETYPE_String), ECProperty(ecClass), m_enumeration(nullptr) {};
@@ -840,11 +840,11 @@ protected:
     virtual Utf8String                  _GetTypeNameForXml(int ecXmlVersionMajor) const override;
     virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
-    virtual bool                        _HasExtendedType() const override { return m_extendedTypeName.size() > 0; }
+    virtual bool                        _HasExtendedType() const override { return !m_extendedTypeName.empty(); }
     virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const override;
     virtual bool                                _IsCalculated() const override;
     virtual bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) override;
-//__PUBLISH_SECTION_START__
+
 public:
     //! Sets the PrimitiveType of this ECProperty.  The default type is ::PRIMITIVETYPE_String
     ECOBJECTS_EXPORT ECObjectsStatus SetType(PrimitiveType value);
@@ -854,12 +854,17 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus SetType(ECEnumerationCR value);
     //! Gets the Enumeration of this ECProperty or nullptr if none used.
     ECOBJECTS_EXPORT ECEnumerationCP GetEnumeration() const;
+    //! Sets the KindOfQuantity of this PrimitiveECProperty
+    ECOBJECTS_EXPORT ECObjectsStatus SetKindOfQuantity(Utf8StringCR value);
+    //! Gets the KindOfQuantity of this PrimitiveECProperty
+    ECOBJECTS_EXPORT Utf8StringCR GetKindOfQuantity() const;
+    //! Gets the extended type of this ECProperty
+    Utf8StringCR GetExtendedTypeName() const { return m_extendedTypeName; }
     //! Sets the Name of the Extended Type of this property.
     ECOBJECTS_EXPORT ECObjectsStatus SetExtendedTypeName(Utf8CP extendedTypeName);
     //! Resets the extended type on this property.
     ECOBJECTS_EXPORT bool RemoveExtendedTypeName();
-    //! Gets the PrimitiveType of this ECProperty
-    ECOBJECTS_EXPORT Utf8String GetExtendedTypeName() const;
+
 };
 
 //=======================================================================================
@@ -909,8 +914,9 @@ private:
     uint32_t                                    m_minOccurs;
     uint32_t                                    m_maxOccurs;    // D-106653 we store this as read from the schema, but all arrays are considered to be of unbounded size
     mutable CalculatedPropertySpecificationPtr  m_calculatedSpec;
-    PrimitiveType   m_primitiveType;
-    mutable IECTypeAdapter* m_cachedMemberTypeAdapter;
+    PrimitiveType                               m_primitiveType;
+    mutable IECTypeAdapter*                     m_cachedMemberTypeAdapter;
+    Utf8String                                  m_extendedTypeName;
 
 protected:
     ArrayKind               m_arrayKind;
@@ -932,6 +938,7 @@ protected:
     virtual Utf8String                  _GetTypeName () const override;
     virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
+    virtual bool                        _HasExtendedType() const override { return !m_extendedTypeName.empty(); }
     virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const override;
     virtual bool                                _IsCalculated() const override;
     virtual bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) override;
@@ -959,6 +966,12 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetMaxOccurs(uint32_t value);
     //! Gets the Maximum number of array members.
     ECOBJECTS_EXPORT uint32_t           GetMaxOccurs() const;
+    //! Gets the extended type of this ECProperty
+    Utf8StringCR GetExtendedTypeName() const { return m_extendedTypeName; }
+    //! Sets the Name of the Extended Type of this property.
+    ECOBJECTS_EXPORT ECObjectsStatus SetExtendedTypeName(Utf8CP extendedTypeName);
+    //! Resets the extended type on this property.
+    ECOBJECTS_EXPORT bool RemoveExtendedTypeName();
 
 //__PUBLISH_SECTION_END__
     //! Because of a legacy bug GetMaxOccurs always returns "unbounded". For components that need to persist
