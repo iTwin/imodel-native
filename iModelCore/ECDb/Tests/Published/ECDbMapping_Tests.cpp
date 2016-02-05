@@ -5380,9 +5380,9 @@ TEST_F(ECDbMappingTestFixture, RelationshipMapCAOnSubclasses)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                  12/15
+// @bsimethod                                   Krischan.Eberle                  02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractBaseClass)
+TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractConstraintClassAndNoSubclasses)
     {
     auto getGeometrySourceHasGeometryRowCount = [] (ECDbCR ecdb)
         {
@@ -5397,8 +5397,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractBaseClass)
         };
 
     {
-    //GeometrySource is abstract and doesn't have subclasses
-    SchemaItem testItem (
+    SchemaItem testItem(
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
         "  <ECEntityClass typeName='Element' modifier='Abstract'>"
@@ -5442,6 +5441,75 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractBaseClass)
     ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(ecdb, "INSERT INTO ts.GeometrySourceHasGeometry(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)"));
     //cannot insert anything as there is no concrete subclass of geometrysource
     }
+
+    {
+    SchemaItem testItem(
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "  <ECEntityClass typeName='Element' modifier='Abstract'>"
+        "    <ECCustomAttributes>"
+        "        <ClassMap xmlns='ECDbMap.01.00'>"
+        "            <MapStrategy>"
+        "               <Strategy>SharedTable</Strategy>"
+        "               <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "               <Options>SharedColumnsForSubclasses</Options>"
+        "            </MapStrategy>"
+        "        </ClassMap>"
+        "    </ECCustomAttributes>"
+        "    <ECProperty propertyName='Code' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='GeometrySource' modifier='Abstract' />"
+        "  <ECEntityClass typeName='GeometrySource3d'>"
+        "    <BaseClass>GeometrySource</BaseClass>"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='ElementGeometry'>"
+        "    <ECProperty propertyName='Geom' typeName='binary' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='ExtendedElement'>"
+        "    <BaseClass>Element</BaseClass>"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECRelationshipClass typeName='GeometrySourceHasGeometry' strength='embedding'>"
+        "    <Source cardinality='(1,1)' polymorphic='False'>"
+        "      <Class class='GeometrySource' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class='ElementGeometry' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>", true, "");
+
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testItem, "RelationshipWithAbstractBaseClass.ecdb");
+    ASSERT_FALSE(asserted);
+
+    ASSERT_EQ(0, getGeometrySourceHasGeometryRowCount(ecdb));
+
+    ECSqlStatement insertStmt;
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(ecdb, "INSERT INTO ts.GeometrySourceHasGeometry(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)"));
+    //cannot insert anything as there is no concrete subclass of geometrysource
+    }
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  12/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractConstraintClass)
+    {
+    auto getGeometrySourceHasGeometryRowCount = [] (ECDbCR ecdb)
+        {
+        ECSqlStatement selectStmt;
+        if (ECSqlStatus::Success != selectStmt.Prepare(ecdb, "SELECT count(*) FROM ts.GeometrySourceHasGeometry"))
+            return -1;
+
+        if (BE_SQLITE_ROW != selectStmt.Step())
+            return -1;
+
+        return selectStmt.GetValueInt(0);
+        };
 
     {
     //Abstract base class has subclasses in different tables

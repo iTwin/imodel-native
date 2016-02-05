@@ -22,3 +22,6 @@ JsonUpdaterTests.CommonGeometryJsonSerialization
 
 #TFS 366270
 JoinedTableECDbMapStrategyTests.PolymorphicRelationshipWithStandAloneClass
+
+#TFS 368922
+ECDbMappingTestFixture.RelationshipWithAbstractConstraintClassAndNoSubclasses

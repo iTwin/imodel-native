@@ -103,10 +103,10 @@ protected:
     std::vector<ECDbSqlTable const*> m_mappedTables;
     PropertyMapCollection m_children;
     mutable ECDbPropertyPathId m_propertyPathId;
-    ECN::ECClassCP m_createdBy;
+
     PropertyMap(ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap);
     PropertyMap(PropertyMapCR rhs, PropertyMapCP parentPropertyMap) : m_ecProperty(rhs.m_ecProperty), m_parentPropertyMap(parentPropertyMap), m_propertyAccessString(rhs.m_propertyAccessString),
-        m_mappedTables(rhs.m_mappedTables), m_propertyPathId(rhs.m_propertyPathId),m_createdBy(nullptr)
+        m_mappedTables(rhs.m_mappedTables), m_propertyPathId(rhs.m_propertyPathId)
         {}
 
     PropertyMapCR GetRoot() const
@@ -120,7 +120,7 @@ protected:
         }
 
     BentleyStatus DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, ECDbSqlColumn::Constraint::Collation& collation) const { return DetermineColumnInfo(columnName, isNullable, isUnique, collation, GetProperty(), GetPropertyAccessString()); }
-    static PropertyMapPtr SetCreatedBy(PropertyMapPtr ptr, ECN::ECClassCR createdBy){ ptr->m_createdBy = &createdBy; return ptr;}
+
 public:
     virtual ~PropertyMap () {}
     ECDbPropertyPathId GetPropertyPathId () const  { BeAssert (m_propertyPathId != 0); return m_propertyPathId; }
@@ -129,7 +129,6 @@ public:
     PropertyMapRelationshipConstraintClassId const* GetAsPropertyMapRelationshipConstraintClassId() const { return _GetAsPropertyMapRelationshipConstraintClassId(); }
     ECN::ECPropertyCR GetProperty () const;
     PropertyMapCP GetParent () const { return m_parentPropertyMap; }
-    ECN::ECClassCP CreatedBy() const { return  m_createdBy; }
     static uint32_t GetPropertyIndex (ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty); //needs to take an enabler, not a class    
     PropertyMapCollection const& GetChildren () const { return m_children; }
 
@@ -376,9 +375,11 @@ private:
     ECN::NavigationECPropertyCP m_navigationProperty;
     RelationshipClassMap const* m_relClassMap;
     std::vector<ECDbSqlColumn const* > m_columns;
-    NavigationPropertyMap(ClassMapLoadContext&, ECN::ECPropertyCR, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap);
-    NavigationPropertyMap(ClassMapLoadContext&, NavigationPropertyMap const& proto, PropertyMap const* parentPropertyMap);
-    static PropertyMapPtr Create(ClassMapLoadContext&, ECDbCR, ECN::ECPropertyCR, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap);
+    ECN::ECClassCP m_createdByClass;
+
+    NavigationPropertyMap(ClassMapLoadContext&, ECN::ECPropertyCR, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap, ECN::ECClassCR createdByClass);
+    NavigationPropertyMap(ClassMapLoadContext&, NavigationPropertyMap const& proto, PropertyMap const* parentPropertyMap, ECN::ECClassCR createdByClass);
+    static PropertyMapPtr Create(ClassMapLoadContext&, ECDbCR, ECN::ECPropertyCR, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap, ECN::ECClassCR createdByClass);
 
     virtual void _GetColumns(std::vector<ECDbSqlColumn const*>&) const override;
     virtual Utf8String _ToString() const override { return Utf8PrintfString("NavigationPropertyMap: ecProperty=%s.%s", m_ecProperty.GetClass().GetFullName(), m_ecProperty.GetName().c_str()); }
