@@ -1129,8 +1129,11 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="SpatialViewDefinition">
+    <ECEntityClass typeName="ViewDefinition3d" modifier="Abstract">
         <BaseClass>ViewDefinition</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="SpatialViewDefinition">
+        <BaseClass>ViewDefinition3d</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
