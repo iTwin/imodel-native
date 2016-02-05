@@ -441,7 +441,7 @@
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="GeometryStream" typeName="binary"/>
-        <ECProperty propertyName="InPhysicalSpace" typeName="boolean"/>
+        <ECProperty propertyName="InSpatialIndex" typeName="boolean"/>
         <ECProperty propertyName="Origin" typeName="point3d" />
         <ECProperty propertyName="Yaw" typeName="double" />
         <ECProperty propertyName="Pitch" typeName="double" />
