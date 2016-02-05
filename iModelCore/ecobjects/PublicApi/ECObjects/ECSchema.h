@@ -1195,7 +1195,7 @@ private:
     PropertyList                    m_propertyList;
     mutable StandaloneECEnablerPtr  m_defaultStandaloneEnabler;
 
-    ECObjectsStatus AddProperty (ECPropertyP& pProperty);
+    ECObjectsStatus AddProperty (ECPropertyP& pProperty, bool resolveConflicts = false);
     ECObjectsStatus RemoveProperty (ECPropertyR pProperty);
     ECObjectsStatus RenameConflictProperty(ECPropertyP thisProperty, bool renameDerivedProperties);
 
@@ -1240,13 +1240,14 @@ protected:
     //! the schema itself otherwise the method may fail because such dependencies can not be located.
     //! @param[in]  classNode       The XML DOM node to read
     //! @param[in]  context         The read context that contains information about schemas used for deserialization
+    //! @param[in]  conversionSchema  If there was a supplied schema to assist in converting from V2 to V3
     //! @param[in]  ecXmlVersionMajor The major version of the ECXml spec used for serializing this ECClass
     //! @param[out] navigationProperties A running list of all naviagtion properties in the schema.  This list is used for validation, which may only happen after all classes are loaded
     //! @return   Status code
-    virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties);
+    virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties);
 
     SchemaReadStatus                    _ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaReadContextR context);
-    SchemaReadStatus                    _ReadPropertyFromXmlAndAddToClass( ECPropertyP ecProperty, BeXmlNodeP& childNode, ECSchemaReadContextR context, Utf8CP childNodeName );
+    SchemaReadStatus                    _ReadPropertyFromXmlAndAddToClass( ECPropertyP ecProperty, BeXmlNodeP& childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, Utf8CP childNodeName );
 
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const;
     SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const;
@@ -2051,7 +2052,7 @@ protected:
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const override;
 
     virtual SchemaReadStatus            _ReadXmlAttributes (BeXmlNodeR classNode) override;
-    virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties) override;
+    virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties) override;
     virtual ECRelationshipClassCP       _GetRelationshipClassCP () const override {return this;};
     virtual ECRelationshipClassP        _GetRelationshipClassP ()  override {return this;};
     virtual ECClassType _GetClassType() const override { return ECClassType::Relationship; }

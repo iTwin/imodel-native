@@ -276,11 +276,13 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadClassContentsFromXml(ECSchemaPtr& sch
     ClassDeserializationVector::const_iterator  classesStart, classesEnd, classesIterator;
     ECClassP    ecClass;
     BeXmlNodeP  classNode;
+    ECSchemaPtr conversionSchema = m_schemaContext.LocateConversionSchemaFor(schemaOut->GetName().c_str(), schemaOut->GetVersionMajor(), schemaOut->GetVersionMinor());
+
     for (classesStart = classes.begin(), classesEnd = classes.end(), classesIterator = classesStart; classesIterator != classesEnd; classesIterator++)
         {
         ecClass = classesIterator->first;
         classNode = classesIterator->second;
-        status = ecClass->_ReadXmlContents(*classNode, m_schemaContext, ecXmlVersionMajor, navigationProperties);
+        status = ecClass->_ReadXmlContents(*classNode, m_schemaContext, conversionSchema.get(), ecXmlVersionMajor, navigationProperties);
         if (SchemaReadStatus::Success != status)
             return status;
         }
