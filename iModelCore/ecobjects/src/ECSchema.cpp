@@ -1403,158 +1403,6 @@ ECSchemaPtr     ECSchema::LocateSchema (SchemaKeyR key, ECSchemaReadContextR sch
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  11/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus GetMinorVersionFromSchemaFileName (uint32_t& versionMinor, WCharCP filePath)
-    {
-    BeFileName  fileName (filePath);
-
-    WString     name;
-    fileName.ParseName (NULL, NULL, &name, NULL);
-
-    // after fileName.parse, name contains "SchemaName.XX.XX.eschema".
-    WString::size_type firstDot;
-    if (WString::npos == (firstDot = name.find ('.')))
-        {
-        THIS IS BROKEN PLEASE ADJUST!!!
-        BeAssert (s_noAssert);
-        LOG.errorv (L"Invalid ECSchema FileName String: '%ls' does not contain the suffix '.ecschema.xml'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION_W, filePath);
-        return ECObjectsStatus::ParseError;
-        }
-
-    Utf8String     versionString;
-    versionString.Assign(name.substr (firstDot+1).c_str());
-    uint32_t    versionMajor;
-    return ECSchema::ParseVersionString (versionMajor, versionMinor, versionString.c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  11/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus GetSchemaFileName (WString& fullFileName, uint32_t& foundMinorVersion, WCharCP schemaPath, bool useLatestCompatibleMatch)
-    {
-    WString     schemaPathWithWildcard = schemaPath;
-    schemaPathWithWildcard += L"*";
-
-    BeFileListIterator  fileList (schemaPathWithWildcard.c_str(), false);
-    BeFileName          filePath;
-    uint32_t currentMinorVersion=0;
-
-    while (SUCCESS == fileList.GetNextFileName (filePath))
-        {
-        WCharCP     fileName = filePath.GetName();
-
-        if (!useLatestCompatibleMatch)
-            {
-            fullFileName = fileName;
-            return ECObjectsStatus::Success;
-            }
-
-        if (fullFileName.empty())
-            {
-            fullFileName = fileName;
-            GetMinorVersionFromSchemaFileName (foundMinorVersion, fileName);
-            continue;
-            }
-
-        if (ECObjectsStatus::Success != GetMinorVersionFromSchemaFileName (currentMinorVersion, fileName))
-            continue;
-
-        if (currentMinorVersion > foundMinorVersion)
-            {
-            foundMinorVersion = currentMinorVersion;
-            fullFileName = fileName;
-            }
-        }
-
-    if (fullFileName.empty())
-        return ECObjectsStatus::Error;
-
-    return ECObjectsStatus::Success;
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr       SearchPathSchemaFileLocater::FindMatchingSchema
-(
-WStringCR                       schemaMatchExpression,
-SchemaKeyR                      key,
-ECSchemaReadContextR            schemaContext,
-SchemaMatchType                 matchType,
-bvector<WString>&               searchPaths
-)
-    {
-    for (WString schemaPathStr: searchPaths)
-        {
-        BeFileName schemaPath (schemaPathStr.c_str());
-        schemaPath.AppendToPath (schemaMatchExpression.c_str());
-        LOG.debugv (L"Checking for existence of %ls...", schemaPath.GetName());
-
-        //Finds latest
-        SchemaKey foundKey(key);
-        WString fullFileName;
-        if (ECObjectsStatus::Success != GetSchemaFileName (fullFileName, foundKey.m_versionMinor, schemaPath,  matchType == SCHEMAMATCHTYPE_LatestCompatible))
-            continue;
-
-        ECSchemaPtr schemaOut = nullptr;
-        //Check if schema is compatible before reading, as reading it would add the schema to the cache.
-        if (!foundKey.Matches(key, matchType))
-            {
-            if (schemaContext.m_acceptLegacyImperfectLatestCompatibleMatch && matchType == SCHEMAMATCHTYPE_LatestCompatible &&
-                0 == foundKey.m_schemaName.CompareTo(key.m_schemaName) && foundKey.m_versionMajor == key.m_versionMajor)
-                {
-                // See if this imperfect match ECSchema has is already cached (so we can avoid loading it, below)
-
-                //We found a different key;
-                if (matchType != SCHEMAMATCHTYPE_Exact)
-                    schemaOut = schemaContext.GetFoundSchema(foundKey, SCHEMAMATCHTYPE_Exact);
-
-                if (schemaOut.IsValid())
-                    {
-                    key.m_versionMinor = foundKey.m_versionMinor;
-                    return schemaOut;
-                    }
-                LOG.warningv (L"Located %ls, which does not meet 'latest compatible' criteria to match %ls, but is being accepted because some legacy schemas are known to require this",
-                                                  fullFileName.c_str(), key.GetFullSchemaName().c_str());
-                }
-            else
-                {
-                LOG.warningv (L"Located %ls, but it does not meet 'latest compatible' criteria to match %ls. Caller can use acceptImperfectLegacyMatch to cause it to be accepted.",
-                                                  fullFileName.c_str(), key.GetFullSchemaName().c_str());
-                continue;
-                }
-            }
-
-        if (SchemaReadStatus::Success != ECSchema::ReadFromXmlFile (schemaOut, fullFileName.c_str(), schemaContext))
-            continue;
-
-        LOG.debugv (L"Located %ls...", fullFileName.c_str());
-        // Now check this same path for supplemental schemas
-        bvector<ECSchemaP> supplementalSchemas;
-        TryLoadingSupplementalSchemas(key.m_schemaName.c_str(), schemaPathStr, schemaContext, supplementalSchemas);
-        
-        // Check for localization supplementals
-        for(WString culture : *(schemaContext.GetCultures()))
-            {
-            if(culture.Equals(L"en")) // not sure
-                continue;
-            BeFileName locDir(schemaPathStr.c_str());
-            locDir.AppendToPath(culture.c_str());
-            TryLoadingSupplementalSchemas(key.m_schemaName.c_str(), locDir, schemaContext, supplementalSchemas);
-            }
-        if (supplementalSchemas.size() > 0)
-            {
-            ECN::SupplementedSchemaBuilder builder;
-            builder.UpdateSchema(*schemaOut, supplementalSchemas);
-            }
-
-        return schemaOut;
-        }
-
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SearchPathSchemaFileLocater::TryLoadingSupplementalSchemas
@@ -1582,14 +1430,15 @@ bvector<ECSchemaP>& supplementalSchemas
         supplementalSchemas.push_back(schemaOut.get());
         }
 
+    BeFileName schemaPath2(schemaFilePath.c_str());
     filter.AssignUtf8(schemaName.c_str());
     filter += L"_Supplemental_*.*.*.*.ecschema.xml";
-    schemaPath.AppendToPath(filter.c_str());
-    BeFileListIterator fileList(schemaPath.GetName(), false);
-    BeFileName filePath;
-    while (SUCCESS == fileList.GetNextFileName(filePath))
+    schemaPath2.AppendToPath(filter.c_str());
+    BeFileListIterator fileList2(schemaPath2.GetName(), false);
+    BeFileName filePath2;
+    while (SUCCESS == fileList2.GetNextFileName(filePath2))
         {
-        WCharCP     fileName = filePath.GetName();
+        WCharCP     fileName = filePath2.GetName();
         ECSchemaPtr schemaOut = NULL;
 
         if (SchemaReadStatus::Success != ECSchema::ReadFromXmlFile(schemaOut, fileName, schemaContext))
@@ -1621,11 +1470,16 @@ SearchPathSchemaFileLocaterPtr SearchPathSchemaFileLocater::CreateSearchPathSche
 void SearchPathSchemaFileLocater::AddCandidateSchemas
 (
 bvector<CandidateSchema>& foundFiles,
-BeFileName& fileExpression,
+WStringCR schemaPath,
+WStringCR fileFilter,
 SchemaKeyR desiredSchemaKey,
-SchemaMatchType matchType
+SchemaMatchType matchType,
+ECSchemaReadContextCR schemaContext
 )
     {
+    BeFileName fileExpression(schemaPath.c_str());
+    fileExpression.AppendToPath(fileFilter.c_str());
+
     LOG.debugv(L"Checking for existence of %ls...", fileExpression.GetName());
 
     BeFileListIterator  fileList(fileExpression.c_str(), false);
@@ -1642,17 +1496,27 @@ SchemaMatchType matchType
             continue;
             }
 
-        if (!key.Matches(desiredSchemaKey, matchType))
-            continue;
-
-        foundFiles.push_back(CandidateSchema());
-        auto& candidate = foundFiles.back();
-        candidate.FileName = filePath;
-        candidate.Key = key;
+        //If key matches, OR the legacy compatible match evaluates true
+        if (key.Matches(desiredSchemaKey, matchType) ||
+            (schemaContext.m_acceptLegacyImperfectLatestCompatibleMatch && matchType == SCHEMAMATCHTYPE_LatestCompatible &&
+             0 == key.m_schemaName.CompareTo(desiredSchemaKey.m_schemaName) && key.m_versionMajor == desiredSchemaKey.m_versionMajor))
+            {
+            foundFiles.push_back(CandidateSchema());
+            auto& candidate = foundFiles.back();
+            candidate.FileName = filePath;
+            candidate.Key = key;
+            candidate.SearchPath = schemaPath;
+            }
         }
     }
 
-void SearchPathSchemaFileLocater::FindEligibleSchemaFiles(bvector<CandidateSchema>& foundFiles, SchemaKeyR desiredSchemaKey, SchemaMatchType matchType)
+void SearchPathSchemaFileLocater::FindEligibleSchemaFiles
+(
+bvector<CandidateSchema>& foundFiles,
+SchemaKeyR desiredSchemaKey,
+SchemaMatchType matchType,
+ECSchemaReadContextCR schemaContext
+)
     {
     Utf8CP schemaName = desiredSchemaKey.m_schemaName.c_str();
     WString twoVersionExpression;
@@ -1690,13 +1554,8 @@ void SearchPathSchemaFileLocater::FindEligibleSchemaFiles(bvector<CandidateSchem
 
     for (WString schemaPathStr : m_searchPaths)
         {
-        BeFileName schemaPath(schemaPathStr.c_str());
-        schemaPath.AppendToPath(twoVersionExpression.c_str());
-        AddCandidateSchemas(foundFiles, schemaPath, desiredSchemaKey, matchType);
-        
-        BeFileName threeVersionSchemaPath(schemaPathStr.c_str());
-        threeVersionSchemaPath.AppendToPath(threeVersionExpression.c_str());
-        AddCandidateSchemas(foundFiles, threeVersionSchemaPath, desiredSchemaKey, matchType);
+        AddCandidateSchemas(foundFiles, schemaPathStr, twoVersionExpression, desiredSchemaKey, matchType, schemaContext);
+        AddCandidateSchemas(foundFiles, schemaPathStr, threeVersionExpression, desiredSchemaKey, matchType, schemaContext);
         }
     }
 
@@ -1721,7 +1580,7 @@ bool SearchPathSchemaFileLocater::SchemyKeyIsLessByVersion(CandidateSchema const
 ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext)
     {
     bvector<CandidateSchema> eligibleSchemaFiles;
-    FindEligibleSchemaFiles(eligibleSchemaFiles, key, matchType);
+    FindEligibleSchemaFiles(eligibleSchemaFiles, key, matchType, schemaContext);
     
     size_t resultCount = eligibleSchemaFiles.size();
     if (resultCount == 0)
@@ -1730,7 +1589,38 @@ ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMat
     auto& schemaToLoad = *std::max_element(eligibleSchemaFiles.begin(), eligibleSchemaFiles.end(), SchemyKeyIsLessByVersion);
     LOG.debugv(L"Attempting to load schema %ls...", schemaToLoad.FileName.GetName());
 
-    return nullptr;
+    //Get cached version of the schema
+    ECSchemaPtr schemaOut = schemaContext.GetFoundSchema(schemaToLoad.Key, SCHEMAMATCHTYPE_Exact);;
+    if (schemaOut.IsValid())
+        return schemaOut;
+     
+    if (SchemaReadStatus::Success != ECSchema::ReadFromXmlFile(schemaOut, schemaToLoad.FileName.c_str(), schemaContext))
+        return nullptr;
+
+    LOG.debugv(L"Located %ls...", schemaToLoad.FileName.c_str());
+
+    // Now check this same path for supplemental schemas
+    bvector<ECSchemaP> supplementalSchemas;
+    TryLoadingSupplementalSchemas(schemaToLoad.Key.m_schemaName.c_str(), schemaToLoad.SearchPath, schemaContext, supplementalSchemas);
+
+    // Check for localization supplementals
+    for (WString culture : *(schemaContext.GetCultures()))
+        {
+        if (culture.Equals(L"en")) // not sure
+            continue;
+
+        BeFileName locDir(schemaToLoad.SearchPath.c_str());
+        locDir.AppendToPath(culture.c_str());
+        TryLoadingSupplementalSchemas(key.m_schemaName.c_str(), locDir, schemaContext, supplementalSchemas);
+        }
+
+    if (supplementalSchemas.size() > 0)
+        {
+        ECN::SupplementedSchemaBuilder builder;
+        builder.UpdateSchema(*schemaOut, supplementalSchemas);
+        }
+
+    return schemaOut;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2393,7 +2283,7 @@ ECSchemaP       ECSchemaCache::GetSchema(SchemaKeyCR key, SchemaMatchType matchT
         }
 
     if (iter == m_schemas.end())
-        return NULL;
+        return nullptr;
 
     return iter->second.get();
     }

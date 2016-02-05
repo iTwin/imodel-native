@@ -19,6 +19,7 @@
 #include <Bentley/bvector.h>
 #include <Bentley/bmap.h>
 #include <Bentley/bset.h>
+#include <Bentley/BeFileName.h>
 
 #define DEFAULT_VERSION_MAJOR       1
 #define DEFAULT_VERSION_MIDDLE      0
@@ -2650,6 +2651,7 @@ private:
     struct CandidateSchema
         {
         BeFileName FileName;
+        WString SearchPath;
         SchemaKey Key;
         };
 
@@ -2658,8 +2660,24 @@ private:
     virtual ~SearchPathSchemaFileLocater();
     static bool TryLoadingSupplementalSchemas(Utf8StringCR schemaName, WStringCR schemaFilePath, ECSchemaReadContextR schemaContext, bvector<ECSchemaP>& supplementalSchemas);
 
-    void FindEligibleSchemaFiles(bvector<CandidateSchema>& foundFiles, SchemaKeyR desiredSchemaKey, SchemaMatchType matchType);
-    void AddCandidateSchemas(bvector<CandidateSchema>& foundFiles, BeFileName& fileExpression, SchemaKeyR desiredSchemaKey, SchemaMatchType matchType);
+    void FindEligibleSchemaFiles
+    (
+    bvector<CandidateSchema>& foundFiles, 
+    SchemaKeyR desiredSchemaKey, 
+    SchemaMatchType matchType, 
+    ECSchemaReadContextCR schemaContext
+    );
+
+    void AddCandidateSchemas
+    (
+    bvector<CandidateSchema>& foundFiles,
+    WStringCR schemaPath,
+    WStringCR fileFilter,
+    SchemaKeyR desiredSchemaKey,
+    SchemaMatchType matchType,
+    ECSchemaReadContextCR schemaContext
+    );
+
     static bool SchemyKeyIsLessByVersion(CandidateSchema const& first, CandidateSchema const& second);
 
 protected:
