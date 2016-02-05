@@ -12,9 +12,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                02/2016
 //+---------------+---------------+---------------+---------------+---------------+-
-std::vector<ECDbSqlColumn*> PropertyMapSystem::ToVector(ECDbSqlColumn* column)
+std::vector<ECDbSqlColumn const*> PropertyMapSystem::ToVector(ECDbSqlColumn const* column)
     {
-    std::vector<ECDbSqlColumn*> tmp;
+    std::vector<ECDbSqlColumn const*> tmp;
     tmp.push_back(column);
     return std::move(tmp);
     }
@@ -22,12 +22,12 @@ std::vector<ECDbSqlColumn*> PropertyMapSystem::ToVector(ECDbSqlColumn* column)
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                02/2016
 //+---------------+---------------+---------------+---------------+---------------+-
-std::vector<std::weak_ptr<ECDbSqlColumn>>&& PropertyMapSystem::ToWeakPtr(std::vector<ECDbSqlColumn*>const& columns)
+std::vector<std::weak_ptr<ECDbSqlColumn>>&& PropertyMapSystem::ToWeakPtr(std::vector<ECDbSqlColumn const*>const& columns)
     {
     std::vector<std::weak_ptr<ECDbSqlColumn>> tmp;
-    for (auto column : columns)
+    for (ECDbSqlColumn const* column : columns)
         {
-        if (column)
+        if (column != nullptr)
             tmp.push_back(column->GetWeakPtr());
         }
 
@@ -37,13 +37,13 @@ std::vector<std::weak_ptr<ECDbSqlColumn>>&& PropertyMapSystem::ToWeakPtr(std::ve
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
-PropertyMapSystem::PropertyMapSystem(ECPropertyCR ecProperty, std::vector<ECDbSqlColumn*> columns, ECSqlSystemProperty kind)
+PropertyMapSystem::PropertyMapSystem(ECPropertyCR ecProperty, std::vector<ECDbSqlColumn const*> columns, ECSqlSystemProperty kind)
     : PropertyMap(ecProperty, ecProperty.GetName().c_str(), nullptr), m_kind(kind)
     {
     std::set<ECDbSqlTable const*> tables;
-    for (auto column : columns)
+    for (ECDbSqlColumn const* column : columns)
         {
-        if (column)
+        if (column != nullptr)
             {
             m_columns.push_back(column->GetWeakPtr());
             if (tables.find(&column->GetTable()) == tables.end())
@@ -147,7 +147,7 @@ Utf8CP const PropertyMapECInstanceId::PROPERTYACCESSSTRING = "ECInstanceId";
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                06/2013
 //+---------------+---------------+---------------+---------------+---------------+-
-PropertyMapECInstanceId::PropertyMapECInstanceId (ECPropertyCR ecInstanceIdProperty, ClassMap const& classMap, std::vector<ECDbSqlColumn*> columns)
+PropertyMapECInstanceId::PropertyMapECInstanceId (ECPropertyCR ecInstanceIdProperty, ClassMap const& classMap, std::vector<ECDbSqlColumn const*> columns)
 : PropertyMapSystem (ecInstanceIdProperty, std::move(columns), ECSqlSystemProperty::ECInstanceId)
     {
    
@@ -156,7 +156,7 @@ PropertyMapECInstanceId::PropertyMapECInstanceId (ECPropertyCR ecInstanceIdPrope
     m_mappedTables.insert(m_mappedTables.begin(), tables.begin(), tables.end());
     }
 
-PropertyMapPtr PropertyMapECInstanceId::Create(ECDbSchemaManagerCR schemaManager, ClassMap const& classMap, std::vector<ECDbSqlColumn*> columns)
+PropertyMapPtr PropertyMapECInstanceId::Create(ECDbSchemaManagerCR schemaManager, ClassMap const& classMap, std::vector<ECDbSqlColumn const*> columns)
     {
     ECPropertyCP property = ECDbSystemSchemaHelper::GetSystemProperty(schemaManager, ECSqlSystemProperty::ECInstanceId);
     if (property == nullptr)
@@ -182,9 +182,7 @@ PropertyMapPtr PropertyMapECInstanceId::Create (ECDbSchemaManagerCR schemaManage
         return nullptr;
         }
 
-    std::vector<ECDbSqlColumn*> tmp; 
-    tmp.push_back(const_cast<ECDbSqlColumn*>(systemColumns.front()));
-    return new PropertyMapECInstanceId (*property, classMap, tmp);
+    return new PropertyMapECInstanceId (*property, classMap, systemColumns);
     }
 
 //----------------------------------------------------------------------------------
@@ -201,7 +199,7 @@ Utf8String PropertyMapECInstanceId::_ToString () const
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
-PropertyMapStructArrayTableKey::PropertyMapStructArrayTableKey (ECPropertyCR ecProperty, std::vector<ECDbSqlColumn*> columns, ECSqlSystemProperty kind)
+PropertyMapStructArrayTableKey::PropertyMapStructArrayTableKey (ECPropertyCR ecProperty, std::vector<ECDbSqlColumn const*> columns, ECSqlSystemProperty kind)
 : PropertyMapSystem (ecProperty, std::move(columns), kind)
  {}
 
@@ -234,8 +232,8 @@ PropertyMapPtr PropertyMapStructArrayTableKey::Create (ECDbSchemaManagerCR schem
         return nullptr;
         }
 
-    ECDbSqlColumn* systemColumn = nullptr;
-    for (auto& column : systemColumns)
+    ECDbSqlColumn const* systemColumn = nullptr;
+    for (ECDbSqlColumn const* column : systemColumns)
         {
         bool found = false;
         switch (kind)
@@ -274,7 +272,7 @@ PropertyMapPtr PropertyMapStructArrayTableKey::Create (ECDbSchemaManagerCR schem
 
         if (found)
             {
-            systemColumn = const_cast<ECDbSqlColumn*>(column);
+            systemColumn = column;
             break;
             }
         }
@@ -301,7 +299,7 @@ Utf8String PropertyMapStructArrayTableKey::_ToString () const
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                08/2013
 //+---------------+---------------+---------------+---------------+---------------+-
-PropertyMapRelationshipConstraint::PropertyMapRelationshipConstraint(ECN::ECPropertyCR constraintProperty, std::vector<ECDbSqlColumn*> columns, ECSqlSystemProperty kind, Utf8CP endTableColumnAlias)
+PropertyMapRelationshipConstraint::PropertyMapRelationshipConstraint(ECN::ECPropertyCR constraintProperty, std::vector<ECDbSqlColumn const*> columns, ECSqlSystemProperty kind, Utf8CP endTableColumnAlias)
     : PropertyMapSystem(constraintProperty, std::move(columns), kind),m_viewColumnAlias(endTableColumnAlias)
     {}
 
@@ -321,7 +319,7 @@ void PropertyMapRelationshipConstraint::AppendSelectClauseSqlSnippetForView (Nat
 //----------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle             01/2014
 //+---------------+---------------+---------------+---------------+---------------+-
-PropertyMapRelationshipConstraintECInstanceId::PropertyMapRelationshipConstraintECInstanceId (ECPropertyCR constraintProperty, std::vector<ECDbSqlColumn*> columns, ECSqlSystemProperty kind, Utf8CP endTableColumnAlias)
+PropertyMapRelationshipConstraintECInstanceId::PropertyMapRelationshipConstraintECInstanceId (ECPropertyCR constraintProperty, std::vector<ECDbSqlColumn const*> columns, ECSqlSystemProperty kind, Utf8CP endTableColumnAlias)
 : PropertyMapRelationshipConstraint (constraintProperty, columns, kind, endTableColumnAlias)
     {}
 
@@ -329,7 +327,7 @@ PropertyMapRelationshipConstraintECInstanceId::PropertyMapRelationshipConstraint
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                08/2013
 //+---------------+---------------+---------------+---------------+---------------+-
-PropertyMapPtr PropertyMapRelationshipConstraintECInstanceId::Create (ECRelationshipEnd constraintEnd, ECDbSchemaManagerCR schemaManager, std::vector<ECDbSqlColumn*> columns, Utf8CP endTableColumnAlias)
+PropertyMapPtr PropertyMapRelationshipConstraintECInstanceId::Create (ECRelationshipEnd constraintEnd, ECDbSchemaManagerCR schemaManager, std::vector<ECDbSqlColumn const*> columns, Utf8CP endTableColumnAlias)
     {
     auto kind = constraintEnd == ECN::ECRelationshipEnd_Source ? ECSqlSystemProperty::SourceECInstanceId : ECSqlSystemProperty::TargetECInstanceId;
     auto prop = ECDbSystemSchemaHelper::GetSystemProperty (schemaManager, kind);
@@ -377,7 +375,7 @@ Utf8String PropertyMapRelationshipConstraintECInstanceId::_ToString () const
 PropertyMapRelationshipConstraintClassId::PropertyMapRelationshipConstraintClassId
 (
 ECN::ECPropertyCR constraintProperty,
-std::vector<ECDbSqlColumn*> columns,
+std::vector<ECDbSqlColumn const*> columns,
 ECSqlSystemProperty kind,
 ECClassId defaultConstraintECClassId,
 ClassMap const& classMap, 
@@ -387,7 +385,7 @@ bool colIsDelayGenerated
 : PropertyMapRelationshipConstraint (constraintProperty, columns, kind, endTableColumnAlias),
 m_defaultConstraintClassId (defaultConstraintECClassId), m_isMappedToClassMapTables(false)
     {
-    for (auto& column : columns)
+    for (ECDbSqlColumn const* column : columns)
         {
         m_isMappedToClassMapTables = classMap.IsMappedTo(column->GetTable());
 
@@ -425,7 +423,7 @@ m_defaultConstraintClassId (defaultConstraintECClassId), m_isMappedToClassMapTab
 // @bsimethod                                 Affan.Khan                11/2013
 //+---------------+---------------+---------------+---------------+---------------+-
 RefCountedPtr<PropertyMapRelationshipConstraintClassId> PropertyMapRelationshipConstraintClassId::Create(ECRelationshipEnd constraintEnd, ECDbSchemaManagerCR schemaManager,
-                        std::vector<ECDbSqlColumn*> columns, ECClassId defaultSourceECClassId, ClassMap const& classMap, Utf8CP endTableColumnAlias, bool colIsDelayGenerated)
+                        std::vector<ECDbSqlColumn const*> columns, ECClassId defaultSourceECClassId, ClassMap const& classMap, Utf8CP endTableColumnAlias, bool colIsDelayGenerated)
     {
     auto kind = constraintEnd == ECN::ECRelationshipEnd_Source ? ECSqlSystemProperty::SourceECClassId : ECSqlSystemProperty::TargetECClassId;
     auto prop = ECDbSystemSchemaHelper::GetSystemProperty(schemaManager, kind);

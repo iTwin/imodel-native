@@ -202,12 +202,12 @@ ECDbSqlPrimaryKeyConstraint* ECDbSqlTable::GetPrimaryKeyConstraint (bool createI
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-ECDbSqlForeignKeyConstraint* ECDbSqlTable::CreateForeignKeyConstraint (ECDbSqlTable const& targetTable)
+ECDbSqlForeignKeyConstraint* ECDbSqlTable::CreateForeignKeyConstraint (ECDbSqlTable const& referencedTable)
     {
     if (GetEditHandleR ().AssertNotInEditMode ())
         return nullptr;
 
-    ECDbSqlForeignKeyConstraint * constraint = new ECDbSqlForeignKeyConstraint (*this, targetTable, GetDbDefR ().GetManagerR ().GetIdGenerator ().NextConstraintId ());
+    ECDbSqlForeignKeyConstraint * constraint = new ECDbSqlForeignKeyConstraint (*this, referencedTable, GetDbDefR ().GetManagerR ().GetIdGenerator ().NextConstraintId ());
     m_constraints.push_back (std::unique_ptr<ECDbSqlConstraint> (constraint));
     return constraint;
     }
@@ -845,17 +845,17 @@ BentleyStatus ECDbSqlPrimaryKeyConstraint::Remove (Utf8CP columnName)
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDbSqlForeignKeyConstraint::ContainsInSource (Utf8CP columnName) const
+bool ECDbSqlForeignKeyConstraint::ContainsInFkColumns (Utf8CP columnName) const
     {
-    return std::find_if (m_sourceColumns.begin (), m_sourceColumns.end (), [columnName] (ECDbSqlColumn const* column){ return column->GetName ().EqualsI (columnName); }) != m_sourceColumns.end ();
+    return std::find_if (m_fkColumns.begin (), m_fkColumns.end (), [columnName] (ECDbSqlColumn const* column){ return column->GetName ().EqualsI (columnName); }) != m_fkColumns.end ();
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDbSqlForeignKeyConstraint::ContainsInTarget (Utf8CP columnName) const
+bool ECDbSqlForeignKeyConstraint::ContainsInReferencedTableColumns (Utf8CP columnName) const
     {
-    return std::find_if (m_targetColumns.begin (), m_targetColumns.end (), [columnName] (ECDbSqlColumn const* column){ return column->GetName ().EqualsI (columnName); }) != m_targetColumns.end ();
+    return std::find_if (m_referencedTableColumns.begin (), m_referencedTableColumns.end (), [columnName] (ECDbSqlColumn const* column){ return column->GetName ().EqualsI (columnName); }) != m_referencedTableColumns.end ();
     }
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      09/2014
@@ -906,37 +906,37 @@ ForeignKeyActionType ECDbSqlForeignKeyConstraint::ToActionType(Utf8CP str)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlForeignKeyConstraint::Remove (Utf8CP sourceColumn, Utf8CP targetColumn)
+BentleyStatus ECDbSqlForeignKeyConstraint::Remove (Utf8CP fkColumnName, Utf8CP referencedTableColumnName)
     {
     bool cont;
-    bool hasSouceColumn = !Utf8String::IsNullOrEmpty (sourceColumn);
-    bool hasTargetColumn = !Utf8String::IsNullOrEmpty (targetColumn);
-    auto size = m_sourceColumns.size ();
+    bool hasFkColumnName = !Utf8String::IsNullOrEmpty (fkColumnName);
+    bool hasReferencedTableColumnName = !Utf8String::IsNullOrEmpty (referencedTableColumnName);
+    size_t size = m_fkColumns.size ();
     do{
         cont = false;
-        for (size_t i = 0; i < m_sourceColumns.size (); i++)
+        for (size_t i = 0; i < m_fkColumns.size (); i++)
             {
-            if (hasSouceColumn && !hasTargetColumn)
+            if (hasFkColumnName && !hasReferencedTableColumnName)
                 {
-                if (m_sourceColumns[i]->GetName () == sourceColumn)
+                if (m_fkColumns[i]->GetName () == fkColumnName)
                     {
                     Remove (i);
                     cont = true;
                     break;
                     }
                 }
-            else if (!hasSouceColumn && hasTargetColumn)
+            else if (!hasFkColumnName && hasReferencedTableColumnName)
                 {
-                if (m_targetColumns[i]->GetName () == targetColumn)
+                if (m_referencedTableColumns[i]->GetName () == referencedTableColumnName)
                     {
                     Remove (i);
                     cont = true;
                     break;
                     }
                 }
-            else if (hasSouceColumn && hasTargetColumn)
+            else if (hasFkColumnName && hasReferencedTableColumnName)
                 {
-                if (m_sourceColumns[i]->GetName () == sourceColumn && m_targetColumns[i]->GetName () == targetColumn)
+                if (m_fkColumns[i]->GetName () == fkColumnName && m_referencedTableColumns[i]->GetName () == referencedTableColumnName)
                     {
                     Remove (i);
                     cont = true;
@@ -946,54 +946,51 @@ BentleyStatus ECDbSqlForeignKeyConstraint::Remove (Utf8CP sourceColumn, Utf8CP t
             }
         } while (cont);
 
-    return size != m_sourceColumns.size () ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;
+    return size != m_fkColumns.size () ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlForeignKeyConstraint::Add (Utf8CP sourceColumn, Utf8CP targetColumn)
+BentleyStatus ECDbSqlForeignKeyConstraint::Add(Utf8CP fkColumnName, Utf8CP referencedTableColumnName)
     {
-    if (Utf8String::IsNullOrEmpty (sourceColumn) || Utf8String::IsNullOrEmpty (targetColumn))
+    if (Utf8String::IsNullOrEmpty(fkColumnName) || Utf8String::IsNullOrEmpty(referencedTableColumnName))
         {
-        BeAssert (false && "Source and target column cannot be empty of null");
+        BeAssert(false && "fkColumnName and target column cannot be empty of null");
         return BentleyStatus::ERROR;
         }
 
-    auto source = GetSourceTable ().FindColumnCP (sourceColumn);
-    auto target = GetTargetTable ().FindColumnCP (targetColumn);
+    ECDbSqlColumn const* fkColumn = GetForeignKeyTable().FindColumnCP(fkColumnName);
+    ECDbSqlColumn const* referencedTableColumn = GetReferencedTable().FindColumnCP(referencedTableColumnName);
 
-    if (source == nullptr || target == nullptr)
+    if (fkColumn == nullptr || referencedTableColumn == nullptr)
         {
-        BeAssert(source != nullptr && "Failed to resolve sourceColumn in sourceTable while creating foreignKey constraint");
-        BeAssert(target != nullptr && "Failed to resolve targetColumn in targetTable while creating foreignKey constraint");
-        return BentleyStatus::ERROR;
+        BeAssert(fkColumn != nullptr && "Failed to resolve fkColumnName in fk table while creating foreignKey constraint");
+        BeAssert(referencedTableColumn != nullptr && "Failed to resolve referencedTableColumnName in referenced table while creating foreignKey constraint");
+        return ERROR;
         }
 
-    if (source->GetPersistenceType () == PersistenceType::Virtual)
+    if (fkColumn->GetPersistenceType() == PersistenceType::Virtual)
         {
-        BeAssert (false && "Virtual column cannot be use as foreign key");
-        return BentleyStatus::ERROR;
+        BeAssert(false && "Virtual column cannot be use as foreign key");
+        return ERROR;
         }
 
-    if (target->GetPersistenceType () == PersistenceType::Virtual)
+    if (referencedTableColumn->GetPersistenceType() == PersistenceType::Virtual)
         {
-        BeAssert (false && "Virtual column cannot be use as foreign key");
-        return BentleyStatus::ERROR;
-        }
-   
-    for (size_t i = 0; i < m_sourceColumns.size (); i++)
-        {
-        if (m_sourceColumns[i]->GetName ().EqualsI (sourceColumn) && m_targetColumns[i]->GetName ().EqualsI (targetColumn))
-            {
-            return BentleyStatus::SUCCESS;
-            }
+        BeAssert(false && "Virtual column cannot be use as foreign key");
+        return ERROR;
         }
 
-    m_sourceColumns.push_back (source);
-    m_targetColumns.push_back (target);
-        
-    return BentleyStatus::SUCCESS;
+    for (size_t i = 0; i < m_fkColumns.size(); i++)
+        {
+        if (m_fkColumns[i]->GetName().EqualsI(fkColumnName) && m_referencedTableColumns[i]->GetName().EqualsI(referencedTableColumnName))
+            return SUCCESS;
+        }
+
+    m_fkColumns.push_back(fkColumn);
+    m_referencedTableColumns.push_back(referencedTableColumn);
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1001,7 +998,7 @@ BentleyStatus ECDbSqlForeignKeyConstraint::Add (Utf8CP sourceColumn, Utf8CP targ
 //---------------------------------------------------------------------------------------
 bool ECDbSqlForeignKeyConstraint::IsDuplicate() const
     {
-    for (auto constraint : GetSourceTable().GetConstraints())
+    for (auto constraint : GetForeignKeyTable().GetConstraints())
         {
         if (constraint->GetType() == ECDbSqlConstraint::Type::ForeignKey)
             {
@@ -1009,7 +1006,7 @@ bool ECDbSqlForeignKeyConstraint::IsDuplicate() const
             if (fkConstraint == this)
                 continue;
 
-            if (Equalls(*fkConstraint))
+            if (Equals(*fkConstraint))
                 return true;
             }
         }
@@ -1023,13 +1020,13 @@ bool ECDbSqlForeignKeyConstraint::IsDuplicate() const
 void ECDbSqlForeignKeyConstraint::RemoveIfDuplicate()
     {
     if (IsDuplicate())
-        const_cast<ECDbSqlTable&>(GetSourceTable()).RemoveConstraint(*this);
+        const_cast<ECDbSqlTable&>(GetForeignKeyTable()).RemoveConstraint(*this);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-bool ECDbSqlForeignKeyConstraint::Equalls(ECDbSqlForeignKeyConstraint const& rhs) const
+bool ECDbSqlForeignKeyConstraint::Equals(ECDbSqlForeignKeyConstraint const& rhs) const
     {
     if (&rhs == this)
         return true;
@@ -1040,26 +1037,26 @@ bool ECDbSqlForeignKeyConstraint::Equalls(ECDbSqlForeignKeyConstraint const& rhs
     if (rhs.m_onUpdateAction != m_onUpdateAction)
         return false;
 
-    if (rhs.m_sourceColumns.size() != m_sourceColumns.size())
+    if (rhs.m_fkColumns.size() != m_fkColumns.size())
         return false;
 
-    if (&this->GetSourceTable() != &GetSourceTable())
+    if (&this->GetForeignKeyTable() != &GetForeignKeyTable())
         return false;
 
-    if (&this->GetTargetTable() != &GetTargetTable())
+    if (&this->GetReferencedTable() != &GetReferencedTable())
         return false;
 
-    std::set<ECDbSqlColumn const*> rhsSourceColumns = std::set<ECDbSqlColumn const*>(rhs.m_sourceColumns.begin(), rhs.m_sourceColumns.end());
-    std::set<ECDbSqlColumn const*> rhsTargetColumns = std::set<ECDbSqlColumn const*>(rhs.m_targetColumns.begin(), rhs.m_targetColumns.end());
-    for (auto col : m_sourceColumns)
+    std::set<ECDbSqlColumn const*> rhsFkColumns = std::set<ECDbSqlColumn const*>(rhs.m_fkColumns.begin(), rhs.m_fkColumns.end());
+    std::set<ECDbSqlColumn const*> rhsReferencedTableColumns = std::set<ECDbSqlColumn const*>(rhs.m_referencedTableColumns.begin(), rhs.m_referencedTableColumns.end());
+    for (auto col : m_fkColumns)
         {
-        if (rhsSourceColumns.find(col) == rhsSourceColumns.end())
+        if (rhsFkColumns.find(col) == rhsFkColumns.end())
             return false;
         }
 
-    for (auto col : m_targetColumns)
+    for (auto col : m_referencedTableColumns)
         {
-        if (rhsTargetColumns.find(col) == rhsTargetColumns.end())
+        if (rhsReferencedTableColumns.find(col) == rhsReferencedTableColumns.end())
             return false;
         }
 
@@ -1068,13 +1065,13 @@ bool ECDbSqlForeignKeyConstraint::Equalls(ECDbSqlForeignKeyConstraint const& rhs
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlForeignKeyConstraint::Remove (size_t index)
+BentleyStatus ECDbSqlForeignKeyConstraint::Remove(size_t index)
     {
-    if (index >= m_sourceColumns.size ())
+    if (index >= m_fkColumns.size())
         return BentleyStatus::ERROR;
 
-    m_sourceColumns.erase (m_sourceColumns.begin () + index);
-    m_targetColumns.erase (m_targetColumns.begin () + index);
+    m_fkColumns.erase(m_fkColumns.begin() + index);
+    m_referencedTableColumns.erase(m_referencedTableColumns.begin() + index);
     return BentleyStatus::SUCCESS;
     }
 
@@ -1183,10 +1180,10 @@ BentleyStatus DDLGenerator::AddColumns(ECDbR ecdb, ECDbSqlTable const& table, st
             if (constraint->GetType() == ECDbSqlConstraint::Type::ForeignKey)
                 {
                 auto fk = static_cast<ECDbSqlForeignKeyConstraint const*> (constraint);
-                if (fk->ContainsInSource(newColumn) && fk->GetSourceColumns().size() == 1 && fk->GetTargetColumns().size() == 1)
+                if (fk->ContainsInFkColumns(newColumn) && fk->GetFkColumns().size() == 1 && fk->GetReferencedTableColumns().size() == 1)
                     {
                     Utf8String fkDefinition;
-                    fkDefinition.Sprintf(" REFERENCES %s (%s) ", fk->GetTargetTable().GetName().c_str(), fk->GetTargetColumns().front()->GetName().c_str());
+                    fkDefinition.Sprintf(" REFERENCES %s (%s) ", fk->GetReferencedTable().GetName().c_str(), fk->GetReferencedTableColumns().front()->GetName().c_str());
                     if (fk->GetOnDeleteAction() != ForeignKeyActionType::NotSpecified)
                         {
                         fkDefinition.append(" ON DELETE ");
@@ -1334,24 +1331,24 @@ Utf8String DDLGenerator::GetColumnList (std::vector<ECDbSqlColumn const*> const&
 //static 
 Utf8String DDLGenerator::GetForeignKeyConstraintDDL (ECDbSqlForeignKeyConstraint const& constraint)
     {
-    if (constraint.GetSourceColumns ().size () != constraint.GetTargetColumns ().size ())
+    if (constraint.GetFkColumns ().size () != constraint.GetReferencedTableColumns ().size ())
         {
         BeAssert (false && "Key columns does not match");
         return "";
         }
 
-    if (constraint.GetSourceColumns ().size () == 0 || constraint.GetTargetColumns ().size () == 0)
+    if (constraint.GetFkColumns ().size () == 0 || constraint.GetReferencedTableColumns ().size () == 0)
         {
         BeAssert (false && "Key columns are empty");
         return "";
         }
 
     Utf8String sql = "FOREIGN KEY (";
-    sql.append (GetColumnList (constraint.GetSourceColumns ()))
+    sql.append (GetColumnList (constraint.GetFkColumns ()))
         .append (") REFERENCES [")
-        .append (constraint.GetTargetTable ().GetName ())
+        .append (constraint.GetReferencedTable().GetName ())
         .append ("] (")
-        .append (GetColumnList (constraint.GetTargetColumns ()))
+        .append (GetColumnList (constraint.GetReferencedTableColumns ()))
         .append (")");
 
    
@@ -2361,48 +2358,48 @@ DbResult ECDbSqlPersistence::InsertConstraint (ECDbSqlConstraint const& o) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-DbResult ECDbSqlPersistence::InsertForeignKey (ECDbSqlForeignKeyConstraint const& o) const
+DbResult ECDbSqlPersistence::InsertForeignKey(ECDbSqlForeignKeyConstraint const& o) const
     {
-    if (o.Count () == 0)
+    if (o.Count() == 0)
         {
-        BeAssert (false && "ForeignKey constraint does not have any columns");
+        BeAssert(false && "ForeignKey constraint does not have any columns");
         return BE_SQLITE_ERROR;
         }
 
-    auto stmt = GetStatement (StatementType::SqlInsertForeignKey);
+    auto stmt = GetStatement(StatementType::SqlInsertForeignKey);
     if (stmt.IsNull())
         return BE_SQLITE_ERROR;
 
-    stmt->BindInt64 (1, o.GetId ());
-    stmt->BindInt64 (2, o.GetTable ().GetId ());
-    stmt->BindInt64 (3, o.GetTargetTable ().GetId ());
-    if (!o.GetName ().empty ())
-        stmt->BindText (4, o.GetName ().c_str (), Statement::MakeCopy::No);
+    stmt->BindInt64(1, o.GetId());
+    stmt->BindInt64(2, o.GetForeignKeyTable().GetId());
+    stmt->BindInt64(3, o.GetReferencedTable().GetId());
+    if (!o.GetName().empty())
+        stmt->BindText(4, o.GetName().c_str(), Statement::MakeCopy::No);
 
-    if (o.GetOnDeleteAction () != ForeignKeyActionType::NotSpecified)
-        stmt->BindInt (5, static_cast<int>(o.GetOnDeleteAction ()));
+    if (o.GetOnDeleteAction() != ForeignKeyActionType::NotSpecified)
+        stmt->BindInt(5, static_cast<int>(o.GetOnDeleteAction()));
 
-    if (o.GetOnUpdateAction () != ForeignKeyActionType::NotSpecified)
-        stmt->BindInt (6, static_cast<int>(o.GetOnUpdateAction ()));
+    if (o.GetOnUpdateAction() != ForeignKeyActionType::NotSpecified)
+        stmt->BindInt(6, static_cast<int>(o.GetOnUpdateAction()));
 
-    auto stat = stmt->Step ();
+    DbResult stat = stmt->Step();
     if (stat != BE_SQLITE_DONE)
         return stat;
 
-    stmt = GetStatement (StatementType::SqlInsertForeignKeyColumn);
+    stmt = GetStatement(StatementType::SqlInsertForeignKeyColumn);
     if (stmt.IsNull())
         return BE_SQLITE_ERROR;
 
-    for (size_t i = 0; i < o.Count (); i++)
+    for (size_t i = 0; i < o.Count(); i++)
         {
-        stmt->Reset ();
-        stmt->ClearBindings ();
-        stmt->BindInt64 (1, o.GetId ());
-        stmt->BindInt64 (2, o.GetSourceColumns ().at (i)->GetId ());
-        stmt->BindInt64 (3, o.GetTargetColumns ().at (i)->GetId ());
-        stmt->BindInt64 (4, i);
+        stmt->Reset();
+        stmt->ClearBindings();
+        stmt->BindInt64(1, o.GetId());
+        stmt->BindInt64(2, o.GetFkColumns()[i]->GetId());
+        stmt->BindInt64(3, o.GetReferencedTableColumns()[i]->GetId());
+        stmt->BindInt64(4, i);
 
-        stat = stmt->Step ();
+        stat = stmt->Step();
         if (stat != BE_SQLITE_DONE)
             return stat;
         }

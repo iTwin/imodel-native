@@ -160,12 +160,8 @@ public:
     virtual ~RelationshipMapInfo() {}
 
     Cardinality GetCardinality() const { return m_cardinality; }
-    RelationshipEndColumns const& GetSourceColumnsMapping() const 
-        { 
-        BeAssert(m_customMapType != CustomMapType::ForeignKeyOnTarget && m_resolvedStrategy.GetStrategy() != ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable); 
-        return m_sourceColumnsMapping; 
-        }
-    RelationshipEndColumns const& GetTargetColumnsMapping() const { BeAssert(m_customMapType != CustomMapType::ForeignKeyOnSource && m_resolvedStrategy.GetStrategy() != ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable); return m_targetColumnsMapping; }
+
+    RelationshipEndColumns const& GetColumnsMapping(ECN::ECRelationshipEnd end) const;
     bool AllowDuplicateRelationships() const { BeAssert((m_customMapType == CustomMapType::LinkTable || m_customMapType == CustomMapType::None) && !m_resolvedStrategy.IsForeignKeyMapping()); return m_allowDuplicateRelationships; }
 
     bool CreateForeignKeyConstraint() const { BeAssert(m_customMapType != CustomMapType::LinkTable && m_resolvedStrategy.IsForeignKeyMapping()); return m_createForeignKeyConstraint;}

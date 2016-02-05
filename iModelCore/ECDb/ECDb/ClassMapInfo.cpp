@@ -760,6 +760,7 @@ BentleyStatus RelationshipMapInfo::ResolveEndTables(EndTablesOptimizationOptions
 
     return m_sourceTables.empty() || m_targetTables.empty() ? ERROR : SUCCESS;
     }
+
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Ramanujam.Raman                07 / 2012
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -932,6 +933,22 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
 
     return m_resolvedStrategy.Assign(resolvedStrategy, false) == SUCCESS ? MapStatus::Success : MapStatus::Error;
 
+    }
+
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+RelationshipEndColumns const& RelationshipMapInfo::GetColumnsMapping(ECRelationshipEnd end) const
+    {
+    if (end == ECRelationshipEnd_Source)
+        {
+        BeAssert(m_customMapType != CustomMapType::ForeignKeyOnTarget && m_resolvedStrategy.GetStrategy() != ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable);
+        return m_sourceColumnsMapping;
+        }
+
+    BeAssert(m_customMapType != CustomMapType::ForeignKeyOnSource && m_resolvedStrategy.GetStrategy() != ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable);
+    return m_targetColumnsMapping;
     }
 
 

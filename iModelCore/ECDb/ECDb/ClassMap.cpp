@@ -555,9 +555,9 @@ MapStatus ClassMap::_MapPart2(SchemaImportContext& schemaImportContext, ClassMap
                 if (constraint->GetType() == ECDbSqlConstraint::Type::ForeignKey)
                     {
                     auto fk = static_cast<ECDbSqlForeignKeyConstraint const*>(constraint);
-                    if (&fk->GetTargetTable() == &parentClassMap->GetJoinedTable())
+                    if (&fk->GetReferencedTable() == &parentClassMap->GetJoinedTable())
                         {
-                        if (fk->GetSourceColumns().front() == foreignKeyColumn && fk->GetTargetColumns().front() == primaryKeyColumn)
+                        if (fk->GetFkColumns().front() == foreignKeyColumn && fk->GetReferencedTableColumns().front() == primaryKeyColumn)
                             {
                             createFKConstraint = false;
                             break;
@@ -1041,7 +1041,7 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
             if (propertyInfo->GetColumns().front()->GetKind() == ColumnKind::ECClassId)
                 continue;
            
-            for (auto column : propertyInfo->GetColumnsPList())
+            for (auto column : propertyInfo->GetColumns())
                 if (column->GetTable().GetTableType() == TableType::Joined)
                     joinedTables.insert(&column->GetTableR());
                 else
@@ -1062,7 +1062,7 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
     
     if (auto propInfo = mapInfo.FindPropertyMapByAccessString(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME))
         {
-        PropertyMapPtr ecInstanceIdPropertyMap = PropertyMapECInstanceId::Create(Schemas(), *this, propInfo->GetColumnsPList());
+        PropertyMapPtr ecInstanceIdPropertyMap = PropertyMapECInstanceId::Create(Schemas(), *this, propInfo->GetColumns());
         if (ecInstanceIdPropertyMap == nullptr)
             return BentleyStatus::ERROR;
 
@@ -1084,7 +1084,7 @@ ECPropertyCP ClassMap::GetECProperty(ECN::ECClassCR ecClass, Utf8CP propertyAcce
     bvector<Utf8String> tokens;
     ECDbMap::ParsePropertyAccessString(tokens, propertyAccessString);
 
-    //for recursive lambdas, iOS requires us to efine the lambda variable before assigning the actual function to it.
+    //for recursive lambdas, iOS requires us to define the lambda variable before assigning the actual function to it.
     std::function<ECPropertyCP (ECClassCR, bvector<Utf8String>&, int)> getECPropertyFromTokens;
     getECPropertyFromTokens = [&getECPropertyFromTokens] (ECClassCR ecClass, bvector<Utf8String>& tokens, int iCurrentToken) -> ECPropertyCP
         {
@@ -1572,8 +1572,7 @@ PropertyMapSet::Ptr PropertyMapSet::Create (IClassMap const& classMap)
         AddSystemEndPoint (*propertySet, classMap, ColumnKind::ECArrayIndex, defaultValue);
         }
 
-    if (classMap.GetClassMapType () == IClassMap::Type::RelationshipLinkTable ||
-        classMap.GetClassMapType () == IClassMap::Type::RelationshipEndTable)
+    if (classMap.IsRelationshipClassMap ())
         {
         RelationshipClassMapCR relationshipMap = static_cast<RelationshipClassMapCR>(classMap);
         auto const& sourceConstraints = relationshipMap.GetRelationshipClass ().GetSource ().GetClasses ();

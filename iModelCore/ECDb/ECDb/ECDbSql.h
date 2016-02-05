@@ -272,19 +272,19 @@ struct ECDbSqlColumn : NonCopyableClass
             Utf8String m_constraintDefaultValue;
             Collation m_collation;
         public:
-            Constraint () :m_constraintNotNull (false), m_constraintIsUnique (false), m_collation (Collation::Default)
+            Constraint() :m_constraintNotNull(false), m_constraintIsUnique(false), m_collation(Collation::Default)
                 {}
-            bool IsNotNull () const { return m_constraintNotNull; }
-            bool IsUnique () const { return m_constraintIsUnique; }
-            Utf8StringCR GetCheckExpression () const { return m_constraintCheck; }
-            Utf8StringCR GetDefaultExpression () const { return m_constraintDefaultValue; }
-            void SetIsNotNull (bool isNotNull) { m_constraintNotNull = isNotNull; }
-            void SetIsUnique (bool isUnique) { m_constraintIsUnique = isUnique; }
-            void SetCheckExpression (Utf8CP expression) { m_constraintCheck = expression; }
-            void SetDefaultExpression (Utf8CP expression) { m_constraintDefaultValue = expression; }
-            Collation GetCollation ()  const { return m_collation; }
+            bool IsNotNull() const { return m_constraintNotNull; }
+            bool IsUnique() const { return m_constraintIsUnique; }
+            Utf8StringCR GetCheckExpression() const { return m_constraintCheck; }
+            Utf8StringCR GetDefaultExpression() const { return m_constraintDefaultValue; }
+            void SetIsNotNull(bool isNotNull) { m_constraintNotNull = isNotNull; }
+            void SetIsUnique(bool isUnique) { m_constraintIsUnique = isUnique; }
+            void SetCheckExpression(Utf8CP expression) { m_constraintCheck = expression; }
+            void SetDefaultExpression(Utf8CP expression) { m_constraintDefaultValue = expression; }
+            Collation GetCollation()  const { return m_collation; }
             void SetCollation(Collation collation) { m_collation = collation; }
-            static Utf8CP CollationToString (Collation);
+            static Utf8CP CollationToString(Collation);
             static bool TryParseCollationString(Collation&, Utf8CP);
         };
 
@@ -298,31 +298,32 @@ struct ECDbSqlColumn : NonCopyableClass
         ECDbColumnId m_id;
 
     public:
-        ECDbSqlColumn (Utf8CP name, Type type, ECDbSqlTable& owner, PersistenceType persistenceType, ECDbColumnId id)
-            : m_name (name), m_ownerTable (owner), m_type (type), m_persistenceType (persistenceType), m_kind (ColumnKind::DataColumn), m_id (id) {}
+        ECDbSqlColumn(Utf8CP name, Type type, ECDbSqlTable& owner, PersistenceType persistenceType, ECDbColumnId id)
+            : m_name(name), m_ownerTable(owner), m_type(type), m_persistenceType(persistenceType), m_kind(ColumnKind::DataColumn), m_id(id)
+            {}
 
         virtual ~ECDbSqlColumn() {}
 
-        ECDbColumnId GetId () const { return m_id; }
-        void SetId (ECDbColumnId id) { m_id = id; }
-        PersistenceType GetPersistenceType () const { return m_persistenceType; }
-        Utf8StringCR GetName () const { return m_name; }
-        Type GetType () const { return m_type; };
-        ECDbSqlTable const& GetTable () const { return m_ownerTable; }
-        ECDbSqlTable&  GetTableR ()  { return m_ownerTable; }
-        Constraint const& GetConstraint () const { return m_constraints; };
-        Constraint& GetConstraintR ()  { return m_constraints; };
-        bool IsReusable () const { return m_type == Type::Any; }
-        static Type StringToType (Utf8CP typeName);
-        static Utf8CP TypeToString (Type type);
+        ECDbColumnId GetId() const { return m_id; }
+        void SetId(ECDbColumnId id) { m_id = id; }
+        PersistenceType GetPersistenceType() const { return m_persistenceType; }
+        Utf8StringCR GetName() const { return m_name; }
+        Type GetType() const { return m_type; };
+        ECDbSqlTable const& GetTable() const { return m_ownerTable; }
+        ECDbSqlTable&  GetTableR() const { return m_ownerTable; }
+        Constraint const& GetConstraint() const { return m_constraints; };
+        Constraint& GetConstraintR() { return m_constraints; };
+        bool IsReusable() const { return m_type == Type::Any; }
+        static Type StringToType(Utf8CP typeName);
+        static Utf8CP TypeToString(Type type);
         ColumnKind GetKind() const { return m_kind; }
         BentleyStatus SetKind(ColumnKind);
         BentleyStatus AddKind(ColumnKind);
-        const Utf8String GetFullName () const;
-        std::weak_ptr<ECDbSqlColumn> GetWeakPtr () const;
+        const Utf8String GetFullName() const;
+        std::weak_ptr<ECDbSqlColumn> GetWeakPtr() const;
 
-        static const Utf8String BuildFullName (Utf8CP table, Utf8CP column);
-        static Utf8CP KindToString (ColumnKind);
+        static const Utf8String BuildFullName(Utf8CP table, Utf8CP column);
+        static Utf8CP KindToString(ColumnKind);
     };
 
 //======================================================================================
@@ -380,43 +381,49 @@ struct ECDbSqlPrimaryKeyConstraint : ECDbSqlConstraint
 struct ECDbSqlForeignKeyConstraint : ECDbSqlConstraint
     {
     private:
-        ECDbSqlTable const& m_targetTable;
-        std::vector<ECDbSqlColumn const*> m_sourceColumns;
-        std::vector<ECDbSqlColumn const*> m_targetColumns;
+        ECDbSqlTable const& m_referencedTable;
+        std::vector<ECDbSqlColumn const*> m_fkColumns;
+        std::vector<ECDbSqlColumn const*> m_referencedTableColumns;
         ForeignKeyActionType m_onDeleteAction;
         ForeignKeyActionType m_onUpdateAction;
         Utf8String m_name;
         ECDbConstraintId m_id;
+
     public:
-        ECDbSqlForeignKeyConstraint (ECDbSqlTable const& sourceTable, ECDbSqlTable const& targetTable, ECDbConstraintId id)
-            :ECDbSqlConstraint (ECDbSqlConstraint::Type::ForeignKey, sourceTable), m_id (id), m_targetTable (targetTable), m_onDeleteAction (ForeignKeyActionType::NotSpecified), m_onUpdateAction (ForeignKeyActionType::NotSpecified)
+        ECDbSqlForeignKeyConstraint(ECDbSqlTable const& fkTable, ECDbSqlTable const& referencedTable, ECDbConstraintId id)
+            :ECDbSqlConstraint(ECDbSqlConstraint::Type::ForeignKey, fkTable), m_id(id), m_referencedTable(referencedTable), m_onDeleteAction(ForeignKeyActionType::NotSpecified), m_onUpdateAction(ForeignKeyActionType::NotSpecified)
             {}
 
-        ECDbConstraintId GetId () const { return m_id; }
-        void SetId (ECDbConstraintId id) { m_id = id; }
-        Utf8StringCR GetName () const { return m_name; }
-        void SetName (Utf8CP name) { m_name = name; }
-        void SetOnDeleteAction (ForeignKeyActionType action) { m_onDeleteAction = action; }
-        void SetOnUpdateAction (ForeignKeyActionType action) { m_onUpdateAction = action; }
+        virtual ~ECDbSqlForeignKeyConstraint() {}
 
-        ForeignKeyActionType GetOnDeleteAction () const { return m_onDeleteAction; }
-        ForeignKeyActionType GetOnUpdateAction () const { return m_onUpdateAction; }
+        ECDbConstraintId GetId() const { return m_id; }
+        void SetId(ECDbConstraintId id) { m_id = id; }
+        Utf8StringCR GetName() const { return m_name; }
+        void SetName(Utf8CP name) { m_name = name; }
+
+        ForeignKeyActionType GetOnDeleteAction() const { return m_onDeleteAction; }
+        ForeignKeyActionType GetOnUpdateAction() const { return m_onUpdateAction; }
+        void SetOnDeleteAction(ForeignKeyActionType action) { m_onDeleteAction = action; }
+        void SetOnUpdateAction(ForeignKeyActionType action) { m_onUpdateAction = action; }
+
+        std::vector<ECDbSqlColumn const*> const& GetFkColumns() const { return m_fkColumns; }
+        std::vector<ECDbSqlColumn const*> const& GetReferencedTableColumns() const { return m_referencedTableColumns; }
+        ECDbSqlTable const& GetReferencedTable() const { return m_referencedTable; }
+        ECDbSqlTable const& GetForeignKeyTable() const { return GetTable(); }
+        bool ContainsInFkColumns(Utf8CP columnName) const;
+        bool ContainsInReferencedTableColumns(Utf8CP columnName) const;
+        size_t Count() const { return m_fkColumns.size(); }
+
         bool IsDuplicate() const;
         void RemoveIfDuplicate();
-        bool Equalls(ECDbSqlForeignKeyConstraint const& rhs) const;
-        BentleyStatus Add (Utf8CP sourceColumn, Utf8CP targetColumn);
-        BentleyStatus Remove (size_t index);
-        std::vector<ECDbSqlColumn const*> const& GetSourceColumns () const { return m_sourceColumns; }
-        std::vector<ECDbSqlColumn const*> const& GetTargetColumns () const { return m_targetColumns; }
-        ECDbSqlTable const& GetTargetTable () const { return m_targetTable; }
-        ECDbSqlTable const& GetSourceTable () const { return GetTable (); }
-        bool ContainsInSource (Utf8CP columnName) const;
-        bool ContainsInTarget (Utf8CP columnName) const;
-        BentleyStatus Remove (Utf8CP sourceColumn, Utf8CP targetColumn);
-        size_t Count () const { return m_targetColumns.size (); }
+        bool Equals(ECDbSqlForeignKeyConstraint const& rhs) const;
+
+        BentleyStatus Add(Utf8CP fkColumnName, Utf8CP referencedColumnName);
+        BentleyStatus Remove(Utf8CP fkColumnName, Utf8CP referencedColumnName);
+        BentleyStatus Remove(size_t index);
+
         static ForeignKeyActionType ToActionType(Utf8CP str);
         static Utf8CP ToSQL(ForeignKeyActionType actionType);
-        virtual ~ECDbSqlForeignKeyConstraint (){}
     };
 
 
@@ -523,7 +530,7 @@ struct ECDbSqlTable : NonCopyableClass
         EditHandle& GetEditHandleR () { return m_editInfo; }
         EditHandle const& GetEditHandle () const { return m_editInfo; }
         ECDbSqlPrimaryKeyConstraint* GetPrimaryKeyConstraint (bool createIfDonotExist = true);
-        ECDbSqlForeignKeyConstraint* CreateForeignKeyConstraint (ECDbSqlTable const& targetTable);
+        ECDbSqlForeignKeyConstraint* CreateForeignKeyConstraint (ECDbSqlTable const& referencedTable);
         BentleyStatus RemoveConstraint(ECDbSqlConstraint const& constraint);
         std::vector<ECDbSqlConstraint const*> GetConstraints () const;   
         BentleyStatus GetFilteredColumnList (std::vector<ECDbSqlColumn const*>& columns, PersistenceType persistenceType) const;
@@ -682,30 +689,17 @@ struct ECDbMapStorage;
 //======================================================================================
 struct ECDbPropertyMapInfo : NonCopyableClass
     {
-    private:
-        ECDbClassMapInfo const&  m_classMap;
-        ECDbPropertyPath const& m_propertyPath;
-        std::vector<ECDbSqlColumn const*> m_columns;
-    public:
-        ECDbPropertyMapInfo (ECDbClassMapInfo const& classMap, ECDbPropertyPath const& propertyPath)
-            :m_classMap (classMap), m_propertyPath (propertyPath)
-            {
-            }
-        std::vector<ECDbSqlColumn const*>& GetColumnsR(){return m_columns;}
-        std::vector<ECDbSqlColumn const*> const& GetColumns() const {return m_columns;}
-        std::vector<ECDbSqlColumn*> GetColumnsPList() const
-            {
-            std::vector<ECDbSqlColumn*> columns;
-            for (auto c : m_columns)
-                columns.push_back(const_cast<ECDbSqlColumn*>(c));
-
-            return columns;
-            }
-        ECDbPropertyPath const& GetPropertyPath () const { return m_propertyPath; }
-        ECDbClassMapInfo const& GetClassMap () const { return m_classMap; }
-        ECDbSqlColumn const* ExpectingSingleColumn() const {
-            BeAssert(m_columns.size() == 1 && "Expecting exactly one column"); return m_columns.front();
-            }
+private:
+    ECDbClassMapInfo const&  m_classMap;
+    ECDbPropertyPath const& m_propertyPath;
+    std::vector<ECDbSqlColumn const*> m_columns;
+public:
+    ECDbPropertyMapInfo (ECDbClassMapInfo const& classMap, ECDbPropertyPath const& propertyPath) :m_classMap (classMap), m_propertyPath (propertyPath) { }
+    std::vector<ECDbSqlColumn const*>& GetColumnsR(){return m_columns;}
+    std::vector<ECDbSqlColumn const*> const& GetColumns() const {return m_columns;}
+    ECDbPropertyPath const& GetPropertyPath () const { return m_propertyPath; }
+    ECDbClassMapInfo const& GetClassMap () const { return m_classMap; }
+    ECDbSqlColumn const* ExpectingSingleColumn() const { BeAssert(m_columns.size() == 1 && "Expecting exactly one column"); return m_columns.front(); }
     };
 
 //======================================================================================
@@ -744,7 +738,6 @@ struct ECDbClassMapInfo : NonCopyableClass
         ECDbPropertyMapInfo const* FindPropertyMapByAccessString(Utf8CP accessString) const;
         ECDbPropertyMapInfo* CreatePropertyMap (ECDbPropertyPath const& propertyPath);
         ECDbPropertyMapInfo* CreatePropertyMap (ECN::ECPropertyId rootPropertyId, Utf8CP accessString, std::vector<ECDbSqlColumn const*> const& columns);
-
     };
 
 //======================================================================================

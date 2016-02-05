@@ -74,6 +74,9 @@ protected:
     std::unique_ptr<ClassDbView> CreateClassDbView ();
     ECDbSqlColumn* CreateConstraintColumn(ECDbSqlTable& table, Utf8CP columnName, ColumnKind columnId, PersistenceType persType);
     void DetermineConstraintClassIdColumnHandling (bool& addConstraintClassIdColumnNeeded, ECN::ECClassId& defaultConstraintClassId, ECN::ECRelationshipConstraintCR constraint) const;
+
+    RelationshipConstraintMap& GetConstraintMapR(ECN::ECRelationshipEnd constraintEnd);
+
     static bool ConstraintIncludesAnyClass (ECN::ECConstraintClassesList const& constraintClasses);
     static RelationshipEndColumns const& GetEndColumnsMapping(RelationshipMapInfo const&, ECN::ECRelationshipEnd);
 
@@ -123,8 +126,6 @@ private:
 
     void AddIndexToRelationshipEnd (SchemaImportContext&, ClassMapInfo const& mapInfo);
 
-    RelationshipEndColumns const& GetEndColumnsMapping(RelationshipMapInfo const&) const;
-
     bool GetReferencedEndKeyColumnName (Utf8StringR columnName, ECDbSqlTable const& table, bool mappingInProgress) const;
     virtual MapStatus _MapPart1 (SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
     virtual MapStatus _MapPart2 (SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
@@ -136,8 +137,6 @@ private:
     //! than one class or more than one key properties.
     BentleyStatus TryGetKeyPropertyColumn(std::set<ECDbSqlColumn const*>& keyPropertyColumns, ECN::ECRelationshipConstraintCR, ECN::ECRelationshipClassCR, ECN::ECRelationshipEnd constraintEnd) const;
     BentleyStatus TryGetConstraintIdColumnNameFromNavigationProperty(Utf8StringR, ECN::ECRelationshipConstraintCR, ECN::ECRelationshipClassCR, ECN::ECRelationshipEnd constraintEnd) const;
-
-    MapStatus CreateConstraintColumns(ECDbSqlColumn*& foreignKeyIdColumn, RelationshipMapInfo const&, ECN::ECRelationshipEnd constraintEnd, ECN::ECRelationshipConstraintCR);
 
     virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ClassMapLoadContext&, ECDbClassMapInfo const&, IClassMap const* parentClassMap) override;
 

@@ -26,20 +26,21 @@ private:
     virtual void _GetColumns (std::vector<ECDbSqlColumn const*>& columns) const override;
 
 protected:
-    PropertyMapSystem (ECN::ECPropertyCR property, std::vector<ECDbSqlColumn*> columns, ECSqlSystemProperty kind);
+    PropertyMapSystem (ECN::ECPropertyCR property, std::vector<ECDbSqlColumn const*> columns, ECSqlSystemProperty kind);
 
     ECDbSqlColumn const& GetColumn () const;
 
     ECSqlSystemProperty GetKind () const { return m_kind; }
     ColumnKind ToColumnKind() const;
-    static std::vector<std::weak_ptr<ECDbSqlColumn>>&& ToWeakPtr(std::vector<ECDbSqlColumn*> const& columns);
-     std::vector<std::weak_ptr<ECDbSqlColumn>>& GetColumnWeakPtrs ()  { return m_columns; }   
+    static std::vector<std::weak_ptr<ECDbSqlColumn>>&& ToWeakPtr(std::vector<ECDbSqlColumn const*> const& columns);
+    std::vector<std::weak_ptr<ECDbSqlColumn>>& GetColumnWeakPtrs ()  { return m_columns; }   
 
-    public:
+public:
     virtual ~PropertyMapSystem () {}
-    static std::vector<ECDbSqlColumn*> ToVector(ECDbSqlColumn* column);
 
     ECDbSqlColumn const* GetColumn(ECDbSqlTable const& table) const;
+
+    static std::vector<ECDbSqlColumn const*> ToVector(ECDbSqlColumn const* column);
     };
 
 //=======================================================================================
@@ -51,16 +52,15 @@ public:
     static Utf8CP const PROPERTYACCESSSTRING;
 
 private:
-    PropertyMapECInstanceId (ECN::ECPropertyCR ecInstanceIdProperty, ClassMap const&, std::vector<ECDbSqlColumn*>);
+    PropertyMapECInstanceId(ECN::ECPropertyCR ecInstanceIdProperty, ClassMap const&, std::vector<ECDbSqlColumn const*>);
 
     virtual bool _IsECInstanceIdPropertyMap() const override { return true; }
     virtual Utf8String _ToString () const override;
 
 public:
-    ~PropertyMapECInstanceId () {}
-    static PropertyMapPtr Create (ECDbSchemaManagerCR, ClassMap const&);
-    static PropertyMapPtr Create(ECDbSchemaManagerCR schemaManager, ClassMap const& classMap, std::vector<ECDbSqlColumn*> columns);
-
+    ~PropertyMapECInstanceId() {}
+    static PropertyMapPtr Create(ECDbSchemaManagerCR, ClassMap const&);
+    static PropertyMapPtr Create(ECDbSchemaManagerCR, ClassMap const&, std::vector<ECDbSqlColumn const*>);
     };
 
 
@@ -72,7 +72,7 @@ public:
 struct PropertyMapStructArrayTableKey : PropertyMapSystem
     {
 private:
-    explicit PropertyMapStructArrayTableKey (ECN::ECPropertyCR systemProperty, std::vector<ECDbSqlColumn*>, ECSqlSystemProperty);
+    explicit PropertyMapStructArrayTableKey (ECN::ECPropertyCR systemProperty, std::vector<ECDbSqlColumn const*>, ECSqlSystemProperty);
 
     virtual Utf8String _ToString () const override;
 
@@ -90,7 +90,7 @@ private:
     Utf8String m_viewColumnAlias;
 
 protected:
-    PropertyMapRelationshipConstraint (ECN::ECPropertyCR constraintProperty, std::vector<ECDbSqlColumn*>, ECSqlSystemProperty, Utf8CP endTableColumnAlias);
+    PropertyMapRelationshipConstraint (ECN::ECPropertyCR constraintProperty, std::vector<ECDbSqlColumn const*>, ECSqlSystemProperty, Utf8CP endTableColumnAlias);
     bool HasViewColumnAlias () const { return !m_viewColumnAlias.empty (); }
     //! In the view generated for select statements, the constraint columns cannot be used directly for end-table mappings
     //! as the this end's columns are actually the key columns of the end table.
@@ -113,7 +113,7 @@ public:
 struct PropertyMapRelationshipConstraintECInstanceId : PropertyMapRelationshipConstraint
     {
 private:
-    PropertyMapRelationshipConstraintECInstanceId(ECN::ECPropertyCR constraintProperty, std::vector<ECDbSqlColumn*>, ECSqlSystemProperty, Utf8CP endTableColumnAlias);
+    PropertyMapRelationshipConstraintECInstanceId(ECN::ECPropertyCR constraintProperty, std::vector<ECDbSqlColumn const*>, ECSqlSystemProperty, Utf8CP endTableColumnAlias);
 
     virtual NativeSqlBuilder::List _ToNativeSql(Utf8CP classIdentifier, ECSqlType, bool wrapInParentheses, ECDbSqlTable const* tableFilter) const override;
     virtual Utf8String _ToString() const override;
@@ -121,7 +121,7 @@ private:
 public:
     ~PropertyMapRelationshipConstraintECInstanceId() {}
 
-    static PropertyMapPtr Create(ECN::ECRelationshipEnd, ECDbSchemaManagerCR, std::vector<ECDbSqlColumn*>, Utf8CP endTableColumnAlias = nullptr);
+    static PropertyMapPtr Create(ECN::ECRelationshipEnd, ECDbSchemaManagerCR, std::vector<ECDbSqlColumn const*>, Utf8CP endTableColumnAlias = nullptr);
     };
 
 //=======================================================================================
@@ -133,7 +133,7 @@ private:
     ECN::ECClassId m_defaultConstraintClassId;
     bool m_isMappedToClassMapTables;
 
-    PropertyMapRelationshipConstraintClassId (ECN::ECPropertyCR constraintProperty, std::vector<ECDbSqlColumn*>, ECSqlSystemProperty, ECN::ECClassId defaultClassId, ClassMap const&, Utf8CP endTableColumnAlias, bool colIsDelayGenerated);
+    PropertyMapRelationshipConstraintClassId (ECN::ECPropertyCR constraintProperty, std::vector<ECDbSqlColumn const*>, ECSqlSystemProperty, ECN::ECClassId defaultClassId, ClassMap const&, Utf8CP endTableColumnAlias, bool colIsDelayGenerated);
 
     virtual PropertyMapRelationshipConstraintClassId const* _GetAsPropertyMapRelationshipConstraintClassId() const override { return this; }
     virtual NativeSqlBuilder::List _ToNativeSql(Utf8CP classIdentifier, ECSqlType, bool wrapInParentheses, ECDbSqlTable const* tableFilter) const override;
@@ -143,7 +143,7 @@ public:
     ~PropertyMapRelationshipConstraintClassId () {}
 
     ECN::ECClassId GetDefaultConstraintECClassId () const { return m_defaultConstraintClassId; }
-    static RefCountedPtr<PropertyMapRelationshipConstraintClassId> Create (ECN::ECRelationshipEnd, ECDbSchemaManagerCR, std::vector<ECDbSqlColumn*>, ECN::ECClassId defaultSourceECClassId, ClassMap const&, Utf8CP endTableColumnAlias = nullptr, bool colIsDelayGenerated = false);
+    static RefCountedPtr<PropertyMapRelationshipConstraintClassId> Create (ECN::ECRelationshipEnd, ECDbSchemaManagerCR, std::vector<ECDbSqlColumn const*>, ECN::ECClassId defaultSourceECClassId, ClassMap const&, Utf8CP endTableColumnAlias = nullptr, bool colIsDelayGenerated = false);
 
     //!ConstraintClassId columns are not always created in the table to which the relationship is mapped to. 
     //!If this method returns false, the relationship table doesn't have a constraint class id column, but the class id
