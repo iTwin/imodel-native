@@ -20,3 +20,17 @@ CGBinarySerializationTests.WriterTest			   # notified Earlin and Carole
 SchemaDeserializationTest.ExpectSuccessWithDuplicateClassesInXml  # This is no longer allowed
 
 NavigationECPropertyTests.RoundtripToEC2Xml # Notified Carole
+
+RelationshipConstraintTests.KeyPropertiesPathDefined # Not yet implemented
+
+RelationshipClassTests.RelationshipClassAbstractness # Not yet implemented
+
+RelationshipClassTests.NonAbstractRelationshipClassConstraintsDefinition # Not yet implemented
+
+RelationshipClassTests.CyclicRelationships # Not yet implemented
+
+RelationshipConstraintTests.StructKeyPropertiesNotSupported # Not yet implemented
+
+RelationshipConstraintTests.MultipleKeyPropertiesNotSupported # Not yet implemented
+
+RelationshipConstraintTests.MultipleConstraintClassesWithKeyPropertyNotSupported # Not yet implemented
