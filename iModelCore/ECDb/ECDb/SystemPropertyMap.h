@@ -32,7 +32,7 @@ protected:
 
     ECSqlSystemProperty GetKind () const { return m_kind; }
     ColumnKind ToColumnKind() const;
-    static std::vector<std::weak_ptr<ECDbSqlColumn>>&& ToWeakPtr(std::vector<ECDbSqlColumn const*> const& columns);
+    static std::vector<std::weak_ptr<ECDbSqlColumn>> ToWeakPtr(std::vector<ECDbSqlColumn const*> const& columns);
     std::vector<std::weak_ptr<ECDbSqlColumn>>& GetColumnWeakPtrs ()  { return m_columns; }   
 
 public:

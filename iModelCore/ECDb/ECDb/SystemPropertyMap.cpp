@@ -22,7 +22,7 @@ std::vector<ECDbSqlColumn const*> PropertyMapSystem::ToVector(ECDbSqlColumn cons
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                02/2016
 //+---------------+---------------+---------------+---------------+---------------+-
-std::vector<std::weak_ptr<ECDbSqlColumn>>&& PropertyMapSystem::ToWeakPtr(std::vector<ECDbSqlColumn const*>const& columns)
+std::vector<std::weak_ptr<ECDbSqlColumn>> PropertyMapSystem::ToWeakPtr(std::vector<ECDbSqlColumn const*>const& columns)
     {
     std::vector<std::weak_ptr<ECDbSqlColumn>> tmp;
     for (ECDbSqlColumn const* column : columns)

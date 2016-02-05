@@ -25,7 +25,7 @@ PropertyMap::PropertyMap(ECPropertyCR ecProperty, Utf8CP propertyAccessString, P
 // @bsimethod                                                Affan.Khan          10/2015
 //---------------------------------------------------------------------------------------
 //static
-PropertyMapPtr PropertyMap::Clone(ECDbMapCR ecdbMap, PropertyMapCR proto, ECN::ECClassCR clonedBy,  PropertyMap const* parentPropertyMap ) 
+PropertyMapPtr PropertyMap::Clone(ECDbMapCR ecdbMap, PropertyMapCR proto, ECN::ECClassCR clonedBy,  PropertyMap const* parentPropertyMap) 
     {
     if (ecdbMap.GetSchemaImportContext() == nullptr)
         {
