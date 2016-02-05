@@ -385,6 +385,45 @@ template<typename T> static void collectCodes(DgnCodeSet& assigned, DgnCodeSet& 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+struct GeometryPartEntry : DgnChangeSummary::Entry<GeometryPartEntry>
+{
+    explicit GeometryPartEntry(Impl const& impl) : Entry(impl) { }
+
+    DgnCode GetCode(bool before) const;
+    DgnGeometryPartId GetPartId() const { return DgnGeometryPartId(GetImpl().GetInstanceId().GetValue()); }
+    DgnCode GetOriginalCode() const { return GetCode(true); }
+    DgnCode GetCurrentCode() const { return GetCode(false); }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode GeometryPartEntry::GetCode(bool old) const
+    {
+    auto op = GetDbOpcode();
+    if (old)
+        return getOriginalCode(*this, op);
+
+    if (DbOpcode::Delete == op)
+        return DgnCode();
+
+    DgnDbR db = static_cast<DgnChangeSummary const&>(GetImpl().GetChangeSummary()).GetDgnDb();
+    auto geompart = db.GeometryParts().LoadGeometryPart(GetPartId());
+    return geompart.IsValid() ? geompart->GetCode() : DgnCode();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+struct GeometryPartIterator : DgnChangeSummary::Iterator<GeometryPartEntry>
+{
+    explicit GeometryPartIterator(DgnChangeSummary const& summary)
+        : Iterator(summary, summary.GetDgnDb().Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_GeometryPart), DgnChangeSummary::QueryDbOpcode::All) { }
+};
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnChangeSummary::GetCodes(DgnCodeSet& assigned, DgnCodeSet& discarded) const
@@ -396,6 +435,8 @@ void DgnChangeSummary::GetCodes(DgnCodeSet& assigned, DgnCodeSet& discarded) con
     collectCodes(assigned, discarded, elems);
     auto models = MakeModelIterator();
     collectCodes(assigned, discarded, models);
+    GeometryPartIterator geomparts(*this);
+    collectCodes(assigned, discarded, geomparts);
     }
 
 /*---------------------------------------------------------------------------------**//**
