@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/NonPublishedSchemaTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -71,7 +71,7 @@ TEST_F (NonPublishedSchemaTest, TestCircularReferenceWithLocateSchema)
     schemaContext->AddSchemaLocater (*schemaLocater);    
     SchemaKey key("CircleSchema", 01, 00);
     DISABLE_ASSERTS
-    testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);
+    testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Latest);
     EXPECT_FALSE(testSchema.IsValid());
     }
 
@@ -86,7 +86,7 @@ TEST_F (NonPublishedSchemaTest, FindLatestShouldFindSchemaWithLowerMinorVersion)
     schemaContext = ECSchemaReadContext::CreateContext();
     schemaContext->AddSchemaLocater (*schemaLocater);
     SchemaKey key("Widgets", 9, 7);
-    testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);
+    testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Latest);
     EXPECT_TRUE(testSchema.IsValid());
     EXPECT_TRUE(testSchema->GetVersionMajor()==9);
     EXPECT_TRUE(testSchema->GetVersionMinor()==6);
@@ -103,7 +103,7 @@ TEST(SupplementalDeserializationTests, VerifyDeserializedSchemaIsSupplemented)
     schemaContext = ECSchemaReadContext::CreateContext();
     schemaContext->AddSchemaLocater (*schemaLocater);
     SchemaKey key("MasterSchema", 1, 0);
-    testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);
+    testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Latest);
     EXPECT_TRUE(testSchema->IsSupplemented());
 
     }

@@ -455,14 +455,14 @@ TEST_F (SchemaSearchTest, FindSchemaByName)
     SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath (L"SchemaThatReferences.01.00.ecschema.xml").c_str (), *schemaContext);
     EXPECT_EQ (SchemaReadStatus::Success, status);
 
-    EXPECT_TRUE (schema->FindSchema (SchemaKey ("SchemaThatReferences", 1, 0), SCHEMAMATCHTYPE_Exact) != NULL);
-    EXPECT_TRUE (schema->FindSchema (SchemaKey ("SchemaThatReferencez", 1, 0), SCHEMAMATCHTYPE_Exact) == NULL);
-    EXPECT_TRUE (schema->FindSchema (SchemaKey ("SchemaThatReferences", 2, 0), SCHEMAMATCHTYPE_Exact) == NULL);
-    EXPECT_TRUE (schema->FindSchema (SchemaKey ("SchemaThatReferences", 1, 1), SCHEMAMATCHTYPE_Exact) == NULL);
+    EXPECT_TRUE (schema->FindSchema (SchemaKey ("SchemaThatReferences", 1, 0), SchemaMatchType::Exact) != NULL);
+    EXPECT_TRUE (schema->FindSchema (SchemaKey ("SchemaThatReferencez", 1, 0), SchemaMatchType::Exact) == NULL);
+    EXPECT_TRUE (schema->FindSchema (SchemaKey ("SchemaThatReferences", 2, 0), SchemaMatchType::Exact) == NULL);
+    EXPECT_TRUE (schema->FindSchema (SchemaKey ("SchemaThatReferences", 1, 1), SchemaMatchType::Exact) == NULL);
 
-    EXPECT_TRUE (schema->FindSchema (SchemaKey ("BaseSchema", 1, 0), SCHEMAMATCHTYPE_Exact) != NULL);
-    EXPECT_TRUE (schema->FindSchemaP (SchemaKey ("SchemaThatReferences", 1, 0), SCHEMAMATCHTYPE_Exact) != NULL);
-    EXPECT_TRUE (schema->FindSchemaP (SchemaKey ("a", 123, 456), SCHEMAMATCHTYPE_Exact) == NULL);
+    EXPECT_TRUE (schema->FindSchema (SchemaKey ("BaseSchema", 1, 0), SchemaMatchType::Exact) != NULL);
+    EXPECT_TRUE (schema->FindSchemaP (SchemaKey ("SchemaThatReferences", 1, 0), SchemaMatchType::Exact) != NULL);
+    EXPECT_TRUE (schema->FindSchemaP (SchemaKey ("a", 123, 456), SchemaMatchType::Exact) == NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1648,7 +1648,7 @@ TEST_F (SchemaSerializationTest, SerializeComprehensiveSchema)
     schemaContext->AddSchemaLocater(*schemaLocater);
 
     SchemaKey schemaKey("Bentley_Standard_CustomAttributes", 1, 12);
-    ECSchemaPtr standardCASchema = schemaContext->LocateSchema(schemaKey, SCHEMAMATCHTYPE_Latest);
+    ECSchemaPtr standardCASchema = schemaContext->LocateSchema(schemaKey, SchemaMatchType::Latest);
     EXPECT_TRUE(standardCASchema.IsValid());
 
     //Compose our new schema
@@ -1983,7 +1983,6 @@ TEST_F (SchemaLocateTest, ExpectSuccessWhenLocatingStandardSchema)
         schema = ECSchema::LocateSchema (key, *schemaContext);
         EXPECT_TRUE (schema.IsValid ());
         EXPECT_TRUE (schema->IsStandardSchema ());
-        EXPECT_STREQ (entry.second, ECSchema::FormatSchemaVersion (key.m_versionMajor, key.m_versionMinor).c_str ());
         }
     }
 
@@ -3085,26 +3084,26 @@ TEST_F (SchemaComparisonTest, VerifyMatchesOperator)
     EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0) == SchemaKey ("SchemaTest", 2, 0));
     EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0) == SchemaKey ("SchemaTest", 1, 1));
 
-    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Exact));
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaNotTest", 1, 0), SCHEMAMATCHTYPE_Exact));
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 2, 0), SCHEMAMATCHTYPE_Exact));
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 1, 1), SCHEMAMATCHTYPE_Exact));
+    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::Exact));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaNotTest", 1, 0), SchemaMatchType::Exact));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 2, 0), SchemaMatchType::Exact));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 1, 1), SchemaMatchType::Exact));
 
-    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Identical));
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaNotTest", 1, 0), SCHEMAMATCHTYPE_Identical));
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 2, 0), SCHEMAMATCHTYPE_Identical));
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 1, 1), SCHEMAMATCHTYPE_Identical));
+    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::Identical));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaNotTest", 1, 0), SchemaMatchType::Identical));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 2, 0), SchemaMatchType::Identical));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 1, 1), SchemaMatchType::Identical));
 
-    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Latest));
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaNotTest", 1, 0), SCHEMAMATCHTYPE_Latest));
-    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 2, 0), SCHEMAMATCHTYPE_Latest));
-    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 1).Matches (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Latest));
+    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::Latest));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaNotTest", 1, 0), SchemaMatchType::Latest));
+    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 2, 0), SchemaMatchType::Latest));
+    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 1).Matches (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::Latest));
 
-    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_LatestCompatible));
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaNotTest", 1, 0), SCHEMAMATCHTYPE_LatestCompatible));
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 2, 0), SCHEMAMATCHTYPE_LatestCompatible));
-    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 1).Matches (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_LatestCompatible));
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 1, 1), SCHEMAMATCHTYPE_LatestCompatible));
+    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::LatestCompatible));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaNotTest", 1, 0), SchemaMatchType::LatestCompatible));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 2, 0), SchemaMatchType::LatestCompatible));
+    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 1).Matches (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::LatestCompatible));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 1, 1), SchemaMatchType::LatestCompatible));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3117,25 +3116,25 @@ TEST_F (SchemaComparisonTest, VerifyLessThanOperator)
     EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0) < SchemaKey ("SchemaTest", 2, 0));
     EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 1) < SchemaKey ("SchemaTest", 1, 0));
 
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Exact));
-    EXPECT_TRUE (SchemaKey ("SchemaTesa", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Exact));
-    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 2, 0), SCHEMAMATCHTYPE_Exact));
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 1).LessThan (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Exact));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::Exact));
+    EXPECT_TRUE (SchemaKey ("SchemaTesa", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::Exact));
+    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 2, 0), SchemaMatchType::Exact));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 1).LessThan (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::Exact));
 
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Identical));
-    EXPECT_TRUE (SchemaKey ("SchemaTesa", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Identical));
-    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 2, 0), SCHEMAMATCHTYPE_Identical));
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 1).LessThan (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Identical));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::Identical));
+    EXPECT_TRUE (SchemaKey ("SchemaTesa", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::Identical));
+    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 2, 0), SchemaMatchType::Identical));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 1).LessThan (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::Identical));
 
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Latest));
-    EXPECT_TRUE (SchemaKey ("SchemaTesa", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Latest));
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 2, 0), SCHEMAMATCHTYPE_Latest));
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 9), SCHEMAMATCHTYPE_Latest));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::Latest));
+    EXPECT_TRUE (SchemaKey ("SchemaTesa", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::Latest));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 2, 0), SchemaMatchType::Latest));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 9), SchemaMatchType::Latest));
 
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_LatestCompatible));
-    EXPECT_TRUE (SchemaKey ("SchemaTesa", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_LatestCompatible));
-    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 2, 0), SCHEMAMATCHTYPE_LatestCompatible));
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 9), SCHEMAMATCHTYPE_LatestCompatible));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::LatestCompatible));
+    EXPECT_TRUE (SchemaKey ("SchemaTesa", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::LatestCompatible));
+    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 2, 0), SchemaMatchType::LatestCompatible));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 9), SchemaMatchType::LatestCompatible));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3194,25 +3193,25 @@ TEST_F (SchemaCacheTest, FilterSchema)
     EXPECT_TRUE (cache->AddSchema (*schema2) == ECObjectsStatus::Success);
     EXPECT_TRUE (cache->AddSchema (*schema3) == ECObjectsStatus::Success);
 
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 2, 0), SCHEMAMATCHTYPE_Exact) != NULL);
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseZchema1", 2, 0), SCHEMAMATCHTYPE_Exact) == NULL);
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 3, 0), SCHEMAMATCHTYPE_Exact) == NULL);
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 2, 1), SCHEMAMATCHTYPE_Exact) == NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 2, 0), SchemaMatchType::Exact) != NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseZchema1", 2, 0), SchemaMatchType::Exact) == NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 3, 0), SchemaMatchType::Exact) == NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 2, 1), SchemaMatchType::Exact) == NULL);
 
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 2, 0), SCHEMAMATCHTYPE_Identical) != NULL);
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseZchema1", 2, 0), SCHEMAMATCHTYPE_Identical) == NULL);
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 3, 0), SCHEMAMATCHTYPE_Identical) == NULL);
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 2, 1), SCHEMAMATCHTYPE_Identical) == NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 2, 0), SchemaMatchType::Identical) != NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseZchema1", 2, 0), SchemaMatchType::Identical) == NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 3, 0), SchemaMatchType::Identical) == NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 2, 1), SchemaMatchType::Identical) == NULL);
 
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 2, 0), SCHEMAMATCHTYPE_Latest) != NULL);
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseZchema1", 2, 0), SCHEMAMATCHTYPE_Latest) == NULL);
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 3, 0), SCHEMAMATCHTYPE_Latest) != NULL);
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 2, 1), SCHEMAMATCHTYPE_Latest) != NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 2, 0), SchemaMatchType::Latest) != NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseZchema1", 2, 0), SchemaMatchType::Latest) == NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 3, 0), SchemaMatchType::Latest) != NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 2, 1), SchemaMatchType::Latest) != NULL);
 
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema2", 5, 5), SCHEMAMATCHTYPE_LatestCompatible) != NULL);
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseZchema2", 5, 5), SCHEMAMATCHTYPE_LatestCompatible) == NULL);
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema2", 3, 5), SCHEMAMATCHTYPE_LatestCompatible) == NULL);
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema2", 5, 3), SCHEMAMATCHTYPE_LatestCompatible) != NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema2", 5, 5), SchemaMatchType::LatestCompatible) != NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseZchema2", 5, 5), SchemaMatchType::LatestCompatible) == NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema2", 3, 5), SchemaMatchType::LatestCompatible) == NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema2", 5, 3), SchemaMatchType::LatestCompatible) != NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -2,7 +2,7 @@
 |
 |     $Source: src/Units/ECUnitsClassLocater.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -30,11 +30,11 @@ ECUnitsClassLocaterPtr ECUnitsClassLocater::Create()
 bool ECUnitsClassLocater::LoadUnitsSchemas (ECSchemaReadContextR context)
     {
     SchemaKey keyKoqSchema (KOQ_SCHEMA, 1, 0);
-    ECSchemaPtr koqSchema = context.LocateSchema (keyKoqSchema, SCHEMAMATCHTYPE_LatestCompatible);
+    ECSchemaPtr koqSchema = context.LocateSchema (keyKoqSchema, SchemaMatchType::LatestCompatible);
     POSTCONDITION (koqSchema.IsValid() && "Cannot load KOQ_SCHEMA", false);
 
     SchemaKey keyUnitsSchema (UNITS_SCHEMA, 1, 0);
-    ECSchemaPtr unitsSchema = context.LocateSchema (keyUnitsSchema, SCHEMAMATCHTYPE_LatestCompatible);
+    ECSchemaPtr unitsSchema = context.LocateSchema (keyUnitsSchema, SchemaMatchType::LatestCompatible);
     POSTCONDITION (unitsSchema.IsValid() && "Cannot load UNITS_SCHEMA", false);
 
     return true;
@@ -56,10 +56,10 @@ bool ECUnitsClassLocater::Initialize()
         }
     
     SchemaKey keyKoqSchema (KOQ_SCHEMA, 1, 0);
-    m_koqSchema = m_context->GetFoundSchema (keyKoqSchema, SCHEMAMATCHTYPE_LatestCompatible);
+    m_koqSchema = m_context->GetFoundSchema (keyKoqSchema, SchemaMatchType::LatestCompatible);
 
     SchemaKey keyUnitsSchema (UNITS_SCHEMA, 1, 0);
-    m_unitsSchema = m_context->LocateSchema (keyUnitsSchema, SCHEMAMATCHTYPE_LatestCompatible);
+    m_unitsSchema = m_context->LocateSchema (keyUnitsSchema, SchemaMatchType::LatestCompatible);
 
     return true;
     }

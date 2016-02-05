@@ -2,7 +2,7 @@
 |
 |  $Source: src/PresentationMetadataHelper.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -65,7 +65,7 @@ public:
 PresentationMetadataHelper::PresentationMetadataHelper (ECSchemaReadContextR schemaContext)
     {
     SchemaKey schemaKey (EDITOR_SCHEMA_NAME, 1, 0);
-    m_customAttributesSchema = schemaContext.LocateSchema (schemaKey, SCHEMAMATCHTYPE_Latest);
+    m_customAttributesSchema = schemaContext.LocateSchema (schemaKey, SchemaMatchType::Latest);
     if (m_customAttributesSchema.IsNull())
         {
         // If we can't find the custom attributes schema, all methods will return ECObjectsStatus::SchemaNotFound
@@ -80,7 +80,7 @@ PresentationMetadataHelper::PresentationMetadataHelper (ECSchemaReadContextR sch
 PresentationMetadataHelper::PresentationMetadataHelper (ECSchemaR editorCustomAttributesSchema)
     {
     SchemaKey schemaKey (EDITOR_SCHEMA_NAME, 1, 0);
-    if (editorCustomAttributesSchema.GetSchemaKey().Matches (schemaKey, SCHEMAMATCHTYPE_Latest))
+    if (editorCustomAttributesSchema.GetSchemaKey().Matches (schemaKey, SchemaMatchType::Latest))
         m_customAttributesSchema = &editorCustomAttributesSchema;
     else
         {

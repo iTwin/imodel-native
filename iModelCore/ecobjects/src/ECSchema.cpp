@@ -1399,7 +1399,7 @@ ECSchemaPtr IECSchemaLocater::LocateSchema(SchemaKeyR key, SchemaMatchType match
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaPtr     ECSchema::LocateSchema (SchemaKeyR key, ECSchemaReadContextR schemaContext)
     {
-    return schemaContext.LocateSchema(key, SCHEMAMATCHTYPE_LatestCompatible);
+    return schemaContext.LocateSchema(key, SchemaMatchType::LatestCompatible);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1487,7 +1487,7 @@ ECSchemaReadContextCR schemaContext
 
     while (SUCCESS == fileList.GetNextFileName(filePath))
         {
-        Utf8String fileName = filePath.GetNameUtf8();
+        Utf8String fileName(filePath.GetFileNameWithoutExtension());
 
         SchemaKey key;
         if (SchemaKey::ParseSchemaFullName(key, fileName.c_str()) != ECObjectsStatus::Success)
@@ -1498,7 +1498,7 @@ ECSchemaReadContextCR schemaContext
 
         //If key matches, OR the legacy compatible match evaluates true
         if (key.Matches(desiredSchemaKey, matchType) ||
-            (schemaContext.m_acceptLegacyImperfectLatestCompatibleMatch && matchType == SCHEMAMATCHTYPE_LatestCompatible &&
+            (schemaContext.m_acceptLegacyImperfectLatestCompatibleMatch && matchType == SchemaMatchType::LatestCompatible &&
              0 == key.m_schemaName.CompareTo(desiredSchemaKey.m_schemaName) && key.m_versionMajor == desiredSchemaKey.m_versionMajor))
             {
             foundFiles.push_back(CandidateSchema());
@@ -1527,17 +1527,17 @@ ECSchemaReadContextCR schemaContext
     Utf8String twoVersionSuffix;
     Utf8String threeVersionSuffix;
     
-    if (matchType == SCHEMAMATCHTYPE_Latest)
+    if (matchType == SchemaMatchType::Latest)
         {
         twoVersionSuffix = ".*.*.ecschema.xml";
         threeVersionSuffix = ".*.*.*.ecschema.xml";
         }
-    else if (matchType == SCHEMAMATCHTYPE_LatestCompatible)
+    else if (matchType == SchemaMatchType::LatestCompatible)
         {
         twoVersionSuffix.Sprintf(".%02d.*.ecschema.xml", desiredSchemaKey.m_versionMajor);
         threeVersionSuffix.Sprintf(".%02d.%02d.*.ecschema.xml", desiredSchemaKey.m_versionMajor, desiredSchemaKey.m_versionMiddle);
         }
-    else if (matchType == SCHEMAMATCHTYPE_LatestReadCompatible)
+    else if (matchType == SchemaMatchType::LatestReadCompatible)
         {
         twoVersionSuffix.Sprintf(".%02d.*.ecschema.xml", desiredSchemaKey.m_versionMajor);
         threeVersionSuffix.Sprintf(".%02d.*.*.ecschema.xml", desiredSchemaKey.m_versionMajor);
@@ -1590,7 +1590,7 @@ ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMat
     LOG.debugv(L"Attempting to load schema %ls...", schemaToLoad.FileName.GetName());
 
     //Get cached version of the schema
-    ECSchemaPtr schemaOut = schemaContext.GetFoundSchema(schemaToLoad.Key, SCHEMAMATCHTYPE_Exact);;
+    ECSchemaPtr schemaOut = schemaContext.GetFoundSchema(schemaToLoad.Key, SchemaMatchType::Exact);;
     if (schemaOut.IsValid())
         return schemaOut;
      
@@ -2258,7 +2258,7 @@ void                             ECSchemaCache::Clear ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaP       ECSchemaCache::GetSchema   (SchemaKeyCR key) const
     {
-    return GetSchema(key, SCHEMAMATCHTYPE_Identical);
+    return GetSchema(key, SchemaMatchType::Identical);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2269,7 +2269,7 @@ ECSchemaP       ECSchemaCache::GetSchema(SchemaKeyCR key, SchemaMatchType matchT
     SchemaMap::const_iterator iter;
     switch (matchType)
         {
-        case SCHEMAMATCHTYPE_Identical:
+        case SchemaMatchType::Identical:
             {
             iter = m_schemas.find (key);
             break;
@@ -2718,13 +2718,13 @@ bool SchemaKey::LessThan (SchemaKeyCR rhs, SchemaMatchType matchType) const
     {
     switch (matchType)
         {
-        case SCHEMAMATCHTYPE_Identical:
+        case SchemaMatchType::Identical:
             {
             if (0 != m_checkSum || 0 != rhs.m_checkSum)
                 return m_checkSum < rhs.m_checkSum;
             //Fall through
             }
-        case SCHEMAMATCHTYPE_Exact:
+        case SchemaMatchType::Exact:
             {
             int nameCompare = CompareByName (rhs.m_schemaName);
 
@@ -2740,7 +2740,7 @@ bool SchemaKey::LessThan (SchemaKeyCR rhs, SchemaMatchType matchType) const
             return m_versionMinor < rhs.m_versionMinor;
             break;
             }
-        case SCHEMAMATCHTYPE_LatestCompatible:
+        case SchemaMatchType::LatestCompatible:
             {
             int nameCompare = CompareByName (rhs.m_schemaName);
 
@@ -2755,7 +2755,7 @@ bool SchemaKey::LessThan (SchemaKeyCR rhs, SchemaMatchType matchType) const
 
             return false;
             }
-        case SCHEMAMATCHTYPE_LatestReadCompatible:
+        case SchemaMatchType::LatestReadCompatible:
             {
             int nameCompare = CompareByName(rhs.m_schemaName);
 
@@ -2764,7 +2764,7 @@ bool SchemaKey::LessThan (SchemaKeyCR rhs, SchemaMatchType matchType) const
 
             return m_versionMajor < rhs.m_versionMajor;
             }
-        case SCHEMAMATCHTYPE_Latest: //Only compare by name
+        case SchemaMatchType::Latest: //Only compare by name
             {
             return CompareByName (rhs.m_schemaName) < 0;
             }
@@ -2780,16 +2780,16 @@ bool SchemaKey::Matches (SchemaKeyCR rhs, SchemaMatchType matchType) const
     {
     switch (matchType)
         {
-        case SCHEMAMATCHTYPE_Identical:
+        case SchemaMatchType::Identical:
             {
             if (0 != m_checkSum && 0 != rhs.m_checkSum)
                 return m_checkSum == rhs.m_checkSum;
             //fall through
             }
-        case SCHEMAMATCHTYPE_Exact:
+        case SchemaMatchType::Exact:
             return 0 == CompareByName (rhs.m_schemaName) && m_versionMajor == rhs.m_versionMajor &&
                 m_versionMiddle == rhs.m_versionMiddle && m_versionMinor == rhs.m_versionMinor;
-        case SCHEMAMATCHTYPE_LatestReadCompatible:
+        case SchemaMatchType::LatestReadCompatible:
             if (CompareByName(rhs.m_schemaName) != 0)
                 return false;
 
@@ -2800,10 +2800,10 @@ bool SchemaKey::Matches (SchemaKeyCR rhs, SchemaMatchType matchType) const
                 return m_versionMinor >= rhs.m_versionMinor;
 
             return m_versionMiddle > rhs.m_versionMiddle;
-        case SCHEMAMATCHTYPE_LatestCompatible:
+        case SchemaMatchType::LatestCompatible:
             return 0 == CompareByName (rhs.m_schemaName) && m_versionMajor == rhs.m_versionMajor &&
                 m_versionMiddle == rhs.m_versionMiddle && m_versionMinor >= rhs.m_versionMinor;
-        case SCHEMAMATCHTYPE_Latest:
+        case SchemaMatchType::Latest:
             return 0 == CompareByName (rhs.m_schemaName);
         default:
             return false;

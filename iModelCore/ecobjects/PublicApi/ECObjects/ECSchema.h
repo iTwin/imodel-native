@@ -2086,15 +2086,15 @@ typedef RefCountedPtr<ECRelationshipClass>      ECRelationshipClassPtr;
 enum SchemaMatchType
     {
     //! Find exact VersionMajor, VersionMiddle, VersionMinor match as well as Data
-    SCHEMAMATCHTYPE_Identical           =   0,
+    Identical,
     //! Find exact VersionMajor, VersionMiddle, VersionMinor match.
-    SCHEMAMATCHTYPE_Exact               =   1, //WIP: Rename this to NameAndVersion
+    Exact,
     //! Find latest version with matching VersionMajor and VersionMiddle
-    SCHEMAMATCHTYPE_LatestCompatible    =   2,
+    LatestCompatible,
     //! Find latest version.
-    SCHEMAMATCHTYPE_Latest              =   3, //WIP:Rename this to Name
+    Latest,
     //! Find latest version with matching VersionMajor
-    SCHEMAMATCHTYPE_LatestReadCompatible = 4,
+    LatestReadCompatible,
     };
 
 /*=================================================================================**//**
@@ -2170,20 +2170,20 @@ struct SchemaKey
     //! @param[in]  rhs         The SchemaKey to compare to
     //! @param[in]  matchType   The type of match to compare for
     //! @returns The comparison is based on the SchemaMatchType, defined by:
-    //! @li SCHEMAMATCHTYPE_Identical - Returns whether the current schema's checksum is less than the target's checksum.  If the checksum is not set, it falls through to the Exact match
-    //! @li SCHEMAMATCHTYPE_Exact - This will first test the names, then the major version, and lastly the minor version
-    //! @li SCHEMAMATCHTYPE_LatestCompatible - This will first test the names and then the major versions.
-    //! @li SCHEMAMATCHTYPE_Latest - Returns whether the current schema's name is less than the target's.
+    //! @li SchemaMatchType::Identical - Returns whether the current schema's checksum is less than the target's checksum.  If the checksum is not set, it falls through to the Exact match
+    //! @li SchemaMatchType::Exact - This will first test the names, then the major version, and lastly the minor version
+    //! @li SchemaMatchType::LatestCompatible - This will first test the names and then the major versions.
+    //! @li SchemaMatchType::Latest - Returns whether the current schema's name is less than the target's.
     ECOBJECTS_EXPORT bool LessThan (SchemaKeyCR rhs, SchemaMatchType matchType) const;
     
     //! Compares two SchemaKeys and returns whether the target schema matches this SchemaKey, where "matches" is dependent on the match type
     //! @param[in]  rhs         The SchemaKey to compare to
     //! @param[in]  matchType   The type of match to compare for
     //! @returns The comparison is based on the SchemaMatchType, defined by:
-    //! @li SCHEMAMATCHTYPE_Identical - Returns whether the current schema's checksum is equal to the target's checksum.  If the checksum is not set, it falls through to the Exact match
-    //! @li SCHEMAMATCHTYPE_Exact - Returns whether this schema's name, major version, and minor version are all equal to the target's.
-    //! @li SCHEMAMATCHTYPE_LatestCompatible - Returns whether this schema's name and major version are equal, and this schema's minor version is greater than or equal to the target's.
-    //! @li SCHEMAMATCHTYPE_Latest - Returns whether the current schema's name is equal to the target's.
+    //! @li SchemaMatchType::Identical - Returns whether the current schema's checksum is equal to the target's checksum.  If the checksum is not set, it falls through to the Exact match
+    //! @li SchemaMatchType::Exact - Returns whether this schema's name, major version, and minor version are all equal to the target's.
+    //! @li SchemaMatchType::LatestCompatible - Returns whether this schema's name and major version are equal, and this schema's minor version is greater than or equal to the target's.
+    //! @li SchemaMatchType::Latest - Returns whether the current schema's name is equal to the target's.
     ECOBJECTS_EXPORT bool Matches (SchemaKeyCR rhs, SchemaMatchType matchType) const;
 
     //! Compares two schema names and returns whether the target schema matches this m_schemaName. Comparison is case-sensitive
@@ -2193,7 +2193,7 @@ struct SchemaKey
     //! Returns whether this SchemaKey is Identical to the target SchemaKey
     bool operator == (SchemaKeyCR rhs) const
         {
-        return Matches(rhs, SCHEMAMATCHTYPE_Identical);
+        return Matches(rhs, SchemaMatchType::Identical);
         }
 
     //! Returns true if the target SchemaKey is not Identical to this SchemaKey, false otherwise
@@ -2205,7 +2205,7 @@ struct SchemaKey
     //! Returns whether this SchemaKey's checksum is less than the target SchemaKey's.
     bool operator < (SchemaKeyCR rhs) const
         {
-        return LessThan (rhs, SCHEMAMATCHTYPE_Identical);
+        return LessThan (rhs, SchemaMatchType::Identical);
         }
 /*__PUBLISH_SECTION_END__*/
     Utf8StringCR GetName() const {return m_schemaName;}
@@ -2403,14 +2403,14 @@ typedef QualifiedECAccessorList const& QualifiedECAccessorListCR;
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct SchemaMapExact:bmap<SchemaKey, ECSchemaPtr, SchemaKeyLessThan <SCHEMAMATCHTYPE_Exact> >
+struct SchemaMapExact:bmap<SchemaKey, ECSchemaPtr, SchemaKeyLessThan <SchemaMatchType::Exact> >
     {
     //! Returns an iterator to the entry in this map matching the specified key using the specified match type, or an iterator to the end of this map if no such entry exists
     SchemaMapExact::const_iterator Find (SchemaKeyCR key, SchemaMatchType matchType) const
         {
         switch (matchType)
             {
-            case SCHEMAMATCHTYPE_Exact:
+            case SchemaMatchType::Exact:
                 return find(key);
             default:
                 return std::find_if(begin(), end(), SchemaKeyMatchPredicate(key, matchType));

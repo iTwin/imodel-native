@@ -121,7 +121,7 @@ struct StandardValueToEnumConversionTest : CustomAttributeRemovalTest
         {
         ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
         SchemaKey schemaKey("EditorCustomAttributes", 1, 0);
-        editorSchema = context->LocateSchema(schemaKey, SCHEMAMATCHTYPE_Latest);
+        editorSchema = context->LocateSchema(schemaKey, SchemaMatchType::Latest);
         }
 
     IECInstancePtr GetStandardValuesInstance(std::map<int, Utf8String> valueMap, ECSchemaPtr& customAttributesSchema, bool mustBedefined = false, bool mustBeFromList = true)
