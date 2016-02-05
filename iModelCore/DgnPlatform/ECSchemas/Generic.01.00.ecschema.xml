@@ -34,4 +34,12 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
+    <ECEntityClass typeName="SpatialGroup">
+        <!-- A SpatialElement that groups other SpatialElements using the ElementGroupsMembers relationship -->
+        <BaseClass>dgn:SpatialElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
 </ECSchema>

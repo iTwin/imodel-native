@@ -57,7 +57,6 @@
 #define DGN_CLASSNAME_SectionDrawingModel   "SectionDrawingModel"
 #define DGN_CLASSNAME_SheetModel            "SheetModel"
 #define DGN_CLASSNAME_SpatialElement        "SpatialElement"
-#define DGN_CLASSNAME_SpatialGroupElement   "SpatialGroupElement"
 #define DGN_CLASSNAME_SpatialIndex          "SpatialIndex"
 #define DGN_CLASSNAME_SpatialRedlineModel   "SpatialRedlineModel"
 #define DGN_CLASSNAME_TextAnnotationSeed    "TextAnnotationSeed"

@@ -469,13 +469,6 @@
         <!-- A SpatialElement that identifies a "tracked" real world location but has no mass and cannot be "touched" -->
         <BaseClass>SpatialElement</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="SpatialGroupElement">
-        <!-- A SpatialElement that groups other SpatialElements using the ElementGroupsMembers relationship -->
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
-        </ECCustomAttributes>
-        <BaseClass>SpatialElement</BaseClass>
-    </ECEntityClass>
     <ECEntityClass typeName="VolumeElement">
         <!-- A SpatialLocationElement that defines a volume -->
         <ECCustomAttributes>

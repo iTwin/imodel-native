@@ -1622,31 +1622,6 @@ public:
 };
 
 //=======================================================================================
-//! A SpatialElement that groups other SpatialElements using the ElementGroupsMembers relationship
-// @bsiclass                                                    Shaun.Sewall    12/15
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SpatialGroupElement : SpatialElement, IElementGroupOf<SpatialElement>
-{
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialGroupElement, SpatialElement)
-
-protected:
-    Dgn::IElementGroupCP _ToIElementGroup() const override final {return this;}
-    virtual Dgn::DgnElementCP _ToGroupElement() const override final {return this;}
-
-public:
-    //! @private
-    explicit SpatialGroupElement(CreateParams const& params) : T_Super(params) {}
-
-    //! Create a new SpatialGroupElement from a model and DgnCategoryId, using the default values for all other parameters.
-    //! @param[in] model The SpatialModel for the new SpatialGroupElement.
-    //! @param[in] categoryId The category for the new SpatialGroupElement.
-    DGNPLATFORM_EXPORT static SpatialGroupElementPtr Create(SpatialModelR model, DgnCategoryId categoryId);
-
-    //! Creates a new SpatialGroupElement
-    static SpatialGroupElementPtr Create(CreateParams const& params) {return new SpatialGroupElement(params);}
-};
-
-//=======================================================================================
 //! @ingroup DgnElementGroup
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE InformationElement : DgnElement

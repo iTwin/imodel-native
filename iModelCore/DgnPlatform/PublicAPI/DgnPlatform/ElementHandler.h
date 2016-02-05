@@ -130,12 +130,6 @@ namespace dgn_ElementHandler
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, DrawingElement, Drawing, Geometric2d, DGNPLATFORM_EXPORT)
     };
-
-    //! The ElementHandler for SpatialGroupElement
-    struct EXPORT_VTABLE_ATTRIBUTE SpatialGroup : Geometric3d
-    {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialGroupElement, SpatialGroupElement, SpatialGroup, Geometric3d, DGNPLATFORM_EXPORT)
-    };
 };
 
 //=======================================================================================
