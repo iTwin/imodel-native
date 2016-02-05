@@ -381,8 +381,13 @@ Utf8StringCR ECSchema::GetNamespacePrefix () const
 ECObjectsStatus ECSchema::SetNamespacePrefix (Utf8StringCR namespacePrefix)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
-    m_namespacePrefix = namespacePrefix;
-    return ECObjectsStatus::Success;
+
+	else if (!ECNameValidation::IsValidName(namespacePrefix.c_str()))
+		return ECObjectsStatus::InvalidName;
+
+	ECNameValidation::EncodeToValidName(m_namespacePrefix, namespacePrefix);
+
+	return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
