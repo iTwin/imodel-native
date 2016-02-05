@@ -2,7 +2,7 @@
 |
 |     $Source: ThreeMxSchema/ThreeMxHandler.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ThreeMxSchemaInternal.h"
@@ -122,12 +122,64 @@ ThreeMxScenePtr  ThreeMxModel::GetScene ()
     }
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                               Nicholas.Woodfield     01/2016
+//----------------------------------------------------------------------------------------
+void ThreeMxModel::GetTiles(GetTileCallback callback, double resolution)
+  {
+  if(callback == nullptr || resolution < 0)
+    return;
+    
+    ThreeMxScenePtr  scene = GetScene();
+
+    if (!scene.IsValid())
+        {
+        BeAssert (false);
+        return;
+        }
+  
+  scene->_GetTiles(callback, resolution);
+  }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                               Nicholas.Woodfield     01/2016
+//----------------------------------------------------------------------------------------
+void ThreeMxModel::GetTransform(TransformR transform) const
+    {
+    if (!m_scene.IsValid())
+        {
+        BeAssert(false);
+        return;
+        }
+
+    m_scene->GetTransform(transform);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                               Nicholas.Woodfield     01/2016
+//----------------------------------------------------------------------------------------
+double ThreeMxModel::GetDefaultExportResolution() const
+    {
+    return 0.0;
+    }
+
+//----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
 AxisAlignedBox3d ThreeMxModel::_QueryModelRange() const
     {
-    BeAssert (false);
-    return AxisAlignedBox3d();          // Needs work...
+    if (!m_scene.IsValid())
+        {
+        BeAssert(false);
+        return AxisAlignedBox3d();
+        }
+
+    DRange3d range;
+    Transform transform;
+    m_scene->GetTransform(transform);
+
+    m_scene->_GetRange(range, transform);
+
+    return AxisAlignedBox3d(range);
     }   
 
 //----------------------------------------------------------------------------------------

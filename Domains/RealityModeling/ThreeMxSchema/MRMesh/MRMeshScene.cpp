@@ -2,7 +2,7 @@
 |
 |     $Source: ThreeMxSchema/MRMesh/MRMeshScene.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "..\ThreeMxSchemaInternal.h"
@@ -174,4 +174,13 @@ void    MRMeshScene::_Draw (bool& childrenScheduled, ViewContextR viewContext, M
     viewContext.PopTransformClip ();
     }
 
-
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                Nicholas.Woodfield     01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void MRMeshScene::_GetTiles(GetTileCallback callback, double resolution)
+  {
+  for (bvector<MRMeshNodePtr>::const_iterator child = m_children.begin(); child != m_children.end(); child++)
+    {
+    (*child)->GetTiles(callback, resolution);
+    }
+  }
