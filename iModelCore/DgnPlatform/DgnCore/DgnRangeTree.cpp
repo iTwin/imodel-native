@@ -813,7 +813,7 @@ DgnRangeTree::Match DgnRangeTree::FindMatches(DgnRangeTree::Traverser& traverser
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline bool OcclusionScorer::ComputeNPC(DPoint3dR npcOut, DPoint3dCR localIn)
+inline bool DgnQueryView::RangeQuery::ComputeNPC(DPoint3dR npcOut, DPoint3dCR localIn)
     {
     double w;
     if (m_cameraOn)
@@ -836,7 +836,7 @@ inline bool OcclusionScorer::ComputeNPC(DPoint3dR npcOut, DPoint3dCR localIn)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void OcclusionScorer::InitForViewport(DgnViewportCR viewport, double minimumSizePixels)
+void DgnQueryView::RangeQuery::InitForViewport(DgnViewportCR viewport, double minimumSizePixels)
     {
     m_localToNpc = viewport.GetWorldToNpcMap()->M0;
     m_cameraOn   = viewport.IsCameraOn();
@@ -880,14 +880,14 @@ void OcclusionScorer::InitForViewport(DgnViewportCR viewport, double minimumSize
 * Compute Occlusion score for a range that crosses the eye plane.
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool OcclusionScorer::ComputeEyeSpanningRangeOcclusionScore(double* score, DPoint3dCP rangeCorners)
+bool DgnQueryView::RangeQuery::ComputeEyeSpanningRangeOcclusionScore(double* score, DPoint3dCP rangeCorners)
     {
     bool    anyInside = false;
     double  s_eyeSpanningCameraLimit = 1.0E-3;
 
     DRange3d npcRange;
     npcRange.Init ();
-    for (int i=0; i<8; i++)
+    for (int i=0; i<8; ++i)
         {
         DPoint3d  npc;
         npc.x = m_localToNpc.coff[0][0] * rangeCorners[i].x + m_localToNpc.coff[0][1] * rangeCorners[i].y + m_localToNpc.coff[0][2] * rangeCorners[i].z + m_localToNpc.coff[0][3];
@@ -937,7 +937,7 @@ bool OcclusionScorer::ComputeEyeSpanningRangeOcclusionScore(double* score, DPoin
 * Algorithm by: Dieter Schmalstieg and Erik Pojar - ACM Transactions on Graphics.
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool OcclusionScorer::ComputeOcclusionScore(double* score, bool& overlap, bool& spansEyePlane, DPoint3dCP localCorners)
+bool DgnQueryView::RangeQuery::ComputeOcclusionScore(double* score, bool& overlap, bool& spansEyePlane, DPoint3dCP localCorners)
     {
     // Note - This routine is VERY time critical - Most of the calls to the geomlib
     // functions have been replaced with inline code as VTune had showed them as bottlenecks.
@@ -1102,7 +1102,7 @@ bool OcclusionScorer::ComputeOcclusionScore(double* score, bool& overlap, bool& 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RTreeFilter::SetFrustum(FrustumCR frustum)
+void DgnQueryView::RangeQuery::SetFrustum(FrustumCR frustum)
     {
     DRange3d range = frustum.ToRange();
     m_boundingRange.FromRange(range);
@@ -1124,10 +1124,10 @@ void RTreeFilter::SetFrustum(FrustumCR frustum)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RTreeFilter::SetViewport(DgnViewportCR viewport, double minimumSizePixels, double frustumScale)
+void DgnQueryView::RangeQuery::SetViewport(DgnViewportCR viewport, double minimumSizePixels, double frustumScale)
     {
     m_doOcclusionScore = true;
-    m_scorer.InitForViewport(viewport, minimumSizePixels);
+    InitForViewport(viewport, minimumSizePixels);
     Frustum frust = viewport.GetFrustum(DgnCoordSystem::World, true);
 
     if (1.0 != frustumScale)
@@ -1149,7 +1149,7 @@ static inline void exchangeAndNegate(double& dbl1, double& dbl2)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RTreeFilter::SkewTest(RTree3dValCP testRange)
+bool DgnQueryView::RangeQuery::SkewTest(RTree3dValCP testRange)
     {
     if (!m_doSkewtest || testRange->Intersects(m_frontFaceRange))
         return true;
@@ -1234,7 +1234,7 @@ bool RTreeFilter::SkewTest(RTree3dValCP testRange)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2013
 //---------------------------------------------------------------------------------------
-bool RTreeFilter::AllPointsClippedByOnePlane(ConvexClipPlaneSetCR cps, size_t nPoints, DPoint3dCP points) const
+bool DgnQueryView::RangeQuery::AllPointsClippedByOnePlane(ConvexClipPlaneSetCR cps, size_t nPoints, DPoint3dCP points) const
     {
     for (auto const& plane : cps)
         {
@@ -1255,9 +1255,8 @@ bool RTreeFilter::AllPointsClippedByOnePlane(ConvexClipPlaneSetCR cps, size_t nP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RTreeFilter::RTreeFilter(DgnDbR db, DgnElementIdSet const* exclude) : m_dgndb(db)
+void DgnQueryView::RTreeQuery::Init(DgnDbR db)
     {
-    m_exclude=exclude;
     db.GetCachedStatement(m_rangeStmt, "SELECT ElementId FROM " DGN_VTABLE_RTree3d " WHERE ElementId MATCH DGN_rTree(?1)");
     m_rangeStmt->BindInt64(1, (uint64_t) this);
     }
@@ -1265,38 +1264,8 @@ RTreeFilter::RTreeFilter(DgnDbR db, DgnElementIdSet const* exclude) : m_dgndb(db
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String RTreeTester::GetAcceptSql() {return " AND e.Id=@elId";}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId RTreeTester::StepRtree()
+DgnElementId DgnQueryView::RTreeQuery::StepRtree()
     {
     auto rc=m_rangeStmt->Step();
     return (rc != BE_SQLITE_ROW) ? DgnElementId() : m_rangeStmt->GetValueId<DgnElementId>(0);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-int RTreeFitFilter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
-    {
-    RTree3dValCP testRange = (RTree3dValCP) info.m_coords;
-
-    if (m_fitRange.IsContained(testRange->m_minx, testRange->m_miny, testRange->m_minz) &&
-        m_fitRange.IsContained(testRange->m_maxx, testRange->m_maxy, testRange->m_maxz))
-        {
-        info.m_within = RTreeMatchFunction::Within::Outside; // If this range is entirely contained there is no reason to continue (it cannot contribute to the fit)
-        }
-    else
-        {
-        info.m_within = RTreeMatchFunction::Within::Partly; 
-        info.m_score  = info.m_level; // to get depth-first traversal
-        if (info.m_level == 0)
-            m_lastRange = DRange3d::From(testRange->m_minx, testRange->m_miny, testRange->m_minz, testRange->m_maxx, testRange->m_maxy, testRange->m_maxz);
-        }
-
-    return  BE_SQLITE_OK;
-    }
-
-

@@ -21,7 +21,7 @@
 #include <Bentley/NonCopyableClass.h>
 #include <Bentley/bvector.h>
 #include "DgnPlatform.r.h"
-#include "DgnPlatformErrors.r.h"
+#include "DgnPlatformErrors.h"
 #include "DgnHost.h"
 #include <BeSQLite/BeSQLite.h>
 #include <BeSQLite/ChangeSet.h>

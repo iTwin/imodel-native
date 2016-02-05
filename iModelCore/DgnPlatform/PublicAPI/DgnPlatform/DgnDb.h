@@ -9,7 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include "DgnDbTables.h"
-#include "DgnDomain.h"
+#include "DgnModel.h"
 #include "MemoryManager.h"
 #include "RepositoryManager.h"
 #include "UpdatePlan.h"
@@ -94,7 +94,6 @@ struct DgnVersion : BeSQLite::SchemaVersion
     DgnVersion(uint16_t major, uint16_t minor, uint16_t sub1, uint16_t sub2) : SchemaVersion(major, minor, sub1, sub2) {}
     DgnVersion(Utf8CP val) : SchemaVersion(val){}
 };
-
 
 //=======================================================================================
 //! A DgnDb is an in-memory object to access the information in a DgnDb file.

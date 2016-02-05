@@ -190,7 +190,7 @@ protected:
     virtual void _SavePartGraphic(DgnGeometryPartId, Render::GraphicR, ElementAlignedBox3dCR) {}
     virtual void _OutputGraphic(Render::GraphicR, GeometrySourceCP) {}
     virtual Render::GraphicP _GetCachedGraphic(GeometrySourceCR, double pixelSize) {return nullptr;}
-    virtual void _SaveGraphic(GeometrySourceCR, Render::GraphicR graphic) {}
+    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize);
     DGNPLATFORM_EXPORT virtual bool _WantAreaPatterns();
     DGNPLATFORM_EXPORT virtual void _DrawAreaPattern(ClipStencil& boundary);
     DGNPLATFORM_EXPORT virtual void _DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed = false);
@@ -473,7 +473,7 @@ public:
     void _AddContextOverrides(Render::OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source) override;
     Render::GraphicP _GetCachedGraphic(GeometrySourceCR source, double pixelSize) override {return source.Graphics().Find(*m_viewport, pixelSize);}
     DGNVIEW_EXPORT Render::GraphicP _GetCachedPartGraphic(DgnGeometryPartId, double pixelSize, ElementAlignedBox3dR) override;
-    void _SaveGraphic(GeometrySourceCR source, Render::GraphicR graphic) override {graphic.Close(); source.Graphics().Save(graphic);}
+    DGNVIEW_EXPORT Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize) override;
     void _PushFrustumClip() override {}
     Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return m_target.CreateGraphic(params);}
     void _SavePartGraphic(DgnGeometryPartId partId, Render::GraphicR graphic, ElementAlignedBox3dCR localRange) override;
@@ -485,25 +485,29 @@ public:
 struct SceneContext : RenderContext
 {
     DEFINE_T_SUPER(RenderContext);
+    friend struct DgnQueryView;
 
 private:
-    int32_t        m_checkStopInterval;
-    int32_t        m_checkStopElementSkip = 10;
-    int32_t        m_checkStopElementCount = 0;
-    uint64_t       m_nextCheckStop;
+    bool m_wantStroke = true;
+    bool m_strokeCalled = false;
+    int32_t m_checkStopInterval;
+    int32_t m_checkStopElementSkip = 10;
+    int32_t m_checkStopElementCount = 0;
+    uint64_t m_nextCheckStop;
     Render::GraphicListR m_scene;
-    UpdateAbort    m_abortReason;
+    UpdateAbort m_abortReason = UpdateAbort::None;
     UpdatePlan const& m_plan;
 
     void _OutputGraphic(Render::GraphicR graphic, GeometrySourceCP) override;
     bool _CheckStop() override;
     int AccumulateMotion();
     bool DoCheckStop();
+    bool SetNoStroking(bool val){bool strokeCalled=m_strokeCalled; m_strokeCalled=false; m_wantStroke=val; return strokeCalled;}
+    Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize) override {m_strokeCalled=true; return m_wantStroke ? T_Super::_StrokeGeometry(source,pixelSize) : nullptr;}
+    void EnableCheckStop(int stopInterval, int const* motionTolerance);
 
 public:
-    SceneContext(DgnViewportR vp, Render::GraphicListR scene, UpdatePlan const& plan) : m_scene(scene), RenderContext(vp, DrawPurpose::CreateScene), m_plan(plan) {}
-    void EnableCheckStop(int stopInterval, int const* motionTolerance);
-    StatusInt CreateScene();
+    SceneContext(DgnViewportR vp, Render::GraphicListR scene, UpdatePlan const& plan);
     UpdatePlan const& GetUpdatePlan() const {return m_plan;}
 };
 

@@ -35,7 +35,6 @@ BEGIN_BENTLEY_DGN_NAMESPACE
   @see DgnCoordSystem
 */
 
-
 //=======================================================================================
 //! Parameters for the "fit view" operation
 // @bsiclass                                                    Keith.Bentley   06/15
@@ -58,12 +57,12 @@ struct FitViewParams
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 enum class ViewportResizeMode
-    {
+{
     KeepCurrent      = 0, //!< The viewport size is unchanged (this is the default). The viewport is unchanged, and the view contents are resized to match the viewport aspect ratio.
     RelativeRect     = 1, //!< The viewport is resized to the same size, relative to the available area, that is specifed in viewPortInfo
     AspectRatio      = 2, //!< The viewport is resized to match the aspect ratio of the viewInfo.
     Size             = 3, //!< The viewport is resized to match the exact size 
-    };
+};
 
 //=======================================================================================
 /**
@@ -87,7 +86,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
 {
 public:
     friend struct ViewManager;
-    friend struct ViewSet;
 
 //! @private
 typedef bpair<Render::GraphicSet, ElementAlignedBox3d> GraphicSetRangePair;
@@ -102,6 +100,7 @@ protected:
     bool            m_isCameraOn = false;       // view is 3d and the camera is turned on.
     bool            m_frustumValid = false;
     bool            m_needSynchWithViewController = true;
+    mutable bool    m_sceneValid = false;    // the scene remains valid, even if the view volume changes. It becomes invalid if the database changes or view parameters change.
     mutable bool    m_needsHeal = true;
     mutable bool    m_needsRefresh = true;
     bool            m_targetCenterValid = false;
@@ -109,7 +108,6 @@ protected:
     Byte            m_dynamicsTransparency = 64;
     Byte            m_flashingTransparency = 100;
     int             m_maxUndoSteps = 20;
-    uint32_t        m_sceneEntries = 0;         // number of entries in the scene from last attempt at healing
     DPoint3d        m_viewOrg;                  // view origin, potentially expanded if f/b clipping are off
     DVec3d          m_viewDelta;                // view delta, potentially expanded if f/b clipping are off
     DPoint3d        m_viewOrgUnexpanded;        // view origin (from ViewController, unexpanded for "no clip")
@@ -146,16 +144,7 @@ protected:
     DMap4d CalcNpcToView();
     void QueueDrawFrame();
     void CalcTargetNumElements(UpdatePlan const& plan, bool isForProgressive);
-
-    enum class CloseMe {No=0, Yes=1};
-    //! called when one or more models are deleted
-    //! Default implementation does:
-    //! - Removes deleted models from viewed model list
-    //! - Chooses a new target model arbitrarily from viewed model list if target model deleted
-    //! - Closes viewport if no viewed models remain
-    //! Override this method to change this behavior
-    //! @return true to close this viewport
-    DGNPLATFORM_EXPORT virtual CloseMe _OnModelsDeleted(bset<Dgn::DgnModelId> const&, Dgn::DgnDbR db);
+    StatusInt ValidateScene(UpdatePlan const& plan);
 
 public:
     DgnViewport(Render::TargetP target) : m_renderTarget(target) {}
@@ -199,6 +188,7 @@ public:
     DPoint3dCP GetViewCmdTargetCenter() {return m_targetCenterValid ? &m_viewCmdTargetCenter : nullptr;}
     Point2d GetScreenOrigin() const {return m_renderTarget->GetScreenOrigin();}
     DGNVIEW_EXPORT double PixelsFromInches(double inches) const;
+    DGNPLATFORM_EXPORT void InvalidateScene();
     DGNVIEW_EXPORT void ForceHeal();
     StatusInt HealViewport(UpdatePlan const&);
     bool GetNeedsHeal() {return m_needsHeal;}
@@ -455,18 +445,14 @@ public:
     CameraViewControllerCP GetCameraViewControllerCP() const {return GetViewController()._ToCameraView();}
     //! If this view is a camera view, get a writeable pointer to the camera physical view controller.
     CameraViewControllerP GetCameraViewControllerP() {return (CameraViewControllerP) GetCameraViewControllerCP();}
-
     //! If this view is a drawing view, get the drawing view controller.
     DrawingViewControllerCP GetDrawingViewControllerCP() const {return GetViewController()._ToDrawingView();}
     //! If this view is a drawing view, get a writeable pointer to the drawing view controller.
     DrawingViewControllerP GetDrawingViewControllerP() {return (DrawingViewControllerP) GetDrawingViewControllerCP();}
-
-    //__PUBLISH_SECTION_END__
     //! If this view is a sheet view, get the sheet view controller.
     SheetViewControllerCP GetSheetViewControllerCP() const {return GetViewController()._ToSheetView();}
     //! If this view is a sheet view, get a writeable pointer to the sheet view controller.
     SheetViewControllerP GetSheetViewControllerP() {return (SheetViewControllerP) GetSheetViewControllerCP();}
-    //__PUBLISH_SECTION_START__
 
     //! Get View Origin for this DgnViewport.
     //! @return the root coordinates of the lower left back corner of the DgnViewport.
@@ -518,8 +504,8 @@ public:
 
     DGNPLATFORM_EXPORT ColorDef GetSolidFillEdgeColor(ColorDef inColor);
 
-    DGNVIEW_EXPORT void UpdateViewDynamic(UpdatePlan const& info = DynamicUpdatePlan());
     DGNVIEW_EXPORT void UpdateView(UpdatePlan const& info = UpdatePlan());
+    void UpdateViewDynamic(UpdatePlan const& info = DynamicUpdatePlan()) {UpdateView(info);}
 
     static double GetMinViewDelta() {return DgnUnits::OneMillimeter() / 100.;}
     static double GetMaxViewDelta() {return 20000 * DgnUnits::OneKilometer();}    // about twice the diameter of the earth

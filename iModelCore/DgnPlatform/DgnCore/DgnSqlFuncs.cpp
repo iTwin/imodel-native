@@ -863,7 +863,7 @@ struct DGN_rtree : RTreeMatchFunction
 {
     int _TestRange(QueryInfo const& info) override
         {
-        RTreeTester* matcher = (RTreeTester*) info.m_args[0].GetValueInt64();
+        auto matcher = (DgnQueryView::RTreeQuery*) info.m_args[0].GetValueInt64();
         return matcher->_TestRTree(info);
         }
     DGN_rtree() : RTreeMatchFunction("DGN_rtree", 1) {}

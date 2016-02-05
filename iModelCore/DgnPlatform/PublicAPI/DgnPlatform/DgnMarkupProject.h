@@ -328,7 +328,6 @@ protected:
     virtual void _SetDelta(DVec3dCR delta) override;
     virtual void _SetRotation(RotMatrixCR rot) override;
     virtual GeometricModelP _GetTargetModel() const override;
-    virtual DgnDbR _GetDgnDb() const override;
     virtual void _AdjustAspectRatio(double , bool expandView) override;
     virtual DPoint3d _GetTargetPoint() const override;
     virtual bool _Allow3dManipulations() const override;
@@ -340,7 +339,6 @@ protected:
     virtual void _OnViewOpened(DgnViewportR vp) override;
 
     //  Override and forward the methods that trigger a query.
-    virtual void _OnUpdate(DgnViewportR viewport, UpdatePlan const&) override;
     virtual void _OnCategoryChange(bool singleEnabled) override;
     virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff) override;
 

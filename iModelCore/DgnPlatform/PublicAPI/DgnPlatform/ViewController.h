@@ -10,31 +10,29 @@
 
 #include "DgnPlatform.h"
 
-DGNPLATFORM_TYPEDEFS(SpatialViewController)
-DGNPLATFORM_TYPEDEFS(CameraViewController)
-DGNPLATFORM_TYPEDEFS(HypermodelingViewController)
-DGNPLATFORM_TYPEDEFS(DrawingViewController)
-DGNPLATFORM_TYPEDEFS(SectionDrawingViewController)
-DGNPLATFORM_TYPEDEFS(SheetViewController)
-DGNPLATFORM_TYPEDEFS(FitViewParams)
 DGNPLATFORM_TYPEDEFS(CameraInfo)
+DGNPLATFORM_TYPEDEFS(CameraViewController)
+DGNPLATFORM_TYPEDEFS(DrawingViewController)
+DGNPLATFORM_TYPEDEFS(FitViewParams)
+DGNPLATFORM_TYPEDEFS(HypermodelingViewController)
+DGNPLATFORM_TYPEDEFS(SectionDrawingViewController)
 DGNPLATFORM_TYPEDEFS(SectioningViewController)
+DGNPLATFORM_TYPEDEFS(SheetViewController)
+DGNPLATFORM_TYPEDEFS(SpatialViewController)
 
+DGNPLATFORM_REF_COUNTED_PTR(CameraViewController)
 DGNPLATFORM_REF_COUNTED_PTR(DrawingViewController)
+DGNPLATFORM_REF_COUNTED_PTR(HypermodelingViewController)
 DGNPLATFORM_REF_COUNTED_PTR(SectionDrawingViewController)
+DGNPLATFORM_REF_COUNTED_PTR(SectioningViewController)
 DGNPLATFORM_REF_COUNTED_PTR(SheetViewController)
 DGNPLATFORM_REF_COUNTED_PTR(SpatialViewController)
-DGNPLATFORM_REF_COUNTED_PTR(CameraViewController)
-DGNPLATFORM_REF_COUNTED_PTR(SectioningViewController)
-DGNPLATFORM_REF_COUNTED_PTR(HypermodelingViewController)
 
 #include "IAuxCoordSys.h"
 #include "ViewContext.h"
-#include "DgnPlatformErrors.r.h"
 #include "SectionClip.h"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
-
 
 enum class OrientationMode
 {
@@ -125,7 +123,7 @@ protected:
     RotMatrix      m_defaultDeviceOrientation;
     bool           m_defaultDeviceOrientationValid;
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Appearance> m_subCategories;
-    bmap<DgnSubCategoryId,DgnSubCategory::Override> m_subCategoryOverrides;
+    mutable bmap<DgnSubCategoryId,DgnSubCategory::Override> m_subCategoryOverrides;
 
 protected:
     DGNPLATFORM_EXPORT ViewController(DgnDbR, DgnViewId viewId);
@@ -145,7 +143,6 @@ protected:
     virtual FitComplete _ComputeFitRange(DRange3dR range, DgnViewportR, FitViewParamsR) {return FitComplete::No;}
     virtual void _OnViewOpened(DgnViewportR) {}
     virtual bool _Allow3dManipulations() const {return false;}
-    virtual void _OnDynamicUpdateComplete(DgnViewportR vp, ViewContextR context, bool completedSuccessfully) {}
     virtual void _OnAttachedToViewport(DgnViewportR) {}
     virtual ColorDef _GetBackgroundColor() const {return m_backgroundColor;}
     virtual double _GetAspectRatioSkew() const {return 1.0;}
@@ -202,11 +199,12 @@ protected:
     //! Turn the display of a model on or off.
     DGNPLATFORM_EXPORT virtual void _ChangeModelDisplay(DgnModelId, bool onOff);
 
-    //! Draws the contents of the view.
-    //! @remarks It is very rare that an applications needs to call this or to override it.
+    //! Draw the contents of the view.
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR);
 
-    DGNPLATFORM_EXPORT virtual void _CreateScene(SceneContextR context) {_DrawView(context);}
+    DGNPLATFORM_EXPORT virtual void _CreateScene(SceneContextR);
+
+    virtual void _InvalidateScene() {}
 
     virtual void _OverrideGraphicParams(Render::OvrGraphicParamsR, GeometrySourceCP) {}
 
@@ -228,7 +226,6 @@ protected:
     DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitDetailCR hit, DecorateContextR context) const;
 
     //! Used to notify derived classes when an update begins.
-    //! <p>See QueryView::_OnFullUpdate
     virtual void _OnUpdate(DgnViewportR vp, UpdatePlan const&) {}
 
     //! Used to notify derived classes of an attempt to locate the viewport around the specified
@@ -251,14 +248,18 @@ protected:
     //! Used to change the writable model in which new elements are to be placed.
     virtual BentleyStatus _SetTargetModel(GeometricModelP model) {return GetTargetModel()==model ? SUCCESS : ERROR;}
 
-    //! Returns the project that is being viewed
-    virtual DgnDbR _GetDgnDb() const {return m_dgndb;}
-
     //! Get the union of the range (axis-aligned bounding box) of all physical elements in project
     DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _GetViewedExtents() const;
 
-    DGNPLATFORM_EXPORT BeSQLite::DbResult QueryViewsPropertyAsJson(JsonValueR, DgnViewProperty::Spec const&) const;
-    DGNPLATFORM_EXPORT BentleyStatus CheckViewSubType() const;
+    enum class CloseMe {No=0, Yes=1};
+    //! called when one or more models are deleted
+    //! Default implementation does:
+    //! - Removes deleted models from viewed model list
+    //! - Chooses a new target model arbitrarily from viewed model list if target model deleted
+    //! - Closes viewport if no viewed models remain
+    //! Override this method to change this behavior
+    //! @return true to close this viewport
+    DGNPLATFORM_EXPORT virtual CloseMe _OnModelsDeleted(bset<Dgn::DgnModelId> const&, Dgn::DgnDbR db);
 
 public:
     /*=================================================================================**//**
@@ -293,11 +294,9 @@ public:
     };
 
     StatusInt VisitHit(HitDetailCR hit, DecorateContextR context) const{return _VisitHit(hit, context);}
-    void CreateScene(SceneContextR context) {return _CreateScene(context);}
     void DrawView(ViewContextR context) {return _DrawView(context);}
     void VisitAllElements(ViewContextR context) {return _VisitAllElements(context);}
     void ChangeModelDisplay(DgnModelId modelId, bool onOff) {_ChangeModelDisplay(modelId, onOff);}
-    DGNPLATFORM_EXPORT StatusInt GetRangeForFit(DRange3dR range);
     void OnViewOpened(DgnViewportR vp) {_OnViewOpened(vp);}
     void SetBaseModelId(DgnModelId id) {m_baseModelId = id;}
     DgnModelId GetBaseModelId() const {return m_baseModelId;}
@@ -308,11 +307,11 @@ public:
     void RestoreFromSettings(JsonValueCR val) {_RestoreFromSettings(val);}
     void OnUpdate(DgnViewportR vp, UpdatePlan const& plan) {_OnUpdate(vp, plan);}
 
-public:
+
     DgnClassId GetClassId() const {return m_classId;}
 
     //! Get the DgnDb of this view.
-    DgnDbR GetDgnDb() const {return _GetDgnDb();}
+    DgnDbR GetDgnDb() const {return m_dgndb;}
 
     //! Get the union of the range (axis-aligned bounding box) of all physical elements in project
     AxisAlignedBox3d GetViewedExtents() const {return _GetViewedExtents();}
@@ -369,9 +368,6 @@ public:
     //! determine whether this is a sheet view
     bool IsSheetView() const {return nullptr != _ToSheetView();}
 
-    //! determine whether this view has been loaded from the database.
-    bool IsLoaded() const {return m_baseModelId.IsValid();}
-
     //! Get the ViewFlags.
     Render::ViewFlags GetViewFlags() const {return m_viewFlags;}
 
@@ -425,16 +421,14 @@ public:
 
     double GetAspectRatioSkew() const {return _GetAspectRatioSkew();}
 
-//__PUBLISH_SECTION_END__
     DGNPLATFORM_EXPORT bool IsViewChanged(Utf8StringCR base) const;
     bool OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) {return _OnGeoLocationEvent(status, point);}
-    DGNPLATFORM_EXPORT bool OnOrientationEvent (RotMatrixCR matrix, OrientationMode mode, UiOrientation ui, uint32_t nEventsSinceEnabled);
+    DGNPLATFORM_EXPORT bool OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui, uint32_t nEventsSinceEnabled);
     DGNPLATFORM_EXPORT void ResetDeviceOrientation();
     DGNPLATFORM_EXPORT void OverrideSubCategory(DgnSubCategoryId, DgnSubCategory::Override const&);
     DGNPLATFORM_EXPORT void DropSubCategoryOverride(DgnSubCategoryId);
     DGNPLATFORM_EXPORT void PointToStandardGrid(DgnViewportR, DPoint3dR point, DPoint3dCR gridOrigin, RotMatrixCR gridOrientation) const;
     DGNPLATFORM_EXPORT void PointToGrid(DgnViewportR, DPoint3dR point) const;
-//__PUBLISH_SECTION_START__
 
     //! Get the set of currently displayed DgnModels for this ViewController
     DgnModelIdSet const& GetViewedModels() const {return m_viewedModels;}
@@ -453,7 +447,7 @@ public:
     //! @param[in] color The new background color
     void SetBackgroundColor(ColorDef color) {m_backgroundColor = color;}
 
-    //! Initialize this ViewController .
+    //! Initialize this ViewController.
     DGNPLATFORM_EXPORT void Init();
 
     //! Gets the DgnModel that will be the target of tools that add new elements.
@@ -470,7 +464,7 @@ public:
 
     //! Gets the name of a StandardView.
     //! @param[in]  standardView The StandardView of interest
-    //! @return the ViewName. 
+    //! @return the ViewName.
     DGNPLATFORM_EXPORT static Utf8String GetStandardViewName(StandardView standardView);
 
     //! Get the RotMatrix for a standard view by name.
@@ -581,7 +575,7 @@ public:
 /** @addtogroup DgnViewGroup
 <h4>%SpatialViewController Camera</h4>
 
- This is what the parameters to the camera methods, and the values stored by CameraViewController mean.
+This is what the parameters to the camera methods, and the values stored by CameraViewController mean.
 @verbatim
                v-- {origin}
           -----+-------------------------------------- -   [back plane]
@@ -987,9 +981,6 @@ private:
     virtual DPoint3d _GetTargetPoint() const override;
     virtual bool _Allow3dManipulations() const override;
     virtual AxisAlignedBox3d _GetViewedExtents() const override;
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    virtual ColorDef _GetBackgroundColor() const override;
-#endif
     virtual ClipVectorPtr _GetClipVector() const override;
 
     void PushClipsForSpatialView(ViewContextR) const;

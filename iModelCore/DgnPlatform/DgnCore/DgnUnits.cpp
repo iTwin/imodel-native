@@ -105,7 +105,7 @@ BEGIN_UNNAMED_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/11
 //=======================================================================================
-struct RTreeBounds : RTreeTester
+struct RTreeBounds : DgnQueryView::RTreeQuery
 {
     BeSQLite::RTree3dVal  m_bounds;
     RTreeBounds() {m_bounds.Invalidate();}

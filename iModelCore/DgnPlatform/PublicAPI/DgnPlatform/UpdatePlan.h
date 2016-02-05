@@ -144,8 +144,6 @@ struct StopEvents
 //=======================================================================================
 struct UpdatePlan
 {
-    friend struct ViewSet;
-
     struct Query
     {
         uint32_t    m_maxTime = 2000;    // maximum time query should run (milliseconds)
@@ -239,7 +237,7 @@ struct DgnQueryQueue
 
     public:
         Task(DgnQueryViewR view, DgnViewportCR vp, UpdatePlan::Query const& plan) : m_view(view), m_vp(vp), m_plan(plan) {}
-        void Process(StopWatch&);
+        void Process();
         uint32_t GetDelayAfter() {return m_plan.GetDelayAfter();}
         bool IsForView(DgnQueryViewR view) const {return &m_view == &view;}
     };
@@ -267,11 +265,11 @@ public:
     DGNPLATFORM_EXPORT void Add(Task& task);
 
     //! Cancel any pending requests to process the specified QueryView.
-    //! @param[in] model The model whose processing is to be canceled
+    //! @param[in] view The view whose processing is to be canceled
     DGNPLATFORM_EXPORT void RemovePending(DgnQueryViewR view);
 
     //! Suspends the calling thread until the specified model is in the idle state
-    DGNPLATFORM_EXPORT void WaitForIdle();
+    DGNPLATFORM_EXPORT void WaitFor(DgnQueryViewR);
 
     DGNPLATFORM_EXPORT bool IsIdle() const;
 };

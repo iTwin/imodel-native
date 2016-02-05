@@ -327,6 +327,19 @@ bool ViewContext::_FilterRangeIntersection(GeometrySourceCR source)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::GraphicPtr ViewContext::_StrokeGeometry(GeometrySourceCR source, double pixelSize)
+    {
+    Render::GraphicPtr graphic = (nullptr != m_viewport) ?
+                m_viewport->GetViewControllerR()._StrokeGeometry(*this, source, pixelSize) :
+                source.Stroke(*this, pixelSize);
+
+    // if we aborted, the graphic may not be complete, don't save it
+    return WasAborted() ? nullptr : graphic;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_OutputGeometry(GeometrySourceCR source)
@@ -339,18 +352,8 @@ void ViewContext::_OutputGeometry(GeometrySourceCR source)
     double pixelSize = (nullptr != m_viewport ? m_viewport->GetPixelSizeAtPoint(&origin) : 0.0);
 
     Render::GraphicPtr graphic = _GetCachedGraphic(source, pixelSize);
-
     if (!graphic.IsValid())
-        {
-        graphic = (nullptr != m_viewport) ?
-                   m_viewport->GetViewControllerR()._StrokeGeometry(*this, source, pixelSize) :
-                   source.Stroke(*this, pixelSize);
-
-        if (WasAborted()) // if we aborted, the graphic may not be complete, don't save it
-            return;
-
-        _SaveGraphic(source, *graphic);
-        }
+        graphic = _StrokeGeometry(source, pixelSize);
 
     if (!graphic.IsValid())
         return;

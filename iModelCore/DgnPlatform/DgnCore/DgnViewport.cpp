@@ -13,7 +13,6 @@
 void DgnViewport::Initialize(ViewControllerR viewController)
     {
     m_viewController = &viewController;
-    m_sceneEntries = 0;
     m_needsHeal = true;
     viewController._OnAttachedToViewport(*this);
     }
@@ -32,6 +31,19 @@ void DgnViewport::DestroyViewport()
 
     m_frustumValid = false;
     m_renderTarget = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::InvalidateScene()
+    {
+    if (!IsActive())
+        return;
+
+    m_viewController->_InvalidateScene();
+    m_sceneValid = false;
+    m_needsHeal = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1206,35 +1218,6 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
     SetupFromViewController();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnViewport::CloseMe DgnViewport::_OnModelsDeleted(bset<DgnModelId> const& deletedIds, DgnDbR db)
-    {
-    ViewController* vc = m_viewController.get();
-    if (nullptr == vc || &vc->GetDgnDb() != &db)
-        return CloseMe::No;
-
-    // Remove deleted models from viewed models list
-    DgnModelIdSet& viewedModels = vc->GetViewedModelsR();
-    for (auto const& deletedId : deletedIds)
-        viewedModels.erase(deletedId);
-
-    // Ensure we still have a target model - choose a new one arbitrarily if previous was deleted
-    RefCountedPtr<GeometricModel> targetModel = vc->GetTargetModel();
-    if (targetModel.IsNull())
-        {
-        for (auto const& viewedId : viewedModels)
-            if ((targetModel = db.Models().Get<GeometricModel>(viewedId)).IsValid())
-                break;
-
-        if (targetModel.IsValid())
-            vc->SetTargetModel(targetModel.get());  // NB: ViewController can reject target model...
-        }
-
-    // If no target model, no choice but to close the view
-    return (nullptr == vc->GetTargetModel()) ? CloseMe::Yes : CloseMe::No;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16

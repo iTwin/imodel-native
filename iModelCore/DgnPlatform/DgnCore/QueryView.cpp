@@ -25,10 +25,13 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnQueryView::DgnQueryView(DgnDbR dgndb, DgnViewId id) : CameraViewController(dgndb, id)
+DgnQueryView::DgnQueryView(DgnDbR db, DgnViewId id) : CameraViewController(db, id)
     {
-    m_forceNewQuery = true; 
-    m_noQuery = false;
+    m_query.Prepare(db, 
+                    "SELECT e.Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e, " 
+                    DGN_TABLE(DGN_CLASSNAME_SpatialElement) " AS g "
+                    "WHERE g.ElementId=e.Id AND InVirtualSet(?1,e.ModelId,g.CategoryId) AND e.Id=?2");
+    m_query.BindVirtualSet(1, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -45,15 +48,16 @@ DgnQueryView::~DgnQueryView()
 void DgnQueryView::RequestAbort(bool wait) 
     {
     DgnDb::VerifyClientThread();
-    SetAbortQuery(true);
 
     auto& queue = m_dgndb.GetQueryQueue();
     queue.RemovePending(*this);
 
+    SetAbortQuery(true);
     if (wait)
-        queue.WaitForIdle();
+        queue.WaitFor(*this);
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -67,6 +71,7 @@ void DgnQueryView::_OnUpdate(DgnViewportR vp, UpdatePlan const& plan)
 
 //    PickUpResults();
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
@@ -85,87 +90,8 @@ void DgnQueryView::QueueQuery(DgnViewportR viewport, UpdatePlan const& plan)
     m_startQueryFrustum = viewport.GetFrustum(DgnCoordSystem::World, true);
     m_saveQueryFrustum.Invalidate();
 
-    m_forceNewQuery = false;
     m_dgndb.GetQueryQueue().Add(*new DgnQueryQueue::Task(*this, viewport, plan.GetQuery()));
     }
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::PickUpResults()
-    {
-    if (!m_queryModel.HasSelectResults())
-        return;
-
-    m_queryModel.SaveQueryResults();
-
-    DgnElements& pool = m_queryModel.GetDgnDb().Elements();
-    pool.ResetStatistics();
-    pool.Purge(GetMaxElementMemory());
-
-    m_forceNewQuery = false;
-    m_saveQueryFrustum = m_startQueryFrustum;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    06/2013
-//---------------------------------------------------------------------------------------
-void DgnQueryView::SaveSelectResults()
-    {
-    if (!m_queryModel.HasSelectResults())
-        {
-        if (m_queryModel.AbortRequested())
-            {
-            m_startQueryFrustum.Invalidate(); // Must be abort or error. Either way the startQueryFrustum is meaningless.
-            m_saveQueryFrustum.Invalidate();
-            }
-
-        DEBUG_PRINTF("QVC: SaveSelectResults: results not ready");
-        return;
-        }
-
-    DEBUG_PRINTF("QVC: SaveSelectResults: saving results");
-
-    m_queryModel.SaveQueryResults();
-
-    DgnElements& pool = m_queryModel.GetDgnDb().Elements();
-
-#if defined (TRACE_ELEMENT_POOL_USE)
-    DgnElements::Totals totals = pool.GetTotals();
-    DgnElements::Statistics stats = pool.GetStatistics();
-    uint64_t start = BeTimeUtilities::QueryMillisecondsCounter();
-#endif
-
-    pool.ResetStatistics();
-    GetDgnDb().Memory().Purge(GetMaxElementMemory());
-
-#if defined (TRACE_ELEMENT_POOL_USE)
-    uint32_t elapsed = (uint32_t)(BeTimeUtilities::QueryMillisecondsCounter() - start);
-    DgnElements::Statistics postStats = pool.GetStatistics();
-    NotificationManager::OutputPrompt(WPrintfString(L"Elms=%u,Free=%u,Mem=%.3f",totals.m_entries,totals.m_unreferenced,(double)totals.m_allocedBytes/(1024.*1024.)));
-    NotificationManager::OutputMessage(NotifyMessageDetails(OutputMessagePriority::Info, WPrintfString(L"purge time %d viewed=%u,new=%u,purged=%u",elapsed, m_queryModel.GetElementCount(),stats.m_newElements,postStats.m_purged)));
-#endif
-
-    m_forceNewQuery = false;
-    m_saveQueryFrustum = m_startQueryFrustum;
-
-#ifdef ABORT_REQUEST_IN_PROCESS
-    m_queryModel.RequestAbort(true);
-#endif
-    }
-#endif
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::EmptyQueryModel() 
-    {
-    m_forceNewQuery = true;
-    m_queryModel.ClearQueryResults();
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/14
@@ -173,9 +99,7 @@ void DgnQueryView::EmptyQueryModel()
 void DgnQueryView::SetAlwaysDrawn(DgnElementIdSet const& newSet, bool exclusive)
     {
     RequestAbort(true);
-    m_noQuery = exclusive;
     m_alwaysDrawn = newSet;
-    m_forceNewQuery = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -184,9 +108,7 @@ void DgnQueryView::SetAlwaysDrawn(DgnElementIdSet const& newSet, bool exclusive)
 void DgnQueryView::ClearAlwaysDrawn()
     {
     RequestAbort(true);
-    m_noQuery = false;
     m_alwaysDrawn.clear();
-    m_forceNewQuery = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -196,7 +118,6 @@ void DgnQueryView::SetNeverDrawn(DgnElementIdSet const& newSet)
     {
     RequestAbort(true);
     m_neverDrawn = newSet;
-    m_forceNewQuery = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -206,7 +127,6 @@ void DgnQueryView::ClearNeverDrawn()
     {
     RequestAbort(true);
     m_neverDrawn.clear();
-    m_forceNewQuery = true;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -219,7 +139,6 @@ void DgnQueryView::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
 
     if (onOff)
         {
-        m_forceNewQuery = true;
         m_viewedModels.insert(modelId);
         //  Ensure the model is in the m_loadedModels list.  QueryModel 
         //  must not do this in the query thread.
@@ -237,7 +156,61 @@ void DgnQueryView::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
 void DgnQueryView::_OnCategoryChange(bool singleEnabled) 
     {
     T_Super::_OnCategoryChange(singleEnabled); 
-    m_forceNewQuery = true;
+    }
+
+BEGIN_UNNAMED_NAMESPACE
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   12/11
+//=======================================================================================
+struct RTreeFitFilter : DgnQueryView::RTreeQuery
+    {
+    DRange3d m_fitRange;
+    DRange3d m_lastRange;
+
+    virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
+
+public:
+    RTreeFitFilter() {m_fitRange = DRange3d::NullRange();}
+    DRange3dCR GetRange() const {return m_fitRange;}
+    };
+
+END_UNNAMED_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+int RTreeFitFilter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
+    {
+    RTree3dValCP testRange = (RTree3dValCP) info.m_coords;
+
+    if (m_fitRange.IsContained(testRange->m_minx, testRange->m_miny, testRange->m_minz) &&
+        m_fitRange.IsContained(testRange->m_maxx, testRange->m_maxy, testRange->m_maxz))
+        {
+        info.m_within = RTreeMatchFunction::Within::Outside; // If this range is entirely contained there is no reason to continue (it cannot contribute to the fit)
+        }
+    else
+        {
+        info.m_within = RTreeMatchFunction::Within::Partly; 
+        info.m_score  = info.m_level; // to get depth-first traversal
+        if (info.m_level == 0)
+            m_lastRange = DRange3d::From(testRange->m_minx, testRange->m_miny, testRange->m_minz, testRange->m_maxx, testRange->m_maxy, testRange->m_maxz);
+        }
+
+    return  BE_SQLITE_OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnQueryView::_TestElement(DgnElementId elId) 
+    {
+    if (m_neverDrawn.Contains(elId))
+        return false;
+
+    m_query.BindId(2, elId);
+    bool stat = (BE_SQLITE_ROW == m_query.Step());
+    m_query.Reset();
+    return stat;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -246,20 +219,12 @@ void DgnQueryView::_OnCategoryChange(bool singleEnabled)
 void DgnQueryView::QueryModelExtents(DRange3dR range, DgnViewportR vp)
     {
     RTreeFitFilter filter;
-    Utf8String viewSql = _GetQuery() + filter.GetAcceptSql();
-    CachedStatementPtr viewStmt;              
-    GetDgnDb().GetCachedStatement(viewStmt, viewSql.c_str());
-    BindModelAndCategory(*viewStmt);
-
-    int idCol = viewStmt->GetParameterIndex("@elId");
-    BeAssert(0 != idCol);
+    filter.Init(m_dgndb);
 
     DgnElementId thisId;
     while ((thisId = filter.StepRtree()).IsValid())
         {
-        viewStmt->Reset();
-        viewStmt->BindId(idCol, thisId);
-        if (BE_SQLITE_ROW == viewStmt->Step())
+        if (_TestElement(thisId))
             range.Extend(filter.m_lastRange);
         }
     }
@@ -278,16 +243,6 @@ ViewController::FitComplete DgnQueryView::_ComputeFitRange(DRange3dR range, DgnV
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String DgnQueryView::_GetQuery() const
-    {
-    return Utf8String("SELECT e.Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e, " 
-                      DGN_TABLE(DGN_CLASSNAME_SpatialElement) " AS g "
-                      "WHERE g.ElementId=e.Id AND InVirtualSet(@vSet,e.ModelId,g.CategoryId)");
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnQueryView::_IsInSet(int nVals, DbValue const* vals) const 
@@ -303,18 +258,6 @@ bool DgnQueryView::_IsInSet(int nVals, DbValue const* vals) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::_OnAttachedToViewport(DgnViewportR) 
     {
-    m_forceNewQuery = true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::BindModelAndCategory(StatementR stmt) const
-    {
-    int vSetIdx = stmt.GetParameterIndex("@vSet");
-    BeAssert(0!=vSetIdx);
-    if (0 != vSetIdx)
-        stmt.BindVirtualSet(vSetIdx, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -338,59 +281,111 @@ void DgnQueryView::_DrawView(ViewContextR context)
         }
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    06/2012
-//--------------+------------------------------------------------------------------------
-void DgnQueryView::_CreateScene(SceneContextR context) 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnQueryView::_InvalidateScene() 
     {
-    if (!m_results.IsValid())
-        {
-        }
+    RequestAbort(false);
+    }
 
-    QueryResultsPtr currQueryResults;
-    std::swap(currQueryResults, m_results);
-
-    // this vector is sorted by occlusion score, so we use it to determine the order to draw the view
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnQueryView::AddtoSceneQuick(SceneContextR context, ProgressiveElements& progressive, QueryResults& results)
+    {
     DgnElements& pool = m_dgndb.Elements();
 
-    RefCountedPtr<ProgressiveFilter> filter = new ProgressiveFilter(*this, m_neverDrawn.empty() ? nullptr : &m_neverDrawn);
-    for (auto& thisScore : currQueryResults->m_scores)
-        {
-        filter->m_inScene.insert(thisScore.second);
-        DgnElementCPtr thisElement = pool.GetElement(thisScore.second);
-        if (!thisElement.IsValid())
-            continue;
+    context.SetNoStroking(true);
+    bool allReady = true;
 
+    // first, run through the query results seeing if all of the elements are loaded and have their graphis ready
+    for (auto& thisScore : results.m_scores)
+        {
+        DgnElementCPtr thisElement = pool.FindElement(thisScore.second);
+        if (!thisElement.IsValid())
+            {
+            allReady = false;
+            continue;
+            }
         GeometrySourceCP geom = thisElement->ToGeometrySource();
         if (nullptr != geom)
+            {
             context.VisitElement(*geom);
+            progressive.m_inScene.insert(thisScore.second);
+            }
 
         if (context.WasAborted())
             break;
+        }
+    return context.SetNoStroking(false) && allReady;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnQueryView::_CreateScene(SceneContextR context) 
+    {
+    QueryResultsPtr results;
+    std::swap(results, m_results);
+
+    DgnViewportR vp = *context.GetViewport();
+    auto& plan = context.GetUpdatePlan().GetQuery();
+
+    if (!results.IsValid())
+        {
+        if (!plan.WantWait())
+            return;
+
+        RequestAbort(true);
+        results = QueryByRange(vp, plan);
+        }
+
+    RefCountedPtr<ProgressiveElements> progressive = new ProgressiveElements(*this);
+
+    if (!AddtoSceneQuick(context, *progressive, *results))
+        {
+        DgnElements& pool = m_dgndb.Elements();
+        for (auto& thisScore : results->m_scores)
+            {
+            if (progressive->m_inScene.Contains(thisScore.second))
+                continue; // was added during "quick" pass
+
+            DgnElementCPtr thisElement = pool.GetElement(thisScore.second);
+            if (!thisElement.IsValid())
+                continue;
+
+            GeometrySourceCP geom = thisElement->ToGeometrySource();
+            if (nullptr != geom)
+                {
+                context.VisitElement(*geom);
+                progressive->m_inScene.insert(thisScore.second);
+                }
+
+            if (context.WasAborted())
+                break;
+            }
         }
 
     // Next, allow external data models to draw or schedule external data.
     for (DgnModelId modelId : GetViewedModels())
         {
-        if (context.WasAborted())
-            break;
-
-        DgnModelPtr model = GetDgnDb().Models().GetModel(modelId);
+        DgnModelPtr model = m_dgndb.Models().GetModel(modelId);
         auto geomModel = model.IsValid() ? model->ToGeometricModelP() : nullptr;
         if (nullptr != geomModel)
             geomModel->AddGraphicsToScene(context);
         }
 
-    if (currQueryResults->m_incomplete && !m_noQuery)
+    BeAssert(progressive->m_inScene.size() <= results->GetCount());
+    if (results->m_incomplete || progressive->m_inScene.size() != results->GetCount())
         {
-        m_needProgressiveDisplay = true;
-        DgnViewportP vp = context.GetViewport();
-        filter->SetViewport(*vp, 6.0, 1.0);
+        progressive->m_rangeQuery.Init(m_dgndb); // the progressive elements are found via this query
+        progressive->m_rangeQuery.SetViewport(vp, 6.0, 1.0);
 
         if (GetClipVector().IsValid())
-            filter->SetClipVector(*GetClipVector());
+            progressive->m_rangeQuery.SetClipVector(*GetClipVector());
 
-        vp->ScheduleProgressiveTask(*filter);
+        vp.ScheduleProgressiveTask(*progressive);
         }
     }
 
@@ -400,29 +395,19 @@ void DgnQueryView::_CreateScene(SceneContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::_VisitAllElements(ViewContextR context)
     {
-    AllElementsFilter filter(m_dgndb, m_neverDrawn.empty() ? nullptr : &m_neverDrawn);
-
-    CachedStatementPtr viewStmt;              
-    Utf8String viewSql = _GetQuery() + filter.GetAcceptSql();
-    m_dgndb.GetCachedStatement(viewStmt, viewSql.c_str());
-    BindModelAndCategory(*viewStmt);
-
-    filter.SetFrustum(context.GetFrustum());
-
-    int count=0;
-    int idCol = viewStmt->GetParameterIndex("@elId");
-    BeAssert(0 != idCol);
+    RangeQuery rangeQuery;
+    rangeQuery.Init(m_dgndb);
+    rangeQuery.SetFrustum(context.GetFrustum());
 
     // the range tree will return all elements in the volume. Filter them by the view criteria
     DgnElementId thisId;
-    while ((thisId = filter.StepRtree()).IsValid())
+    int count = 0;
+    while ((thisId = rangeQuery.StepRtree()).IsValid())
         {           
-        viewStmt->Reset();
-        viewStmt->BindId(idCol, thisId);
-        if (BE_SQLITE_ROW == viewStmt->Step())
+        if (_TestElement(thisId))
             {
             ++count;
-            filter.AcceptElement(context, thisId);
+            VisitElement(context, thisId);
             }
 
         if (context.CheckStop())
@@ -576,12 +561,12 @@ void DgnQueryQueue::Add(Task& task)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryQueue::WaitForIdle()
+void DgnQueryQueue::WaitFor(DgnQueryViewR view)
     {
     DgnDb::VerifyClientThread();
 
     BeMutexHolder holder(m_cv.GetMutex());
-    while (m_active.IsValid() || !m_pending.empty())
+    while (m_active.IsValid() && m_active->IsForView(view))
         m_cv.InfiniteWait(holder);
     }
 
@@ -627,14 +612,12 @@ void DgnQueryQueue::Process()
     {
     DgnDb::VerifyQueryThread();
 
-    StopWatch timer(false);
-
     while (WaitForWork())
         {
         if (!m_active.IsValid())
             continue;
 
-        m_active->Process(timer);
+        m_active->Process();
         uint32_t delay = m_active->GetDelayAfter();
 
         {
@@ -652,44 +635,12 @@ void DgnQueryQueue::Process()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::DoQuery(DgnViewportCR vp, UpdatePlan::Query const& plan, StopWatch& watch)
-    {
-    watch.Start();
-
-    SetAbortQuery(false); // gets turned on by client thread
-
-    DEBUG_PRINTF("Query started");
-    Filter filter(m_dgndb, *new QueryResults(), plan.m_targetNumElements, plan.m_onlyAlwaysDrawn ? nullptr : &m_alwaysDrawn, &m_neverDrawn);
-    filter.SetViewport(vp, plan.m_minPixelSize, plan.m_frustumScale);
-    if (m_clipVector.IsValid())
-        filter.SetClipVector(*m_clipVector);
-
-    if (plan.m_onlyAlwaysDrawn)
-        SearchIdSet(m_alwaysDrawn, filter);
-    else
-        SearchRangeTree(filter, plan.GetTimeout());
-
-    if (m_abortQuery)
-        {
-        DEBUG_PRINTF("query aborted");
-        return;
-        }
-
-    m_results = filter.m_results;
-
-    double total = watch.GetCurrentSeconds();
-    DEBUG_PRINTF("Query completed, total=%d, progressive=%d, time=%f", filter.m_results->m_count, filter.m_results->m_incomplete, total);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryQueue::Task::Process(StopWatch& watch)
+void DgnQueryQueue::Task::Process()
     {
     DgnDb::VerifyQueryThread();
-    m_view.DoQuery(m_vp, m_plan, watch);
+    m_view.QueryByRange(m_vp, m_plan);
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // This is not strictly thread-safe. The worst that can happen is that the work thread reads false from it, or sets it to false, while the query thread sets it to true.
@@ -699,6 +650,7 @@ void DgnQueryQueue::Task::Process(StopWatch& watch)
 #endif
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -730,47 +682,66 @@ void DgnQueryView::SearchIdSet(DgnElementIdSet& idList, Filter& filter)
             filter.AcceptElement(curr);
         }
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::SearchRangeTree(Filter& filter, uint32_t timeout)
+DgnQueryView::QueryResultsPtr DgnQueryView::QueryByRange(DgnViewportCR vp, UpdatePlan::Query const& plan)
     {
-    CachedStatementPtr viewStmt;
-    Utf8String viewSql = _GetQuery() + filter.GetAcceptSql();
-    m_dgndb.GetCachedStatement(viewStmt, viewSql.c_str());
+    StopWatch watch(true);
+    SetAbortQuery(false); // gets turned on by client thread
 
-    BindModelAndCategory(*viewStmt);
+    DEBUG_PRINTF("Query started");
 
-    uint64_t endTime = timeout ? (BeTimeUtilities::QueryMillisecondsCounter() + timeout) : 0;
+    RangeQuery rangeQuery;
+    rangeQuery.Init(m_dgndb);
+    rangeQuery.SetViewport(vp, plan.m_minPixelSize, plan.m_frustumScale);
 
-    int idCol = viewStmt->GetParameterIndex("@elId");
-    BeAssert(0 != idCol);
+    if (m_clipVector.IsValid())
+        rangeQuery.SetClipVector(*m_clipVector);
 
+    QueryResultsPtr results = new QueryResults();
+    uint64_t endTime = plan.GetTimeout() ? (BeTimeUtilities::QueryMillisecondsCounter() + plan.GetTimeout()) : 0;
+
+    rangeQuery.m_hitLimit = plan.GetTargetNumElements();
     DgnElementId thisId;
-    while ((thisId=filter.StepRtree()).IsValid())
+    while ((thisId=rangeQuery.StepRtree()).IsValid())
         {
-        viewStmt->Reset();
-        viewStmt->BindId(idCol, thisId);
-
         if (m_abortQuery)
             {
             DEBUG_ERRORLOG("Query aborted");
-            return;
+            return results;
             }
 
-        if (BE_SQLITE_ROW == viewStmt->Step())
-            filter.AcceptElement(thisId);
+        if (_TestElement(thisId))
+            {
+            if (++rangeQuery.m_count >= rangeQuery.m_hitLimit)
+                {
+                rangeQuery.SetTestLOD(true); // now that we've found a minimum number of elements, start skipping small ones
+                results->m_scores.erase(m_results->m_scores.begin());
+                results->m_incomplete = true;
+                rangeQuery.m_count = rangeQuery.m_hitLimit;
+                }
+
+            results->m_scores.Insert(rangeQuery.m_lastScore, thisId);
+            rangeQuery.m_minScore = results->m_scores.begin()->first;
+            }
 
         if (endTime && (BeTimeUtilities::QueryMillisecondsCounter() > endTime))
             {
             DEBUG_ERRORLOG("Query timeout");
-            filter.m_results->m_incomplete = true;
+            results->m_incomplete = true;
             break;
             }
         };
+
+    double total = watch.GetCurrentSeconds();
+    DEBUG_PRINTF("Query completed, total=%d, progressive=%d, time=%f", results->GetCount(), results->m_incomplete, total);
+    return results;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -786,9 +757,10 @@ DgnQueryView::Filter::Filter(DgnDbR db, QueryResults& results, uint32_t hitLimit
             AcceptElement(id);
         }
 
-    //  We do this as the last step. Otherwise, the calls to AcceptElement in the previous step would not have any effect.
+    // We do this as the last step. Otherwise, the calls to AcceptElement in the previous step would not have any effect.
     m_alwaysDraw = alwaysDraw;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
@@ -808,7 +780,7 @@ inline static void toLocalCorners(DPoint3dP localCorners, RTree3dValCP pt)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-int DgnQueryView::Filter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
+int DgnQueryView::RangeQuery::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
     {
     BeAssert(6 == info.m_nCoord);
     info.m_within = RTreeMatchFunction::Within::Outside;
@@ -840,10 +812,10 @@ int DgnQueryView::Filter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
 
     bool overlap, spansEyePlane;
 
-    if (!m_scorer.ComputeOcclusionScore(&m_lastScore, overlap, spansEyePlane, localCorners))
+    if (!ComputeOcclusionScore(&m_lastScore, overlap, spansEyePlane, localCorners))
         return BE_SQLITE_OK;
 
-    if (m_results->m_count >= m_hitLimit && m_lastScore <= m_minScore)
+    if (m_hitLimit && (m_count >= m_hitLimit && m_lastScore <= m_minScore))
         return BE_SQLITE_OK; // this one is smaller than the smallest entry we already have, skip it (and children).
 
     m_lastId = info.m_rowid;  // for debugging - make sure we get entries immediately after we score them.
@@ -862,32 +834,7 @@ int DgnQueryView::Filter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
     return BE_SQLITE_OK;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ray.Bentley                     04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::Filter::AcceptElement(DgnElementId elementId)
-    {
-    BeAssert(m_lastId == elementId.GetValueUnchecked());
-    
-    if (nullptr != m_exclude && m_exclude->find(elementId) != m_exclude->end())
-        return;
-
-    //  Don't add it if the constructor already added it.
-    if (nullptr != m_alwaysDraw && m_alwaysDraw->find(elementId) != m_alwaysDraw->end())
-        return;
-
-    if (++m_results->m_count >= m_hitLimit)
-        {
-        m_scorer.SetTestLOD(true); // now that we've found a minimum number of elements, start skipping small ones
-        m_results->m_scores.erase(m_results->m_scores.begin());
-        m_results->m_incomplete = true;
-        m_results->m_count = m_hitLimit;
-        }
-
-    m_results->m_scores.Insert(m_lastScore, elementId);
-    m_minScore = m_results->m_scores.begin()->first;
-    }
-
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -930,46 +877,32 @@ int DgnQueryView::AllElementsFilter::_TestRTree(RTreeMatchFunction::QueryInfo co
     info.m_within = RTreeMatchFunction::Within::Partly;
     return BE_SQLITE_OK;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveTask::Completion DgnQueryView::ProgressiveFilter::_DoProgressive(SceneContext& context, WantShow& wantShow)
+ProgressiveTask::Completion DgnQueryView::ProgressiveElements::_DoProgressive(SceneContext& context, WantShow& wantShow)
     {
     m_thisBatch = 0; // restart every pass
     m_batchSize = context.GetUpdatePlan().GetQuery().GetTargetNumElements();
     m_setTimeout = false;
 
-    m_scorer.SetTestLOD(true);  
-
-    CachedStatementPtr viewStmt;              
-
-    Utf8String viewSql = m_view._GetQuery() + GetAcceptSql();
-    m_dgndb.GetCachedStatement(viewStmt, viewSql.c_str());
-    m_view.BindModelAndCategory(*viewStmt);
-
     DEBUG_PRINTF("begin progressive display");
 
-    int idCol = viewStmt->GetParameterIndex("@elId");
-    BeAssert(0 != idCol);
-
     DgnElementId thisId;
-    while ((thisId=StepRtree()).IsValid())
+    while ((thisId=m_rangeQuery.StepRtree()).IsValid())
         {
-        viewStmt->Reset(); // we now have an element that satisfies the range criteria, see if it passes view criteria
-        viewStmt->BindId(idCol, thisId);
-
-        if (BE_SQLITE_ROW == viewStmt->Step())
+        if (!m_inScene.Contains(thisId) && m_view._TestElement(thisId))
             {
-            if (!m_inScene.Contains(thisId)) // see if it was already drawn in the scene
-                AcceptElement(context, thisId); // no, draw it now
+            m_view.VisitElement(context, thisId); // no, draw it now
 
             if (!m_setTimeout) // don't set the timeout until after we've drawn one element
                 {
                 context.EnableStopAfterTimout(SHOW_PROGRESS_INTERVAL);
                 m_setTimeout = true;
                 }
-        }
+            }
 
         if (m_batchSize && ++m_thisBatch >= m_batchSize) // limit the number or elements added per batch
             context.SetAborted();
@@ -1002,27 +935,27 @@ ProgressiveTask::Completion DgnQueryView::ProgressiveFilter::_DoProgressive(Scen
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnQueryView::AllElementsFilter::AcceptElement(ViewContextR context, DgnElementId elementId) 
+StatusInt DgnQueryView::VisitElement(ViewContextR context, DgnElementId elementId) 
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (m_model.FindElementById(elementId))
         return false;
-#endif
 
     if (nullptr != m_exclude && m_exclude->find(elementId) != m_exclude->end())
         return false;
+#endif
 
     DgnElements& pool = m_dgndb.Elements();
     DgnElementCPtr el = pool.GetElement(elementId);
     if (!el.IsValid())
         {
         BeAssert(false);
-        return false;
+        return ERROR;
         }
 
     GeometrySourceCP geomElem = el->ToGeometrySource();
     if (nullptr != geomElem)
-        context.VisitElement(*geomElem);
+        return context.VisitElement(*geomElem);
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (pool.GetTotalAllocated() < (int64_t) m_elementReleaseTrigger)
