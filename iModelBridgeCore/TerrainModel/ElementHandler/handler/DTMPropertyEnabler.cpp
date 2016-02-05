@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMPropertyEnabler.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
@@ -1062,6 +1062,8 @@ void DTMELEMENTECExtension::_InitializeCompoundDelegate (ICompoundECDelegateR de
         del.RegisterIsPropertyReadOnlyOverrideHandler (*ElementECDelegate::LookupRegisteredPrimaryDelegate (L"TerrainModel", L"DTMOverrideSymbology"), &DTMELEMENTECExtension::IsPropertyReadOnly_Never);
         }
     }
+
+#pragma region ElementECDelegates
 
 struct BaseElementECDelegate : ElementECDelegate
     {
@@ -3295,6 +3297,8 @@ struct DTMElementScalableTerrainModelECDelegate : BaseElementECDelegate
             }
     };
 
+#pragma endregion
+
 //*--------------------------------------------------------------------------------------
 //* @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -3389,7 +3393,7 @@ void DTMELEMENTECExtension::SetPerDelegateData (DelegatedElementECInstancePtr in
 
 enum DTMElementLocalId : UInt32
     {
-    LocalID_DTMElement = 0xffffffff,
+    LocalID_DTMElement = 0,
     LocalID_DTMCalculatedFeatures = 0xfffffffe,
     LocalID_DTMSourceFeatures = 0xfffffffd,
     LocalID_DTMGeneralContours = 0xfffffffc
@@ -3792,6 +3796,8 @@ IDgnECInstanceFinderPtr DTMELEMENTECExtension::_CreateRelatedFinder (DgnECInstan
 
     return nullptr;
     }
+
+#pragma region TypeAdapters
 
 /*---------------------------------------------------------------------------------**
  * @bsistruct                                                    Paul.Connelly   05/13
@@ -4446,7 +4452,7 @@ bool MrDTMViewFlagsTypeAdapter::_ConvertFromString (ECN::ECValueR outVal, WCharC
     return false;
     }
 
-
+#pragma endregion
 
 DTMELEMENTECExtension* extension = nullptr;
 //*--------------------------------------------------------------------------------------
