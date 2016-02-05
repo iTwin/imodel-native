@@ -1207,13 +1207,13 @@
     <!-- // DgnDb "implementation detail" classes -->
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
 
-    <ECEntityClass typeName="ElementRTree">
+    <ECEntityClass typeName="SpatialIndex">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Strategy>ExistingTable</Strategy>
                 </MapStrategy>
-                <TableName>dgn_RTree3d</TableName>
+                <TableName>dgn_SpatialIndex</TableName> <!-- Must match DGN_VTABLE_SpatialIndex #define -->
                 <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>

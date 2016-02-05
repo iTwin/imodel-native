@@ -93,7 +93,7 @@ DbResult DgnDb::CreateDgnDbTables()
 
     Fonts().DbFontMap().CreateFontTable();
 
-    ExecuteSql("CREATE VIRTUAL TABLE " DGN_VTABLE_RTree3d " USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)"); // Define this before importing dgn schema!
+    ExecuteSql("CREATE VIRTUAL TABLE " DGN_VTABLE_SpatialIndex " USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)"); // Define this before importing dgn schema!
 
     importDgnSchema(*this);
 
@@ -111,21 +111,21 @@ DbResult DgnDb::CreateDgnDbTables()
         }
 
     ExecuteSql("CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON " DGN_TABLE(DGN_CLASSNAME_GeometricElement3d)
-               " BEGIN DELETE FROM " DGN_VTABLE_RTree3d " WHERE ElementId=old.ElementId;END");
+               " BEGIN DELETE FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId=old.ElementId;END");
 
     ExecuteSql("CREATE TRIGGER dgn_rtree_upd AFTER UPDATE ON " DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) 
                " WHEN new.Origin_X IS NOT NULL AND " GEOM_IN_PHYSICAL_SPACE_CLAUSE
-               "BEGIN INSERT OR REPLACE INTO " DGN_VTABLE_RTree3d "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,"
+               "BEGIN INSERT OR REPLACE INTO " DGN_VTABLE_SpatialIndex "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,"
                "DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5)"
                " FROM (SELECT " AABB_FROM_PLACEMENT " as bb);END");
 
     ExecuteSql("CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE ON " DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) 
                 " WHEN OLD.Origin_X IS NOT NULL AND NEW.Origin_X IS NULL"
-                " BEGIN DELETE FROM " DGN_VTABLE_RTree3d " WHERE ElementId=OLD.ElementId;END");
+                " BEGIN DELETE FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId=OLD.ElementId;END");
 
     ExecuteSql("CREATE TRIGGER dgn_rtree_ins AFTER INSERT ON " DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) 
                " WHEN new.Origin_X IS NOT NULL AND " GEOM_IN_PHYSICAL_SPACE_CLAUSE
-               "BEGIN INSERT INTO " DGN_VTABLE_RTree3d "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,"
+               "BEGIN INSERT INTO " DGN_VTABLE_SpatialIndex "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,"
                "DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5)"
                " FROM (SELECT " AABB_FROM_PLACEMENT " as bb);END");
 

@@ -841,7 +841,7 @@ public:
 //=======================================================================================
 //! A GeometricModel3d that occupies physical space in the DgnDb. All SpatialModels in a DgnDb have the same coordinate
 //! space (CoordinateSpace::World), aka "Physical Space".
-//! DgnElements from SpatialModels are indexed in the persistent range tree of the DgnDb (the DGN_VTABLE_RTree3d).
+//! DgnElements from SpatialModels are indexed in the persistent range tree of the DgnDb (the DGN_VTABLE_SpatialIndex).
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================

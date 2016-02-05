@@ -317,12 +317,10 @@ TEST_F(SqlFunctionsTest, DGN_point_min_distance_to_bbox)
     RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);
     ASSERT_TRUE( robot1.IsValid() );
         
-    // Note:  Can't use ECSql here. It only allows ECClases, and dgn_RTree3d is not in the ecschema
-    
     Statement stmt;
     stmt.Prepare(*m_db, 
-        "SELECT aspect.ElementId, aspect.TestUniqueAspectProperty FROM " DGN_TABLE(DGN_CLASSNAME_Element) " e, dptest_TestUniqueAspect aspect," DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) " g, " DGN_VTABLE_RTree3d " rt WHERE"
-             " rt.ElementId MATCH DGN_rtree_overlap_aabb(:bbox)" // FROM R-Tree
+        "SELECT aspect.ElementId, aspect.TestUniqueAspectProperty FROM " DGN_TABLE(DGN_CLASSNAME_Element) " e, dptest_TestUniqueAspect aspect," DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) " g, " DGN_VTABLE_SpatialIndex " rt WHERE"
+             " rt.ElementId MATCH DGN_spatial_overlap_aabb(:bbox)" // FROM R-Tree
              " AND g.ElementId=rt.ElementId"
              " AND DGN_point_min_distance_to_bbox(:testPoint, " AABB_FROM_PLACEMENT ") <= :maxDistance"  // select geoms that are within some distance of a specified point
              " AND e.Id=g.ElementId"
@@ -450,8 +448,8 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
 
     ECSqlStatement stmt;
     stmt.Prepare(*m_db, 
-        "SELECT TestUniqueAspect.ECInstanceId,TestUniqueAspect.TestUniqueAspectProperty FROM dgn.ElementRTree rt,DgnPlatformTest.Obstacle,DgnPlatformTest.TestUniqueAspect"
-            " WHERE rt.ECInstanceId MATCH DGN_rtree_overlap_aabb(:bbox)"
+        "SELECT TestUniqueAspect.ECInstanceId,TestUniqueAspect.TestUniqueAspectProperty FROM " DGN_SCHEMA(DGN_CLASSNAME_SpatialIndex) " rt,DgnPlatformTest.Obstacle,DgnPlatformTest.TestUniqueAspect"
+            " WHERE rt.ECInstanceId MATCH DGN_spatial_overlap_aabb(:bbox)"
             " AND Obstacle.ECInstanceId=rt.ECInstanceId"
             " AND TestUniqueAspect.ECInstanceId=rt.ECInstanceId AND TestUniqueAspect.TestUniqueAspectProperty = :propertyValue"
         );
@@ -459,7 +457,7 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
     //  Make sure that the range tree index is used (first) and that other tables are indexed (after)
     Utf8CP sql = stmt.GetNativeSql();
     Utf8String qplan = m_db->ExplainQuery(sql);
-    auto scanRt = qplan.find("SCAN TABLE dgn_RTree3d VIRTUAL TABLE INDEX");
+    auto scanRt = qplan.find("SCAN TABLE " DGN_VTABLE_SpatialIndex " VIRTUAL TABLE INDEX");
     auto searchItem = qplan.find("SEARCH TABLE dptest_TestUniqueAspect USING INTEGER PRIMARY KEY");
     //auto searchElement = qplan.find("SEARCH TABLE dgn_Element USING COVERING INDEX"); WIP: removing ElementItem has changed the query plan, but not convinced that is an actual problem
     ASSERT_NE(Utf8String::npos, scanRt) << "Unexpected query plan for SQL " << sql << ". Actual query plan: " << qplan.c_str();
@@ -660,13 +658,13 @@ TEST_F(SqlFunctionsTest, spatialQuery)
         o2a = obstacle2a->GetElementId();
         }
 
-    //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_rtree_overlap_aabb.sampleCode
-    // This query uses DGN_rtree_overlap_aabb to find elements whose range overlaps the argument :bbox and are of class :ecClass and have
+    //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_spatial_overlap_aabb.sampleCode
+    // This query uses DGN_spatial_overlap_aabb to find elements whose range overlaps the argument :bbox and are of class :ecClass and have
     // item property sc01 = :propertyValue.
     Statement stmt;
     stmt.Prepare(*m_db, 
-        "SELECT aspect.ElementId,aspect.TestUniqueAspectProperty FROM dgn_RTree3d rt,dgn_Element e,dptest_TestUniqueAspect aspect WHERE"
-           " rt.ElementId MATCH DGN_rtree_overlap_aabb(:bbox)"      // select elements whose range overlaps box
+        "SELECT aspect.ElementId,aspect.TestUniqueAspectProperty FROM " DGN_VTABLE_SpatialIndex " rt," DGN_TABLE(DGN_CLASSNAME_Element) " e,dptest_TestUniqueAspect aspect WHERE"
+           " rt.ElementId MATCH DGN_spatial_overlap_aabb(:bbox)"      // select elements whose range overlaps box
            " AND e.Id=rt.ElementId AND e.ECClassId=:ecClass"        // and are of a specific ecClass 
            " AND aspect.ElementId=e.Id AND aspect.TestUniqueAspectProperty=:propertyValue"   // ... with certain item value
         );
