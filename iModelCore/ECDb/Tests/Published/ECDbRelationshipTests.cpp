@@ -141,24 +141,24 @@ void ValidateReadingRelationship (ECDbR ecdb, Utf8CP relationshipSchemaName, Utf
     ECRelationshipClassCP relationshipClass = tmpClass->GetRelationshipClassCP();
     ASSERT_TRUE (relationshipClass != nullptr);
 
-    SqlPrintfString ecSql ("SELECT rel.* FROM %s.%s rel WHERE rel.ECInstanceId=?", Utf8String(relationshipClass->GetSchema().GetName()).c_str(), Utf8String(relationshipClass->GetName()).c_str());
+    Utf8String ecsql;
+    ecsql.Sprintf("SELECT ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM %s WHERE ECInstanceId=?", relationshipClass->GetECSqlName().c_str());
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare (ecdb, ecSql.GetUtf8CP())) << ecSql.GetUtf8CP();
-    statement.BindId(1, InstanceToId(importedRelInstance));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, InstanceToId(importedRelInstance)));
 
     ASSERT_TRUE(BE_SQLITE_ROW == statement.Step());
-    int64_t ecInstanceId = statement.GetValueInt64 (0);
-    int64_t sourceECInstanceId = statement.GetValueInt64 (1);
-    int64_t sourceECClassId = statement.GetValueInt64 (2);
-    int64_t targetECInstanceId = statement.GetValueInt64 (3);
-    int64_t targetECClassId = statement.GetValueInt64 (4);
-    ASSERT_TRUE (ecInstanceId != 0 && sourceECInstanceId != 0 && sourceECClassId != 0 && targetECInstanceId != 0 && targetECClassId != 0);
+    ASSERT_TRUE (statement.GetValueId<ECInstanceId>(0).IsValid());
+    ASSERT_TRUE(statement.GetValueId<ECInstanceId>(1).IsValid());
+    ASSERT_NE(ECClass::UNSET_ECCLASSID, statement.GetValueInt64(2));
+    ASSERT_TRUE(statement.GetValueId<ECInstanceId>(3).IsValid());
+    ASSERT_NE(ECClass::UNSET_ECCLASSID, statement.GetValueInt64(4));
 
     // Get and check result
     ECInstanceECSqlSelectAdapter adapter (statement);
     IECInstancePtr readRelInstance = adapter.GetInstance();
     ASSERT_FALSE (readRelInstance.IsNull());
-    ASSERT_TRUE (importedRelInstance.GetInstanceId() == readRelInstance->GetInstanceId());
+    ASSERT_STREQ (importedRelInstance.GetInstanceId().c_str(), readRelInstance->GetInstanceId().c_str());
     ASSERT_TRUE (ECDbTestUtility::CompareECInstances (importedRelInstance, *readRelInstance));
     }
 
@@ -182,18 +182,17 @@ void ValidateReadingRelated (ECDbR ecdb, Utf8CP relationshipSchemaName, Utf8CP r
     ECRelationshipClassCP relationshipClass = tmpClass->GetRelationshipClassCP();
     ASSERT_TRUE (relationshipClass != nullptr);
 
-    SqlPrintfString ecSql ("SELECT %s.* FROM ONLY %s.%s JOIN %s.%s USING %s.%s WHERE %s.ECInstanceId = ?",
-        relTargetClassName.c_str(),
-        relTargetClass.GetSchema().GetName().c_str(), relTargetClassName.c_str(),
-        relSourceClass.GetSchema().GetName().c_str(), relSourceClassName.c_str(),
-        tmpClass->GetSchema().GetName().c_str(), tmpClass->GetName().c_str(),
-        relSourceClassName.c_str());
+    Utf8String ecsql;
+    ecsql.Sprintf("SELECT lhs.* FROM ONLY %s lhs JOIN %s rhs USING %s WHERE rhs.ECInstanceId=?",
+                  relTargetClass.GetECSqlName().c_str(),
+                  relSourceClass.GetECSqlName().c_str(),
+                  relationshipClass->GetECSqlName().c_str());
 
     // Build SQL
     // Prepare and execute ECSqlStatement
     ECSqlStatement statement;
-    ECSqlStatus prepareStatus = statement.Prepare (ecdb, ecSql.GetUtf8CP());
-    ASSERT_EQ(ECSqlStatus::Success, prepareStatus) << ecSql.GetUtf8CP();
+    ECSqlStatus prepareStatus = statement.Prepare (ecdb, ecsql.c_str());
+    ASSERT_EQ(ECSqlStatus::Success, prepareStatus) << ecsql.c_str();
     statement.BindId(1, relSourceECInstanceId);
     ASSERT_TRUE(BE_SQLITE_ROW == statement.Step());
 
@@ -230,7 +229,7 @@ TEST (ECDbRelationships, RelationshipECInstanceIdContract)
 
         EXPECT_EQ (targetECInstanceId.GetValue (), relECInstanceId.GetValue ()) << "For non-link table mappings, the ECInstanceId of the relationship is equal to the ECInstanceId of the child instance, i.e. the instance on the end of the relationship into whose table the relationship is persisted";
         EXPECT_NE (sourceECInstanceId.GetValue (), relECInstanceId.GetValue ()) << "For non-link table mappings, the ECInstanceId of the relationship must not be equal to the ECInstanceId of the parent instance.";
-        LOG.infov (L"ECRelationship ECInstanceId Contract for non-link-table mappings: Relationship ECInstanceId: %lld - Source ECInstanceId: %lld - Target ECInstanceId: %lld (Target is where relationship is persisted to)",
+        LOG.infov ("ECRelationship ECInstanceId Contract for non-link-table mappings: Relationship ECInstanceId: %lld - Source ECInstanceId: %lld - Target ECInstanceId: %lld (Target is where relationship is persisted to)",
             relECInstanceId.GetValue (), sourceECInstanceId.GetValue (), targetECInstanceId.GetValue ());
         }
 
@@ -448,17 +447,7 @@ TEST(ECDbRelationships, TestRelationshipKeys)
         ASSERT_EQ(1, keys.size());
         ASSERT_TRUE(std::find(keys.begin(), keys.end(), "area_id") != keys.end());
         }
-    ECRelationshipClassCP countryContinent = ecSchema->GetClassCP("country_continent")->GetRelationshipClassCP();
-    for (auto constraintClass : countryContinent->GetSource().GetConstraintClasses())
-        {
-        Utf8String key = constraintClass->GetKeys().at(0);
-        ASSERT_TRUE(key.Equals("country_id"));
-        }
-    for (auto constraintClass : countryContinent->GetTarget().GetConstraintClasses())
-        {
-        Utf8String key = constraintClass->GetKeys().at(0);
-        ASSERT_TRUE(key.Equals("continent_id"));
-        }
+
     ECRelationshipClassCP houseUser = ecSchema->GetClassCP("house_user")->GetRelationshipClassCP();
     for (auto constraintClass : houseUser->GetSource().GetConstraintClasses())
         {

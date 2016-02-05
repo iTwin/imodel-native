@@ -91,7 +91,11 @@ ECDbSqlColumn const* PropertyMapSystem::GetColumn(ECDbSqlTable const& table) con
 //+---------------+---------------+---------------+---------------+---------------+-
 void PropertyMapSystem::_GetColumns (std::vector<ECDbSqlColumn const*>& columns) const
     {
-    BeAssert(!m_columns.empty());
+    if (m_columns.empty())
+        {
+        BeAssert(!m_columns.empty());
+        }
+
     columns.clear();
     for (std::weak_ptr<ECDbSqlColumn> const& column : m_columns)
         {

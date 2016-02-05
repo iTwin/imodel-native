@@ -1159,6 +1159,24 @@ BentleyStatus NavigationPropertyMap::Postprocess(ECDbMapCR ecdbMap)
         return SUCCESS;
         }
 
+    ClassMap const* relClassMap = ecdbMap.GetClassMap(*m_navigationProperty->GetRelationshipClass());
+    if (relClassMap == nullptr || !relClassMap->IsRelationshipClassMap())
+        {
+        BeAssert(false && "RelationshipClassMap should not be nullptr when finishing the NavigationPropMap");
+        return ERROR;
+        }
+
+    if (relClassMap->GetClassMapType() == IClassMap::Type::RelationshipLinkTable)
+        {
+        ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                                                                   "Failed to map NavigationECProperty '%s.%s'. NavigationECProperties for ECRelationship that map to a link table are not supported by ECDb.",
+                                                                   m_navigationProperty->GetClass().GetFullName(), m_navigationProperty->GetName().c_str());
+        return ERROR;
+        }
+
+    m_relClassMap = static_cast<RelationshipClassMap const*> (relClassMap);
+
+
     if (m_createdBy == nullptr)
         {
         BeAssert(false);
@@ -1168,23 +1186,12 @@ BentleyStatus NavigationPropertyMap::Postprocess(ECDbMapCR ecdbMap)
     ClassMap const* classMap = ecdbMap.GetClassMap(*m_createdBy);
     if (classMap == nullptr)
         {
-        BeAssert(false && "Fail to find ClasMaps that created the NavigationPropMap");
+        BeAssert(false && "Fail to find ClassMaps that created the NavigationPropMap");
         return ERROR;
         }
 
-
-    ClassMap const* relClassMap = ecdbMap.GetClassMap(*m_navigationProperty->GetRelationshipClass());
-    if (relClassMap == nullptr || !relClassMap->IsRelationshipClassMap())
-        {
-        BeAssert(false && "RelationshipClassMap should not be nullptr when finishing the NavigationPropMap");
-        return ERROR;
-        }
-
-    m_relClassMap = static_cast<RelationshipClassMap const*> (relClassMap);
     ECDbSqlColumn const* constraintIdCol = nullptr;
     std::vector<ECDbSqlColumn const*> columns;
-
-
     GetConstraintMap(NavigationEnd::To).GetECInstanceIdPropMap()->GetColumns(columns, classMap->GetPrimaryTable());
     if (columns.size() == 1)
         constraintIdCol = columns.front();
@@ -1205,7 +1212,6 @@ BentleyStatus NavigationPropertyMap::Postprocess(ECDbMapCR ecdbMap)
         m_columns.push_back(constraintIdCol);
 
     BeAssert(m_mappedTables.empty());
-    //const std::set<ECDbSqlTable const*> tables = ecdbMap.GetTablesFromRelationshipEndWithColumn(GetConstraintMap(NavigationEnd::From).GetRelationshipConstraint(), constraintIdCol->GetName().c_str());
     m_mappedTables.push_back(&constraintIdCol->GetTable());
     return SUCCESS;
     }

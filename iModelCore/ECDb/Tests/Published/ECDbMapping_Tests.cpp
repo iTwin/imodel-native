@@ -16,7 +16,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbMappingTestFixture, InvalidMapstarategyCATests)
+TEST_F (ECDbMappingTestFixture, InvalidMapStrategyCATests)
     {
     std::vector<SchemaItem> testItems;
     testItems.push_back (SchemaItem (
@@ -82,6 +82,55 @@ TEST_F (ECDbMappingTestFixture, InvalidMapstarategyCATests)
         "</ECSchema>", false, "Option JoinedTablePerDirectSubclass cannot be used without a strategy"));
 
     AssertSchemaImport (testItems, "invalidmapstrategycatests.ecdb");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                                   Krischan.Eberle   02/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, UnsupportedNavigationPropertyCases)
+    {
+    std::vector<SchemaItem> testSchemas;
+    testSchemas.push_back(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEntityClass typeName='A'>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "        <ECNavigationProperty propertyName='BIds' relationshipName='AHasB' direction='Forward' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B'>"
+        "        <ECProperty propertyName='Cost' typeName='double' />"
+        "    </ECEntityClass>"
+        "   <ECRelationshipClass typeName='AHasB' strength='Referencing'>"
+        "      <Source cardinality='(0,1)' polymorphic='False'>"
+        "          <Class class ='A' />"
+        "      </Source>"
+        "      <Target cardinality='(0,N)' polymorphic='False'>"
+        "          <Class class ='B' />"
+        "      </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>", false, "NavigationProperty to 'Many' end of relationship is not supported"));
+
+    testSchemas.push_back(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEntityClass typeName='A'>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B'>"
+        "        <ECProperty propertyName='Cost' typeName='double' />"
+        "        <ECNavigationProperty propertyName='AId' relationshipName='AHasB' direction='Backward' />"
+        "    </ECEntityClass>"
+        "   <ECRelationshipClass typeName='AHasB' strength='Referencing'>"
+        "      <Source cardinality='(0,N)' polymorphic='False'>"
+        "          <Class class ='A' />"
+        "      </Source>"
+        "      <Target cardinality='(0,N)' polymorphic='False'>"
+        "          <Class class ='B' />"
+        "      </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>", false, "NavigationProperty for link table relationships is not supported"));
+
+    AssertSchemaImport(testSchemas, "invalidnavprops.ecdb");
     }
 
 //---------------------------------------------------------------------------------------

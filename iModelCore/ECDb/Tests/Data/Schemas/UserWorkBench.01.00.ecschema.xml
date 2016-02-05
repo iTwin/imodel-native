@@ -23,7 +23,7 @@
         <Source cardinality="(1,1)" polymorphic="true">
             <Class class="areas"/>
         </Source>
-        <Target cardinality="(10,10)" polymorphic="true">
+        <Target cardinality="(0,N)" polymorphic="true">
             <Class class="towns">
                 <Key>
                     <Property name="area_id"/>
@@ -107,7 +107,7 @@
         <ECProperty propertyName="level" typeName="int" displayLabel="Level" readOnly="false"/>
         <ECProperty propertyName="house_id" typeName="int" readOnly="false"/>
     </ECEntityClass>
-    <ECEntityClass typeName="continent" displayLabel="Continent" modifier="Abstract">
+    <ECEntityClass typeName="continent" displayLabel="Continent">
         <ECProperty propertyName="continent_id" typeName="int" displayLabel="Continent Id" readOnly="false"/>
         <ECProperty propertyName="name" typeName="string" displayLabel="Name" readOnly="false"/>
     </ECEntityClass>
@@ -121,33 +121,24 @@
             </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="name" typeName="string" displayLabel="Name" readOnly="false"/>
-        <ECProperty propertyName="country_id" typeName="int" displayLabel="Country Id" readOnly="false"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="country_continent" displayLabel="Country Continent Relationship" modifier="None" strength="referencing" strengthDirection="forward">
         <Source cardinality="(1,N)" polymorphic="true">
-            <Class class="country">
-                <Key>
-                    <Property name="country_id"/>
-                </Key>
-            </Class>
+            <Class class="country" />
         </Source>
         <Target cardinality="(1,1)" polymorphic="true">
-            <Class class="continent">
-                <Key>
-                    <Property name="continent_id"/>
-                </Key>
-            </Class>
+            <Class class="continent" />
         </Target>
     </ECRelationshipClass>
     <ECEntityClass typeName="region" displayLabel="Region" modifier="None">
         <BaseClass>country</BaseClass>
-        <ECProperty propertyName="region_id" typeName="int" displayLabel="Region Id" readOnly="false"/>
+        <ECProperty propertyName="country_id" typeName="int" displayLabel="Country Id" readOnly="false"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="country_region" displayLabel="Country Region Relationship" modifier="None" strength="holding" strengthDirection="forward">
         <Source cardinality="(1,1)" polymorphic="true">
             <Class class="country"/>
         </Source>
-        <Target cardinality="(4,N)" polymorphic="true">
+        <Target cardinality="(0,N)" polymorphic="true">
             <Class class="region">
                 <Key>
                     <Property name="country_id"/>
@@ -249,7 +240,7 @@
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="towns"/>
         </Source>
-        <Target cardinality="(0,100)" polymorphic="true">
+        <Target cardinality="(0,N)" polymorphic="true">
             <Class class="houses"/>
         </Target>
     </ECRelationshipClass>
