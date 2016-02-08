@@ -571,7 +571,6 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipLinkTableMappingTests 
     savepoint.Commit ();
     }
 
-
     auto psaHasPsaClass = ecdb.Schemas().GetECClass("ECSqlTest", "PSAHasPSA");
     Utf8String psaHasPsaClassECSqlStub;
     if (ToECSql (psaHasPsaClassECSqlStub, ecsqlType, *psaHasPsaClass, false))
@@ -619,7 +618,6 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipWithAdditionalPropsTes
     auto psaClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "PSA");
     auto pClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "P");
 
-
     ECInstanceId sourceECInstanceId;
     {
     ECSqlStatement stmt;
@@ -640,9 +638,8 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipWithAdditionalPropsTes
 
     ECInstanceId ecInstanceId;
     {
-
     Savepoint savepoint (ecdb, "Inserting test instances");
-    ecInstanceId = ECSqlTestFrameworkHelper::InsertTestInstance (ecdb, SqlPrintfString("INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, TargetECInstanceId, B, D) VALUES (%ld, %ld, False, 3.14)", sourceECInstanceId.GetValue(),targetECInstanceId.GetValue()).GetUtf8CP());
+    ecInstanceId = ECSqlTestFrameworkHelper::InsertTestInstance (ecdb, SqlPrintfString("INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, TargetECInstanceId, B, D) VALUES (%lld, %lld, False, 3.14)", sourceECInstanceId.GetValue(),targetECInstanceId.GetValue()).GetUtf8CP());
     if (!ecInstanceId.IsValid ())
         {
         savepoint.Cancel ();
@@ -670,10 +667,10 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipWithAdditionalPropsTes
         ecsql.Sprintf ("%s WHERE B = false AND D = 3.14", relClassECSqlStub.c_str ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
 
-        ecsql.Sprintf ("%s WHERE SourceECInstanceId = %ld", relClassECSqlStub.c_str (), sourceECInstanceId.GetValue());
+        ecsql.Sprintf ("%s WHERE SourceECInstanceId = %lld", relClassECSqlStub.c_str (), sourceECInstanceId.GetValue());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
 
-        ecsql.Sprintf ("%s WHERE TargetECInstanceId = %ld", relClassECSqlStub.c_str (), targetECInstanceId.GetValue());
+        ecsql.Sprintf ("%s WHERE TargetECInstanceId = %lld", relClassECSqlStub.c_str (), targetECInstanceId.GetValue());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
 
         ecsql.Sprintf ("%s WHERE SourceECClassId <> %lld", relClassECSqlStub.c_str (), psaClassId);

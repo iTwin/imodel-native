@@ -340,8 +340,8 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
                            "Description TEXT,"
                            "Type INTEGER NOT NULL,"
                            "Modifier INTEGER NOT NULL,"
-                           "RelationStrength INTEGER,"
-                           "RelationStrengthDirection INTEGER)");
+                           "RelationshipStrength INTEGER,"
+                           "RelationshipStrengthDirection INTEGER)");
     if (BE_SQLITE_OK != stat)
         return stat;
 

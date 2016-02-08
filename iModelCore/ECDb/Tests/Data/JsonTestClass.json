@@ -1,5 +1,5 @@
 ﻿{
-   "$ECClassKey" : "eB_PW_CommonSchema_WSB.Document",
+   "$ECClassKey" : "JsonTests.Document",
    "$ECClassLabel" : "Document",
    "$ECInstanceId" : "1",
    "$ECInstanceLabel" : "A-Model.pdf",

@@ -340,7 +340,7 @@ void JsonECSqlSelectAdapter::JsonFromClassesRecursive(JsonValueR jsonValue, bset
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String JsonECSqlSelectAdapter::GetClassKey(ECClassCR ecClass)
     {
-    Utf8PrintfString classKey("%s.%s", Utf8String(ecClass.GetSchema().GetName().c_str()).c_str(), Utf8String(ecClass.GetName().c_str()).c_str());
+    Utf8PrintfString classKey("%s.%s", ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str());
     return classKey;
     }
 
@@ -354,9 +354,9 @@ void JsonECSqlSelectAdapter::JsonFromClass(JsonValueR jsonValue, ECClassCR ecCla
 
     JsonValueR jsonClass = jsonValue[classKey.c_str()];
 
-    jsonClass["Name"] = Utf8String(ecClass.GetName());
-    jsonClass["DisplayLabel"] = Utf8String(ecClass.GetDisplayLabel());
-    jsonClass["SchemaName"] = Utf8String(ecClass.GetSchema().GetName());
+    jsonClass["Name"] = ecClass.GetName();
+    jsonClass["DisplayLabel"] = ecClass.GetDisplayLabel();
+    jsonClass["SchemaName"] = ecClass.GetSchema().GetName();
     jsonClass["RelationshipPath"] = Json::nullValue;
     }
 
@@ -856,12 +856,16 @@ bool JsonECSqlSelectAdapter::JsonFromPrimitive(JsonValueR jsonValue, IECSqlValue
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::JsonFromArray(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ArrayECPropertyCR arrayProperty) const
+bool JsonECSqlSelectAdapter::JsonFromArray(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECPropertyCR property) const
     {
-    if (ARRAYKIND_Struct == arrayProperty.GetKind())
+    ArrayECPropertyCP arrayProp = property.GetAsArrayProperty();
+    if (arrayProp == nullptr)
+        return false;
+
+    if (ARRAYKIND_Struct == arrayProp->GetKind())
         return JsonFromStructArray(jsonValue, ecsqlValue);
-    /* else if (ARRAYKIND_Primitive == arrayProperty.GetKind()) */
-    return JsonFromPrimitiveArray(jsonValue, ecsqlValue, arrayProperty);
+
+    return JsonFromPrimitiveArray(jsonValue, ecsqlValue, property);
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -886,7 +890,7 @@ bool JsonECSqlSelectAdapter::JsonFromStructArray(JsonValueR jsonValue, IECSqlVal
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::JsonFromPrimitiveArray(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ArrayECPropertyCR arrayProperty) const
+bool JsonECSqlSelectAdapter::JsonFromPrimitiveArray(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECPropertyCR property) const
     {
     bool status = true;
     IECSqlArrayValue const&  primArrayValue = ecsqlValue.GetArray();
@@ -895,7 +899,7 @@ bool JsonECSqlSelectAdapter::JsonFromPrimitiveArray(JsonValueR jsonValue, IECSql
     jsonValue = Json::Value(Json::arrayValue);
     for (IECSqlValue const* arrayElementValue : primArrayValue)
         {
-        if (!JsonFromPrimitive(jsonValue[ii++], *arrayElementValue, arrayProperty, true))
+        if (!JsonFromPrimitive(jsonValue[ii++], *arrayElementValue, property, true))
             status = false;
         }
 
@@ -917,9 +921,7 @@ bool JsonECSqlSelectAdapter::JsonFromStruct(JsonValueR jsonValue, IECSqlValue co
         IECSqlValue const& structMemberValue = structECSqlValue.GetValue(memberIndex);
         ECPropertyCP ecLeafProperty = structMemberValue.GetColumnInfo().GetProperty();
         BeAssert(ecLeafProperty != nullptr && "TODO: Adjust code as ColumnInfo::GetProperty can be null.");
-
-        Utf8String ecLeafPropertyName = Utf8String(ecLeafProperty->GetName());
-        if (!JsonFromPropertyValue(jsonValue[ecLeafPropertyName.c_str()], structMemberValue))
+        if (!JsonFromPropertyValue(jsonValue[ecLeafProperty->GetName().c_str()], structMemberValue))
             rStatus = false;
         }
     return rStatus;
@@ -938,7 +940,7 @@ void JsonECSqlSelectAdapter::JsonFromClassKey(JsonValueR jsonValue, ECClassCR ec
 +---------------+---------------+---------------+---------------+---------------+------*/
 void JsonECSqlSelectAdapter::JsonFromClassLabel(JsonValueR jsonValue, ECClassCR ecClass) const
     {
-    jsonValue = Utf8String(ecClass.GetDisplayLabel());
+    jsonValue = ecClass.GetDisplayLabel();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1002,15 +1004,14 @@ bool JsonECSqlSelectAdapter::JsonFromPropertyValue(JsonValueR jsonValue, IECSqlV
     else if (ecProperty->GetIsStruct())
         return JsonFromStruct(jsonValue, ecsqlValue);
     else if (ecProperty->GetIsArray())
-        {
-        ArrayECPropertyCP arrayProperty = ecProperty->GetAsArrayProperty();
-        BeAssert(arrayProperty != nullptr);
-        return JsonFromArray(jsonValue, ecsqlValue, *arrayProperty);
-        }
+        return JsonFromArray(jsonValue, ecsqlValue, *ecProperty);
     else if (ecProperty->GetIsNavigation())
         {
-        //WIP_NAVPROP Not implemented yet
-        return true;
+        NavigationECPropertyCP navProp = ecProperty->GetAsNavigationProperty();
+        if (!navProp->IsMultiple())
+            return JsonFromPrimitive(jsonValue, ecsqlValue, *ecProperty, false);
+        else
+            return JsonFromPrimitiveArray(jsonValue, ecsqlValue, *ecProperty);
         }
 
     BeAssert(false && "Unhandled ECProperty type. Adjust the code for this new ECProperty type");

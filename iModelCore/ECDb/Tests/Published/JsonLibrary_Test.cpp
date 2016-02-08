@@ -263,14 +263,14 @@ TEST_F (RapidJsonTests, RoundTripDoubles)
 //---------------------------------------------------------------------------------------
 TEST_F(RapidJsonTests, InsertIntoECDb)
     {
-    ECDbR ecdb = SetupECDb("RapidJsonInsertIntoECDb.ecdb", BeFileName(L"eB_PW_CommonSchema_WSB.01.00.ecschema.xml"));
+    ECDbR ecdb = SetupECDb("RapidJsonInsertIntoECDb.ecdb", BeFileName(L"JsonTests.01.00.ecschema.xml"));
     ASSERT_TRUE(ecdb.IsDbOpen());
 
     // Read JSON input from file
     BeFileName jsonInputFile;
     BeTest::GetHost().GetDocumentsRoot (jsonInputFile);
     jsonInputFile.AppendToPath (L"ECDb");
-    jsonInputFile.AppendToPath (L"FieldEngineerStructArray.json");
+    jsonInputFile.AppendToPath (L"JsonTestClass.json");
 
     // Parse JSON value using JsonCpp
     Json::Value jsonInput;
@@ -281,7 +281,7 @@ TEST_F(RapidJsonTests, InsertIntoECDb)
     bool parseSuccessful = !rapidJsonInput.Parse<0>(Json::FastWriter().write(jsonInput).c_str()).HasParseError();
     ASSERT_TRUE (parseSuccessful);
 
-    ECClassCP documentClass = ecdb.Schemas().GetECClass ("eB_PW_CommonSchema_WSB", "Document");
+    ECClassCP documentClass = ecdb.Schemas().GetECClass ("JsonTests", "Document");
     ASSERT_TRUE (documentClass != nullptr);
     JsonInserter inserter (ecdb, *documentClass);
 

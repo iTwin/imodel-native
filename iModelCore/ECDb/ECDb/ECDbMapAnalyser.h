@@ -383,7 +383,6 @@ struct ECDbMapAnalyser
         static NativeSqlBuilder GetClassFilter(std::pair<ECDbMapAnalyser::Storage const*, std::set<ECDbMapAnalyser::Class const*>> const& partition);
         DbResult ApplyChanges();
         DbResult ExecuteDDL(Utf8CP sql);
-        DbResult UpdateHoldingView();
         ViewInfo* GetViewInfoForClass(Class const& nclass);
 
     public:

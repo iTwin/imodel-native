@@ -14,7 +14,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST (ECSqlStatementTests, Insert)
+TEST (ECSqlInsertTests, Insert)
     {
         {
         ECTEST_SETUP ("ECSqlStatementTests", "ECSqlStatementTests.01.00.ecschema.xml", L"Insert.ecdb");
@@ -29,7 +29,6 @@ TEST (ECSqlStatementTests, Insert)
         STATEMENT_EXECUTE_SUCCESS ();
 
         EXPECT_STATEMENT_PREPARE ("INSERT INTO ECST.Orders(ShipCity) VALUES('NewYork')", ECSqlStatus::InvalidECSql);
-
         }
 
         {
@@ -43,7 +42,7 @@ TEST (ECSqlStatementTests, Insert)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST (ECSqlStatementTests, Update)
+TEST (ECSqlInsertTests, Update)
     {
     ECTEST_SETUP ("ECSqlStatementTests", "ECSqlStatementTests.01.00.ecschema.xml", L"Update.ecdb");
 
@@ -61,7 +60,7 @@ TEST (ECSqlStatementTests, Update)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST (ECSqlStatementTests, Delete)
+TEST (ECSqlInsertTests, Delete)
     {
     ECTEST_SETUP ("ECSqlStatementTests", "NestedStructArrayTest.01.00.ecschema.xml", L"Delete.ecdb");
 
@@ -76,7 +75,7 @@ TEST (ECSqlStatementTests, Delete)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST (ECSqlStatementTests, ParameterAdvancedTests)
+TEST (ECSqlInsertTests, ParameterAdvancedTests)
     {
     ECTEST_SETUP ("ParameterAdvancedTests", "ECSqlTest.01.00.ecschema.xml", L"ParameterAdvancedTests.ecdb");
 
@@ -207,7 +206,7 @@ TEST (ECSqlStatementTests, ParameterAdvancedTests)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST (ECSqlStatementTests, ArrayTests)
+TEST (ECSqlInsertTests, ArrayTests)
     {
     ECTEST_SETUP ("ArrayTests", "ECSqlTest.01.00.ecschema.xml", L"ArrayTests.ecdb");
 
@@ -221,7 +220,7 @@ TEST (ECSqlStatementTests, ArrayTests)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST (ECSqlStatementTests, CommonGeometryTests)
+TEST (ECSqlInsertTests, CommonGeometryTests)
     {
     ECTEST_SETUP ("CommonGeometryTests", "ECSqlTest.01.00.ecschema.xml", L"CommonGeometryTests.ecdb");
 
@@ -249,7 +248,7 @@ TEST (ECSqlStatementTests, CommonGeometryTests)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST (ECSqlStatementTests, DateTimeTests)
+TEST (ECSqlInsertTests, DateTimeTests)
     {
     ECTEST_SETUP ("DateTimeTests", "ECSqlTest.01.00.ecschema.xml", L"DateTimeTests.ecdb");
 
@@ -388,7 +387,7 @@ TEST (ECSqlStatementTests, DateTimeTests)
     STATEMENT_EXECUTE_SUCCESS ();
     }
 
-    TEST (ECSqlStatementTests, FunctionTests)
+TEST (ECSqlInsertTests, FunctionTests)
     {
     ECTEST_SETUP ("FunctionTests", "ECSqlTest.01.00.ecschema.xml", L"FunctionTests.ecdb");
 
@@ -399,7 +398,7 @@ TEST (ECSqlStatementTests, DateTimeTests)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST (ECSqlStatementTests, IntoTests)
+TEST (ECSqlInsertTests, IntoTests)
     {
     ECTEST_SETUP ("IntoTests", "ECSqlTest.01.00.ecschema.xml", L"IntoTests.ecdb");
 
@@ -530,14 +529,6 @@ TEST (ECSqlStatementTests, MiscTests)
     STATEMENT_PREPARE_SUCCESS ("INSERT INTO ecsql.TH2 (ECInstanceId, S1) VALUES (41241231231, 's1')");//table per hierarchy mapping->class id must be populated;
     STATEMENT_EXECUTE_SUCCESS ();
 
-    //for link table mappings specifying the ECInstanceId is same as for regular classes
-    STATEMENT_PREPARE_SUCCESS ("INSERT INTO ecsql.PSAHasPSA (ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES (NULL, 124, 124)");
-    STATEMENT_EXECUTE_SUCCESS ();
-
-    STATEMENT_PREPARE_SUCCESS ("INSERT INTO ecsql.PSAHasPSA (ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES (?, 124, 123)");
-    BIND_ID (1, ECInstanceId (123));
-    STATEMENT_EXECUTE_SUCCESS ();
-
     STATEMENT_PREPARE_SUCCESS ("INSERT INTO ecsql.P (ECInstanceId) VALUES (123)");
     ASSERT_STATEMENT_EXECUTE (DbResult::BE_SQLITE_CONSTRAINT_PRIMARYKEY);   //provoke pk constraint violation as instance with id 123 already exists
 
@@ -637,7 +628,7 @@ TEST (ECSqlStatementTests, MiscTests)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST (ECSqlStatementTests, StructTests)
+TEST (ECSqlInsertTests, StructTests)
     {
     ECTEST_SETUP ("StructTests", "ECSqlTest.01.00.ecschema.xml", L"StructTests.ecdb");
 
@@ -652,7 +643,7 @@ TEST (ECSqlStatementTests, StructTests)
     EXECUTE_LIST ();
     }
 
-TEST (ECSqlStatementTests, NamedParameterTest)
+TEST (ECSqlInsertTests, NamedParameterTest)
     {
     ECTEST_SETUP ("NamedParameterTest", "ECSqlTest.01.00.ecschema.xml", L"NamedParameterTest.ecdb");
 

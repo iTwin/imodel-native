@@ -1128,39 +1128,34 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipLinkTableMappingTests (ECDb
     auto thBaseClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "THBase");
     auto th3ClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "TH3");
 
+    bvector<ECInstanceId> psaIds = ECSqlTestFrameworkHelper::GetValidECInstanceIds (ecdb, "SELECT ECInstanceId FROM ecsql.PSA");
+    bvector<ECInstanceId> thbaseIds = ECSqlTestFrameworkHelper::GetValidECInstanceIds (ecdb, "SELECT ECInstanceId FROM ecsql.THBase");
+    bvector<ECInstanceId> th3Ids = ECSqlTestFrameworkHelper::GetValidECInstanceIds (ecdb, "SELECT ECInstanceId FROM ecsql.TH3");
+    //for (auto ecinstanceId : thbaseIds)
+    //    {
+    //    printf ("\n THBase InstanceId = %lld", ecinstanceId.GetValue());
+    //    }
+
     ECSqlTestDataset dataset;
-
-    //ECInstanceId
-    //    111
-    //    115
-    //    119
-    //    123
-    //    127
-    //    131
-    //    135
-    //    139
-    //    143
-    //    147
-
-    ECInstanceId psa1 = ECInstanceId(111);
-    ECInstanceId psa2 = ECInstanceId(115);
-    ECInstanceId thbase1 = ECInstanceId(391);
+    int i = 0; //used as indexNumber for class PSA
+    int j = 0; //used as indexNumber for class THBase
+    int k = 0; //used as indexNumber for class TH3
 
     //**** Case: source/target class id not mandatory as source/target constraints are unambiguous
     Utf8String ecsqlStr;
-    ecsqlStr.Sprintf( "INSERT INTO ecsql.PSAHasPSA (SourceECInstanceId, TargetECInstanceId) VALUES (%lld, %lld);", psa1.GetValue(), psa2.GetValue());
+    ecsqlStr.Sprintf( "INSERT INTO ecsql.PSAHasPSA (SourceECInstanceId, TargetECInstanceId) VALUES (%lld, %lld);", psaIds[i].GetValue(), psaIds[i].GetValue());//111,115
     ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsqlStr.c_str());
 
     {
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPSA (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (%lld, %lld, %lld);",
-         psa1.GetValue(), psa2.GetValue(), psaClassId);
+        psaIds[i].GetValue(), psaIds[i+1].GetValue(), psaClassId);
     ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsqlStr.c_str ());
     }
 
     {
     Utf8String ecsqlStr;
-    ecsqlStr.Sprintf("INSERT INTO ecsql.PSAHasPSA (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (%lld, %lld, ?);", psa1.GetValue(), psa2.GetValue());
+    ecsqlStr.Sprintf("INSERT INTO ecsql.PSAHasPSA (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (%lld, %lld, ?);", psaIds[i].GetValue(), psaIds[i+2].GetValue());
     auto& testItem = ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsqlStr.c_str());
     testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (psaClassId)));
     }
@@ -1168,14 +1163,14 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipLinkTableMappingTests (ECDb
     {
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPSA (SourceECInstanceId, SourceECClassId, TargetECInstanceId) VALUES (%lld, %lld, %lld);",
-        psa1.GetValue(), psaClassId, psa2.GetValue());
+        psaIds[i].GetValue(), psaClassId, psaIds[i+3].GetValue());
     ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsqlStr.c_str ());
     }
 
     {
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf("INSERT INTO ecsql.PSAHasPSA (SourceECInstanceId, SourceECClassId, TargetECInstanceId) VALUES (%lld, ?, %lld);",
-        psa1.GetValue(), psa2.GetValue());
+        psaIds[i].GetValue(), psaIds[i+4].GetValue());
 
     auto& testItem = ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsqlStr.c_str());
     testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (psaClassId)));
@@ -1184,14 +1179,14 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipLinkTableMappingTests (ECDb
     {
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPSA VALUES (%lld, %lld, %lld, %lld);",
-        psa1.GetValue(), psaClassId, psa2.GetValue(),  psaClassId);
+        psaIds[i].GetValue(), psaClassId, psaIds[i+5].GetValue(),  psaClassId);
     ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsqlStr.c_str ());
     }
 
     {
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf("INSERT INTO ecsql.PSAHasPSA VALUES (%lld, :classid, %lld, :classid);",
-        psa1.GetValue(), psa2.GetValue());
+        psaIds[i].GetValue(), psaIds[i+6].GetValue());
 
     auto& testItem = ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsqlStr.c_str());
     testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("classid", ECValue (psaClassId)));
@@ -1200,7 +1195,7 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipLinkTableMappingTests (ECDb
     {
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf("INSERT INTO ecsql.PSAHasOnlyTHBase_NN (SourceECInstanceId, TargetECInstanceId) VALUES (%lld, %lld);",
-        psa1.GetValue(), thbase1.GetValue());
+        psaIds[i++].GetValue(), thbaseIds[j].GetValue());
 
     //Target is non-polymorphic -> target class id not required
     ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsqlStr.c_str());
@@ -1209,7 +1204,7 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipLinkTableMappingTests (ECDb
     {
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf("INSERT INTO ecsql.PSAHasOnlyTHBase_NN (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (%lld,?, %lld, ?)",
-        psa1.GetValue(), thbase1.GetValue());
+        psaIds[i].GetValue(), thbaseIds[j+1].GetValue());
 
     auto& testItem = ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsqlStr.c_str());
     testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (psaClassId)));
@@ -1220,57 +1215,56 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipLinkTableMappingTests (ECDb
     {
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPSA (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (%lld, %lld, %lld);",
-        psa1.GetValue(), thbase1.GetValue(), thBaseClassId);
+        psaIds[i++].GetValue(), psaIds[i].GetValue(), thBaseClassId);
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsqlStr.c_str (), ECSqlExpectedResult::Category::Invalid);
     }
 
     {
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf("INSERT INTO ecsql.PSAHasPSA (SourceECInstanceId, SourceECClassId, TargetECInstanceId) VALUES ((%lld, ?, (%lld);",
-        psa1.GetValue(), psa2.GetValue());
+        psaIds[i].GetValue(), psaIds[i+1].GetValue());
 
     auto& testItem = ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsqlStr.c_str(), ECSqlExpectedResult::Category::Invalid);
     testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (thBaseClassId)));
     }
 
     {
-    Utf8CP ecsql = "INSERT INTO ecsql.PSAHasPSA (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (131, 117, ?);";
+    Utf8String ecsqlStr;
+    ecsqlStr.Sprintf("INSERT INTO ecsql.PSAHasPSA (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (%lld, %lld, ?);", psaIds[i].GetValue (), psaIds[i + 2].GetValue ());
 
-    auto& testItem = ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    auto& testItem = ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsqlStr.c_str(), ECSqlExpectedResult::Category::Invalid);
     testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (thBaseClassId)));
     }
 
     {
     Utf8String ecsqlStr;
-    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPSA (SourceECInstanceId, SourceECClassId, TargetECInstanceId) VALUES (125, %lld, 117);",
-                thBaseClassId);
+    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPSA (SourceECInstanceId, SourceECClassId, TargetECInstanceId) VALUES (%lld, %lld, %lld);", psaIds[i].GetValue (), psaIds[i + 3].GetValue (), thBaseClassId);
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsqlStr.c_str (), ECSqlExpectedResult::Category::Invalid);
     }
 
     {
     Utf8String ecsqlStr;
-    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPSA VALUES (129, %lld, 117, %lld);",
-                th3ClassId, thBaseClassId);
+    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPSA VALUES (%lld, %lld, %lld, %lld);", psaIds[i].GetValue (), th3ClassId, psaIds[i + 3].GetValue (), thBaseClassId);
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsqlStr.c_str (), ECSqlExpectedResult::Category::Invalid);
     }
 
     {
-    Utf8CP ecsql = "INSERT INTO ecsql.PSAHasPSA (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (133, ?, 117, ?);";
-    auto& testItem = ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    Utf8String ecsqlStr;
+    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPSA (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (%lld, ?, %lld, ?);", psaIds[i].GetValue(), psaIds[i+4].GetValue());
+    auto& testItem = ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsqlStr.c_str(), ECSqlExpectedResult::Category::Invalid);
     testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (th3ClassId)));
     testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (thBaseClassId)));
-        }
+    }
 
     //specifying invalid class ids
     for (Utf8StringCR invalidClassIdValue : s_invalidClassIdValues)
         {
         Utf8String ecsqlStr;
-        ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPSA (SourceECInstanceId, SourceECClassId, TargetECInstanceId) VALUES (149, %s, 117);",
-            invalidClassIdValue.c_str ());
+        ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPSA (SourceECInstanceId, SourceECClassId, TargetECInstanceId) VALUES (%lld, %s, %lld);", psaIds[i++].GetValue(),
+            invalidClassIdValue.c_str (), psaIds[i+1].GetValue());
         ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsqlStr.c_str (), ECSqlExpectedResult::Category::Invalid);
 
-        ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (149, 83, %s);",
-            invalidClassIdValue.c_str ());
+        ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (%lld, %lld, %s);", psaIds[i].GetValue (), psaIds[i + 1].GetValue (), invalidClassIdValue.c_str ());
         ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsqlStr.c_str (), ECSqlExpectedResult::Category::Invalid);
         }
 
@@ -1279,36 +1273,35 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipLinkTableMappingTests (ECDb
     //insert with instances of target constraint base class
     {
     Utf8String ecsqlStr;
-    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasTHBase_NN (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (149, %lld, 370, %lld);",
-                    psaClassId, thBaseClassId);
+    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasTHBase_NN (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (%lld, %lld, %lld, %lld);", psaIds[i++].GetValue(), psaClassId, thbaseIds[j].GetValue(), thBaseClassId);
     ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsqlStr.c_str ());
     }
 
     {
-    Utf8CP ecsql = "INSERT INTO ecsql.PSAHasTHBase_NN (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (149, ?, 383, ?);";
-    auto& testItem = ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsql);
+    Utf8String ecsqlStr;
+    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasTHBase_NN (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (%lld, ?, %lld, ?);", psaIds[i].GetValue (), thbaseIds[j + 1].GetValue());
+    auto& testItem = ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsqlStr.c_str());
     testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (psaClassId)));
     testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (thBaseClassId)));
     }
 
     {
     Utf8String ecsqlStr;
-    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasTHBase_NN (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (149, 366, %lld);",
-                    thBaseClassId);
+    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasTHBase_NN (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (%lld, %lld, %lld);", psaIds[i].GetValue (), thbaseIds[j + 2].GetValue(), thBaseClassId);
     ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsqlStr.c_str ());
     }
 
     //insert with instances of target constraint sub class
     {
     Utf8String ecsqlStr;
-    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasTHBase_NN (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (149, %lld, 367, %lld);",
-                    psaClassId, th3ClassId);
+    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasTHBase_NN (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (%lld, %lld, %lld, %lld);", psaIds[i].GetValue (), psaClassId, th3Ids[k].GetValue(), th3ClassId);
     ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsqlStr.c_str ());
     }
 
     {
-    Utf8CP ecsql = "INSERT INTO ecsql.PSAHasTHBase_NN (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (149, ?, 371, ?);";
-    auto& testItem = ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsql);
+    Utf8String ecsqlStr;
+    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasTHBase_NN (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (%lld, ?, %lld, ?);", psaIds[i].GetValue (), th3Ids[k + 1].GetValue ());
+    auto& testItem = ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsqlStr.c_str());
     testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (psaClassId)));
     testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (th3ClassId)));
     }
@@ -1316,48 +1309,47 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipLinkTableMappingTests (ECDb
     //omit source class id which is not required as source constraint is only one class
     {
     Utf8String ecsqlStr;
-    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasTHBase_NN (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (149, 401, %lld);",
-                    thBaseClassId);
-    ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsqlStr.c_str ());
-        }
-
-    {
-    Utf8String ecsqlStr;
-    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasTHBase_NN (SourceECInstanceId, SourceECClassId, TargetECInstanceId) VALUES (149, %lld, 381);",
-            psaClassId);
+    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasTHBase_NN (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (%lld, %lld, %lld);", psaIds[i].GetValue (), th3Ids[k + 2].GetValue (), thBaseClassId);
     ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsqlStr.c_str ());
     }
 
     {
     Utf8String ecsqlStr;
-    ecsqlStr = "INSERT INTO ecsql.PSAHasTHBase_NN (SourceECInstanceId, TargetECInstanceId) VALUES (149, 382);";
+    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasTHBase_NN (SourceECInstanceId, SourceECClassId, TargetECInstanceId) VALUES (%lld, %lld, %lld);", psaIds[i].GetValue(), psaClassId, th3Ids[k+3].GetValue());
     ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsqlStr.c_str ());
     }
+
+    {
+    Utf8String ecsqlStr;
+    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasTHBase_NN (SourceECInstanceId, TargetECInstanceId) VALUES (%lld, %lld);", psaIds[i].GetValue (), th3Ids[k + 4].GetValue());
+    ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsqlStr.c_str ());
+    }
+
     //mismatching class ids
     {
     Utf8String ecsqlStr;
-    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasTHBase_NN (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (149, 383, %lld);",
-                psaClassId);
+    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasTHBase_NN (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (%lld, %lld, %lld);", psaIds[i].GetValue (), th3Ids[k + 5].GetValue(), psaClassId);
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsqlStr.c_str (), ECSqlExpectedResult::Category::Invalid);;
     }
 
     {
-    Utf8CP ecsql = "INSERT INTO ecsql.PSAHasTHBase_NN (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (149, 384, ?);";
-    auto& testItem = ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    Utf8String ecsqlStr;
+    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasTHBase_NN (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (%lld, %lld, ?);", psaIds[i].GetValue (), th3Ids[k + 5].GetValue ());
+    auto& testItem = ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsqlStr.c_str(), ECSqlExpectedResult::Category::Invalid);
     testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (psaClassId)));
     }
 
     {
     //Target constraint is non-polymorphic, so specifying a subclass id is invalid
     Utf8String ecsqlStr;
-    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasOnlyTHBase_NN (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (149, 117, %lld);",
-            th3ClassId);
+    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasOnlyTHBase_NN (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (%lld, %lld, %lld);", psaIds[i].GetValue (), th3Ids[k + 5].GetValue (), th3ClassId);
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsqlStr.c_str (), ECSqlExpectedResult::Category::Invalid);
     }
 
     {
-    Utf8CP ecsql = "INSERT INTO ecsql.PSAHasOnlyTHBase_NN (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (149, 117, ?);";
-    auto& testItem = ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    Utf8String ecsqlStr;
+    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasOnlyTHBase_NN (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (%lld, %lld, ?);", psaIds[i].GetValue (), th3Ids[k + 5].GetValue ());
+    auto& testItem = ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsqlStr.c_str(), ECSqlExpectedResult::Category::Invalid);
     testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (th3ClassId)));
     }
 
@@ -1365,18 +1357,15 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipLinkTableMappingTests (ECDb
     for (Utf8StringCR invalidClassIdValue : s_invalidClassIdValues)
         {
         Utf8String ecsqlStr;
-        ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasTHBase_NN (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (149, %s, 117, %lld);",
-            invalidClassIdValue.c_str (), thBaseClassId);
+        ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasTHBase_NN (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (%lld, %s, %lld, %lld);", psaIds[i].GetValue (), invalidClassIdValue.c_str (), th3Ids[k + 5].GetValue (), thBaseClassId);
         ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsqlStr.c_str (), ECSqlExpectedResult::Category::Invalid);
 
-        ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasTHBase_NN (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (130, 117, %s);",
-            invalidClassIdValue.c_str ());
+        ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasTHBase_NN (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (%lld, %lld, %s);", psaIds[i].GetValue (), th3Ids[k + 5].GetValue (), invalidClassIdValue.c_str ());
         ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsqlStr.c_str (), ECSqlExpectedResult::Category::Invalid);
         }
 
     return dataset;
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  12/13
@@ -1386,27 +1375,35 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipWithAdditionalPropsTests (E
     auto psaClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "PSA");
     auto pClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "P");
 
+    bvector<ECInstanceId> psaIds = ECSqlTestFrameworkHelper::GetValidECInstanceIds (ecdb, "SELECT ECInstanceId FROM ecsql.PSA");
+    bvector<ECInstanceId> pIds = ECSqlTestFrameworkHelper::GetValidECInstanceIds (ecdb, "SELECT ECInstanceId FROM ecsql.P");
+
     ECSqlTestDataset dataset;
+    int i = 0; //used as indexNumber for class PSA
+    int j = 0; //used as indexNumber for class P
 
     //Additional props
-    Utf8CP ecsql = "INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, TargetECInstanceId) VALUES (113, 83);";
-    ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsql);
+    {
+    Utf8String ecsqlStr;
+    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, TargetECInstanceId) VALUES (%lld, %lld);", psaIds[i].GetValue(), pIds[j].GetValue());
+    ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsqlStr.c_str());
+    }
 
     {
     Utf8String ecsqlStr;
-    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, B, D, I, S) VALUES (117, %lld, 84, %lld, True, 3.14, 123, 'hello');", psaClassId, pClassId);
+    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, B, D, I, S) VALUES (%lld, %lld, %lld, %lld, True, 3.14, 123, 'hello');",psaIds[i].GetValue(), psaClassId, pIds[j+1].GetValue(), pClassId);
     ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsqlStr.c_str ());
     }
 
     {
     Utf8String ecsqlStr;
-    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (121, %lld, 85, %lld);", psaClassId, pClassId);
+    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (%lld, %lld, %lld, %lld);", psaIds[i].GetValue(), psaClassId, pIds[j+2].GetValue(), pClassId);
     ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsqlStr.c_str ());
     }
 
     {
     Utf8String ecsqlStr;
-    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, D, B) VALUES (125, %lld, 86, %lld, 3.14, True);", psaClassId, pClassId);
+    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, D, B) VALUES (%lld, %lld, %lld, %lld, 3.14, True);", psaIds[i].GetValue(), psaClassId, pIds[j+3].GetValue(), pClassId);
     ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsqlStr.c_str ());
     }
 
