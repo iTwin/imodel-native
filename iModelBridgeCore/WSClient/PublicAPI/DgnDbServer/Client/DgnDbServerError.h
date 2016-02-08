@@ -20,6 +20,7 @@ struct DgnDbServerError : public DgnClientFx::Utils::AsyncError
             //DgnDbServer Errors
             MissingRequiredProperties,
             InvalidBriefcase,
+            BriefcaseDoesNotBelongToUser,
             AnotherUserPushing,
             RevisionAlreadyExists,
             RevisionDoesNotExist,
