@@ -40,7 +40,7 @@ END_BENTLEY_RENDER_NAMESPACE
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-namespace dgn_ElementHandler {struct Element; struct Physical; struct Graphical2d; struct Annotation; struct Drawing; struct Sheet; struct Group;};
+namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometric3d; struct Physical; struct Annotation; struct Drawing; struct Group;};
 namespace dgn_TxnTable {struct Element; struct Model;};
 
 //=======================================================================================
@@ -821,7 +821,6 @@ protected:
     virtual PhysicalElementCP _ToPhysicalElement() const {return nullptr;}
     virtual AnnotationElementCP _ToAnnotationElement() const {return nullptr;}
     virtual DrawingElementCP _ToDrawingElement() const {return nullptr;}
-    virtual SheetElementCP _ToSheetElement() const {return nullptr;}
     virtual DefinitionElementCP _ToDefinitionElement() const {return nullptr;}
     virtual DictionaryElementCP _ToDictionaryElement() const {return nullptr;}
     virtual IElementGroupCP _ToIElementGroup() const {return nullptr;}
@@ -862,7 +861,6 @@ public:
     PhysicalElementCP ToPhysicalElement() const {return _ToPhysicalElement();}          //!< more efficient substitute for dynamic_cast<PhysicalElementCP>(el)
     AnnotationElementCP ToAnnotationElement() const {return _ToAnnotationElement();}    //!< more efficient substitute for dynamic_cast<AnnotationElementCP>(el)
     DrawingElementCP ToDrawingElement() const {return _ToDrawingElement();}             //!< more efficient substitute for dynamic_cast<DrawingElementCP>(el)
-    SheetElementCP ToSheetElement() const {return _ToSheetElement();}                   //!< more efficient substitute for dynamic_cast<SheetElementCP>(el)
     IElementGroupCP ToIElementGroup() const {return _ToIElementGroup();}                //!< more efficient substitute for dynamic_cast<IElementGroup>(el)
     
     GeometrySourceP ToGeometrySourceP() {return const_cast<GeometrySourceP>(_ToGeometrySource());} //!< more efficient substitute for dynamic_cast<GeometrySourceP>(el)
@@ -875,7 +873,6 @@ public:
     PhysicalElementP ToPhysicalElementP() {return const_cast<PhysicalElementP>(_ToPhysicalElement());}          //!< more efficient substitute for dynamic_cast<PhysicalElementP>(el)
     AnnotationElementP ToAnnotationElementP() {return const_cast<AnnotationElementP>(_ToAnnotationElement());}  //!< more efficient substitute for dynamic_cast<AnnotationElementP>(el)
     DrawingElementP ToDrawingElementP() {return const_cast<DrawingElementP>(_ToDrawingElement());}              //!< more efficient substitute for dynamic_cast<DrawingElementP>(el)
-    SheetElementP ToSheetElementP() {return const_cast<SheetElementP>(_ToSheetElement());}                      //!< more efficient substitute for dynamic_cast<SheetElementP>(el)
     //! @}
 
     bool Is3d() const {return nullptr != ToGeometrySource3d();}                     //!< Determine whether this element is 3d or not
@@ -885,7 +882,6 @@ public:
     bool IsDictionaryElement() const {return nullptr != ToDictionaryElement();}
     bool IsAnnotationElement() const {return nullptr != ToAnnotationElement();}     //!< Determine whether this element is an AnnotationElement
     bool IsDrawingElement() const {return nullptr != ToDrawingElement();}           //!< Determine whether this element is an DrawingElement
-    bool IsSheetElement() const {return nullptr != ToSheetElement();}               //!< Determine whether this element is an SheetElement
     bool IsSameType(DgnElementCR other) {return m_classId == other.m_classId;}      //!< Determine whether this element is the same type (has the same DgnClassId) as another element.
 
     //! Determine whether this is a copy of the "persistent state" (i.e. an exact copy of what is saved in the DgnDb) of a DgnElement.
@@ -1269,8 +1265,10 @@ protected:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GeometricElement3d : GeometricElement, GeometrySource3d
 {
-    DEFINE_T_SUPER(GeometricElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_GeometricElement3d, GeometricElement)
+    friend struct dgn_ElementHandler::Geometric3d;
 
+public:
     struct CreateParams : T_Super::CreateParams
     {
         DEFINE_T_SUPER(GeometricElement3d::T_Super::CreateParams);
@@ -1320,8 +1318,10 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GeometricElement2d : GeometricElement, GeometrySource2d
 {
-    DEFINE_T_SUPER(GeometricElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_GeometricElement2d, GeometricElement)
+    friend struct dgn_ElementHandler::Geometric2d;
 
+public:
     struct CreateParams : T_Super::CreateParams
     {
         DEFINE_T_SUPER(GeometricElement2d::T_Super::CreateParams);
@@ -1424,8 +1424,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GraphicalElement2d : GeometricElement2d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_GraphicalElement2d, GeometricElement2d)
-    friend struct dgn_ElementHandler::Graphical2d;
+    DEFINE_T_SUPER(GeometricElement2d);
 public:
     explicit GraphicalElement2d(CreateParams const& params) : T_Super(params) {}
 };
@@ -1464,26 +1463,8 @@ protected:
     virtual DrawingElementCP _ToDrawingElement() const override final {return this;}
 
     explicit DrawingElement(CreateParams const& params) : T_Super(params) { }
+
 }; // DrawingElement
-
-//=======================================================================================
-//! A 2-dimensional geometric element used in sheets
-//! @ingroup DgnElementGroup
-// @bsiclass                                                    Paul.Connelly   12/15
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SheetElement : GraphicalElement2d
-{
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_SheetElement, GraphicalElement2d)
-    friend struct dgn_ElementHandler::Sheet;
-public:
-
-    //! Create a SheetElement from CreateParams.
-    static SheetElementPtr Create(CreateParams const& params) {return new SheetElement(params);}
-protected:
-    virtual SheetElementCP _ToSheetElement() const override final {return this;}
-
-    explicit SheetElement(CreateParams const& params) : T_Super(params) { }
-}; // SheetElement
 
 //=======================================================================================
 //! Helper class for maintaining and querying the ElementGroupsMembers relationship
@@ -1603,37 +1584,23 @@ public:
 };
 
 //=======================================================================================
-//! A SpatialElement that groups other SpatialElements using the ElementGroupsMembers relationship
-// @bsiclass                                                    Shaun.Sewall    12/15
+//! @ingroup DgnElementGroup
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SpatialGroupElement : SpatialElement, IElementGroupOf<SpatialElement>
+struct EXPORT_VTABLE_ATTRIBUTE InformationElement : DgnElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialGroupElement, SpatialElement)
+    DEFINE_T_SUPER(DgnElement);
 
 protected:
-    Dgn::IElementGroupCP _ToIElementGroup() const override final {return this;}
-    virtual Dgn::DgnElementCP _ToGroupElement() const override final {return this;}
-
-public:
-    //! @private
-    explicit SpatialGroupElement(CreateParams const& params) : T_Super(params) {}
-
-    //! Create a new SpatialGroupElement from a model and DgnCategoryId, using the default values for all other parameters.
-    //! @param[in] model The SpatialModel for the new SpatialGroupElement.
-    //! @param[in] categoryId The category for the new SpatialGroupElement.
-    DGNPLATFORM_EXPORT static SpatialGroupElementPtr Create(SpatialModelR model, DgnCategoryId categoryId);
-
-    //! Creates a new SpatialGroupElement
-    static SpatialGroupElementPtr Create(CreateParams const& params) {return new SpatialGroupElement(params);}
+    explicit InformationElement(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
 //! A DefinitionElement which resides in (and only in) a DefinitionModel.
 //! @ingroup DgnElementGroup
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DefinitionElement : DgnElement
+struct EXPORT_VTABLE_ATTRIBUTE DefinitionElement : InformationElement
 {
-    DEFINE_T_SUPER(DgnElement);
+    DEFINE_T_SUPER(InformationElement);
 
 protected:
     virtual DefinitionElementCP _ToDefinitionElement() const override final {return this;}

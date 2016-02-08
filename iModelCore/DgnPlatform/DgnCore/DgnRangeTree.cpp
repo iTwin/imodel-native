@@ -50,6 +50,7 @@ static inline double rangeExtentSquared(RTree3dValCR range)
     return extentX * extentX + extentY * extentY + extentZ * extentZ;
     }
 
+#ifdef UNUSED
 /*---------------------------------------------------------------------------------**//**
 * Optimized - no function calls, no nullptr tests etc. as in DRange3d::extentSquared.
 * @bsimethod                                                    RayBentley      10/2009
@@ -74,7 +75,8 @@ static inline void extendRange(DRange3dR thisRange, DPoint3dCR point)
     if (point.z > thisRange.high.z)
         thisRange.high.z = point.z;
     }
-
+#endif
+    
 /*---------------------------------------------------------------------------------**//**
 * Optimized - no function calls, no nullptr tests etc. as in DRange3d::extentSquared.
 * @bsimethod                                                    RayBentley      10/2009
@@ -880,56 +882,9 @@ void OcclusionScorer::InitForViewport(DgnViewportCR viewport, double minimumSize
 * Compute Occlusion score for a range that crosses the eye plane.
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool OcclusionScorer::ComputeEyeSpanningRangeOcclusionScore(double* score, DPoint3dCP rangeCorners)
+bool OcclusionScorer::ComputeEyeSpanningRangeOcclusionScore (double* score, DPoint3dCP rangeCorners, bool doFrustumCull)
     {
-    bool    anyInside = false;
-    double  s_eyeSpanningCameraLimit = 1.0E-3;
-
-    DRange3d npcRange;
-    npcRange.Init ();
-    for (int i=0; i<8; i++)
-        {
-        DPoint3d  npc;
-        npc.x = m_localToNpc.coff[0][0] * rangeCorners[i].x + m_localToNpc.coff[0][1] * rangeCorners[i].y + m_localToNpc.coff[0][2] * rangeCorners[i].z + m_localToNpc.coff[0][3];
-        npc.y = m_localToNpc.coff[1][0] * rangeCorners[i].x + m_localToNpc.coff[1][1] * rangeCorners[i].y + m_localToNpc.coff[1][2] * rangeCorners[i].z + m_localToNpc.coff[1][3];
-
-        double w = m_localToNpc.coff[3][0] * rangeCorners[i].x + m_localToNpc.coff[3][1] * rangeCorners[i].y + m_localToNpc.coff[3][2] * rangeCorners[i].z + m_localToNpc.coff[3][3];
-
-        if (w < s_eyeSpanningCameraLimit)
-            {
-            w = s_eyeSpanningCameraLimit;
-            }
-        else
-            {
-            anyInside = true;
-            }
-
-        npc.x /= w;
-        npc.y /= w;
-        npc.z = 1.0;
-        extendRange(npcRange, npc);
-        }
-
-    if (!anyInside)
-        return false;
-
-    if (nullptr == score)
-        return  true;
-
-    if (npcRange.low.x < 0.0)
-        npcRange.low.x = 0.0;
-
-    if (npcRange.low.y < 0.0)
-        npcRange.low.y = 0.0;
-
-    if (npcRange.high.x > 1.0)
-        npcRange.high.x = 1.0;
-
-    if (npcRange.high.y > 1.0)
-        npcRange.high.y = 1.0;
-
-    *score = (npcRange.high.x - npcRange.low.x) * (npcRange.high.y - npcRange.low.y);  // Double score as the area calculation below doubles.
-
+    *score = 2.0;
     return true;
     }
 

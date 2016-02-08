@@ -128,7 +128,7 @@ END_UNNAMED_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d DgnUnits::ComputeProjectExtents()
     {
-    Statement stmt(m_dgndb, "SELECT 1 FROM " DGN_VTABLE_RTree3d " WHERE ElementId MATCH DGN_rtree(?)");
+    Statement stmt(m_dgndb, "SELECT 1 FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId MATCH DGN_rtree(1)");
     RTreeBounds bounds;
     stmt.BindInt64(1, (int64_t) &bounds);
 

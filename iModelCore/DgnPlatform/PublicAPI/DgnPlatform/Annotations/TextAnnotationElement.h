@@ -167,10 +167,9 @@ namespace dgn_ElementHandler
     //=======================================================================================
     // @bsiclass                                                    Jeff.Marker     09/2015
     //=======================================================================================
-    struct TextAnnotation3dHandler : Element
+    struct TextAnnotation3dHandler : Geometric3d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotation3d, TextAnnotation3d, TextAnnotation3dHandler, Element, DGNPLATFORM_EXPORT);
-        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); TextAnnotation3d::AddClassParams(params); }
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotation3d, TextAnnotation3d, TextAnnotation3dHandler, Geometric3d, DGNPLATFORM_EXPORT);
     };
 }
 

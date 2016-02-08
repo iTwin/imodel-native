@@ -1105,7 +1105,7 @@ void PerformanceElementsCRUDTestFixture::BindParams(DgnElementPtr& element, ECSq
         }
     }
 
-    ASSERT_EQ (ECSqlStatus::Success, stmt.BindInt(stmt.GetParameterIndex("InPhysicalSpace"), CoordinateSpace::World == element->GetModel()->ToGeometricModel()->GetCoordinateSpace() ? 1 : 0));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.BindInt (stmt.GetParameterIndex ("InSpatialIndex"), CoordinateSpace::World == element->GetModel ()->ToGeometricModel ()->GetCoordinateSpace () ? 1 : 0));
 
     Placement3dCR placement = element->ToGeometrySource3d()->GetPlacement();
     if (!placement.IsValid())
@@ -1220,7 +1220,7 @@ void PerformanceElementsCRUDTestFixture::BindUpdateParams(DgnElementPtr& element
         stmt.BindNull(geomIndex);
         }
     }
-    ASSERT_EQ (ECSqlStatus::Success, stmt.BindInt(stmt.GetParameterIndex("InPhysicalSpace"), CoordinateSpace::World == element->GetModel()->ToGeometricModel()->GetCoordinateSpace() ? 1 : 0));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.BindInt (stmt.GetParameterIndex ("InSpatialIndex"), CoordinateSpace::World == element->GetModel()->ToGeometricModel()->GetCoordinateSpace() ? 1 : 0));
 
     Placement3dCR placement = element->ToGeometrySource3d()->GetPlacement();
     if (!placement.IsValid())
