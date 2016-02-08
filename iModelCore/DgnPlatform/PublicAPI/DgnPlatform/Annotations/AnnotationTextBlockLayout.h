@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: PublicAPI/DgnPlatform/Annotations/AnnotationTextBlockLayout.h $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 #pragma once
 
@@ -61,6 +61,7 @@ private:
     DGNPLATFORM_EXPORT void Update();
 
 public:
+    DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
     DGNPLATFORM_EXPORT explicit AnnotationLayoutRun(AnnotationRunBaseCR);
     AnnotationLayoutRun(AnnotationLayoutRunCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
     AnnotationLayoutRunR operator=(AnnotationLayoutRunCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
@@ -102,6 +103,7 @@ private:
     DGNPLATFORM_EXPORT void Update();
 
 public:
+    DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
     DGNPLATFORM_EXPORT AnnotationLayoutLine();
     AnnotationLayoutLine(AnnotationLayoutLineCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
     AnnotationLayoutLineR operator=(AnnotationLayoutLineCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
@@ -139,6 +141,7 @@ private:
     DGNPLATFORM_EXPORT void Update();
 
 public:
+    DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
     DGNPLATFORM_EXPORT explicit AnnotationTextBlockLayout(AnnotationTextBlockCR);
     AnnotationTextBlockLayout(AnnotationTextBlockLayoutCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
     AnnotationTextBlockLayoutR operator=(AnnotationTextBlockLayoutCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
