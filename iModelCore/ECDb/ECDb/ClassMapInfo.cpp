@@ -403,13 +403,13 @@ BentleyStatus ClassMapInfo::InitializeFromClassMapCA()
             return ERROR;
 
         if ((userStrategy->GetStrategy() == UserECDbMapStrategy::Strategy::ExistingTable ||
-            (userStrategy->GetStrategy() == UserECDbMapStrategy::Strategy::SharedTable && !userStrategy->AppliesToSubclasses())))
+             (userStrategy->GetStrategy() == UserECDbMapStrategy::Strategy::SharedTable && !userStrategy->AppliesToSubclasses())))
             {
             if (m_tableName.empty())
                 {
                 m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                     "TableName must not be empty in ClassMap custom attribute on ECClass %s if MapStrategy is 'SharedTable (AppliesToSubclasses)' or if MapStrategy is 'ExistingTable'.",
-                     m_ecClass.GetFullName());
+                                                                              "TableName must not be empty in ClassMap custom attribute on ECClass %s if MapStrategy is 'SharedTable (AppliesToSubclasses)' or if MapStrategy is 'ExistingTable'.",
+                                                                              m_ecClass.GetFullName());
                 return ERROR;
                 }
             }
@@ -427,45 +427,15 @@ BentleyStatus ClassMapInfo::InitializeFromClassMapCA()
         ecstat = customClassMap.TryGetECInstanceIdColumn(m_ecInstanceIdColumnName);
         if (ECObjectsStatus::Success != ecstat)
             return ERROR;
-        }
-    
-    auto tryGetBaseClassList = [&] (std::vector<ECDbClassMap>& classMapList)
-        {
-        std::deque<ECClassCP> classes;
-        std::set<ECClassCP> doneList;
-        classes.push_back(&GetECClass());
 
-        while (!classes.empty())
-            {
-            auto head = classes.front();
-            classMapList.push_back(ECDbClassMap());
-            if (!ECDbMapCustomAttributeHelper::TryGetClassMap(classMapList.back(), *head))
-                classMapList.pop_back();
-
-            classes.pop_front();
-            doneList.insert(head);
-            for (auto baseClass : head->GetBaseClasses())
-                {
-                if (doneList.find(baseClass) == doneList.end())
-                    classes.push_back(baseClass);
-                }
-            }
-        return SUCCESS;
-        };
-
-    std::vector<ECDbClassMap> classMapList;
-    tryGetBaseClassList(classMapList);
-
-    for (ECDbClassMap const& classMap : classMapList)
-        {
         bvector<ECDbClassMap::DbIndex> indices;
-        auto ecstat = classMap.TryGetIndexes(indices);
+        ecstat = customClassMap.TryGetIndexes(indices);
         if (ECObjectsStatus::Success != ecstat)
             return ERROR;
 
         for (ECDbClassMap::DbIndex const& index : indices)
             {
-            ClassIndexInfoPtr indexInfo = ClassIndexInfo::Create(index);
+            ClassIndexInfoPtr indexInfo = ClassIndexInfo::Create(m_ecdbMap.GetECDbR(), index);
             if (indexInfo == nullptr)
                 return ERROR;
 
@@ -976,4 +946,27 @@ void RelationshipMapInfo::DetermineCardinality(ECRelationshipConstraintCR source
         m_cardinality = Cardinality::OneToOne;
     }
   
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                02/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ClassIndexInfoPtr ClassIndexInfo::Create(ECDbCR ecdb, ECN::ECDbClassMap::DbIndex const& dbIndex)
+    {
+    WhereConstraint whereConstraint = WhereConstraint::None;
+
+    Utf8CP whereClause = dbIndex.GetWhereClause();
+    if (!Utf8String::IsNullOrEmpty(whereClause))
+        {
+        if (BeStringUtilities::Stricmp(whereClause, "IndexedColumnsAreNotNull") == 0 ||
+            BeStringUtilities::Stricmp(whereClause, "ECDB_NOTNULL") == 0) //legacy support
+            whereConstraint = WhereConstraint::NotNull;
+        else
+            {
+            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid where clause in ClassMap::DbIndex: %s. Only 'IndexedColumnsAreNotNull' is supported by ECDb.", dbIndex.GetWhereClause());
+            return nullptr;
+            }
+        }
+
+    return new ClassIndexInfo(dbIndex.GetName(), dbIndex.IsUnique(), dbIndex.GetProperties(), whereConstraint);
+    }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

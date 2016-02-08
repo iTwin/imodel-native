@@ -176,46 +176,30 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct ClassIndexInfo : RefCountedBase
     {
-    public:
-        enum class WhereConstraint
-            {
-            None,
-            NotNull
-            };
+public:
+    enum class WhereConstraint
+        {
+        None,
+        NotNull
+        };
+
 private:
     Utf8String m_name;
     bool m_isUnique;
     bvector<Utf8String> m_properties;
     WhereConstraint m_where;
-private:
+
     ClassIndexInfo(Utf8CP name, bool isUnique, bvector<Utf8String> const& properties, WhereConstraint whereConstraint)
         : m_name(name), m_isUnique(isUnique), m_properties(properties), m_where(whereConstraint)
         {}
 
 public:
+    static ClassIndexInfoPtr Create(ECDbCR, ECN::ECDbClassMap::DbIndex const&);
+
     Utf8CP GetName() const { return m_name.c_str();}
     bool GetIsUnique() const { return m_isUnique;}
     bvector<Utf8String>& GetProperties(){ return m_properties;}
     WhereConstraint GetWhere() const { return m_where; }
-    static ClassIndexInfoPtr Create(ECN::ECDbClassMap::DbIndex const& dbIndex)
-        {
-        WhereConstraint whereConstraint = WhereConstraint::None;
-
-        Utf8CP whereClause = dbIndex.GetWhereClause();
-        if (!Utf8String::IsNullOrEmpty(whereClause))
-            {
-            if (BeStringUtilities::Stricmp(whereClause, "IndexedColumnsAreNotNull") == 0 ||
-                BeStringUtilities::Stricmp(whereClause, "ECDB_NOTNULL") == 0) //legacy support
-                whereConstraint = WhereConstraint::NotNull;
-            else
-                {
-                LOG.errorv("Invalid where clause in ClassMap::DbIndex: %s. Only 'IndexedColumnsAreNotNull' supported by ECDb.", dbIndex.GetWhereClause());
-                return nullptr;
-                }
-            }
-
-        return new ClassIndexInfo(dbIndex.GetName(), dbIndex.IsUnique(), dbIndex.GetProperties(), whereConstraint);
-        }
     };
 
 /*=================================================================================**//**
