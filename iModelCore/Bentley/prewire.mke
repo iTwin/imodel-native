@@ -2,7 +2,7 @@
 #
 #     $Source: prewire.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 %include mdl.mki
@@ -25,5 +25,11 @@ $(BuildContext)Delivery/bentley-notice.txt : $(_MakeFilePath)bentley-notice.txt
 $(BuildContext)Delivery/btree-notice.txt : $(_MakeFilePath)btree-notice.txt
     $(LinkFirstDepToFirstTarget)
 
+$(BuildContext)Delivery/btree-license.txt : $(_MakeFilePath)btree-license.txt
+    $(LinkFirstDepToFirstTarget)
+
 $(BuildContext)Delivery/bvector-notice.txt : $(_MakeFilePath)bvector-notice.txt
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/bvector-license.txt : $(_MakeFilePath)bvector-license.txt
     $(LinkFirstDepToFirstTarget)
