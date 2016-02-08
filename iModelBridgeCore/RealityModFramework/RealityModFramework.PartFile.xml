@@ -103,7 +103,8 @@
         </Bindings> -->
     </Part>
     
-    <Part Name="BentleyWMSPackageNet" BentleyBuildMakeFile="BentleyWMSPackageNet\BentleyWMSPackageNet.mke">
+    <Part Name="BentleyWMSPackageNet" BentleyBuildMakeFile="BentleyWMSPackageNet\BentleyWMSPackageNet.mke" BMakeOptions="-dTranskitLink=1">
+        <SubPart PartName="TransKitToolsSub"    PartFile="${SrcRoot}util/TranskitTools\TransKitTools" />
         <SubPart PartName="RealityPackage"/>
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="PublicAPI" />
