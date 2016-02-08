@@ -40,3 +40,7 @@ ECInstanceSelectTests.SelectQueriesOnDbGeneratedDuringBuild_79Main # Notified Ma
 
 ImportTest.ImportElementsWithDependencies # Seemingly utterly unrelated schema changes induce this
 ComponentModelBasicTest.MakeVariationInstance # fails firebug; notified Umar
+
+#Uses the eb ECschema which has to be refactored for EC3 and ECDb06. Notified Raman
+JsonTests.FieldEngineerStructArray
+

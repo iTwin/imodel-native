@@ -20,13 +20,9 @@
 #define DGN_CLASSNAME_AnnotationLeaderStyle "AnnotationLeaderStyle"
 #define DGN_CLASSNAME_AnnotationTextStyle   "AnnotationTextStyle"
 #define DGN_CLASSNAME_Authority             "Authority"
-#define DGN_CLASSNAME_TrueColor             "TrueColor"
 #define DGN_CLASSNAME_CategoryAuthority     "CategoryAuthority"
 #define DGN_CLASSNAME_ComponentAuthority    "ComponentAuthority"
 #define DGN_CLASSNAME_ComponentModel        "ComponentModel"
-#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
-#define DGN_CLASSNAME_ComponentSolution     "ComponentSolution"
-#endif
 #define DGN_CLASSNAME_DefinitionElement     "DefinitionElement"
 #define DGN_CLASSNAME_DefinitionModel       "DefinitionModel"
 #define DGN_CLASSNAME_DictionaryElement     "DictionaryElement"
@@ -38,41 +34,44 @@
 #define DGN_CLASSNAME_ElementAspect         "ElementAspect"
 #define DGN_CLASSNAME_ElementExternalKey    "ElementExternalKey"
 #define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
+#define DGN_CLASSNAME_GeometricElement2d    "GeometricElement2d"
+#define DGN_CLASSNAME_GeometricElement3d    "GeometricElement3d"
 #define DGN_CLASSNAME_GeometricModel        "GeometricModel"
-#define DGN_CLASSNAME_GeometrySource        "GeometrySource"
+#define DGN_CLASSNAME_GeometricModel2d      "GeometricModel2d"
+#define DGN_CLASSNAME_GeometricModel3d      "GeometricModel3d"
 #define DGN_CLASSNAME_GeometryPart          "GeometryPart"
 #define DGN_CLASSNAME_GeometryPartAuthority "GeometryPartAuthority"
+#define DGN_CLASSNAME_GraphicalElement2d    "GraphicalElement2d"
+#define DGN_CLASSNAME_GraphicalModel2d      "GraphicalModel2d"
 #define DGN_CLASSNAME_LineStyle             "LineStyle"
 #define DGN_CLASSNAME_Link                  "Link"
 #define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"
 #define DGN_CLASSNAME_MaterialAuthority     "MaterialAuthority"
 #define DGN_CLASSNAME_Model                 "Model"
 #define DGN_CLASSNAME_ModelAuthority        "ModelAuthority"
-#define DGN_CLASSNAME_Model2d               "Model2d"
-#define DGN_CLASSNAME_Model3d               "Model3d"
 #define DGN_CLASSNAME_VolumeElement         "VolumeElement"
 #define DGN_CLASSNAME_NamespaceAuthority    "NamespaceAuthority"
 #define DGN_CLASSNAME_PhysicalElement       "PhysicalElement"
 #define DGN_CLASSNAME_ResourceAuthority     "ResourceAuthority"
 #define DGN_CLASSNAME_SpatialModel          "SpatialModel"
 #define DGN_CLASSNAME_SectionDrawingModel   "SectionDrawingModel"
-#define DGN_CLASSNAME_SheetElement          "SheetElement"
 #define DGN_CLASSNAME_SheetModel            "SheetModel"
 #define DGN_CLASSNAME_SpatialElement        "SpatialElement"
-#define DGN_CLASSNAME_SpatialGroupElement   "SpatialGroupElement"
+#define DGN_CLASSNAME_SpatialIndex          "SpatialIndex"
 #define DGN_CLASSNAME_SpatialRedlineModel   "SpatialRedlineModel"
 #define DGN_CLASSNAME_TextAnnotationSeed    "TextAnnotationSeed"
 #define DGN_CLASSNAME_Texture               "Texture"
+#define DGN_CLASSNAME_TrueColor             "TrueColor"
 #define DGN_CLASSNAME_TrueColorAuthority    "TrueColorAuthority"
 
 //-----------------------------------------------------------------------------------------
 // DgnDb table names
 //-----------------------------------------------------------------------------------------
-#define DGN_TABLE_Domain   DGN_TABLE("Domain")
-#define DGN_TABLE_Font     DGN_TABLE("Font")
-#define DGN_TABLE_Handler  DGN_TABLE("Handler")
-#define DGN_TABLE_Txns     DGN_TABLE("Txns")
-#define DGN_VTABLE_RTree3d DGN_TABLE("RTree3d")
+#define DGN_TABLE_Domain                    DGN_TABLE("Domain")
+#define DGN_TABLE_Font                      DGN_TABLE("Font")
+#define DGN_TABLE_Handler                   DGN_TABLE("Handler")
+#define DGN_TABLE_Txns                      DGN_TABLE("Txns")
+#define DGN_VTABLE_SpatialIndex             DGN_TABLE(DGN_CLASSNAME_SpatialIndex)
 
 //-----------------------------------------------------------------------------------------
 // ECRelationshipClass names (combine with DGN_SCHEMA macro for use in ECSql)
