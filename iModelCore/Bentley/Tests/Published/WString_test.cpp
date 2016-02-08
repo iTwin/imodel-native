@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+
+﻿/*--------------------------------------------------------------------------------------+
 |
 |  $Source: Tests/Published/WString_test.cpp $
 |
@@ -211,6 +211,10 @@ TEST(WStringTest, Utils)
     VERIFY (str2 == cc2);
     VERIFY (trimmed2 == L" Test ");
     VERIFY (trimmed2.length() == 6);
+
+    WString str3(L"");
+    VERIFY( 0 == str3.Trim().length());
+    VERIFY(0 == str3.Trim(L"; .").length());
     }
 
 TEST(WStringTest, Operators)
@@ -1131,4 +1135,259 @@ TEST (WStringTest, WStringLength)
     ASSERT_EQ (3, wcslen (a.c_str ()));
     }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                 02/16
+//---------------------------------------------------------------------------------------
+TEST(WStringTest, EndsWith_EmptyStrings_False)
+    {
+    EXPECT_FALSE(WString(L"").EndsWith(L""));
+    }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                 02/16
+//---------------------------------------------------------------------------------------
+TEST(WStringTest, EndsWith_StringWithEmptyEnding_False)
+    {
+    EXPECT_FALSE(WString(L"ABC").EndsWith(L""));
+    EXPECT_FALSE(WString(L"ABC").EndsWith(nullptr));
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                 02/16
+//---------------------------------------------------------------------------------------
+TEST(WStringTest, EndsWith_StringWithEnding_True)
+    {
+    EXPECT_TRUE(WString(L"ABC").EndsWith(L"C"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                 02/16
+//---------------------------------------------------------------------------------------
+TEST(WStringTest, EndsWith_StringWithBegining_False)
+    {
+    EXPECT_FALSE(WString(L"ABC").EndsWith(L"A"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                 02/16
+//---------------------------------------------------------------------------------------
+TEST(WStringTest, EndsWith_EqualStrings_True)
+    {
+    EXPECT_TRUE(WString(L"ABC").EndsWith(L"ABC"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                 02/16
+//---------------------------------------------------------------------------------------
+TEST(WStringTest, EndsWith_DifferentCaseStrings)
+    {
+    EXPECT_FALSE(WString(L"ABC").EndsWith(L"abc"));
+
+    EXPECT_TRUE(WString(L"ABC").EndsWithI(L"abc"));
+    
+    EXPECT_FALSE(WString(L"ABC").EndsWithI(nullptr));
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                 02/16
+//---------------------------------------------------------------------------------------
+TEST(WStringTest, EndsWith_EndingLongerThanString_False)
+    {
+    EXPECT_FALSE(WString(L"AAA").EndsWith(L"AAAA"));
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                          01/16
+//---------------------------------------------------------------------------------------
+TEST(WStringTest, StartsWith)
+    {
+    EXPECT_FALSE(WString(L"").StartsWith(L""));
+    EXPECT_FALSE(WString(L"ABC").StartsWith(L""));
+    EXPECT_TRUE(WString(L"ABC").StartsWith(L"A"));
+    EXPECT_FALSE(WString(L"ABC").StartsWith(L"C"));
+    EXPECT_TRUE(WString(L"ABC").StartsWith(L"ABC"));
+    EXPECT_FALSE(WString(L"AAA").StartsWith(L"AAAA"));
+
+    // Check Case
+    EXPECT_FALSE(WString(L"ABC").StartsWith(L"abc"));
+    EXPECT_TRUE(WString(L"ABC").StartsWithI(L"abc"));
+    EXPECT_FALSE(WString(L"ABC").StartsWithI(L""));
+    EXPECT_FALSE(WString(L"ABC").StartsWithI(nullptr));
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                          01/16
+//---------------------------------------------------------------------------------------
+TEST(WStringTest, Contains)
+    {
+    // Check WCharCP
+    EXPECT_TRUE(WString(L"").Contains(L""));
+    EXPECT_FALSE(WString(L"").Contains(L"ABCDEF1232"));
+    EXPECT_TRUE(WString(L"ABC").Contains(L""));
+    EXPECT_TRUE(WString(L"ABC").Contains(L"A"));
+    EXPECT_FALSE(WString(L"ABC").Contains(L"ABD"));
+    EXPECT_TRUE(WString(L"ABC").Contains(L"ABC"));
+    EXPECT_FALSE(WString(L"AAA").Contains(L"AAAA"));
+    
+    // Check WString
+    EXPECT_TRUE(WString(L"").Contains(WString(L"")));
+    EXPECT_FALSE(WString(L"").Contains(WString(L"ABCDEF1232")));
+    EXPECT_TRUE(WString(L"ABC").Contains(WString(L"")));
+    EXPECT_TRUE(WString(L"ABC").Contains(WString(L"A")));
+    EXPECT_FALSE(WString(L"ABC").Contains(WString(L"ABD")));
+    EXPECT_TRUE(WString(L"ABC").Contains(WString(L"ABC")));
+    EXPECT_FALSE(WString(L"AAA").Contains(WString(L"AAAA")));
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                          01/16
+//---------------------------------------------------------------------------------------
+TEST(WStringTest, FindI)
+    {
+    EXPECT_EQ(0, WString(L"abc").FindI(L"abc"));
+    EXPECT_EQ(0, WString(L"ABC").FindI(L"abc"));
+    EXPECT_EQ(0, WString(L"AbC").FindI(L"ABC"));
+
+    EXPECT_EQ(0, WString(L"").FindI(L""));
+#ifdef BENTLEY_WIN32
+    EXPECT_EQ(std::string::npos, WString(L"").FindI(L"abc"));
+#endif 
+    EXPECT_EQ(0, WString(L"ababa").FindI(L"ab"));
+    EXPECT_EQ(1, WString(L"ababa").FindI(L"ba"));
+    EXPECT_EQ(2, WString(L"ababc").FindI(L"abc"));
+
+    EXPECT_EQ(0, WString(L"121").FindI(L"1"));
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                          01/16
+//---------------------------------------------------------------------------------------
+TEST(WStringTest, ContainsI)
+    {
+    // Check WCharCP
+    EXPECT_FALSE(WString(L"ABC").Contains(L"abc"));
+    EXPECT_TRUE(WString(L"ABC").ContainsI(L"abc"));
+    EXPECT_TRUE(WString(L"ABC").ContainsI(L"ABC"));
+        
+    // Check WString
+    EXPECT_FALSE(WString(L"ABC").Contains(WString(L"abc")));
+    EXPECT_TRUE(WString(L"ABC").ContainsI(WString(L"abc")));
+    EXPECT_TRUE(WString(L"ABC").ContainsI(WString(L"ABC")));
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                          02/16
+//---------------------------------------------------------------------------------------
+TEST(WStringTest, ReplaceAll)
+    {
+    WString str(L"");
+    EXPECT_EQ(0, str.ReplaceAll(L"", L""));
+    EXPECT_STREQ(L"",str.c_str());
+
+    str.assign(L"");
+    EXPECT_EQ(0, str.ReplaceAll(L"", L"A"));
+    EXPECT_STREQ(L"", str.c_str());
+
+    str.assign(L"ABC");
+    EXPECT_EQ(1, str.ReplaceAll(L"A", L""));
+    EXPECT_STREQ(L"BC", str.c_str());
+
+    str.assign(L"ABC");
+    EXPECT_EQ(1, str.ReplaceAll(L"A", L"C"));
+    EXPECT_STREQ(L"CBC", str.c_str());
+
+    str.assign(L"ABCABC ");
+    EXPECT_EQ(2, str.ReplaceAll(L"AB", L""));
+    EXPECT_STREQ(L"CC ", str.c_str());
+
+    str.assign(L"ABCABC");
+    EXPECT_EQ(2, str.ReplaceAll(L"AB", L"11223344"));
+    EXPECT_STREQ(L"11223344C11223344C", str.c_str());
+
+    str.assign(L"AAA");
+    EXPECT_EQ(0, str.ReplaceAll(L"AAAA", L""));
+    EXPECT_STREQ(L"AAA", str.c_str());
+
+    // Check Case
+    str.assign(L"ABC");
+    EXPECT_EQ(0, str.ReplaceAll(L"abc", L"def"));
+    EXPECT_STREQ(L"ABC", str.c_str());
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                          02/16
+//---------------------------------------------------------------------------------------
+TEST(WStringTest, ReplaceI)
+    {
+    WString str(L"");
+    EXPECT_TRUE( str.ReplaceI(L"", L""));
+    EXPECT_STREQ(L"",str.c_str());
+
+    str.assign(L"");
+    EXPECT_TRUE(str.ReplaceI(L"", L"A"));
+    EXPECT_STREQ(L"A", str.c_str());
+
+    str.assign(L"ABC");
+    EXPECT_TRUE(str.ReplaceI(L"A", L""));
+    EXPECT_STREQ(L"BC", str.c_str());
+
+    str.assign(L"ABC");
+    EXPECT_TRUE(str.ReplaceI(L"A", L"C"));
+    EXPECT_STREQ(L"CBC", str.c_str());
+
+    str.assign(L"ABC");
+    EXPECT_TRUE(str.ReplaceI(L"a", L"C"));
+    EXPECT_STREQ(L"CBC", str.c_str());
+
+    str.assign(L"ABCABC ");
+    EXPECT_TRUE(str.ReplaceI(L"Ab", L""));
+    EXPECT_STREQ(L"CABC ", str.c_str());
+
+    str.assign(L"ABCABC");
+    EXPECT_TRUE(str.ReplaceI(L"AB", L"11223344"));
+    EXPECT_STREQ(L"11223344CABC", str.c_str());
+
+    str.assign(L"ABC");
+    EXPECT_FALSE(str.ReplaceI(L"ABCD", L""));
+    EXPECT_STREQ(L"ABC", str.c_str());
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                          02/16
+//---------------------------------------------------------------------------------------
+TEST(WStringTest, PadRight)
+    {
+    WString str(L"");
+    EXPECT_STREQ(L"", str.PadRight(0, '0').c_str());
+
+    str.assign(L"");
+    EXPECT_STREQ(L"00000", str.PadRight(5, '0').c_str());
+
+    str.assign(L"ABC");
+    EXPECT_STREQ(L"ABC00", str.PadRight(5, '0').c_str());
+
+    str.assign(L"ABC");
+    EXPECT_STREQ(L"ABC", str.PadRight(3, '0').c_str());
+
+    str.assign(L"ABC");
+    EXPECT_STREQ(L"ABC", str.PadRight(1, '0').c_str());
+
+    str.assign(L"ABC");
+    EXPECT_STREQ(L"ABCD", str.PadRight(4, 'D').c_str());
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                          02/16
+//---------------------------------------------------------------------------------------
+TEST(WStringTest, PadLeft)
+    {
+    WString str(L"");
+    EXPECT_STREQ(L"", str.PadLeft(0, '0').c_str());
+
+    str.assign(L"");
+    EXPECT_STREQ(L"00000", str.PadLeft(5, '0').c_str());
+
+    str.assign(L"ABC");
+    EXPECT_STREQ(L"00ABC", str.PadLeft(5, '0').c_str());
+
+    str.assign(L"ABC");
+    EXPECT_STREQ(L"ABC", str.PadLeft(3, '0').c_str());
+
+    str.assign(L"ABC");
+    EXPECT_STREQ(L"ABC", str.PadLeft(1, '0').c_str());
+
+    str.assign(L"ABC");
+    EXPECT_STREQ(L"DABC", str.PadLeft(4, 'D').c_str());
+    }

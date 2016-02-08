@@ -141,6 +141,10 @@ TEST(Utf8StringTest, EndsWith_DifferentCaseStrings)
     EXPECT_FALSE(Utf8String("ABC").EndsWith("abc"));
 
     EXPECT_TRUE(Utf8String("ABC").EndsWithI("abc"));
+    
+    EXPECT_FALSE(Utf8String("ABC").EndsWithI(nullptr));
+
+    EXPECT_FALSE(Utf8String("ABC").EndsWithI(""));
     }
 
 //---------------------------------------------------------------------------------------
