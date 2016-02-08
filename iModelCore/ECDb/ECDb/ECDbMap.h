@@ -125,7 +125,9 @@ private:
     BentleyStatus               FinishTableDefinition() const;
     BentleyStatus               Save();
     //! Create a table to persist ECInstances of the given ECClass in the Db
-    BentleyStatus               CreateOrUpdateRequiredTables();
+    BentleyStatus               CreateOrUpdateRequiredTables() const;
+    BentleyStatus               CreateOrUpdateIndexesInDb() const;
+
     ClassMapByTable             GetClassMapByTable() const;
     void                        GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>&, ECN::ECClassCR) const;
     DbResult                    UpdateHoldingView();
@@ -194,6 +196,7 @@ public:
         Partition& operator=(Partition&& rhs);
 
         ECDbSqlTable const& GetTable () const { return *m_table; }
+        ECN::ECClassId GetRootClassId() const { BeAssert(!m_partitionClassIds.empty()); return m_partitionClassIds[0]; }
         std::vector<ECN::ECClassId> const& GetClassIds () const { return m_partitionClassIds; }
         bool NeedsECClassIdFilter() const;
         void AppendECClassIdFilterSql(Utf8CP classIdColName, NativeSqlBuilder&) const;
@@ -210,7 +213,7 @@ public:
         ECN::ECClassId m_classId;
         std::vector<Partition> m_horizontalPartitions;
         std::vector<size_t> m_nonVirtualHorizontalPartitionIndices;
-        std::vector<Partition> m_veritcalPartitions;
+        std::vector<Partition> m_verticalPartitions;
         size_t m_rootHorizontalPartitionIndex;
         size_t m_rootVerticalPartitionIndex;
 
@@ -224,10 +227,7 @@ public:
         ~StorageDescription (){}
         StorageDescription (StorageDescription&&);
         StorageDescription& operator=(StorageDescription&&);
-        std::vector<Partition> const& GetVerticalPartitions() const
-            {
-            return m_veritcalPartitions;
-            }
+        std::vector<Partition> const& GetVerticalPartitions() const { return m_verticalPartitions; }
 
         //! Returns nullptr, if more than one non-virtual partitions exist.
         //! If polymorphic is true or has no non-virtual partitions, gets root horizontal partition.

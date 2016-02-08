@@ -451,64 +451,38 @@ BentleyStatus ClassMapInfo::InitializeFromClassMapCA()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ClassMapInfo::ProcessStandardKeys(ECClassCR ecClass, Utf8CP customAttributeName)
     {
-    StandardKeySpecification::Type keyType = StandardKeySpecification::GetTypeFromString(customAttributeName);
-    if (keyType == StandardKeySpecification::Type::None)
-        return SUCCESS;
-
     IECInstancePtr ca = ecClass.GetCustomAttribute(customAttributeName);
     if (ca == nullptr)
         return SUCCESS;
 
-    ECValue v;
-    switch (keyType)
+    Utf8CP caPropName = nullptr;
+    if (BeStringUtilities::Stricmp(customAttributeName, "BusinessKeySpecification") == 0 ||
+        BeStringUtilities::Stricmp(customAttributeName, "GlobalIdSpecification") == 0)
+        caPropName = "PropertyName";
+    else if (BeStringUtilities::Stricmp(customAttributeName, "SyncIDSpecification") == 0)
+        caPropName = "Property";
+    else
         {
-            case StandardKeySpecification::Type::BusinessKeySpecification:
-            case StandardKeySpecification::Type::GlobalIdSpecification:
-                ca->GetValue(v, "PropertyName"); break;
-            case StandardKeySpecification::Type::SyncIDSpecification:
-                ca->GetValue(v, "Property"); break;
-
-            default:
-                BeAssert(false);
-                return ERROR;
-        }
-
-    if (v.IsNull())
-        return SUCCESS;
-
-    //Create unique not null index on provided property
-    Utf8CP keyPropName = v.GetUtf8CP();
-    ECPropertyP keyProp = ecClass.GetPropertyP(keyPropName);
-    if (nullptr == keyProp)
-        {
-        m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                        "Invalid %s on class '%s'. The specified property '%s' does not exist in the class.",
-                         customAttributeName, ecClass.GetFullName(), keyPropName);
+        BeAssert(false && "Unsupported Key Specification custom attribute");
         return ERROR;
         }
 
-    if (keyProp->GetAsPrimitiveProperty() != nullptr)
+    ECValue v;
+    if (ECObjectsStatus::Success != ca->GetValue(v, caPropName) || v.IsNull())
         {
-        const PrimitiveType primType = keyProp->GetAsPrimitiveProperty()->GetType();
-        if (primType == PRIMITIVETYPE_Binary ||
-            primType == PRIMITIVETYPE_Boolean ||
-            primType == PRIMITIVETYPE_DateTime ||
-            primType == PRIMITIVETYPE_Double ||
-            primType == PRIMITIVETYPE_Integer ||
-            primType == PRIMITIVETYPE_Long ||
-            primType == PRIMITIVETYPE_String)
-            {
-            StandardKeySpecificationPtr spec = StandardKeySpecification::Create(keyType);
-            spec->GetKeyProperties().push_back(keyPropName);
-            m_standardKeys.push_back(spec);
-            return SUCCESS;
-            }
+        m_ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                                                      "Invalid %s on ECClass '%s'. Could not retrieve value of property '%s' from the custom attribute.",
+                                                                     customAttributeName, ecClass.GetFullName(), caPropName);
+        return ERROR;
         }
 
-    m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                "Invalid %s on class '%s'. The data type of the specified property '%s' is not supported. Supported types: Binary, Boolean, DateTime, Double, Integer, Long and String.",
-               customAttributeName, ecClass.GetFullName(), keyPropName);
-    return ERROR;
+    Utf8CP keyPropName = v.GetUtf8CP();
+    ClassIndexInfoPtr indexInfo = ClassIndexInfo::CreateStandardKeyIndex(m_ecdbMap.GetECDbR(), ecClass, customAttributeName, keyPropName);
+    if (indexInfo == nullptr)
+        return ERROR;
+
+    m_dbIndexes.push_back(indexInfo);
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -967,6 +941,46 @@ ClassIndexInfoPtr ClassIndexInfo::Create(ECDbCR ecdb, ECN::ECDbClassMap::DbIndex
         }
 
     return new ClassIndexInfo(dbIndex.GetName(), dbIndex.IsUnique(), dbIndex.GetProperties(), whereConstraint);
+    }
+
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                02/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ClassIndexInfoPtr ClassIndexInfo::CreateStandardKeyIndex(ECDbCR ecdb, ECClassCR containerClass, Utf8CP standardKeyCAName, Utf8CP propertyName)
+    {
+    if (Utf8String::IsNullOrEmpty(standardKeyCAName) || Utf8String::IsNullOrEmpty(propertyName))
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    if (containerClass.GetPropertyP(propertyName) == nullptr)
+        {
+        ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                                                      "Invalid %s on ECClass '%s'. The property '%s' specified in the custom attribute does not exist in the ECClass.",
+                                                      standardKeyCAName, containerClass.GetFullName(), propertyName);
+        return nullptr;
+        }
+
+    Utf8String indexName;
+    indexName.Sprintf("ix_%s_%s_%s_%s", containerClass.GetSchema().GetNamespacePrefix().c_str(), containerClass.GetName().c_str(),
+                      standardKeyCAName, propertyName);
+
+    bvector<Utf8String> indexPropNameVector;
+    indexPropNameVector.push_back(propertyName);
+    return new ClassIndexInfo(indexName.c_str(), false, indexPropNameVector, WhereConstraint::None);
+    }
+
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                02/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ClassIndexInfoPtr ClassIndexInfo::Clone(ClassIndexInfoCR rhs, Utf8CP newIndexName)
+    {
+    return new ClassIndexInfo(newIndexName, rhs.GetIsUnique(), rhs.GetProperties(), rhs.GetWhere());
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

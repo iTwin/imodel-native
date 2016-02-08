@@ -38,7 +38,6 @@ struct ClassMapInfo : NonCopyableClass
 private:
     Utf8String m_tableName;
     Utf8String m_ecInstanceIdColumnName;
-    bvector<StandardKeySpecificationPtr> m_standardKeys;
     bvector<ClassIndexInfoPtr> m_dbIndexes; 
     IClassMap const* m_parentClassMap;
     bool m_isMapToVirtualTable;
@@ -79,11 +78,10 @@ public:
 
     ECDbMapCR GetECDbMap() const {return m_ecdbMap;}
     ECN::ECClassCR GetECClass() const {return m_ecClass;}
-    bvector<ClassIndexInfoPtr> const& GetIndexInfo() const { return m_dbIndexes;}
+    bvector<ClassIndexInfoPtr> const& GetIndexInfos() const { return m_dbIndexes;}
     Utf8CP GetTableName() const {return m_tableName.c_str();}
     Utf8CP GetECInstanceIdColumnName() const {return m_ecInstanceIdColumnName.c_str();}
     IClassMap const* GetParentClassMap () const { return m_parentClassMap; }
-    bvector<StandardKeySpecificationPtr>const& GetStandardKeys() const {return m_standardKeys;}
 
     //! Virtual tables are not persisted   
     bool IsMapToVirtualTable () const { return m_isMapToVirtualTable; }
@@ -195,64 +193,13 @@ private:
 
 public:
     static ClassIndexInfoPtr Create(ECDbCR, ECN::ECDbClassMap::DbIndex const&);
+    static ClassIndexInfoPtr CreateStandardKeyIndex(ECDbCR, ECN::ECClassCR containerClass, Utf8CP standardKeyCAName, Utf8CP propertyName);
+    static ClassIndexInfoPtr Clone(ClassIndexInfoCR, Utf8CP newIndexName);
 
     Utf8CP GetName() const { return m_name.c_str();}
     bool GetIsUnique() const { return m_isUnique;}
-    bvector<Utf8String>& GetProperties(){ return m_properties;}
+    bvector<Utf8String> const& GetProperties() const{ return m_properties;}
     WhereConstraint GetWhere() const { return m_where; }
     };
-
-/*=================================================================================**//**
-* This class hold key specification as describe by standard custom attributes
-* @bsiclass                                                     Affan.Khan      09/2012
-+===============+===============+===============+===============+===============+======*/
-struct StandardKeySpecification : RefCountedBase
-    {
-    public:
-        enum class Type
-            {
-            None = 0,
-            SyncIDSpecification,
-            GlobalIdSpecification,
-            BusinessKeySpecification
-            };
-    private:
-        bvector<Utf8String> m_keyProperties;
-        Type m_type;
-
-        StandardKeySpecification(Type type) : m_type(type){}
-
-    public:
-        bvector<Utf8String>& GetKeyProperties() { return m_keyProperties; }
-        Type GetType() const { return m_type; }
-        static StandardKeySpecificationPtr Create(Type type)
-            {
-            return new StandardKeySpecification(type);
-            }
-        static Type GetTypeFromString(Utf8CP customAttributeName)
-            {
-            Type keyType = Type::None;
-            if (BeStringUtilities::Stricmp(customAttributeName, "SyncIDSpecification") == 0)
-                keyType = Type::SyncIDSpecification;
-            else if (BeStringUtilities::Stricmp(customAttributeName, "GlobalIdSpecification") == 0)
-                keyType = Type::GlobalIdSpecification;
-            else if (BeStringUtilities::Stricmp(customAttributeName, "BusinessKeySpecification") == 0)
-                keyType = Type::BusinessKeySpecification;
-
-            return keyType;
-            }
-        static Utf8String TypeToString(Type keyType)
-            {
-            if (keyType == Type::SyncIDSpecification)
-                return "SyncIDSpecification";
-            if (keyType == Type::GlobalIdSpecification)
-                return "GlobalIdSpecification";
-            if (keyType == Type::BusinessKeySpecification)
-                return "BusinessKeySpecification";
-
-            return "";
-            }
-    };
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

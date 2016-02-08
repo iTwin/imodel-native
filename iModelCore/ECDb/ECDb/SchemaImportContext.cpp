@@ -68,9 +68,8 @@ UserECDbMapStrategy* SchemaImportContext::GetUserStrategyP(ECClassCR ecclass, EC
 //---------------------------------------------------------------------------------------
 void SchemaImportContext::CacheClassMapInfo(ClassMap const& classMap, std::unique_ptr<ClassMapInfo>& info)
     {
-    m_classMapInfoCache.push_back(std::make_pair(&classMap, std::move(info)));
+    m_classMapInfoCache[&classMap] = std::move(info);
     }
-
 
 
 //****************************************************************************************
@@ -192,7 +191,7 @@ ECDbSqlIndex* SchemaImportECDbMapDb::CacheIndex(ECDbCR ecdb, ECDbIndexId id, ECD
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  08/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus SchemaImportECDbMapDb::CreateOrUpdateIndicesInDb(ECDbR ecdb) const
+BentleyStatus SchemaImportECDbMapDb::CreateOrUpdateIndexesInDb(ECDbR ecdb) const
     {
     bmap<Utf8String, ECDbSqlIndex const*> comparableIndexDefs;
     for (std::unique_ptr<ECDbSqlIndex>& indexPtr : m_indexes)

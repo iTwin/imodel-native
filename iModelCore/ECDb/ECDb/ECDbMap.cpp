@@ -110,7 +110,7 @@ MapStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext, bvector<
 
     m_lightweightCache.Reset();
 
-    if (SUCCESS != m_schemaImportContext->GetECDbMapDb().CreateOrUpdateIndicesInDb(m_ecdb))
+    if (SUCCESS != CreateOrUpdateIndexesInDb())
         {
         ClearCache();
         m_schemaImportContext = nullptr;
@@ -232,9 +232,9 @@ MapStatus ECDbMap::DoMapSchemas(bvector<ECSchemaCP> const& mapSchemas)
         return MapStatus::Error;
 
     BeAssert(status != MapStatus::BaseClassesNotMapped && "Expected to resolve all class maps by now.");
-    for (std::pair<ClassMap const*, std::unique_ptr<ClassMapInfo>> const& kvpair : GetSchemaImportContext()->GetClassMapInfoCache())
+    for (auto& kvpair : GetSchemaImportContext()->GetClassMapInfoCache())
         {
-        if (SUCCESS != kvpair.first->CreateUserProvidedIndices(*GetSchemaImportContext(), *kvpair.second))
+        if (SUCCESS != kvpair.first->CreateUserProvidedIndexes(*GetSchemaImportContext(), kvpair.second->GetIndexInfos()))
             return MapStatus::Error;
         }
    
@@ -361,12 +361,6 @@ MapStatus ECDbMap::MapClass(ECClassCR ecClass)
             }
         }
 
-    /*
-     * Note: forceRevaluationOfMapStrategy is normally set to TRUE for the case the schemas
-     * are getting upgraded. If classes have new properties, loading the previous class map
-     * updates the class map with new property maps. If the schema has new classes, the fall
-     * through the code below creates the new class maps
-     */
     const bool classMapExists = GetClassMap(ecClass) != nullptr;
     if (!classMapExists)
         {
@@ -641,15 +635,15 @@ ECDbMap::ClassMapByTable ECDbMap::GetClassMapByTable() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbMap::CreateOrUpdateRequiredTables ()
+BentleyStatus ECDbMap::CreateOrUpdateRequiredTables() const
     {
     if (AssertIfIsNotImportingSchema())
         return ERROR;
 
-    BeMutexHolder lock (m_criticalSection);
-    m_ecdb.GetStatementCache ().Empty ();
+    BeMutexHolder lock(m_criticalSection);
+    m_ecdb.GetStatementCache().Empty();
     StopWatch timer(true);
-    
+
     int nCreated = 0;
     int nUpdated = 0;
     int nSkipped = 0;
@@ -663,14 +657,14 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables ()
         {
         ECDbSqlTable* table = it->first;
 
-        if (table->GetPersistenceType () == PersistenceType::Virtual || table->GetTableType() == TableType::Existing)           
-            continue; 
-        
+        if (table->GetPersistenceType() == PersistenceType::Virtual || table->GetTableType() == TableType::Existing)
+            continue;
+
         if (GetECDbR().TableExists(table->GetName().c_str()))
             {
-            if (GetSQLManager ().IsTableChanged (*table))
+            if (GetSQLManager().IsTableChanged(*table))
                 {
-                if (table->GetPersistenceManager ().CreateOrUpdate (GetECDbR ()) != BentleyStatus::SUCCESS)
+                if (table->GetPersistenceManager().CreateOrUpdate(GetECDbR()) != BentleyStatus::SUCCESS)
                     return ERROR;
                 nUpdated++;
                 }
@@ -691,6 +685,89 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables ()
         LOG.debugv("Created %d tables, skipped %d tables and updated %d table/view(s) in %.4f seconds", nCreated, nSkipped, nUpdated, timer.GetElapsedSeconds());
 
     return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  02/2016
+//---------------------------------------------------------------------------------------
+BentleyStatus ECDbMap::CreateOrUpdateIndexesInDb() const
+    {
+    if (AssertIfIsNotImportingSchema())
+        return ERROR;
+
+    std::vector<ECDbSqlIndex const*> indexes;
+    for (std::unique_ptr<ECDbSqlIndex> const& indexPtr : m_schemaImportContext->GetECDbMapDb().GetIndexes())
+        {
+        indexes.push_back(indexPtr.get());
+        }
+
+    bmap<Utf8String, ECDbSqlIndex const*> comparableIndexDefs;
+    for (ECDbSqlIndex const* index : indexes)
+        {
+        const ECClassId classId = index->GetClassId();
+        if (ECClass::UNSET_ECCLASSID == classId)
+            continue;
+
+        ClassMap const* classMap = GetClassMap(classId);
+        if (classMap == nullptr)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        ECDbSqlTable const& table = index->GetTable();
+        StorageDescription const& storageDesc = classMap->GetStorageDescription();
+        std::vector<Partition> const& horizPartitions = storageDesc.GetHorizontalPartitions();
+        if (horizPartitions.size() <= 1)
+            {
+            if (horizPartitions.empty() || &horizPartitions[0].GetTable() != &table)
+                {
+                BeAssert(!horizPartitions.empty() && &horizPartitions[0].GetTable() == &table);
+                return ERROR;
+                }
+
+            continue;
+            }
+
+        auto classMapInfoCacheIt = m_schemaImportContext->GetClassMapInfoCache().find(classMap);
+        bvector<ClassIndexInfoPtr> const* baseClassIndexInfos = nullptr;
+        if (classMapInfoCacheIt == m_schemaImportContext->GetClassMapInfoCache().end())
+            {
+            BeAssert(false && "TBD");
+            }
+        else
+            baseClassIndexInfos = &classMapInfoCacheIt->second->GetIndexInfos();
+
+
+        for (Partition const& horizPartition : horizPartitions)
+            {
+            if (&table == &horizPartition.GetTable())
+                continue;
+
+            ECClassId rootClassId = horizPartition.GetRootClassId();
+            ClassMap const* rootClassMap = GetClassMap(rootClassId);
+            if (rootClassMap == nullptr)
+                {
+                BeAssert(false);
+                return ERROR;
+                }
+
+            bvector<ClassIndexInfoPtr> indexInfos;
+            for (ClassIndexInfoPtr const& indexInfo : *baseClassIndexInfos)
+                {
+                Utf8String indexName;
+                if (!Utf8String::IsNullOrEmpty(indexInfo->GetName()))
+                    indexName.append(indexInfo->GetName()).append("_").append(horizPartition.GetTable().GetName());
+
+                indexInfos.push_back(ClassIndexInfo::Clone(*indexInfo, indexName.c_str()));
+                }
+
+            if (SUCCESS != rootClassMap->CreateUserProvidedIndexes(*m_schemaImportContext, indexInfos))
+                return ERROR;
+            }
+        }
+
+    return m_schemaImportContext->GetECDbMapDb().CreateOrUpdateIndexesInDb(m_ecdb);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1254,23 +1331,22 @@ void ECDbMap::LightweightCache::LoadHorizontalPartitions ()  const
         Enum::ToInt(ColumnKind::ECClassId), Enum::ToInt(TableType::Joined));
 
     CachedStatementPtr stmt = m_map.GetECDbR ().GetCachedStatement (sql.c_str());
-    while (stmt->Step () == BE_SQLITE_ROW)
+    while (stmt->Step() == BE_SQLITE_ROW)
         {
-        auto rootClassId = stmt->GetValueInt64 (0);
-        auto derivedClassId = stmt->GetValueInt64 (1);
+        ECClassId rootClassId = stmt->GetValueInt64(0);
         if (anyClassId == rootClassId)
             continue;
 
-        Utf8CP tableName = stmt->GetValueText (2);
-        auto table = m_map.GetSQLManager ().GetDbSchema ().FindTable (tableName);
-        BeAssert (table != nullptr);
-        auto& ids = m_horizontalPartitions[rootClassId][table];
+        ECClassId derivedClassId = stmt->GetValueInt64(1);
+
+        Utf8CP tableName = stmt->GetValueText(2);
+        ECDbSqlTable const* table = m_map.GetSQLManager().GetDbSchema().FindTable(tableName);
+        BeAssert(table != nullptr);
+        std::vector<ECClassId>& horizontalPartition = m_horizontalPartitions[rootClassId][table];
         if (derivedClassId == rootClassId)
-            {
-            ids.insert (ids.begin (), derivedClassId);
-            }
+            horizontalPartition.insert(horizontalPartition.begin(), derivedClassId);
         else
-            ids.insert (ids.end(), derivedClassId);
+            horizontalPartition.insert(horizontalPartition.end(), derivedClassId);
         }
 
     m_loadedFlags.m_horizontalPartitionsIsLoaded = true;
@@ -1492,7 +1568,7 @@ StorageDescription::StorageDescription(StorageDescription&& rhs)
     : m_classId(std::move(rhs.m_classId)), m_horizontalPartitions(std::move(rhs.m_horizontalPartitions)),
     m_nonVirtualHorizontalPartitionIndices(std::move(rhs.m_nonVirtualHorizontalPartitionIndices)),
     m_rootHorizontalPartitionIndex(std::move(rhs.m_rootHorizontalPartitionIndex)),
-    m_rootVerticalPartitionIndex(std::move(rhs.m_rootVerticalPartitionIndex)), m_veritcalPartitions(std::move(rhs.m_veritcalPartitions))
+    m_rootVerticalPartitionIndex(std::move(rhs.m_rootVerticalPartitionIndex)), m_verticalPartitions(std::move(rhs.m_verticalPartitions))
     {}
 
 //------------------------------------------------------------------------------------------
@@ -1507,7 +1583,7 @@ StorageDescription& StorageDescription::operator=(StorageDescription&& rhs)
         m_nonVirtualHorizontalPartitionIndices = std::move(rhs.m_nonVirtualHorizontalPartitionIndices);
         m_rootHorizontalPartitionIndex = std::move(rhs.m_rootHorizontalPartitionIndex);
         m_rootVerticalPartitionIndex = std::move(rhs.m_rootVerticalPartitionIndex);
-        m_veritcalPartitions = std::move(rhs.m_veritcalPartitions);
+        m_verticalPartitions = std::move(rhs.m_verticalPartitions);
         }
 
     return *this;
@@ -1665,7 +1741,7 @@ Partition const* StorageDescription::GetHorizontalPartition(ECDbSqlTable const& 
 //------------------------------------------------------------------------------------------
 Partition const* StorageDescription::GetVerticalPartition(ECDbSqlTable const& table) const
     {
-    for (Partition const& part : m_veritcalPartitions)
+    for (Partition const& part : m_verticalPartitions)
         {
         if (&part.GetTable() == &table)
             return &part;
@@ -1687,8 +1763,8 @@ Partition const& StorageDescription::GetRootHorizontalPartition() const
 //------------------------------------------------------------------------------------------
 Partition const& StorageDescription::GetRootVerticalPartition() const
     {
-    BeAssert(m_rootVerticalPartitionIndex < m_veritcalPartitions.size());
-    return m_veritcalPartitions[m_rootVerticalPartitionIndex];
+    BeAssert(m_rootVerticalPartitionIndex < m_verticalPartitions.size());
+    return m_verticalPartitions[m_rootVerticalPartitionIndex];
     }
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    05 / 2015
@@ -1717,13 +1793,13 @@ Partition* StorageDescription::AddVerticalPartition(ECDbSqlTable const& table, b
     if (table.GetPersistenceType() == PersistenceType::Virtual)
         return nullptr;
 
-    m_veritcalPartitions.push_back(Partition(table));
+    m_verticalPartitions.push_back(Partition(table));
 
-    const size_t indexOfAddedPartition = m_veritcalPartitions.size() - 1;
+    const size_t indexOfAddedPartition = m_verticalPartitions.size() - 1;
     if (isRootPartition)
         m_rootVerticalPartitionIndex = indexOfAddedPartition;
 
-    return &m_veritcalPartitions[indexOfAddedPartition];
+    return &m_verticalPartitions[indexOfAddedPartition];
     }
 
 //****************************************************************************************

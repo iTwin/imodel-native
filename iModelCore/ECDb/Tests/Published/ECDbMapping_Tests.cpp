@@ -1611,13 +1611,15 @@ TEST_F (ECDbMappingTestFixture, SharedColumnsAcrossMultipleSchemaImports)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, AbstractClassWithSharedTable)
+TEST_F(ECDbMappingTestFixture, AbstractClass)
     {
+    #define SharedTableName "t_unrelatedsharedtable"
+
     SchemaItem testItem ("<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestAbstractClasses' nameSpacePrefix='tac' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='AbstractClassTest' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
         "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-        "    <ECEntityClass typeName='AbstractBaseClass' modifier='Abstract'>"
+        "    <ECEntityClass typeName='BaseAbstractSharedTable' modifier='Abstract'>"
         "        <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.01.00'>"
         "                <MapStrategy>"
@@ -1626,39 +1628,51 @@ TEST_F(ECDbMappingTestFixture, AbstractClassWithSharedTable)
         "                </MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='P1' typeName='string' />"
+        "        <ECProperty propertyName='BaseAbstractSharedTableProp' typeName='int' />"
         "    </ECEntityClass>"
-        "    <ECEntityClass typeName='ChildDomainClassA' modifier='None'>"
-        "        <BaseClass>AbstractBaseClass</BaseClass>"
-        "        <ECProperty propertyName='P2' typeName='string' />"
+        "    <ECEntityClass typeName='Sub1Abstract' modifier='Abstract'>"
+        "        <BaseClass>BaseAbstractSharedTable</BaseClass>"
+        "        <ECProperty propertyName='Sub1AbstractProp' typeName='int' />"
         "    </ECEntityClass>"
-        "    <ECEntityClass typeName='ChildDomainClassB' modifier='None'>"
-        "        <BaseClass>AbstractBaseClass</BaseClass>"
-        "        <ECProperty propertyName='P3' typeName='string' />"
+        "    <ECEntityClass typeName='Sub11' modifier='None'>"
+        "        <BaseClass>Sub1Abstract</BaseClass>"
+        "        <ECProperty propertyName='Sub11Prop' typeName='int' />"
         "    </ECEntityClass>"
-        "    <ECEntityClass typeName='SharedTable' modifier='Abstract'>"
+        "    <ECEntityClass typeName='Sub2' modifier='None'>"
+        "        <BaseClass>BaseAbstractSharedTable</BaseClass>"
+        "        <ECProperty propertyName='Sub2Prop' typeName='int' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Interface' modifier='Abstract'>"
+        "        <ECProperty propertyName='InterfaceProp' typeName='int' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub21' modifier='None'>"
+        "        <BaseClass>Sub2</BaseClass>"
+        "        <BaseClass>Interface</BaseClass>"
+        "        <ECProperty propertyName='Sub21Prop' typeName='int' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='AbstractSharedTable' modifier='Abstract'>"
         "        <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.01.00'>"
         "                <MapStrategy>"
         "                  <Strategy>SharedTable</Strategy>"
         "                  <AppliesToSubclasses>False</AppliesToSubclasses>"
         "                </MapStrategy>"
-        "                <TableName>SharedTable</TableName>"
+        "                <TableName>" SharedTableName "</TableName>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='P1' typeName='string' />"
+        "        <ECProperty propertyName='AbstractSharedTableProp' typeName='int' />"
         "    </ECEntityClass>"
-        "    <ECEntityClass typeName='SharedTable1' modifier='None'>"
+        "    <ECEntityClass typeName='ConcreteSharedTable' modifier='None'>"
         "        <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.01.00'>"
         "                <MapStrategy>"
         "                  <Strategy>SharedTable</Strategy>"
         "                  <AppliesToSubclasses>False</AppliesToSubclasses>"
         "                </MapStrategy>"
-        "                <TableName>SharedTable</TableName>"
+        "                <TableName>" SharedTableName "</TableName>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='P2' typeName='string' />"
+        "        <ECProperty propertyName='ConcreteSharedTableProp' typeName='int' />"
         "    </ECEntityClass>"
         "</ECSchema>",
         true, "");
@@ -1669,24 +1683,33 @@ TEST_F(ECDbMappingTestFixture, AbstractClassWithSharedTable)
     ASSERT_FALSE(asserted);
 
     //verify tables
-    ASSERT_TRUE(db.TableExists("SharedTable"));
-    ASSERT_TRUE(db.TableExists("tac_AbstractBaseClass"));
-    ASSERT_FALSE(db.TableExists("tac_ChildDomainClassA"));
-    ASSERT_FALSE(db.TableExists("tac_ChildDomainClassB"));
-    ASSERT_FALSE(db.TableExists("tac_SharedTable"));
-    ASSERT_FALSE(db.TableExists("tac_SharedTable1"));
+    ASSERT_TRUE(db.TableExists(SharedTableName));
 
-    //verify ECSqlStatement
-    ECSqlStatement s1, s2, s3, s4, s5;
-    ASSERT_EQ(s1.Prepare(db, "INSERT INTO tac.AbstractBaseClass (P1) VALUES('Hello')"), ECSqlStatus::InvalidECSql);
-    ASSERT_EQ(s4.Prepare(db, "INSERT INTO tac.SharedTable (P1) VALUES('Hello')"), ECSqlStatus::InvalidECSql);
-    //Noabstract classes
-    ASSERT_EQ(s2.Prepare(db, "INSERT INTO tac.ChildDomainClassA (P1, P2) VALUES('Hello', 'World')"), ECSqlStatus::Success);
-    ASSERT_EQ(s2.Step(), BE_SQLITE_DONE);
-    ASSERT_EQ(s3.Prepare(db, "INSERT INTO tac.ChildDomainClassB (P1, P3) VALUES('Hello', 'World')"), ECSqlStatus::Success);
-    ASSERT_EQ(s3.Step(), BE_SQLITE_DONE);
-    ASSERT_EQ(s5.Prepare(db, "INSERT INTO tac.SharedTable1 (P2) VALUES('Hello')"), ECSqlStatus::Success);
-    ASSERT_EQ(s5.Step(), BE_SQLITE_DONE);
+    ECSchemaCP testSchema = db.Schemas().GetECSchema("AbstractClassTest", true);
+    ASSERT_TRUE(testSchema != nullptr);
+    for (ECClassCP ecClass : testSchema->GetClasses())
+        {
+        Utf8String tableName("t_");
+        tableName.append(ecClass->GetName());
+        if (ecClass->GetName().EqualsI("BaseAbstractSharedTable"))
+            ASSERT_TRUE(db.TableExists(tableName.c_str())) << "Table: " << tableName.c_str();
+        else
+            ASSERT_FALSE(db.TableExists(tableName.c_str())) << "Table: " << tableName.c_str();
+        }
+
+    //verify insertability
+    for (ECClassCP ecClass : testSchema->GetClasses())
+        {
+        Utf8String ecsql("INSERT INTO ");
+        ecsql.append(ecClass->GetECSqlName()).append("(").append(ecClass->GetName()).append("Prop").append(") VALUES(123)");
+
+        ECSqlStatement stmt;
+        if (ecClass->GetClassModifier() == ECClassModifier::Abstract)
+            ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(db, ecsql.c_str())) << "ECSQL against abstract class. " << ecsql.c_str();
+        else
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, ecsql.c_str())) << "ECSQL against concrete class. " << ecsql.c_str();
+        }
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -3696,12 +3719,178 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
 
      AssertIndex (db, "uix_element_code", true, "ts_Element", { "Code_AuthorityId", "Code_Namespace", "Code_Val" });
      }
+
+     {
+     SchemaItem testItem("Index on abstract class",
+                         "<?xml version='1.0' encoding='utf-8'?>"
+                         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                         "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                         "    <ECEntityClass typeName='Root' modifier='Abstract'>"
+                         "        <ECCustomAttributes>"
+                         "            <ClassMap xmlns='ECDbMap.01.00'>"
+                         "                <MapStrategy>"
+                         "                   <Strategy>SharedTable</Strategy>"
+                         "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                         "                 </MapStrategy>"
+                         "                 <Indexes>"
+                         "                   <DbIndex>"
+                         "                       <IsUnique>True</IsUnique>"
+                         "                       <Name>uix_root</Name>"
+                         "                       <Properties>"
+                         "                          <string>RootProp</string>"
+                         "                       </Properties>"
+                         "                   </DbIndex>"
+                         "                 </Indexes>"
+                         "            </ClassMap>"
+                         "        </ECCustomAttributes>"
+                         "        <ECProperty propertyName='RootProp' typeName='int' />"
+                         "    </ECEntityClass>"
+                         "    <ECEntityClass typeName='Interface' modifier='Abstract'>"
+                         "        <ECCustomAttributes>"
+                         "            <ClassMap xmlns='ECDbMap.01.00'>"
+                         "                 <Indexes>"
+                         "                   <DbIndex>"
+                         "                       <IsUnique>True</IsUnique>"
+                         "                       <Name>uix_interface</Name>"
+                         "                       <Properties>"
+                         "                          <string>InterfaceProp</string>"
+                         "                       </Properties>"
+                         "                   </DbIndex>"
+                         "                 </Indexes>"
+                         "            </ClassMap>"
+                         "        </ECCustomAttributes>"
+                         "        <ECProperty propertyName='InterfaceProp' typeName='int' />"
+                         "    </ECEntityClass>"
+                         "    <ECEntityClass typeName='Sub'>"
+                         "        <ECCustomAttributes>"
+                         "            <ClassMap xmlns='ECDbMap.01.00'>"
+                         "                 <Indexes>"
+                         "                   <DbIndex>"
+                         "                       <IsUnique>True</IsUnique>"
+                         "                       <Name>uix_sub</Name>"
+                         "                       <Properties>"
+                         "                          <string>SubProp</string>"
+                         "                       </Properties>"
+                         "                   </DbIndex>"
+                         "                 </Indexes>"
+                         "            </ClassMap>"
+                         "        </ECCustomAttributes>"
+                         "       <BaseClass>Root</BaseClass>"
+                         "       <BaseClass>Interface</BaseClass>"
+                         "        <ECProperty propertyName='SubProp' typeName='int' />"
+                         "    </ECEntityClass>"
+                         "    <ECEntityClass typeName='RootUnshared' modifier='Abstract'>"
+                         "        <ECCustomAttributes>"
+                         "            <ClassMap xmlns='ECDbMap.01.00'>"
+                         "                 <Indexes>"
+                         "                   <DbIndex>"
+                         "                       <IsUnique>True</IsUnique>"
+                         "                       <Name>uix_rootunshared</Name>"
+                         "                       <Properties>"
+                         "                          <string>RootUnsharedProp</string>"
+                         "                       </Properties>"
+                         "                   </DbIndex>"
+                         "                 </Indexes>"
+                         "            </ClassMap>"
+                         "        </ECCustomAttributes>"
+                         "        <ECProperty propertyName='RootUnsharedProp' typeName='int' />"
+                         "    </ECEntityClass>"
+                         "    <ECEntityClass typeName='SubUnshared'>"
+                         "        <ECCustomAttributes>"
+                         "            <ClassMap xmlns='ECDbMap.01.00'>"
+                         "                 <Indexes>"
+                         "                   <DbIndex>"
+                         "                       <IsUnique>True</IsUnique>"
+                         "                       <Name>uix_subunshared</Name>"
+                         "                       <Properties>"
+                         "                          <string>SubUnsharedProp</string>"
+                         "                       </Properties>"
+                         "                   </DbIndex>"
+                         "                 </Indexes>"
+                         "            </ClassMap>"
+                         "        </ECCustomAttributes>"
+                         "       <BaseClass>RootUnshared</BaseClass>"
+                         "        <ECProperty propertyName='SubUnsharedProp' typeName='int' />"
+                         "    </ECEntityClass>"
+                         "</ECSchema>");
+
+     ECDb db;
+     bool asserted = false;
+     AssertSchemaImport(db, asserted, testItem, "userdefinedindextest.ecdb");
+     ASSERT_FALSE(asserted);
+
+     ECClassCP subClass = db.Schemas().GetECClass("TestSchema", "Sub");
+     ASSERT_TRUE(subClass != nullptr);
+
+     //class hierarchy with shared table
+     AssertIndex(db, "uix_root", true, "ts_Root", {"RootProp"});
+
+     Utf8String indexWhere;
+     indexWhere.Sprintf("ECClassId=%lld", subClass->GetId());
+     AssertIndex(db, "uix_interface_ts_Root", true, "ts_Root", {"InterfaceProp"}, indexWhere.c_str());
+
+     indexWhere.Sprintf("ECClassId=%lld", subClass->GetId());
+     AssertIndex(db, "uix_sub", true, "ts_Root", {"SubProp"}, indexWhere.c_str());
+
+     //class hierarchy without shared table
+     AssertIndex(db, "uix_rootunshared_ts_SubUnshared", true, "ts_SubUnshared", {"RootUnsharedProp"});
+     AssertIndex(db, "uix_subunshared", true, "ts_SubUnshared", {"SubUnsharedProp"});
+     }
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     02/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, IdSpecificationCustomAttributes)
+    {
+    SchemaItem testItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.13' prefix='bsca' />"
+        "    <ECEntityClass typeName='ClassWithBusinessKey' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <BusinessKeySpecification xmlns='Bentley_Standard_CustomAttributes.01.13'>"
+        "               <PropertyName>Name</PropertyName>"
+        "            </BusinessKeySpecification>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Id' typeName='long' />"
+        "        <ECProperty propertyName='Name' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='ClassWithSyncId' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <SyncIDSpecification xmlns='Bentley_Standard_CustomAttributes.01.13'>"
+        "               <Property>Name</Property>"
+        "            </SyncIDSpecification>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Id' typeName='long' />"
+        "        <ECProperty propertyName='Name' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='ClassWithGlobalId' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <GlobalIdSpecification xmlns='Bentley_Standard_CustomAttributes.01.13'>"
+        "               <PropertyName>Name</PropertyName>"
+        "            </GlobalIdSpecification>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Id' typeName='long' />"
+        "        <ECProperty propertyName='Name' typeName='string' />"
+        "    </ECEntityClass>"
+        "</ECSchema>");
+
+    ECDb db;
+    bool asserted = false;
+    AssertSchemaImport(db, asserted, testItem, "idspectests.ecdb");
+    ASSERT_FALSE(asserted);
+
+    AssertIndex(db, "ix_ts_ClassWithBusinessKey_BusinessKeySpecification_Name", false, "ts_ClassWithBusinessKey", {"Name"});
+    AssertIndex(db, "ix_ts_ClassWithSyncId_SyncIDSpecification_Name", false, "ts_ClassWithSyncId", {"Name"});
+    AssertIndex(db, "ix_ts_ClassWithGlobalId_GlobalIdSpecification_Name", false, "ts_ClassWithGlobalId", {"Name"});
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, NotNullablePropertyTest)
+TEST_F(ECDbMappingTestFixture, NotNullableProperty)
     {
         {
         SchemaItem testItem(
