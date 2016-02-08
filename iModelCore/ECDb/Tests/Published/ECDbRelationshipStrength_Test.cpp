@@ -870,7 +870,7 @@ TEST_F (ECDbRelationshipsIntegrityTests, ForwardHoldingRelationshipsTest)
     AddEntityClass ("Goo");
     AddRelationShipClass (Cardinality::OneOne, Cardinality::OneOne, StrengthType::Holding, Direction::Forward, "FooOwnsGoo", "Foo", "Goo", true);
     AddRelationShipClass (Cardinality::OneOne, Cardinality::OneMany, StrengthType::Holding, Direction::Forward, "FooOwnsManyGoo", "Foo", "Goo", true);
-    AddRelationShipClass (Cardinality::OneMany, Cardinality::OneMany, StrengthType::Referencing, Direction::Forward, "ManyFooOwnManyGoo", "Foo", "Goo", true);
+    AddRelationShipClass (Cardinality::OneMany, Cardinality::OneMany, StrengthType::Holding, Direction::Forward, "ManyFooOwnManyGoo", "Foo", "Goo", true);
     AssertSchemaImport (true);
 
     std::vector<ECInstanceKey> fooKeys, gooKeys;
@@ -944,7 +944,7 @@ TEST_F (ECDbRelationshipsIntegrityTests, BackwardHoldingRelationshipsTest)
     AddEntityClass ("Goo");
     AddRelationShipClass (Cardinality::OneOne, Cardinality::OneOne, StrengthType::Holding, Direction::Backward, "GooOwnsFoo", "Foo", "Goo", true);
     AddRelationShipClass (Cardinality::OneMany, Cardinality::OneOne, StrengthType::Holding, Direction::Backward, "GooOwnsManyFoo", "Foo", "Goo", true);
-    AddRelationShipClass (Cardinality::OneMany, Cardinality::OneMany, StrengthType::Referencing, Direction::Backward, "ManyGooOwnManyFoo", "Foo", "Goo", true);
+    AddRelationShipClass (Cardinality::OneMany, Cardinality::OneMany, StrengthType::Holding, Direction::Backward, "ManyGooOwnManyFoo", "Foo", "Goo", true);
     AssertSchemaImport (true);
 
     std::vector<ECInstanceKey> fooKeys, gooKeys;
