@@ -43,6 +43,12 @@ void    doFormatDoubleTest (DoubleFormatTestData const& testData)
     Utf8String outputStr = formatter->ToString (testData.m_inputValue);
 
     ASSERT_STREQ (testData.m_expectedString, WString(outputStr.c_str(), BentleyCharEncoding::Utf8).c_str());
+
+#ifdef DEFECT_369075_DGNDBSDK
+    WString outputStrW = formatter->ToStringW (testData.m_inputValue);
+
+    ASSERT_STREQ (testData.m_expectedString, outputStrW.c_str());
+#endif
     }
 //=======================================================================================
 // @bsiclass                                                    Umar.Hayat     11/2015
@@ -307,4 +313,61 @@ TEST_F (DoubleFormatterTest, SetAndGetPrecision)
         EXPECT_EQ(static_cast<int>(precision), static_cast<int>(formatter->GetPrecision()));
         precisionTypes.pop_back();
         }
+}
+#define VERIFY_StripTrailingZeros(expected , value) {\
+    Utf8String numericString(value); \
+    DoubleFormatter::StripTrailingZeros(numericString); \
+    EXPECT_STREQ(expected, numericString.c_str()); \
+    \
+    WString numericStringW(value,true); \
+    WString expectedStringW(expected,true); \
+    DoubleFormatter::StripTrailingZeros(numericStringW); \
+    EXPECT_STREQ(expectedStringW.c_str(), numericStringW.c_str()); \
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                            Umar.Hayat          02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (DoubleFormatterTest, StripTrailingZeros)
+    {
+    //                         Expected         Actual 
+    VERIFY_StripTrailingZeros( ""               ,"0"        );
+    VERIFY_StripTrailingZeros( "2"              ,"2"        );
+    VERIFY_StripTrailingZeros( "1"              ,"10"       );
+    VERIFY_StripTrailingZeros( "1"              ,"1000000"  );
+    VERIFY_StripTrailingZeros( "101"            ,"101"      );
+    VERIFY_StripTrailingZeros( "01"             ,"01"       );
+    VERIFY_StripTrailingZeros( "10.1"           ,"10.1"     );
+    VERIFY_StripTrailingZeros( "10.01"          ,"10.01"    );
+    VERIFY_StripTrailingZeros( "10.2"           ,"10.20"    );
+    VERIFY_StripTrailingZeros( "100,450.14"     ,"100,450.14"       );
+    VERIFY_StripTrailingZeros( "100,450.14"     ,"100,450.140000"   );
+    }
+#define VERIFY_ReplaceDecimalSeparator(expected , value, separator) {\
+    Utf8String numericString(value); \
+    Utf8String separatorString(separator); \
+    formatter->ReplaceDecimalSeparator(numericString,separatorString[0]); \
+    EXPECT_STREQ(expected, numericString.c_str()); \
+    \
+    WString numericStringW(value,true); \
+    WString expectedStringW(expected,true); \
+    WString separatorStringW(separator,true); \
+    DoubleFormatter::ReplaceDecimalSeparator(numericStringW,separatorStringW[0]); \
+    EXPECT_STREQ(expectedStringW.c_str(), numericStringW.c_str()); \
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                            Umar.Hayat          02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DoubleFormatterTest, ReplaceDecimalSeparator)
+    {
+    DoubleFormatterPtr formatter = DoubleFormatter::Create();
+    //                              Expected         Actual             Separator
+    VERIFY_ReplaceDecimalSeparator( "1"             ,"1"                , ","   );
+    VERIFY_ReplaceDecimalSeparator( "1,0"           ,"1.0"              , ","   );
+    VERIFY_ReplaceDecimalSeparator( "10,01"         ,"10.01"            , ","   );
+    VERIFY_ReplaceDecimalSeparator( "10#01"         ,"10.01"            , "#"   );
+    VERIFY_ReplaceDecimalSeparator( "100,000"       ,"100,000"          , ","   );
+    formatter->SetDecimalSeparator( '#');
+    VERIFY_ReplaceDecimalSeparator( "100000.01"     ,"100000#01"        , "."   );
+    }
+

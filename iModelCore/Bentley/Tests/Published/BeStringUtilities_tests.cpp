@@ -1064,6 +1064,16 @@ TEST (BeStringUtilitiesTests, ParseUInt64FromUtf8)
     number = 0ULL;
     stat = BeStringUtilities::ParseUInt64 (number, str);
     ASSERT_EQ (ERROR, stat);
+    
+    number = 0ULL;
+    stat = BeStringUtilities::ParseUInt64(number, "");
+    ASSERT_EQ(ERROR, stat);
+    stat = BeStringUtilities::ParseUInt64(number, L"");
+    ASSERT_EQ(ERROR, stat);
+    stat = BeStringUtilities::ParseUInt64(number, (Utf8CP)nullptr);
+    ASSERT_EQ(ERROR, stat);
+    stat = BeStringUtilities::ParseUInt64(number, (WCharCP)nullptr);
+    ASSERT_EQ(ERROR, stat);
     }
 
 //---------------------------------------------------------------------------------------
