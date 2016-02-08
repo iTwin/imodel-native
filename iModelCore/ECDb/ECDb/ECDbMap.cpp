@@ -881,7 +881,7 @@ std::set<ECDbSqlTable const*> ECDbMap::GetTablesFromRelationshipEnd(ECRelationsh
             {
             for (ECDbSqlTable const* table : classPersistInTables)
                 {
-                if (auto baseTable = table->GetBaseTable())
+                if (auto baseTable = table->GetParentOfJoinedTable())
                     {
                     joinedTables[baseTable].insert(table);
                     tables.insert(table);
@@ -1895,7 +1895,7 @@ BentleyStatus RelationshipPurger::Initialize(ECDbR ecdb)
         std::set<ECDbSqlTable const*> heldTables = map.GetTablesFromRelationshipEnd(heldConstraint, EndTablesOptimizationOptions::ForeignEnd);
         for (ECDbSqlTable const* table : heldTables)
             {
-            ECDbSqlTable const* heldTable = table->GetBaseTable() != nullptr ? table->GetBaseTable() : table;
+            ECDbSqlTable const* heldTable = table->GetParentOfJoinedTable() != nullptr ? table->GetParentOfJoinedTable() : table;
             Utf8CP heldTableName = heldTable->GetName().c_str();
             auto itor = deleteOrphansSqlPerTableMap.find(heldTableName);
             if (itor == deleteOrphansSqlPerTableMap.end())

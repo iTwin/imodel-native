@@ -2276,7 +2276,7 @@ DbResult ECDbSqlPersistence::InsertTable (ECDbSqlTable const& o) const
     stmt->BindText (2, o.GetName ().c_str (), Statement::MakeCopy::No);
     stmt->BindInt (3, Enum::ToInt(o.GetTableType ()));
     stmt->BindInt (4, o.GetPersistenceType () == PersistenceType::Virtual ? 1 : 0);
-    if (auto baseTable = o.GetBaseTable())
+    if (auto baseTable = o.GetParentOfJoinedTable())
         stmt->BindInt64(5, baseTable->GetId());
     else
         stmt->BindNull(5);

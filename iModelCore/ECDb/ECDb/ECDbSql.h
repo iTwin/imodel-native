@@ -434,15 +434,18 @@ struct ECDbSqlTrigger;
 
 struct ECDbSqlTable : NonCopyableClass
     {
+public:
+    friend ECDbSqlTable* ECDbMapDb::CreateTable (Utf8CP name, TableType, PersistenceType, ECDbSqlTable const*);
+    friend ECDbSqlTable* ECDbMapDb::CreateTableForExistingTableMapStrategy (ECDbCR, Utf8CP existingTableName);
+    friend ECDbSqlTable* ECDbMapDb::CreateTableForExistingTableMapStrategy (Utf8CP existingTableName);
+    friend std::weak_ptr<ECDbSqlColumn> ECDbSqlColumn::GetWeakPtr () const;
+
     enum class ColumnEvent
         {
         Created,
         Deleted
         };
-    friend ECDbSqlTable* ECDbMapDb::CreateTable (Utf8CP name, TableType, PersistenceType, ECDbSqlTable const*);
-    friend ECDbSqlTable* ECDbMapDb::CreateTableForExistingTableMapStrategy (ECDbCR, Utf8CP existingTableName);
-    friend ECDbSqlTable* ECDbMapDb::CreateTableForExistingTableMapStrategy (Utf8CP existingTableName);
-    friend std::weak_ptr<ECDbSqlColumn> ECDbSqlColumn::GetWeakPtr () const;
+
     struct PersistenceManager : NonCopyableClass
         {
     private:
@@ -460,7 +463,7 @@ struct ECDbSqlTable : NonCopyableClass
         };
 
     private:
-        ECDbSqlTable const* m_baseTable;
+        ECDbSqlTable const* m_parentOfJoinedTable;
         ECDbMapDb& m_dbDef;
         ECDbTableId m_id;
         Utf8String m_name;
@@ -477,37 +480,27 @@ struct ECDbSqlTable : NonCopyableClass
         EditHandle m_editInfo;
         std::vector<ECDbSqlTable const*> m_childTables;
         std::vector<std::function<void (ColumnEvent, ECDbSqlColumn&)>> m_columnEvents;
-    private:
-        ECDbSqlTable (Utf8CP name, ECDbMapDb& sqlDbDef, ECDbTableId id, PersistenceType type, TableType tableType, ECDbSqlTable const* baseTable)
+    
+        ECDbSqlTable(Utf8CP name, ECDbMapDb& sqlDbDef, ECDbTableId id, PersistenceType type, TableType tableType, ECDbSqlTable const* parentOfJoinedTable)
             : m_dbDef(sqlDbDef), m_id(id), m_name(name), m_nameGeneratorForColumn("sc%02x"), m_persistenceType(type), m_tableType(tableType),
-            m_isClassIdColumnCached(false), m_classIdColumn(nullptr), m_persistenceManager(*this), m_baseTable(baseTable)
+            m_isClassIdColumnCached(false), m_classIdColumn(nullptr), m_persistenceManager(*this), m_parentOfJoinedTable(parentOfJoinedTable)
             {
-            if (tableType == TableType::Joined)
-                {
-                if (baseTable == nullptr)
-                    {
-                    BeAssert(false && "BaseTable must be provided for TableType::Joined");
-                    }
-                else 
-                    const_cast<ECDbSqlTable*>(baseTable)->m_childTables.push_back(this);
-                }
-            else
-                {
-                if (baseTable != nullptr)
-                    {
-                    BeAssert("BaseTable parameter is only valid for TableType::Joined");
-                    m_baseTable = nullptr;
-                    }
-                }
+            BeAssert((tableType == TableType::Joined && parentOfJoinedTable != nullptr) ||
+                     (tableType != TableType::Joined && parentOfJoinedTable == nullptr) && "parentOfJoinedTable must be provided for TableType::Joined and must be null for any other TableType.");
+
+            if (tableType == TableType::Joined && parentOfJoinedTable != nullptr)
+                const_cast<ECDbSqlTable*>(parentOfJoinedTable)->m_childTables.push_back(this);
             }
 
         std::weak_ptr<ECDbSqlColumn> GetColumnWeakPtr (Utf8CP name) const;
+
     public:
         virtual ~ECDbSqlTable() {}
-        ECDbSqlTable const* GetBaseTable() const
-            {
-            return m_baseTable;
-            }
+
+        //!If this is a joined table the method returns the parent of the joined table, aka primary table.
+        //!Otherwise the method returns nullptr
+        ECDbSqlTable const* GetParentOfJoinedTable() const { return m_parentOfJoinedTable; }
+
         ECDbTableId GetId () const { return m_id; }
         void SetId (ECDbTableId id) { m_id = id; }
         Utf8StringCR GetName () const { return m_name; }
