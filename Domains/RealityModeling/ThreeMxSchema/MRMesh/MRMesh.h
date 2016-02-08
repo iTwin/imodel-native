@@ -53,6 +53,8 @@ struct MRMeshGeometry : RefCountedBase
 #endif
 
     PolyfaceHeaderPtr           GetPolyface () { return m_polyface; }
+    PolyfaceHeaderCP            GetPolyfaceCP() const { return m_polyface.get(); }
+    int                         GetTextureId() const { return m_textureId; }
     void                        Draw (ViewContextR viewContext, MRMeshNodeR node, MRMeshContextCR meshContext);
     void                        DrawCut (ViewContextR viewContext, DPlane3dCR plane);
     BentleyStatus               GetRange (DRange3dR range, TransformCR transform) const;
@@ -94,6 +96,8 @@ struct MRMeshTexture : RefCountedBase
     size_t                      GetMemorySize() const;
     bool                        IsInitialized() const;
     void                        ReleaseQVisionCache ();
+    Point2d                     GetSize() const { return m_size; }
+    ByteCP                      GetData() const { return &m_data[0]; }
 
     static MRMeshTexturePtr     Create (Byte const* pData, size_t dataSize);
 
@@ -150,6 +154,7 @@ public:
 
     virtual void    _Draw (bool& childrenScheduled, ViewContextR viewContext, MRMeshContextCR MeshContext) override;
     virtual BentleyStatus   _GetRange (DRange3dR range, TransformCR transform)  const override;
+    virtual void    _GetTiles(GetTileCallback callback, double resolution) override;
 
 
     void            DrawBoundingSpheres (ViewContextR viewContext);
@@ -225,6 +230,7 @@ struct MRMeshNode :  BaseMeshNode,  RefCountedBase
     void                        Clear();
     BentleyStatus               GetRange (DRange3dR range, TransformCR transform) const;
     void                        FlushStale (uint64_t staleTime);
+    void                        GetTiles(GetTileCallback callback, double resolution);
     
     static MRMeshNodePtr        Create (S3NodeInfo const& info, MRMeshNodeP parent);
     static MRMeshNodePtr        Create ();
@@ -269,6 +275,7 @@ struct  MRMeshUtil
     static BentleyStatus        ReadSceneFile (S3SceneInfo& sceneInfo, WCharCP fileName);
     static void                 GetMemoryStatistics (size_t& memoryLoad, size_t& total, size_t& available);
     static double               CalculateResolutionRatio ();
+    static BentleyStatus        ParseTileId(std::string const& name, uint32_t& tileX, uint32_t& tileY);
 
 
 };  // MRMeshUtil
