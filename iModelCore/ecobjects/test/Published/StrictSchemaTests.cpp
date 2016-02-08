@@ -534,10 +534,10 @@ TEST_F(RelationshipConstraintTests, MultipleKeyPropertiesNotSupported)
     ECRelationshipClassP relClass = m_schema->GetClassP("Relationship")->GetRelationshipClassP();
     ASSERT_NE(nullptr, relClass) << "Cannot find 'Relationship' in thest schema";
     
-    ASSERT_LE(relClass->GetSource().GetConstraintClasses()[0]->GetKeys().size(), 1)
+    ASSERT_TRUE(relClass->GetSource().GetConstraintClasses()[0]->GetKeys().size() < 1)
            << "Multiple key properties are not supported";
 
-    ASSERT_LE(relClass->GetTarget().GetConstraintClasses()[0]->GetKeys().size(), 1)
+    ASSERT_TRUE(relClass->GetTarget().GetConstraintClasses()[0]->GetKeys().size() < 1)
            << "Multiple key properties are not supported";
     
     Utf8CP schemaXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
