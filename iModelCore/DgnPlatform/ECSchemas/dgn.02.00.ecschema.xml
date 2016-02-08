@@ -441,7 +441,7 @@
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="GeometryStream" typeName="binary"/>
-        <ECProperty propertyName="InPhysicalSpace" typeName="boolean"/>
+        <ECProperty propertyName="InSpatialIndex" typeName="boolean"/>
         <ECProperty propertyName="Origin" typeName="point3d" />
         <ECProperty propertyName="Yaw" typeName="double" />
         <ECProperty propertyName="Pitch" typeName="double" />
@@ -467,13 +467,6 @@
     </ECEntityClass>
     <ECEntityClass typeName="SpatialLocationElement" modifier="Abstract">
         <!-- A SpatialElement that identifies a "tracked" real world location but has no mass and cannot be "touched" -->
-        <BaseClass>SpatialElement</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="SpatialGroupElement">
-        <!-- A SpatialElement that groups other SpatialElements using the ElementGroupsMembers relationship -->
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
-        </ECCustomAttributes>
         <BaseClass>SpatialElement</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="VolumeElement">
@@ -1129,8 +1122,11 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="SpatialViewDefinition">
+    <ECEntityClass typeName="ViewDefinition3d" modifier="Abstract">
         <BaseClass>ViewDefinition</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="SpatialViewDefinition">
+        <BaseClass>ViewDefinition3d</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>

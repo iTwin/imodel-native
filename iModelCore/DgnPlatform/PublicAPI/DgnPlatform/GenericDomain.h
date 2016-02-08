@@ -11,21 +11,25 @@
 #include <DgnPlatform/DgnDomain.h>
 
 DGNPLATFORM_TYPEDEFS(GenericSpatialObject)
+DGNPLATFORM_TYPEDEFS(GenericSpatialGroup)
 DGNPLATFORM_TYPEDEFS(GenericSpatialLocation)
 DGNPLATFORM_TYPEDEFS(GenericPhysicalObject)
 
 DGNPLATFORM_REF_COUNTED_PTR(GenericSpatialObject)
+DGNPLATFORM_REF_COUNTED_PTR(GenericSpatialGroup)
 DGNPLATFORM_REF_COUNTED_PTR(GenericSpatialLocation)
 DGNPLATFORM_REF_COUNTED_PTR(GenericPhysicalObject)
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-#define GENERIC_DOMAIN_ECSCHEMA_PATH L"ECSchemas/Dgn/Generic.01.00.ecschema.xml"
-#define GENERIC_DOMAIN_NAME "Generic"
-#define GENERIC_CLASSNAME_SpatialObject "SpatialObject"
-#define GENERIC_CLASSNAME_SpatialLocation "SpatialLocation"
-#define GENERIC_CLASSNAME_PhysicalObject "PhysicalObject"
-#define GENERIC_SCHEMA(className) GENERIC_DOMAIN_NAME "." className
+#define GENERIC_DOMAIN_ECSCHEMA_PATH        L"ECSchemas/Dgn/Generic.01.00.ecschema.xml"
+#define GENERIC_DOMAIN_NAME                 "Generic"
+#define GENERIC_SCHEMA(className)           GENERIC_DOMAIN_NAME "." className
+
+#define GENERIC_CLASSNAME_SpatialObject     "SpatialObject"
+#define GENERIC_CLASSNAME_SpatialGroup      "SpatialGroup"
+#define GENERIC_CLASSNAME_SpatialLocation   "SpatialLocation"
+#define GENERIC_CLASSNAME_PhysicalObject    "PhysicalObject"
 
 //=======================================================================================
 //! The Generic DgnDomain
@@ -56,6 +60,22 @@ struct EXPORT_VTABLE_ATTRIBUTE GenericSpatialObject : SpatialElement
 
 public:
     explicit GenericSpatialObject(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
+//! A SpatialElement that groups other SpatialElements using the ElementGroupsMembers relationship
+// @bsiclass                                                    Shaun.Sewall    12/15
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GenericSpatialGroup : SpatialElement, IElementGroupOf<SpatialElement>
+{
+    DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASSNAME_SpatialGroup, SpatialElement)
+
+protected:
+    Dgn::IElementGroupCP _ToIElementGroup() const override final {return this;}
+    virtual Dgn::DgnElementCP _ToGroupElement() const override final {return this;}
+
+public:
+    explicit GenericSpatialGroup(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
@@ -111,6 +131,13 @@ namespace generic_ElementHandler
     struct EXPORT_VTABLE_ATTRIBUTE GenericPhysicalObjectHandler : dgn_ElementHandler::Physical
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASSNAME_PhysicalObject, GenericPhysicalObject, GenericPhysicalObjectHandler, dgn_ElementHandler::Physical, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for GenericSpatialGroup
+    //! @private
+    struct EXPORT_VTABLE_ATTRIBUTE GenericSpatialGroupHandler : dgn_ElementHandler::Geometric3d
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASSNAME_SpatialGroup, GenericSpatialGroup, GenericSpatialGroupHandler, dgn_ElementHandler::Geometric3d, DGNPLATFORM_EXPORT)
     };
 }
 

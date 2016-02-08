@@ -29,7 +29,7 @@
  *      BBoxLow : point2d
  *      BBoxHigh : point2d
  *  GeometrySource3d : GeometrySource
- *      InPhysicalSpace : boolean
+ *      InSpatialIndex : boolean
  *      Origin : point3d
  *      Yaw : double
  *      Pitch : double
@@ -44,7 +44,7 @@
 #define GEOM_Box_Low "BBoxLow"
 #define GEOM_Box_High "BBoxHigh"
 #define GEOM2_Rotation "Rotation"
-#define GEOM3_InPhysicalSpace "InPhysicalSpace"
+#define GEOM3_InSpatialIndex "InSpatialIndex"
 #define GEOM3_Yaw "Yaw"
 #define GEOM3_Pitch "Pitch"
 #define GEOM3_Roll "Roll"
@@ -1302,23 +1302,6 @@ DgnElementIdSet ElementGroupsMembers::QueryGroups(DgnElementCR member)
     return elementIdSet;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    12/2015
-//---------------------------------------------------------------------------------------
-SpatialGroupElementPtr SpatialGroupElement::Create(SpatialModelR model, DgnCategoryId categoryId)
-    {
-    DgnDbR db = model.GetDgnDb();
-    DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::SpatialGroup::GetHandler());
-
-    if (!classId.IsValid() || !categoryId.IsValid())
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    return new SpatialGroupElement(CreateParams(db, model.GetModelId(), classId, categoryId));
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2418,7 +2401,7 @@ DgnDbStatus GeometricElement3d::BindParams(ECSqlStatement& stmt)
     if (nullptr == geomModel)
         return DgnDbStatus::WrongModel;
 
-    stmt.BindInt(stmt.GetParameterIndex(GEOM3_InPhysicalSpace), CoordinateSpace::World == geomModel->GetCoordinateSpace() ? 1 : 0);
+    stmt.BindInt(stmt.GetParameterIndex(GEOM3_InSpatialIndex), CoordinateSpace::World == geomModel->GetCoordinateSpace() ? 1 : 0);
 
     if (!m_placement.IsValid())
         {
@@ -2598,7 +2581,7 @@ void GeometricElement3d::AddClassParams(ECSqlClassParams& params)
     {
     AddBaseClassParams(params);
 
-    params.Add(GEOM3_InPhysicalSpace);
+    params.Add(GEOM3_InSpatialIndex);
     params.Add(GEOM3_Yaw);
     params.Add(GEOM3_Pitch);
     params.Add(GEOM3_Roll);
