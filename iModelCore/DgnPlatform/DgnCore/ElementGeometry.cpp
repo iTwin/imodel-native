@@ -474,7 +474,7 @@ GeometricPrimitivePtr GeometricPrimitive::Clone() const
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricPrimitive::AddToGraphic(Render::GraphicR graphic, ViewContextR context) const
+void GeometricPrimitive::AddToGraphic(Render::GraphicR graphic) const
     {
     // Do we need to worry about 2d draw (display priority) and fill, etc.?
     switch (GetGeometryType())
@@ -2030,7 +2030,7 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
 
                 DgnStyleId lineStyleId((uint64_t)ppfb->lineStyleId());
                 DgnStyleId remappedLineStyleId = (lineStyleId.IsValid() ? importer.RemapLineStyleId(lineStyleId) : DgnStyleId());
-                BeAssert((lineStyleId.IsValid() == remappedLineStyleId.IsValid()));
+                //BeAssert((lineStyleId.IsValid() == remappedLineStyleId.IsValid()));
 
                 FlatBufferBuilder remappedfbb;
 
@@ -2816,6 +2816,28 @@ static bool IsGeometryVisible(ViewContextR context, Render::GeometryParamsCR geo
     return true;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static void UpdatePixelSizeRange(Render::GraphicR graphic, double newMin, double newMax)
+    {
+    double min, max;
+
+    graphic.GetPixelSizeRange(min, max);
+
+    if (0.0 == min)
+        min = newMin;
+    else
+        min = DoubleOps::Max(min, newMin);
+
+    if (0.0 == max)
+        max = newMax;
+    else
+        max = DoubleOps::Min(max, newMax);
+
+    graphic.SetPixelSizeRange(min, max);
+    }
+
 }; // DrawHelper
 
 /*---------------------------------------------------------------------------------**//**
@@ -2823,11 +2845,11 @@ static bool IsGeometryVisible(ViewContextR context, Render::GeometryParamsCR geo
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR context, Render::GeometryParamsR geomParams, bool activateParams) const
     {
-    bool        isQVis = graphic.IsForDisplay();
-    bool        isQVWireframe = (isQVis && RenderMode::Wireframe == context.GetViewFlags().GetRenderMode());
-    bool        isPick = (nullptr != context.GetIPickGeom());
-    bool        useBRep = !(isQVis || isPick);
-    bool        geomParamsChanged = activateParams || !isQVis; // NOTE: Don't always bake initial symbology into SubGraphics, it's activated before drawing QvElem...
+    bool isQVis = graphic.IsForDisplay();
+    bool isQVWireframe = (isQVis && RenderMode::Wireframe == context.GetViewFlags().GetRenderMode());
+    bool isPick = (nullptr != context.GetIPickGeom());
+    bool useBRep = !(isQVis || isPick);
+    bool geomParamsChanged = activateParams || !isQVis; // NOTE: Don't always bake initial symbology into SubGraphics, it's activated before drawing QvElem...
 
     GeometryStreamIO::Reader reader(context.GetDgnDb());
 
@@ -2859,14 +2881,24 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 GeometryStreamEntryIdHelper::Increment(context.GetGeometryStreamEntryIdR());
 
                 DgnGeometryPartId geomPartId;
-                Transform     geomToSource;
+                Transform geomToSource;
 
                 if (!reader.Get(egOp, geomPartId, geomToSource))
                     break;
 
                 GeometryStreamEntryIdHelper::SetActiveGeometryPart(context.GetGeometryStreamEntryIdR(), geomPartId);
-                context.AddSubGraphic(graphic, geomPartId, geomToSource, geomParams);
-                GeometryStreamEntryIdHelper::SetActive(context.GetGeometryStreamEntryIdR(), false);
+                Render::GraphicPtr partGraphic = context.AddSubGraphic(graphic, geomPartId, geomToSource, geomParams);
+                GeometryStreamEntryIdHelper::SetActiveGeometryPart(context.GetGeometryStreamEntryIdR(), DgnGeometryPartId());
+
+                if (!partGraphic.IsValid())
+                    break;
+
+                // NOTE: Main graphic controls what pixel range is used for all parts.
+                //       Since we can't have independent pixel range for parts, choose most restrictive...
+                double partMin, partMax;
+
+                partGraphic->GetPixelSizeRange(partMin, partMax);
+                DrawHelper::UpdatePixelSizeRange(graphic, partMin, partMax);
                 break;
                 }
 
@@ -3109,6 +3141,26 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
 
                 DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
 
+                if (isQVis && GeometryStreamIO::OpCode::BRepPolyface == egOp.m_opCode && meshData.GetPointCount() > 1000.0)
+                    {
+                    DRange3d range = meshData.PointRange();
+                    double   xLen = range.XLength(), yLen = range.YLength(), zLen = range.ZLength();
+                    double   maxLen = DoubleOps::Max(xLen, yLen, zLen);
+                    double   pixelThreshold = 15.0;
+
+                    if ((maxLen / graphic.GetPixelSize()) < pixelThreshold)
+                        {
+                        DgnBoxDetail boxDetail(range.low, DPoint3d::From(range.low.x, range.low.y, range.high.z), DVec3d::From(1.0, 0.0, 0.0), DVec3d::From(0.0, 1.0, 0.0), xLen, yLen, xLen, yLen, true);
+                        graphic.AddSolidPrimitive(*ISolidPrimitive::CreateDgnBox(boxDetail));
+                        DrawHelper::UpdatePixelSizeRange(graphic, maxLen/pixelThreshold, DBL_MAX);
+                        break;
+                        }
+                    else
+                        {
+                        DrawHelper::UpdatePixelSizeRange(graphic, 0.0, maxLen/pixelThreshold);
+                        }
+                    }
+
                 // NOTE: For this case the exact edge geometry will be supplied by BRepEdges/BRepFaceIso, inhibit facetted edge draw...
                 if ((isPick || isQVWireframe) && GeometryStreamIO::OpCode::BRepPolyface == egOp.m_opCode)
                     {
@@ -3234,10 +3286,10 @@ Render::GraphicPtr GeometrySource::_Stroke(ViewContextR context, double pixelSiz
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometrySource::_DrawHit(HitDetailCR hit, DecorateContextR context) const
+Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR hit) const
     {
     if (GeometryStreamEntryId::Type::Invalid == hit.GetGeomDetail().GetGeometryStreamEntryId().GetType())
-        return false;
+        return nullptr;
 
     switch (hit.GetSubSelectionMode())
         {
@@ -3246,7 +3298,7 @@ bool GeometrySource::_DrawHit(HitDetailCR hit, DecorateContextR context) const
             if (hit.GetGeomDetail().GetGeometryStreamEntryId().GetGeometryPartId().IsValid())
                 break;
 
-            return false;
+            return nullptr;
             }
 
         case SubSelectionMode::Primitive:
@@ -3257,63 +3309,134 @@ bool GeometrySource::_DrawHit(HitDetailCR hit, DecorateContextR context) const
             if (nullptr != hit.GetGeomDetail().GetCurvePrimitive())
                 break;
 
-            return false;
+            return nullptr;
             }
 
         default:
-            return false;
+            return nullptr;
         }
-
 
     // Get the GeometryParams for this hit from the GeometryStream...
     GeometryCollection collection(*this);
+    Render::GraphicPtr graphic;
 
     collection.SetBRepOutput(GeometryCollection::BRepOutput::Mesh);
 
     for (auto iter : collection)
         {
-        GeometricPrimitivePtr geom = iter.GetGeometryPtr();
-
-        if (!geom.IsValid())
+        // Quick exclude of geometry that didn't generate the hit...
+        if (hit.GetGeomDetail().GetGeometryStreamEntryId() != iter.GetGeometryStreamEntryId())
             continue;
 
         switch (hit.GetSubSelectionMode())
             {
             case SubSelectionMode::Part:
                 {
-                if (hit.GetGeomDetail().GetGeometryStreamEntryId().GetGeometryPartId() == iter.GetGeometryStreamEntryId().GetGeometryPartId())
-                    break;
+                GeometryParams geomParams(iter.GetGeometryParams());
 
-                continue;
+                graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), iter.GetSourceToWorld()));
+                context.AddSubGraphic(*graphic, iter.GetGeometryPartId(), iter.GetGeometryToSource(), geomParams);
+
+                return graphic;
+                }
+
+            case SubSelectionMode::Segment:
+                {
+                GeometryParams geomParams(iter.GetGeometryParams()); // NOTE: Used for weight. A part can store weights in it's GeometryStream too, but this is probably good enough...
+                GraphicParams  graphicParams;
+
+                context.CookGeometryParams(geomParams, graphicParams); // Don't activate yet...need to tweak...
+                graphicParams.SetWidth(graphicParams.GetWidth()+2); // NOTE: Would be nice if flashing made element "glow" for now just bump up weight...
+
+                graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport()));
+                graphic->ActivateGraphicParams(graphicParams);
+
+                bool doSegmentFlash = (hit.GetHitType() < HitDetailType::Snap);
+
+                if (!doSegmentFlash)
+                    {
+                    switch (static_cast<SnapDetailCR>(hit).GetSnapMode())
+                        {
+                        case SnapMode::Center:
+                        case SnapMode::Origin:
+                        case SnapMode::Bisector:
+                            break; // Snap point for these is computed using entire linestring, not just the hit segment...
+
+                        default:
+                            doSegmentFlash = true;
+                            break;
+                        }
+                    }
+
+                DSegment3d      segment;
+                CurveVectorPtr  curve;
+
+                // Flash only the selected segment of linestrings/shapes based on snap mode...
+                if (doSegmentFlash && hit.GetGeomDetail().GetSegment(segment))
+                    curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateLine(segment));
+                else
+                    curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, hit.GetGeomDetail().GetCurvePrimitive()->Clone());
+
+                if (hit.GetViewport().Is3dView())
+                    graphic->AddCurveVector(*curve, false);
+                else
+                    graphic->AddCurveVector2d(*curve, false, geomParams.GetNetDisplayPriority());
+
+                return graphic;
                 }
 
             case SubSelectionMode::Primitive:
-            case SubSelectionMode::Segment:
                 {
-                if (hit.GetGeomDetail().GetGeometryStreamEntryId() == iter.GetGeometryStreamEntryId())
-                    break;
+                GeometricPrimitivePtr geom = iter.GetGeometryPtr();
 
-                continue;
+                if (geom.IsValid())
+                    {
+                    if (!graphic.IsValid())
+                        graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), iter.GetGeometryToWorld()));
+
+                    GeometryParams geomParams(iter.GetGeometryParams());
+
+                    context.CookGeometryParams(geomParams, *graphic);
+                    geom->AddToGraphic(*graphic);
+                    break; // Keep going, want to draw all matching geometry (ex. multi-symb BRep is Polyface per-symbology)...
+                    }
+
+                DgnGeometryPartPtr geomPart = iter.GetGeometryPartPtr();
+
+                if (!geomPart.IsValid())
+                    return nullptr; // Shouldn't happen...
+
+                GeometryCollection partCollection(geomPart->GetGeometryStream(), context.GetDgnDb());
+
+                partCollection.SetNestedIteratorContext(iter); // Iterate part GeomStream in context of parent...
+
+                for (auto partIter : partCollection)
+                    {
+                    // Quick exclude of part geometry that didn't generate the hit...pass true to compare part geometry index...
+                    if (hit.GetGeomDetail().GetGeometryStreamEntryId(true) != partIter.GetGeometryStreamEntryId())
+                        continue;
+
+                    GeometricPrimitivePtr partGeom = partIter.GetGeometryPtr();
+
+                    if (!partGeom.IsValid())
+                        continue;
+
+                    if (!graphic.IsValid())
+                        graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), partIter.GetGeometryToWorld()));
+
+                    GeometryParams geomParams(partIter.GetGeometryParams());
+
+                    context.CookGeometryParams(geomParams, *graphic);
+                    partGeom->AddToGraphic(*graphic);
+                    continue; // Keep going, want to draw all matching geometry (ex. multi-symb BRep is Polyface per-symbology)...
+                    }
+
+                return graphic; // Done with part...
                 }
             }
-
-        if (SubSelectionMode::Segment != hit.GetSubSelectionMode())
-            {
-            Render::GraphicPtr  graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), iter.GetGeometryToWorld()));
-            GeometryParams      geomParams(iter.GetGeometryParams());
-
-            context.CookGeometryParams(geomParams, *graphic);
-            geom->AddToGraphic(*graphic, context);
-            context.AddFlashed(*graphic);
-
-            continue; // Keep going, want to draw all matching geometry...
-            }
-
-        hit.FlashCurveSegment(context, iter.GetGeometryParams());
-        break;
         }
 
-    return true;
+    return graphic;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3594,9 +3717,14 @@ void GeometryCollection::Iterator::ToNext()
                         }
 
                     case GeometryStreamIO::OpCode::BRepPolyface:
-                    case GeometryStreamIO::OpCode::BRepPolyfaceExact:
                         {
                         doOutput = (BRepOutput::None != (BRepOutput::Mesh & m_state->m_bRepOutput));
+                        break;
+                        }
+
+                    case GeometryStreamIO::OpCode::BRepPolyfaceExact:
+                        {
+                        doOutput = (BRepOutput::None != ((BRepOutput::Mesh | BRepOutput::Edges) & m_state->m_bRepOutput));
                         break;
                         }
 
@@ -3633,6 +3761,7 @@ void GeometryCollection::SetNestedIteratorContext(Iterator const& iter)
     m_state.m_geomStreamEntryId = iter.m_state->m_geomStreamEntryId;
     m_state.m_sourceToWorld = iter.m_state->m_sourceToWorld;
     m_state.m_geomToSource = iter.m_state->m_geomToSource;
+    m_state.m_bRepOutput = iter.m_state->m_bRepOutput;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -424,7 +424,7 @@ void ViewContext::_OutputGeometry(GeometrySourceCR source)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_AddSubGraphic(Render::GraphicR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams)
+Render::GraphicPtr ViewContext::_AddSubGraphic(Render::GraphicR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams)
     {
     ElementAlignedBox3d localRange;
     Render::GraphicPtr  partGraphic = _GetCachedPartGraphic(partId, graphic.GetPixelSize(), localRange);
@@ -441,19 +441,21 @@ void ViewContext::_AddSubGraphic(Render::GraphicR graphic, DgnGeometryPartId par
             collection.Draw(*partGraphic, *this, geomParams, false);
             
             if (WasAborted()) // if we aborted, the graphic may not be complete, don't save it
-                return;
+                return nullptr;
 
             _SavePartGraphic(partId, *partGraphic, partGeometry->GetBoundingBox());
             }
         }
 
     if (!partGraphic.IsValid())
-        return;
+        return nullptr;
 
     // NOTE: Need to cook GeometryParams to get GraphicParams, but we don't want to activate and bake into our QvElem...
     GraphicParams graphicParams;
     _CookGeometryParams(geomParams, graphicParams);
     graphic.AddSubGraphic(*partGraphic, subToGraphic, graphicParams);
+
+    return partGraphic;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -524,6 +526,42 @@ StatusInt ViewContext::_VisitGeometry(GeometrySourceCR source)
     _OutputGeometry(source);
 
     return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    KeithBentley    05/01
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt ViewContext::_VisitHit(HitDetailCR hit)
+    {
+    DgnElementCPtr   element = hit.GetElement();
+    GeometrySourceCP source = (element.IsValid() ? element->ToGeometrySource() : nullptr);
+
+    if (nullptr == source)
+        {
+        IElemTopologyCP elemTopo = hit.GetElemTopology();
+        if (nullptr == (source = (nullptr != elemTopo ? elemTopo->_ToGeometrySource() : nullptr)))
+            return ERROR;
+        }
+
+    if (&GetDgnDb() != &source->GetSourceDgnDb())
+        return ERROR;
+
+    if (element.IsValid() && nullptr != m_viewport && !m_viewport->GetViewController().IsModelViewed(element->GetModelId()))
+        return ERROR;
+
+    // Allow sub-class involvement for flashing sub-entities...
+    Render::GraphicPtr graphic = (nullptr != m_viewport ? m_viewport->GetViewControllerR()._StrokeHit(*this, *source, hit) : source->StrokeHit(*this, hit));
+
+    if (WasAborted()) // if we aborted, the graphic may not be complete
+        return ERROR;
+
+    if (graphic.IsValid())
+        {
+        _OutputGraphic(*graphic, source); 
+        return SUCCESS;
+        }
+
+    return VisitGeometry(*source);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -703,15 +741,6 @@ bool ViewContext::_VisitAllModelElements()
         PopClip();
 
     return WasAborted();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    05/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DecorateContext::VisitHit(HitDetailCR hit)
-    {
-    AutoRestore<bool> flash(&m_isFlash, true);
-    return m_viewport->GetViewController().VisitHit(hit, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**

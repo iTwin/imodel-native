@@ -1091,7 +1091,6 @@ bool                drawName
     Render::GraphicPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), transform));
 
     ACSFlags    flags = _GetFlags();
-    Utf8String  axisLabel[128];
 
     _AddZAxis(*graphic, ColorDef::Blue(), options);
     _AddXYAxis(*graphic, ColorDef::Red(), _GetAxisLabel(0).c_str(), false, options, flags);

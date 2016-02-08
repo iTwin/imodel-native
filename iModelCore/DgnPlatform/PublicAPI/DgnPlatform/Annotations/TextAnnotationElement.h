@@ -63,6 +63,7 @@ public:
     static TextAnnotationDataCP GetCP(DgnElementCR el) { return UniqueAspect::Get<TextAnnotationData>(el, *QueryECClass(el.GetDgnDb())); }
     static TextAnnotationDataP GetP(DgnElementR el) { return UniqueAspect::GetP<TextAnnotationData>(el, *QueryECClass(el.GetDgnDb())); }
 
+    DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
     TextAnnotationData() : m_isGeometrySuppressed(false) {}
     TextAnnotationCP GetAnnotation() const { return m_annotation.get(); }
     void SetAnnotation(TextAnnotationCP value) { m_annotation = value ? value->Clone() : nullptr; }
@@ -90,7 +91,7 @@ struct EXPORT_VTABLE_ATTRIBUTE TextAnnotation2d : AnnotationElement
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotation2d, AnnotationElement);
 
 protected:
-    virtual bool _DrawHit(HitDetailCR, DecorateContextR) const override { return false; } // Don't flash text box...
+    virtual Render::GraphicPtr _StrokeHit(ViewContextR, HitDetailCR) const {return nullptr;} // Don't flash text box...
     virtual SnapStatus _OnSnap(SnapContextR context) const override { return context.DoTextSnap(); } // Default snap using text box...
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR originalElment) override;
@@ -105,6 +106,7 @@ public:
     static TextAnnotation2dCPtr Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<TextAnnotation2d>(id); }
     static TextAnnotation2dPtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<TextAnnotation2d>(id); }
 
+    DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
     explicit TextAnnotation2d(CreateParams const& params) : T_Super(params) {}
     static TextAnnotation2dPtr Create(CreateParams const& params) { return new TextAnnotation2d(params); }
 
@@ -134,7 +136,7 @@ struct EXPORT_VTABLE_ATTRIBUTE TextAnnotation3d : SpatialElement
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotation3d, SpatialElement);
 
 protected:
-    virtual bool _DrawHit(HitDetailCR, DecorateContextR) const override { return false; } // Don't flash text box...
+    virtual Render::GraphicPtr _StrokeHit(ViewContextR, HitDetailCR) const {return nullptr;} // Don't flash text box...
     virtual SnapStatus _OnSnap(SnapContextR context) const override { return context.DoTextSnap(); } // Default snap using text box...
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR originalElment) override;
@@ -149,6 +151,7 @@ public:
     static TextAnnotation3dCPtr Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<TextAnnotation3d>(id); }
     static TextAnnotation3dPtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<TextAnnotation3d>(id); }
 
+    DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
     explicit TextAnnotation3d(CreateParams const& params) : T_Super(params) {}
     static TextAnnotation3dPtr Create(CreateParams const& params) { return new TextAnnotation3d(params); }
     
@@ -167,7 +170,7 @@ namespace dgn_ElementHandler
     struct TextAnnotation3dHandler : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotation3d, TextAnnotation3d, TextAnnotation3dHandler, Element, DGNPLATFORM_EXPORT);
-        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); ElementGeom3d::AddClassParams(params); }
+        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); TextAnnotation3d::AddClassParams(params); }
     };
 }
 

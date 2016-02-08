@@ -369,6 +369,14 @@ Render::GraphicPtr ViewController::_StrokeGeometry(ViewContextR context, Geometr
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley  10/06
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::GraphicPtr ViewController::_StrokeHit(ViewContextR context, GeometrySourceCR source, HitDetailCR hit)
+    {
+    return source.StrokeHit(context, hit);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::ReloadSubCategory(DgnSubCategoryId id)
@@ -2133,37 +2141,6 @@ void ViewController::_DrawGrid(DecorateContextR context)
         getGridOrientation(vp, origin, rMatrix, orientation);
         context.DrawStandardGrid(origin, rMatrix, spacing, gridsPerRef, isoGrid, nullptr);
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley  10/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ViewController::_VisitHit(HitDetailCR hit, DecorateContextR context) const
-    {
-    DgnElementCPtr   element = hit.GetElement();
-    GeometrySourceCP geom = (element.IsValid() ? element->ToGeometrySource() : nullptr);
-
-    if (nullptr == geom)
-        {
-        IElemTopologyCP elemTopo = hit.GetElemTopology();
-
-        if (nullptr == (geom = (nullptr != elemTopo ? elemTopo->_ToGeometrySource() : nullptr)))
-            return ERROR;
-        }
-
-    if (&GetDgnDb() != &geom->GetSourceDgnDb())
-        return ERROR;
-
-    if (element.IsValid() && !IsModelViewed(element->GetModelId()))
-        return ERROR;
-
-    ViewContext::ContextMark mark(&context);
-
-    // Allow sub-class involvement for flashing sub-entities...
-    if (geom->DrawHit(hit, context))
-        return SUCCESS;
-
-    return context.VisitGeometry(*geom);
     }
 
 /*---------------------------------------------------------------------------------**//**
