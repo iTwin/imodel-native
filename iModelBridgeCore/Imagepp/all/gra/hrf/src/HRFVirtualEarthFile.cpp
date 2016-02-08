@@ -8,7 +8,7 @@
 // Class HRFVirtualEarthFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 #include <Imagepp/all/h/HFCURLHTTP.h>

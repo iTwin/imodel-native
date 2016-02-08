@@ -2,13 +2,13 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCExceptionHandler.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class: HFCExceptionHandler
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
  // Must be the first include.
 #include <ImagePP/all/h/HFCException.h>
 #include <Imagepp/all/h/HFCExceptionHandler.h>

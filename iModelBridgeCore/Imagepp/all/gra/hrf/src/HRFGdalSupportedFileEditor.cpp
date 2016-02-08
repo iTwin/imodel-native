@@ -9,7 +9,7 @@
 // Class HRFGdalSupportedFileEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HRFGdalSupportedFile.h>
 #include <Imagepp/all/h/HRFGdalSupportedFileEditor.h>

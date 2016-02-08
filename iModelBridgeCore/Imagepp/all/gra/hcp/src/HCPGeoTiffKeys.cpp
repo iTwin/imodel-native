@@ -8,7 +8,7 @@
 // Class : HCPGeoTiffKeys
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 #include <Imagepp/all/h/HCPGCoordModel.h>

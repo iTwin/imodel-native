@@ -2,11 +2,14 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HRAImageSamplerTester.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 #include "../imagepptestpch.h"
+
+#ifdef USE_GTEST        // TEST_P only available when using gtest.
+
 #include <ImagePP/all/h/HCDPacketRLE.h>
 #include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>
 #include <ImagePP/all/h/HRAImageOp.h>
@@ -17,12 +20,6 @@
 #include <ImagePP/all/h/HGSMemoryRLESurfaceDescriptor.h>
 #include <ImagePP/all/h/HRANearestSamplerRLE1.h>
 #endif
-
-#define TEST_NAME ::testing::UnitTest::GetInstance()->current_test_info()->name()
-#define TEST_CASE_NAME ::testing::UnitTest::GetInstance()->current_test_info()->test_case_name()
-#define TEST_NAME_PRINT L"TEST: (" << TEST_CASE_NAME << ", " << TEST_NAME << ")"
-
-
 
 typedef std::vector<HFCPtr<HRPPixelType>>           HRPPixelTypeVector;
 typedef std::vector<double>                         ScalingsVector;
@@ -1551,3 +1548,8 @@ TEST_F(EditorN1Tester, EditorN1TesterTest)
     ClearPixelsTest();
     }
 
+#else
+
+#pragma message("Warining: Disabling HRAImageSamplerTester because TEST_P/INSTANTIATE_TEST_CASE_P are not available")
+
+#endif

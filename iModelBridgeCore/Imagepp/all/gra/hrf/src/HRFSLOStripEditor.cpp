@@ -9,7 +9,7 @@
 // Class HRFSLOStripEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HRFSLOStripEditor.h>
 #include <Imagepp/all/h/HRFSLOStripAdapter.h>

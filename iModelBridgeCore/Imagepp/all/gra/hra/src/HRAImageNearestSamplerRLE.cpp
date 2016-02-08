@@ -6,7 +6,7 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <ImagePPInternal/gra/HRAImageNearestSamplerRLE.h>
 #include <Imagepp/all/h/HRPPixelType.h>

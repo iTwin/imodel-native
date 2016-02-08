@@ -9,7 +9,7 @@
 // Class HRFRasterFileResBooster
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 #include <Imagepp/all/h/HFCStat.h>

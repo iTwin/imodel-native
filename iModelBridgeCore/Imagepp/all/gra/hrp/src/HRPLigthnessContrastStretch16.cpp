@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPLigthnessContrastStretch16.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -10,7 +10,7 @@
 //-----------------------------------------------------------------------------
 // Some common function filters.
 //-----------------------------------------------------------------------------
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HRPLigthnessContrastStretch16.h>
 #include <Imagepp/all/h/HRPPixelTypeV48R16G16B16.h>

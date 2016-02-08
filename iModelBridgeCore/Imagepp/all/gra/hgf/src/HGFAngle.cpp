@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGFAngle.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
 // All methods are declared inline and are defined in HGFAngle.hpp
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 // The class declaration must be the last include file.

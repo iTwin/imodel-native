@@ -8,7 +8,7 @@
 // Class HRFPngLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HRFPngLineEditor.h>
 #include <Imagepp/all/h/HRFPngFile.h>

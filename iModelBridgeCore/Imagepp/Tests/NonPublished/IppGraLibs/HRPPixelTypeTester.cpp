@@ -2,16 +2,14 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HRPPixelTypeTester.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 
 #include "../imagepptestpch.h"
 
-#define TEST_NAME ::testing::UnitTest::GetInstance()->current_test_info()->name()
-#define TEST_CASE_NAME ::testing::UnitTest::GetInstance()->current_test_info()->test_case_name()
-#define TEST_NAME_PRINT L"TEST: (" << TEST_CASE_NAME << ", " << TEST_NAME << ")"
+#ifdef USE_GTEST        // TEST_P only available when using gtest.
 
 typedef std::pair<HFCPtr<HRPPixelType>, WString>    HRPPixelTypeNamePair;
 typedef std::vector<HRPPixelTypeNamePair>           HRPPixelTypeVector;
@@ -581,3 +579,10 @@ TEST_P(HRPPixelTypeCoverage, ComposeSimpleTest)
 INSTANTIATE_TEST_CASE_P(HRPPixelTypeCoverageTests,
                         HRPPixelTypeCoverage,
                         ::testing::Combine(::testing::ValuesIn(s_GetPixelTypeVector ()), ::testing::ValuesIn(s_GetPixelTypeVector ())));
+
+
+#else
+
+#pragma message("Warining: Disabling HRAImageSamplerTester because INSTANTIATE_TEST_CASE_P is not available")
+
+#endif

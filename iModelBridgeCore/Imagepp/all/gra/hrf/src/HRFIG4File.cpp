@@ -8,7 +8,7 @@
 // Class HRFIG4File
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 #include <Imagepp/all/h/HRFIG4File.h>

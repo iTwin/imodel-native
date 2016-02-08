@@ -2,13 +2,13 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGFPolynomialModelAdapter.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGFPolynomialModelAdapter
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 #include <Imagepp/all/h/HGF2DTransfoModelAdapter.h>
 #include <Imagepp/all/h/HGF2DTranslation.h>
 #include <Imagepp/all/h/HGF2DIdentity.h>

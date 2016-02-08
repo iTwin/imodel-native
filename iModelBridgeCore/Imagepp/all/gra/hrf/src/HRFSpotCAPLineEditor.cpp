@@ -9,7 +9,7 @@
 // Class HRFSpotCAPLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HRFSpotCAPLineEditor.h>
 #include <Imagepp/all/h/HRFSpotCAPFile.h>

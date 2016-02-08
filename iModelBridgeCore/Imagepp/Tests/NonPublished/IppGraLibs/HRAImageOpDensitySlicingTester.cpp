@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HRAImageOpDensitySlicingTester.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -20,8 +20,7 @@ class HRAImageOpDensitySlicingTester : public testing::Test
         void TestFiltering(HRAImageOpPtr imageOp, HRAImageSampleCR imageSampleIn, HRAImageSampleCR imageSampleOutExpected);
         bool TestAvailableInputPixelType(HRAImageOpPtr pImageOp, uint32_t pixelTypeId, uint32_t pixelTypeIndex, HFCPtr<HRPPixelType> pixelTypeToMatch, uint32_t expectedStatus);
         bool TestAvailableOutputPixelType(HRAImageOpPtr pImageOp, uint32_t pixelTypeId, uint32_t pixelTypeIndex, HFCPtr<HRPPixelType> pixelTypeToMatch, uint32_t expectedStatus);
-        static const ::testing::TestInfo* TestInfo();
-
+       
         IImageAllocator& GetMemoryManager();
 
     private:
@@ -178,8 +177,8 @@ TEST_F(HRAImageOpDensitySlicingTester, LightnessDensitySlicingTest)
 
     ASSERT_EQ(1, pNewOp->GetSlices().size());
 
-    ASSERT_FLOAT_EQ(0, slices[0].m_StartValue);
-    ASSERT_FLOAT_EQ(100, slices[0].m_EndValue);
+    ASSERT_DOUBLE_EQ(0, slices[0].m_StartValue);
+    ASSERT_DOUBLE_EQ(100, slices[0].m_EndValue);
     ASSERT_EQ(16711680, slices[0].m_StartColor);
     ASSERT_EQ(65280, slices[0].m_EndColor);
     ASSERT_DOUBLE_EQ(0.5, slices[0].m_Opacity);
@@ -230,9 +229,9 @@ bool HRAImageOpDensitySlicingTester::TestAvailableInputPixelType(HRAImageOpPtr p
     if (imageOpStatus != expectedStatus)
         {
 // not now
-//         wchar_t errorMsg[512];
-//         BeStringUtilities::Snwprintf (errorMsg, L"TEST: (%hs, %hs) - In TestAvailableInputPixelType: ImagePPStatus:%d expectedStatus:%d", 
-//                                       TestInfo()->test_case_name(), TestInfo()->name(), imageOpStatus, expectedStatus);
+//         char errorMsg[512];
+//         BeStringUtilities::Snprintf (errorMsg, "TEST: (%s, %s) - In TestAvailableInputPixelType: ImagePPStatus:%d expectedStatus:%d", 
+//                                       TEST_FIXTURE_NAME, TEST_NAME, imageOpStatus, expectedStatus);
         return false;
         }
 
@@ -242,9 +241,9 @@ bool HRAImageOpDensitySlicingTester::TestAvailableInputPixelType(HRAImageOpPtr p
         if (!pixelType->IsCompatibleWith(pixelTypeId))
             {
 // not now
-//             wchar_t errorMsg[512];
-//             BeStringUtilities::Snwprintf (errorMsg, L"TEST: (%hs, %hs) - In TestAvailableInputPixelType: pixel type not compatible with:%d", 
-//                                           TestInfo()->test_case_name(), TestInfo()->name(), pixelTypeId);
+//             char errorMsg[512];
+//             BeStringUtilities::Snprintf (errorMsg, "TEST: (%s, %s) - In TestAvailableInputPixelType: pixel type not compatible with:%d", 
+//                                           TEST_FIXTURE_NAME, TEST_NAME, pixelTypeId);
             return false;
             }
         }
@@ -263,9 +262,9 @@ bool HRAImageOpDensitySlicingTester::TestAvailableOutputPixelType(HRAImageOpPtr 
     if (imageOpStatus != expectedStatus)
         {
         // not now
-//         wchar_t errorMsg[512];
-//         BeStringUtilities::Snwprintf (errorMsg, L"TEST: (%hs, %hs) - In TestAvailableOutputPixelType: ImagePPStatus:%d expectedStatus:%d", 
-//                                       TestInfo()->test_case_name(), TestInfo()->name(), imageOpStatus, expectedStatus);
+//         char errorMsg[512];
+//         BeStringUtilities::Snprintf (errorMsg, "TEST: (%s, %s) - In TestAvailableOutputPixelType: ImagePPStatus:%d expectedStatus:%d", 
+//                                       TEST_FIXTURE_NAME, TEST_NAME, imageOpStatus, expectedStatus);
         return true;
         }
 
@@ -275,9 +274,9 @@ bool HRAImageOpDensitySlicingTester::TestAvailableOutputPixelType(HRAImageOpPtr 
         if (!pixelType->IsCompatibleWith(pixelTypeId))
             {
             // not now
-//             wchar_t errorMsg[512];
-//             BeStringUtilities::Snwprintf (errorMsg, L"TEST: (%hs, %hs) - In TestAvailableOutputPixelType: pixel type not compatible with:%d", 
-//                                           TestInfo()->test_case_name(), TestInfo()->name(), pixelTypeId);
+//             char errorMsg[512];
+//             BeStringUtilities::Snprintf (errorMsg, "TEST: (%s, %s) - In TestAvailableOutputPixelType: pixel type not compatible with:%d", 
+//                                           TEST_FIXTURE_NAME, TEST_NAME, pixelTypeId);
 //            FAIL() << errorMsg;
 
             return false;
@@ -316,7 +315,7 @@ void HRAImageOpDensitySlicingTester::TestFiltering(HRAImageOpPtr pImageOp, HRAIm
     Byte* pOutBuffer = pImageOut->GetBufferP()->GetDataP(pitch);
     size_t pitchExpected;
     const Byte* pOutBufferExpected = imageSampleOutExpected.GetBufferCP()->GetDataCP(pitchExpected);
-    ASSERT_EQ(pitch, pitchExpected) << L"TEST: (" << TestInfo()->test_case_name() << ", " << TestInfo()->name() << ") - In TestFiltering.";
+    ASSERT_EQ(pitch, pitchExpected) << "TEST: (" << TEST_FIXTURE_NAME << ", " << TEST_NAME << ") - In TestFiltering.";
 
     uint32_t posBuffer = 0;
     for(uint32_t row=0; row < height; ++row)
@@ -327,9 +326,9 @@ void HRAImageOpDensitySlicingTester::TestFiltering(HRAImageOpPtr pImageOp, HRAIm
                 {
                 if (pOutBuffer[posBuffer] != pOutBufferExpected[posBuffer])
                     {
-                    wchar_t errorMsg[512];
-                    BeStringUtilities::Snwprintf (errorMsg, L"TEST: (%hs, %hs) - In TestFiltering: pOutBuffer[%d]:%d pOutBufferExpected[%d]:%d", 
-                                                  TestInfo()->test_case_name(), TestInfo()->name(),
+                    char errorMsg[512];
+                    BeStringUtilities::Snprintf (errorMsg, "TEST: (%s, %s) - In TestFiltering: pOutBuffer[%d]:%d pOutBufferExpected[%d]:%d", 
+                                                  TEST_FIXTURE_NAME, TEST_NAME,
                                                   posBuffer, pOutBuffer[posBuffer], posBuffer, pOutBufferExpected[posBuffer]);
                     FAIL() << errorMsg;
                     }
@@ -339,12 +338,4 @@ void HRAImageOpDensitySlicingTester::TestFiltering(HRAImageOpPtr pImageOp, HRAIm
         }
     }    
     
-//==================================================================================
-// Utility method that returns TestInfo
-//==================================================================================
-const ::testing::TestInfo* HRAImageOpDensitySlicingTester::TestInfo()
-    {
-    return ::testing::UnitTest::GetInstance()->current_test_info();
-    }
-
 

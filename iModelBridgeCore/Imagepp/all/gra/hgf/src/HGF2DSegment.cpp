@@ -8,7 +8,7 @@
 // Methods for class HGF2DSegment
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HGF2DDisplacement.h>
 

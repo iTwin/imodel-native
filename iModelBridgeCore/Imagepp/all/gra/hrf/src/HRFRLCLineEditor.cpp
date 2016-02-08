@@ -8,7 +8,7 @@
 // Class HRFRLCLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HRFRLCLineEditor.h>
 #include <Imagepp/all/h/HRFRLCFile.h>

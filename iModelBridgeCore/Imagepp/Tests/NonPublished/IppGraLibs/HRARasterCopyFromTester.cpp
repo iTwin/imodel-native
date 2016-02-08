@@ -2,14 +2,15 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HRARasterCopyFromTester.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 #include "../imagepptestpch.h"
+
+#ifdef USE_GTEST        // TEST_P only available when using gtest.
+
 #include "NonLinearTransforms.h"
-
-
 
 #define TEST_RASTER_WIDTH    531
 #define TEST_RASTER_HEIGHT   542
@@ -844,3 +845,9 @@ TEST_F(HRARasterCopyFromTesterNonLinear, TestAllTilesAreCopied)
     ASSERT_EQ(0xFF, pBuffer[302  + 235 * IMAGE_WIDTH]);
     ASSERT_EQ(0xFF, pBuffer[40   + 400 * IMAGE_WIDTH]);
     }
+
+#else
+
+#pragma message("Warining: Disabling HRARasterCopyFromTester because TEST_P/INSTANTIATE_TEST_CASE_P are not available")
+
+#endif

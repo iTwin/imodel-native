@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/DownSamplingTester.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -11,11 +11,6 @@
 
 //&&SP Adapt to DownSampler changes. 
 #if 0
-
-#define TEST_NAME ::testing::UnitTest::GetInstance()->current_test_info()->name()
-#define TEST_CASE_NAME ::testing::UnitTest::GetInstance()->current_test_info()->test_case_name()
-#define TEST_NAME_PRINT L"TEST: (" << TEST_CASE_NAME << ", " << TEST_NAME << ")"
-
 
 
 typedef std::vector<HFCPtr<HRPPixelType>>           HRPPixelTypeVector;

@@ -8,7 +8,7 @@
 // Class HRFTiffTileEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HRFTiffTileEditor.h>
 #include <Imagepp/all/h/HRFTiffFile.h>

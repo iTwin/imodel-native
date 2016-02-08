@@ -8,7 +8,7 @@
 // Methods for class HGF2DShape
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 #include <Imagepp/all/h/HGF2DShape.h>

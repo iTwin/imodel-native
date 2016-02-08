@@ -8,7 +8,7 @@
 // Methods for class HFCEmbedBinStream
 //---------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HFCEmbedBinStream.h>
 #include <Imagepp/all/h/HFCURLFile.h>

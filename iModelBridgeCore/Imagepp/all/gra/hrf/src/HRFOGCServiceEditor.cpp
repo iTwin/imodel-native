@@ -8,7 +8,7 @@
 // Class HRFOGCServiceEditor
 //----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 #include "HRFOGCServiceEditor.h"

@@ -8,7 +8,7 @@
 // Class HRFSunRasterLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HRFSunRasterFile.h>
 #include <Imagepp/all/h/HRFSunRasterEditor.h>

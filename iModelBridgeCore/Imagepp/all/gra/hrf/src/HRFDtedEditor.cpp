@@ -9,7 +9,7 @@
 // Class HRFDtedEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HRFDtedEditor.h>
 #include <Imagepp/all/h/HRFDtedFile.h>

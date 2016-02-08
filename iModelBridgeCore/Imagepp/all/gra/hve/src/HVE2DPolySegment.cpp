@@ -8,7 +8,7 @@
 // Methods for class HVE2DPolySegment
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 #include <Imagepp/all/h/HGFAngle.h>

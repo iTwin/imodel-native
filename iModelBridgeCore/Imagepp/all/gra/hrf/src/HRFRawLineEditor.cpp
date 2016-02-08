@@ -8,7 +8,7 @@
 // Class HRFRawLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HRFRawLineEditor.h>
 #include <Imagepp/all/h/HRFRawFile.h>

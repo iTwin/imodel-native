@@ -8,7 +8,7 @@
 // Methods for class HFCMemoryBinStream
 //---------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HFCMemoryBinStream.h>
 #include <Imagepp/all/h/HFCException.h>

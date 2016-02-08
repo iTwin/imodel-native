@@ -2,13 +2,13 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCIniFileBrowser.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Implementation of the HFCIniFileBrowser class.
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HFCIniFileBrowser.h>
 #include <Imagepp/all/h/HFCException.h>

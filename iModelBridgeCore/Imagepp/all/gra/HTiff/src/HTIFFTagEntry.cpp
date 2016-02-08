@@ -8,7 +8,7 @@
 // Methods for class HTIFFTagEntry
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 

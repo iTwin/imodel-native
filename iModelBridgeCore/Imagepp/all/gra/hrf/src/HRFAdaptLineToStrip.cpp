@@ -9,7 +9,7 @@
 // Class HRFAdaptLineToStrip
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 #include <Imagepp/all/h/HRFAdaptLineToStrip.h>

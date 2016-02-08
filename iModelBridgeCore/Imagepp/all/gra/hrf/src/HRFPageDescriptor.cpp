@@ -9,7 +9,7 @@
 // Class HRFPageDescriptor
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HRFThumbnail.h>
 #include <Imagepp/all/h/HRFResolutionDescriptor.h>

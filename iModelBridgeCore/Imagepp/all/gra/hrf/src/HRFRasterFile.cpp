@@ -8,7 +8,7 @@
 // Class HRFRasterFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 

@@ -9,7 +9,7 @@
 // Class HRFGeoTiffFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 #include <ImagePP/all/h/ImageppLib.h>

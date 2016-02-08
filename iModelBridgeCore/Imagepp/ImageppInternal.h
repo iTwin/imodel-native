@@ -1,11 +1,18 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: PrivateApi/ImagePPInternal/hstdcpp.h $
+//:>     $Source: ImageppInternal.h $
 //:>
 //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#pragma once
+
+
+// pragma once is giving 'error: #pragma once in main file' with GCC. Looks like a GCC bug :
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=47857
+//#pragma once
+
+#ifndef __IMAGEPPINTERNAL_H__
+#define __IMAGEPPINTERNAL_H__
 
 #include <ImagePP/h/ImageppAPI.h>
 
@@ -87,14 +94,4 @@
 USING_NAMESPACE_IMAGEPP
 
 
-
-
-
-
-
-
-
-
-
-
-
+#endif //__IMAGEPPINTERNAL_H__

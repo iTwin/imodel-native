@@ -9,7 +9,7 @@
 // Methods for class HIMFilteredImage
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HRPDEMFilter.h>
 #include <Imagepp/all/h/HRPPixelType.h>

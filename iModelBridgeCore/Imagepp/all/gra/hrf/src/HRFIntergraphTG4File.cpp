@@ -8,7 +8,7 @@
 // Class HRFIntergraphTG4File
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 #include <Imagepp/all/h/HFCURLFile.h>

@@ -2,13 +2,13 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCMemoryLineStream.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCMemoryLineStream
 //---------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HFCMemoryLineStream.h>
 #include <Imagepp/all/h/HFCException.h>

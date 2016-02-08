@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppUtlLibs/HFCMatrixTester.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -437,19 +437,17 @@ TEST_F (HFCMatrixTester, DoubleMatrixCompare)
 //==================================================================================
 TEST_F (HFCMatrixTester, TestMatrixSignedLongConstructor)
     {
-
     A3By3int32_tMatrix Mat2;
 
-    ASSERT_NEAR(0.0, Mat2[0][0] , MYEPSILON);
-    ASSERT_NEAR(0.0, Mat2[0][1] , MYEPSILON);
-    ASSERT_NEAR(0.0, Mat2[0][2] , MYEPSILON);
-    ASSERT_NEAR(0.0, Mat2[1][0] , MYEPSILON);
-    ASSERT_NEAR(0.0, Mat2[1][1] , MYEPSILON);
-    ASSERT_NEAR(0.0, Mat2[1][2] , MYEPSILON);
-    ASSERT_NEAR(0.0, Mat2[2][0] , MYEPSILON);
-    ASSERT_NEAR(0.0, Mat2[2][1] , MYEPSILON);
-    ASSERT_NEAR(0.0, Mat2[2][2] , MYEPSILON);
-
+    ASSERT_EQ(0, Mat2[0][0]);
+    ASSERT_EQ(0, Mat2[0][1]);
+    ASSERT_EQ(0, Mat2[0][2]);
+    ASSERT_EQ(0, Mat2[1][0]);
+    ASSERT_EQ(0, Mat2[1][1]);
+    ASSERT_EQ(0, Mat2[1][2]);
+    ASSERT_EQ(0, Mat2[2][0]);
+    ASSERT_EQ(0, Mat2[2][1]);
+    ASSERT_EQ(0, Mat2[2][2]);
     }
 
 //==================================================================================
@@ -457,17 +455,15 @@ TEST_F (HFCMatrixTester, TestMatrixSignedLongConstructor)
 //==================================================================================
 TEST_F (HFCMatrixTester, TestMatrixSignedLongSetting)
     {
-       
-    ASSERT_NEAR(0.0, Mat2[0][0] , MYEPSILON);
-    ASSERT_DOUBLE_EQ(1.0, Mat2[0][1]);
-    ASSERT_DOUBLE_EQ(2.0, Mat2[0][2]);
-    ASSERT_DOUBLE_EQ(1.0, Mat2[1][0]);
-    ASSERT_DOUBLE_EQ(2.0, Mat2[1][1]);
-    ASSERT_DOUBLE_EQ(3.0, Mat2[1][2]);
-    ASSERT_DOUBLE_EQ(2.0, Mat2[2][0]);
-    ASSERT_DOUBLE_EQ(3.0, Mat2[2][1]);
-    ASSERT_DOUBLE_EQ(4.0, Mat2[2][2]);
-
+    ASSERT_EQ(0, Mat2[0][0]);
+    ASSERT_EQ(1, Mat2[0][1]);
+    ASSERT_EQ(2, Mat2[0][2]);
+    ASSERT_EQ(1, Mat2[1][0]);
+    ASSERT_EQ(2, Mat2[1][1]);
+    ASSERT_EQ(3, Mat2[1][2]);
+    ASSERT_EQ(2, Mat2[2][0]);
+    ASSERT_EQ(3, Mat2[2][1]);
+    ASSERT_EQ(4, Mat2[2][2]);
     }
 
 //==================================================================================
@@ -478,15 +474,15 @@ TEST_F (HFCMatrixTester, TestMatrixSignedLongCopyConstructor)
   
     const A3By3int32_tMatrix Mat2Const(Mat2);
 
-    ASSERT_NEAR(0.0, Mat2Const[0][0] , MYEPSILON);
-    ASSERT_DOUBLE_EQ(1.0, Mat2Const[0][1]);
-    ASSERT_DOUBLE_EQ(2.0, Mat2Const[0][2]);
-    ASSERT_DOUBLE_EQ(1.0, Mat2Const[1][0]);
-    ASSERT_DOUBLE_EQ(2.0, Mat2Const[1][1]);
-    ASSERT_DOUBLE_EQ(3.0, Mat2Const[1][2]);
-    ASSERT_DOUBLE_EQ(2.0, Mat2Const[2][0]);
-    ASSERT_DOUBLE_EQ(3.0, Mat2Const[2][1]);
-    ASSERT_DOUBLE_EQ(4.0, Mat2Const[2][2]);
+    ASSERT_EQ(0, Mat2Const[0][0]);
+    ASSERT_EQ(1, Mat2Const[0][1]);
+    ASSERT_EQ(2, Mat2Const[0][2]);
+    ASSERT_EQ(1, Mat2Const[1][0]);
+    ASSERT_EQ(2, Mat2Const[1][1]);
+    ASSERT_EQ(3, Mat2Const[1][2]);
+    ASSERT_EQ(2, Mat2Const[2][0]);
+    ASSERT_EQ(3, Mat2Const[2][1]);
+    ASSERT_EQ(4, Mat2Const[2][2]);
 
     }
 
@@ -496,15 +492,15 @@ TEST_F (HFCMatrixTester, TestMatrixSignedLongCopyConstructor)
 TEST_F (HFCMatrixTester, TestMatrixSignedLongAssignement)
     {
 
-    ASSERT_NEAR(0.0, Mat2A[0][0] , MYEPSILON);
-    ASSERT_DOUBLE_EQ(1.0, Mat2A[0][1]);
-    ASSERT_DOUBLE_EQ(2.0, Mat2A[0][2]);
-    ASSERT_DOUBLE_EQ(1.0, Mat2A[1][0]);
-    ASSERT_DOUBLE_EQ(2.0, Mat2A[1][1]);
-    ASSERT_DOUBLE_EQ(3.0, Mat2A[1][2]);
-    ASSERT_DOUBLE_EQ(2.0, Mat2A[2][0]);
-    ASSERT_DOUBLE_EQ(3.0, Mat2A[2][1]);
-    ASSERT_DOUBLE_EQ(4.0, Mat2A[2][2]);
+    ASSERT_EQ(0, Mat2A[0][0]);
+    ASSERT_EQ(1, Mat2A[0][1]);
+    ASSERT_EQ(2, Mat2A[0][2]);
+    ASSERT_EQ(1, Mat2A[1][0]);
+    ASSERT_EQ(2, Mat2A[1][1]);
+    ASSERT_EQ(3, Mat2A[1][2]);
+    ASSERT_EQ(2, Mat2A[2][0]);
+    ASSERT_EQ(3, Mat2A[2][1]);
+    ASSERT_EQ(4, Mat2A[2][2]);
 
     }
 
@@ -518,16 +514,15 @@ TEST_F (HFCMatrixTester, TestMatrixSignedLongValue)
         for(j = 0; j < 3 ; ++j)
             Mat2[i][j] = Mat2A[i][j] * 3;
 
-    ASSERT_NEAR(0.0, Mat2[0][0] , MYEPSILON);
-    ASSERT_DOUBLE_EQ(3.0, Mat2[0][1]);
-    ASSERT_DOUBLE_EQ(6.0, Mat2[0][2]);
-    ASSERT_DOUBLE_EQ(3.0, Mat2[1][0]);
-    ASSERT_DOUBLE_EQ(6.0, Mat2[1][1]);
-    ASSERT_DOUBLE_EQ(9.0, Mat2[1][2]);
-    ASSERT_DOUBLE_EQ(6.0, Mat2[2][0]);
-    ASSERT_DOUBLE_EQ(9.0, Mat2[2][1]);
-    ASSERT_DOUBLE_EQ(12.0, Mat2[2][2]);
-
+    ASSERT_EQ(0, Mat2[0][0]);
+    ASSERT_EQ(3, Mat2[0][1]);
+    ASSERT_EQ(6, Mat2[0][2]);
+    ASSERT_EQ(3, Mat2[1][0]);
+    ASSERT_EQ(6, Mat2[1][1]);
+    ASSERT_EQ(9, Mat2[1][2]);
+    ASSERT_EQ(6, Mat2[2][0]);
+    ASSERT_EQ(9, Mat2[2][1]);
+    ASSERT_EQ(12, Mat2[2][2]);
     }
 
 //==================================================================================
@@ -542,14 +537,14 @@ TEST_F (HFCMatrixTester, TestMatrixSignedLongValueByRow)
     Mat2[2] = Mat2Const[2];
 
     ASSERT_NEAR(0.0, Mat1A[0][0] , MYEPSILON);
-    ASSERT_DOUBLE_EQ(1.0, Mat2[0][1]);
-    ASSERT_DOUBLE_EQ(2.0, Mat2[0][2]);
-    ASSERT_DOUBLE_EQ(1.0, Mat2[1][0]);
-    ASSERT_DOUBLE_EQ(2.0, Mat2[1][1]);
-    ASSERT_DOUBLE_EQ(3.0, Mat2[1][2]);
-    ASSERT_DOUBLE_EQ(2.0, Mat2[2][0]);
-    ASSERT_DOUBLE_EQ(3.0, Mat2[2][1]);
-    ASSERT_DOUBLE_EQ(4.0, Mat2[2][2]);
+    ASSERT_EQ(1, Mat2[0][1]);
+    ASSERT_EQ(2, Mat2[0][2]);
+    ASSERT_EQ(1, Mat2[1][0]);
+    ASSERT_EQ(2, Mat2[1][1]);
+    ASSERT_EQ(3, Mat2[1][2]);
+    ASSERT_EQ(2, Mat2[2][0]);
+    ASSERT_EQ(3, Mat2[2][1]);
+    ASSERT_EQ(4, Mat2[2][2]);
 
     }
 
@@ -569,9 +564,9 @@ TEST_F (HFCMatrixTester, TestMatrixSignedLongMultiplication)
 
     ResultArray = Mat2 * SmallArray;
 
-    ASSERT_DOUBLE_EQ(16.0, ResultArray[0][0]);
-    ASSERT_DOUBLE_EQ(28.0, ResultArray[1][0]);
-    ASSERT_DOUBLE_EQ(40.0, ResultArray[2][0]);
+    ASSERT_EQ(16, ResultArray[0][0]);
+    ASSERT_EQ(28, ResultArray[1][0]);
+    ASSERT_EQ(40, ResultArray[2][0]);
 
     }
 
@@ -608,15 +603,15 @@ TEST_F (HFCMatrixTester, TestMatrixSignedLongOperator2)
     
     Mat2 = Mat2 / 2;
 
-    ASSERT_DOUBLE_EQ(Mat2[0][0] , 0);
-    ASSERT_DOUBLE_EQ(Mat2[0][1] , 0);
-    ASSERT_DOUBLE_EQ(Mat2[0][2] , 1);
-    ASSERT_DOUBLE_EQ(Mat2[1][0] , 0);
-    ASSERT_DOUBLE_EQ(Mat2[1][1] , 1);
-    ASSERT_DOUBLE_EQ(Mat2[1][2] , 1);
-    ASSERT_DOUBLE_EQ(Mat2[2][0] , 1);
-    ASSERT_DOUBLE_EQ(Mat2[2][1] , 1);
-    ASSERT_DOUBLE_EQ(Mat2[2][2] , 2);
+    ASSERT_EQ(Mat2[0][0] , 0);
+    ASSERT_EQ(Mat2[0][1] , 0);
+    ASSERT_EQ(Mat2[0][2] , 1);
+    ASSERT_EQ(Mat2[1][0] , 0);
+    ASSERT_EQ(Mat2[1][1] , 1);
+    ASSERT_EQ(Mat2[1][2] , 1);
+    ASSERT_EQ(Mat2[2][0] , 1);
+    ASSERT_EQ(Mat2[2][1] , 1);
+    ASSERT_EQ(Mat2[2][2] , 2);
 
     }
 
@@ -654,15 +649,15 @@ TEST_F (HFCMatrixTester, TestMatrixSignedLongIncrement)
     
     Mat2 += Mat2Const;
 
-    ASSERT_NEAR(0.0, Mat2[0][0] , MYEPSILON);
-    ASSERT_DOUBLE_EQ(2.0, Mat2[0][1]);
-    ASSERT_DOUBLE_EQ(4.0, Mat2[0][2]);
-    ASSERT_DOUBLE_EQ(2.0, Mat2[1][0]);
-    ASSERT_DOUBLE_EQ(4.0, Mat2[1][1]);
-    ASSERT_DOUBLE_EQ(6.0, Mat2[1][2]);
-    ASSERT_DOUBLE_EQ(4.0, Mat2[2][0]);
-    ASSERT_DOUBLE_EQ(6.0, Mat2[2][1]);
-    ASSERT_DOUBLE_EQ(8.0, Mat2[2][2]);
+    ASSERT_EQ(0, Mat2[0][0]);
+    ASSERT_EQ(2, Mat2[0][1]);
+    ASSERT_EQ(4, Mat2[0][2]);
+    ASSERT_EQ(2, Mat2[1][0]);
+    ASSERT_EQ(4, Mat2[1][1]);
+    ASSERT_EQ(6, Mat2[1][2]);
+    ASSERT_EQ(4, Mat2[2][0]);
+    ASSERT_EQ(6, Mat2[2][1]);
+    ASSERT_EQ(8, Mat2[2][2]);
 
     }
 
@@ -675,15 +670,15 @@ TEST_F (HFCMatrixTester, TestMatrixSignedLongDecrement)
     const A3By3int32_tMatrix Mat2Const(Mat2);
     Mat2 -= Mat2Const;
 
-    ASSERT_NEAR(0.0, Mat2[0][0] , MYEPSILON);
-    ASSERT_NEAR(0.0, Mat2[0][1] , MYEPSILON);
-    ASSERT_NEAR(0.0, Mat2[0][2] , MYEPSILON);
-    ASSERT_NEAR(0.0, Mat2[1][0] , MYEPSILON);
-    ASSERT_NEAR(0.0, Mat2[1][1] , MYEPSILON);
-    ASSERT_NEAR(0.0, Mat2[1][2] , MYEPSILON);
-    ASSERT_NEAR(0.0, Mat2[2][0] , MYEPSILON);
-    ASSERT_NEAR(0.0, Mat2[2][1] , MYEPSILON);
-    ASSERT_NEAR(0.0, Mat2[2][2] , MYEPSILON);
+    ASSERT_EQ(0, Mat2[0][0]);
+    ASSERT_EQ(0, Mat2[0][1]);
+    ASSERT_EQ(0, Mat2[0][2]);
+    ASSERT_EQ(0, Mat2[1][0]);
+    ASSERT_EQ(0, Mat2[1][1]);
+    ASSERT_EQ(0, Mat2[1][2]);
+    ASSERT_EQ(0, Mat2[2][0]);
+    ASSERT_EQ(0, Mat2[2][1]);
+    ASSERT_EQ(0, Mat2[2][2]);
 
     }
 
@@ -694,26 +689,26 @@ TEST_F (HFCMatrixTester, TestMatrixSignedLongScale)
     {
     
     Mat2 *= 2;
-    ASSERT_NEAR(0.0, Mat2[0][0] , MYEPSILON);
-    ASSERT_DOUBLE_EQ(2.0, Mat2[0][1]);
-    ASSERT_DOUBLE_EQ(4.0, Mat2[0][2]);
-    ASSERT_DOUBLE_EQ(2.0, Mat2[1][0]);
-    ASSERT_DOUBLE_EQ(4.0, Mat2[1][1]);
-    ASSERT_DOUBLE_EQ(6.0, Mat2[1][2]);
-    ASSERT_DOUBLE_EQ(4.0, Mat2[2][0]);
-    ASSERT_DOUBLE_EQ(6.0, Mat2[2][1]);
-    ASSERT_DOUBLE_EQ(8.0, Mat2[2][2]);
+    ASSERT_EQ(0, Mat2[0][0]);
+    ASSERT_EQ(2, Mat2[0][1]);
+    ASSERT_EQ(4, Mat2[0][2]);
+    ASSERT_EQ(2, Mat2[1][0]);
+    ASSERT_EQ(4, Mat2[1][1]);
+    ASSERT_EQ(6, Mat2[1][2]);
+    ASSERT_EQ(4, Mat2[2][0]);
+    ASSERT_EQ(6, Mat2[2][1]);
+    ASSERT_EQ(8, Mat2[2][2]);
 
     Mat2 /= -2;
-    ASSERT_NEAR(0.0, Mat2[0][0] , MYEPSILON);
-    ASSERT_DOUBLE_EQ(-1.0, Mat2[0][1]);
-    ASSERT_DOUBLE_EQ(-2.0, Mat2[0][2]);
-    ASSERT_DOUBLE_EQ(-1.0, Mat2[1][0]);
-    ASSERT_DOUBLE_EQ(-2.0, Mat2[1][1]);
-    ASSERT_DOUBLE_EQ(-3.0, Mat2[1][2]);
-    ASSERT_DOUBLE_EQ(-2.0, Mat2[2][0]);
-    ASSERT_DOUBLE_EQ(-3.0, Mat2[2][1]);
-    ASSERT_DOUBLE_EQ(-4.0, Mat2[2][2]);
+    ASSERT_EQ(0, Mat2[0][0]);
+    ASSERT_EQ(-1, Mat2[0][1]);
+    ASSERT_EQ(-2, Mat2[0][2]);
+    ASSERT_EQ(-1, Mat2[1][0]);
+    ASSERT_EQ(-2, Mat2[1][1]);
+    ASSERT_EQ(-3, Mat2[1][2]);
+    ASSERT_EQ(-2, Mat2[2][0]);
+    ASSERT_EQ(-3, Mat2[2][1]);
+    ASSERT_EQ(-4, Mat2[2][2]);
 
     }
 
@@ -726,15 +721,15 @@ TEST_F (HFCMatrixTester, TestMatrixSignedLongNegation)
     const A3By3int32_tMatrix Mat2Const(Mat2);
     Mat2 = -Mat2Const;
 
-    ASSERT_NEAR(0.0, Mat2[0][0] , MYEPSILON);
-    ASSERT_DOUBLE_EQ(-1.0, Mat2[0][1]);
-    ASSERT_DOUBLE_EQ(-2.0, Mat2[0][2]);
-    ASSERT_DOUBLE_EQ(-1.0, Mat2[1][0]);
-    ASSERT_DOUBLE_EQ(-2.0, Mat2[1][1]);
-    ASSERT_DOUBLE_EQ(-3.0, Mat2[1][2]);
-    ASSERT_DOUBLE_EQ(-2.0, Mat2[2][0]);
-    ASSERT_DOUBLE_EQ(-3.0, Mat2[2][1]);
-    ASSERT_DOUBLE_EQ(-4.0, Mat2[2][2]);
+    ASSERT_EQ(0, Mat2[0][0]);
+    ASSERT_EQ(-1, Mat2[0][1]);
+    ASSERT_EQ(-2, Mat2[0][2]);
+    ASSERT_EQ(-1, Mat2[1][0]);
+    ASSERT_EQ(-2, Mat2[1][1]);
+    ASSERT_EQ(-3, Mat2[1][2]);
+    ASSERT_EQ(-2, Mat2[2][0]);
+    ASSERT_EQ(-3, Mat2[2][1]);
+    ASSERT_EQ(-4, Mat2[2][2]);
 
     }
 
@@ -747,15 +742,15 @@ TEST_F (HFCMatrixTester, TestMatrixSignedLongAddition)
     A3By3int32_tMatrix Mat2A;
     Mat2A = Mat2 + Mat2;
 
-    ASSERT_NEAR(0.0, Mat2[0][0] , MYEPSILON);
-    ASSERT_DOUBLE_EQ(2.0, Mat2A[0][1]);
-    ASSERT_DOUBLE_EQ(4.0, Mat2A[0][2]);
-    ASSERT_DOUBLE_EQ(2.0, Mat2A[1][0]);
-    ASSERT_DOUBLE_EQ(4.0, Mat2A[1][1]);
-    ASSERT_DOUBLE_EQ(6.0, Mat2A[1][2]);
-    ASSERT_DOUBLE_EQ(4.0, Mat2A[2][0]);
-    ASSERT_DOUBLE_EQ(6.0, Mat2A[2][1]);
-    ASSERT_DOUBLE_EQ(8.0, Mat2A[2][2]);
+    ASSERT_EQ(0, Mat2[0][0]);
+    ASSERT_EQ(2, Mat2A[0][1]);
+    ASSERT_EQ(4, Mat2A[0][2]);
+    ASSERT_EQ(2, Mat2A[1][0]);
+    ASSERT_EQ(4, Mat2A[1][1]);
+    ASSERT_EQ(6, Mat2A[1][2]);
+    ASSERT_EQ(4, Mat2A[2][0]);
+    ASSERT_EQ(6, Mat2A[2][1]);
+    ASSERT_EQ(8, Mat2A[2][2]);
 
     }
 
@@ -767,15 +762,15 @@ TEST_F (HFCMatrixTester, TestMatrixSignedLongSubstraction)
     
     Mat2A = Mat2 - Mat2;
 
-    ASSERT_NEAR(0.0, Mat2A[0][0] , MYEPSILON);
-    ASSERT_NEAR(0.0, Mat2A[0][1] , MYEPSILON);
-    ASSERT_NEAR(0.0, Mat2A[0][2] , MYEPSILON);
-    ASSERT_NEAR(0.0, Mat2A[1][0] , MYEPSILON);
-    ASSERT_NEAR(0.0, Mat2A[1][1] , MYEPSILON);
-    ASSERT_NEAR(0.0, Mat2A[1][2] , MYEPSILON);
-    ASSERT_NEAR(0.0, Mat2A[2][0] , MYEPSILON);
-    ASSERT_NEAR(0.0, Mat2A[2][1] , MYEPSILON);
-    ASSERT_NEAR(0.0, Mat2A[2][2] , MYEPSILON);
+    ASSERT_EQ(0, Mat2A[0][0]);
+    ASSERT_EQ(0, Mat2A[0][1]);
+    ASSERT_EQ(0, Mat2A[0][2]);
+    ASSERT_EQ(0, Mat2A[1][0]);
+    ASSERT_EQ(0, Mat2A[1][1]);
+    ASSERT_EQ(0, Mat2A[1][2]);
+    ASSERT_EQ(0, Mat2A[2][0]);
+    ASSERT_EQ(0, Mat2A[2][1]);
+    ASSERT_EQ(0, Mat2A[2][2]);
 
     }
 
@@ -789,15 +784,15 @@ TEST_F (HFCMatrixTester, TestMatrixSignedLongTranspose)
 
     A3By3int32_tMatrix Mat4(Mat2.CalculateTranspose());
 
-    ASSERT_NEAR(0.0, Mat4[0][0] , MYEPSILON);
-    ASSERT_DOUBLE_EQ(1.0, Mat4[0][1]);
-    ASSERT_DOUBLE_EQ(35.0, Mat4[0][2]);
-    ASSERT_DOUBLE_EQ(1.0, Mat4[1][0]);
-    ASSERT_DOUBLE_EQ(2.0, Mat4[1][1]);
-    ASSERT_DOUBLE_EQ(3.0, Mat4[1][2]);
-    ASSERT_DOUBLE_EQ(2.0, Mat4[2][0]);
-    ASSERT_DOUBLE_EQ(3.0, Mat4[2][1]);
-    ASSERT_DOUBLE_EQ(4.0, Mat4[2][2]);
+    ASSERT_EQ(0, Mat4[0][0]);
+    ASSERT_EQ(1, Mat4[0][1]);
+    ASSERT_EQ(35, Mat4[0][2]);
+    ASSERT_EQ(1, Mat4[1][0]);
+    ASSERT_EQ(2, Mat4[1][1]);
+    ASSERT_EQ(3, Mat4[1][2]);
+    ASSERT_EQ(2, Mat4[2][0]);
+    ASSERT_EQ(3, Mat4[2][1]);
+    ASSERT_EQ(4, Mat4[2][2]);
 
     }
 

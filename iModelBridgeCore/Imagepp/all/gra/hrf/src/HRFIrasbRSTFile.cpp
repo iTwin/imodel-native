@@ -6,7 +6,7 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
     // must be first for PreCompiledHeader Option
 
 #include <Imagepp/all/h/HRFIrasbRSTFile.h>

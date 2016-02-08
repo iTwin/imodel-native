@@ -9,7 +9,7 @@
 // Class HRFJpegFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 #include <Imagepp/all/h/HRFJpegFile.h>

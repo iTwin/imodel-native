@@ -8,7 +8,7 @@
 // Class HRFGeoRasterEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 #include <Imagepp/all/h/HRFGeoRasterEditor.h>

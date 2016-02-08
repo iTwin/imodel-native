@@ -9,7 +9,7 @@
 // Class HRFErdasImgFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 #include <Imagepp/all/h/ImageppLib.h>

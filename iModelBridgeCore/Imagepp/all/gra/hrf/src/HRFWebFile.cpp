@@ -15,7 +15,7 @@
 //-----------------------------------------------------------------------------
 
 // Precompiled Header
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 // HRFWebFile class

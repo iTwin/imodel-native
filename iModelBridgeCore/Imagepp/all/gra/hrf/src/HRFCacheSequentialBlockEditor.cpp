@@ -9,7 +9,7 @@
 // Class HRFCacheSequentialBlockEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HRFCacheSequentialBlockEditor.h>
 #include <Imagepp/all/h/HFCMonitor.h>

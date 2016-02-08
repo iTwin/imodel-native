@@ -9,7 +9,7 @@
 // Class HRFDoqFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 

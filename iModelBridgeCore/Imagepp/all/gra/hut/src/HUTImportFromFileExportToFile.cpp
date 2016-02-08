@@ -9,7 +9,7 @@
 // Class: HUTImportFromFileExportToFile
 // ----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 

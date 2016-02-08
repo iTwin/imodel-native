@@ -6,7 +6,7 @@
     //:>
     //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 #include <ImagePPInternal/gra/HRAImageBicubicSamplerN8.h>
 #include <Imagepp/all/h/HRPPixelType.h>
 #include <ImagePPInternal/gra/ImageCommon.h>

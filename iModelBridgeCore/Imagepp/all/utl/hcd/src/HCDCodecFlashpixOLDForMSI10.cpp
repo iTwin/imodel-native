@@ -2,13 +2,13 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecFlashpixOLDForMSI10.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HCDCodecFlashpixOLDForMSI10
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HCDCodecFlashpixOLDForMSI10.h>
 #include <Imagepp/all/h/HFCMath.h>

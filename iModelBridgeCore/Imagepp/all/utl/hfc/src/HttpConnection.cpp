@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 #include <ImagePPInternal/HttpConnection.h>
 
 static std::atomic<uint32_t> s_curl_initTermCount(0);

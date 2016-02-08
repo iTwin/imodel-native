@@ -9,7 +9,7 @@
 // Class: HRFExportOptions
 // ----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 #include <Imagepp/all/h/HRFExportOptions.h>

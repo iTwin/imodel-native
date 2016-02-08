@@ -10,7 +10,7 @@
 //-----------------------------------------------------------------------------
 
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 #include <ImagePP/all/h/HTagFile.h>

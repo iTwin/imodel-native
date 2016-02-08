@@ -9,7 +9,7 @@
 // Class HRFUSgsSDTSDEMFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePPInternal/hstdcpp.h>
+#include <ImageppInternal.h>
 
 
 #include <Imagepp/all/h/HCDCodecIdentity.h>
