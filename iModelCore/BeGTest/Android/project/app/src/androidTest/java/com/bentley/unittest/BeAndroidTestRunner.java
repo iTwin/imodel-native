@@ -5,8 +5,12 @@ import junit.framework.AssertionFailedError;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestListener;
+import android.app.Activity;
+import android.content.Context;
+import android.test.ActivityInstrumentationTestCase2;
 import android.test.AndroidTestRunner;
 import android.util.Log;
+import com.bentley.test.TestActivity;
 
 public class BeAndroidTestRunner extends AndroidTestRunner implements TestListener 
     {
@@ -26,17 +30,21 @@ public class BeAndroidTestRunner extends AndroidTestRunner implements TestListen
 	 */
 	@Override
     public void startTest (Test test) 
-        { 
-        TestCase testCase = (TestCase) test;
-		if (null != testCase)
+        {
+        ActivityInstrumentationTestCase2<TestActivity> testCase = (ActivityInstrumentationTestCase2<TestActivity>) test;
+	if (null != testCase)
             {
-			if (m_currentClass != testCase.getClass())
+            Activity activity = testCase.getActivity();
+            Context context = activity.getApplication().getApplicationContext();
+            TestActivity.initialize(context);
+
+	    if (m_currentClass != testCase.getClass())
                 {
-				if (null != m_currentClass)
-					tearDownTestCase (m_currentClass);
-				
-				m_currentClass  = testCase.getClass();
-				setUpTestCase (m_currentClass);
+		 if (null != m_currentClass)
+		    tearDownTestCase (m_currentClass);
+
+		m_currentClass  = testCase.getClass();
+		setUpTestCase (m_currentClass);
                 }
             }
         }

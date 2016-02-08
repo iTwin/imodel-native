@@ -154,6 +154,7 @@
         <ProductDirectory Name="ECObjectsTestSeedDataV3Conversion"  Path="Assets/SeedData/V3Conversion" LibType="static"/>
         
         <ProductDirectory Name="WSClientTestAssets"                 Path="Assets/WSClientTestAssets"/>
+        <ProductDirectory Name="WSClientTestAssets"                 Path="Assets/WSClientTestAssets" LibType="static"/>
 
         <ProductDirectory Name="DgnClientSdkIncludeDirectory" Deliver="false"/>
         <ProductDirectory Name="DgnClientSdkIncludeDirectory" Deliver="false" LibType="static"/>
@@ -180,7 +181,7 @@
     <!-- *********************************************************************************************** -->
     <!-- This part should be used by any part that wants to build and/or run a gtest EXE -->
     <!-- *********************************************************************************************** -->
-    <Part Name="Gtest-Tools" BentleyBuildMakeFile="prewire.mke" ExcludePlatforms="Android*,iOS*">
+    <Part Name="Gtest-Tools" BentleyBuildMakeFile="prewire.mke" ExcludePlatforms="iOS*">
         <SubPart PartName="google_gtest_lib"    PartFile="gtest"        Repository="util-gtest" />
         <SubPart PartName="google_gmock_lib"    PartFile="gmock"        Repository="util-gmock" />
         <SubPart PartName="LoggingNative"       PartFile="LoggingSDK"   Repository="loggingsdk" />

@@ -2,7 +2,7 @@
 |
 |     $Source: Android/GenJUnitTestCaseS.java.c $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -77,7 +77,6 @@ public class __FIXTURE__ extends ActivityInstrumentationTestCase2<TestActivity>
         {
         // System libraries
         System.loadLibrary ("gnustl_shared");
-        System.loadLibrary ("android");
         // Supporting Bentley libraries
         loadNativeLibraries ("__ANDROIDJUNITTEST_SHARED_LIBRARIES__");
         // The unit tests
