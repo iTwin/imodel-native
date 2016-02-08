@@ -673,6 +673,8 @@ protected:
     virtual NavigationECPropertyP       _GetAsNavigationPropertyP()         { return nullptr; } // used to avoid dynamic_cast
 
     virtual bool                        _HasExtendedType() const { return false; }
+    virtual ExtendedTypeECPropertyCP    _GetAsExtendedTypePropertyCP() const { return nullptr; } // used to avoid dynamic_cast
+    virtual ExtendedTypeECPropertyP     _GetAsExtendedTypePropertyP() { return nullptr; } // used to avoid dynamic_cast
 
     // This method returns a wstring by value because it may be a computed string.  For instance struct properties may return a qualified typename with a namespace
     // prefix relative to the containing schema.
@@ -808,9 +810,10 @@ public:
     StructECPropertyP      GetAsStructPropertyP()               { return _GetAsStructPropertyP(); } //!< Returns the property as a StructECProperty*
     StructArrayECPropertyCP GetAsStructArrayProperty() const    { return _GetAsStructArrayPropertyCP(); } //! <Returns the property as a const StructArrayECProperty*
     StructArrayECPropertyP GetAsStructArrayPropertyP()          { return _GetAsStructArrayPropertyP(); } //! <Returns the property as a StructArrayECProperty*
-    NavigationECPropertyCP GetAsNavigationProperty() const    { return _GetAsNavigationPropertyCP(); } //! <Returns the property as a const NavigationECProperty*
+    NavigationECPropertyCP GetAsNavigationProperty() const      { return _GetAsNavigationPropertyCP(); } //! <Returns the property as a const NavigationECProperty*
     NavigationECPropertyP  GetAsNavigationPropertyP()           { return _GetAsNavigationPropertyP(); } //! <Returns the property as a NavigationECProperty*
-
+    ExtendedTypeECPropertyCP GetAsExtendedTypeProperty() const  { return _GetAsExtendedTypePropertyCP(); } //! <Returns the property as a const ExtendedTypeECProperty*
+    ExtendedTypeECPropertyP GetAsExtendedTypePropertyP()        { return _GetAsExtendedTypePropertyP(); } //! <Returns the property as a ExtendedTypeECProperty*
 };
 
 //=======================================================================================
@@ -825,11 +828,14 @@ private:
         
 protected:
     ExtendedTypeECProperty(ECClassCR ecClass) : ECProperty(ecClass) {};
-    virtual bool  _HasExtendedType() const override { return m_extendedTypeName.size() > 0; }
-                
+    virtual bool  _HasExtendedType() const override { return GetExtendedTypeName().size() > 0; }
+    virtual ExtendedTypeECPropertyCP _GetAsExtendedTypePropertyCP () const override { return this; }
+    virtual ExtendedTypeECPropertyP  _GetAsExtendedTypePropertyP() override { return this; }
+    bool ExtendedTypeLocallyDefined() const { return m_extendedTypeName.size() > 0; }
+
 public:
     //! Gets the extended type name of this ECProperty
-    Utf8StringCR GetExtendedTypeName() const { return m_extendedTypeName; }
+    ECOBJECTS_EXPORT Utf8StringCR GetExtendedTypeName() const;
     //! Sets the Name of the Extended Type of this property.
     ECOBJECTS_EXPORT ECObjectsStatus SetExtendedTypeName(Utf8CP extendedTypeName);
     //! Resets the extended type on this property.
@@ -2973,6 +2979,16 @@ public:
     //! @return A status code indicating whether the call was succesfull or not
     ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema (ECSchemaPtr& schemaOut, Utf8StringCR schemaName,
                                                           uint32_t versionMajor, uint32_t versionMinor);
+
+    //! If the given schemaName and namespacePrefix is valid, this will create a new schema object
+    //! @param[out] schemaOut       if successful, will contain a new schema object
+    //! @param[in]  schemaName      Name of the schema to be created.
+    //! @param[in]  namespacePrefix Namespace prefix of the schema to be created
+    //! @param[in]  versionMajor    The major version number.
+    //! @param[in]  versionMinor    The minor version number.
+    //! @return A status code indicating whether the call was succesfull or not
+    ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR schemaName, 
+                                                         Utf8StringCR namespacePrefix, uint32_t versionMajor, uint32_t versionMinor);
 
     //! Generate a schema version string given the major and minor version values.
     //! @param[in] versionMajor    The major version number
