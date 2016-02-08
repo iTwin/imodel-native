@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: Tests/DgnProject/Published/AnnotationLeader_Test.cpp $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include "AnnotationTestFixture.h"
@@ -29,11 +29,11 @@ public: AnnotationLeaderTest() :
 
 #define DECLARE_AND_SET_DATA_1(LEADER_PTR)\
     AnnotationLeaderTargetAttachmentType type = AnnotationLeaderTargetAttachmentType::PhysicalPoint;    LEADER_PTR->SetTargetAttachmentType(type);\
-    DPoint3d point = DPoint3d::From(0.0, 0.0);                                                          LEADER_PTR->SetTargetAttachmentDataForPhysicalPoint(&point);
+    DPoint3d point = DPoint3d::From(0.0, 0.0);                                                          LEADER_PTR->SetTargetAttachmentDataForPhysicalPoint(point);
 
 #define VERIFY_DATA_1(LEADER_PTR)\
     EXPECT_TRUE(type == LEADER_PTR->GetTargetAttachmentType());\
-    EXPECT_TRUE(point.IsEqual(*LEADER_PTR->GetTargetAttachmentDataForPhysicalPoint()));
+    EXPECT_TRUE(point.IsEqual(LEADER_PTR->GetTargetAttachmentDataForPhysicalPoint()));
 
 //---------------------------------------------------------------------------------------
 // Creates a style and tests accessors.
@@ -81,7 +81,6 @@ TEST_F(AnnotationLeaderTest, DeepCopy)
     AnnotationLeaderPtr leader = AnnotationLeader::Create(project);
     ASSERT_TRUE(leader.IsValid());
     
-
     DECLARE_AND_SET_DATA_1(leader);
 
     //.............................................................................................

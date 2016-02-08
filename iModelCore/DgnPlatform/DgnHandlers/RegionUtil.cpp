@@ -2,7 +2,7 @@
 |
 |     $Source: DgnHandlers/RegionUtil.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -1072,7 +1072,7 @@ BentleyStatus   RegionGraphicsContext::VisitFloodCandidate(GeometrySourceCR elem
         _PushTransform(*trans);
 #endif
 
-    return (BentleyStatus) _VisitElement(element);
+    return (BentleyStatus) _VisitGeometry(element);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1084,7 +1084,7 @@ BentleyStatus   RegionGraphicsContext::PushBooleanCandidate(GeometrySourceCR ele
     if (trans)
         _PushTransform(*trans);
 
-    m_currentGeomSource = &element; // Push path entry since we aren't calling _VisitElement...
+    m_currentGeomSource = &element; // Push path entry since we aren't calling _VisitGeometry...
 #endif
     return SUCCESS;
     }

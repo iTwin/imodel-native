@@ -513,7 +513,7 @@ bool ViewContext::IsUndisplayed(GeometrySourceCR source)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ViewContext::_VisitElement(GeometrySourceCR source)
+StatusInt ViewContext::_VisitGeometry(GeometrySourceCR source)
     {
     if (_CheckStop())
         return ERROR;
@@ -527,6 +527,42 @@ StatusInt ViewContext::_VisitElement(GeometrySourceCR source)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    KeithBentley    05/01
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt ViewContext::_VisitHit(HitDetailCR hit)
+    {
+    DgnElementCPtr   element = hit.GetElement();
+    GeometrySourceCP source = (element.IsValid() ? element->ToGeometrySource() : nullptr);
+
+    if (nullptr == source)
+        {
+        IElemTopologyCP elemTopo = hit.GetElemTopology();
+        if (nullptr == (source = (nullptr != elemTopo ? elemTopo->_ToGeometrySource() : nullptr)))
+            return ERROR;
+        }
+
+    if (&GetDgnDb() != &source->GetSourceDgnDb())
+        return ERROR;
+
+    if (element.IsValid() && nullptr != m_viewport && !m_viewport->GetViewController().IsModelViewed(element->GetModelId()))
+        return ERROR;
+
+    // Allow sub-class involvement for flashing sub-entities...
+    Render::GraphicPtr graphic = (nullptr != m_viewport ? m_viewport->GetViewControllerR()._StrokeHit(*this, *source, hit) : source->StrokeHit(*this, hit));
+
+    if (WasAborted()) // if we aborted, the graphic may not be complete
+        return ERROR;
+
+    if (graphic.IsValid())
+        {
+        _OutputGraphic(*graphic, source); 
+        return SUCCESS;
+        }
+
+    return VisitGeometry(*source);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * private callback (called from scanner)
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -537,7 +573,7 @@ static StatusInt visitElementFunc(DgnElementCR element, void* inContext, ScanCri
         return SUCCESS;
     
     ViewContextR context = *(ViewContext*)inContext;
-    return context.VisitElement(*geomElement);
+    return context.VisitGeometry(*geomElement);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -703,15 +739,6 @@ bool ViewContext::_VisitAllModelElements()
         PopClip();
 
     return WasAborted();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    05/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DecorateContext::VisitHit(HitDetailCR hit)
-    {
-    AutoRestore<bool> flash(&m_isFlash, true);
-    return m_viewport->GetViewController().VisitHit(hit, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1507,6 +1534,11 @@ enum
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int getGridPlaneViewIntersections(DPoint3dP intersections, DPoint3dCP planePoint, DPoint3dCP planeNormal, double spacing, DgnViewportCR vp)
     {
+    DRange3d range = vp.GetViewController().GetViewedExtents(); // Limit grid to project extents...
+
+    if (range.IsEmpty())
+        return 0;
+
     static int const index[12][2] = {
                         {NPC_000, NPC_001},     // lines connecting front to back
                         {NPC_100, NPC_101},
@@ -1525,11 +1557,15 @@ static int getGridPlaneViewIntersections(DPoint3dP intersections, DPoint3dCP pla
                         };
 
     Frustum frust = vp.GetFrustum(DgnCoordSystem::World, true);
-    int     nIntersections = 0;
+
+    range.IntersectionOf(range, frust.ToRange());
+    range.Get8Corners(frust.m_pts);
+
+    int nIntersections = 0;
 
     for (int i=0; i<12; i++)
         {
-        double  param;
+        double param;
 
         if (bsiGeom_linePlaneIntersection(&param, intersections+nIntersections, &frust.GetCorner(index[i][0]), &frust.GetCorner(index[i][1]), planePoint, planeNormal) && param >= 0.0 && param <= 1.0)
             ++nIntersections;

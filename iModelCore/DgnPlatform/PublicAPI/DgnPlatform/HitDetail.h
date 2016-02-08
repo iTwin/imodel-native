@@ -124,7 +124,7 @@ public:
     void                    SetZValue(double value)                {m_viewZ = value;}
 
     //! @private
-    GeometryStreamEntryId GetGeometryStreamEntryId() const {return m_geomId;}
+    GeometryStreamEntryId GetGeometryStreamEntryId(bool wantPartIndex=false) const {if (wantPartIndex) return m_geomId; GeometryStreamEntryId tmpId = m_geomId; tmpId.SetPartIndex(0); return tmpId;}
     //! @private
     void SetGeometryStreamEntryId(GeometryStreamEntryId geomId) {m_geomId = geomId;}
 
@@ -173,7 +173,7 @@ protected:
     virtual void _SetHitPoint(DPoint3dCR pt) {m_geomDetail.SetClosestPoint(pt);}
     virtual void _SetTestPoint(DPoint3dCR pt) {m_testPoint = pt;}
     virtual bool _IsSameHit(HitDetailCP otherHit) const;
-    virtual void _Draw(DecorateContextR context) const;
+    virtual void _Draw(ViewContextR context) const;
     virtual void _SetHilited(DgnElement::Hilited) const;
 
 public:
@@ -187,10 +187,7 @@ public:
     void SetHilited(DgnElement::Hilited state) const {_SetHilited(state);}
     void SetSubSelectionMode(SubSelectionMode mode) {_SetSubSelectionMode(mode);}
 
-    void Draw(DecorateContextR context) const {_Draw(context);}
-    DGNPLATFORM_EXPORT bool ShouldFlashCurveSegment() const; //! Check for segment flash mode before calling FlashCurveSegment.
-    DGNPLATFORM_EXPORT void FlashCurveSegment(DecorateContextR, Render::GeometryParamsCR geomParams) const; //! Setup context.GetCurrentGeometryParams() before calling!
-
+    void Draw(ViewContextR context) const {_Draw(context);}
     void GetInfoString(Utf8StringR descr, Utf8CP delimiter) const {_GetInfoString(descr, delimiter);}
     DGNPLATFORM_EXPORT DgnElement::Hilited IsHilited() const;
     DGNPLATFORM_EXPORT bool IsInSelectionSet() const;
@@ -328,7 +325,6 @@ public:
     DGNPLATFORM_EXPORT bool GetCustomKeypoint(int* nBytesP, Byte** dataPP) const {if (nBytesP) *nBytesP = m_customKeypointSize; if (dataPP) *dataPP = m_customKeypointData; return (NULL != m_customKeypointData ? true : false);}
     DGNPLATFORM_EXPORT void SetCustomKeypoint(int nBytes, Byte* dataP);
 
-public:
     bool IsHot() const {return m_heat != SNAP_HEAT_None;}
     bool IsPointOnCurve() const {return m_heat == SNAP_HEAT_InRange;}
     SnapHeat GetHeat() const {return m_heat;}
@@ -346,6 +342,8 @@ public:
     void SetSnapDivisor(uint32_t divisor) {m_divisor = divisor ? divisor : 2;}
     void SetAdjustedPoint(DPoint3dCR adjustedPt) {m_adjustedPt = adjustedPt;}
     void SetHeat(SnapHeat isHot) {m_heat = isHot;}
+
+    DGNPLATFORM_EXPORT void SetSnapPoint(DPoint3dCR snapPt, bool forceHot, double hotDistance); //!< Sets hit point, screen point, screen distance, and snap heat from world input point. 
 };
 
 //=======================================================================================
@@ -357,7 +355,7 @@ struct IntersectDetail : SnapDetail
 private:
     HitDetailP  m_secondHit;
 
-    virtual void _Draw(DecorateContextR) const override;
+    virtual void _Draw(ViewContextR) const override;
     virtual HitDetailType _GetHitType() const override{return HitDetailType::Intersection;}
     DGNPLATFORM_EXPORT virtual void _SetHilited(DgnElement::Hilited) const override;
     DGNPLATFORM_EXPORT virtual bool _IsSameHit(HitDetailCP otherHit) const override;

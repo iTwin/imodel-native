@@ -2487,7 +2487,7 @@ void GeometryProcessor::Process(IGeometryProcessorR processor, GeometrySourceCR 
     GeometryProcessorContext context(processor);
 
     context.SetDgnDb(source.GetSourceDgnDb());
-    context.VisitElement(source);
+    context.VisitGeometry(source);
     }    
 
 

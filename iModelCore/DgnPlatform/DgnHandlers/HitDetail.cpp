@@ -130,7 +130,7 @@ void GeomDetail::SetCurvePrimitive(ICurvePrimitiveCP curve, TransformCP localToW
             }
         }
 
-    if (nullptr != localToWorld && m_primitive.IsValid())
+    if (m_primitive.IsValid() && nullptr != localToWorld && !localToWorld->IsIdentity())
         m_primitive->TransformInPlace(*localToWorld);
 
     // Set geometry type override...
@@ -403,72 +403,9 @@ HitDetail::HitDetail(HitDetail const& from) : m_viewport(from.m_viewport)
 HitDetail::~HitDetail() {}
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  07/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool HitDetail::ShouldFlashCurveSegment() const
-    {
-    return (SubSelectionMode::Segment == GetSubSelectionMode() && nullptr != GetGeomDetail().GetCurvePrimitive());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  07/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void HitDetail::FlashCurveSegment(DecorateContextR context, Render::GeometryParamsCR params) const
-    {
-    if (nullptr == GetGeomDetail().GetCurvePrimitive())
-        return;
-
-    Render::GraphicPtr  graphic = context.CreateGraphic();
-    GeometryParams      geomParams(params);
-    GraphicParams       graphicParams;
-
-    context.CookGeometryParams(geomParams, graphicParams); // Don't activate yet...need to tweak...
-
-    // NOTE: Would be nice if flashing made element "glow" for now just bump up weight...
-    graphicParams.SetWidth(graphicParams.GetWidth()+2);
-    graphic->ActivateGraphicParams(graphicParams);
-
-    bool doSegmentFlash = (GetHitType() < HitDetailType::Snap);
-
-    if (!doSegmentFlash)
-        {
-        switch (static_cast<SnapDetailCR>(*this).GetSnapMode())
-            {
-            case SnapMode::Center:
-            case SnapMode::Origin:
-            case SnapMode::Bisector:
-                break; // Snap point for these is computed using entire linestring, not just the hit segment...
-
-            default:
-                doSegmentFlash = true;
-                break;
-            }
-        }
-
-    DSegment3d      segment;
-    CurveVectorPtr  curve;
-
-    // Flash only the selected segment of linestrings/shapes based on snap mode...
-    if (doSegmentFlash && GetGeomDetail().GetSegment(segment))
-        curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateLine(segment));
-    else
-        curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, GetGeomDetail().GetCurvePrimitive()->Clone());
-
-    if (GetViewport().Is3dView())
-        graphic->AddCurveVector(*curve, false);
-    else
-        graphic->AddCurveVector2d(*curve, false, geomParams.GetNetDisplayPriority());
-
-    context.AddFlashed(*graphic);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HitDetail::_Draw(DecorateContextR context) const
-    {
-    context.VisitHit(*this);
-    }
+void HitDetail::_Draw(ViewContextR context) const {context.VisitHit(*this);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/2015
@@ -524,6 +461,12 @@ DgnElement::Hilited HitDetail::IsHilited() const
     DgnElementCPtr   element = GetElement();
     GeometrySourceCP source = (element.IsValid() ? element->ToGeometrySource() : nullptr);
 
+    if (nullptr == source)
+        {
+        IElemTopologyCP elemTopo = GetElemTopology();
+        source = (nullptr != elemTopo ? elemTopo->_ToGeometrySource() : nullptr);
+        }
+
     return (nullptr != source ? source->IsHilited() : DgnElement::Hilited::None);
     }
 
@@ -534,6 +477,12 @@ void HitDetail::_SetHilited(DgnElement::Hilited newState) const
     {
     DgnElementCPtr   element = GetElement();
     GeometrySourceCP source = (element.IsValid() ? element->ToGeometrySource() : nullptr);
+
+    if (nullptr == source)
+        {
+        IElemTopologyCP elemTopo = GetElemTopology();
+        source = (nullptr != elemTopo ? elemTopo->_ToGeometrySource() : nullptr);
+        }
 
     if (nullptr == source)
         return;
@@ -679,6 +628,63 @@ void SnapDetail::_SetHitPoint(DPoint3dCR hitPoint)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    KeithBentley    05/01
++---------------+---------------+---------------+---------------+---------------+------*/
+static double   distSquaredXY(DPoint4dCR pVec1, DPoint4dCR pVec2)
+    {
+    DPoint3d    v1, v2;
+
+    pVec1.GetProjectedXYZ(v1);
+    pVec2.GetProjectedXYZ(v2);
+
+    double dx = v1.x - v2.x;
+    double dy = v1.y - v2.y;
+
+    return dx * dx + dy * dy;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    SamWilson       06/03
++---------------+---------------+---------------+---------------+---------------+------*/
+static double   getDistanceFromSnap(SnapDetailCR snap)
+    {
+    DPoint3d    pts[2];
+    DPoint4d    scrPts[2];
+
+    pts[0] = snap.GetGeomDetail().GetClosestPoint();
+    pts[1] = snap.GetSnapPoint();
+
+    // NOTE: Use viewport to get active-to-view...
+    snap.GetViewport().GetWorldToViewMap()->M0.Multiply(scrPts, pts, NULL, 2);
+
+    return sqrt(distSquaredXY(scrPts[0], scrPts[1]));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void SnapDetail::SetSnapPoint(DPoint3dCR snapPt, bool forceHot, double hotDistance)
+    {
+    DPoint4d viewPt;
+
+    m_viewport.GetWorldToViewMap()->M0.Multiply(&viewPt, &snapPt, NULL, 1);
+    viewPt.NormalizeWeightInPlace();
+
+    Point2d screenPt;
+    screenPt.x = (long) viewPt.x;
+    screenPt.y = (long) viewPt.y;
+
+    SetScreenPoint(screenPt);
+    SetHitPoint(snapPt);
+
+    double screenDist = getDistanceFromSnap(*this);
+    GetGeomDetailW().SetScreenDist(screenDist);
+
+    bool withinAperture = (screenDist <= hotDistance);
+    SetHeat(withinAperture ? SNAP_HEAT_InRange : (forceHot ? SNAP_HEAT_NotInRange : SNAP_HEAT_None));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 IntersectDetail::IntersectDetail(HitDetailCP firstHit, HitDetailCP secondHit, DPoint3dCR pt) : SnapDetail(firstHit)
@@ -755,7 +761,7 @@ void IntersectDetail::_SetHilited(DgnElement::Hilited newState) const
 * is drawn using a dashed symbology.
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IntersectDetail::_Draw(DecorateContextR context) const
+void IntersectDetail::_Draw(ViewContextR context) const
     {
     // start by drawing the first path normally
     T_Super::_Draw(context);

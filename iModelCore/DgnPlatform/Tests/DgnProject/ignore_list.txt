@@ -1,8 +1,6 @@
 #----------------------------------------------------------------------------------------
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
-DimensionHandler.CreateAngularTypes                     # Josh -- We'll need this for markups in Graphite04 -- On non-Windows - Problem setting range of dimension text
-DimensionHandler.CreateLabelLineDimension               # Josh -- We'll need this for markups in Graphite04 -- On non-Windows - Problem setting range of dimension text
 
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
@@ -46,6 +44,8 @@ ComponentModelBasicTest.MakeVariationInstance # fails firebug; notified Umar
 ViewAttachmentTest.Geom                                 # NonVisibleViewport
 VolumeElementTestFixture.QueryTest                      # FenceParams::AcceptElement
 
+#Uses the eb ECschema which has to be refactored for EC3 and ECDb06. Notified Raman
+JsonTests.FieldEngineerStructArray
 
 # WIP_MERGE_0600
 RevisionTestFixture.* # notified Raman

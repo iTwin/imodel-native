@@ -316,7 +316,7 @@ DgnModel::~DgnModel()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel2d::_OnInsertElement(DgnElementR element)
+DgnDbStatus GeometricModel2d::_OnInsertElement(DgnElementR element)
     {
     DgnDbStatus status = T_Super::_OnInsertElement(element);
     if (DgnDbStatus::Success != status)
@@ -353,7 +353,7 @@ DgnDbStatus SectionDrawingModel::_OnInsertElement(DgnElementR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel3d::_OnInsertElement(DgnElementR element)
+DgnDbStatus GeometricModel3d::_OnInsertElement(DgnElementR element)
     {
     auto status = T_Super::_OnInsertElement(element);
     if (DgnDbStatus::Success == status && element.IsGeometricElement() && !element.Is3d())
@@ -1216,7 +1216,7 @@ AxisAlignedBox3d GeometricModel::_QueryModelRange() const
                     "DGN_bbox("
                         "g.BBoxLow_X,g.BBoxLow_Y,g.BBoxLow_Z,"
                         "g.BBoxHigh_X,g.BBoxHigh_Y,g.BBoxHigh_Z))))"
-        " FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e," DGN_TABLE(DGN_CLASSNAME_SpatialElement) " As g"
+        " FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e," DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) " As g"
         " WHERE e.ModelId=? AND e.Id=g.ElementId");
 
     stmt.BindId(1, GetModelId());

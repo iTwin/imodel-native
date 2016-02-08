@@ -279,7 +279,7 @@ ViewController::FitComplete QueryViewController::_ComputeFitRange(DRange3dR rang
 Utf8String QueryViewController::_GetQuery(DgnViewportR) const
     {
     return Utf8String("SELECT e.Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e, " 
-                      DGN_TABLE(DGN_CLASSNAME_SpatialElement) " AS g "
+                      DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) " AS g "
                       "WHERE g.ElementId=e.Id AND InVirtualSet(@vSet,e.ModelId,g.CategoryId)");
     }
 
@@ -361,7 +361,7 @@ void QueryViewController::_DrawView(ViewContextR context)
         GeometrySourceCP geom = thisElement->ToGeometrySource();
 
         if (nullptr != geom)
-            context.VisitElement(*geom);
+            context.VisitGeometry(*geom);
 
         ++numDrawn;
 
