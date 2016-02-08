@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/GeomJsTypes/JsDRange3d.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -44,7 +44,7 @@ public:
 
     bool ContainsXYZ (double x, double y, double z){return m_data.IsContained (x,y,z);}
     bool ContainsPoint (JsDPoint3dP point){return m_data.IsContained (point->Get ());}
-    bool ContainsPointPointXY (JsDPoint3dP point){return m_data.IsContainedXY (point->Get ());}
+    bool ContainsPointXY (JsDPoint3dP point){return m_data.IsContainedXY (point->Get ());}
     bool ContainsRange (JsDRange3dP other){return other->m_data.IsContained (m_data);}
 
     bool IntersectsRange (JsDRange3dP other){return m_data.IntersectsWith (other->m_data);}
