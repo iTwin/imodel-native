@@ -20,19 +20,11 @@ ECDbMappingTestFixture.PropertiesWithoutColumnsInExistingTable
 #TFS353210 will adress this (Raman)
 JsonUpdaterTests.CommonGeometryJsonSerialization
 
-# TFS359449 (Affan)
-ECSqlNavigationPropertyTestFixture.SingleInstanceNavProp_ForeignKeyMappingWithJoinedTable
-
 #TFS 366270
 JoinedTableECDbMapStrategyTests.PolymorphicRelationshipWithStandAloneClass
 
-#WIP Purge for N:N holding
-ECDbSchemaRules.RelationshipMappingLimitations_SupportedCases
-
-ECDbInstances.AdapterCheckClassBeforeOperation # notified Majd
-ECSqlDeleteTestFramework.WhereRelationshipWithAdditionalPropsTests # notified Krischan
-ECSqlSelectTestFramework.WhereRelationshipWithAdditionalPropsTests # notified Krischan
-ECSqlUpdateTestFramework.WhereRelationshipWithAdditionalPropsTests # notified Krischan
+#TFS 368922
+ECDbMappingTestFixture.RelationshipWithAbstractConstraintClassAndNoSubclasses
 
 #Crashes in DgnDb0601Dev -> Hassan
 ECSqlInsertTestFramework.MiscTests

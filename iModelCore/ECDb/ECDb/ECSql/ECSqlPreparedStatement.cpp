@@ -142,8 +142,11 @@ DbResult ECSqlPreparedStatement::DoStep()
     
     const DbResult nativeSqlStatus = GetSqliteStatementR ().Step();
     if (BE_SQLITE_ROW != nativeSqlStatus && BE_SQLITE_DONE != nativeSqlStatus)
-        GetIssueReporter().ReportSqliteIssue(ECDbIssueSeverity::Error, nativeSqlStatus);
-
+        {
+        Utf8String msg;
+        msg.Sprintf("Step failed for ECSQL '%s': SQLite Step failed [Native SQL: '%s'] with. Error:", GetECSql(), GetNativeSql());
+        GetIssueReporter().ReportSqliteIssue(ECDbIssueSeverity::Error, nativeSqlStatus, msg.c_str());
+        }
     return nativeSqlStatus;
     }
 

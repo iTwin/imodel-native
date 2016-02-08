@@ -8,11 +8,9 @@
 #include "ECDbPch.h"
 #include <vector>
 
-
 USING_NAMESPACE_BENTLEY_EC
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
-
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Casey.Mullen      11/2011
@@ -860,32 +858,71 @@ void ECDbMap::GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>& classMa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                      12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-std::set<ECDbSqlTable const*> ECDbMap::GetTablesFromRelationshipEnd(ECRelationshipConstraintCR relationshipEnd, bool returnVirtualTables) const
+std::set<ECDbSqlTable const*> ECDbMap::GetTablesFromRelationshipEnd(ECRelationshipConstraintCR relationshipEnd, EndTablesOptimizationOptions options) const
     {
+    BeAssert(options != EndTablesOptimizationOptions::Skip);
+
     bool hasAnyClass = false;
     std::set<ClassMap const*> classMaps = GetClassMapsFromRelationshipEnd(relationshipEnd, &hasAnyClass);
 
     if (hasAnyClass)
         return std::set<ECDbSqlTable const*>();
 
-    std::map<PersistenceType, std::set<ECDbSqlTable const*>> tables;
-    bool singleEndClass = relationshipEnd.GetClasses().size() == 1;
-    std::vector<ECClassCP> classes = GetClassesFromRelationshipEnd(relationshipEnd);
+    std::map<ECDbSqlTable const*, std::set<ECDbSqlTable const*>> joinedTables;
+    std::set<ECDbSqlTable const*> tables;
     for (IClassMap const* classMap : classMaps)
         {
-        if (singleEndClass)
-            tables[classMap->GetPrimaryTable().GetPersistenceType()].insert(&classMap->GetJoinedTable());
+        IClassMap::TableListR classPersistInTables = classMap->GetTables();
+        if (classPersistInTables.size() == 1)
+            {
+            tables.insert(classPersistInTables.front());
+            }
         else
-            tables[classMap->GetPrimaryTable().GetPersistenceType()].insert(&classMap->GetPrimaryTable());
+            {
+            for (ECDbSqlTable const* table : classPersistInTables)
+                {
+                if (auto baseTable = table->GetParentOfJoinedTable())
+                    {
+                    joinedTables[baseTable].insert(table);
+                    tables.insert(table);
+                    }
+                }
+            }
         }
 
-    if (tables[PersistenceType::Persisted].size() > 0)
-        return tables[PersistenceType::Persisted];
+    for (auto const& pair : joinedTables)
+        {
+        ECDbSqlTable const* baseTable = pair.first;
+        std::set<ECDbSqlTable const*> const& childTables = pair.second;
+        bool isBaseTableSelected = tables.find(baseTable) != tables.end();
+        if (options == EndTablesOptimizationOptions::ReferencedEnd)
+            {
+            for (auto childTable : baseTable->GetChildTables())
+                tables.erase(childTable);
 
-    if (returnVirtualTables)
-        return tables[PersistenceType::Virtual];
+            tables.insert(baseTable);
+            }
+        else
+            {
+            if (isBaseTableSelected)
+                {
+                for (auto childTable : childTables)
+                    tables.erase(childTable);
+                }
+            }
+        }
 
-    return std::set<ECDbSqlTable const*>();
+    if (options == EndTablesOptimizationOptions::ForeignEnd)
+        return tables;
+
+    std::map<PersistenceType, std::set<ECDbSqlTable const*>> finalListOfTables;
+    for (ECDbSqlTable const* table : tables)
+        {
+        finalListOfTables[table->GetPersistenceType()].insert(table);
+        }
+
+
+    return finalListOfTables[PersistenceType::Persisted];
     }
 
 //---------------------------------------------------------------------------------------
@@ -1535,21 +1572,24 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(IClassMap const& 
     if (classMap.GetClassMapType() == IClassMap::Type::RelationshipEndTable)
         {
         RelationshipClassEndTableMap const& relClassMap = static_cast<RelationshipClassEndTableMap const&> (classMap);
-        ECDbSqlTable const& endTable = relClassMap.GetPrimaryTable();
-        const ECDbMap::LightweightCache::RelationshipEnd foreignEnd = relClassMap.GetForeignEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? ECDbMap::LightweightCache::RelationshipEnd::Source : ECDbMap::LightweightCache::RelationshipEnd::Target;
-
-        Partition* hp = storageDescription->AddHorizontalPartition(endTable, true);
-
-        for (bpair<ECClassId, ECDbMap::LightweightCache::RelationshipEnd> const& kvpair : lwmc.GetConstraintClassesForRelationship(classId))
+        for (ECDbSqlTable const* endTable : relClassMap.GetTables())
             {
-            ECClassId constraintClassId = kvpair.first;
-            ECDbMap::LightweightCache::RelationshipEnd end = kvpair.second;
+            const ECDbMap::LightweightCache::RelationshipEnd foreignEnd = relClassMap.GetForeignEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? ECDbMap::LightweightCache::RelationshipEnd::Source : ECDbMap::LightweightCache::RelationshipEnd::Target;
 
-            if (end == ECDbMap::LightweightCache::RelationshipEnd::Both || end == foreignEnd)
-                hp->AddClassId(constraintClassId);
+            Partition* hp = storageDescription->AddHorizontalPartition(*endTable, true);
+
+            for (bpair<ECClassId, ECDbMap::LightweightCache::RelationshipEnd> const& kvpair : lwmc.GetConstraintClassesForRelationship(classId))
+                {
+                ECClassId constraintClassId = kvpair.first;
+                ECDbMap::LightweightCache::RelationshipEnd end = kvpair.second;
+
+                if (end == ECDbMap::LightweightCache::RelationshipEnd::Both || end == foreignEnd)
+                    hp->AddClassId(constraintClassId);
+                }
+
+            hp->GenerateClassIdFilter(lwmc.GetClassesForTable(*endTable));
             }
-
-        hp->GenerateClassIdFilter(lwmc.GetClassesForTable(endTable));
+    
         }
     else
         {
@@ -1797,6 +1837,7 @@ void Partition::AppendECClassIdFilterSql(Utf8CP classIdColName, NativeSqlBuilder
     }
 
 #define ECDB_HOLDING_VIEW "ec_RelationshipHoldingStatistics"
+#define ECDB_HOLDING_VIEW_HELDID_COLNAME "HeldECInstanceId"
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan     01/2016
@@ -1840,19 +1881,21 @@ BentleyStatus RelationshipPurger::Initialize(ECDbR ecdb)
             relationships.push_back(relationshipClassMap);
         }
 
+    //reset stmt so that it doesn't hold resources
+    stmt = nullptr;
+
     SqlPerTableMap deleteOrphansSqlPerTableMap;
-    NativeSqlBuilder::List unionList;
-    NativeSqlBuilder viewSql;
-    std::map <ECDbSqlTable const*, ECDbMap::LightweightCache::RelationshipEnd> linkTables;
+    NativeSqlBuilder::List unionClauseList;
+    bmap<ECDbSqlTable const*, ECDbMap::LightweightCache::RelationshipEnd> linkTables;
     for (RelationshipClassMapCP relClassMap : relationships)
         {
         ECRelationshipClassCR relClass = relClassMap->GetRelationshipClass();
         ECRelationshipConstraintCR heldConstraint = relClass.GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? relClass.GetTarget() : relClass.GetSource();
 
-        std::set<ECDbSqlTable const*> heldTables = map.GetTablesFromRelationshipEnd(heldConstraint);
+        std::set<ECDbSqlTable const*> heldTables = map.GetTablesFromRelationshipEnd(heldConstraint, EndTablesOptimizationOptions::ForeignEnd);
         for (ECDbSqlTable const* table : heldTables)
             {
-            ECDbSqlTable const* heldTable = table->GetBaseTable() != nullptr ? table->GetBaseTable() : table;
+            ECDbSqlTable const* heldTable = table->GetParentOfJoinedTable() != nullptr ? table->GetParentOfJoinedTable() : table;
             Utf8CP heldTableName = heldTable->GetName().c_str();
             auto itor = deleteOrphansSqlPerTableMap.find(heldTableName);
             if (itor == deleteOrphansSqlPerTableMap.end())
@@ -1862,66 +1905,81 @@ BentleyStatus RelationshipPurger::Initialize(ECDbR ecdb)
                 }
             }
 
-
-        ECRelationshipConstraintCR holdingConstraint = relClass.GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? relClass.GetSource() : relClass.GetTarget();
-        PropertyMapCP holdingConstraintIdPropMap = relClass.GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? relClassMap->GetSourceECInstanceIdPropMap() : relClassMap->GetTargetECInstanceIdPropMap();
-        Utf8CP holdingConstraintIdColumnName = holdingConstraintIdPropMap->GetFirstColumn()->GetName().c_str();
-
         if (relClassMap->GetClassMapType() == IClassMap::Type::RelationshipEndTable)
             {
-            std::set<ECDbSqlTable const*> tables = map.GetTablesFromRelationshipEndWithColumn(holdingConstraint, holdingConstraintIdColumnName);
-            for (auto table : tables)
+            RelationshipClassEndTableMapCP endTableRelClassMap = static_cast<RelationshipClassEndTableMapCP>(relClassMap);
+            PropertyMapCP foreignIdPropMap = endTableRelClassMap->GetConstraintECInstanceIdPropMap(endTableRelClassMap->GetReferencedEnd());
+
+            ColumnKind foreignIdColKind = endTableRelClassMap->GetReferencedEnd() == ECRelationshipEnd_Source ? ColumnKind::SourceECInstanceId : ColumnKind::TargetECInstanceId;
+            NativeSqlBuilder unionClauseBuilder;
+            for (ECDbSqlTable const* table : foreignIdPropMap->GetTables())
                 {
-                viewSql.AppendFormatted("SELECT [%s] ECInstanceId FROM [%s] WHERE [%s] IS NOT NULL", holdingConstraintIdColumnName, table->GetName().c_str(), holdingConstraintIdColumnName);
+                ECDbSqlColumn const* foreignIdCol = table->GetFilteredColumnFirst(foreignIdColKind);
+                if (foreignIdCol == nullptr)
+                    {
+                    BeAssert(false);
+                    return ERROR;
+                    }
+
+                unionClauseBuilder.AppendFormatted("SELECT [%s] " ECDB_HOLDING_VIEW_HELDID_COLNAME " FROM [%s] WHERE [%s] IS NOT NULL", foreignIdCol->GetName().c_str(), table->GetName().c_str(), foreignIdCol->GetName().c_str());
                 }
 
-            if (!viewSql.IsEmpty())
-                unionList.push_back(std::move(viewSql));
-
-            viewSql.Reset();
+            if (!unionClauseBuilder.IsEmpty())
+                unionClauseList.push_back(std::move(unionClauseBuilder));
             }
         else
             {
-            ECDbMap::LightweightCache::RelationshipEnd holdingEnd = relClass.GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? ECDbMap::LightweightCache::RelationshipEnd::Source : ECDbMap::LightweightCache::RelationshipEnd::Target;
             ECDbSqlTable const& primaryTable = static_cast<RelationshipClassLinkTableMapCP>(relClassMap)->GetPrimaryTable();
+
+            ECDbMap::LightweightCache::RelationshipEnd heldEnd = relClass.GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? ECDbMap::LightweightCache::RelationshipEnd::Target : ECDbMap::LightweightCache::RelationshipEnd::Source;
             auto it = linkTables.find(&primaryTable);
             if (it == linkTables.end())
-                linkTables[&primaryTable] = holdingEnd;
-            else if (Enum::Contains(linkTables[&primaryTable], holdingEnd))
-                continue;
+                linkTables[&primaryTable] = heldEnd;
+            else
+                {
+                if (Enum::Contains(it->second, heldEnd))
+                    continue;
 
-            linkTables[&primaryTable] = Enum::Or(linkTables[&primaryTable], holdingEnd);
-            viewSql.AppendFormatted("SELECT [%s] ECInstanceId FROM [%s]", holdingConstraintIdColumnName, primaryTable.GetName().c_str());
-            unionList.push_back(std::move(viewSql));
-            viewSql.Reset();
+                linkTables[&primaryTable] = Enum::Or(linkTables[&primaryTable], heldEnd);
+                }
+
+            PropertyMapCP heldConstraintIdPropMap = relClass.GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? relClassMap->GetTargetECInstanceIdPropMap() : relClassMap->GetSourceECInstanceIdPropMap();
+            ECDbSqlColumn const* heldIdCol = heldConstraintIdPropMap->GetSingleColumn();
+            if (heldIdCol == nullptr)
+                return ERROR;
+
+            NativeSqlBuilder unionClauseBuilder;
+            unionClauseBuilder.AppendFormatted("SELECT [%s] " ECDB_HOLDING_VIEW_HELDID_COLNAME " FROM [%s]", heldIdCol->GetName().c_str(), primaryTable.GetName().c_str());
+            unionClauseList.push_back(std::move(unionClauseBuilder));
             }
         }
 
-        viewSql.Reset();
-        viewSql.Append("DROP VIEW IF EXISTS " ECDB_HOLDING_VIEW ";");
-        viewSql.Append("CREATE VIEW " ECDB_HOLDING_VIEW " AS ");
-        if (!unionList.empty())
+    NativeSqlBuilder holdingViewBuilder("DROP VIEW IF EXISTS " ECDB_HOLDING_VIEW "; CREATE VIEW " ECDB_HOLDING_VIEW " AS ");
+    if (!unionClauseList.empty())
+        {
+        bool isFirstItem = true;
+        for (NativeSqlBuilder const& unionClause : unionClauseList)
             {
-            for (auto& select : unionList)
-                {
-                viewSql.Append(select);
-                if (&select != &(unionList.back()))
-                    viewSql.Append(" UNION ALL ");
-                }
+            if (!isFirstItem)
+                holdingViewBuilder.Append(" UNION ALL ");
 
-            viewSql.Append(";");
+            holdingViewBuilder.Append(unionClause);
+            isFirstItem = false;
             }
-        else
-            viewSql.Append("SELECT NULL ECInstanceId LIMIT 0;");
 
-        if (BE_SQLITE_OK != ecdb.ExecuteSql(viewSql.ToString()))
-            {
-            BeAssert(false && "Failed to create holding view");
-            return ERROR;
-            }
-        
+        holdingViewBuilder.Append(";");
+        }
+    else
+        holdingViewBuilder.Append("SELECT NULL " ECDB_HOLDING_VIEW_HELDID_COLNAME " LIMIT 0;");
 
-    for (auto& kvPair : deleteOrphansSqlPerTableMap)
+    if (BE_SQLITE_OK != ecdb.ExecuteSql(holdingViewBuilder.ToString()))
+        {
+        BeAssert(false && "Failed to create holding view");
+        return ERROR;
+        }
+
+
+    for (bpair<Utf8CP,Utf8String> const& kvPair : deleteOrphansSqlPerTableMap)
         {
         std::unique_ptr<Statement> stmt = std::unique_ptr<Statement>(new Statement());
         if (BE_SQLITE_OK != stmt->Prepare(ecdb, kvPair.second.c_str()))
@@ -1960,7 +2018,7 @@ BentleyStatus RelationshipPurger::Purge(ECDbR ecdb)
 Utf8String RelationshipPurger::BuildSql(Utf8CP tableName, Utf8CP pkColumnName)
     {
     Utf8String str;
-    str.Sprintf("DELETE FROM [%s] WHERE [%s] NOT IN (SELECT ECInstanceId FROM " ECDB_HOLDING_VIEW ")", tableName, pkColumnName);
+    str.Sprintf("DELETE FROM [%s] WHERE [%s] NOT IN (SELECT " ECDB_HOLDING_VIEW_HELDID_COLNAME " FROM " ECDB_HOLDING_VIEW ")", tableName, pkColumnName);
     return str;
     }
 

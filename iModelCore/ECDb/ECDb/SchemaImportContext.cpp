@@ -337,7 +337,7 @@ BentleyStatus SchemaImportECDbMapDb::GenerateIndexWhereClause(NativeSqlBuilder& 
         }
 
     StorageDescription const& storageDescription = classMap->GetStorageDescription();
-    if (index.AppliesToSubclassesIfPartial() && storageDescription.HierarchyMapsToMultipleTables())
+    if (index.AppliesToSubclassesIfPartial() && storageDescription.HierarchyMapsToMultipleTables() && classMap->GetClass().GetRelationshipClassCP()== nullptr)
         {
         ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
                                                       "Index %s cannot be created for ECClass '%s' because the ECClass has subclasses in other tables and the index is defined to apply to subclasses.",

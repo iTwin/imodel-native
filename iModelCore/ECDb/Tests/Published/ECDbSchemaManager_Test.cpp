@@ -338,19 +338,6 @@ ECSchemaPtr CreateTestSchema ()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                  10/14
-//+---------------+---------------+---------------+---------------+---------------+------
-//Importing a schema containing all the possible combinations of class properties and relationship classes having built-in and user defined cardinalities 
-TEST_F(ECDbSchemaManagerTests, ImportSchema)
-    {
-    ECDbTestProject testProject;
-    ECDbR ecdbr = testProject.Create("ecschemamanagertest.ecdb", L"UserWorkBench.01.00.ecschema.xml", true);
-    ECClassCP ecclass = ecdbr. Schemas ().GetECClass ("UserWorkBench", "areas");
-    ASSERT_TRUE (ecclass != nullptr);
-    ecclass = ecdbr. Schemas ().GetECClass ("UserWorkBench", "house_user");
-    ASSERT_TRUE (ecclass != nullptr);
-    }
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                  09/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaManagerTests, AddDuplicateECSchemaInCache)

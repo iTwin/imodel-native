@@ -1,17 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="DiegoSchema1" nameSpacePrefix="ds1" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
-    <ECCustomAttributes>
-        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.12">
-            <SchemaFullNameAtEditingStart>DiagoSchema1.01.00</SchemaFullNameAtEditingStart>
-            <TrackingEnabled>True</TrackingEnabled>
-        </SchemaChangeTrackingState>
-    </ECCustomAttributes>
-    <ECEntityClass typeName="CivilModel" modifier="None">
-        <ECProperty propertyName="CMId" typeName="string" readOnly="false"/>
+    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap"/>
+    <ECEntityClass typeName="CivilModel">
+        <ECProperty propertyName="CMId" typeName="string"/>
     </ECEntityClass>
-    <ECEntityClass typeName="DataSetModel" modifier="Abstract">
-        <ECProperty propertyName="MSMId" typeName="string" readOnly="false"/>
+    <ECEntityClass typeName="DataSetModel">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>SharedTable</Strategy>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="MSMId" typeName="string"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="CivilModelHasDataSetModel" modifier="None" strength="referencing" strengthDirection="forward">
         <Source cardinality="(0,1)" polymorphic="true">

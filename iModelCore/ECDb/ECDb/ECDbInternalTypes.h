@@ -222,4 +222,10 @@ struct CompareIUtf8
         }
     };
 
+enum class EndTablesOptimizationOptions
+    {
+    Skip, //!NOP or do nothing
+    ReferencedEnd, //Select base table over joined table
+    ForeignEnd //select subset of joinedTable if possiable instead of base table.
+    };
 END_BENTLEY_SQLITE_EC_NAMESPACE
