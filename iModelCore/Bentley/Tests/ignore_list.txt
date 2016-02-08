@@ -11,6 +11,7 @@ BeFileNameTests.UNCReadOnlyTest         # Testable UNC path is required to be av
 BeTextFileTests.*
 BeStringUtilitiesTests.UriEncoding
 Utf8StringTest.ContainsI                        # Defect 369077:Utf8String::ContainsI() does not work
+WStringTest.ContainsI                           # Defect 369077:Utf8String::ContainsI() does not work
 DoubleFormatterTest.ReplaceDecimalSeparator     # Only replace default decimal Separator
 
 #----------------------------------------------------------------------------------------

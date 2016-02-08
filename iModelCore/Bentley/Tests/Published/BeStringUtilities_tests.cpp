@@ -396,8 +396,6 @@ TEST (BeStringUtilitiesTests, BeStringUtilMemcpy)
     ASSERT_STREQ(L"DEL456", dest);
     VERIFY(BentleyStatus::SUCCESS == BeStringUtilities::Memcpy(dest, 12, src, 0));
     ASSERT_STREQ(L"DEL456", dest);
-    VERIFY(BentleyStatus::SUCCESS == BeStringUtilities::Memcpy(dest, 12, src, 20));
-    ASSERT_STREQ(L"123456", dest);
     }
 
 //---------------------------------------------------------------------------------------
