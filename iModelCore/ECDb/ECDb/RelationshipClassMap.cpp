@@ -314,8 +314,8 @@ MapStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMap
 
 
     std::set<ECDbSqlTable const*> foreignEndTables = GetForeignEnd() == ECRelationshipEnd_Source ? relationshipClassMapInfo.GetSourceTables() : relationshipClassMapInfo.GetTargetTables();
-    ECRelationshipConstraintCR const& foreignEndConstraint = GetForeignEnd() == ECRelationshipEnd_Source ? relationshipClass.GetSource() : relationshipClass.GetTarget();
-    ECRelationshipConstraintCR const& referencedEndConstraint = GetReferencedEnd() == ECRelationshipEnd_Source ? relationshipClass.GetSource() : relationshipClass.GetTarget();
+    ECRelationshipConstraintCR foreignEndConstraint = GetForeignEnd() == ECRelationshipEnd_Source ? relationshipClass.GetSource() : relationshipClass.GetTarget();
+    ECRelationshipConstraintCR referencedEndConstraint = GetReferencedEnd() == ECRelationshipEnd_Source ? relationshipClass.GetSource() : relationshipClass.GetTarget();
 
     //! table must meet following constraint though these are already validated at MapStrategy evaluation time.
     BeAssert(foreignEndTables.size() >= 1 && "ForeignEnd Tables must be >= 1");
