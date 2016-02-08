@@ -331,7 +331,7 @@ ECObjectsStatus ECClass::DeleteProperty (ECPropertyR prop)
 ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDerivedProperties)
     {
     PropertyMap::iterator iter = m_propertyMap.find(prop->GetName().c_str());
-    if (iter == m_propertyMap.end() || iter->second != prop)
+    if (iter == m_propertyMap.end())
         return ECObjectsStatus::PropertyNotFound;
 
     Utf8PrintfString newName("%s_%s", prop->GetClass().GetSchema().GetNamespacePrefix().c_str(), prop->GetName().c_str());
@@ -497,13 +497,17 @@ ECObjectsStatus ECClass::OnBaseClassPropertyAdded (ECPropertyCR baseProperty, bo
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty)
+ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConflicts)
     {
     PropertyMap::const_iterator propertyIterator = m_propertyMap.find(pProperty->GetName().c_str());
     if (m_propertyMap.end() != propertyIterator)
         {
-        LOG.errorv("Cannot create property '%s' because it already exists in this ECClass", pProperty->GetName().c_str());
-        return ECObjectsStatus::NamedItemAlreadyExists;
+        if (!resolveConflicts)
+            {
+            LOG.errorv("Cannot create property '%s' because it already exists in this ECClass", pProperty->GetName().c_str());
+            return ECObjectsStatus::NamedItemAlreadyExists;
+            }
+        RenameConflictProperty(pProperty, true);
         }
 
     // It isn't part of this schema, but does it exist as a property on a baseClass?
@@ -612,7 +616,7 @@ bool copyCustomAttributes
     if (copyCustomAttributes)
         sourceProperty->CopyCustomAttributesTo(*destProperty);
 
-    ECObjectsStatus status = AddProperty(destProperty, destPropertyName);
+    ECObjectsStatus status = AddProperty(destProperty, Utf8String(destPropertyName));
     if (ECObjectsStatus::Success != status)
         delete destProperty;
 
@@ -1340,7 +1344,7 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties)
+SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties)
     {
     bool isSchemaSupplemental = Utf8String::npos != GetSchema().GetName().find("_Supplemental_");
     // Get the BaseClass child nodes.
@@ -1350,7 +1354,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
         if (0 == strcmp (childNodeName, EC_PROPERTY_ELEMENT))
             {
             PrimitiveECPropertyP ecProperty = new PrimitiveECProperty(*this);
-            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, childNodeName);
+            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, conversionSchema, childNodeName);
             if (SchemaReadStatus::Success != status)
                 return status;
             }
@@ -1384,28 +1388,28 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
                 }
                 else 
                     ecProperty = new ArrayECProperty(*this);
-            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, childNodeName);
+            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, conversionSchema, childNodeName);
             if (SchemaReadStatus::Success != status)
                 return status;
             }
         else if (0 == strcmp(childNodeName, EC_STRUCTARRAYPROPERTY_ELEMENT)) // technically, this only happens in EC3.0 and higher, but no harm in checking 2.0 schemas
             {
             ECPropertyP ecProperty = new StructArrayECProperty(*this);
-            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass(ecProperty, childNode, context, childNodeName);
+            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass(ecProperty, childNode, context, conversionSchema, childNodeName);
             if (SchemaReadStatus::Success != status)
                 return status;
             }
         else if (0 == strcmp (childNodeName, EC_STRUCTPROPERTY_ELEMENT))
             {
             ECPropertyP ecProperty = new StructECProperty (*this);
-            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, childNodeName);
+            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, conversionSchema, childNodeName);
             if (SchemaReadStatus::Success != status)
                 return status;
             }
         else if (0 == strcmp(childNodeName, EC_NAVIGATIONPROPERTY_ELEMENT)) // also EC3.0 only
             {
             NavigationECPropertyP ecProperty = new NavigationECProperty(*this);
-            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass(ecProperty, childNode, context, childNodeName);
+            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass(ecProperty, childNode, context, conversionSchema, childNodeName);
             if (SchemaReadStatus::Success != status)
                 return status;
             navigationProperties.push_back(ecProperty);
@@ -1463,7 +1467,7 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
     }
 
 
-SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecProperty, BeXmlNodeP& childNode, ECSchemaReadContextR context, Utf8CP childNodeName )
+SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecProperty, BeXmlNodeP& childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, Utf8CP childNodeName )
     {
     // read the property data.
     SchemaReadStatus status = ecProperty->_ReadXml (*childNode, context);
@@ -1474,7 +1478,11 @@ SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecPrope
         return status;
         }
 
-    if (ECObjectsStatus::Success != this->AddProperty (ecProperty))
+    bool resolveConflicts = false;
+    if (nullptr != conversionSchema)
+        resolveConflicts = conversionSchema->IsDefined("ResolvePropertyNameConflicts");
+
+    if (ECObjectsStatus::Success != this->AddProperty (ecProperty, resolveConflicts))
         {
         LOG.errorv ("Invalid ECSchemaXML: Failed to read ECClass '%s:%s' because a problem occurred while adding ECProperty '%s'", 
             this->GetName().c_str(), this->GetSchema().GetName().c_str(), childNodeName);
@@ -2648,9 +2656,9 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlAttributes (BeXmlNodeR classNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties)
+SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties)
     {
-    SchemaReadStatus status = T_Super::_ReadXmlContents (classNode, context, ecXmlVersionMajor, navigationProperties);
+    SchemaReadStatus status = T_Super::_ReadXmlContents (classNode, context, conversionSchema, ecXmlVersionMajor, navigationProperties);
     if (status != SchemaReadStatus::Success)
         return status;
 
