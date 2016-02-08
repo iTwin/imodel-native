@@ -119,10 +119,10 @@ namespace dgn_ElementHandler
         virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); GeometricElement2d::AddClassParams(params); }
     };
 
-    //! The ElementHandler for AnnotationElement
-    struct EXPORT_VTABLE_ATTRIBUTE Annotation : Geometric2d
+    //! The ElementHandler for AnnotationElement2d
+    struct EXPORT_VTABLE_ATTRIBUTE Annotation2d : Geometric2d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationElement, AnnotationElement, Annotation, Geometric2d, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationElement2d, AnnotationElement2d, Annotation2d, Geometric2d, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for DrawingElement

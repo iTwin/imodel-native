@@ -22,7 +22,7 @@ BENTLEY_NAMESPACE_TYPEDEFS(HeapZone);
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometric3d; struct Physical; struct Annotation; struct Drawing; struct Group;};
+namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometric3d; struct Physical; struct Annotation2d; struct Drawing; struct Group;};
 namespace dgn_TxnTable {struct Element; struct Model;};
 
 DEFINE_REF_COUNTED_PTR(ElementGeometry)
@@ -817,7 +817,7 @@ protected:
     virtual GeometrySourceCP _ToGeometrySource() const {return nullptr;}
     virtual SpatialElementCP _ToSpatialElement() const {return nullptr;}
     virtual PhysicalElementCP _ToPhysicalElement() const {return nullptr;}
-    virtual AnnotationElementCP _ToAnnotationElement() const {return nullptr;}
+    virtual AnnotationElement2dCP _ToAnnotationElement2d() const {return nullptr;}
     virtual DrawingElementCP _ToDrawingElement() const {return nullptr;}
     virtual DefinitionElementCP _ToDefinitionElement() const {return nullptr;}
     virtual DictionaryElementCP _ToDictionaryElement() const {return nullptr;}
@@ -857,7 +857,7 @@ public:
     DictionaryElementCP ToDictionaryElement() const {return _ToDictionaryElement();}    //!< more efficient substitute for dynamic_cast<DictionaryElementCP>(el)
     SpatialElementCP ToSpatialElement() const {return _ToSpatialElement();}             //!< more efficient substitute for dynamic_cast<SpatialElementCP>(el)
     PhysicalElementCP ToPhysicalElement() const {return _ToPhysicalElement();}          //!< more efficient substitute for dynamic_cast<PhysicalElementCP>(el)
-    AnnotationElementCP ToAnnotationElement() const {return _ToAnnotationElement();}    //!< more efficient substitute for dynamic_cast<AnnotationElementCP>(el)
+    AnnotationElement2dCP ToAnnotationElement2d() const {return _ToAnnotationElement2d();} //!< more efficient substitute for dynamic_cast<AnnotationElement2dCP>(el)
     DrawingElementCP ToDrawingElement() const {return _ToDrawingElement();}             //!< more efficient substitute for dynamic_cast<DrawingElementCP>(el)
     IElementGroupCP ToIElementGroup() const {return _ToIElementGroup();}                //!< more efficient substitute for dynamic_cast<IElementGroup>(el)
     
@@ -869,7 +869,7 @@ public:
     DictionaryElementP ToDictionaryElementP() {return const_cast<DictionaryElementP>(_ToDictionaryElement());}  //!< more efficient substitute for dynamic_cast<DictionaryElementP>(el)
     SpatialElementP ToSpatialElementP() {return const_cast<SpatialElementP>(_ToSpatialElement());}              //!< more efficient substitute for dynamic_cast<PhysicalElementP>(el)
     PhysicalElementP ToPhysicalElementP() {return const_cast<PhysicalElementP>(_ToPhysicalElement());}          //!< more efficient substitute for dynamic_cast<PhysicalElementP>(el)
-    AnnotationElementP ToAnnotationElementP() {return const_cast<AnnotationElementP>(_ToAnnotationElement());}  //!< more efficient substitute for dynamic_cast<AnnotationElementP>(el)
+    AnnotationElement2dP ToAnnotationElement2dP() {return const_cast<AnnotationElement2dP>(_ToAnnotationElement2d());} //!< more efficient substitute for dynamic_cast<AnnotationElement2dP>(el)
     DrawingElementP ToDrawingElementP() {return const_cast<DrawingElementP>(_ToDrawingElement());}              //!< more efficient substitute for dynamic_cast<DrawingElementP>(el)
     //! @}
 
@@ -878,7 +878,7 @@ public:
     bool IsGeometricElement() const {return nullptr != ToGeometrySource();}         //!< Determine whether this element is geometric or not
     bool IsDefinitionElement() const {return nullptr != ToDefinitionElement();}     //!< Determine whether this element is a definition or not
     bool IsDictionaryElement() const {return nullptr != ToDictionaryElement();}
-    bool IsAnnotationElement() const {return nullptr != ToAnnotationElement();}     //!< Determine whether this element is an AnnotationElement
+    bool IsAnnotationElement2d() const {return nullptr != ToAnnotationElement2d();} //!< Determine whether this element is an AnnotationElement2d
     bool IsDrawingElement() const {return nullptr != ToDrawingElement();}           //!< Determine whether this element is an DrawingElement
     bool IsSameType(DgnElementCR other) {return m_classId == other.m_classId;}      //!< Determine whether this element is the same type (has the same DgnClassId) as another element.
 
@@ -1473,18 +1473,18 @@ public:
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Paul.Connelly   12/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE AnnotationElement : GraphicalElement2d
+struct EXPORT_VTABLE_ATTRIBUTE AnnotationElement2d : GraphicalElement2d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationElement, GraphicalElement2d)
-    friend struct dgn_ElementHandler::Annotation;
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationElement2d, GraphicalElement2d)
+    friend struct dgn_ElementHandler::Annotation2d;
 public:
-    //! Create a AnnotationElement from CreateParams.
-    static AnnotationElementPtr Create(CreateParams const& params) {return new AnnotationElement(params);}
+    //! Create a AnnotationElement2d from CreateParams.
+    static AnnotationElement2dPtr Create(CreateParams const& params) {return new AnnotationElement2d(params);}
 protected:
-    virtual AnnotationElementCP _ToAnnotationElement() const override final {return this;}
+    virtual AnnotationElement2dCP _ToAnnotationElement2d() const override final {return this;}
 
-    explicit AnnotationElement(CreateParams const& params) : T_Super(params) { }
-}; // AnnotationElement
+    explicit AnnotationElement2d(CreateParams const& params) : T_Super(params) { }
+}; // AnnotationElement2d
 
 //=======================================================================================
 //! A 2-dimensional geometric element used in drawings

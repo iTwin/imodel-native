@@ -242,9 +242,9 @@ static DgnElementCPtr insertElement(DgnDbR db, DgnModelId mid, bool is3d, DgnSub
 
     DgnElementPtr gelem;
     if (is3d)
-        gelem = PhysicalElement::Create(PhysicalElement::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "PhysicalElement")), cat, Placement3d()));
+        gelem = PhysicalElement::Create(PhysicalElement::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement)), cat, Placement3d()));
     else
-        gelem = AnnotationElement::Create(AnnotationElement::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "AnnotationElement")), cat, Placement2d()));
+        gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement2d)), cat, Placement2d()));
 
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*gelem->ToGeometrySource());
     builder->Append(subcat);

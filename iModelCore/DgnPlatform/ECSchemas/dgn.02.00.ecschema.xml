@@ -509,7 +509,7 @@
         <!-- 2D geometric element that is used to convey information within graphical presentations (like drawings). -->
         <BaseClass>GeometricElement2d</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="AnnotationElement">
+    <ECEntityClass typeName="AnnotationElement2d">
         <!-- 2D element used to annotate drawings and sheets -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
@@ -538,7 +538,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>AnnotationElement</BaseClass>
+        <BaseClass>AnnotationElement2d</BaseClass>
     </ECEntityClass>
     <ECRelationshipClass typeName="TextAnnotation2dOwnsTextAnnotationData" strength="embedding">
         <!-- only exists to get automatic deletion of a text element's unique aspect -->
@@ -575,16 +575,16 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="AnnotationTableElement">
-        <!-- An AnnotationTableElement is an annotation element that displays a grid containing text and or graphics -->
+    <ECEntityClass typeName="AnnotationTable">
+        <!-- An AnnotationTable is an annotation element that displays a grid containing text and or graphics -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>AnnotationElement</BaseClass>
+        <BaseClass>AnnotationElement2d</BaseClass>
     </ECEntityClass>
 
     <ECEntityClass typeName="AnnotationTableHeader">
-        <!-- The aspect that holds the header properties for an AnnotationTableElement -->
+        <!-- The aspect that holds the header properties for an AnnotationTable -->
         <BaseClass>ElementUniqueAspect</BaseClass>
         <ECProperty propertyName="RowCount" typeName="int"/>
         <ECProperty propertyName="ColumnCount" typeName="int"/>
@@ -627,7 +627,7 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="AnnotationTableRow">
-        <!-- The aspect that holds properties of a row of an AnnotationTableElement -->
+        <!-- The aspect that holds properties of a row of an AnnotationTable -->
         <BaseClass>ElementMultiAspect</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
@@ -640,7 +640,7 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="AnnotationTableColumn">
-        <!-- The aspect that holds properties of a column of an AnnotationTableElement -->
+        <!-- The aspect that holds properties of a column of an AnnotationTable -->
         <BaseClass>ElementMultiAspect</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
@@ -658,7 +658,7 @@
     </ECStructClass>
 
     <ECEntityClass typeName="AnnotationTableCell">
-        <!-- The aspect that holds properties of a cell of an AnnotationTableElement -->
+        <!-- The aspect that holds properties of a cell of an AnnotationTable -->
         <BaseClass>ElementMultiAspect</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
@@ -677,7 +677,7 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="AnnotationTableMerge">
-        <!-- The aspect that holds properties describing merging of cells in an AnnotationTableElement -->
+        <!-- The aspect that holds properties describing merging of cells in an AnnotationTable -->
         <BaseClass>ElementMultiAspect</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
@@ -690,7 +690,7 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="AnnotationTableSymbology">
-        <!-- The aspect that holds properties describing symbology in an AnnotationTableElement -->
+        <!-- The aspect that holds properties describing symbology in an AnnotationTable -->
         <BaseClass>ElementMultiAspect</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
@@ -707,7 +707,7 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="AnnotationTableEdgeRun">
-        <!-- The aspect that holds properties describing edges in an AnnotationTableElement -->
+        <!-- The aspect that holds properties describing edges in an AnnotationTable -->
         <BaseClass>ElementMultiAspect</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">

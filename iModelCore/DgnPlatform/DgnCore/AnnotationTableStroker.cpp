@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: DgnCore/AnnotationTableStroker.cpp $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include <DgnPlatformInternal.h> 
@@ -436,7 +436,7 @@ TablePositionedCellIterator::TablePositionedCellIterator (TablePositionedCells c
 +---------------+---------------+---------------+---------------+---------------+------*/
 AnnotationTableCellP  TablePositionedCellIterator::CellFromIterators ()
     {
-    AnnotationTableElementCR  table = *m_cellCollection->m_table;
+    AnnotationTableCR  table = *m_cellCollection->m_table;
     AnnotationTableCellIndex  cellIndex ((*m_rowIter)->GetIndex(), (*m_columnIter)->GetIndex());
 
     return table.GetCell (cellIndex);
@@ -557,9 +557,9 @@ TablePositionedCell const& TablePositionedCellIterator::GetCurrent () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-/* ctor */ TablePositionedCells::TablePositionedCells (AnnotationTableElementCR table, SubTablesCP subTables, bool ownSubTables)
+/* ctor */ TablePositionedCells::TablePositionedCells (AnnotationTableCR table, SubTablesCP subTables, bool ownSubTables)
     {
-    m_table        = const_cast <AnnotationTableElementP> (&table);
+    m_table        = const_cast <AnnotationTableP> (&table);
     m_subTables    = subTables;
     m_ownSubTables = ownSubTables;
     }
@@ -653,7 +653,7 @@ BentleyStatus   TableFillBoxIterator::MoveToNextRow ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            TableFillBoxIterator::GetHeightFromFillRun ()
     {
-    AnnotationTableElementCR table = m_fillCollection->GetTable();
+    AnnotationTableCR table = m_fillCollection->GetTable();
 
     m_fillBox.m_height = 0.0;
 
@@ -799,7 +799,7 @@ TableFillBoxes::const_iterator  TableFillBoxes::end() const   { return new Table
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-AnnotationTableElementCR        TableFillBoxes::GetTable() const { return m_stroker.GetTable(); }
+AnnotationTableCR        TableFillBoxes::GetTable() const { return m_stroker.GetTable(); }
 FillRunsCR                      TableFillBoxes::GetFillRuns (uint32_t rowIndex) const { return m_stroker.GetFillRuns (rowIndex); }
 
 /*---------------------------------------------------------------------------------**//**
@@ -841,7 +841,7 @@ DVec2dCP        TableEdgeStrokeIterator::GetComponentDirection (bool span) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double          TableEdgeStrokeIterator::GetComponentLength (uint32_t index, bool span) const
     {
-    AnnotationTableElementR  table = *(m_strokeCollection->m_table);
+    AnnotationTableR  table = *(m_strokeCollection->m_table);
 
     // For horizontal edges, the spans are columns, the hosts are rows
     if (m_strokeCollection->m_horizontal)
@@ -890,7 +890,7 @@ void            TableEdgeStrokeIterator::InitRunIterFromStart()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            TableEdgeStrokeIterator::InitRunIterFromHost(uint32_t index)
     {
-    AnnotationTableElementR  table = *(m_strokeCollection->m_table);
+    AnnotationTableR  table = *(m_strokeCollection->m_table);
 
     if (m_strokeCollection->m_horizontal)
         {
@@ -1139,10 +1139,10 @@ bool  TableEdgeStrokeIterator::IsDifferent (TableEdgeStrokeIterator const& rhs) 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-/* ctor */ TableEdgeStrokes::TableEdgeStrokes (AnnotationTableElementCR table, bool horizontal, SubTablesCR subTables)
+/* ctor */ TableEdgeStrokes::TableEdgeStrokes (AnnotationTableCR table, bool horizontal, SubTablesCR subTables)
     :
     m_horizontal (horizontal),
-    m_table (const_cast <AnnotationTableElementP> (&table)),
+    m_table (const_cast <AnnotationTableP> (&table)),
     m_subTables (subTables)
     {}
 
@@ -1155,7 +1155,7 @@ TableEdgeStrokes::const_iterator  TableEdgeStrokes::end() const   { return new T
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-/* ctor */  AnnotationTableStroker::AnnotationTableStroker (AnnotationTableElementCR table, ElementGeometryBuilderR builder)
+/* ctor */  AnnotationTableStroker::AnnotationTableStroker (AnnotationTableCR table, ElementGeometryBuilderR builder)
     :
     m_table (table),
     m_geomBuilder (builder),

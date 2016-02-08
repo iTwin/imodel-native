@@ -116,9 +116,9 @@ protected:
 //! A test Element
 // @bsiclass                                                     Sam.Wilson      04/15
 //=======================================================================================
-struct TestElement2d : Dgn::AnnotationElement
+struct TestElement2d : Dgn::AnnotationElement2d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT2d_CLASS_NAME, Dgn::AnnotationElement) 
+    DGNELEMENT_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT2d_CLASS_NAME, Dgn::AnnotationElement2d) 
 
 public:
     TestElement2d(CreateParams const& params) : T_Super(params) {}
@@ -134,9 +134,9 @@ typedef TestElement2d const& TestElement2dCR;
 //! A test ElementHandler
 // @bsiclass                                                     Sam.Wilson      01/15
 //=======================================================================================
-struct TestElement2dHandler : Dgn::dgn_ElementHandler::Annotation
+struct TestElement2dHandler : Dgn::dgn_ElementHandler::Annotation2d
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT2d_CLASS_NAME, TestElement2d, TestElement2dHandler, Dgn::dgn_ElementHandler::Annotation, )
+    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT2d_CLASS_NAME, TestElement2d, TestElement2dHandler, Dgn::dgn_ElementHandler::Annotation2d, )
 };
 
 //=======================================================================================
