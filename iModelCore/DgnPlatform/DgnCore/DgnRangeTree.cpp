@@ -343,6 +343,7 @@ static inline double rangeExtentSquared(RTree3dValCR range)
     return extentX * extentX + extentY * extentY + extentZ * extentZ;
     }
 
+#ifdef UNUSED
 /*---------------------------------------------------------------------------------**//**
 * Optimized - no function calls, no nullptr tests etc. as in DRange3d::extentSquared.
 * @bsimethod                                                    RayBentley      10/2009
@@ -367,7 +368,8 @@ static inline void extendRange(DRange3dR thisRange, DPoint3dCR point)
     if (point.z > thisRange.high.z)
         thisRange.high.z = point.z;
     }
-
+#endif
+    
 /*---------------------------------------------------------------------------------**//**
 * Optimized - no function calls, no nullptr tests etc. as in DRange3d::extentSquared.
 * @bsimethod                                                    RayBentley      10/2009
