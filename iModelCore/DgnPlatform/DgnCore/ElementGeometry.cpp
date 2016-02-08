@@ -2816,6 +2816,28 @@ static bool IsGeometryVisible(ViewContextR context, Render::GeometryParamsCR geo
     return true;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static void UpdatePixelSizeRange(Render::GraphicR graphic, double newMin, double newMax)
+    {
+    double min, max;
+
+    graphic.GetPixelSizeRange(min, max);
+
+    if (0.0 == min)
+        min = newMin;
+    else
+        min = DoubleOps::Max(min, newMin);
+
+    if (0.0 == max)
+        max = newMax;
+    else
+        max = DoubleOps::Min(max, newMax);
+
+    graphic.SetPixelSizeRange(min, max);
+    }
+
 }; // DrawHelper
 
 /*---------------------------------------------------------------------------------**//**
@@ -2823,11 +2845,11 @@ static bool IsGeometryVisible(ViewContextR context, Render::GeometryParamsCR geo
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR context, Render::GeometryParamsR geomParams, bool activateParams) const
     {
-    bool        isQVis = graphic.IsForDisplay();
-    bool        isQVWireframe = (isQVis && RenderMode::Wireframe == context.GetViewFlags().GetRenderMode());
-    bool        isPick = (nullptr != context.GetIPickGeom());
-    bool        useBRep = !(isQVis || isPick);
-    bool        geomParamsChanged = activateParams || !isQVis; // NOTE: Don't always bake initial symbology into SubGraphics, it's activated before drawing QvElem...
+    bool isQVis = graphic.IsForDisplay();
+    bool isQVWireframe = (isQVis && RenderMode::Wireframe == context.GetViewFlags().GetRenderMode());
+    bool isPick = (nullptr != context.GetIPickGeom());
+    bool useBRep = !(isQVis || isPick);
+    bool geomParamsChanged = activateParams || !isQVis; // NOTE: Don't always bake initial symbology into SubGraphics, it's activated before drawing QvElem...
 
     GeometryStreamIO::Reader reader(context.GetDgnDb());
 
@@ -2859,14 +2881,24 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 GeometryStreamEntryIdHelper::Increment(context.GetGeometryStreamEntryIdR());
 
                 DgnGeometryPartId geomPartId;
-                Transform     geomToSource;
+                Transform geomToSource;
 
                 if (!reader.Get(egOp, geomPartId, geomToSource))
                     break;
 
                 GeometryStreamEntryIdHelper::SetActiveGeometryPart(context.GetGeometryStreamEntryIdR(), geomPartId);
-                context.AddSubGraphic(graphic, geomPartId, geomToSource, geomParams);
+                Render::GraphicPtr partGraphic = context.AddSubGraphic(graphic, geomPartId, geomToSource, geomParams);
                 GeometryStreamEntryIdHelper::SetActiveGeometryPart(context.GetGeometryStreamEntryIdR(), DgnGeometryPartId());
+
+                if (!partGraphic.IsValid())
+                    break;
+
+                // NOTE: Main graphic controls what pixel range is used for all parts.
+                //       Since we can't have independent pixel range for parts, choose most restrictive...
+                double partMin, partMax;
+
+                partGraphic->GetPixelSizeRange(partMin, partMax);
+                DrawHelper::UpdatePixelSizeRange(graphic, partMin, partMax);
                 break;
                 }
 
@@ -3108,6 +3140,26 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                     break;
 
                 DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
+
+                if (isQVis && GeometryStreamIO::OpCode::BRepPolyface == egOp.m_opCode && meshData.GetPointCount() > 1000.0)
+                    {
+                    DRange3d range = meshData.PointRange();
+                    double   xLen = range.XLength(), yLen = range.YLength(), zLen = range.ZLength();
+                    double   maxLen = DoubleOps::Max(xLen, yLen, zLen);
+                    double   pixelThreshold = 15.0;
+
+                    if ((maxLen / graphic.GetPixelSize()) < pixelThreshold)
+                        {
+                        DgnBoxDetail boxDetail(range.low, DPoint3d::From(range.low.x, range.low.y, range.high.z), DVec3d::From(1.0, 0.0, 0.0), DVec3d::From(0.0, 1.0, 0.0), xLen, yLen, xLen, yLen, true);
+                        graphic.AddSolidPrimitive(*ISolidPrimitive::CreateDgnBox(boxDetail));
+                        DrawHelper::UpdatePixelSizeRange(graphic, maxLen/pixelThreshold, DBL_MAX);
+                        break;
+                        }
+                    else
+                        {
+                        DrawHelper::UpdatePixelSizeRange(graphic, 0.0, maxLen/pixelThreshold);
+                        }
+                    }
 
                 // NOTE: For this case the exact edge geometry will be supplied by BRepEdges/BRepFaceIso, inhibit facetted edge draw...
                 if ((isPick || isQVWireframe) && GeometryStreamIO::OpCode::BRepPolyface == egOp.m_opCode)

@@ -185,7 +185,7 @@ protected:
     DGNPLATFORM_EXPORT virtual StatusInt _Attach(DgnViewportP, DrawPurpose purpose);
     DGNPLATFORM_EXPORT virtual void _Detach();
     DGNPLATFORM_EXPORT virtual void _OutputGeometry(GeometrySourceCR);
-    DGNPLATFORM_EXPORT virtual void _AddSubGraphic(Render::GraphicR, DgnGeometryPartId, TransformCR, Render::GeometryParamsR);
+    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _AddSubGraphic(Render::GraphicR, DgnGeometryPartId, TransformCR, Render::GeometryParamsR);
     virtual Render::GraphicP _GetCachedPartGraphic(DgnGeometryPartId, double pixelSize, ElementAlignedBox3dR) {return nullptr;}
     virtual void _SavePartGraphic(DgnGeometryPartId, Render::GraphicR, ElementAlignedBox3dCR) {}
     virtual void _OutputGraphic(Render::GraphicR, GeometrySourceCP) {}
@@ -253,7 +253,7 @@ public:
     void EnableStopAfterTimout(uint32_t timeout) {m_endTime = BeTimeUtilities::QueryMillisecondsCounter()+timeout; m_stopAfterTimeout=true;}
 
     Render::GraphicPtr CreateGraphic(Render::Graphic::CreateParams const& params=Render::Graphic::CreateParams()) {return _CreateGraphic(params);}
-    void AddSubGraphic(Render::GraphicR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams) {_AddSubGraphic(graphic, partId, subToGraphic, geomParams);}
+    Render::GraphicPtr AddSubGraphic(Render::GraphicR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams) {return _AddSubGraphic(graphic, partId, subToGraphic, geomParams);}
     StatusInt VisitGeometry(GeometrySourceCR elem) {return _VisitGeometry(elem);}
     StatusInt VisitHit(HitDetailCR hit) {return _VisitHit(hit);}
 
