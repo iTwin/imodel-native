@@ -90,6 +90,14 @@ namespace IndexECPlugin.Source
         /// <summary>
         /// TO BE DONE
         /// </summary>
+        public string SpatialDataSourceID
+            {
+            get;
+            set;
+            }
+        /// <summary>
+        /// TO BE DONE
+        /// </summary>
         public string SelectedStyle
             {
             get;
