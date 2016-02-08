@@ -915,7 +915,8 @@ public:
     TransformCR GetLocalToWorldTransform() const {return m_localToWorldTransform;}
 
     double GetPixelSize() const {return m_pixelSize;}
-    void SetPixelSizeRange(double min, double max) {m_minSize = min, m_maxSize = max;}
+    void GetPixelSizeRange(double& min, double& max) const {min = m_minSize; max = m_maxSize;}
+    void SetPixelSizeRange(double min, double max) {m_minSize = min; m_maxSize = max;}
 
     //! Set an GraphicParams to be the "active" GraphicParams for this Render::Graphic.
     //! @param[in]          graphicParams   The new active GraphicParams. All geometry drawn via calls to this Render::Graphic will
@@ -1046,8 +1047,8 @@ public:
     void AddMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) {_AddMosaic(numX, numY, tileIds, verts);}
 
     // Helper Methods to draw simple SolidPrimitives.
-    void DrawTorus(DPoint3dCR center, DVec3dCR vectorX, DVec3dCR vectorY, double majorRadius, double minorRadius, double sweepAngle, bool capped) { AddSolidPrimitive(*ISolidPrimitive::CreateDgnTorusPipe(DgnTorusPipeDetail(center, vectorX, vectorY, majorRadius, minorRadius, sweepAngle, capped)));}
-    void DrawBox(DVec3dCR primary, DVec3dCR secondary, DPoint3dCR basePoint, DPoint3dCR topPoint, double baseWidth, double baseLength, double topWidth, double topLength, bool capped) {AddSolidPrimitive(*ISolidPrimitive::CreateDgnBox(DgnBoxDetail::InitFromCenters(basePoint, topPoint, primary, secondary, baseWidth, baseLength, topWidth, topLength, capped))); }
+    void AddTorus(DPoint3dCR center, DVec3dCR vectorX, DVec3dCR vectorY, double majorRadius, double minorRadius, double sweepAngle, bool capped) { AddSolidPrimitive(*ISolidPrimitive::CreateDgnTorusPipe(DgnTorusPipeDetail(center, vectorX, vectorY, majorRadius, minorRadius, sweepAngle, capped)));}
+    void AddBox(DVec3dCR primary, DVec3dCR secondary, DPoint3dCR basePoint, DPoint3dCR topPoint, double baseWidth, double baseLength, double topWidth, double topLength, bool capped) {AddSolidPrimitive(*ISolidPrimitive::CreateDgnBox(DgnBoxDetail::InitFromCenters(basePoint, topPoint, primary, secondary, baseWidth, baseLength, topWidth, topLength, capped))); }
 
     void AddRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) {_AddRaster(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, range);}
     void AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2dCP range) {_AddRaster2d(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, zDepth, range);}
@@ -1175,8 +1176,8 @@ protected:
     virtual BSIRect _GetViewRect() const = 0;
     virtual DVec2d _GetDpiScale() const = 0;
 
-    Target();
-    ~Target();
+    DGNVIEW_EXPORT Target();
+    DGNVIEW_EXPORT ~Target();
     DGNPLATFORM_EXPORT static void VerifyRenderThread();
 
 public:

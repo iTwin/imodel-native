@@ -687,7 +687,7 @@ bool QueryModel::AllElementsFilter::AcceptElement(ViewContextR context, DgnEleme
 
     GeometrySourceCP geomElem = el->ToGeometrySource();
     if (nullptr != geomElem)
-        context.VisitElement(*geomElem);
+        context.VisitGeometry(*geomElem);
 
     if (pool.GetTotalAllocated() < (int64_t) m_elementReleaseTrigger)
         return true;

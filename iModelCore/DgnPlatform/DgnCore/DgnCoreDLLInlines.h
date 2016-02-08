@@ -56,10 +56,10 @@ DG_INLINE ClipVectorPtr CameraViewController::_GetClipVector() const {return m_c
 
 DG_INLINE IACSManagerR IACSManager::GetManager() {return T_HOST.GetAcsManager();}
 DG_INLINE void IAuxCoordSys::DisplayInView(DecorateContextR context, ACSDisplayOptions options, bool drawName) const {return _DisplayInView(context, options, drawName);}
-DG_INLINE WString IAuxCoordSys::GetName() const {return _GetName();}
-DG_INLINE WString IAuxCoordSys::GetDescription() const {return _GetDescription();}
+DG_INLINE Utf8String IAuxCoordSys::GetName() const {return _GetName();}
+DG_INLINE Utf8String IAuxCoordSys::GetDescription() const {return _GetDescription();}
 DG_INLINE ACSType IAuxCoordSys::GetType() const {return _GetType();}
-DG_INLINE WString IAuxCoordSys::GetTypeName() const {return _GetTypeName();}
+DG_INLINE Utf8String IAuxCoordSys::GetTypeName() const {return _GetTypeName();}
 DG_INLINE uint32_t IAuxCoordSys::GetExtenderId() const {return _GetExtenderId();}
 DG_INLINE uint32_t IAuxCoordSys::GetSerializedSize() const {return _GetSerializedSize();}
 DG_INLINE StatusInt IAuxCoordSys::Serialize(void *buffer, uint32_t maxSize) const {return _Serialize(buffer, maxSize);}
@@ -69,8 +69,8 @@ DG_INLINE bool IAuxCoordSys::GetIsReadOnly() const {return _GetIsReadOnly();}
 DG_INLINE RotMatrixR IAuxCoordSys::GetRotation(RotMatrixR pRot) const {return _GetRotation(pRot);}
 DG_INLINE RotMatrixR IAuxCoordSys::GetRotation(RotMatrixR pRot, DPoint3dR pPosition) const {return _GetRotation(pRot, pPosition);}
 DG_INLINE ACSFlags IAuxCoordSys::GetFlags() const {return _GetFlags();}
-DG_INLINE StatusInt IAuxCoordSys::SetName(WCharCP name) {return _SetName(name);}
-DG_INLINE StatusInt IAuxCoordSys::SetDescription(WCharCP descr) {return _SetDescription(descr);}
+DG_INLINE StatusInt IAuxCoordSys::SetName(Utf8CP name) {return _SetName(name);}
+DG_INLINE StatusInt IAuxCoordSys::SetDescription(Utf8CP descr) {return _SetDescription(descr);}
 DG_INLINE StatusInt IAuxCoordSys::SetType(ACSType type) {return _SetType(type);}
 DG_INLINE StatusInt IAuxCoordSys::SetScale(double scale) {return _SetScale(scale);}
 DG_INLINE StatusInt IAuxCoordSys::SetOrigin(DPoint3dCR pOrigin) {return _SetOrigin(pOrigin);}
@@ -131,11 +131,6 @@ DG_INLINE DPoint3dCR PatternParams::GetOrigin() const {return origin;}
 DG_INLINE double PatternParams::GetAnnotationScale() const {return annotationscale;}
 
 DG_INLINE void LineStyleParams::SetScale(double inScale) { modifiers |= STYLEMOD_SCALE; scale = inScale; }
-
-DG_INLINE SnapDetailP     SnapContext::GetSnapDetail() {return m_snapPath;}
-DG_INLINE SnapMode      SnapContext::GetSnapMode() {return m_snapMode;}
-DG_INLINE int           SnapContext::GetSnapDivisor() {return m_snapDivisor;}
-
 DG_INLINE DgnPlatformLib::Host& DgnPlatformLib::GetHost() {return *static_cast<DgnPlatformLib::Host*>(g_hostForThread.GetValueAsPointer());}
 
 DG_INLINE WChar AngleFormatter::GetDecimalSeparator() const { return m_decimalSeparator; }

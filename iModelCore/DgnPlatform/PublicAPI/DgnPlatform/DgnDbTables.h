@@ -20,13 +20,10 @@
 #define DGN_CLASSNAME_AnnotationLeaderStyle "AnnotationLeaderStyle"
 #define DGN_CLASSNAME_AnnotationTextStyle   "AnnotationTextStyle"
 #define DGN_CLASSNAME_Authority             "Authority"
-#define DGN_CLASSNAME_TrueColor             "TrueColor"
 #define DGN_CLASSNAME_CategoryAuthority     "CategoryAuthority"
+#define DGN_CLASSNAME_CodedEntity           "CodedEntity"
 #define DGN_CLASSNAME_ComponentAuthority    "ComponentAuthority"
 #define DGN_CLASSNAME_ComponentModel        "ComponentModel"
-#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
-#define DGN_CLASSNAME_ComponentSolution     "ComponentSolution"
-#endif
 #define DGN_CLASSNAME_DefinitionElement     "DefinitionElement"
 #define DGN_CLASSNAME_DefinitionModel       "DefinitionModel"
 #define DGN_CLASSNAME_DictionaryElement     "DictionaryElement"
@@ -38,18 +35,21 @@
 #define DGN_CLASSNAME_ElementAspect         "ElementAspect"
 #define DGN_CLASSNAME_ElementExternalKey    "ElementExternalKey"
 #define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
+#define DGN_CLASSNAME_GeometricElement2d    "GeometricElement2d"
+#define DGN_CLASSNAME_GeometricElement3d    "GeometricElement3d"
 #define DGN_CLASSNAME_GeometricModel        "GeometricModel"
-#define DGN_CLASSNAME_GeometrySource        "GeometrySource"
+#define DGN_CLASSNAME_GeometricModel2d      "GeometricModel2d"
+#define DGN_CLASSNAME_GeometricModel3d      "GeometricModel3d"
 #define DGN_CLASSNAME_GeometryPart          "GeometryPart"
 #define DGN_CLASSNAME_GeometryPartAuthority "GeometryPartAuthority"
+#define DGN_CLASSNAME_GraphicalElement2d    "GraphicalElement2d"
+#define DGN_CLASSNAME_GraphicalModel2d      "GraphicalModel2d"
 #define DGN_CLASSNAME_LineStyle             "LineStyle"
 #define DGN_CLASSNAME_Link                  "Link"
 #define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"
 #define DGN_CLASSNAME_MaterialAuthority     "MaterialAuthority"
 #define DGN_CLASSNAME_Model                 "Model"
 #define DGN_CLASSNAME_ModelAuthority        "ModelAuthority"
-#define DGN_CLASSNAME_Model2d               "Model2d"
-#define DGN_CLASSNAME_Model3d               "Model3d"
 #define DGN_CLASSNAME_VolumeElement         "VolumeElement"
 #define DGN_CLASSNAME_NamespaceAuthority    "NamespaceAuthority"
 #define DGN_CLASSNAME_PhysicalElement       "PhysicalElement"
@@ -63,6 +63,7 @@
 #define DGN_CLASSNAME_SpatialRedlineModel   "SpatialRedlineModel"
 #define DGN_CLASSNAME_TextAnnotationSeed    "TextAnnotationSeed"
 #define DGN_CLASSNAME_Texture               "Texture"
+#define DGN_CLASSNAME_TrueColor             "TrueColor"
 #define DGN_CLASSNAME_TrueColorAuthority    "TrueColorAuthority"
 
 //-----------------------------------------------------------------------------------------
@@ -186,6 +187,9 @@ public:
     };
 
     static Iterator MakeIterator(DgnDbR db) { return Iterator(db); }
+
+    DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
+    DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
 };
 
 typedef bset<DgnCode> DgnCodeSet;

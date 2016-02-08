@@ -60,8 +60,7 @@ void DgnDb::Destroy()
         m_revisionManager = nullptr;
         }
     m_ecsqlCache.Empty();
-    m_locksManager = nullptr;
-    m_codesManager = nullptr;
+    m_briefcaseManager = nullptr;
     m_localStateDb.Destroy();
     }
 
@@ -89,12 +88,40 @@ void DgnDb::_OnDbClose()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static DbResult checkIsConvertibleVersion(Db& db)
+    {
+    Utf8String versionString;
+    DbResult rc = db.QueryProperty(versionString, DgnProjectProperty::SchemaVersion());
+    if (BE_SQLITE_ROW != rc)
+        return BE_SQLITE_ERROR_InvalidProfileVersion;
+
+    SchemaVersion sver(0,0,0,0);
+    sver.FromJson(versionString.c_str());
+    if (sver.GetMajor() < DGNDB_CURRENT_VERSION_Major)
+        return BE_SQLITE_ERROR_ProfileTooOld;
+
+    return BE_SQLITE_OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::_OnDbOpened()
     {
-    DbResult rc = T_Super::_OnDbOpened();
+    DbResult rc = checkIsConvertibleVersion(*this);
     if (BE_SQLITE_OK != rc)
+        {
+        // Short-circuit this function if the Db is too old or new such that we cannot continue;
+        //  The caller does the version check/upgrade after this _OnDbOpened logic finishes. 
+        //  If we have missing tables and columns, however, then we cannot even execute this _OnDbOpened logic.
+        //  *** NEEDS WORK: Do we need some kind of "pre" version upgrade?
+        //  In any case, we don't intend to upgrade from 05 to 06, so it's a moot point for now.
+        return rc;
+        }
+
+    if (BE_SQLITE_OK != (rc = T_Super::_OnDbOpened()))
         return rc;
 
     if (BE_SQLITE_OK != (rc = Domains().OnDbOpened()))
@@ -123,31 +150,17 @@ TxnManagerR DgnDb::Txns()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ILocksManagerR DgnDb::Locks()
+IBriefcaseManagerR DgnDb::BriefcaseManager()
     {
-    // This is here rather than in the constructor because _CreateLocksManager() requires briefcase ID, which is obtained from m_dbFile,
+    // This is here rather than in the constructor because _CreateBriefcaseManager() requires briefcase ID, which is obtained from m_dbFile,
     // which is not initialized in constructor.
-    if (m_locksManager.IsNull())
+    if (m_briefcaseManager.IsNull())
         {
-        m_locksManager = T_HOST.GetServerAdmin()._CreateLocksManager(*this);
-        BeAssert(m_locksManager.IsValid());
+        m_briefcaseManager = T_HOST.GetRepositoryAdmin()._CreateBriefcaseManager(*this);
+        BeAssert(m_briefcaseManager.IsValid());
         }
 
-    return *m_locksManager;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-IDgnCodesManagerR DgnDb::Codes()
-    {
-    if (m_codesManager.IsNull())
-        {
-        m_codesManager = T_HOST.GetServerAdmin()._CreateCodesManager(*this);
-        BeAssert(m_codesManager.IsValid());
-        }
-
-    return *m_codesManager;
+    return *m_briefcaseManager;
     }
 
 /*---------------------------------------------------------------------------------**//**

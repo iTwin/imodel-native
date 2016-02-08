@@ -139,7 +139,6 @@ protected:
     DVec3d          m_viewDeltaUnexpanded;      // view delta (from ViewController, unexpanded for "no clip")
     RotMatrix       m_rotMatrix;                // rotation matrix (from ViewController)
     CameraInfo      m_camera;
-    Render::ViewFlags m_viewFlags;
     Render::TargetPtr m_renderTarget;
     ColorDef        m_hiliteColor = ColorDef::Magenta();
     DMap4d          m_rootToView;
@@ -364,7 +363,7 @@ public:
     DGNPLATFORM_EXPORT void NpcToView(DPoint3dP viewPts, DPoint3dCP npcPts, int nPts) const;
 
     //! Transforma a point from DgnCoordSystem::Npc into DgnCoordSystem::View.
-    DPoint3d NpcToView(DPoint3dCR npcPt) {DPoint3d viewPt; NpcToView(&viewPt, &npcPt, 1); return viewPt;}
+    DPoint3d NpcToView(DPoint3dCR npcPt) const {DPoint3d viewPt; NpcToView(&viewPt, &npcPt, 1); return viewPt;}
 
     //! Transfrom an array of points in DgnCoordSystem::View into DgnCoordSystem::Npc.
     //! @param[out] npcPts An array to receive the points in DgnCoordSystem::Npc. Must be dimensioned to hold \c nPts points.
@@ -373,7 +372,7 @@ public:
     DGNPLATFORM_EXPORT void ViewToNpc(DPoint3dP npcPts, DPoint3dCP viewPts, int nPts) const;
 
     //! Transforma a point from DgnCoordSystem::View into DgnCoordSystem::Npc.
-    DPoint3d ViewToNpc(DPoint3dCR viewPt) {DPoint3d npcPt; ViewToNpc(&npcPt, &viewPt, 1); return npcPt;}
+    DPoint3d ViewToNpc(DPoint3dCR viewPt) const {DPoint3d npcPt; ViewToNpc(&npcPt, &viewPt, 1); return npcPt;}
 
     //! Transfrom an array of points in DgnCoordSystem::View into DgnCoordSystem::Screen.
     //! @param[out] screenPts An array to receive the points in DgnCoordSystem::Screen. Must be dimensioned to hold \c nPts points.
@@ -394,7 +393,7 @@ public:
     DGNPLATFORM_EXPORT void NpcToWorld(DPoint3dP worldPts, DPoint3dCP npcPts, int nPts) const;
 
     //! Transforma a point from DgnCoordSystem::Npc into DgnCoordSystem::World.
-    DPoint3d NpcToWorld(DPoint3dCR npcPt) {DPoint3d worldPt; NpcToWorld(&worldPt, &npcPt, 1); return worldPt;}
+    DPoint3d NpcToWorld(DPoint3dCR npcPt) const {DPoint3d worldPt; NpcToWorld(&worldPt, &npcPt, 1); return worldPt;}
 
     //! Transfrom an array of points in DgnCoordSystem::World into DgnCoordSystem::Npc.
     //! @param[out] npcPts An array to receive the points in DgnCoordSystem::Npc. Must be dimensioned to hold \c nPts points.
@@ -403,7 +402,7 @@ public:
     DGNPLATFORM_EXPORT void WorldToNpc(DPoint3dP npcPts, DPoint3dCP worldPts, int nPts) const;
 
     //! Transforma a point from DgnCoordSystem::World into DgnCoordSystem::Npc.
-    DPoint3d WorldToNpc(DPoint3dCR worldPt) {DPoint3d npcPt; WorldToNpc(&npcPt, &worldPt, 1); return npcPt;}
+    DPoint3d WorldToNpc(DPoint3dCR worldPt) const {DPoint3d npcPt; WorldToNpc(&npcPt, &worldPt, 1); return npcPt;}
 
     //! Transfrom an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
     //! @param[out] viewPts  An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
@@ -423,8 +422,8 @@ public:
     //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void WorldToView(DPoint3dP viewPts, DPoint3dCP worldPts, int nPts) const;
 
-    //! Transforma a point from DgnCoordSystem::World into DgnCoordSystem::View.
-    DPoint3d WorldToView(DPoint3dCR worldPt) {DPoint3d viewPt; WorldToView(&viewPt, &worldPt, 1); return viewPt;}
+    //! Transform a point from DgnCoordSystem::World into DgnCoordSystem::View.
+    DPoint3d WorldToView(DPoint3dCR worldPt) const {DPoint3d viewPt; WorldToView(&viewPt, &worldPt, 1); return viewPt;}
 
     //! Transfrom an array of points in DgnCoordSystem::World into an array of 2D points in DgnCoordSystem::View.
     //! @param[out] viewPts An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
@@ -439,7 +438,7 @@ public:
     DGNPLATFORM_EXPORT void ViewToWorld(DPoint3dP worldPts, DPoint3dCP viewPts, int nPts) const;
 
     //! Transform a point from DgnCoordSystem::View into DgnCoordSystem::World.
-    DPoint3d ViewToWorld(DPoint3dCR viewPt) {DPoint3d worldPt; ViewToWorld(&worldPt, &viewPt, 1); return worldPt;}
+    DPoint3d ViewToWorld(DPoint3dCR viewPt) const {DPoint3d worldPt; ViewToWorld(&worldPt, &viewPt, 1); return worldPt;}
 /** @} */
 
 /** @name DgnViewport Parameters */
@@ -457,7 +456,7 @@ public:
 
     //! Determine whether the Grid display is currently enabled in this DgnViewport.
     //! @return true if the grid display is on.
-    bool IsGridOn() const {return m_viewFlags.grid;}
+    bool IsGridOn() const {return m_viewController->GetViewFlags().grid;}
 
     //! Determine whether this viewport is a 3D view.
     //! @remarks Will be true only for a physical view.
@@ -502,7 +501,7 @@ public:
 
     //! Get the View Flags for this DgnViewport.
     //! @return the View flags for this DgnViewport.
-    Render::ViewFlags GetViewFlags() const {return m_viewFlags;}
+    Render::ViewFlags GetViewFlags() const {return m_viewController->GetViewFlags();}
 
     //! Synchronized this DgnViewport with the current state of its ViewController. A DgnViewport may hold local copies of the information
     //! in its ViewController. Therefore, when changes are made to the state of a ViewController, it must be synchronized with the
