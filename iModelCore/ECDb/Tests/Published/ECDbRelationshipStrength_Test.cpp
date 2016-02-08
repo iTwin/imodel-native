@@ -609,7 +609,6 @@ TEST_F (ECDbRelationshipsIntegrityTests, ForwardEmbeddingRelationshipsTest)
     AddEntityClass ("Goo");
     AddRelationShipClass (Cardinality::ZeroOne, Cardinality::OneOne, StrengthType::Embedding, Direction::Forward, "FooOwnsGoo", "Foo", "Goo", true);
     AddRelationShipClass (Cardinality::ZeroOne, Cardinality::OneMany, StrengthType::Embedding, Direction::Forward, "FooOwnsManyGoo", "Foo", "Goo", true);
-    AddRelationShipClass (Cardinality::ZeroMany, Cardinality::OneMany, StrengthType::Referencing, Direction::Forward, "ManyFooOwnManyGoo", "Foo", "Goo", true);
     AssertSchemaImport (true);
 
     std::vector<ECInstanceKey> fooKeys, gooKeys;
@@ -621,7 +620,6 @@ TEST_F (ECDbRelationshipsIntegrityTests, ForwardEmbeddingRelationshipsTest)
     //Compute what are the right valid permutation
     std::vector<DbResult> FooOwnsGooResult;
     std::vector<DbResult> FooOwnsManyGooResult;
-    std::vector<DbResult> ManyFooOwnManyGooResult;
 
     for (auto f = 0; f < maxFooInstances; f++)
         {
@@ -638,9 +636,6 @@ TEST_F (ECDbRelationshipsIntegrityTests, ForwardEmbeddingRelationshipsTest)
                 FooOwnsManyGooResult.push_back (BE_SQLITE_DONE);
             else
                 FooOwnsManyGooResult.push_back (BE_SQLITE_CONSTRAINT_UNIQUE);
-
-            //Source(0,N), Target(1,N)
-            ManyFooOwnManyGooResult.push_back (BE_SQLITE_DONE);
             }
         }
 
@@ -665,17 +660,6 @@ TEST_F (ECDbRelationshipsIntegrityTests, ForwardEmbeddingRelationshipsTest)
     }
     ASSERT_EQ (count_FooOwnsManyGoo, GetInsertedRelationshipsCount ("ts.FooOwnsManyGoo"));
 
-    //N-N............................
-    size_t count_ManyGooOwnManyGoo = 0;
-    {
-    ASSERT_TRUE (TryGetPersistedMapStrategy (mapStrategy, m_ecdb, GetRelationShipClassId ("ManyFooOwnManyGoo")));
-    ASSERT_EQ (PersistedMapStrategy::Strategy::OwnTable, mapStrategy.m_strategy);
-
-    InsertRelationshipInstances ("ts.ManyFooOwnManyGoo", fooKeys, gooKeys, ManyFooOwnManyGooResult, count_ManyGooOwnManyGoo);
-    }
-    ASSERT_EQ (count_ManyGooOwnManyGoo, GetInsertedRelationshipsCount ("ts.ManyFooOwnManyGoo"));
-
-    
     //Delete fooKeys[0]
     {
     ECSqlStatement stmt;
@@ -703,10 +687,6 @@ TEST_F (ECDbRelationshipsIntegrityTests, ForwardEmbeddingRelationshipsTest)
     ASSERT_FALSE (RelationshipExists ("ts.FooOwnsManyGoo", fooKeys[0], gooKeys[0]));
     ASSERT_FALSE (RelationshipExists ("ts.FooOwnsManyGoo", fooKeys[0], gooKeys[1]));
     ASSERT_FALSE (RelationshipExists ("ts.FooOwnsManyGoo", fooKeys[0], gooKeys[2]));
-
-    ASSERT_FALSE (RelationshipExists ("ts.ManyFooOwnManyGoo", fooKeys[0], gooKeys[0]));
-    ASSERT_FALSE (RelationshipExists ("ts.ManyFooOwnManyGoo", fooKeys[1], gooKeys[1]));
-    ASSERT_FALSE (RelationshipExists ("ts.ManyFooOwnManyGoo", fooKeys[2], gooKeys[2]));
     }
     }
 
@@ -723,7 +703,6 @@ TEST_F (ECDbRelationshipsIntegrityTests, BackwardEmbeddingRelationshipsTest)
     AddEntityClass ("Goo");
     AddRelationShipClass (Cardinality::OneOne, Cardinality::ZeroOne, StrengthType::Embedding, Direction::Backward, "FooOwnedByGoo", "Foo", "Goo", true);
     AddRelationShipClass (Cardinality::OneMany, Cardinality::ZeroOne, StrengthType::Embedding, Direction::Backward, "FooOwnedByManyGoo", "Foo", "Goo", true);
-    AddRelationShipClass (Cardinality::OneMany, Cardinality::ZeroMany, StrengthType::Referencing, Direction::Backward, "ManyGooOwnedByManyFoo", "Foo", "Goo", true);
     AssertSchemaImport (true);
 
     std::vector<ECInstanceKey> fooKeys, gooKeys;
@@ -735,7 +714,6 @@ TEST_F (ECDbRelationshipsIntegrityTests, BackwardEmbeddingRelationshipsTest)
     //Compute what are the right valid permutation
     std::vector<DbResult> FooOwnedByGooResult;
     std::vector<DbResult> FooOwnedByManyGooResult;
-    std::vector<DbResult> ManyGooOwnedByManyFooResult;
 
     for (auto f = 0; f < maxFooInstances; f++)
         {
@@ -752,9 +730,6 @@ TEST_F (ECDbRelationshipsIntegrityTests, BackwardEmbeddingRelationshipsTest)
                 FooOwnedByManyGooResult.push_back (BE_SQLITE_DONE);
             else
                 FooOwnedByManyGooResult.push_back (BE_SQLITE_CONSTRAINT_UNIQUE);
-
-            //Source(1,N), Target(0,N)
-            ManyGooOwnedByManyFooResult.push_back (BE_SQLITE_DONE);
             }
         }
 
@@ -779,16 +754,6 @@ TEST_F (ECDbRelationshipsIntegrityTests, BackwardEmbeddingRelationshipsTest)
     InsertRelationshipInstances ("ts.FooOwnedByManyGoo", fooKeys, gooKeys, FooOwnedByManyGooResult, count_FooOwnedByManyGoo);
     }
     ASSERT_EQ (count_FooOwnedByManyGoo, GetInsertedRelationshipsCount ("ts.FooOwnedByManyGoo"));
-
-    //N-N..........................
-    size_t count_ManyGooOwnedByManyFoo = 0;
-    {
-    ASSERT_TRUE (TryGetPersistedMapStrategy (mapStrategy, m_ecdb, GetRelationShipClassId ("ManyGooOwnedByManyFoo")));
-    ASSERT_EQ (PersistedMapStrategy::Strategy::OwnTable, mapStrategy.m_strategy);
-
-    InsertRelationshipInstances ("ts.ManyGooOwnedByManyFoo", fooKeys, gooKeys, ManyGooOwnedByManyFooResult, count_ManyGooOwnedByManyFoo);
-    }
-    ASSERT_EQ (count_ManyGooOwnedByManyFoo, GetInsertedRelationshipsCount ("ts.ManyGooOwnedByManyFoo"));
 
     //Delete gooKeys[0]
     {
@@ -817,10 +782,6 @@ TEST_F (ECDbRelationshipsIntegrityTests, BackwardEmbeddingRelationshipsTest)
     ASSERT_FALSE (RelationshipExists ("ts.FooOwnedByManyGoo", fooKeys[0], gooKeys[0]));
     ASSERT_FALSE (RelationshipExists ("ts.FooOwnedByManyGoo", fooKeys[0], gooKeys[1]));
     ASSERT_FALSE (RelationshipExists ("ts.FooOwnedByManyGoo", fooKeys[0], gooKeys[2]));
-
-    ASSERT_FALSE (RelationshipExists ("ts.ManyGooOwnedByManyFoo", fooKeys[0], gooKeys[0]));
-    ASSERT_FALSE (RelationshipExists ("ts.ManyGooOwnedByManyFoo", fooKeys[1], gooKeys[1]));
-    ASSERT_FALSE (RelationshipExists ("ts.ManyGooOwnedByManyFoo", fooKeys[2], gooKeys[2]));
     }
     }
 
