@@ -77,7 +77,6 @@ public:
     void                                RemoveConversionSchema(ECSchemaR schema);
     ECSchemaPtr                         LocateConversionSchemaFor(Utf8CP schemaName, int versionMajor, int versionMinor);
 
-    ECSchemaPtr         LocateSchema (SchemaKeyR key, bset<SchemaMatchType> const& matches);
     ECOBJECTS_EXPORT void AddSchemaLocaters (bvector<ECN::IECSchemaLocaterP> const& schemaLocators);
 
     IECSchemaRemapperCP GetRemapper() const                         { return m_remapper; }

@@ -3449,9 +3449,8 @@ InstanceWriteStatus     WriteInstance (IECInstanceCR ecInstance, bool writeInsta
     ECClassCR   ecClass         = ecInstance.GetClass();
     ECSchemaCR  ecSchema        = ecClass.GetSchema();
     Utf8String  className       = ecClass.GetName();
-    Utf8String  fullSchemaName;
+    Utf8String  fullSchemaName = ecSchema.GetFullSchemaName();
 
-    fullSchemaName.Sprintf ("%s.%02d.%02d", ecSchema.GetName().c_str(), ecSchema.GetVersionMajor(), ecSchema.GetVersionMinor());
     m_xmlWriter->WriteElementStart(className.c_str(), fullSchemaName.c_str());
 
     auto relationshipInstance = dynamic_cast<IECRelationshipInstanceCP> (&ecInstance);
