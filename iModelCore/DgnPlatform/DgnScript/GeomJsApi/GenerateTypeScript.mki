@@ -10,6 +10,13 @@
     $(BuildContext)Delivery/GeomJsApi.d.ts : $(_MakeFileSpec)
         $(LinkFirstDepToFirstTarget)
 
+    # Since there is a part binding for this directory, we should make sure it physically exists, even if empty.
+    always:
+        !~@mkdir $(dgnScriptGen)noDocsOnThisPlatform
+    
+    $(BuildContext)Delivery/internal-docs/GeomJsApi : $(dgnScriptGen)noDocsOnThisPlatform
+        $(LinkFirstDepToFirstTargetAsDirectory)
+
     %return
 %endif
 
