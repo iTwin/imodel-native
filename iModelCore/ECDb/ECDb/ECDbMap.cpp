@@ -710,6 +710,8 @@ BentleyStatus ECDbMap::CreateOrUpdateIndexesInDb() const
         if (ECClass::UNSET_ECCLASSID == classId)
             continue;
 
+        ECDbSqlTable const& indexTable = index->GetTable();
+
         ClassMap const* classMap = GetClassMap(classId);
         if (classMap == nullptr)
             {
@@ -717,7 +719,6 @@ BentleyStatus ECDbMap::CreateOrUpdateIndexesInDb() const
             return ERROR;
             }
 
-        ECDbSqlTable const& table = index->GetTable();
         StorageDescription const& storageDesc = classMap->GetStorageDescription();
         std::vector<Partition> const& horizPartitions = storageDesc.GetHorizontalPartitions();
 
@@ -729,29 +730,38 @@ BentleyStatus ECDbMap::CreateOrUpdateIndexesInDb() const
 
         for (Partition const& horizPartition : horizPartitions)
             {
-            ECClassId rootClassId = horizPartition.GetRootClassId();
-            ClassMap const* rootClassMap = GetClassMap(rootClassId);
-            if (rootClassMap == nullptr)
-                {
-                BeAssert(false);
-                return ERROR;
-                }
-
-            if (&table == &horizPartition.GetTable())
+            if (&indexTable == &horizPartition.GetTable())
                 continue;
 
-            bvector<ClassIndexInfoPtr> indexInfos;
-            for (ClassIndexInfoPtr const& indexInfo : *baseClassIndexInfos)
+            bset<ECDbSqlTable const*> alreadyProcessedTables;
+            for (ECClassId derivedClassId : horizPartition.GetClassIds())
                 {
-                Utf8String indexName;
-                if (!Utf8String::IsNullOrEmpty(indexInfo->GetName()))
-                    indexName.append(indexInfo->GetName()).append("_").append(horizPartition.GetTable().GetName());
+                ClassMap const* derivedClassMap = GetClassMap(derivedClassId);
+                if (derivedClassMap == nullptr)
+                    {
+                    BeAssert(false);
+                    return ERROR;
+                    }
 
-                indexInfos.push_back(ClassIndexInfo::Clone(*indexInfo, indexName.c_str()));
+                ECDbSqlTable const& joinedOrSingleTable = derivedClassMap->GetJoinedTable();
+                if (alreadyProcessedTables.find(&joinedOrSingleTable) != alreadyProcessedTables.end())
+                    continue;
+
+                bvector<ClassIndexInfoPtr> indexInfos;
+                for (ClassIndexInfoPtr const& indexInfo : *baseClassIndexInfos)
+                    {
+                    Utf8String indexName;
+                    if (!Utf8String::IsNullOrEmpty(indexInfo->GetName()))
+                        indexName.append(indexInfo->GetName()).append("_").append(joinedOrSingleTable.GetName());
+
+                    indexInfos.push_back(ClassIndexInfo::Clone(*indexInfo, indexName.c_str()));
+                    }
+
+                if (SUCCESS != derivedClassMap->CreateUserProvidedIndexes(*m_schemaImportContext, indexInfos))
+                    return ERROR;
+
+                alreadyProcessedTables.insert(&joinedOrSingleTable);
                 }
-
-            if (SUCCESS != rootClassMap->CreateUserProvidedIndexes(*m_schemaImportContext, indexInfos))
-                return ERROR;
             }
         }
 

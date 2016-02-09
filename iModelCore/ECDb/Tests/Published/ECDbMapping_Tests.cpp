@@ -3721,7 +3721,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
      }
 
      {
-     SchemaItem testItem("Index on abstract class",
+     SchemaItem testItem("Index on abstract classes - Schema 1",
                          "<?xml version='1.0' encoding='utf-8'?>"
                          "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                          "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -3855,20 +3855,63 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
      AssertSchemaImport(db, asserted, testItem, "userdefinedindextest.ecdb");
      ASSERT_FALSE(asserted);
 
+     SchemaItem secondSchema("Index on abstract classes - Schema 2",
+                             "<?xml version='1.0' encoding='utf-8'?>"
+                             "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                             "    <ECSchemaReference name='TestSchema' version='01.00' prefix='ts' />"
+                             "    <ECEntityClass typeName='Sub3'>"
+                             "        <ECCustomAttributes>"
+                             "            <ClassMap xmlns='ECDbMap.01.00'>"
+                             "                 <Indexes>"
+                             "                   <DbIndex>"
+                             "                       <IsUnique>True</IsUnique>"
+                             "                       <Name>uix_sub3</Name>"
+                             "                       <Properties>"
+                             "                          <string>Sub3Prop</string>"
+                             "                       </Properties>"
+                             "                   </DbIndex>"
+                             "                 </Indexes>"
+                             "            </ClassMap>"
+                             "        </ECCustomAttributes>"
+                             "       <BaseClass>ts:Root</BaseClass>"
+                             "       <BaseClass>ts:Interface</BaseClass>"
+                             "        <ECProperty propertyName='Sub3Prop' typeName='int' />"
+                             "    </ECEntityClass>"
+                             "    <ECEntityClass typeName='Sub2Unshared'>"
+                             "        <ECCustomAttributes>"
+                             "            <ClassMap xmlns='ECDbMap.01.00'>"
+                             "                 <Indexes>"
+                             "                   <DbIndex>"
+                             "                       <IsUnique>True</IsUnique>"
+                             "                       <Name>uix_sub2unshared</Name>"
+                             "                       <Properties>"
+                             "                          <string>Sub2UnsharedProp</string>"
+                             "                       </Properties>"
+                             "                   </DbIndex>"
+                             "                 </Indexes>"
+                             "            </ClassMap>"
+                             "        </ECCustomAttributes>"
+                             "       <BaseClass>ts:RootUnshared</BaseClass>"
+                             "        <ECProperty propertyName='Sub2UnsharedProp' typeName='int' />"
+                             "    </ECEntityClass>"
+                             " </ECSchema>");
+
+     asserted = false;
+     AssertSchemaImport(asserted, db, secondSchema);
+     ASSERT_FALSE(asserted);
 
      //class hierarchy with shared table
      AssertIndex(db, "uix_root", true, "ts_Root", {"RootProp"});
 
      //index from Interface class is applied to Sub and Sub2 which are stored in joined tables
-     //WIP: This is not implemented yet. Therefore once it is expected to work, uncomment these lines
-     //and remove the two below
-     //AssertIndex(db, "uix_interface_ts_Sub", true, "ts_Sub", {"InterfaceProp"});
-     //AssertIndex(db, "uix_interface_ts_Sub2", true, "ts_Sub2", {"InterfaceProp"});
-     AssertIndexExists(db, "uix_interface_ts_Sub", false);
-     AssertIndexExists(db, "uix_interface_ts_Sub2", false);
+     AssertIndex(db, "uix_interface_ts_Sub", true, "ts_Sub", {"InterfaceProp"});
+     AssertIndex(db, "uix_interface_ts_Sub2", true, "ts_Sub2", {"InterfaceProp"});
+     AssertIndex(db, "uix_interface_ts2_Sub3", true, "ts2_Sub3", {"InterfaceProp"});
 
      AssertIndex(db, "uix_sub", true, "ts_Sub", {"SubProp"});
      AssertIndex(db, "uix_sub2", true, "ts_Sub2", {"Sub2Prop"});
+     AssertIndex(db, "uix_sub3", true, "ts2_Sub3", {"Sub3Prop"});
 
      ECClassCP subSubClass = db.Schemas().GetECClass("TestSchema", "SubSub");
      ASSERT_TRUE(subSubClass != nullptr);
@@ -3878,7 +3921,9 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
 
      //class hierarchy without shared table
      AssertIndex(db, "uix_rootunshared_ts_SubUnshared", true, "ts_SubUnshared", {"RootUnsharedProp"});
+     AssertIndex(db, "uix_rootunshared_ts2_Sub2Unshared", true, "ts2_Sub2Unshared", {"RootUnsharedProp"});
      AssertIndex(db, "uix_subunshared", true, "ts_SubUnshared", {"SubUnsharedProp"});
+     AssertIndex(db, "uix_sub2unshared", true, "ts2_Sub2Unshared", {"Sub2UnsharedProp"});
      }
 
     }
