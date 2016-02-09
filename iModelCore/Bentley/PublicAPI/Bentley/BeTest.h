@@ -331,6 +331,7 @@ BENTLEYDLL_EXPORT static void Log (Utf8CP category, LogPriority priority, Utf8CP
     #define ASSERT_NEAR(val1, val2, tol) BE_TEST_EXPECTED_RESULT_NEAR(val1, val2, tol,true)
     #define EXPECT_NEAR(val1, val2, tol) BE_TEST_EXPECTED_RESULT_NEAR(val1, val2, tol,false)
     #define EXPECT_DOUBLE_EQ(v1,v2)      BE_TEST_EXPECTED_RESULT_NEAR_(v1,v2,false)
+    #define ASSERT_DOUBLE_EQ(v1,v2)      BE_TEST_EXPECTED_RESULT_NEAR_(v1,v2,true)
     #define FAIL()                       BE_TEST_EXPECTED_RESULT_FAIL()
     #define SUCCEED()
 

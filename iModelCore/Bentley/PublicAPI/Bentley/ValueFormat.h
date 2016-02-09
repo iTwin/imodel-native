@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/ValueFormat.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -63,8 +63,8 @@ public:
 protected:
     BENTLEYDLL_EXPORT DoubleFormatterBase ();
 
-//! Get the precision used by this formatter.
-public: 
+public:
+    //! Get the precision used by this formatter.
     BENTLEYDLL_EXPORT PrecisionFormat GetPrecision () const;
 
     //! Get the decimal separator used by this formatter.
@@ -151,7 +151,6 @@ public:
     //! Use the settings defined in this formatter to convert a double value to a string.
     //! @param[in] value value to format.
     BENTLEYDLL_EXPORT Utf8String ToString (double value) const;
-    BENTLEYDLL_EXPORT WString ToStringW (double value) const;
 };
 
 END_BENTLEY_NAMESPACE
