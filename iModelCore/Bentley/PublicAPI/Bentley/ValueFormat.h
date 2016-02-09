@@ -151,7 +151,6 @@ public:
     //! Use the settings defined in this formatter to convert a double value to a string.
     //! @param[in] value value to format.
     BENTLEYDLL_EXPORT Utf8String ToString (double value) const;
-    BENTLEYDLL_EXPORT WString ToStringW (double value) const;
 };
 
 END_BENTLEY_NAMESPACE
