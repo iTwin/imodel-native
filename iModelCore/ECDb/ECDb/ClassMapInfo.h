@@ -49,13 +49,11 @@ protected:
     ECDbMapStrategy m_resolvedStrategy;
 
 private:
-    BentleyStatus InitializeFromClassMapCA ();
-    BentleyStatus InitializeFromClassHasCurrentTimeStampProperty();
-
     BentleyStatus DoEvaluateMapStrategy(bool& baseClassesNotMappedYet, UserECDbMapStrategy&);
 
     bool GatherBaseClassMaps (bvector<IClassMap const*>& baseClassMaps, bvector<IClassMap const*>& tphMaps, bvector<IClassMap const*>& tpcMaps, bvector<IClassMap const*>& nmhMaps, ECN::ECClassCR ecClass) const;
     bool ValidateChildStrategy(ECDbMapStrategy const& parentStrategy, UserECDbMapStrategy const& childStrategy) const;
+    BentleyStatus InitializeClassHasCurrentTimeStampProperty();
 
 protected:
     virtual BentleyStatus _InitializeFromSchema();
@@ -69,20 +67,17 @@ public:
 
     MapStatus Initialize();
 
-    ECN::ECPropertyCP GetClassHasCurrentTimeStampProperty() const { return m_classHasCurrentTimeStampProperty; }
-
     ECDbMapStrategy const& GetMapStrategy () const{ return m_resolvedStrategy; }
-
     ECDbMapCR GetECDbMap() const {return m_ecdbMap;}
     ECN::ECClassCR GetECClass() const {return m_ecClass;}
     bvector<ClassIndexInfoPtr> const& GetIndexInfos() const { return m_dbIndexes;}
     Utf8CP GetTableName() const {return m_tableName.c_str();}
     Utf8CP GetECInstanceIdColumnName() const {return m_ecInstanceIdColumnName.c_str();}
+    ECN::ECPropertyCP GetClassHasCurrentTimeStampProperty() const { return m_classHasCurrentTimeStampProperty; }
     IClassMap const* GetParentClassMap () const { return m_parentClassMap; }
 
     //! Virtual tables are not persisted   
     bool IsMapToVirtualTable () const { return m_isMapToVirtualTable; }
-    void RestoreSaveSettings (ECDbMapStrategy mapStrategy, Utf8CP tableName){ m_resolvedStrategy = mapStrategy; if (tableName != nullptr) m_tableName = tableName; }
     };
 
 
@@ -183,17 +178,23 @@ private:
     bool m_isUnique;
     bvector<Utf8String> m_properties;
     WhereConstraint m_where;
+    static std::vector<std::pair<Utf8String, Utf8String>> s_idSpecCustomAttributeNames;
 
     ClassIndexInfo(Utf8CP name, bool isUnique, bvector<Utf8String> const& properties, WhereConstraint whereConstraint)
         : m_name(name), m_isUnique(isUnique), m_properties(properties), m_where(whereConstraint)
         {}
 
-public:
-    static ClassIndexInfoPtr Create(ECDbCR, ECN::ECDbClassMap::DbIndex const&);
-    static ClassIndexInfoPtr CreateStandardKeyIndex(ECDbCR, ECN::ECClassCR containerClass, Utf8CP standardKeyCAName, Utf8CP propertyName);
-    static ClassIndexInfoPtr Clone(ClassIndexInfoCR, Utf8CP newIndexName);
-    static BentleyStatus CreateFromClassMapCA(bvector<ClassIndexInfoPtr>& indexInfos, ECDbCR, ECN::ECDbClassMap const&);
     static BentleyStatus CreateFromIdSpecificationCAs(bvector<ClassIndexInfoPtr>& indexInfos, ECDbCR, ECN::ECClassCR);
+
+    static ClassIndexInfoPtr Create(ECDbCR, ECN::ECDbClassMap::DbIndex const&);
+
+    static std::vector<std::pair<Utf8String, Utf8String>> const& GetIdSpecCustomAttributeNames();
+
+public:
+    static ClassIndexInfoPtr Clone(ClassIndexInfoCR, Utf8CP newIndexName);
+    //!@param customClassMap pass nullptr if @p ecClass doesn't have the ClassMap CA. 
+    static BentleyStatus CreateFromECClass(bvector<ClassIndexInfoPtr>& indexInfos, ECDbCR, ECN::ECClassCR ecClass, ECN::ECDbClassMap const* customClassMap);
+
     Utf8CP GetName() const { return m_name.c_str();}
     bool GetIsUnique() const { return m_isUnique;}
     bvector<Utf8String> const& GetProperties() const{ return m_properties;}

@@ -3797,6 +3797,24 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
                          "       <BaseClass>Sub</BaseClass>"
                          "        <ECProperty propertyName='SubSubProp' typeName='int' />"
                          "    </ECEntityClass>"
+                         "    <ECEntityClass typeName='Sub2'>"
+                         "        <ECCustomAttributes>"
+                         "            <ClassMap xmlns='ECDbMap.01.00'>"
+                         "                 <Indexes>"
+                         "                   <DbIndex>"
+                         "                       <IsUnique>True</IsUnique>"
+                         "                       <Name>uix_sub2</Name>"
+                         "                       <Properties>"
+                         "                          <string>Sub2Prop</string>"
+                         "                       </Properties>"
+                         "                   </DbIndex>"
+                         "                 </Indexes>"
+                         "            </ClassMap>"
+                         "        </ECCustomAttributes>"
+                         "       <BaseClass>Root</BaseClass>"
+                         "       <BaseClass>Interface</BaseClass>"
+                         "        <ECProperty propertyName='Sub2Prop' typeName='int' />"
+                         "    </ECEntityClass>"
                          "    <ECEntityClass typeName='RootUnshared' modifier='Abstract'>"
                          "        <ECCustomAttributes>"
                          "            <ClassMap xmlns='ECDbMap.01.00'>"
@@ -3841,10 +3859,12 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
      //class hierarchy with shared table
      AssertIndex(db, "uix_root", true, "ts_Root", {"RootProp"});
 
-     //index from Interface class is applied to Sub which is stored in joined table
-     AssertIndex(db, "uix_interface_ts_Root", true, "ts_Sub", {"InterfaceProp"});
+     //index from Interface class is applied to Sub and Sub2 which are stored in joined tables
+     AssertIndex(db, "uix_interface_ts_Sub", true, "ts_Sub", {"InterfaceProp"});
+     AssertIndex(db, "uix_interface_ts_Sub2", true, "ts_Sub2", {"InterfaceProp"});
 
      AssertIndex(db, "uix_sub", true, "ts_Sub", {"SubProp"});
+     AssertIndex(db, "uix_sub2", true, "ts_Sub2", {"Sub2Prop"});
 
      ECClassCP subSubClass = db.Schemas().GetECClass("TestSchema", "SubSub");
      ASSERT_TRUE(subSubClass != nullptr);

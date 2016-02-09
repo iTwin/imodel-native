@@ -73,9 +73,7 @@ DbResult ECDbProfileUpgrader::AlterColumnsInTable (ECDbR ecdb, Utf8CP tableName,
     //if the old name list is null, the column names have not changed. This is the case
     //when only dropping columns (and not renaming columns)
     if (matchingColumnNamesWithOldNames == nullptr)
-        {
         matchingColumnNamesWithOldNames = allColumnNamesAfter;
-        }
 
     sql.Sprintf ("INSERT INTO %s (%s) SELECT %s FROM %s;", tableName, allColumnNamesAfter, matchingColumnNamesWithOldNames, tempTableName.c_str ());
     stat = ecdb.ExecuteSql (sql.c_str ());
@@ -197,38 +195,38 @@ SchemaKey ECDbProfileECSchemaUpgrader::s_ecdbfileinfoSchemaKey = SchemaKey ("ECD
 // @bsimethod                                                    Krischan.Eberle        07/2012
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ECDbProfileECSchemaUpgrader::ImportProfileSchemas (ECDbR ecdb)
+DbResult ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ECDbR ecdb)
     {
-    StopWatch timer (true);
-    auto context = ECSchemaReadContext::CreateContext ();
-    context->AddSchemaLocater (ecdb.GetSchemaLocater ());
+    StopWatch timer(true);
+    auto context = ECSchemaReadContext::CreateContext();
+    context->AddSchemaLocater(ecdb.GetSchemaLocater());
 
-    BeFileName ecdbStandardSchemasFolder (context->GetHostAssetsDirectory ());
-    ecdbStandardSchemasFolder.AppendToPath (L"ECSchemas");
-    ecdbStandardSchemasFolder.AppendToPath (L"ECDb");
-    context->AddSchemaPath (ecdbStandardSchemasFolder);
+    BeFileName ecdbStandardSchemasFolder(context->GetHostAssetsDirectory());
+    ecdbStandardSchemasFolder.AppendToPath(L"ECSchemas");
+    ecdbStandardSchemasFolder.AppendToPath(L"ECDb");
+    context->AddSchemaPath(ecdbStandardSchemasFolder);
 
-    if (SUCCESS != ReadECDbSystemSchema (*context, ecdb.GetDbFileName ()))
+    if (SUCCESS != ReadECDbSystemSchema(*context, ecdb.GetDbFileName()))
         return BE_SQLITE_ERROR;
 
-    if (SUCCESS != ReadECDbFileInfoSchema (*context, ecdb.GetDbFileName ()))
+    if (SUCCESS != ReadECDbFileInfoSchema(*context, ecdb.GetDbFileName()))
         return BE_SQLITE_ERROR;
 
-    //import / update if already existing
-    BentleyStatus importStat = ecdb.Schemas ().ImportECSchemas (context->GetCache (), ECDbSchemaManager::ImportOptions());
-    timer.Stop ();
+    //import if already existing
+    BentleyStatus importStat = ecdb.Schemas().ImportECSchemas(context->GetCache());
+    timer.Stop();
     if (importStat != SUCCESS)
         {
-        LOG.errorv ("Creating / upgrading ECDb file failed because importing / updating the ECDb standard ECSchemas in ECDb '%s' failed.",
-            ecdb.GetDbFileName ());
+        LOG.errorv("Creating / upgrading ECDb file failed because importing the ECDb standard ECSchemas into the file '%s' failed.",
+                   ecdb.GetDbFileName());
         return BE_SQLITE_ERROR;
         }
 
-    if (LOG.isSeverityEnabled (NativeLogging::LOG_DEBUG))
+    if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
         {
-        LOG.debugv ("Imported / updated ECDb system ECSchemas in ECDb '%s' in %.4f msecs.",
-            ecdb.GetDbFileName (),
-            timer.GetElapsedSeconds () * 1000.0);
+        LOG.debugv("Imported ECDb system ECSchemas into the file '%s' in %.4f msecs.",
+                   ecdb.GetDbFileName(),
+                   timer.GetElapsedSeconds() * 1000.0);
         }
 
     return BE_SQLITE_OK;
@@ -284,10 +282,10 @@ Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml ()
     {
     return "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='ECDb_System' nameSpacePrefix='ecdbsys' version='3.0'  xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
-        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.12' prefix='bsca' /> "
+        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.13' prefix='bsca' /> "
         "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' /> "
         "    <ECCustomAttributes> "
-        "         <SystemSchema xmlns='Bentley_Standard_CustomAttributes.01.12'/> "
+        "         <SystemSchema xmlns='Bentley_Standard_CustomAttributes.01.13'/> "
         "    </ECCustomAttributes> "
         "    <ECEntityClass typeName='PrimitiveArray' modifier='Abstract'> "
         "        <ECCustomAttributes> "

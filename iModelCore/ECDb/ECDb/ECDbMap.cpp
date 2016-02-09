@@ -731,13 +731,8 @@ BentleyStatus ECDbMap::CreateOrUpdateIndexesInDb() const
                 {
                 bvector<ClassIndexInfoPtr>& indexInfos = indexInfoCache[classMap];
                 ECDbClassMap customClassMap;
-                if (ECDbMapCustomAttributeHelper::TryGetClassMap(customClassMap, classMap->GetClass()))
-                    {
-                    if (SUCCESS != ClassIndexInfo::CreateFromClassMapCA(indexInfos, m_ecdb, customClassMap))
-                        return ERROR;
-                    }
-
-                if (SUCCESS != ClassIndexInfo::CreateFromIdSpecificationCAs(indexInfos, m_ecdb, classMap->GetClass()))
+                const bool hasCustomClassMap = ECDbMapCustomAttributeHelper::TryGetClassMap(customClassMap, classMap->GetClass());
+                if (SUCCESS != ClassIndexInfo::CreateFromECClass(indexInfos, m_ecdb, classMap->GetClass(), hasCustomClassMap ? &customClassMap : nullptr))
                     return ERROR;
 
                 baseClassIndexInfos = &indexInfos;
@@ -1135,37 +1130,37 @@ void ECDbMap::ParsePropertyAccessString(bvector<Utf8String>& tokens, Utf8CP prop
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-void ECDbMap::LightweightCache::LoadClassIdsPerTable () const
+void ECDbMap::LightweightCache::LoadClassIdsPerTable() const
     {
     if (m_loadedFlags.m_classIdsPerTableIsLoaded)
         return;
 
     Utf8String sql;
-    sql.Sprintf("SELECT ec_Table.Id, ec_Class.Id ClassId, ec_Table.Name TableName FROM ec_PropertyMap "
-        "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND (ec_Column.ColumnKind & %d = 0) "
-        "JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
-        "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
-        "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
-        "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-        "WHERE ec_ClassMap.MapStrategy NOT IN (100, 101) "
-        "GROUP BY  ec_Table.Id, ec_Class.Id", Enum::ToInt(ColumnKind::ECClassId));
+    sql.Sprintf("SELECT ec_Table.Id, ec_Table.Name, ec_Class.Id FROM ec_PropertyMap "
+                "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND (ec_Column.ColumnKind & %d = 0) "
+                "JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+                "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
+                "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
+                "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
+                "WHERE ec_ClassMap.MapStrategy NOT IN (100, 101) "
+                "GROUP BY ec_Table.Id, ec_Class.Id", Enum::ToInt(ColumnKind::ECClassId));
 
-    auto stmt = m_map.GetECDbR ().GetCachedStatement (sql.c_str());
+    CachedStatementPtr stmt = m_map.GetECDbR().GetCachedStatement(sql.c_str());
     ECDbTableId currentTableId = -1;
-    ECDbSqlTable const* currentTable;
-    while (stmt->Step () == BE_SQLITE_ROW)
+    ECDbSqlTable const* currentTable = nullptr;
+    while (stmt->Step() == BE_SQLITE_ROW)
         {
-        auto tableId = stmt->GetValueInt64 (0);
-        ECClassId id = stmt->GetValueInt64 (1);
+        ECDbTableId tableId = stmt->GetValueInt64(0);
         if (currentTableId != tableId)
             {
-            Utf8CP tableName = stmt->GetValueText (2);
-            currentTable = m_map.GetSQLManager ().GetDbSchema ().FindTable (tableName);
+            Utf8CP tableName = stmt->GetValueText(1);
+            currentTable = m_map.GetSQLManager().GetDbSchema().FindTable(tableName);
             currentTableId = tableId;
-            BeAssert (currentTable != nullptr);
+            BeAssert(currentTable != nullptr);
             }
 
-        m_classIdsPerTable[currentTable].push_back (id);
+        ECClassId id = stmt->GetValueInt64(2);
+        m_classIdsPerTable[currentTable].push_back(id);
         m_tablesPerClassId[id].insert(currentTable);
         }
 

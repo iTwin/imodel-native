@@ -336,58 +336,10 @@ bool ClassMapInfo::ValidateChildStrategy(ECDbMapStrategy const& parentStrategy, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ClassMapInfo::_InitializeFromSchema ()
     {
-    if (SUCCESS != InitializeFromClassMapCA() ||
-        SUCCESS != InitializeFromClassHasCurrentTimeStampProperty())
-        return ERROR;
-
-    // Add indices for IdSpecification CAs
-    return ClassIndexInfo::CreateFromIdSpecificationCAs(m_dbIndexes, m_ecdbMap.GetECDb(), m_ecClass);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 muhammad.zaighum                01/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ClassMapInfo::InitializeFromClassHasCurrentTimeStampProperty()
-    {
-    IECInstancePtr classHint = m_ecClass.GetCustomAttributeLocal("ClassHasCurrentTimeStampProperty");
-    if (classHint == nullptr)
-        return SUCCESS;
-   
-    ECValue v;
-    if (classHint->GetValue(v, "PropertyName") == ECObjectsStatus::Success && !v.IsNull())
-        {
-        ECPropertyCP prop = m_ecClass.GetPropertyP(v.GetUtf8CP());
-        if (nullptr == prop)
-            {
-            m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                    "Failed to map ECClass %s. The property '%s' specified in the 'ClassHasCurrentTimeStampProperty' custom attribute "
-                    "does not exist in the ECClass.", m_ecClass.GetFullName(), v.GetUtf8CP());
-            return ERROR;
-            }
-        PrimitiveECPropertyCP primProp = prop->GetAsPrimitiveProperty();
-        if (primProp == nullptr || primProp->GetType() != PrimitiveType::PRIMITIVETYPE_DateTime)
-            {
-            m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                "Failed to map ECClass %s. The property '%s' specified in the 'ClassHasCurrentTimeStampProperty' custom attribute "
-                "is not a primitive property of type 'DateTime'.", m_ecClass.GetFullName(), prop->GetName().c_str());
-            return ERROR;
-
-            }
-
-        m_classHasCurrentTimeStampProperty = prop;
-        }
-
-    return SUCCESS;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                03/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ClassMapInfo::InitializeFromClassMapCA()
-    {
     ECDbClassMap customClassMap;
-    if (ECDbMapCustomAttributeHelper::TryGetClassMap(customClassMap, m_ecClass))
+    const bool hasCustomClassMap = ECDbMapCustomAttributeHelper::TryGetClassMap(customClassMap, m_ecClass);
+    if (hasCustomClassMap)
         {
-
         UserECDbMapStrategy const* userStrategy = m_ecdbMap.GetSchemaImportContext()->GetUserStrategy(m_ecClass, &customClassMap);
         if (userStrategy == nullptr || !userStrategy->IsValid())
             return ERROR;
@@ -421,9 +373,45 @@ BentleyStatus ClassMapInfo::InitializeFromClassMapCA()
         ecstat = customClassMap.TryGetECInstanceIdColumn(m_ecInstanceIdColumnName);
         if (ECObjectsStatus::Success != ecstat)
             return ERROR;
+        }
 
-        if (SUCCESS != ClassIndexInfo::CreateFromClassMapCA(m_dbIndexes, m_ecdbMap.GetECDb(), customClassMap))
+    if (SUCCESS != ClassIndexInfo::CreateFromECClass(m_dbIndexes, m_ecdbMap.GetECDb(), m_ecClass, hasCustomClassMap? &customClassMap : nullptr))
+        return ERROR;
+
+    return InitializeClassHasCurrentTimeStampProperty();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 muhammad.zaighum                01/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ClassMapInfo::InitializeClassHasCurrentTimeStampProperty()
+    {
+    IECInstancePtr ca = m_ecClass.GetCustomAttributeLocal("ClassHasCurrentTimeStampProperty");
+    if (ca == nullptr)
+        return SUCCESS;
+   
+    ECValue v;
+    if (ca->GetValue(v, "PropertyName") == ECObjectsStatus::Success && !v.IsNull())
+        {
+        ECPropertyCP prop = m_ecClass.GetPropertyP(v.GetUtf8CP());
+        if (nullptr == prop)
+            {
+            m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                    "Failed to map ECClass %s. The property '%s' specified in the 'ClassHasCurrentTimeStampProperty' custom attribute "
+                    "does not exist in the ECClass.", m_ecClass.GetFullName(), v.GetUtf8CP());
             return ERROR;
+            }
+        PrimitiveECPropertyCP primProp = prop->GetAsPrimitiveProperty();
+        if (primProp == nullptr || primProp->GetType() != PrimitiveType::PRIMITIVETYPE_DateTime)
+            {
+            m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                "Failed to map ECClass %s. The property '%s' specified in the 'ClassHasCurrentTimeStampProperty' custom attribute "
+                "is not a primitive property of type 'DateTime'.", m_ecClass.GetFullName(), prop->GetName().c_str());
+            return ERROR;
+
+            }
+
+        m_classHasCurrentTimeStampProperty = prop;
         }
 
     return SUCCESS;
@@ -867,6 +855,13 @@ void RelationshipMapInfo::DetermineCardinality(ECRelationshipConstraintCR source
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2016
 //+---------------+---------------+---------------+---------------+---------------+------
+//static
+std::vector<std::pair<Utf8String, Utf8String>> ClassIndexInfo::s_idSpecCustomAttributeNames;
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                02/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
 ClassIndexInfoPtr ClassIndexInfo::Create(ECDbCR ecdb, ECN::ECDbClassMap::DbIndex const& dbIndex)
     {
     WhereConstraint whereConstraint = WhereConstraint::None;
@@ -887,37 +882,6 @@ ClassIndexInfoPtr ClassIndexInfo::Create(ECDbCR ecdb, ECN::ECDbClassMap::DbIndex
     return new ClassIndexInfo(dbIndex.GetName(), dbIndex.IsUnique(), dbIndex.GetProperties(), whereConstraint);
     }
 
-
-//---------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                02/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-ClassIndexInfoPtr ClassIndexInfo::CreateStandardKeyIndex(ECDbCR ecdb, ECClassCR containerClass, Utf8CP standardKeyCAName, Utf8CP propertyName)
-    {
-    if (Utf8String::IsNullOrEmpty(standardKeyCAName) || Utf8String::IsNullOrEmpty(propertyName))
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    if (containerClass.GetPropertyP(propertyName) == nullptr)
-        {
-        ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                                                      "Invalid %s on ECClass '%s'. The property '%s' specified in the custom attribute does not exist in the ECClass.",
-                                                      standardKeyCAName, containerClass.GetFullName(), propertyName);
-        return nullptr;
-        }
-
-    Utf8String indexName;
-    indexName.Sprintf("ix_%s_%s_%s_%s", containerClass.GetSchema().GetNamespacePrefix().c_str(), containerClass.GetName().c_str(),
-                      standardKeyCAName, propertyName);
-
-    bvector<Utf8String> indexPropNameVector;
-    indexPropNameVector.push_back(propertyName);
-    return new ClassIndexInfo(indexName.c_str(), false, indexPropNameVector, WhereConstraint::None);
-    }
-
-
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -932,18 +896,66 @@ ClassIndexInfoPtr ClassIndexInfo::Clone(ClassIndexInfoCR rhs, Utf8CP newIndexNam
 // @bsimethod                                 Krischan.Eberle                02/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus ClassIndexInfo::CreateFromClassMapCA(bvector<ClassIndexInfoPtr>& indexInfos, ECDbCR ecdb, ECDbClassMap const& customClassMap)
+BentleyStatus ClassIndexInfo::CreateFromECClass(bvector<ClassIndexInfoPtr>& indexInfos, ECDbCR ecdb, ECClassCR ecClass, ECDbClassMap const* customClassMap)
     {
-    bvector<ECDbClassMap::DbIndex> indices;
-    if (ECObjectsStatus::Success != customClassMap.TryGetIndexes(indices))
-        return ERROR;
-
-    for (ECDbClassMap::DbIndex const& index : indices)
+    if (customClassMap != nullptr)
         {
-        ClassIndexInfoPtr indexInfo = ClassIndexInfo::Create(ecdb, index);
-        if (indexInfo == nullptr)
+        bvector<ECDbClassMap::DbIndex> indices;
+        if (ECObjectsStatus::Success == customClassMap->TryGetIndexes(indices))
             return ERROR;
 
+        for (ECDbClassMap::DbIndex const& index : indices)
+            {
+            ClassIndexInfoPtr indexInfo = Create(ecdb, index);
+            if (indexInfo == nullptr)
+                return ERROR;
+
+            indexInfos.push_back(indexInfo);
+            }
+        }
+
+    return CreateFromIdSpecificationCAs(indexInfos, ecdb, ecClass);
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                02/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+BentleyStatus ClassIndexInfo::CreateFromIdSpecificationCAs(bvector<ClassIndexInfoPtr>& indexInfos, ECDbCR ecdb, ECN::ECClassCR ecClass)
+    {
+    for (std::pair<Utf8String, Utf8String> const& idSpecCA : GetIdSpecCustomAttributeNames())
+        {
+        Utf8StringCR caName = idSpecCA.first;
+        Utf8CP caPropName = idSpecCA.second.c_str();
+        IECInstancePtr ca = ecClass.GetCustomAttribute(caName);
+        if (ca == nullptr)
+            return SUCCESS;
+
+        ECValue v;
+        if (ECObjectsStatus::Success != ca->GetValue(v, caPropName) || v.IsNull() || Utf8String::IsNullOrEmpty(v.GetUtf8CP()))
+            {
+            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                                                                         "Invalid %s on ECClass '%s'. Could not retrieve value of property '%s' from the custom attribute.",
+                                                                         caName.c_str(), ecClass.GetFullName(), caPropName);
+            return ERROR;
+            }
+
+        Utf8CP idPropName = v.GetUtf8CP();
+        if (ecClass.GetPropertyP(idPropName) == nullptr)
+            {
+            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                                                          "Invalid %s on ECClass '%s'. The property '%s' specified in the custom attribute does not exist in the ECClass.",
+                                                          caName.c_str(), ecClass.GetFullName(), idPropName);
+            return ERROR;
+            }
+
+        Utf8String indexName;
+        indexName.Sprintf("ix_%s_%s_%s_%s", ecClass.GetSchema().GetNamespacePrefix().c_str(), ecClass.GetName().c_str(),
+                          caName.c_str(), idPropName);
+
+        bvector<Utf8String> indexPropNameVector;
+        indexPropNameVector.push_back(idPropName);
+        ClassIndexInfoPtr indexInfo = new ClassIndexInfo(indexName.c_str(), false, indexPropNameVector, WhereConstraint::None);
         indexInfos.push_back(indexInfo);
         }
 
@@ -954,39 +966,17 @@ BentleyStatus ClassIndexInfo::CreateFromClassMapCA(bvector<ClassIndexInfoPtr>& i
 // @bsimethod                                 Krischan.Eberle                02/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus ClassIndexInfo::CreateFromIdSpecificationCAs(bvector<ClassIndexInfoPtr>& indexInfos, ECDbCR ecdb, ECN::ECClassCR ecClass)
+std::vector<std::pair<Utf8String, Utf8String>> const& ClassIndexInfo::GetIdSpecCustomAttributeNames()
     {
-    std::vector<std::pair<Utf8CP, Utf8CP>> idSpecCAs;
-    idSpecCAs.push_back(std::make_pair("BusinessKeySpecification", "PropertyName"));
-    idSpecCAs.push_back(std::make_pair("GlobalIdSpecification", "PropertyName"));
-    idSpecCAs.push_back(std::make_pair("SyncIDSpecification", "Property"));
-
-    for (std::pair<Utf8CP, Utf8CP> const& idSpecCA : idSpecCAs)
+    if (s_idSpecCustomAttributeNames.empty())
         {
-        Utf8CP caName = idSpecCA.first;
-        Utf8CP caPropName = idSpecCA.second;
-        IECInstancePtr ca = ecClass.GetCustomAttribute(caName);
-        if (ca == nullptr)
-            return SUCCESS;
-
-        ECValue v;
-        if (ECObjectsStatus::Success != ca->GetValue(v, caPropName) || v.IsNull())
-            {
-            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                                                                         "Invalid %s on ECClass '%s'. Could not retrieve value of property '%s' from the custom attribute.",
-                                                                         caName, ecClass.GetFullName(), caPropName);
-            return ERROR;
-            }
-
-        Utf8CP keyPropName = v.GetUtf8CP();
-        ClassIndexInfoPtr indexInfo = ClassIndexInfo::CreateStandardKeyIndex(ecdb, ecClass, caName, keyPropName);
-        if (indexInfo == nullptr)
-            return ERROR;
-
-        indexInfos.push_back(indexInfo);
+        s_idSpecCustomAttributeNames.push_back(std::make_pair("BusinessKeySpecification", "PropertyName"));
+        s_idSpecCustomAttributeNames.push_back(std::make_pair("GlobalIdSpecification", "PropertyName"));
+        s_idSpecCustomAttributeNames.push_back(std::make_pair("SyncIDSpecification", "Property"));
         }
 
-    return SUCCESS;
+    return s_idSpecCustomAttributeNames;
     }
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
