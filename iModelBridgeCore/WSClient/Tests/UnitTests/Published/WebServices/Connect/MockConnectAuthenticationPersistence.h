@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/MockConnectAuthenticationPersistence.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,6 +24,7 @@ struct MockConnectAuthenticationPersistence : public IConnectAuthenticationPersi
 
         MOCK_METHOD1 (SetToken, void (SamlTokenPtr token));
         MOCK_CONST_METHOD0 (GetToken, SamlTokenPtr ());
+        MOCK_CONST_METHOD0(GetTokenSetTime, DateTime());
     };
 #endif
 

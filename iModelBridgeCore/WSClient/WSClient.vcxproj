@@ -138,10 +138,12 @@
     <ClCompile Include="Connect\Connect.cpp" />
     <ClCompile Include="Connect\ConnectAuthenticationHandler.cpp" />
     <ClCompile Include="Connect\ConnectAuthenticationPersistence.cpp" />
+    <ClCompile Include="Connect\ConnectSessionAuthenticationPersistence.cpp" />
     <ClCompile Include="Connect\ConnectSetup.cpp" />
     <ClCompile Include="Connect\ConnectSignInManager.cpp" />
     <ClCompile Include="Connect\ConnectSpaces.cpp" />
     <ClCompile Include="Connect\ConnectTokenProvider.cpp" />
+    <ClCompile Include="Connect\EulaClient.cpp" />
     <ClCompile Include="Connect\SamlToken.cpp" />
     <ClCompile Include="Licensing\MobileTracking.cpp" />
     <ClCompile Include="Client\ObjectId.cpp" />
@@ -279,10 +281,13 @@
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectAuthenticationHandler.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectAuthenticationPersistence.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectMessaging.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\ConnectSessionAuthenticationPersistence.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectSetup.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectSignInManager.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectSpaces.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectTokenProvider.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\EulaClient.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\IConnectAuthenticationProvider.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\IConnectAuthenticationPersistence.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\IConnectTokenProvider.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\SamlToken.h" />

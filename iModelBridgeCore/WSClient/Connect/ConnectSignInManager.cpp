@@ -18,6 +18,7 @@
 #include <WebServices/Configuration/UrlProvider.h>
 #include <WebServices/Connect/ConnectTokenProvider.h>
 #include <WebServices/Connect/ConnectAuthenticationHandler.h>
+#include <WebServices/Connect/ConnectSessionAuthenticationPersistence.h>
 
 #include "Connect.xliff.h"
 #include "AuthenticationData.h"
@@ -42,15 +43,16 @@ ConnectSignInManager::~ConnectSignInManager()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                           Vytautas.Barkauskas    12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithToken(Utf8StringCR tokenStr)
+AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithToken(SamlTokenPtr token)
     {
-    auto token = std::make_shared<SamlToken>(tokenStr);
     if (!token->IsSupported())
         {
         return CreateCompletedAsyncTask(SignInResult::Error(ConnectLocalizedString(ALERT_UnsupportedToken)));
         }
 
-    ConnectAuthenticationPersistence::GetShared()->SetToken(std::make_shared<SamlToken>(tokenStr));
+    m_persistence = std::make_shared<ConnectSessionAuthenticationPersistence>();
+    m_persistence->SetToken(token);
+
     return CreateCompletedAsyncTask(SignInResult::Success());
     }
 
@@ -70,9 +72,22 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithCredentials(Credentia
         return CreateCompletedAsyncTask(SignInResult::Error(ConnectLocalizedString(ALERT_SignInFailed_ServerError)));
         }
 
-    ConnectAuthenticationPersistence::GetShared()->SetToken(token);
-    ConnectAuthenticationPersistence::GetShared()->SetCredentials(credentials);
+    m_persistence = std::make_shared<ConnectSessionAuthenticationPersistence>();
+    m_persistence->SetToken(token);
+    m_persistence->SetCredentials(credentials);
+
     return CreateCompletedAsyncTask(SignInResult::Success());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                           Vytautas.Barkauskas    01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectSignInManager::FinalizeSignIn()
+    {
+    auto currentPersistence = m_persistence;
+    m_persistence = ConnectAuthenticationPersistence::GetShared();
+    m_persistence->SetToken(currentPersistence->GetToken());
+    m_persistence->SetCredentials(currentPersistence->GetCredentials());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -80,6 +95,7 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithCredentials(Credentia
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSignInManager::SignOut()
     {
+    m_persistence = nullptr;
     ConnectAuthenticationPersistence::GetShared()->SetToken(nullptr);
     ConnectAuthenticationPersistence::GetShared()->SetCredentials(Credentials());
     }
@@ -89,6 +105,8 @@ void ConnectSignInManager::SignOut()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConnectSignInManager::IsSignedIn() const
     {
+    // TODO: allow session sign in to be valid
+    //return nullptr != m_persistence && m_persistence->GetToken() != nullptr;
     return ConnectAuthenticationPersistence::GetShared()->GetToken() != nullptr;
     }
 
@@ -120,8 +138,7 @@ ConnectSignInManager::UserInfo ConnectSignInManager::GetUserInfo() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<AuthenticationHandler> ConnectSignInManager::GetAuthenticationHandler(Utf8StringCR serverUrl, IHttpHandlerPtr customHandler)
     {
-    auto persistence = ConnectAuthenticationPersistence::GetShared();
-    auto provider = std::make_shared<ConnectTokenProvider>(persistence);
+    auto provider = std::make_shared<ConnectTokenProvider>(m_persistence, IsTokenBasedAuthentication());
     auto handler = UrlProvider::GetSecurityConfigurator(customHandler);
     return std::make_shared<ConnectAuthenticationHandler>(serverUrl, provider, handler);
     }
@@ -132,6 +149,7 @@ std::shared_ptr<AuthenticationHandler> ConnectSignInManager::GetAuthenticationHa
 bool ConnectSignInManager::IsTokenBasedAuthentication()
     {
     return
-        ConnectAuthenticationPersistence::GetShared()->GetToken() != nullptr &&
-        ConnectAuthenticationPersistence::GetShared()->GetCredentials().IsEmpty();
+        m_persistence != nullptr &&
+        m_persistence->GetToken() != nullptr &&
+        m_persistence->GetCredentials().IsEmpty();
     }
