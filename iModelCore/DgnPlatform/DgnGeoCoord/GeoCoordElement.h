@@ -2,7 +2,7 @@
 |
 |     $Source: DgnGeoCoord/GeoCoordElement.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -102,7 +102,7 @@ typedef struct GeoCoordType66
     char        deprec_dgnUnitNm[UNTSZ];// 16-character version of the name of the linear unit for dgn master units
 
     uint32_t    to84_via;               // Conversion technique, one of: cs_DTCTYP_MOLO, cs_DTCTYP_BURSA, cs_DTCTYP_MREG, cs_DTCTYP_NAD27, cs_DTCTYP_NAD83
-                                        // cs_DTCTYP_WGS84, cs_DTCTYP_WGS72 cs_DTCTYP_HPGN,  cs_DTCTYP_LCLGRF
+                                        // cs_DTCTYP_WGS84, cs_DTCTYP_WGS72 cs_DTCTYP_HPGN,  cs_DTCTYP_LCLGRF, cs_DTCTYP_GENGRID
     int32_t     minor_version;
     int32_t     attributes;
     int32_t     prj_code;               // CSMap equivalent to projType (different values)
