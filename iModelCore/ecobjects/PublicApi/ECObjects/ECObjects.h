@@ -39,6 +39,7 @@ EC_TYPEDEFS(PrimitiveECProperty);
 EC_TYPEDEFS(DateTimeInfo);
 EC_TYPEDEFS(StructECProperty);
 EC_TYPEDEFS(ArrayECProperty);
+EC_TYPEDEFS(ExtendedTypeECProperty);
 EC_TYPEDEFS(StructArrayECProperty);
 EC_TYPEDEFS(NavigationECProperty);
 EC_TYPEDEFS(ECPropertyIterable);
@@ -161,6 +162,7 @@ enum class ECObjectsStatus
     DynamicSchemaCustomAttributeWasNotFound,
     Error,
     RelationshipConstraintsNotCompatible,
+    CaseCollision,
     };
 
 //! Result status for deserializing an ECSchema from Xml

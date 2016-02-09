@@ -81,7 +81,7 @@ struct PerformanceTestsECXml : PerformanceTestFixture
         readingTimer.Stop ();
         EXPECT_EQ (InstanceReadStatus::Success, instanceStatus);
 
-        StopWatch writingTimer (L"Serialization", false);
+        StopWatch writingTimer ("Serialization", false);
         WString ecInstanceXml;
         writingTimer.Start ();
         InstanceWriteStatus status2 = testInstance->WriteToXmlString (ecInstanceXml, true, true);

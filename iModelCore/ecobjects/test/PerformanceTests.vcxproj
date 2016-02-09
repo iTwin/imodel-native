@@ -72,7 +72,9 @@
     <ClInclude Include="Performance\PerformanceTestFixture.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="logging.config.xml" />
+    <None Include="logging.config.xml">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="performanceCompileRules.mki" />
     <None Include="performanceTests.mke" />
   </ItemGroup>

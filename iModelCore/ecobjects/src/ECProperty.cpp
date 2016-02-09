@@ -424,38 +424,14 @@ SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchem
 SchemaWriteStatus PrimitiveECProperty::_WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor)
     {
     bmap<Utf8CP, CharCP> additionalAttributes;
-    if (this->HasExtendedType())
+    if (this->ExtendedTypeLocallyDefined())
         {
-        additionalAttributes[EXTENDED_TYPE_NAME_ATTRIBUTE] = m_extendedTypeName.c_str();
+        additionalAttributes[EXTENDED_TYPE_NAME_ATTRIBUTE] = GetExtendedTypeName().c_str();
         }
     if (3 == ecXmlVersionMajor)
         additionalAttributes["kindOfQuantity"] = GetKindOfQuantity().c_str();
 
     return T_Super::_WriteXml(xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersionMajor, &additionalAttributes);
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus PrimitiveECProperty::SetExtendedTypeName(Utf8CP extendedTypeName)
-    {
-    if (Utf8String::IsNullOrEmpty(extendedTypeName))
-        {
-        m_extendedTypeName = Utf8String(); // Resets String
-        }
-    else if (!m_extendedTypeName.Equals(extendedTypeName))
-        {
-        m_extendedTypeName = extendedTypeName;
-        }
-    return ECObjectsStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PrimitiveECProperty::RemoveExtendedTypeName()
-    {
-    return ECObjectsStatus::Success == this->SetExtendedTypeName(nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -636,6 +612,45 @@ Utf8StringCR PrimitiveECProperty::GetKindOfQuantity () const
 bool PrimitiveECProperty::_IsCalculated() const
     {
     return m_calculatedSpec.IsValid() || GetCustomAttribute ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification").IsValid();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Colin.Kerr                02/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8StringCR ExtendedTypeECProperty::GetExtendedTypeName() const
+    {
+    if (!ExtendedTypeLocallyDefined())
+        {
+        ECPropertyCP baseProperty = GetBaseProperty();
+        if (nullptr != baseProperty)
+            {
+            ExtendedTypeECPropertyCP baseExtended = baseProperty->GetAsExtendedTypeProperty();
+            if (nullptr != baseExtended)
+                return baseExtended->GetExtendedTypeName();
+            }
+        }
+
+    return m_extendedTypeName;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ExtendedTypeECProperty::SetExtendedTypeName(Utf8CP extendedTypeName)
+    {
+    m_extendedTypeName.clear();
+    if (!Utf8String::IsNullOrEmpty(extendedTypeName))
+        m_extendedTypeName.assign(extendedTypeName);
+
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ExtendedTypeECProperty::RemoveExtendedTypeName()
+    {
+    return ECObjectsStatus::Success == this->SetExtendedTypeName(nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -934,9 +949,9 @@ SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlV
             elementName = EC_STRUCTARRAYPROPERTY_ELEMENT;
         }
 
-    if (this->HasExtendedType())
+    if (this->ExtendedTypeLocallyDefined())
         {
-        additionalAttributes[EXTENDED_TYPE_NAME_ATTRIBUTE] = m_extendedTypeName.c_str();
+        additionalAttributes[EXTENDED_TYPE_NAME_ATTRIBUTE] = GetExtendedTypeName().c_str();
         }
 
     SchemaWriteStatus status = T_Super::_WriteXml (xmlWriter, elementName, ecXmlVersionMajor, &additionalAttributes);
@@ -953,30 +968,6 @@ SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlV
 
         
     return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ArrayECProperty::SetExtendedTypeName(Utf8CP extendedTypeName)
-    {
-    if (Utf8String::IsNullOrEmpty(extendedTypeName))
-        {
-        m_extendedTypeName = Utf8String(); // Resets String
-        }
-    else if (!m_extendedTypeName.Equals(extendedTypeName))
-        {
-        m_extendedTypeName = extendedTypeName;
-        }
-    return ECObjectsStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ArrayECProperty::RemoveExtendedTypeName()
-    {
-    return ECObjectsStatus::Success == this->SetExtendedTypeName(nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -2539,6 +2539,37 @@ TEST_F (ClassTest, CanOverrideBaseProperties)
 
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            01/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ClassTest, CanOverrideBasePropertiesInDerivedClass)
+    {
+    ECSchemaPtr schema;
+    ECEntityClassP parent;
+    ECEntityClassP derived;
+    ECEntityClassP base;
+
+    ECSchema::CreateSchema(schema, "TestSchema", 1, 0);
+    schema->CreateEntityClass(base, "BaseClass");
+    schema->CreateEntityClass(parent, "Parent");
+    schema->CreateEntityClass(derived, "Derived");
+    derived->AddBaseClass(*parent);
+
+    PrimitiveECPropertyP derivedStringProp;
+    PrimitiveECPropertyP baseIntProp;
+
+    derived->CreatePrimitiveProperty(derivedStringProp, "Code", PRIMITIVETYPE_String);
+    base->CreatePrimitiveProperty(baseIntProp, "Code", PRIMITIVETYPE_Integer);
+
+    ECObjectsStatus status = parent->AddBaseClass(*base);
+    EXPECT_NE(ECObjectsStatus::DataTypeMismatch, status);
+
+    ECPropertyP prop = derived->GetPropertyP("Code", false);
+    ASSERT_TRUE(nullptr != prop);
+    PrimitiveECPropertyP primProp = prop->GetAsPrimitivePropertyP();
+    EXPECT_EQ(PRIMITIVETYPE_String, primProp->GetType());
+
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

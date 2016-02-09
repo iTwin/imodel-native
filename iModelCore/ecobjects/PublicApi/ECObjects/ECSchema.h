@@ -38,7 +38,7 @@ struct less_str
 {
 bool operator()(Utf8CP s1, Utf8CP s2) const
     {
-    if (strcmp(s1, s2) < 0)
+    if (BeStringUtilities::Stricmp(s1, s2) < 0)
         return true;
 
     return false;
@@ -675,6 +675,8 @@ protected:
     virtual NavigationECPropertyP       _GetAsNavigationPropertyP()         { return nullptr; } // used to avoid dynamic_cast
 
     virtual bool                        _HasExtendedType() const { return false; }
+    virtual ExtendedTypeECPropertyCP    _GetAsExtendedTypePropertyCP() const { return nullptr; } // used to avoid dynamic_cast
+    virtual ExtendedTypeECPropertyP     _GetAsExtendedTypePropertyP() { return nullptr; } // used to avoid dynamic_cast
 
     // This method returns a wstring by value because it may be a computed string.  For instance struct properties may return a qualified typename with a namespace
     // prefix relative to the containing schema.
@@ -810,16 +812,43 @@ public:
     StructECPropertyP      GetAsStructPropertyP()               { return _GetAsStructPropertyP(); } //!< Returns the property as a StructECProperty*
     StructArrayECPropertyCP GetAsStructArrayProperty() const    { return _GetAsStructArrayPropertyCP(); } //! <Returns the property as a const StructArrayECProperty*
     StructArrayECPropertyP GetAsStructArrayPropertyP()          { return _GetAsStructArrayPropertyP(); } //! <Returns the property as a StructArrayECProperty*
-    NavigationECPropertyCP GetAsNavigationProperty() const    { return _GetAsNavigationPropertyCP(); } //! <Returns the property as a const NavigationECProperty*
+    NavigationECPropertyCP GetAsNavigationProperty() const      { return _GetAsNavigationPropertyCP(); } //! <Returns the property as a const NavigationECProperty*
     NavigationECPropertyP  GetAsNavigationPropertyP()           { return _GetAsNavigationPropertyP(); } //! <Returns the property as a NavigationECProperty*
+    ExtendedTypeECPropertyCP GetAsExtendedTypeProperty() const  { return _GetAsExtendedTypePropertyCP(); } //! <Returns the property as a const ExtendedTypeECProperty*
+    ExtendedTypeECPropertyP GetAsExtendedTypePropertyP()        { return _GetAsExtendedTypePropertyP(); } //! <Returns the property as a ExtendedTypeECProperty*
+};
 
+//=======================================================================================
+//! The in-memory representation of an ExtendedTypeECProperty which enhances the ECProperty
+//! baseclass by the methods to support ExtendedType handling.
+//! @bsiclass
+//=======================================================================================
+struct ExtendedTypeECProperty : public ECProperty
+ {
+private:
+    Utf8String    m_extendedTypeName;
+        
+protected:
+    ExtendedTypeECProperty(ECClassCR ecClass) : ECProperty(ecClass) {};
+    virtual bool  _HasExtendedType() const override { return GetExtendedTypeName().size() > 0; }
+    virtual ExtendedTypeECPropertyCP _GetAsExtendedTypePropertyCP () const override { return this; }
+    virtual ExtendedTypeECPropertyP  _GetAsExtendedTypePropertyP() override { return this; }
+    bool ExtendedTypeLocallyDefined() const { return m_extendedTypeName.size() > 0; }
+
+public:
+    //! Gets the extended type name of this ECProperty
+    ECOBJECTS_EXPORT Utf8StringCR GetExtendedTypeName() const;
+    //! Sets the Name of the Extended Type of this property.
+    ECOBJECTS_EXPORT ECObjectsStatus SetExtendedTypeName(Utf8CP extendedTypeName);
+    //! Resets the extended type on this property.
+    ECOBJECTS_EXPORT bool RemoveExtendedTypeName();
 };
 
 //=======================================================================================
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
 //! @bsiclass
 //=======================================================================================
-struct PrimitiveECProperty : public ECProperty
+struct PrimitiveECProperty : public ExtendedTypeECProperty
 {
     DEFINE_T_SUPER(ECProperty)
 friend struct ECClass;
@@ -828,9 +857,8 @@ private:
     ECEnumerationCP                             m_enumeration;
     mutable CalculatedPropertySpecificationPtr  m_calculatedSpec;   // lazily-initialized
     Utf8String                                  m_kindOfQuantity;
-    Utf8String                                  m_extendedTypeName;
 
-    PrimitiveECProperty (ECClassCR ecClass) : m_primitiveType(PRIMITIVETYPE_String), ECProperty(ecClass), m_enumeration(nullptr) {};
+    PrimitiveECProperty(ECClassCR ecClass) : m_primitiveType(PRIMITIVETYPE_String), ExtendedTypeECProperty(ecClass), m_enumeration(nullptr) {};
 
 protected:
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
@@ -842,7 +870,6 @@ protected:
     virtual Utf8String                  _GetTypeNameForXml(int ecXmlVersionMajor) const override;
     virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
-    virtual bool                        _HasExtendedType() const override { return !m_extendedTypeName.empty(); }
     virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const override;
     virtual bool                                _IsCalculated() const override;
     virtual bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) override;
@@ -860,13 +887,6 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus SetKindOfQuantity(Utf8StringCR value);
     //! Gets the KindOfQuantity of this PrimitiveECProperty
     ECOBJECTS_EXPORT Utf8StringCR GetKindOfQuantity() const;
-    //! Gets the extended type of this ECProperty
-    Utf8StringCR GetExtendedTypeName() const { return m_extendedTypeName; }
-    //! Sets the Name of the Extended Type of this property.
-    ECOBJECTS_EXPORT ECObjectsStatus SetExtendedTypeName(Utf8CP extendedTypeName);
-    //! Resets the extended type on this property.
-    ECOBJECTS_EXPORT bool RemoveExtendedTypeName();
-
 };
 
 //=======================================================================================
@@ -907,7 +927,7 @@ public:
 //! The in-memory representation of an ECArrayProperty as defined by ECSchemaXML
 //! @bsiclass
 //=======================================================================================
-struct ArrayECProperty : public ECProperty
+struct ArrayECProperty : public ExtendedTypeECProperty
 {
     DEFINE_T_SUPER(ECProperty)
 friend struct ECClass;
@@ -918,13 +938,12 @@ private:
     mutable CalculatedPropertySpecificationPtr  m_calculatedSpec;
     PrimitiveType                               m_primitiveType;
     mutable IECTypeAdapter*                     m_cachedMemberTypeAdapter;
-    Utf8String                                  m_extendedTypeName;
 
 protected:
     ArrayKind               m_arrayKind;
 
     ArrayECProperty(ECClassCR ecClass)
-        : ECProperty(ecClass), m_primitiveType(PRIMITIVETYPE_String), m_arrayKind(ARRAYKIND_Primitive),
+        : ExtendedTypeECProperty(ecClass), m_primitiveType(PRIMITIVETYPE_String), m_arrayKind(ARRAYKIND_Primitive),
         m_minOccurs(0), m_maxOccurs(UINT_MAX), m_cachedMemberTypeAdapter(NULL)
         {};
     ECObjectsStatus                     SetMinOccurs(Utf8StringCR minOccurs);
@@ -940,7 +959,6 @@ protected:
     virtual Utf8String                  _GetTypeName () const override;
     virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
-    virtual bool                        _HasExtendedType() const override { return !m_extendedTypeName.empty(); }
     virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const override;
     virtual bool                                _IsCalculated() const override;
     virtual bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) override;
@@ -968,12 +986,6 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetMaxOccurs(uint32_t value);
     //! Gets the Maximum number of array members.
     ECOBJECTS_EXPORT uint32_t           GetMaxOccurs() const;
-    //! Gets the extended type of this ECProperty
-    Utf8StringCR GetExtendedTypeName() const { return m_extendedTypeName; }
-    //! Sets the Name of the Extended Type of this property.
-    ECOBJECTS_EXPORT ECObjectsStatus SetExtendedTypeName(Utf8CP extendedTypeName);
-    //! Resets the extended type on this property.
-    ECOBJECTS_EXPORT bool RemoveExtendedTypeName();
 
 //__PUBLISH_SECTION_END__
     //! Because of a legacy bug GetMaxOccurs always returns "unbounded". For components that need to persist
@@ -1197,8 +1209,9 @@ private:
     PropertyList                    m_propertyList;
     mutable StandaloneECEnablerPtr  m_defaultStandaloneEnabler;
 
-    ECObjectsStatus AddProperty (ECPropertyP& pProperty);
+    ECObjectsStatus AddProperty (ECPropertyP& pProperty, bool resolveConflicts = false);
     ECObjectsStatus RemoveProperty (ECPropertyR pProperty);
+    ECObjectsStatus RenameConflictProperty(ECPropertyP thisProperty, bool renameDerivedProperties);
 
     static bool     SchemaAllowsOverridingArrays(ECSchemaCP schema);
 
@@ -1215,9 +1228,10 @@ private:
     static void     SetErrorHandling (bool doAssert);
     ECObjectsStatus CopyPropertyForSupplementation(ECPropertyP& destProperty, ECPropertyCP sourceProperty, bool copyCustomAttributes);
     ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyP sourceProperty, bool copyCustomAttributes);
+    ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, Utf8CP destPropertyName, bool copyCustomAttributes);
 
     void            OnBaseClassPropertyRemoved (ECPropertyCR baseProperty);
-    ECObjectsStatus OnBaseClassPropertyAdded (ECPropertyCR baseProperty);
+    ECObjectsStatus OnBaseClassPropertyAdded (ECPropertyCR baseProperty, bool resolveConflicts);
 protected:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
     //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
@@ -1240,13 +1254,14 @@ protected:
     //! the schema itself otherwise the method may fail because such dependencies can not be located.
     //! @param[in]  classNode       The XML DOM node to read
     //! @param[in]  context         The read context that contains information about schemas used for deserialization
+    //! @param[in]  conversionSchema  If there was a supplied schema to assist in converting from V2 to V3
     //! @param[in]  ecXmlVersionMajor The major version of the ECXml spec used for serializing this ECClass
     //! @param[out] navigationProperties A running list of all naviagtion properties in the schema.  This list is used for validation, which may only happen after all classes are loaded
     //! @return   Status code
-    virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties);
+    virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties);
 
     SchemaReadStatus                    _ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaReadContextR context);
-    SchemaReadStatus                    _ReadPropertyFromXmlAndAddToClass( ECPropertyP ecProperty, BeXmlNodeP& childNode, ECSchemaReadContextR context, Utf8CP childNodeName );
+    SchemaReadStatus                    _ReadPropertyFromXmlAndAddToClass( ECPropertyP ecProperty, BeXmlNodeP& childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, Utf8CP childNodeName );
 
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const;
     SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const;
@@ -1382,8 +1397,9 @@ public:
     //! Note: baseClass must be of same derived class type
     //! @param[in] baseClass The class to derive from
     //! @param[in] insertAtBeginning true, if @p baseClass is inserted at the beginning of the list. 
+    //! @param[in] resolveConflicts if true, will automatically resolve conflicts with property names by renaming the property in the current (and derived) class
     //! false if @p baseClass is added to the end of the list
-    ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass, bool insertAtBeginning);
+    ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false);
     
     //! Returns whether there are any base classes for this class
     ECOBJECTS_EXPORT bool            HasBaseClasses() const;
@@ -2050,7 +2066,7 @@ protected:
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const override;
 
     virtual SchemaReadStatus            _ReadXmlAttributes (BeXmlNodeR classNode) override;
-    virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties) override;
+    virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties) override;
     virtual ECRelationshipClassCP       _GetRelationshipClassCP () const override {return this;};
     virtual ECRelationshipClassP        _GetRelationshipClassP ()  override {return this;};
     virtual ECClassType _GetClassType() const override { return ECClassType::Relationship; }
@@ -3069,6 +3085,16 @@ public:
     //! @param[in] versionMinor    The minor version number
     //! @return The version string
     static Utf8String FormatSchemaVersion(uint32_t versionMajor, uint32_t versionMiddle, uint32_t versionMinor) { return SchemaKey::FormatSchemaVersion(versionMajor, versionMiddle, versionMinor); }
+
+    //! If the given schemaName and namespacePrefix is valid, this will create a new schema object
+    //! @param[out] schemaOut       if successful, will contain a new schema object
+    //! @param[in]  schemaName      Name of the schema to be created.
+    //! @param[in]  namespacePrefix Namespace prefix of the schema to be created
+    //! @param[in]  versionMajor    The major version number.
+    //! @param[in]  versionMinor    The minor version number.
+    //! @return A status code indicating whether the call was succesfull or not
+    ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR schemaName, 
+                                                         Utf8StringCR namespacePrefix, uint32_t versionMajor, uint32_t versionMinor);
 
     //! Generate a schema version string given the major and minor version values.
     //! @param[in] versionMajor    The major version number

@@ -378,8 +378,13 @@ Utf8StringCR ECSchema::GetNamespacePrefix () const
 ECObjectsStatus ECSchema::SetNamespacePrefix (Utf8StringCR namespacePrefix)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
-    m_namespacePrefix = namespacePrefix;
-    return ECObjectsStatus::Success;
+
+	else if (!ECNameValidation::IsValidName(namespacePrefix.c_str()))
+		return ECObjectsStatus::InvalidName;
+
+	ECNameValidation::EncodeToValidName(m_namespacePrefix, namespacePrefix);
+
+	return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1047,16 +1052,40 @@ ECObjectsStatus ECSchema::SetVersionFromString (Utf8CP versionString)
         return ECObjectsStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+// TODO: deprecate, we want namespace prefix set all the time.
+//---------------------------------------------------------------------------------------//
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+----//
 ECObjectsStatus ECSchema::CreateSchema (ECSchemaPtr& schemaOut, Utf8StringCR schemaName, uint32_t versionMajor, uint32_t versionMiddle, uint32_t versionMinor)
     {
     schemaOut = new ECSchema();
 
     ECObjectsStatus status;
 
-    if (ECObjectsStatus::Success != (status = schemaOut->SetName (schemaName)) ||
+    if (ECObjectsStatus::Success != (status = schemaOut->SetName(schemaName)) ||
+        ECObjectsStatus::Success != (status = schemaOut->SetVersionMajor(versionMajor)) ||
+        ECObjectsStatus::Success != (status = schemaOut->SetVersionMiddle(versionMiddle)) ||
+        ECObjectsStatus::Success != (status = schemaOut->SetVersionMinor(versionMinor)))
+        {
+        schemaOut = NULL;
+        return status;
+        }
+
+    return ECObjectsStatus::Success;
+    }
+ 
+    
+//-------------------------------------------------------------------------------------//
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+----//
+ECObjectsStatus ECSchema::CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR schemaName, Utf8StringCR namespacePrefix, uint32_t versionMajor, uint32_t versionMiddle, uint32_t versionMinor)
+    {
+    schemaOut = new ECSchema();
+
+    ECObjectsStatus status;
+
+    if (ECObjectsStatus::Success != (status = schemaOut->SetName(schemaName)) ||
+        ECObjectsStatus::Success != (status = schemaOut->SetNamespacePrefix(namespacePrefix)) ||
         ECObjectsStatus::Success != (status = schemaOut->SetVersionMajor (versionMajor)) ||
         ECObjectsStatus::Success != (status = schemaOut->SetVersionMiddle(versionMiddle)) ||
         ECObjectsStatus::Success != (status = schemaOut->SetVersionMinor (versionMinor)))
@@ -1067,6 +1096,7 @@ ECObjectsStatus ECSchema::CreateSchema (ECSchemaPtr& schemaOut, Utf8StringCR sch
 
     return ECObjectsStatus::Success;
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
@@ -1791,7 +1821,7 @@ uint32_t        CheckSumHelper::ComputeCheckSumForFile (WCharCP schemaFile)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSchemaXmlFile, ECSchemaReadContextR schemaContext)
     {
-    StopWatch timer(L"", true);
+    StopWatch timer(true);
     LOG.debugv (L"About to read native ECSchema from file: fileName='%ls'", ecSchemaXmlFile);
     schemaOut = NULL;
 
@@ -1836,7 +1866,7 @@ Utf8CP               ecSchemaXml,
 ECSchemaReadContextR schemaContext
 )
     {
-    StopWatch timer(L"", true);
+    StopWatch timer(true);
     LOG.debugv (L"About to read native ECSchema read from string."); // mainly included for timing
     schemaOut = NULL;
     SchemaReadStatus status = SchemaReadStatus::Success;
@@ -1887,7 +1917,7 @@ WCharCP              ecSchemaXml,
 ECSchemaReadContextR schemaContext
 )
     {
-    StopWatch timer(L"", true);
+    StopWatch timer(true);
     LOG.debugv (L"About to read native ECSchema read from string."); // mainly included for timing
     schemaOut = NULL;
     SchemaReadStatus status = SchemaReadStatus::Success;

@@ -83,7 +83,7 @@ TEST_F (InstanceLabelTest, TestLabels)
 
     TestInstanceLabel (true, "InstanceLabelProperty", "MyLabel");
     TestInstanceLabel (false, "DisplayLabel", NULL);   // Bill added DisplayLabel and variants as hard-coded property names to use for label if no specification present; managed does not do this; reverted it.
-    TestInstanceLabel (false, "NAME", "MyName");
+    TestInstanceLabel (false, "NAME", "C");
     TestInstanceLabel (true, "NAME", "MyName");
     TestInstanceLabel (false, "ThisIsNotAnInstanceLabel", NULL);
     }

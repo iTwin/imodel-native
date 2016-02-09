@@ -373,7 +373,7 @@ bool createCopyOfSupplementalCustomAttribute
 )
     {
     m_createCopyOfSupplementalCustomAttribute = createCopyOfSupplementalCustomAttribute;
-    StopWatch timer (L"", true);
+    StopWatch timer(true);
     bmap<uint32_t, ECSchemaP> schemasByPrecedence;
     bvector<ECSchemaP> localizationSchemas;
     SupplementedSchemaStatus status = OrderSupplementalSchemas(schemasByPrecedence, primarySchema, supplementalSchemaList, localizationSchemas);
