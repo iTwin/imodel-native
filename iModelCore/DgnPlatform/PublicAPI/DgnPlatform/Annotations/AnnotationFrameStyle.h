@@ -93,6 +93,9 @@ public:
     void SetRealProperty(AnnotationFrameStyleProperty key, T_Real value) { T_Super::SetRealProperty((T_Key)key, value); }
 };
 
+//! As an element, AnnotationFrameStyle IDs are inherently DgnElementId, but create a typedef so that argument types are more obvious/natural.
+typedef DgnElementId AnnotationFrameStyleId;
+
 //=======================================================================================
 //! This is used to provide style properties when creating an AnnotationFrame.
 //! @note When creating an AnnotationFrame, the typical work flow is to create and store the style, and then create the AnnotationFrame with the stored style's ID.

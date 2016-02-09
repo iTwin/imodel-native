@@ -69,6 +69,9 @@ public:
     void SetRealProperty(TextAnnotationSeedProperty key, T_Real value) { T_Super::SetRealProperty((T_Key)key, value); }
 };
 
+//! As an element, TextAnnotationSeed IDs are inherently DgnElementId, but create a typedef so that argument types are more obvious/natural.
+typedef DgnElementId TextAnnotationSeedId;
+
 //=======================================================================================
 //! This is used to provide seed properties when creating a TextAnnotation. Unlike a classic "style", a "seed" is only used when creating the element. Once created, elements will not react to changes in the seed.
 //! @note To be valid, a seed must have all 3 style properties set. When created from scratch, all 3 styles are invalid and must therefore be set.

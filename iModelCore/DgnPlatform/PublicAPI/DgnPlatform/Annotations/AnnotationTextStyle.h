@@ -95,6 +95,9 @@ public:
     void SetRealProperty(AnnotationTextStyleProperty key, T_Real value) { T_Super::SetRealProperty((T_Key)key, value); }
 };
 
+//! As an element, AnnotationTextStyle IDs are inherently DgnElementId, but create a typedef so that argument types are more obvious/natural.
+typedef DgnElementId AnnotationTextStyleId;
+
 //=======================================================================================
 //! This is used to provide style properties when creating an AnnotationTextBlock.
 //! AnnotationTextBlock has different components, such as the block itself, paragraphs, and runs. Different properties of a style affect different components of the AnnotationTextBlock. AnnotationTextStyleProperty indicates which components the properties affect.
