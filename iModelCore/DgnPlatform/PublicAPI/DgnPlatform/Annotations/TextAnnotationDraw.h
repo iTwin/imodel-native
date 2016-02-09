@@ -32,7 +32,6 @@ private:
     DGNPLATFORM_EXPORT void CopyFrom(TextAnnotationDrawCR);
 
 public:
-    DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
     DGNPLATFORM_EXPORT explicit TextAnnotationDraw(TextAnnotationCR);
     TextAnnotationDraw(TextAnnotationDrawCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
     TextAnnotationDrawR operator=(TextAnnotationDrawCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}

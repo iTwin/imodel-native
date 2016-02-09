@@ -81,7 +81,6 @@ protected:
     DGNPLATFORM_EXPORT virtual bool _IsRealProperty(T_Key) const override;
 
 public:
-    DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
     AnnotationTextStylePropertyBag() : T_Super() {}
     AnnotationTextStylePropertyBag(AnnotationTextStylePropertyBagCR rhs) : T_Super(rhs) {}
     AnnotationTextStylePropertyBagR operator=(AnnotationTextStylePropertyBagCR rhs) { T_Super::operator=(rhs); return *this;}
@@ -130,7 +129,6 @@ public:
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationTextStyle); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
     
-    DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
     explicit AnnotationTextStyle(DgnDbR db) : T_Super(CreateParams(db, QueryDgnClassId(db), DgnCode())) {}
     explicit AnnotationTextStyle(CreateParams const& params) : T_Super(params) {}
     static AnnotationTextStylePtr Create(DgnDbR db) { return new AnnotationTextStyle(db); }

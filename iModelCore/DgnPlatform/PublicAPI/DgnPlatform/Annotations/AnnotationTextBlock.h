@@ -129,7 +129,6 @@ protected:
     virtual AnnotationRunType _GetType() const override { return AnnotationRunType::Text; }
     
 public:
-    DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
     DGNPLATFORM_EXPORT explicit AnnotationTextRun(DgnDbR);
     AnnotationTextRun(AnnotationTextRunCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
     AnnotationTextRunR operator=(AnnotationTextRunCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
@@ -167,7 +166,6 @@ protected:
     virtual AnnotationRunType _GetType() const override { return AnnotationRunType::Fraction; }
     
 public:
-    DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
     DGNPLATFORM_EXPORT explicit AnnotationFractionRun(DgnDbR);
     AnnotationFractionRun(AnnotationFractionRunCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
     AnnotationFractionRunR operator=(AnnotationFractionRunCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
@@ -196,7 +194,6 @@ protected:
     virtual AnnotationRunType _GetType() const override { return AnnotationRunType::LineBreak; }
     
 public:
-    DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
     DGNPLATFORM_EXPORT explicit AnnotationLineBreakRun(DgnDbR);
     AnnotationLineBreakRun(AnnotationLineBreakRunCR rhs) : T_Super(rhs) { }
     AnnotationLineBreakRunR operator=(AnnotationLineBreakRunCR rhs) { T_Super::operator=(rhs); return *this;}
@@ -226,7 +223,6 @@ private:
     DGNPLATFORM_EXPORT void CopyFrom(AnnotationParagraphCR);
 
 public:
-    DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
     DGNPLATFORM_EXPORT explicit AnnotationParagraph(DgnDbR);
     AnnotationParagraph(AnnotationParagraphCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
     AnnotationParagraphR operator=(AnnotationParagraphCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
@@ -303,7 +299,6 @@ private:
     void Reset();
 
 public:
-    DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
     DGNPLATFORM_EXPORT explicit AnnotationTextBlock(DgnDbR);
     AnnotationTextBlock(AnnotationTextBlockCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
     AnnotationTextBlockR operator=(AnnotationTextBlockCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}

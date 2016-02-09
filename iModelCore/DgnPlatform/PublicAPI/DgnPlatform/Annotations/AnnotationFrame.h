@@ -53,7 +53,6 @@ private:
     void Reset();
 
 public:
-    DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
     DGNPLATFORM_EXPORT explicit AnnotationFrame(DgnDbR);
     AnnotationFrame(AnnotationFrameCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
     AnnotationFrameR operator=(AnnotationFrameCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
