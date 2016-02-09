@@ -23,7 +23,7 @@ public:
 		CmdFileCloseAll = 101
 	};
 
-	FileTool() : Tool(CmdFileOpen, CmdFileCloseAll) {}
+	FileTool(bool simple=false) : Tool(CmdFileOpen, CmdFileCloseAll), m_simple(simple) {}
 	
 	void	onIdle();
 	void	buildUserInterface(GLUI_Node *parent);
@@ -33,6 +33,7 @@ private:
 	std::string		m_infoString;
 	std::string		m_loadString;
 	GLUI_TextBox*	m_txtMbSec;
+	bool			m_simple;
 };
 
 #endif

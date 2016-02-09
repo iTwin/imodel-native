@@ -89,6 +89,10 @@ EXPORTS
 	ptShowScene
 	ptShowCloud
 	
+	ptSetOverrideColor
+	ptRemoveOverrideColor
+	ptGetOverrideColor
+	
 	ptIsSceneVisible
 	ptIsCloudVisible
 

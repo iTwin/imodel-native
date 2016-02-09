@@ -38,10 +38,15 @@ PointCloud::PointCloud(const wchar_t*id, const Scene *scene, float compressionTo
 	_guid = 0;
 	_compressionTolerance = compressionTolerance;
 	_scene = scene;
+
+	static int col_test = 255;
+
 	_pointSize=0; // use global setting
 	_baseColour[0] = 255;
 	_baseColour[1] = 255;
 	_baseColour[2] = 255;
+	_baseColour[3] = 0; // indicates the color is not used
+
 	memset(_channels, 0, sizeof(bool)*MAX_CHANNELS);
 	_filepointer = 0;
 }
@@ -367,6 +372,7 @@ pt::Guid PointCloud::objectGuid() const
 //---------------------------------------------------------------
 void PointCloud::visitInterface(pt::InterfaceVisitor *visitor) const
 {
+	// this is not really used by Vortex
 	Object3D::visitInterface(visitor);
 
 	visitor->property(pt::Property("Offset", "Offset to position", pt::PropertyTypeLocation, _userTransform.translation() ));	
@@ -379,6 +385,7 @@ void PointCloud::visitInterface(pt::InterfaceVisitor *visitor) const
 }
 int PointCloud::setProperty(const char *id, const pt::Variant &v)
 {
+	// this is not really used by Vortex
 	if (pt::Object3D::setProperty(id, v) == 1) return 1;
 	
 	pt::vector3d trans(_userTransform.translation());

@@ -195,6 +195,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\ClippingTool.cpp" />
     <ClCompile Include="..\src\CloudVisibilityTool.cpp" />
     <ClCompile Include="..\src\TransformTool.cpp" />
     <ClCompile Include="EditingExampleApp.cpp" />

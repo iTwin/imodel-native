@@ -62,7 +62,9 @@ public:
 	enum
 	{
 		CmdShaderUpdate = 200,
-		CmdIncIntensity = 201
+		CmdIncIntensity = 201,
+		CmdSetPodCol = 202,
+		CmdResetPodCol = 203
 	};
 
 	ShaderTool();
@@ -73,7 +75,7 @@ public:
 
 private:
 	void	handleClassificationShader();
-
+	
 	ShaderOptions	m_shader;
 	Renderer		*m_lastRenderer;
 	Renderer		*m_classificationRenderer;

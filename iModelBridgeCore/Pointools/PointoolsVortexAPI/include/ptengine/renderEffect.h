@@ -58,6 +58,12 @@ namespace pointsengine
 		virtual void			endShaderBuffer( const RenderContext *context, ShaderObj *shader )	{};
 
 		virtual uint			requiredStandardUniforms()const										{ return 0; }
+
+		virtual bool			affectsColor() const												{ return true; }
+
+		virtual bool			affectsGeometry() const												{ return false; }
+
+		virtual bool			affectsLighting() const												{ return false; }
 	};
 
 	/** Per Context effects manager */  
@@ -78,8 +84,12 @@ namespace pointsengine
 
 		int						addEffect( RenderEffectI *effect );
 
+		void					disableColorEffects( bool d )	{ m_disableColor = d; }
+		bool					areColorEffectsDisabled() const { return m_disableColor; }
+
 	private:
 		typedef std::vector<RenderEffectI*>	EffectsContainer;
 		EffectsContainer					m_effects;
+		bool								m_disableColor;
 	};
 }

@@ -1259,13 +1259,34 @@ void PointsPager::completeRequests()
 //---------------------------------------------------------
 bool PointsPager::pause()				
 { 
+	// if its paused still need to check is lock was acquired
+	if (_paused && !pp.pausemutex.try_lock()) 
+		return true;
+
+	if (!_paused) 
+		pp.pausemutex.lock(); 
+	
+	pp.voxlist.clear(); 
+	_paused = true; 
+
+	return true; 
+}
+//---------------------------------------------------------
+bool PointsPager::softPause()				
+{ 
 	if (_paused)
 		return true;
 
 	_paused = true; 
-	pp.pausemutex.lock(); 
-	pp.voxlist.clear(); 
-	return true; 
+	pp.pausemutex.try_lock(); 
+	
+	//pp.voxlist.clear(); 
+	return false; 
+}
+//---------------------------------------------------------
+bool PointsPager::isPaused() const
+{
+	return _paused;
 }
 //---------------------------------------------------------
 bool PointsPager::unpause()				
@@ -1273,7 +1294,14 @@ bool PointsPager::unpause()
 	if (_paused)
 	{
 		_paused = false;
-		pp.pausemutex.unlock(); 
+		try
+		{
+			pp.pausemutex.unlock(); 
+		}
+		catch(...)
+		{
+			// mutex already unlocked, no big deal
+		}
 		return true; 
 	}
 	return true;

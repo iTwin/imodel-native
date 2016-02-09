@@ -41,13 +41,16 @@ void RenderLightingEffectGL::startFixedFuncFrame( const RenderContext *context )
 	ptgl::State::enable( GL_LIGHTING );
 	ptgl::State::enable( GL_LIGHT0 );
 
-	float gloss = settings->materialGlossiness() * 128;
+	float gloss = settings->materialGlossiness() * 1.0;
 
 	glShadeModel(GL_FLAT);
 	glMaterialfv(GL_FRONT, GL_AMBIENT, settings->lightAmbient());
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, settings->materialDiffuse());
 	glMaterialfv(GL_FRONT, GL_SPECULAR, settings->materialSpecular());
-	glMaterialfv(GL_FRONT, GL_SHININESS, &gloss);
+	glMaterialf(GL_FRONT, GL_SHININESS, gloss);
+
+	//glColorMaterial ( GL_FRONT, GL_AMBIENT_AND_DIFFUSE ); 
+	//glColorMaterial ( GL_FRONT, GL_SPECULAR );
 }
 
 void				RenderLightingEffectGL::startShaderFrame( const RenderContext *context, ShaderObj *shader  )

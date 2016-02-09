@@ -24,7 +24,7 @@ public:
 	QueryBuffer( int size ) 
 		: m_size(size), m_pointsBuffer(0), m_rgbBuffer(0), 
 		m_intensityBuffer(0), m_classificationBuffer(0),
-		m_validPnts(0)
+		m_validPnts(0), m_layerBuffer(0)
 	{
 		for (int i=0; i<QUERY_BUFFER_MAX_CHANNELS;i++)
 			m_channelBuffer[i]=0;
@@ -33,7 +33,7 @@ public:
 	{
 		clear();
 	}
-	bool					initialize	( bool needRGB=false, bool needIntensity=false, bool needClassification=false );
+	bool					initialize	( bool needRGB=false, bool needIntensity=false, bool needClassification=false, bool needLayers=false );
 	void					clear();
 	int						executeQuery( PThandle query );	
 	int						executeQuery( PThandle query, PThandle channel );	
@@ -43,6 +43,7 @@ public:
 	inline const T			*getPointsBuffer()	const					{ return m_pointsBuffer; }
 	inline const PTubyte	*getRGBBuffer()	const						{ return m_rgbBuffer; }
 	inline const PTubyte	*getClassificationBuffer() const			{ return m_classificationBuffer; }
+	inline const PTubyte	*getLayerBuffer() const						{ return m_layerBuffer; }
 	inline PTubyte			*getRGB( int index )						{ return &m_rgbBuffer[index*3]; }
 	
 	void					*getChannelBuffer( int channelIndex=0 ) const	{ return m_channelBuffer[ channelIndex ]; }
@@ -55,6 +56,8 @@ public:
 
 	__int64					countPointsInQuery( PThandle query );	
 
+	__int64					computeQueryBoundingBox( PThandle query, PTdouble *lower3, PTdouble *upper3 );	// returns point count
+
 private:
 	bool					allocateChannelBuffer( PThandle channel, int channelIndex );
 
@@ -62,6 +65,7 @@ private:
 	PTubyte					*m_rgbBuffer;
 	PTshort					*m_intensityBuffer;
 	PTubyte					*m_classificationBuffer;
+	PTubyte					*m_layerBuffer;
 	PTvoid					*m_channelBuffer[QUERY_BUFFER_MAX_CHANNELS];
 
 	int						m_size;
@@ -77,7 +81,8 @@ typedef QueryBuffer<double> QueryBufferd;
 template< typename T >
 bool QueryBuffer<T>::initialize( bool needRGB/*=false*/, 
 								bool needIntensity/*=false */, 
-								bool needClassification/*=false*/ )
+								bool needClassification/*=false*/,
+								bool needLayers/*=false*/)
 //-----------------------------------------------------------------------------
 {
 	try
@@ -93,6 +98,9 @@ bool QueryBuffer<T>::initialize( bool needRGB/*=false*/,
 
 		if (needClassification && !m_classificationBuffer)
 			m_classificationBuffer = new PTubyte[m_size];
+
+		if (needLayers && !m_layerBuffer)
+			m_layerBuffer = new PTubyte[m_size];
 
 		return true;
 	}
@@ -141,16 +149,19 @@ void QueryBuffer<T>::clear()
 //-----------------------------------------------------------------------------
 {
 	if (m_pointsBuffer)	delete [] m_pointsBuffer;
-	m_pointsBuffer=0;
+		m_pointsBuffer=0;
 	
 	if (m_rgbBuffer)	delete [] m_rgbBuffer;
-	m_rgbBuffer=0;
+		m_rgbBuffer=0;
 	
 	if (m_intensityBuffer)	delete [] m_intensityBuffer;
-	m_intensityBuffer=0;
+		m_intensityBuffer=0;
 	
 	if (m_classificationBuffer)	delete [] m_classificationBuffer;
-	m_classificationBuffer=0;
+		m_classificationBuffer=0;
+	
+	if (m_layerBuffer)	delete [] m_layerBuffer;
+		m_layerBuffer=0;
 
 	for (int i=0; i<QUERY_BUFFER_MAX_CHANNELS;i++)
 	{

@@ -12,6 +12,14 @@ Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 *******************************************************************************/
 #include "NavigationTool.h"
 
+CameraNavigation* CameraNavigation::s_instance = 0;
+
+//-----------------------------------------------------------------------------
+CameraNavigation *CameraNavigation::instance()
+//-----------------------------------------------------------------------------
+{
+	return s_instance;
+}
 //-----------------------------------------------------------------------------
 CameraNavigation::CameraNavigation()
 //-----------------------------------------------------------------------------
@@ -33,6 +41,8 @@ CameraNavigation::CameraNavigation()
 	m_posXtmp = 0;
 	m_posYtmp = 0;
 	m_posZtmp = 0;
+
+	s_instance = this;
 }
 //-----------------------------------------------------------------------------
 bool CameraNavigation::onMouseButtonDown( int button, int x, int y )
@@ -119,4 +129,20 @@ void CameraNavigation::drawPreDisplay()
 	glRotatef( m_rotateY + m_rotateYtmp, 0,1,0);
 	glRotatef( m_rotateZ + m_rotateZtmp, 0,0,1);
 }
-
+//-----------------------------------------------------------------------------
+void CameraNavigation::getCameraPosition( float &x, float &y, float &z ) const
+//-----------------------------------------------------------------------------
+{
+	x = m_posX;
+	y = m_posY;
+	z = m_posZ;
+}
+//-----------------------------------------------------------------------------
+void CameraNavigation::setCameraPosition( float x, float y, float z )
+//-----------------------------------------------------------------------------
+{
+	m_posX=x;
+	m_posY=y;
+	m_posZ=z;
+}
+//-----------------------------------------------------------------------------

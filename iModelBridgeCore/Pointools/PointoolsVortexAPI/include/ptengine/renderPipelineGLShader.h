@@ -27,6 +27,12 @@ namespace pointsengine
 		void			startFrame( RenderContext *context, int renderPass ); 
 		void			endFrame( RenderContext *context, int renderPass );
 
+		enum 
+		{
+			ShaderPass = 0,
+			OverridePass = 1
+		};
+
 	private:
 		
 		uint			hashSettings( const RenderSettings *settings, const PointsBufferI *buffer ) const;
@@ -48,5 +54,6 @@ namespace pointsengine
 		uint			m_avalBuffers;
 		ptgl::Shader	*m_lastShader;
 		int				m_numRenderPasses;
+		RenderSettings	m_storeSettings;
 	};
 }

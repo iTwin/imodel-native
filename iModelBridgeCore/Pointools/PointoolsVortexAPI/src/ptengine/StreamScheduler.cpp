@@ -1,6 +1,8 @@
 
 #include <ptengine/StreamScheduler.h>
 #include <ptengine/StreamManager.h>
+#include <ptengine/PointsPager.h>
+#include <ptengine/engine.h>
 
 namespace pointsengine
 {
@@ -205,6 +207,10 @@ void StreamScheduler::generateStreamHostReadSets(StreamHost &streamHost, StreamM
 	for(v = streamHost.getActiveVoxelBegin(); v != streamHost.getActiveVoxelEnd() && streamBudgetTotalUsed < params.getStreamBudgetTotal() && streamHost.getNumReads() < streamHost.getStreamMaxReadsDefault(); v++)
 	{
 		StreamVoxel &streamVoxel = const_cast<StreamVoxel &>(*v);
+
+		// need to check for paused state
+		if (thePointsPager().isPaused()) break;
+
 															// Read data for voxel
 		params.getStreamManager()->processRequestsVoxelStream(streamVoxel.getVoxel(), streamVoxel.getDataSource(), params.getGlobalPagerData(), params.getPager(), params.getStreamBudgetPerVoxel(), streamBudgetVoxelUsed, streamBudgetTotalUsed, streamBudgetIterationUsed, streamBudgetTotalNotUsed, numVoxelsReceivedBudget);
 	}

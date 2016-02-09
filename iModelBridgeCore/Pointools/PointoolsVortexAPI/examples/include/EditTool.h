@@ -85,8 +85,7 @@ public:
 		CmdDeselLayer5		= 385,
 		CmdDeselLayer6		= 386,
 		CmdDeselLayer7		= 387,
-		CmdDeselLayer8		= 388,
-		
+
 		CmdLayerCol1		= 312,
 		CmdLayerCol2		= 313,
 		CmdLayerCol3		= 314,
@@ -109,7 +108,10 @@ public:
 		CmdSaveEditStack	 = 395,
 		CmdLoadEditStack	 = 396,
 		CmdSaveScopeLayersFile	 = 397,
-		CmdLoadScopeLayersFile	 = 398
+		CmdLoadScopeLayersFile	 = 398,
+
+		CmdRegenEdit		= 379
+
 	};
 
 	EditTool(bool simple);	// simple = true, for no layers or scope 

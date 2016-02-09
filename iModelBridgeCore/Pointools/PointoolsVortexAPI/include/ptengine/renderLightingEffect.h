@@ -25,6 +25,10 @@ namespace pointsengine
 		void				startShaderFrame( const RenderContext *context, ShaderObj *shader );
 		void				endShaderFrame( const RenderContext *context, ShaderObj *shader );
 		uint				requiredStandardUniforms() const;
+
+		bool				affectsLighting() const							{ return true; }
+		bool				affectsColor() const							{ return false; }
+
 	};
 
 }

@@ -24,7 +24,8 @@ class SubObjectsTool : public Tool, public Renderer
 public:
 	enum
 	{
-		CmdAddPointClouds	= 1200
+		CmdAddPointClouds	= 1200,
+		CmdReportLayers = 1201
 	};
 
 	SubObjectsTool( void );	
@@ -40,6 +41,8 @@ public:
 	void	drawBackground();
 	bool	drawPointClouds(bool dynamic, bool clearFrame );
 
+	void	report();
+
 private:
 
 	void	syncScenes( void );
@@ -51,8 +54,9 @@ private:
 		LayeredPointCloud( PThandle handle );
 		~LayeredPointCloud( void );
 
-		void draw( bool dynamic ) const;
-		void makeActive( void ) const;		// set editing scope and layer set to this
+		void	draw( bool dynamic ) const;
+		void	makeActive( void ) const;		// set editing scope and layer set to this
+		void	report();
 		
 		GLUI_Tree	*m_uibranch;
 		int			m_layers[PT_EDIT_MAX_LAYERS];	// int due to UI needs

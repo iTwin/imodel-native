@@ -95,8 +95,8 @@ void main(void)
 			#ifndef PT_EG
 				vec4 spec = vec4(0.0, 0.0, 0.0, 0.0);
 				
-				vec4 diff = gl_FrontMaterial.diffuse * gl_LightSource[0].diffuse;
-				vec4 amb = 	gl_FrontMaterial.ambient * gl_LightSource[0].ambient;
+				vec4 diff = (pC + gl_FrontMaterial.diffuse) * gl_LightSource[0].diffuse;
+				vec4 amb = 	(pC + gl_FrontMaterial.ambient) * gl_LightSource[0].ambient;
 				
 				if (pLam > 0.0) 
 				{

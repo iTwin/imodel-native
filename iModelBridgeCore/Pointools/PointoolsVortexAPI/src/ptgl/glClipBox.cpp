@@ -4,7 +4,10 @@
 
 using namespace ptgl;
 
+#ifndef USE_MESA
 static PFNGLACTIVETEXTUREARBPROC glActiveTextureARB = NULL;
+#endif
+
 static bool _glhasTextureShader = false;
 
 ClipBox::ClipBox(const pt::BoundingBox *bb)
@@ -16,8 +19,10 @@ ClipBox::ClipBox(const pt::BoundingBox *bb)
 		if (!initialized)
 		{
 			_glhasTextureShader = Ext::isSupported("GL_NV_texture_shader");
-			glActiveTextureARB   = (PFNGLACTIVETEXTUREARBPROC) wglGetProcAddress("glActiveTextureARB");
 
+#ifndef USE_MESA
+			glActiveTextureARB   = (PFNGLACTIVETEXTUREARBPROC) wglGetProcAddress("glActiveTextureARB");
+#endif
 			initialized = true;
 		}
 		static double sPlane[4] = {1.0, 0.0, 0.0, 0.0};

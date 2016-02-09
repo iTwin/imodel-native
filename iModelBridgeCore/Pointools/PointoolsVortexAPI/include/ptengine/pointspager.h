@@ -56,7 +56,9 @@ public:
 
 	bool initialize();
 	bool pause();
+	bool softPause();
 	bool unpause();
+	bool isPaused() const;
 
 	pcloud::Scene::CreateSceneResult	openScene(pcloud::Scene *scene);
 	

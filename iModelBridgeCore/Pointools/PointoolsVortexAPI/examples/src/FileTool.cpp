@@ -59,7 +59,7 @@ void FileTool::onIdle()
 		ptKbLoaded(true); // reset counter
 		glutPostRedisplay();		
 	}
-	else if (kb > 4096)
+	else if (!m_simple && kb > 4096)
 	{
 		view.timeSinceKbUpdate.end();
 		kb /= 1024;
@@ -102,20 +102,23 @@ void FileTool::buildUserInterface(GLUI_Node *parent)
 	new GLUI_Button( pan, "Close All", CmdFileCloseAll, &Tool::dispatchCmd  );
 
 	// Scene Information
-	new GLUI_StaticText( rolloutFile, "" );
-	m_infoString = "Scene Information:\n-------------------";
-	GLUI_TextBox * info = new GLUI_TextBox( rolloutFile, m_infoString, false );
-	info->set_w( PANEL_WIDTH );
-	info->set_h( 80 );
-	info->align();
+	if (!m_simple)
+	{
+		new GLUI_StaticText( rolloutFile, "" );
+		m_infoString = "Scene Information:\n-------------------";
+		GLUI_TextBox * info = new GLUI_TextBox( rolloutFile, m_infoString, false );
+		info->set_w( PANEL_WIDTH );
+		info->set_h( 80 );
+		info->align();
 
-	// Stats
-	new GLUI_StaticText( rolloutFile, "" );
-	m_loadString = "Load stats";
-	
-	m_txtMbSec = new GLUI_TextBox( rolloutFile, m_loadString );
-	m_txtMbSec->set_w( PANEL_WIDTH );
-	m_txtMbSec->set_h( 80 );
+		// Stats
+		new GLUI_StaticText( rolloutFile, "" );
+		m_loadString = "Load stats";
+		
+		m_txtMbSec = new GLUI_TextBox( rolloutFile, m_loadString );
+		m_txtMbSec->set_w( PANEL_WIDTH );
+		m_txtMbSec->set_h( 80 );
 
-	new GLUI_StaticText( rolloutFile, "" );
+		new GLUI_StaticText( rolloutFile, "" );
+	}
 }

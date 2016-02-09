@@ -200,6 +200,7 @@ PTvoid PTAPI ptDrawSceneGL(PThandle scene, PTbool dynamic)
 		glDisable(GL_NORMALIZE);
 		glDisable(GL_TEXTURE_2D);
 		glEnable( GL_DEPTH_TEST );
+		glEnable( GL_COLOR_MATERIAL );
 
 		if (ptIsInitialized())
 		{
@@ -211,6 +212,7 @@ PTvoid PTAPI ptDrawSceneGL(PThandle scene, PTbool dynamic)
 			if (g_currentViewParams)
 				theVisibilityEngine().setViewParameters( *g_currentViewParams );
 
+			/* This is for client code to do
 			glEnable(GL_LIGHT0);
 
 			if (!g_camera.getLight())
@@ -218,6 +220,7 @@ PTvoid PTAPI ptDrawSceneGL(PThandle scene, PTbool dynamic)
 				g_camera.setLight(&g_light);
 			}
 			g_light.setupGL();
+			*/
 
 //			theRenderEngine().setLight(&g_light); 
 //			theRenderEngine().setCamera(&g_camera);

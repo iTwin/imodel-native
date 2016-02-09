@@ -34,6 +34,8 @@ public:
 	bool			onMouseButtonDown( int button, int x, int y );
 	void			drawPostDisplay();
 
+	static	SnapTest* instance();
+
 private:
 
 	enum

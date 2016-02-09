@@ -10,6 +10,12 @@
 #include <ptengine/clipManager.h>
 using namespace pointsengine;
 
+//
+// Shader Pipeline
+//
+// pass 1: General rendering
+// pass 2: Point clouds with solid colour attribute set
+//
 void RenderPipeline_GLShader::setupShaderForFrame( const RenderContext *context, ptgl::Shader *shader, 
 												  uint requiredUniforms )
 {
@@ -110,6 +116,7 @@ void RenderPipeline_GLShader::setUpShaderForBuffer( const PointsBufferI *buffer,
 			shader->setUniform4fv( UNIFORM_LAYER_COL, 1, &c.r );
 			//shader->setUniform1f( UNIFORM_LAYER_ALPHA, c.a );
 		}
+		// used for override colour if set
 	}
 }
 /*****************************************************************************/
@@ -120,14 +127,15 @@ void RenderPipeline_GLShader::setUpShaderForBuffer( const PointsBufferI *buffer,
 /*****************************************************************************/
 void	RenderPipeline_GLShader::initializeFrame( RenderContext *context )
 {	
+	/*
 	if (context->settings()->clippingEnabled())
 	{
 		// clipping is enabled, use two passes, one with clipping
 		// switched on in the shader and one with it switched off
 		m_numRenderPasses = 2;		
 	}
-
-	m_numRenderPasses = 1; // only one pass needed
+	*/
+	m_numRenderPasses = 2; // pass 2 is for color overrides
 }
 /*****************************************************************************/
 /**
@@ -142,17 +150,10 @@ bool RenderPipeline_GLShader::renderOnThisPass( RenderContext* context, int rend
 	if (!vox) 
 		return false;
 
-	// 2 stage clipping rendering passes
-	if (m_numRenderPasses == 2)
-	{
-		if (context->settings()->clippingEnabled() && !vox->flag(pcloud::PartClipped))
-			return false;
-
-		if (!context->settings()->clippingEnabled() && vox->flag(pcloud::PartClipped))
-			return false;
-	}
-
-	return true;
+	if (vox->pointCloud()->isOverriderColorEnabled())
+		return renderPass == OverridePass ? true : false;
+	else 
+		return renderPass == OverridePass ? false : true;
 }
 /*****************************************************************************/
 /**
@@ -166,23 +167,18 @@ void RenderPipeline_GLShader::startFrame( RenderContext *context, int renderPass
 {
 	m_lastShader = 0;
 	m_avalBuffers = 0;
-
-	// if we are doing more than one rendering pass, do one pass with clipping and one without
-	if (m_numRenderPasses > 1)
+ 
+	// using multiple passes here for overrider color
+	if (renderPass == OverridePass)
 	{
-		// check if clipping is required there will be 2 render passes,
-		// renderPass 0 and renderPass 1 - only render partially clipped voxels on pass 1
-		if (renderPass == 1)
-		{
-			pointsengine::ClipManager::instance().enableClipping();
-			context->settings()->clippingEnabled(true);
-		}
-		else
-		{
-			pointsengine::ClipManager::instance().disableClipping();
-			context->settings()->clippingEnabled(false);
-		}
-	}
+		// turn off other effects
+		// turn off color effects
+		m_storeSettings = *context->settings();
+
+		context->settings()->enableRGB(false);
+		context->settings()->enableGeomShader(false);
+		context->settings()->enableIntensity(false);
+	}	
 }
 void RenderPipeline_GLShader::endFrame( RenderContext *context, int renderPass )
 {
@@ -193,6 +189,11 @@ void RenderPipeline_GLShader::endFrame( RenderContext *context, int renderPass )
 		context->effectsMan()->endFrame( context, m_avalBuffers, (ShaderObj*)m_lastShader );
 		m_lastShader = 0;
 	}
+	if (renderPass == OverridePass)
+	{
+		*context->settings() = m_storeSettings;
+	}
+
     glUseProgram(0);
 
 	m_lastShader = 0;
@@ -210,6 +211,7 @@ void RenderPipeline_GLShader::renderPoints( PointsBufferI *buffer, RenderContext
 	
 	if (!shader) return; //shader error
 
+	// shader change
 	if (shader != m_lastShader)
 	{
 		if (m_lastShader)
@@ -228,6 +230,7 @@ void RenderPipeline_GLShader::renderPoints( PointsBufferI *buffer, RenderContext
 	context->effectsMan()->startBuffer( context, m_avalBuffers, (ShaderObj*)shader );
 
 	//glColor3fv( buffer->baseColor() );
+
 	renderMethod()->renderPoints( buffer, context->settings() );
 
 	context->effectsMan()->endBuffer( context, m_avalBuffers, (ShaderObj*)shader );
@@ -351,6 +354,11 @@ ptgl::Shader * RenderPipeline_GLShader::getShader( const PointsBufferI *buffer, 
 			((hash & reqBuffers) == reqBuffers)  && //has required buffers available
 			preprocessor)	//has a define
 		{
+			// this is used in 2nd pass - its ugly here
+			if (context->effectsMan()->areColorEffectsDisabled())
+			{
+				if (effect->affectsColor()) continue;
+			}
 			requiredUniforms |= effect->requiredStandardUniforms();
 			preprocessor_defines += pt::String(preprocessor) +  pt::String("\n");
 		}

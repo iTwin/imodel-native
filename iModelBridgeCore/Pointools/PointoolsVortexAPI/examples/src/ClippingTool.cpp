@@ -369,7 +369,7 @@ void ClippingTool::updatePlane(unsigned int planeID)
 	vortex::Vector3d v(a, b, c);
 	m_planes[planeID].update(v, d);	
 
-	updateListFromPlanes(true, planeID);	
+	updateListFromPlanes(false, planeID);	
 }
 //-----------------------------------------------------------------------------
 void ClippingTool::planeDefSelected(int selected)
@@ -466,10 +466,11 @@ void ClippingTool::updateListFromPlanes(bool enablePlanes, int keepSelected)
 			else
 				m_planeDefList->add_item(i, txt);	
 
+			// update this plane's parameters in Vortex				
+			ptSetClippingPlaneParameters(i, m_planes[i].normal().x, m_planes[i].normal().y, m_planes[i].normal().z, m_planes[i].constant());
+
 			if (enablePlanes)
 			{
-				// update this plane's parameters in Vortex				
-				ptSetClippingPlaneParameters(i, m_planes[i].normal().x, m_planes[i].normal().y, m_planes[i].normal().z, m_planes[i].constant());
 				ptEnableClippingPlane(i);
 			}
 		}

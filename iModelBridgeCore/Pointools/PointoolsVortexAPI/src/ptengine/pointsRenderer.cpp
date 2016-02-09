@@ -92,7 +92,9 @@ void PointsRenderer::renderPoints( RenderContext *context, const pcloud::Scene *
 	int voxelcount = m_voxlist.size();
 	
 	if (!voxelcount || !m_enabled)  return;		// early exit if nothing to render
-	
+
+	thePointsPager().softPause(); //this prevents rare a crash bug - but is not optimal
+
 	m_frameData.clearFrameStats();
 	m_frameData.isDynamic(dynamic);
 
@@ -119,6 +121,8 @@ void PointsRenderer::renderPoints( RenderContext *context, const pcloud::Scene *
 	//renderDiagnostics();
 
 	if (dynamic) computeDynamicFPS( t0, context->settings()->framesPerSec() );
+
+	thePointsPager().unpause(); //not needed, see above
 }
 
 /*****************************************************************************/
