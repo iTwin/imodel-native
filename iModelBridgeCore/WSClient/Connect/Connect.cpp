@@ -222,7 +222,7 @@ Utf8String Connect::GetFederatedSignInUrl(Utf8String windowsDomainName)
         }
 
     Utf8String signInUrl = UrlProvider::Urls::ImsFederatedAuth.Get();
-    signInUrl += "?wa=wsignin1.0&wtrealm=" + BeStringUtilities::UriEncode(GetClientRelyingPartyUri().c_str());
+    signInUrl += "?wa=wsignin1.0&wtrealm=" + GetClientRelyingPartyUriForWtrealm();
 
     if (!windowsDomainName.empty())
         {
@@ -233,9 +233,23 @@ Utf8String Connect::GetFederatedSignInUrl(Utf8String windowsDomainName)
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Ron.Stewart     01/2016
+* @bsimethod                                                    Ron.Stewart     02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Connect::GetClientRelyingPartyUri()
+    {
+    // Note: It seems weird that we get the wtrealm parameter and URL decode here (instead
+    // of creating the raw RP URI here and URL-encoding for the wtrealm parameter. The
+    // latter won't work because it would encode the '_' in the wtrealm parameter, and
+    // that leads to obscure JS errors in the IMS web pages during sign-in.
+    return BeStringUtilities::UriDecode(GetClientRelyingPartyUriForWtrealm().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* Return the client appliction's relying party URI, encoded in a form suitable for use
+* in a federated sign-in URL's wtrealm query parameter.
+* @bsimethod                                                    Ron.Stewart     01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Connect::GetClientRelyingPartyUriForWtrealm()
     {
 #if defined(BENTLEY_WIN32)
     Utf8String platformType("desktop");
@@ -243,7 +257,10 @@ Utf8String Connect::GetClientRelyingPartyUri()
     Utf8String platformType("mobile");
 #endif
 
-    return "sso://wsfed_" + platformType + "/" + s_clientInfo->GetApplicationProductId();
+    // URL-encode the RP URI, except for the underscore in wsfed_<platformType>.
+    Utf8String rpUri(BeStringUtilities::UriEncode("sso://wsfed"));
+    rpUri += "_" + platformType + BeStringUtilities::UriEncode("/") + s_clientInfo->GetApplicationProductId();
+    return rpUri;
     }
 
 /*--------------------------------------------------------------------------------------+

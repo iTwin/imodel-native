@@ -34,8 +34,6 @@ struct Connect
     private:
         static StatusInt GetStsToken(Utf8StringCR authorization, JsonValueCR issueExParams, SamlTokenR tokenOut, Utf8CP appliesToUrl, Utf8CP stsUrl);
         static Utf8String GetClientRelyingPartyUri();
-
-        //! Return the client appliction's relying party URI
         static Utf8String GetClientRelyingPartyUriForWtrealm();
 
     public:
