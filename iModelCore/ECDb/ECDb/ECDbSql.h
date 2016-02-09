@@ -66,8 +66,8 @@ enum class TableType
     {
     Primary = 0,
     Joined = 1,
-    StructArray = 2,
-    Existing = 3
+    Existing = 2,
+    StructArray = 3
     };
 
 //======================================================================================

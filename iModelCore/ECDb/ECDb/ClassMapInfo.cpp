@@ -336,31 +336,62 @@ bool ClassMapInfo::ValidateChildStrategy(ECDbMapStrategy const& parentStrategy, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ClassMapInfo::_InitializeFromSchema ()
     {
-    if (SUCCESS != InitializeFromClassMapCA() ||
-        SUCCESS != InitializeFromClassHasCurrentTimeStampProperty())
+    ECDbClassMap customClassMap;
+    const bool hasCustomClassMap = ECDbMapCustomAttributeHelper::TryGetClassMap(customClassMap, m_ecClass);
+    if (hasCustomClassMap)
+        {
+        UserECDbMapStrategy const* userStrategy = m_ecdbMap.GetSchemaImportContext()->GetUserStrategy(m_ecClass, &customClassMap);
+        if (userStrategy == nullptr || !userStrategy->IsValid())
+            return ERROR;
+
+        ECObjectsStatus ecstat = customClassMap.TryGetTableName(m_tableName);
+        if (ECObjectsStatus::Success != ecstat)
+            return ERROR;
+
+        if ((userStrategy->GetStrategy() == UserECDbMapStrategy::Strategy::ExistingTable ||
+             (userStrategy->GetStrategy() == UserECDbMapStrategy::Strategy::SharedTable && !userStrategy->AppliesToSubclasses())))
+            {
+            if (m_tableName.empty())
+                {
+                m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                                                                              "TableName must not be empty in ClassMap custom attribute on ECClass %s if MapStrategy is 'SharedTable (AppliesToSubclasses)' or if MapStrategy is 'ExistingTable'.",
+                                                                              m_ecClass.GetFullName());
+                return ERROR;
+                }
+            }
+        else
+            {
+            if (!m_tableName.empty())
+                {
+                m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                                                                              "TableName must only be set in ClassMap custom attribute on ECClass %s if MapStrategy is 'SharedTable (AppliesToSubclasses)' or 'ExistingTable'.",
+                                                                              m_ecClass.GetFullName());
+                return ERROR;
+                }
+            }
+
+        ecstat = customClassMap.TryGetECInstanceIdColumn(m_ecInstanceIdColumnName);
+        if (ECObjectsStatus::Success != ecstat)
+            return ERROR;
+        }
+
+    if (SUCCESS != ClassIndexInfo::CreateFromECClass(m_dbIndexes, m_ecdbMap.GetECDb(), m_ecClass, hasCustomClassMap? &customClassMap : nullptr))
         return ERROR;
 
-    // Add indices for important identifiers
-    if (SUCCESS != ProcessStandardKeys(m_ecClass, "BusinessKeySpecification") ||
-        SUCCESS != ProcessStandardKeys(m_ecClass, "GlobalIdSpecification") ||
-        SUCCESS != ProcessStandardKeys(m_ecClass, "SyncIDSpecification"))
-        return ERROR;
-    
-    //TODO: VerifyThatTableNameIsNotReservedName, e.g. dgn element table, etc.
-    return SUCCESS;
+    return InitializeClassHasCurrentTimeStampProperty();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 muhammad.zaighum                01/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ClassMapInfo::InitializeFromClassHasCurrentTimeStampProperty()
+BentleyStatus ClassMapInfo::InitializeClassHasCurrentTimeStampProperty()
     {
-    IECInstancePtr classHint = m_ecClass.GetCustomAttributeLocal("ClassHasCurrentTimeStampProperty");
-    if (classHint == nullptr)
+    IECInstancePtr ca = m_ecClass.GetCustomAttributeLocal("ClassHasCurrentTimeStampProperty");
+    if (ca == nullptr)
         return SUCCESS;
    
     ECValue v;
-    if (classHint->GetValue(v, "PropertyName") == ECObjectsStatus::Success && !v.IsNull())
+    if (ca->GetValue(v, "PropertyName") == ECObjectsStatus::Success && !v.IsNull())
         {
         ECPropertyCP prop = m_ecClass.GetPropertyP(v.GetUtf8CP());
         if (nullptr == prop)
@@ -384,161 +415,6 @@ BentleyStatus ClassMapInfo::InitializeFromClassHasCurrentTimeStampProperty()
         }
 
     return SUCCESS;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                03/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ClassMapInfo::InitializeFromClassMapCA()
-    {
-    ECDbClassMap customClassMap;
-    if (ECDbMapCustomAttributeHelper::TryGetClassMap(customClassMap, m_ecClass))
-        {
-
-        UserECDbMapStrategy const* userStrategy = m_ecdbMap.GetSchemaImportContext()->GetUserStrategy(m_ecClass, &customClassMap);
-        if (userStrategy == nullptr || !userStrategy->IsValid())
-            return ERROR;
-
-        ECObjectsStatus ecstat = customClassMap.TryGetTableName(m_tableName);
-        if (ECObjectsStatus::Success != ecstat)
-            return ERROR;
-
-        if ((userStrategy->GetStrategy() == UserECDbMapStrategy::Strategy::ExistingTable ||
-            (userStrategy->GetStrategy() == UserECDbMapStrategy::Strategy::SharedTable && !userStrategy->AppliesToSubclasses())))
-            {
-            if (m_tableName.empty())
-                {
-                m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                     "TableName must not be empty in ClassMap custom attribute on ECClass %s if MapStrategy is 'SharedTable (AppliesToSubclasses)' or if MapStrategy is 'ExistingTable'.",
-                     m_ecClass.GetFullName());
-                return ERROR;
-                }
-            }
-        else
-            {
-            if (!m_tableName.empty())
-                {
-                m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                                                                              "TableName must only be set in ClassMap custom attribute on ECClass %s if MapStrategy is 'SharedTable (AppliesToSubclasses)' or 'ExistingTable'.",
-                                                                              m_ecClass.GetFullName());
-                return ERROR;
-                }
-            }
-
-        ecstat = customClassMap.TryGetECInstanceIdColumn(m_ecInstanceIdColumnName);
-        if (ECObjectsStatus::Success != ecstat)
-            return ERROR;
-        }
-    
-    auto tryGetBaseClassList = [&] (std::vector<ECDbClassMap>& classMapList)
-        {
-        std::deque<ECClassCP> classes;
-        std::set<ECClassCP> doneList;
-        classes.push_back(&GetECClass());
-
-        while (!classes.empty())
-            {
-            auto head = classes.front();
-            classMapList.push_back(ECDbClassMap());
-            if (!ECDbMapCustomAttributeHelper::TryGetClassMap(classMapList.back(), *head))
-                classMapList.pop_back();
-
-            classes.pop_front();
-            doneList.insert(head);
-            for (auto baseClass : head->GetBaseClasses())
-                {
-                if (doneList.find(baseClass) == doneList.end())
-                    classes.push_back(baseClass);
-                }
-            }
-        return SUCCESS;
-        };
-
-    std::vector<ECDbClassMap> classMapList;
-    tryGetBaseClassList(classMapList);
-
-    for (ECDbClassMap const& classMap : classMapList)
-        {
-        bvector<ECDbClassMap::DbIndex> indices;
-        auto ecstat = classMap.TryGetIndexes(indices);
-        if (ECObjectsStatus::Success != ecstat)
-            return ERROR;
-
-        for (ECDbClassMap::DbIndex const& index : indices)
-            {
-            ClassIndexInfoPtr indexInfo = ClassIndexInfo::Create(index);
-            if (indexInfo == nullptr)
-                return ERROR;
-
-            m_dbIndexes.push_back(indexInfo);
-            }
-        }
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                 Affan.Khan                07/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ClassMapInfo::ProcessStandardKeys(ECClassCR ecClass, Utf8CP customAttributeName)
-    {
-    StandardKeySpecification::Type keyType = StandardKeySpecification::GetTypeFromString(customAttributeName);
-    if (keyType == StandardKeySpecification::Type::None)
-        return SUCCESS;
-
-    IECInstancePtr ca = ecClass.GetCustomAttribute(customAttributeName);
-    if (ca == nullptr)
-        return SUCCESS;
-
-    ECValue v;
-    switch (keyType)
-        {
-            case StandardKeySpecification::Type::BusinessKeySpecification:
-            case StandardKeySpecification::Type::GlobalIdSpecification:
-                ca->GetValue(v, "PropertyName"); break;
-            case StandardKeySpecification::Type::SyncIDSpecification:
-                ca->GetValue(v, "Property"); break;
-
-            default:
-                BeAssert(false);
-                return ERROR;
-        }
-
-    if (v.IsNull())
-        return SUCCESS;
-
-    //Create unique not null index on provided property
-    Utf8CP keyPropName = v.GetUtf8CP();
-    ECPropertyP keyProp = ecClass.GetPropertyP(keyPropName);
-    if (nullptr == keyProp)
-        {
-        m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                        "Invalid %s on class '%s'. The specified property '%s' does not exist in the class.",
-                         customAttributeName, ecClass.GetFullName(), keyPropName);
-        return ERROR;
-        }
-
-    if (keyProp->GetAsPrimitiveProperty() != nullptr)
-        {
-        const PrimitiveType primType = keyProp->GetAsPrimitiveProperty()->GetType();
-        if (primType == PRIMITIVETYPE_Binary ||
-            primType == PRIMITIVETYPE_Boolean ||
-            primType == PRIMITIVETYPE_DateTime ||
-            primType == PRIMITIVETYPE_Double ||
-            primType == PRIMITIVETYPE_Integer ||
-            primType == PRIMITIVETYPE_Long ||
-            primType == PRIMITIVETYPE_String)
-            {
-            StandardKeySpecificationPtr spec = StandardKeySpecification::Create(keyType);
-            spec->GetKeyProperties().push_back(keyPropName);
-            m_standardKeys.push_back(spec);
-            return SUCCESS;
-            }
-        }
-
-    m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                "Invalid %s on class '%s'. The data type of the specified property '%s' is not supported. Supported types: Binary, Boolean, DateTime, Double, Integer, Long and String.",
-               customAttributeName, ecClass.GetFullName(), keyPropName);
-    return ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -976,4 +852,163 @@ void RelationshipMapInfo::DetermineCardinality(ECRelationshipConstraintCR source
         m_cardinality = Cardinality::OneToOne;
     }
   
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                02/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+std::vector<std::pair<Utf8String, Utf8String>> ClassIndexInfo::s_idSpecCustomAttributeNames;
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                02/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ClassIndexInfoPtr ClassIndexInfo::Create(ECDbCR ecdb, ECN::ECDbClassMap::DbIndex const& dbIndex)
+    {
+    WhereConstraint whereConstraint = WhereConstraint::None;
+
+    Utf8CP whereClause = dbIndex.GetWhereClause();
+    if (!Utf8String::IsNullOrEmpty(whereClause))
+        {
+        if (BeStringUtilities::Stricmp(whereClause, "IndexedColumnsAreNotNull") == 0 ||
+            BeStringUtilities::Stricmp(whereClause, "ECDB_NOTNULL") == 0) //legacy support
+            whereConstraint = WhereConstraint::NotNull;
+        else
+            {
+            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid where clause in ClassMap::DbIndex: %s. Only 'IndexedColumnsAreNotNull' is supported by ECDb.", dbIndex.GetWhereClause());
+            return nullptr;
+            }
+        }
+
+    return new ClassIndexInfo(dbIndex.GetName(), dbIndex.IsUnique(), dbIndex.GetProperties(), whereConstraint);
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                02/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ClassIndexInfoPtr ClassIndexInfo::Clone(ClassIndexInfoCR rhs, Utf8CP newIndexName)
+    {
+    return new ClassIndexInfo(newIndexName, rhs.GetIsUnique(), rhs.GetProperties(), rhs.GetWhere());
+    }
+
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                02/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+BentleyStatus ClassIndexInfo::CreateFromECClass(bvector<ClassIndexInfoPtr>& indexInfos, ECDbCR ecdb, ECClassCR ecClass, ECDbClassMap const* customClassMap)
+    {
+    if (customClassMap != nullptr)
+        {
+        bvector<ECDbClassMap::DbIndex> indices;
+        if (ECObjectsStatus::Success != customClassMap->TryGetIndexes(indices))
+            return ERROR;
+
+        for (ECDbClassMap::DbIndex const& index : indices)
+            {
+            ClassIndexInfoPtr indexInfo = Create(ecdb, index);
+            if (indexInfo == nullptr)
+                return ERROR;
+
+            indexInfos.push_back(indexInfo);
+            }
+        }
+
+    return CreateFromIdSpecificationCAs(indexInfos, ecdb, ecClass);
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                02/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+BentleyStatus ClassIndexInfo::CreateFromIdSpecificationCAs(bvector<ClassIndexInfoPtr>& indexInfos, ECDbCR ecdb, ECN::ECClassCR ecClass)
+    {
+    for (std::pair<Utf8String, Utf8String> const& idSpecCA : GetIdSpecCustomAttributeNames())
+        {
+        Utf8StringCR caName = idSpecCA.first;
+        Utf8CP caPropName = idSpecCA.second.c_str();
+        IECInstancePtr ca = ecClass.GetCustomAttribute(caName);
+        if (ca == nullptr)
+            continue;
+
+        ECValue v;
+        if (ECObjectsStatus::Success != ca->GetValue(v, caPropName) || v.IsNull() || Utf8String::IsNullOrEmpty(v.GetUtf8CP()))
+            {
+            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                                                                         "Invalid %s on ECClass '%s'. Could not retrieve value of property '%s' from the custom attribute.",
+                                                                         caName.c_str(), ecClass.GetFullName(), caPropName);
+            return ERROR;
+            }
+
+        Utf8CP idPropName = v.GetUtf8CP();
+        if (ecClass.GetPropertyP(idPropName) == nullptr)
+            {
+            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                                                          "Invalid %s on ECClass '%s'. The property '%s' specified in the custom attribute does not exist in the ECClass.",
+                                                          caName.c_str(), ecClass.GetFullName(), idPropName);
+            return ERROR;
+            }
+
+        Utf8String indexName;
+        indexName.Sprintf("ix_%s_%s_%s_%s", ecClass.GetSchema().GetNamespacePrefix().c_str(), ecClass.GetName().c_str(),
+                          caName.c_str(), idPropName);
+
+        bvector<Utf8String> indexPropNameVector;
+        indexPropNameVector.push_back(idPropName);
+        ClassIndexInfoPtr indexInfo = new ClassIndexInfo(indexName.c_str(), false, indexPropNameVector, WhereConstraint::None);
+        indexInfos.push_back(indexInfo);
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                02/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+std::vector<std::pair<Utf8String, Utf8String>> const& ClassIndexInfo::GetIdSpecCustomAttributeNames()
+    {
+    if (s_idSpecCustomAttributeNames.empty())
+        {
+        s_idSpecCustomAttributeNames.push_back(std::make_pair("BusinessKeySpecification", "PropertyName"));
+        s_idSpecCustomAttributeNames.push_back(std::make_pair("GlobalIdSpecification", "PropertyName"));
+        s_idSpecCustomAttributeNames.push_back(std::make_pair("SyncIDSpecification", "Property"));
+        }
+
+    return s_idSpecCustomAttributeNames;
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                02/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ClassIndexInfoCache::TryGetIndexInfos(bvector<ClassIndexInfoPtr> const*& indexInfos, ClassMapCR classMap) const
+    {
+    //first look in class map info cache
+    auto classMapInfoCacheIt = m_schemaImportContext.GetClassMapInfoCache().find(&classMap);
+    if (classMapInfoCacheIt != m_schemaImportContext.GetClassMapInfoCache().end())
+        {
+        indexInfos = &classMapInfoCacheIt->second->GetIndexInfos();
+        return SUCCESS;
+        }
+
+    //now look in internal cache
+    auto indexInfoCacheIt = m_indexInfoCache.find(&classMap);
+    if (indexInfoCacheIt != m_indexInfoCache.end())
+        {
+        indexInfos = &indexInfoCacheIt->second;
+        return SUCCESS;
+        }
+
+    //not in internal cache, so read index info from ECClass (and cache it)
+    bvector<ClassIndexInfoPtr>& newIndexInfos = m_indexInfoCache[&classMap];
+    ECClassCR ecClass = classMap.GetClass();
+    ECDbClassMap customClassMap;
+    const bool hasCustomClassMap = ECDbMapCustomAttributeHelper::TryGetClassMap(customClassMap, ecClass);
+    if (SUCCESS != ClassIndexInfo::CreateFromECClass(newIndexInfos, m_ecdb, ecClass, hasCustomClassMap ? &customClassMap : nullptr))
+        return ERROR;
+
+    indexInfos = &newIndexInfos;
+    return SUCCESS;
+    }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

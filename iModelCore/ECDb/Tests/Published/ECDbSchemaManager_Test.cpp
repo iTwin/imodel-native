@@ -683,10 +683,7 @@ TEST_F(ECDbSchemaManagerTests, SupplementWithLatestCompatibleSupplementalSchema)
     ASSERT_TRUE(schemaptr != NULL);
     schemacache->AddSchema (*schemaptr);
 
-    ECSchemaPtr supple;
-    ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"BasicSchema_Supplemental_Localization.01.10.ecschema.xml", nullptr);
-    ASSERT_TRUE(supple != NULL);
-    schemacache->AddSchema (*supple);
+    ECSchemaPtr supple = nullptr;
 
     ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"BasicSchema_Supplemental_Localization.01.90.ecschema.xml", nullptr);
     ASSERT_TRUE(supple != NULL);
@@ -709,7 +706,7 @@ TEST_F(ECDbSchemaManagerTests, SupplementWithLatestCompatibleSupplementalSchema)
     {
         i++;
     }
-    EXPECT_EQ(6, i) << "the number of custom attributes on the Class Base do not match the original";
+    EXPECT_EQ(5, i) << "the number of custom attributes on the Class Base do not match the original";
 }
 
 //---------------------------------------------------------------------------------------

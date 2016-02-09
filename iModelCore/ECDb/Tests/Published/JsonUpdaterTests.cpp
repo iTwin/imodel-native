@@ -300,4 +300,51 @@ TEST_F (JsonUpdaterTests, CommonGeometryJsonSerialization)
     ValidateSpatialInstance (ecdb, jsonCppInstanceKey, expectedJsonCppValue);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  02/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (JsonUpdaterTests, ClassHavingReadonlyOrCalcProperty)
+    {
+    ECDb ecdb;
+    SchemaItem testItem (
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='testSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.00' prefix = 'bsca' />"
+        "     <ECEntityClass typeName = 'TestClass3' >"
+        "       <ECProperty propertyName = 'TestReadOnlyProperty' typeName = 'string' readOnly = 'True' />"
+        "       <ECProperty propertyName = 'TestCalculatedProperty' typeName = 'string' >"
+        "           <ECCustomAttributes>"
+        "               <CalculatedECPropertySpecification xmlns = 'Bentley_Standard_CustomAttributes.01.00'>"
+        "                   <RequiredSymbolSets />"
+        "                   <ECExpression>'CalculatedValue'</ECExpression>"
+        "               </CalculatedECPropertySpecification>"
+        "           </ECCustomAttributes>"
+        "       </ECProperty>"
+        "     </ECEntityClass>"
+        "</ECSchema>", true, "");
+
+    bool asserted = false;
+    AssertSchemaImport (ecdb, asserted, testItem, "updateClassProperties.ecdb");
+    ASSERT_FALSE (asserted);
+
+    ECClassCP ecClass = ecdb.Schemas ().GetECClass ("testSchema", "TestClass3");
+
+    //Insert test instance
+    ECInstanceKey instanceKey;
+    Json::Value properties;
+    properties["TestReadOnlyProperty"] = "OldValue";
+    JsonInserter inserter (ecdb, *ecClass);
+    ASSERT_EQ (SUCCESS, inserter.Insert (instanceKey, properties));
+
+    //Update test instance
+    properties["TestReadOnlyProperty"] = "NewValue";
+    JsonUpdater updater (ecdb, *ecClass);
+    ASSERT_EQ (SUCCESS, updater.Update (instanceKey.GetECInstanceId (), properties));
+
+    properties = Json::objectValue;
+    JsonReader reader(ecdb, ecClass->GetId ());
+    ASSERT_EQ (SUCCESS, reader.ReadInstance (properties, instanceKey.GetECInstanceId ()));
+    ASSERT_EQ ("NewValue", properties["TestReadOnlyProperty"].asString ());//validate updated value
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

@@ -174,24 +174,13 @@ public:
     TableListR GetTables() const { return _GetTables(); }
     ECDbSqlTable& GetPrimaryTable() const { BeAssert(!GetTables().empty()); return *GetTables().front(); }
     ECDbSqlTable& GetJoinedTable() const { BeAssert(!GetTables().empty()); return *GetTables().back(); }
-    bool IsMappedTo(ECDbSqlTable const& table) const
-        {
-        TableListR tables = GetTables();
-        return std::find(tables.begin(), tables.end(), &table) != tables.end();
-        }
+    bool IsMappedTo(ECDbSqlTable const& table) const { TableListR tables = GetTables(); return std::find(tables.begin(), tables.end(), &table) != tables.end(); }
     bool IsMappedToSingleTable() const { return GetTables().size() == 1; }
 
     IClassMap const* FindSharedTableRootClassMap() const;
     IClassMap const* FindClassMapOfParentOfJoinedTable() const;
     BentleyStatus GetPathToParentOfJoinedTable(std::vector<IClassMap const*>& path) const;
-    IClassMap const* GetParentOfJoinedTable() const
-        {
-        std::vector<IClassMap const*> path;
-        if (GetPathToParentOfJoinedTable(path) != SUCCESS)
-            return nullptr;
-
-        return path.front();
-        }
+    IClassMap const* GetParentOfJoinedTable() const;
     PropertyMapCP GetPropertyMap (Utf8CP propertyName) const;
 
     //! Returns a collection of this class map's property maps.
@@ -341,7 +330,6 @@ struct ClassMap : public IClassMap, RefCountedBase
         ColumnFactory               m_columnFactory;
 
     private:
-        BentleyStatus ProcessStandardKeySpecifications(SchemaImportContext&, ClassMapInfo const&);
         BentleyStatus InitializeDisableECInstanceIdAutogeneration();
 
         //! Used to find an ECProperty from a propertyAccessString
@@ -361,13 +349,7 @@ struct ClassMap : public IClassMap, RefCountedBase
         
 
         MapStatus AddPropertyMaps(ClassMapLoadContext&, IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo, ClassMapInfo const* classMapInfo);
-        void SetTable(ECDbSqlTable& newTable, bool append = false)
-            {
-            if (!append)
-                m_tables.clear();
-
-            m_tables.push_back(&newTable);
-            }
+        void SetTable(ECDbSqlTable& newTable, bool append = false);
         virtual PropertyMapCollection const& _GetPropertyMaps() const;
         virtual TableListR _GetTables() const override { return m_tables; }
         virtual ECN::ECClassCR _GetClass() const override { return m_ecClass; }
@@ -394,7 +376,7 @@ struct ClassMap : public IClassMap, RefCountedBase
         PropertyMapCP GetECInstanceIdPropertyMap() const;
         bool TryGetECInstanceIdPropertyMap(PropertyMapPtr& ecIstanceIdPropertyMap) const;
 
-        BentleyStatus CreateUserProvidedIndices(SchemaImportContext&, ClassMapInfo const&) const;
+        BentleyStatus CreateUserProvidedIndexes(SchemaImportContext&, bvector<ClassIndexInfoPtr> const&) const;
 
         bool IsDirty() const { return m_isDirty; }
         ECDbClassMapId GetId() const { return m_id; }

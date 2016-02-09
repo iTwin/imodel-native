@@ -230,6 +230,18 @@ bool IClassMap::IsParentOfJoinedTable() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                         Affan.Khan  10/2015
 //---------------------------------------------------------------------------------------
+IClassMap const* IClassMap::GetParentOfJoinedTable() const
+    {
+    std::vector<IClassMap const*> path;
+    if (GetPathToParentOfJoinedTable(path) != SUCCESS)
+        return nullptr;
+
+    return path.front();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                         Affan.Khan  10/2015
+//---------------------------------------------------------------------------------------
 BentleyStatus IClassMap::GetPathToParentOfJoinedTable(std::vector<IClassMap const*>& path) const
     {
     path.clear();
@@ -261,6 +273,8 @@ BentleyStatus IClassMap::GetPathToParentOfJoinedTable(std::vector<IClassMap cons
     path.clear();
     return ERROR;
     }
+
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                         Affan.Khan  10/2015
 //---------------------------------------------------------------------------------------
@@ -575,7 +589,7 @@ MapStatus ClassMap::_MapPart2(SchemaImportContext& schemaImportContext, ClassMap
             }
         }
 
-    return ProcessStandardKeySpecifications(schemaImportContext, mapInfo) == SUCCESS ? MapStatus::Success : MapStatus::Error;
+    return MapStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -584,6 +598,17 @@ MapStatus ClassMap::_MapPart2(SchemaImportContext& schemaImportContext, ClassMap
 MapStatus ClassMap::_OnInitialized()
     {
     return MapStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Affan.Khan   02/2016
+//---------------------------------------------------------------------------------------
+void ClassMap::SetTable(ECDbSqlTable& newTable, bool append /*= false*/)
+    {
+    if (!append)
+        m_tables.clear();
+
+    m_tables.push_back(&newTable);
     }
 
 //---------------------------------------------------------------------------------------
@@ -648,69 +673,11 @@ MapStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, IClassMap const* p
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Affan.Khan                           09/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ClassMap::ProcessStandardKeySpecifications(SchemaImportContext& schemaImportContext, ClassMapInfo const& mapInfo)
+BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImportContext, bvector<ClassIndexInfoPtr> const& indexInfoList) const
     {
-    std::set<PropertyMapCP> doneList;
-    std::set<Utf8String> specList;
-    for (StandardKeySpecificationPtr spec : mapInfo.GetStandardKeys())
-        {
-        BeAssert(spec->GetKeyProperties().size() > 0);
-
-        if (spec->GetKeyProperties().size() == 0)
-            continue;
-
-        Utf8String propertyName = spec->GetKeyProperties().front();
-        Utf8String typeString = StandardKeySpecification::TypeToString(spec->GetType());
-        if (specList.find(typeString) != specList.end())
-            continue;
-
-        specList.insert(typeString);
-        auto propertyMap = GetPropertyMap(propertyName.c_str());
-        if (propertyMap == nullptr)
-            {
-            LOG.warningv("Column index creation is ignoring %s on %s because map for ECProperty '%s' cannot be found", typeString.c_str(), GetClass().GetFullName(), propertyName.c_str());
-            continue;
-            }
-        //We don't want to create multiple indexes on same column.
-        if (doneList.find(propertyMap) != doneList.end())
-            {
-            LOG.warningv("Ignoring %s for property %s.%s. It is already part of another index.", typeString.c_str(), GetClass().GetFullName(), propertyName.c_str());
-            continue;
-            }
-        doneList.insert(propertyMap);
-
-        Utf8String indexName;
-        indexName.Sprintf("ix_%s_%s_%s_%s", 
-                          mapInfo.GetECClass().GetSchema().GetNamespacePrefix().c_str(),
-                          mapInfo.GetECClass().GetName().c_str(), 
-                          typeString.c_str(), 
-                          propertyName.c_str());
-
-        std::vector<ECDbSqlColumn const*> columns;
-        propertyMap->GetColumns(columns);
-
-        if (nullptr == schemaImportContext.GetECDbMapDb().CreateIndex(GetECDbMap().GetECDbR(), GetJoinedTable(), indexName.c_str(), false, columns, nullptr,
-                                            true, GetClass().GetId()))
-            {
-            BeAssert(false && "Index was not created correctly");
-            return ERROR;
-            }
-        }
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                 Affan.Khan                           09/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext& schemaImportContext, ClassMapInfo const& classMapInfo) const
-    {
-    if (GetPrimaryTable().GetPersistenceType() == PersistenceType::Virtual)
-        return SUCCESS;
-
     int i = 0;
     IssueReporter const& issues = m_ecDbMap.GetECDbR().GetECDbImplR().GetIssueReporter();
-    for (ClassIndexInfoPtr indexInfo : classMapInfo.GetIndexInfo())
+    for (ClassIndexInfoPtr indexInfo : indexInfoList)
         {
         i++;
 
@@ -749,7 +716,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext& schemaImp
 
             for (ECDbSqlColumn const* column : columns)
                 {
-                if (column->GetPersistenceType() == PersistenceType::Virtual)
+                if (column->GetTable().GetPersistenceType() == PersistenceType::Persisted && column->GetPersistenceType() == PersistenceType::Virtual)
                     {
                     issues.Report(ECDbIssueSeverity::Error,
                                   "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid: "
