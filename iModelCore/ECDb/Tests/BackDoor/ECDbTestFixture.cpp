@@ -211,8 +211,8 @@ BentleyStatus ECDbTestFixture::Populate(ECDbCR ecdb, ECSchemaCR schema, int inst
     {
     for (ECClassCP ecClass : schema.GetClasses())
         {
-        if (ecClass->GetRelationshipClassCP())
-            continue; // skip relationships
+        if (!ecClass->IsEntityClass() || ecClass->GetClassModifier() == ECClassModifier::Abstract)
+            continue;
 
         ECInstanceInserter inserter(ecdb, *ecClass);
         if (!inserter.IsValid())

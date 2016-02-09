@@ -230,6 +230,18 @@ bool IClassMap::IsParentOfJoinedTable() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                         Affan.Khan  10/2015
 //---------------------------------------------------------------------------------------
+IClassMap const* IClassMap::GetParentOfJoinedTable() const
+    {
+    std::vector<IClassMap const*> path;
+    if (GetPathToParentOfJoinedTable(path) != SUCCESS)
+        return nullptr;
+
+    return path.front();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                         Affan.Khan  10/2015
+//---------------------------------------------------------------------------------------
 BentleyStatus IClassMap::GetPathToParentOfJoinedTable(std::vector<IClassMap const*>& path) const
     {
     path.clear();
@@ -261,6 +273,8 @@ BentleyStatus IClassMap::GetPathToParentOfJoinedTable(std::vector<IClassMap cons
     path.clear();
     return ERROR;
     }
+
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                         Affan.Khan  10/2015
 //---------------------------------------------------------------------------------------
@@ -517,7 +531,7 @@ MapStatus ClassMap::_MapPart2(SchemaImportContext& schemaImportContext, ClassMap
         PropertyMapCP propertyMap = GetPropertyMap(mapInfo.GetClassHasCurrentTimeStampProperty()->GetName().c_str());
         if (propertyMap != nullptr)
             {
-            ECDbSqlColumn* column = const_cast<ECDbSqlColumn*>(propertyMap->GetFirstColumn());
+            ECDbSqlColumn* column = const_cast<ECDbSqlColumn*>(propertyMap->GetSingleColumn());
             BeAssert(column != nullptr && "TimeStamp column cannot be null");
             if (column != nullptr)
                 {
@@ -529,7 +543,7 @@ MapStatus ClassMap::_MapPart2(SchemaImportContext& schemaImportContext, ClassMap
                 Utf8CP lastModName = column->GetName().c_str();
                 whenCondtion.Sprintf("old.%s=new.%s AND old.%s!=julianday('now')", lastModName, lastModName, lastModName);
                 Utf8String body;
-                Utf8CP instanceId = GetPropertyMap("ECInstanceId")->GetFirstColumn()->GetName().c_str();
+                Utf8CP instanceId = GetPropertyMap("ECInstanceId")->GetSingleColumn()->GetName().c_str();
                 body.Sprintf("BEGIN UPDATE %s SET %s=julianday('now') WHERE %s=new.%s; END", column->GetTableR().GetName().c_str(), lastModName, instanceId, instanceId);
                 Utf8String triggerName;
                 triggerName.Sprintf("%s_CurrentTimeStamp", column->GetTableR().GetName().c_str());
@@ -555,9 +569,9 @@ MapStatus ClassMap::_MapPart2(SchemaImportContext& schemaImportContext, ClassMap
                 if (constraint->GetType() == ECDbSqlConstraint::Type::ForeignKey)
                     {
                     auto fk = static_cast<ECDbSqlForeignKeyConstraint const*>(constraint);
-                    if (&fk->GetTargetTable() == &parentClassMap->GetJoinedTable())
+                    if (&fk->GetReferencedTable() == &parentClassMap->GetJoinedTable())
                         {
-                        if (fk->GetSourceColumns().front() == foreignKeyColumn && fk->GetTargetColumns().front() == primaryKeyColumn)
+                        if (fk->GetFkColumns().front() == foreignKeyColumn && fk->GetReferencedTableColumns().front() == primaryKeyColumn)
                             {
                             createFKConstraint = false;
                             break;
@@ -575,7 +589,7 @@ MapStatus ClassMap::_MapPart2(SchemaImportContext& schemaImportContext, ClassMap
             }
         }
 
-    return ProcessStandardKeySpecifications(schemaImportContext, mapInfo) == SUCCESS ? MapStatus::Success : MapStatus::Error;
+    return MapStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -584,6 +598,17 @@ MapStatus ClassMap::_MapPart2(SchemaImportContext& schemaImportContext, ClassMap
 MapStatus ClassMap::_OnInitialized()
     {
     return MapStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Affan.Khan   02/2016
+//---------------------------------------------------------------------------------------
+void ClassMap::SetTable(ECDbSqlTable& newTable, bool append /*= false*/)
+    {
+    if (!append)
+        m_tables.clear();
+
+    m_tables.push_back(&newTable);
     }
 
 //---------------------------------------------------------------------------------------
@@ -607,10 +632,10 @@ MapStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, IClassMap const* p
             propertiesToMap.push_back(property);
         else
             {
-            if (!isJoinedTable)
+            if (!isJoinedTable && propMap->GetAsNavigationPropertyMap() == nullptr)
                 GetPropertyMapsR().AddPropertyMap(propMap);
             else
-                GetPropertyMapsR().AddPropertyMap(PropertyMap::Clone(m_ecDbMap, *propMap, nullptr));
+                GetPropertyMapsR().AddPropertyMap(PropertyMap::Clone(m_ecDbMap, *propMap, GetClass(), nullptr));
             }
         }
 
@@ -648,69 +673,11 @@ MapStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, IClassMap const* p
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Affan.Khan                           09/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ClassMap::ProcessStandardKeySpecifications(SchemaImportContext& schemaImportContext, ClassMapInfo const& mapInfo)
+BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImportContext, bvector<ClassIndexInfoPtr> const& indexInfoList) const
     {
-    std::set<PropertyMapCP> doneList;
-    std::set<Utf8String> specList;
-    for (StandardKeySpecificationPtr spec : mapInfo.GetStandardKeys())
-        {
-        BeAssert(spec->GetKeyProperties().size() > 0);
-
-        if (spec->GetKeyProperties().size() == 0)
-            continue;
-
-        Utf8String propertyName = spec->GetKeyProperties().front();
-        Utf8String typeString = StandardKeySpecification::TypeToString(spec->GetType());
-        if (specList.find(typeString) != specList.end())
-            continue;
-
-        specList.insert(typeString);
-        auto propertyMap = GetPropertyMap(propertyName.c_str());
-        if (propertyMap == nullptr)
-            {
-            LOG.warningv("Column index creation is ignoring %s on %s because map for ECProperty '%s' cannot be found", typeString.c_str(), GetClass().GetFullName(), propertyName.c_str());
-            continue;
-            }
-        //We don't want to create multiple indexes on same column.
-        if (doneList.find(propertyMap) != doneList.end())
-            {
-            LOG.warningv("Ignoring %s for property %s.%s. It is already part of another index.", typeString.c_str(), GetClass().GetFullName(), propertyName.c_str());
-            continue;
-            }
-        doneList.insert(propertyMap);
-
-        Utf8String indexName;
-        indexName.Sprintf("ix_%s_%s_%s_%s", 
-                          mapInfo.GetECClass().GetSchema().GetNamespacePrefix().c_str(),
-                          mapInfo.GetECClass().GetName().c_str(), 
-                          typeString.c_str(), 
-                          propertyName.c_str());
-
-        std::vector<ECDbSqlColumn const*> columns;
-        propertyMap->GetColumns(columns);
-
-        if (nullptr == schemaImportContext.GetECDbMapDb().CreateIndex(GetECDbMap().GetECDbR(), GetJoinedTable(), indexName.c_str(), false, columns, nullptr,
-                                            true, GetClass().GetId()))
-            {
-            BeAssert(false && "Index was not created correctly");
-            return ERROR;
-            }
-        }
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                 Affan.Khan                           09/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext& schemaImportContext, ClassMapInfo const& classMapInfo) const
-    {
-    if (GetPrimaryTable().GetPersistenceType() == PersistenceType::Virtual)
-        return SUCCESS;
-
     int i = 0;
     IssueReporter const& issues = m_ecDbMap.GetECDbR().GetECDbImplR().GetIssueReporter();
-    for (ClassIndexInfoPtr indexInfo : classMapInfo.GetIndexInfo())
+    for (ClassIndexInfoPtr indexInfo : indexInfoList)
         {
         i++;
 
@@ -749,7 +716,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext& schemaImp
 
             for (ECDbSqlColumn const* column : columns)
                 {
-                if (column->GetPersistenceType() == PersistenceType::Virtual)
+                if (column->GetTable().GetPersistenceType() == PersistenceType::Persisted && column->GetPersistenceType() == PersistenceType::Virtual)
                     {
                     issues.Report(ECDbIssueSeverity::Error,
                                   "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid: "
@@ -1015,8 +982,6 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
 
     auto& allPropertyInfos = mapInfo.GetPropertyMaps(false);
 
-    ECDbSqlTable* primaryTable = nullptr;
-    ECDbSqlTable* secondaryTable = nullptr;
     std::set<Utf8CP, CompareUtf8> localPropSet;
     for (auto property : GetClass().GetProperties(false))
         {
@@ -1028,6 +993,8 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
     localPropSet.insert(ECDbSystemSchemaHelper::ECPROPERTYPATHID_PROPNAME);
     localPropSet.insert(ECDbSystemSchemaHelper::OWNERECINSTANCEID_PROPNAME);
     localPropSet.insert(ECDbSystemSchemaHelper::PARENTECINSTANCEID_PROPNAME);
+    std::set<ECDbSqlTable*> tables;
+    std::set<ECDbSqlTable*> joinedTables;
 
     if (allPropertyInfos.empty())
         {
@@ -1035,41 +1002,44 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
         }
     else
         {
+
         for (auto propertyInfo : allPropertyInfos)
             {
-            bool isLocal = localPropSet.find(propertyInfo->GetPropertyPath().GetName().c_str()) != localPropSet.end();
-            if (propertyInfo->GetColumn().GetKind() == ColumnKind::ECClassId)
+            if (propertyInfo->GetColumns().front()->GetKind() == ColumnKind::ECClassId)
                 continue;
-
-            if (isLocal && !secondaryTable)
-                secondaryTable = const_cast<ECDbSqlTable*>(&propertyInfo->GetColumn().GetTable());
-            else if (!primaryTable)
-                primaryTable = const_cast<ECDbSqlTable*>(&propertyInfo->GetColumn().GetTable());
+           
+            for (auto column : propertyInfo->GetColumns())
+                if (column->GetTable().GetTableType() == TableType::Joined)
+                    joinedTables.insert(&column->GetTableR());
+                else
+                    tables.insert(&column->GetTableR());
             }
 
-        if (secondaryTable)
-            {
-            if (primaryTable && primaryTable != secondaryTable)
-                SetTable(*primaryTable);
+        for (auto table : tables)
+            SetTable(*table, true);
 
-            SetTable(*secondaryTable, true);
-            }
-        else
-            {
-            BeAssert(secondaryTable != nullptr);
-            return ERROR;
-            }
+        for (auto table : joinedTables)
+            SetTable(*table, true);
+
+        BeAssert(!GetTables().empty());
         }
 
     if (GetECInstanceIdPropertyMap() != nullptr)
         return BentleyStatus::ERROR;
+    
+    if (auto propInfo = mapInfo.FindPropertyMapByAccessString(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME))
+        {
+        PropertyMapPtr ecInstanceIdPropertyMap = PropertyMapECInstanceId::Create(Schemas(), *this, propInfo->GetColumns());
+        if (ecInstanceIdPropertyMap == nullptr)
+            return BentleyStatus::ERROR;
 
-    PropertyMapPtr ecInstanceIdPropertyMap = PropertyMapECInstanceId::Create(Schemas(), *this);
-    if (ecInstanceIdPropertyMap == nullptr)
-        return BentleyStatus::ERROR;
-
-    GetPropertyMapsR().AddPropertyMap(ecInstanceIdPropertyMap);
-
+        GetPropertyMapsR().AddPropertyMap(ecInstanceIdPropertyMap);
+        }
+    else
+        {
+        BeAssert(false && "Failed to deserialize ECInstanceId");
+        return ERROR;
+        }
     return AddPropertyMaps(ctx, parentClassMap, &mapInfo, nullptr) == MapStatus::Success ? SUCCESS : ERROR;
     }
 
@@ -1081,7 +1051,7 @@ ECPropertyCP ClassMap::GetECProperty(ECN::ECClassCR ecClass, Utf8CP propertyAcce
     bvector<Utf8String> tokens;
     ECDbMap::ParsePropertyAccessString(tokens, propertyAccessString);
 
-    //for recursive lambdas, iOS requires us to efine the lambda variable before assigning the actual function to it.
+    //for recursive lambdas, iOS requires us to define the lambda variable before assigning the actual function to it.
     std::function<ECPropertyCP (ECClassCR, bvector<Utf8String>&, int)> getECPropertyFromTokens;
     getECPropertyFromTokens = [&getECPropertyFromTokens] (ECClassCR ecClass, bvector<Utf8String>& tokens, int iCurrentToken) -> ECPropertyCP
         {
@@ -1569,16 +1539,15 @@ PropertyMapSet::Ptr PropertyMapSet::Create (IClassMap const& classMap)
         AddSystemEndPoint (*propertySet, classMap, ColumnKind::ECArrayIndex, defaultValue);
         }
 
-    if (classMap.GetClassMapType () == IClassMap::Type::RelationshipLinkTable ||
-        classMap.GetClassMapType () == IClassMap::Type::RelationshipEndTable)
+    if (classMap.IsRelationshipClassMap ())
         {
         RelationshipClassMapCR relationshipMap = static_cast<RelationshipClassMapCR>(classMap);
         auto const& sourceConstraints = relationshipMap.GetRelationshipClass ().GetSource ().GetClasses ();
         auto const& targetConstraints = relationshipMap.GetRelationshipClass ().GetTarget ().GetClasses ();
-        auto sourceECInstanceIdColumn = relationshipMap.GetSourceECInstanceIdPropMap ()->GetFirstColumn ();
-        auto sourceECClassIdColumn = relationshipMap.GetSourceECInstanceIdPropMap ()->GetFirstColumn ();
-        auto targetECInstanceIdColumn = relationshipMap.GetTargetECInstanceIdPropMap ()->GetFirstColumn ();
-        auto targetECClassIdColumn = relationshipMap.GetTargetECClassIdPropMap ()->GetFirstColumn ();
+        auto sourceECInstanceIdColumn = relationshipMap.GetSourceECInstanceIdPropMap ()->GetSingleColumn ();
+        auto sourceECClassIdColumn = relationshipMap.GetSourceECInstanceIdPropMap ()->GetSingleColumn ();
+        auto targetECInstanceIdColumn = relationshipMap.GetTargetECInstanceIdPropMap ()->GetSingleColumn ();
+        auto targetECClassIdColumn = relationshipMap.GetTargetECClassIdPropMap ()->GetSingleColumn ();
 
 
         AddSystemEndPoint (*propertySet, classMap, ColumnKind::SourceECInstanceId, defaultValue, sourceECInstanceIdColumn);
@@ -1612,9 +1581,9 @@ PropertyMapSet::Ptr PropertyMapSet::Create (IClassMap const& classMap)
             {
             feedback = TraversalFeedback::NextSibling;
             }
-        else if (!propMap->IsSystemPropertyMap ())
+        else if (!propMap->IsSystemPropertyMap () && !propMap->GetProperty().GetAsStructProperty())
             {
-            propertySet->m_orderedEndPoints.push_back (std::unique_ptr<EndPoint> (new EndPoint (propMap->GetPropertyAccessString (), *propMap->GetFirstColumn (), ECValue ())));
+            propertySet->m_orderedEndPoints.push_back (std::unique_ptr<EndPoint> (new EndPoint (propMap->GetPropertyAccessString (), *propMap->GetSingleColumn (), ECValue ())));
             }
         feedback = TraversalFeedback::Next;
         }, true);
@@ -1644,11 +1613,7 @@ BentleyStatus ClassMapLoadContext::Postprocess(ECDbMapCR ecdbMap) const
     for (NavigationPropertyMap* propMap : m_navPropMaps)
         {
         if (SUCCESS != propMap->Postprocess(ecdbMap))
-            {
-            LOG.errorv("Finishing creation of NavigationPropertyMap for NavigationProperty '%s.%s' failed.",
-                       propMap->GetProperty().GetClass().GetFullName(), propMap->GetProperty().GetName().c_str());
             return ERROR;
-            }
         }
 
     return SUCCESS;

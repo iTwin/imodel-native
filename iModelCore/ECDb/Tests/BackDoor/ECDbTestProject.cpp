@@ -197,8 +197,8 @@ void ECDbTestProject::ImportArbitraryECInstances(ECSchemaCR schema, int numberOf
     int classCount = 0;
     for (ECClassCP ecClass : schema.GetClasses())
         {
-        if (ecClass->GetRelationshipClassCP())
-            continue; // skip relationships
+        if (!ecClass->IsEntityClass() || ecClass->GetClassModifier() == ECClassModifier::Abstract)
+            continue;
         
         classCount++;
         for (int i = 0; i < numberOfECInstances; i++)

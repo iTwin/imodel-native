@@ -47,7 +47,6 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECSqlSupport)
                          "    </ECEntityClass>"
                          "    <ECEntityClass typeName='D'>"
                          "        <ECProperty propertyName='PD' typeName='int' />"
-                         "        <ECNavigationProperty propertyName='CId' relationshipName='CHasDLinkTable' direction='Backward' />"
                          "    </ECEntityClass>"
                          "   <ECRelationshipClass typeName='AHasB' strength='Embedding'>"
                          "      <Source cardinality='(0,1)' polymorphic='False'>"
@@ -75,14 +74,11 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECSqlSupport)
     AssertPrepare("SELECT * FROM ts.B WHERE ECInstanceId=?", true, "");
 
     AssertPrepare("SELECT PD FROM ts.D WHERE ECInstanceId=?", true, "");
-    AssertPrepare("SELECT PD, CId FROM ts.D WHERE ECInstanceId=?", false, "NavProp with link table relationship is not supported.");
-    AssertPrepare("SELECT * FROM ts.D WHERE ECInstanceId=?", false, "NavProp with link table relationship is not supported.");
 
     AssertPrepare("INSERT INTO ts.B (PB,AId) VALUES(123,?)", true, "NavProp with single related instance is expected to be supported.");
-    AssertPrepare("INSERT INTO ts.D (PD,CId) VALUES(123,?)", false, "NavProp with link table relationship is not supported.");
+    AssertPrepare("INSERT INTO ts.D (PD) VALUES(123)", true, "");
 
     AssertPrepare("UPDATE ONLY ts.B SET AId=?", true, "Updating NavProp with end table rel is supported.");
-    AssertPrepare("UPDATE ONLY ts.D SET CId=?", false, "Updating NavProp with link table rel is not supported.");
     }
 
 //---------------------------------------------------------------------------------------
@@ -587,13 +583,24 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
 
     ASSERT_GT(rowCount, 0);
     }
-
-    //UPDATE
+    ecdb.SaveChanges();
+    
+    //UPDATE CategoryId
     {
+    //UPDATE via GeometrySource is not expected to work as it is mapped to multiple joined tables
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE np.GeometrySource SET CategoryId=? WHERE Category IS NULL"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, catKey.GetECInstanceId()));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, "UPDATE np.GeometrySource SET CategoryId=? WHERE CategoryId IS NULL")) << "ECSQL UPDATE on that kind of class not supported as it results in multiple UPDATES";
+    stmt.Finalize();
+
+    //UPDATE via classes that is mapped to a single joined table, is expected to work
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE np.SpatialElement SET CategoryId=? WHERE CategoryId IS NULL"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, catKey.GetECInstanceId())) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE np.AnnotationElement SET CategoryId=? WHERE CategoryId IS NULL"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, catKey.GetECInstanceId())) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
     }
 
     //Verify via SELECT

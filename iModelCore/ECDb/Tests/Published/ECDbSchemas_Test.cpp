@@ -1061,58 +1061,55 @@ TEST(ECDbSchemas, ImportSchemaAgainstExistingTableWithECInstanceIdColumn)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                       08/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST (ECDbSchemas, DiegoRelationshipTest)
+TEST(ECDbSchemas, DiegoRelationshipTest)
     {
     // Create a sample project
     ECDbTestProject test;
-    auto& ecdb = test.Create ("importecschema.ecdb");
+    auto& ecdb = test.Create("importecschema.ecdb");
 
     ECSchemaPtr s1, s2;
-    ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext ();
-    ECDbTestUtility::ReadECSchemaFromDisk (s1, ctx, L"DiegoSchema1.01.00.ecschema.xml", nullptr);
-    ASSERT_TRUE (s1.IsValid ());
-    ECDbTestUtility::ReadECSchemaFromDisk (s2, ctx, L"DiegoSchema2.01.00.ecschema.xml", nullptr);
-    ASSERT_TRUE (s2.IsValid ());
+    ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
+    ECDbTestUtility::ReadECSchemaFromDisk(s1, ctx, L"DiegoSchema1.01.00.ecschema.xml", nullptr);
+    ASSERT_TRUE(s1.IsValid());
+    ECDbTestUtility::ReadECSchemaFromDisk(s2, ctx, L"DiegoSchema2.01.00.ecschema.xml", nullptr);
+    ASSERT_TRUE(s2.IsValid());
 
     //now import test schema where the table already exists for the ECClass
-    ASSERT_EQ (SUCCESS, ecdb. Schemas ().ImportECSchemas (ctx->GetCache(),
-        ECDbSchemaManager::ImportOptions (false))) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(ctx->GetCache(),
+                                                      ECDbSchemaManager::ImportOptions(false))) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
 
-    auto aCivilModel = ecdb. Schemas ().GetECClass ("DiegoSchema1", "CivilModel");
-    auto aDatasetModel = ecdb. Schemas ().GetECClass ("DiegoSchema1", "DataSetModel");
-    auto aCivilModelHasDataSetModel = ecdb. Schemas ().GetECClass ("DiegoSchema1", "CivilModelHasDataSetModel");
-    auto aGeometricModel = ecdb. Schemas ().GetECClass ("DiegoSchema2", "GeometricModel");
-    ASSERT_TRUE (aCivilModel != nullptr);
-    ASSERT_TRUE (aDatasetModel != nullptr);
-    ASSERT_TRUE (aCivilModelHasDataSetModel != nullptr);
-    ASSERT_TRUE (aGeometricModel != nullptr);
+    ECClassCP civilModelClass = ecdb.Schemas().GetECClass("DiegoSchema1", "CivilModel");
+    ASSERT_TRUE(civilModelClass != nullptr);
+    ECClassCP datasetModelClass = ecdb.Schemas().GetECClass("DiegoSchema1", "DataSetModel");
+    ASSERT_TRUE(datasetModelClass != nullptr);
+    ECClassCP relClass = ecdb.Schemas().GetECClass("DiegoSchema1", "CivilModelHasDataSetModel");
+    ASSERT_TRUE(relClass != nullptr);
+    ECClassCP geometricModelClass = ecdb.Schemas().GetECClass("DiegoSchema2", "GeometricModel");
+    ASSERT_TRUE(geometricModelClass != nullptr);
 
+    IECInstancePtr civilModel1 = ECDbTestUtility::CreateArbitraryECInstance(*civilModelClass);
+    IECInstancePtr civilModel2 = ECDbTestUtility::CreateArbitraryECInstance(*civilModelClass);
+    IECInstancePtr geometricModel = ECDbTestUtility::CreateArbitraryECInstance(*geometricModelClass);
 
-    auto  iCivilModel1 = ECDbTestUtility::CreateArbitraryECInstance (*aCivilModel);
-    auto  iCivilModel2 = ECDbTestUtility::CreateArbitraryECInstance (*aCivilModel);
+    StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*(relClass->GetRelationshipClassCP()));
+    StandaloneECRelationshipInstancePtr rel1 = relationshipEnabler->CreateRelationshipInstance();
 
-    auto  iGeometricModel = ECDbTestUtility::CreateArbitraryECInstance (*aGeometricModel);
+    rel1->SetSource(civilModel2.get());
+    rel1->SetTarget(geometricModel.get());
 
-    StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*(aCivilModelHasDataSetModel->GetRelationshipClassCP()));
-
-    StandaloneECRelationshipInstancePtr iCivilModelHasDataSetModel2 = relationshipEnabler->CreateRelationshipInstance ();
-
-    iCivilModelHasDataSetModel2->SetSource (iCivilModel2.get ());
-    iCivilModelHasDataSetModel2->SetTarget (iGeometricModel.get ());
-
-    ECInstanceInserter aiCivilModel (ecdb, *aCivilModel);
-    ASSERT_TRUE (aiCivilModel.IsValid ());
-    auto insertStatus = aiCivilModel.Insert (*iCivilModel1);
-    insertStatus = aiCivilModel.Insert (*iCivilModel2);
+    ECInstanceInserter civilModelInserter(ecdb, *civilModelClass);
+    ASSERT_TRUE(civilModelInserter.IsValid());
+    ASSERT_EQ(SUCCESS, civilModelInserter.Insert(*civilModel1));
+    ASSERT_EQ(SUCCESS, civilModelInserter.Insert(*civilModel2));
 
 
-    ECInstanceInserter aiGeometricModel (ecdb, *aGeometricModel);
-    ASSERT_TRUE (aiGeometricModel.IsValid ());
-    insertStatus = aiGeometricModel.Insert (*iGeometricModel);
+    ECInstanceInserter geometricModelInserter(ecdb, *geometricModelClass);
+    ASSERT_TRUE(geometricModelInserter.IsValid());
+    ASSERT_EQ(SUCCESS, geometricModelInserter.Insert(*geometricModel));
 
-    ECInstanceInserter aiCivilModelHasDataSetModel (ecdb, *aCivilModelHasDataSetModel);
-    ASSERT_TRUE (aiCivilModelHasDataSetModel.IsValid ());
-    insertStatus = aiCivilModelHasDataSetModel.Insert (*iCivilModelHasDataSetModel2);
+    ECInstanceInserter relInserter(ecdb, *relClass);
+    ASSERT_TRUE(relInserter.IsValid());
+    ASSERT_EQ(SUCCESS, relInserter.Insert(*rel1));
     }
 
 
@@ -1551,7 +1548,7 @@ TEST(ECDbSchemas, ECDbSchemaManagerAPITest)
     ECClassKeys inSchemaClassKeys;
     EXPECT_EQ (SUCCESS, schemaManager.GetECClassKeys (inSchemaClassKeys, "StartupCompany"));
     LOG.infov("No of classes in StartupCompany is %d", (int)inSchemaClassKeys.size());
-    EXPECT_EQ (46, inSchemaClassKeys.size());
+    EXPECT_EQ (44, inSchemaClassKeys.size());
 
     StopWatch randomClassSW ("Loading Random Class", false);
     int maxClassesToLoad = 100;

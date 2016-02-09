@@ -338,19 +338,6 @@ ECSchemaPtr CreateTestSchema ()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                  10/14
-//+---------------+---------------+---------------+---------------+---------------+------
-//Importing a schema containing all the possible combinations of class properties and relationship classes having built-in and user defined cardinalities 
-TEST_F(ECDbSchemaManagerTests, ImportSchema)
-    {
-    ECDbTestProject testProject;
-    ECDbR ecdbr = testProject.Create("ecschemamanagertest.ecdb", L"UserWorkBench.01.00.ecschema.xml", true);
-    ECClassCP ecclass = ecdbr. Schemas ().GetECClass ("UserWorkBench", "areas");
-    ASSERT_TRUE (ecclass != nullptr);
-    ecclass = ecdbr. Schemas ().GetECClass ("UserWorkBench", "house_user");
-    ASSERT_TRUE (ecclass != nullptr);
-    }
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                  09/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaManagerTests, AddDuplicateECSchemaInCache)
@@ -696,10 +683,7 @@ TEST_F(ECDbSchemaManagerTests, SupplementWithLatestCompatibleSupplementalSchema)
     ASSERT_TRUE(schemaptr != NULL);
     schemacache->AddSchema (*schemaptr);
 
-    ECSchemaPtr supple;
-    ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"BasicSchema_Supplemental_Localization.01.10.ecschema.xml", nullptr);
-    ASSERT_TRUE(supple != NULL);
-    schemacache->AddSchema (*supple);
+    ECSchemaPtr supple = nullptr;
 
     ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"BasicSchema_Supplemental_Localization.01.90.ecschema.xml", nullptr);
     ASSERT_TRUE(supple != NULL);
@@ -722,7 +706,7 @@ TEST_F(ECDbSchemaManagerTests, SupplementWithLatestCompatibleSupplementalSchema)
     {
         i++;
     }
-    EXPECT_EQ(6, i) << "the number of custom attributes on the Class Base do not match the original";
+    EXPECT_EQ(5, i) << "the number of custom attributes on the Class Base do not match the original";
 }
 
 //---------------------------------------------------------------------------------------

@@ -262,8 +262,8 @@
         - Number of tables on the Foreign Key end
             - 1: ok
             - > 1: ok, but <b>relationship becomes read-only</b>, i.e. it cannot be used in ECSQL INSERT, UPDATE, DELETE.
-
-    
+            Creating relationships of that kind is possible through @ref BentleyApi::ECN::NavigationECProperty "NavigationECProprties".
+        
     #### Counting the tables on the ECRelationshipClass ends
     - Count the distinct tables to which each class specified in the 
     @ref BentleyApi::ECN::ECRelationshipConstraint "ECRelationshipConstraint" maps.
@@ -284,7 +284,7 @@
     each class of the constraint. See @ref CustomClassMapDescription for details.
     - If the <i>Shared Table</i> strategy cannot be applied, consider breaking the ECRelationshipClass apart into several separate
     ECRelationshipClasses.
-
+    
     ## Referential Integrity
     ECDb enforces referential integrity via foreign key constraints. 
     

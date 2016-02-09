@@ -1,15 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="DiegoSchema2" nameSpacePrefix="ds2" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
     <ECSchemaReference name="DiegoSchema1" version="01.00" prefix="ds1"/>
-    <ECCustomAttributes>
-        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.12">
-            <SchemaFullNameAtEditingStart>DiagoSchema2.01.00</SchemaFullNameAtEditingStart>
-            <TrackingEnabled>True</TrackingEnabled>
-        </SchemaChangeTrackingState>
-    </ECCustomAttributes>
-    <ECEntityClass typeName="GeometricModel" modifier="None">
+    <ECEntityClass typeName="GeometricModel">
         <BaseClass>ds1:DataSetModel</BaseClass>
-        <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Name" typeName="string"/>
     </ECEntityClass>
 </ECSchema>

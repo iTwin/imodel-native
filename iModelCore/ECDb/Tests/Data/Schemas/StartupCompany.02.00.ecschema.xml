@@ -119,10 +119,6 @@
         <ECProperty propertyName="Room" typeName="string" displayLabel="Room/Cubicle" readOnly="false"/>
         <ECProperty propertyName="AssetRecordKey" typeName="string" displayLabel="Record Key" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="AssetRelationshipsBase" displayLabel="Asset Relationships Base" modifier="Abstract" strength="referencing" strengthDirection="forward">
-        <Source cardinality="(0,1)" polymorphic="true"/>
-        <Target cardinality="(0,1)" polymorphic="true"/>
-    </ECRelationshipClass>
     <ECEntityClass typeName="Bar" modifier="None">
         <ECProperty propertyName="stringBar" typeName="string" readOnly="false"/>
     </ECEntityClass>
@@ -754,12 +750,7 @@
         <ECStructProperty propertyName="Address" typeName="Location" readOnly="false"/>
         <ECProperty propertyName="EmployeeRecordKey" typeName="dateTime" displayLabel="Record Key" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="EmployeeRelationshipsBase" displayLabel="Employee Relationships Base" modifier="Abstract" strength="referencing" strengthDirection="forward">
-        <Source cardinality="(0,1)" polymorphic="true"/>
-        <Target cardinality="(0,1)" polymorphic="true"/>
-    </ECRelationshipClass>
     <ECRelationshipClass typeName="EmployeeCompany" modifier="None" strength="referencing" strengthDirection="forward">
-        <BaseClass>EmployeeRelationshipsBase</BaseClass>
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
                 <End>Source</End>
@@ -774,8 +765,6 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="EmployeeFurniture" modifier="None" strength="referencing" strengthDirection="forward">
-        <BaseClass>AssetRelationshipsBase</BaseClass>
-        <BaseClass>EmployeeRelationshipsBase</BaseClass>
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
                 <ForeignKeyColumn>Employee__src_01_id</ForeignKeyColumn>
@@ -790,8 +779,6 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="EmployeeHardware" modifier="None" strength="referencing" strengthDirection="forward">
-        <BaseClass>AssetRelationshipsBase</BaseClass>
-        <BaseClass>EmployeeRelationshipsBase</BaseClass>
         <ECCustomAttributes>
             <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
                 <SourceECInstanceIdColumn>Employee__src_0N_id</SourceECInstanceIdColumn>
@@ -806,7 +793,6 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="EmployeeOffice" modifier="None" strength="referencing" strengthDirection="forward">
-        <BaseClass>EmployeeRelationshipsBase</BaseClass>
         <ECCustomAttributes>
             <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
                 <SourceECInstanceIdColumn>Employee__src_0N_id</SourceECInstanceIdColumn>
@@ -827,8 +813,6 @@
         <ECProperty propertyName="User" typeName="int" readOnly="false"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="EmployeePhone" modifier="None" strength="referencing" strengthDirection="forward">
-        <BaseClass>AssetRelationshipsBase</BaseClass>
-        <BaseClass>EmployeeRelationshipsBase</BaseClass>
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
                 <ForeignKeyColumn>Employee__src_01_id</ForeignKeyColumn>
@@ -842,7 +826,6 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="EmployeeProject" modifier="None" strength="referencing" strengthDirection="forward">
-        <BaseClass>EmployeeRelationshipsBase</BaseClass>
         <ECCustomAttributes>
             <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
                 <SourceECInstanceIdColumn>Employee__src_1N_id</SourceECInstanceIdColumn>
