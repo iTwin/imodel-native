@@ -1104,12 +1104,36 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
 
             if (edgeCurves.IsValid())
                 {
-                bvector<Byte> buffer;
+                if (edgeCurves->size() < 25) // Don't create large flatbuffer entries, need to CheckStop...
+                    {
+                    bvector<Byte> buffer;
 
-                BentleyGeometryFlatBuffer::GeometryToBytes(*edgeCurves, buffer);
+                    BentleyGeometryFlatBuffer::GeometryToBytes(*edgeCurves, buffer);
 
-                if (0 != buffer.size())
-                    Append(Operation(OpCode::BRepEdges, (uint32_t) buffer.size(), &buffer.front()));
+                    if (0 != buffer.size())
+                        Append(Operation(OpCode::BRepEdges, (uint32_t) buffer.size(), &buffer.front()));
+                    }
+                else
+                    {
+                    CurveVectorPtr batchCurves = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
+
+                    for (ICurvePrimitivePtr curvePrimitive : *edgeCurves)
+                        {
+                        batchCurves->push_back(curvePrimitive);
+
+                        if (batchCurves->size() < 25 && curvePrimitive != edgeCurves->back())
+                            continue;
+
+                        bvector<Byte> buffer;
+
+                        BentleyGeometryFlatBuffer::GeometryToBytes(*batchCurves, buffer);
+
+                        if (0 != buffer.size())
+                            Append(Operation(OpCode::BRepEdges, (uint32_t) buffer.size(), &buffer.front()));
+
+                        batchCurves->clear();
+                        }
+                    }
                 }
             }
         }
@@ -1146,12 +1170,36 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
 
             if (faceCurves.IsValid())
                 {
-                bvector<Byte> buffer;
+                if (faceCurves->size() < 25) // Don't create large flatbuffer entries, need to CheckStop...
+                    {
+                    bvector<Byte> buffer;
 
-                BentleyGeometryFlatBuffer::GeometryToBytes(*faceCurves, buffer);
+                    BentleyGeometryFlatBuffer::GeometryToBytes(*faceCurves, buffer);
 
-                if (0 != buffer.size())
-                    Append(Operation(OpCode::BRepFaceIso, (uint32_t) buffer.size(), &buffer.front()));
+                    if (0 != buffer.size())
+                        Append(Operation(OpCode::BRepFaceIso, (uint32_t) buffer.size(), &buffer.front()));
+                    }
+                else
+                    {
+                    CurveVectorPtr batchCurves = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
+
+                    for (ICurvePrimitivePtr curvePrimitive : *faceCurves)
+                        {
+                        batchCurves->push_back(curvePrimitive);
+
+                        if (batchCurves->size() < 25 && curvePrimitive != faceCurves->back())
+                            continue;
+
+                        bvector<Byte> buffer;
+
+                        BentleyGeometryFlatBuffer::GeometryToBytes(*batchCurves, buffer);
+
+                        if (0 != buffer.size())
+                            Append(Operation(OpCode::BRepFaceIso, (uint32_t) buffer.size(), &buffer.front()));
+
+                        batchCurves->clear();
+                        }
+                    }
                 }
             }
         }
@@ -2848,6 +2896,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
     bool isQVis = graphic.IsForDisplay();
     bool isQVWireframe = (isQVis && RenderMode::Wireframe == context.GetViewFlags().GetRenderMode());
     bool isPick = (nullptr != context.GetIPickGeom());
+    bool isSnap = (isPick && context.GetIPickGeom()->_IsSnap()); // Only need BRep edges/face iso if snapping, mesh good enough for locate...
     bool useBRep = !(isQVis || isPick);
     bool geomParamsChanged = activateParams || !isQVis; // NOTE: Don't always bake initial symbology into SubGraphics, it's activated before drawing QvElem...
 
@@ -3162,7 +3211,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                     }
 
                 // NOTE: For this case the exact edge geometry will be supplied by BRepEdges/BRepFaceIso, inhibit facetted edge draw...
-                if ((isPick || isQVWireframe) && GeometryStreamIO::OpCode::BRepPolyface == egOp.m_opCode)
+                if ((isSnap || isQVWireframe) && GeometryStreamIO::OpCode::BRepPolyface == egOp.m_opCode)
                     {
                     // NOTE: Don't like doing this...but I can't think of another way.
                     //       We only want to use the mesh for silhouettes and surface locates.
@@ -3198,7 +3247,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
             case GeometryStreamIO::OpCode::BRepEdges:
                 {
                 // Don't increment GeometryStreamEntryId...
-                if (!(isPick || isQVWireframe))
+                if (!(isSnap || isQVWireframe))
                     break;
 
                 if (!DrawHelper::IsGeometryVisible(context, geomParams))
@@ -3217,7 +3266,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
             case GeometryStreamIO::OpCode::BRepFaceIso:
                 {
                 // Don't increment GeometryStreamEntryId...
-                if (!(isPick || isQVWireframe))
+                if (!(isSnap || isQVWireframe))
                     break;
 
                 if (!DrawHelper::IsGeometryVisible(context, geomParams))
