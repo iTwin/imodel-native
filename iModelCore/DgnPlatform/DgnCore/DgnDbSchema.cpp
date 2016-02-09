@@ -42,7 +42,7 @@ static void importDgnSchema(DgnDbR db)
     BeAssert(status == SUCCESS);
     }
 
-#define GEOM_IN_PHYSICAL_SPACE_CLAUSE " 1 = new.InPhysicalSpace "
+#define GEOM_IN_SPATIAL_INDEX_CLAUSE " 1 = new.InSpatialIndex "
 #define ORIGIN_FROM_PLACEMENT "DGN_point(NEW.Origin_X,NEW.Origin_Y,NEW.Origin_Z)"
 #define ANGLES_FROM_PLACEMENT "DGN_angles(NEW.Yaw,NEW.Pitch,NEW.Roll)"
 #define BBOX_FROM_PLACEMENT "DGN_bbox(NEW.BBoxLow_X,NEW.BBoxLow_Y,NEW.BBoxLow_Z,NEW.BBoxHigh_X,NEW.BBoxHigh_Y,NEW.BBoxHigh_Z)"
@@ -93,7 +93,7 @@ DbResult DgnDb::CreateDgnDbTables()
 
     Fonts().DbFontMap().CreateFontTable();
 
-    ExecuteSql("CREATE VIRTUAL TABLE " DGN_VTABLE_RTree3d " USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)"); // Define this before importing dgn schema!
+    ExecuteSql("CREATE VIRTUAL TABLE " DGN_VTABLE_SpatialIndex " USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)"); // Define this before importing dgn schema!
 
     importDgnSchema(*this);
 
@@ -111,21 +111,21 @@ DbResult DgnDb::CreateDgnDbTables()
         }
 
     ExecuteSql("CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON " DGN_TABLE(DGN_CLASSNAME_GeometricElement3d)
-               " BEGIN DELETE FROM " DGN_VTABLE_RTree3d " WHERE ElementId=old.ElementId;END");
+               " BEGIN DELETE FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId=old.ElementId;END");
 
     ExecuteSql("CREATE TRIGGER dgn_rtree_upd AFTER UPDATE ON " DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) 
-               " WHEN new.Origin_X IS NOT NULL AND " GEOM_IN_PHYSICAL_SPACE_CLAUSE
-               "BEGIN INSERT OR REPLACE INTO " DGN_VTABLE_RTree3d "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,"
+               " WHEN new.Origin_X IS NOT NULL AND " GEOM_IN_SPATIAL_INDEX_CLAUSE
+               "BEGIN INSERT OR REPLACE INTO " DGN_VTABLE_SpatialIndex "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,"
                "DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5)"
                " FROM (SELECT " AABB_FROM_PLACEMENT " as bb);END");
 
     ExecuteSql("CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE ON " DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) 
                 " WHEN OLD.Origin_X IS NOT NULL AND NEW.Origin_X IS NULL"
-                " BEGIN DELETE FROM " DGN_VTABLE_RTree3d " WHERE ElementId=OLD.ElementId;END");
+                " BEGIN DELETE FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId=OLD.ElementId;END");
 
     ExecuteSql("CREATE TRIGGER dgn_rtree_ins AFTER INSERT ON " DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) 
-               " WHEN new.Origin_X IS NOT NULL AND " GEOM_IN_PHYSICAL_SPACE_CLAUSE
-               "BEGIN INSERT INTO " DGN_VTABLE_RTree3d "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,"
+               " WHEN new.Origin_X IS NOT NULL AND " GEOM_IN_SPATIAL_INDEX_CLAUSE
+               "BEGIN INSERT INTO " DGN_VTABLE_SpatialIndex "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,"
                "DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5)"
                " FROM (SELECT " AABB_FROM_PLACEMENT " as bb);END");
 

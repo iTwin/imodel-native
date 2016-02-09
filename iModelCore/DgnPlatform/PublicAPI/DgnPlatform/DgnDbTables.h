@@ -21,7 +21,6 @@
 #define DGN_CLASSNAME_AnnotationTextStyle   "AnnotationTextStyle"
 #define DGN_CLASSNAME_Authority             "Authority"
 #define DGN_CLASSNAME_CategoryAuthority     "CategoryAuthority"
-#define DGN_CLASSNAME_CodedEntity           "CodedEntity"
 #define DGN_CLASSNAME_ComponentAuthority    "ComponentAuthority"
 #define DGN_CLASSNAME_ComponentModel        "ComponentModel"
 #define DGN_CLASSNAME_DefinitionElement     "DefinitionElement"
@@ -56,10 +55,9 @@
 #define DGN_CLASSNAME_ResourceAuthority     "ResourceAuthority"
 #define DGN_CLASSNAME_SpatialModel          "SpatialModel"
 #define DGN_CLASSNAME_SectionDrawingModel   "SectionDrawingModel"
-#define DGN_CLASSNAME_SheetElement          "SheetElement"
 #define DGN_CLASSNAME_SheetModel            "SheetModel"
 #define DGN_CLASSNAME_SpatialElement        "SpatialElement"
-#define DGN_CLASSNAME_SpatialGroupElement   "SpatialGroupElement"
+#define DGN_CLASSNAME_SpatialIndex          "SpatialIndex"
 #define DGN_CLASSNAME_SpatialRedlineModel   "SpatialRedlineModel"
 #define DGN_CLASSNAME_TextAnnotationSeed    "TextAnnotationSeed"
 #define DGN_CLASSNAME_Texture               "Texture"
@@ -69,11 +67,11 @@
 //-----------------------------------------------------------------------------------------
 // DgnDb table names
 //-----------------------------------------------------------------------------------------
-#define DGN_TABLE_Domain   DGN_TABLE("Domain")
-#define DGN_TABLE_Font     DGN_TABLE("Font")
-#define DGN_TABLE_Handler  DGN_TABLE("Handler")
-#define DGN_TABLE_Txns     DGN_TABLE("Txns")
-#define DGN_VTABLE_RTree3d DGN_TABLE("RTree3d")
+#define DGN_TABLE_Domain                    DGN_TABLE("Domain")
+#define DGN_TABLE_Font                      DGN_TABLE("Font")
+#define DGN_TABLE_Handler                   DGN_TABLE("Handler")
+#define DGN_TABLE_Txns                      DGN_TABLE("Txns")
+#define DGN_VTABLE_SpatialIndex             DGN_TABLE(DGN_CLASSNAME_SpatialIndex)
 
 //-----------------------------------------------------------------------------------------
 // ECRelationshipClass names (combine with DGN_SCHEMA macro for use in ECSql)
