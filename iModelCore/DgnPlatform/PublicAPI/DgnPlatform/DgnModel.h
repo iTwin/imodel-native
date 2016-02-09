@@ -19,8 +19,10 @@ DGNPLATFORM_TYPEDEFS(GeometricModel)
 DGNPLATFORM_TYPEDEFS(DefinitionModel)
 DGNPLATFORM_TYPEDEFS(GeometricModel2d)
 DGNPLATFORM_TYPEDEFS(GeometricModel3d)
+DGNPLATFORM_TYPEDEFS(GraphicalModel2d)
 DGNPLATFORM_TYPEDEFS(DgnRangeTree)
 DGNPLATFORM_TYPEDEFS(CheckStop)
+DGNPLATFORM_TYPEDEFS(DrawingModel)
 DGNPLATFORM_TYPEDEFS(SectionDrawingModel)
 DGNPLATFORM_TYPEDEFS(SheetModel)
 DGNPLATFORM_TYPEDEFS(DictionaryModel)
@@ -596,7 +598,7 @@ public:
 };
 
 //=======================================================================================
-//! A DgnModel that holds geometric DgnElements.
+//! A DgnModel that contains geometric DgnElements.
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   03/15
 //=======================================================================================
@@ -788,7 +790,7 @@ public:
 };
 
 //=======================================================================================
-//! A DgnModel that holds only 3-dimensional DgnElements.
+//! A DgnModel that contains only 3-dimensional DgnElements.
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   03/15
 //=======================================================================================
@@ -805,7 +807,7 @@ public:
 };
 
 //=======================================================================================
-//! A GeometricModel2d is a infinite planar model that holds only 2-dimensional DgnElements. Coordinates values are X,Y.
+//! A GeometricModel2d is a infinite planar model that contains only 2-dimensional DgnElements. Coordinates values are X,Y.
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
@@ -821,6 +823,19 @@ protected:
 
 public:
     explicit GeometricModel2d(CreateParams const& params, DPoint2dCR origin=DPoint2d::FromZero()) : T_Super(params) {}
+};
+
+//=======================================================================================
+//! A GraphicalModel2d contains 2-dimensional geometric elements for graphical presentation purposes (as opposed to analytical purposes).
+//! @ingroup DgnModelGroup
+// @bsiclass                                                    Shaun.Sewall    02/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GraphicalModel2d : GeometricModel2d
+{
+    DEFINE_T_SUPER(GeometricModel2d);
+
+public:
+    explicit GraphicalModel2d(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
@@ -842,7 +857,7 @@ public:
 };
 
 //=======================================================================================
-//! A model which holds only definitions.
+//! A model which contains only definitions.
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Paul.Connelly   09/15
 //=======================================================================================
@@ -859,7 +874,7 @@ public:
 };
 
 //=======================================================================================
-//! A definition model which holds definitions like materials and styles which are used
+//! A definition model which contains definitions like materials and styles which are used
 //! throughout a DgnDb. Each DgnDb has exactly one DictionaryModel.
 //! A DictionaryModel can contain @em only DictionaryElements; and likewise, a
 //! DictionaryElement can @em only reside in a DictionaryModel.
@@ -910,7 +925,7 @@ public:
     ComponentModel(CreateParams const& params) : GeometricModel3d(params) {;} //!< @private
 
     //! Create a ComponentModel that can be used by a component definition
-    //! @param db The DgnDb that is intended to hold the new model
+    //! @param db The DgnDb that is intended to contain the new model
     //! @param componentDefClassECSqlName The full ECSQL name of the component definition ECClass
     //! @return a new, non-persistent component model
     DGNPLATFORM_EXPORT static ComponentModelPtr Create(DgnDbR db, Utf8StringCR componentDefClassECSqlName);
@@ -1236,6 +1251,18 @@ public:
 };
 
 //=======================================================================================
+//! @ingroup DgnModelGroup
+// @bsiclass                                                    Shaun.Sewall    02/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE DrawingModel : GraphicalModel2d
+    {
+    DEFINE_T_SUPER(GraphicalModel2d);
+
+    public:
+        explicit DrawingModel(CreateParams const& params) : T_Super(params) {}
+    };
+
+//=======================================================================================
 //! A SectionDrawingModel is an infinite planar model that subdivides physical space into two halves.
 //! The plane of a SectionDrawingModel is mapped into physical space such that the vertical direction (Y
 //! vector) of the SectionDrawingModel is constant in physical space. That is, physical space is divided in half (cut) by a
@@ -1255,9 +1282,9 @@ public:
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingModel : GeometricModel2d
+struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingModel : DrawingModel
 {
-    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_SectionDrawingModel, GeometricModel2d);
+    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_SectionDrawingModel, DrawingModel);
 protected:
     SectionDrawingModelCP _ToSectionDrawingModel() const override final {return this;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
@@ -1266,19 +1293,19 @@ public:
 };
 
 //=======================================================================================
-//! A sheet model is a GeometricModel2d that has the following characteristics:
+//! A sheet model is a GraphicalModel2d that has the following characteristics:
 //!     - Has fixed extents (is not infinite), specified in meters.
 //!     - Can contain @b views of other models, like pictures pasted on a photo album.
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SheetModel : GeometricModel2d
+struct EXPORT_VTABLE_ATTRIBUTE SheetModel : GraphicalModel2d
 {
-    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_SheetModel, GeometricModel2d);
+    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_SheetModel, GraphicalModel2d);
 public:
-    struct CreateParams : GeometricModel2d::CreateParams
+    struct CreateParams : GraphicalModel2d::CreateParams
     {
-        DEFINE_T_SUPER(GeometricModel2d::CreateParams);
+        DEFINE_T_SUPER(GraphicalModel2d::CreateParams);
         DPoint2d m_size;
 
         //! Parameters for creating a new SheetModel.

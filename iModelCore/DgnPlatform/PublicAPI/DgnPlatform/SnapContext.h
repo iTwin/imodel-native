@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/SnapContext.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,21 +32,23 @@ public:
     DGNVIEW_EXPORT SnapStatus IntersectDetails (SnapDetailP* snappedPath, HitDetailCP first, HitDetailCP second, DPoint3dCP testPoint, bool allowSelfIntersections);
     DGNVIEW_EXPORT SnapStatus SnapToPath (SnapDetailP* snappedPath, HitDetailCP thisPath, SnapMode snapMode, int snapDivisor, double hotAperture);
 
-    DGNPLATFORM_EXPORT void SetSnapPoint (DPoint3dCR snapPt, bool forceHot);
     DGNPLATFORM_EXPORT static KeypointType GetSnapKeypointType (SnapMode);
 
     //! Get the snap path created by calling element's draw method, and
     //! representing "nearest" snap.
     //! @return SnapDetailP won't return NULL.
-    DGNPLATFORM_EXPORT SnapDetailP GetSnapDetail ();
+    SnapDetailP GetSnapDetail() {return m_snapPath;}
 
     //! Get the snap mode that the handler is being asked to adjust the snap path for.
     //! @return SnapMode to use for this snap.
-    DGNPLATFORM_EXPORT SnapMode GetSnapMode ();
+    SnapMode GetSnapMode() {return m_snapMode;}
 
     //! Get the current snap divisor setting, this is used for SnapMode::NearestKeypoint.
     //! @return current snap divisor.
-    DGNPLATFORM_EXPORT int GetSnapDivisor ();
+    int GetSnapDivisor() {return m_snapDivisor;}
+
+    //! Get hot distance to use to set snap heat.
+    double GetSnapAperture() {return m_snapAperture;}
 
     //! Get the default sprite used for the supplied SnapMode.
     //! @param[in]    mode                  Snap mode to get sprite for.

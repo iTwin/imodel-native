@@ -184,7 +184,7 @@ protected:
     void InvalidateScanRange() {m_scanRangeValid = false;}
     DGNPLATFORM_EXPORT virtual StatusInt _Attach(DgnViewportP, DrawPurpose purpose);
     DGNPLATFORM_EXPORT virtual void _Detach();
-    DGNPLATFORM_EXPORT virtual void _OutputGeometry(GeometrySourceCR);
+    DGNPLATFORM_EXPORT virtual StatusInt _OutputGeometry(GeometrySourceCR);
     DGNPLATFORM_EXPORT virtual void _AddSubGraphic(Render::GraphicR, DgnGeometryPartId, TransformCR, Render::GeometryParamsR);
     virtual Render::GraphicP _GetCachedPartGraphic(DgnGeometryPartId, double pixelSize, ElementAlignedBox3dR) {return nullptr;}
     virtual void _SavePartGraphic(DgnGeometryPartId, Render::GraphicR, ElementAlignedBox3dCR) {}
@@ -201,7 +201,8 @@ protected:
     DGNPLATFORM_EXPORT virtual void _DrawStyledBSplineCurve2d(MSBsplineCurveCR, double zDepth);
     DGNPLATFORM_EXPORT virtual void _AddTextString(TextStringCR);
     DGNPLATFORM_EXPORT virtual StatusInt _InitContextForView();
-    DGNPLATFORM_EXPORT virtual StatusInt _VisitElement(GeometrySourceCR);
+    DGNPLATFORM_EXPORT virtual StatusInt _VisitGeometry(GeometrySourceCR);
+    DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitDetailCR);
     DGNPLATFORM_EXPORT virtual void _InitScanRangeAndPolyhedron();
     DGNPLATFORM_EXPORT virtual bool _VisitAllModelElements();
     DGNPLATFORM_EXPORT virtual StatusInt _VisitDgnModel(DgnModelP);
@@ -252,7 +253,8 @@ public:
 
     Render::GraphicPtr CreateGraphic(Render::Graphic::CreateParams const& params=Render::Graphic::CreateParams()) {return _CreateGraphic(params);}
     void AddSubGraphic(Render::GraphicR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams) {_AddSubGraphic(graphic, partId, subToGraphic, geomParams);}
-    StatusInt VisitElement(GeometrySourceCR elem) {return _VisitElement(elem);}
+    StatusInt VisitGeometry(GeometrySourceCR elem) {return _VisitGeometry(elem);}
+    StatusInt VisitHit(HitDetailCR hit) {return _VisitHit(hit);}
 
     /// @name Coordinate Query and Conversion
     //@{
@@ -377,11 +379,11 @@ public:
 
     /// @name Identifying element "topology".
     //@{
-    //! Query the current IElementTopology.
+    //! Query the current IElemTopology.
     //! @return An object that holds additional information about the graphics that are currently being drawn.
     IElemTopologyCP GetElemTopology() const {return (m_currElemTopo.IsValid() ? m_currElemTopo.get() : nullptr);}
 
-    //! Set the current IElementTopology.
+    //! Set the current IElemTopology.
     //! @param topo An object holding additional information about the graphics to be drawn or nullptr to clear the current topology pointer.
     void SetElemTopology(IElemTopologyCP topo) {m_currElemTopo = topo;}
 
@@ -489,7 +491,6 @@ struct SceneContext : RenderContext
 
 private:
     bool m_wantStroke = true;
-    bool m_strokeCalled = false;
     int32_t m_checkStopInterval;
     int32_t m_checkStopElementSkip = 10;
     int32_t m_checkStopElementCount = 0;
@@ -502,8 +503,8 @@ private:
     bool _CheckStop() override;
     int AccumulateMotion();
     bool DoCheckStop();
-    bool SetNoStroking(bool val){bool strokeCalled=m_strokeCalled; m_strokeCalled=false; m_wantStroke=val; return strokeCalled;}
-    Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize) override {m_strokeCalled=true; return m_wantStroke ? T_Super::_StrokeGeometry(source,pixelSize) : nullptr;}
+    void SetNoStroking(bool val) {m_wantStroke=!val;}
+    Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize) override {return m_wantStroke ? T_Super::_StrokeGeometry(source,pixelSize) : nullptr;}
     void EnableCheckStop(int stopInterval, int const* motionTolerance);
 
 public:
@@ -542,11 +543,10 @@ private:
     Render::Decorations& m_decorations;
     void _AddContextOverrides(Render::OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source) override;
     void _OutputGraphic(Render::GraphicR graphic, GeometrySourceCP) override;
+    StatusInt _VisitHit(HitDetailCR hit) override;
     DecorateContext(DgnViewportR vp, Render::Decorations& decorations) : RenderContext(vp, DrawPurpose::Decorate), m_decorations(decorations) {}
 
 public:
-    StatusInt VisitHit(HitDetailCR hit);
-
     //! Display world coordinate graphic with flash/hilite treatment.
     DGNPLATFORM_EXPORT void AddFlashed(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);
 

@@ -24,6 +24,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::VirtualSet
 {
     DEFINE_T_SUPER(CameraViewController)
+    friend struct DgnQueryQueue::Task;
 
     //=======================================================================================
     // @bsiclass                                                    Keith.Bentley   02/16
@@ -31,9 +32,18 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
     struct RTreeQuery
     {
         BeSQLite::CachedStatementPtr m_rangeStmt;
+        BeSQLite::CachedStatementPtr m_viewStmt;
+        DgnElementIdSet const* m_neverDrawn;
+        int m_idCol = 0;
         virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) = 0;
         DgnElementId StepRtree();
-        void Init(DgnDbR db);
+        bool TestElement(DgnElementId);
+        void Start(DgnQueryViewCR);
+        RTreeQuery(DgnElementIdSet const* ignore) : m_neverDrawn(ignore) 
+            {
+            if (m_neverDrawn && m_neverDrawn->empty())
+                m_neverDrawn=nullptr;
+            }
     };
 
     typedef bmultimap<double, DgnElementId> OcclusionScores;
@@ -47,50 +57,65 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
     };
     typedef RefCountedPtr<QueryResults> QueryResultsPtr;
 
+    struct Clips : ConvexClipPlaneSet
+    {
+        void AddFrustum(FrustumCR frustum);
+        BeSQLite::RTreeMatchFunction::Within TestBox(DPoint3d*);
+    };
+
     //=======================================================================================
     // @bsiclass                                                    Keith.Bentley   02/16
     //=======================================================================================
-    struct RangeQuery : RTreeQuery
+    struct RangeQuery : RTreeQuery, DgnQueryQueue::Task
     {
         DEFINE_T_SUPER(RTreeQuery)
+        bool        m_depthFirst = false;
         bool        m_cameraOn = false;
         bool        m_testLOD = false;
-        bool        m_doSkewtest = false;
-        bool        m_doOcclusionScore = false;
+        bool        m_doSkewTest = false;
         uint32_t    m_orthogonalProjectionIndex;
         uint32_t    m_count = 0;
         uint32_t    m_hitLimit = 0;
         uint64_t    m_lastId = 0;
         BeSQLite::RTree3dVal m_boundingRange;    // only return entries whose range intersects this cube.
-        BeSQLite::RTree3dVal m_frontFaceRange;
-        ClipVectorPtr   m_clips;
+        BeSQLite::RTree3dVal m_backFace;
+        
+        Clips       m_clips;
+        Frustum     m_frustum;
         DMatrix4d   m_localToNpc;
         DVec3d      m_viewVec;  // vector from front face to back face
         DPoint3d    m_cameraPosition;
         double      m_lodFilterNPCArea = 0.0;
-        double      m_minScore = 1.0e20;
+        double      m_minScore = 0.0;
         double      m_lastScore = 0.0;
 
+        virtual void _Go() override;
         virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
-        void SetTestLOD(bool val) {m_testLOD=val;}
-        void InitForViewport(DgnViewportCR viewport, double minimumSizePixels);
-        bool ComputeEyeSpanningRangeOcclusionScore(double* score, DPoint3dCP rangeCorners);
+        bool SkewTest(BeSQLite::RTree3dValCP testRange);
+        void SetDepthFirst() {m_depthFirst=true;}
+        void SetTestLOD(bool onOff) {m_testLOD=onOff;}
+        void SetSizeFilter(DgnViewportCR, double size);
         bool ComputeNPC(DPoint3dR npcOut, DPoint3dCR localIn);
         bool ComputeOcclusionScore(double* score, bool& overlap, bool& spansEyePlane, DPoint3dCP localCorners);
-        bool AllPointsClippedByOnePlane(ConvexClipPlaneSetCR cps, size_t nPoints, DPoint3dCP points) const;
-        void SetClipVector(ClipVectorR clip) {m_clips = &clip;}
         void SetFrustum(FrustumCR);
-        void SetViewport(DgnViewportCR, double minimumSizeScreenPixels, double frustumScale);
-        bool SkewTest(BeSQLite::RTree3dValCP);
     
     public:
-        void Init(DgnDbR db) {T_Super::Init(db); m_count=0;}
+        RangeQuery(DgnQueryViewCR, FrustumCR, DgnViewportCR, UpdatePlan::Query const& plan);
+        DgnQueryView::QueryResultsPtr DoQuery();
     };
+
+    //=======================================================================================
+    // @bsiclass                                                    Keith.Bentley   02/16
+    //=======================================================================================
+    struct SceneMembers : RefCounted<DgnElementIdSet>, NonCopyableClass
+    {
+    };
+    typedef RefCountedPtr<SceneMembers> SceneMembersPtr;
 
     //=======================================================================================
     // @bsiclass                                                    Keith.Bentley   04/14
     //=======================================================================================
-    struct ProgressiveElements : ProgressiveTask
+    struct NonScene : ProgressiveTask
     {
         enum {SHOW_PROGRESS_INTERVAL = 1000}; // once per second.
         bool     m_setTimeout = false;
@@ -98,31 +123,32 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
         uint32_t m_thisBatch = 0;
         uint32_t m_batchSize = 0;
         uint64_t m_nextShow  = 0;
+        SceneMembersPtr m_scene;
         RangeQuery m_rangeQuery;
-        DgnElementIdSet m_inScene;
         DgnQueryViewR m_view;
-        explicit ProgressiveElements(DgnQueryViewR view) : m_view(view) {m_rangeQuery.SetTestLOD(true);}
+        explicit NonScene(DgnQueryViewR view, DgnViewportCR, SceneMembers& scene);// : m_view(view), m_scene(&scene) {m_rangeQuery.SetTestLOD(true);}
         virtual Completion _DoProgressive(SceneContext& context, WantShow&) override;
     };
 
 protected:
-    bool m_abortQuery;
-    BeSQLite::Statement m_query;
-    Frustum m_startQueryFrustum;
-    Frustum m_saveQueryFrustum;
+    bool m_forceNewQuery;
+    mutable bool m_abortQuery;
+    Utf8String m_viewSQL;
+
     DgnElementIdSet m_alwaysDrawn;
     DgnElementIdSet m_neverDrawn;
-    QueryResultsPtr m_results;
+    mutable QueryResultsPtr m_results;
 
     void SearchIdSet(DgnElementIdSet&, RangeQuery&);
     void QueryModelExtents(DRange3dR, DgnViewportR);
-    bool FrustumChanged(DgnViewportCR vp) const;
-    void QueueQuery(DgnViewportR, UpdatePlan const&);
-    bool AddtoSceneQuick(SceneContextR context, ProgressiveElements& progressive, QueryResults& results);
-    StatusInt VisitElement(ViewContextR context, DgnElementId);
+    void QueueQuery(DgnViewportR, UpdatePlan::Query const&);
+    void AddtoSceneQuick(SceneContextR context, SceneMembers&, QueryResults& results);
+    StatusInt VisitElement(ViewContextR context, DgnElementId, bool allowLoad);
     DGNPLATFORM_EXPORT virtual bool _IsInSet(int nVal, BeSQLite::DbValue const*) const override;
     DGNPLATFORM_EXPORT virtual void _InvalidateScene() override;
+    DGNPLATFORM_EXPORT virtual bool _IsSceneReady() const override;
     virtual void _FillModels() override {} // query views do not load elements in advance
+    DGNPLATFORM_EXPORT void _OnUpdate(DgnViewportR vp, UpdatePlan const& plan) override;
     DGNPLATFORM_EXPORT virtual void _OnAttachedToViewport(DgnViewportR) override;
 
     //! Called when the visibility of a category is changed.
@@ -149,11 +175,7 @@ protected:
     //! @return \a true if the returned \a range is complete. Otherwise the caller will compute the tightest fit for all loaded elements.
     DGNPLATFORM_EXPORT virtual FitComplete _ComputeFitRange(DRange3dR range, DgnViewportR viewport, FitViewParamsR params) override;
 
-    DGNPLATFORM_EXPORT virtual bool _TestElement(DgnElementId);
-
 public:
-    QueryResultsPtr QueryByRange(DgnViewportCR vp, UpdatePlan::Query const& plan);
-
     //! Construct the view controller.                          
     //! @param dgndb  The DgnDb for the view
     //! @param viewId Id of view to be displayed
@@ -177,7 +199,7 @@ public:
     DGNPLATFORM_EXPORT void ClearNeverDrawn();
 
     bool AbortRequested() const {return m_abortQuery;} //!< @private
-    void SetAbortQuery(bool val) {m_abortQuery=val;} //!< @private
+    void SetAbortQuery(bool val) const {m_abortQuery=val;} //!< @private
     void ClearQueryResults();
 
     //! Requests that any active or pending processing of the model be canceled, optionally not returning until the request is satisfied

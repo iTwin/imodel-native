@@ -37,7 +37,6 @@ static Utf8CP VIEWFLAG_fill                      = "fill";
 static Utf8CP VIEWFLAG_grid                      = "grid";
 static Utf8CP VIEWFLAG_acs                       = "acs";
 static Utf8CP VIEWFLAG_useBgImage                = "noBgImage";
-
 static Utf8CP VIEWFLAG_noTexture                 = "noTexture";
 static Utf8CP VIEWFLAG_noMaterial                = "noMaterial";
 static Utf8CP VIEWFLAG_noSceneLight              = "noSceneLight";
@@ -366,6 +365,14 @@ AxisAlignedBox3d ViewController::_GetViewedExtents() const
 Render::GraphicPtr ViewController::_StrokeGeometry(ViewContextR context, GeometrySourceCR source, double pixelSize)
     {
     return source.Stroke(context, pixelSize);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley  10/06
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::GraphicPtr ViewController::_StrokeHit(ViewContextR context, GeometrySourceCR source, HitDetailCR hit)
+    {
+    return source.StrokeHit(context, hit);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2136,37 +2143,6 @@ void ViewController::_DrawGrid(DecorateContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley  10/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ViewController::_VisitHit(HitDetailCR hit, DecorateContextR context) const
-    {
-    DgnElementCPtr   element = hit.GetElement();
-    GeometrySourceCP geom = (element.IsValid() ? element->ToGeometrySource() : nullptr);
-
-    if (nullptr == geom)
-        {
-        IElemTopologyCP elemTopo = hit.GetElemTopology();
-
-        if (nullptr == (geom = (nullptr != elemTopo ? elemTopo->_ToGeometrySource() : nullptr)))
-            return ERROR;
-        }
-
-    if (&GetDgnDb() != &geom->GetSourceDgnDb())
-        return ERROR;
-
-    if (element.IsValid() && !IsModelViewed(element->GetModelId()))
-        return ERROR;
-
-    ViewContext::ContextMark mark(&context);
-
-    // Allow sub-class involvement for flashing sub-entities...
-    if (geom->DrawHit(hit, context))
-        return SUCCESS;
-
-    return context.VisitElement(*geom);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewController::CloseMe ViewController::_OnModelsDeleted(bset<DgnModelId> const& deletedIds, DgnDbR db)
@@ -2195,7 +2171,7 @@ ViewController::CloseMe ViewController::_OnModelsDeleted(bset<DgnModelId> const&
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley  10/06
+* @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::_DrawView(ViewContextR context) 
     {
@@ -2203,10 +2179,3 @@ void ViewController::_DrawView(ViewContextR context)
         context.VisitDgnModel(m_dgndb.Models().GetModel(modelId).get());
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_CreateScene(SceneContextR context)
-    {
-    _DrawView(context);
-    }

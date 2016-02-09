@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Performance/PerformanceECInstanceDeleteTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTestFixture.h"
@@ -110,32 +110,3 @@ TEST_F (PerformanceECInstanceDeleteTestsFixture, CascadeDeleteOnDgn_ElementItem)
     stmt.Finalize ();
     }
 #endif
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Maha Nasir                     10/15
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (PerformanceECInstanceDeleteTestsFixture, CascadeDeleteOnDgn_Element)
-    {
-    DgnDbPtr dgnProj = nullptr;
-    SetUPDgnProj (dgnProj);
-
-    ECSqlStatement stmt;
-    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (*dgnProj, "Select COUNT(*) FROM dgn.Element"));
-    ASSERT_EQ (stmt.Step (), DbResult::BE_SQLITE_ROW);
-    ASSERT_EQ (2220, stmt.GetValueInt (0));
-    stmt.Finalize ();
-
-    Utf8String deleteECSql = "Delete FROM dgn.Element";
-    StopWatch timer (true);
-    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (*dgnProj, deleteECSql.c_str ())) << "Prepare failed for %s" << deleteECSql.c_str ();
-    ASSERT_EQ (DbResult::BE_SQLITE_DONE, stmt.Step ()) << "Step failed for " << deleteECSql.c_str ();
-    timer.Stop ();
-    stmt.Finalize ();
-
-    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), "ECSql Cascade Delete on dgn.Element");
-
-    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (*dgnProj, "Select COUNT(*) FROM dgn.Element"));
-    ASSERT_EQ (stmt.Step (), DbResult::BE_SQLITE_ROW);
-    ASSERT_EQ (0, stmt.GetValueInt (0));
-    stmt.Finalize ();
-    }

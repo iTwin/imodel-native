@@ -36,14 +36,13 @@ void DgnViewport::DestroyViewport()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::InvalidateScene()
+void DgnViewport::InvalidateScene() const
     {
-    if (!IsActive())
-        return;
-
-    m_viewController->_InvalidateScene();
     m_sceneValid = false;
     m_needsHeal = true;
+
+    if (m_viewController.IsValid())
+        m_viewController->_InvalidateScene();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -727,12 +726,18 @@ Frustum DgnViewport::GetFrustum(DgnCoordSystem sys, bool expandedBox) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DPoint3d DgnViewport::DetermineDefaultRotatePoint()
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     double low, high;
 
     if (SUCCESS != DetermineVisibleDepthNpc(low, high) && IsCameraOn())
         return GetCameraTarget(); // if there are no elements in the view and the camera is on, use the camera target point
 
     return DPoint3d::FromInterpolate(NpcToWorld(DPoint3d::From(0.5,0.5,low)), 0.5, NpcToWorld(DPoint3d::From(0.5,0.5,high)));
+#endif
+    if (IsCameraOn())
+        return GetCameraTarget(); // if there are no elements in the view and the camera is on, use the camera target point
+
+    return DPoint3d::From(0.5,0.5,0.5);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1203,21 +1208,23 @@ void DgnViewport::ClearUndo()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   04/10
+* @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::ChangeViewController(ViewControllerR viewController)
     {
     if (m_viewController.IsValid())
         m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);
+    m_partGraphics.clear();
 
     ClearUndo();
 
     m_viewController = &viewController;
     viewController._OnAttachedToViewport(*this);
 
+    InvalidateScene();
+
     SetupFromViewController();
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16

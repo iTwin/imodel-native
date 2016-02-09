@@ -7,10 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/QueryView.h>
-
-#if !defined(BENTLEYCONFIG_VIRTUAL_MEMORY)
-    #include <Bentley/BeSystemInfo.h>
-#endif
+#include <Bentley/BeSystemInfo.h>
 
 #define TRACE_QUERY_LOGIC 1
 #ifdef TRACE_QUERY_LOGIC
@@ -20,18 +17,81 @@
 #   define DEBUG_PRINTF(fmt, ...)
 #   define DEBUG_ERRORLOG(fmt, ...)
 #endif
-#define TRACE_QUERY_LOGIC 1
+
+BEGIN_UNNAMED_NAMESPACE
+static const double   s_cameraLimit = 1.0E-5;
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   12/11
+//=======================================================================================
+struct RTreeFitFilter : DgnQueryView::RTreeQuery
+    {
+    DRange3d m_fitRange;
+    DRange3d m_lastRange;
+
+    virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
+
+public:
+    RTreeFitFilter(DgnElementIdSet const* ignore) : DgnQueryView::RTreeQuery(ignore) {m_fitRange = DRange3d::NullRange();}
+    DRange3dCR GetRange() const {return m_fitRange;}
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+struct CornerBox
+{
+    DPoint3d m_corner[8];
+    CornerBox(RTree3dValCR from)
+        {
+        m_corner[0].x = m_corner[3].x = m_corner[4].x = m_corner[7].x = from.m_minx;   //       7+------+6
+        m_corner[1].x = m_corner[2].x = m_corner[5].x = m_corner[6].x = from.m_maxx;   //       /|     /|
+                                                                                       //      / |    / |
+        m_corner[0].y = m_corner[1].y = m_corner[4].y = m_corner[5].y = from.m_miny;   //     / 4+---/--+5
+        m_corner[2].y = m_corner[3].y = m_corner[6].y = m_corner[7].y = from.m_maxy;   //   3+------+2 /    y   z
+                                                                                       //    | /    | /     |  /
+        m_corner[0].z = m_corner[1].z = m_corner[2].z = m_corner[3].z = from.m_minz;   //    |/     |/      |/
+        m_corner[4].z = m_corner[5].z = m_corner[6].z = m_corner[7].z = from.m_maxz;   //   0+------+1      *---x
+        }
+    
+    CornerBox(DRange3dCR range)
+        {
+        m_corner[0].x = m_corner[3].x = m_corner[4].x = m_corner[7].x = range.low.x; 
+        m_corner[1].x = m_corner[2].x = m_corner[5].x = m_corner[6].x = range.high.x;
+        m_corner[0].y = m_corner[1].y = m_corner[4].y = m_corner[5].y = range.low.y; 
+        m_corner[2].y = m_corner[3].y = m_corner[6].y = m_corner[7].y = range.high.y;
+        m_corner[0].z = m_corner[1].z = m_corner[2].z = m_corner[3].z = range.low.y; 
+        m_corner[4].z = m_corner[5].z = m_corner[6].z = m_corner[7].z = range.high.z;
+        }
+
+    RTreeMatchFunction::Within Test(DgnQueryView::Clips const& clips)
+        {
+        auto containment = clips.ClassifyPointContainment(m_corner, 8);
+        if (containment == ClipPlaneContainment_StronglyInside) 
+            return RTreeMatchFunction::Within::Inside;
+        if (containment == ClipPlaneContainment_StronglyOutside) 
+            return RTreeMatchFunction::Within::Outside;
+        return RTreeMatchFunction::Within::Partly;
+        }
+};
+END_UNNAMED_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnQueryView::Clips::AddFrustum(FrustumCR frustum)
+    {
+    resize(6);
+    ClipUtil::RangePlanesFromFrustum(&front(), frustum, true, true, 1.0E-6);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnQueryView::DgnQueryView(DgnDbR db, DgnViewId id) : CameraViewController(db, id)
     {
-    m_query.Prepare(db, 
-                    "SELECT e.Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e, " 
-                    DGN_TABLE(DGN_CLASSNAME_SpatialElement) " AS g "
-                    "WHERE g.ElementId=e.Id AND InVirtualSet(?1,e.ModelId,g.CategoryId) AND e.Id=?2");
-    m_query.BindVirtualSet(1, *this);
+    m_viewSQL = "SELECT e.Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e, " DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) " AS g "
+                "WHERE g.ElementId=e.Id AND InVirtualSet(@vset,e.ModelId,g.CategoryId) AND e.Id=@elId";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -57,40 +117,41 @@ void DgnQueryView::RequestAbort(bool wait)
         queue.WaitFor(*this);
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::_OnUpdate(DgnViewportR vp, UpdatePlan const& plan)
     {
-    if (m_forceNewQuery || FrustumChanged(vp))
-        QueueQuery(vp, plan);
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    Frustum frustum = vp.GetFrustum(DgnCoordSystem::World, true);
+    if (!m_forceNewQuery && frustum == m_lastFrustum)
+        {
+        DEBUG_PRINTF("same frustum, skipping");
+        return;
+        }
 
-    if (plan.GetQuery().WantWait())
-        GetDgnDb().GetQueryQueue().WaitForIdle();
-
-//    PickUpResults();
-    }
+    m_forceNewQuery = false;
+    m_lastFrustum = frustum;
 #endif
+    BeAssert(plan.GetQuery().GetTargetNumElements() > 0);
+    BeAssert(plan.GetQuery().GetTargetNumElements() <= plan.GetQuery().GetMaxElements());
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnQueryView::FrustumChanged(DgnViewportCR vp) const
-    {
-    Frustum newFrustumPoints = vp.GetFrustum(DgnCoordSystem::World, true);
-    return newFrustumPoints != m_saveQueryFrustum;
+    QueueQuery(vp, plan.GetQuery());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2013
 //---------------------------------------------------------------------------------------
-void DgnQueryView::QueueQuery(DgnViewportR viewport, UpdatePlan const& plan)
+void DgnQueryView::QueueQuery(DgnViewportR viewport, UpdatePlan::Query const& plan)
     {
-    m_startQueryFrustum = viewport.GetFrustum(DgnCoordSystem::World, true);
-    m_saveQueryFrustum.Invalidate();
+    Frustum frust = viewport.GetFrustum(DgnCoordSystem::World, true);
+    if (plan.m_frustumScale != 1.0)
+        frust.ScaleAboutCenter(plan.m_frustumScale);
 
-    m_dgndb.GetQueryQueue().Add(*new DgnQueryQueue::Task(*this, viewport, plan.GetQuery()));
+    RangeQuery* query = new RangeQuery(*this, frust, viewport, plan);
+    query->SetSizeFilter(viewport, 6.0);
+
+    m_dgndb.GetQueryQueue().Add(*query);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -109,6 +170,7 @@ void DgnQueryView::ClearAlwaysDrawn()
     {
     RequestAbort(true);
     m_alwaysDrawn.clear();
+    m_forceNewQuery = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -118,6 +180,7 @@ void DgnQueryView::SetNeverDrawn(DgnElementIdSet const& newSet)
     {
     RequestAbort(true);
     m_neverDrawn = newSet;
+    m_forceNewQuery = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -127,6 +190,7 @@ void DgnQueryView::ClearNeverDrawn()
     {
     RequestAbort(true);
     m_neverDrawn.clear();
+    m_forceNewQuery = true;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -139,6 +203,7 @@ void DgnQueryView::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
 
     if (onOff)
         {
+        m_forceNewQuery = true;
         m_viewedModels.insert(modelId);
         //  Ensure the model is in the m_loadedModels list.  QueryModel 
         //  must not do this in the query thread.
@@ -156,25 +221,8 @@ void DgnQueryView::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
 void DgnQueryView::_OnCategoryChange(bool singleEnabled) 
     {
     T_Super::_OnCategoryChange(singleEnabled); 
+    m_forceNewQuery = true;
     }
-
-BEGIN_UNNAMED_NAMESPACE
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   12/11
-//=======================================================================================
-struct RTreeFitFilter : DgnQueryView::RTreeQuery
-    {
-    DRange3d m_fitRange;
-    DRange3d m_lastRange;
-
-    virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
-
-public:
-    RTreeFitFilter() {m_fitRange = DRange3d::NullRange();}
-    DRange3dCR GetRange() const {return m_fitRange;}
-    };
-
-END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
@@ -200,31 +248,17 @@ int RTreeFitFilter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnQueryView::_TestElement(DgnElementId elId) 
-    {
-    if (m_neverDrawn.Contains(elId))
-        return false;
-
-    m_query.BindId(2, elId);
-    bool stat = (BE_SQLITE_ROW == m_query.Step());
-    m_query.Reset();
-    return stat;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::QueryModelExtents(DRange3dR range, DgnViewportR vp)
     {
-    RTreeFitFilter filter;
-    filter.Init(m_dgndb);
+    RTreeFitFilter filter(&m_neverDrawn);
+    filter.Start(*this);
 
     DgnElementId thisId;
     while ((thisId = filter.StepRtree()).IsValid())
         {
-        if (_TestElement(thisId))
+        if (filter.TestElement(thisId))
             range.Extend(filter.m_lastRange);
         }
     }
@@ -243,6 +277,20 @@ ViewController::FitComplete DgnQueryView::_ComputeFitRange(DRange3dR range, DgnV
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnQueryView::RTreeQuery::TestElement(DgnElementId elId) 
+    {
+    if (m_neverDrawn && m_neverDrawn->Contains(elId))
+        return false;
+
+    m_viewStmt->BindId(m_idCol, elId);
+    bool stat = (BE_SQLITE_ROW == m_viewStmt->Step());
+    m_viewStmt->Reset();
+    return stat;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnQueryView::_IsInSet(int nVals, DbValue const* vals) const 
@@ -258,6 +306,7 @@ bool DgnQueryView::_IsInSet(int nVals, DbValue const* vals) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::_OnAttachedToViewport(DgnViewportR) 
     {
+    m_forceNewQuery = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -292,82 +341,84 @@ void DgnQueryView::_InvalidateScene()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnQueryView::AddtoSceneQuick(SceneContextR context, ProgressiveElements& progressive, QueryResults& results)
+DgnQueryView::NonScene::NonScene(DgnQueryViewR view, DgnViewportCR vp, SceneMembers& scene) : m_rangeQuery(view, vp.GetFrustum(DgnCoordSystem::World, true), vp, UpdatePlan::Query()), m_scene(&scene), m_view(view)
     {
-    DgnElements& pool = m_dgndb.Elements();
-
-    context.SetNoStroking(true);
-    bool allReady = true;
-
-    // first, run through the query results seeing if all of the elements are loaded and have their graphis ready
-    for (auto& thisScore : results.m_scores)
-        {
-        DgnElementCPtr thisElement = pool.FindElement(thisScore.second);
-        if (!thisElement.IsValid())
-            {
-            allReady = false;
-            continue;
-            }
-        GeometrySourceCP geom = thisElement->ToGeometrySource();
-        if (nullptr != geom)
-            {
-            context.VisitElement(*geom);
-            progressive.m_inScene.insert(thisScore.second);
-            }
-
-        if (context.WasAborted())
-            break;
-        }
-    return context.SetNoStroking(false) && allReady;
+    m_rangeQuery.SetTestLOD(true);
+    m_rangeQuery.SetSizeFilter(vp, 6.0);
+    m_rangeQuery.SetDepthFirst(); // uses less memory
+    m_rangeQuery.Start(view);
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Add graphics for all elements that are: a) already loaded b) have an appropriate previously-created graphic 
+* We do this first so that if any elements need to be loaded or stroked (which can take time), the available ones 
+* are in the scene if we abort
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnQueryView::AddtoSceneQuick(SceneContextR context, SceneMembers& members, QueryResults& results)
+    {
+    context.SetNoStroking(true);
+
+    // first, run through the query results seeing if all of the elements are loaded and have their graphis ready
+    // NOTE: This is not CheckStop'ed! It must be fast.
+    for (auto& thisScore : results.m_scores)
+        {
+        if (SUCCESS == VisitElement(context, thisScore.second, false))
+            members.insert(thisScore.second);
+        }
+
+    context.SetNoStroking(false);
+
+    DEBUG_PRINTF("QuickCreate count=%d/%d", (int) members.size(), results.GetCount());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Create the scene and potentially schedule a progressive display 
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::_CreateScene(SceneContextR context) 
     {
+    StopWatch watch(true);
+    DEBUG_PRINTF("Begin create scene");
+
     QueryResultsPtr results;
     std::swap(results, m_results);
 
     DgnViewportR vp = *context.GetViewport();
-    auto& plan = context.GetUpdatePlan().GetQuery();
 
     if (!results.IsValid())
         {
+        return;
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    auto& plan = context.GetUpdatePlan().GetQuery();
         if (!plan.WantWait())
             return;
 
         RequestAbort(true);
         results = QueryByRange(vp, plan);
+#endif
         }
 
-    RefCountedPtr<ProgressiveElements> progressive = new ProgressiveElements(*this);
+    SceneMembersPtr members = new SceneMembers();
+    AddtoSceneQuick(context, *members, *results);
 
-    if (!AddtoSceneQuick(context, *progressive, *results))
+    if (members->size() < results->GetCount()) // did we get them all?
         {
-        DgnElements& pool = m_dgndb.Elements();
+        DEBUG_PRINTF("Begin create scene with load");
         for (auto& thisScore : results->m_scores)
             {
-            if (progressive->m_inScene.Contains(thisScore.second))
-                continue; // was added during "quick" pass
+            if (members->Contains(thisScore.second))
+                continue; // was already added during "quick" pass
 
-            DgnElementCPtr thisElement = pool.GetElement(thisScore.second);
-            if (!thisElement.IsValid())
-                continue;
-
-            GeometrySourceCP geom = thisElement->ToGeometrySource();
-            if (nullptr != geom)
-                {
-                context.VisitElement(*geom);
-                progressive->m_inScene.insert(thisScore.second);
-                }
+            if (SUCCESS == VisitElement(context, thisScore.second, true))
+                members->insert(thisScore.second);
 
             if (context.WasAborted())
                 break;
             }
         }
 
-    // Next, allow external data models to draw or schedule external data.
+    // Next, allow external data models to draw or schedule external data. NB: Do this even if we're already aborted
     for (DgnModelId modelId : GetViewedModels())
         {
         DgnModelPtr model = m_dgndb.Models().GetModel(modelId);
@@ -376,17 +427,24 @@ void DgnQueryView::_CreateScene(SceneContextR context)
             geomModel->AddGraphicsToScene(context);
         }
 
-    BeAssert(progressive->m_inScene.size() <= results->GetCount());
-    if (results->m_incomplete || progressive->m_inScene.size() != results->GetCount())
+    BeAssert(members->size() <= results->GetCount());
+    bool sceneComplete = !results->m_incomplete && (members->size() == results->GetCount());
+    if (!sceneComplete)
         {
-        progressive->m_rangeQuery.Init(m_dgndb); // the progressive elements are found via this query
-        progressive->m_rangeQuery.SetViewport(vp, 6.0, 1.0);
-
-        if (GetClipVector().IsValid())
-            progressive->m_rangeQuery.SetClipVector(*GetClipVector());
-
+        DEBUG_PRINTF("schedule progressive");
+        NonScene* progressive = new NonScene(*this, vp, *members);
         vp.ScheduleProgressiveTask(*progressive);
         }
+
+    DEBUG_PRINTF("Done create scene=%ld entries, aborted=%ld, time=%lf", members->size(), context.WasAborted(), watch.GetCurrentSeconds());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnQueryView::_IsSceneReady() const 
+    {
+    return m_results.IsValid();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -395,19 +453,18 @@ void DgnQueryView::_CreateScene(SceneContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::_VisitAllElements(ViewContextR context)
     {
-    RangeQuery rangeQuery;
-    rangeQuery.Init(m_dgndb);
-    rangeQuery.SetFrustum(context.GetFrustum());
+    RangeQuery rangeQuery(*this, context.GetFrustum(), *context.GetViewport(), UpdatePlan::Query()); // NOTE: the context may have a smaller frustum than the view
+    rangeQuery.Start(*this);
 
     // the range tree will return all elements in the volume. Filter them by the view criteria
     DgnElementId thisId;
     int count = 0;
     while ((thisId = rangeQuery.StepRtree()).IsValid())
         {           
-        if (_TestElement(thisId))
+        if (rangeQuery.TestElement(thisId))
             {
             ++count;
-            VisitElement(context, thisId);
+            VisitElement(context, thisId, true);
             }
 
         if (context.CheckStop())
@@ -519,7 +576,7 @@ void DgnQueryQueue::Terminate()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryQueue::RemovePending(DgnQueryViewR view)
+void DgnQueryQueue::RemovePending(DgnQueryViewCR view)
     {
     DgnDb::VerifyClientThread();
 
@@ -561,7 +618,7 @@ void DgnQueryQueue::Add(Task& task)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryQueue::WaitFor(DgnQueryViewR view)
+void DgnQueryQueue::WaitFor(DgnQueryViewCR view)
     {
     DgnDb::VerifyClientThread();
 
@@ -617,8 +674,9 @@ void DgnQueryQueue::Process()
         if (!m_active.IsValid())
             continue;
 
-        m_active->Process();
+        m_active->_Go();
         uint32_t delay = m_active->GetDelayAfter();
+        BeAssert(delay<2000);
 
         {
         BeMutexHolder holder(m_cv.GetMutex());
@@ -637,17 +695,15 @@ void DgnQueryQueue::Process()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryQueue::Task::Process()
+void DgnQueryView::RangeQuery::_Go()
     {
     DgnDb::VerifyQueryThread();
-    m_view.QueryByRange(m_vp, m_plan);
+    m_view.m_results = DoQuery();
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // This is not strictly thread-safe. The worst that can happen is that the work thread reads false from it, or sets it to false, while the query thread sets it to true.
     // In that case we skip an update.
     // Alternative is to go through contortions to queue up a "heal viewport" task on the DgnClientFx work thread.
-    m_params.m_vp.SetNeedsHeal();
-#endif
+//    m_vp.InvalidateScene();
     }
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
@@ -685,96 +741,58 @@ void DgnQueryView::SearchIdSet(DgnElementIdSet& idList, Filter& filter)
 #endif
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
+* @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnQueryView::QueryResultsPtr DgnQueryView::QueryByRange(DgnViewportCR vp, UpdatePlan::Query const& plan)
+DgnQueryView::QueryResultsPtr DgnQueryView::RangeQuery::DoQuery()
     {
     StopWatch watch(true);
-    SetAbortQuery(false); // gets turned on by client thread
+    m_view.SetAbortQuery(false); // gets turned on by client thread
 
     DEBUG_PRINTF("Query started");
+    Start(m_view);
 
-    RangeQuery rangeQuery;
-    rangeQuery.Init(m_dgndb);
-    rangeQuery.SetViewport(vp, plan.m_minPixelSize, plan.m_frustumScale);
+    QueryResultsPtr thisResult = new QueryResults();
+    uint64_t endTime = m_plan.GetTimeout() ? (BeTimeUtilities::QueryMillisecondsCounter() + m_plan.GetTimeout()) : 0;
 
-    if (m_clipVector.IsValid())
-        rangeQuery.SetClipVector(*m_clipVector);
+    m_minScore = 0.0;
+    m_hitLimit = m_plan.GetTargetNumElements();
+    BeAssert(m_hitLimit>=0);
 
-    QueryResultsPtr results = new QueryResults();
-    uint64_t endTime = plan.GetTimeout() ? (BeTimeUtilities::QueryMillisecondsCounter() + plan.GetTimeout()) : 0;
-
-    rangeQuery.m_hitLimit = plan.GetTargetNumElements();
     DgnElementId thisId;
-    while ((thisId=rangeQuery.StepRtree()).IsValid())
+    while ((thisId=StepRtree()).IsValid())
         {
-        if (m_abortQuery)
+        BeAssert(m_lastId==thisId.GetValueUnchecked());
+        if (m_view.m_abortQuery)
             {
             DEBUG_ERRORLOG("Query aborted");
-            return results;
+            return thisResult;
             }
 
-        if (_TestElement(thisId))
+        if (TestElement(thisId))
             {
-            if (++rangeQuery.m_count >= rangeQuery.m_hitLimit)
+            if (++m_count > m_hitLimit)
                 {
-                rangeQuery.SetTestLOD(true); // now that we've found a minimum number of elements, start skipping small ones
-                results->m_scores.erase(m_results->m_scores.begin());
-                results->m_incomplete = true;
-                rangeQuery.m_count = rangeQuery.m_hitLimit;
+                SetTestLOD(true); // now that we've found a minimum number of elements, start skipping small ones
+                thisResult->m_scores.erase(thisResult->m_scores.begin());
+                thisResult->m_incomplete = true;
+                m_count = m_hitLimit;
                 }
 
-            results->m_scores.Insert(rangeQuery.m_lastScore, thisId);
-            rangeQuery.m_minScore = results->m_scores.begin()->first;
+            thisResult->m_scores.Insert(m_lastScore, thisId);
+            m_minScore = thisResult->m_scores.begin()->first;
             }
 
         if (endTime && (BeTimeUtilities::QueryMillisecondsCounter() > endTime))
             {
             DEBUG_ERRORLOG("Query timeout");
-            results->m_incomplete = true;
+            thisResult->m_incomplete = true;
             break;
             }
         };
 
     double total = watch.GetCurrentSeconds();
-    DEBUG_PRINTF("Query completed, total=%d, progressive=%d, time=%f", results->GetCount(), results->m_incomplete, total);
-    return results;
-    }
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnQueryView::Filter::Filter(DgnDbR db, QueryResults& results, uint32_t hitLimit, DgnElementIdSet const* alwaysDraw, DgnElementIdSet const* exclude)
-    :  m_results(&results), m_hitLimit(hitLimit), m_alwaysDraw(nullptr), RTreeFilter(db, exclude)
-    {
-    m_minScore = 1.0e20;
-
-    if (nullptr != alwaysDraw)
-        {
-        m_lastScore = DBL_MAX;
-        for (auto const& id : *alwaysDraw)
-            AcceptElement(id);
-        }
-
-    // We do this as the last step. Otherwise, the calls to AcceptElement in the previous step would not have any effect.
-    m_alwaysDraw = alwaysDraw;
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-inline static void toLocalCorners(DPoint3dP localCorners, RTree3dValCP pt)
-    {
-    localCorners[0].x = localCorners[3].x = localCorners[4].x = localCorners[7].x = pt->m_minx;     //       7+------+6
-    localCorners[1].x = localCorners[2].x = localCorners[5].x = localCorners[6].x = pt->m_maxx;     //       /|     /|
-                                                                                                    //      / |    / |
-    localCorners[0].y = localCorners[1].y = localCorners[4].y = localCorners[5].y = pt->m_miny;     //     / 4+---/--+5
-    localCorners[2].y = localCorners[3].y = localCorners[6].y = localCorners[7].y = pt->m_maxy;     //   3+------+2 /    y   z
-                                                                                                    //    | /    | /     |  /
-    localCorners[0].z = localCorners[1].z = localCorners[2].z = localCorners[3].z = pt->m_minz;     //    |/     |/      |/
-    localCorners[4].z = localCorners[5].z = localCorners[6].z = localCorners[7].z = pt->m_maxz;     //   0+------+1      *---x
+    DEBUG_PRINTF("Query completed, total=%d, progressive=%d, time=%f", thisResult->GetCount(), thisResult->m_incomplete, total);
+    return thisResult;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -785,104 +803,50 @@ int DgnQueryView::RangeQuery::_TestRTree(RTreeMatchFunction::QueryInfo const& in
     BeAssert(6 == info.m_nCoord);
     info.m_within = RTreeMatchFunction::Within::Outside;
 
-    RTree3dValCP pt = (RTree3dValCP) info.m_coords;
-    if (!m_boundingRange.Intersects(*pt) || !SkewTest(pt))
-        return BE_SQLITE_OK;
+    RTree3dValCP coords = (RTree3dValCP) info.m_coords;
+    CornerBox box(*coords);
 
-    DPoint3d localCorners[8];
-    toLocalCorners(localCorners, pt);
-
-#if defined (NEEDS_WORK_CLIPPING)
-    if (m_clips.IsValid())
+    RTreeMatchFunction::Within rangeTest;
+    if (info.m_parentWithin == RTreeMatchFunction::Within::Inside)
+        rangeTest = RTreeMatchFunction::Within::Inside;
+    else
         {
-        bool allClippedByOnePlane = false;
-        for (ConvexClipPlaneSetCR cps : *m_clips)
-            {
-            if (allClippedByOnePlane = AllPointsClippedByOnePlane(cps, 8, localCorners))
-                break;
-            }
-
-        if (allClippedByOnePlane)
-            {
-            m_passedPrimaryTest = false;
+        if (!m_boundingRange.Intersects(*coords) || !SkewTest(coords)) // quick test for entirely outside axis-aligned bounding range
             return BE_SQLITE_OK;
-            }
+
+        rangeTest = box.Test(m_clips);
+        if (rangeTest == RTreeMatchFunction::Within::Outside)
+            return BE_SQLITE_OK;
         }
-#endif
 
     bool overlap, spansEyePlane;
-
-    if (!ComputeOcclusionScore(&m_lastScore, overlap, spansEyePlane, localCorners))
+    if (!ComputeOcclusionScore(&m_lastScore, overlap, spansEyePlane, box.m_corner))
+        {
         return BE_SQLITE_OK;
+        }
 
+    BeAssert(m_lastScore>0.0);
+    BeAssert(m_minScore>=0.0);
     if (m_hitLimit && (m_count >= m_hitLimit && m_lastScore <= m_minScore))
         return BE_SQLITE_OK; // this one is smaller than the smallest entry we already have, skip it (and children).
 
     m_lastId = info.m_rowid;  // for debugging - make sure we get entries immediately after we score them.
-    if (info.m_level>0)
-        {
-        // For nodes, return 'level-score' (the "-" is because for occlusion score higher is better. But for rtree priority, lower means better).
-        info.m_score = info.m_level - m_lastScore;
-        }
-    else
-        {
-        // For entries (ilevel==0), we return 0 so they are processed immediately (lowest score has highest priority).
-        info.m_score = 0;
-        }
 
-    info.m_within = RTreeMatchFunction::Within::Partly;
+    // for leaf nodes (elements), we must return a score of 0 so they will be immediately returned. That's necessary since we're keeping the
+    // score in this object and we otherwise would not be able to correlate elements with their score. 
+    // For depth-first traversals, we return values such that we decend down to the bottom of one branch before we look at the next node. Otherwise 
+    // traversals take too much memory (the only reason it works for non-depth-first traversals is that we start eliminating nodes on size criteria 
+    // to choose the n-best values).
+    info.m_score = info.m_level==0 ? 0.0 : m_depthFirst ? (info.m_maxLevel - info.m_level - m_lastScore) : (info.m_level - m_lastScore);
+    info.m_within = rangeTest;
+
     return BE_SQLITE_OK;
     }
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-int DgnQueryView::AllElementsFilter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
-    {
-    BeAssert(6 == info.m_nCoord);
-    info.m_within = RTreeMatchFunction::Within::Outside;
-
-    RTree3dValCP pt = (RTree3dValCP) info.m_coords;
-    if (!m_boundingRange.Intersects(*pt) || !SkewTest(pt))
-        return BE_SQLITE_OK;
-
-#if defined (NEEDS_WORK_CLIPPING)
-    if (m_clips.IsValid())
-        {
-        bool allClippedByOnePlane = false;
-        for (ConvexClipPlaneSetCR cps : *m_clips)
-            {
-            if (allClippedByOnePlane = AllPointsClippedByOnePlane(cps, 8, localCorners))
-                break;
-            }
-        if (allClippedByOnePlane)
-            return BE_SQLITE_OK;
-        }
-#endif
-
-    DPoint3d localCorners[8];
-    toLocalCorners(localCorners, pt);
-
-    double score = 0.0;
-    bool   overlap, spansEyePlane;
-
-    // NOTE: m_doOcclusionScore is off if we're trying to visit all elements. ComputeOcclusionScore returns false if the
-    // size is smaller than our minimum NPC area.
-    if (m_doOcclusionScore && !m_scorer.ComputeOcclusionScore(&score, overlap, spansEyePlane, localCorners))
-        return BE_SQLITE_OK;
-
-    // For entries (m_level==0), we return 0 so they are processed immediately (lowest score has highest priority).
-    info.m_score = (info.m_level>0) ? (info.m_maxLevel - info.m_level - score) : 0;
-    info.m_within = RTreeMatchFunction::Within::Partly;
-    return BE_SQLITE_OK;
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveTask::Completion DgnQueryView::ProgressiveElements::_DoProgressive(SceneContext& context, WantShow& wantShow)
+ProgressiveTask::Completion DgnQueryView::NonScene::_DoProgressive(SceneContext& context, WantShow& wantShow)
     {
     m_thisBatch = 0; // restart every pass
     m_batchSize = context.GetUpdatePlan().GetQuery().GetTargetNumElements();
@@ -893,9 +857,10 @@ ProgressiveTask::Completion DgnQueryView::ProgressiveElements::_DoProgressive(Sc
     DgnElementId thisId;
     while ((thisId=m_rangeQuery.StepRtree()).IsValid())
         {
-        if (!m_inScene.Contains(thisId) && m_view._TestElement(thisId))
+        if (!m_scene->Contains(thisId) && m_rangeQuery.TestElement(thisId))
             {
-            m_view.VisitElement(context, thisId); // no, draw it now
+            ++m_total;
+            m_view.VisitElement(context, thisId, true); // no, draw it now
 
             if (!m_setTimeout) // don't set the timeout until after we've drawn one element
                 {
@@ -935,27 +900,21 @@ ProgressiveTask::Completion DgnQueryView::ProgressiveElements::_DoProgressive(Sc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnQueryView::VisitElement(ViewContextR context, DgnElementId elementId) 
+StatusInt DgnQueryView::VisitElement(ViewContextR context, DgnElementId elementId, bool allowLoad) 
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    if (m_model.FindElementById(elementId))
-        return false;
-
-    if (nullptr != m_exclude && m_exclude->find(elementId) != m_exclude->end())
-        return false;
-#endif
-
     DgnElements& pool = m_dgndb.Elements();
-    DgnElementCPtr el = pool.GetElement(elementId);
+    DgnElementCPtr el = allowLoad ? pool.GetElement(elementId) : pool.FindElement(elementId);
     if (!el.IsValid())
         {
-        BeAssert(false);
+        BeAssert(!allowLoad);
         return ERROR;
         }
 
     GeometrySourceCP geomElem = el->ToGeometrySource();
-    if (nullptr != geomElem)
-        return context.VisitElement(*geomElem);
+    if (nullptr == geomElem)
+        return ERROR;
+
+    return context.VisitGeometry(*geomElem);
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (pool.GetTotalAllocated() < (int64_t) m_elementReleaseTrigger)
@@ -977,5 +936,387 @@ StatusInt DgnQueryView::VisitElement(ViewContextR context, DgnElementId elementI
     uint64_t newTotalAllocated = (uint64_t)pool.GetTotalAllocated();
     m_purgeTrigger = (uint64_t)(s_purgeFactor * std::max(newTotalAllocated, m_elementReleaseTrigger));
 #endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+inline bool DgnQueryView::RangeQuery::ComputeNPC(DPoint3dR npcOut, DPoint3dCR localIn)
+    {
+    double w;
+    if (m_cameraOn)
+        {
+        w = m_localToNpc.coff[3][0] * localIn.x + m_localToNpc.coff[3][1] * localIn.y + m_localToNpc.coff[3][2] * localIn.z + m_localToNpc.coff[3][3];
+        if (w < s_cameraLimit)
+            return false;
+        }
+    else
+        {
+        w = 1.0;
+        }
+
+    npcOut.x = (m_localToNpc.coff[0][0] * localIn.x + m_localToNpc.coff[0][1] * localIn.y + m_localToNpc.coff[0][2] * localIn.z + m_localToNpc.coff[0][3]) / w;
+    npcOut.y = (m_localToNpc.coff[1][0] * localIn.x + m_localToNpc.coff[1][1] * localIn.y + m_localToNpc.coff[1][2] * localIn.z + m_localToNpc.coff[1][3]) / w;
+    npcOut.z = (m_localToNpc.coff[2][0] * localIn.x + m_localToNpc.coff[2][1] * localIn.y + m_localToNpc.coff[2][2] * localIn.z + m_localToNpc.coff[2][3]) / w;
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnQueryView::RangeQuery::SetSizeFilter(DgnViewportCR vp, double size)
+    {
+    BSIRect screenRect = vp.GetViewRect();
+    if (screenRect.Width() > 0 && screenRect.Height() > 0)
+        {
+        double width  = size/screenRect.Width();
+        double height = size/screenRect.Height();
+
+        m_lodFilterNPCArea = width * width + height * height;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnQueryView::RangeQuery::RangeQuery(DgnQueryViewCR view, FrustumCR frustum, DgnViewportCR vp, UpdatePlan::Query const& plan) : RTreeQuery(&view.m_neverDrawn), DgnQueryQueue::Task(view, plan)
+    {
+    m_count=0;
+    m_localToNpc = vp.GetWorldToNpcMap()->M0;
+    m_cameraOn   = vp.IsCameraOn();
+
+    if (m_cameraOn)
+        {
+        m_cameraPosition = vp.GetCamera().GetEyePoint();
+        }
+    else
+        {
+        DPoint3d viewDirection[2] = {{0,0,0}, {0.0, 0.0, 1.0}};
+        DPoint3d viewDirRoot[2];
+        vp.NpcToWorld(viewDirRoot, viewDirection, 2);
+        viewDirRoot[1].Subtract (viewDirRoot[0]);
+
+        m_orthogonalProjectionIndex = ((viewDirRoot[1].x < 0.0) ? 1  : 0) +
+                                      ((viewDirRoot[1].x > 0.0) ? 2  : 0) +
+                                      ((viewDirRoot[1].y < 0.0) ? 4  : 0) +
+                                      ((viewDirRoot[1].y > 0.0) ? 8  : 0) +
+                                      ((viewDirRoot[1].z < 0.0) ? 16 : 0) +
+                                      ((viewDirRoot[1].z > 0.0) ? 32 : 0);
+        }
+
+    SetFrustum(frustum);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Algorithm by: Dieter Schmalstieg and Erik Pojar - ACM Transactions on Graphics.
+* @bsimethod                                                    RayBentley      01/07
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnQueryView::RangeQuery::ComputeOcclusionScore(double* score, bool& overlap, bool& spansEyePlane, DPoint3dCP corners)
+    {
+    // Note - This routine is VERY time critical - Most of the calls to the geomlib
+    // functions have been replaced with inline code as VTune had showed them as bottlenecks.
+
+    static const short s_indexList[43][9] =
+        {
+        { 0, 3, 7, 6, 5, 1,   6,}, // 0 inside    (arbitrarily default to front, top, right.
+        { 0, 4, 7, 3,-1,-1,   4}, // 1 left
+        { 1, 2, 6, 5,-1,-1,   4}, // 2 right
+        {-1,-1,-1,-1,-1,-1,   0}, // 3 -
+        { 0, 1, 5, 4,-1,-1,   4}, // 4 bottom
+        { 0, 1, 5, 4, 7, 3,   6}, // 5 bottom, left
+        { 0, 1, 2, 6, 5, 4,   6}, // 6 bottom, right
+        {-1,-1,-1,-1,-1,-1,   0}, // 7 -
+        { 2, 3, 7, 6,-1,-1,   4}, // 8 top
+        { 0, 4, 7, 6, 2, 3,   6}, // 9 top, left
+        { 1, 2, 3, 7, 6, 5,   6}, //10 top, right
+        {-1,-1,-1,-1,-1,-1,   0}, //11 -
+        {-1,-1,-1,-1,-1,-1,   0}, //12 -
+        {-1,-1,-1,-1,-1,-1,   0}, //13 -
+        {-1,-1,-1,-1,-1,-1,   0}, //14 -
+        {-1,-1,-1,-1,-1,-1,   0}, //15 -
+        { 0, 3, 2, 1,-1,-1,   4}, //16 front
+        { 0, 4, 7, 3, 2, 1,   6}, //17 front, left
+        { 0, 3, 2, 6, 5, 1,   6}, //18 front, right
+        {-1,-1,-1,-1,-1,-1,   0}, //19 -
+        { 0, 3, 2, 1, 5, 4,   6}, //20 front, bottom
+        { 1, 5, 4, 7, 3, 2,   6}, //21 front, bottom, left
+        { 0, 3, 2, 6, 5, 4,   6}, //22 front, bottom, right
+        {-1,-1,-1,-1,-1,-1,   0}, //23 -
+        { 0, 3, 7, 6, 2, 1,   6}, //24 front, top
+        { 0, 4, 7, 6, 2, 1,   6}, //25 front, top, left
+        { 0, 3, 7, 6, 5, 1,   6}, //26 front, top, right
+        {-1,-1,-1,-1,-1,-1,   0}, //27 -
+        {-1,-1,-1,-1,-1,-1,   0}, //28 -
+        {-1,-1,-1,-1,-1,-1,   0}, //29 -
+        {-1,-1,-1,-1,-1,-1,   0}, //30 -
+        {-1,-1,-1,-1,-1,-1,   0}, //31 -
+        { 4, 5, 6, 7,-1,-1,   4}, //32 back
+        { 0, 4, 5, 6, 7, 3,   6}, //33 back, left
+        { 1, 2, 6, 7, 4, 5,   6}, //34 back, right
+        {-1,-1,-1,-1,-1,-1,   0}, //35 -
+        { 0, 1, 5, 6, 7, 4,   6}, //36 back, bottom
+        { 0, 1, 5, 6, 7, 3,   6}, //37 back, bottom, left
+        { 0, 1, 2, 6, 7, 4,   6}, //38 back, bottom, right
+        {-1,-1,-1,-1,-1,-1,   0}, //39 -
+        { 2, 3, 7, 4, 5, 6,   6}, //40 back, top
+        { 0, 4, 5, 6, 2, 3,   6}, //41 back, top, left
+        { 1, 2, 3, 7, 4, 5,   6}, //42 back, top, right
+        };
+
+    enum
+        {
+        OUTSIDE_Left   = (0x00001 << 0),
+        OUTSIDE_Right  = (0x00001 << 1),
+        OUTSIDE_Top    = (0x00001 << 2),
+        OUTSIDE_Bottom = (0x00001 << 3),
+        OUTSIDE_Front  = (0x00001 << 4),
+        OUTSIDE_Back   = (0x00001 << 5),
+        };
+
+    uint32_t npcComputedMask = 0, zComputedMask = 0;
+    uint32_t projectionIndex;
+
+    spansEyePlane = false;
+    if (m_cameraOn)
+        {
+        projectionIndex = ((m_cameraPosition.x < corners[0].x) ? 1  : 0) +
+                          ((m_cameraPosition.x > corners[1].x) ? 2  : 0) +
+                          ((m_cameraPosition.y < corners[0].y) ? 4  : 0) +
+                          ((m_cameraPosition.y > corners[2].y) ? 8  : 0) +
+                          ((m_cameraPosition.z < corners[0].z) ? 16 : 0) +       // Zs reversed for right-handed system.
+                          ((m_cameraPosition.z > corners[4].z) ? 32 : 0);
+
+        if (0 == projectionIndex)
+            {
+            if (nullptr != score)
+                *score = 1.0;
+
+            overlap = spansEyePlane = true;
+            return true;
+            }
+        }
+    else
+        {
+        projectionIndex = m_orthogonalProjectionIndex;
+        }
+
+    uint32_t    nVertices;
+    double      npcZ[8];
+    DPoint3d    npcVertices[6];
+
+    BeAssert(projectionIndex <= 42);
+    if (projectionIndex > 42 || 0 == (nVertices = s_indexList[projectionIndex][6]))
+        {
+        // Inside the box... Needs work.
+        return false;
+        }
+
+    double  zTotal = 0.0;
+
+    overlap = false;
+    for (uint32_t i=0, mask = 0x0001; i<nVertices; i++, mask <<= 1)
+        {
+        int  cornerIndex = s_indexList[projectionIndex][i];
+        if (0 == (mask & npcComputedMask) && !ComputeNPC(npcVertices[i], corners[cornerIndex]))
+            {
+            spansEyePlane = overlap = true;
+            *score = 2.0;  // range spans eye plane
+            return true;
+            }
+
+        zTotal += (npcZ[cornerIndex] = npcVertices[i].z);
+        zComputedMask |= (1 << cornerIndex);
+        }
+
+    if (m_testLOD && 0.0 != m_lodFilterNPCArea)
+        {
+        // In the cases where this does exclude the element it would be faster to do the other filtering first. However, even when we exclude something due
+        // to LOD filtering we want to know if it should be drawn by the progressive display. We want progressive display to draw zero-length line strings
+        // and points.
+        int        diagonalVertex = nVertices/2;
+        DPoint3dR  diagonalNPC    = npcVertices[diagonalVertex];
+
+        if (!ComputeNPC(npcVertices[0], corners[s_indexList[projectionIndex][0]]) ||
+            !ComputeNPC(diagonalNPC,    corners[s_indexList[projectionIndex][diagonalVertex]]))
+            {
+            spansEyePlane = overlap = true;
+            *score = 2.0;  // range spans eye plane
+            return true;
+            }
+
+        DPoint3dR   npcCorner = npcVertices[nVertices/2];
+        DPoint2d    extent = { npcCorner.x - npcVertices[0].x, npcCorner.y - npcVertices[0].y};
+
+        if ((extent.x * extent.x + extent.y * extent.y) < m_lodFilterNPCArea)
+            return false;
+
+        npcComputedMask |= 1;
+        npcComputedMask |= (1 << diagonalVertex);
+        }
+
+    if (nullptr == score)
+        return true;
+
+    *score = (npcVertices[nVertices-1].x - npcVertices[0].x) * (npcVertices[nVertices-1].y + npcVertices[0].y);
+    for (uint32_t i=0; i<nVertices-1; i++)
+        *score += (npcVertices[i].x - npcVertices[i+1].x) * (npcVertices[i].y + npcVertices[i+1].y);
+
+    // an area of 0.0 means that we have a line. Recalculate using length/1000 (assuming width of 1000th of npc)
+    if (*score == 0.0)
+        *score = npcVertices[0].DistanceXY(npcVertices[2]) * .001;
+    else if (*score < 0.0)
+        *score = - *score;
+
+    // Multiply area by the Z total value (0 is the back of the view) so that the score is roughly
+    // equivalent to the area swept by the range through the view which makes things closer to the eye more likely to display first.
+    // Also by scoring based on swept volume we are proportional to occluded volume.
+    *score *= .5 * (zTotal / (double) nVertices);
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnQueryView::RangeQuery::SetFrustum(FrustumCR frustum)
+    {
+    DRange3d range = frustum.ToRange();
+    m_boundingRange.FromRange(range);
+
+    range.InitFrom(frustum.GetPts(), 4);
+    m_backFace.FromRange(range);
+
+    // get unit bvector from front plane to back plane
+    m_viewVec = DVec3d::FromStartEndNormalize(*frustum.GetPts(), *(frustum.GetPts()+4));
+
+    // check to see if it's worthwhile using skew scan (skew vector not along one of the three major axes)
+    int alongAxes = (fabs(m_viewVec.x) < 1e-8) + (fabs(m_viewVec.y) < 1e-8) + (fabs(m_viewVec.z) < 1e-8);
+    m_doSkewTest = alongAxes<2;
+
+    m_clips.AddFrustum(frustum);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BJB             12/89
++---------------+---------------+---------------+---------------+---------------+------*/
+static inline void exchangeAndNegate(double& dbl1, double& dbl2)
+    {
+    double temp = -dbl1;
+    dbl1 = -dbl2;
+    dbl2 = temp;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnQueryView::RangeQuery::SkewTest(RTree3dValCP testRange)
+    {
+    static bool s_doskew=true;
+    if (!s_doskew)
+        return true;
+
+    if (!m_doSkewTest || testRange->Intersects(m_backFace))
+        return true;
+
+    DVec3d skVector = m_viewVec;
+    DPoint3d dlo, dhi;
+
+    dlo.x = testRange->m_minx - m_backFace.m_maxx;
+    dlo.y = testRange->m_miny - m_backFace.m_maxy;
+    dhi.x = testRange->m_maxx - m_backFace.m_minx;
+    dhi.y = testRange->m_maxy - m_backFace.m_miny;
+
+    if (skVector.x < 0.0)
+        {
+        skVector.x = - skVector.x;
+        exchangeAndNegate(dlo.x, dhi.x);
+        }
+
+    if (skVector.y < 0.0)
+        {
+        skVector.y = - skVector.y;
+        exchangeAndNegate(dlo.y, dhi.y);
+        }
+
+    // Check the projection of the element's xhigh to the plane where ylow of the element is equal to yhigh of the skewrange
+    double va1 = dlo.x * skVector.y;
+    double vb2 = dhi.y * skVector.x;
+    if (va1 > vb2)
+        return false;
+
+    // Check the projection of the element's xlow to the plane where yhigh of the element is equal to ylow of the skewrange
+    double vb1 = dlo.y * skVector.x;
+    double va2 = dhi.x * skVector.y;
+    if (va2 < vb1)
+        return false;
+
+    // now we need the Z stuff
+    dlo.z = testRange->m_minz - m_backFace.m_maxz;
+    dhi.z = testRange->m_maxz - m_backFace.m_minz;
+    if (skVector.z < 0.0)
+        {
+        skVector.z = - skVector.z;
+        exchangeAndNegate(dlo.z, dhi.z);
+        }
+
+    // project onto either the xz or yz plane
+    if (va1 > vb1)
+        {
+        double va3 = dlo.x * skVector.z;
+        double vc2 = dhi.z * skVector.x;
+        if (va3 > vc2)
+            return false;
+        }
+    else
+        {
+        double vb3 = dlo.y * skVector.z;
+        double vc4 = dhi.z * skVector.y;
+        if (vb3 > vc4)
+            return false;
+        }
+
+    // project onto the other plane
+    if (va2 < vb2)
+        {
+        double va4 = dhi.x * skVector.z;
+        double vc1 = dlo.z * skVector.x;
+        if (va4 < vc1)
+            return false;
+        }
+    else
+        {
+        double vb4 = dhi.y * skVector.z;
+        double vc3 = dlo.z * skVector.y;
+        if (vb4 < vc3)
+            return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnQueryView::RTreeQuery::Start(DgnQueryViewCR view)
+    {
+    DgnDbR db = view.GetDgnDb();
+    db.GetCachedStatement(m_rangeStmt, "SELECT ElementId FROM " DGN_VTABLE_RTree3d " WHERE ElementId MATCH DGN_rTree(?1)");
+    m_rangeStmt->BindInt64(1, (uint64_t) this);
+
+    db.GetCachedStatement(m_viewStmt, view.m_viewSQL.c_str());
+    int vSetCol = m_viewStmt->GetParameterIndex("@vset");
+    BeAssert(0 != vSetCol);
+    m_viewStmt->BindVirtualSet(vSetCol, view);
+
+    m_idCol = m_viewStmt->GetParameterIndex("@elId");
+    BeAssert(0 != m_idCol);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId DgnQueryView::RTreeQuery::StepRtree()
+    {
+    auto rc=m_rangeStmt->Step();
+    return (rc != BE_SQLITE_ROW) ? DgnElementId() : m_rangeStmt->GetValueId<DgnElementId>(0);
     }

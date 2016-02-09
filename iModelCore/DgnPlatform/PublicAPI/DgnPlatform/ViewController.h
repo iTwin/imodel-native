@@ -9,6 +9,9 @@
 //__PUBLISH_SECTION_START__
 
 #include "DgnPlatform.h"
+#include "IAuxCoordSys.h"
+#include "ViewContext.h"
+#include "SectionClip.h"
 
 DGNPLATFORM_TYPEDEFS(CameraInfo)
 DGNPLATFORM_TYPEDEFS(CameraViewController)
@@ -27,10 +30,6 @@ DGNPLATFORM_REF_COUNTED_PTR(SectionDrawingViewController)
 DGNPLATFORM_REF_COUNTED_PTR(SectioningViewController)
 DGNPLATFORM_REF_COUNTED_PTR(SheetViewController)
 DGNPLATFORM_REF_COUNTED_PTR(SpatialViewController)
-
-#include "IAuxCoordSys.h"
-#include "ViewContext.h"
-#include "SectionClip.h"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -202,13 +201,13 @@ protected:
     //! Draw the contents of the view.
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR);
 
-    DGNPLATFORM_EXPORT virtual void _CreateScene(SceneContextR);
-
+    virtual void _CreateScene(SceneContextR context) {_DrawView(context);}
+    virtual bool _IsSceneReady() const {return false;}
     virtual void _InvalidateScene() {}
 
     virtual void _OverrideGraphicParams(Render::OvrGraphicParamsR, GeometrySourceCP) {}
 
-    //! Invokes the _VisitElement on \a context for <em>each element</em> that is in the view.
+    //! Invokes the _VisitGeometry on \a context for <em>each element</em> that is in the view.
     //! For normal views, this does the same thing as _DrawView.
     virtual void _VisitAllElements(ViewContextR& context) {_DrawView(context);}
 
@@ -216,14 +215,16 @@ protected:
     //! An application can override _StrokeGeometry to change the symbology of a GeometrySource.
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeGeometry(ViewContextR, GeometrySourceCR, double pixelSize);
 
+    //! Stroke a single HitDetail through a ViewContext.
+    //! An application can override _StrokeHit to change how elements are flashed for auto-locate.
+    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeHit(ViewContextR, GeometrySourceCR, HitDetailCR);
+
     //! Invoked just before the locate tooltip is displayed to retrieve the info text. Allows the ViewController to override the default description.
     //! @param[in]  hit The locate HitDetail whose info is needed.
     //! @param[out] descr The info string.
     //! @param[in] delimiter The default delimiter to use when building the info string.
     //! @return true if the info string was set or false to use the default implementation.
     virtual bool _GetInfoString(HitDetailCR hit, Utf8StringR descr, Utf8CP delimiter) const {return false;}
-
-    DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitDetailCR hit, DecorateContextR context) const;
 
     //! Used to notify derived classes when an update begins.
     virtual void _OnUpdate(DgnViewportR vp, UpdatePlan const&) {}
@@ -293,7 +294,6 @@ public:
         double Bottom() const {return m_bottom;}
     };
 
-    StatusInt VisitHit(HitDetailCR hit, DecorateContextR context) const{return _VisitHit(hit, context);}
     void DrawView(ViewContextR context) {return _DrawView(context);}
     void VisitAllElements(ViewContextR context) {return _VisitAllElements(context);}
     void ChangeModelDisplay(DgnModelId modelId, bool onOff) {_ChangeModelDisplay(modelId, onOff);}
@@ -859,9 +859,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController2d : ViewController
     DEFINE_T_SUPER(ViewController);
 
 protected:
-    DPoint2d    m_origin;       //!< The lower left front corner of the view frustum.
-    DVec2d      m_delta;        //!< The extent of the view frustum.
-    double      m_rotAngle;     //!< Rotation of the view frustum.
+    DPoint2d m_origin;       //!< The lower left front corner of the view frustum.
+    DVec2d   m_delta;        //!< The extent of the view frustum.
+    double   m_rotAngle;     //!< Rotation of the view frustum.
 
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(double, bool expandView) override;
     DGNPLATFORM_EXPORT virtual DPoint3d _GetOrigin() const override;
@@ -969,7 +969,7 @@ private:
 
     virtual void _DrawView(ViewContextR) override;
     virtual Render::GraphicPtr _StrokeGeometry(ViewContextR, GeometrySourceCR, double) override;
-    virtual StatusInt _VisitHit(HitDetailCR hit, DecorateContextR context) const override;
+    virtual Render::GraphicPtr _StrokeHit(ViewContextR, GeometrySourceCR, HitDetailCR) override;
     virtual DPoint3d _GetOrigin() const override;
     virtual DVec3d _GetDelta() const override;
     virtual RotMatrix _GetRotation() const override;

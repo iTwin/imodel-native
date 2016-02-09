@@ -90,7 +90,7 @@ struct EXPORT_VTABLE_ATTRIBUTE TextAnnotation2d : AnnotationElement
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotation2d, AnnotationElement);
 
 protected:
-    virtual bool _DrawHit(HitDetailCR, DecorateContextR) const override { return false; } // Don't flash text box...
+    virtual Render::GraphicPtr _StrokeHit(ViewContextR, HitDetailCR) const {return nullptr;} // Don't flash text box...
     virtual SnapStatus _OnSnap(SnapContextR context) const override { return context.DoTextSnap(); } // Default snap using text box...
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR originalElment) override;
@@ -134,7 +134,7 @@ struct EXPORT_VTABLE_ATTRIBUTE TextAnnotation3d : SpatialElement
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotation3d, SpatialElement);
 
 protected:
-    virtual bool _DrawHit(HitDetailCR, DecorateContextR) const override { return false; } // Don't flash text box...
+    virtual Render::GraphicPtr _StrokeHit(ViewContextR, HitDetailCR) const {return nullptr;} // Don't flash text box...
     virtual SnapStatus _OnSnap(SnapContextR context) const override { return context.DoTextSnap(); } // Default snap using text box...
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR originalElment) override;
@@ -167,7 +167,7 @@ namespace dgn_ElementHandler
     struct TextAnnotation3dHandler : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotation3d, TextAnnotation3d, TextAnnotation3dHandler, Element, DGNPLATFORM_EXPORT);
-        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); ElementGeom3d::AddClassParams(params); }
+        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); TextAnnotation3d::AddClassParams(params); }
     };
 }
 

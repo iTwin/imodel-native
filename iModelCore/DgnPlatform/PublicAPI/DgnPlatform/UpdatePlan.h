@@ -150,22 +150,22 @@ struct UpdatePlan
         double      m_minPixelSize = 50;
         double      m_frustumScale = 1.25;
         bool        m_onlyAlwaysDrawn = false;
-        bool        m_wait = false;
-        uint32_t    m_minElements = 300;
-        uint32_t    m_maxElements = 50000;
+        mutable bool m_wait = false;
+        uint32_t    m_minElements = 3;
+        uint32_t    m_maxElements = 25000;
         mutable uint32_t m_delayAfter = 0;
-        mutable uint32_t m_targetNumElements;
+        mutable uint32_t m_targetNumElements = 0;
 
         uint32_t GetTimeout() const {return m_maxTime;}
         uint32_t GetMinElements() const {return m_minElements;}
         uint32_t GetMaxElements() const {return m_maxElements;}
-        void SetMinjElements(uint32_t val) {m_minElements = val;}
+        void SetMinElements(uint32_t val) {m_minElements = val;}
         void SetMaxElements(uint32_t val) {m_maxElements = val;}
         double GetMinimumSizePixels() const {return m_minPixelSize;}
         void SetMinimumSizePixels(double val) {m_minPixelSize=val;}
         void SetTargetNumElements(uint32_t val) const {m_targetNumElements=val;}
         uint32_t GetTargetNumElements() const {return m_targetNumElements;}
-        void SetWait(bool val) {m_wait=val;}
+        void SetWait(bool val) const {m_wait=val;}
         bool WantWait() const {return m_wait;}
         uint32_t GetDelayAfter() const {return m_delayAfter;}
         void SetDelayAfter (uint32_t val) const {m_delayAfter=val;}
@@ -222,7 +222,6 @@ struct DynamicUpdatePlan : UpdatePlan
     DynamicUpdatePlan() {m_abortFlags.SetStopEvents(StopEvents::ForQuickUpdate);}
     };
 
-
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   02/16
 //=======================================================================================
@@ -231,15 +230,14 @@ struct DgnQueryQueue
     //! Executes a query on a separate thread to load elements for a QueryModel
     struct Task : RefCounted<NonCopyableClass>
     {
-        DgnQueryViewR m_view;
-        DgnViewportCR m_vp;
-        UpdatePlan::Query const& m_plan;
+        DgnQueryViewCR m_view;
+        UpdatePlan::Query m_plan;
 
     public:
-        Task(DgnQueryViewR view, DgnViewportCR vp, UpdatePlan::Query const& plan) : m_view(view), m_vp(vp), m_plan(plan) {}
-        void Process();
+        Task(DgnQueryViewCR view, UpdatePlan::Query const& plan) : m_view(view), m_plan(plan) {}
+        virtual void _Go() = 0;
         uint32_t GetDelayAfter() {return m_plan.GetDelayAfter();}
-        bool IsForView(DgnQueryViewR view) const {return &m_view == &view;}
+        bool IsForView(DgnQueryViewCR view) const {return &m_view == &view;}
     };
 
     typedef RefCountedPtr<Task> TaskPtr;
@@ -266,10 +264,10 @@ public:
 
     //! Cancel any pending requests to process the specified QueryView.
     //! @param[in] view The view whose processing is to be canceled
-    DGNPLATFORM_EXPORT void RemovePending(DgnQueryViewR view);
+    DGNPLATFORM_EXPORT void RemovePending(DgnQueryViewCR view);
 
     //! Suspends the calling thread until the specified model is in the idle state
-    DGNPLATFORM_EXPORT void WaitFor(DgnQueryViewR);
+    DGNPLATFORM_EXPORT void WaitFor(DgnQueryViewCR);
 
     DGNPLATFORM_EXPORT bool IsIdle() const;
 };

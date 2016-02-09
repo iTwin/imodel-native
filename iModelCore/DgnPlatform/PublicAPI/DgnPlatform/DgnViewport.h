@@ -84,17 +84,12 @@ enum class ViewportResizeMode
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
 {
-public:
     friend struct ViewManager;
-
-//! @private
-typedef bpair<Render::GraphicSet, ElementAlignedBox3d> GraphicSetRangePair;
-//! @private
-typedef bmap<DgnGeometryPartId, GraphicSetRangePair> PartGraphicMap;
-
-protected:
+    typedef bpair<Render::GraphicSet, ElementAlignedBox3d> GraphicSetRangePair; //!< @private
+    typedef bmap<DgnGeometryPartId, GraphicSetRangePair> PartGraphicMap;        //!< @private
     typedef std::deque<Utf8String> ViewStateStack;
 
+protected:
     bool            m_zClipAdjusted = false;    // were the view z clip planes adjusted due to front/back clipping off?
     bool            m_is3dView = false;         // view is of a 3d model
     bool            m_isCameraOn = false;       // view is 3d and the camera is turned on.
@@ -139,12 +134,11 @@ protected:
     virtual void _Destroy() {DestroyViewport();}
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(ViewControllerR, bool expandView);
     DGNPLATFORM_EXPORT virtual int _GetIndexedLineWidth(int index) const;
-
     DGNPLATFORM_EXPORT static void StartRenderThread();
     DMap4d CalcNpcToView();
     void QueueDrawFrame();
     void CalcTargetNumElements(UpdatePlan const& plan, bool isForProgressive);
-    StatusInt ValidateScene(UpdatePlan const& plan);
+    StatusInt CreateScene(UpdatePlan const& plan);
 
 public:
     DgnViewport(Render::TargetP target) : m_renderTarget(target) {}
@@ -188,7 +182,7 @@ public:
     DPoint3dCP GetViewCmdTargetCenter() {return m_targetCenterValid ? &m_viewCmdTargetCenter : nullptr;}
     Point2d GetScreenOrigin() const {return m_renderTarget->GetScreenOrigin();}
     DGNVIEW_EXPORT double PixelsFromInches(double inches) const;
-    DGNPLATFORM_EXPORT void InvalidateScene();
+    DGNPLATFORM_EXPORT void InvalidateScene() const;
     DGNVIEW_EXPORT void ForceHeal();
     StatusInt HealViewport(UpdatePlan const&);
     bool GetNeedsHeal() {return m_needsHeal;}

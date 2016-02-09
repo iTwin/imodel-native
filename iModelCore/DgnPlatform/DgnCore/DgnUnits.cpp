@@ -108,7 +108,7 @@ BEGIN_UNNAMED_NAMESPACE
 struct RTreeBounds : DgnQueryView::RTreeQuery
 {
     BeSQLite::RTree3dVal  m_bounds;
-    RTreeBounds() {m_bounds.Invalidate();}
+    RTreeBounds() : DgnQueryView::RTreeQuery(nullptr) {m_bounds.Invalidate();}
     int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const& info) override
         {
         BeAssert(6 == info.m_nCoord);
