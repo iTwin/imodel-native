@@ -174,7 +174,7 @@ public:
     //! Hold detail about how table partition is described for this class
     // @bsiclass                                               Affan.Khan           05/2015
     //+===============+===============+===============+===============+===============+======
-    struct Partition : NonCopyableClass
+    struct Partition
         {
     friend struct StorageDescription;
 
@@ -191,8 +191,10 @@ public:
 
     public:
         explicit Partition (ECDbSqlTable const& table) : m_table (&table), m_hasInversedPartitionClassIds (false) {}
-        ~Partition () {}
-        Partition (Partition&& rhs);
+        ~Partition() {}
+        Partition(Partition const&);
+        Partition& operator=(Partition const& rhs);
+        Partition(Partition&& rhs);
         Partition& operator=(Partition&& rhs);
 
         ECDbSqlTable const& GetTable () const { return *m_table; }

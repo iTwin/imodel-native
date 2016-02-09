@@ -3731,6 +3731,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
                          "                <MapStrategy>"
                          "                   <Strategy>SharedTable</Strategy>"
                          "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                         "                   <Options>JoinedTablePerDirectSubclass</Options>"
                          "                 </MapStrategy>"
                          "                 <Indexes>"
                          "                   <DbIndex>"
@@ -3779,6 +3780,23 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
                          "       <BaseClass>Interface</BaseClass>"
                          "        <ECProperty propertyName='SubProp' typeName='int' />"
                          "    </ECEntityClass>"
+                         "    <ECEntityClass typeName='SubSub'>"
+                         "        <ECCustomAttributes>"
+                         "            <ClassMap xmlns='ECDbMap.01.00'>"
+                         "                 <Indexes>"
+                         "                   <DbIndex>"
+                         "                       <IsUnique>True</IsUnique>"
+                         "                       <Name>uix_subsub</Name>"
+                         "                       <Properties>"
+                         "                          <string>SubSubProp</string>"
+                         "                       </Properties>"
+                         "                   </DbIndex>"
+                         "                 </Indexes>"
+                         "            </ClassMap>"
+                         "        </ECCustomAttributes>"
+                         "       <BaseClass>Sub</BaseClass>"
+                         "        <ECProperty propertyName='SubSubProp' typeName='int' />"
+                         "    </ECEntityClass>"
                          "    <ECEntityClass typeName='RootUnshared' modifier='Abstract'>"
                          "        <ECCustomAttributes>"
                          "            <ClassMap xmlns='ECDbMap.01.00'>"
@@ -3819,18 +3837,20 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
      AssertSchemaImport(db, asserted, testItem, "userdefinedindextest.ecdb");
      ASSERT_FALSE(asserted);
 
-     ECClassCP subClass = db.Schemas().GetECClass("TestSchema", "Sub");
-     ASSERT_TRUE(subClass != nullptr);
 
      //class hierarchy with shared table
      AssertIndex(db, "uix_root", true, "ts_Root", {"RootProp"});
 
-     Utf8String indexWhere;
-     indexWhere.Sprintf("ECClassId=%lld", subClass->GetId());
-     AssertIndex(db, "uix_interface_ts_Root", true, "ts_Root", {"InterfaceProp"}, indexWhere.c_str());
+     //index from Interface class is applied to Sub which is stored in joined table
+     AssertIndex(db, "uix_interface_ts_Root", true, "ts_Sub", {"InterfaceProp"});
 
-     indexWhere.Sprintf("ECClassId=%lld", subClass->GetId());
-     AssertIndex(db, "uix_sub", true, "ts_Root", {"SubProp"}, indexWhere.c_str());
+     AssertIndex(db, "uix_sub", true, "ts_Sub", {"SubProp"});
+
+     ECClassCP subSubClass = db.Schemas().GetECClass("TestSchema", "SubSub");
+     ASSERT_TRUE(subSubClass != nullptr);
+     Utf8String indexWhere;
+     indexWhere.Sprintf("ECClassId=%lld", subSubClass->GetId());
+     AssertIndex(db, "uix_subsub", true, "ts_Sub", {"SubSubProp"}, indexWhere.c_str());
 
      //class hierarchy without shared table
      AssertIndex(db, "uix_rootunshared_ts_SubUnshared", true, "ts_SubUnshared", {"RootUnsharedProp"});

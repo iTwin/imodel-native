@@ -701,6 +701,7 @@ BentleyStatus ECDbMap::CreateOrUpdateIndexesInDb() const
         indexes.push_back(indexPtr.get());
         }
 
+    bmap<ClassMap const*, bvector<ClassIndexInfoPtr>> indexInfoCache;
     bmap<Utf8String, ECDbSqlIndex const*> comparableIndexDefs;
     for (ECDbSqlIndex const* index : indexes)
         {
@@ -719,32 +720,41 @@ BentleyStatus ECDbMap::CreateOrUpdateIndexesInDb() const
         StorageDescription const& storageDesc = classMap->GetStorageDescription();
         std::vector<Partition> const& horizPartitions = storageDesc.GetHorizontalPartitions();
         if (horizPartitions.size() <= 1)
-            {
-            if (horizPartitions.empty() || &horizPartitions[0].GetTable() != &table)
-                {
-                BeAssert(!horizPartitions.empty() && &horizPartitions[0].GetTable() == &table);
-                return ERROR;
-                }
-
             continue;
-            }
 
         auto classMapInfoCacheIt = m_schemaImportContext->GetClassMapInfoCache().find(classMap);
         bvector<ClassIndexInfoPtr> const* baseClassIndexInfos = nullptr;
         if (classMapInfoCacheIt == m_schemaImportContext->GetClassMapInfoCache().end())
             {
-            BeAssert(false && "TBD");
+            auto indexInfoCacheIt = indexInfoCache.find(classMap);
+            if (indexInfoCacheIt == indexInfoCache.end())
+                {
+                bvector<ClassIndexInfoPtr>& indexInfos = indexInfoCache[classMap];
+                ECDbClassMap customClassMap;
+                if (ECDbMapCustomAttributeHelper::TryGetClassMap(customClassMap, classMap->GetClass()))
+                    {
+                    if (SUCCESS != ClassIndexInfo::CreateFromClassMapCA(indexInfos, m_ecdb, customClassMap))
+                        return ERROR;
+                    }
+
+                if (SUCCESS != ClassIndexInfo::CreateFromIdSpecificationCAs(indexInfos, m_ecdb, classMap->GetClass()))
+                    return ERROR;
+
+                baseClassIndexInfos = &indexInfos;
+                }
+            else
+                baseClassIndexInfos = &indexInfoCacheIt->second;
             }
         else
             baseClassIndexInfos = &classMapInfoCacheIt->second->GetIndexInfos();
 
 
-        for (Partition const& horizPartition : horizPartitions)
+        for (Partition const& partition : horizPartitions)
             {
-            if (&table == &horizPartition.GetTable())
+            if (&table == &partition.GetTable())
                 continue;
 
-            ECClassId rootClassId = horizPartition.GetRootClassId();
+            ECClassId rootClassId = partition.GetRootClassId();
             ClassMap const* rootClassMap = GetClassMap(rootClassId);
             if (rootClassMap == nullptr)
                 {
@@ -757,7 +767,7 @@ BentleyStatus ECDbMap::CreateOrUpdateIndexesInDb() const
                 {
                 Utf8String indexName;
                 if (!Utf8String::IsNullOrEmpty(indexInfo->GetName()))
-                    indexName.append(indexInfo->GetName()).append("_").append(horizPartition.GetTable().GetName());
+                    indexName.append(indexInfo->GetName()).append("_").append(partition.GetTable().GetName());
 
                 indexInfos.push_back(ClassIndexInfo::Clone(*indexInfo, indexName.c_str()));
                 }
@@ -1805,6 +1815,30 @@ Partition* StorageDescription::AddVerticalPartition(ECDbSqlTable const& table, b
 //****************************************************************************************
 // Partition
 //****************************************************************************************
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Krischan.Eberle    02 / 2016
+//------------------------------------------------------------------------------------------
+Partition::Partition(Partition const& rhs)
+    : m_table(rhs.m_table), m_partitionClassIds(rhs.m_partitionClassIds),
+    m_inversedPartitionClassIds(rhs.m_inversedPartitionClassIds), m_hasInversedPartitionClassIds(rhs.m_hasInversedPartitionClassIds)
+    {}
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Krischan.Eberle    05 / 2015
+//------------------------------------------------------------------------------------------
+Partition& Partition::operator=(Partition const& rhs)
+    {
+    if (this != &rhs)
+        {
+        m_table = rhs.m_table;
+        m_partitionClassIds = rhs.m_partitionClassIds;
+        m_inversedPartitionClassIds = rhs.m_inversedPartitionClassIds;
+        m_hasInversedPartitionClassIds = rhs.m_hasInversedPartitionClassIds;
+        }
+
+    return *this;
+    }
+
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    05 / 2015
 //------------------------------------------------------------------------------------------

@@ -340,14 +340,8 @@ BentleyStatus ClassMapInfo::_InitializeFromSchema ()
         SUCCESS != InitializeFromClassHasCurrentTimeStampProperty())
         return ERROR;
 
-    // Add indices for important identifiers
-    if (SUCCESS != ProcessStandardKeys(m_ecClass, "BusinessKeySpecification") ||
-        SUCCESS != ProcessStandardKeys(m_ecClass, "GlobalIdSpecification") ||
-        SUCCESS != ProcessStandardKeys(m_ecClass, "SyncIDSpecification"))
-        return ERROR;
-    
-    //TODO: VerifyThatTableNameIsNotReservedName, e.g. dgn element table, etc.
-    return SUCCESS;
+    // Add indices for IdSpecification CAs
+    return ClassIndexInfo::CreateFromIdSpecificationCAs(m_dbIndexes, m_ecdbMap.GetECDb(), m_ecClass);
     }
 
 //---------------------------------------------------------------------------------------
@@ -428,60 +422,10 @@ BentleyStatus ClassMapInfo::InitializeFromClassMapCA()
         if (ECObjectsStatus::Success != ecstat)
             return ERROR;
 
-        bvector<ECDbClassMap::DbIndex> indices;
-        ecstat = customClassMap.TryGetIndexes(indices);
-        if (ECObjectsStatus::Success != ecstat)
+        if (SUCCESS != ClassIndexInfo::CreateFromClassMapCA(m_dbIndexes, m_ecdbMap.GetECDb(), customClassMap))
             return ERROR;
-
-        for (ECDbClassMap::DbIndex const& index : indices)
-            {
-            ClassIndexInfoPtr indexInfo = ClassIndexInfo::Create(m_ecdbMap.GetECDbR(), index);
-            if (indexInfo == nullptr)
-                return ERROR;
-
-            m_dbIndexes.push_back(indexInfo);
-            }
         }
 
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                 Affan.Khan                07/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ClassMapInfo::ProcessStandardKeys(ECClassCR ecClass, Utf8CP customAttributeName)
-    {
-    IECInstancePtr ca = ecClass.GetCustomAttribute(customAttributeName);
-    if (ca == nullptr)
-        return SUCCESS;
-
-    Utf8CP caPropName = nullptr;
-    if (BeStringUtilities::Stricmp(customAttributeName, "BusinessKeySpecification") == 0 ||
-        BeStringUtilities::Stricmp(customAttributeName, "GlobalIdSpecification") == 0)
-        caPropName = "PropertyName";
-    else if (BeStringUtilities::Stricmp(customAttributeName, "SyncIDSpecification") == 0)
-        caPropName = "Property";
-    else
-        {
-        BeAssert(false && "Unsupported Key Specification custom attribute");
-        return ERROR;
-        }
-
-    ECValue v;
-    if (ECObjectsStatus::Success != ca->GetValue(v, caPropName) || v.IsNull())
-        {
-        m_ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                                                      "Invalid %s on ECClass '%s'. Could not retrieve value of property '%s' from the custom attribute.",
-                                                                     customAttributeName, ecClass.GetFullName(), caPropName);
-        return ERROR;
-        }
-
-    Utf8CP keyPropName = v.GetUtf8CP();
-    ClassIndexInfoPtr indexInfo = ClassIndexInfo::CreateStandardKeyIndex(m_ecdbMap.GetECDbR(), ecClass, customAttributeName, keyPropName);
-    if (indexInfo == nullptr)
-        return ERROR;
-
-    m_dbIndexes.push_back(indexInfo);
     return SUCCESS;
     }
 
@@ -981,6 +925,68 @@ ClassIndexInfoPtr ClassIndexInfo::CreateStandardKeyIndex(ECDbCR ecdb, ECClassCR 
 ClassIndexInfoPtr ClassIndexInfo::Clone(ClassIndexInfoCR rhs, Utf8CP newIndexName)
     {
     return new ClassIndexInfo(newIndexName, rhs.GetIsUnique(), rhs.GetProperties(), rhs.GetWhere());
+    }
+
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                02/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+BentleyStatus ClassIndexInfo::CreateFromClassMapCA(bvector<ClassIndexInfoPtr>& indexInfos, ECDbCR ecdb, ECDbClassMap const& customClassMap)
+    {
+    bvector<ECDbClassMap::DbIndex> indices;
+    if (ECObjectsStatus::Success != customClassMap.TryGetIndexes(indices))
+        return ERROR;
+
+    for (ECDbClassMap::DbIndex const& index : indices)
+        {
+        ClassIndexInfoPtr indexInfo = ClassIndexInfo::Create(ecdb, index);
+        if (indexInfo == nullptr)
+            return ERROR;
+
+        indexInfos.push_back(indexInfo);
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                02/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+BentleyStatus ClassIndexInfo::CreateFromIdSpecificationCAs(bvector<ClassIndexInfoPtr>& indexInfos, ECDbCR ecdb, ECN::ECClassCR ecClass)
+    {
+    std::vector<std::pair<Utf8CP, Utf8CP>> idSpecCAs;
+    idSpecCAs.push_back(std::make_pair("BusinessKeySpecification", "PropertyName"));
+    idSpecCAs.push_back(std::make_pair("GlobalIdSpecification", "PropertyName"));
+    idSpecCAs.push_back(std::make_pair("SyncIDSpecification", "Property"));
+
+    for (std::pair<Utf8CP, Utf8CP> const& idSpecCA : idSpecCAs)
+        {
+        Utf8CP caName = idSpecCA.first;
+        Utf8CP caPropName = idSpecCA.second;
+        IECInstancePtr ca = ecClass.GetCustomAttribute(caName);
+        if (ca == nullptr)
+            return SUCCESS;
+
+        ECValue v;
+        if (ECObjectsStatus::Success != ca->GetValue(v, caPropName) || v.IsNull())
+            {
+            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                                                                         "Invalid %s on ECClass '%s'. Could not retrieve value of property '%s' from the custom attribute.",
+                                                                         caName, ecClass.GetFullName(), caPropName);
+            return ERROR;
+            }
+
+        Utf8CP keyPropName = v.GetUtf8CP();
+        ClassIndexInfoPtr indexInfo = ClassIndexInfo::CreateStandardKeyIndex(ecdb, ecClass, caName, keyPropName);
+        if (indexInfo == nullptr)
+            return ERROR;
+
+        indexInfos.push_back(indexInfo);
+        }
+
+    return SUCCESS;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

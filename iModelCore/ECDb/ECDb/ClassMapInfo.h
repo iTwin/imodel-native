@@ -55,10 +55,7 @@ private:
     BentleyStatus DoEvaluateMapStrategy(bool& baseClassesNotMappedYet, UserECDbMapStrategy&);
 
     bool GatherBaseClassMaps (bvector<IClassMap const*>& baseClassMaps, bvector<IClassMap const*>& tphMaps, bvector<IClassMap const*>& tpcMaps, bvector<IClassMap const*>& nmhMaps, ECN::ECClassCR ecClass) const;
-
     bool ValidateChildStrategy(ECDbMapStrategy const& parentStrategy, UserECDbMapStrategy const& childStrategy) const;
-
-    BentleyStatus ProcessStandardKeys(ECN::ECClassCR ecClass, Utf8CP customAttributeName);
 
 protected:
     virtual BentleyStatus _InitializeFromSchema();
@@ -195,7 +192,8 @@ public:
     static ClassIndexInfoPtr Create(ECDbCR, ECN::ECDbClassMap::DbIndex const&);
     static ClassIndexInfoPtr CreateStandardKeyIndex(ECDbCR, ECN::ECClassCR containerClass, Utf8CP standardKeyCAName, Utf8CP propertyName);
     static ClassIndexInfoPtr Clone(ClassIndexInfoCR, Utf8CP newIndexName);
-
+    static BentleyStatus CreateFromClassMapCA(bvector<ClassIndexInfoPtr>& indexInfos, ECDbCR, ECN::ECDbClassMap const&);
+    static BentleyStatus CreateFromIdSpecificationCAs(bvector<ClassIndexInfoPtr>& indexInfos, ECDbCR, ECN::ECClassCR);
     Utf8CP GetName() const { return m_name.c_str();}
     bool GetIsUnique() const { return m_isUnique;}
     bvector<Utf8String> const& GetProperties() const{ return m_properties;}
