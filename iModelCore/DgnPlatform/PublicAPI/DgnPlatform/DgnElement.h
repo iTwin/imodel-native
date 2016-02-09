@@ -1300,7 +1300,8 @@ protected:
 };
 
 //=======================================================================================
-//! Base class for elements with 3d geometry
+//! Base class for elements with 3d geometry.
+//! GeometricElement3d elements are not inherently spatially located, but can be spatially located.
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Paul.Connelly   02/16
 //=======================================================================================
@@ -1404,7 +1405,22 @@ public:
 };
 
 //=======================================================================================
+//! A 3-dimensional geometric element that is used to convey information in 3-dimensional graphical presentations.
+//! It is common for the GeometryStream of a GraphicalElement3d to contain display-oriented metadata such as symbology overrides, styles, etc.
+//! @ingroup DgnElementGroup
+// @bsiclass                                                    Shaun.Sewall    02/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GraphicalElement3d : GeometricElement3d
+{
+    DEFINE_T_SUPER(GeometricElement3d);
+public:
+    explicit GraphicalElement3d(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
 //! An abstract base class for elements that occupy real world 3-dimensional space
+//! It is uncommon for the GeometryStream of a SpatialElement to contain display-oriented metadata. 
+//! Instead, display-oriented settings should come from the SubCategories that classify the geometry in the GeometryStream.
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Shaun.Sewall    12/15
 //=======================================================================================

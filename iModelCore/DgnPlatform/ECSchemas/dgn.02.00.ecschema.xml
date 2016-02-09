@@ -419,6 +419,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="GeometricElement3d" modifier="Abstract">
         <!-- Base class for elements with 3d geometry -->
+	<!-- GeometricElement3d elements are not inherently spatially located, but can be spatially located. -->
         <BaseClass>GeometricElement</BaseClass> <!-- WIP: should inherit from GeometricElement, waiting for table split control -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
@@ -448,6 +449,10 @@
         <ECProperty propertyName="Roll" typeName="double" />
         <ECProperty propertyName="BBoxLow" typeName="point3d" />
         <ECProperty propertyName="BBoxHigh" typeName="point3d" />
+    </ECEntityClass>
+    <ECEntityClass typeName="GraphicalElement3d" modifier="Abstract">
+        <!-- 3D geometric element that is used to convey information within 3D graphical presentations. -->
+        <BaseClass>GeometricElement3d</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="SpatialElement" modifier="Abstract">
         <!-- An element that occupies real world space -->
@@ -559,7 +564,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>SpatialElement</BaseClass>
+        <BaseClass>GraphicalElement3d</BaseClass>
     </ECEntityClass>
     <ECRelationshipClass typeName="TextAnnotation3dOwnsTextAnnotationData" strength="embedding">
         <!-- only exists to get automatic deletion of a text element's unique aspect -->
