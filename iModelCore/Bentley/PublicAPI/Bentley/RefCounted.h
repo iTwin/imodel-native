@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/RefCounted.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -88,10 +88,8 @@ public:
 * Inheriting from this class is equivalent to inheriting from RefCounted<IRefCounted>.
 * @bsiclass                                                     Keith.Bentley   09/07
 +===============+===============+===============+===============+===============+======*/
-class RefCountedBase : public RefCounted <IRefCounted>
+class RefCountedBase : public RefCounted<IRefCounted>
     {
-public:
-    DEFINE_BENTLEY_NEW_DELETE_OPERATORS
     };
 
 //=======================================================================================
