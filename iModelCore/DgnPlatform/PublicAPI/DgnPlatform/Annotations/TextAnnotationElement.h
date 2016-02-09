@@ -129,9 +129,9 @@ namespace dgn_ElementHandler
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     09/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TextAnnotation3d : SpatialElement
+struct EXPORT_VTABLE_ATTRIBUTE TextAnnotation3d : GraphicalElement3d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotation3d, SpatialElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotation3d, GraphicalElement3d);
 
 protected:
     virtual bool _DrawHit(HitDetailCR, ViewContextR) const override { return false; } // Don't flash text box...
