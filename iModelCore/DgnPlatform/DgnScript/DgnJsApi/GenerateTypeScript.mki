@@ -24,7 +24,7 @@
     %error Caller must define dgnScriptDir
 %endif
 
-dgnScriptGen =% $(OutDgnPlatformBuild)DgnScriptGen/DgnJsApi/
+dgnScriptGen =% $(OutDgnPlatformBuild)DgnScriptGen/
 
 TypeScriptCompile = $(BuildContext)SubParts/NodeJs/node$(toolchainExeext) $(BuildContext)SubParts/TypeScript/tsc.js
 
