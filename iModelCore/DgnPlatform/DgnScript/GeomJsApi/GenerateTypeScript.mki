@@ -17,7 +17,7 @@
     %error Caller must define dgnScriptDir
 %endif
 
-dgnScriptGen =% $(OutDgnPlatformBuild)DgnScriptGen/
+dgnScriptGen =% $(OutDgnPlatformBuild)DgnScriptGen/GeomJsApi/
 
 %if defined(winNT)
     TypeScriptCompile = $(BuildContext)SubParts/NodeJs/node.exe $(BuildContext)SubParts/TypeScript/tsc.js
