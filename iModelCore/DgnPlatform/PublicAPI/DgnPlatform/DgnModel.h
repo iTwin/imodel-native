@@ -841,7 +841,7 @@ public:
 //=======================================================================================
 //! A GeometricModel3d that occupies physical space in the DgnDb. All SpatialModels in a DgnDb have the same coordinate
 //! space (CoordinateSpace::World), aka "Physical Space".
-//! DgnElements from SpatialModels are indexed in the persistent range tree of the DgnDb (the DGN_VTABLE_RTree3d).
+//! DgnElements from SpatialModels are indexed in the persistent range tree of the DgnDb (the DGN_VTABLE_SpatialIndex).
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
@@ -1339,8 +1339,6 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR params) override;
     DGNPLATFORM_EXPORT DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
     DGNPLATFORM_EXPORT DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
-
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
 
 public:
     //! construct a new SheetModel

@@ -558,6 +558,44 @@ TEST_F(DgnElementTests, ForceElementIdForInsert)
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    01/2016
+//---------------------------------------------------------------------------------------
+TEST_F(DgnElementTests, GenericDomainElements)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"GenericDomainElements.dgndb", Db::OpenMode::ReadWrite);
+
+    // GenericSpatialObject
+        {
+        DgnModelId modelId = m_db->Models().QueryFirstModelId();
+        DgnClassId classId = m_db->Domains().GetClassId(generic_ElementHandler::GenericSpatialObjectHandler::GetHandler());
+        GenericSpatialObjectPtr element = new GenericSpatialObject(GenericSpatialObject::CreateParams(*m_db, modelId, classId, m_defaultCategoryId));
+        ASSERT_TRUE(element.IsValid());
+        ASSERT_TRUE(element->Insert().IsValid());
+        ASSERT_TRUE(element->GetElementId().IsValid());
+        }
+
+    // GenericSpatialLocation
+        {
+        DgnModelId modelId = m_db->Models().QueryFirstModelId();
+        DgnClassId classId = m_db->Domains().GetClassId(generic_ElementHandler::GenericSpatialLocationHandler::GetHandler());
+        GenericSpatialLocationPtr element = new GenericSpatialLocation(GenericSpatialLocation::CreateParams(*m_db, modelId, classId, m_defaultCategoryId));
+        ASSERT_TRUE(element.IsValid());
+        ASSERT_TRUE(element->Insert().IsValid());
+        ASSERT_TRUE(element->GetElementId().IsValid());
+        }
+
+    // GenericPhysicalObject
+        {
+        DgnModelId modelId = m_db->Models().QueryFirstModelId();
+        DgnClassId classId = m_db->Domains().GetClassId(generic_ElementHandler::GenericPhysicalObjectHandler::GetHandler());
+        GenericPhysicalObjectPtr element = new GenericPhysicalObject(GenericPhysicalObject::CreateParams(*m_db, modelId, classId, m_defaultCategoryId));
+        ASSERT_TRUE(element.IsValid());
+        ASSERT_TRUE(element->Insert().IsValid());
+        ASSERT_TRUE(element->GetElementId().IsValid());
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
