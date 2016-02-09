@@ -1537,7 +1537,7 @@ ECSchemaReadContextCR schemaContext
         twoVersionSuffix.Sprintf(".%02d.*.ecschema.xml", desiredSchemaKey.m_versionMajor);
         threeVersionSuffix.Sprintf(".%02d.%02d.*.ecschema.xml", desiredSchemaKey.m_versionMajor, desiredSchemaKey.m_versionMiddle);
         }
-    else if (matchType == SchemaMatchType::LatestReadCompatible)
+    else if (matchType == SchemaMatchType::LatestMajorCompatible)
         {
         twoVersionSuffix.Sprintf(".%02d.*.ecschema.xml", desiredSchemaKey.m_versionMajor);
         threeVersionSuffix.Sprintf(".%02d.*.*.ecschema.xml", desiredSchemaKey.m_versionMajor);
@@ -2529,6 +2529,15 @@ Utf8String SchemaKey::FormatSchemaVersion (uint32_t versionMajor, uint32_t versi
     return versionString;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Robert.Schili                  01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SchemaKey::FormatLegacyFullSchemaName(Utf8CP schemaName, uint32_t versionMajor, uint32_t versionMinor)
+    {
+    Utf8PrintfString formattedString("%s.%02d.%02d", schemaName, versionMajor, versionMinor);
+    return formattedString;
+    }
+
 #define ECSCHEMA_VERSION_FORMAT_EXPLANATION " Format must be either MM.mm or MM.ww.mm where MM is major version, ww is the middle version and mm is minor version."
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
@@ -2562,9 +2571,7 @@ ECObjectsStatus SchemaKey::ParseSchemaFullName (Utf8StringR schemaName, uint32_t
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus SchemaKey::ParseVersionString (uint32_t& versionMajor, uint32_t& versionMiddle, uint32_t& versionMinor, Utf8CP versionString)
     {
-    versionMajor = DEFAULT_VERSION_MAJOR;
-    versionMiddle = DEFAULT_VERSION_MIDDLE;
-    versionMinor = DEFAULT_VERSION_MINOR;
+    
 
     if(Utf8String::IsNullOrEmpty(versionString))
         return ECObjectsStatus::Success;
@@ -2584,6 +2591,7 @@ ECObjectsStatus SchemaKey::ParseVersionString (uint32_t& versionMajor, uint32_t&
     versionMajor = strtoul(chars, &end, 10);
     if (end == chars)
         {
+        versionMajor = DEFAULT_VERSION_MAJOR;
         LOG.errorv("Invalid ECSchema Version String: '%s' The characters '%s' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString, chars);
         return ECObjectsStatus::ParseError;
         }
@@ -2592,12 +2600,15 @@ ECObjectsStatus SchemaKey::ParseVersionString (uint32_t& versionMajor, uint32_t&
     uint32_t second = strtoul(chars, &end, 10);
     if (end == chars)
         {
+        versionMiddle = DEFAULT_VERSION_MIDDLE;
+        versionMinor = DEFAULT_VERSION_MINOR;
         LOG.errorv("Invalid ECSchema Version String: '%s' The characters '%s' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString, chars);
         return ECObjectsStatus::ParseError;
         }
 
     if (digits == 2)
         {
+        versionMiddle = DEFAULT_VERSION_MIDDLE;
         versionMinor = second;
         return ECObjectsStatus::Success;
         }
@@ -2609,6 +2620,7 @@ ECObjectsStatus SchemaKey::ParseVersionString (uint32_t& versionMajor, uint32_t&
     //before 3 number versions were introduced.
     if (end == chars)
         {
+        versionMiddle = DEFAULT_VERSION_MIDDLE;
         versionMinor = second;
         }
     else
@@ -2755,7 +2767,7 @@ bool SchemaKey::LessThan (SchemaKeyCR rhs, SchemaMatchType matchType) const
 
             return false;
             }
-        case SchemaMatchType::LatestReadCompatible:
+        case SchemaMatchType::LatestMajorCompatible:
             {
             int nameCompare = CompareByName(rhs.m_schemaName);
 
@@ -2789,7 +2801,7 @@ bool SchemaKey::Matches (SchemaKeyCR rhs, SchemaMatchType matchType) const
         case SchemaMatchType::Exact:
             return 0 == CompareByName (rhs.m_schemaName) && m_versionMajor == rhs.m_versionMajor &&
                 m_versionMiddle == rhs.m_versionMiddle && m_versionMinor == rhs.m_versionMinor;
-        case SchemaMatchType::LatestReadCompatible:
+        case SchemaMatchType::LatestMajorCompatible:
             if (CompareByName(rhs.m_schemaName) != 0)
                 return false;
 

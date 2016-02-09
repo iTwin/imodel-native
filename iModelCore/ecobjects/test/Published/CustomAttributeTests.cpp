@@ -62,7 +62,7 @@ ECSchemaPtr   CreateCustomAttributeTestSchema()
 void VerifyCustomAttributeTestSchema (ECSchemaPtr customAttributeSchema)
     {
     EXPECT_TRUE (customAttributeSchema.IsValid ()) << "Custom attribute schema is null.";
-    EXPECT_STREQ ("TestSchema.05.05", customAttributeSchema->GetFullSchemaName ().c_str ()) << "Custom attribute schema full name mismatches.";
+    EXPECT_STREQ ("TestSchema.05.00.05", customAttributeSchema->GetFullSchemaName ().c_str ()) << "Custom attribute schema full name mismatches.";
     
     Utf8CP className = "CustomAttribClass";
     EXPECT_TRUE (customAttributeSchema->GetClassCP (className) != NULL) << "Class " << className << " not found in custom attribute schema.";

@@ -2094,7 +2094,7 @@ enum SchemaMatchType
     //! Find latest version.
     Latest,
     //! Find latest version with matching VersionMajor
-    LatestReadCompatible,
+    LatestMajorCompatible,
     };
 
 /*=================================================================================**//**
@@ -2149,13 +2149,20 @@ struct SchemaKey
     //! Return full schema name in format GetName().MM.ww.mm where Name is the schema name MM is major version,ww is the middle version and mm is minor version.
     Utf8String GetFullSchemaName() const { return FormatFullSchemaName(m_schemaName.c_str(), m_versionMajor, m_versionMiddle, m_versionMinor); }
 
-    //! Generate a schema version string given the major and minor version values.
+    //! Generate a schema full name string given the major, middle and minor version values.
     //! @param[in] schemaName      Name of the schema
     //! @param[in] versionMajor    The major version number
     //! @param[out] versionMiddle  The middle version number indicating write compatibility
     //! @param[in] versionMinor    The minor version number
     //! @return The version string
     ECOBJECTS_EXPORT static Utf8String FormatFullSchemaName(Utf8CP schemaName, uint32_t versionMajor, uint32_t versionMiddle, uint32_t versionMinor);
+
+    //! Generate a legacy schema full name, which does not contain the middle version.
+    //! @param[in] schemaName      Name of the schema
+    //! @param[in] versionMajor    The major version number
+    //! @param[in] versionMinor    The minor version number
+    //! @return The version string
+    ECOBJECTS_EXPORT static Utf8String FormatLegacyFullSchemaName(Utf8CP schemaName, uint32_t versionMajor, uint32_t versionMinor);
 
     //! Generate a schema version string given the major and minor version values.
     //! @param[in] versionMajor    The major version number
@@ -3003,6 +3010,11 @@ public:
     
     //! Return full schema name in format GetName().MM.ww.mm where Name is the schema name MM is major version,ww is the middle version and mm is minor version.
     Utf8String             GetFullSchemaName() const { return m_key.GetFullSchemaName(); }
+
+    //! Return a legacy full schema name in format GetName().MM.mm where Name is the schema name MM is major version and mm is minor version.
+    //! This overload is missing the middle version
+    Utf8String             GetLegacyFullSchemaName() const { return SchemaKey::FormatLegacyFullSchemaName(
+        m_key.GetName().c_str(), m_key.GetVersionMajor(), m_key.GetVersionMinor()); }
 
     //! Given a source class, will copy that class into this schema if it does not already exist
     //! @param[out] targetClass If successful, will contain a new ECClass object that is a copy of the sourceClass

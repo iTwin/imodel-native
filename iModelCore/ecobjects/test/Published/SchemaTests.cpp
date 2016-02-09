@@ -468,30 +468,26 @@ TEST_F (SchemaSearchTest, FindSchemaByName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Raimondas.Rimkus 02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-static  void    ValidateSchemaNameParsing (Utf8CP fullName, bool expectFailure, Utf8CP expectName, uint32_t expectMajor, uint32_t expectMinor)
+static  void    ValidateSchemaNameParsing (Utf8CP fullName, bool expectFailure, Utf8CP expectName, uint32_t expectMajor, uint32_t expectMiddle, uint32_t expectMinor)
     {
     Utf8String    shortName;
-    Utf8String    shortNameStr;
     uint32_t   versionMajor;
+    uint32_t   versionMiddle;
     uint32_t   versionMinor;
-    Utf8String    fullNameStr = Utf8String (fullName);
 
-    ECObjectsStatus status = ECSchema::ParseSchemaFullName (shortName, versionMajor, versionMinor, fullName);
-    ECObjectsStatus statusStr = ECSchema::ParseSchemaFullName (shortNameStr, versionMajor, versionMinor, fullNameStr);
+    ECObjectsStatus status = ECSchema::ParseSchemaFullName (shortName, versionMajor, versionMiddle, versionMinor, fullName);
 
     if (expectFailure)
         {
         EXPECT_TRUE (ECObjectsStatus::Success != status);
-        EXPECT_TRUE (ECObjectsStatus::Success != statusStr);
         return;
         }
 
     EXPECT_TRUE (ECObjectsStatus::Success == status);
-    EXPECT_TRUE (ECObjectsStatus::Success == statusStr);
 
     EXPECT_STREQ (shortName.c_str (), expectName);
-    EXPECT_STREQ (shortNameStr.c_str (), expectName);
     EXPECT_EQ (versionMajor, expectMajor);
+    EXPECT_EQ(versionMiddle, expectMiddle);
     EXPECT_EQ (versionMinor, expectMinor);
     }
 
@@ -500,14 +496,14 @@ static  void    ValidateSchemaNameParsing (Utf8CP fullName, bool expectFailure, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (SchemaNameParsingTest, ParseFullSchemaName)
     {
-    ValidateSchemaNameParsing ("TestName.6.8", false, "TestName", 6, 8);
-    ValidateSchemaNameParsing ("TestName.16.18", false, "TestName", 16, 18);
-    ValidateSchemaNameParsing ("TestName.126.128", false, "TestName", 126, 128);
-    ValidateSchemaNameParsing ("TestName.1267.128", true, NULL, 0, 0);
-    ValidateSchemaNameParsing ("TestName.1267", true, NULL, 0, 0);
-    ValidateSchemaNameParsing ("TestName", true, NULL, 0, 0);
-    ValidateSchemaNameParsing ("", true, NULL, 0, 0);
-    ValidateSchemaNameParsing ("12.18", true, NULL, 0, 0);
+    ValidateSchemaNameParsing ("TestName.6.8", false, "TestName", 6, 0, 8);
+    ValidateSchemaNameParsing ("TestName.16.18", false, "TestName", 16, 0, 18);
+    ValidateSchemaNameParsing ("TestName.126.128", false, "TestName", 126, 0, 128);
+    ValidateSchemaNameParsing ("TestName.1267.128", false, "TestName", 1267, 0, 128);
+    ValidateSchemaNameParsing ("TestName.1267", true, NULL, 0, 0, 0);
+    ValidateSchemaNameParsing ("TestName", true, NULL, 0, 0, 0);
+    ValidateSchemaNameParsing ("", true, NULL, 0, 0, 0);
+    ValidateSchemaNameParsing ("12.18", true, NULL, 0, 0, 0);
     }
 
 //---------------------------------------------------------------------------------------
