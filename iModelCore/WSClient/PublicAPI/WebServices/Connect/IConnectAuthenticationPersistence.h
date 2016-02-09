@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Connect/IConnectAuthenticationPersistence.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -33,6 +33,9 @@ struct EXPORT_VTABLE_ATTRIBUTE IConnectAuthenticationPersistence
         virtual void SetToken(SamlTokenPtr token) = 0;
         //! Return existing token or null if not token is persisted
         virtual SamlTokenPtr GetToken()  const = 0;
+
+        //! Return time when token was set or invalid if no token is stored
+        virtual DateTime GetTokenSetTime() const = 0;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
