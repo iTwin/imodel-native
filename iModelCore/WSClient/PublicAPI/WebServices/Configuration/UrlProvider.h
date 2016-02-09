@@ -47,6 +47,9 @@ struct UrlProvider
 
                 //! Retrieve cached, server configured or default URL if no connection exists.
                 WSCLIENT_EXPORT Utf8String Get() const;
+
+                //! Retrieve cached, server configured or default URL if no connection exists.
+                WSCLIENT_EXPORT AsyncTaskPtr<Utf8String> GetAsync() const;
             };
 
         WSCLIENT_EXPORT static int64_t DefaultTimeout;
@@ -60,8 +63,8 @@ struct UrlProvider
         static IHttpHandlerPtr s_customHandler;
 
     private:
-        static Utf8String GetBuddiUrl(Utf8StringCR urlName);
-        static Utf8String GetUrl(Utf8StringCR urlName, const Utf8String* defaultUrls);
+        static AsyncTaskPtr<Utf8String> GetBuddiUrl(Utf8StringCR urlName);
+        static AsyncTaskPtr<Utf8String> GetUrl(Utf8StringCR urlName, const Utf8String* defaultUrls);
 
     public:
         //! Initialize UrlProvider for current session.
