@@ -201,4 +201,19 @@ public:
     WhereConstraint GetWhere() const { return m_where; }
     };
 
+//======================================================================================
+// @bsiclass                                                Krischan.Eberle  02/2016
+//+===============+===============+===============+===============+===============+======
+struct ClassIndexInfoCache : NonCopyableClass
+    {
+private:
+    ECDbCR m_ecdb;
+    SchemaImportContext const& m_schemaImportContext;
+    mutable bmap<ClassMap const*, bvector<ClassIndexInfoPtr>> m_indexInfoCache;
+
+public:
+    ClassIndexInfoCache(ECDbCR ecdb, SchemaImportContext const& ctx) : m_ecdb(ecdb), m_schemaImportContext(ctx) {}
+    BentleyStatus TryGetIndexInfos(bvector<ClassIndexInfoPtr> const*& indexInfos, ClassMapCR) const;
+    };
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

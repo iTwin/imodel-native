@@ -901,7 +901,7 @@ BentleyStatus ClassIndexInfo::CreateFromECClass(bvector<ClassIndexInfoPtr>& inde
     if (customClassMap != nullptr)
         {
         bvector<ECDbClassMap::DbIndex> indices;
-        if (ECObjectsStatus::Success == customClassMap->TryGetIndexes(indices))
+        if (ECObjectsStatus::Success != customClassMap->TryGetIndexes(indices))
             return ERROR;
 
         for (ECDbClassMap::DbIndex const& index : indices)
@@ -929,7 +929,7 @@ BentleyStatus ClassIndexInfo::CreateFromIdSpecificationCAs(bvector<ClassIndexInf
         Utf8CP caPropName = idSpecCA.second.c_str();
         IECInstancePtr ca = ecClass.GetCustomAttribute(caName);
         if (ca == nullptr)
-            return SUCCESS;
+            continue;
 
         ECValue v;
         if (ECObjectsStatus::Success != ca->GetValue(v, caPropName) || v.IsNull() || Utf8String::IsNullOrEmpty(v.GetUtf8CP()))
@@ -978,5 +978,37 @@ std::vector<std::pair<Utf8String, Utf8String>> const& ClassIndexInfo::GetIdSpecC
     return s_idSpecCustomAttributeNames;
     }
 
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                02/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ClassIndexInfoCache::TryGetIndexInfos(bvector<ClassIndexInfoPtr> const*& indexInfos, ClassMapCR classMap) const
+    {
+    //first look in class map info cache
+    auto classMapInfoCacheIt = m_schemaImportContext.GetClassMapInfoCache().find(&classMap);
+    if (classMapInfoCacheIt != m_schemaImportContext.GetClassMapInfoCache().end())
+        {
+        indexInfos = &classMapInfoCacheIt->second->GetIndexInfos();
+        return SUCCESS;
+        }
+
+    //now look in internal cache
+    auto indexInfoCacheIt = m_indexInfoCache.find(&classMap);
+    if (indexInfoCacheIt != m_indexInfoCache.end())
+        {
+        indexInfos = &indexInfoCacheIt->second;
+        return SUCCESS;
+        }
+
+    //not in internal cache, so read index info from ECClass (and cache it)
+    bvector<ClassIndexInfoPtr>& newIndexInfos = m_indexInfoCache[&classMap];
+    ECClassCR ecClass = classMap.GetClass();
+    ECDbClassMap customClassMap;
+    const bool hasCustomClassMap = ECDbMapCustomAttributeHelper::TryGetClassMap(customClassMap, ecClass);
+    if (SUCCESS != ClassIndexInfo::CreateFromECClass(newIndexInfos, m_ecdb, ecClass, hasCustomClassMap ? &customClassMap : nullptr))
+        return ERROR;
+
+    indexInfos = &newIndexInfos;
+    return SUCCESS;
+    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

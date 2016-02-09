@@ -687,6 +687,7 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables() const
     return SUCCESS;
     }
 
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2016
 //---------------------------------------------------------------------------------------
@@ -701,7 +702,7 @@ BentleyStatus ECDbMap::CreateOrUpdateIndexesInDb() const
         indexes.push_back(indexPtr.get());
         }
 
-    bmap<ClassMap const*, bvector<ClassIndexInfoPtr>> indexInfoCache;
+    ClassIndexInfoCache indexInfoCache (m_ecdb, *m_schemaImportContext);
     bmap<Utf8String, ECDbSqlIndex const*> comparableIndexDefs;
     for (ECDbSqlIndex const* index : indexes)
         {
@@ -719,37 +720,16 @@ BentleyStatus ECDbMap::CreateOrUpdateIndexesInDb() const
         ECDbSqlTable const& table = index->GetTable();
         StorageDescription const& storageDesc = classMap->GetStorageDescription();
         std::vector<Partition> const& horizPartitions = storageDesc.GetHorizontalPartitions();
-        if (horizPartitions.size() <= 1)
-            continue;
 
-        auto classMapInfoCacheIt = m_schemaImportContext->GetClassMapInfoCache().find(classMap);
         bvector<ClassIndexInfoPtr> const* baseClassIndexInfos = nullptr;
-        if (classMapInfoCacheIt == m_schemaImportContext->GetClassMapInfoCache().end())
+        if (SUCCESS != indexInfoCache.TryGetIndexInfos(baseClassIndexInfos, *classMap))
+            return ERROR;
+
+        BeAssert(baseClassIndexInfos != nullptr);
+
+        for (Partition const& horizPartition : horizPartitions)
             {
-            auto indexInfoCacheIt = indexInfoCache.find(classMap);
-            if (indexInfoCacheIt == indexInfoCache.end())
-                {
-                bvector<ClassIndexInfoPtr>& indexInfos = indexInfoCache[classMap];
-                ECDbClassMap customClassMap;
-                const bool hasCustomClassMap = ECDbMapCustomAttributeHelper::TryGetClassMap(customClassMap, classMap->GetClass());
-                if (SUCCESS != ClassIndexInfo::CreateFromECClass(indexInfos, m_ecdb, classMap->GetClass(), hasCustomClassMap ? &customClassMap : nullptr))
-                    return ERROR;
-
-                baseClassIndexInfos = &indexInfos;
-                }
-            else
-                baseClassIndexInfos = &indexInfoCacheIt->second;
-            }
-        else
-            baseClassIndexInfos = &classMapInfoCacheIt->second->GetIndexInfos();
-
-
-        for (Partition const& partition : horizPartitions)
-            {
-            if (&table == &partition.GetTable())
-                continue;
-
-            ECClassId rootClassId = partition.GetRootClassId();
+            ECClassId rootClassId = horizPartition.GetRootClassId();
             ClassMap const* rootClassMap = GetClassMap(rootClassId);
             if (rootClassMap == nullptr)
                 {
@@ -757,12 +737,15 @@ BentleyStatus ECDbMap::CreateOrUpdateIndexesInDb() const
                 return ERROR;
                 }
 
+            if (&table == &horizPartition.GetTable())
+                continue;
+
             bvector<ClassIndexInfoPtr> indexInfos;
             for (ClassIndexInfoPtr const& indexInfo : *baseClassIndexInfos)
                 {
                 Utf8String indexName;
                 if (!Utf8String::IsNullOrEmpty(indexInfo->GetName()))
-                    indexName.append(indexInfo->GetName()).append("_").append(partition.GetTable().GetName());
+                    indexName.append(indexInfo->GetName()).append("_").append(horizPartition.GetTable().GetName());
 
                 indexInfos.push_back(ClassIndexInfo::Clone(*indexInfo, indexName.c_str()));
                 }
@@ -1136,14 +1119,16 @@ void ECDbMap::LightweightCache::LoadClassIdsPerTable() const
         return;
 
     Utf8String sql;
-    sql.Sprintf("SELECT ec_Table.Id, ec_Table.Name, ec_Class.Id FROM ec_PropertyMap "
-                "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND (ec_Column.ColumnKind & %d = 0) "
-                "JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
-                "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
-                "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
-                "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-                "WHERE ec_ClassMap.MapStrategy NOT IN (100, 101) "
-                "GROUP BY ec_Table.Id, ec_Class.Id", Enum::ToInt(ColumnKind::ECClassId));
+    sql.Sprintf("SELECT t.Id, t.Name, c.Id FROM ec_PropertyMap pm "
+                "JOIN ec_Column col ON col.Id = pm.ColumnId AND (col.ColumnKind & %d = 0) "
+                "JOIN ec_PropertyPath pp ON pp.Id = pm.PropertyPathId "
+                "JOIN ec_ClassMap cm ON cm.Id = pm.ClassMapId "
+                "JOIN ec_Class c ON c.Id = cm.ClassId "
+                "JOIN ec_Table t ON t.Id = col.TableId "
+                "WHERE cm.MapStrategy<>%d AND cm.MapStrategy<>%d "
+                "GROUP BY t.Id, c.Id", Enum::ToInt(ColumnKind::ECClassId),
+                Enum::ToInt(ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable),
+                Enum::ToInt(ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable));
 
     CachedStatementPtr stmt = m_map.GetECDbR().GetCachedStatement(sql.c_str());
     ECDbTableId currentTableId = -1;
@@ -1323,17 +1308,18 @@ void ECDbMap::LightweightCache::LoadHorizontalPartitions ()  const
         "SELECT RootClassId, BC.BaseClassId, BC.ClassId FROM DerivedClassList DCL "
         "INNER JOIN ec_BaseClass BC ON BC.BaseClassId = DCL.DerivedClassId), "
         "TableMapInfo AS ("
-        "SELECT  ec_Class.Id ClassId, ec_Table.Name TableName FROM ec_PropertyMap "
+        "SELECT ec_Class.Id ClassId, ec_Table.Name TableName FROM ec_PropertyMap "
         "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND (ec_Column.ColumnKind & %d = 0) "
         "JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
         "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
         "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
         "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-        "WHERE ec_ClassMap.MapStrategy<>100 AND ec_ClassMap.MapStrategy<>101 AND ec_Table.Type<>%d "
+        "WHERE ec_ClassMap.MapStrategy<>%d AND ec_ClassMap.MapStrategy<>%d AND ec_Table.Type<>%d "
         "GROUP BY ec_Class.Id, ec_Table.Name) "
         "SELECT DISTINCT DCL.RootClassId, DCL.DerivedClassId, TMI.TableName FROM DerivedClassList DCL "
         "INNER JOIN TableMapInfo TMI ON TMI.ClassId=DCL.DerivedClassId ORDER BY DCL.RootClassId,TMI.TableName,DCL.DerivedClassId",
-        Enum::ToInt(ColumnKind::ECClassId), Enum::ToInt(TableType::Joined));
+        Enum::ToInt(ColumnKind::ECClassId), Enum::ToInt(ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable),
+        Enum::ToInt(ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable), Enum::ToInt(TableType::Joined));
 
     CachedStatementPtr stmt = m_map.GetECDbR ().GetCachedStatement (sql.c_str());
     while (stmt->Step() == BE_SQLITE_ROW)

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/MapStrategy.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -86,10 +86,10 @@ public:
     //+---------------+---------------+---------------+---------------+---------------+------
     enum class Strategy
         {
-        NotMapped,
-        OwnTable,
-        SharedTable,
-        ExistingTable,
+        NotMapped = 0,
+        OwnTable = 1,
+        SharedTable = 2,
+        ExistingTable = 3,
 
         ForeignKeyRelationshipInTargetTable = 100,
         ForeignKeyRelationshipInSourceTable = 101
