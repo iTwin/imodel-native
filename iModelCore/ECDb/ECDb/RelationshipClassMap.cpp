@@ -314,8 +314,8 @@ MapStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMap
 
 
     std::set<ECDbSqlTable const*> foreignEndTables = GetForeignEnd() == ECRelationshipEnd_Source ? relationshipClassMapInfo.GetSourceTables() : relationshipClassMapInfo.GetTargetTables();
-    ECRelationshipConstraintCR const& foreignEndConstraint = GetForeignEnd() == ECRelationshipEnd_Source ? relationshipClass.GetSource() : relationshipClass.GetTarget();
-    ECRelationshipConstraintCR const& referencedEndConstraint = GetReferencedEnd() == ECRelationshipEnd_Source ? relationshipClass.GetSource() : relationshipClass.GetTarget();
+    ECRelationshipConstraintCR foreignEndConstraint = GetForeignEnd() == ECRelationshipEnd_Source ? relationshipClass.GetSource() : relationshipClass.GetTarget();
+    ECRelationshipConstraintCR referencedEndConstraint = GetReferencedEnd() == ECRelationshipEnd_Source ? relationshipClass.GetSource() : relationshipClass.GetTarget();
 
     //! table must meet following constraint though these are already validated at MapStrategy evaluation time.
     BeAssert(foreignEndTables.size() >= 1 && "ForeignEnd Tables must be >= 1");
@@ -504,7 +504,27 @@ MapStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMap
             referencedEndClassIdCols.insert(fkTableReferencedEndClassIdCol);
             }
 
-        ForeignKeyActionType userRequestedDeleteAction = relationshipClassMapInfo.CreateForeignKeyConstraint() ? relationshipClassMapInfo.GetOnDeleteAction() : ForeignKeyActionType::NotSpecified;
+        ForeignKeyActionType userRequestedDeleteAction = relationshipClassMapInfo.GetOnDeleteAction();
+        //if FK table is a joined table, CASCADE is not allowed as it would leave orphaned rows in the parent of joined table.
+        if (fkTable.GetParentOfJoinedTable() != nullptr)
+            {
+            //WIP_AFFAN. The DGN schema has such cases. What should we do with them?
+            /*if (userRequestedDeleteAction == ForeignKeyActionType::Cascade ||
+                (userRequestedDeleteAction == ForeignKeyActionType::NotSpecified && relationshipClass.GetStrength() == StrengthType::Embedding))
+                {
+                IssueReporter const& issues = GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter();
+                if (userRequestedDeleteAction == ForeignKeyActionType::Cascade)
+                    issues.Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. Its ForeignKeyRelationshipMap custom attribute specifies the OnDelete action 'Cascade'. "
+                                         "This is only allowed if the foreign key end of the ECRelationship is not mapped to a joined table.",
+                                         relationshipClass.GetFullName());
+                else
+                    issues.Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. Its strength is 'Embedding' which implies the OnDelete action 'Cascade'. "
+                                         "This is only allowed if the foreign key end of the ECRelationship is not mapped to a joined table.",
+                                         relationshipClass.GetFullName());
+
+                return MapStatus::Error;
+                }*/
+            }
 
         //! Create Foreign Key constraint only if FK is not a virtual or existing table.
         if (fkTable.IsOwnedByECDb() && fkTable.GetPersistenceType() == PersistenceType::Persisted
@@ -516,7 +536,7 @@ MapStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMap
                 foreignKeyConstraint->SetOnDeleteAction(userRequestedDeleteAction);
             else
                 {
-                if (GetRelationshipClass().GetStrength() == StrengthType::Embedding)
+                if (relationshipClass.GetStrength() == StrengthType::Embedding)
                     foreignKeyConstraint->SetOnDeleteAction(ForeignKeyActionType::Cascade);
                 else
                     foreignKeyConstraint->SetOnDeleteAction(ForeignKeyActionType::SetNull);
