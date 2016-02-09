@@ -882,7 +882,7 @@ void OcclusionScorer::InitForViewport(DgnViewportCR viewport, double minimumSize
 * Compute Occlusion score for a range that crosses the eye plane.
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool OcclusionScorer::ComputeEyeSpanningRangeOcclusionScore (double* score, DPoint3dCP rangeCorners, bool doFrustumCull)
+bool OcclusionScorer::ComputeEyeSpanningRangeOcclusionScore (double* score, DPoint3dCP rangeCorners)
     {
     *score = 2.0;
     return true;
@@ -1232,7 +1232,7 @@ bool RTreeFilter::AllPointsClippedByOnePlane(ConvexClipPlaneSetCR cps, size_t nP
 RTreeFilter::RTreeFilter(DgnDbR db, DgnElementIdSet const* exclude) : m_dgndb(db)
     {
     m_exclude=exclude;
-    db.GetCachedStatement(m_rangeStmt, "SELECT ElementId FROM " DGN_VTABLE_RTree3d " WHERE ElementId MATCH DGN_rTree(?1)");
+    db.GetCachedStatement(m_rangeStmt, "SELECT ElementId FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId MATCH DGN_rTree(?1)");
     m_rangeStmt->BindInt64(1, (uint64_t) this);
     }
 
