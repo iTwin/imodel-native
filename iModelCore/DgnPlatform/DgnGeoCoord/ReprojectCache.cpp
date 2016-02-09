@@ -2,7 +2,7 @@
 |
 |   $Source: DgnGeoCoord/ReprojectCache.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #pragma  warning(disable:4189) // local variable is initialized but not referenced
@@ -14,7 +14,7 @@
 #include    <DgnPlatform/IGeoCoordReproject.h>
 #include    <DgnPlatform/Undo.h>
 
-USING_NAMESPACE_BENTLEY_DGN
+USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_USTN
 
 using namespace BentleyApi::GeoCoordinates;
@@ -40,6 +40,10 @@ class       StandardReprojectionSettings : public IGeoCoordinateReprojectionSett
     virtual bool                    ReprojectElevation()                    { return false; }
     };
 
+// used for address to pass to BeGetModuleFileName.
+static void dummy() {;}
+
+typedef DgnPlatform::IGeoCoordinateReprojectionSettingsP  (*ReprojectRefSettingsFunc)(DgnModelRefP modelRef);
 
 /*=================================================================================**//**
 * This is the class that helps with the reprojection of a cache from reference GCS to master GCS.
@@ -72,7 +76,11 @@ private:
     int                 m_domainErrors;
     int                 m_usefulRangeErrors;
     int                 m_datumConvertNotSetErrors;
+    int                 m_verticalConvertErrors;
     int                 m_otherErrors;
+
+    static bool                     s_lookedForRefReprojectionSettingsFunc;
+    static ReprojectRefSettingsFunc s_getRefReprojectionSettingsFunc;
 
 public:
 /*---------------------------------------------------------------------------------**//**
@@ -94,13 +102,10 @@ CacheReproject (DgnModelRefP refModelRef, DgnGCSP refGCS, DgnModelRefP rootModel
     m_domainErrors              = 0;
     m_usefulRangeErrors         = 0;
     m_datumConvertNotSetErrors  = 0; 
+    m_verticalConvertErrors     = 0;
     m_otherErrors               = 0;
     m_progressMeter             = DgnPlatformLib::GetHost().GetProgressMeter();
-#if defined (BEIJING_DGNPLATFORM_WIP_GEOCOORD)
-    m_reprojectionSettings      = dgnGeoCoord_getRefReprojectionSettings (refModelRef);
-#else
-    m_reprojectionSettings      = new StandardReprojectionSettings();
-#endif
+    m_reprojectionSettings      = GetRefReprojectionSettings (refModelRef);
 
     // calculate the stroke range. We use 1000 meters, and we need it in reference modelRef UORs
     double  refUorsPerMeter     = dgnModel_getUorPerMeter (refModelRef->GetDgnModelP());
@@ -141,6 +146,57 @@ virtual ~CacheReproject ()
         delete m_reprojectionSettings;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Barry.Bentley   07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnPlatform::IGeoCoordinateReprojectionSettingsP  GetRefReprojectionSettings (DgnModelRefP refModelRef)
+    {
+    FindRefReprojectionSettingsFunc();
+    if (nullptr == s_getRefReprojectionSettingsFunc)
+        return new StandardReprojectionSettings();
+
+    return s_getRefReprojectionSettingsFunc (refModelRef);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Barry.Bentley   07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+static HMODULE FindManagedDll ()
+    {
+    BeFileName  dllFileName;
+    if (SUCCESS != Bentley::BeGetModuleFileName (dllFileName, (void*)&dummy))
+        return nullptr;
+
+    WString device;
+    WString dir;
+    dllFileName.ParseName (&device, &dir, NULL, NULL);
+
+    BeFileName  managedDllName;
+    managedDllName.BuildName (device.c_str(), dir.c_str(), L"Bentley.DgnGeoCoord2", L".dll");
+
+    // Try to load the library
+    return LoadLibraryW ( managedDllName);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Barry.Bentley   07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static void FindRefReprojectionSettingsFunc()
+    {
+    // try once to find the dll and function that gets the Reprojection Settings for a given modelRef.
+    if (s_lookedForRefReprojectionSettingsFunc)
+        return;
+
+    s_lookedForRefReprojectionSettingsFunc = true;
+    s_getRefReprojectionSettingsFunc = nullptr;
+
+    HMODULE hLib;
+    if (nullptr == (hLib = FindManagedDll()))
+        return;
+
+    // Get the function pointers
+    s_getRefReprojectionSettingsFunc = (ReprojectRefSettingsFunc) GetProcAddress ( hLib, "dgnGeoCoord_getRefReprojectionSettings");
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   10/06
@@ -156,10 +212,10 @@ StatusInt DoReprojection (bool undoable, bool highFidelity)
     IDgnProgressMeter::TaskMark progressTaskMark;
     if (m_progressMeter)
         {
-        WChar msgBuf[512];
-        BaseGeoCoordResource::GetLocalizedStringW (msgBuf, DGNGEOCOORD_Msg_ReprojectingCoordinateData, _countof (msgBuf));
+        WString msgBuf;
+        BaseGeoCoordResource::GetLocalizedString (msgBuf, DGNGEOCOORD_Msg_ReprojectingCoordinateData);
         
-        progressTaskMark.Push (msgBuf);
+        progressTaskMark.Push (msgBuf.c_str());
         }
 
     uint32_t                        currentCount;
@@ -390,7 +446,7 @@ double      tolerance
 
     // calculate startPointOutUors and endPointOutUors to start the process.
     DPoint3d            startPointOutUors;
-    DPoint3d            endPointOutUors;
+    DPoint3d            endPointOutUors = DPoint3d::FromZero();
     ReprojectStatus     status = TrackErrors (m_refGCSPtr->ReprojectUors (&startPointOutUors, NULL, NULL, inUors, 1, *m_rootGCSPtr.get()));
 
     for (int iPoint=0; iPoint < (numPoints-1); iPoint++)
@@ -442,7 +498,7 @@ double      tolerance
     startPointInUors.init (inUors);
     ReprojectStatus    status = TrackErrors (m_refGCSPtr->ReprojectUors (&startPointOutUors, NULL, NULL, &startPointInUors, 1, *m_rootGCSPtr.get()));
 
-    DPoint3d    endPointOutUors;
+    DPoint3d    endPointOutUors = DPoint3d::FromZero();
     DPoint3d    endPointInUors;
     for (int iPoint=0; iPoint < (numPoints-1); iPoint++)
         {
@@ -571,6 +627,8 @@ ReprojectStatus         TrackErrors (ReprojectStatus status)
         m_datumConvertNotSetErrors++; // The actual number of occurence could be irrelevant in this case 
                                       // but it may provide an indication if multiple reference files are attached with various
                                       // GCS set which of the reference GCS is offending.
+    else if (REPROJECT_CSMAPERR_VerticalDatumConversionError == status)
+        m_verticalConvertErrors++;
     else if (REPROJECT_Success != status)
         m_otherErrors++;
 
@@ -584,8 +642,8 @@ void                    GetFinishMessages
 (
 bool*       hasWarnings,
 bool*       hasErrors,
-WChar*    message,
-WChar*    detailMessage
+WStringR    message,
+WStringR    detailMessage
 )
     {
     // report the number of points reprojected and the time it took.
@@ -596,40 +654,53 @@ WChar*    detailMessage
     *hasWarnings = (m_usefulRangeErrors > 0) || (m_otherErrors > 0) || (m_datumConvertNotSetErrors > 0);
     *hasErrors   = (m_domainErrors > 0);
 
-    WChar format[512];
-    BaseGeoCoordResource::GetLocalizedStringW (format, *hasErrors ? DGNGEOCOORD_Msg_ReprojectedPointsWithErrors : *hasWarnings ? DGNGEOCOORD_Msg_ReprojectedPointsWithWarnings : DGNGEOCOORD_Msg_ReprojectedPoints, _countof (format));
-    swprintf (message, format, fileName.c_str(), modelName, seconds);
+    WString format;
+    BaseGeoCoordResource::GetLocalizedString (format, *hasErrors ? DGNGEOCOORD_Msg_ReprojectedPointsWithErrors : *hasWarnings ? DGNGEOCOORD_Msg_ReprojectedPointsWithWarnings : DGNGEOCOORD_Msg_ReprojectedPoints);
+    message.Sprintf (format.c_str(), fileName.c_str(), modelName, seconds);
 
-    BaseGeoCoordResource::GetLocalizedStringW (format, DGNGEOCOORD_Msg_PointsReprojectedDetail, _countof (format));
-    swprintf (detailMessage, format, m_pointsReprojected, m_detailPointsAdded, m_transformsComputed);
+    BaseGeoCoordResource::GetLocalizedString (format, DGNGEOCOORD_Msg_PointsReprojectedDetail);
+    detailMessage.Sprintf (format.c_str(), m_pointsReprojected, m_detailPointsAdded, m_transformsComputed);
 
+    WString tmp;
     if (m_domainErrors > 0)
         {
-        BaseGeoCoordResource::GetLocalizedStringW (format, DGNGEOCOORD_Msg_DomainErrors, _countof (format));
-        wcscat (detailMessage, L"\n");
-        swprintf (&detailMessage[wcslen(detailMessage)], format, m_domainErrors);
+        BaseGeoCoordResource::GetLocalizedString (format, DGNGEOCOORD_Msg_DomainErrors);
+        detailMessage.append (L"\n");
+        tmp.Sprintf (format.c_str(), m_domainErrors);
+        detailMessage.append (tmp);
         }
     if (m_usefulRangeErrors > 0)
         {
-        BaseGeoCoordResource::GetLocalizedStringW (format, DGNGEOCOORD_Msg_UsefulRangeErrors, _countof (format));
-        wcscat (detailMessage, L"\n");
-        swprintf (&detailMessage[wcslen(detailMessage)], format, m_usefulRangeErrors);
+        BaseGeoCoordResource::GetLocalizedString (format, DGNGEOCOORD_Msg_UsefulRangeErrors);
+        detailMessage.append (L"\n");
+        tmp.Sprintf (format.c_str(), m_usefulRangeErrors);
+        detailMessage.append (tmp);
         }
     if (m_datumConvertNotSetErrors > 0)
         {
         // We cannot unfortunately use the complete datum error message (DGNGeoCoord_Msg_DatumError) as we do not know the
         // name of the datums for which a datum converter could not be set.
         // We use a simpler message that stipulates the number of points as an indication of the DGN model that 
-        // uses one of the datum.		
-        BaseGeoCoordResource::GetLocalizedStringW (format, DGNGEOCOORD_Msg_DatumConvertNotSetErrors, _countof (format));
-        wcscat (detailMessage, L"\n");
-        swprintf (&detailMessage[wcslen(detailMessage)], format, m_datumConvertNotSetErrors);
-       }
+        // uses one of the datum.
+        BaseGeoCoordResource::GetLocalizedString (format, DGNGEOCOORD_Msg_DatumConvertNotSetErrors);
+        detailMessage.append (L"\n");
+        tmp.Sprintf (format.c_str(), m_datumConvertNotSetErrors);
+        detailMessage.append (tmp);
+        }
+    if (m_verticalConvertErrors > 0)
+        {
+        BaseGeoCoordResource::GetLocalizedString (format, DGNGEOCOORD_Msg_VerticalConvertErrors);
+        detailMessage.append (L"\n");
+        tmp.Sprintf (format.c_str(), m_verticalConvertErrors);
+        detailMessage.append (tmp);
+        }
+
     if (m_otherErrors > 0)
         {
-        BaseGeoCoordResource::GetLocalizedStringW (format, DGNGEOCOORD_Msg_OtherErrors, _countof (format));
-        wcscat (detailMessage, L"\n");
-        swprintf (&detailMessage[wcslen(detailMessage)], format, m_otherErrors);
+        BaseGeoCoordResource::GetLocalizedString (format, DGNGEOCOORD_Msg_OtherErrors);
+        detailMessage.append (L"\n");
+        tmp.Sprintf (format.c_str(), m_otherErrors);
+        detailMessage.append (tmp);
         }
     }
 
@@ -722,14 +793,14 @@ static void reportDatumShiftError (DgnGCSP sourceGCS, DgnGCSP targetGCS, DgnMode
     // if we get here, it's because we can't create a DatumConverter. We report that error,
     // and the reference will be marked as not found.
     // report the number of points reprojected and the time it took.
-    WChar     format[512];
-    WChar     message[2048];
-    WCharCP modelName = modelRef->GetModelNameCP();
-    WString   fileName  = modelRef->GetDgnFileP()->GetFileName();
+    WString     format;
+    WString     message;
+    WCharCP     modelName = modelRef->GetModelNameCP();
+    WString     fileName  = modelRef->GetDgnFileP()->GetFileName();
 
-    BaseGeoCoordResource::GetLocalizedStringW (format, DGNGEOCOORD_Msg_DatumError, _countof (format));
-    swprintf (message, format, sourceGCS->GetDatumName(), targetGCS->GetDatumName(), fileName.c_str(), modelName);
-    NotifyMessageDetails details (MESSAGE_ERROR, message);
+    BaseGeoCoordResource::GetLocalizedString (format, DGNGEOCOORD_Msg_DatumError);
+    message.Sprintf (format, sourceGCS->GetDatumName(), targetGCS->GetDatumName(), fileName.c_str(), modelName);
+    NotifyMessageDetails details (OutputMessagePriority::Error, message.c_str());
     NotificationManager::OutputMessage (details);
     }
 
@@ -760,16 +831,16 @@ static bool designCoordinateSystemsIdentical (DgnModelP targetCache, DgnModelP s
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void getLinearTransformMessages (WCharP message, size_t messageCount, WCharP detailMessage, size_t detailMessageCount, DgnModelRefP modelRef)
+static void getLinearTransformMessages (WStringR message, WStringR detailMessage, DgnModelRefP modelRef)
     {
-    WChar     format[512];
-    WCharCP   modelName = modelRef->GetModelNameCP();
+    WString     format;
+    WCharCP     modelName = modelRef->GetModelNameCP();
     WString     fileName  = modelRef->GetDgnFileP()->GetFileName();
 
     // mark it as reprojected, even though no reprojection was actually required.
-    BaseGeoCoordResource::GetLocalizedStringW (format, DGNGEOCOORD_Msg_SubstituteLinearTransform, _countof (format));
-    swprintf (message, format, fileName.c_str(), modelName);
-    BaseGeoCoordResource::GetLocalizedStringW (detailMessage, DGNGEOCOORD_Msg_SubstituteLinearTransformDetails, detailMessageCount);
+    BaseGeoCoordResource::GetLocalizedString (format, DGNGEOCOORD_Msg_SubstituteLinearTransform);
+    message.Sprintf (format, fileName.c_str(), modelName);
+    BaseGeoCoordResource::GetLocalizedString (detailMessage, DGNGEOCOORD_Msg_SubstituteLinearTransformDetails);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -803,10 +874,10 @@ void DgnGeoCoordinationAdmin::_OnPostModelFill (DgnModelR cache, DgnModelFillCon
     if ( (ATTACHMETHOD_Unknown == refP->GetAttachMethod()) && !untransformedAttachment (refElementReprojected, refP->GetParentModelRefP(), refP))
         return;
 
-    // if the GeoHandling of the root is set to anything other than DGNMODEL_GeoAttachmentHandling_Default, don't attempt to reproject.
-    // By default, DgnModels opened with mdlModelRef_createWorking are set to DGNMODEL_GeoAttachmentHandling_DontReproject.
+    // if the GeoHandling of the root is set to anything other than GeoAttachmentHandling::Default, don't attempt to reproject.
+    // By default, DgnModels opened with mdlModelRef_createWorking are set to GeoAttachmentHandling::DoNotReproject.
     DgnModelP   rootModel;
-    if ( (NULL != (rootModel = refP->GetRoot())) && (DGNMODEL_GeoAttachmentHandling_Default != rootModel->GetGeoAttachmentHandling()) )
+    if ( (NULL != (rootModel = refP->GetRoot())) && (GeoAttachmentHandling::Default != rootModel->GetGeoAttachmentHandling()) )
         return;
 
     // start non-undoble txn
@@ -832,8 +903,8 @@ void DgnGeoCoordinationAdmin::_OnPostModelFill (DgnModelR cache, DgnModelFillCon
         }
 
     DgnGCSP     sourceGCS;
-    WChar       message[2048];
-    WChar       detailMessage[2048];
+    WString     message;
+    WString     detailMessage;
     // if we've just filled a reference modelRef cache, see if both it and the master file have a coordinate system.
     if (NULL != (sourceGCS = DgnGCS::FromModel (refP, true)))
         {
@@ -853,8 +924,8 @@ void DgnGeoCoordinationAdmin::_OnPostModelFill (DgnModelR cache, DgnModelFillCon
         // if the coordinate systems are the same, we don't have to reproject.
         if (dgnGeoCoord_canSubstituteLinearTransformForReprojection (refP, &cache, sourceGCS, targetModelRef, targetGCS))
             {
-            getLinearTransformMessages (message, _countof (message), detailMessage, _countof (detailMessage), refP);
-            NotifyMessageDetails details (MESSAGE_INFO, message, detailMessage);
+            getLinearTransformMessages (message, detailMessage, refP);
+            NotifyMessageDetails details (OutputMessagePriority::Info, message.c_str(), detailMessage.c_str());
             NotificationManager::OutputMessage (details);
             return;
             }
@@ -873,7 +944,7 @@ void DgnGeoCoordinationAdmin::_OnPostModelFill (DgnModelR cache, DgnModelFillCon
         bool        hasWarnings;
         bool        hasErrors;
         reprojector.GetFinishMessages (&hasWarnings, &hasErrors, message, detailMessage);
-        NotifyMessageDetails details (hasErrors ? (MESSAGE_ERROR) : hasWarnings ? MESSAGE_WARNING : MESSAGE_INFO, message, detailMessage);
+        NotifyMessageDetails details (hasErrors ? (OutputMessagePriority::Error) : hasWarnings ? OutputMessagePriority::Warning : OutputMessagePriority::Info, message.c_str(), detailMessage.c_str());
         NotificationManager::OutputMessage (details);
         }
     }
@@ -950,7 +1021,7 @@ bool DgnGeoCoordinationAdmin::_CanShareDgnFile (DgnFileR testDgnFile, DgnAttachm
         return true;
 
     // if the cache isn't filled, we're going through the cache reload associated with changing the reprojection option.
-    if (!dgnModel_isFilled (refCache, DGNMODEL_SECTION_CONTROL_ELMS) && (ATTACHMETHOD_GeographicProjected == refP.GetAttachMethod()))
+    if (!dgnModel_isFilled (refCache, DgnModelSections::ControlElements) && (ATTACHMETHOD_GeographicProjected == refP.GetAttachMethod()))
         return false;
 
     DgnGCSP     sourceGCS;
@@ -989,12 +1060,15 @@ DGNPLATFORM_EXPORT StatusInt dgnGeoCoord_reprojectToGCS (DgnModelRefP modelRef, 
         {
         bool        hasWarnings;
         bool        hasErrors;
-        WChar       message[2048];
-        WChar       detailMessage[2048];
+        WString     message;
+        WString     detailMessage;
         reprojector.GetFinishMessages (&hasWarnings, &hasErrors, message, detailMessage);
-        NotifyMessageDetails details (hasErrors ? (MESSAGE_ERROR) : hasWarnings ? MESSAGE_WARNING : MESSAGE_INFO, message, detailMessage);
+        NotifyMessageDetails details (hasErrors ? (OutputMessagePriority::Error) : hasWarnings ? OutputMessagePriority::Warning : OutputMessagePriority::Info, message.c_str(), detailMessage.c_str());
         NotificationManager::OutputMessage (details);
         }
 
     return SUCCESS;
     }
+
+bool                        CacheReproject::s_lookedForRefReprojectionSettingsFunc;
+ReprojectRefSettingsFunc    CacheReproject::s_getRefReprojectionSettingsFunc;
