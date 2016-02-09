@@ -26,4 +26,5 @@ JoinedTableECDbMapStrategyTests.PolymorphicRelationshipWithStandAloneClass
 #TFS 368922
 ECDbMappingTestFixture.RelationshipWithAbstractConstraintClassAndNoSubclasses
 
+#TFS 369937
 ECDbRelationshipsIntegrityTests.BackwardEmbeddingRelationshipsTest
