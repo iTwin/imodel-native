@@ -427,7 +427,7 @@ StatusInt ViewContext::_OutputGeometry(GeometrySourceCR source)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_AddSubGraphic(Render::GraphicR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams)
+Render::GraphicPtr ViewContext::_AddSubGraphic(Render::GraphicR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams)
     {
     ElementAlignedBox3d localRange;
     Render::GraphicPtr  partGraphic = _GetCachedPartGraphic(partId, graphic.GetPixelSize(), localRange);
@@ -444,19 +444,21 @@ void ViewContext::_AddSubGraphic(Render::GraphicR graphic, DgnGeometryPartId par
             collection.Draw(*partGraphic, *this, geomParams, false);
             
             if (WasAborted()) // if we aborted, the graphic may not be complete, don't save it
-                return;
+                return nullptr;
 
             _SavePartGraphic(partId, *partGraphic, partGeometry->GetBoundingBox());
             }
         }
 
     if (!partGraphic.IsValid())
-        return;
+        return nullptr;
 
     // NOTE: Need to cook GeometryParams to get GraphicParams, but we don't want to activate and bake into our QvElem...
     GraphicParams graphicParams;
     _CookGeometryParams(geomParams, graphicParams);
     graphic.AddSubGraphic(*partGraphic, subToGraphic, graphicParams);
+
+    return partGraphic;
     }
 
 /*---------------------------------------------------------------------------------**//**

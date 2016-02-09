@@ -279,14 +279,25 @@ public:
 };
 
 //=======================================================================================
+//! Defines a view of a 3d model.
+// @bsiclass                                                      Shaun.Sewall    02/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE ViewDefinition3d : ViewDefinition
+{
+    DEFINE_T_SUPER(ViewDefinition);
+protected:
+    explicit ViewDefinition3d(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
 //! Defines a view of one or more SpatialModels.
 //! The list of viewed models is stored in the view's settings in the DgnDb's settings
 //! table.
 // @bsiclass                                                      Paul.Connelly   10/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SpatialViewDefinition : ViewDefinition
+struct EXPORT_VTABLE_ATTRIBUTE SpatialViewDefinition : ViewDefinition3d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialViewDefinition, ViewDefinition);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialViewDefinition, ViewDefinition3d);
 public:
     //! Parameters for initializing a SpatialViewDefinition
     struct CreateParams : T_Super::CreateParams

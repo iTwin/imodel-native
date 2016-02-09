@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: PublicAPI/DgnPlatform/Annotations/AnnotationLeaderLayout.h $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 #pragma once
 
@@ -42,6 +42,7 @@ private:
     DGNPLATFORM_EXPORT void Update();
 
 public:
+    DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
     DGNPLATFORM_EXPORT AnnotationLeaderLayout(AnnotationLeaderCR, AnnotationFrameLayoutCR);
     AnnotationLeaderLayout(AnnotationLeaderLayoutCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
     AnnotationLeaderLayoutR operator=(AnnotationLeaderLayoutCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}

@@ -127,24 +127,6 @@
         </ECProperty>
     </ECStructClass>
 
-    <ECEntityClass typeName="CodedEntity" modifier="Abstract">
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <Indexes>
-                    <DbIndex>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
-                            <string>Code.AuthorityId</string>
-                            <string>Code.Namespace</string>
-                            <string>Code.Value</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
-            </ClassMap>
-        </ECCustomAttributes>
-        <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
-    </ECEntityClass>
-
     <ECRelationshipClass typeName="AuthorityIssuesElementCode" description="Element has a code which was issued by the given authority" strength="referencing">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
@@ -198,7 +180,6 @@
     </ECRelationshipClass>
 
     <ECEntityClass typeName="Model" modifier="Abstract">
-        <BaseClass>CodedEntity</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00">
                 <Restrictions>
@@ -206,13 +187,24 @@
                 </Restrictions>
             </ClassHasHandler>
             <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <MapStrategy>
                     <Strategy>SharedTable</Strategy>
                     <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+                <Indexes>
+                    <DbIndex>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>Code.AuthorityId</string>
+                            <string>Code.Namespace</string>
+                            <string>Code.Value</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
             </ClassMap>
         </ECCustomAttributes>
+        <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
         <ECProperty propertyName="Label" typeName="string"/>
         <ECProperty propertyName="Properties" typeName="string"/>
         <ECProperty propertyName="Visibility" typeName="int"/>
@@ -318,19 +310,25 @@
     </ECRelationshipClass>
 
     <ECEntityClass typeName="Element" modifier="Abstract">
+        <!-- NOTE: Only platform can directly subclass from Element. Everyone else should pick the most appropriate superclass. -->
         <!-- NOTE: Element subclasses should drop the "Element" suffix from their name once the concept becomes "user facing" -->
-        <BaseClass>CodedEntity</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Strategy>SharedTable</Strategy>
                     <AppliesToSubclasses>True</AppliesToSubclasses>
-                    <Options>JoinedTablePerDirectSubclass</Options>
                 </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <Indexes>
                     <DbIndex>
-                        <Name>idx_dgn_Element_ParentId</Name>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>Code.AuthorityId</string>
+                            <string>Code.Namespace</string>
+                            <string>Code.Value</string>
+                        </Properties>
+                    </DbIndex>
+                    <DbIndex>
                         <IsUnique>False</IsUnique>
                         <Properties>
                             <string>ParentId</string>
@@ -338,14 +336,12 @@
                         <Where>IndexedColumnsAreNotNull</Where>
                     </DbIndex>
                     <DbIndex>
-                        <Name>idx_dgn_Element_ModelId</Name>
                         <IsUnique>False</IsUnique>
                         <Properties>
                             <string>ModelId</string>
                         </Properties>
                     </DbIndex>
                     <DbIndex>
-                        <Name>idx_dgn_Element_Label</Name>
                         <IsUnique>False</IsUnique>
                         <Properties>
                             <string>Label</string>
@@ -359,6 +355,7 @@
             </ClassHasCurrentTimeStampProperty>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
+        <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
         <ECProperty propertyName="ModelId" typeName="long">
             <!-- Foreign key relationship: ModelContainsElements.ModelId -->
             <ECCustomAttributes>
@@ -394,16 +391,37 @@
         </ECProperty>
     </ECEntityClass>
 
-    <ECEntityClass typeName="DefinitionElement" modifier="Abstract">
+    <ECEntityClass typeName="InformationElement" modifier="Abstract">
         <BaseClass>Element</BaseClass>
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Options>JoinedTablePerDirectSubclass</Options>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="DefinitionElement" modifier="Abstract">
+        <BaseClass>InformationElement</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="DictionaryElement" modifier="Abstract">
         <BaseClass>DefinitionElement</BaseClass>
     </ECEntityClass>
+    <ECEntityClass typeName="GeometricElement" modifier="Abstract">
+        <BaseClass>Element</BaseClass>
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Options>JoinedTablePerDirectSubclass</Options>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
     <ECEntityClass typeName="GeometricElement3d" modifier="Abstract">
         <!-- Base class for elements with 3d geometry -->
-        <BaseClass>Element</BaseClass> <!-- WIP: should inherit from GeometricElement, waiting for table split control -->
+        <BaseClass>GeometricElement</BaseClass> <!-- WIP: should inherit from GeometricElement, waiting for table split control -->
         <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
             <ClassMap xmlns="ECDbMap.01.00">
                 <Indexes>
                     <DbIndex>
@@ -423,7 +441,7 @@
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="GeometryStream" typeName="binary"/>
-        <ECProperty propertyName="InPhysicalSpace" typeName="boolean"/>
+        <ECProperty propertyName="InSpatialIndex" typeName="boolean"/>
         <ECProperty propertyName="Origin" typeName="point3d" />
         <ECProperty propertyName="Yaw" typeName="double" />
         <ECProperty propertyName="Pitch" typeName="double" />
@@ -451,13 +469,6 @@
         <!-- A SpatialElement that identifies a "tracked" real world location but has no mass and cannot be "touched" -->
         <BaseClass>SpatialElement</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="SpatialGroupElement">
-        <!-- A SpatialElement that groups other SpatialElements using the ElementGroupsMembers relationship -->
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
-        </ECCustomAttributes>
-        <BaseClass>SpatialElement</BaseClass>
-    </ECEntityClass>
     <ECEntityClass typeName="VolumeElement">
         <!-- A SpatialLocationElement that defines a volume -->
         <ECCustomAttributes>
@@ -467,8 +478,9 @@
     </ECEntityClass>
     <ECEntityClass typeName="GeometricElement2d" modifier="Abstract">
         <!-- Base class for elements with 2d geometry -->
-        <BaseClass>Element</BaseClass> <!-- WIP: should inherit from GeometricElement, waiting for table split control -->
+        <BaseClass>GeometricElement</BaseClass> <!-- WIP: should inherit from GeometricElement, waiting for table split control -->
         <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
             <ClassMap xmlns="ECDbMap.01.00">
                 <Indexes>
                     <DbIndex>
@@ -495,9 +507,6 @@
     </ECEntityClass>
     <ECEntityClass typeName="GraphicalElement2d">
         <!-- 2D geometric element that is used to convey information within graphical presentations (like drawings). -->
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
-        </ECCustomAttributes>
         <BaseClass>GeometricElement2d</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="AnnotationElement">
@@ -509,13 +518,6 @@
     </ECEntityClass>
     <ECEntityClass typeName="DrawingElement">
         <!-- 2D element used in drawings -->
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
-        </ECCustomAttributes>
-        <BaseClass>GraphicalElement2d</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="SheetElement">
-        <!-- 2D element used in sheets -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
@@ -724,7 +726,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>SheetElement</BaseClass>
+        <BaseClass>GraphicalElement2d</BaseClass>
         <ECProperty propertyName="ViewId" typeName="long">
             <!-- Foreign key relationship: ViewIsAttached.ViewId -->
             <!-- Should have IsNullable=False but shared table... -->
@@ -1131,8 +1133,11 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="SpatialViewDefinition">
+    <ECEntityClass typeName="ViewDefinition3d" modifier="Abstract">
         <BaseClass>ViewDefinition</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="SpatialViewDefinition">
+        <BaseClass>ViewDefinition3d</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
@@ -1209,13 +1214,13 @@
     <!-- // DgnDb "implementation detail" classes -->
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
 
-    <ECEntityClass typeName="ElementRTree">
+    <ECEntityClass typeName="SpatialIndex">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Strategy>ExistingTable</Strategy>
                 </MapStrategy>
-                <TableName>dgn_RTree3d</TableName>
+                <TableName>dgn_SpatialIndex</TableName> <!-- Must match DGN_VTABLE_SpatialIndex #define -->
                 <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
@@ -1228,12 +1233,22 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="GeometryPart">
-        <BaseClass>CodedEntity</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+                <Indexes>
+                    <DbIndex>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>Code.AuthorityId</string>
+                            <string>Code.Namespace</string>
+                            <string>Code.Value</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
             </ClassMap>
         </ECCustomAttributes>
+        <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
         <ECProperty propertyName="GeometryStream" typeName="binary">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">

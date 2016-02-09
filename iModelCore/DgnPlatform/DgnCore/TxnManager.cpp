@@ -327,8 +327,8 @@ BentleyStatus TxnManager::DoPropagateChanges(ChangeTracker& tracker)
 TxnManager::TrackChangesForTable TxnManager::_FilterTable(Utf8CP tableName)
     {
     // Skip the range tree tables - they hold redundant data that will be automatically updated when the changeset is applied.
-    // They all start with the string defined by DGN_VTABLE_RTree3d
-    if (0 == strncmp(DGN_VTABLE_RTree3d, tableName, sizeof(DGN_VTABLE_RTree3d)-1))
+    // They all start with the string defined by DGN_VTABLE_SpatialIndex
+    if (0 == strncmp(DGN_VTABLE_SpatialIndex, tableName, sizeof(DGN_VTABLE_SpatialIndex)-1))
         return  TrackChangesForTable::No;
 
     if (0 == strncmp(DGN_TABLE_Txns, tableName, sizeof(DGN_TABLE_Txns)-1))

@@ -8,6 +8,7 @@
 declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ 
 {
     /*** BEGIN_FORWARD_DECLARATIONS ***/
+    class Transform { /*** NATIVE_TYPE_NAME = JsTransform ***/ }
     class DPoint3d { /*** NATIVE_TYPE_NAME = JsDPoint3d ***/ }
     class YawPitchRollAngles { /*** NATIVE_TYPE_NAME = JsYawPitchRollAngles ***/ }
     class SolidPrimitive extends Geometry { /*** NATIVE_TYPE_NAME = JsSolidPrimitive ***/ }
@@ -16,6 +17,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     class Geometry { /*** NATIVE_TYPE_NAME = JsGeometry ***/ }
     /*** END_FORWARD_DECLARATIONS ***/
 
+    type TransformP             = cxx_pointer<Transform>;
     type DPoint3dP              = cxx_pointer<DPoint3d>;
     type YawPitchRollAnglesP    = cxx_pointer<YawPitchRollAngles>;
     type SolidPrimitiveP        = cxx_pointer<SolidPrimitive>;
@@ -239,6 +241,12 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
         /** Get the placement of this element */
         Placement : Placement3dP;
+
+        /** Transform the element's Placement 
+         * @param transform The transform to apply to the element's Placement. The transform must be pure rotation and/or translation.
+         * @return non-zero error status if the element could not be transformed or if \a transform is invalid.
+        */
+        Transform(transform: TransformP): cxx_int32_t;
 
         /**
          * Create a new PhysicalElement

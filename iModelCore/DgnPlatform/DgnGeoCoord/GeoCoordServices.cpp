@@ -2,7 +2,7 @@
 |
 |   $Source: DgnGeoCoord/GeoCoordServices.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -12,13 +12,15 @@
 #include <DgnPlatform/GeoCoordErrors.h>
 #include <csmap/cs_map.h>
 #include "GeoCoordElement.h"
-#include <GeoCoord/GCSLibrary.h>
+
+
 
 USING_NAMESPACE_BENTLEY
-USING_NAMESPACE_BENTLEY_DGN
+USING_NAMESPACE_BENTLEY_DGNPLATFORM
 using namespace BentleyApi::GeoCoordinates;
 
 namespace {
+
 
 /*=================================================================================**//**
 * This is the class that implements geocoordinate reference interface.
@@ -26,6 +28,8 @@ namespace {
 +===============+===============+===============+===============+===============+======*/
 class   GeoCoordinateServices : public IGeoCoordinateServices
 {
+
+
 public:
 
 /*---------------------------------------------------------------------------------**//**

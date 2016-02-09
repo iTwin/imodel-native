@@ -276,7 +276,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
                 Code.AuthorityId;NULL;1
                 Code.Namespace;NULL;""
                 Geometry;NULL;...
-                InPhysicalSpace;NULL;1
+                InSpatialIndex;NULL;1
                 LastMod;NULL;2.4574e+006
                 ModelId;NULL;1099511627777
                 Origin.X;NULL;0
@@ -359,7 +359,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
                 Code.AuthorityId;1;NULL
                 Code.Namespace;"";NULL
                 Geometry;...;NULL
-                InPhysicalSpace;1;NULL
+                InSpatialIndex;1;NULL
                 LastMod;2.4574e+006;NULL
                 ModelId;1099511627777;NULL
                 Origin.X;0;NULL
@@ -446,7 +446,7 @@ ndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
                 Code.AuthorityId;NULL;1
                 Code.Namespace;NULL;""
                 Geometry;NULL;...
-                InPhysicalSpace;NULL;1
+                InSpatialIndex;NULL;1
                 LastMod;NULL;2.4574e+006
                 ModelId;NULL;1099511627777
                 Origin.X;NULL;0
@@ -530,7 +530,7 @@ ndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
                 Code.AuthorityId;NULL;1
                 Code.Namespace;NULL;""
                 Geometry;NULL;...
-                InPhysicalSpace;NULL;1
+                InSpatialIndex;NULL;1
                 LastMod;NULL;2.4574e+006
                 ModelId;NULL;1099511627777
                 Origin.X;NULL;0
