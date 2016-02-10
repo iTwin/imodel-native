@@ -97,7 +97,7 @@ public:
     int GetCount() const {return m_nEntries;}
     void InitRange(uint64_t min, uint64_t max) const {m_range.Init(min, max); m_isSloppy = false;}
     void InitRange() const {InitRange(ULLONG_MAX, 0);}
-    void GetExactNodeRange(ElemIdRange& range) const {CheckSloppy(); range = m_range;}
+    ElemIdRange const& GetExactNodeRange() const {CheckSloppy(); return m_range;}
     void SetNodeRange(ElemIdRange const& range) const { m_range = range; m_isSloppy = false; }
     void SetLastUnReferenced(uint64_t val) {m_lastUnreferenced=val; m_allReferenced=false;}
     uint64_t GetLastUnReferenced() const {return m_lastUnreferenced;}
@@ -286,7 +286,7 @@ ElemPurge ElemIdLeafNode::_Purge(int64_t memTarget)
 
     for (;curr < end; ++curr)
         {
-        if (0 ==(*curr)->GetRefCount()) // is the element garbage?
+        if (0 == (*curr)->GetRefCount()) // is the element garbage?
             {
             //  Do not kill the element here.  If the element's app data holds a reference to another
             //  element -- possibly a symbol element -- killing the element here may cause the reference
@@ -303,7 +303,7 @@ ElemPurge ElemIdLeafNode::_Purge(int64_t memTarget)
     m_allReferenced = true;      // since we know we've eliminated any garbage entries, mark this node as "all referenced"
     m_nEntries =(int)(used - m_elems);
 
-    // this call deletes the element data, and all its AppData (e.g. XAttributes). It also keeps the total element/bytes count up to date.
+    // this call deletes the element data, and all its AppData. It also keeps the total element/bytes count up to date.
     for (unsigned i = 0; i < killedIndex; i++)
         m_treeRoot.KillElement(*killed[i]);
 
@@ -334,8 +334,7 @@ ElemPurge ElemIdInternalNode::_Drop(uint64_t key)
     for (unsigned index = 0; index <(unsigned)m_nEntries; ++index)
         {
         ElemIdRangeNodeP node = m_children[index];
-        ElemIdRange  currRange;
-        node->GetExactNodeRange(currRange);
+        ElemIdRange const& currRange = node->GetExactNodeRange();
 
         if (key >= currRange.m_low && key <= currRange.m_high)
             {
@@ -569,8 +568,7 @@ ElemIdRangeNodeP ElemIdInternalNode::ChooseBestNode(uint64_t key)
 
     for (ElemIdRangeNodeH curr = FirstEntry(), last = LastEntry(); curr <= last ; ++curr)
         {
-        ElemIdRange  thisRange;
-        (*curr)->GetExactNodeRange(thisRange);
+        ElemIdRange const& thisRange = (*curr)->GetExactNodeRange();
 
         if (key >= thisRange.m_low)
             {
@@ -602,8 +600,7 @@ DgnElementCP ElemIdInternalNode::FindInternal(uint64_t key, bool setFreeEntryFla
         {
         int index = begin +(end - begin - 1)/2;
 
-        ElemIdRange  thisRange;
-        m_children[index]->GetExactNodeRange(thisRange);
+        ElemIdRange const& thisRange = m_children[index]->GetExactNodeRange();
 
         if (key < thisRange.m_low)
             end = index;
@@ -641,15 +638,13 @@ void ElemIdInternalNode::_AddChildNode(ElemIdRangeNodeP newNode)
 
     newNode->SetParent(this);
 
-    ElemIdRange   range;
-    newNode->GetExactNodeRange(range);
+    ElemIdRange const& range = newNode->GetExactNodeRange();
     m_range.Extend(range);
 
     int index = 0;
     for (; index <m_nEntries; index++)
         {
-        ElemIdRange   thisRange;
-        m_children[index]->GetExactNodeRange(thisRange);
+        ElemIdRange const& thisRange = m_children[index]->GetExactNodeRange();
 
         if (range.m_high <= thisRange.m_low)
             {
@@ -711,10 +706,9 @@ void ElemIdInternalNode::_CalculateNodeRange() const
     {
     InitRange();
 
-    ElemIdRange currRange;
     for (ElemIdRangeNodeCH curr = FirstEntryC(), last = LastEntryC(); curr <= last ; ++curr)
         {
-        (*curr)->GetExactNodeRange(currRange);
+        ElemIdRange const& currRange = (*curr)->GetExactNodeRange();
         m_range.Extend(currRange);
         }
     }
@@ -806,15 +800,13 @@ void ElemIdTree::FreeNode(ElemIdRangeNodeP child, bool leaf)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElemIdTree::_AddChildNode(ElemIdRangeNodeP newNode)
     {
-    ElemIdRange          range;
     ElemIdRangeNodeP     currentRoot = m_root;
     ElemIdInternalNode*  newRoot;
 
     newRoot = new((ElemIdInternalNode*) m_internalPool.malloc()) ElemIdInternalNode(*this, this);
     newRoot->_AddChildNode(newNode);
 
-    newNode->GetExactNodeRange(range);
-    newRoot->SetNodeRange(range);
+    newNode->GetExactNodeRange();
 
     if (nullptr != currentRoot)
         newRoot->_AddChildNode(currentRoot);

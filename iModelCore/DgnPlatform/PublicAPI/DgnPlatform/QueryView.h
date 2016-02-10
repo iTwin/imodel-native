@@ -27,48 +27,59 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
     friend struct DgnQueryQueue::Task;
 
     //=======================================================================================
+    // The Ids of elements that are somehow treated specially for a DgnQueryView
     // @bsiclass                                                    Keith.Bentley   02/16
     //=======================================================================================
-    struct RTreeQuery
+    struct SpecialElements
+    {
+        DgnElementIdSet m_always;
+        DgnElementIdSet m_never;
+        bool IsEmpty() const {return m_always.empty() && m_never.empty();}
+    };
+    
+    //=======================================================================================
+    // A query that uses the BeSQLite spatial index
+    // @bsiclass                                                    Keith.Bentley   02/16
+    //=======================================================================================
+    struct SpatialQuery
     {
         BeSQLite::CachedStatementPtr m_rangeStmt;
         BeSQLite::CachedStatementPtr m_viewStmt;
-        DgnElementIdSet const* m_neverDrawn;
+        SpecialElements const* m_special;
         int m_idCol = 0;
         virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) = 0;
         DgnElementId StepRtree();
         bool TestElement(DgnElementId);
         void Start(DgnQueryViewCR);
-        RTreeQuery(DgnElementIdSet const* ignore) : m_neverDrawn(ignore) 
-            {
-            if (m_neverDrawn && m_neverDrawn->empty())
-                m_neverDrawn=nullptr;
-            }
+        bool IsNever(DgnElementId id) const {return m_special && m_special->m_never.Contains(id);}
+        bool IsAlways(DgnElementId id) const {return m_special && m_special->m_always.Contains(id);}
+        bool HasAlways() const {return m_special && !m_special->m_always.empty();}
+        SpatialQuery(SpecialElements const* special) {m_special = (special && !special->IsEmpty()) ? special : nullptr;}
     };
 
-    typedef bmultimap<double, DgnElementId> OcclusionScores;
-    
     //! Holds the results of a query.
     struct QueryResults : RefCounted<NonCopyableClass>
     {
+        typedef bmultimap<double, DgnElementId> OcclusionScores;
         bool m_incomplete = false;
         OcclusionScores m_scores;
         uint32_t GetCount() const {return (uint32_t) m_scores.size();}
     };
     typedef RefCountedPtr<QueryResults> QueryResultsPtr;
 
-    struct Clips : ConvexClipPlaneSet
+    //! clip planes for frustum
+    struct FrustumClips : ConvexClipPlaneSet
     {
         void AddFrustum(FrustumCR frustum);
-        BeSQLite::RTreeMatchFunction::Within TestBox(DPoint3d*);
+        BeSQLite::RTreeMatchFunction::Within TestBox(FrustumCR); // test all 8 points of a frustum
     };
 
     //=======================================================================================
     // @bsiclass                                                    Keith.Bentley   02/16
     //=======================================================================================
-    struct RangeQuery : RTreeQuery, DgnQueryQueue::Task
+    struct RangeQuery : SpatialQuery, DgnQueryQueue::Task
     {
-        DEFINE_T_SUPER(RTreeQuery)
+        DEFINE_T_SUPER(SpatialQuery)
         bool        m_depthFirst = false;
         bool        m_cameraOn = false;
         bool        m_testLOD = false;
@@ -79,8 +90,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
         uint64_t    m_lastId = 0;
         BeSQLite::RTree3dVal m_boundingRange;    // only return entries whose range intersects this cube.
         BeSQLite::RTree3dVal m_backFace;
-        
-        Clips       m_clips;
+        FrustumClips m_clips;
         Frustum     m_frustum;
         DMatrix4d   m_localToNpc;
         DVec3d      m_viewVec;  // vector from front face to back face
@@ -88,15 +98,17 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
         double      m_lodFilterNPCArea = 0.0;
         double      m_minScore = 0.0;
         double      m_lastScore = 0.0;
+        DgnQueryView::QueryResultsPtr m_results;
 
         virtual void _Go() override;
         virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
+        void AddAlwaysDrawn(DgnQueryViewCR);
         bool SkewTest(BeSQLite::RTree3dValCP testRange);
         void SetDepthFirst() {m_depthFirst=true;}
         void SetTestLOD(bool onOff) {m_testLOD=onOff;}
         void SetSizeFilter(DgnViewportCR, double size);
         bool ComputeNPC(DPoint3dR npcOut, DPoint3dCR localIn);
-        bool ComputeOcclusionScore(double* score, bool& overlap, bool& spansEyePlane, DPoint3dCP localCorners);
+        bool ComputeOcclusionScore(double& score, FrustumCR);
         void SetFrustum(FrustumCR);
     
     public:
@@ -131,15 +143,13 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
     };
 
 protected:
-    bool m_forceNewQuery;
+    bool m_forceNewQuery = false;
+    bool m_noQuery = false;
     mutable bool m_abortQuery;
     Utf8String m_viewSQL;
-
-    DgnElementIdSet m_alwaysDrawn;
-    DgnElementIdSet m_neverDrawn;
+    SpecialElements m_special;
     mutable QueryResultsPtr m_results;
 
-    void SearchIdSet(DgnElementIdSet&, RangeQuery&);
     void QueryModelExtents(DRange3dR, DgnViewportR);
     void QueueQuery(DgnViewportR, UpdatePlan::Query const&);
     void AddtoSceneQuick(SceneContextR context, SceneMembers&, QueryResults& results);
@@ -183,7 +193,7 @@ public:
     DGNPLATFORM_EXPORT ~DgnQueryView();
 
     //! Get the list of elements that are always drawn
-    DgnElementIdSet const& GetAlwaysDrawn() {return m_alwaysDrawn;}
+    DgnElementIdSet const& GetAlwaysDrawn() {return m_special.m_always;}
 
     //! Establish a set of elements that are always drawn in the view.
     DGNPLATFORM_EXPORT void SetAlwaysDrawn(DgnElementIdSet const&, bool exclusive);
@@ -193,7 +203,7 @@ public:
     //! Get the list of elements that are never drawn.
     //! @remarks An element in the never-draw list is excluded regardless of whether or not it is 
     //! in the always-draw list. That is, the never-draw list gets priority over the always-draw list.
-    DgnElementIdSet const& GetNeverDrawn() {return m_neverDrawn;}
+    DgnElementIdSet const& GetNeverDrawn() {return m_special.m_never;}
 
     DGNPLATFORM_EXPORT void SetNeverDrawn(DgnElementIdSet const&);
     DGNPLATFORM_EXPORT void ClearNeverDrawn();

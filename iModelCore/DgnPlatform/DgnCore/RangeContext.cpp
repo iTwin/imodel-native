@@ -910,6 +910,7 @@ StatusInt _VisitGeometry(GeometrySourceCR source) override
         return SUCCESS;
 
     // NOTE: Can just draw bounding box instead of drawing element geometry...
+    DPoint3d corners[8];
     range.Get8Corners(corners);
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     m_fitRange.Union (8, corners, GetCurrRangeClip());

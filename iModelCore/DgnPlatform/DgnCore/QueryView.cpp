@@ -24,7 +24,7 @@ static const double   s_cameraLimit = 1.0E-5;
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/11
 //=======================================================================================
-struct RTreeFitFilter : DgnQueryView::RTreeQuery
+struct RTreeFitFilter : DgnQueryView::SpatialQuery
     {
     DRange3d m_fitRange;
     DRange3d m_lastRange;
@@ -32,46 +32,35 @@ struct RTreeFitFilter : DgnQueryView::RTreeQuery
     virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
 
 public:
-    RTreeFitFilter(DgnElementIdSet const* ignore) : DgnQueryView::RTreeQuery(ignore) {m_fitRange = DRange3d::NullRange();}
+    RTreeFitFilter(DgnQueryView::SpecialElements const* special) : DgnQueryView::SpatialQuery(special) {m_fitRange = DRange3d::NullRange();}
     DRange3dCR GetRange() const {return m_fitRange;}
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct CornerBox
+struct CornerBox : Frustum
 {
-    DPoint3d m_corner[8];
     CornerBox(RTree3dValCR from)
         {
-        m_corner[0].x = m_corner[3].x = m_corner[4].x = m_corner[7].x = from.m_minx;   //       7+------+6
-        m_corner[1].x = m_corner[2].x = m_corner[5].x = m_corner[6].x = from.m_maxx;   //       /|     /|
-                                                                                       //      / |    / |
-        m_corner[0].y = m_corner[1].y = m_corner[4].y = m_corner[5].y = from.m_miny;   //     / 4+---/--+5
-        m_corner[2].y = m_corner[3].y = m_corner[6].y = m_corner[7].y = from.m_maxy;   //   3+------+2 /    y   z
-                                                                                       //    | /    | /     |  /
-        m_corner[0].z = m_corner[1].z = m_corner[2].z = m_corner[3].z = from.m_minz;   //    |/     |/      |/
-        m_corner[4].z = m_corner[5].z = m_corner[6].z = m_corner[7].z = from.m_maxz;   //   0+------+1      *---x
+        m_pts[0].x = m_pts[3].x = m_pts[4].x = m_pts[7].x = from.m_minx;   //       7+------+6
+        m_pts[1].x = m_pts[2].x = m_pts[5].x = m_pts[6].x = from.m_maxx;   //       /|     /|
+                                                                           //      / |    / |
+        m_pts[0].y = m_pts[1].y = m_pts[4].y = m_pts[5].y = from.m_miny;   //     / 4+---/--+5
+        m_pts[2].y = m_pts[3].y = m_pts[6].y = m_pts[7].y = from.m_maxy;   //   3+------+2 /    y   z
+                                                                           //    | /    | /     |  /
+        m_pts[0].z = m_pts[1].z = m_pts[2].z = m_pts[3].z = from.m_minz;   //    |/     |/      |/
+        m_pts[4].z = m_pts[5].z = m_pts[6].z = m_pts[7].z = from.m_maxz;   //   0+------+1      *---x
         }
     
     CornerBox(DRange3dCR range)
         {
-        m_corner[0].x = m_corner[3].x = m_corner[4].x = m_corner[7].x = range.low.x; 
-        m_corner[1].x = m_corner[2].x = m_corner[5].x = m_corner[6].x = range.high.x;
-        m_corner[0].y = m_corner[1].y = m_corner[4].y = m_corner[5].y = range.low.y; 
-        m_corner[2].y = m_corner[3].y = m_corner[6].y = m_corner[7].y = range.high.y;
-        m_corner[0].z = m_corner[1].z = m_corner[2].z = m_corner[3].z = range.low.y; 
-        m_corner[4].z = m_corner[5].z = m_corner[6].z = m_corner[7].z = range.high.z;
-        }
-
-    RTreeMatchFunction::Within Test(DgnQueryView::Clips const& clips)
-        {
-        auto containment = clips.ClassifyPointContainment(m_corner, 8);
-        if (containment == ClipPlaneContainment_StronglyInside) 
-            return RTreeMatchFunction::Within::Inside;
-        if (containment == ClipPlaneContainment_StronglyOutside) 
-            return RTreeMatchFunction::Within::Outside;
-        return RTreeMatchFunction::Within::Partly;
+        m_pts[0].x = m_pts[3].x = m_pts[4].x = m_pts[7].x = range.low.x; 
+        m_pts[1].x = m_pts[2].x = m_pts[5].x = m_pts[6].x = range.high.x;
+        m_pts[0].y = m_pts[1].y = m_pts[4].y = m_pts[5].y = range.low.y; 
+        m_pts[2].y = m_pts[3].y = m_pts[6].y = m_pts[7].y = range.high.y;
+        m_pts[0].z = m_pts[1].z = m_pts[2].z = m_pts[3].z = range.low.y; 
+        m_pts[4].z = m_pts[5].z = m_pts[6].z = m_pts[7].z = range.high.z;
         }
 };
 END_UNNAMED_NAMESPACE
@@ -79,10 +68,23 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::Clips::AddFrustum(FrustumCR frustum)
+void DgnQueryView::FrustumClips::AddFrustum(FrustumCR frustum)
     {
     resize(6);
     ClipUtil::RangePlanesFromFrustum(&front(), frustum, true, true, 1.0E-6);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BeSQLite::RTreeMatchFunction::Within DgnQueryView::FrustumClips::TestBox(FrustumCR frustum)
+    {
+    auto containment = ClassifyPointContainment(frustum.m_pts, 8);
+    if (containment == ClipPlaneContainment_StronglyInside) 
+        return RTreeMatchFunction::Within::Inside;
+    if (containment == ClipPlaneContainment_StronglyOutside) 
+        return RTreeMatchFunction::Within::Outside;
+    return RTreeMatchFunction::Within::Partly;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -160,7 +162,8 @@ void DgnQueryView::QueueQuery(DgnViewportR viewport, UpdatePlan::Query const& pl
 void DgnQueryView::SetAlwaysDrawn(DgnElementIdSet const& newSet, bool exclusive)
     {
     RequestAbort(true);
-    m_alwaysDrawn = newSet;
+    m_noQuery = exclusive;
+    m_special.m_always = newSet; // NB: copies values
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -169,7 +172,7 @@ void DgnQueryView::SetAlwaysDrawn(DgnElementIdSet const& newSet, bool exclusive)
 void DgnQueryView::ClearAlwaysDrawn()
     {
     RequestAbort(true);
-    m_alwaysDrawn.clear();
+    m_special.m_always.clear();
     m_forceNewQuery = true;
     }
 
@@ -179,7 +182,7 @@ void DgnQueryView::ClearAlwaysDrawn()
 void DgnQueryView::SetNeverDrawn(DgnElementIdSet const& newSet)
     {
     RequestAbort(true);
-    m_neverDrawn = newSet;
+    m_special.m_never = newSet; // NB: copies values
     m_forceNewQuery = true;
     }
 
@@ -189,7 +192,7 @@ void DgnQueryView::SetNeverDrawn(DgnElementIdSet const& newSet)
 void DgnQueryView::ClearNeverDrawn()
     {
     RequestAbort(true);
-    m_neverDrawn.clear();
+    m_special.m_never.clear();
     m_forceNewQuery = true;
     }
     
@@ -252,7 +255,7 @@ int RTreeFitFilter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::QueryModelExtents(DRange3dR range, DgnViewportR vp)
     {
-    RTreeFitFilter filter(&m_neverDrawn);
+    RTreeFitFilter filter(&m_special);
     filter.Start(*this);
 
     DgnElementId thisId;
@@ -279,9 +282,9 @@ ViewController::FitComplete DgnQueryView::_ComputeFitRange(DRange3dR range, DgnV
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnQueryView::RTreeQuery::TestElement(DgnElementId elId) 
+bool DgnQueryView::SpatialQuery::TestElement(DgnElementId elId) 
     {
-    if (m_neverDrawn && m_neverDrawn->Contains(elId))
+    if (IsNever(elId))
         return false;
 
     m_viewStmt->BindId(m_idCol, elId);
@@ -291,6 +294,7 @@ bool DgnQueryView::RTreeQuery::TestElement(DgnElementId elId)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* virtual method bound to the "InVirtualSet(@vset,e.ModelId,g.CategoryId)" SQL function for view query.
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnQueryView::_IsInSet(int nVals, DbValue const* vals) const 
@@ -378,6 +382,8 @@ void DgnQueryView::AddtoSceneQuick(SceneContextR context, SceneMembers& members,
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::_CreateScene(SceneContextR context) 
     {
+    DgnDb::VerifyClientThread();
+
     StopWatch watch(true);
     DEBUG_PRINTF("Begin create scene");
 
@@ -385,7 +391,6 @@ void DgnQueryView::_CreateScene(SceneContextR context)
     std::swap(results, m_results);
 
     DgnViewportR vp = *context.GetViewport();
-
     if (!results.IsValid())
         {
         return;
@@ -700,45 +705,32 @@ void DgnQueryView::RangeQuery::_Go()
     DgnDb::VerifyQueryThread();
     m_view.m_results = DoQuery();
 
-    // This is not strictly thread-safe. The worst that can happen is that the work thread reads false from it, or sets it to false, while the query thread sets it to true.
-    // In that case we skip an update.
-    // Alternative is to go through contortions to queue up a "heal viewport" task on the DgnClientFx work thread.
-//    m_vp.InvalidateScene();
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::SearchIdSet(DgnElementIdSet& idList, Filter& filter)
+void DgnQueryView::RangeQuery::AddAlwaysDrawn(DgnQueryViewCR view)
     {
-    DgnElements& pool = m_dgndb.Elements();
-    for (auto const& curr : idList)
-        {
-        if (AbortRequested())
-            break;
+    if (!HasAlways())
+        return;
 
+    DgnElements& pool = view.GetDgnDb().Elements();
+    for (auto const& curr : m_special->m_always)
+        {
         DgnElementCPtr el = pool.GetElement(curr);
         GeometrySourceCP geom = el.IsValid() ? el->ToGeometrySource() : nullptr;
         if (nullptr == geom || !geom->HasGeometry())
             continue;
 
-        RTree3dVal rtreeRange;
-        rtreeRange.FromRange(geom->CalculateRange3d());
+        CornerBox box(geom->CalculateRange3d());
+        if (RTreeMatchFunction::Within::Outside == m_clips.TestBox(box))
+            continue;
 
-        RTreeMatchFunction::QueryInfo info;
-        info.m_nCoord = 6;
-        info.m_coords = &rtreeRange.m_minx;
-        info.m_parentWithin = info.m_within = RTreeMatchFunction::Within::Partly;
-        info.m_parentScore  = info.m_score  = 1.0;
-        info.m_rowid = curr.GetValue();
-        info.m_level = 0;
-        filter._TestRTree(info);
-        if (RTreeMatchFunction::Within::Outside != info.m_within)
-            filter.AcceptElement(curr);
+        if (TestElement(curr))
+            m_results->m_scores.Insert(3.0, curr); // value has to be higher than max occlusion score which is really 2.0
         }
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
@@ -751,7 +743,6 @@ DgnQueryView::QueryResultsPtr DgnQueryView::RangeQuery::DoQuery()
     DEBUG_PRINTF("Query started");
     Start(m_view);
 
-    QueryResultsPtr thisResult = new QueryResults();
     uint64_t endTime = m_plan.GetTimeout() ? (BeTimeUtilities::QueryMillisecondsCounter() + m_plan.GetTimeout()) : 0;
 
     m_minScore = 0.0;
@@ -765,37 +756,38 @@ DgnQueryView::QueryResultsPtr DgnQueryView::RangeQuery::DoQuery()
         if (m_view.m_abortQuery)
             {
             DEBUG_ERRORLOG("Query aborted");
-            return thisResult;
+            return m_results;
             }
 
-        if (TestElement(thisId))
+        if (TestElement(thisId) && !IsAlways(thisId))
             {
             if (++m_count > m_hitLimit)
                 {
                 SetTestLOD(true); // now that we've found a minimum number of elements, start skipping small ones
-                thisResult->m_scores.erase(thisResult->m_scores.begin());
-                thisResult->m_incomplete = true;
+                m_results->m_scores.erase(m_results->m_scores.begin());
+                m_results->m_incomplete = true;
                 m_count = m_hitLimit;
                 }
 
-            thisResult->m_scores.Insert(m_lastScore, thisId);
-            m_minScore = thisResult->m_scores.begin()->first;
+            m_results->m_scores.Insert(m_lastScore, thisId);
+            m_minScore = m_results->m_scores.begin()->first;
             }
 
         if (endTime && (BeTimeUtilities::QueryMillisecondsCounter() > endTime))
             {
             DEBUG_ERRORLOG("Query timeout");
-            thisResult->m_incomplete = true;
+            m_results->m_incomplete = true;
             break;
             }
         };
 
     double total = watch.GetCurrentSeconds();
-    DEBUG_PRINTF("Query completed, total=%d, progressive=%d, time=%f", thisResult->GetCount(), thisResult->m_incomplete, total);
-    return thisResult;
+    DEBUG_PRINTF("Query completed, total=%d, progressive=%d, time=%f", m_results->GetCount(), m_results->m_incomplete, total);
+    return m_results;
     }
 
 /*---------------------------------------------------------------------------------**//**
+* callback function for "MATCH DGN_rTree(?1)" against the spatial index
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 int DgnQueryView::RangeQuery::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
@@ -808,22 +800,19 @@ int DgnQueryView::RangeQuery::_TestRTree(RTreeMatchFunction::QueryInfo const& in
 
     RTreeMatchFunction::Within rangeTest;
     if (info.m_parentWithin == RTreeMatchFunction::Within::Inside)
-        rangeTest = RTreeMatchFunction::Within::Inside;
+        rangeTest = RTreeMatchFunction::Within::Inside; // if parent is contained, we're contained and don't need to test
     else
         {
         if (!m_boundingRange.Intersects(*coords) || !SkewTest(coords)) // quick test for entirely outside axis-aligned bounding range
             return BE_SQLITE_OK;
 
-        rangeTest = box.Test(m_clips);
+        rangeTest = m_clips.TestBox(box);
         if (rangeTest == RTreeMatchFunction::Within::Outside)
-            return BE_SQLITE_OK;
+            return BE_SQLITE_OK; // overlaps outer bounding range but not inside clip planes
         }
 
-    bool overlap, spansEyePlane;
-    if (!ComputeOcclusionScore(&m_lastScore, overlap, spansEyePlane, box.m_corner))
-        {
-        return BE_SQLITE_OK;
-        }
+    if (!ComputeOcclusionScore(m_lastScore, box))
+        return BE_SQLITE_OK; // eliminated by LOD filter
 
     BeAssert(m_lastScore>0.0);
     BeAssert(m_minScore>=0.0);
@@ -962,6 +951,8 @@ inline bool DgnQueryView::RangeQuery::ComputeNPC(DPoint3dR npcOut, DPoint3dCR lo
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Set the size of a filter that eliminates elements smaller than a given size (in pixels). To enable this filter, you must also call SetTestLOD.
+* For range queries, we only enable this after we've found our maximum number of hits.
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::RangeQuery::SetSizeFilter(DgnViewportCR vp, double size)
@@ -979,7 +970,7 @@ void DgnQueryView::RangeQuery::SetSizeFilter(DgnViewportCR vp, double size)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnQueryView::RangeQuery::RangeQuery(DgnQueryViewCR view, FrustumCR frustum, DgnViewportCR vp, UpdatePlan::Query const& plan) : RTreeQuery(&view.m_neverDrawn), DgnQueryQueue::Task(view, plan)
+DgnQueryView::RangeQuery::RangeQuery(DgnQueryViewCR view, FrustumCR frustum, DgnViewportCR vp, UpdatePlan::Query const& plan) : SpatialQuery(&view.m_special), DgnQueryQueue::Task(view, plan)
     {
     m_count=0;
     m_localToNpc = vp.GetWorldToNpcMap()->M0;
@@ -1005,13 +996,16 @@ DgnQueryView::RangeQuery::RangeQuery(DgnQueryViewCR view, FrustumCR frustum, Dgn
         }
 
     SetFrustum(frustum);
+    m_results = new QueryResults();
+    AddAlwaysDrawn(view);
     }
 
 /*---------------------------------------------------------------------------------**//**
+* compute the size in "NPC area squared" 
 * Algorithm by: Dieter Schmalstieg and Erik Pojar - ACM Transactions on Graphics.
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnQueryView::RangeQuery::ComputeOcclusionScore(double* score, bool& overlap, bool& spansEyePlane, DPoint3dCP corners)
+bool DgnQueryView::RangeQuery::ComputeOcclusionScore(double& score, FrustumCR box)
     {
     // Note - This routine is VERY time critical - Most of the calls to the geomlib
     // functions have been replaced with inline code as VTune had showed them as bottlenecks.
@@ -1076,22 +1070,18 @@ bool DgnQueryView::RangeQuery::ComputeOcclusionScore(double* score, bool& overla
     uint32_t npcComputedMask = 0, zComputedMask = 0;
     uint32_t projectionIndex;
 
-    spansEyePlane = false;
     if (m_cameraOn)
         {
-        projectionIndex = ((m_cameraPosition.x < corners[0].x) ? 1  : 0) +
-                          ((m_cameraPosition.x > corners[1].x) ? 2  : 0) +
-                          ((m_cameraPosition.y < corners[0].y) ? 4  : 0) +
-                          ((m_cameraPosition.y > corners[2].y) ? 8  : 0) +
-                          ((m_cameraPosition.z < corners[0].z) ? 16 : 0) +       // Zs reversed for right-handed system.
-                          ((m_cameraPosition.z > corners[4].z) ? 32 : 0);
+        projectionIndex = ((m_cameraPosition.x < box.m_pts[0].x) ? 1  : 0) +
+                          ((m_cameraPosition.x > box.m_pts[1].x) ? 2  : 0) +
+                          ((m_cameraPosition.y < box.m_pts[0].y) ? 4  : 0) +
+                          ((m_cameraPosition.y > box.m_pts[2].y) ? 8  : 0) +
+                          ((m_cameraPosition.z < box.m_pts[0].z) ? 16 : 0) +       // Zs reversed for right-handed system.
+                          ((m_cameraPosition.z > box.m_pts[4].z) ? 32 : 0);
 
         if (0 == projectionIndex)
             {
-            if (nullptr != score)
-                *score = 1.0;
-
-            overlap = spansEyePlane = true;
+            score = 1.0;
             return true;
             }
         }
@@ -1113,14 +1103,12 @@ bool DgnQueryView::RangeQuery::ComputeOcclusionScore(double* score, bool& overla
 
     double  zTotal = 0.0;
 
-    overlap = false;
     for (uint32_t i=0, mask = 0x0001; i<nVertices; i++, mask <<= 1)
         {
         int  cornerIndex = s_indexList[projectionIndex][i];
-        if (0 == (mask & npcComputedMask) && !ComputeNPC(npcVertices[i], corners[cornerIndex]))
+        if (0 == (mask & npcComputedMask) && !ComputeNPC(npcVertices[i], box.m_pts[cornerIndex]))
             {
-            spansEyePlane = overlap = true;
-            *score = 2.0;  // range spans eye plane
+            score = 2.0;  // range spans eye plane
             return true;
             }
 
@@ -1136,11 +1124,10 @@ bool DgnQueryView::RangeQuery::ComputeOcclusionScore(double* score, bool& overla
         int        diagonalVertex = nVertices/2;
         DPoint3dR  diagonalNPC    = npcVertices[diagonalVertex];
 
-        if (!ComputeNPC(npcVertices[0], corners[s_indexList[projectionIndex][0]]) ||
-            !ComputeNPC(diagonalNPC,    corners[s_indexList[projectionIndex][diagonalVertex]]))
+        if (!ComputeNPC(npcVertices[0], box.m_pts[s_indexList[projectionIndex][0]]) ||
+            !ComputeNPC(diagonalNPC,    box.m_pts[s_indexList[projectionIndex][diagonalVertex]]))
             {
-            spansEyePlane = overlap = true;
-            *score = 2.0;  // range spans eye plane
+            score = 2.0;  // range spans eye plane
             return true;
             }
 
@@ -1154,23 +1141,20 @@ bool DgnQueryView::RangeQuery::ComputeOcclusionScore(double* score, bool& overla
         npcComputedMask |= (1 << diagonalVertex);
         }
 
-    if (nullptr == score)
-        return true;
-
-    *score = (npcVertices[nVertices-1].x - npcVertices[0].x) * (npcVertices[nVertices-1].y + npcVertices[0].y);
+    score = (npcVertices[nVertices-1].x - npcVertices[0].x) * (npcVertices[nVertices-1].y + npcVertices[0].y);
     for (uint32_t i=0; i<nVertices-1; i++)
-        *score += (npcVertices[i].x - npcVertices[i+1].x) * (npcVertices[i].y + npcVertices[i+1].y);
+        score += (npcVertices[i].x - npcVertices[i+1].x) * (npcVertices[i].y + npcVertices[i+1].y);
 
     // an area of 0.0 means that we have a line. Recalculate using length/1000 (assuming width of 1000th of npc)
-    if (*score == 0.0)
-        *score = npcVertices[0].DistanceXY(npcVertices[2]) * .001;
-    else if (*score < 0.0)
-        *score = - *score;
+    if (score == 0.0)
+        score = npcVertices[0].DistanceXY(npcVertices[2]) * .001;
+    else if (score < 0.0)
+        score = -score;
 
     // Multiply area by the Z total value (0 is the back of the view) so that the score is roughly
     // equivalent to the area swept by the range through the view which makes things closer to the eye more likely to display first.
     // Also by scoring based on swept volume we are proportional to occluded volume.
-    *score *= .5 * (zTotal / (double) nVertices);
+    score *= .5 * (zTotal / (double) nVertices);
 
     return true;
     }
@@ -1297,10 +1281,10 @@ bool DgnQueryView::RangeQuery::SkewTest(RTree3dValCP testRange)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::RTreeQuery::Start(DgnQueryViewCR view)
+void DgnQueryView::SpatialQuery::Start(DgnQueryViewCR view)
     {
     DgnDbR db = view.GetDgnDb();
-    db.GetCachedStatement(m_rangeStmt, "SELECT ElementId FROM " DGN_VTABLE_RTree3d " WHERE ElementId MATCH DGN_rTree(?1)");
+    db.GetCachedStatement(m_rangeStmt, "SELECT ElementId FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId MATCH DGN_rTree(?1)");
     m_rangeStmt->BindInt64(1, (uint64_t) this);
 
     db.GetCachedStatement(m_viewStmt, view.m_viewSQL.c_str());
@@ -1315,7 +1299,7 @@ void DgnQueryView::RTreeQuery::Start(DgnQueryViewCR view)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId DgnQueryView::RTreeQuery::StepRtree()
+DgnElementId DgnQueryView::SpatialQuery::StepRtree()
     {
     auto rc=m_rangeStmt->Step();
     return (rc != BE_SQLITE_ROW) ? DgnElementId() : m_rangeStmt->GetValueId<DgnElementId>(0);

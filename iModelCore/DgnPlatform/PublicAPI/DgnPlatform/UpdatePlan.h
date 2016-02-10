@@ -152,7 +152,7 @@ struct UpdatePlan
         bool        m_onlyAlwaysDrawn = false;
         mutable bool m_wait = false;
         uint32_t    m_minElements = 3;
-        uint32_t    m_maxElements = 25000;
+        uint32_t    m_maxElements = 50000;
         mutable uint32_t m_delayAfter = 0;
         mutable uint32_t m_targetNumElements = 0;
 
