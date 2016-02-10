@@ -29,7 +29,7 @@ private:
 public:
     void Init() {m_size=m_allocSize=0; m_data=nullptr;}
     ByteStream() {Init();}
-    explicit ByteStream(uint32_t size) {Init(); ReserveMemory(size);}
+    explicit ByteStream(uint32_t size) {Init(); Resize(size);}
     ByteStream(uint8_t const* data, uint32_t size) {Init(); SaveData(data, size);}
     ByteStream(ByteStream const& other) {Init(); SaveData(other.m_data, other.m_size);}
     ~ByteStream() {Clear();}
@@ -46,19 +46,31 @@ public:
     bool HasData() const {return 0 != m_size;}  //!< return false if this ByteStream is empty.
     void Clear() {FREE_AND_CLEAR(m_data); m_size = m_allocSize = 0;} //!< Return this object to an empty/uninitialized state.
 
-    //! Reserve memory for this ByteStream.
+    //! Reserve memory for this ByteStream. The stream capacity will change but not its size.
     //! @param[in] size the number of bytes to reserve
-    void ReserveMemory(uint32_t size) {m_size=size; if (size<=m_allocSize) return; m_data = (uint8_t*) realloc(m_data, size); m_allocSize = size;}
+    void Reserve(uint32_t size) {if (size<=m_allocSize) return; m_data = (uint8_t*) realloc(m_data, size); m_allocSize = size;}
+
+    //! Resize the stream. If more memory is required, the new portion won't be initialized.
+    //! @param[in] newSize number of bytes
+    void Resize(uint32_t newSize) { Reserve(newSize); m_size = newSize; }
 
     //! Save a stream of bytes into this ByteStream.
     //! @param[in] data the data to save
     //! @param[in] size number of bytes in data
-    void SaveData(uint8_t const* data, uint32_t size) {ReserveMemory(size); if (data) memcpy(m_data, data, size);}
+    void SaveData(uint8_t const* data, uint32_t size) {m_size = 0; Append(data, size);}
 
     //! Append a stream of byes to the current end of this ByteStream.
     //! @param[in] data the data to save
     //! @param[in] size number of bytes in data
-    void Append(uint8_t const* data, uint32_t size) {ReserveMemory(size+m_size); if (data) memcpy(m_data+m_size, data, size);}
+    void Append(uint8_t const* data, uint32_t size) 
+        {
+        if (data)
+            {
+            Reserve(m_size + size);
+            memcpy(m_data + m_size, data, size);
+            m_size += size;
+            }
+        }
 };
 
 END_BENTLEY_NAMESPACE
