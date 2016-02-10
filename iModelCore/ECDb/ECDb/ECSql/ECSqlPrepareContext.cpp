@@ -484,7 +484,7 @@ NativeSqlBuilder ECSqlPrepareContext::JoinTableInfo::BuildAssignmentExpression(N
         if (propI != prop.begin())
             out.AppendComma();
 
-        out.Append(*propI).Append(" = ").Append(*valueI);      
+        out.Append(*propI).Append("=").Append(*valueI);      
         }
 
     return std::move(out);
