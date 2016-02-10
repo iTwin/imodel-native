@@ -35,7 +35,6 @@ private:
     BentleyStatus DrawLineBreakRun(AnnotationLayoutRunCR, Render::GraphicR, ViewContextR, Render::GeometryParamsR, TransformCR) const;
 
 public:
-    DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
     DGNPLATFORM_EXPORT explicit AnnotationTextBlockDraw(AnnotationTextBlockLayoutCR);
     AnnotationTextBlockDraw(AnnotationTextBlockDrawCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
     AnnotationTextBlockDrawR operator=(AnnotationTextBlockDrawCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
