@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/GeomStream_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -36,7 +36,7 @@ TEST_F(GeometryStreamTest, DgnElement)
     // allocate a ElementGeom and put some data in its graphics
     GeometryStream eg1;         
     ASSERT_TRUE(!hasGeom(eg1));
-    eg1.ReserveMemory(3);
+    eg1.Resize(3);
     memset (eg1.GetDataP(), 5, 3);
     ASSERT_TRUE(hasGeom(eg1)); 
 
@@ -71,7 +71,7 @@ TEST_F(GeometryStreamTest, DgnElement)
     ASSERT_TRUE(!sameGeomPtr(eg2,eg1));
 
     GeometryStream eg4;
-    eg4.ReserveMemory(10);
+    eg4.Resize(10);
     memset (eg4.GetDataP(), 4, 10);
 
     // an element with a graphics buffer that is large enough to hold the data from a copy operator should not need to realloc.
