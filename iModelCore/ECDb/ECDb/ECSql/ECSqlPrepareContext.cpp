@@ -388,7 +388,7 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
     NativeSqlBuilder::List parentOfJoinedTableProperties;
     bool isPolymorphic = exp.GetClassNameExp()->IsPolymorphic();
     joinedTableECSQL.Append("UPDATE ").AppendIf(!isPolymorphic, "ONLY ").Append(classMap.GetClass().GetECSqlName().c_str()).Append(" SET ");
-    parentOfJoinedTableECSQL.Append("UPDATE ").AppendIf(!isPolymorphic, "ONLY ").Append(rootClassMap->GetClass().GetECSqlName().c_str()).Append(" SET ");
+    parentOfJoinedTableECSQL.Append("UPDATE ").Append(rootClassMap->GetClass().GetECSqlName().c_str()).Append(" SET ");
 
     auto assignmentList = exp.GetAssignmentListExp();
     ptr->m_userProvidedECInstanceId = false;
@@ -484,7 +484,7 @@ NativeSqlBuilder ECSqlPrepareContext::JoinTableInfo::BuildAssignmentExpression(N
         if (propI != prop.begin())
             out.AppendComma();
 
-        out.Append(*propI).Append(" = ").Append(*valueI);      
+        out.Append(*propI).Append("=").Append(*valueI);      
         }
 
     return std::move(out);
