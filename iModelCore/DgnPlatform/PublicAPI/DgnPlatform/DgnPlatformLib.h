@@ -496,6 +496,9 @@ public:
             //! Report if Parasolids is loaded.
             virtual bool _IsParasolidLoaded() {return false;}
 
+            //! Return the location of the directory containing the psolid schemas
+            virtual BeFileName _GetPSolidSchemasDir() const {return BeFileName();}
+
             //! Get the number of radial isoparametric lines to produce for analytic faces.
             //! @return Desired number of radial isoparametrics lines.
             //! @note: Used by _OutputBodyAsWireframe to produce hatch lines for non-planar faces.
