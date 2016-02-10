@@ -10,6 +10,7 @@ using namespace std;
 #include <DgnPlatform\IPointCloud.h>
 #include <DgnPlatform\PointCloudHandler.h>
 #include <DgnGeoCoord\DgnGeoCoord.h>
+#include <GeoCoord\GCSLibrary.h>
 #include <PointCloud\PointCloud.h>
 #include <PointCloud\PointCloudDisplayHandler.h>
 #include <RasterCore\RasterCoreLib.h>
@@ -61,7 +62,9 @@ namespace ScalableMeshSDKexe
         //=======================================================================================
         class AppHost : public Bentley::DgnPlatform::DgnViewLib::Host
         {
-            AppViewManager   m_viewManager;
+            AppViewManager m_viewManager;
+            BeFileName     m_systemDtyPath;
+            BeFileName     m_customDtyPath;
 
         protected:
 
@@ -81,7 +84,7 @@ namespace ScalableMeshSDKexe
             virtual Bentley::DgnPlatform::DgnPlatformLib::Host::GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin() override;
 
         public:
-            void Startup (/*HWND*/);
+            void Startup (BeFileName& systemDtyPath, BeFileName& customDtyPath);
         
             void Terminate ();
 
@@ -126,11 +129,10 @@ struct AppRasterCoreLibHost : Bentley::DgnPlatform::Raster::RasterCoreLib::Host
 virtual Bentley::DgnPlatform::Raster::RasterCoreAdmin& _SupplyRasterCoreAdmin() override {return *new AppRasterCoreAdmin();}
 }; // RasterCoreLib::Host
 
-void AppHost::Startup (/*HWND*/)
-    {       
-    //InitMonikerFactories();
-
-    //IScalableMeshAdmin::SetCanImportPODFile(true);    
+void AppHost::Startup (BeFileName& systemDtyPath, BeFileName& customDtyPath)
+    {           
+    m_systemDtyPath = systemDtyPath;
+    m_customDtyPath = customDtyPath;
 
     //Init GDAL path.    
     WString gdalDataPath(L".\\Gdal_Data\\");        
@@ -139,28 +141,17 @@ void AppHost::Startup (/*HWND*/)
     RscFileManager::StaticInitialize(L"en");
         
     DgnViewLib::Initialize (*this, true);
-
-    //Application needs to initialize PdfLibInitializer dll if it wants support for PDF raster attachment.
-    //Bentley::PdfLibInitializer::Initialize(*new ViewDemoPdfLibInitializerHost());
-
+    
     Bentley::DgnPlatform::Raster::RasterCoreLib::Initialize (*new AppRasterCoreLibHost());
     BeAssert (Bentley::DgnPlatform::Raster::RasterCoreLib::IsInitialized());
 
     //Ensure basegeocoord is initialized.
     _SupplyGeoCoordinationAdmin()._GetServices();
-    
-    //Required for reading TM element
-    //Bentley::TerrainModel::Element::DTMElementHandlerManager::InitializeForOfflineTmImport();
 
-    //m_viewManager.SetTopWindow(topWindow);
-
-    // Setup location to find parasolid schema files (schema directory was created under exe location)...
-    /*
-    WString baseDir;
-    getBaseDirOfExecutingModule (baseDir);
-    
-    ConfigurationManager::DefineVariable (L"MS_SMARTSOLID", baseDir.c_str ());
-    */
+    if (BeFileName::DoesPathExist(m_customDtyPath.c_str()))
+        {
+        GeoCoordinates::LibraryManager::Instance()->AddUserLibrary(m_customDtyPath.c_str(), nullptr);
+        }   
     }
 
 void AppHost::Terminate ()
@@ -186,10 +177,18 @@ Bentley::DgnPlatform::DgnPlatformLib::Host::PointCloudAdmin&           AppHost::
 //MaterialAdmin&             AppHost::_SupplyMaterialAdmin()              {return *new DemoMaterialAdmin(); }
 //ProgressiveDisplayManager& AppHost::_SupplyProgressiveDisplayManager()  {return *new DemoProgressiveDisplayManager(); }
 Bentley::DgnPlatform::DgnPlatformLib::Host::GeoCoordinationAdmin&      AppHost::_SupplyGeoCoordinationAdmin()       
-    {        
-    
-    WString geocoordinateDataPath(L".\\GeoCoordinateData\\");    
+    {            
+    WString geocoordinateDataPath;
 
+    if (BeFileName::DoesPathExist(m_systemDtyPath.c_str()))
+        {
+        geocoordinateDataPath = WString(m_systemDtyPath.c_str());
+        }
+    else
+        {
+        geocoordinateDataPath = WString(L".\\GeoCoordinateData\\");
+        }
+       
     return *DgnGeoCoordinationAdmin::Create (geocoordinateDataPath.c_str(), IACSManager::GetManager()); 
     }
 
@@ -575,10 +574,10 @@ void InitMonikerFactories()
 Bentley::RefCountedPtr<DgnDocument> docPtr = nullptr;
 Bentley::RefCountedPtr<DgnFile> file = nullptr;
 
-void InitializeSDK(DgnPlatformLib::Host& host)
+void InitializeSDK(BeFileName& systemDtyPath, BeFileName& customDtyPath)
         {
         static AppHost appHost;
-        appHost.Startup ();
+        appHost.Startup (systemDtyPath, customDtyPath);
 
         DependencyManager::SetTrackingDisabled(true);
         DependencyManager::SetProcessingDisabled(true);

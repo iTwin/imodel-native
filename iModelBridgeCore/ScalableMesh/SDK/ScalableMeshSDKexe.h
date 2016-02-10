@@ -50,7 +50,8 @@ namespace ScalableMeshSDKexe
         virtual DgnPlatformLib::Host::GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin() { return *GeoCoordinates::DgnGeoCoordinationAdmin::Create(NULL, *m_acsManager); }
 
             BeFileName          m_inputFileName;
-            IScalableMeshPtr                m_sMesh;
+            BeXmlDomPtr         m_pImportDefinitionXmlDom;
+            IScalableMeshPtr    m_sMesh;
             HANDLE m_pipe;
 
             WString GetArgValueW(WCharCP arg);
@@ -66,6 +67,7 @@ namespace ScalableMeshSDKexe
             BentleyStatus OpenScalableMesh(WCharCP path);
             size_t CountPoints();
             BentleyStatus ParseImportDefinition(BeXmlNodeP pTestNode);            
+            bool OpenXmlImportFile();
             void Start();
             void Import();
 

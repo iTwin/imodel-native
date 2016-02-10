@@ -5,6 +5,6 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 namespace ScalableMeshSDKexe
     {
-    void InitializeSDK(DgnPlatformLib::Host& host);
+    void InitializeSDK(BeFileName& systemDtyPath, BeFileName& customDtyPath);
     void CloseSDK();
     };

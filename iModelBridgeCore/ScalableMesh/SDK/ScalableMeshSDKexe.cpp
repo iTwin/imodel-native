@@ -33,7 +33,7 @@ namespace ScalableMeshSDKexe
             0, 
             0, 
             0,
-            NULL 
+            NULL    
             );
         if (m_pipe == NULL || m_pipe == INVALID_HANDLE_VALUE) fwprintf(stderr, L"Error creating pipe\n");
         if (!ConnectNamedPipe(m_pipe, NULL)) fwprintf(stderr, L"No client connected\n");
@@ -50,8 +50,31 @@ namespace ScalableMeshSDKexe
             {
             OpenPipe();
             }
+
         DgnViewLib::Initialize(*this, true); // this initializes the DgnDb libraries
-        InitializeSDK(*this);
+
+
+        BeXmlNodeP pRootNode = m_pImportDefinitionXmlDom->GetRootElement();
+
+        assert(pRootNode != nullptr);
+                
+        BeFileName systemDtyPath;        
+        BeXmlStatus status = pRootNode->GetAttributeStringValue(systemDtyPath, "systemDtyPath");
+            
+        if (status != BEXML_Success)
+            {
+            systemDtyPath.clear();            
+            }            
+
+        BeFileName userDtyPath;        
+        status = pRootNode->GetAttributeStringValue(userDtyPath, "userDtyPath");
+            
+        if (status != BEXML_Success)
+            {
+            userDtyPath.clear();            
+            }            
+
+        InitializeSDK(systemDtyPath, userDtyPath);
         setlocale(LC_CTYPE, "");
         return SUCCESS;
         }
@@ -977,22 +1000,27 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
         Import();        
         //Terminate(true);
         }
-    
-    void ScalableMeshSDKexe::Import()
+
+    bool ScalableMeshSDKexe::OpenXmlImportFile()
         {
         BeXmlStatus status;
         WString     errorMsg;
 
-        BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromFile(status, m_inputFileName, &errorMsg);
+        m_pImportDefinitionXmlDom = BeXmlDom::CreateAndReadFromFile(status, m_inputFileName, &errorMsg);
 
-        if (pXmlDom == 0)
+        if (m_pImportDefinitionXmlDom == 0)
             {
             wprintf(L"ERROR : Cannot open input file (%s)", errorMsg.c_str());
-            return;
+            return false;
             }
+        
+        return m_pImportDefinitionXmlDom->GetRootElement() != 0;
+        }
+    
+    void ScalableMeshSDKexe::Import()
+        {                      
+        BeXmlNodeP pRootNode = m_pImportDefinitionXmlDom->GetRootElement();
 
-        BeXmlNodeP pRootNode(pXmlDom->GetRootElement());
-                
         ParseImportDefinition(pRootNode);
                 
         CloseHandle(m_pipe);
@@ -1012,6 +1040,12 @@ int wmain(int argc, wchar_t* argv[])
         fwprintf(stderr, L"No output directory specified\n");
         return app.PrintUsage(argv[0]);
         }
+    
+    if (!app.OpenXmlImportFile())
+        {
+        return false;
+        }
+
     app.Initialize(argc, argv);
     app.Start();
 
