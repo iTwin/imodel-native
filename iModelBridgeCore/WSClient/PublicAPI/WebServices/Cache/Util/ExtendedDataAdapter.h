@@ -46,9 +46,9 @@ struct ExtendedDataAdapter::IDelegate
     public:
         virtual ~IDelegate() {};
         //! Return class key with "Content" string property for storing data
-        virtual ECClassCP GetExtendedDataClass() = 0;
+        virtual ECClassCP GetExtendedDataClass(ECInstanceKeyCR ownerKey) = 0;
         //! Return relationship class with source "owner" instances to hold target "extended data" class instances
-        virtual ECRelationshipClassCP GetExtendedDataRelationshipClass() = 0;
+        virtual ECRelationshipClassCP GetExtendedDataRelationshipClass(ECInstanceKeyCR ownerKey) = 0;
         //! Return instance key that should hold extended data for specific owner so schema would match.
         virtual ECInstanceKey GetHolderKey(ECInstanceKeyCR ownerKey) { return ownerKey; };
     };
