@@ -63,7 +63,6 @@ public:
     static TextAnnotationDataCP GetCP(DgnElementCR el) { return UniqueAspect::Get<TextAnnotationData>(el, *QueryECClass(el.GetDgnDb())); }
     static TextAnnotationDataP GetP(DgnElementR el) { return UniqueAspect::GetP<TextAnnotationData>(el, *QueryECClass(el.GetDgnDb())); }
 
-    DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
     TextAnnotationData() : m_isGeometrySuppressed(false) {}
     TextAnnotationCP GetAnnotation() const { return m_annotation.get(); }
     void SetAnnotation(TextAnnotationCP value) { m_annotation = value ? value->Clone() : nullptr; }
@@ -106,7 +105,6 @@ public:
     static TextAnnotation2dCPtr Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<TextAnnotation2d>(id); }
     static TextAnnotation2dPtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<TextAnnotation2d>(id); }
 
-    DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
     explicit TextAnnotation2d(CreateParams const& params) : T_Super(params) {}
     static TextAnnotation2dPtr Create(CreateParams const& params) { return new TextAnnotation2d(params); }
 
@@ -151,7 +149,6 @@ public:
     static TextAnnotation3dCPtr Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<TextAnnotation3d>(id); }
     static TextAnnotation3dPtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<TextAnnotation3d>(id); }
 
-    DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
     explicit TextAnnotation3d(CreateParams const& params) : T_Super(params) {}
     static TextAnnotation3dPtr Create(CreateParams const& params) { return new TextAnnotation3d(params); }
     
