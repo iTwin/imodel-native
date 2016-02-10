@@ -41,27 +41,20 @@ public:
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      10/2013
 //+===============+===============+===============+===============+===============+======
-struct JoinTableECSqlStatement: public ECSqlStatementBase
+struct JoinedTableECSqlStatement: public ECSqlStatementBase
     {
-    private:
-        ECN::ECClassId m_jointTableClassId;
-        IECSqlBinder * m_ecInstanceIdBinder;
-        virtual ECSqlPrepareContext _InitializePrepare(ECDbCR ecdb, Utf8CP ecsql) override
-            {          
-            return ECSqlPrepareContext(ecdb, *this, m_jointTableClassId);
-            }
+private:
+    ECN::ECClassId m_classId;
+    IECSqlBinder * m_ecInstanceIdBinder;
 
-    public:
-        ECN::ECClassId GetClassId() const {return m_jointTableClassId;}
-        void SetECInstanceIdBinder(int ecsqlParameterIndex)
-            {     
-            m_ecInstanceIdBinder = &GetBinder(ecsqlParameterIndex);
-            }
-        IECSqlBinder* GetECInstanceIdBinder() 
-            {
-            return m_ecInstanceIdBinder;
-            }
-        explicit JoinTableECSqlStatement(ECN::ECClassId joinTableClassId): ECSqlStatementBase(), m_jointTableClassId(joinTableClassId), m_ecInstanceIdBinder(nullptr) {}
-        ~JoinTableECSqlStatement() {}
+    virtual ECSqlPrepareContext _InitializePrepare(ECDbCR ecdb, Utf8CP ecsql) override { return ECSqlPrepareContext(ecdb, *this, m_classId); }
+
+public:
+    explicit JoinedTableECSqlStatement(ECN::ECClassId joinTableClassId) : ECSqlStatementBase(), m_classId(joinTableClassId), m_ecInstanceIdBinder(nullptr) {}
+    ~JoinedTableECSqlStatement() {}
+
+    ECN::ECClassId GetClassId() const {return m_classId;}
+    void SetECInstanceIdBinder(int ecsqlParameterIndex) { m_ecInstanceIdBinder = &GetBinder(ecsqlParameterIndex); }
+    IECSqlBinder* GetECInstanceIdBinder() { return m_ecInstanceIdBinder;  }
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

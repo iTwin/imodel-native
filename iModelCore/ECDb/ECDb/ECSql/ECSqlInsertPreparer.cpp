@@ -22,10 +22,10 @@ ECSqlStatus ECSqlInsertPreparer::Prepare(ECSqlPrepareContext& ctx, InsertStateme
     ctx.PushScope(exp);
 
     auto const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
-    if (auto info = ctx.GetJoinTableInfo())
+    if (auto info = ctx.GetJoinedTableInfo())
         {
-        auto baseStatement = ctx.GetECSqlStatementR().GetPreparedStatementP()->GetBaseECSqlStatement(classMap.GetClass().GetId());
-        auto status = baseStatement->Prepare(ctx.GetECDb(), info->GetParentECSQlStatement());
+        auto joinedTableStmt = ctx.GetECSqlStatementR().GetPreparedStatementP()->GetJoinedTableECSqlStatement(classMap.GetClass().GetId());
+        auto status = joinedTableStmt->Prepare(ctx.GetECDb(), info->GetParentOfJoinedTableECSql());
         if (status != ECSqlStatus::Success)
             {
             BeAssert("Base statement is generated statement should fail at prepare");
@@ -33,7 +33,7 @@ ECSqlStatus ECSqlInsertPreparer::Prepare(ECSqlPrepareContext& ctx, InsertStateme
             }
 
         if (info->GetPrimaryECinstanceIdParameterIndex() > 0)
-            baseStatement->SetECInstanceIdBinder(static_cast<int>(info->GetPrimaryECinstanceIdParameterIndex()));
+            joinedTableStmt->SetECInstanceIdBinder(static_cast<int>(info->GetPrimaryECinstanceIdParameterIndex()));
         }
   
     NativeSqlSnippets insertNativeSqlSnippets;
@@ -547,9 +547,9 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
         nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(move(classIdNameSqliteSnippets));
 
         NativeSqlBuilder::List classIdSqliteSnippets {NativeSqlBuilder()};
-        if (auto joinTableStatement = dynamic_cast<JoinTableECSqlStatement const*>(&ctx.GetECSqlStatementR()))
+        if (auto joinedTableStatement = dynamic_cast<JoinedTableECSqlStatement const*>(&ctx.GetECSqlStatementR()))
             {
-            classIdSqliteSnippets[0].Append(joinTableStatement->GetClassId());
+            classIdSqliteSnippets[0].Append(joinedTableStatement->GetClassId());
             }
         else
             {
@@ -811,9 +811,9 @@ ECSqlInsertPreparer::ECInstanceIdMode ECSqlInsertPreparer::ValidateUserProvidedE
 
     ECClassId classId = classMap.GetClass().GetId();
     //override ECClassId in case of join table with secondary class id 
-    if (auto joinTableStatement = dynamic_cast<JoinTableECSqlStatement const*>(&ctx.GetECSqlStatementR()))
+    if (auto joinedTableStatement = dynamic_cast<JoinedTableECSqlStatement const*>(&ctx.GetECSqlStatementR()))
         {
-        classId = joinTableStatement->GetClassId(); 
+        classId = joinedTableStatement->GetClassId(); 
         }
 
     const Exp::Type expType = valueExp->GetType();

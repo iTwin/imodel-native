@@ -1661,10 +1661,10 @@ void ChangeSummary::Free()
 //---------------------------------------------------------------------------------------
 ChangeSummary::~ChangeSummary()
     {
-    Free();
     s_count--;
     if (s_count == 0)
-        UnregisterSqlFunctions();
+        UnregisterSqlFunctions(m_ecdb);
+    Free();
     }
 
 //---------------------------------------------------------------------------------------
@@ -2109,11 +2109,12 @@ void ChangeSummary::RegisterSqlFunctions(ECDbR ecdb)
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
 // static
-void ChangeSummary::UnregisterSqlFunctions()
+void ChangeSummary::UnregisterSqlFunctions(ECDbR ecdb)
     {
     if (!s_isChangedInstanceSqlFunction)
         return;
 
+    ecdb.RemoveFunction(*s_isChangedInstanceSqlFunction);
     delete s_isChangedInstanceSqlFunction;
     s_isChangedInstanceSqlFunction = nullptr;
     }

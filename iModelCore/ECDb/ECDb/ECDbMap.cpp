@@ -237,7 +237,7 @@ MapStatus ECDbMap::DoMapSchemas(bvector<ECSchemaCP> const& mapSchemas)
         if (SUCCESS != kvpair.first->CreateUserProvidedIndexes(*GetSchemaImportContext(), kvpair.second->GetIndexInfos()))
             return MapStatus::Error;
         }
-   
+
     timer.Stop();
     if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
 
@@ -734,6 +734,8 @@ BentleyStatus ECDbMap::CreateOrUpdateIndexesInDb() const
                 continue;
 
             bset<ECDbSqlTable const*> alreadyProcessedTables;
+            //table of index doesn't need to be processed again either, so put it in the set, too
+            alreadyProcessedTables.insert(&indexTable);
             for (ECClassId derivedClassId : horizPartition.GetClassIds())
                 {
                 ClassMap const* derivedClassMap = GetClassMap(derivedClassId);

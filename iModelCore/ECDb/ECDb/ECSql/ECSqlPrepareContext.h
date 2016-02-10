@@ -102,13 +102,12 @@ struct ECSqlPrepareContext
         //=======================================================================================
         // @bsiclass                                                 Affan.Khan    10/2015
         //+===============+===============+===============+===============+===============+======
-        struct JoinTableInfo
+        struct JoinedTableInfo
             {
             public:
-                typedef std::unique_ptr<JoinTableInfo> Ptr;
                 struct Parameter
                     {
-                    friend struct JoinTableInfo;
+                    friend struct JoinedTableInfo;
                     typedef std::unique_ptr<Parameter> Ptr;
                     private:
                         size_t m_index;
@@ -282,68 +281,36 @@ struct ECSqlPrepareContext
                             return m_secondary;
                             }
                     };
+
             private:
-                Utf8String m_parentStatement;
-                Utf8String m_statement;
-                Utf8String m_orginalStatement;
+                Utf8String m_originalECSql;
+                Utf8String m_parentOfJoinedTableECSql;
+                Utf8String m_joinedTableECSql;
                 ParameterMap m_parameterMap;
-                bool m_userProvidedECInstanceId;
+                bool m_ecinstanceIdIsUserProvided;
                 size_t m_primaryECInstanceIdParameterIndex;
-                ECClassCP m_class;
-                ECClassCP m_parentClass;
+                ECN::ECClassCR m_class;
 
-            private:
-                static Ptr TrySetupJoinTableContextForInsert(ECSqlPrepareContext& ctx, InsertStatementExp const& exp);
-                static Ptr TrySetupJoinTableContextForUpdate(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp);
+                JoinedTableInfo(ECN::ECClassCR ecClass) : m_ecinstanceIdIsUserProvided(false), m_primaryECInstanceIdParameterIndex(0), m_class(ecClass)
+                    {}
+
+                static std::unique_ptr<JoinedTableInfo> CreateForInsert(ECSqlPrepareContext& ctx, InsertStatementExp const& exp);
+                static std::unique_ptr<JoinedTableInfo> CreateForUpdate(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp);
                 static NativeSqlBuilder BuildAssignmentExpression(NativeSqlBuilder::List const& prop, NativeSqlBuilder::List const& values);
-                JoinTableInfo()
-                    {}
+
             public:
-                ~JoinTableInfo()
-                    {}
-                static Ptr TrySetupJoinTableContextIfAny(ECSqlPrepareContext& ctx, ECSqlParseTreeCR exp, Utf8CP orignalECSQL);
-                Utf8CP GetECSQlStatement() const
-                    {
-                    return m_statement.c_str();
-                    }
-                Utf8CP GetParentECSQlStatement() const
-                    {
-                    return m_parentStatement.c_str();
-                    }
-                Utf8CP GetOrignalECSQlStatement() const
-                    {
-                    return m_orginalStatement.c_str();
-                    }
-                bool HasParentECSQlStatement() const
-                    {
-                    return !m_parentStatement.empty();
-                    }
-                bool HasECSQlStatement() const
-                    {
-                    return !m_statement.empty();
-                    }
-                ECClassCR GetClass() const
-                    {
-                    return *m_class;
-                    }
-                ECClassCR GetParentClass() const
-                    {
-                    return *m_parentClass;
-                    }
+                ~JoinedTableInfo() {}
+                static std::unique_ptr<JoinedTableInfo> Create(ECSqlPrepareContext& ctx, ECSqlParseTreeCR exp, Utf8CP orignalECSQL);
+                Utf8CP GetJoinedTableECSql() const { return m_joinedTableECSql.c_str(); }
+                Utf8CP GetParentOfJoinedTableECSql() const { return m_parentOfJoinedTableECSql.c_str(); }
+                Utf8CP GetOrignalECSql() const { return m_originalECSql.c_str(); }
+                bool HasParentOfJoinedTableECSql() const { return !m_parentOfJoinedTableECSql.empty(); }
+                bool HasJoinedTableECSql() const { return !m_joinedTableECSql.empty(); }
+                ECClassCR GetClass() const { return m_class; }
 
-                ParameterMap const& GetParameterMap() const
-                    {
-                    return m_parameterMap;
-                    }
-                bool IsUserProvidedECInstanceId()const
-                    {
-                    return m_userProvidedECInstanceId;
-                    }
-                size_t GetPrimaryECinstanceIdParameterIndex() const
-                    {
-                    return m_primaryECInstanceIdParameterIndex;
-                    }
-
+                ParameterMap const& GetParameterMap() const { return m_parameterMap; }
+                bool IsUserProvidedECInstanceId()const { return m_ecinstanceIdIsUserProvided; }
+                size_t GetPrimaryECinstanceIdParameterIndex() const { return m_primaryECInstanceIdParameterIndex; }
             };
         //=======================================================================================
         // @bsiclass                                                 Affan.Khan    06/2013
@@ -416,13 +383,13 @@ struct ECSqlPrepareContext
         bool m_nativeNothingToUpdate;
         ExpScopeStack m_scopes;
         SelectionOptions m_selectionOptions;
-        JoinTableInfo::Ptr m_joinTableInfo;
-        ECClassId m_joinTableClassId;
+        std::unique_ptr<JoinedTableInfo> m_joinedTableInfo;
+        ECClassId m_joinedTableClassId;
         //SELECT only
         static bool FindLastParameterIndexBeforeWhereClause(int& index, Exp const& statementExp, WhereExp const* whereExp);
     public:
         ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&);
-        ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECN::ECClassId joinTableClassId);
+        ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECN::ECClassId joinedTableClassId);
         ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECSqlPrepareContext const& parentCtx, ArrayECPropertyCR parentArrayProperty, ECSqlColumnInfo const* parentColumnInfo);
         ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECSqlPrepareContext const& parentCtx);
         //ECSqlPrepareContext is copyable. Using compiler-generated copy ctor and assignment op.
@@ -437,42 +404,37 @@ struct ECSqlPrepareContext
         ECSqlColumnInfo const* GetParentColumnInfo() const { return m_parentColumnInfo; }
         SelectionOptions const& GetSelectionOptions() const { return m_selectionOptions; }
         SelectionOptions& GetSelectionOptionsR() { return m_selectionOptions; }
-        ECClassId GetJoinTableClassId() const { return m_joinTableClassId; }
-        bool IsParentOfJoinTable() const { return m_joinTableClassId != ECClass::UNSET_ECCLASSID; }
-        void MarkAsParentOfJoinedTable(ECN::ECClassId classId)
-            {
-            BeAssert(!IsParentOfJoinTable());
-            m_joinTableClassId = classId;
-            }
-    JoinTableInfo const* GetJoinTableInfo() const { return m_joinTableInfo.get(); }
-    JoinTableInfo const* TrySetupJoinTableContextIfAny(ECSqlParseTreeCR exp, Utf8CP orignalECSQL)
-        {
-        m_joinTableInfo = JoinTableInfo::TrySetupJoinTableContextIfAny(*this, exp, orignalECSQL);
-        return GetJoinTableInfo();
-        }
-    ECSqlStatementBase& GetECSqlStatementR () const;
-    NativeSqlBuilder const& GetSqlBuilder () const {return m_nativeSqlBuilder;}
-    NativeSqlBuilder& GetSqlBuilderR () {return m_nativeSqlBuilder;}
-    Utf8CP GetNativeSql () const;
+        
+        ECClassId GetJoinedTableClassId() const { return m_joinedTableClassId; }
+        bool IsParentOfJoinedTable() const { return m_joinedTableClassId != ECClass::UNSET_ECCLASSID; }
+        void MarkAsParentOfJoinedTable(ECN::ECClassId classId) { BeAssert(!IsParentOfJoinedTable()); m_joinedTableClassId = classId; }
+        JoinedTableInfo const* GetJoinedTableInfo() const { return m_joinedTableInfo.get(); }
+        JoinedTableInfo const* TrySetupJoinedTableInfo(ECSqlParseTreeCR exp, Utf8CP orignalECSQL);
+        
+        ECSqlStatementBase& GetECSqlStatementR() const;
+                NativeSqlBuilder const& GetSqlBuilder() const { return m_nativeSqlBuilder; }
+        NativeSqlBuilder& GetSqlBuilderR() { return m_nativeSqlBuilder; }
+        Utf8CP GetNativeSql() const;
 
-    bool NativeStatementIsNoop () const { return m_nativeStatementIsNoop;  }
-    bool NativeNothingToUpdate() const { return m_nativeNothingToUpdate;  }
+        bool NativeStatementIsNoop() const { return m_nativeStatementIsNoop; }
+        bool NativeNothingToUpdate() const { return m_nativeNothingToUpdate; }
 
-    void SetNativeStatementIsNoop (bool flag) { m_nativeStatementIsNoop = flag; }
-    void SetNativeNothingToUpdate(bool flag){ m_nativeNothingToUpdate = flag; }
-    
-
-    ExpScope const& GetCurrentScope () const {return m_scopes.Current();}
-    ExpScope& GetCurrentScopeR ()  {return m_scopes.CurrentR();}
+        void SetNativeStatementIsNoop(bool flag) { m_nativeStatementIsNoop = flag; }
+        void SetNativeNothingToUpdate(bool flag) { m_nativeNothingToUpdate = flag; }
 
 
-    void PushScope (ExpCR exp, OptionsExp const* options = nullptr) { m_scopes.Push (exp, options); }
-    void PopScope () {m_scopes.Pop();}
+        ExpScope const& GetCurrentScope() const { return m_scopes.Current(); }
+        ExpScope& GetCurrentScopeR() { return m_scopes.CurrentR(); }
 
-    bool IsEmbeddedStatement () const { return m_parentCtx != nullptr; }
-    bool IsPrimaryStatement () const { return !IsEmbeddedStatement (); }
-    static Utf8String CreateECInstanceIdSelectionQuery (ECSqlPrepareContext& ctx, ClassNameExp const& classNameExpr, WhereExp const* whereExp);
-    static int FindLastParameterIndexBeforeWhereClause (Exp const& statementExp, WhereExp const* whereExp);
+
+        void PushScope(ExpCR exp, OptionsExp const* options = nullptr) { m_scopes.Push(exp, options); }
+        void PopScope() { m_scopes.Pop(); }
+
+        bool IsEmbeddedStatement() const { return m_parentCtx != nullptr; }
+        bool IsPrimaryStatement() const { return !IsEmbeddedStatement(); }
+
+        static Utf8String CreateECInstanceIdSelectionQuery(ECSqlPrepareContext& ctx, ClassNameExp const& classNameExpr, WhereExp const* whereExp);
+        static int FindLastParameterIndexBeforeWhereClause(Exp const& statementExp, WhereExp const* whereExp);
     };
 
 
