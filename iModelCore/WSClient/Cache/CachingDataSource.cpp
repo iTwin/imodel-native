@@ -432,6 +432,7 @@ bvector<SchemaKey> CachingDataSource::GetRepositorySchemaKeys(CacheTransactionCR
     Json::Value schemaDefs;
     if (CacheStatus::OK != txn.GetCache().ReadResponse(CreateSchemaListResponseKey(txn), schemaDefs))
         {
+        BeAssert(false);
         return keys;
         }
 
