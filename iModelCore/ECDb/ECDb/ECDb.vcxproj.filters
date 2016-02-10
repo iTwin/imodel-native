@@ -412,6 +412,9 @@
     <ClInclude Include="ECDbSchemaPersistenceHelper.h">
       <Filter>ECDbSchemaManager</Filter>
     </ClInclude>
+    <ClInclude Include="ECSql\StructArrayAsJsonECSqlField.h">
+      <Filter>ECSql\Fields</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -759,6 +762,9 @@
     </ClCompile>
     <ClCompile Include="ECDbSchemaPersistenceHelper.cpp">
       <Filter>ECDbSchemaManager</Filter>
+    </ClCompile>
+    <ClCompile Include="ECSql\StructArrayAsJsonECSqlField.cpp">
+      <Filter>ECSql\Fields</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -105,6 +105,7 @@
     <ClCompile Include="ECSql\PrimitiveToSingleColumnECSqlBinder.cpp" />
     <ClCompile Include="ECSql\PropertyNameExp.cpp" />
     <ClCompile Include="ECSql\SelectStatementExp.cpp" />
+    <ClCompile Include="ECSql\StructArrayAsJsonECSqlField.cpp" />
     <ClCompile Include="ECSql\StructArrayMappedToSecondaryTableECSqlField.cpp" />
     <ClCompile Include="ECSql\StructArrayToSecondaryTableECSqlBinder.cpp" />
     <ClCompile Include="ECSql\StructMappedToColumnsECSqlField.cpp" />
@@ -213,6 +214,7 @@
     <ClInclude Include="ECSql\PrimitiveToSingleColumnECSqlBinder.h" />
     <ClInclude Include="ECSql\PropertyNameExp.h" />
     <ClInclude Include="ECSql\SelectStatementExp.h" />
+    <ClInclude Include="ECSql\StructArrayAsJsonECSqlField.h" />
     <ClInclude Include="ECSql\StructArrayMappedToSecondaryTableECSqlField.h" />
     <ClInclude Include="ECSql\StructArrayToSecondaryTableECSqlBinder.h" />
     <ClInclude Include="ECSql\StructMappedToColumnsECSqlField.h" />
