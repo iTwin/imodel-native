@@ -81,7 +81,8 @@
         <ProductDirectory Name="JpegAssemblies" Deliver="false"/>
         <ProductDirectory Name="PngNativeAssemblies" Deliver="false"/>            
         <ProductDirectory Name="TiffNativeAssemblies" Deliver="false"/>      
-        <ProductDirectory Name="ZlibNativeAssemblies" Deliver="false"/>              
+        <ProductDirectory Name="ZlibNativeAssemblies" Deliver="false"/>   
+        <ProductDirectory Name="PCLLicenses" Path="Notices" />        
     </ProductDirectoryList>
   
     <Product Name="ScalableMeshSDK"  PrgOutputDir="ScalableMesh" SaveProduct="true" >    
