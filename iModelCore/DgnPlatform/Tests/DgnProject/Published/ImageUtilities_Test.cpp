@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/DgnProject/Published/ImageUtilities_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -21,7 +21,7 @@ TEST (ImageUtilities_Tests, Png)
     info.width = 100;
     info.height = 200;
 
-    testImage.ReserveMemory(info.height * info.width * 4);
+    testImage.Resize(info.height * info.width * 4);
     Byte* p=testImage.GetDataP();
     for (uint8_t y = 0; y<info.height; ++y)
         {
@@ -67,7 +67,7 @@ TEST (ImageUtilities_Tests, PngReadFromBuffer)
     info.width = 100;
     info.height = 200;
 
-    testImage.ReserveMemory(info.height * info.width * 4);
+    testImage.Resize(info.height * info.width * 4);
     Byte* p=testImage.GetDataP();
     for (uint8_t y = 0; y<info.height; ++y)
         {
@@ -116,7 +116,7 @@ TEST (ImageUtilities_Tests, JPG)
     info.width = 100;
     info.height = 200;
 
-    testImage.ReserveMemory(info.height * info.width * 3);
+    testImage.Resize(info.height * info.width * 3);
     Byte* p=testImage.GetDataP();
 
     for (uint8_t y = 0; y<info.height; ++y)
