@@ -328,13 +328,31 @@ ECObjectsStatus ECClass::DeleteProperty (ECPropertyR prop)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            02/2016
 //---------------+---------------+---------------+---------------+---------------+-------
+void ECClass::FindUniquePropertyName(Utf8StringR newName, Utf8CP prefix, Utf8CP originalName)
+    {
+    Utf8PrintfString testName("%s_%s", prefix, originalName);
+    bool conflict = true;
+    while (conflict)
+        {
+        PropertyMap::iterator iter = m_propertyMap.find(testName.c_str());
+        if (iter == m_propertyMap.end())
+            conflict = false;
+        testName.append("_");
+        }
+    newName = testName;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2016
+//---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDerivedProperties)
     {
     PropertyMap::iterator iter = m_propertyMap.find(prop->GetName().c_str());
     if (iter == m_propertyMap.end())
         return ECObjectsStatus::PropertyNotFound;
 
-    Utf8PrintfString newName("%s_%s", prop->GetClass().GetSchema().GetNamespacePrefix().c_str(), prop->GetName().c_str());
+    Utf8String newName;
+    FindUniquePropertyName(newName, prop->GetClass().GetSchema().GetNamespacePrefix().c_str(), prop->GetName().c_str());
     ECPropertyP newProperty;
     CopyProperty(newProperty, prop, newName.c_str(), true);
 
@@ -507,7 +525,9 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
             LOG.errorv("Cannot create property '%s' because it already exists in this ECClass", pProperty->GetName().c_str());
             return ECObjectsStatus::NamedItemAlreadyExists;
             }
-        RenameConflictProperty(pProperty, true);
+        Utf8String newName;
+        FindUniquePropertyName(newName, pProperty->GetClass().GetSchema().GetNamespacePrefix().c_str(), pProperty->GetName().c_str());
+        pProperty->SetName(newName);
         }
 
     // It isn't part of this schema, but does it exist as a property on a baseClass?
