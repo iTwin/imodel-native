@@ -22,44 +22,45 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 ECSqlPreparedStatement::ECSqlPreparedStatement(ECSqlType type, ECDbCR ecdb)
 : m_type(type), m_ecdb(&ecdb), m_isNoopInSqlite(false), m_isNothingToUpdate(false) {}
 
-JoinTableECSqlStatement* ECSqlPreparedStatement::GetBaseECSqlStatement(ECN::ECClassId jointTableId)
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Affan.Khan        01/16
+//---------------------------------------------------------------------------------------
+JoinedTableECSqlStatement* ECSqlPreparedStatement::GetJoinedTableECSqlStatement(ECClassId joinedTableId)
     {
-    if (m_baseECSqlStatement == nullptr && jointTableId != 0)
-        {
-        m_baseECSqlStatement = std::unique_ptr<JoinTableECSqlStatement>(new JoinTableECSqlStatement(jointTableId));
-        }
-    return m_baseECSqlStatement.get();
+    if (m_joinedTableECSqlStatement == nullptr && joinedTableId != ECClass::UNSET_ECCLASSID)
+        m_joinedTableECSqlStatement = std::unique_ptr<JoinedTableECSqlStatement>(new JoinedTableECSqlStatement(joinedTableId));
+
+    return m_joinedTableECSqlStatement.get();
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlPreparedStatement::Prepare(ECSqlPrepareContext& prepareContext, ECSqlParseTreeCR ecsqlParseTree, Utf8CP ecsql)
     {
-    auto const& ecdb = GetECDb();
+    ECDbCR ecdb = GetECDb();
 
     if (GetType() != ECSqlType::Select && ecdb.IsReadonly())
         {
-        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECDb file is opened read-only. For data-modifying ECSQL statements write access is needed.");
+        ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECDb file is opened read-only. For data-modifying ECSQL statements write access is needed.");
         return ECSqlStatus::Error;
         }
 
     Utf8String nativeSql;
-    auto stat = ECSqlPreparer::Prepare(nativeSql, prepareContext, ecsqlParseTree);
+    ECSqlStatus stat = ECSqlPreparer::Prepare(nativeSql, prepareContext, ecsqlParseTree);
     if (!stat.IsSuccess())
         return stat;
-    if (auto info = prepareContext.GetJoinTableInfo())
-        {
-        m_ecsql.assign(info->GetOrignalECSQlStatement());
-        }
+
+    if (ECSqlPrepareContext::JoinedTableInfo const* info = prepareContext.GetJoinedTableInfo())
+        m_ecsql.assign(info->GetOrignalECSql());
     else
         m_ecsql.assign(ecsql);
 
     if (prepareContext.NativeStatementIsNoop())
         m_isNoopInSqlite = true;
     else if (prepareContext.NativeNothingToUpdate())
-        {
         m_isNothingToUpdate = true;
-        }
     else
         {
         //don't let BeSQLite log and assert on error (therefore use TryPrepare instead of Prepare)
@@ -115,9 +116,9 @@ ECSqlStatus ECSqlPreparedStatement::ClearBindings()
     if (m_isNoopInSqlite)
         return ECSqlStatus::Success;
 
-    if (auto baseStmt = GetBaseECSqlStatement())
+    if (auto joinedTableStmt = GetJoinedTableECSqlStatement())
         {
-        baseStmt->ClearBindings();
+        joinedTableStmt->ClearBindings();
         }
 
     const DbResult nativeSqlStat = GetSqliteStatementR ().ClearBindings();
@@ -155,9 +156,9 @@ DbResult ECSqlPreparedStatement::DoStep()
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlPreparedStatement::Reset()
     {
-    if (auto baseStmt = GetBaseECSqlStatement())
+    if (auto joinedTableStmt = GetJoinedTableECSqlStatement())
         {
-        baseStmt->Reset();
+        joinedTableStmt->Reset();
         }
 
     return _Reset();
@@ -353,14 +354,14 @@ DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
 
     //reset the ecinstanceid from key info for the next execution (if it was bound, and is no literal)
     m_ecInstanceKeyInfo.ResetBoundECInstanceId();
-    if (auto baseStmt = GetBaseECSqlStatement())
+    if (auto joinedTableStmt = GetJoinedTableECSqlStatement())
         {      
-        if (auto binder = baseStmt->GetECInstanceIdBinder())
+        if (auto binder = joinedTableStmt->GetECInstanceIdBinder())
             {
             binder->BindId(ecinstanceidOfInsert);
             }
 
-        auto r = baseStmt->Step();       
+        auto r = joinedTableStmt->Step();
         if (r != DbResult::BE_SQLITE_DONE)
             return r;
         }
@@ -440,10 +441,9 @@ DbResult ECSqlUpdatePreparedStatement::Step()
 
         if (!IsNothingToUpdate())
             {
-            if (auto baseStmt = GetBaseECSqlStatement())
+            if (auto joinedTableStmt = GetJoinedTableECSqlStatement())
                 {
-                status = baseStmt->Step();
-                //BeAssert(baseStatus == status && "base and child status must return same status");
+                status = joinedTableStmt->Step();
                 if (status != BE_SQLITE_DONE)
                     return status;
                 }

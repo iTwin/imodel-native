@@ -57,12 +57,13 @@ ECSqlStatus ECSqlStatementBase::_Prepare (ECDbCR ecdb, Utf8CP ecsql)
         }
 
     //establish joinTable context if any
-    if (auto joinTableContext = prepareContext.TrySetupJoinTableContextIfAny(*ecsqlParseTree, ecsql))
+    ECSqlPrepareContext::JoinedTableInfo const* joinedTableInfo = prepareContext.TrySetupJoinedTableInfo(*ecsqlParseTree, ecsql);
+    if (joinedTableInfo != nullptr)
         {
-        if (joinTableContext->HasECSQlStatement()) //in case joinTable update it is possiable that current could be null
-            ecsql = joinTableContext->GetECSQlStatement();    //INSERT INTO Boo(B1, ECInstanceId)
+        if (joinedTableInfo->HasJoinedTableECSql()) //in case joinTable update it is possible that current could be null
+            ecsql = joinedTableInfo->GetJoinedTableECSql();    //INSERT INTO Boo(B1, ECInstanceId)
         else
-            ecsql = joinTableContext->GetParentECSQlStatement();//INSERT INTO Foo(ECInstanceId)
+            ecsql = joinedTableInfo->GetParentOfJoinedTableECSql();//INSERT INTO Foo(ECInstanceId)
 
         ecsqlParseTree = nullptr; //delete existing parse tree
         if (SUCCESS != parser.Parse(ecsqlParseTree, ecdb, ecsql, prepareContext.GetClassMapViewMode()))
@@ -71,6 +72,7 @@ ECSqlStatus ECSqlStatementBase::_Prepare (ECDbCR ecdb, Utf8CP ecsql)
             return ECSqlStatus::InvalidECSql;
             }
         }
+
     //Step 2: translate into SQLite SQL and prepare SQLite statement
     ECSqlPreparedStatement& preparedStatement = CreatePreparedStatement (ecdb, *ecsqlParseTree);
     ECSqlStatus stat = preparedStatement.Prepare (prepareContext, *ecsqlParseTree, ecsql);
