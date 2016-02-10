@@ -79,7 +79,6 @@ protected:
     DGNPLATFORM_EXPORT virtual bool _IsRealProperty(T_Key) const override;
 
 public:
-    DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
     AnnotationFrameStylePropertyBag() : T_Super() {}
     AnnotationFrameStylePropertyBag(AnnotationFrameStylePropertyBagCR rhs) : T_Super(rhs) {}
     AnnotationFrameStylePropertyBagR operator=(AnnotationFrameStylePropertyBagCR rhs) { T_Super::operator=(rhs); return *this;}
@@ -93,6 +92,9 @@ public:
     T_Real GetRealProperty(AnnotationFrameStyleProperty key) const { return T_Super::GetRealProperty((T_Key)key); }
     void SetRealProperty(AnnotationFrameStyleProperty key, T_Real value) { T_Super::SetRealProperty((T_Key)key, value); }
 };
+
+//! As an element, AnnotationFrameStyle IDs are inherently DgnElementId, but create a typedef so that argument types are more obvious/natural.
+typedef DgnElementId AnnotationFrameStyleId;
 
 //=======================================================================================
 //! This is used to provide style properties when creating an AnnotationFrame.
@@ -125,7 +127,6 @@ public:
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationFrameStyle); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
 
-    DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
     explicit AnnotationFrameStyle(DgnDbR db) : T_Super(CreateParams(db, QueryDgnClassId(db), DgnCode())) {}
     explicit AnnotationFrameStyle(CreateParams const& params) : T_Super(params) {}
     static AnnotationFrameStylePtr Create(DgnDbR db) { return new AnnotationFrameStyle(db); }

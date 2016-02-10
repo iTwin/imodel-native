@@ -81,7 +81,6 @@ protected:
     DGNPLATFORM_EXPORT virtual bool _IsRealProperty(T_Key) const override;
 
 public:
-    DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
     AnnotationLeaderStylePropertyBag() : T_Super() {}
     AnnotationLeaderStylePropertyBag(AnnotationLeaderStylePropertyBagCR rhs) : T_Super(rhs) {}
     AnnotationLeaderStylePropertyBagR operator=(AnnotationLeaderStylePropertyBagCR rhs) { T_Super::operator=(rhs); return *this;}
@@ -95,6 +94,9 @@ public:
     T_Real GetRealProperty(AnnotationLeaderStyleProperty key) const { return T_Super::GetRealProperty((T_Key)key); }
     void SetRealProperty(AnnotationLeaderStyleProperty key, T_Real value) { T_Super::SetRealProperty((T_Key)key, value); }
 };
+
+//! As an element, AnnotationLeaderStyle IDs are inherently DgnElementId, but create a typedef so that argument types are more obvious/natural.
+typedef DgnElementId AnnotationLeaderStyleId;
 
 //=======================================================================================
 //! This is used to provide style properties when creating an AnnotationLeader.
@@ -127,7 +129,6 @@ public:
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationLeaderStyle); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
     
-    DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
     explicit AnnotationLeaderStyle(DgnDbR db) : T_Super(CreateParams(db, QueryDgnClassId(db), DgnCode())) {}
     explicit AnnotationLeaderStyle(CreateParams const& params) : T_Super(params) {}
     static AnnotationLeaderStylePtr Create(DgnDbR db) { return new AnnotationLeaderStyle(db); }
