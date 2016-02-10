@@ -41,7 +41,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
             ECSqlStatus status = joinedTableStmt->Prepare(ctx.GetECDb(), info->GetParentOfJoinedTableECSql());
             if (status != ECSqlStatus::Success)
                 {
-                BeAssert("JoinedTable ECSqlStatement is generated statement should fail at prepare");
+                BeAssert("JoinedTableECSqlStatement shouldn't fail to prepare");
                 return status;
                 }
             }
