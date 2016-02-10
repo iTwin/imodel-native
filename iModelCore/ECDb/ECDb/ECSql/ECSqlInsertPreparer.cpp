@@ -25,7 +25,7 @@ ECSqlStatus ECSqlInsertPreparer::Prepare(ECSqlPrepareContext& ctx, InsertStateme
     if (auto info = ctx.GetJoinTableInfo())
         {
         auto baseStatement = ctx.GetECSqlStatementR().GetPreparedStatementP()->GetBaseECSqlStatement(classMap.GetClass().GetId());
-        auto status = baseStatement->Prepare(ctx.GetECDb(), info->GetParentECSQlStatement());
+        auto status = baseStatement->Prepare(ctx.GetECDb(), info->GetParentOfJoinedTableECSql());
         if (status != ECSqlStatus::Success)
             {
             BeAssert("Base statement is generated statement should fail at prepare");

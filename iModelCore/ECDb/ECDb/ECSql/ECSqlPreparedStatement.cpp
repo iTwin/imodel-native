@@ -49,7 +49,7 @@ ECSqlStatus ECSqlPreparedStatement::Prepare(ECSqlPrepareContext& prepareContext,
         return stat;
     if (auto info = prepareContext.GetJoinTableInfo())
         {
-        m_ecsql.assign(info->GetOrignalECSQlStatement());
+        m_ecsql.assign(info->GetOrignalECSql());
         }
     else
         m_ecsql.assign(ecsql);
