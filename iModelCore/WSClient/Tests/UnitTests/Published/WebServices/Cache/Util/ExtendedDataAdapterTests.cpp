@@ -26,21 +26,37 @@ SeedFile ExtendedDataAdapterTests::s_seedECDb("ecdbAdapterTest.ecdb",
     EXPECT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(filePath));
 
     auto schema = ParseSchema(R"xml(
-        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECClass typeName="TestClass" />
-            <ECClass typeName="TestClass2" />
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">    
+            <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+
+            <ECClass typeName="TestClass" isDomainClass="True">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.01.00">
+                        <MapStrategy>
+                            <Strategy>SharedTable</Strategy>
+                            <AppliesToSubclasses>True</AppliesToSubclasses>
+                        </MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+            </ECClass>
+
+            <ECClass typeName="TestClass2" isDomainClass="True">
+                <BaseClass>TestClass</BaseClass>
+            </ECClass>
+
             <ECClass typeName="TestEDClass" isDomainClass="True">
                 <ECProperty propertyName="Content" typeName="string" />
             </ECClass>
+
             <ECRelationshipClass typeName="TestEDRelClass" isDomainClass="True" strength="embedding">
                 <Source cardinality="(1,1)" polymorphic="True">
                     <Class class="TestClass" />
-                    <Class class="TestClass2" />
                 </Source>
                 <Target cardinality="(0,1)" polymorphic="True">
                     <Class class="TestEDClass" />
                 </Target>
             </ECRelationshipClass>
+
         </ECSchema>)xml");
 
     auto cache = ECSchemaCache::Create();
