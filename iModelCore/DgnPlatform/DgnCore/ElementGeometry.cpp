@@ -2894,7 +2894,8 @@ static void UpdatePixelSizeRange(Render::GraphicR graphic, double newMin, double
 void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR context, Render::GeometryParamsR geomParams, bool activateParams) const
     {
     bool isQVis = graphic.IsForDisplay();
-    bool isQVWireframe = (isQVis && RenderMode::Wireframe == context.GetViewFlags().GetRenderMode());
+    bool isWireframe = (RenderMode::Wireframe == context.GetViewFlags().GetRenderMode());
+    bool isQVWireframe = (isQVis && isWireframe);
     bool isPick = (nullptr != context.GetIPickGeom());
     bool isSnap = (isPick && context.GetIPickGeom()->_IsSnap()); // Only need BRep edges/face iso if snapping, mesh good enough for locate...
     bool useBRep = !(isQVis || isPick);
@@ -3266,7 +3267,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
             case GeometryStreamIO::OpCode::BRepFaceIso:
                 {
                 // Don't increment GeometryStreamEntryId...
-                if (!(isSnap || isQVWireframe))
+                if (!(isSnap || isQVWireframe || (isPick && isWireframe))) // Need face hatch lines for wireframe locate...
                     break;
 
                 if (!DrawHelper::IsGeometryVisible(context, geomParams))
