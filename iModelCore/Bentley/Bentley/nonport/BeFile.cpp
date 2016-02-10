@@ -377,8 +377,8 @@ BeFileStatus BeFile::ReadEntireFile(ByteStream& buffer)
     if (BeFileStatus::Success != stat)
         return  stat;
 
-    buffer.ReserveMemory(static_cast <uint32_t> (fileSize));
-    return Read(buffer.GetDataP(), nullptr, static_cast <uint32_t> (fileSize));
+    buffer.Resize(static_cast <uint32_t> (fileSize));
+    return Read(buffer.GetDataP(), nullptr, buffer.GetSize());
     }
 
 /*---------------------------------------------------------------------------------**//**
