@@ -653,7 +653,7 @@ DgnDbStatus GeometryStream::ReadGeometryStream(SnappyFromMemory& snappy, DgnDbR 
         return DgnDbStatus::ReadError;
         }
 
-    ReserveMemory(header.m_size);
+    Resize(header.m_size);
 
     uint32_t actuallyRead;
     auto readStatus = snappy._Read(GetDataP(), GetSize(), actuallyRead);
