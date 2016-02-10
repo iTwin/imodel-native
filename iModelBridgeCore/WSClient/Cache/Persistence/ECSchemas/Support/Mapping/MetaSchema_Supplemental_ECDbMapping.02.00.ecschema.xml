@@ -22,4 +22,74 @@
             </ClassMap>
         </ECCustomAttributes>
     </ECRelationshipClass>
+    <ECRelationshipClass typeName="ClassHasBaseClass">
+        <ECCustomAttributes>
+            <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>NotMapped</Strategy>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ClassHasInheritedProperty">
+        <ECCustomAttributes>
+            <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>NotMapped</Strategy>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ClassHasLocalProperty">
+        <ECCustomAttributes>
+            <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>NotMapped</Strategy>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ClassHasProperty">
+        <ECCustomAttributes>
+            <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>NotMapped</Strategy>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="RelationshipClassHasSourceTarget">
+        <ECCustomAttributes>
+            <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>NotMapped</Strategy>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SchemaHasClass">
+        <ECCustomAttributes>
+            <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>NotMapped</Strategy>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SchemaHasSchemaReference">
+        <ECCustomAttributes>
+            <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>NotMapped</Strategy>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
 </ECSchema>
