@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: DgnCore/Annotations/AnnotationFrame.cpp $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
  
 #include <DgnPlatformInternal.h> 
@@ -26,7 +26,7 @@ AnnotationFrame::AnnotationFrame(DgnDbR project) :
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-AnnotationFramePtr AnnotationFrame::Create(DgnDbR project, DgnElementId styleID)
+AnnotationFramePtr AnnotationFrame::Create(DgnDbR project, AnnotationFrameStyleId styleID)
     {
     auto frame = AnnotationFrame::Create(project);
     frame->SetStyleId(styleID, SetAnnotationFrameStyleOptions::Direct);
@@ -58,7 +58,7 @@ void AnnotationFrame::Reset()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-void AnnotationFrame::SetStyleId(DgnElementId value, SetAnnotationFrameStyleOptions options)
+void AnnotationFrame::SetStyleId(AnnotationFrameStyleId value, SetAnnotationFrameStyleOptions options)
     {
     m_styleID = value;
 
@@ -134,7 +134,7 @@ BentleyStatus AnnotationFramePersistence::DecodeFromFlatBuf(AnnotationFrameR fra
         return ERROR;
 
     PRECONDITION(fbFrame.has_styleId(), ERROR);
-    frame.SetStyleId(DgnElementId((uint64_t)fbFrame.styleId()), SetAnnotationFrameStyleOptions::Direct);
+    frame.SetStyleId(AnnotationFrameStyleId((uint64_t)fbFrame.styleId()), SetAnnotationFrameStyleOptions::Direct);
 
     if (fbFrame.has_styleOverrides())
         AnnotationFrameStylePersistence::DecodeFromFlatBuf(frame.m_styleOverrides, *fbFrame.styleOverrides());
