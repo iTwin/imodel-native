@@ -205,7 +205,15 @@
             </ClassMap>
         </ECCustomAttributes>
         <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
-        <ECProperty propertyName="Label" typeName="string"/>
+        <ECProperty propertyName="Label" typeName="string">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>True</IsNullable>
+                    <Collation>NoCase</Collation>
+                    <IsUnique>False</IsUnique>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
         <ECProperty propertyName="Properties" typeName="string"/>
         <ECProperty propertyName="Visibility" typeName="int"/>
         <ECProperty propertyName="DependencyIndex" typeName="int"/>
