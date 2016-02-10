@@ -163,7 +163,7 @@ void AnnotationLeaderLayout::Update()
     switch (m_leader->GetSourceAttachmentType())
         {
         case AnnotationLeaderSourceAttachmentType::Id:
-            m_frameLayout->ComputePhysicalPointForAttachmentId(m_sourcePhysicalPoint, m_sourceTangent, *m_leader->GetSourceAttachmentDataForId());
+            m_frameLayout->ComputePhysicalPointForAttachmentId(m_sourcePhysicalPoint, m_sourceTangent, m_leader->GetSourceAttachmentDataForId());
             m_frameTransform.Multiply(m_sourcePhysicalPoint);
             break;
 
@@ -176,7 +176,7 @@ void AnnotationLeaderLayout::Update()
         {
         case AnnotationLeaderTargetAttachmentType::PhysicalPoint:
             // NEEDSWORK: Need target relative to placement (which is different from frame transform!)
-            m_targetPhysicalPoint = *m_leader->GetTargetAttachmentDataForPhysicalPoint();
+            m_targetPhysicalPoint = m_leader->GetTargetAttachmentDataForPhysicalPoint();
             break;
 
         default:

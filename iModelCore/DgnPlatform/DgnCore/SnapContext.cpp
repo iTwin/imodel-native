@@ -325,6 +325,7 @@ private:
 SnapContextR        m_snapContext;
 CurveLocationDetail m_location;
 bool                m_isVisible;
+bool                m_testPolyEdges;
 
 protected:
 
@@ -410,6 +411,59 @@ virtual bool _ProcessCurveVector(CurveVectorCR curves, bool isFilled, SimplifyGr
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   11/13
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual bool _ProcessPolyface(PolyfaceQueryCR meshData, bool isFilled, SimplifyGraphic& graphic) override
+    {
+    if (m_testPolyEdges)
+        return false; // Process according to UnhandledPreference...
+
+    PolyfaceVisitorPtr  visitor = PolyfaceVisitor::Attach(meshData);
+    double              tolerance = 1.0e-5;
+
+    visitor->SetNumWrap(1);
+
+    DPoint3d    spacePointLocal;
+    Transform   worldToLocal;
+
+    worldToLocal.InverseOf(graphic.GetLocalToWorldTransform());
+    worldToLocal.Multiply(&spacePointLocal, &m_snapContext.GetSnapDetail()->GetGeomDetail().GetClosestPoint(), 1);
+
+    for (; visitor->AdvanceToNextFace();)
+        {
+        DPoint3d thisFacePoint;
+
+        if (!visitor->TryFindCloseFacetPoint(spacePointLocal, tolerance, thisFacePoint))
+            continue;
+
+        // Get a "face" containing this facet, a single facet when there are hidden edges isn't what someone would consider a face...
+        bvector<ptrdiff_t> seedReadIndices;
+        bvector<ptrdiff_t> allFaceBlocks;
+        bvector<ptrdiff_t> activeReadIndexBlocks;
+    
+        PolyfaceHeaderPtr mesh = meshData.Clone(); // NEEDSWORK_EARLIN - Should be able to call PartitionByConnectivity on PolyfaceQuery...
+
+        mesh->PartitionByConnectivity(2, allFaceBlocks);
+        seedReadIndices.push_back(visitor->GetReadIndex());
+        mesh->SelectBlockedIndices(allFaceBlocks, seedReadIndices, true, activeReadIndexBlocks);
+
+        bvector<PolyfaceHeaderPtr> perFacePolyfaces;
+
+        mesh->CopyPartitions(activeReadIndexBlocks, perFacePolyfaces);
+
+        if (0 != perFacePolyfaces.size())
+            {
+            AutoRestore<bool> savePolyEdges(&m_testPolyEdges, true);
+            graphic.AddPolyface(*perFacePolyfaces.front());
+            }
+
+        break;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void _OutputGraphics (ViewContextR context) override
@@ -481,7 +535,7 @@ virtual void _OutputGraphics (ViewContextR context) override
 
 public:
 
-SnapGraphicsProcessor (SnapContextR snapContext) : m_snapContext(snapContext) {m_isVisible = false;}
+SnapGraphicsProcessor (SnapContextR snapContext) : m_snapContext(snapContext) {m_isVisible = false; m_testPolyEdges = false;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   08/15

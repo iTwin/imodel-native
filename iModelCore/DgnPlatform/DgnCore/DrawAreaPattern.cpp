@@ -864,7 +864,7 @@ double          scale
         }
 
     // NOTE: Colors aren't stored in geometry map for point cells, setup active matsymb color from pattern if different than element color...
-    if (symbCell.IsPointCellSymbol() && PatternParamsModifierFlags::None != (params->modifiers & PatternParamsModifierFlags::Color) && context.GetCurrentGeometryParams()->GetLineColor() != params->color)
+    if (symbCell.IsPointCellSymbol() && PatternParamsModifierFlags::None != (params->modifiers & PatternParamsModifierFlags::Color) && context.GetCurrentGeometryParams()->m_symbology.color != params->color)
         {
         // NOTE: Don't need to worry about overrides, context overrides CAN NOT look at m_currDisplayParams, so changing line color doesn't affect them...
         context.GetCurrentGeometryParams()->SetLineColor(params->color);

@@ -155,6 +155,10 @@ module DgnScriptTests {
 
         ele.Insert();
 
+        var rotateTransform = be.Transform.CreateRotationAroundRay(new be.DRay3d(new be.DPoint3d(0, 0, 0), new be.DVector3d(0, 0, 1)), be.Angle.CreateDegrees(45.0));
+        ele.Transform(rotateTransform);
+        ele.Update();
+
         //  EC API
         var schemas: be.SchemaManager = db.Schemas;
         var pe: be.ECClass = schemas.GetECClass(be.DGN_ECSCHEMA_NAME, be.DGN_CLASSNAME_PhysicalElement);

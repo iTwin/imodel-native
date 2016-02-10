@@ -95,6 +95,9 @@ public:
     void SetRealProperty(AnnotationLeaderStyleProperty key, T_Real value) { T_Super::SetRealProperty((T_Key)key, value); }
 };
 
+//! As an element, AnnotationLeaderStyle IDs are inherently DgnElementId, but create a typedef so that argument types are more obvious/natural.
+typedef DgnElementId AnnotationLeaderStyleId;
+
 //=======================================================================================
 //! This is used to provide style properties when creating an AnnotationLeader.
 //! @note When creating an AnnotationLeader, the typical work flow is to create and store the style, and then create the AnnotationLeader with the stored style's ID.

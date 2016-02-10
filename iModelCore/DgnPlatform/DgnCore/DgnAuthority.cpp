@@ -791,7 +791,14 @@ DgnDbStatus DgnAuthority::RegenerateCode(DgnCodeR code, ICodedEntityCR codedEnti
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode::Iterator::Iterator(DgnDbR db)
     {
-    static const Utf8CP s_ecsql = "SELECT Code.AuthorityId,Code.[Value],Code.Namespace,ECInstanceId FROM " DGN_SCHEMA(DGN_CLASSNAME_CodedEntity);
+#define SELECT_CODE_COLUMNS_FROM "SELECT Code.AuthorityId,Code.[Value],Code.Namespace,ECInstanceId FROM "
+    static const Utf8CP s_ecsql =
+        SELECT_CODE_COLUMNS_FROM DGN_SCHEMA(DGN_CLASSNAME_Element)
+        " UNION ALL "
+        SELECT_CODE_COLUMNS_FROM DGN_SCHEMA(DGN_CLASSNAME_Model)
+        " UNION ALL "
+        SELECT_CODE_COLUMNS_FROM DGN_SCHEMA(DGN_CLASSNAME_GeometryPart);
+
     Prepare(db, s_ecsql, 3);
     }
 
