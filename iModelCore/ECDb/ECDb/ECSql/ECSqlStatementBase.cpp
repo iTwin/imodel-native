@@ -57,7 +57,7 @@ ECSqlStatus ECSqlStatementBase::_Prepare (ECDbCR ecdb, Utf8CP ecsql)
         }
 
     //establish joinTable context if any
-    ECSqlPrepareContext::JoinedTableInfo const* joinedTableInfo = prepareContext.TrySetupJoinTableContext(*ecsqlParseTree, ecsql);
+    ECSqlPrepareContext::JoinedTableInfo const* joinedTableInfo = prepareContext.TrySetupJoinedTableInfo(*ecsqlParseTree, ecsql);
     if (joinedTableInfo != nullptr)
         {
         if (joinedTableInfo->HasJoinedTableECSql()) //in case joinTable update it is possible that current could be null

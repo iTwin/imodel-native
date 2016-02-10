@@ -294,13 +294,13 @@ struct ECSqlPrepareContext
                 JoinedTableInfo(ECN::ECClassCR ecClass) : m_ecinstanceIdIsUserProvided(false), m_primaryECInstanceIdParameterIndex(0), m_class(ecClass)
                     {}
 
-                static std::unique_ptr<JoinedTableInfo> TrySetupJoinTableContextForInsert(ECSqlPrepareContext& ctx, InsertStatementExp const& exp);
-                static std::unique_ptr<JoinedTableInfo> TrySetupJoinTableContextForUpdate(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp);
+                static std::unique_ptr<JoinedTableInfo> CreateForInsert(ECSqlPrepareContext& ctx, InsertStatementExp const& exp);
+                static std::unique_ptr<JoinedTableInfo> CreateForUpdate(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp);
                 static NativeSqlBuilder BuildAssignmentExpression(NativeSqlBuilder::List const& prop, NativeSqlBuilder::List const& values);
 
             public:
                 ~JoinedTableInfo() {}
-                static std::unique_ptr<JoinedTableInfo> TrySetupJoinTableContext(ECSqlPrepareContext& ctx, ECSqlParseTreeCR exp, Utf8CP orignalECSQL);
+                static std::unique_ptr<JoinedTableInfo> Create(ECSqlPrepareContext& ctx, ECSqlParseTreeCR exp, Utf8CP orignalECSQL);
                 Utf8CP GetJoinedTableECSql() const { return m_joinedTableECSql.c_str(); }
                 Utf8CP GetParentOfJoinedTableECSql() const { return m_parentOfJoinedTableECSql.c_str(); }
                 Utf8CP GetOrignalECSql() const { return m_originalECSql.c_str(); }
@@ -383,13 +383,13 @@ struct ECSqlPrepareContext
         bool m_nativeNothingToUpdate;
         ExpScopeStack m_scopes;
         SelectionOptions m_selectionOptions;
-        std::unique_ptr<JoinedTableInfo> m_joinTableInfo;
-        ECClassId m_joinTableClassId;
+        std::unique_ptr<JoinedTableInfo> m_joinedTableInfo;
+        ECClassId m_joinedTableClassId;
         //SELECT only
         static bool FindLastParameterIndexBeforeWhereClause(int& index, Exp const& statementExp, WhereExp const* whereExp);
     public:
         ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&);
-        ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECN::ECClassId joinTableClassId);
+        ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECN::ECClassId joinedTableClassId);
         ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECSqlPrepareContext const& parentCtx, ArrayECPropertyCR parentArrayProperty, ECSqlColumnInfo const* parentColumnInfo);
         ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECSqlPrepareContext const& parentCtx);
         //ECSqlPrepareContext is copyable. Using compiler-generated copy ctor and assignment op.
@@ -405,11 +405,11 @@ struct ECSqlPrepareContext
         SelectionOptions const& GetSelectionOptions() const { return m_selectionOptions; }
         SelectionOptions& GetSelectionOptionsR() { return m_selectionOptions; }
         
-        ECClassId GetJoinTableClassId() const { return m_joinTableClassId; }
-        bool IsParentOfJoinTable() const { return m_joinTableClassId != ECClass::UNSET_ECCLASSID; }
-        void MarkAsParentOfJoinedTable(ECN::ECClassId classId) { BeAssert(!IsParentOfJoinTable()); m_joinTableClassId = classId; }
-        JoinedTableInfo const* GetJoinTableInfo() const { return m_joinTableInfo.get(); }
-        JoinedTableInfo const* TrySetupJoinTableContext(ECSqlParseTreeCR exp, Utf8CP orignalECSQL);
+        ECClassId GetJoinedTableClassId() const { return m_joinedTableClassId; }
+        bool IsParentOfJoinedTable() const { return m_joinedTableClassId != ECClass::UNSET_ECCLASSID; }
+        void MarkAsParentOfJoinedTable(ECN::ECClassId classId) { BeAssert(!IsParentOfJoinedTable()); m_joinedTableClassId = classId; }
+        JoinedTableInfo const* GetJoinedTableInfo() const { return m_joinedTableInfo.get(); }
+        JoinedTableInfo const* TrySetupJoinedTableInfo(ECSqlParseTreeCR exp, Utf8CP orignalECSQL);
         
         ECSqlStatementBase& GetECSqlStatementR() const;
                 NativeSqlBuilder const& GetSqlBuilder() const { return m_nativeSqlBuilder; }
