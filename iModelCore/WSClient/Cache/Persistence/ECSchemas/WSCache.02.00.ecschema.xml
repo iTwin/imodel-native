@@ -2,8 +2,21 @@
 <ECSchema schemaName="WSCache" nameSpacePrefix="WSC" version="02.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.10" prefix="bsca" />
     <ECSchemaReference name="ECDb_FileInfo" version="02.00" prefix="ecdbf" />
+    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+
+    <ECClass typeName="Node" isDomainClass="False">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>SharedTable</Strategy>
+                    <AppliesToSubclasses>true</AppliesToSubclasses>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECClass>
 
     <ECClass typeName="Root" isDomainClass="True">
+        <BaseClass>Node</BaseClass>
         <ECCustomAttributes>
             <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.10">
                 <Indexes>
@@ -28,18 +41,21 @@
         </ECProperty>
     </ECClass>
 
-    <ECClass typeName="NavigationBase" isDomainClass="True" />
+    <ECClass typeName="NavigationBase" isDomainClass="True">
+        <BaseClass>Node</BaseClass>
+    </ECClass>
 
     <ECClass typeName="Sequence" isDomainClass="True">
         <ECProperty propertyName="LastChangeNumber" typeName="long" />
         <ECProperty propertyName="LastCachedFileIndex" typeName="long" />
     </ECClass>
-    
+
     <ECClass typeName="InstanceBackup" isDomainClass="True">
         <ECProperty propertyName="Instance" typeName="string" />
     </ECClass>
 
     <ECClass typeName="ChangeInfo" isDomainClass="True">
+        <BaseClass>Node</BaseClass>
         <ECProperty propertyName="ChangeStatus" typeName="int" />
         <ECProperty propertyName="SyncStatus" typeName="int" />
         <ECProperty propertyName="ChangeNumber" typeName="long" />
@@ -132,6 +148,7 @@
     </ECClass>
 
     <ECClass typeName="CachedResponseInfo" isDomainClass="True">
+        <BaseClass>Node</BaseClass>
         <ECCustomAttributes>
             <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.10">
                 <Indexes>
@@ -157,6 +174,7 @@
     </ECClass>
 
     <ECClass typeName="CachedResponsePageInfo" isDomainClass="True">
+        <BaseClass>Node</BaseClass>
         <ECProperty propertyName="CacheDate" typeName="dateTime">
             <ECCustomAttributes>
                 <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.10">
@@ -192,11 +210,8 @@
         <Source cardinality="(0,N)" polymorphic="False">
             <Class class="CachedResponseInfo" />
         </Source>
-        <!-- WIP06 (1,N) -> (1,1) (ECDb issue) -->
-        <Target cardinality="(1,N)" polymorphic="False">
-            <Class class="CachedObjectInfo" />
-            <Class class="Root" />
-            <Class class="NavigationBase" />
+        <Target cardinality="(1,1)" polymorphic="True">
+            <Class class="Node" />
         </Target>
     </ECRelationshipClass>
 
@@ -204,11 +219,8 @@
         <Source cardinality="(0,N)" polymorphic="False">
             <Class class="CachedResponseInfo" />
         </Source>
-        <!-- WIP06 (1,N) -> (1,1) (ECDb issue) -->
-        <Target cardinality="(1,N)" polymorphic="False">
-            <Class class="CachedObjectInfo" />
-            <Class class="Root" />
-            <Class class="NavigationBase" />
+        <Target cardinality="(1,1)" polymorphic="True">
+            <Class class="Node" />
         </Target>
     </ECRelationshipClass>
 
@@ -263,8 +275,8 @@
         <Source cardinality="(1,1)" polymorphic="False">
             <Class class="CachedFileInfo" />
         </Source>
-        <Target cardinality="(0,1)" polymorphic="True">
-            <Class class="ecdbf:FileInfo" />
+        <Target cardinality="(0,1)" polymorphic="False">
+            <Class class="ecdbf:ExternalFileInfo" />
         </Target>
     </ECRelationshipClass>
 
@@ -282,11 +294,8 @@
     </ECClass>
 
     <ECRelationshipClass typeName="NodeToExtendedData" isDomainClass="True" strength="embedding" strengthDirection="forward">
-        <Source cardinality="(1,1)" polymorphic="False">
-            <Class class="CachedObjectInfo" />
-            <Class class="CachedRelationshipInfo" />
-            <Class class="Root" />
-            <Class class="NavigationBase" />
+        <Source cardinality="(1,1)" polymorphic="True">
+            <Class class="Node" />
         </Source>
         <Target cardinality="(0,1)" polymorphic="False">
             <Class class="ExtendedData" />

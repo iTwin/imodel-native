@@ -33,7 +33,17 @@ m_infoClass(m_dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_CachedObjectInfo)),
 
 m_infoInserter(m_dbAdapter.GetECDb(), *m_infoClass),
 m_infoUpdater(m_dbAdapter.GetECDb(), *m_infoClass)
-    {}
+    {
+    m_dbAdapter.RegisterDeleteListener(this);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ObjectInfoManager::~ObjectInfoManager()
+    {
+    m_dbAdapter.UnRegisterDeleteListener(this);
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2013
@@ -586,4 +596,24 @@ BentleyStatus ObjectInfoManager::RemoveAllCachedInstances()
         });
 
     return m_hierarchyManager.DeleteInstances(*statement);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ObjectInfoManager::OnBeforeDelete(ECN::ECClassCR ecClass, ECInstanceId ecInstanceId, bset<ECInstanceKey>& additionalInstancesOut)
+    {
+    if (&ecClass != m_infoClass)
+        {
+        return SUCCESS;
+        }
+
+    CacheNodeKey infoKey(m_infoClass->GetId(), ecInstanceId);
+    ECInstanceKey instance = ReadCachedInstanceKey(infoKey).GetInstanceKey();
+    if (instance.IsValid())
+        {
+        additionalInstancesOut.insert(instance);
+        }
+
+    return SUCCESS;
     }

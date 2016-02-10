@@ -27,8 +27,8 @@ struct MockExtendedDataAdapterDelegate : public ExtendedDataAdapter::IDelegate
                 return key;
                 }));
             }
-        MOCK_METHOD0(GetExtendedDataClass, ECClassCP());
-        MOCK_METHOD0(GetExtendedDataRelationshipClass, ECRelationshipClassCP());
+        MOCK_METHOD1(GetExtendedDataClass, ECClassCP(ECInstanceKeyCR ownerKey));
+        MOCK_METHOD1(GetExtendedDataRelationshipClass, ECRelationshipClassCP(ECInstanceKeyCR ownerKey));
         MOCK_METHOD1(GetHolderKey, ECInstanceKey(ECInstanceKeyCR ownerKey));
     };
 

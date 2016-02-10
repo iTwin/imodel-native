@@ -19,7 +19,7 @@ struct HierarchyManager;
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ObjectInfoManager
+struct ObjectInfoManager : public IECDbAdapter::DeleteListener
     {
     private:
         ECDbAdapter&            m_dbAdapter;
@@ -38,8 +38,12 @@ struct ObjectInfoManager
             ECSqlStatementCache& statementCache,
             HierarchyManager& hierarchyManager
             );
+        ~ObjectInfoManager();
 
         ECClassCP GetInfoClass() const;
+
+        //! IECDbAdapter::DeleteListener
+        BentleyStatus OnBeforeDelete(ECClassCR ecClass, ECInstanceId ecInstanceId, bset<ECInstanceKey>& additionalInstancesOut) override;
 
         BentleyStatus InsertInfo(ObjectInfoR info);
         BentleyStatus UpdateInfo(ObjectInfoCR info);
