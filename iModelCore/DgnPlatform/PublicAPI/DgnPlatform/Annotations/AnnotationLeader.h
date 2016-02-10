@@ -66,7 +66,7 @@ private:
 
     DgnDbP m_dgndb;
     
-    DgnElementId m_styleID;
+    AnnotationLeaderStyleId m_styleID;
     AnnotationLeaderStylePropertyBag m_styleOverrides;
 
     AnnotationLeaderSourceAttachmentType m_sourceAttachmentType;
@@ -79,17 +79,16 @@ private:
     void Reset();
 
 public:
-    DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
     DGNPLATFORM_EXPORT explicit AnnotationLeader(DgnDbR);
     AnnotationLeader(AnnotationLeaderCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
     AnnotationLeaderR operator=(AnnotationLeaderCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
     static AnnotationLeaderPtr Create(DgnDbR project) { return new AnnotationLeader(project); }
-    DGNPLATFORM_EXPORT static AnnotationLeaderPtr Create(DgnDbR, DgnElementId);
+    DGNPLATFORM_EXPORT static AnnotationLeaderPtr Create(DgnDbR, AnnotationLeaderStyleId);
     AnnotationLeaderPtr Clone() const { return new AnnotationLeader(*this); }
 
     DgnDbR GetDbR() const { return *m_dgndb; }
-    DgnElementId GetStyleId() const { return m_styleID; }
-    DGNPLATFORM_EXPORT void SetStyleId(DgnElementId, SetAnnotationLeaderStyleOptions);
+    AnnotationLeaderStyleId GetStyleId() const { return m_styleID; }
+    DGNPLATFORM_EXPORT void SetStyleId(AnnotationLeaderStyleId, SetAnnotationLeaderStyleOptions);
     AnnotationLeaderStylePtr CreateEffectiveStyle() const { return AnnotationLeaderStyle::Get(*m_dgndb, m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
     AnnotationLeaderStylePropertyBagCR GetStyleOverrides() const { return m_styleOverrides; }
     AnnotationLeaderStylePropertyBagR GetStyleOverridesR() { return m_styleOverrides; }

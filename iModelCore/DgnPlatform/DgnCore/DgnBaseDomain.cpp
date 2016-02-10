@@ -41,12 +41,11 @@ HANDLER_DEFINE_MEMBERS(Geometric2d)
 namespace dgn_ElementHandler
 {
 HANDLER_DEFINE_MEMBERS(Element)
-HANDLER_DEFINE_MEMBERS(SpatialGroup)
+HANDLER_DEFINE_MEMBERS(Geometric2d)
+HANDLER_DEFINE_MEMBERS(Geometric3d)
 HANDLER_DEFINE_MEMBERS(Physical)
-HANDLER_DEFINE_MEMBERS(Graphical2d)
 HANDLER_DEFINE_MEMBERS(Annotation)
 HANDLER_DEFINE_MEMBERS(Drawing)
-HANDLER_DEFINE_MEMBERS(Sheet)
 };
 
 namespace dgn_AspectHandler
@@ -98,12 +97,11 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ModelHandler::Dictionary::GetHandler());
 
     RegisterHandler(dgn_ElementHandler::Element::GetHandler());
+    RegisterHandler(dgn_ElementHandler::Geometric2d::GetHandler());
+    RegisterHandler(dgn_ElementHandler::Geometric3d::GetHandler());
     RegisterHandler(dgn_ElementHandler::Physical::GetHandler());
-    RegisterHandler(dgn_ElementHandler::Graphical2d::GetHandler());
     RegisterHandler(dgn_ElementHandler::Annotation::GetHandler());
     RegisterHandler(dgn_ElementHandler::Drawing::GetHandler());
-    RegisterHandler(dgn_ElementHandler::Sheet::GetHandler());
-    RegisterHandler(dgn_ElementHandler::SpatialGroup::GetHandler());
     RegisterHandler(dgn_ElementHandler::VolumeElementHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::TextAnnotation2dHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::TextAnnotation3dHandler::GetHandler());

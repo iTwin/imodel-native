@@ -38,7 +38,6 @@ private:
     DGNPLATFORM_EXPORT void Update();
 
 public:
-    DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
     DGNPLATFORM_EXPORT AnnotationFrameLayout(AnnotationFrameCR, AnnotationTextBlockLayoutCR);
     AnnotationFrameLayout(AnnotationFrameLayoutCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
     AnnotationFrameLayoutR operator=(AnnotationFrameLayoutCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}

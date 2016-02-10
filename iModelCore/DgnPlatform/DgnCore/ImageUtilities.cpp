@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ImageUtilities.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -122,7 +122,7 @@ static BentleyStatus readPngToBuffer(ByteStream& outPixels, ImageUtilities::RgbI
     info.hasAlpha = (32 == info_ptr->pixel_depth);     // either RGB or RGBA
     info.isBGR = false;
     info.isTopDown = true;
-    outPixels.ReserveMemory((uint32_t) (info.height*bytesPerRow));
+    outPixels.Resize((uint32_t) (info.height*bytesPerRow));
 
     for(uint32_t line=0; line < info.height; ++line)
         memcpy(outPixels.GetDataP() + line*bytesPerRow, rows_pointers[line], bytesPerRow);
@@ -367,7 +367,7 @@ BentleyStatus ImageUtilities::ReadImageFromJpgBuffer (ByteStream& rgbaBuffer, Rg
     if (SUCCESS != reader.ReadHeader (info.width, info.height, inputBuffer, inputBufferSize))
         return ERROR;
 
-    rgbaBuffer.ReserveMemory((uint32_t) (info.width*info.height*computeBytesPerPixel(info)));
+    rgbaBuffer.Resize((uint32_t) (info.width*info.height*computeBytesPerPixel(info)));
     return reader.Decompress(rgbaBuffer.GetDataP(), rgbaBuffer.GetSize(), inputBuffer, inputBufferSize, computePixelFormat(info));
     }
 

@@ -905,18 +905,23 @@ bool _ScanRangeFromPolyhedron()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt _VisitGeometry(GeometrySourceCR source) override
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    DPoint3d corners[8];
-    auto geom3d = source.ToGeometrySource3d();
+    DRange3d range = source.CalculateRange3d();
+    bool is3d = (nullptr != source.ToGeometrySource3d());
 
-    DRange3d elRange = source.CalculateRange3d();
-    if (IsRangeContainedInCurrentRange(elRange, nullptr != geom3d))
+    if (IsRangeContainedInCurrentRange(range, is3d))
         return SUCCESS;
 
-    // NOTE: Can just draw bounding box instead of drawing element geometry...
+    // NOTE: Can just element aligned box instead of drawing element geometry...
     DPoint3d corners[8];
-    range.Get8Corners(corners);
-    GetIDrawGeom().AddPointString(8, corners, nullptr);
+    ElementAlignedBox3d elementBox = (is3d ? source.ToGeometrySource3d()->GetPlacement().GetElementBox() : ElementAlignedBox3d(source.ToGeometrySource2d()->GetPlacement().GetElementBox()));
+
+    elementBox.Get8Corners(corners);
+    source.GetPlacementTransform().Multiply(corners, corners, 8);
+
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    m_fitRange.Union (8, corners, GetCurrRangeClip());
+#else
+    m_fitRange.Union (8, corners, nullptr);
 #endif
 
     return SUCCESS;

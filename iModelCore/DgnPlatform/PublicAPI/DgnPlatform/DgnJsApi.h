@@ -242,8 +242,8 @@ struct JsDgnElement : RefCountedBaseWithCreate
     JsAuthorityIssuedCodeP GetCode() const {return new JsAuthorityIssuedCode(m_el->GetCode());}
     JsDgnModelP GetModel();
     JsECClassP GetElementClass();
-    int32_t Insert() {return m_el.IsValid()? m_el->Insert().IsValid()? 0: -1: -2;}
-    int32_t Update() {return m_el.IsValid()? m_el->Update().IsValid()? 0: -1: -2;}
+    int32_t Insert();
+    int32_t Update();
     void SetParent(JsDgnElement* parent) {if (m_el.IsValid() && (nullptr != parent)) m_el->SetParentId(parent->m_el->GetElementId());}
 
     STUB_OUT_SET_METHOD(Model, JsDgnModelP)
@@ -262,6 +262,8 @@ struct JsPhysicalElement : JsDgnElement
     JsPhysicalElement(PhysicalElementR el) : JsDgnElement(el) {;}
 
     JsPlacement3dP GetPlacement() const;
+
+    int32_t Transform(JsTransformP transform);
 
     static JsPhysicalElement* Create(JsDgnModelP model, JsDgnObjectIdP categoryId, Utf8StringCR elementClassName);
 

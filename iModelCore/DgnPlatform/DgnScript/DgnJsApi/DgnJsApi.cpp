@@ -55,7 +55,52 @@ JsGeometryBuilder::JsGeometryBuilder(JsDgnElementP e, JsDPoint3dP o, JsYawPitchR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
-JsPlacement3dP JsPhysicalElement::GetPlacement() const { return m_el.IsValid() ? new JsPlacement3d(m_el->ToGeometrySource3d()->GetPlacement()) : nullptr; }
+int32_t JsDgnElement::Insert() 
+    {
+    if (!m_el.IsValid())
+        return -1;
+    auto cptr = m_el->Insert();
+    if (!cptr.IsValid())
+        return -2;
+    m_el = cptr->CopyForEdit();
+    return 0;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+int32_t JsDgnElement::Update() 
+    {
+    if (!m_el.IsValid())
+        return -1;
+    auto cptr = m_el->Update();
+    if (!cptr.IsValid())
+        return -2;
+    m_el = cptr->CopyForEdit();
+    return 0;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+JsPlacement3dP JsPhysicalElement::GetPlacement() const 
+    {
+    return m_el.IsValid() ? new JsPlacement3d(m_el->ToGeometrySource3d()->GetPlacement()) : nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+int32_t JsPhysicalElement::Transform(JsTransformP jstransform)
+    {
+    if(!m_el.IsValid())
+        return -1;
+
+    if (m_el->IsPersistent())
+        m_el = m_el->CopyForEdit();
+
+    return (DgnDbStatus::Success == DgnElementTransformer::ApplyTransformTo(*m_el, jstransform->Get()))? 0: -2;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      06/15
