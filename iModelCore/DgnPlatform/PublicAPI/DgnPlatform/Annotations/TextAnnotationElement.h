@@ -85,9 +85,9 @@ namespace dgn_AspectHandler
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     09/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TextAnnotation2d : AnnotationElement
+struct EXPORT_VTABLE_ATTRIBUTE TextAnnotation2d : AnnotationElement2d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotation2d, AnnotationElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotation2d, AnnotationElement2d);
 
 protected:
     virtual bool _DrawHit(HitDetailCR, ViewContextR) const override { return false; } // Don't flash text box...
@@ -120,18 +120,18 @@ namespace dgn_ElementHandler
     //=======================================================================================
     // @bsiclass                                                    Jeff.Marker     09/2015
     //=======================================================================================
-    struct TextAnnotation2dHandler : Annotation
+    struct TextAnnotation2dHandler : Annotation2d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotation2d, TextAnnotation2d, TextAnnotation2dHandler, Annotation, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotation2d, TextAnnotation2d, TextAnnotation2dHandler, Annotation2d, DGNPLATFORM_EXPORT);
     };
 }
 
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     09/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TextAnnotation3d : SpatialElement
+struct EXPORT_VTABLE_ATTRIBUTE TextAnnotation3d : GraphicalElement3d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotation3d, SpatialElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotation3d, GraphicalElement3d);
 
 protected:
     virtual bool _DrawHit(HitDetailCR, ViewContextR) const override { return false; } // Don't flash text box...
