@@ -30,8 +30,8 @@ m_delegate(edDelegate)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExtendedData ExtendedDataAdapter::GetData(ECInstanceKeyCR ownerKey)
     {
-    auto edClass = m_delegate.GetExtendedDataClass();
-    auto edRelClass = m_delegate.GetExtendedDataRelationshipClass();
+    auto edClass = m_delegate.GetExtendedDataClass(ownerKey);
+    auto edRelClass = m_delegate.GetExtendedDataRelationshipClass(ownerKey);
 
     if (nullptr == edClass || nullptr == edRelClass)
         {
@@ -74,8 +74,8 @@ ExtendedData ExtendedDataAdapter::GetData(ECInstanceKeyCR ownerKey)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ExtendedDataAdapter::UpdateData(ExtendedData& data)
     {
-    auto edClass = m_delegate.GetExtendedDataClass();
-    auto edRelClass = m_delegate.GetExtendedDataRelationshipClass();
+    auto edClass = m_delegate.GetExtendedDataClass(data.m_ownerKey);
+    auto edRelClass = m_delegate.GetExtendedDataRelationshipClass(data.m_ownerKey);
 
     if (nullptr == edClass || nullptr == edRelClass)
         {
