@@ -461,6 +461,8 @@ TEST_F(CachingDataSourceTests, GetRepositorySchemas_CacheContainsNonRepositorySc
         EXPECT_EQ(2, schemas.size());
         EXPECT_CONTAINS(schemas, txn.GetCache().GetAdapter().GetECSchema("A"));
         EXPECT_CONTAINS(schemas, txn.GetCache().GetAdapter().GetECSchema("B"));
+        EXPECT_NE(nullptr, txn.GetCache().GetAdapter().GetECSchema("A"));
+        EXPECT_NE(nullptr, txn.GetCache().GetAdapter().GetECSchema("B"));
         })->Wait();
     }
 

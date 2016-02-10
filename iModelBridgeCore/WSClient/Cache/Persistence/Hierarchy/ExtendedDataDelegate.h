@@ -31,8 +31,8 @@ struct ExtendedDataDelegate : ExtendedDataAdapter::IDelegate
             m_relationshipInfoManager(m_relationshipInfoManager)
             {}
 
-        ECClassCP GetExtendedDataClass() override;
-        ECRelationshipClassCP GetExtendedDataRelationshipClass() override;
+        ECClassCP GetExtendedDataClass(ECInstanceKeyCR ownerKey) override;
+        ECRelationshipClassCP GetExtendedDataRelationshipClass(ECInstanceKeyCR ownerKey) override;
         ECInstanceKey GetHolderKey(ECInstanceKeyCR ownerKey) override;
     };
 

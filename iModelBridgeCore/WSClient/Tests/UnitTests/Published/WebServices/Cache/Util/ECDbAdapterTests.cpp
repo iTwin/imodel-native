@@ -76,7 +76,7 @@ SeedFile ECDbAdapterTests::s_seedECDb("ecdbAdapterTest.ecdb",
                 <Target cardinality="(0,N)"><Class class="TestClass" /></Target>
             </ECRelationshipClass>
             <ECRelationshipClass typeName="EmbeddingRel" strength="embedding">
-                <Source cardinality="(0,N)"><Class class="TestClass" /></Source>
+                <Source cardinality="(0,1)"><Class class="TestClass" /></Source>
                 <Target cardinality="(0,N)"><Class class="TestClass" /></Target>
             </ECRelationshipClass>
         </ECSchema>)xml");
@@ -225,7 +225,19 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassWithSource_SchemaHasOneMatchingRel
     {
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECClass typeName="Base" />
+            <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+
+            <ECClass typeName="Base">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.01.00">
+                        <MapStrategy>
+                            <Strategy>SharedTable</Strategy>
+                            <AppliesToSubclasses>True</AppliesToSubclasses>
+                        </MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+            </ECClass>
+
             <ECClass typeName="A">
                 <BaseClass>Base</BaseClass>
             </ECClass>
@@ -285,7 +297,19 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassWithTarget_SchemaHasOneMatchingRel
     {
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECClass typeName="Base" />
+            <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+
+            <ECClass typeName="Base">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.01.00">
+                        <MapStrategy>
+                            <Strategy>SharedTable</Strategy>
+                            <AppliesToSubclasses>True</AppliesToSubclasses>
+                        </MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+            </ECClass>
+
             <ECClass typeName="A">
                 <BaseClass>Base</BaseClass>
             </ECClass>
@@ -318,7 +342,19 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatc
     {
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECClass typeName="Base" />
+            <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+
+            <ECClass typeName="Base">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.01.00">
+                        <MapStrategy>
+                            <Strategy>SharedTable</Strategy>
+                            <AppliesToSubclasses>True</AppliesToSubclasses>
+                        </MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+            </ECClass>
+
             <ECClass typeName="A">
                 <BaseClass>Base</BaseClass>
             </ECClass>
@@ -351,7 +387,19 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatc
     {
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECClass typeName="Base" />
+            <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+
+            <ECClass typeName="Base">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.01.00">
+                        <MapStrategy>
+                            <Strategy>SharedTable</Strategy>
+                            <AppliesToSubclasses>True</AppliesToSubclasses>
+                        </MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+            </ECClass>
+
             <ECClass typeName="A">
                 <BaseClass>Base</BaseClass>
             </ECClass>
@@ -384,7 +432,19 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasNoMatch
     {
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECClass typeName="Base" />
+            <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+
+            <ECClass typeName="Base">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.01.00">
+                        <MapStrategy>
+                            <Strategy>SharedTable</Strategy>
+                            <AppliesToSubclasses>True</AppliesToSubclasses>
+                        </MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+            </ECClass>
+
             <ECClass typeName="A"/>
             <ECClass typeName="B"/>
             <ECRelationshipClass typeName="AB1">
@@ -439,7 +499,19 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassesWithSource_SchemaHasOneMatchingR
     {
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECClass typeName="Base" />
+            <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+
+            <ECClass typeName="Base">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.01.00">
+                        <MapStrategy>
+                            <Strategy>SharedTable</Strategy>
+                            <AppliesToSubclasses>True</AppliesToSubclasses>
+                        </MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+            </ECClass>
+
             <ECClass typeName="A">
                 <BaseClass>Base</BaseClass>
             </ECClass>
@@ -471,7 +543,19 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassesInSchema_SchemaHasOneMatchingRel
     {
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECClass typeName="Base" />
+            <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+
+            <ECClass typeName="Base">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.01.00">
+                        <MapStrategy>
+                            <Strategy>SharedTable</Strategy>
+                            <AppliesToSubclasses>True</AppliesToSubclasses>
+                        </MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+            </ECClass>
+
             <ECClass typeName="A">
                 <BaseClass>Base</BaseClass>
             </ECClass>
@@ -513,7 +597,19 @@ TEST_F(ECDbAdapterTests, FindRelationshipClasses_SchemaHasOneMatchingRelationsip
     {
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECClass typeName="Base" />
+            <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+
+            <ECClass typeName="Base">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.01.00">
+                        <MapStrategy>
+                            <Strategy>SharedTable</Strategy>
+                            <AppliesToSubclasses>True</AppliesToSubclasses>
+                        </MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+            </ECClass>
+
             <ECClass typeName="A">
                 <BaseClass>Base</BaseClass>
             </ECClass>
@@ -821,11 +917,16 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatHoldsChildThatHasOthe
     adapter.RegisterDeleteListener(&listener);
 
     EXPECT_EQ(SUCCESS, adapter.DeleteInstances(StubECInstanceKeyMultiMap({parent})));
+
     auto notDeletedInstances = adapter.FindInstances(ecClass);
     EXPECT_EQ(2, notDeletedInstances.size());
     EXPECT_NCONTAIN(notDeletedInstances, parent.GetECInstanceId());
     EXPECT_CONTAINS(notDeletedInstances, otherParent.GetECInstanceId());
     EXPECT_CONTAINS(notDeletedInstances, child.GetECInstanceId());
+
+    notDeletedInstances = adapter.FindInstances(holdingRelClass);
+    EXPECT_EQ(1, notDeletedInstances.size());
+    EXPECT_CONTAINS(notDeletedInstances, rel2.GetECInstanceId());
     }
 
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletingHoldingRelationshipWhenChildHasOtherHoldingParent_DeletesRelationshipWithoutChild)

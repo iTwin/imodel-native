@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP ExtendedDataDelegate::GetExtendedDataClass()
+ECClassCP ExtendedDataDelegate::GetExtendedDataClass(ECInstanceKeyCR ownerKey)
     {
     return m_dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_ExtendedData);
     }
@@ -22,7 +22,7 @@ ECClassCP ExtendedDataDelegate::GetExtendedDataClass()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipClassCP ExtendedDataDelegate::GetExtendedDataRelationshipClass()
+ECRelationshipClassCP ExtendedDataDelegate::GetExtendedDataRelationshipClass(ECInstanceKeyCR ownerKey)
     {
     return m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_NodeToExtendedData);
     }

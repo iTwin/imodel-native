@@ -1134,6 +1134,12 @@ BentleyStatus ECDbAdapter::DeleteInstances(const ECInstanceKeyMultiMap& instance
             }
         }
 
+    // Cleanup holding relationship hierarchies
+    if (SUCCESS != m_ecDb->Purge(ECDb::PurgeMode::HoldingRelationships))
+        {
+        return ERROR;
+        }
+
     ECInstanceKeyMultiMap additionalInstancesMap;
     for (auto& key : additionalInstancesSet)
         {
