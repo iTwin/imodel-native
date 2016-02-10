@@ -510,7 +510,7 @@
         <ECProperty propertyName="BBoxLow" typeName="point2d" />
         <ECProperty propertyName="BBoxHigh" typeName="point2d" />
     </ECEntityClass>
-    <ECEntityClass typeName="GraphicalElement2d">
+    <ECEntityClass typeName="GraphicalElement2d" modifier="Abstract">
         <!-- 2D geometric element that is used to convey information within graphical presentations (like drawings). -->
         <BaseClass>GeometricElement2d</BaseClass>
     </ECEntityClass>
