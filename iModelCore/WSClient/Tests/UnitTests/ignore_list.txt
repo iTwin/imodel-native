@@ -40,17 +40,12 @@ DataSourceCacheTests.UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceC
 CachingDataSourceTests.UpdateSchemas_*
 CachingDataSourceTests.OpenOrCreate_SchemaPathNotPassedAndServerRetursMetaSchema_GetsAllSchemasAndMetaSchemaFromServer
 
-# Fails when using existing ECDb and opening it. Works fine when using freshly opened ECDb
+# Fails because ECDb holding relationship deletion deletes child but not subchildren
+ECDbAdapterTests.DeleteInstances_DeletingRelationshipThatHoldsHierarchy_HierarchyDeleted
 ECDbAdapterTests.DeleteInstances_DeletingParentThatHoldsTwoChildrenThatHoldSubChild_DeletesParentAndChildrenAndSubChild
 ECDbAdapterTests.DeleteInstances_DeletedInstanceIsInHoldingCircularRelationships_DeletesChildren
 
-# Fails because ECDb holding relationship deletion deletes child but not subchildren
-ECDbAdapterTests.DeleteInstances_DeletingRelationshipThatHoldsHierarchy_HierarchyDeleted
-
 #Need adjustments to 06 ECRelationship limitations in ECDb
-#Test schema with relationship where end maps to multiple tables
-ExtendedDataAdapterTests.*
-#WSCache schema has relationships where end maps to multiple tables
 CachingDataSourceTests.*
 ChangeManagerTests.*
 DataSourceCacheTests.*
