@@ -104,7 +104,9 @@ public:
     //! This is only to be called during SELECT view generation. It appends the column name
     //! and, if set, the view column alias to to the select clause of the view.
     //! @param[in,out] viewSql View SQL builder to append to
+    void AppendSelectClauseSqlSnippetForView (NativeSqlBuilder& viewSql, ECDbSqlTable const& table) const;
     void AppendSelectClauseSqlSnippetForView (NativeSqlBuilder& viewSql) const;
+
     };
 
 //=======================================================================================

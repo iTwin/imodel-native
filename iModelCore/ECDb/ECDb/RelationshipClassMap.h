@@ -164,8 +164,20 @@ public:
         if (!referencedEndClassIdPropertyMap->IsVirtual() && !referencedEndClassIdPropertyMap->IsMappedToClassMapTables())
             return true;
 
-        return  GetTargetECClassIdPropMap()->GetSingleColumn() == GetSourceECClassIdPropMap()->GetSingleColumn()
-            && !GetTargetECClassIdPropMap()->IsVirtual() && !GetTargetECClassIdPropMap()->IsVirtual();
+        std::vector<ECDbSqlColumn const*> sourceColumns, targetColumns;
+        GetSourceECClassIdPropMap()->GetColumns(sourceColumns);
+        GetTargetECClassIdPropMap()->GetColumns(targetColumns);
+
+        //SELF JOIN case
+        if (sourceColumns.size() == 1 && targetColumns.size() == 1)
+            {
+            return  sourceColumns.front() == targetColumns.front()
+                && sourceColumns.front()->GetPersistenceType() == PersistenceType::Persisted && !GetSourceECClassIdPropMap()->IsVirtual();
+            }
+        else
+            {
+            return false;
+            }
         }
     };
 

@@ -509,6 +509,8 @@ MapStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMap
         if (fkTable.GetParentOfJoinedTable() != nullptr)
             {
             //WIP_AFFAN. The DGN schema has such cases. What should we do with them?
+            //We support it in one direction but not in another e.g. if FK is stored in a table that is not a JoinedTable then we can support otherwise no.
+
             /*if (userRequestedDeleteAction == ForeignKeyActionType::Cascade ||
                 (userRequestedDeleteAction == ForeignKeyActionType::NotSpecified && relationshipClass.GetStrength() == StrengthType::Embedding))
                 {
