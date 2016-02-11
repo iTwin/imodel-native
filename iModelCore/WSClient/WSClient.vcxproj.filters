@@ -833,6 +833,9 @@
     <ClInclude Include="Cache\Persistence\Hierarchy\ExtendedDataDelegate.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerError.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="WSClient.PartFile.xml" />

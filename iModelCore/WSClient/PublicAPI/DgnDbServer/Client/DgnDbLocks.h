@@ -26,9 +26,10 @@ private:
     ICancellationTokenPtr        m_cancellationToken;
     Credentials                  m_credentials;
     WebServices::ClientInfoPtr   m_clientInfo;
+    IHttpHandlerPtr              m_customHandler;
 
 protected:
-    DgnDbRepositoryManager (WebServices::ClientInfoPtr clientInfo);
+    DgnDbRepositoryManager(WebServices::ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler);
 
     virtual Response                      _ProcessRequest       (Request const& req, DgnDbR db) override;
     virtual RepositoryStatus              _Demote               (DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db) override;
@@ -37,7 +38,7 @@ protected:
     virtual RepositoryStatus              _QueryStates          (DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes) override;
 
 public:
-    static DgnDbRepositoryManagerPtr      Create                (WebServices::ClientInfoPtr clientInfo);
+    static DgnDbRepositoryManagerPtr      Create                (WebServices::ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler = nullptr);
     void                                  SetCredentials        (CredentialsCR credentials) { m_credentials = credentials; };
 
     DGNDBSERVERCLIENT_EXPORT DgnDbResult  Connect               (DgnDbCR db);

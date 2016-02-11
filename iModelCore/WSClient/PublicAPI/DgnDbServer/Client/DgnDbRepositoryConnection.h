@@ -111,7 +111,7 @@ private:
     //! Returns all available locks for given lock ids and briefcase id.
     AsyncTaskPtr<DgnDbLockSetResult> QueryLocksInternal (LockableIdSet const* ids, const BeSQLite::BeBriefcaseId* briefcaseId, ICancellationTokenPtr cancellationToken = nullptr);
 
-    DgnDbRepositoryConnection(RepositoryInfoPtr repository, WebServices::CredentialsCR credentials, WebServices::ClientInfoPtr clientInfo);
+    DgnDbRepositoryConnection(RepositoryInfoPtr repository, WebServices::CredentialsCR credentials, WebServices::ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler);
 
 public:
     //! Create an instance of the connection to a repository on the server.
@@ -119,9 +119,10 @@ public:
     //! @param[in] credentials Credentials used to authenticate on the repository.
     //! @param[in] clientInfo Application information sent to server.
     //! @param[in] cancellationToken
+    //! @param[in] customHandler Custom http handler for connect authentication.
     //! @return Asynchronous task that has the created connection instance as the result.
     //! @note OpenBriefcase in DgnDbClient is used to create an instance of a DgnDbRepositoryConnection.
-    static AsyncTaskPtr<DgnDbRepositoryConnectionResult> Create (RepositoryInfoPtr repository, CredentialsCR credentials, WebServices::ClientInfoPtr clientInfo, ICancellationTokenPtr cancellationToken = nullptr);
+    static AsyncTaskPtr<DgnDbRepositoryConnectionResult> Create(RepositoryInfoPtr repository, CredentialsCR credentials, WebServices::ClientInfoPtr clientInfo, ICancellationTokenPtr cancellationToken = nullptr, IHttpHandlerPtr customHandler = nullptr);
 
 //__PUBLISH_SECTION_START__
 
