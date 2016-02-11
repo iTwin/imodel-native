@@ -54,8 +54,11 @@ AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullAndMerge(HttpRequest::ProgressCall
         {
         return CreateCompletedAsyncTask<DgnDbResult>(DgnDbResult::Error(Error::DbReadOnly));
         }
-    Utf8String lastRevisionId;
-    m_db->QueryBriefcaseLocalValue(Db::Local::LastRevision, lastRevisionId);
+    if (!m_db->Txns ().IsTracking ())
+        {
+        return CreateCompletedAsyncTask<DgnDbResult> (DgnDbResult::Error (Error::TrackingNotEnabled));
+        }
+    Utf8String lastRevisionId = GetLastRevisionPulled ();
     return m_repositoryConnection->Pull(lastRevisionId, callback, cancellationToken)->Then<DgnDbResult>([=] (const DgnDbServerRevisionsResult& result)
         {
         if (result.IsSuccess())
@@ -182,44 +185,40 @@ AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullMergeAndPushInternal(HttpRequest::
             {
             DgnDbServerHost::Adopt(host);
             BeAssert(m_db.IsValid());
-            if (!m_db->Txns().IsUndoPossible())
+            DgnRevisionPtr revision = m_db->Revisions ().StartCreateRevision ();
+            DgnDbServerHost::Forget (host, false);
+            if (!revision.IsValid ())
                 {
-                DgnDbServerHost::Forget(host, false);
                 finalResult->SetSuccess();
                 }
             else
                 {
-                DgnRevisionPtr revision = m_db->Revisions().StartCreateRevision();
-                DgnDbServerHost::Forget(host, false);
-                if (revision.IsValid())
+                Utf8String revisionId = revision->GetId();
+                BeFileName revisionFile(m_db->GetDbFileName());
+                m_repositoryConnection->Push(revision, m_db->GetBriefcaseId().GetValue(), uploadCallback, cancellationToken)->Then
+                    ([=] (const DgnDbResult& pushResult)
                     {
-                    Utf8String revisionId = revision->GetId();
-                    BeFileName revisionFile(m_db->GetDbFileName());
-                    m_repositoryConnection->Push(revision, m_db->GetBriefcaseId().GetValue(), uploadCallback, cancellationToken)->Then
-                        ([=] (const DgnDbResult& pushResult)
+                    if (pushResult.IsSuccess())
                         {
-                        if (pushResult.IsSuccess())
+                        DgnDbServerHost::Adopt(host);
+                        Dgn::RevisionStatus status = m_db->Revisions().FinishCreateRevision();
+                        m_db->SaveChanges();
+                        DgnDbServerHost::Forget(host);
+                        if (RevisionStatus::Success == status)
                             {
-                            DgnDbServerHost::Adopt(host);
-                            Dgn::RevisionStatus status = m_db->Revisions().FinishCreateRevision();
-                            m_db->SaveChanges();
-                            DgnDbServerHost::Forget(host);
-                            if (RevisionStatus::Success == status)
-                                {
-                                finalResult->SetSuccess();
-                                }
-                            else
-                                finalResult->SetError(status);
+                            finalResult->SetSuccess();
                             }
                         else
-                            {
-                            DgnDbServerHost::Adopt(host);
-                            m_db->Revisions().AbandonCreateRevision();
-                            DgnDbServerHost::Forget(host);
-                            finalResult->SetError(pushResult.GetError());
-                            }
-                        });
-                    }
+                            finalResult->SetError(status);
+                        }
+                    else
+                        {
+                        DgnDbServerHost::Adopt(host);
+                        m_db->Revisions().AbandonCreateRevision();
+                        DgnDbServerHost::Forget(host);
+                        finalResult->SetError(pushResult.GetError());
+                        }
+                    });
                 }
             }
         else
@@ -259,8 +258,5 @@ BeBriefcaseId DgnDbBriefcase::GetBriefcaseId ()
 //---------------------------------------------------------------------------------------
 Utf8String DgnDbBriefcase::GetLastRevisionPulled ()
     {
-    Utf8String lastRevisionId;
-    GetDgnDb ().QueryBriefcaseLocalValue (Db::Local::LastRevision, lastRevisionId);
-
-    return lastRevisionId;
+    return GetDgnDb ().Revisions ().GetParentRevisionId ();
     }

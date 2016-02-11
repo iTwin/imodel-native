@@ -66,8 +66,7 @@ IBriefcaseManager::Response DgnDbRepositoryManager::_ProcessRequest (Request con
     if (!m_connection)
         return Response (RepositoryStatus::ServerUnavailable);
 
-    Utf8String lastRevisionId;
-    db.QueryBriefcaseLocalValue (Db::Local::LastRevision, lastRevisionId);
+    Utf8String lastRevisionId = db.Revisions ().GetParentRevisionId ();
 
     // NEEDSWORK_LOCKS: Handle codes
     // NEEDSWORK: pass ResponseOptions to make sure we do not return locks if they are not needed. This is currently not supported by WSG.
@@ -106,8 +105,7 @@ RepositoryStatus DgnDbRepositoryManager::_Demote (DgnLockSet const& locks, DgnCo
     if (!m_connection)
         return RepositoryStatus::ServerUnavailable;
 
-    Utf8String lastRevisionId;
-    db.QueryBriefcaseLocalValue (Db::Local::LastRevision, lastRevisionId);
+    Utf8String lastRevisionId = db.Revisions ().GetParentRevisionId ();
 
     // NEEDSWORK_LOCKS: Handle codes
     auto result = m_connection->DemoteLocks (locks, db.GetBriefcaseId (), lastRevisionId, m_cancellationToken)->GetResult ();
@@ -129,8 +127,7 @@ RepositoryStatus DgnDbRepositoryManager::_Relinquish (Resources which, DgnDbR db
     if (!m_connection)
         return RepositoryStatus::ServerUnavailable;
 
-    Utf8String lastRevisionId;
-    db.QueryBriefcaseLocalValue (Db::Local::LastRevision, lastRevisionId);
+    Utf8String lastRevisionId = db.Revisions ().GetParentRevisionId ();
 
     // NEEDSWORK_LOCKS: Handle codes
     if (Resources::Locks != (which & Resources::Locks)) 
