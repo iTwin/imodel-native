@@ -1775,8 +1775,9 @@ SchemaWriteStatus ECCustomAttributeClass::_WriteXml(BeXmlWriterR xmlWriter, int 
 
     else
         {
+        Utf8String appliesToAttributeValue = ECXml::ContainerTypeToString(m_containerType);
         bmap<Utf8CP, Utf8CP> additionalAttributes;
-        additionalAttributes[CUSTOM_ATTRIBUTE_APPLIES_TO] = ECXml::ContainerTypeToString(m_containerType).c_str();
+        additionalAttributes[CUSTOM_ATTRIBUTE_APPLIES_TO] = appliesToAttributeValue.c_str();
         return T_Super::_WriteXml(xmlWriter, ecXmlVersionMajor, ecXmlVersionMinor, EC_CUSTOMATTRIBUTECLASS_ELEMENT, &additionalAttributes, true);
         }
     }
