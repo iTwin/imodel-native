@@ -3064,11 +3064,8 @@ public:
     //! @param[in]  versionMajor The major version number.
     //! @param[in]  versionMinor The minor version number.
     //! @return A status code indicating whether the call was succesfull or not
-    static ECObjectsStatus CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR schemaName,
-                                        uint32_t versionMajor, uint32_t versionMinor)
-        {
-        return CreateSchema(schemaOut, schemaName, "", versionMajor, DEFAULT_VERSION_MIDDLE, versionMinor);
-        }
+    ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR schemaName,
+                                                         uint32_t versionMajor, uint32_t versionMinor);
 
     //! Generate a schema version string given the major and minor version values.
     //! @param[in] versionMajor    The major version number

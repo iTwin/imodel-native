@@ -1051,6 +1051,26 @@ ECObjectsStatus ECSchema::SetVersionFromString (Utf8CP versionString)
     else
         return ECObjectsStatus::Success;
     }
+
+//-------------------------------------------------------------------------------------//
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+----//
+ECObjectsStatus ECSchema::CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR schemaName, uint32_t versionMajor, uint32_t versionMinor)
+    {
+    schemaOut = new ECSchema();
+
+    ECObjectsStatus status;
+
+    if (ECObjectsStatus::Success != (status = schemaOut->SetName(schemaName)) ||
+        ECObjectsStatus::Success != (status = schemaOut->SetVersionMajor(versionMajor)) ||
+        ECObjectsStatus::Success != (status = schemaOut->SetVersionMinor(versionMinor)))
+        {
+        schemaOut = NULL;
+        return status;
+        }
+
+    return ECObjectsStatus::Success;
+    }
     
 //-------------------------------------------------------------------------------------//
 // @bsimethod
