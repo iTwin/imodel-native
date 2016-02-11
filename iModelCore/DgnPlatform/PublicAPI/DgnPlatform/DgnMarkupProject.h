@@ -328,7 +328,6 @@ protected:
     virtual void _SetDelta(DVec3dCR delta) override;
     virtual void _SetRotation(RotMatrixCR rot) override;
     virtual GeometricModelP _GetTargetModel() const override;
-    virtual DgnDbR _GetDgnDb() const override;
     virtual void _AdjustAspectRatio(double , bool expandView) override;
     virtual DPoint3d _GetTargetPoint() const override;
     virtual bool _Allow3dManipulations() const override;
@@ -340,7 +339,6 @@ protected:
     virtual void _OnViewOpened(DgnViewportR vp) override;
 
     //  Override and forward the methods that trigger a query.
-    virtual void _OnUpdate(DgnViewportR viewport, UpdatePlan const&) override;
     virtual void _OnCategoryChange(bool singleEnabled) override;
     virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff) override;
 
@@ -349,16 +347,16 @@ protected:
     virtual FitComplete _ComputeFitRange (DRange3dR range, DgnViewportR viewport, FitViewParamsR params) override;
 
 #ifdef WIP_SpatialRedlineViewController
-    // QueryViewController
+    // QueryView
     virtual bool _IsInSet (int nVal, BeSQLite::DbValue const*) const override;
     virtual bool _WantElementLoadStart (ViewportR viewport, double currentTime, double lastQueryTime, uint32_t maxElementsDrawnInDynamicUpdate, Frustum const& queryFrustum) override;
     virtual Utf8String _GetRTreeMatchSql (ViewportR viewport) override;
     virtual int32_t _GetMaxElementFactor() override;
     virtual double _GetMinimumSizePixels (DrawPurpose updateType) override;
     virtual uint64_t _GetMaxElementMemory () override;
-    // END QueryViewController
+    // END QueryView
 #endif
-    // END QueryViewController
+    // END QueryView
 
     void SynchWithSubjectViewController();
 #endif // DOCUMENTATION_GENERATOR

@@ -104,10 +104,9 @@ void ViewContext::_PushFrustumClip()
     int         nPlanes;
     ClipPlane   frustumPlanes[6];
     ViewFlags viewFlags = GetViewFlags();
-
     Frustum polyhedron = GetFrustum();
 
-    if (0 != (nPlanes = ClipUtil::RangePlanesFromPolyhedra(frustumPlanes, polyhedron.GetPts(), !viewFlags.noFrontClip, !viewFlags.noBackClip, 1.0E-6)))
+    if (0 != (nPlanes = ClipUtil::RangePlanesFromFrustum(frustumPlanes, polyhedron, !viewFlags.noFrontClip, !viewFlags.noBackClip, 1.0E-6)))
         m_transformClipStack.PushClipPlanes(frustumPlanes, nPlanes);
     }
 
@@ -327,43 +326,46 @@ bool ViewContext::_FilterRangeIntersection(GeometrySourceCR source)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::GraphicPtr ViewContext::_StrokeGeometry(GeometrySourceCR source, double pixelSize)
+    {
+    Render::GraphicPtr graphic = (nullptr != m_viewport) ?
+                m_viewport->GetViewControllerR()._StrokeGeometry(*this, source, pixelSize) :
+                source.Stroke(*this, pixelSize);
+
+    // if we aborted, the graphic may not be complete, don't save it
+    return WasAborted() ? nullptr : graphic;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_OutputGeometry(GeometrySourceCR source)
+StatusInt ViewContext::_OutputGeometry(GeometrySourceCR source)
     {
     if (!source.HasGeometry())
-        return;
+        return ERROR;
 
     DPoint3d origin;
     source.GetPlacementTransform().GetTranslation(origin);
     double pixelSize = (nullptr != m_viewport ? m_viewport->GetPixelSizeAtPoint(&origin) : 0.0);
 
     Render::GraphicPtr graphic = _GetCachedGraphic(source, pixelSize);
+    if (!graphic.IsValid())
+        graphic = _StrokeGeometry(source, pixelSize);
 
     if (!graphic.IsValid())
-        {
-        graphic = (nullptr != m_viewport) ?
-                   m_viewport->GetViewControllerR()._StrokeGeometry(*this, source, pixelSize) :
-                   source.Stroke(*this, pixelSize);
-
-        if (WasAborted()) // if we aborted, the graphic may not be complete, don't save it
-            return;
-
-        _SaveGraphic(source, *graphic);
-        }
-
-    if (!graphic.IsValid())
-        return;
+        return ERROR;
 
     _OutputGraphic(*graphic, &source);
 
     static int s_drawRange; // 0 - Host Setting (Bounding Box Debug), 1 - Bounding Box, 2 - Element Range
     if (!s_drawRange)
-        return;
+        return SUCCESS;
 
     // Output element local range for debug display and locate...
     if (!graphic->IsForDisplay() && nullptr == GetIPickGeom())
-        return;
+        return SUCCESS;
 
     Render::GraphicPtr rangeGraphic = CreateGraphic(Graphic::CreateParams(nullptr, (2 == s_drawRange ? Transform::FromIdentity() : source.GetPlacementTransform())));
     Render::GeometryParams rangeParams;
@@ -419,6 +421,7 @@ void ViewContext::_OutputGeometry(GeometrySourceCR source)
         }
 
     _OutputGraphic(*rangeGraphic, &source);
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -520,12 +523,7 @@ StatusInt ViewContext::_VisitGeometry(GeometrySourceCR source)
     if (_CheckStop())
         return ERROR;
 
-    if (IsUndisplayed(source))
-        return SUCCESS;
-
-    _OutputGeometry(source);
-
-    return SUCCESS;
+    return IsUndisplayed(source) ? ERROR : _OutputGeometry(source);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1689,7 +1687,7 @@ static void drawGridDots(Render::GraphicR graphic, bool doIsoGrid, DPoint3dCR or
 
     Frustum corners = vp.GetFrustum(DgnCoordSystem::World, true);
     ClipPlane clipPlanes[6];
-    ClipUtil::RangePlanesFromPolyhedra(clipPlanes, corners.GetPts(), true, true, false);
+    ClipUtil::RangePlanesFromFrustum(clipPlanes, corners, true, true, false);
 
     double minClipDistance, maxClipDistance;
     for (int i=0; i<rowRepetitions; i++)

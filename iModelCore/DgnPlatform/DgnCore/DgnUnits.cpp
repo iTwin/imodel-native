@@ -105,10 +105,10 @@ BEGIN_UNNAMED_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/11
 //=======================================================================================
-struct RTreeBounds : RTreeTester
+struct SpatialBounds : DgnQueryView::SpatialQuery
 {
     BeSQLite::RTree3dVal  m_bounds;
-    RTreeBounds() {m_bounds.Invalidate();}
+    SpatialBounds() : DgnQueryView::SpatialQuery(nullptr) {m_bounds.Invalidate();}
     int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const& info) override
         {
         BeAssert(6 == info.m_nCoord);
@@ -129,7 +129,7 @@ END_UNNAMED_NAMESPACE
 AxisAlignedBox3d DgnUnits::ComputeProjectExtents()
     {
     Statement stmt(m_dgndb, "SELECT 1 FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId MATCH DGN_rtree(?)");
-    RTreeBounds bounds;
+    SpatialBounds bounds;
     stmt.BindInt64(1, (int64_t) &bounds);
 
     auto rc=stmt.Step();

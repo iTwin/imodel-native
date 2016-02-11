@@ -799,8 +799,8 @@ struct FitContext : NullContext
 {
     DEFINE_T_SUPER(NullContext)
 private:
-    FitViewParams&      m_params;
-    ElemRangeCalc       m_fitRange;
+    FitViewParams& m_params;
+    ElemRangeCalc  m_fitRange;
 
 protected:
 
