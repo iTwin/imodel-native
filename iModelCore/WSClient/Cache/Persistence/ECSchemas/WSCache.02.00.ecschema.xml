@@ -1,24 +1,24 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<ECSchema schemaName="WSCache" nameSpacePrefix="WSC" version="02.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.10" prefix="bsca" />
-    <ECSchemaReference name="ECDb_FileInfo" version="02.00" prefix="ecdbf" />
-    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="WSCache" nameSpacePrefix="WSC" version="02.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
+    <ECSchemaReference name="ECDb_FileInfo" version="02.00" prefix="ecdbf"/>
+    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap"/>
 
-    <ECClass typeName="Node" isDomainClass="False">
+    <ECEntityClass typeName="Node" modifier="Abstract">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>true</AppliesToSubclasses>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
-    </ECClass>
+    </ECEntityClass>
 
-    <ECClass typeName="Root" isDomainClass="True">
+    <ECEntityClass typeName="Root">
         <BaseClass>Node</BaseClass>
         <ECCustomAttributes>
-            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.10">
+            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
                 <Indexes>
                     <ECDbIndex>
                         <Name>WSC_Index_RootName</Name>
@@ -30,55 +30,55 @@
                 </Indexes>
             </ECDbClassHint>
         </ECCustomAttributes>
-        <ECProperty propertyName="Name" typeName="string" />
-        <ECProperty propertyName="Persistence" typeName="int" />
+        <ECProperty propertyName="Name" typeName="string"/>
+        <ECProperty propertyName="Persistence" typeName="int"/>
         <ECProperty propertyName="SyncDate" typeName="dateTime">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.10">
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>
         </ECProperty>
-    </ECClass>
+    </ECEntityClass>
 
-    <ECClass typeName="NavigationBase" isDomainClass="True">
+    <ECEntityClass typeName="NavigationBase">
         <BaseClass>Node</BaseClass>
-    </ECClass>
+    </ECEntityClass>
 
-    <ECClass typeName="Sequence" isDomainClass="True">
-        <ECProperty propertyName="LastChangeNumber" typeName="long" />
-        <ECProperty propertyName="LastCachedFileIndex" typeName="long" />
-    </ECClass>
+    <ECEntityClass typeName="Sequence">
+        <ECProperty propertyName="LastChangeNumber" typeName="long"/>
+        <ECProperty propertyName="LastCachedFileIndex" typeName="long"/>
+    </ECEntityClass>
 
-    <ECClass typeName="InstanceBackup" isDomainClass="True">
-        <ECProperty propertyName="Instance" typeName="string" />
-    </ECClass>
+    <ECEntityClass typeName="InstanceBackup">
+        <ECProperty propertyName="Instance" typeName="string"/>
+    </ECEntityClass>
 
-    <ECClass typeName="ChangeInfo" isDomainClass="True">
+    <ECEntityClass typeName="ChangeInfo">
         <BaseClass>Node</BaseClass>
-        <ECProperty propertyName="ChangeStatus" typeName="int" />
-        <ECProperty propertyName="SyncStatus" typeName="int" />
-        <ECProperty propertyName="ChangeNumber" typeName="long" />
-        <ECProperty propertyName="Revision" typeName="long" />
-        <ECProperty propertyName="IsLocal" typeName="bool" />
-    </ECClass>
+        <ECProperty propertyName="ChangeStatus" typeName="int"/>
+        <ECProperty propertyName="SyncStatus" typeName="int"/>
+        <ECProperty propertyName="ChangeNumber" typeName="long"/>
+        <ECProperty propertyName="Revision" typeName="long"/>
+        <ECProperty propertyName="IsLocal" typeName="boolean"/>
+    </ECEntityClass>
 
-    <ECClass typeName="CachedFileInfo" isDomainClass="True">
+    <ECEntityClass typeName="CachedFileInfo">
         <BaseClass>ChangeInfo</BaseClass>
-        <ECProperty propertyName="CacheTag" typeName="string" />
+        <ECProperty propertyName="CacheTag" typeName="string"/>
         <ECProperty propertyName="CacheDate" typeName="dateTime">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.10">
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>
         </ECProperty>
-    </ECClass>
+    </ECEntityClass>
 
-    <ECClass typeName="CachedObjectInfo" isDomainClass="True">
+    <ECEntityClass typeName="CachedObjectInfo">
         <BaseClass>ChangeInfo</BaseClass>
         <ECCustomAttributes>
-            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.10">
+            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
                 <Indexes>
                     <ECDbIndex>
                         <Name>WSC_Index_ClassIdAndRemoteId</Name>
@@ -99,24 +99,24 @@
                 </Indexes>
             </ECDbClassHint>
         </ECCustomAttributes>
-        <ECProperty propertyName="ClassId" typeName="long" />
-        <ECProperty propertyName="InstanceId" typeName="long" />
-        <ECProperty propertyName="RemoteId" typeName="string" />
-        <ECProperty propertyName="InstanceState" typeName="int" />
-        <ECProperty propertyName="CacheTag" typeName="string" />
+        <ECProperty propertyName="ClassId" typeName="long"/>
+        <ECProperty propertyName="InstanceId" typeName="long"/>
+        <ECProperty propertyName="RemoteId" typeName="string"/>
+        <ECProperty propertyName="InstanceState" typeName="int"/>
+        <ECProperty propertyName="CacheTag" typeName="string"/>
         <ECProperty propertyName="CacheDate" typeName="dateTime">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.10">
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>
         </ECProperty>
-    </ECClass>
+    </ECEntityClass>
 
-    <ECClass typeName="CachedRelationshipInfo" isDomainClass="True">
+    <ECEntityClass typeName="CachedRelationshipInfo">
         <BaseClass>CachedObjectInfo</BaseClass>
         <ECCustomAttributes>
-            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.10">
+            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
                 <Indexes>
                     <ECDbIndex>
                         <Name>WSC_Index_ClassIdAndNonUniqueRemoteId</Name>
@@ -140,17 +140,17 @@
                 </Indexes>
             </ECDbClassHint>
         </ECCustomAttributes>
-        <ECProperty propertyName="RemoteId" typeName="string" />
-        <ECProperty propertyName="SourceClassId" typeName="long" />
-        <ECProperty propertyName="SourceInstanceId" typeName="long" />
-        <ECProperty propertyName="TargetClassId" typeName="long" />
-        <ECProperty propertyName="TargetInstanceId" typeName="long" />
-    </ECClass>
+        <ECProperty propertyName="RemoteId" typeName="string"/>
+        <ECProperty propertyName="SourceClassId" typeName="long"/>
+        <ECProperty propertyName="SourceInstanceId" typeName="long"/>
+        <ECProperty propertyName="TargetClassId" typeName="long"/>
+        <ECProperty propertyName="TargetInstanceId" typeName="long"/>
+    </ECEntityClass>
 
-    <ECClass typeName="CachedResponseInfo" isDomainClass="True">
+    <ECEntityClass typeName="CachedResponseInfo">
         <BaseClass>Node</BaseClass>
         <ECCustomAttributes>
-            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.10">
+            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
                 <Indexes>
                     <ECDbIndex>
                         <Name>WSC_Index_QueryName</Name>
@@ -162,143 +162,144 @@
                 </Indexes>
             </ECDbClassHint>
         </ECCustomAttributes>
-        <ECProperty propertyName="Name" typeName="string" />
+        <ECProperty propertyName="Name" typeName="string"/>
         <ECProperty propertyName="AccessDate" typeName="dateTime">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.10">
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="IsCompleted" typeName="bool" />
-    </ECClass>
+        <ECProperty propertyName="IsCompleted" typeName="boolean"/>
+    </ECEntityClass>
 
-    <ECClass typeName="CachedResponsePageInfo" isDomainClass="True">
+    <ECEntityClass typeName="CachedResponsePageInfo">
         <BaseClass>Node</BaseClass>
         <ECProperty propertyName="CacheDate" typeName="dateTime">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.10">
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="CacheTag" typeName="string" />
-        <ECProperty propertyName="Index" typeName="long" />
-    </ECClass>
+        <ECProperty propertyName="CacheTag" typeName="string"/>
+        <ECProperty propertyName="Index" typeName="long"/>
+    </ECEntityClass>
 
-    <ECRelationshipClass typeName="RootToNode" isDomainClass="True" strength="holding" strengthDirection="forward">
-        <Source cardinality="(0,N)" polymorphic="False">
-            <Class class="Root" />
+    <ECRelationshipClass typeName="RootToNode" strength="holding">
+        <Source cardinality="(0,N)" polymorphic="false">
+            <Class class="Root"/>
         </Source>
-        <Target cardinality="(0,N)" polymorphic="False">
-            <Class class="CachedObjectInfo" />
-            <Class class="NavigationBase" />
+        <Target cardinality="(0,N)" polymorphic="false">
+            <Class class="CachedObjectInfo"/>
+            <Class class="NavigationBase"/>
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="RootToNodeWeak" isDomainClass="True" strength="referencing" strengthDirection="forward">
-        <Source cardinality="(0,N)" polymorphic="False">
-            <Class class="Root" />
+    <ECRelationshipClass typeName="RootToNodeWeak" strength="referencing">
+        <Source cardinality="(0,N)" polymorphic="false">
+            <Class class="Root"/>
         </Source>
-        <Target cardinality="(0,N)" polymorphic="False">
-            <Class class="CachedObjectInfo" />
-            <Class class="NavigationBase" />
+        <Target cardinality="(0,N)" polymorphic="false">
+            <Class class="CachedObjectInfo"/>
+            <Class class="NavigationBase"/>
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ResponseToParent" isDomainClass="True" strength="referencing" strengthDirection="backward">
-        <Source cardinality="(0,N)" polymorphic="False">
-            <Class class="CachedResponseInfo" />
+    <ECRelationshipClass typeName="ResponseToParent" strength="referencing" strengthDirection="backward">
+        <Source cardinality="(0,N)" polymorphic="false">
+            <Class class="CachedResponseInfo"/>
         </Source>
-        <Target cardinality="(1,1)" polymorphic="True">
-            <Class class="Node" />
+        <Target cardinality="(1,1)" polymorphic="true">
+            <Class class="Node"/>
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ResponseToHolder" isDomainClass="True" strength="holding" strengthDirection="backward">
-        <Source cardinality="(0,N)" polymorphic="False">
-            <Class class="CachedResponseInfo" />
+    <ECRelationshipClass typeName="ResponseToHolder" strength="holding" strengthDirection="backward">
+        <Source cardinality="(0,N)" polymorphic="false">
+            <Class class="CachedResponseInfo"/>
         </Source>
-        <Target cardinality="(1,1)" polymorphic="True">
-            <Class class="Node" />
+        <Target cardinality="(1,1)" polymorphic="true">
+            <Class class="Node"/>
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ResponseToResponsePage" isDomainClass="True" strength="holding" strengthDirection="forward">
-        <Source cardinality="(1,1)" polymorphic="False">
-            <Class class="CachedResponseInfo" />
+    <ECRelationshipClass typeName="ResponseToResponsePage" strength="holding">
+        <Source cardinality="(1,1)" polymorphic="false">
+            <Class class="CachedResponseInfo"/>
         </Source>
-        <Target cardinality="(0,N)" polymorphic="False">
-            <Class class="CachedResponsePageInfo" />
+        <Target cardinality="(0,N)" polymorphic="false">
+            <Class class="CachedResponsePageInfo"/>
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ResponsePageToResult" isDomainClass="True" strength="holding" strengthDirection="forward">
-        <Source cardinality="(0,N)" polymorphic="False">
-            <Class class="CachedResponsePageInfo" />
+    <ECRelationshipClass typeName="ResponsePageToResult" strength="holding">
+        <Source cardinality="(0,N)" polymorphic="false">
+            <Class class="CachedResponsePageInfo"/>
         </Source>
-        <Target cardinality="(0,N)" polymorphic="False">
-            <Class class="CachedObjectInfo" />
-            <Class class="CachedRelationshipInfo" />
+        <Target cardinality="(0,N)" polymorphic="false">
+            <Class class="CachedObjectInfo"/>
+            <Class class="CachedRelationshipInfo"/>
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ResponsePageToResultWeak" isDomainClass="True" strength="referencing" strengthDirection="forward">
-        <Source cardinality="(0,N)" polymorphic="False">
-            <Class class="CachedResponsePageInfo" />
+    <ECRelationshipClass typeName="ResponsePageToResultWeak" strength="referencing">
+        <Source cardinality="(0,N)" polymorphic="false">
+            <Class class="CachedResponsePageInfo"/>
         </Source>
-        <Target cardinality="(0,N)" polymorphic="False">
-            <Class class="CachedObjectInfo" />
-            <Class class="CachedRelationshipInfo" />
+        <Target cardinality="(0,N)" polymorphic="false">
+            <Class class="CachedObjectInfo"/>
+            <Class class="CachedRelationshipInfo"/>
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ChangeInfoToInstanceBackup" isDomainClass="True" strength="holding" strengthDirection="forward">
-        <Source cardinality="(1,1)" polymorphic="True">
-            <Class class="ChangeInfo" />
+    <ECRelationshipClass typeName="ChangeInfoToInstanceBackup" strength="holding">
+        <Source cardinality="(1,1)" polymorphic="true">
+            <Class class="ChangeInfo"/>
         </Source>
-        <Target cardinality="(0,1)" polymorphic="False">
-            <Class class="InstanceBackup" />
+        <Target cardinality="(0,1)" polymorphic="false">
+            <Class class="InstanceBackup"/>
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ObjectInfoToCachedFileInfo" isDomainClass="True" strength="holding" strengthDirection="forward">
-        <Source cardinality="(1,1)" polymorphic="False">
-            <Class class="CachedObjectInfo" />
+    <ECRelationshipClass typeName="ObjectInfoToCachedFileInfo" strength="holding">
+        <Source cardinality="(1,1)" polymorphic="false">
+            <Class class="CachedObjectInfo"/>
         </Source>
-        <Target cardinality="(0,1)" polymorphic="False">
-            <Class class="CachedFileInfo" />
+        <Target cardinality="(0,1)" polymorphic="false">
+            <Class class="CachedFileInfo"/>
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="CachedFileInfoToFileInfo" isDomainClass="True" strength="holding" strengthDirection="forward">
-        <Source cardinality="(1,1)" polymorphic="False">
-            <Class class="CachedFileInfo" />
+
+    <ECRelationshipClass typeName="CachedFileInfoToFileInfo" strength="holding">
+        <Source cardinality="(1,1)" polymorphic="false">
+            <Class class="CachedFileInfo"/>
         </Source>
-        <Target cardinality="(0,1)" polymorphic="False">
-            <Class class="ecdbf:ExternalFileInfo" />
+        <Target cardinality="(0,1)" polymorphic="false">
+            <Class class="ecdbf:ExternalFileInfo"/>
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="CachedFileInfoToFileInfoOwnership" isDomainClass="True" strength="holding" strengthDirection="forward">
-        <Source cardinality="(1,1)" polymorphic="False">
-            <Class class="CachedFileInfo" />
+    <ECRelationshipClass typeName="CachedFileInfoToFileInfoOwnership" strength="holding">
+        <Source cardinality="(1,1)" polymorphic="false">
+            <Class class="CachedFileInfo"/>
         </Source>
-        <Target cardinality="(0,1)" polymorphic="False">
-            <Class class="ecdbf:FileInfoOwnership" />
+        <Target cardinality="(0,1)" polymorphic="false">
+            <Class class="ecdbf:FileInfoOwnership"/>
         </Target>
     </ECRelationshipClass>
 
-    <ECClass typeName="ExtendedData" isDomainClass="True">
-        <ECProperty propertyName="Content" typeName="string" />
-    </ECClass>
+    <ECEntityClass typeName="ExtendedData">
+        <ECProperty propertyName="Content" typeName="string"/>
+    </ECEntityClass>
 
-    <ECRelationshipClass typeName="NodeToExtendedData" isDomainClass="True" strength="embedding" strengthDirection="forward">
-        <Source cardinality="(1,1)" polymorphic="True">
-            <Class class="Node" />
+    <ECRelationshipClass typeName="NodeToExtendedData" strength="embedding">
+        <Source cardinality="(1,1)" polymorphic="true">
+            <Class class="Node"/>
         </Source>
-        <Target cardinality="(0,1)" polymorphic="False">
-            <Class class="ExtendedData" />
+        <Target cardinality="(0,1)" polymorphic="false">
+            <Class class="ExtendedData"/>
         </Target>
     </ECRelationshipClass>
 
