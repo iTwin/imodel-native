@@ -382,6 +382,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="ecobjects.mke" />
-    <None Include="ecobjects.mki" />
+    <None Include="ECObjectsCompileOpts.mki" />
+    <None Include="..\mki\ECObjects.mki" />
   </ItemGroup>
 </Project>
