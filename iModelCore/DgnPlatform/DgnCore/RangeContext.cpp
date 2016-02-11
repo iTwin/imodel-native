@@ -577,7 +577,7 @@ public:
         m_rMatrix.InitIdentity();
         }
 
-    ElemRangeCalc& GetFitRange() { return m_fitRange; }
+    ElemRangeCalc& GetFitRange() {return m_fitRange;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/06
@@ -610,13 +610,6 @@ bool IsRangeContainedInCurrentRange(DRange3dCR range, bool is3d)
     DRange3d dRange = range;
     if (!is3d)
         dRange.low.z = dRange.high.z = 0;
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    DPoint3d  dRangeCorners[8];
-    dRange.Get8Corners(dRangeCorners);
-    if (!m_rangeClipStack.IsEmpty())
-        m_rangeClipStack.ClipRange(&elemRangeCalc, dRangeCorners, 0, true);
-#endif
 
     if (SUCCESS != elemRangeCalc.GetRange(dRange))
         return true;
@@ -679,12 +672,8 @@ StatusInt _VisitGeometry(GeometrySourceCR source) override
 
     elementBox.Get8Corners(corners);
     source.GetPlacementTransform().Multiply(corners, corners, 8);
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    m_fitRange.Union(8, corners, !m_rangeClipStack.IsEmpty() ? &m_rangeClipStack : nullptr);
-#else
     m_rMatrix.Multiply(corners, corners, 8);
     m_fitRange.Union(8, corners, nullptr);
-#endif
 
     return SUCCESS;
     }
@@ -761,56 +750,6 @@ StatusInt DgnViewport::ComputeFittedElementRange(DRange3dR rangeUnion, DgnElemen
     return context.GetFitRange().GetRange(rangeUnion);
     }
 
-/*=================================================================================**//**
-* Context to caclulate the range of all elements within a view.
-* @bsiclass                                                     RayBentley    09/06
-+===============+===============+===============+===============+===============+======*/
-struct DepthFitContext : public FitContext
-{
-    DEFINE_T_SUPER(FitContext)    
-    DepthFitContext(FitViewParams& params) : FitContext(params) {}
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    virtual void _PushFrustumClip() override {ViewContext::_PushFrustumClip();}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      09/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt _VisitGeometry(GeometrySourceCR element)
-    {
-    // Check range - this is much less expensive than clipping and accumulating ranges for geometry outside the view.
-    if (_FilterRangeIntersection(element))
-        return SUCCESS;
-
-    return T_Super::_VisitGeometry(element);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt _InitContextForView() override
-    {
-    if (SUCCESS != T_Super::_InitContextForView())
-        return ERROR;
-
-    int         nPlanes;
-    ClipPlane   frustumPlanes[6];
-    ViewFlags   viewFlags = GetViewFlags();
-    Frustum     frustum = GetFrustum();
-
-    // DepthFitContext needs the frustum planes in RangeOutput also to properly clip elements that span outside the view.
-    if (0 != (nPlanes = ClipUtil::RangePlanesFromPolyhedra(frustumPlanes, frustum.GetPts(), !viewFlags.noFrontClip, !viewFlags.noBackClip, 1.0e-6)))
-        {
-        ClipPlaneSet planeSet(frustumPlanes, nPlanes);
-        m_rangeClipStack.Push(&planeSet, nullptr);
-        }
-
-    return SUCCESS;
-    }
-#endif
-
-}; // DepthFitContext
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -821,7 +760,7 @@ StatusInt DgnViewport::DetermineVisibleDepthNpc(double& lowNpc, double& highNpc,
     params.m_useScanRange = true;
     params.m_fitMinDepth = params.m_fitMaxDepth = true;
 
-    DepthFitContext context(params);
+    FitContext context(params);
 
     if (subRectNpc)
         context.SetSubRectNpc(*subRectNpc);
@@ -862,7 +801,7 @@ StatusInt DgnViewport::ComputeVisibleDepthRange(double& minDepth, double& maxDep
     params.m_useScanRange = !ignoreViewExtent;
     params.m_fitMinDepth = params.m_fitMaxDepth = true;
 
-    DepthFitContext context(params);
+    FitContext context(params);
 
     if (SUCCESS != context.Attach (this, context.GetDrawPurpose()))
         return ERROR;
