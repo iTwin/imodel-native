@@ -71,15 +71,15 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
     typedef RefCountedPtr<QueryResults> QueryResultsPtr;
 
     //! Clip planes for a single frustum
-    struct FrustumClips : ConvexClipPlaneSet
+    struct FrustumPlanes : ConvexClipPlaneSet
     {
-        void AddFrustum(FrustumCR frustum);
-        BeSQLite::RTreeMatchFunction::Within TestBox(FrustumCR); // test all 8 points of a box
+        void Init(FrustumCR frustum);
+        BeSQLite::RTreeMatchFunction::Within TestBox(FrustumCR box); // test all 8 points of a box
     };
 
     //=======================================================================================
     // This object is created on the Client thread and queued to the Query thread. It populates its
-    // QueryResults with the set of n-best elements that satisfy both criteria.
+    // QueryResults with the set of n-best elements that satisfy both range and view criteria.
     // @bsiclass                                                    Keith.Bentley   02/16
     //=======================================================================================
     struct RangeQuery : SpatialQuery, DgnQueryQueue::Task
@@ -95,7 +95,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
         uint64_t    m_lastId = 0;
         BeSQLite::RTree3dVal m_boundingRange;    // only return entries whose range intersects this cube.
         BeSQLite::RTree3dVal m_backFace;
-        FrustumClips m_clips;
+        FrustumPlanes m_clips;
         Frustum     m_frustum;
         DMatrix4d   m_localToNpc;
         DVec3d      m_viewVec;  // vector from front face to back face, for SkewScan
@@ -119,6 +119,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
     public:
         RangeQuery(DgnQueryViewCR, FrustumCR, DgnViewportCR, UpdatePlan::Query const& plan);
         DgnQueryView::QueryResultsPtr DoQuery();
+        DgnQueryView::QueryResultsPtr GetResults() {return m_results;}
     };
 
     //=======================================================================================
@@ -154,14 +155,18 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
 protected:
     bool m_forceNewQuery = false;
     bool m_noQuery = false;
-    mutable bool m_abortQuery;
+    mutable bool m_abortQuery = false;
     Utf8String m_viewSQL;
+    double m_sceneLODSize    = 6.0; 
+    double m_nonSceneLODSize = 7.0; 
     SpecialElements m_special;
     mutable QueryResultsPtr m_results;
 
     void QueryModelExtents(DRange3dR, DgnViewportR);
     void QueueQuery(DgnViewportR, UpdatePlan::Query const&);
     void AddtoSceneQuick(SceneContextR context, SceneMembers&, QueryResults& results);
+    bool AbortRequested() const {return m_abortQuery;} //!< @private
+    void SetAbortQuery(bool val) const {m_abortQuery=val;} //!< @private
     StatusInt VisitElement(ViewContextR context, DgnElementId, bool allowLoad);
     DGNPLATFORM_EXPORT virtual bool _IsInSet(int nVal, BeSQLite::DbValue const*) const override;
     DGNPLATFORM_EXPORT virtual void _InvalidateScene() override;
@@ -169,22 +174,11 @@ protected:
     virtual void _FillModels() override {} // query views do not load elements in advance
     DGNPLATFORM_EXPORT void _OnUpdate(DgnViewportR vp, UpdatePlan const& plan) override;
     DGNPLATFORM_EXPORT virtual void _OnAttachedToViewport(DgnViewportR) override;
-
-    //! Called when the visibility of a category is changed.
-    DGNPLATFORM_EXPORT virtual void _OnCategoryChange(bool singleEnabled) override;
-
-    //! Called when the display of a model is changed on or off
-    //! @param modelId  The model to turn on or off.
-    //! @param onOff    If true, elements in the model are candidates for display; else elements in the model are not displayed.
-    DGNPLATFORM_EXPORT virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff) override;
-
     DGNPLATFORM_EXPORT virtual void _CreateScene(SceneContextR) override;
-
-    //! Draw the elements in the query view.
-    DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR context) override;
-
-    //! Allow the supplied ViewContext to visit every element in the view, not just the best elements in the query model.
     DGNPLATFORM_EXPORT void _VisitAllElements(ViewContextR) override;
+    DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR context) override;
+    DGNPLATFORM_EXPORT virtual void _OnCategoryChange(bool singleEnabled) override;
+    DGNPLATFORM_EXPORT virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff) override;
 
     //! Compute the range of the elements and graphics in the QueryView.
     //! @remarks This function may also load elements to determine the range.
@@ -195,35 +189,44 @@ protected:
     DGNPLATFORM_EXPORT virtual FitComplete _ComputeFitRange(DRange3dR range, DgnViewportR viewport, FitViewParamsR params) override;
 
 public:
-    //! Construct the view controller.
     //! @param dgndb  The DgnDb for the view
-    //! @param viewId Id of view to be displayed
+    //! @param viewId Id of view to be displayed in this DgnQueryView
     DGNPLATFORM_EXPORT DgnQueryView(DgnDbR dgndb, DgnViewId viewId);
     DGNPLATFORM_EXPORT ~DgnQueryView();
+
+    //! Get the Level-of-Detail filtering size for scene creation for this DgnQueryView. This is the size, in pixels, of one side of a square. 
+    //! Elements whose aabb projects onto the view an area less than this box are skippped during scene creation.
+    double GetSceneLODSize() const {return m_sceneLODSize;}
+    void SetSceneLODSize(double val) {m_sceneLODSize=val;} //!< see GetSceneLODSize
+
+    //! Get the Level-of-Detail filtering size for non-scene (background) elements this DgnQueryView. This is the size, in pixels, of one side of a square. 
+    //! Elements whose aabb projects onto the view an area less than this box are skippped during background-element display.
+    double GetNonSceneLODSize() const {return m_nonSceneLODSize;}
+    void SetNonSceneLODSize(double val) {m_nonSceneLODSize=val;} //!< see GetNonSceneLODSize
 
     //! Get the list of elements that are always drawn
     DgnElementIdSet const& GetAlwaysDrawn() {return m_special.m_always;}
 
     //! Establish a set of elements that are always drawn in the view.
+    //! @param[in] exclusive If true, only these elements are drawn
     DGNPLATFORM_EXPORT void SetAlwaysDrawn(DgnElementIdSet const&, bool exclusive);
 
+    //! Empty the set of elements that are always drawn
     DGNPLATFORM_EXPORT void ClearAlwaysDrawn();
+
+    //! Establish a set of elements that are never drawn in the view.
+    DGNPLATFORM_EXPORT void SetNeverDrawn(DgnElementIdSet const&);
 
     //! Get the list of elements that are never drawn.
     //! @remarks An element in the never-draw list is excluded regardless of whether or not it is
     //! in the always-draw list. That is, the never-draw list gets priority over the always-draw list.
     DgnElementIdSet const& GetNeverDrawn() {return m_special.m_never;}
 
-    DGNPLATFORM_EXPORT void SetNeverDrawn(DgnElementIdSet const&);
+    //! Empty the set of elements that are never drawn
     DGNPLATFORM_EXPORT void ClearNeverDrawn();
 
-    bool AbortRequested() const {return m_abortQuery;} //!< @private
-    void SetAbortQuery(bool val) const {m_abortQuery=val;} //!< @private
-    void ClearQueryResults();
-
-    //! Requests that any active or pending processing of the model be canceled, optionally not returning until the request is satisfied
-    void RequestAbort(bool waitUntilFinished);
-    void WaitUntilFinished(CheckStop* checkStop); //!< @private
+    //! Requests that any active or pending queries for this view be canceled, optionally not returning until the request is satisfied
+    DGNPLATFORM_EXPORT void RequestAbort(bool waitUntilFinished);
 };
 
 END_BENTLEY_DGN_NAMESPACE

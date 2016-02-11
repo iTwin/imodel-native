@@ -19,12 +19,10 @@
 #endif
 
 BEGIN_UNNAMED_NAMESPACE
-static const double   s_cameraLimit = 1.0E-5;
-
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/11
 //=======================================================================================
-struct RTreeFitFilter : DgnQueryView::SpatialQuery
+struct SpatialFitQuery : DgnQueryView::SpatialQuery
     {
     DRange3d m_fitRange;
     DRange3d m_lastRange;
@@ -32,13 +30,13 @@ struct RTreeFitFilter : DgnQueryView::SpatialQuery
     virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
 
 public:
-    RTreeFitFilter(DgnQueryView::SpecialElements const* special) : DgnQueryView::SpatialQuery(special) {m_fitRange = DRange3d::NullRange();}
+    SpatialFitQuery(DgnQueryView::SpecialElements const* special) : DgnQueryView::SpatialQuery(special) {m_fitRange = DRange3d::NullRange();}
     DRange3dCR GetRange() const {return m_fitRange;}
     };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/14
-+---------------+---------------+---------------+---------------+---------------+------*/
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   02/16
+//=======================================================================================
 struct CornerBox : Frustum
 {
     CornerBox(RTree3dValCR from)
@@ -68,7 +66,7 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::FrustumClips::AddFrustum(FrustumCR frustum)
+void DgnQueryView::FrustumPlanes::Init(FrustumCR frustum)
     {
     resize(6);
     ClipUtil::RangePlanesFromFrustum(&front(), frustum, true, true, 1.0E-6);
@@ -77,7 +75,7 @@ void DgnQueryView::FrustumClips::AddFrustum(FrustumCR frustum)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::RTreeMatchFunction::Within DgnQueryView::FrustumClips::TestBox(FrustumCR frustum)
+BeSQLite::RTreeMatchFunction::Within DgnQueryView::FrustumPlanes::TestBox(FrustumCR frustum)
     {
     auto containment = ClassifyPointContainment(frustum.m_pts, 8);
     if (containment == ClipPlaneContainment_StronglyInside) 
@@ -136,13 +134,16 @@ void DgnQueryView::_OnUpdate(DgnViewportR vp, UpdatePlan const& plan)
 void DgnQueryView::QueueQuery(DgnViewportR viewport, UpdatePlan::Query const& plan)
     {
     Frustum frust = viewport.GetFrustum(DgnCoordSystem::World, true);
-    if (plan.m_frustumScale != 1.0)
+    if (plan.m_frustumScale != 1.0) // sometimes we want to expand the frustum to hold elements outside the current view frustum
         frust.ScaleAboutCenter(plan.m_frustumScale);
 
-    RangeQuery* query = new RangeQuery(*this, frust, viewport, plan);
-    query->SetSizeFilter(viewport, 6.0);
+    RefCountedPtr<RangeQuery> query = new RangeQuery(*this, frust, viewport, plan);
+    query->SetSizeFilter(viewport, GetSceneLODSize());
 
-    m_dgndb.GetQueryQueue().Add(*query);
+    if (m_noQuery)
+        m_results = query->GetResults(); // we're just showing a fixed set of elements. Don't perform a query, just get the results.
+    else
+        m_dgndb.GetQueryQueue().Add(*query);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -162,6 +163,7 @@ void DgnQueryView::ClearAlwaysDrawn()
     {
     RequestAbort(true);
     m_special.m_always.clear();
+    m_noQuery = false;
     m_forceNewQuery = true;
     }
 
@@ -193,6 +195,7 @@ void DgnQueryView::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
     if (onOff == m_viewedModels.Contains(modelId))
         return;
 
+    RequestAbort(true);
     if (onOff)
         {
         m_forceNewQuery = true;
@@ -213,13 +216,14 @@ void DgnQueryView::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
 void DgnQueryView::_OnCategoryChange(bool singleEnabled) 
     {
     T_Super::_OnCategoryChange(singleEnabled); 
+    RequestAbort(true);
     m_forceNewQuery = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-int RTreeFitFilter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
+int SpatialFitQuery::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
     {
     RTree3dValCP testRange = (RTree3dValCP) info.m_coords;
 
@@ -244,7 +248,7 @@ int RTreeFitFilter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::QueryModelExtents(DRange3dR range, DgnViewportR vp)
     {
-    RTreeFitFilter filter(&m_special);
+    SpatialFitQuery filter(&m_special);
     filter.Start(*this);
 
     DgnElementId thisId;
@@ -334,12 +338,16 @@ void DgnQueryView::_InvalidateScene()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnQueryView::NonScene::NonScene(DgnQueryViewR view, DgnViewportCR vp, SceneMembers& scene) : m_rangeQuery(view, vp.GetFrustum(DgnCoordSystem::World, true), vp, UpdatePlan::Query()), m_scene(&scene), m_view(view)
+DgnQueryView::NonScene::NonScene(DgnQueryViewR view, DgnViewportCR vp, SceneMembers& scene) : m_rangeQuery(view, vp.GetFrustum(DgnCoordSystem::World, true), vp, UpdatePlan::Query()), 
+                        m_scene(&scene), m_view(view)
     {
-    m_rangeQuery.SetTestLOD(true);
-    m_rangeQuery.SetSizeFilter(vp, 6.0);
+    if (0.0 != view.GetNonSceneLODSize()) // do we want to filter small elements during progressive phase?
+        {
+        m_rangeQuery.SetTestLOD(true);
+        m_rangeQuery.SetSizeFilter(vp, view.GetNonSceneLODSize());
+        }
     m_rangeQuery.SetDepthFirst(); // uses less memory
-    m_rangeQuery.Start(view);
+    m_rangeQuery.Start(view); // prepare statements, bind parameters
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -350,7 +358,7 @@ DgnQueryView::NonScene::NonScene(DgnQueryViewR view, DgnViewportCR vp, SceneMemb
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::AddtoSceneQuick(SceneContextR context, SceneMembers& members, QueryResults& results)
     {
-    context.SetNoStroking(true); // tell the context to not create any graphics - just return exiting ones
+    context.SetNoStroking(true); // tell the context to not create any graphics - just return existing ones
 
     // first, run through the query results seeing if all of the elements are loaded and have their graphics ready
     // NOTE: This is not CheckStop'ed! It must be fast.
@@ -402,7 +410,7 @@ void DgnQueryView::_CreateScene(SceneContextR context)
             }
         }
 
-    // Next, allow external data models to draw or schedule external data. NB: Do this even if we're already aborted
+    // Next, allow external data models to draw or schedule external data. Note: Do this even if we're already aborted
     for (DgnModelId modelId : GetViewedModels())
         {
         DgnModelPtr model = m_dgndb.Models().GetModel(modelId);
@@ -416,8 +424,7 @@ void DgnQueryView::_CreateScene(SceneContextR context)
     if (!sceneComplete)
         {
         DEBUG_PRINTF("schedule progressive");
-        NonScene* progressive = new NonScene(*this, vp, *members);
-        vp.ScheduleProgressiveTask(*progressive);
+        vp.ScheduleProgressiveTask(*new NonScene(*this, vp, *members));
         }
 
     DEBUG_PRINTF("Done create scene=%ld entries, aborted=%ld, time=%lf", members->size(), context.WasAborted(), watch.GetCurrentSeconds());
@@ -715,9 +722,6 @@ void DgnQueryView::RangeQuery::AddAlwaysDrawn(DgnQueryViewCR view)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnQueryView::QueryResultsPtr DgnQueryView::RangeQuery::DoQuery()
     {
-    if (m_noQuery)
-        return m_results; //this is just the set of "always drawn" elements
-
     StopWatch watch(true);
     m_view.SetAbortQuery(false); // gets turned on by client thread
 
@@ -917,7 +921,7 @@ inline bool DgnQueryView::RangeQuery::ComputeNPC(DPoint3dR npcOut, DPoint3dCR lo
     if (m_cameraOn)
         {
         w = m_localToNpc.coff[3][0] * localIn.x + m_localToNpc.coff[3][1] * localIn.y + m_localToNpc.coff[3][2] * localIn.z + m_localToNpc.coff[3][3];
-        if (w < s_cameraLimit)
+        if (w < 1.0E-5)
             return false;
         }
     else
@@ -1158,7 +1162,7 @@ void DgnQueryView::RangeQuery::SetFrustum(FrustumCR frustum)
     int alongAxes = (fabs(m_viewVec.x) < 1e-8) + (fabs(m_viewVec.y) < 1e-8) + (fabs(m_viewVec.z) < 1e-8);
     m_doSkewTest = alongAxes<2;
 
-    m_clips.AddFrustum(frustum);
+    m_clips.Init(frustum);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1265,7 +1269,6 @@ bool DgnQueryView::RangeQuery::SkewTest(RTree3dValCP testRange)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::SpatialQuery::Start(DgnQueryViewCR view)
     {
-    DgnDb::VerifyClientThread();
     DgnDbR db = view.GetDgnDb();
 
     db.GetCachedStatement(m_rangeStmt, "SELECT ElementId FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId MATCH DGN_rTree(?1)");
