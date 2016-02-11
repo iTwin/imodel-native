@@ -811,7 +811,7 @@ TEST_F (ECSqlStatementTestFixture, PolymorphicDelete_PolymorphicSharedTable)
     schemaReadContext->AddSchemaLocater (ecdb.GetSchemaLocater ());
     ECDbTestUtility::ReadECSchemaFromDisk (nestedStructArraySchema, schemaReadContext, L"NestedStructArrayTest.01.00.ecschema.xml");
     SchemaKey schemaKey ("ECDbMap", 1, 0);
-    ECSchemaPtr ecdbMapSchema = schemaReadContext->LocateSchema (schemaKey, SCHEMAMATCHTYPE_LatestCompatible);
+    ECSchemaPtr ecdbMapSchema = schemaReadContext->LocateSchema (schemaKey, SchemaMatchType::LatestCompatible);
     ASSERT_TRUE (ecdbMapSchema != nullptr) << "Reference Schema not found";
 
     ECClassP baseClass = nestedStructArraySchema->GetClassP ("ClassA");
@@ -984,7 +984,7 @@ TEST_F (ECSqlStatementTestFixture, PolymorphicUpdateWithSharedTable)
     schemaReadContext->AddSchemaLocater (ecdb.GetSchemaLocater ());
     ECDbTestUtility::ReadECSchemaFromDisk (nestedStructArraySchema, schemaReadContext, L"NestedStructArrayTest.01.00.ecschema.xml");
     SchemaKey schemaKey ("ECDbMap", 1, 0);
-    ECSchemaPtr ecdbMapSchema = schemaReadContext->LocateSchema (schemaKey, SCHEMAMATCHTYPE_LatestCompatible);
+    ECSchemaPtr ecdbMapSchema = schemaReadContext->LocateSchema (schemaKey, SchemaMatchType::LatestCompatible);
     ASSERT_TRUE (ecdbMapSchema != nullptr) << "Reference Schema not found";
 
     ECClassP baseClass = nestedStructArraySchema->GetClassP ("ClassA");

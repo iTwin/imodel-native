@@ -263,7 +263,7 @@ BentleyStatus ECDbProfileECSchemaUpgrader::ReadECDbSystemSchema (ECSchemaReadCon
 //static
 BentleyStatus ECDbProfileECSchemaUpgrader::ReadECDbFileInfoSchema (ECSchemaReadContextR readContext, Utf8CP ecdbFileName)
     {
-    auto schema = readContext.LocateSchema (s_ecdbfileinfoSchemaKey, SCHEMAMATCHTYPE_LatestCompatible);
+    auto schema = readContext.LocateSchema (s_ecdbfileinfoSchemaKey, SchemaMatchType::LatestCompatible);
     if (schema == nullptr)
         {
         LOG.errorv ("Creating / upgrading ECDb file %s failed because required ECSchema '%s' could not be found.", ecdbFileName,

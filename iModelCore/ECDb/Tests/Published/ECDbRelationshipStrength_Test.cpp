@@ -421,7 +421,7 @@ void ECDbRelationshipsIntegrityTests::CreateSchema (Utf8CP schemaName, Utf8CP sc
     readContext = ECSchemaReadContext::CreateContext ();
     readContext->AddSchemaLocater (m_ecdb.GetSchemaLocater ());
     SchemaKey ecdbmapKey = SchemaKey ("ECDbMap", 1, 0);
-    ECSchemaPtr ecdbmapSchema = readContext->LocateSchema (ecdbmapKey, SchemaMatchType::SCHEMAMATCHTYPE_LatestCompatible);
+    ECSchemaPtr ecdbmapSchema = readContext->LocateSchema (ecdbmapKey, SchemaMatchType::LatestCompatible);
     ASSERT_TRUE (ecdbmapSchema.IsValid ());
 
     ECSchema::CreateSchema (testSchema, schemaName, 1, 0);

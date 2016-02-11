@@ -2468,7 +2468,7 @@ void ApplyCustomAttributeAndImportSchema (ECDbR ecdb, ECSchemaPtr ecSchema)
     ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext ();
     readContext->AddSchemaLocater (ecdb.GetSchemaLocater ());
     SchemaKey ecdbmapKey = SchemaKey ("ECDbMap", 1, 0);
-    ECSchemaPtr ecdbmapSchema = readContext->LocateSchema (ecdbmapKey, SchemaMatchType::SCHEMAMATCHTYPE_LatestCompatible);
+    ECSchemaPtr ecdbmapSchema = readContext->LocateSchema (ecdbmapKey, SchemaMatchType::LatestCompatible);
     ASSERT_TRUE (ecdbmapSchema.IsValid ());
     readContext->AddSchema (*ecSchema);
     ecSchema->AddReferencedSchema (*ecdbmapSchema);

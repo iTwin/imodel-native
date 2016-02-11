@@ -141,7 +141,7 @@ ECSqlStatus DynamicSelectClauseECClass::SetBackReferenceToPropertyPath (ECProper
     auto ctx = ECSchemaReadContext::CreateContext();
     ctx->AddSchemaLocater(ecdb.GetSchemaLocater ());
     auto bscaKey = SchemaKey("Bentley_Standard_CustomAttributes", 1, 0);
-    auto bsca = ctx->LocateSchema(bscaKey, SCHEMAMATCHTYPE_Latest);
+    auto bsca = ctx->LocateSchema(bscaKey, SchemaMatchType::Latest);
     if (bsca.IsNull())
         {
         LOG.error("Failed to find Bentley_Standard_CustomAttributes schema");

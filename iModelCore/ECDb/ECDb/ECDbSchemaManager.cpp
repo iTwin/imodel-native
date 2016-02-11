@@ -76,7 +76,7 @@ bool DependsOn(ECSchemaCP thisSchema, ECSchemaCP possibleDependency)
     SupplementalSchemaMetaDataPtr metaData;
     if (SupplementalSchemaMetaData::TryGetFromSchema(metaData, *possibleDependency)
         && metaData.IsValid()
-        && metaData->IsForPrimarySchema(thisSchema->GetName(), 0, 0, SCHEMAMATCHTYPE_Latest))
+        && metaData->IsForPrimarySchema(thisSchema->GetName(), 0, 0, SchemaMatchType::Latest))
         {
         return true; // possibleDependency supplements thisSchema. possibleDependency must be imported before thisSchema
         }
