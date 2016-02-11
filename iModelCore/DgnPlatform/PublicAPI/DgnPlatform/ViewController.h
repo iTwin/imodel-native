@@ -198,7 +198,7 @@ protected:
     //! Called when the display of a model is changed on or off
     //! @param modelId  The model to turn on or off.
     //! @param onOff    If true, elements in the model displayed
-    DGNPLATFORM_EXPORT virtual void _ChangeModelDisplay(DgnModelId, bool onOff);
+    DGNPLATFORM_EXPORT virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff);
 
     //! Draw the contents of the view.
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR);
