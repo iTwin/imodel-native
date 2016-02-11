@@ -45,10 +45,11 @@ DgnDbRepositoryConnection::DgnDbRepositoryConnection
 (
 RepositoryInfoPtr          repository,
 WebServices::CredentialsCR credentials,
-WebServices::ClientInfoPtr clientInfo
+WebServices::ClientInfoPtr clientInfo,
+IHttpHandlerPtr            customHandler
 ) : m_repositoryInfo(repository)
     {
-    m_wsRepositoryClient = WSRepositoryClient::Create(repository->GetServerURL(), repository->GetWSRepositoryName(), clientInfo);
+    m_wsRepositoryClient = WSRepositoryClient::Create(repository->GetServerURL(), repository->GetWSRepositoryName(), clientInfo, nullptr, customHandler);
     m_wsRepositoryClient->SetCredentials(credentials);
     }
 
@@ -104,7 +105,8 @@ AsyncTaskPtr<DgnDbRepositoryConnectionResult> DgnDbRepositoryConnection::Create
 RepositoryInfoPtr     repository,
 CredentialsCR         credentials,
 ClientInfoPtr         clientInfo,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr cancellationToken,
+IHttpHandlerPtr       customHandler
 )
     {
     if (!repository || repository->GetServerURL().empty() || repository->GetId().empty())
@@ -115,7 +117,7 @@ ICancellationTokenPtr cancellationToken
         {
         return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Error(Error::InvalidCredentials));
         }
-    DgnDbRepositoryConnectionPtr repositoryConnection(new DgnDbRepositoryConnection(repository, credentials, clientInfo));
+    DgnDbRepositoryConnectionPtr repositoryConnection(new DgnDbRepositoryConnection(repository, credentials, clientInfo, customHandler));
     if (repository->GetFileId().empty())
         return repositoryConnection->UpdateRepositoryInfo(cancellationToken)->Then<DgnDbRepositoryConnectionResult>([=] (const DgnDbResult& result)
         {

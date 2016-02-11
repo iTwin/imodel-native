@@ -44,7 +44,7 @@ DgnDbResult DgnDbRepositoryManager::Connect (DgnDbCR db)
             return DgnDbResult::Success();
         }
 
-    auto result = DgnDbRepositoryConnection::Create(RepositoryInfo::ReadRepositoryInfo(db), m_credentials, m_clientInfo, m_cancellationToken)->GetResult();
+    auto result = DgnDbRepositoryConnection::Create(RepositoryInfo::ReadRepositoryInfo(db), m_credentials, m_clientInfo, m_cancellationToken, m_customHandler)->GetResult();
     if (result.IsSuccess())
         {
         DgnDbRepositoryConnectionPtr connection = result.GetValue();
@@ -192,17 +192,18 @@ RepositoryStatus DgnDbRepositoryManager::_QueryStates (DgnLockInfoSet& lockState
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Karolis.Dziedzelis              12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbRepositoryManager::DgnDbRepositoryManager (WebServices::ClientInfoPtr clientInfo)
+DgnDbRepositoryManager::DgnDbRepositoryManager (WebServices::ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler)
     {
     m_clientInfo = clientInfo;
+    m_customHandler = customHandler;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Karolis.Dziedzelis              12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<DgnDbRepositoryManager> DgnDbRepositoryManager::Create (WebServices::ClientInfoPtr clientInfo)
+std::shared_ptr<DgnDbRepositoryManager> DgnDbRepositoryManager::Create (WebServices::ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler)
     {
-    return std::shared_ptr<DgnDbRepositoryManager>(new DgnDbRepositoryManager(clientInfo));
+    return std::shared_ptr<DgnDbRepositoryManager>(new DgnDbRepositoryManager(clientInfo, customHandler));
     }
 
 /*---------------------------------------------------------------------------------**//**

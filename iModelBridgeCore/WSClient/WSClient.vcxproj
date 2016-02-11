@@ -235,6 +235,7 @@
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbClient.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbLocks.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbRepositoryConnection.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerError.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerRevision.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\RepositoryInfo.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\DgnDbServerCommon.h" />
