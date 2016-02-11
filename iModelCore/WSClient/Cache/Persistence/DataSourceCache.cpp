@@ -40,7 +40,6 @@ std::shared_ptr<ECDbDebugInfoHolder> CreateLoggerHolder(WSCacheState& state, Utf
 
     ECSchemaList schemas;
     state.GetECDbAdapter().GetECDb().Schemas().GetECSchemas(schemas);
-    schemas.push_back(state.GetCacheSchema());
 
     return std::make_shared<ECDbDebugInfoHolder>(state.GetECDbAdapter().GetECDb(), schemas, "DataSourceCache debug information", context);
     }
