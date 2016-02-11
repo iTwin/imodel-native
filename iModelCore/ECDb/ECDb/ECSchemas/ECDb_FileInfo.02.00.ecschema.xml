@@ -15,7 +15,7 @@
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
-    <ECEntityClass typeName="EmbeddedFileInfo" modifier="Sealed" description="Attributes of a file stored in the ECDb file." displayLabel="Embedded File Info" modifier="Sealed">
+    <ECEntityClass typeName="EmbeddedFileInfo" modifier="Sealed" description="Attributes of a file stored in the ECDb file." displayLabel="Embedded File Info">
         <BaseClass>FileInfo</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
