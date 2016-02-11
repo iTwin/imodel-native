@@ -67,7 +67,7 @@ namespace ScalableMeshSDKexe
             }            
 
         BeFileName userDtyPath;        
-        status = pRootNode->GetAttributeStringValue(userDtyPath, "userDtyPath");
+        status = pRootNode->GetAttributeStringValue(userDtyPath, "customDtyPath");
             
         if (status != BEXML_Success)
             {

@@ -4,6 +4,7 @@
 #include "Initialize.h"
 
 using namespace std;
+#include <Bentley\BeFileListIterator.h>
 #include <DgnPlatform\IAuxCoordSys.h>
 #include <DgnPlatform/DelegatedElementECEnabler.h>
 #include <DgnPlatform\ITransactionHandler.h>
@@ -150,7 +151,15 @@ void AppHost::Startup (BeFileName& systemDtyPath, BeFileName& customDtyPath)
 
     if (BeFileName::DoesPathExist(m_customDtyPath.c_str()))
         {
-        GeoCoordinates::LibraryManager::Instance()->AddUserLibrary(m_customDtyPath.c_str(), nullptr);
+        BeFileName customDtySearchPath(m_customDtyPath);
+        customDtySearchPath.AppendToPath(L"*.dty");
+
+        BeFileListIterator iterDir(customDtySearchPath, false);
+        BeFileName currentFile;
+        while (BSISUCCESS == iterDir.GetNextFileName(currentFile))
+            {
+            GeoCoordinates::LibraryManager::Instance()->AddUserLibrary(currentFile.GetName(), nullptr);
+            }        
         }   
     }
 
