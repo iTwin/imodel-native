@@ -228,7 +228,6 @@ StatusInt ElemRangeCalc::GetRange(DRange3dR range)
     return SUCCESS;
     }
 
-
 static const double RMINDESIGNRANGE = (-4503599627370496.0);
 static const double RMAXDESIGNRANGE = (4503599627370495.0);
 
@@ -557,240 +556,6 @@ void RangeClipPlanes::ClipPoints(ElemRangeCalc* rangeCalculator, ClipStackCP cli
         }
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RangeGraphic::Init(ViewContextP context)
-    {
-    SetViewContext(context);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     09/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RangeGraphic::_PushTransClip(TransformCP trans, ClipPlaneSetCP clip)
-    {
-    T_Super::_PushTransClip(trans, clip);
-
-    m_rangeClipStack.Push(clip, trans);
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   09/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RangeGraphic::UpdateRange(int numPoints, DPoint3dCP points)
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    m_elRange.Union(numPoints, points, GetCurrRangeClip());
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   09/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RangeGraphic::UpdateRange(int numPoints, DPoint2dCP points)
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    m_elRange.Union(numPoints, points, GetCurrRangeClip());
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   09/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RangeGraphic::UpdateRange(DEllipse3dCP ellipse)
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    m_elRange.Union(ellipse, GetCurrRangeClip());
-#endif
-    }
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt RangeGraphic::_ProcessCurvePrimitive(ICurvePrimitiveCR primitive, bool closed, bool filled)
-    {
-    switch (primitive.GetCurvePrimitiveType())
-        {
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
-            {
-            DSegment3dCP segment = primitive.GetLineCP ();
-
-            UpdateRange(2, segment->point);
-            break;
-            }
-
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
-            {
-            bvector<DPoint3d> const* points = primitive.GetLineStringCP ();
-
-            UpdateRange((int) points->size(), &points->front());
-            break;
-            }
-
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
-            {
-            DEllipse3dCP ellipse = primitive.GetArcCP ();
-
-            UpdateRange(ellipse);
-            break;
-            }
-
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve:
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_InterpolationCurve:
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_AkimaCurve:
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral:
-            {
-            MSBsplineCurveCP bcurve = primitive.GetProxyBsplineCurveCP ();
-
-            // NOTE: Using un-weighted pole range is better for fit than MSBsplineCurve::GetPoleRange...
-            if (bcurve->HasWeights())
-                {
-                bvector<DPoint3d> poles;
-
-                bcurve->GetUnWeightedPoles(poles);
-                UpdateRange((int) poles.size(), &poles.front());
-                break;
-                }
-
-            UpdateRange(bcurve->GetIntNumPoles(), bcurve->GetPoleCP ());
-            break;
-            }
-
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString:
-            {
-            bvector<DPoint3d> const* points = primitive.GetPointStringCP ();
-
-            UpdateRange((int) points->size(), &points->front());
-            break;
-            }
-
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector:
-            {
-            // Do nothing, SimplifyGraphic will recurse...
-            break;
-            }
-
-        default:
-            {
-            BeAssert(false && "Unexpected entry in CurveVector.");
-            break;
-            }
-        }
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt RangeGraphic::_ProcessSolidPrimitive(ISolidPrimitiveCR primitive)
-    {
-    DRange3d    range;
-
-    if (!primitive.GetRange(range))
-        return ERROR;
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    m_elRange.Union(&range, GetCurrRangeClip());
-#endif
-
-    return SUCCESS;
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   09/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RangeGraphic::_AddPointString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range)
-    {
-    UpdateRange(numPoints, points);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RangeGraphic::_AddBody(ISolidKernelEntityCR entity, double)
-    {
-    DRange3d    range;
-
-    // Entity box better than edges, edge range may not be large enough for curved surfaces and it's a lot more work!
-    if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._GetEntityRange(range, entity))
-        return;
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    _PushTransClip(&entity.GetEntityTransform(), nullptr);
-    m_elRange.Union(&range, GetCurrRangeClip());
-    _PopTransClip();
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   09/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RangeGraphic::_AddLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range)
-    {
-    UpdateRange(numPoints, points);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   09/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RangeGraphic::_AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range)
-    {
-    UpdateRange(numPoints, points);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   09/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RangeGraphic::_AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool fill, double zDepth, DPoint2dCP range)
-    {
-    UpdateRange(&ellipse);
-    }
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   09/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RangeGraphic::_AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY,
-                              int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2dCP range)
-    {
-    UpdateRange(4, points);
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   09/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RangeGraphic::_AddTextString(TextStringCR text)
-    {
-    if (text.GetText().empty())
-        return;
-
-    double      height = text.GetStyle().GetHeight();
-    DPoint3d    pts[5];
-
-    text.ComputeBoundingShape(pts, 0.0, (fabs(height) / 2.0));
-    text.ComputeTransform().Multiply(pts, _countof(pts));
-
-    UpdateRange(5, pts);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Earlin.Lutz     07/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RangeGraphic::_AddPolyface(PolyfaceQueryCR meshData, bool filled)
-    {
-    size_t numPoint = meshData.GetPointCount();
-
-    if (numPoint > 0)
-        UpdateRange(static_cast<int>(numPoint), meshData.GetPointCP ());
-    }
-
 /*=================================================================================**//**
 * Context to caclulate the range of all elements within a view.
 * @bsiclass                                                     RayBentley    09/06
@@ -798,18 +563,18 @@ void RangeGraphic::_AddPolyface(PolyfaceQueryCR meshData, bool filled)
 struct FitContext : NullContext
 {
     DEFINE_T_SUPER(NullContext)
-private:
+protected:
     FitViewParams&      m_params;
     ElemRangeCalc       m_fitRange;
-
-protected:
+    RotMatrix           m_rMatrix;
 
 public:
     FitContext(FitViewParams& params) : NullContext(), m_params(params)
         {
         m_ignoreViewRange = !params.m_useScanRange;
-        m_purpose         = DrawPurpose::FitView;
-        m_is3dView        = true;
+        m_purpose = DrawPurpose::FitView;
+        m_is3dView = true;
+        m_rMatrix.InitIdentity();
         }
 
     ElemRangeCalc& GetFitRange() { return m_fitRange; }
@@ -822,16 +587,10 @@ virtual StatusInt _InitContextForView() override
     if (SUCCESS != T_Super::_InitContextForView())
         return ERROR;
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    if (m_params.m_rMatrix || m_viewport)
-        {
-        Transform transform;
-
-        transform.InitFrom((nullptr == m_params.m_rMatrix) ? m_viewport->GetRotMatrix() : *m_params.m_rMatrix);
-        PushTransform(transform);
-        m_transformClipStack.Clear(); // It is important to clear after PushTransform (TFS# 16267)
-        }
-#endif
+    if (nullptr != m_params.m_rMatrix)
+        m_rMatrix = *m_params.m_rMatrix;
+    else if (nullptr != m_viewport)
+        m_rMatrix = m_viewport->GetRotMatrix();
 
     return SUCCESS;
     }
@@ -846,16 +605,17 @@ bool IsRangeContainedInCurrentRange(DRange3dCR range, bool is3d)
     if (SUCCESS != m_fitRange.GetRange(currentRange))
         return false;
 
-    DPoint3d  dRangeCorners[8];
     ElemRangeCalc elemRangeCalc;
 
     DRange3d dRange = range;
     if (!is3d)
         dRange.low.z = dRange.high.z = 0;
 
-    dRange.Get8Corners(dRangeCorners);
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    m_currGraphic->GetCurrRangeClip()->ClipRange(&elemRangeCalc, dRangeCorners, 0, true);
+    DPoint3d  dRangeCorners[8];
+    dRange.Get8Corners(dRangeCorners);
+    if (!m_rangeClipStack.IsEmpty())
+        m_rangeClipStack.ClipRange(&elemRangeCalc, dRangeCorners, 0, true);
 #endif
 
     if (SUCCESS != elemRangeCalc.GetRange(dRange))
@@ -873,12 +633,12 @@ bool IsRangeContainedInCurrentRange(DRange3dCR range, bool is3d)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual ScanCriteria::Result _CheckNodeRange(ScanCriteriaCR criteria, DRange3dCR scanRange, bool is3d) override
+virtual ScanCriteria::Result _CheckNodeRange(ScanCriteriaCR criteria, DRange3dCR range, bool is3d) override
     {
-    if (ScanCriteria::Result::Fail == T_Super::_CheckNodeRange(criteria, scanRange, is3d))
-        return  ScanCriteria::Result::Fail;
+    if (ScanCriteria::Result::Fail == T_Super::_CheckNodeRange(criteria, range, is3d))
+        return ScanCriteria::Result::Fail;
 
-    return IsRangeContainedInCurrentRange(scanRange, is3d) ? ScanCriteria::Result::Fail : ScanCriteria::Result::Pass;
+    return IsRangeContainedInCurrentRange(range, is3d) ? ScanCriteria::Result::Fail : ScanCriteria::Result::Pass;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -891,13 +651,15 @@ bool _ScanRangeFromPolyhedron()
         {
         // Rather than no range test - use a big range so range tree still gets used (and we can reject nodes).
         DRange3d bigRange;
+        
         bigRange.low.x = bigRange.low.y = bigRange.low.z = -1.0e20;
         bigRange.high.x = bigRange.high.y = bigRange.high.z = 1.0e20;
-
         m_scanCriteria.SetRangeTest(&bigRange);
-        return  true;
+
+        return true;
         }
-    return  T_Super::_ScanRangeFromPolyhedron();
+
+    return T_Super::_ScanRangeFromPolyhedron();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -917,11 +679,11 @@ StatusInt _VisitGeometry(GeometrySourceCR source) override
 
     elementBox.Get8Corners(corners);
     source.GetPlacementTransform().Multiply(corners, corners, 8);
-
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    m_fitRange.Union (8, corners, GetCurrRangeClip());
+    m_fitRange.Union(8, corners, !m_rangeClipStack.IsEmpty() ? &m_rangeClipStack : nullptr);
 #else
-    m_fitRange.Union (8, corners, nullptr);
+    m_rMatrix.Multiply(corners, corners, 8);
+    m_fitRange.Union(8, corners, nullptr);
 #endif
 
     return SUCCESS;
@@ -1008,7 +770,8 @@ struct DepthFitContext : public FitContext
     DEFINE_T_SUPER(FitContext)    
     DepthFitContext(FitViewParams& params) : FitContext(params) {}
 
-    virtual void _PushFrustumClip() override {ViewContext::_PushFrustumClip(); }
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    virtual void _PushFrustumClip() override {ViewContext::_PushFrustumClip();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/06
@@ -1030,24 +793,21 @@ virtual StatusInt _InitContextForView() override
     if (SUCCESS != T_Super::_InitContextForView())
         return ERROR;
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     int         nPlanes;
     ClipPlane   frustumPlanes[6];
-    ViewFlags viewFlags = GetViewFlags();
-
+    ViewFlags   viewFlags = GetViewFlags();
     Frustum     frustum = GetFrustum();
-    // DepthFitContext needs the frustum planes in RangeOutput also to properly clip elements that span outside the view.
-    if (0 != (nPlanes = ClipUtil::RangePlanesFromPolyhedra(frustumPlanes, frustum.GetPts(), !viewFlags.noFrontClip, !viewFlags.noBackClip, 1.0E-6)))
-        {
-        m_transformClipStack.PushClipPlanes(frustumPlanes, nPlanes);
 
+    // DepthFitContext needs the frustum planes in RangeOutput also to properly clip elements that span outside the view.
+    if (0 != (nPlanes = ClipUtil::RangePlanesFromPolyhedra(frustumPlanes, frustum.GetPts(), !viewFlags.noFrontClip, !viewFlags.noBackClip, 1.0e-6)))
+        {
         ClipPlaneSet planeSet(frustumPlanes, nPlanes);
-        DirectPushTransClipOutput(*m_IDrawGeom, nullptr, &planeSet);
+        m_rangeClipStack.Push(&planeSet, nullptr);
         }
-#endif
 
     return SUCCESS;
     }
+#endif
 
 }; // DepthFitContext
 

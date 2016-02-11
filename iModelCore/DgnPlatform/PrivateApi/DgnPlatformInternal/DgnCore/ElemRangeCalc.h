@@ -2,7 +2,7 @@
 |
 |     $Source: PrivateApi/DgnPlatformInternal/DgnCore/ElemRangeCalc.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -124,43 +124,6 @@ public:
     DGNPLATFORM_EXPORT void Union(DRange3d const* in, ClipStackCP currClip);
     DGNPLATFORM_EXPORT void Union(DEllipse3d const* ellipse, ClipStackCP currClip);
     DGNPLATFORM_EXPORT StatusInt ToScanRange(AxisAlignedBox3dR range, bool is3d);
-};
-
-/*=================================================================================**//**
-* Context to calculate the range of an element.
-* @bsiclass                                                     KeithBentley    01/02
-+===============+===============+===============+===============+===============+======*/
-struct RangeGraphic : SimplifyGraphic
-{
-    DEFINE_T_SUPER(SimplifyGraphic)
-private:
-    ElemRangeCalc m_elRange;
-
-public:
-    RangeGraphic(Render::Graphic::CreateParams const& params, IGeometryProcessorR processor, ViewContextR context) : T_Super(params, processor, context) {}
-
-    ElemRangeCalc* GetElemRange() {return &m_elRange;}
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    void Init(ViewContextP context);
-#endif
-    void      UpdateRange(int numPoints, DPoint3dCP points);
-    void      UpdateRange(int numPoints, DPoint2dCP points);
-    void      UpdateRange(DEllipse3dCP ellipse);
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    StatusInt _ProcessCurvePrimitive(ICurvePrimitiveCR primitive, bool closed, bool filled) override;
-    StatusInt _ProcessSolidPrimitive(ISolidPrimitiveCR primitive) override;
-#endif
-    void      _AddPointString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) override;
-    void      _AddBody(ISolidKernelEntityCR entity, double) override;
-    void      _AddLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) override;
-    void      _AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range) override;
-    void      _AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool fill, double zDepth, DPoint2dCP range) override;
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    void      _AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2dCP range) override;
-#endif
-    void      _AddTextString(TextStringCR text) override;
-    void      _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) override;
 };
 
 END_BENTLEY_DGN_NAMESPACE
