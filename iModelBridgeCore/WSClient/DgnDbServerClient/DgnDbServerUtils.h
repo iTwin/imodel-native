@@ -92,7 +92,6 @@ namespace Db
     {
     namespace Local
         {
-        static Utf8CP LastRevision = "ParentRevisionId";
         static Utf8CP RepositoryURL = "ServerURL";
         static Utf8CP RepositoryId = "RepositoryId";
         }
@@ -117,6 +116,8 @@ namespace Error
     static Utf8CP DbReadOnly = "Briefcase db is open as read only.";
     static Utf8CP RevisionsMerge = "Unable to merge revisions.";
     static Utf8CP RevisionsFinish = "Unable to finish creating revision.";
+    static Utf8CP CantWriteToDgnDb = "Can't write to DgnDb file.";
+    static Utf8CP TrackingNotEnabled = "Change tracking is not enabled.";
     }
 
 //=======================================================================================

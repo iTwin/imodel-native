@@ -233,6 +233,34 @@ AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::CreateNewRepository(Dgn::DgnDbP
         return CreateCompletedAsyncTask<DgnDbRepositoryResult>(DgnDbRepositoryResult::Error(Error::InvalidRepository));
         }
 
+    //NEEDSWORK: Make a clean copy for a server. This code should move to the server once we have long running services.
+    BeFileName tempFile;
+    BeFileName::BeGetTempPath (tempFile);
+    tempFile.AppendToPath (db->GetFileName ().GetFileNameAndExtension ().c_str ());
+    BeFileName::BeCopyFile (db->GetFileName (), tempFile);
+
+    BeSQLite::DbResult status;
+    Dgn::DgnDbPtr tempdb = Dgn::DgnDb::OpenDgnDb (&status, tempFile, Dgn::DgnDb::OpenParams (Dgn::DgnDb::OpenMode::ReadWrite));
+    if (BeSQLite::DbResult::BE_SQLITE_OK != status)
+        return CreateCompletedAsyncTask<DgnDbRepositoryResult> (DgnDbRepositoryResult::Error (Error::DbNotFound));
+        
+    Utf8String dbFileName = tempdb->GetDbFileName ();
+    BeFileName fileName   = tempdb->GetFileName ();
+    Utf8String dbFileId   = tempdb->GetDbGuid ().ToString ();
+
+    //Do cleanup
+    if (tempdb->Revisions ().StartCreateRevision ().IsValid ())              //Clear transaction table
+        tempdb->Revisions ().FinishCreateRevision ();
+    tempdb->SaveBriefcaseLocalValue ("ParentRevisionId", "");                //Clear parent revision id
+    tempdb->ChangeBriefcaseId (BeBriefcaseId (0));                           //Set BriefcaseId to 0 (master)
+    tempdb->SaveBriefcaseLocalValue (Db::Local::RepositoryURL, "");          //Set URL
+    tempdb->SaveBriefcaseLocalValue (Db::Local::RepositoryId, repositoryId); //Set repository ID
+    //Save changes
+    tempdb->SaveChanges ();
+    tempdb->CloseDb ();
+    //tempFile.BeDeleteFile ();
+    //NEEDSWOR: end of file cleanup
+
     std::shared_ptr<DgnDbRepositoryResult> finalResult = std::make_shared<DgnDbRepositoryResult>();
     return GetRepositoriesByPlugin(ServerSchema::Plugin::Admin, cancellationToken)
         ->Then([=] (const WSRepositoriesResult& repositoriesResult)
@@ -246,7 +274,7 @@ AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::CreateNewRepository(Dgn::DgnDbP
         // Stage 1. Create repository.
         Utf8String adminRepositoryURL = (*repositoriesResult.GetValue().begin()).GetId();
         IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, adminRepositoryURL, m_clientInfo, nullptr, m_customHandler);
-        Json::Value repositoryCreationJson = RepositoryCreationJson(repositoryId, db->GetDbGuid().ToString(), description, db->GetDbFileName(), published);
+        Json::Value repositoryCreationJson = RepositoryCreationJson(repositoryId, dbFileId, description, dbFileName, published);
         client->SetCredentials(m_credentials);
         client->SendCreateObjectRequest(repositoryCreationJson, BeFileName(), callback, cancellationToken)
             ->Then([=] (const WSCreateObjectResult& createRepositoryResult)
@@ -265,7 +293,7 @@ AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::CreateNewRepository(Dgn::DgnDbP
 
             if (url.empty())
                 {
-                client->SendUpdateFileRequest(repositoryObjectId, db->GetFileName(), callback, cancellationToken)
+                client->SendUpdateFileRequest(repositoryObjectId, fileName, callback, cancellationToken)
                     ->Then([=] (const WSUpdateFileResult& uploadFileResult)
                     {
                     if (!uploadFileResult.IsSuccess())
@@ -288,7 +316,7 @@ AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::CreateNewRepository(Dgn::DgnDbP
             else
                 {
                 IAzureBlobStorageClientPtr azureClient = AzureBlobStorageClient::Create();
-                azureClient->SendUpdateFileRequest(url, db->GetFileName(), callback, cancellationToken)
+                azureClient->SendUpdateFileRequest(url, fileName, callback, cancellationToken)
                     ->Then([=] (const AzureResult& result)
                     {
                     if (!result.IsSuccess())
@@ -455,29 +483,32 @@ AsyncTaskPtr<DgnDbFileNameResult> DgnDbClient::AquireBriefcase(Utf8StringCR repo
 
                             BeSQLite::DbResult status;
                             DgnDbServerHost::Adopt(host);
-                            Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
+                            Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb (&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
                             if (BeSQLite::DbResult::BE_SQLITE_OK == status)
                                 {
-                                bvector<DgnDbServerRevisionPtr> revisions = pullTask->GetResult().GetValue();
+                                db->Txns ().EnableTracking (true);
+                                bvector<DgnDbServerRevisionPtr> revisions = pullTask->GetResult ().GetValue ();
                                 RevisionStatus mergeStatus = RevisionStatus::Success;
-                                if (!revisions.empty())
+                                if (!revisions.empty ())
                                     {
                                     bvector<DgnRevisionPtr> mergeRevisions;
                                     for (auto revision : revisions)
-                                        mergeRevisions.push_back(revision->GetRevision());
-                                    mergeStatus = db->Revisions().MergeRevisions(mergeRevisions);
-                                    db->CloseDb();
+                                        mergeRevisions.push_back (revision->GetRevision ());
+                                    mergeStatus = db->Revisions ().MergeRevisions (mergeRevisions);
                                     }
-                                DgnDbServerHost::Forget(host);
+                                    
+                                db->CloseDb ();
+                                DgnDbServerHost::Forget (host);
+
                                 if (RevisionStatus::Success != mergeStatus)
-                                    finalResult->SetError(mergeStatus);
+                                    finalResult->SetError (mergeStatus);
                                 else
-                                    finalResult->SetSuccess(filePath);
+                                    finalResult->SetSuccess (filePath);
                                 }
                             else
                                 {
-                                DgnDbServerHost::Forget(host);
-                                finalResult->SetError(db->GetLastError(&status).c_str());
+                                DgnDbServerHost::Forget (host);
+                                finalResult->SetError (Error::CantWriteToDgnDb);
                                 }
                             });
                         }

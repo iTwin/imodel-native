@@ -142,23 +142,21 @@ const BeSQLite::BeBriefcaseId& briefcaseId
     BeSQLite::DbResult status;
 
     std::shared_ptr<DgnDbServerHost> host = std::make_shared<DgnDbServerHost>();
-    DgnDbServerHost::Adopt(host);
-    Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
+    DgnDbServerHost::Adopt (host);
 
+    Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb (&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
     if (BeSQLite::DbResult::BE_SQLITE_OK == status)
-        status = RepositoryInfo::WriteRepositoryInfo(*db, *m_repositoryInfo, briefcaseId);
-
-    if (BeSQLite::DbResult::BE_SQLITE_DONE == status)
         {
-        db->CloseDb();
-        DgnDbServerHost::Forget(host, true);
-        return DgnDbResult::Success();
+        status = RepositoryInfo::WriteRepositoryInfo (*db, *m_repositoryInfo, briefcaseId);
+        db->CloseDb ();
         }
 
-    Utf8String error = db->GetLastError(&status);
-    db->CloseDb();
-    DgnDbServerHost::Forget(host, true);
-    return DgnDbResult::Error(error.c_str());
+    DgnDbServerHost::Forget (host, true);
+        
+    if (BeSQLite::DbResult::BE_SQLITE_DONE == status)
+        return DgnDbResult::Success ();
+    else
+        return DgnDbResult::Error (Error::CantWriteToDgnDb);
     }
 
 //---------------------------------------------------------------------------------------
