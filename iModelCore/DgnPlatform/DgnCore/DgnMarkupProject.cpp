@@ -275,14 +275,6 @@ GeometricModelP SpatialRedlineViewController::_GetTargetModel() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbR SpatialRedlineViewController::_GetDgnDb() const
-    {
-    return m_targetModelIsInSubjectView? m_subjectView.GetDgnDb(): T_Super::_GetDgnDb();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d SpatialRedlineViewController::_GetViewedExtents() const
@@ -310,15 +302,6 @@ void SpatialRedlineViewController::_OnAttachedToViewport(DgnViewportR vp)
     {
     T_Super::_OnAttachedToViewport(vp);
     m_subjectView._OnAttachedToViewport(vp);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    08/2014
-//---------------------------------------------------------------------------------------
-void SpatialRedlineViewController::_OnUpdate(DgnViewportR viewport, UpdatePlan const& plan)
-    {
-    T_Super::_OnUpdate(viewport, plan);
-    m_subjectView._OnUpdate(viewport, plan);
     }
 
 //---------------------------------------------------------------------------------------

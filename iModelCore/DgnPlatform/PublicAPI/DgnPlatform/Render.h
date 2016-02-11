@@ -1104,12 +1104,10 @@ struct GraphicList : RefCounted<NonCopyableClass>
 
     bvector<Node> m_list;
 
-    GraphicList() {}
-    DGNPLATFORM_EXPORT virtual ~GraphicList();
     uint32_t GetCount() const {return (uint32_t) m_list.size();}
     bool IsEmpty() const {return m_list.empty();}
+    void Clear() {m_list.clear();}
     DGNPLATFORM_EXPORT void Add(Graphic& graphic, void* ovr, uint32_t ovrFlags);
-    DGNPLATFORM_EXPORT void Clear();
 };
 
 //=======================================================================================

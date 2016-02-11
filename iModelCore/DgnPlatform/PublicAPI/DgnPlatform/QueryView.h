@@ -7,142 +7,226 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-#include <DgnPlatform/QueryModel.h>
 #include <DgnPlatform/ViewController.h>
+#include "UpdatePlan.h"
+#include <Bentley/BeThread.h>
+#include <BeSQLite/RTreeMatch.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
-//! Populates a QueryModel with \ref DgnElementGroup from a SQL query. The query can combine 
+//! Displays \ref DgnElementGroup from a SQL query. The query can combine
 //! spatial criteria with business and graphic criteria.
 //!
-//! @remarks QueryViewController is also used to produce graphics for picking and for purposes other than display.
+//! @remarks QueryView is also used to produce graphics for picking and for purposes other than display.
 // @bsiclass                                                    Keith.Bentley   07/12
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE QueryViewController : CameraViewController, BeSQLite::VirtualSet
+struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::VirtualSet
 {
-    DEFINE_T_SUPER (CameraViewController)
+    DEFINE_T_SUPER(CameraViewController)
+    friend struct DgnQueryQueue::Task;
 
-    friend struct QueryModel::Processor;
+    //=======================================================================================
+    // The Ids of elements that are somehow treated specially for a DgnQueryView
+    // @bsiclass                                                    Keith.Bentley   02/16
+    //=======================================================================================
+    struct SpecialElements
+    {
+        DgnElementIdSet m_always;
+        DgnElementIdSet m_never;
+        bool IsEmpty() const {return m_always.empty() && m_never.empty();}
+    };
+
+    //=======================================================================================
+    // A query that uses both the BeSQLite spatial index and a DgnElementId-based filter for a QueryView.
+    // This object holds two statements - one for the spatial query and one that filters element, by id,
+    // on the "other" criteria for a QueryView.
+    // The Statements are retrieved from the statement cache and prepared/bound in the Start method.
+    // @bsiclass                                                    Keith.Bentley   02/16
+    //=======================================================================================
+    struct SpatialQuery
+    {
+        BeSQLite::CachedStatementPtr m_rangeStmt;
+        BeSQLite::CachedStatementPtr m_viewStmt;
+        SpecialElements const* m_special;
+        int m_idCol = 0;
+        virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) = 0;
+        DgnElementId StepRtree();
+        bool TestElement(DgnElementId);
+        void Start(DgnQueryViewCR); //!< when this method is called the SQL string for the "ViewStmt" is obtained from the DgnQueryView supplied.
+        bool IsNever(DgnElementId id) const {return m_special && m_special->m_never.Contains(id);}
+        bool IsAlways(DgnElementId id) const {return m_special && m_special->m_always.Contains(id);}
+        bool HasAlways() const {return m_special && !m_special->m_always.empty();}
+        SpatialQuery(SpecialElements const* special) {m_special = (special && !special->IsEmpty()) ? special : nullptr;}
+    };
+
+    //! Holds the results of a query.
+    struct QueryResults : RefCounted<NonCopyableClass>
+    {
+        typedef bmultimap<double, DgnElementId> OcclusionScores;
+        bool m_incomplete = false;
+        OcclusionScores m_scores;
+        uint32_t GetCount() const {return (uint32_t) m_scores.size();}
+    };
+    typedef RefCountedPtr<QueryResults> QueryResultsPtr;
+
+    //! Clip planes for a single frustum
+    struct FrustumPlanes : ConvexClipPlaneSet
+    {
+        void Init(FrustumCR frustum);
+        BeSQLite::RTreeMatchFunction::Within TestBox(FrustumCR box); // test all 8 points of a box
+    };
+
+    //=======================================================================================
+    // This object is created on the Client thread and queued to the Query thread. It populates its
+    // QueryResults with the set of n-best elements that satisfy both range and view criteria.
+    // @bsiclass                                                    Keith.Bentley   02/16
+    //=======================================================================================
+    struct RangeQuery : SpatialQuery, DgnQueryQueue::Task
+    {
+        DEFINE_T_SUPER(SpatialQuery)
+        bool        m_depthFirst = false;
+        bool        m_cameraOn = false;
+        bool        m_testLOD = false;
+        bool        m_doSkewTest = false;
+        uint32_t    m_orthogonalProjectionIndex;
+        uint32_t    m_count = 0;
+        uint32_t    m_hitLimit = 0;     // find this many "best" elements sorted by occlusion score
+        uint64_t    m_lastId = 0;
+        BeSQLite::RTree3dVal m_boundingRange;    // only return entries whose range intersects this cube.
+        BeSQLite::RTree3dVal m_backFace;
+        FrustumPlanes m_clips;
+        Frustum     m_frustum;
+        DMatrix4d   m_localToNpc;
+        DVec3d      m_viewVec;  // vector from front face to back face, for SkewScan
+        DPoint3d    m_cameraPosition;
+        double      m_lodFilterNPCArea = 0.0;
+        double      m_minScore = 0.0;
+        double      m_lastScore = 0.0;
+        DgnQueryView::QueryResultsPtr m_results;
+
+        virtual void _Go() override;
+        virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
+        void AddAlwaysDrawn(DgnQueryViewCR);
+        bool SkewTest(BeSQLite::RTree3dValCP testRange);
+        void SetDepthFirst() {m_depthFirst=true;}
+        void SetTestLOD(bool onOff) {m_testLOD=onOff;}
+        void SetSizeFilter(DgnViewportCR, double size);
+        bool ComputeNPC(DPoint3dR npcOut, DPoint3dCR localIn);
+        bool ComputeOcclusionScore(double& score, FrustumCR);
+        void SetFrustum(FrustumCR);
+
+    public:
+        RangeQuery(DgnQueryViewCR, FrustumCR, DgnViewportCR, UpdatePlan::Query const& plan);
+        DgnQueryView::QueryResultsPtr DoQuery();
+        DgnQueryView::QueryResultsPtr GetResults() {return m_results;}
+    };
+
+    //=======================================================================================
+    // The set of DgnElementIds that are contained in a scene. This is used when performing a progressive
+    // update of a view to determine which elements are already visible.
+    // @bsiclass                                                    Keith.Bentley   02/16
+    //=======================================================================================
+    struct SceneMembers : RefCounted<DgnElementIdSet>, NonCopyableClass
+    {
+    };
+    typedef RefCountedPtr<SceneMembers> SceneMembersPtr;
+
+    //=======================================================================================
+    // A ProgressiveTask for a DgnQueryView that draws all of the elements that satisfy the query and range
+    // criteria, but were too small to be in the scene.
+    // @bsiclass                                                    Keith.Bentley   04/14
+    //=======================================================================================
+    struct NonScene : ProgressiveTask
+    {
+        enum {SHOW_PROGRESS_INTERVAL = 1000}; // once per second.
+        bool     m_setTimeout = false;
+        uint32_t m_total = 0;
+        uint32_t m_thisBatch = 0;
+        uint32_t m_batchSize = 0;
+        uint64_t m_nextShow  = 0;
+        SceneMembersPtr m_scene;
+        RangeQuery m_rangeQuery;
+        DgnQueryViewR m_view;
+        explicit NonScene(DgnQueryViewR view, DgnViewportCR, SceneMembers& scene);
+        virtual Completion _DoProgressive(SceneContext& context, WantShow&) override;
+    };
 
 protected:
-    bool        m_forceNewQuery;    //!< If true, before doing the next view update, repopulate the QueryModel with the result of the query 
-    bool        m_noQuery;          //!< If true, *only* draw the "always drawn" list - do not query for other elements
-    bool        m_needProgressiveDisplay;
-    uint64_t    m_maxElementMemory;
-    Frustum     m_startQueryFrustum;
-    Frustum     m_saveQueryFrustum;
-    QueryModelR m_queryModel;
-    DgnElementIdSet m_alwaysDrawn;
-    DgnElementIdSet m_neverDrawn;
+    bool m_forceNewQuery = false;
+    bool m_noQuery = false;
+    mutable bool m_abortQuery = false;
+    Utf8String m_viewSQL;
+    double m_sceneLODSize    = 6.0; 
+    double m_nonSceneLODSize = 7.0; 
+    SpecialElements m_special;
+    mutable QueryResultsPtr m_results;
 
-    DGNPLATFORM_EXPORT void EmptyQueryModel();
     void QueryModelExtents(DRange3dR, DgnViewportR);
-
-    //! Populate the QueryModel with the results of the query.
-    void LoadElementsForUpdate(DgnViewportR viewport, DrawPurpose updateType, CheckStopP checkStop, bool needNewQuery, bool waitForQueryToFinish, bool stopQueryOnAbort);
-    void SaveSelectResults();
-    void PickUpResults();
-    bool FrustumChanged(DgnViewportCR vp) const;
-    void QueueQuery(DgnViewportR, UpdatePlan const&);
+    void QueueQuery(DgnViewportR, UpdatePlan::Query const&);
+    void AddtoSceneQuick(SceneContextR context, SceneMembers&, QueryResults& results);
+    bool AbortRequested() const {return m_abortQuery;} //!< @private
+    void SetAbortQuery(bool val) const {m_abortQuery=val;} //!< @private
+    StatusInt VisitElement(ViewContextR context, DgnElementId, bool allowLoad);
     DGNPLATFORM_EXPORT virtual bool _IsInSet(int nVal, BeSQLite::DbValue const*) const override;
-    virtual void _FillModels() override {} // query models do not load elements in advance
+    DGNPLATFORM_EXPORT virtual void _InvalidateScene() override;
+    DGNPLATFORM_EXPORT virtual bool _IsSceneReady() const override;
+    virtual void _FillModels() override {} // query views do not load elements in advance
+    DGNPLATFORM_EXPORT void _OnUpdate(DgnViewportR vp, UpdatePlan const& plan) override;
     DGNPLATFORM_EXPORT virtual void _OnAttachedToViewport(DgnViewportR) override;
-
-protected:
-    //! Called at the beginning of a full update to populate the QueryModel.
-    //! @param[in] viewport    The viewport that will display the graphics
-    //! @param[in] plan The update plan
-    //! @remarks Applications that override this method normally perform any additional work that is required and then call QueryViewController::_OnUpdate to 
-    //!  let it decide if is necessary to repopulate the QueryModel.
-    //! @remarks An application may use this and _OnFullUpdate to decide when to display some indication such as a spinner to 
-    //! let the user know that the update is in progress.  The application can override SpatialViewController::_OnUpdateComplete
-    //! to know when to stop the spinner.
-    DGNPLATFORM_EXPORT virtual void _OnUpdate(DgnViewportR viewport, UpdatePlan const& plan) override;
-
-    //! Called when the visibility of a category is changed.
+    DGNPLATFORM_EXPORT virtual void _CreateScene(SceneContextR) override;
+    DGNPLATFORM_EXPORT void _VisitAllElements(ViewContextR) override;
+    DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR context) override;
     DGNPLATFORM_EXPORT virtual void _OnCategoryChange(bool singleEnabled) override;
-
-    //! Called when the display of a model is changed on or off
-    //! @param modelId  The model to turn on or off.
-    //! @param onOff    If true, elements in the model are candidates for display; else elements in the model are not displayed.
     DGNPLATFORM_EXPORT virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff) override;
 
-    //! Draw the elements in the query model.
-    //! @param context The context that is processing the graphics. Sometimes this is a ViewContext, when the output is a DgnViewport. Sometimes, this is a PickContext, when
-    //! the purpose is to identify an element or snap location.
-    //! @remarks It not normally necessary for apps to override this function.
-    DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR context) override;
-
-    //! Allow the supplied ViewContext to visit every element in the view, not just the best elements in the query model.
-    DGNPLATFORM_EXPORT void _VisitAllElements(ViewContextR) override;
-
-protected:
-    //! Compute the range of the elements and graphics in the QueryModel.
+    //! Compute the range of the elements and graphics in the QueryView.
     //! @remarks This function may also load elements to determine the range.
-    //! @param[out] range    the computed range 
+    //! @param[out] range    the computed range
     //! @param[in]  viewport the viewport that will display the graphics
     //! @param[in]  params   options for computing the range.
     //! @return \a true if the returned \a range is complete. Otherwise the caller will compute the tightest fit for all loaded elements.
     DGNPLATFORM_EXPORT virtual FitComplete _ComputeFitRange(DRange3dR range, DgnViewportR viewport, FitViewParamsR params) override;
 
-    //! Return the maximum number of bytes of memory that should be used to hold loaded element data. Element data may exceed this limit at times and is trimmed back at intervals.
-    //! It is recommended that applications use this default implementation and instead control memory usage by overriding _GetMaxElementFactor
-    virtual uint64_t _GetMaxElementMemory(DgnViewportCR vp) {return ComputeMaxElementMemory(vp);}
-
 public:
-    //! The premise of a QueryModel is that it holds only a small subset of the potential elements in a DgnDb, limited to a maximum number of 
-    //! elements and bytes. Obviously, the criteria that determines which elements are loaded at a given time must combine business logic (e.g. elements that meet 
-    //! a certain property test), display logic (e.g. which models and categories are turned on), plus spatial criteria (i.e. the position of the camera).
-    //! Further, assuming more than the maximum number of elements meet all the search criteria, the candidate elements should be sorted such that the "best"
-    //! set of elements are returned.
-    //! <p> This method is used to obtain an SQL statement to achieve that goal. The "best set" of elements are determined 
-    //! using a spatial scoring algorithm that traverses the persistent range tree (an RTree in SQLite), and scores elements based on an approximate number of
-    //! pixels occluded by its axis aligned bounding box (AABB - aka "range box"). The SQL returned by the base-class implementation of this method contains 
-    //! logic to affect that purpose, plus filters for category and models. To add additional, application-specific criteria to the query, override this method, call
-    //! T_Super::_GetRTreeMatchSql, and append your filters as additional "AND" clauses on that string. Then, return the new combined SQL statement.
-    //! @param viewport The viewport where the query model is to be displayed.
-    /**
-       $SAMPLECODE_BEGIN[QueryView_GetRTreeMatchSql,Example]
-__PUBLISH_INSERT_FILE__  QueryView_GetRTreeMatchSql.sampleCode
-       $SAMPLECODE_END
-     */
-    DGNPLATFORM_EXPORT virtual Utf8String _GetQuery(DgnViewportR viewport) const;
-
-    void BindModelAndCategory(BeSQLite::StatementR stmt) const;
-
-    //! Construct the view controller.                          
     //! @param dgndb  The DgnDb for the view
-    //! @param viewId Id of view to be displayed
-    DGNPLATFORM_EXPORT QueryViewController(DgnDbR dgndb, DgnViewId viewId);
-    DGNPLATFORM_EXPORT ~QueryViewController();
+    //! @param viewId Id of view to be displayed in this DgnQueryView
+    DGNPLATFORM_EXPORT DgnQueryView(DgnDbR dgndb, DgnViewId viewId);
+    DGNPLATFORM_EXPORT ~DgnQueryView();
 
-    void SetForceNewQuery(bool newValue) {m_forceNewQuery = newValue;}
+    //! Get the Level-of-Detail filtering size for scene creation for this DgnQueryView. This is the size, in pixels, of one side of a square. 
+    //! Elements whose aabb projects onto the view an area less than this box are skippped during scene creation.
+    double GetSceneLODSize() const {return m_sceneLODSize;}
+    void SetSceneLODSize(double val) {m_sceneLODSize=val;} //!< see GetSceneLODSize
 
-    //! Computes and returns the maximum number of bytes of memory that should be used to hold loaded element data. Element data may exceed this limit at times and is trimmed back at intervals.
-    DGNPLATFORM_EXPORT uint64_t ComputeMaxElementMemory(DgnViewportCR vp);
-
-    //! Returns the value computed on the last call to ComputeMaxElementMemory;
-    DGNPLATFORM_EXPORT uint64_t GetMaxElementMemory();
+    //! Get the Level-of-Detail filtering size for non-scene (background) elements this DgnQueryView. This is the size, in pixels, of one side of a square. 
+    //! Elements whose aabb projects onto the view an area less than this box are skippped during background-element display.
+    double GetNonSceneLODSize() const {return m_nonSceneLODSize;}
+    void SetNonSceneLODSize(double val) {m_nonSceneLODSize=val;} //!< see GetNonSceneLODSize
 
     //! Get the list of elements that are always drawn
-    DgnElementIdSet const& GetAlwaysDrawn() {return m_alwaysDrawn;}
+    DgnElementIdSet const& GetAlwaysDrawn() {return m_special.m_always;}
 
     //! Establish a set of elements that are always drawn in the view.
+    //! @param[in] exclusive If true, only these elements are drawn
     DGNPLATFORM_EXPORT void SetAlwaysDrawn(DgnElementIdSet const&, bool exclusive);
 
+    //! Empty the set of elements that are always drawn
     DGNPLATFORM_EXPORT void ClearAlwaysDrawn();
 
-    //! Get the list of elements that are never drawn.
-    //! @remarks An element in the never-draw list is excluded regardless of whether or not it is 
-    //! in the always-draw list. That is, the never-draw list gets priority over the always-draw list.
-    DgnElementIdSet const& GetNeverDrawn() {return m_neverDrawn;}
-
+    //! Establish a set of elements that are never drawn in the view.
     DGNPLATFORM_EXPORT void SetNeverDrawn(DgnElementIdSet const&);
+
+    //! Get the list of elements that are never drawn.
+    //! @remarks An element in the never-draw list is excluded regardless of whether or not it is
+    //! in the always-draw list. That is, the never-draw list gets priority over the always-draw list.
+    DgnElementIdSet const& GetNeverDrawn() {return m_special.m_never;}
+
+    //! Empty the set of elements that are never drawn
     DGNPLATFORM_EXPORT void ClearNeverDrawn();
 
-    //! Gets the QueryModel that this QueryViewController uses.
-    QueryModelR GetQueryModel() const {return m_queryModel;}
+    //! Requests that any active or pending queries for this view be canceled, optionally not returning until the request is satisfied
+    DGNPLATFORM_EXPORT void RequestAbort(bool waitUntilFinished);
 };
 
 END_BENTLEY_DGN_NAMESPACE

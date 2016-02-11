@@ -35,7 +35,6 @@ BEGIN_BENTLEY_DGN_NAMESPACE
   @see DgnCoordSystem
 */
 
-
 //=======================================================================================
 //! Parameters for the "fit view" operation
 // @bsiclass                                                    Keith.Bentley   06/15
@@ -58,35 +57,12 @@ struct FitViewParams
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 enum class ViewportResizeMode
-    {
+{
     KeepCurrent      = 0, //!< The viewport size is unchanged (this is the default). The viewport is unchanged, and the view contents are resized to match the viewport aspect ratio.
     RelativeRect     = 1, //!< The viewport is resized to the same size, relative to the available area, that is specifed in viewPortInfo
     AspectRatio      = 2, //!< The viewport is resized to match the aspect ratio of the viewInfo.
     Size             = 3, //!< The viewport is resized to match the exact size 
-    };
-
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-enum class UpdateAbort : int
-    {
-    None          = 0,
-    BadView       = 1,
-    Motion        = 2,
-    MotionStopped = 3,
-    Keystroke     = 4,
-    ReachedLimit  = 5,
-    MouseWheel    = 6,
-    Timeout       = 7,
-    Button        = 8,
-    Paint         = 9,
-    Focus         = 10,
-    ModifierKey   = 11,
-    Gesture       = 12,
-    Command       = 13,
-    Sensor        = 14,
-    Unknown       = 15
-    };
+};
 
 //=======================================================================================
 /**
@@ -108,23 +84,18 @@ enum class UpdateAbort : int
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
 {
-public:
     friend struct ViewManager;
-    friend struct ViewSet;
-
-//! @private
-typedef bpair<Render::GraphicSet, ElementAlignedBox3d> GraphicSetRangePair;
-//! @private
-typedef bmap<DgnGeometryPartId, GraphicSetRangePair> PartGraphicMap;
-
-protected:
+    typedef bpair<Render::GraphicSet, ElementAlignedBox3d> GraphicSetRangePair; //!< @private
+    typedef bmap<DgnGeometryPartId, GraphicSetRangePair> PartGraphicMap;        //!< @private
     typedef std::deque<Utf8String> ViewStateStack;
 
+protected:
     bool            m_zClipAdjusted = false;    // were the view z clip planes adjusted due to front/back clipping off?
     bool            m_is3dView = false;         // view is of a 3d model
     bool            m_isCameraOn = false;       // view is 3d and the camera is turned on.
     bool            m_frustumValid = false;
     bool            m_needSynchWithViewController = true;
+    mutable bool    m_sceneValid = false;    // the scene remains valid, even if the view volume changes. It becomes invalid if the database changes or view parameters change.
     mutable bool    m_needsHeal = true;
     mutable bool    m_needsRefresh = true;
     bool            m_targetCenterValid = false;
@@ -132,7 +103,6 @@ protected:
     Byte            m_dynamicsTransparency = 64;
     Byte            m_flashingTransparency = 100;
     int             m_maxUndoSteps = 20;
-    uint32_t        m_sceneEntries = 0;         // number of entries in the scene from last attempt at healing
     DPoint3d        m_viewOrg;                  // view origin, potentially expanded if f/b clipping are off
     DVec3d          m_viewDelta;                // view delta, potentially expanded if f/b clipping are off
     DPoint3d        m_viewOrgUnexpanded;        // view origin (from ViewController, unexpanded for "no clip")
@@ -146,7 +116,7 @@ protected:
     double          m_frustFraction;
     Utf8String      m_viewTitle;
     ViewControllerPtr m_viewController;
-    bvector<ProgressiveDisplayPtr> m_progressiveDisplay;    // list of progressive display suppliers
+    bvector<ProgressiveTaskPtr> m_progressiveTasks;
     DPoint3d        m_viewCmdTargetCenter;
     Utf8String      m_currentBaseline;
     ViewStateStack  m_forwardStack;
@@ -164,21 +134,11 @@ protected:
     virtual void _Destroy() {DestroyViewport();}
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(ViewControllerR, bool expandView);
     DGNPLATFORM_EXPORT virtual int _GetIndexedLineWidth(int index) const;
-
     DGNPLATFORM_EXPORT static void StartRenderThread();
     DMap4d CalcNpcToView();
     void QueueDrawFrame();
     void CalcTargetNumElements(UpdatePlan const& plan, bool isForProgressive);
-
-    enum class CloseMe {No=0, Yes=1};
-    //! called when one or more models are deleted
-    //! Default implementation does:
-    //! - Removes deleted models from viewed model list
-    //! - Chooses a new target model arbitrarily from viewed model list if target model deleted
-    //! - Closes viewport if no viewed models remain
-    //! Override this method to change this behavior
-    //! @return true to close this viewport
-    DGNPLATFORM_EXPORT virtual CloseMe _OnModelsDeleted(bset<Dgn::DgnModelId> const&, Dgn::DgnDbR db);
+    StatusInt CreateScene(UpdatePlan const& plan);
 
 public:
     DgnViewport(Render::TargetP target) : m_renderTarget(target) {}
@@ -196,9 +156,9 @@ public:
     Render::Plan::AntiAliasPref WantAntiAliasLines() const {return _WantAntiAliasLines();}
     Render::Plan::AntiAliasPref WantAntiAliasText() const {return _WantAntiAliasText();}
     void AlignWithRootZ();
-    ProgressiveDisplay::Completion DoProgressiveDisplay();
-    void ClearProgressiveDisplay() {m_progressiveDisplay.clear();}
-    DGNPLATFORM_EXPORT void ScheduleProgressiveDisplay(ProgressiveDisplay& pd);
+    ProgressiveTask::Completion DoProgressiveTasks();
+    void ClearProgressiveTasks() {m_progressiveTasks.clear();}
+    DGNPLATFORM_EXPORT void ScheduleProgressiveTask(ProgressiveTask& pd);
     DGNPLATFORM_EXPORT double GetFocusPlaneNpc();
     DGNPLATFORM_EXPORT StatusInt RootToNpcFromViewDef(DMap4d&, double&, CameraInfo const*, DPoint3dCR, DPoint3dCR, RotMatrixCR) const;
     DGNPLATFORM_EXPORT static int32_t GetMaxDisplayPriority();
@@ -222,6 +182,7 @@ public:
     DPoint3dCP GetViewCmdTargetCenter() {return m_targetCenterValid ? &m_viewCmdTargetCenter : nullptr;}
     Point2d GetScreenOrigin() const {return m_renderTarget->GetScreenOrigin();}
     DGNVIEW_EXPORT double PixelsFromInches(double inches) const;
+    DGNPLATFORM_EXPORT void InvalidateScene() const;
     DGNVIEW_EXPORT void ForceHeal();
     StatusInt HealViewport(UpdatePlan const&);
     bool GetNeedsHeal() {return m_needsHeal;}
@@ -363,7 +324,7 @@ public:
     DGNPLATFORM_EXPORT void NpcToView(DPoint3dP viewPts, DPoint3dCP npcPts, int nPts) const;
 
     //! Transforma a point from DgnCoordSystem::Npc into DgnCoordSystem::View.
-    DPoint3d NpcToView(DPoint3dCR npcPt) const {DPoint3d viewPt; NpcToView(&viewPt, &npcPt, 1); return viewPt;}
+    DPoint3d NpcToView(DPoint3dCR npcPt) {DPoint3d viewPt; NpcToView(&viewPt, &npcPt, 1); return viewPt;}
 
     //! Transfrom an array of points in DgnCoordSystem::View into DgnCoordSystem::Npc.
     //! @param[out] npcPts An array to receive the points in DgnCoordSystem::Npc. Must be dimensioned to hold \c nPts points.
@@ -372,7 +333,7 @@ public:
     DGNPLATFORM_EXPORT void ViewToNpc(DPoint3dP npcPts, DPoint3dCP viewPts, int nPts) const;
 
     //! Transforma a point from DgnCoordSystem::View into DgnCoordSystem::Npc.
-    DPoint3d ViewToNpc(DPoint3dCR viewPt) const {DPoint3d npcPt; ViewToNpc(&npcPt, &viewPt, 1); return npcPt;}
+    DPoint3d ViewToNpc(DPoint3dCR viewPt) {DPoint3d npcPt; ViewToNpc(&npcPt, &viewPt, 1); return npcPt;}
 
     //! Transfrom an array of points in DgnCoordSystem::View into DgnCoordSystem::Screen.
     //! @param[out] screenPts An array to receive the points in DgnCoordSystem::Screen. Must be dimensioned to hold \c nPts points.
@@ -393,7 +354,7 @@ public:
     DGNPLATFORM_EXPORT void NpcToWorld(DPoint3dP worldPts, DPoint3dCP npcPts, int nPts) const;
 
     //! Transforma a point from DgnCoordSystem::Npc into DgnCoordSystem::World.
-    DPoint3d NpcToWorld(DPoint3dCR npcPt) const {DPoint3d worldPt; NpcToWorld(&worldPt, &npcPt, 1); return worldPt;}
+    DPoint3d NpcToWorld(DPoint3dCR npcPt) {DPoint3d worldPt; NpcToWorld(&worldPt, &npcPt, 1); return worldPt;}
 
     //! Transfrom an array of points in DgnCoordSystem::World into DgnCoordSystem::Npc.
     //! @param[out] npcPts An array to receive the points in DgnCoordSystem::Npc. Must be dimensioned to hold \c nPts points.
@@ -402,7 +363,7 @@ public:
     DGNPLATFORM_EXPORT void WorldToNpc(DPoint3dP npcPts, DPoint3dCP worldPts, int nPts) const;
 
     //! Transforma a point from DgnCoordSystem::World into DgnCoordSystem::Npc.
-    DPoint3d WorldToNpc(DPoint3dCR worldPt) const {DPoint3d npcPt; WorldToNpc(&npcPt, &worldPt, 1); return npcPt;}
+    DPoint3d WorldToNpc(DPoint3dCR worldPt) {DPoint3d npcPt; WorldToNpc(&npcPt, &worldPt, 1); return npcPt;}
 
     //! Transfrom an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
     //! @param[out] viewPts  An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
@@ -422,8 +383,8 @@ public:
     //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void WorldToView(DPoint3dP viewPts, DPoint3dCP worldPts, int nPts) const;
 
-    //! Transform a point from DgnCoordSystem::World into DgnCoordSystem::View.
-    DPoint3d WorldToView(DPoint3dCR worldPt) const {DPoint3d viewPt; WorldToView(&viewPt, &worldPt, 1); return viewPt;}
+    //! Transforma a point from DgnCoordSystem::World into DgnCoordSystem::View.
+    DPoint3d WorldToView(DPoint3dCR worldPt) {DPoint3d viewPt; WorldToView(&viewPt, &worldPt, 1); return viewPt;}
 
     //! Transfrom an array of points in DgnCoordSystem::World into an array of 2D points in DgnCoordSystem::View.
     //! @param[out] viewPts An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
@@ -438,7 +399,7 @@ public:
     DGNPLATFORM_EXPORT void ViewToWorld(DPoint3dP worldPts, DPoint3dCP viewPts, int nPts) const;
 
     //! Transform a point from DgnCoordSystem::View into DgnCoordSystem::World.
-    DPoint3d ViewToWorld(DPoint3dCR viewPt) const {DPoint3d worldPt; ViewToWorld(&worldPt, &viewPt, 1); return worldPt;}
+    DPoint3d ViewToWorld(DPoint3dCR viewPt) {DPoint3d worldPt; ViewToWorld(&worldPt, &viewPt, 1); return worldPt;}
 /** @} */
 
 /** @name DgnViewport Parameters */
@@ -478,18 +439,14 @@ public:
     CameraViewControllerCP GetCameraViewControllerCP() const {return GetViewController()._ToCameraView();}
     //! If this view is a camera view, get a writeable pointer to the camera physical view controller.
     CameraViewControllerP GetCameraViewControllerP() {return (CameraViewControllerP) GetCameraViewControllerCP();}
-
     //! If this view is a drawing view, get the drawing view controller.
     DrawingViewControllerCP GetDrawingViewControllerCP() const {return GetViewController()._ToDrawingView();}
     //! If this view is a drawing view, get a writeable pointer to the drawing view controller.
     DrawingViewControllerP GetDrawingViewControllerP() {return (DrawingViewControllerP) GetDrawingViewControllerCP();}
-
-    //__PUBLISH_SECTION_END__
     //! If this view is a sheet view, get the sheet view controller.
     SheetViewControllerCP GetSheetViewControllerCP() const {return GetViewController()._ToSheetView();}
     //! If this view is a sheet view, get a writeable pointer to the sheet view controller.
     SheetViewControllerP GetSheetViewControllerP() {return (SheetViewControllerP) GetSheetViewControllerCP();}
-    //__PUBLISH_SECTION_START__
 
     //! Get View Origin for this DgnViewport.
     //! @return the root coordinates of the lower left back corner of the DgnViewport.
@@ -541,8 +498,8 @@ public:
 
     DGNPLATFORM_EXPORT ColorDef GetSolidFillEdgeColor(ColorDef inColor);
 
-    DGNVIEW_EXPORT void UpdateViewDynamic(UpdatePlan const& info = DynamicUpdatePlan());
     DGNVIEW_EXPORT void UpdateView(UpdatePlan const& info = UpdatePlan());
+    void UpdateViewDynamic(UpdatePlan const& info = DynamicUpdatePlan()) {UpdateView(info);}
 
     static double GetMinViewDelta() {return DgnUnits::OneMillimeter() / 100.;}
     static double GetMaxViewDelta() {return 20000 * DgnUnits::OneKilometer();}    // about twice the diameter of the earth

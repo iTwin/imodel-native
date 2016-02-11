@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include "DgnPlatform.h"
+#include <Bentley/BeTimeUtilities.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -34,17 +35,41 @@ public:
     virtual bool _CheckStop() {return m_aborted;}
 };
 
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+enum class UpdateAbort : int
+    {
+    None          = 0,
+    BadView       = 1,
+    Motion        = 2,
+    MotionStopped = 3,
+    Keystroke     = 4,
+    ReachedLimit  = 5,
+    MouseWheel    = 6,
+    Timeout       = 7,
+    Button        = 8,
+    Paint         = 9,
+    Focus         = 10,
+    ModifierKey   = 11,
+    Gesture       = 12,
+    Command       = 13,
+    Sensor        = 14,
+    Unknown       = 15
+    };
+
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/14
 //=======================================================================================
-struct ProgressiveDisplay : RefCounted<NonCopyableClass>
+struct ProgressiveTask : RefCounted<NonCopyableClass>
 {
     enum class Completion {Finished=0, Aborted=1, Failed=2};
     enum class WantShow : bool {No=0, Yes=1};
-    virtual Completion _Process(ViewContextR, uint32_t batchSize, WantShow& showFrame) = 0;  // if this returns Finished, it is removed from the viewport
+    virtual Completion _DoProgressive(struct SceneContext& context, WantShow& showFrame) = 0;  // if this returns Finished, it is removed from the viewport
 };
 
 /*=================================================================================**//**
+* The types of events that cause ViewContext operations to abort early.
 * @bsiclass                                                     Keith.Bentley   02/04
 +===============+===============+===============+===============+===============+======*/
 struct StopEvents
@@ -119,39 +144,31 @@ struct StopEvents
 //=======================================================================================
 struct UpdatePlan
 {
-    friend struct ViewSet;
-
     struct Query
     {
         uint32_t    m_maxTime = 2000;    // maximum time query should run (milliseconds)
         double      m_minPixelSize = 50;
         double      m_frustumScale = 1.25;
-        bool        m_wait = false;
-        uint32_t    m_minElements = 300;
+        bool        m_onlyAlwaysDrawn = false;
+        mutable bool m_wait = false;
+        uint32_t    m_minElements = 3;
         uint32_t    m_maxElements = 50000;
         mutable uint32_t m_delayAfter = 0;
-        mutable uint32_t m_targetNumElements;
+        mutable uint32_t m_targetNumElements = 0;
 
         uint32_t GetTimeout() const {return m_maxTime;}
         uint32_t GetMinElements() const {return m_minElements;}
         uint32_t GetMaxElements() const {return m_maxElements;}
-        void SetMinjElements(uint32_t val) {m_minElements = val;}
+        void SetMinElements(uint32_t val) {m_minElements = val;}
         void SetMaxElements(uint32_t val) {m_maxElements = val;}
         double GetMinimumSizePixels() const {return m_minPixelSize;}
         void SetMinimumSizePixels(double val) {m_minPixelSize=val;}
         void SetTargetNumElements(uint32_t val) const {m_targetNumElements=val;}
         uint32_t GetTargetNumElements() const {return m_targetNumElements;}
-        void SetWait(bool val) {m_wait=val;}
+        void SetWait(bool val) const {m_wait=val;}
         bool WantWait() const {return m_wait;}
         uint32_t GetDelayAfter() const {return m_delayAfter;}
         void SetDelayAfter (uint32_t val) const {m_delayAfter=val;}
-    };
-
-    struct Scene
-    {   
-        double m_timeout = 0.0; // abort create scene after this time. If 0, no timeout
-        double GetTimeout() const {return m_timeout;}
-        void SetTimeout(double seconds) {m_timeout=seconds;}
     };
 
     struct AbortFlags
@@ -182,8 +199,8 @@ struct UpdatePlan
     };
 
     double      m_targetFPS = 20.0; // Frames Per second
+    double      m_timeout = 0; // seconds
     Query       m_query;
-    Scene       m_scene;
     AbortFlags  m_abortFlags;
 
 public:
@@ -191,10 +208,10 @@ public:
     void SetTargetFramesPerSecond(double fps) {m_targetFPS = fps;}
     Query& GetQueryR() {return m_query;}
     Query const& GetQuery() const {return m_query;}
-    Scene& GetSceneR() {return m_scene;}
-    Scene const& GetScene() const {return m_scene;}
     AbortFlags const& GetAbortFlags() const {return m_abortFlags;}
     AbortFlags& GetAbortFlagsR() {return m_abortFlags;}
+    void SetTimeout(double seconds) {m_timeout=seconds;}
+    double GetTimeout() const {return m_timeout;}
 };
 
 //=======================================================================================
@@ -204,6 +221,56 @@ struct DynamicUpdatePlan : UpdatePlan
     {
     DynamicUpdatePlan() {m_abortFlags.SetStopEvents(StopEvents::ForQuickUpdate);}
     };
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   02/16
+//=======================================================================================
+struct DgnQueryQueue
+{
+    //! Executes a query on a separate thread to load elements for a QueryModel
+    struct Task : RefCounted<NonCopyableClass>
+    {
+        DgnQueryViewCR m_view;
+        UpdatePlan::Query m_plan;
+
+    public:
+        Task(DgnQueryViewCR view, UpdatePlan::Query const& plan) : m_view(view), m_plan(plan) {}
+        virtual void _Go() = 0;
+        uint32_t GetDelayAfter() {return m_plan.GetDelayAfter();}
+        bool IsForView(DgnQueryViewCR view) const {return &m_view == &view;}
+    };
+
+    typedef RefCountedPtr<Task> TaskPtr;
+
+private:
+    enum class State { Active, TerminateRequested, Terminated };
+
+    DgnDbR              m_db;
+    BeConditionVariable m_cv;
+    std::deque<TaskPtr> m_pending;
+    TaskPtr             m_active;
+    State               m_state;
+    bool WaitForWork();
+    void Process();
+    THREAD_MAIN_DECL Main(void* arg);
+
+public:
+    DgnQueryQueue(DgnDbR db);
+
+    void Terminate();
+
+    //! Enqueue a request to execute the query for a QueryModel
+    DGNPLATFORM_EXPORT void Add(Task& task);
+
+    //! Cancel any pending requests to process the specified QueryView.
+    //! @param[in] view The view whose processing is to be canceled
+    DGNPLATFORM_EXPORT void RemovePending(DgnQueryViewCR view);
+
+    //! Suspends the calling thread until the specified model is in the idle state
+    DGNPLATFORM_EXPORT void WaitFor(DgnQueryViewCR);
+
+    DGNPLATFORM_EXPORT bool IsIdle() const;
+};
 
 END_BENTLEY_DGN_NAMESPACE
 
