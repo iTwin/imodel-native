@@ -43,7 +43,7 @@ static DgnMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, W
         width = rgbImageInfo.width;
         height = rgbImageInfo.height;
 
-        imageData.ReserveMemory(width * height * 4);
+        imageData.Resize(width * height * 4);
         Byte* p = imageData.GetDataP(); 
         Byte* s = fileImageData.GetDataP(); 
         for (uint32_t i=0; i<imageData.GetSize(); i += 4)
@@ -61,7 +61,7 @@ static DgnMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, W
     else
         {
         width = height = 512;
-        imageData.ReserveMemory(width * height * 4);
+        imageData.Resize(width * height * 4);
 
         size_t      value = 0;
         Byte* imageByte=imageData.GetDataP();

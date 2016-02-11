@@ -45,7 +45,7 @@ namespace dgn_TxnTable {struct Element; struct Model;};
 
 //=======================================================================================
 //! Holds ID remapping tables
-//=======================================================================================
+//==========================================================================    =============
 struct DgnRemapTables
 {
 protected:
@@ -1215,14 +1215,28 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
 {
     DEFINE_T_SUPER(DgnElement);
 
+    //! Parameters used to construct a GeometricElement
     struct CreateParams : T_Super::CreateParams
     {
         DEFINE_T_SUPER(GeometricElement::T_Super::CreateParams);
 
-        DgnCategoryId   m_category;
+        DgnCategoryId   m_category; //!< The category to which the element belongs
 
+        //! Construct from the supplied parameters
+        //! @param[in]      db       The DgnDb in which the element is to reside
+        //! @param[in]      modelId  The ID of the model in which the element is to reside
+        //! @param[in]      classId  The ID of the element's ECClass
+        //! @param[in]      category The category to which the element belongs
+        //! @param[in]      code     The element's code
+        //! @param[in]      label    (Optional) element label
+        //! @param[in]      parent   (Optional) ID of this element's parent element
         CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, DgnCodeCR code=DgnCode(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId())
             : T_Super(db, modelId, classId, code, label, parent), m_category(category) { }
+
+        //! Constructor from base params. Chiefly for internal use.
+        //! @param[in]      params   The base element parameters
+        //! @param[in]      category The category to which the element belongs
+        //! @return 
         explicit CreateParams(DgnElement::CreateParams const& params, DgnCategoryId category=DgnCategoryId()) : T_Super(params), m_category(category) { }
     };
 protected:
@@ -1269,15 +1283,31 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement3d : GeometricElement, GeometrySo
     friend struct dgn_ElementHandler::Geometric3d;
 
 public:
+    //! Parameters for constructing a 3d geometric element
     struct CreateParams : T_Super::CreateParams
     {
         DEFINE_T_SUPER(GeometricElement3d::T_Super::CreateParams);
 
-    Placement3d m_placement;
+        Placement3d m_placement; //!< The element's placement in 3d space
 
+        //! Construct from supplied parameters
+        //! @param[in]      db        The DgnDb in which the element is to reside
+        //! @param[in]      modelId   The ID of the model in which the element is to reside
+        //! @param[in]      classId   The ID of the element's ECClass
+        //! @param[in]      category  The category to which the element belongs
+        //! @param[in]      placement The element's placement in 3d space
+        //! @param[in]      code      The element's code
+        //! @param[in]      label     (Optional) element label
+        //! @param[in]      parent    (Optional) ID of this element's parent element
         CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(),
                 DgnCodeCR code=DgnCode(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId())
             : T_Super(db, modelId, classId, category, code, label, parent), m_placement(placement) { }
+
+        //! Construct from base parameters. Chiefly for internal use
+        //! @param[in]      params    The base element parameters
+        //! @param[in]      category  The category to which the element belongs
+        //! @param[in]      placement The element's placement in 3d space
+        //! @return 
         explicit CreateParams(DgnElement::CreateParams const& params, DgnCategoryId category=DgnCategoryId(), Placement3dCR placement=Placement3d())
             : T_Super(params, category), m_placement(placement) { }
     };
@@ -1322,14 +1352,31 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement2d : GeometricElement, GeometrySo
     friend struct dgn_ElementHandler::Geometric2d;
 
 public:
+    //! Parameters for constructing a 2d geometric element
     struct CreateParams : T_Super::CreateParams
     {
         DEFINE_T_SUPER(GeometricElement2d::T_Super::CreateParams);
-        Placement2d m_placement;
 
+        Placement2d m_placement; //!< The element's placement in 2d space
+
+        //! Construct from supplied parameters
+        //! @param[in]      db        The DgnDb in which the element is to reside
+        //! @param[in]      modelId   The ID of the model in which the element is to reside
+        //! @param[in]      classId   The ID of the element's ECClass
+        //! @param[in]      category  The ID of the category to which the element belongs
+        //! @param[in]      placement The element's placement in 2d space
+        //! @param[in]      code      The element's code
+        //! @param[in]      label     (Optional) element label
+        //! @param[in]      parent    (Optional) ID of this element's parent element
         CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(),
                 DgnCodeCR code=DgnCode(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId())
             : T_Super(db, modelId, classId, category, code, label, parent), m_placement(placement) { }
+
+        //! Construct from base parameters. Chiefly for internal use.
+        //! @param[in]      params    The base element parameters
+        //! @param[in]      category  The ID of the category to which the element belongs
+        //! @param[in]      placement The element's placement in 2d space
+        //! @return 
         explicit CreateParams(DgnElement::CreateParams const& params, DgnCategoryId category=DgnCategoryId(), Placement2dCR placement=Placement2d())
             : T_Super(params, category), m_placement(placement) { }
     };

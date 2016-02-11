@@ -13,7 +13,6 @@
 void DgnViewport::Initialize(ViewControllerR viewController)
     {
     m_viewController = &viewController;
-    m_sceneEntries = 0;
     m_needsHeal = true;
     viewController._OnAttachedToViewport(*this);
     }
@@ -23,7 +22,7 @@ void DgnViewport::Initialize(ViewControllerR viewController)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::DestroyViewport()
     {
-    m_progressiveDisplay.clear();
+    m_progressiveTasks.clear();
     if (m_viewController.IsValid())
         {
         m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);
@@ -32,6 +31,18 @@ void DgnViewport::DestroyViewport()
 
     m_frustumValid = false;
     m_renderTarget = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::InvalidateScene() const
+    {
+    m_sceneValid = false;
+    m_needsHeal = true;
+
+    if (m_viewController.IsValid())
+        m_viewController->_InvalidateScene();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1135,9 +1146,9 @@ ColorDef DgnViewport::GetBackgroundColor() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::ScheduleProgressiveDisplay(ProgressiveDisplay& pd)
+void DgnViewport::ScheduleProgressiveTask(ProgressiveTask& pd)
     {
-    m_progressiveDisplay.push_back(&pd);
+    m_progressiveTasks.push_back(&pd);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1191,49 +1202,22 @@ void DgnViewport::ClearUndo()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   04/10
+* @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::ChangeViewController(ViewControllerR viewController)
     {
     if (m_viewController.IsValid())
         m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);
-    
+    m_partGraphics.clear();
+
     ClearUndo();
 
     m_viewController = &viewController;
     viewController._OnAttachedToViewport(*this);
 
+    InvalidateScene();
+
     SetupFromViewController();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnViewport::CloseMe DgnViewport::_OnModelsDeleted(bset<DgnModelId> const& deletedIds, DgnDbR db)
-    {
-    ViewController* vc = m_viewController.get();
-    if (nullptr == vc || &vc->GetDgnDb() != &db)
-        return CloseMe::No;
-
-    // Remove deleted models from viewed models list
-    DgnModelIdSet& viewedModels = vc->GetViewedModelsR();
-    for (auto const& deletedId : deletedIds)
-        viewedModels.erase(deletedId);
-
-    // Ensure we still have a target model - choose a new one arbitrarily if previous was deleted
-    RefCountedPtr<GeometricModel> targetModel = vc->GetTargetModel();
-    if (targetModel.IsNull())
-        {
-        for (auto const& viewedId : viewedModels)
-            if ((targetModel = db.Models().Get<GeometricModel>(viewedId)).IsValid())
-                break;
-
-        if (targetModel.IsValid())
-            vc->SetTargetModel(targetModel.get());  // NB: ViewController can reject target model...
-        }
-
-    // If no target model, no choice but to close the view
-    return (nullptr == vc->GetTargetModel()) ? CloseMe::Yes : CloseMe::No;
     }
 
 /*---------------------------------------------------------------------------------**//**
