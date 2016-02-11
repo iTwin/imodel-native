@@ -15,7 +15,7 @@
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
-//! Displays \ref DgnElementGroup from a SQL query. The query can combine 
+//! Displays \ref DgnElementGroup from a SQL query. The query can combine
 //! spatial criteria with business and graphic criteria.
 //!
 //! @remarks QueryView is also used to produce graphics for picking and for purposes other than display.
@@ -36,9 +36,12 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
         DgnElementIdSet m_never;
         bool IsEmpty() const {return m_always.empty() && m_never.empty();}
     };
-    
+
     //=======================================================================================
-    // A query that uses the BeSQLite spatial index
+    // A query that uses both the BeSQLite spatial index and a DgnElementId-based filter for a QueryView.
+    // This object holds two statements - one for the spatial query and one that filters element, by id,
+    // on the "other" criteria for a QueryView.
+    // The Statements are retrieved from the statement cache and prepared/bound in the Start method.
     // @bsiclass                                                    Keith.Bentley   02/16
     //=======================================================================================
     struct SpatialQuery
@@ -50,7 +53,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
         virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) = 0;
         DgnElementId StepRtree();
         bool TestElement(DgnElementId);
-        void Start(DgnQueryViewCR);
+        void Start(DgnQueryViewCR); //!< when this method is called the SQL string for the "ViewStmt" is obtained from the DgnQueryView supplied.
         bool IsNever(DgnElementId id) const {return m_special && m_special->m_never.Contains(id);}
         bool IsAlways(DgnElementId id) const {return m_special && m_special->m_always.Contains(id);}
         bool HasAlways() const {return m_special && !m_special->m_always.empty();}
@@ -67,14 +70,16 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
     };
     typedef RefCountedPtr<QueryResults> QueryResultsPtr;
 
-    //! clip planes for frustum
+    //! Clip planes for a single frustum
     struct FrustumClips : ConvexClipPlaneSet
     {
         void AddFrustum(FrustumCR frustum);
-        BeSQLite::RTreeMatchFunction::Within TestBox(FrustumCR); // test all 8 points of a frustum
+        BeSQLite::RTreeMatchFunction::Within TestBox(FrustumCR); // test all 8 points of a box
     };
 
     //=======================================================================================
+    // This object is created on the Client thread and queued to the Query thread. It populates its
+    // QueryResults with the set of n-best elements that satisfy both criteria.
     // @bsiclass                                                    Keith.Bentley   02/16
     //=======================================================================================
     struct RangeQuery : SpatialQuery, DgnQueryQueue::Task
@@ -86,14 +91,14 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
         bool        m_doSkewTest = false;
         uint32_t    m_orthogonalProjectionIndex;
         uint32_t    m_count = 0;
-        uint32_t    m_hitLimit = 0;
+        uint32_t    m_hitLimit = 0;     // find this many "best" elements sorted by occlusion score
         uint64_t    m_lastId = 0;
         BeSQLite::RTree3dVal m_boundingRange;    // only return entries whose range intersects this cube.
         BeSQLite::RTree3dVal m_backFace;
         FrustumClips m_clips;
         Frustum     m_frustum;
         DMatrix4d   m_localToNpc;
-        DVec3d      m_viewVec;  // vector from front face to back face
+        DVec3d      m_viewVec;  // vector from front face to back face, for SkewScan
         DPoint3d    m_cameraPosition;
         double      m_lodFilterNPCArea = 0.0;
         double      m_minScore = 0.0;
@@ -110,13 +115,15 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
         bool ComputeNPC(DPoint3dR npcOut, DPoint3dCR localIn);
         bool ComputeOcclusionScore(double& score, FrustumCR);
         void SetFrustum(FrustumCR);
-    
+
     public:
         RangeQuery(DgnQueryViewCR, FrustumCR, DgnViewportCR, UpdatePlan::Query const& plan);
         DgnQueryView::QueryResultsPtr DoQuery();
     };
 
     //=======================================================================================
+    // The set of DgnElementIds that are contained in a scene. This is used when performing a progressive
+    // update of a view to determine which elements are already visible.
     // @bsiclass                                                    Keith.Bentley   02/16
     //=======================================================================================
     struct SceneMembers : RefCounted<DgnElementIdSet>, NonCopyableClass
@@ -125,6 +132,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
     typedef RefCountedPtr<SceneMembers> SceneMembersPtr;
 
     //=======================================================================================
+    // A ProgressiveTask for a DgnQueryView that draws all of the elements that satisfy the query and range
+    // criteria, but were too small to be in the scene.
     // @bsiclass                                                    Keith.Bentley   04/14
     //=======================================================================================
     struct NonScene : ProgressiveTask
@@ -138,7 +147,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
         SceneMembersPtr m_scene;
         RangeQuery m_rangeQuery;
         DgnQueryViewR m_view;
-        explicit NonScene(DgnQueryViewR view, DgnViewportCR, SceneMembers& scene);// : m_view(view), m_scene(&scene) {m_rangeQuery.SetTestLOD(true);}
+        explicit NonScene(DgnQueryViewR view, DgnViewportCR, SceneMembers& scene);
         virtual Completion _DoProgressive(SceneContext& context, WantShow&) override;
     };
 
@@ -179,14 +188,14 @@ protected:
 
     //! Compute the range of the elements and graphics in the QueryView.
     //! @remarks This function may also load elements to determine the range.
-    //! @param[out] range    the computed range 
+    //! @param[out] range    the computed range
     //! @param[in]  viewport the viewport that will display the graphics
     //! @param[in]  params   options for computing the range.
     //! @return \a true if the returned \a range is complete. Otherwise the caller will compute the tightest fit for all loaded elements.
     DGNPLATFORM_EXPORT virtual FitComplete _ComputeFitRange(DRange3dR range, DgnViewportR viewport, FitViewParamsR params) override;
 
 public:
-    //! Construct the view controller.                          
+    //! Construct the view controller.
     //! @param dgndb  The DgnDb for the view
     //! @param viewId Id of view to be displayed
     DGNPLATFORM_EXPORT DgnQueryView(DgnDbR dgndb, DgnViewId viewId);
@@ -201,7 +210,7 @@ public:
     DGNPLATFORM_EXPORT void ClearAlwaysDrawn();
 
     //! Get the list of elements that are never drawn.
-    //! @remarks An element in the never-draw list is excluded regardless of whether or not it is 
+    //! @remarks An element in the never-draw list is excluded regardless of whether or not it is
     //! in the always-draw list. That is, the never-draw list gets priority over the always-draw list.
     DgnElementIdSet const& GetNeverDrawn() {return m_special.m_never;}
 

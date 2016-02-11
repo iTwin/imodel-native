@@ -124,17 +124,6 @@ void DgnQueryView::RequestAbort(bool wait)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::_OnUpdate(DgnViewportR vp, UpdatePlan const& plan)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    Frustum frustum = vp.GetFrustum(DgnCoordSystem::World, true);
-    if (!m_forceNewQuery && frustum == m_lastFrustum)
-        {
-        DEBUG_PRINTF("same frustum, skipping");
-        return;
-        }
-
-    m_forceNewQuery = false;
-    m_lastFrustum = frustum;
-#endif
     BeAssert(plan.GetQuery().GetTargetNumElements() > 0);
     BeAssert(plan.GetQuery().GetTargetNumElements() <= plan.GetQuery().GetMaxElements());
 
@@ -361,9 +350,9 @@ DgnQueryView::NonScene::NonScene(DgnQueryViewR view, DgnViewportCR vp, SceneMemb
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::AddtoSceneQuick(SceneContextR context, SceneMembers& members, QueryResults& results)
     {
-    context.SetNoStroking(true);
+    context.SetNoStroking(true); // tell the context to not create any graphics - just return exiting ones
 
-    // first, run through the query results seeing if all of the elements are loaded and have their graphis ready
+    // first, run through the query results seeing if all of the elements are loaded and have their graphics ready
     // NOTE: This is not CheckStop'ed! It must be fast.
     for (auto& thisScore : results.m_scores)
         {
@@ -371,7 +360,7 @@ void DgnQueryView::AddtoSceneQuick(SceneContextR context, SceneMembers& members,
             members.insert(thisScore.second);
         }
 
-    context.SetNoStroking(false);
+    context.SetNoStroking(false); // reset the context 
 
     DEBUG_PRINTF("QuickCreate count=%d/%d", (int) members.size(), results.GetCount());
     }
@@ -392,17 +381,7 @@ void DgnQueryView::_CreateScene(SceneContextR context)
 
     DgnViewportR vp = *context.GetViewport();
     if (!results.IsValid())
-        {
         return;
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    auto& plan = context.GetUpdatePlan().GetQuery();
-        if (!plan.WantWait())
-            return;
-
-        RequestAbort(true);
-        results = QueryByRange(vp, plan);
-#endif
-        }
 
     SceneMembersPtr members = new SceneMembers();
     AddtoSceneQuick(context, *members, *results);
@@ -704,7 +683,6 @@ void DgnQueryView::RangeQuery::_Go()
     {
     DgnDb::VerifyQueryThread();
     m_view.m_results = DoQuery();
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -737,6 +715,9 @@ void DgnQueryView::RangeQuery::AddAlwaysDrawn(DgnQueryViewCR view)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnQueryView::QueryResultsPtr DgnQueryView::RangeQuery::DoQuery()
     {
+    if (m_noQuery)
+        return m_results; //this is just the set of "always drawn" elements
+
     StopWatch watch(true);
     m_view.SetAbortQuery(false); // gets turned on by client thread
 
@@ -1279,11 +1260,14 @@ bool DgnQueryView::RangeQuery::SkewTest(RTree3dValCP testRange)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* this method must be called from the client thread.
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::SpatialQuery::Start(DgnQueryViewCR view)
     {
+    DgnDb::VerifyClientThread();
     DgnDbR db = view.GetDgnDb();
+
     db.GetCachedStatement(m_rangeStmt, "SELECT ElementId FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId MATCH DGN_rTree(?1)");
     m_rangeStmt->BindInt64(1, (uint64_t) this);
 
