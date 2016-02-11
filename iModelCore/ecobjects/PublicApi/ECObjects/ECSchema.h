@@ -2148,6 +2148,7 @@ struct SchemaKey
 
     //! Given a version string MM.NN, this will parse other major and minor versions
     //! @param[out] versionMajor    The major version number
+    //! @param[out] versionMiddle   Middle version. Will default to zero if the string only contains two numbers.
     //! @param[out] versionMinor    The minor version number
     //! @param[in]  versionString   A string containing the major and minor versions (MM.NN)
     //! @return A status code indicating whether the string was successfully parsed
@@ -2230,12 +2231,11 @@ struct SchemaKey
         {
         return LessThan (rhs, SchemaMatchType::Identical);
         }
-/*__PUBLISH_SECTION_END__*/
+
     Utf8StringCR GetName() const {return m_schemaName;}
     uint32_t GetVersionMajor() const { return m_versionMajor; };
     uint32_t GetVersionMiddle() const { return m_versionMiddle; };
     uint32_t GetVersionMinor() const { return m_versionMinor; };
-/*__PUBLISH_SECTION_START__*/
     };
 
 //---------------------------------------------------------------------------------------
@@ -3057,6 +3057,7 @@ public:
     //! Given a str containing SchemaXml, will compute the CheckSum
     ECOBJECTS_EXPORT static uint32_t        ComputeSchemaXmlStringCheckSum(Utf8CP str, size_t len);
 
+    //! Try using the other overload, this one is just included for legacy reasons.
     //! If the given schemaName is valid, this will create a new schema object
     //! @param[out] schemaOut   if successful, will contain a new schema object
     //! @param[in]  schemaName  Name of the schema to be created.
@@ -3066,18 +3067,8 @@ public:
     static ECObjectsStatus CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR schemaName,
                                         uint32_t versionMajor, uint32_t versionMinor)
         {
-        return CreateSchema(schemaOut, schemaName, versionMajor, DEFAULT_VERSION_MIDDLE, versionMinor);
+        return CreateSchema(schemaOut, schemaName, "", versionMajor, DEFAULT_VERSION_MIDDLE, versionMinor);
         }
-
-    //! If the given schemaName is valid, this will create a new schema object
-    //! @param[out] schemaOut   if successful, will contain a new schema object
-    //! @param[in]  schemaName  Name of the schema to be created.
-    //! @param[in]  versionMajor The major version number.
-    //! @param[out] versionMiddle The middle version number indicating write compatibility
-    //! @param[in]  versionMinor The minor version number.
-    //! @return A status code indicating whether the call was succesfull or not
-    ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR schemaName,
-                                                         uint32_t versionMajor, uint32_t versionMiddle, uint32_t versionMinor);
 
     //! Generate a schema version string given the major and minor version values.
     //! @param[in] versionMajor    The major version number
@@ -3091,10 +3082,11 @@ public:
     //! @param[in]  schemaName      Name of the schema to be created.
     //! @param[in]  namespacePrefix Namespace prefix of the schema to be created
     //! @param[in]  versionMajor    The major version number.
+    //! @param[out] versionMiddle The middle version number indicating write compatibility
     //! @param[in]  versionMinor    The minor version number.
     //! @return A status code indicating whether the call was succesfull or not
     ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR schemaName, 
-                                                         Utf8StringCR namespacePrefix, uint32_t versionMajor, uint32_t versionMinor);
+                                                         Utf8StringCR namespacePrefix, uint32_t versionMajor, uint32_t versionMiddle, uint32_t versionMinor);
 
     //! Generate a schema version string given the major and minor version values.
     //! @param[in] versionMajor    The major version number
@@ -3147,6 +3139,7 @@ public:
 
     //! Given a version string MM.NN, this will parse other major and minor versions
     //! @param[out] versionMajor    The major version number
+    //! @param[out] versionMiddle   Middle version number, will default to zero if versionString only has two numbers.
     //! @param[out] versionMinor    The minor version number
     //! @param[in]  versionString   A string containing the major and minor versions (MM.NN)
     //! @return A status code indicating whether the string was successfully parsed

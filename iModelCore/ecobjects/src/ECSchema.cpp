@@ -1051,29 +1051,6 @@ ECObjectsStatus ECSchema::SetVersionFromString (Utf8CP versionString)
     else
         return ECObjectsStatus::Success;
     }
-
-// TODO: deprecate, we want namespace prefix set all the time.
-//---------------------------------------------------------------------------------------//
-//@bsimethod
-//+---------------+---------------+---------------+---------------+---------------+----//
-ECObjectsStatus ECSchema::CreateSchema (ECSchemaPtr& schemaOut, Utf8StringCR schemaName, uint32_t versionMajor, uint32_t versionMiddle, uint32_t versionMinor)
-    {
-    schemaOut = new ECSchema();
-
-    ECObjectsStatus status;
-
-    if (ECObjectsStatus::Success != (status = schemaOut->SetName(schemaName)) ||
-        ECObjectsStatus::Success != (status = schemaOut->SetVersionMajor(versionMajor)) ||
-        ECObjectsStatus::Success != (status = schemaOut->SetVersionMiddle(versionMiddle)) ||
-        ECObjectsStatus::Success != (status = schemaOut->SetVersionMinor(versionMinor)))
-        {
-        schemaOut = NULL;
-        return status;
-        }
-
-    return ECObjectsStatus::Success;
-    }
- 
     
 //-------------------------------------------------------------------------------------//
 // @bsimethod

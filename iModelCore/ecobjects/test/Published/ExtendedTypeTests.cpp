@@ -242,7 +242,7 @@ TEST_F(ExtendedTypeTests, SetExtendedTypeToNull)
 TEST_F(ExtendedTypeTests, ExtendedTypeInheritanceBehavior)
     {
     ECSchemaPtr testSchema;
-    ECSchema::CreateSchema(testSchema, "InheritTest", "IT", 4, 2);
+    ECSchema::CreateSchema(testSchema, "InheritTest", "IT", 4, 0, 2);
 
     ECEntityClassP baseClass;
     testSchema->CreateEntityClass(baseClass, "BaseClass");

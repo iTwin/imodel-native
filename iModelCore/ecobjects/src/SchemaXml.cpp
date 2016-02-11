@@ -125,7 +125,7 @@ bool  SchemaXmlReaderImpl::IsOpenPlantPidCircularReferenceSpecialCase
     if (0 != referencedECSchemaName.CompareTo("OpenPlant_PID"))
         return false;
 
-    return (0 == referencingECSchemaFullName.CompareTo("OpenPlant_Supplemental_Mapping_OPPID.01.01") || 0 == referencingECSchemaFullName.CompareTo("OpenPlant_Supplemental_Mapping_OPPID.01.02"));
+    return (0 == referencingECSchemaFullName.CompareTo("OpenPlant_Supplemental_Mapping_OPPID.01.00.01") || 0 == referencingECSchemaFullName.CompareTo("OpenPlant_Supplemental_Mapping_OPPID.01.00.02"));
     }
 
 //---------------------------------------------------------------------------------------
@@ -696,8 +696,12 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
 
     LOG.debugv("Reading ECSchema %s", SchemaKey::FormatFullSchemaName(schemaName.c_str(), versionMajor, versionMiddle, versionMinor).c_str());
 
-    ECObjectsStatus createStatus = ECSchema::CreateSchema(schemaOut, schemaName, versionMajor, versionMiddle, versionMinor);
+    //Using the old overload of CreateSchema as we don't have the namespace prefix at this point.
+    ECObjectsStatus createStatus = ECSchema::CreateSchema(schemaOut, schemaName, versionMajor, versionMinor);
     if (ECObjectsStatus::Success != createStatus)
+        return SchemaReadStatus::InvalidECSchemaXml;
+
+    if(schemaOut->SetVersionMiddle(versionMiddle) != ECObjectsStatus::Success)
         return SchemaReadStatus::InvalidECSchemaXml;
 
     schemaOut->m_key.m_checkSum = checkSum;
@@ -709,7 +713,15 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
 
     // OPTIONAL attributes - If these attributes exist they MUST be valid
     Utf8String value;  // used by macro.
-    READ_OPTIONAL_XML_ATTRIBUTE((*schemaNode), SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE, schemaOut, NamespacePrefix)
+    if (ecXmlMajorVersion >= 3)
+        {
+        READ_REQUIRED_XML_ATTRIBUTE((*schemaNode), SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE, schemaOut, NamespacePrefix, EC_SCHEMA_ELEMENT)
+        }
+    else
+        {
+        READ_OPTIONAL_XML_ATTRIBUTE((*schemaNode), SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE, schemaOut, NamespacePrefix)
+        }
+
     READ_OPTIONAL_XML_ATTRIBUTE((*schemaNode), DESCRIPTION_ATTRIBUTE, schemaOut, Description)
     READ_OPTIONAL_XML_ATTRIBUTE((*schemaNode), DISPLAY_LABEL_ATTRIBUTE, schemaOut, DisplayLabel)
 

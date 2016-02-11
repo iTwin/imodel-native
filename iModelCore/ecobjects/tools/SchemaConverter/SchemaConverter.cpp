@@ -173,7 +173,7 @@ ConversionOptions options
 
     s_logger->infov("Reading schema '%s'", options.InputFile.GetName());
     SchemaKey key(schemaName.c_str(), versionMajor, versionMinor);
-    ECSchemaPtr schema = context->LocateSchema(key, SchemaMatchType::SCHEMAMATCHTYPE_Exact);
+    ECSchemaPtr schema = context->LocateSchema(key, SchemaMatchType::Exact);
     if (!schema.IsValid())
         {
         s_logger->errorv("Failed to read schema '%s'", schemaFullName);
