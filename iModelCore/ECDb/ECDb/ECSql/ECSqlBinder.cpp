@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlBinder.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -223,15 +223,15 @@ ECSqlBinder* ECSqlParameterMap::AddProxyBinder(int ecsqlParameterIndex, ECSqlBin
 ECSqlStatus ECSqlParameterMap::RemapForJoinTable(ECSqlPrepareContext& ctx)
     {
     ECSqlStatus st = ECSqlStatus::Success;
-    auto joinInfo = ctx.GetJoinTableInfo();
+    auto joinInfo = ctx.GetJoinedTableInfo();
     if (joinInfo == nullptr)
         return st;
 
-    auto baseStmt = ctx.GetECSqlStatementR().GetPreparedStatementP()->GetBaseECSqlStatement();
-    if (baseStmt == nullptr)
+    auto joinedTableStmt = ctx.GetECSqlStatementR().GetPreparedStatementP()->GetJoinedTableECSqlStatement();
+    if (joinedTableStmt == nullptr)
         return st;
 
-    auto& baseParameterMap = baseStmt->GetPreparedStatementP()->GetParameterMapR();
+    auto& baseParameterMap = joinedTableStmt->GetPreparedStatementP()->GetParameterMapR();
     auto& primaryMap = joinInfo->GetParameterMap().GetPrimary();
     for (auto oi = primaryMap.First(); oi <= primaryMap.Last(); oi++)
         {

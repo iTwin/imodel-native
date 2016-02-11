@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlPreparedStatement.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -25,57 +25,58 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! post-prepare operations
 // @bsiclass                                                Krischan.Eberle      12/2013
 //+===============+===============+===============+===============+===============+======
-struct JoinTableECSqlStatement;
+struct JoinedTableECSqlStatement;
 struct ECSqlPreparedStatement : NonCopyableClass
     {
-private:
-    ECSqlType m_type;
+    private:
+        ECSqlType m_type;
 
-    ECDbCP m_ecdb;
-    Utf8String m_ecsql;
-    mutable BeSQLite::Statement m_sqliteStatement;
-    bool m_isNoopInSqlite;
-    bool m_isNothingToUpdate;
-    ECSqlParameterMap m_parameterMap;
-    std::vector<ECN::ECSchemaPtr> m_keepAliveSchemas; //Hold on to dependent ECSchema just in case some process flush original ECSchema
-    std::unique_ptr<JoinTableECSqlStatement> m_baseECSqlStatement;
-    virtual ECSqlStatus _Reset () = 0;
+        ECDbCP m_ecdb;
+        Utf8String m_ecsql;
+        mutable BeSQLite::Statement m_sqliteStatement;
+        bool m_isNoopInSqlite;
+        bool m_isNothingToUpdate;
+        ECSqlParameterMap m_parameterMap;
+        std::unique_ptr<JoinedTableECSqlStatement> m_joinedTableECSqlStatement;
+        std::vector<ECN::ECSchemaPtr> m_keepAliveSchemas; //Hold on to dependent ECSchema just in case some process flush original ECSchema
 
-protected:
-    ECSqlPreparedStatement (ECSqlType statementType, ECDbCR ecdb);
+        virtual ECSqlStatus _Reset() = 0;
 
-    DbResult DoStep ();
-    ECSqlStatus DoReset ();
+    protected:
+        ECSqlPreparedStatement(ECSqlType, ECDbCR);
 
-    ECSqlParameterMap const& GetParameterMap () const { return m_parameterMap; }
-    void PrepareBinders ();
+        DbResult DoStep();
+        ECSqlStatus DoReset();
 
-    bool IsNoopInSqlite () const { return m_isNoopInSqlite; }
-    bool IsNothingToUpdate() const { return m_isNothingToUpdate; }
+        ECSqlParameterMap const& GetParameterMap() const { return m_parameterMap; }
 
-    IssueReporter const& GetIssueReporter() const { return m_ecdb->GetECDbImplR().GetIssueReporter(); }
+        bool IsNoopInSqlite() const { return m_isNoopInSqlite; }
+        bool IsNothingToUpdate() const { return m_isNothingToUpdate; }
 
-public:
-    virtual ~ECSqlPreparedStatement () {}
+        IssueReporter const& GetIssueReporter() const { return m_ecdb->GetECDbImplR().GetIssueReporter(); }
 
-    ECSqlType GetType () const { return m_type; }
-    ECSqlStatus Prepare (ECSqlPrepareContext& prepareContext, ECSqlParseTreeCR ecsqlParseTree, Utf8CP ecsql);
-    IECSqlBinder& GetBinder (int parameterIndex);
-    int GetParameterIndex (Utf8CP parameterName) const;
-    JoinTableECSqlStatement* GetBaseECSqlStatement(ECN::ECClassId jointTableId = 0LL);
+    public:
+        virtual ~ECSqlPreparedStatement() {}
 
-    ECSqlStatus ClearBindings ();
-    ECSqlStatus Reset ();
+        ECSqlType GetType() const { return m_type; }
+        ECSqlStatus Prepare(ECSqlPrepareContext& prepareContext, ECSqlParseTreeCR ecsqlParseTree, Utf8CP ecsql);
+        IECSqlBinder& GetBinder(int parameterIndex);
+        int GetParameterIndex(Utf8CP parameterName) const;
 
-    Utf8CP GetECSql() const { return m_ecsql.c_str(); }
-    Utf8CP GetNativeSql () const;
+        ECSqlStatus ClearBindings();
+        ECSqlStatus Reset();
 
-    ECDbCR GetECDb () const { return *m_ecdb; }
-    BeSQLite::Statement& GetSqliteStatementR () const { return m_sqliteStatement; }
+        Utf8CP GetECSql() const { return m_ecsql.c_str(); }
+        Utf8CP GetNativeSql() const;
 
-    ECSqlParameterMap& GetParameterMapR () { return m_parameterMap; }
+        JoinedTableECSqlStatement* GetJoinedTableECSqlStatement(ECN::ECClassId joinedTableId = ECN::ECClass::UNSET_ECCLASSID);
 
-    void AddKeepAliveSchema (ECN::ECSchemaCR schema);
+        ECDbCR GetECDb() const { return *m_ecdb; }
+        BeSQLite::Statement& GetSqliteStatementR() const { return m_sqliteStatement; }
+
+        ECSqlParameterMap& GetParameterMapR() { return m_parameterMap; }
+
+        void AddKeepAliveSchema(ECN::ECSchemaCR schema);
     };
 
 //=======================================================================================

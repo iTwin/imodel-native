@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/ChangeSummary.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -248,7 +248,7 @@ private:
     
     void Initialize();
     static void RegisterSqlFunctions(ECDbR ecdb);
-    static void UnregisterSqlFunctions();
+    static void UnregisterSqlFunctions(ECDbR ecdb);
     Utf8String FormatInstanceIdStr(int64_t id) const;
     Utf8String FormatClassIdStr(ECN::ECClassId id) const;
 

@@ -95,30 +95,30 @@ ECSqlPrepareContext::ExpScope& ECSqlPrepareContext::ExpScopeStack::CurrentR ()
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlPrepareContext::ECSqlPrepareContext (ECDbCR ecdb, ECSqlStatementBase& preparedStatment)
-: m_ecdb (ecdb), m_ecsqlStatement (preparedStatment), m_parentCtx (nullptr), m_parentArrayProperty (nullptr), 
-m_parentColumnInfo (nullptr), m_nativeStatementIsNoop (false), m_nativeNothingToUpdate (false), m_joinTableClassId(0)
+ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment)
+    : m_ecdb(ecdb), m_ecsqlStatement(preparedStatment), m_parentCtx(nullptr), m_parentArrayProperty(nullptr),
+    m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_nativeNothingToUpdate(false), m_joinedTableClassId(ECClass::UNSET_ECCLASSID), m_joinedTableInfo(nullptr)
     {}
 
-ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECClassId joinTableClassId)
+ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECClassId joinedTableClassId)
     : m_ecdb(ecdb), m_ecsqlStatement(preparedStatment), m_parentCtx(nullptr), m_parentArrayProperty(nullptr),
-    m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_nativeNothingToUpdate(false), m_joinTableClassId(joinTableClassId)
+    m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_nativeNothingToUpdate(false), m_joinedTableClassId(joinedTableClassId), m_joinedTableInfo(nullptr)
     {}
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                    04/2014
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECSqlPrepareContext const& parentCtx)
     : m_ecdb(ecdb), m_ecsqlStatement(preparedStatment), m_parentCtx(&parentCtx), m_parentArrayProperty(nullptr),
-    m_parentColumnInfo (nullptr), m_nativeStatementIsNoop (false), m_nativeNothingToUpdate (false), m_joinTableClassId(0)
+    m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_nativeNothingToUpdate(false), m_joinedTableClassId(ECClass::UNSET_ECCLASSID), m_joinedTableInfo(nullptr)
     {}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECSqlPrepareContext const& parentCtx, ArrayECPropertyCR parentArrayProperty, ECSqlColumnInfo const* parentColumnInfo)
-: m_ecdb (ecdb), m_ecsqlStatement (preparedStatment), m_parentCtx (&parentCtx), 
- m_parentArrayProperty (&parentArrayProperty), m_parentColumnInfo (parentColumnInfo), 
- m_nativeStatementIsNoop (false), m_nativeNothingToUpdate (false), m_joinTableClassId(0)
+    : m_ecdb(ecdb), m_ecsqlStatement(preparedStatment), m_parentCtx(&parentCtx),
+    m_parentArrayProperty(&parentArrayProperty), m_parentColumnInfo(parentColumnInfo),
+    m_nativeStatementIsNoop(false), m_nativeNothingToUpdate(false), m_joinedTableClassId(ECClass::UNSET_ECCLASSID), m_joinedTableInfo(nullptr)
     {}
 
 //-----------------------------------------------------------------------------------------
@@ -130,6 +130,15 @@ IClassMap::View ECSqlPrepareContext::GetClassMapViewMode () const
         return IClassMap::View::DomainClass;
     else
         return IClassMap::View::EmbeddedType;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECSqlPrepareContext::JoinedTableInfo const* ECSqlPrepareContext::TrySetupJoinedTableInfo(ECSqlParseTreeCR exp, Utf8CP orignalECSQL)
+    {
+    m_joinedTableInfo = JoinedTableInfo::Create(*this, exp, orignalECSQL);
+    return GetJoinedTableInfo();
     }
 
 //-----------------------------------------------------------------------------------------
@@ -233,10 +242,12 @@ bool ECSqlPrepareContext::FindLastParameterIndexBeforeWhereClause (int& index, E
     return false;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
 //static 
-ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TrySetupJoinTableContextForInsert(ECSqlPrepareContext& ctx, InsertStatementExp const& exp)
+std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::JoinedTableInfo::CreateForInsert(ECSqlPrepareContext& ctx, InsertStatementExp const& exp)
     {
-    Ptr ptr = Ptr(new JoinTableInfo());
     IClassMap const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
     if (!classMap.HasJoinedTable())
         return nullptr;
@@ -246,20 +257,16 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
     IClassMap const* parentOfJoinedTableClassMap = classMap.FindClassMapOfParentOfJoinedTable();
     if (parentOfJoinedTableClassMap == nullptr)
         {
-        BeAssert(parentOfJoinedTableClassMap != nullptr && "Root class for joined tabel must exist.");
+        BeAssert(parentOfJoinedTableClassMap != nullptr && "Root class for joined table must exist.");
         return nullptr;
         }
-
-    ptr->m_class = &classMap.GetClass();
-    ptr->m_parentClass = &parentOfJoinedTableClassMap->GetClass();
 
     ECDbSqlTable const& primaryTable = classMap.GetPrimaryTable();
     ECDbSqlTable const& joinedTable = classMap.GetJoinedTable();
     auto tables = exp.GetReferencedTables();
     if (tables.size() < 2)
         {
-        auto isTableSame = (&classMap.GetJoinedTable() == &parentOfJoinedTableClassMap->GetJoinedTable());
-        if (isTableSame)
+        if (&classMap.GetJoinedTable() == &parentOfJoinedTableClassMap->GetJoinedTable())
             return nullptr;
         }
 
@@ -271,25 +278,19 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
     joinedTableECSQL.Append("INSERT INTO ").Append(classMap.GetClass().GetECSqlName().c_str());
     parentOfJoinedTableECSQL.Append("INSERT INTO ").Append(parentOfJoinedTableClassMap->GetClass().GetECSqlName().c_str());
 
+    std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> info = std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo>( new JoinedTableInfo(classMap.GetClass()));
     auto propertyList = exp.GetPropertyNameListExp();
     auto valueList = exp.GetValuesExp();
-    ptr->m_userProvidedECInstanceId = false;
-    ptr->m_primaryECInstanceIdParameterIndex = 0;
-
     for (size_t i = 0; i < propertyList->GetChildrenCount(); i++)
         {
-        auto property = propertyList->GetPropertyNameExp(i);
-        auto value = valueList->GetValueExp(i);
+        PropertyNameExp const* property = propertyList->GetPropertyNameExp(i);
+        ValueExp const* value = valueList->GetValueExp(i);
         std::vector<Parameter const*> thisValueParams;
-        for (auto exp : value->Find(Exp::Type::Parameter, true /* recusive*/))
+        for (Exp const* exp : value->Find(Exp::Type::Parameter, true /* recursive*/))
             {
-            auto param = static_cast<ParameterExp const*>(exp);
-            if (param->IsNamedParameter() && ptr->m_parameterMap.GetOrignal().Find(param->GetParameterName()))
-                {
-                //do nothing
-                }
-            else
-                thisValueParams.push_back(ptr->m_parameterMap.GetOrignalR().Add(*param));
+            ParameterExp const* param = static_cast<ParameterExp const*>(exp);
+            if (!param->IsNamedParameter() || info->m_parameterMap.GetOrignal().Find(param->GetParameterName()) == nullptr)
+                thisValueParams.push_back(info->m_parameterMap.GetOrignalR().Add(*param));
             }
 
         if (property->GetPropertyMap().IsSystemPropertyMap())
@@ -299,15 +300,15 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
             parentOfJoinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
             parentOfJoinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
 
-            ptr->m_parameterMap.GetPrimaryR().Add(thisValueParams);
-            ptr->m_parameterMap.GetSecondaryR().Add(thisValueParams);
+            info->m_parameterMap.GetPrimaryR().Add(thisValueParams);
+            info->m_parameterMap.GetSecondaryR().Add(thisValueParams);
 
-            if (!ptr->m_userProvidedECInstanceId  && property->GetPropertyMap().GetSingleColumn())
+            if (!info->m_ecinstanceIdIsUserProvided  && property->GetPropertyMap().GetSingleColumn())
                 {
-                ptr->m_userProvidedECInstanceId = Enum::Contains(property->GetPropertyMap().GetSingleColumn()->GetKind(), ColumnKind::ECInstanceId);
+                info->m_ecinstanceIdIsUserProvided = Enum::Contains(property->GetPropertyMap().GetSingleColumn()->GetKind(), ColumnKind::ECInstanceId);
                 BeAssert(thisValueParams.size() <= 1);
                 if (thisValueParams.size() == 1)
-                    ptr->m_primaryECInstanceIdParameterIndex = ptr->m_parameterMap.GetPrimaryR().Last();
+                    info->m_primaryECInstanceIdParameterIndex = info->m_parameterMap.GetPrimaryR().Last();
                 else if (thisValueParams.size() > 1)
                     {
                     BeAssert(false && "This case is not handled where e.g. (ECInstanceId ) VALUES ( ? + ? ) has more then one parameter");
@@ -319,29 +320,29 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
             {
             joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
             joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
-            ptr->m_parameterMap.GetSecondaryR().Add(thisValueParams);
+            info->m_parameterMap.GetSecondaryR().Add(thisValueParams);
             }
         else if (property->GetPropertyMap().GetAsPropertyMapStructArray())
             {
             joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
             joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
-            ptr->m_parameterMap.GetSecondaryR().Add(thisValueParams);
+            info->m_parameterMap.GetSecondaryR().Add(thisValueParams);
             }
         else
             {
             BeAssert(property->GetPropertyMap().MapsToTable(primaryTable));
             parentOfJoinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
             parentOfJoinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
-            ptr->m_parameterMap.GetPrimaryR().Add(thisValueParams);
+            info->m_parameterMap.GetPrimaryR().Add(thisValueParams);
             }
         }
 
-    if (!ptr->m_userProvidedECInstanceId)
+    if (!info->m_ecinstanceIdIsUserProvided)
         {
         parentOfJoinedTableProperties.push_back(NativeSqlBuilder("ECInstanceId"));
         parentOfJoinedTableValues.push_back(NativeSqlBuilder("?"));
-        ptr->m_parameterMap.GetPrimaryR().Add();
-        ptr->m_primaryECInstanceIdParameterIndex = ptr->m_parameterMap.GetPrimaryR().Last();
+        info->m_parameterMap.GetPrimaryR().Add();
+        info->m_primaryECInstanceIdParameterIndex = info->m_parameterMap.GetPrimaryR().Last();
         }
 
     if (joinedTableProperties.empty())
@@ -353,34 +354,34 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
     joinedTableECSQL.AppendParenLeft().Append(joinedTableProperties).Append(") VALUES (").Append(joinedTableValues).AppendParenRight();
     parentOfJoinedTableECSQL.AppendParenLeft().Append(parentOfJoinedTableProperties).Append(") VALUES (").Append(parentOfJoinedTableValues).AppendParenRight();
 
-    ptr->m_statement = joinedTableECSQL.ToString();
-    ptr->m_parentStatement = parentOfJoinedTableECSQL.ToString();
-    return std::move(ptr);
+    info->m_joinedTableECSql = joinedTableECSQL.ToString();
+    info->m_parentOfJoinedTableECSql = parentOfJoinedTableECSQL.ToString();
+    return std::move(info);
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
 //static 
-ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TrySetupJoinTableContextForUpdate(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp)
+std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::JoinedTableInfo::CreateForUpdate(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp)
     {
-    Ptr ptr = Ptr(new JoinTableInfo());
-    auto const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
+    IClassMap const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
     if (!classMap.HasJoinedTable())
         return nullptr;
 
     NativeSqlBuilder parentOfJoinedTableECSQL;
     NativeSqlBuilder joinedTableECSQL;
-    auto rootClassMap = classMap.FindClassMapOfParentOfJoinedTable();
-    ptr->m_class = &classMap.GetClass();
-    ptr->m_parentClass = &rootClassMap->GetClass();
+    IClassMap const* parentOfJoinedTableClassMap = classMap.FindClassMapOfParentOfJoinedTable();
 
     ECDbSqlTable const& primaryTable = classMap.GetPrimaryTable();
     ECDbSqlTable const& joinedTable = classMap.GetJoinedTable();
     auto tables = exp.GetReferencedTables();
     if (tables.size() <= 2)
         {
-        auto isTableSame = (&classMap.GetJoinedTable() == &rootClassMap->GetJoinedTable());
-        if (isTableSame)
+        if (&classMap.GetJoinedTable() == &parentOfJoinedTableClassMap->GetJoinedTable())
             return nullptr;
         }
+
 
     NativeSqlBuilder::List joinedTableProperties;
     NativeSqlBuilder::List joinedTableValues;
@@ -388,11 +389,10 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
     NativeSqlBuilder::List parentOfJoinedTableProperties;
     bool isPolymorphic = exp.GetClassNameExp()->IsPolymorphic();
     joinedTableECSQL.Append("UPDATE ").AppendIf(!isPolymorphic, "ONLY ").Append(classMap.GetClass().GetECSqlName().c_str()).Append(" SET ");
-    parentOfJoinedTableECSQL.Append("UPDATE ").AppendIf(!isPolymorphic, "ONLY ").Append(rootClassMap->GetClass().GetECSqlName().c_str()).Append(" SET ");
+    parentOfJoinedTableECSQL.Append("UPDATE ").Append(parentOfJoinedTableClassMap->GetClass().GetECSqlName().c_str()).Append(" SET ");
 
+    std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> info = std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo>(new JoinedTableInfo(classMap.GetClass()));
     auto assignmentList = exp.GetAssignmentListExp();
-    ptr->m_userProvidedECInstanceId = false;
-    ptr->m_primaryECInstanceIdParameterIndex = 0;
     for (size_t i = 0; i < assignmentList->GetChildrenCount(); i++)
         {
         auto assignmentExp = assignmentList->GetAssignmentExp(i);
@@ -400,15 +400,15 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
         auto value = assignmentExp->GetValueExp();
 
         std::vector<Parameter const*> thisValueParams;
-        for (auto exp : value->Find(Exp::Type::Parameter, true /* recusive*/))
+        for (auto exp : value->Find(Exp::Type::Parameter, true /* recursive*/))
             {
             auto param = static_cast<ParameterExp const*>(exp);
-            if (param->IsNamedParameter() && ptr->m_parameterMap.GetOrignal().Find(param->GetParameterName()))
+            if (param->IsNamedParameter() && info->m_parameterMap.GetOrignal().Find(param->GetParameterName()))
                 {
                 //do nothing
                 }
             else
-                thisValueParams.push_back(ptr->m_parameterMap.GetOrignalR().Add(*param));
+                thisValueParams.push_back(info->m_parameterMap.GetOrignalR().Add(*param));
             }
 
         if (property->GetPropertyMap().IsSystemPropertyMap())
@@ -420,23 +420,22 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
             {
             joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
             joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
-            ptr->m_parameterMap.GetSecondaryR().Add(thisValueParams);
+            info->m_parameterMap.GetSecondaryR().Add(thisValueParams);
             }
         else if (property->GetPropertyMap().GetAsPropertyMapStructArray())
             {
             joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
             joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
-            ptr->m_parameterMap.GetSecondaryR().Add(thisValueParams);
+            info->m_parameterMap.GetSecondaryR().Add(thisValueParams);
             }
         else
             {
             BeAssert(property->GetPropertyMap().MapsToTable(primaryTable));
             parentOfJoinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
             parentOfJoinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
-            ptr->m_parameterMap.GetPrimaryR().Add(thisValueParams);
+            info->m_parameterMap.GetPrimaryR().Add(thisValueParams);
             }
         }
-
 
     joinedTableECSQL.Append(BuildAssignmentExpression(joinedTableProperties, joinedTableValues));
     parentOfJoinedTableECSQL.Append(BuildAssignmentExpression(parentOfJoinedTableProperties, parentOfJoinedTableValues));
@@ -444,19 +443,19 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
     if (auto bwhere = exp.GetWhereClauseExp())
         {
         std::vector<Parameter const*> thisValueParams;
-        for (auto exp : bwhere->Find(Exp::Type::Parameter, true /* recusive*/))
+        for (auto exp : bwhere->Find(Exp::Type::Parameter, true /* recursive*/))
             {
             auto param = static_cast<ParameterExp const*>(exp);
-            if (param->IsNamedParameter() && ptr->m_parameterMap.GetOrignal().Find(param->GetParameterName()))
+            if (param->IsNamedParameter() && info->m_parameterMap.GetOrignal().Find(param->GetParameterName()))
                 {
                 //do nothing
                 }
             else
-                thisValueParams.push_back(ptr->m_parameterMap.GetOrignalR().Add(*param));
+                thisValueParams.push_back(info->m_parameterMap.GetOrignalR().Add(*param));
             }
 
-        ptr->m_parameterMap.GetSecondaryR().Add(thisValueParams);
-        ptr->m_parameterMap.GetPrimaryR().Add(thisValueParams);
+        info->m_parameterMap.GetSecondaryR().Add(thisValueParams);
+        info->m_parameterMap.GetPrimaryR().Add(thisValueParams);
         joinedTableECSQL.AppendSpace().Append(bwhere->ToECSql().c_str());
         parentOfJoinedTableECSQL.AppendSpace().Append(bwhere->ToECSql().c_str());
         }
@@ -464,18 +463,22 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
 
     if (!joinedTableProperties.empty())
         {
-        ptr->m_statement = joinedTableECSQL.ToString();
+        info->m_joinedTableECSql = joinedTableECSQL.ToString();
         }
 
     if (!parentOfJoinedTableProperties.empty())
         {
-        ptr->m_parentStatement = parentOfJoinedTableECSQL.ToString();
+        info->m_parentOfJoinedTableECSql = parentOfJoinedTableECSQL.ToString();
         }
 
-    return std::move(ptr);
+    return std::move(info);
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
 //static
-NativeSqlBuilder ECSqlPrepareContext::JoinTableInfo::BuildAssignmentExpression(NativeSqlBuilder::List const& prop, NativeSqlBuilder::List const& values)
+NativeSqlBuilder ECSqlPrepareContext::JoinedTableInfo::BuildAssignmentExpression(NativeSqlBuilder::List const& prop, NativeSqlBuilder::List const& values)
     {
     BeAssert(prop.size() == values.size());
     NativeSqlBuilder out;
@@ -484,33 +487,36 @@ NativeSqlBuilder ECSqlPrepareContext::JoinTableInfo::BuildAssignmentExpression(N
         if (propI != prop.begin())
             out.AppendComma();
 
-        out.Append(*propI).Append(" = ").Append(*valueI);      
+        out.Append(*propI).Append("=").Append(*valueI);      
         }
 
     return std::move(out);
     }
-//static 
-ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TrySetupJoinTableContextIfAny(ECSqlPrepareContext& ctx, ECSqlParseTreeCR exp, Utf8CP orignalECSQL)
-    {
-    Ptr ptr;
-    if (exp.GetType() == Exp::Type::Insert)
-        ptr = TrySetupJoinTableContextForInsert(ctx, static_cast<InsertStatementExp const&>(exp));
-    else if (exp.GetType() == Exp::Type::Update)
-        ptr = TrySetupJoinTableContextForUpdate(ctx, static_cast<UpdateStatementExp const&>(exp));
 
-    if (ptr != nullptr)
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static 
+std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::JoinedTableInfo::Create(ECSqlPrepareContext& ctx, ECSqlParseTreeCR exp, Utf8CP orignalECSQL)
+    {
+    std::unique_ptr<JoinedTableInfo> info = nullptr;
+    if (exp.GetType() == Exp::Type::Insert)
+        info = CreateForInsert(ctx, static_cast<InsertStatementExp const&>(exp));
+    else if (exp.GetType() == Exp::Type::Update)
+        info = CreateForUpdate(ctx, static_cast<UpdateStatementExp const&>(exp));
+
+    if (info != nullptr)
         {
-        bool isValidJoinTableContext = ptr->m_class != nullptr && ptr->m_parentClass != nullptr && !(ptr->m_statement.empty() && ptr->m_parentStatement.empty());
-        if (!isValidJoinTableContext)
+        if (info->m_joinedTableECSql.empty() && info->m_parentOfJoinedTableECSql.empty())
             {
-            BeAssert(isValidJoinTableContext == true);
+            BeAssert(false);
             return nullptr;
             }
 
-        ptr->m_orginalStatement = orignalECSQL;
+        info->m_originalECSql = orignalECSQL;
 
-        auto& primary = ptr->m_parameterMap.GetPrimaryR();
-        auto& secondary = ptr->m_parameterMap.GetSecondaryR();
+        auto& primary = info->m_parameterMap.GetPrimaryR();
+        auto& secondary = info->m_parameterMap.GetSecondaryR();
         for (auto i = primary.First(); i > 0 && i <= primary.Last(); ++i)
             {
             auto p = const_cast<Parameter*>(primary.Find(i));
@@ -527,7 +533,7 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
                 }
             }
 
-        return std::move(ptr);
+        return std::move(info);
         }
 
     return nullptr;
