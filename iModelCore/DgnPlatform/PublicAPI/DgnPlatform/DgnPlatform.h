@@ -370,43 +370,34 @@ struct DgnClassId : BeSQLite::BeInt64Id
     DgnClassId& operator=(DgnClassId const& rhs) {m_id = rhs.m_id; return *this;}
 };
 
+//=======================================================================================
 //! The GeometryStreamEntryId class identifies a geometric primitive in a GeometryStream.
 //=======================================================================================
 struct GeometryStreamEntryId
 {
-    enum class Type
-        {
-        Invalid = 0,
-        Indexed = 1,
-        };
-
 private:
-    Type            m_type;
-    DgnGeometryPartId   m_partId;
-    uint32_t        m_index;
-    uint32_t        m_partIndex;
+    DgnGeometryPartId   m_partId;       // Valid when m_index refers to a part
+    uint16_t            m_index;        // Index into top-level GeometryStream
+    uint16_t            m_partIndex;    // Index into part GeometryStream
 
 public:
     GeometryStreamEntryId() {Init();}
-    GeometryStreamEntryId(GeometryStreamEntryIdCR rhs) {m_type = rhs.m_type; m_partId = rhs.m_partId; m_index = rhs.m_index; m_partIndex = rhs.m_partIndex;}
+    GeometryStreamEntryId(GeometryStreamEntryIdCR rhs) {m_partId = rhs.m_partId; m_index = rhs.m_index; m_partIndex = rhs.m_partIndex;}
 
-    DGNPLATFORM_EXPORT bool operator==(GeometryStreamEntryIdCR rhs) const;
-    DGNPLATFORM_EXPORT bool operator!=(GeometryStreamEntryIdCR rhs) const;
-    DGNPLATFORM_EXPORT GeometryStreamEntryIdR operator=(GeometryStreamEntryIdCR rhs);
+    bool operator==(GeometryStreamEntryIdCR rhs) const {if (this == &rhs) return true; return (m_partId == rhs.m_partId && m_index == rhs.m_index && m_partIndex == rhs.m_partIndex);}
+    bool operator!=(GeometryStreamEntryIdCR rhs) const {return !(*this == rhs);}
+    GeometryStreamEntryIdR operator=(GeometryStreamEntryIdCR rhs) {m_partId = rhs.m_partId; m_index = rhs.m_index; m_partIndex = rhs.m_partIndex; return *this;}
 
-    void Init() {m_type = Type::Invalid; m_index = 0; m_partIndex = 0; m_partId = DgnGeometryPartId();}
-    void SetType(Type type) {m_type = type;}
+    void Init() {m_index = 0; m_partIndex = 0; m_partId = DgnGeometryPartId();}
     void SetGeometryPartId(DgnGeometryPartId partId) {m_partId = partId; m_partIndex = 0;}
-    void SetIndex(uint32_t index) {m_index = index;}
-    void SetPartIndex(uint32_t partIndex) {m_partIndex = partIndex;}
+    void SetIndex(uint16_t index) {m_index = index;}
+    void SetPartIndex(uint16_t partIndex) {m_partIndex = partIndex;}
 
-    Type GetType() const {return m_type;}
     DgnGeometryPartId GetGeometryPartId() const {return m_partId;}
-    uint32_t GetIndex() const {return m_index;}
-    uint32_t GetPartIndex() const {return m_partIndex;}
+    uint16_t GetIndex() const {return m_index;}
+    uint16_t GetPartIndex() const {return m_partIndex;}
 };
 
-//=======================================================================================
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
 //=======================================================================================
 //! The key (classId,instanceId) of a the Item aspect.

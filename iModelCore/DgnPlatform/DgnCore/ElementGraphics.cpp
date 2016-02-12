@@ -490,7 +490,7 @@ static void drawSolidPrimitiveCurveVector(Render::GraphicR graphic, CurveVectorC
         }
 
     clearCurveVectorIds(curveVector);
-    CurveTopologyId::AddCurveVectorIds(curveVector, type, id, nullptr); // NEEDSWORK: Replace CompoundDrawState with GeometryStreamEntryId to support GeomParts...
+    CurveTopologyId::AddCurveVectorIds(curveVector, type, id, entryId->GetIndex(), entryId->GetPartIndex());
     WireframeGeomUtil::DrawOutline(curveVector, graphic); // Always output as open profile...
     clearCurveVectorIds(curveVector); // Best not to leave our curve ids on the curve primitives...
     }
@@ -506,7 +506,7 @@ static void drawSolidPrimitiveCurve(Render::GraphicR graphic, ICurvePrimitivePtr
         return;
         }
 
-    CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type_SolidPrimitive, topologyId, nullptr); // NEEDSWORK: Replace CompoundDrawState with GeometryStreamEntryId to support GeomParts...
+    CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type::SolidPrimitive, topologyId, entryId->GetIndex(), entryId->GetPartIndex());
     primitive->SetId(newId.get());
     graphic.AddCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, primitive), false);
     }
@@ -688,7 +688,7 @@ void WireframeGeomUtil::Draw(Render::GraphicR graphic, ISolidPrimitiveCR primiti
 
             if (includeEdges)
                 {
-                drawSolidPrimitiveCurveVector(graphic, *detail.m_baseCurve, CurvePrimitiveId::Type_SolidPrimitive, CurveTopologyId::FromSweepProfile(0), entryId);
+                drawSolidPrimitiveCurveVector(graphic, *detail.m_baseCurve, CurvePrimitiveId::Type::SolidPrimitive, CurveTopologyId::FromSweepProfile(0), entryId);
 
                 if (context.CheckStop())
                     return;
@@ -696,7 +696,7 @@ void WireframeGeomUtil::Draw(Render::GraphicR graphic, ISolidPrimitiveCR primiti
                 CurveVectorPtr tmpCurve = detail.m_baseCurve->Clone();
 
                 tmpCurve->TransformInPlace(Transform::From(detail.m_extrusionVector));
-                drawSolidPrimitiveCurveVector(graphic, *tmpCurve, CurvePrimitiveId::Type_SolidPrimitive, CurveTopologyId::FromSweepProfile(1), entryId);
+                drawSolidPrimitiveCurveVector(graphic, *tmpCurve, CurvePrimitiveId::Type::SolidPrimitive, CurveTopologyId::FromSweepProfile(1), entryId);
 
                 if (context.CheckStop())
                     return;
@@ -730,7 +730,7 @@ void WireframeGeomUtil::Draw(Render::GraphicR graphic, ISolidPrimitiveCR primiti
 
             if (showCap0)
                 {
-                drawSolidPrimitiveCurveVector(graphic, *detail.m_baseCurve, CurvePrimitiveId::Type_SolidPrimitive, CurveTopologyId::FromSweepProfile(0), entryId);
+                drawSolidPrimitiveCurveVector(graphic, *detail.m_baseCurve, CurvePrimitiveId::Type::SolidPrimitive, CurveTopologyId::FromSweepProfile(0), entryId);
 
                 if (context.CheckStop())
                     return;
@@ -747,7 +747,7 @@ void WireframeGeomUtil::Draw(Render::GraphicR graphic, ISolidPrimitiveCR primiti
                 CurveVectorPtr tmpCurve = detail.m_baseCurve->Clone();
 
                 tmpCurve->TransformInPlace(transform);
-                drawSolidPrimitiveCurveVector(graphic, *tmpCurve, CurvePrimitiveId::Type_SolidPrimitive, CurveTopologyId::FromSweepProfile(1), entryId);
+                drawSolidPrimitiveCurveVector(graphic, *tmpCurve, CurvePrimitiveId::Type::SolidPrimitive, CurveTopologyId::FromSweepProfile(1), entryId);
 
                 if (context.CheckStop())
                     return;
@@ -769,7 +769,7 @@ void WireframeGeomUtil::Draw(Render::GraphicR graphic, ISolidPrimitiveCR primiti
                     CurveVectorPtr tmpCurve = detail.m_baseCurve->Clone();
 
                     tmpCurve->TransformInPlace(transform);
-                    drawSolidPrimitiveCurveVector(graphic, *tmpCurve, CurvePrimitiveId::Type_SolidPrimitive, CurveTopologyId::FromSweepProfile(vRule + 1), entryId);
+                    drawSolidPrimitiveCurveVector(graphic, *tmpCurve, CurvePrimitiveId::Type::SolidPrimitive, CurveTopologyId::FromSweepProfile(vRule + 1), entryId);
 
                     if (context.CheckStop())
                         return;
@@ -806,7 +806,7 @@ void WireframeGeomUtil::Draw(Render::GraphicR graphic, ISolidPrimitiveCR primiti
 
                 for (CurveVectorPtr curves: detail.m_sectionCurves)
                     {
-                    drawSolidPrimitiveCurveVector(graphic, *curves, CurvePrimitiveId::Type_SolidPrimitive, CurveTopologyId::FromSweepProfile(curveIndex++), entryId);
+                    drawSolidPrimitiveCurveVector(graphic, *curves, CurvePrimitiveId::Type::SolidPrimitive, CurveTopologyId::FromSweepProfile(curveIndex++), entryId);
 
                     if (context.CheckStop())
                         return;
