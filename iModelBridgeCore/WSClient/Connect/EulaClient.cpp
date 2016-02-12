@@ -20,7 +20,8 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 +---------------+---------------+---------------+---------------+---------------+------*/
 EulaClient::EulaClient(ClientInfoPtr clientInfo, IConnectAuthenticationProvider& authProvider, IHttpHandlerPtr customHandler) :
 m_cancelToken(SimpleCancellationToken::Create()),
-m_authProvider(authProvider)
+m_authProvider(authProvider),
+m_customHandler(customHandler)
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -34,7 +35,7 @@ EulaClient::~EulaClient()
 +---------------+---------------+---------------+---------------+---------------+------*/
 HttpRequest EulaClient::CreateRequest(Utf8StringCR url, Utf8StringCR method)
     {
-    HttpRequest request(url, method, m_authProvider.GetAuthenticationHandler(url));
+    HttpRequest request(url, method, m_authProvider.GetAuthenticationHandler(url, m_customHandler));
     request.SetCancellationToken(m_cancelToken);    
     return request;
     }
