@@ -19,7 +19,7 @@
 +----------------------------------------------------------------------*/
 
 #pragma once
-
+#pragma warning(disable:4250) //yes visual studio I am aware of virtual inheritance thank you
 #include <GeoCoord\BaseGeoCoord.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include <ScalableMesh/GeoCoords/Reprojection.h>
@@ -1426,57 +1426,19 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
        
 
 //NEEDS_WORK_SM : Should inherit from ScalableMeshNode instead
-template<class POINT> class ScalableMeshNodeEdit : public IScalableMeshNodeEdit
+template<class POINT> class ScalableMeshNodeEdit : public IScalableMeshNodeEdit, public ScalableMeshNode<POINT>
 
     {
     protected:
 
     protected:
-        HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>> m_node;
-
-        virtual BcDTMPtr   _GetBcDTM() const override;
-
-        virtual bool    _ArePoints3d() const override;
-
-        virtual bool    _ArePointsFullResolution() const override;
-        
-        virtual IScalableMeshMeshPtr _GetMesh(bool loadGraph, bvector<bool>& clipsToShow) const override;
-
-        virtual IScalableMeshMeshPtr _GetMeshByParts(const bvector<bool>& clipsToShow, ScalableMeshTextureID texId) const override;
-
-        virtual IScalableMeshTexturePtr _GetTexture(size_t texture_id) const override;
-
-        virtual int _GetTextureID(size_t texture_id) const override;
-
-        virtual size_t _GetNbTexture() const override;
-
-        virtual bvector<IScalableMeshNodePtr> _GetNeighborAt(char relativePosX, char relativePosY, char relativePosZ) const override;
-
-        virtual void   _ApplyAllExistingClips() const override;
-
-        virtual void   _RefreshMergedClip() const override;
-
-        virtual bool   _AddClip(uint64_t id, bool isVisible) const override;
-
-        virtual bool   _AddClipAsync(uint64_t id, bool isVisible) const override;
-
-        virtual bool   _ModifyClip(uint64_t id,  bool isVisible) const override;
-
-        virtual bool   _DeleteClip(uint64_t id, bool isVisible) const override;
-
-        virtual DRange3d _GetNodeExtent() const override;
-
-        virtual DRange3d _GetContentExtent() const override;
-
-        virtual __int64 _GetNodeId() const override;
-
-        virtual size_t _GetLevel() const override;
-
-        virtual size_t _GetPointCount() const override;
 
         virtual StatusInt _AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices) override;
+
         virtual StatusInt _AddTextures(bvector<bvector<Byte>>& data, size_t numTextures, bool sibling = false) override;
+
         virtual StatusInt _AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture) override;
+        
         virtual StatusInt _SetNodeExtent(DRange3d& extent) override;
 
         virtual StatusInt _SetContentExtent(DRange3d& extent) override;

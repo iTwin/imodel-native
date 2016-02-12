@@ -931,6 +931,8 @@
     <ClInclude Include="STM\SMSQLiteFeatureTileStore.h">
       <Filter>Includes\STM</Filter>
     </ClInclude>
+    <ClInclude Include="STM\SMSQLiteClipDefinitionsTileStore.h" />
+    <ClInclude Include="STM\SMSQLiteDiffsetTileStore.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Foundations\Errors.cpp">
@@ -1301,9 +1303,6 @@
     <ClCompile Include="STM\Threading\LightThreadPool.cpp">
       <Filter>Source\STM\Threading</Filter>
     </ClCompile>
-    <ClCompile Include="STM\Plugins\ScalableMeshTypeConversionFilterPlugins.h">
-      <Filter>Source\STM\Plugins</Filter>
-    </ClCompile>
     <ClCompile Include="STM\CGALEdgeCollapse.cpp">
       <Filter>Source\STM</Filter>
     </ClCompile>
@@ -1326,6 +1325,7 @@
     <ClCompile Include="STM\SMMeshIndex.cpp">
       <Filter>Source\STM</Filter>
     </ClCompile>
+    <ClCompile Include="STM\Plugins\ScalableMeshTypeConversionFilterPlugins.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ScalableTerrainModel.mke" />
