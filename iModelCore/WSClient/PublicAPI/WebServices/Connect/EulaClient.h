@@ -10,6 +10,7 @@
 
 #include <WebServices/WebServices.h>
 #include <WebServices/Connect/IConnectAuthenticationProvider.h>
+#include <MobileDgn/Utils/Http/IHttpHandler.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE 
 
@@ -26,6 +27,7 @@ struct EulaClient
     private:
         IConnectAuthenticationProvider& m_authProvider;
         SimpleCancellationTokenPtr m_cancelToken;
+        IHttpHandlerPtr m_customHandler;
 
     private:
         HttpRequest CreateRequest(Utf8StringCR url, Utf8StringCR action);
