@@ -715,7 +715,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     Utf8String value;  // used by macro.
     if (ecXmlMajorVersion >= 3)
         {
-        READ_REQUIRED_XML_ATTRIBUTE((*schemaNode), EC_SCHEMA_ELEMENT, schemaOut, NamespacePrefix, SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE)
+        READ_REQUIRED_XML_ATTRIBUTE((*schemaNode), SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE, schemaOut, NamespacePrefix, EC_SCHEMA_ELEMENT)
         }
     else
         {
