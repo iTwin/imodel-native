@@ -170,7 +170,7 @@
         <ECProperty propertyName='Prop3_3' typeName='double' />
     </ECClass>
 
-    <ECClass typeName="TestStruct" isStruct="True" >
+    <ECClass typeName="TestStruct" isStruct="True" isDomainClass="False">
         <ECProperty propertyName="TestStructDoubleMember" typeName="double" />"
         <ECProperty propertyName="TestStructIntMember" typeName="int" />"
         <ECProperty propertyName="TestStructBoolMember" typeName="boolean" />"
