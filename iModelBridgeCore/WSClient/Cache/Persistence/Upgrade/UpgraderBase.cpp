@@ -27,7 +27,7 @@ BentleyStatus UpgraderBase::UpgradeCacheSchema(int versionMajor, int versionMino
     ECSchemaReadContextPtr schemaContext = SchemaContext::CreateReadContext();
 
     SchemaKey cacheSchemaKey = SchemaKey("DSCacheSchema", versionMajor, versionMinor);
-    ECSchemaPtr cacheSchema = schemaContext->LocateSchema(cacheSchemaKey, SchemaMatchType::SCHEMAMATCHTYPE_Exact);
+    ECSchemaPtr cacheSchema = schemaContext->LocateSchema(cacheSchemaKey, SchemaMatchType::Exact);
     if (cacheSchema.IsNull())
         {
         return ERROR;
