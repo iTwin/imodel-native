@@ -572,9 +572,8 @@ public:
             //! @param[in] clipRange Clip extents based on clip mask.
             //! @param[in] clipMatrix clip orientation from clip x and y direction and plane normal.
             //! @param[in] clipMask mask detailing which directions are being clipped.
-            //! @param[in] compoundDrawState - used for generating CurvePrimitiveId - cannot be extracted from context as this is only for output (not context for this cut).
             //! @return SUCCESS if operation was handled.
-            virtual BentleyStatus _OutputBodyCut(Render::GraphicR graphic, ISolidKernelEntityCR in, TransformCP transform, ViewContextR context, DPlane3dCR plane, DRange2dCR clipRange, RotMatrixCR clipMatrix, ClipMask clipMask, CompoundDrawState* compoundDrawState) const {return ERROR;}
+            virtual BentleyStatus _OutputBodyCut(Render::GraphicR graphic, ISolidKernelEntityCR in, TransformCP transform, ViewContextR context, DPlane3dCR plane, DRange2dCR clipRange, RotMatrixCR clipMatrix, ClipMask clipMask) const {return ERROR;}
 
             //! Stretch faces/edges of a solid/surface kernel entity.
             //! @param[in] in The solid kernel entity to strecth.

@@ -778,7 +778,7 @@ void SimplifyGraphic::ClipAndProcessSolidPrimitive(ISolidPrimitiveCR geom)
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Curve & unhandled))
         {
-        CurveVectorPtr curves = WireframeGeomUtil::CollectCurves(geom, m_context.GetDgnDb(), m_processor._IncludeWireframeEdges(), m_processor._IncludeWireframeFaceIso());
+        CurveVectorPtr curves = WireframeGeomUtil::CollectCurves(geom, m_context.GetDgnDb(), m_processor._IncludeWireframeEdges(), m_processor._IncludeWireframeFaceIso(), &m_context);
 
         if (!curves.IsValid())
             return;
@@ -893,7 +893,7 @@ void SimplifyGraphic::ClipAndProcessSurface(MSBsplineSurfaceCR geom)
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Curve & unhandled))
         {
-        CurveVectorPtr curves = WireframeGeomUtil::CollectCurves(geom, m_context.GetDgnDb(), m_processor._IncludeWireframeEdges(), m_processor._IncludeWireframeFaceIso());
+        CurveVectorPtr curves = WireframeGeomUtil::CollectCurves(geom, m_context.GetDgnDb(), m_processor._IncludeWireframeEdges(), m_processor._IncludeWireframeFaceIso(), &m_context);
 
         if (!curves.IsValid())
             return;
@@ -1152,7 +1152,7 @@ void SimplifyGraphic::ClipAndProcessBody(ISolidKernelEntityCR geom)
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Curve & unhandled))
         {
-        CurveVectorPtr curves = WireframeGeomUtil::CollectCurves(geom, m_context.GetDgnDb(), m_processor._IncludeWireframeEdges(), m_processor._IncludeWireframeFaceIso());
+        CurveVectorPtr curves = WireframeGeomUtil::CollectCurves(geom, m_context.GetDgnDb(), m_processor._IncludeWireframeEdges(), m_processor._IncludeWireframeFaceIso(), &m_context);
 
         if (!curves.IsValid())
             return;
