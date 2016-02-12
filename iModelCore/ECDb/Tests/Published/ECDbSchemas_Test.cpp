@@ -612,7 +612,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     //baseClass
     Utf8CP tblAsset = "sc_Asset";
     EXPECT_TRUE (db.TableExists(tblAsset));    
-    EXPECT_EQ   (33, GetColumnCount(db, tblAsset));            
+    EXPECT_EQ   (34, GetColumnCount(db, tblAsset));            
     EXPECT_TRUE (db.ColumnExists(tblAsset, "ECInstanceId"));
     EXPECT_TRUE(db.ColumnExists(tblAsset, "ECClassId"));
 
@@ -639,8 +639,9 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (db.ColumnExists(tblAsset, "Type"));
     EXPECT_TRUE (db.ColumnExists(tblAsset, "Breadth"));
     EXPECT_TRUE (db.ColumnExists(tblAsset, "Length"));
-    //relation key
-    EXPECT_TRUE (db.ColumnExists(tblAsset, "Employee__src_01_id"));
+    //relation keys
+    EXPECT_TRUE(db.ColumnExists(tblAsset, "ForeignECInstanceId_EmployeePhone"));
+    EXPECT_TRUE (db.ColumnExists(tblAsset, "ForeignECInstanceId_EmployeeFurniture"));
     
     EXPECT_TRUE(db.ColumnExists(tblAsset, "HasWarranty"));
     EXPECT_TRUE(db.ColumnExists(tblAsset, "IsCompanyProperty"));
@@ -951,7 +952,7 @@ ECSchemaCachePtr CreateImportSchemaAgainstExistingTablesTestSchema ()
     testSchema->CreateRelationshipClass (oneToManyRelClass, "FooHasGoo");
     oneToManyRelClass->SetStrength (StrengthType::Holding);
     oneToManyRelClass->GetSource ().AddClass (*fooClass);
-    oneToManyRelClass->GetSource ().SetCardinality (RelationshipCardinality::OneOne ());
+    oneToManyRelClass->GetSource ().SetCardinality (RelationshipCardinality::ZeroOne ());
     oneToManyRelClass->GetTarget ().AddClass (*gooClass);
     oneToManyRelClass->GetTarget ().SetCardinality (RelationshipCardinality::ZeroMany ());
 
@@ -1129,7 +1130,7 @@ TEST(ECDbSchemas, ImportSchemaWithRelationshipAgainstExistingTable)
     auto testSchemaCache = CreateImportSchemaAgainstExistingTablesTestSchema ();
     //now import test schema where the table already exists for the ECClass
     //missing link tables are created if true is passed for createTables
-    ASSERT_EQ (SUCCESS, ecdb. Schemas ().ImportECSchemas (*testSchemaCache, ECDbSchemaManager::ImportOptions (false))) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
+    ASSERT_EQ (SUCCESS, ecdb. Schemas ().ImportECSchemas (*testSchemaCache)) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
 
     //ImportSchema does not (yet) modify the existing tables. So it is expected that the ECInstanceId column is not added
     EXPECT_TRUE (ecdb.ColumnExists ("t_Goo", "ECInstanceId")) << "Existing column is expected to still be in the table after ImportECSchemas.";
@@ -2113,7 +2114,7 @@ TEST(ECDbSchemas, IntegrityCheck)
     ECDbR db = saveTestProject.Create("IntegrityCheck.ecdb", L"IntegrityCheck.01.00.ecschema.xml", true);
     Statement stmt;
     std::map<Utf8String, Utf8String> expected;
-    expected["ic_TargetBase"] = "CREATE TABLE [ic_TargetBase] ([ECInstanceId] INTEGER NOT NULL, [ECClassId] INTEGER NOT NULL, [I] INTEGER, [S] TEXT, [SourceECInstanceId] INTEGER, PRIMARY KEY ([ECInstanceId]), FOREIGN KEY ([SourceECInstanceId]) REFERENCES [ic_SourceBase] ([ECInstanceId]) ON DELETE CASCADE)";
+    expected["ic_TargetBase"] = "CREATE TABLE [ic_TargetBase] ([ECInstanceId] INTEGER NOT NULL, [ECClassId] INTEGER NOT NULL, [I] INTEGER, [S] TEXT, [SourceECInstanceId] INTEGER NOT NULL, PRIMARY KEY ([ECInstanceId]), FOREIGN KEY ([SourceECInstanceId]) REFERENCES [ic_SourceBase] ([ECInstanceId]) ON DELETE CASCADE)";
     stmt.Prepare(db, "select name, sql from sqlite_master Where type='table' AND tbl_name = 'ic_TargetBase'");
     int nRows = 0;
     while (stmt.Step() == BE_SQLITE_ROW)

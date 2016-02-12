@@ -286,9 +286,10 @@ TEST_F(ReadTests, WriteCalculatedECProperty)
 //---------------------------------------------------------------------------------------
 //                                               Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ReadTests, createECDbWithArbitraryNumberOfECInstances)
+TEST_F(ReadTests, CreateECDbWithArbitraryNumberOfECInstances)
 {
     ECDbR ecdbr = SetupECDb("ecdbWithArbitratyInstances.ecdb", BeFileName(L"SimpleCompany.01.00.ecschema.xml"), 3);
+
     ECSchemaCP ecschemap = ecdbr. Schemas ().GetECSchema ("SimpleCompany", true);
     ASSERT_TRUE (ecschemap != nullptr);
     ECClassCP employee = ecschemap->GetClassCP("Employee");

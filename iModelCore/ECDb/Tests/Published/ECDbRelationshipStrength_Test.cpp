@@ -701,7 +701,7 @@ TEST_F (ECDbRelationshipsIntegrityTests, BackwardEmbeddingRelationshipsTest)
     CreateSchema ("testSchema", "ts");
     AddEntityClass ("Foo");
     AddEntityClass ("Goo");
-    AddRelationShipClass (Cardinality::OneOne, Cardinality::ZeroOne, StrengthType::Embedding, Direction::Backward, "FooOwnedByGoo", "Foo", "Goo", true);
+    AddRelationShipClass (Cardinality::ZeroOne, Cardinality::ZeroOne, StrengthType::Embedding, Direction::Backward, "FooOwnedByGoo", "Foo", "Goo", true);
     AddRelationShipClass (Cardinality::OneMany, Cardinality::ZeroOne, StrengthType::Embedding, Direction::Backward, "FooOwnedByManyGoo", "Foo", "Goo", true);
     AssertSchemaImport (true);
 
@@ -1069,8 +1069,8 @@ TEST_F (ECDbRelationshipsIntegrityTests, ForwardHoldingRelationshipsTest)
     CreateSchema ("testSchema", "ts");
     AddEntityClass ("Foo");
     AddEntityClass ("Goo");
-    AddRelationShipClass (Cardinality::OneOne, Cardinality::OneOne, StrengthType::Holding, Direction::Forward, "FooHoldsGoo", "Foo", "Goo", true);
-    AddRelationShipClass (Cardinality::OneOne, Cardinality::OneMany, StrengthType::Holding, Direction::Forward, "FooHoldManyGoo", "Foo", "Goo", true);
+    AddRelationShipClass (Cardinality::ZeroOne, Cardinality::OneOne, StrengthType::Holding, Direction::Forward, "FooHoldsGoo", "Foo", "Goo", true);
+    AddRelationShipClass (Cardinality::ZeroOne, Cardinality::OneMany, StrengthType::Holding, Direction::Forward, "FooHoldManyGoo", "Foo", "Goo", true);
     AddRelationShipClass (Cardinality::OneMany, Cardinality::OneMany, StrengthType::Holding, Direction::Forward, "ManyFooHoldManyGoo", "Foo", "Goo", true);
     AssertSchemaImport (true);
 
@@ -1218,8 +1218,8 @@ TEST_F (ECDbRelationshipsIntegrityTests, BackwardHoldingRelationshipsTest)
     CreateSchema ("testSchema", "ts");
     AddEntityClass ("Foo");
     AddEntityClass ("Goo");
-    AddRelationShipClass (Cardinality::OneOne, Cardinality::OneOne, StrengthType::Holding, Direction::Backward, "FooHeldByGoo", "Foo", "Goo", true);
-    AddRelationShipClass (Cardinality::OneMany, Cardinality::OneOne, StrengthType::Holding, Direction::Backward, "FooHeldByManyGoo", "Foo", "Goo", true);
+    AddRelationShipClass (Cardinality::ZeroOne, Cardinality::ZeroOne, StrengthType::Holding, Direction::Backward, "FooHeldByGoo", "Foo", "Goo", true);
+    AddRelationShipClass (Cardinality::OneMany, Cardinality::ZeroOne, StrengthType::Holding, Direction::Backward, "FooHeldByManyGoo", "Foo", "Goo", true);
     AddRelationShipClass (Cardinality::OneMany, Cardinality::OneMany, StrengthType::Holding, Direction::Backward, "ManyFooHeldByManyGoo", "Foo", "Goo", true);
     AssertSchemaImport (true);
 
