@@ -912,6 +912,7 @@ BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(std::set<ECD
                 {
                 LogKeyPropertyRetrievalError(GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter(), "ECDb does not support ECRelationshipConstraint Keys with different accessStrings. All Key properties in constraint must have same name",
                     relClass, constraintEnd);
+                return ERROR;
                 }
             }                      
         }

@@ -339,13 +339,13 @@ void PropertyMap::GetColumns (std::vector<ECDbSqlColumn const*>& columns) const
 //---------------------------------------------------------------------------------------
 void PropertyMap::GetColumns(std::vector<ECDbSqlColumn const*>& columns, ECDbSqlTable const& table) const
     {
-    GetColumns(columns);
+    std::vector<ECDbSqlColumn const*> cols;
+    GetColumns(cols);
 
-    auto itor = std::find_if_not(columns.begin(), columns.end(), [&table] (ECDbSqlColumn const* column) { return &column->GetTable() == &table; });
-    while (itor != columns.end())
+    for (ECDbSqlColumn const* col : cols)
         {
-        columns.erase(itor);
-        itor = std::find_if_not(columns.begin(), columns.end(), [&table] (ECDbSqlColumn const* column) { return &column->GetTable() == &table; });
+        if (&col->GetTable() == &table)
+            columns.push_back(col);
         }
     }
 
@@ -366,16 +366,33 @@ ECDbSqlColumn const* PropertyMap::GetSingleColumn() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      08/2013
 //---------------------------------------------------------------------------------------
-ECDbSqlColumn const* PropertyMap::GetSingleColumn(ECDbSqlTable const& table) const
+ECDbSqlColumn const* PropertyMap::GetSingleColumn(ECDbSqlTable const& table, bool alwaysFilterByTable) const
     {
     std::vector<ECDbSqlColumn const*> columns;
-    GetColumns(columns, table);
-    BeAssert(columns.size() == 1 && "Expecting Single Column for given table");
-    if (columns.empty() || columns.size() > 1)
-        return nullptr;
+    GetColumns(columns);
 
-    return columns.front();
+    if (columns.size() == 1 && !alwaysFilterByTable)
+        return columns[0];
+
+    ECDbSqlColumn const* foundCol = nullptr;
+    for (ECDbSqlColumn const* col : columns)
+        {
+        if (&col->GetTable() == &table)
+            {
+            if (foundCol != nullptr)
+                {
+                BeAssert(false && "Cannot retrieve a single column for the given table");
+                return nullptr;
+                }
+
+            foundCol = col;
+            }
+        }
+
+    BeAssert(foundCol != nullptr && "PropertyMap doesn't have any columns matching the table");
+    return foundCol;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      08/2013
 //---------------------------------------------------------------------------------------

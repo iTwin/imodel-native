@@ -1915,7 +1915,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipKeyPropertiesWithMultipleConstraints)
          "      </Class>"
          "    </Target>"
          "  </ECRelationshipClass>"
-         "</ECSchema>", true, "Multiple Key properties not pointing to the same property is not expected to work"));
+         "</ECSchema>", false, "Multiple Key properties not pointing to the same property is not expected to work"));
 
      testSchemas.push_back (SchemaItem (
          "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
@@ -5062,6 +5062,60 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
         ASSERT_TRUE(ddl.ContainsI("[AId_Rel1N] INTEGER NOT NULL,"));
         ASSERT_TRUE(ddl.ContainsI("[AId_RelN0] INTEGER,"));
         ASSERT_TRUE(ddl.ContainsI("[AId_RelN1] INTEGER NOT NULL,"));
+        }
+
+        {
+        SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
+                            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                            "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                            "    <ECEntityClass typeName='A'>"
+                            "        <ECProperty propertyName='AName' typeName='string' />"
+                            "    </ECEntityClass>"
+                            "    <ECEntityClass typeName='B'>"
+                            "        <ECProperty propertyName='BName' typeName='string' />"
+                            "    </ECEntityClass>"
+                            "  <ECRelationshipClass typeName='Rel1N' strength='embedding'>"
+                            "    <Source cardinality='(0,1)' polymorphic='True'>"
+                            "      <Class class = 'A' />"
+                            "    </Source>"
+                            "    <Target cardinality='(0,N)' polymorphic='True'>"
+                            "      <Class class = 'B'>"
+                            "           <Key>"
+                            "              <Property name='ECInstanceId'/>"
+                            "           </Key>"
+                            "      </Class>"
+                            "    </Target>"
+                            "  </ECRelationshipClass>"
+                            "</ECSchema>", false, "Key property ECInstanceId forces parent multiplicity of(1,1)");
+
+        AssertSchemaImport(testItem, "notnullconstraintsonfkcolumns.ecdb");
+        }
+
+        {
+        SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
+                            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                            "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                            "    <ECEntityClass typeName='A'>"
+                            "        <ECProperty propertyName='AName' typeName='string' />"
+                            "    </ECEntityClass>"
+                            "    <ECEntityClass typeName='B'>"
+                            "        <ECProperty propertyName='BName' typeName='string' />"
+                            "    </ECEntityClass>"
+                            "  <ECRelationshipClass typeName='Rel1N' strength='embedding'>"
+                            "    <Source cardinality='(1,1)' polymorphic='True'>"
+                            "      <Class class = 'A' />"
+                            "    </Source>"
+                            "    <Target cardinality='(0,N)' polymorphic='True'>"
+                            "      <Class class = 'B'>"
+                            "           <Key>"
+                            "              <Property name='ECInstanceId'/>"
+                            "           </Key>"
+                            "      </Class>"
+                            "    </Target>"
+                            "  </ECRelationshipClass>"
+                            "</ECSchema>", true, "Key property ECInstanceId forces parent multiplicity of(1,1)");
+
+        AssertSchemaImport(testItem, "notnullconstraintsonfkcolumns.ecdb");
         }
 
     }

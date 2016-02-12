@@ -145,10 +145,8 @@ public:
     //! Gets the columns (if any) mapped to this property
     void GetColumns(std::vector<ECDbSqlColumn const*>&) const;
     void GetColumns(std::vector<ECDbSqlColumn const*>&, ECDbSqlTable const&) const;
-    size_t ColumnCount() const { std::vector<ECDbSqlColumn const*> columns; GetColumns(columns); return columns.size(); }
-    //! Gets the first column if any
     ECDbSqlColumn const* GetSingleColumn() const;
-    ECDbSqlColumn const* GetSingleColumn(ECDbSqlTable const&) const;
+    ECDbSqlColumn const* GetSingleColumn(ECDbSqlTable const&, bool alwaysFilterByTable) const;
     ECDbSqlTable const* GetSingleTable() const;
 
     //! Generates the native SQL snippets from the columns related to this property map.
