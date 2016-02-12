@@ -6,18 +6,18 @@
 |       $Date: 2012/08/20 16:31:58 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
+#include "ImagePPHeaders.h"
 #include "SMPointIndex.h"
 #include "InternalUtilityFunctions.h"
 #include <ScalableMesh/IScalableMeshClipContainer.h>
 #include <ScalableMesh/ScalableMeshUtilityFunctions.h>
 #include <ScalableMesh/IScalableMeshQuery.h>
 
-//NEEDS_WORK_SM : Remove if normal not computed at generation time
 //#define GPU
 #undef static_assert
 #include <ppl.h>
@@ -39,22 +39,14 @@ static int s_faceToBoxPoint[6][4] =
     {2,6,7,3},
     };
 
-
-DPoint3d ToBcPtConverter::operator () (const IDTMFile::Point3d64fM64f& inputPt) const
-    {
-    DPoint3d outPt = {inputPt.x, inputPt.y, inputPt.z};
+DPoint3d PtToPtConverter::operator () (const DPoint3d& inputPt) const
+{
+    DPoint3d outPt(inputPt);
     // DPoint3d outPt = {inputPt.x, inputPt.y, 0};
     return outPt;
-    }
+}
 
-DPoint3d ToBcPtConverter::operator () (const IDTMFile::Point3d64f& inputPt) const
-    {
-    DPoint3d outPt = {inputPt.x, inputPt.y, inputPt.z};
-    // DPoint3d outPt = {inputPt.x, inputPt.y, 0};
-    return outPt;
-    }
-
-DPoint3d ToBcPtConverter::operator () (const HGF3DCoord<double>& inputPt) const
+DPoint3d PtToPtConverter::operator () (const HGF3DCoord<double>& inputPt) const
     {   
     DPoint3d outPt = {inputPt.GetX(), inputPt.GetY(), inputPt.GetZ()};
     //  DPoint3d outPt = {inputPt.GetX(), inputPt.GetY(), 0};
@@ -64,7 +56,6 @@ DPoint3d ToBcPtConverter::operator () (const HGF3DCoord<double>& inputPt) const
 /*---------------------------------------------------------------------------------**//**
 * Calculate normals for points of a mesh
 +---------------+---------------+---------------+---------------+---------------+------*/
-//NEEDS_WORK_SM : Remove if normal not computed at generation time
 double checkNormal (DVec3dCR viewNormal, DVec3dCR normal) restrict (amp,cpu)
     {
     return (viewNormal.x*normal.x + viewNormal.y*normal.y + viewNormal.z*normal.z);
@@ -248,8 +239,6 @@ StatusInt FillBBoxFromIppExtent(DPoint3d    boxPoints[],
     return SUCCESS;
     }
 
-extern CheckStopCallbackFP              g_checkIndexingStopCallbackFP;
-
 int CutLinears(list<HFCPtr<HVEDTMLinearFeature>>& linearList, list<HFCPtr<HVEDTMLinearFeature>>& cutLinearList, HFCPtr<HVE2DPolygonOfSegments> queryPolyLine)
     {   
     int status = SUCCESS;
@@ -260,13 +249,7 @@ int CutLinears(list<HFCPtr<HVEDTMLinearFeature>>& linearList, list<HFCPtr<HVEDTM
         list<HFCPtr<HVEDTMLinearFeature> >::iterator linearIterEnd = linearList.end();
 
         while (linearIter != linearIterEnd) 
-            {                   
-            if ((g_checkIndexingStopCallbackFP != 0) && (g_checkIndexingStopCallbackFP(0) != 0))
-                {
-                status = ERROR;
-                break;                
-                }
-
+            {                               
             HGF3DPoint firstPt = (*linearIter)->GetPoint(0);
             HGF3DPoint secondPt;
             bool       addAllPts = false;
@@ -1538,7 +1521,7 @@ int AddClipToDTM (Bentley::TerrainModel::DTMPtr&           dtmPtr,
     }
 
 /*----------------------------------------------------------------------------+
-|ScalableMeshQuery::SetClipToDTM
+|ScalableMeshPointQuery::SetClipToDTM
 | Protected... Utility method used to set the shape of a DTM object.
 | Usually called internaly after the ClipShape has been properly computed and
 | DTM been generated with the result of a query.

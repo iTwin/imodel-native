@@ -6,11 +6,11 @@
 |       $Date: 2012/01/30 17:24:44 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
-
+#include "ImagePPHeaders.h"
 #include <ScalableMesh/IScalableMeshSourceImportConfig.h>
 
 #include <ScalableMesh/Import/ImportConfig.h>
@@ -290,6 +290,7 @@ const ScalableMeshData& SourceImportConfig::GetReplacementSMData() const
     };
 
     SMDataVisitor visitor;
+    if (m_implP.get() == nullptr) return ScalableMeshData::GetNull();
     m_implP->m_contentConfig.Accept(visitor);
 
     assert(0 != visitor.m_foundSMData);

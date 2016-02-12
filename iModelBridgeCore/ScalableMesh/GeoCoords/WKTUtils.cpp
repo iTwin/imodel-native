@@ -6,11 +6,11 @@
 |       $Date: 2011/12/20 16:24:01 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
-
+#include "../STM/ImagePPHeaders.h"
 #include <STMInternal/Foundations/PrivateStringTools.h>
 #include "WktUtils.h"
 

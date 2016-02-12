@@ -6,11 +6,12 @@
 |       $Date: 2013/03/27 15:53:21 $
 |     $Author: Jean-Francois.Cote $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
+#include "ImagePPHeaders.h"
 #include <ScalableMesh/ScalableMeshUtilityFunctions.h>
 #include <ScalableMesh/IScalableMeshQuery.h>
 #include "InternalUtilityFunctions.h"
@@ -610,7 +611,7 @@ int CreateBcDTM(DTMPtr& dtmPtr)
         {
         BcDTMPtr bcDtmObjPtr;
 
-        bcDtmObjPtr = BcDTM::CreateFromDtmHandle(*bcDtmP);
+        bcDtmObjPtr = BcDTM::CreateFromDtmHandle(bcDtmP);
         //bcDtmObjPtr->Release();     
 
         dtmPtr = bcDtmObjPtr.get();
@@ -672,49 +673,6 @@ int SetClipsToDTM (Bentley::TerrainModel::DTMPtr&  dtmPtr,
         }
 
     return SetClipToDTM(dtmPtr, dtmRange, *clipShape->GetShapePtr());
-    }
-
-/*----------------------------------------------------------------------------+
-| TriangulateDTM
-| Utility function that triggers the triangulation of a DTM.
-| Some triangulation parameters are obtained from ????
-+----------------------------------------------------------------------------*/
-int TriangulateDTM(Bentley::TerrainModel::DTMPtr&                     dtmPtr,
-                   const Bentley::ScalableMesh::IScalableMeshQueryParametersPtr& scmQueryParamsPtr)
-    {                         
-    assert((dtmPtr != 0) && (dtmPtr->GetBcDTM() != 0) && (dtmPtr->GetBcDTM()->GetTinHandle()));
-
-    BC_DTM_OBJ* dtmObjP(dtmPtr->GetBcDTM()->GetTinHandle());
-
-    // We should not try to triangulate DTMs with less than 3 points
-    // as the bc triangulation function will return an error.
-    if (dtmObjP->numPoints < 3)
-        return BSISUCCESS;                                                    
-
-   bcdtmObject_setTriangulationParametersDtmObject(dtmObjP,
-                                                    Bentley::ScalableMesh::IScalableMeshQueryParameters::GetToleranceTriangulationParam(),
-                                                    Bentley::ScalableMesh::IScalableMeshQueryParameters::GetToleranceTriangulationParam(),
-                                                    scmQueryParamsPtr->GetEdgeOptionTriangulationParam() + 1,
-                                                   scmQueryParamsPtr->GetMaxSideLengthTriangulationParam());
-
-    int status = BSISUCCESS;
-
-    if (GetTriangulationTerminationCallback() != 0)
-        {
-        status = bcdtmTin_setTriangulationCheckStopCallBackFunction(dtmObjP, GetTriangulationTerminationCallback());
-
-        assert(status == 0);
-        }    
-     
-    status = bcdtmObject_triangulateDtmObject(dtmObjP);                                            
- 
-    if (status == 0)
-        {
-        BcDTMPtr bcDtmObjPtr(BcDTM::CreateFromDtmHandle(*dtmObjP));
-        dtmPtr = bcDtmObjPtr.get();            
-        }   
-
-    return status;
     }
 
 /*----------------------------------------------------------------------------+
@@ -1000,30 +958,7 @@ bool AddExtentAndTestMatch(bool&           shouldAddMatchedCachedTile,
     return unifiedMatchedTilesShape->Matches(*extentToCoverShape);
     }
 #endif
-
-extern CheckStopCallbackFP              g_checkIndexingStopCallbackFP = 0;
-extern checkTriangulationStopCallbackFP g_checkTriangulationStopCallbackFP = 0;
         
-
-checkTriangulationStopCallbackFP GetTriangulationTerminationCallback()
-    {    
-    return g_checkTriangulationStopCallbackFP;
-    }
-
-int myTypeSafeCallBack(long dtmFeatureType)
-    {
-    return g_checkTriangulationStopCallbackFP((DTMFeatureType)dtmFeatureType);
-    }
-
-bool SetTriangulationTerminationCallback(checkTriangulationStopCallbackFP callbackFP)
-    {
-    g_checkTriangulationStopCallbackFP = callbackFP;
-
-    g_checkIndexingStopCallbackFP = (CheckStopCallbackFP)callbackFP/*myTypeSafeCallBack*/;        
-
-    return true;
-    }
-
 extern addLinearsForPresentationModeFP g_addLinearsForPresentationModeFP = 0;
 
 addLinearsForPresentationModeFP GetLinearsForPresentationModeCallback()

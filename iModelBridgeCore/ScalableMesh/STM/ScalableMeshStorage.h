@@ -6,7 +6,7 @@
 |       $Date: 2011/10/26 17:55:17 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -36,6 +36,7 @@ struct IStorage : public Import::Sink
 
 template <typename PtType>
 class ScalableMeshStorage;
+template <typename PtType> class ScalableMeshNonDestructiveEditStorage;
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
@@ -47,7 +48,7 @@ class ScalableMeshPointStorageEditor : public Import::BackInserter
     {
 
     friend class                            ScalableMeshStorage<PtType>;
-
+    protected:
     Memory::ConstPacketProxy<PtType>        m_pointPacket;
 
     typedef SMPointIndex<PtType, YProtPtExtentType>
@@ -65,10 +66,30 @@ class ScalableMeshPointStorageEditor : public Import::BackInserter
 
     virtual void                            _Write                     () override
         {
-        const bool Success = m_rIndex.AddArray(m_pointPacket.Get(), m_pointPacket.GetSize(), m_is3dData);
+        const bool Success = m_rIndex.AddArray(m_pointPacket.Get(), m_pointPacket.GetSize(), m_is3dData, m_isGridData);
 
         // TDORAY: Throw on failures?
         assert(Success);
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @description  
+*
+* @bsiclass                                                  Elenie.Godzaridis   10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename PtType>
+class ScalableMeshPointNonDestructiveStorageEditor : public ScalableMeshPointStorageEditor<PtType>
+    {
+
+    friend class                            ScalableMeshNonDestructiveEditStorage<PtType>;
+
+    explicit                                ScalableMeshPointNonDestructiveStorageEditor(IndexType&                 pi_rIndex)
+        : ScalableMeshPointStorageEditor(pi_rIndex)
+        {}
+
+    virtual void                            _Write                     () override
+        {
         }
     };
 
@@ -166,7 +187,7 @@ class GenericLinearStorageEditor : public Import::BackInserter
 
      {
      friend class                            ScalableMeshStorage < PtType > ;
-
+     protected:
      Memory::ConstPacketProxy<PtType>      m_pointPacket;
      Memory::ConstPacketProxy < IDTMFile::FeatureHeader >
          m_headerPacket;
@@ -220,6 +241,55 @@ class GenericLinearStorageEditor : public Import::BackInserter
      };
 
 
+ /*---------------------------------------------------------------------------------**//**
+ * @description
+*
+* @bsiclass                                                  Elenie.Godzaridis   10/2015
+-+---------------+---------------+---------------+---------------+---------------+------*/
+ template<typename PtType>
+ class ScalableMeshNonDestructiveLinearStorageEditor : public ScalableMeshLinearStorageEditor<PtType>
+
+     {
+     friend class                            ScalableMeshNonDestructiveEditStorage < PtType > ;
+
+     explicit                                ScalableMeshNonDestructiveLinearStorageEditor
+         (IndexType&                  pi_rFeatureIndex)
+         : ScalableMeshLinearStorageEditor(pi_rFeatureIndex)
+         {}
+
+
+     virtual void                            _Write() override
+         {
+         m_Features.EditHeaders().Wrap(m_headerPacket.Get(), m_headerPacket.GetSize());
+         m_Features.EditPoints().Wrap(m_pointPacket.Get(), m_pointPacket.GetSize());
+
+         for (ArrayType::const_iterator myFeature = m_Features.Begin(); myFeature != m_Features.End(); myFeature++)
+             {
+             bvector<DPoint3d> newFeature;
+             DRange3d featureExtent;
+             for (ArrayType::value_type::const_iterator myPoint = myFeature->Begin(); myPoint != myFeature->End(); myPoint++)
+                 {
+                 newFeature.push_back(DPoint3d::From(PointOp<PtType>::GetX(*myPoint),
+                     PointOp<PtType>::GetY(*myPoint),
+                     PointOp<PtType>::GetZ(*myPoint)));
+                 if (newFeature.size() == 1) featureExtent.InitFrom(newFeature.back());
+                 else featureExtent.Extend(newFeature.back());
+                 }
+
+             // Append to index
+             m_rIndex.AddClipDefinition(newFeature, featureExtent);
+             }
+
+         // TDORAY: Throw on failures?
+         }
+
+     virtual void                            _NotifySourceImported() override
+         {
+         m_rIndex.RefreshMergedClips();
+         }
+     };
+
+
 /*---------------------------------------------------------------------------------**//**
 * @description  
 *
@@ -228,13 +298,14 @@ class GenericLinearStorageEditor : public Import::BackInserter
 template<typename PtType>
 class ScalableMeshStorage : public IStorage
     {
+    protected:
     typedef typename PointTypeCreatorTrait<PtType>::type 
                                             PointTypeFactory;
     typedef typename LinearTypeCreatorTrait<PtType>::type 
                                             LinearTypeFactory;
-    typedef typename TINAsLinearTypeCreatorTrait<IDTMFile::Point3d64f>::type 
+    typedef typename TINAsLinearTypeCreatorTrait<DPoint3d>::type
                                             TINTypeFactory;
-    typedef typename MeshAsLinearTypeCreatorTrait<IDTMFile::Point3d64f>::type 
+    typedef typename MeshAsLinearTypeCreatorTrait<DPoint3d>::type
                                             MeshTypeFactory;
 
     typedef SMMeshIndex<PtType, YProtPtExtentType>
@@ -292,6 +363,41 @@ public:
         }
     };
 
+
+/*---------------------------------------------------------------------------------**//**
+* @description  
+*
+* @bsiclass                                                  Raymond.Gauthier   03/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename PtType>
+class ScalableMeshNonDestructiveEditStorage : public ScalableMeshStorage<PtType>
+    {
+
+    virtual Import::BackInserter*          _CreateBackInserterFor      (UInt                        layerID,
+                                                                        const Import::DataType&     type,
+                                                                        Import::Log&         log) const override
+        {
+        assert(0 == layerID);
+
+        //TDORAY: Ensure that type can be found in layer before returning
+
+        if (PointTypeFactory().Create() == type)
+            return (0 != m_pPointIndex) ? new ScalableMeshPointNonDestructiveStorageEditor<PtType>(*m_pPointIndex) : 0;
+        if (LinearTypeFactory().Create() == type)
+            return (0 != m_pPointIndex) ? new ScalableMeshNonDestructiveLinearStorageEditor<PtType>(*m_pPointIndex) : 0;
+
+        return 0;
+        }
+
+public:
+
+    explicit                                ScalableMeshNonDestructiveEditStorage(IndexType&                 pi_rIndex,
+                                                                        const GeoCoords::GCS&           pi_rGeoCoordSys)
+                                                                        : ScalableMeshStorage(pi_rIndex, pi_rGeoCoordSys)
+        {
+        
+        }
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @description  

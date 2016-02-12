@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/PointCloudQuadTree.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma  once
@@ -227,7 +227,7 @@ class PointCloudQuadTree : public RefCountedBase
 
         PointCloudQuadNodePtr   m_root;                 // First node
         double                  m_nbNodeFetched;
-        vector<DPoint3d>        m_points;
+        std::vector<DPoint3d>        m_points;
         std::vector<int>*       m_triangleIndexes;
         EditElementHandleP      m_elHandle;
         size_t                  m_maxSize;

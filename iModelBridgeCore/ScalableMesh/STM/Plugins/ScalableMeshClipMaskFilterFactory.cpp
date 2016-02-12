@@ -6,11 +6,11 @@
 |       $Date: 2011/09/01 14:07:04 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
-
+#include "../ImagePPHeaders.h"
 #include "ScalableMeshClipMaskFilterFactory.h"
 #include <ScalableMesh/Import/Plugin/FilterV0.h>
 
@@ -329,11 +329,11 @@ const FilterCreatorBase* ClipMaskFilterFactory::_FindCreatorFor    (const DataTy
     {
     if (pi_rSourceType == PointType3d64fCreator().Create())
         {
-        return new PointClipMaskFilterCreator<Point3d64f>(pi_rSourceType, m_pImpl->m_pShape);
+        return new PointClipMaskFilterCreator<DPoint3d>(pi_rSourceType, m_pImpl->m_pShape);
         }
     else if (pi_rSourceType == LinearTypeTi32Pi32Pq32Gi32_3d64fCreator().Create())
         {
-        return new LinearFeatureClipMaskFilterCreator<Point3d64f>(pi_rSourceType, m_pImpl->m_pShape);
+        return new LinearFeatureClipMaskFilterCreator<DPoint3d>(pi_rSourceType, m_pImpl->m_pShape);
         }
     else
         {

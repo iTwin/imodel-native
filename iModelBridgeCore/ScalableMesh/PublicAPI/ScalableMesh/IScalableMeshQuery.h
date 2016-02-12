@@ -1,12 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: PublicAPI/ScalableMesh/IScalableMeshQuery.h $
-|    $RCSfile: IScalableMeshQuery.h,v $
+|    $RCSfile: IScalableMeshPointQuery.h,v $
 |   $Revision: 1.17 $
 |       $Date: 2012/11/29 17:30:53 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -16,18 +16,24 @@
 //#include <GeoCoord/BaseGeoCoord.h>
 #include <TerrainModel/TerrainModel.h>
 #include <TerrainModel/Core/IDTM.h>
+#include <TerrainModel/Core/bcDTMClass.h>
 #include <ScalableMesh/ScalableMeshDefs.h>
 #include <ScalableMesh/IScalableMeshFeature.h>
 #include <Mtg\MtgStructs.h>
 #include <Geom\Polyface.h>
+#include <list>
+#include <DgnPlatform/DgnPlatform.h>
 
 //#include <Bentley/RefCounted.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 struct IScalableMeshMesh;
+struct IScalableMeshTexture;
 struct IScalableMeshNode;
 struct IScalableMeshNodeEdit;
+struct IScalableMeshCachedDisplayNode;
+struct IScalableMeshPointQuery;
 struct IScalableMeshMeshQuery;
 struct IScalableMeshMeshQueryParams;
 struct IScalableMeshViewDependentMeshQueryParams;
@@ -35,7 +41,6 @@ struct IScalableMeshNodeRayQuery;
 struct IScalableMeshNodeQueryParams;
 struct IScalableMeshNodePlaneQueryParams;
 struct IScalableMeshMeshRayQueryParams;
-struct IScalableMeshQuery;
 struct IScalableMeshQueryParameters;
 struct IScalableMeshFixResolutionIndexQueryParams;
 struct IScalableMeshFixResolutionMaxPointsQueryParams;
@@ -45,16 +50,18 @@ struct IScalableMeshViewDependentQueryParams;
 struct IScalableMeshQueryAllLinearsQueryParams;
 
 typedef RefCountedPtr<IScalableMeshMesh>                              IScalableMeshMeshPtr;
+typedef RefCountedPtr<IScalableMeshTexture>                           IScalableMeshTexturePtr;
 typedef RefCountedPtr<IScalableMeshMeshQuery>                         IScalableMeshMeshQueryPtr;
-typedef RefCountedPtr<IScalableMeshMeshQueryParams>                    IScalableMeshMeshQueryParamsPtr;
+typedef RefCountedPtr<IScalableMeshMeshQueryParams>                   IScalableMeshMeshQueryParamsPtr;
 typedef RefCountedPtr<IScalableMeshViewDependentMeshQueryParams>      IScalableMeshViewDependentMeshQueryParamsPtr;
-typedef RefCountedPtr<IScalableMeshNode>                                IScalableMeshNodePtr;
-typedef RefCountedPtr<IScalableMeshNodeEdit>                                IScalableMeshNodeEditPtr;
-typedef RefCountedPtr<IScalableMeshNodeRayQuery>                         IScalableMeshNodeRayQueryPtr;
+typedef RefCountedPtr<IScalableMeshNode>                              IScalableMeshNodePtr;
+typedef RefCountedPtr<IScalableMeshNodeEdit>                          IScalableMeshNodeEditPtr;
+typedef RefCountedPtr<IScalableMeshCachedDisplayNode>                 IScalableMeshCachedDisplayNodePtr;
+typedef RefCountedPtr<IScalableMeshNodeRayQuery>                      IScalableMeshNodeRayQueryPtr;
 typedef RefCountedPtr<IScalableMeshNodeQueryParams>                   IScalableMeshNodeQueryParamsPtr;
-typedef RefCountedPtr<IScalableMeshNodePlaneQueryParams>                   IScalableMeshNodePlaneQueryParamsPtr;
+typedef RefCountedPtr<IScalableMeshNodePlaneQueryParams>              IScalableMeshNodePlaneQueryParamsPtr;
 typedef RefCountedPtr<IScalableMeshMeshRayQueryParams>                IScalableMeshMeshRayQueryParamsPtr;
-typedef RefCountedPtr<IScalableMeshQuery>                             IScalableMeshQueryPtr;
+typedef RefCountedPtr<IScalableMeshPointQuery>                        IScalableMeshPointQueryPtr;
 typedef RefCountedPtr<IScalableMeshQueryParameters>                   IScalableMeshQueryParametersPtr;
 typedef RefCountedPtr<IScalableMeshFixResolutionIndexQueryParams>     IScalableMeshFixResolutionIndexQueryParamsPtr;
 typedef RefCountedPtr<IScalableMeshFixResolutionMaxPointsQueryParams> IScalableMeshFixResolutionMaxPointsQueryParamsPtr;
@@ -77,10 +84,7 @@ struct IScalableMeshQueryParameters abstract: virtual public RefCountedBase
     protected: 
         
                  IScalableMeshQueryParameters();                    
-        virtual ~IScalableMeshQueryParameters();
-
-        virtual bool _GetTriangulationState() = 0;        
-        virtual void _SetTriangulationState(bool pi_isReturnedDataTriangulated) = 0;                
+        virtual ~IScalableMeshQueryParameters();                
 
         virtual Bentley::GeoCoordinates::BaseGCSPtr _GetSourceGCS() = 0;
 
@@ -88,34 +92,14 @@ struct IScalableMeshQueryParameters abstract: virtual public RefCountedBase
 
         virtual void _SetGCS(Bentley::GeoCoordinates::BaseGCSPtr& sourceGCSPtr, 
                              Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr) = 0;
-
-        virtual long _GetEdgeOptionTriangulationParam() = 0;            
-
-        virtual double _GetMaxSideLengthTriangulationParam() = 0;
-                            
-        virtual void _SetEdgeOptionTriangulationParam(long edgeOption) = 0;            
-
-        virtual void _SetMaxSideLengthTriangulationParam(double maxSideLength) = 0;
-                               
+                                       
     public:    
-            
-        BENTLEYSTM_EXPORT bool GetTriangulationState();        
-        BENTLEYSTM_EXPORT void SetTriangulationState(bool pi_isReturnedDataTriangulated);                
-
-
+                    
         BENTLEYSTM_EXPORT Bentley::GeoCoordinates::BaseGCSPtr GetSourceGCS();
         BENTLEYSTM_EXPORT Bentley::GeoCoordinates::BaseGCSPtr GetTargetGCS();
 
         BENTLEYSTM_EXPORT void SetGCS(Bentley::GeoCoordinates::BaseGCSPtr& sourceGCSPtr, 
-                                      Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr);
-                
-        BENTLEYSTM_EXPORT long GetEdgeOptionTriangulationParam();
-            
-        BENTLEYSTM_EXPORT double GetMaxSideLengthTriangulationParam();
-            
-        BENTLEYSTM_EXPORT void SetEdgeOptionTriangulationParam(long edgeOption);
-            
-        BENTLEYSTM_EXPORT void SetMaxSideLengthTriangulationParam(double maxSideLength);
+                                      Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr);                        
             
         BENTLEYSTM_EXPORT static double GetToleranceTriangulationParam();
     };
@@ -237,48 +221,23 @@ struct IScalableMeshViewDependentQueryParams : public virtual ISrDTMViewDependen
 
         virtual double        _GetMinScreenPixelsPerPoint() const = 0;
 
-        virtual bool          _GetUseSameResolutionWhenCameraIsOff() const = 0;
-
-        virtual bool          _GetUseSplitThresholdForLevelSelection() const = 0;
-
-        virtual bool          _GetUseSplitThresholdForTileSelection() const = 0;
-
         virtual const double* _GetRootToViewMatrix() const = 0;
 
         virtual void          _SetMinScreenPixelsPerPoint(double minScreenPixelsPerPoint) = 0;
 
         virtual void          _SetRootToViewMatrix(const double rootToViewMatrix[][4]) = 0;    
-
-        virtual void          _SetUseSameResolutionWhenCameraIsOff(bool useSameResolution) = 0;        
-
-        virtual void          _SetUseSplitThresholdForLevelSelection(bool useSplitThreshold) = 0;        
-
-        virtual void          _SetUseSplitThresholdForTileSelection(bool useSplitThreshold) = 0;                        
-
-       
+               
                
     public : 
 
         double        GetMinScreenPixelsPerPoint() const;
-
-        bool          GetUseSameResolutionWhenCameraIsOff() const;
-
-        bool          GetUseSplitThresholdForLevelSelection() const;
-
-        bool          GetUseSplitThresholdForTileSelection() const;
-
+       
         const double* GetRootToViewMatrix() const;
            
                                 
         BENTLEYSTM_EXPORT void   SetMinScreenPixelsPerPoint(double minScreenPixelsPerPoint);
 
-        BENTLEYSTM_EXPORT void   SetRootToViewMatrix(const double rootToViewMatrix[][4]);    
-
-        BENTLEYSTM_EXPORT void   SetUseSameResolutionWhenCameraIsOff(bool useSameResolution);        
-
-        BENTLEYSTM_EXPORT void   SetUseSplitThresholdForLevelSelection(bool useSplitThreshold);        
-
-        BENTLEYSTM_EXPORT void   SetUseSplitThresholdForTileSelection(bool useSplitThreshold);             
+        BENTLEYSTM_EXPORT void   SetRootToViewMatrix(const double rootToViewMatrix[][4]);            
         
         BENTLEYSTM_EXPORT static IScalableMeshViewDependentQueryParamsPtr CreateParams();       
     };
@@ -338,15 +297,9 @@ struct IScalableMeshQueryAllLinearsQueryParams : public virtual IScalableMeshFul
 
         virtual std::list<IScalableMeshFeaturePtr> _GetFeatures() = 0;        
 
-#ifdef SCALABLE_TERRAIN_MODEL_PRIVATE_SECTION
-        virtual void                   _SetFeatures (const list<HFCPtr<HVEDTMLinearFeature>>& features) = 0;
-#endif
 
     public :                        
 
-#ifdef SCALABLE_TERRAIN_MODEL_PRIVATE_SECTION
-        void SetFeatures (const list<HFCPtr<HVEDTMLinearFeature>>& features);
-#endif
                 
         BENTLEYSTM_EXPORT std::list<IScalableMeshFeaturePtr> GetFeatures();            
 
@@ -357,7 +310,7 @@ struct IScalableMeshQueryAllLinearsQueryParams : public virtual IScalableMeshFul
 * Interface implemented by MRDTM engines.
 * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
-struct IScalableMeshQuery abstract: RefCountedBase
+struct IScalableMeshPointQuery abstract: RefCountedBase
     {
     /*__PUBLISH_SECTION_END__*/
     /*__PUBLISH_CLASS_VIRTUAL__*/
@@ -367,17 +320,11 @@ struct IScalableMeshQuery abstract: RefCountedBase
     protected: 
                 
         //NEEDS_WORK_SM: remove clip shape from query interface??
-        virtual int _Query(Bentley::TerrainModel::DTMPtr&   dtmPtr, 
+        virtual int _Query(bvector<DPoint3d>&               points, 
                            const DPoint3d*                  pClipShapePts, 
                            int                              nbClipShapePts, 
                            const IScalableMeshQueryParametersPtr&  scmQueryParamsPtr) const = 0;
-        /*
-        virtual int _Query(IScalableMeshMeshPtr                    meshPtr, 
-                           const DPoint3d*                  pClipShapePts, 
-                           int                              nbClipShapePts, 
-                           const IScalableMeshQueryParametersPtr&  mrDTMQueryParamsPtr) const = 0;
-                           */
-
+        
         virtual int _GetNbClip() const = 0;
         virtual int _AddClip(DPoint3d* clipPointsP,
                              int       numberOfPoints, 
@@ -402,10 +349,10 @@ struct IScalableMeshQuery abstract: RefCountedBase
         
         //! Gets the number of points of the DTM.
         //! @return The number of points of the DTM..
-        BENTLEYSTM_EXPORT int Query(Bentley::TerrainModel::DTMPtr&    dtmPtr,                            
-                                    const DPoint3d*                   pClipShapePts, 
-                                    int                               nbClipShapePts, 
-                                    const IScalableMeshQueryParametersPtr&   scmQueryParamsPtr) const;         
+        BENTLEYSTM_EXPORT int Query(bvector<DPoint3d>&                     points,    
+                                    const DPoint3d*                        pClipShapePts, 
+                                    int                                    nbClipShapePts, 
+                                    const IScalableMeshQueryParametersPtr& scmQueryParamsPtr) const;         
         
         BENTLEYSTM_EXPORT int GetNbClip() const;
             
@@ -433,6 +380,10 @@ struct IScalableMeshMesh : public RefCountedBase
 
         virtual size_t _GetNbPoints() const = 0;
 
+        virtual size_t _GetNbFaces() const = 0;
+
+        virtual DTMStatusInt _GetAsBcDTM(Bentley::TerrainModel::BcDTMPtr& bcdtm) = 0;
+
         virtual bool _FindTriangleForProjectedPoint(int* outTriangle, DPoint3d& point, bool use2d = false) const = 0;
         virtual bool _FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DPoint3d& point, bool use2d = false) const = 0;
 
@@ -450,7 +401,11 @@ struct IScalableMeshMesh : public RefCountedBase
 
         BENTLEYSTM_EXPORT size_t GetNbPoints() const;
 
+        BENTLEYSTM_EXPORT size_t GetNbFaces() const;
+
         DPoint3d* EditPoints();
+
+        BENTLEYSTM_EXPORT DTMStatusInt GetAsBcDTM(Bentley::TerrainModel::BcDTMPtr& bcdtm);
 
         //NEEDS_WORK_SM: maybe move all geometry-related functions to util interface
         
@@ -472,24 +427,78 @@ struct IScalableMeshMesh : public RefCountedBase
                                                       int32_t*    faceInd, 
                                                       size_t    normalCount,
                                                       DVec3d*   pNormal,
-                                                      int32_t*    pNormalIndex);
+                                                      int32_t*    pNormalIndex,
+                                                      size_t uvCount, 
+                                                      DVec2d* pUv,
+                                                      int32_t* pUvIndex);
     
     };
 
-struct IScalableMeshNode : public RefCountedBase
+
+struct IScalableMeshTexture : public RefCountedBase
+{
+    /*class Material;
+    typedef RefCountedPtr<Material> MaterialPtr;*/
+protected:
+    virtual Byte* _GetData() const = 0;
+    virtual size_t _GetSize() const = 0;
+    virtual Point2d _GetDimension() const = 0;
+    virtual int _GetID() const = 0;
+    //virtual MaterialPtr _GetMaterial() const = 0;
+//    virtual void _SetMaterial(MaterialPtr& material);
+
+public:
+//    BENTLEYSTM_EXPORT void Initialize(node, host, viewContext);
+    BENTLEYSTM_EXPORT Byte* GetData() const;
+    BENTLEYSTM_EXPORT size_t GetSize() const;
+    BENTLEYSTM_EXPORT size_t GetNOfChannels() const;
+    BENTLEYSTM_EXPORT Point2d GetDimension() const;
+    BENTLEYSTM_EXPORT int GetID() const;
+//    BENTLEYSTM_EXPORT void SetMaterial(MaterialPtr& material);
+    BENTLEYSTM_EXPORT static IScalableMeshTexturePtr Create(Byte* data,
+        size_t size,
+        Point2d dimension,
+        int id
+        );
+    //BENTLEYSTM_EXPORT MaterialPtr GetMaterial() const;
+};
+
+typedef size_t ScalableMeshTextureID;
+
+struct IScalableMeshNode abstract: virtual public RefCountedBase
 
     {
     private:
-
     protected:
+        virtual Bentley::TerrainModel::BcDTMPtr  _GetBcDTM() const = 0;
 
         virtual bool    _ArePoints3d() const = 0;
 
         virtual bool    _ArePointsFullResolution() const = 0;
 
-        virtual IScalableMeshMeshPtr _GetMesh(bool loadGraph) const = 0;
+        virtual IScalableMeshMeshPtr _GetMesh(bool loadGraph, bvector<bool>& clipsToShow) const = 0;
+
+        virtual IScalableMeshMeshPtr _GetMeshByParts(const bvector<bool>& clipsToShow, ScalableMeshTextureID texId) const = 0;
+
+        virtual IScalableMeshTexturePtr _GetTexture(size_t texture_id) const = 0;
+
+        virtual int _GetTextureID(size_t texture_id) const = 0;
+
+        virtual size_t _GetNbTexture() const = 0;
 
         virtual bvector<IScalableMeshNodePtr> _GetNeighborAt(char relativePosX, char relativePosY, char relativePosZ) const = 0;
+        
+        virtual void     _ApplyAllExistingClips() const = 0;
+
+        virtual void     _RefreshMergedClip() const = 0;
+
+        virtual bool     _AddClip(uint64_t id, bool isVisible) const = 0;
+
+        virtual bool     _AddClipAsync(uint64_t id, bool isVisible) const = 0;
+
+        virtual bool     _ModifyClip(uint64_t id, bool isVisible) const = 0;
+
+        virtual bool     _DeleteClip(uint64_t id, bool isVisible) const = 0;
         
         virtual DRange3d _GetNodeExtent() const = 0;
 
@@ -509,17 +518,38 @@ struct IScalableMeshNode : public RefCountedBase
 
                 
     public:
+        static const BENTLEYSTM_EXPORT ScalableMeshTextureID UNTEXTURED_PART = 0;
 
-        //NEEDS_WORK_SM : Not sure required except in debug
+        BENTLEYSTM_EXPORT Bentley::TerrainModel::BcDTMPtr          GetBcDTM() const;
+        
         BENTLEYSTM_EXPORT bool          ArePoints3d() const;
 
         BENTLEYSTM_EXPORT bool          ArePointsFullResolution() const;
-        //NEEDS_WORK_SM : Not sure required except in debug - END
-
-        BENTLEYSTM_EXPORT IScalableMeshMeshPtr GetMesh(bool loadGraph) const;
         
+        BENTLEYSTM_EXPORT IScalableMeshMeshPtr GetMesh(bool loadGraph, bvector<bool>& clipsToShow) const;
+
+        BENTLEYSTM_EXPORT IScalableMeshMeshPtr GetMeshByParts(bvector<bool>& clipsToShow, ScalableMeshTextureID texId) const;
+
+        BENTLEYSTM_EXPORT IScalableMeshTexturePtr GetTexture(size_t texture_id) const;
+                
+        BENTLEYSTM_EXPORT int GetTextureID(size_t textureInd) const;
+
+        BENTLEYSTM_EXPORT size_t GetNbTexture() const;
+                
         //Gets neighbors by relative position. For example, neighbor (-1, 0, 0) shares the node's left face. (1,1,0) shares the node's top-right diagonal. 
         BENTLEYSTM_EXPORT bvector<IScalableMeshNodePtr> GetNeighborAt(char relativePosX,  char relativePosY,  char relativePosZ) const;
+
+        BENTLEYSTM_EXPORT void     ApplyAllExistingClips() const;
+
+        BENTLEYSTM_EXPORT void     RefreshMergedClip() const;
+
+        BENTLEYSTM_EXPORT bool     AddClip(uint64_t id, bool isVisible=true) const;
+
+        BENTLEYSTM_EXPORT bool     AddClipAsync(uint64_t id, bool isVisible = true) const;
+
+        BENTLEYSTM_EXPORT bool     ModifyClip(uint64_t id,bool isVisible=true) const;
+
+        BENTLEYSTM_EXPORT bool     DeleteClip(uint64_t id, bool isVisible=true) const;
 
         BENTLEYSTM_EXPORT DRange3d GetNodeExtent() const;
 
@@ -538,17 +568,47 @@ struct IScalableMeshNode : public RefCountedBase
         BENTLEYSTM_EXPORT void LoadHeader() const;
     };
 
+struct SmCachedDisplayMesh;
+struct SmCachedDisplayTexture;
 
-struct IScalableMeshNodeEdit : public IScalableMeshNode
+struct IScalableMeshCachedDisplayNode : public virtual IScalableMeshNode
+    {
+    protected:
+
+        virtual StatusInt _GetCachedMesh(SmCachedDisplayMesh*& cachedMesh, size_t cachedMeshId) const = 0;
+
+        virtual StatusInt _GetCachedTexture(SmCachedDisplayTexture*& cachedTexture, size_t cachedMeshId) const = 0;
+
+        virtual size_t    _GetNbMeshes() const = 0;
+
+    public : 
+
+        BENTLEYSTM_EXPORT StatusInt GetCachedMesh(SmCachedDisplayMesh*& cachedMesh, size_t cachedMeshId) const;
+
+        BENTLEYSTM_EXPORT StatusInt GetCachedTexture(SmCachedDisplayTexture*& cachedTexture, size_t cachedMeshId) const;
+
+        BENTLEYSTM_EXPORT size_t    GetNbMeshes() const;
+
+
+    };
+
+
+struct IScalableMeshNodeEdit : public virtual IScalableMeshNode
     {
     protected:
         virtual StatusInt _AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices) = 0;
+        virtual StatusInt _AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t idTexture) = 0;
         virtual StatusInt _SetNodeExtent(DRange3d& extent) = 0;
         virtual StatusInt _SetContentExtent(DRange3d& extent) = 0;
+        virtual StatusInt _SetArePoints3d(bool arePoints3d) = 0;
+        virtual StatusInt _AddTextures(bvector<bvector<Byte>>& data, size_t numTextures, bool sibling) = 0;
     public:
         BENTLEYSTM_EXPORT StatusInt AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices);
+        BENTLEYSTM_EXPORT StatusInt AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture);
+        BENTLEYSTM_EXPORT StatusInt AddTextures(bvector<bvector<Byte>>& data, size_t numTextures, bool sibling = false);
         BENTLEYSTM_EXPORT StatusInt SetNodeExtent(DRange3d& extent);
         BENTLEYSTM_EXPORT StatusInt SetContentExtent(DRange3d& extent);
+        BENTLEYSTM_EXPORT StatusInt SetArePoints3d(bool arePoints3d);
     };
 
 
@@ -574,6 +634,9 @@ struct IScalableMeshMeshQueryParams abstract : virtual public RefCountedBase
                                       Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr);
     };
 
+
+typedef bool (*StopQueryCallbackFP)();
+
 struct IScalableMeshViewDependentMeshQueryParams abstract: virtual public IScalableMeshMeshQueryParams
     {
     protected :
@@ -585,57 +648,34 @@ struct IScalableMeshViewDependentMeshQueryParams abstract: virtual public IScala
                             
         virtual void                _SetViewBox(const DPoint3d viewBox[]) = 0;         
 
-        virtual double              _GetMinScreenPixelsPerPoint() const = 0;
+        virtual double              _GetMinScreenPixelsPerPoint() const = 0;        
 
-        virtual bool                _GetUseSameResolutionWhenCameraIsOff() const = 0;
-
-        virtual bool                _GetUseSplitThresholdForLevelSelection() const = 0;
-
-        virtual bool                _GetUseSplitThresholdForTileSelection() const = 0;
-
+        virtual StopQueryCallbackFP _GetStopQueryCallback() const = 0;
+               
         virtual const double*       _GetRootToViewMatrix() const = 0;
 
         virtual const ClipVectorPtr _GetViewClipVector() const = 0;
 
+        virtual bool                _IsProgressiveDisplay() const = 0;
+
         virtual void            _SetMinScreenPixelsPerPoint(double minScreenPixelsPerPoint) = 0;
+
+        virtual void            _SetProgressiveDisplay(bool isProgressiveDisplay) = 0;
 
         virtual void            _SetRootToViewMatrix(const double rootToViewMatrix[][4]) = 0;    
 
-        virtual void            _SetUseSameResolutionWhenCameraIsOff(bool useSameResolution) = 0;        
-
-        virtual void            _SetUseSplitThresholdForLevelSelection(bool useSplitThreshold) = 0;        
-
-        virtual void            _SetUseSplitThresholdForTileSelection(bool useSplitThreshold) = 0;   
-
+        virtual StatusInt       _SetStopQueryCallback(StopQueryCallbackFP stopQueryCallbackFP) = 0;
+        
         virtual void            _SetViewClipVector(ClipVectorPtr& viewClipVector) = 0;            
-
-         //NEEDS_WORK_SM : Maybe should be activate only on a specialized define
-        virtual bool            _GetGatherQueriedNodeBoundaries() const = 0;                                            
-
-        virtual void            _SetGatherQueriedNodeBoundaries(bool gatherNodeBoundaries) = 0;                                            
-
-        virtual bool            _GetQueriedNodeBoundaries(bvector<DSegment3d>& nodeBoundaries) const = 0;
-
-        virtual void            _SetQueriedNodeBoundaries(bvector<DSegment3d>& nodeBoundaries) = 0;   
-        //NEEDS_WORK_SM : Maybe should be activate only on a specialized define END
-                    
-               
+                                                  
     public : 
 
-         //NEEDS_WORK_SM : Maybe should be activate only on a specialized define
-        bool          GetGatherQueriedNodeBoundaries() const;
-
-        BENTLEYSTM_EXPORT void  SetGatherQueriedNodeBoundaries(bool gatherNodeBoundaries);
-
-        BENTLEYSTM_EXPORT bool  GetQueriedNodeBoundaries(bvector<DSegment3d>& nodeBoundaries) const;
-            
-        void  SetQueriedNodeBoundaries(bvector<DSegment3d>& nodeBoundaries);
-        //NEEDS_WORK_SM : Maybe should be activate only on a specialized define END
-
-
+        
         const DPoint3d*     GetViewBox() const;
                                         
         double              GetMinScreenPixelsPerPoint() const;
+
+        StopQueryCallbackFP GetStopQueryCallback() const;
 
         bool                GetUseSameResolutionWhenCameraIsOff() const;
 
@@ -646,23 +686,29 @@ struct IScalableMeshViewDependentMeshQueryParams abstract: virtual public IScala
         const double*       GetRootToViewMatrix() const;
 
         const ClipVectorPtr GetViewClipVector() const;
+
+        bool                IsProgressiveDisplay() const;
     
         
-        BENTLEYSTM_EXPORT void   SetViewBox(const DPoint3d viewBox[]);        
+        BENTLEYSTM_EXPORT void      SetViewBox(const DPoint3d viewBox[]);        
 
-        BENTLEYSTM_EXPORT void   SetMinScreenPixelsPerPoint(double minScreenPixelsPerPoint);
+        BENTLEYSTM_EXPORT void      SetMinScreenPixelsPerPoint(double minScreenPixelsPerPoint);
 
-        BENTLEYSTM_EXPORT void   SetRootToViewMatrix(const double rootToViewMatrix[][4]);    
+        BENTLEYSTM_EXPORT void      SetProgressiveDisplay(bool isProgressiveDisplay);
 
-        BENTLEYSTM_EXPORT void   SetUseSameResolutionWhenCameraIsOff(bool useSameResolution);        
+        BENTLEYSTM_EXPORT void      SetRootToViewMatrix(const double rootToViewMatrix[][4]);    
 
-        BENTLEYSTM_EXPORT void   SetUseSplitThresholdForLevelSelection(bool useSplitThreshold);        
+        BENTLEYSTM_EXPORT StatusInt SetStopQueryCallback(StopQueryCallbackFP stopQueryCallbackFP);
 
-        BENTLEYSTM_EXPORT void   SetUseSplitThresholdForTileSelection(bool useSplitThreshold);    
+        BENTLEYSTM_EXPORT void      SetUseSameResolutionWhenCameraIsOff(bool useSameResolution);        
 
-        BENTLEYSTM_EXPORT void   SetViewClipVector(ClipVectorPtr& viewClipVector);
+        BENTLEYSTM_EXPORT void      SetUseSplitThresholdForLevelSelection(bool useSplitThreshold);        
+
+        BENTLEYSTM_EXPORT void      SetUseSplitThresholdForTileSelection(bool useSplitThreshold);    
+
+        BENTLEYSTM_EXPORT void      SetViewClipVector(ClipVectorPtr& viewClipVector);
         
-        BENTLEYSTM_EXPORT static IScalableMeshViewDependentMeshQueryParamsPtr CreateParams();       
+        BENTLEYSTM_EXPORT static    IScalableMeshViewDependentMeshQueryParamsPtr CreateParams();       
     };
 
 
@@ -697,6 +743,7 @@ struct IScalableMeshMeshQuery abstract: RefCountedBase
         S_SUCCESS,
         S_ERROR,
         S_NBPTSEXCEEDMAX, 
+        S_SUCCESS_INCOMPLETE,
         S_QTY,
         };
         
@@ -749,6 +796,12 @@ struct IScalableMeshNodeRayQuery abstract : RefCountedBase
                            int                                           nbClipShapePts,
                            const IScalableMeshNodeQueryParamsPtr& scmQueryParamsPtr) const = 0;
 
+       virtual int _Query(bvector<IScalableMeshNodePtr>&                                nodesPtr,
+                            const DPoint3d*                               pTestPt,
+                            const DPoint3d*                               pClipShapePts,
+                            int                                           nbClipShapePts,
+                            const IScalableMeshNodeQueryParamsPtr& scmQueryParamsPtr) const = 0;
+        
 
         /*__PUBLISH_SECTION_START__*/
     public:
@@ -771,6 +824,12 @@ struct IScalableMeshNodeRayQuery abstract : RefCountedBase
                                     const DPoint3d*                              pClipShapePts,
                                     int                                          nbClipShapePts,
                                     const IScalableMeshNodeQueryParamsPtr& scmQueryParamsPtr) const;
+
+        BENTLEYSTM_EXPORT int Query(bvector<IScalableMeshNodePtr>&                                nodesPtr,
+                                     const DPoint3d*                              pTestPt,
+                                     const DPoint3d*                              pClipShapePts,
+                                     int                                          nbClipShapePts,
+                                     const IScalableMeshNodeQueryParamsPtr& scmQueryParamsPtr) const;
     };
 
 

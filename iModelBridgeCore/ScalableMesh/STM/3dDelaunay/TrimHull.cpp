@@ -1,5 +1,5 @@
 #include <ScalableMeshPCH.h>
-
+using namespace std;
 #include "tetGen\tetgen.h"
 #undef REAL
 #include <iomanip>
@@ -2852,6 +2852,7 @@ void TrimHull::FindAndMarkFlatEdges ()
 void TrimHull::FindTrianglesViaMatchTrimming (std::vector<edge>& edges, bool justEdges)
     {
     // now we have an edge.
+#if 0
     std::vector<std::map<long, long>> pointEdges (m_points.size ());
     std::vector<int[6]> edgesT (m_tetrahedrons.size ());
     std::vector<std::vector<std::pair<long, char>>> edgeTets (m_tetrahedrons.size () * 6);
@@ -2950,6 +2951,7 @@ void TrimHull::FindTrianglesViaMatchTrimming (std::vector<edge>& edges, bool jus
             }
         }
     m_fixedFaces.clear ();
+#endif
     }
 
 bool TestPoint (DPoint3dCR ptA, DPoint3dCR ptB)
@@ -4110,6 +4112,7 @@ int TrimHull::FixFacesAroundEdge (long i, std::vector<std::vector<std::pair<long
 
 void TrimHull::Method4 ()
     {
+#if 0
     std::vector<std::map<long, long>> pointEdges (m_points.size ());
     std::vector<int[6]> edges (m_tetrahedrons.size ());
     std::vector<std::vector<std::pair<long, char>>> edgeTets (m_tetrahedrons.size () * 6);
@@ -4168,6 +4171,7 @@ void TrimHull::Method4 ()
             edgesLeft += FixFacesAroundEdge (i, edgeTets, edgeList, edges);
             }
         }
+#endif
     }
 
 bool TrimHull::AddFixFaceWithEdges (int tn, int f)

@@ -2,12 +2,12 @@
 |
 |     $Source: STM/ImportPlugins/DGNLevelImporter.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
-                            
+#include "../ImagePPHeaders.h"                         
 #include <ScalableMesh\ScalableMeshLib.h>
 #include <ScalableMesh\ScalableMeshAdmin.h>
 #include <ScalableMesh\GeoCoords\DGNModelGeoref.h>
@@ -56,6 +56,18 @@ struct ElementStats
         {
         }
     };
+
+
+struct DTMFeaturesStruct
+{
+    DTMFeatureType m_featureType;
+    IDTMFeatureArray<DPoint3d>& m_featureArray;
+
+    explicit DTMFeaturesStruct(DTMFeatureType& featureType, IDTMFeatureArray<DPoint3d>& featureArray)
+        : m_featureArray(featureArray),
+        m_featureType(featureType)
+    {}
+};
 
 struct RefHolder
     {
@@ -206,13 +218,14 @@ int ScanPointsCallback(ElementRefP elmRef, void* userArgP, ScanCriteria* scanCri
 +---------------+---------------+---------------+---------------+---------------+------*/
 int ScanFeaturesCallback(ElementRefP elmRef, void* userArgP, ScanCriteria* scanCritP)
     {
-    IDTMFeatureArray<DPoint3d>& featureArray = *((IDTMFeatureArray<DPoint3d>*)userArgP);
+        DTMFeaturesStruct featuresStruct = *(DTMFeaturesStruct*)userArgP;
 
     EditElementHandle handle(elmRef, scanCritP->GetModelRef());
     MSElementDescrP edP = handle.GetElementDescrP();
 
-    // Extract element type and import features
-    return ElementLinearExtractor::GetFor(edP).Scan(edP, featureArray);
+
+
+    return ElementLinearExtractor::GetFor(edP).Scan(edP, featuresStruct.m_featureArray, featuresStruct.m_featureType);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -726,12 +739,13 @@ private:
     PODPacketProxy<DPoint3d>                m_pointPacket;
     IDTMFeatureArray<DPoint3d>              m_featureArray;
 
+    DTMFeatureType                          m_linearFeatureType;
 
     /*---------------------------------------------------------------------------------**//**
     * @description
     * @bsimethod                                                  Raymond.Gauthier   03/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
-    explicit                        DGNLevelLinearExtractor        (DGNLevelSource& dgnLevel)
+    explicit                        DGNLevelLinearExtractor        (DGNLevelSource& dgnLevel, const DTMFeatureType linearType = DTMFeatureType::Breakline)
         :   m_dgnLevel(dgnLevel),
             m_hasNext(dgnLevel.GetStats().m_linear.HasAny()),
             m_elementIt(dgnLevel.GetDGNModelRefP(), dgnLevel.GetLevelID())
@@ -741,6 +755,8 @@ private:
         m_elementIt.AddSingleElementTypeTest(CMPLX_STRING_ELM);
         m_elementIt.AddSingleElementTypeTest(SHAPE_ELM);
         m_elementIt.AddSingleElementTypeTest(CMPLX_SHAPE_ELM);
+
+        m_linearFeatureType = linearType;
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -769,7 +785,9 @@ private:
 
         m_featureArray.Clear();
 
-        m_hasNext = (BUFF_FULL == m_elementIt.Scan(ScanFeaturesCallback, &m_featureArray));
+        DTMFeaturesStruct featureStruct(m_linearFeatureType, m_featureArray);
+
+        m_hasNext = (BUFF_FULL == m_elementIt.Scan(ScanFeaturesCallback, &featureStruct));
 
         m_headerPacket.SetSize(m_featureArray.GetHeaders().GetSize());
         m_pointPacket.SetSize(m_featureArray.GetPoints().GetSize());
@@ -820,7 +838,9 @@ class DGNLevelLinearExtractorCreator : public InputExtractorCreatorMixinBase<DGN
                                                                                     const ExtractionConfig&         config,
                                                                                     Log&                            log) const override
         {
-        return new DGNLevelLinearExtractor(sourceBase);
+            SourceImportConfig* sourceImportConf = source.GetSourceImportConfigC();
+            ScalableMeshData data = sourceImportConf->GetReplacementSMData();
+        return new DGNLevelLinearExtractor(sourceBase, data.GetLinearFeatureType());
         }
     };
 

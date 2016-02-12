@@ -6,7 +6,7 @@
 |       $Date: 2011/10/26 17:55:44 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -40,14 +40,10 @@ enum ScalableMeshCompressionType
 
 enum ScalableMeshFilterType
     {
-    SCM_FILTER_DUMB = 0,
-    SCM_FILTER_TILE,
-    SCM_FILTER_TIN,
-    SCM_FILTER_PROGRESSIVE_DUMB,
-    SCM_FILTER_PROGRESSIVE_TILE,
-    SCM_FILTER_PROGRESSIVE_TIN,
-    SCM_FILTER_DUMB_MESH = 6,    
-    SCM_FILTER_GARLAND_SIMPLIFIER = 7, 
+    SCM_FILTER_DUMB = 0,    
+    SCM_FILTER_PROGRESSIVE_DUMB = 1,    
+    SCM_FILTER_DUMB_MESH = 2,        
+    SCM_FILTER_CGAL_SIMPLIFIER = 3,
     SCM_FILTER_QTY,
     };
 
@@ -68,23 +64,16 @@ enum ScalableMeshSaveType
     SCM_SAVE_QTY,
     };
 
-enum DTMQueryType
+//NEEDS_WORK_MST : Must be renamed SCMQueryType
+enum ScalableMeshQueryType
     {
-    DTM_QUERY_FULL_RESOLUTION = 0,      //Query the highest resolution data.
-    DTM_QUERY_VIEW_DEPENDENT,                                           
-    DTM_QUERY_FIX_RESOLUTION_VIEW,  //Return query which can be used to obtain view of a particular ScalableMesh's resolution. 
-    DTM_QUERY_EXTENTS_BY_PARTS, // For tiled triangulation
-    DTM_QUERY_ALL_POINTS_IN_EXTENT,
-    DTM_QUERY_ALL_LINEARS_IN_EXTENT,
-    DTM_QUERY_QTY
-    };
-
-//MST : Maybe query and data type should be combined eventually
-enum DTMQueryDataType
-    {
-    DTM_QUERY_DATA_POINT = 0, 
-    DTM_QUERY_DATA_LINEAR, 
-    DTM_QUERY_DATA_QTY
+    SCM_QUERY_FULL_RESOLUTION = 0,      //Query the highest resolution data.
+    SCM_QUERY_VIEW_DEPENDENT,                                           
+    SCM_QUERY_FIX_RESOLUTION_VIEW,  //Return query which can be used to obtain view of a particular ScalableMesh's resolution. 
+    SCM_QUERY_EXTENTS_BY_PARTS, // For tiled triangulation
+    SCM_QUERY_ALL_POINTS_IN_EXTENT,
+    SCM_QUERY_ALL_LINEARS_IN_EXTENT,
+    SCM_QUERY_QTY
     };
 
 enum MeshQueryType
@@ -103,6 +92,8 @@ enum DTMSourceDataType
     DTM_SOURCE_DATA_BREAKLINE,
     DTM_SOURCE_DATA_CLIP,
     DTM_SOURCE_DATA_MASK,    
+    DTM_SOURCE_DATA_HARD_MASK,
+    DTM_SOURCE_DATA_IMAGE,
     DTM_SOURCE_DATA_QTY
     };
 

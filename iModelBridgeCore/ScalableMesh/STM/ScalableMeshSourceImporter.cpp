@@ -6,12 +6,12 @@
 |       $Date: 2012/01/27 16:45:29 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
-
+#include "ImagePPHeaders.h"
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 #include "ScalableMeshCreator.h"
@@ -700,9 +700,9 @@ StatusInt IScalableMeshSourceImporter::Impl::LoadGCS (IScalableMeshSourceImporte
     {    
     WString wktStr;
 
-    StatusInt status = sourceImporterStoragePtr->ReadGcs(wktStr);
+    /*StatusInt status =*/ sourceImporterStoragePtr->ReadGcs(wktStr);
 
-    assert(status == SUCCESS);   
+    //assert(status == SUCCESS);   
 
     if (wktStr.size() == 0)
         {

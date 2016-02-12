@@ -6,13 +6,13 @@
 |       $Date: 2015/04/07 12:15:00 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 
 #include <ScalableMeshPCH.h>
-
+#include "../ImagePPHeaders.h"
 
 #include <ScalableMesh/Import/Plugin/InputExtractorV0.h>
 #include <ScalableMesh/Import/Plugin/SourceV0.h>
@@ -138,12 +138,14 @@ private:
             int                                     m_currentGeomChildID;
             int                                     m_defaultPtCount;
             WString                                 m_elevationProperty;
+            DTMFeatureType                          m_linearFeatureType;
+            DTMFeatureType                          m_polygonFeatureType;
 
             /*---------------------------------------------------------------------------------**//**
             * @description
             * @bsimethod                                                  Elenie.Godzaridis   04/2015
             +---------------+---------------+---------------+---------------+---------------+------*/
-            explicit                        GDALLinearExtractor(GDALSource& gdalFile)
+            explicit                        GDALLinearExtractor(GDALSource& gdalFile, const WString propName, const DTMFeatureType linearType = DTMFeatureType::Breakline, const DTMFeatureType polygonType = DTMFeatureType::Breakline)
                 {
                 m_ogrSource = gdalFile.GetDataSource();
                 m_currentLayerID = 0;
@@ -154,14 +156,12 @@ private:
                 m_currentGeomID = 0;
                 m_currentGeomChildID = 0;
                 m_defaultPtCount = gdalFile.GetPointCount();
-                for (auto iter = gdalFile.GetDescriptor().LayersBegin(); iter != gdalFile.GetDescriptor().LayersEnd(); ++iter)
+                if (!propName.empty())
                     {
-                    if (!iter->GetScalableMeshData().ElevationPropertyName().empty())
-                        {
-                        m_elevationProperty = iter->GetScalableMeshData().ElevationPropertyName();
-                        break;
-                        }
+                    m_elevationProperty = propName;
                     }
+                m_polygonFeatureType = polygonType;
+                m_linearFeatureType = linearType;
                 }
 
             /*---------------------------------------------------------------------------------**//**
@@ -265,7 +265,7 @@ private:
                                 {
                                 OGRGeometryH element = OGR_G_GetGeometryRef(singleGeom, (int)j);
                                 _GrowFeatureArray(OGR_G_GetPointCount(element));
-                                DTMFeatureType feaType = type == wkbPoint25D ? DTMFeatureType::FeatureSpot : DTMFeatureType::Breakline;
+                                DTMFeatureType feaType = m_polygonFeatureType;//type == wkbPoint25D ? DTMFeatureType::FeatureSpot : DTMFeatureType::Breakline;
                                 if (!_AddNewFeature((unsigned int)feaType, element))
                                     {
                                     m_currentGeomRef = feature;
@@ -279,7 +279,7 @@ private:
                         else
                             {
                             _GrowFeatureArray(OGR_G_GetPointCount(singleGeom));
-                            DTMFeatureType feaType = type == wkbPoint25D ? DTMFeatureType::FeatureSpot : DTMFeatureType::Breakline;
+                            DTMFeatureType feaType = m_polygonFeatureType;//type == wkbPoint25D ? DTMFeatureType::FeatureSpot : DTMFeatureType::Breakline;
                             if (!_AddNewFeature((unsigned int)feaType, singleGeom))
                                 {
                                 m_currentGeomRef = feature;
@@ -293,7 +293,7 @@ private:
                 else
                     {
                     _GrowFeatureArray(OGR_G_GetPointCount(feature));
-                    DTMFeatureType feaType = type == wkbPoint25D ? DTMFeatureType::FeatureSpot : DTMFeatureType::Breakline;
+                    DTMFeatureType feaType = type == wkbPoint25D ? DTMFeatureType::FeatureSpot : m_linearFeatureType;//DTMFeatureType::Breakline;
                     if (!_AddNewFeature((unsigned int)feaType, feature))
                         {
                         m_currentGeomRef = feature;
@@ -331,7 +331,8 @@ private:
                 bool bufferExceeded = false;
                 while (!bufferExceeded && m_currentFeature != NULL && m_currentLayer != NULL)
                     {
-                    if (OGR_G_GetGeometryType(geomRef) == wkbPoint25D || OGR_G_GetGeometryType(geomRef) == wkbLineString25D || OGR_G_GetGeometryType(geomRef) == wkbPolygon25D || OGR_G_GetGeometryType(geomRef) == wkbMultiLineString25D || OGR_G_GetGeometryType(geomRef) == wkbMultiPolygon25D || OGR_G_GetGeometryType(geomRef) == wkbGeometryCollection25D)
+                    if (OGR_G_GetGeometryType(geomRef) == wkbPoint25D || OGR_G_GetGeometryType(geomRef) == wkbLineString25D || OGR_G_GetGeometryType(geomRef) == wkbPolygon25D || OGR_G_GetGeometryType(geomRef) == wkbMultiLineString25D || OGR_G_GetGeometryType(geomRef) == wkbMultiPolygon25D || OGR_G_GetGeometryType(geomRef) == wkbGeometryCollection25D ||
+                        OGR_G_GetGeometryType(geomRef) == wkbLineString || OGR_G_GetGeometryType(geomRef) == wkbPolygon || OGR_G_GetGeometryType(geomRef) == wkbMultiLineString || OGR_G_GetGeometryType(geomRef) == wkbMultiPolygon || OGR_G_GetGeometryType(geomRef) == wkbGeometryCollection)
                         {
                         bufferExceeded = !_TryAddFeature(geomRef);
                         }
@@ -441,7 +442,9 @@ class GDALLinearExtractorCreator : public InputExtractorCreatorMixinBase<GDALSou
                                                                                     const ExtractionConfig&         config,
                                                                                     Log&                            log) const override
         {
-        return new GDALLinearExtractor(sourceBase);
+        SourceImportConfig* sourceImportConf = source.GetSourceImportConfigC();
+        ScalableMeshData data = sourceImportConf->GetReplacementSMData();
+        return new GDALLinearExtractor(sourceBase, data.ElevationPropertyName(), data.GetLinearFeatureType(), data.GetPolygonFeatureType());
         }
     };
 

@@ -6,11 +6,11 @@
 |       $Date: 2011/08/10 15:10:23 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
-
+#include "../ImagePPHeaders.h"
 #include <ScalableMesh/Type/IScalableMeshMesh.h>
 #include <ScalableMesh/Import/Plugin/DataTypeRegistry.h>
 
@@ -95,7 +95,7 @@ const WChar MESH_AS_LINEAR_HEADER_TYPE_NAME[] = L"MeshAsLinearHeader";
 Bentley::ScalableMesh::Import::DimensionType::Register s_RegisterMeshAsLinearHeaderType(MESH_AS_LINEAR_HEADER_TYPE_NAME, sizeof(IDTMFile::FeatureHeader));
 
 const WChar MESH_AS_LINEAR_POINT_TYPE_NAME[] = L"MeshAsLinearPoint";
-Bentley::ScalableMesh::Import::DimensionType::Register s_RegisterMeshAsLinearPointType(MESH_AS_LINEAR_POINT_TYPE_NAME, sizeof(IDTMFile::Point3d64f));
+Bentley::ScalableMesh::Import::DimensionType::Register s_RegisterMeshAsLinearPointType(MESH_AS_LINEAR_POINT_TYPE_NAME, sizeof(DPoint3d));
 
 }
 

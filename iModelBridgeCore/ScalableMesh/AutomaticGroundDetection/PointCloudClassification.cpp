@@ -2,11 +2,11 @@
 |
 |     $Source: AutomaticGroundDetection/PointCloudClassification.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ScalableMeshPCH.h" //always first
-
+#include "../STM/ImagePPHeaders.h"
 #include "PointCloudClassification.h"
 //#include "PointCloudEditChannelUndoRedoManager.h"
 //#include "PointCloudEditRasterColoringTool.h"

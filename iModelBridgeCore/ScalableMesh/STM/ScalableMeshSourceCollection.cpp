@@ -6,12 +6,12 @@
 |       $Date: 2011/10/26 17:55:30 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
-
+#include "ImagePPHeaders.h"
 #include <ScalableMesh/GeoCoords/Definitions.h>
 #include <ScalableMesh/Import/ScalableMeshData.h>
 #include "ScalableMeshSources.h"

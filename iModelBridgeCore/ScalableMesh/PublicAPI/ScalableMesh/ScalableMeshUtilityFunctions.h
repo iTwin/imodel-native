@@ -6,7 +6,7 @@
 |       $Date: 2013/03/27 15:53:36 $
 |     $Author: Jean-Francois.Cote $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -122,15 +122,6 @@ BENTLEYSTM_EXPORT bool AddExtentAndTestMatch(bool&           shouldAddMatchedCac
                                        bool            reset,                                        
                                        const DRange2d& extentToCover,
                                        const DRange2d& matchedCachedTileExtent);
-
-
-
-typedef int (*checkTriangulationStopCallbackFP)(DTMFeatureType dtmFeatureType);
-
-checkTriangulationStopCallbackFP GetTriangulationTerminationCallback();
-
-BENTLEYSTM_EXPORT bool SetTriangulationTerminationCallback(checkTriangulationStopCallbackFP callbackFP);
-
 
 class DTMLinearFeature;
 

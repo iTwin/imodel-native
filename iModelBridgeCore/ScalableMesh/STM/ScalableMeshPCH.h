@@ -6,7 +6,7 @@
 |       $Date: 2012/07/25 14:13:37 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -18,7 +18,6 @@
 #include <mutex> 
 #include <excpt.h> 
 
-using namespace std;
 
 #include <Bentley/Bentley.h>
 #include <Bentley\BeStringUtilities.h>
@@ -62,6 +61,7 @@ USING_NAMESPACE_BENTLEY_POINTCLOUD
 /*----------------------------------------------------------------------+
 | Include ImagePP headers
 +----------------------------------------------------------------------*/
+/*#include <ImagePP/h/ExportMacros.h>
 #include <ImagePP/h/ImageppAPI.h>
 #include <ImagePP/h/HStlStuff.h>
 #include <ImagePP/h/HTraits.h>
@@ -85,7 +85,8 @@ USING_NAMESPACE_BENTLEY_POINTCLOUD
 #include <ImagePP/all/h/HFCException.h>
 
 #ifdef SCALABLE_MESH_DGN
-#include <ImagePP/all/h/DgnTileStore.h>
+//#include <ImagePP/all/h/DgnTileStore.h>
+//#include "DgnTileStore.h"
 #endif
 #include <ImagePP/all/h/HGF2DTemplateExtent.h>
 #include <ImagePP/all/h/HGF3DCoord.h>
@@ -108,6 +109,8 @@ USING_NAMESPACE_BENTLEY_POINTCLOUD
 #include <RasterCore\RasterDEMFilters.h>
 #include <RasterCore\msrastercore.h>
 #include "SMPointTileStore.h"
+
+#include "SMStreamingTileStore.h"*/
 /*----------------------------------------------------------------------+
 | Include TerrainModel general header files                             |
 +----------------------------------------------------------------------*/

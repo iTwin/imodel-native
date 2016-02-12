@@ -39,13 +39,17 @@ public:
     IMPORT_DLLE                                 ~ScalableMeshData               ();
 
     IMPORT_DLLE static const ScalableMeshData&  GetNull                         ();
+#ifdef SCALABLE_MESH_DGN
+    //IMPORT_DLLE                                 ScalableMeshData(SourceDataSQLite& sourceData);
+#else
     IMPORT_DLLE                                 ScalableMeshData                (BinaryIStream& stream);
+#endif
     IMPORT_DLLE                                 ScalableMeshData                (const ScalableMeshData&    rhs);
     IMPORT_DLLE ScalableMeshData&               operator=                       (const ScalableMeshData&    rhs);
 
-    IMPORT_DLLE vector<DRange3d>&               GetExtent                       ();
+    IMPORT_DLLE std::vector<DRange3d>&               GetExtent                       ();
     IMPORT_DLLE DRange3d&                       GetExtentByLayer                (int id);
-    IMPORT_DLLE void                            SetExtents                      (vector<DRange3d>& extent);
+    IMPORT_DLLE void                            SetExtents                      (std::vector<DRange3d>& extent);
     IMPORT_DLLE void                            SetExtent                       (int id, DRange3d& extent);
     IMPORT_DLLE void                            AddExtent                       (DRange3d& extent);
     IMPORT_DLLE size_t                          GetLayerCount                   ();
@@ -63,8 +67,10 @@ public:
 
     IMPORT_DLLE __int64                         GetMaximumNbPoints() const;
     IMPORT_DLLE void                            SetMaximumNbPoints(__int64 maximumNbPoints);
-   
+#ifdef SCALABLE_MESH_DGN
+#else
     IMPORT_DLLE void                            Serialize                       (BinaryOStream& stream) const;
+#endif
 
     IMPORT_DLLE std::vector<DRange3d>           GetVectorRangeAdd();
     IMPORT_DLLE void                            ClearVectorRangeAdd();
@@ -78,6 +84,15 @@ public:
 
     IMPORT_DLLE WString                         ElevationPropertyName() const;
     IMPORT_DLLE void                            SetElevationPropertyName(WString& name);
+
+    IMPORT_DLLE DTMFeatureType                  GetLinearFeatureType() const;
+    IMPORT_DLLE void                            SetLinearFeatureType(DTMFeatureType type);
+
+    IMPORT_DLLE DTMFeatureType                  GetPolygonFeatureType() const;
+    IMPORT_DLLE void                            SetPolygonFeatureType(DTMFeatureType type);
+
+    IMPORT_DLLE bool                            IsGridData() const;
+    IMPORT_DLLE void                            SetIsGridData(bool isGridData);
 
 };
 

@@ -6,12 +6,12 @@
 |       $Date: 2012/01/06 16:30:15 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
   
 #include <ScalableMeshPCH.h>
-
+#include "ImagePPHeaders.h"
 extern bool   GET_HIGHEST_RES;
 
 /*------------------------------------------------------------------+
@@ -20,6 +20,7 @@ extern bool   GET_HIGHEST_RES;
 #include "InternalUtilityFunctions.h"
 #include "ScalableMesh.h"
 #include "DTMGraphTileStore.h"
+#include "SMTextureTileStore.h"
 #include "ScalableMeshQuadTreeBCLIBFilters.h"
 #include "ScalableMeshQuadTreeQueries.h"
 
@@ -38,10 +39,23 @@ extern bool   GET_HIGHEST_RES;
 #include "ScalableMeshDraping.h"
 #include "ScalableMeshVolume.h"
 
-#ifdef SCALABLE_MESH_DGN
+#include "Edits\DiffSetTileStore.h"
+#include "SMSQLiteDiffsetTileStore.h"
+#include "Edits\ClipRegistry.h"
+#include "SMSQLitePointTileStore.h"
+#include "SMSQLiteGraphTileStore.h"
+#include "SMSQLiteIndiceTileStore.h"
+#include "SMSQLiteUVStore.h"
+#include "SMSQLiteUVIndiceTileStore.h"
+#include "SMSQLiteTextureTileStore.h"
+#include "CGALEdgeCollapse.h"
+/*#ifdef SCALABLE_MESH_DGN
 #include <DgnPlatform\Tools\ConfigurationManager.h>
-#endif
+#endif*/
 
+
+ScalableMeshScheduler* s_clipScheduler = nullptr;
+std::mutex s_schedulerLock;
 /*
 #include <msoutput.fdf>
 #include <mstypes.h>
@@ -82,12 +96,16 @@ using namespace IDTMFile;
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_GEOCOORDINATES
-#ifdef SCALABLE_MESH_DGN
+/*#ifdef SCALABLE_MESH_DGN
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
+#endif*/
+
+BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
+#ifdef SM_BESQL_FORMAT
+bool s_useSQLFormat = true;
+#else
+bool s_useSQLFormat = false;
 #endif
-
-BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE 
-
 #define USE_CODE_FOR_ERROR_DETECTION
 
 
@@ -117,6 +135,16 @@ const size_t DEFAULT_WORKING_LAYER = 0;
 /*----------------------------------------------------------------------------+
 |IScalableMesh Method Definition Section - Begin
 +----------------------------------------------------------------------------*/
+_int64 IScalableMesh::GetPointCount()
+    {
+    return _GetPointCount();
+    }
+
+DTMStatusInt IScalableMesh::GetRange(DRange3dR range)
+    {
+    return _GetRange(range);
+    }
+
 int IScalableMesh::GenerateSubResolutions()
     {
     return _GenerateSubResolutions();
@@ -132,23 +160,21 @@ ScalableMeshCompressionType IScalableMesh::GetCompressionType() const
     return _GetCompressionType();
     }
 
-int IScalableMesh::GetNbResolutions(DTMQueryDataType queryDataType) const
+int IScalableMesh::GetNbResolutions() const
     {
-    return _GetNbResolutions(queryDataType);
+    return _GetNbResolutions();
     }
 
-IScalableMeshQueryPtr IScalableMesh::GetQueryInterface(DTMQueryType     queryType, 
-                                         DTMQueryDataType queryDataType) const
+IScalableMeshPointQueryPtr IScalableMesh::GetQueryInterface(ScalableMeshQueryType queryType) const
     {
-    return _GetQueryInterface(queryType, queryDataType);
+    return _GetQueryInterface(queryType);
     }
 
-IScalableMeshQueryPtr IScalableMesh::GetQueryInterface(DTMQueryType                         queryType, 
-                                         DTMQueryDataType                     queryDataType, 
-                                         Bentley::GeoCoordinates::BaseGCSPtr& targetGCS,
-                                         const DRange3d& extentInTargetGCS) const
+IScalableMeshPointQueryPtr IScalableMesh::GetQueryInterface(ScalableMeshQueryType                         queryType,                                          
+                                                            Bentley::GeoCoordinates::BaseGCSPtr& targetGCS,
+                                                            const DRange3d& extentInTargetGCS) const
     {
-    return _GetQueryInterface(queryType, queryDataType, targetGCS, extentInTargetGCS);
+    return _GetQueryInterface(queryType, targetGCS, extentInTargetGCS);
     }
 
 IScalableMeshMeshQueryPtr IScalableMesh::GetMeshQueryInterface(MeshQueryType queryType) const
@@ -171,6 +197,11 @@ IScalableMeshNodeRayQueryPtr IScalableMesh::GetNodeQueryInterface() const
 IDTMVolume* IScalableMesh::GetDTMVolume()
     {
     return _GetDTMVolume();
+    }
+
+Bentley::TerrainModel::IDTM* IScalableMesh::GetDTMInterface()
+    {
+    return _GetDTMInterface();
     }
 
 const BaseGCSPtr& IScalableMesh::GetBaseGCS() const 
@@ -239,6 +270,12 @@ int IScalableMesh::GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, Bent
     return _GetRangeInSpecificGCS(lowPt, highPt, targetGCS);
     }
 
+
+uint64_t IScalableMesh::AddClip(const DPoint3d* pts, size_t ptsSize)
+    {
+    return _AddClip(pts, ptsSize);
+    }
+
 #ifdef SCALABLE_MESH_ATP
 int IScalableMesh::LoadAllNodeHeaders(size_t& nbLoadedNodes) const
     {
@@ -284,6 +321,34 @@ AccessMode GetAccessModeFor(bool                    openReadOnly,
 /*----------------------------------------------------------------------------+
 |IScalableMesh::GetFor
 +----------------------------------------------------------------------------*/
+#ifdef SCALABLE_MESH_DGN
+IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
+    bool                    openReadOnly,
+    bool                    openShareable,
+    StatusInt&              status)
+{
+    status = BSISUCCESS;
+
+    if(0 != _waccess(filePath, 04))
+    {
+        status = BSISUCCESS;
+        return 0; // File not found
+    }
+
+    StatusInt openStatus;
+    SMSQLiteFilePtr smSQLiteFile(SMSQLiteFile::Open(filePath, openReadOnly, openStatus));
+    if(smSQLiteFile == nullptr)
+    {
+        if (openStatus == DTMFILE_UNSUPPORTED_VERSION)
+            status = DTMFILE_UNSUPPORTED_VERSION;
+        else
+            status = BSIERROR;
+
+        return 0; // Error opening file
+    }
+    return ScalableMesh<DPoint3d>::Open(smSQLiteFile, filePath, status);
+}
+#else
 IScalableMeshPtr IScalableMesh::GetFor   (const WChar*          filePath,
                             bool                    openReadOnly,
                             bool                    openShareable,
@@ -324,7 +389,7 @@ IScalableMeshPtr IScalableMesh::GetFor   (const WChar*          filePath,
         {
         //MST For now returns success until a layer is create which contains the 
         //    data source information.
-        return ScalableMesh<IDTMFile::Point3d64f>::Open(iDTMFilePtr, filePath, status);
+        return ScalableMesh<DPoint3d>::Open(iDTMFilePtr, filePath, status);
         }
 
     const IDTMFile::LayerDir* layerDir = iDTMFilePtr->GetRootDir()->GetLayerDir (workingLayer);
@@ -334,15 +399,15 @@ IScalableMeshPtr IScalableMesh::GetFor   (const WChar*          filePath,
         return 0; // Error accessing working layer
         }
 
-    if (!layerDir->HasUniformFeatureDir(SMPointTaggedTileStore<IDTMFile::Point3d64f, YProtPtExtentType>::MASS_POINT_FEATURE_TYPE))
+    if (!layerDir->HasUniformFeatureDir(SMPointTaggedTileStore<DPoint3d, YProtPtExtentType>::MASS_POINT_FEATURE_TYPE))
         {
         //MST : The point type might be incorrect depending on the filtering chosen. 
         //      The point type should probably be stored in the layer.
-        return ScalableMesh<IDTMFile::Point3d64f>::Open(iDTMFilePtr, filePath, status);
+        return ScalableMesh<DPoint3d>::Open(iDTMFilePtr, filePath, status);
         }
 
     const IDTMFile::UniformFeatureDir* featureDir = 
-        layerDir->GetUniformFeatureDir(SMPointTaggedTileStore<IDTMFile::Point3d64f, YProtPtExtentType>::MASS_POINT_FEATURE_TYPE);
+        layerDir->GetUniformFeatureDir(SMPointTaggedTileStore<DPoint3d, YProtPtExtentType>::MASS_POINT_FEATURE_TYPE);
 
     if (0 == featureDir)
         {
@@ -355,11 +420,8 @@ IScalableMeshPtr IScalableMesh::GetFor   (const WChar*          filePath,
     const IDTMFile::PointTypeID ptType = featureDir->GetPointType();
     switch(ptType)
         {
-        case IDTMFile::POINT_TYPE_XYZf64 :                   
-            iScmPtr = ScalableMesh<IDTMFile::Point3d64f>::Open(iDTMFilePtr, filePath, status);
-            break;
-        case IDTMFile::POINT_TYPE_XYZMf64 :            
-            iScmPtr = ScalableMesh<IDTMFile::Point3d64fM64f>::Open(iDTMFilePtr, filePath, status);
+        case IDTMFile::POINT_TYPE_POINT3D :                   
+            iScmPtr = ScalableMesh<DPoint3d>::Open(iDTMFilePtr, filePath, status);
             break;
         default : 
             status = BSIERROR;
@@ -369,6 +431,7 @@ IScalableMeshPtr IScalableMesh::GetFor   (const WChar*          filePath,
                      
     return iScmPtr;   
     }
+#endif
 
 
 /*----------------------------------------------------------------------------+
@@ -392,19 +455,32 @@ Count IScalableMesh::GetCountInRange (const DRange2d& range, const CountType& ty
     }
 
 #ifdef SCALABLE_MESH_DGN
-static bool DgnDbFilename(Bentley::WString& stmFilename)
+/*static bool DgnDbFilename(Bentley::WString& stmFilename)
     {
     Bentley::WString dgndbFilename;
     //stmFilename
     size_t size = stmFilename.ReplaceAll(L".stm", L".dgndb");
     assert(size==1);
     return true;
-    }
+    }*/
 #endif
 
 /*----------------------------------------------------------------------------+
 |ScalableMeshBase::ScalableMeshBase
 +----------------------------------------------------------------------------*/
+#ifdef SCALABLE_MESH_DGN
+ScalableMeshBase::ScalableMeshBase(SMSQLiteFilePtr& smSQliteFile,
+    const WString&             filePath)
+    : m_workingLayer(DEFAULT_WORKING_LAYER),
+    m_sourceGCS(GetDefaultGCS()),
+    m_path(filePath),
+    m_smSQLitePtr(smSQliteFile)
+{
+    memset(&m_contentExtent, 0, sizeof(m_contentExtent));
+
+    HPRECONDITION(smSQliteFile != 0);
+}
+#else
 ScalableMeshBase::ScalableMeshBase   (IDTMFile::File::Ptr&            filePtr, 
                         const WString&             filePath)
     :   m_iDTMFilePtr(filePtr),
@@ -416,6 +492,7 @@ ScalableMeshBase::ScalableMeshBase   (IDTMFile::File::Ptr&            filePtr,
 
     HPRECONDITION(filePtr != 0);
     }
+#endif
 
 /*----------------------------------------------------------------------------+
 |ScalableMeshBase::~ScalableMeshBase
@@ -427,10 +504,17 @@ ScalableMeshBase::~ScalableMeshBase ()
 /*----------------------------------------------------------------------------+
 |ScalableMeshBase::GetIDTMFile
 +----------------------------------------------------------------------------*/
+#ifdef SCALABLE_MESH_DGN
+const SMSQLiteFilePtr& ScalableMeshBase::GetDbFile() const
+{
+    return m_smSQLitePtr;
+}
+#else
 const IDTMFile::File::Ptr& ScalableMeshBase::GetIDTMFile () const
     {
     return m_iDTMFilePtr;
     }
+#endif
 
 /*----------------------------------------------------------------------------+
 |ScalableMeshBase::GetPath
@@ -443,6 +527,32 @@ const WChar* ScalableMeshBase::GetPath () const
 /*----------------------------------------------------------------------------+
 |ScalableMeshBase::LoadGCSFrom
 +----------------------------------------------------------------------------*/
+#ifdef SCALABLE_MESH_DGN
+bool ScalableMeshBase::LoadGCSFrom()
+{
+    WString wktStr;
+    if (m_smSQLitePtr->GetWkt(wktStr)) // if true, ScalableMesh has not Wkt
+        return true;
+
+    IDTMFile::WktFlavor fileWktFlavor = GetWKTFlavor(&wktStr, wktStr);
+    BaseGCS::WktFlavor  wktFlavor;
+
+    bool result = MapWktFlavorEnum(wktFlavor, fileWktFlavor);
+
+    assert(result);
+
+    GCSFactory::Status gcsCreateStatus;
+    GCS gcs(GetGCSFactory().Create(wktStr.c_str(), wktFlavor, gcsCreateStatus));
+
+    if (GCSFactory::S_SUCCESS != gcsCreateStatus)
+        return false;
+
+    using std::swap;
+    swap(m_sourceGCS, gcs);
+
+    return true;
+}
+#else
 bool ScalableMeshBase::LoadGCSFrom (const IDTMFile::LayerDir& layerDir)
     {
     if (!layerDir.HasWkt())
@@ -472,36 +582,28 @@ bool ScalableMeshBase::LoadGCSFrom (const IDTMFile::LayerDir& layerDir)
 
     return true;
     }
+#endif
 
 /*----------------------------------------------------------------------------+
 |ScalableMesh::ScalableMesh
 +----------------------------------------------------------------------------*/
+#ifdef SCALABLE_MESH_DGN
+template <class POINT> ScalableMesh<POINT>::ScalableMesh(SMSQLiteFilePtr& smSQLiteFile, const WString& path)
+    : ScalableMeshBase(smSQLiteFile, path),
+    m_areDataCompressed(false),
+    m_computeTileBoundary(false),
+    m_minScreenPixelsPerPoint(MEAN_SCREEN_PIXELS_PER_POINT)
+    { 
+    }
+#else
 template <class POINT> ScalableMesh<POINT>::ScalableMesh(IDTMFile::File::Ptr& iDTMFilePtr, const WString& path)
     :   ScalableMeshBase(iDTMFilePtr, path),
         m_areDataCompressed(false),
         m_computeTileBoundary(false),
         m_minScreenPixelsPerPoint(MEAN_SCREEN_PIXELS_PER_POINT)
     {
-#ifdef SCALABLE_MESH_DGN
-    // Test if dgndb exist
-    Bentley::WString filename = m_path;
-    DgnDbFilename(filename);    
-    
-    {
-    std::wifstream infile(filename.c_str());
-    
-    m_isDgnDB = infile.good();
-    }    
-    if(m_isDgnDB)
-        {
-        // NEEDS_WORK_SM : check if in open we load the right mode : BLOB or Table
-        bool status = IDgnDbScalableMesh::Initialize(m_dgnScalableMeshPtr, false);
-        if(!status)
-            throw;
-        m_dgnScalableMeshPtr->Open(filename.GetWCharCP());
-        }
-#endif
     }
+#endif
 
 /*----------------------------------------------------------------------------+
 |ScalableMesh::~ScalableMesh
@@ -582,7 +684,7 @@ template <class POINT> Count ScalableMesh<POINT>::_GetCountInRange (const DRange
         case COUNTTYPE_POINTS:
         case COUNTTYPE_BOTH:
             {
-            HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>> nodePtr = m_scmPointIndexPtr->GetRootNode();
+            HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>> nodePtr = m_scmIndexPtr->GetRootNode();
             YProtPtExtentType pointExtent;
             ExtentOp<YProtPtExtentType>::SetXMax(pointExtent, range.high.x);
             ExtentOp<YProtPtExtentType>::SetXMin(pointExtent, range.low.x);
@@ -610,6 +712,19 @@ template <class POINT> Count ScalableMesh<POINT>::_GetCountInRange (const DRange
 /*----------------------------------------------------------------------------+
 |ScalableMesh::Open
 +----------------------------------------------------------------------------*/
+#ifdef SCALABLE_MESH_DGN
+template <class POINT>
+IScalableMeshPtr ScalableMesh<POINT>::Open(SMSQLiteFilePtr& smSQLiteFile,
+                                    const WString&     filePath,
+                                    StatusInt&              status)
+{
+     ScalableMesh<POINT>* scmPtr = new ScalableMesh<POINT>(smSQLiteFile, filePath);
+    IScalableMeshPtr scmP(scmPtr);
+
+    status = scmPtr->Open();
+    return (BSISUCCESS == status ? scmP : 0);
+}
+#else
 template <class POINT>
 ScalableMesh<POINT>* ScalableMesh<POINT>::Open   (IDTMFile::File::Ptr&    filePtr, 
                                     const WString&     filePath, 
@@ -620,16 +735,18 @@ ScalableMesh<POINT>* ScalableMesh<POINT>::Open   (IDTMFile::File::Ptr&    filePt
     status = scmP->Open();
     return (BSISUCCESS == status ? scmP.release() : 0);
     }
-
+#endif
 /*----------------------------------------------------------------------------+
 |ScalableMesh::Open
 +----------------------------------------------------------------------------*/
-static bool s_dropNodes = false; 
+static bool s_dropNodes = false;
 static bool s_checkHybridNodeState = false;
 template <class POINT> int ScalableMesh<POINT>::Open()
-    {       
+    {
+    m_scalableMeshDTM = ScalableMeshDTM::Create(this);
+#ifdef SCALABLE_MESH_DGN
+#else
     HPRECONDITION(m_iDTMFilePtr != 0);
-
     s_inEditing = false;   
 
     if (!m_iDTMFilePtr->GetRootDir()->HasLayerDir(m_workingLayer))
@@ -638,82 +755,198 @@ template <class POINT> int ScalableMesh<POINT>::Open()
     IDTMFile::LayerDir* layerDir = m_iDTMFilePtr->GetRootDir()->GetLayerDir(m_workingLayer);
     if (0 == layerDir)
         return BSIERROR; // Could not access existing layer
-
+#endif
     try 
-        {       
-        if (!LoadGCSFrom(*layerDir))
+        {
+#ifdef SCALABLE_MESH_DGN
+        //m_smSQLitePtr->Open(m_path);
+        // If there are no masterHeader => file empty ?
+        bool notEmpty = m_smSQLitePtr->HasMasterHeader();
+        if (!notEmpty)
+            return BSISUCCESS; // File is empty.
+
+        if (!LoadGCSFrom())
             return BSIERROR; // Error loading layer gcs
 
-        const bool hasPoints = layerDir->HasUniformFeatureDir(SMPointTaggedTileStore<POINT, YProtPtExtentType>::MASS_POINT_FEATURE_TYPE);
-        const bool hasFeatures = layerDir->CountMixedFeatureDirs() > 0;
+        bool hasPoints = m_smSQLitePtr->HasPoints(); // NEEDS_WORKS : add AddPOints To DataSQLite, and test if there are somes points in the database.
 
-        HFCPtr<TileStoreType> pTileStore;
-#ifdef SCALABLE_MESH_DGN
-        HFCPtr<DgnStoreType>  pDgnTileStore;
+
+#else
+            bool hasPoints = layerDir->HasUniformFeatureDir(SMPointTaggedTileStore<POINT, YProtPtExtentType>::MASS_POINT_FEATURE_TYPE);
+//            const bool hasFeatures = layerDir->CountMixedFeatureDirs() > 0;
+
+            if (!LoadGCSFrom(*layerDir))
+                return BSIERROR; // Error loading layer gcs
 #endif
+        HFCPtr<TileStoreType> pTileStore;
+        HFCPtr<StreamingStoreType>  pStreamingTileStore;
+        HFCPtr<SMStreamingPointTaggedTileStore<int32_t, YProtPtExtentType >> pStreamingIndiceTileStore;
+        HFCPtr<SMStreamingPointTaggedTileStore<DPoint2d, YProtPtExtentType >> pStreamingUVTileStore;
+        HFCPtr<SMStreamingPointTaggedTileStore<int32_t, YProtPtExtentType >> pStreamingUVsIndicesTileStore;
 
-        if (hasPoints)
+        HFCPtr<SMPointTileStore<int32_t, YProtPtExtentType >> pIndiceTileStore;
+        HFCPtr<SMPointTileStore<DPoint2d, YProtPtExtentType >> pUVTileStore;
+        HFCPtr<SMPointTileStore<int32_t, YProtPtExtentType >> pUVsIndicesTileStore;
+        HFCPtr<IHPMPermanentStore<Byte, float, float>> pTextureTileStore;
+        HFCPtr<IHPMPermanentStore<MTGGraph, Byte, Byte>> pGraphTileStore;
+        bool isSingleFile = true;
+        
+#ifndef SCALABLE_MESH_DGN
+        
+        pTileStore = new SMPointTaggedTileStore<POINT, YProtPtExtentType>(m_iDTMFilePtr, AreDataCompressed());
+        SMPointIndexHeader<YProtPtExtentType>* indexHeader = new SMPointIndexHeader<YProtPtExtentType>;
+        pTileStore->LoadMasterHeader(indexHeader, 0);
+        isSingleFile = indexHeader->m_singleFile;
+        delete indexHeader;
+#else
+        pTileStore = new SMSQLitePointTileStore<POINT, YProtPtExtentType>(m_smSQLitePtr);
+        isSingleFile = m_smSQLitePtr->IsSingleFile();
+#endif
+        if (hasPoints || !isSingleFile)
             {    
          //   HFCPtr<HPMCountLimitedPool<POINT> > pMemoryPool(PoolSingleton<POINT>());
 
-            IDTMFile::UniformFeatureDir* featureDir =
-                layerDir->GetUniformFeatureDir(SMPointTaggedTileStore<POINT, YProtPtExtentType>::MASS_POINT_FEATURE_TYPE);  
-
-            if (0 == featureDir)
-                return BSIERROR;
-
-            //NEEDS_WORK_SM - Why correct filter is not saved?                                             
-            //auto_ptr<ISMPointIndexFilter<POINT, YProtPtExtentType>> filterP(CreatePointIndexFilter(featureDir));
+         //NEEDS_WORK_SM - Why correct filter is not saved?                                             
+         //auto_ptr<ISMPointIndexFilter<POINT, YProtPtExtentType>> filterP(CreatePointIndexFilter(featureDir));
             auto_ptr<ISMMeshIndexFilter<POINT, YProtPtExtentType>> filterP(new ScalableMeshQuadTreeBCLIBMeshFilter1<POINT, YProtPtExtentType>());
-
-            if (0 == filterP.get())
-                return BSIERROR;
-
-            m_areDataCompressed = (featureDir->GetPointCompressType().GetType() != HTGFF::Compression::TYPE_NONE);
-
-#ifdef SCALABLE_MESH_DGN
-
-            if(m_isDgnDB)
+#ifndef SCALABLE_MESH_DGN
+            if (isSingleFile)
                 {
-                pDgnTileStore = new DgnStoreType(m_dgnScalableMeshPtr, m_iDTMFilePtr, HFC_READ_ONLY | HFC_SHARE_READ_ONLY, AreDataCompressed());
+                IDTMFile::UniformFeatureDir* featureDir =
+                    layerDir->GetUniformFeatureDir(SMPointTaggedTileStore<POINT, YProtPtExtentType>::MASS_POINT_FEATURE_TYPE);
 
-                m_scmPointIndexPtr = new PointIndexType(pMemoryPool, 
-                    &*pDgnTileStore, 
-                    new HPMIndirectCountLimitedPool<MTGGraph>(new HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment(100, 2000*sizeof(POINT)), 600000000),
-                    new DgnGraphTileStore(m_dgnScalableMeshPtr, m_iDTMFilePtr, 0),
-                    10000, 
-                    filterP.get(),
-                    true, 
-                    false, 
-                    0, 
-                    0);  //NEEDS_WORK_SM - Should we store mesher information in STM file like filter?
+                if (0 == featureDir)
+                    return BSIERROR;
+
+                if (0 == filterP.get())
+                    return BSIERROR;
+
+                m_areDataCompressed = (featureDir->GetPointCompressType().GetType() != HTGFF::Compression::TYPE_NONE);
                 }
             else
+                m_areDataCompressed = true;
 #endif
-                {
-                pTileStore = new TileStoreType(m_iDTMFilePtr, AreDataCompressed());
-   
-                m_scmPointIndexPtr = new PointIndexType(//pMemoryPool, 
-                                                        ScalableMeshMemoryPools<POINT>::Get()->GetPointPool(),
-                                                          &*pTileStore, 
-                                                          ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),
-                                                          //new HPMIndirectCountLimitedPool<MTGGraph>(new HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment(100, 2000*sizeof(POINT)), 600000000),
-                                                          new DTMGraphTileStore(m_iDTMFilePtr, 0),
-                                                          10000, 
-                                                          filterP.get(),
-                                                          false, 
-                                                          false, 
-                                                          0, 
-                                                          0);  //NEEDS_WORK_SM - Should we store mesher information in STM file like filter?
-                }
 
+                if (!isSingleFile)
+                    {
+                    // NEEDS_WORK_SM - Path should not depend on the existence of an stm file
+                    auto position = m_path.find_last_of(L".stm");
+                    auto filenameWithoutExtension = m_path.substr(0, position - 3);
+                    // NEEDS_WORK_SM - Remove hardcoded azure dataset name
+                    WString azureDatasetName(L"c1sub_grouped_plus\\");
+                    // NEEDS_WORK_SM - Check existence of the following directories
+                    WString streamingFilePath = (s_stream_from_disk ? m_path.substr(0, position - 3) + L"_stream\\" : L"");
+                    WString groupedStreamingFilePath = (s_stream_from_disk ? filenameWithoutExtension + L"_grouped_stream\\" : azureDatasetName + L"headers\\");
+                    WString point_store_path = (s_stream_from_disk ? streamingFilePath + L"point_store\\" : azureDatasetName + L"points\\");
+                    WString indice_store_path = (s_stream_from_disk ? streamingFilePath + L"indice_store\\" : azureDatasetName + L"indices\\");
+                    WString uv_store_path = streamingFilePath + L"uv_store\\";
+                    WString uvIndice_store_path = streamingFilePath + L"uvIndice_store\\";
+                    WString texture_store_path = streamingFilePath + L"texture_store\\";
+
+                    // NEEDS_WORK_SM - Need to stream textures as well
+                    pStreamingTileStore = new StreamingStoreType(point_store_path, groupedStreamingFilePath, AreDataCompressed());
+                    pStreamingIndiceTileStore = new SMStreamingPointTaggedTileStore< Int32, YProtPtExtentType>(indice_store_path, groupedStreamingFilePath, AreDataCompressed());
+                    pStreamingUVTileStore = new SMStreamingPointTaggedTileStore< DPoint2d, YProtPtExtentType>(uv_store_path, groupedStreamingFilePath, AreDataCompressed());
+                    pStreamingUVsIndicesTileStore = new SMStreamingPointTaggedTileStore<int32_t, YProtPtExtentType >(uvIndice_store_path, groupedStreamingFilePath, AreDataCompressed());
+                    pTextureTileStore = new StreamingTextureTileStore(texture_store_path.c_str(), 4);
+                    m_scmIndexPtr = new PointIndexType(ScalableMeshMemoryPools<POINT>::Get()->GetPointPool(),
+                                                            &*pStreamingTileStore,
+                                                            ScalableMeshMemoryPools<POINT>::Get()->GetPtsIndicePool(),
+                                                            &*pStreamingIndiceTileStore,
+                                                            ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),
+#ifdef SCALABLE_MESH_DGN
+                                                            new SMSQLiteGraphTileStore((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection()),
+#else
+                                                            new DTMGraphTileStore(m_iDTMFilePtr, 0),
+#endif
+                                                            ScalableMeshMemoryPools<POINT>::Get()->GetTexturePool(),
+#ifdef SCALABLE_MESH_DGN
+                                                            pTextureTileStore,
+#else
+                                                            new TextureTileStore(m_iDTMFilePtr, 4),
+#endif
+                                                            ScalableMeshMemoryPools<POINT>::Get()->GetUVPool(),
+                                                            &*pStreamingUVTileStore,
+                                                            ScalableMeshMemoryPools<POINT>::Get()->GetUVsIndicesPool(),
+                                                            &*pStreamingUVsIndicesTileStore,
+                                                            10000,
+                                                            filterP.get(),
+                                                            false,
+                                                            false,
+                                                            false,
+                                                            0,
+                                                            0);
+                    if (s_save_grouped_store && !m_scmIndexPtr->IsEmpty())
+                        {
+
+                        auto groupedStreamingFilePath = m_path.substr(0, position - 3) + L"_grouped_stream\\";
+                        m_scmIndexPtr->SaveCloudReady(groupedStreamingFilePath, point_store_path);
+                        }
+
+                    }
+                else
+                    {
+                    //                    size_t n = 4;
+#ifndef SCALABLE_MESH_DGN
+                    pIndiceTileStore = new SMPointTaggedTileStore<int32_t, YProtPtExtentType >(m_iDTMFilePtr, AreDataCompressed(), 1);
+                    pUVTileStore = new SMPointTaggedTileStore<DPoint2d, YProtPtExtentType >(m_iDTMFilePtr, AreDataCompressed(), 2);
+                    pUVsIndicesTileStore = new SMPointTaggedTileStore<int32_t, YProtPtExtentType >(m_iDTMFilePtr, AreDataCompressed(), 3);
+                    pTextureTileStore = new TextureTileStore(m_iDTMFilePtr, 4);
+                    pGraphTileStore = new DTMGraphTileStore(m_iDTMFilePtr, 0);
+#else
+                    pIndiceTileStore = new SMSQLiteIndiceTileStore<YProtPtExtentType >(m_smSQLitePtr);
+                    pUVTileStore = new SMSQLiteUVTileStore<YProtPtExtentType >((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection());
+                    pUVsIndicesTileStore = new SMSQLiteUVIndiceTileStore<YProtPtExtentType >((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection());
+                    pTextureTileStore = new SMSQLiteTextureTileStore((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection());
+                    pGraphTileStore = new SMSQLiteGraphTileStore((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection());
+#endif
+					
+                    m_scmIndexPtr = new PointIndexType(//pMemoryPool, 
+															ScalableMeshMemoryPools<POINT>::Get()->GetPointPool(),
+															&*pTileStore,
+															ScalableMeshMemoryPools<POINT>::Get()->GetPtsIndicePool(),
+															&*pIndiceTileStore,
+															ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),
+															//new HPMIndirectCountLimitedPool<MTGGraph>(new HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment(100, 2000*sizeof(POINT)), 600000000),
+															&*pGraphTileStore,
+															ScalableMeshMemoryPools<POINT>::Get()->GetTexturePool(),
+															&*pTextureTileStore,
+															ScalableMeshMemoryPools<POINT>::Get()->GetUVPool(),
+															&*pUVTileStore,
+															ScalableMeshMemoryPools<POINT>::Get()->GetUVsIndicesPool(),
+															&*pUVsIndicesTileStore,
+															10000,
+															filterP.get(),
+															false,
+															false,
+															false,
+															0,
+															0);  //NEEDS_WORK_SM - Should we store mesher information in STM file like filter?
+                    }
+#ifndef SCALABLE_MESH_DGN
+                m_scmIndexPtr->m_useSTMFormat = false;
+#else
+                m_scmIndexPtr->m_useSTMFormat = true;
+#endif
+            WString clipFilePath = m_path;
+            clipFilePath.append(L"_clips"); 
+           // IDTMFile::File::Ptr clipFilePtr = IDTMFile::File::Create(clipFilePath.c_str());
+            HFCPtr<IHPMPermanentStore<DifferenceSet, Byte, Byte>> store = new SMSQLiteDiffsetTileStore(clipFilePath, 0);//DiffSetTileStore(clipFilePath, 0);
+            //store->StoreMasterHeader(NULL,0);
+            m_scmIndexPtr->SetClipStore(store);
+            auto pool = ScalableMeshMemoryPools<POINT>::Get()->GetDiffSetPool();
+            m_scmIndexPtr->SetClipPool(pool);
+            WString clipFileDefPath = m_path;
+            clipFileDefPath.append(L"_clipDefinitions");
+            ClipRegistry* registry = new ClipRegistry(clipFileDefPath);
+            m_scmIndexPtr->SetClipRegistry(registry);
             filterP.release();
 
 #ifdef INDEX_DUMPING_ACTIVATED
             if (s_dropNodes)
                 {                                        
-              //  m_scmPointIndexPtr->DumpOctTree("D:\\MyDoc\\Scalable Mesh Iteration 8\\PartialUpdate\\Neighbor\\Log\\nodeAfterOpen.xml", false); 
-                m_scmPointIndexPtr->DumpOctTree("D:\\nodeAfterOpen.xml", false);      
+              //  m_scmIndexPtr->DumpOctTree("D:\\MyDoc\\Scalable Mesh Iteration 8\\PartialUpdate\\Neighbor\\Log\\nodeAfterOpen.xml", false); 
+                m_scmIndexPtr->DumpOctTree("e:\\output\\scmesh\\nodeAfterOpen.xml", false);      
            //     m_scmMPointIndexPtr->ValidateNeighbors();
                 }
 #endif
@@ -721,7 +954,22 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
 
 #ifndef NDEBUG
-        
+#ifdef SCALABLE_MESH_DGN
+        if (s_checkHybridNodeState)
+        {
+            if (!m_smSQLitePtr->HasSources())
+                return BSISUCCESS; // No sources were added to the STM
+
+            IDTMSourceCollection sources;
+            DocumentEnv sourceEnv(L"");
+
+            SourcesDataSQLite* sourcesData = new SourcesDataSQLite();
+            m_smSQLitePtr->LoadSources(*sourcesData);
+
+            bool success = Bentley::ScalableMesh::LoadSources(sources, *sourcesData, sourceEnv);
+            assert(success == true);
+
+#else
         if (s_checkHybridNodeState)
             {
             if (!m_iDTMFilePtr->GetRootDir()->HasSourcesDir())
@@ -736,7 +984,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
             bool success = Bentley::ScalableMesh::LoadSources(sources, *sourceDirPtr, sourceEnv);
             assert(success == true);
-
+#endif
             auto sourceIter(sources.Begin());
             auto sourceIterEnd(sources.End());
 
@@ -759,34 +1007,37 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     source2_5dRanges.insert(source2_5dRanges.begin(), scalableMesh.GetExtent().begin(), scalableMesh.GetExtent().end());                
                     }
 
-                m_scmPointIndexPtr->ValidateIs3dDataStates(source2_5dRanges, source3dRanges);    
+                m_scmIndexPtr->ValidateIs3dDataStates(source2_5dRanges, source3dRanges);    
 
                 sourceIter++;
                 }                       
             }            
 #endif
                        
-        if (hasFeatures)
+       /* if (hasFeatures)
             {
 #ifndef SCALABLE_MESH_DGN
             bool m_isDgnDB = false;
 #endif
             if (pTileStore == 0 && !m_isDgnDB)
                 {
-                pTileStore = new TileStoreType(m_iDTMFilePtr, AreDataCompressed());
+//                pTileStore = new TileStoreType(m_iDTMFilePtr, AreDataCompressed());
                 }
 #ifdef SCALABLE_MESH_DGN
-            else if (pDgnTileStore == 0 && m_isDgnDB)
+//            else if (pDgnPointTileStore == 0 && m_isDgnDB)
                 {
-                pDgnTileStore = new DgnStoreType(m_dgnScalableMeshPtr, m_iDTMFilePtr, HFC_READ_ONLY | HFC_SHARE_READ_ONLY, AreDataCompressed());
+                //pDgnTileStore = new DgnStoreType(m_dgnScalableMeshPtr, m_iDTMFilePtr, HFC_READ_ONLY | HFC_SHARE_READ_ONLY, AreDataCompressed());
+                //pDgnGraphTileStore = new SMDgnDBGraphTileStore(m_dgnScalableMeshPtr, m_iDTMFilePtr, HFC_READ_ONLY | HFC_SHARE_READ_ONLY, AreDataCompressed());
+//                pDgnPointTileStore = new SMDgnDBPointTileStore(m_dgnScalableMeshPtr, m_iDTMFilePtr, HFC_READ_ONLY | HFC_SHARE_READ_ONLY, AreDataCompressed());
+                //pDgnTextureTileStore = new SMDgnDBTextureTileStore(m_dgnScalableMeshPtr, m_iDTMFilePtr, HFC_READ_ONLY | HFC_SHARE_READ_ONLY, AreDataCompressed());
                // m_mrDTMLinearIndexPtr = new LinearIndexType (&*pDgnTileStore, 400, false);
                 }
 #endif
            
             
-            }
+            }*/
 
-        m_contentExtent = ComputeTotalExtentFor(&*m_scmPointIndexPtr);
+        m_contentExtent = ComputeTotalExtentFor(&*m_scmIndexPtr);
 
         return BSISUCCESS;  
         }
@@ -803,10 +1054,13 @@ template <class POINT> int ScalableMesh<POINT>::Close
 (
 )
     {
-    m_scmPointIndexPtr = 0;   
-    m_iDTMFilePtr = 0;
+    m_scmIndexPtr = 0;
 #ifdef SCALABLE_MESH_DGN
-    m_dgnScalableMeshPtr = 0;
+    if(m_smSQLitePtr != nullptr)
+        m_smSQLitePtr->Close();
+    m_smSQLitePtr = nullptr;
+#else
+    m_iDTMFilePtr = 0;
 #endif
     
     return SUCCESS;        
@@ -862,13 +1116,7 @@ template <class POINT> ISMPointIndexFilter<POINT, YProtPtExtentType>* ScalableMe
             {
             case IDTMFile::FILTER_TYPE_DUMB :
                 pFilter = new ScalableMeshQuadTreeBCLIBProgressiveFilter1<POINT, YProtPtExtentType>();                           
-                break;
-            case IDTMFile::FILTER_TYPE_TILE :
-                pFilter = new ScalableMeshQuadTreeBCLIBProgressiveFilter2<POINT, YProtPtExtentType>();      
-                break;
-            case IDTMFile::FILTER_TYPE_TIN :                     
-                pFilter = new ScalableMeshQuadTreeBCLIBProgressiveFilter3<POINT, YProtPtExtentType>();      
-                break;
+                break;            
             default : 
                 assert(0);
             }               
@@ -879,13 +1127,7 @@ template <class POINT> ISMPointIndexFilter<POINT, YProtPtExtentType>* ScalableMe
             {
             case FILTER_TYPE_DUMB :
                 pFilter = new ScalableMeshQuadTreeBCLIBFilter1<POINT, YProtPtExtentType>();                           
-                break;
-            case FILTER_TYPE_TILE :
-                pFilter = new ScalableMeshQuadTreeBCLIBFilter2<POINT, YProtPtExtentType>();      
-                break;
-            case FILTER_TYPE_TIN :                     
-                pFilter = new ScalableMeshQuadTreeBCLIBFilter3<POINT, YProtPtExtentType>();      
-                break;
+                break;                        
             default : 
                 assert(0);
             }               
@@ -924,8 +1166,10 @@ template <class POINT> double ScalableMesh<POINT>::GetMinScreenPixelsPerPoint()
 +----------------------------------------------------------------------------*/
 template <class POINT> bool ScalableMesh<POINT>::AreDataCompressed()
     {
+#ifdef SCALABLE_MESH_DGN
+#else
     assert(m_iDTMFilePtr != 0);
-    
+#endif
     return m_areDataCompressed;
     }
 
@@ -1009,25 +1253,59 @@ template <class POINT> void ScalableMesh<POINT>::AddBreaklineSet(list<HFCPtr<HVE
 
 /*-------------------Methods inherited from IDTM-----------------------------*/
 
-/*----------------------------------------------------------------------------+
-|ScalableMesh::_GetDTMDraping
-+----------------------------------------------------------------------------*/
-template <class POINT> IDTMDrapingP ScalableMesh<POINT>::_GetDTMDraping() 
+
+__int64 ScalableMeshDTM::_GetPointCount()
     {
-   // assert(0);
-    return new ScalableMeshDraping(this);
+    return m_scMesh->GetPointCount();
     }
 
-template <class POINT> IDTMDrainageP    ScalableMesh<POINT>::_GetDTMDrainage()
+BcDTMP ScalableMeshDTM::_GetBcDTM()
+{
+return 0;
+};
+
+DTMStatusInt ScalableMeshDTM::_GetBoundary(DTMPointArray& result)
+{
+return DTM_ERROR;
+}
+
+IDTMDrapingP ScalableMeshDTM::_GetDTMDraping()
+    {
+    // assert(0);
+    return m_draping;
+    }
+
+IDTMDrainageP    ScalableMeshDTM::_GetDTMDrainage()
     {
     assert(0);
     return 0;
     }
 
-template <class POINT> IDTMContouringP  ScalableMesh<POINT>::_GetDTMContouring()
+IDTMContouringP  ScalableMeshDTM::_GetDTMContouring()
     {
     assert(0);
     return 0;
+    }
+
+DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double&, double&, const DPoint3d*, int)
+    {
+    return DTM_ERROR;
+    }
+
+bool ScalableMeshDTM::_GetTransformation(TransformR)
+    {
+    return true;
+    }
+
+DTMStatusInt ScalableMeshDTM::_GetTransformDTM(DTMPtr& transformedDTM, TransformCR)
+    {
+    return DTM_ERROR;
+    }
+
+DTMStatusInt ScalableMeshDTM::_GetRange(DRange3dR range)
+    {
+    m_scMesh->GetRange(range);
+    return DTM_SUCCESS;
     }
 
 template <class POINT> IDTMVolumeP ScalableMesh<POINT>::_GetDTMVolume()
@@ -1035,33 +1313,38 @@ template <class POINT> IDTMVolumeP ScalableMesh<POINT>::_GetDTMVolume()
     return new ScalableMeshVolume(this);
     }
 
-template <class POINT> DTMStatusInt ScalableMesh<POINT>::_CalculateSlopeArea (double&, double&, const DPoint3d*, int)
-    {
-    return DTM_ERROR;
-    }
+template <class POINT> Bentley::TerrainModel::IDTM* ScalableMesh<POINT>::_GetDTMInterface()
+ {
+    return m_scalableMeshDTM.get();
+ }
 
-template <class POINT> bool ScalableMesh<POINT>::_GetTransformation(TransformR)
-    {
-    return true;
-    }
 
-template <class POINT> DTMStatusInt ScalableMesh<POINT>::_GetTransformDTM(DTMPtr& transformedDTM, TransformCR)
+
+/*----------------------------------------------------------------------------+
+|ScalableMesh::GetRootNode
++----------------------------------------------------------------------------*/
+template <class POINT> HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>> ScalableMesh<POINT>::GetRootNode()
     {
-    return DTM_ERROR;
+    HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>> pRootNode;
+
+    if (m_scmIndexPtr != 0)
+        {
+        pRootNode = m_scmIndexPtr->GetRootNode();
+        }
+
+    return pRootNode;    
     }
 
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_GetPointCount
 +----------------------------------------------------------------------------*/
 template <class POINT> __int64 ScalableMesh<POINT>::_GetPointCount() 
-    {        
-    
-    
+    {                
     __int64 nbPoints = 0;
 
-    if (m_scmPointIndexPtr != 0)
+    if (m_scmIndexPtr != 0)
         {
-        nbPoints += m_scmPointIndexPtr->GetCount();
+        nbPoints += m_scmIndexPtr->GetCount();
         }
     
     //MST : Need to add the number of points in the linear index.    
@@ -1083,26 +1366,18 @@ template <class POINT> __int64 ScalableMesh<POINT>::_GetBreaklineCount() const
 +----------------------------------------------------------------------------*/
 template <class POINT> DTMStatusInt ScalableMesh<POINT>::_GetRange(DRange3dR range) 
     {
+
+    HFCPtr<HRABitmap> pTextureBitmap(new HRABitmap);
+    
+    HRAClearOptions clearOptions;
+
+    pTextureBitmap->Clear(clearOptions);
+
+
     range = m_contentExtent;
     return DTM_SUCCESS;
     }
 
-
-/*----------------------------------------------------------------------------+
-|ScalableMesh::_GetBcDTM
-+----------------------------------------------------------------------------*/
-template <class POINT> BcDTMP ScalableMesh<POINT>::_GetBcDTM() 
-    {    
-    return 0;
-    };
- 
-/*----------------------------------------------------------------------------+
-|ScalableMesh::_GetBoundary
-+----------------------------------------------------------------------------*/
-template <class POINT> DTMStatusInt ScalableMesh<POINT>::_GetBoundary(DTMPointArray& result) 
-    {
-    return DTM_ERROR; 
-    }
 
 /*-------------------Methods inherited from IMRDTM-----------------------------*/
 
@@ -1125,21 +1400,20 @@ template <class POINT> ScalableMeshCompressionType ScalableMesh<POINT>::_GetComp
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_GetQueryInterface
 +----------------------------------------------------------------------------*/
-template <class POINT> IScalableMeshQueryPtr ScalableMesh<POINT>::_GetQueryInterface(DTMQueryType                         queryType, 
-                                                                       DTMQueryDataType                     queryDataType, 
-                                                                       Bentley::GeoCoordinates::BaseGCSPtr& targetBaseGCSPtr,
-                                                                       const DRange3d&                       extentInTargetGCS) const
+template <class POINT> IScalableMeshPointQueryPtr ScalableMesh<POINT>::_GetQueryInterface(ScalableMeshQueryType                         queryType,                                                                        
+                                                                                          Bentley::GeoCoordinates::BaseGCSPtr& targetBaseGCSPtr,
+                                                                                          const DRange3d&                       extentInTargetGCS) const
     {
-    IScalableMeshQueryPtr scmQueryPtr;
+    IScalableMeshPointQueryPtr scmQueryPtr;
                     
     GCS targetGCS = GetGCSFactory().Create(targetBaseGCSPtr);        
 
-    _GetQueryInterface(queryType, queryDataType);    
+    _GetQueryInterface(queryType);    
     
     // TODO: Remove cast when smart pointers becomes const aware
     ScalableMesh<POINT>* UNCONST_THIS = const_cast<ScalableMesh<POINT>*>(this);
 
-    scmQueryPtr = ScalableMeshQuery::GetReprojectionQueryInterface(UNCONST_THIS, queryType, queryDataType, m_sourceGCS, targetGCS, extentInTargetGCS);
+    scmQueryPtr = ScalableMeshPointQuery::GetReprojectionQueryInterface(UNCONST_THIS, queryType, m_sourceGCS, targetGCS, extentInTargetGCS);
              
     return scmQueryPtr;                
     }
@@ -1147,33 +1421,29 @@ template <class POINT> IScalableMeshQueryPtr ScalableMesh<POINT>::_GetQueryInter
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_GetQueryInterface
 +----------------------------------------------------------------------------*/
-template <class POINT> IScalableMeshQueryPtr ScalableMesh<POINT>::_GetQueryInterface(DTMQueryType queryType, DTMQueryDataType queryDataType) const
+template <class POINT> IScalableMeshPointQueryPtr ScalableMesh<POINT>::_GetQueryInterface(ScalableMeshQueryType queryType) const
     {
-    IScalableMeshQueryPtr iScalableMeshQueryPtr;
-
-    if (queryDataType == DTM_QUERY_DATA_POINT)
+    IScalableMeshPointQueryPtr iScalableMeshQueryPtr;
+       
+    if ((m_scmIndexPtr != 0) && (m_scmIndexPtr->IsEmpty() == false))
         {
-        if ((m_scmPointIndexPtr != 0) && (m_scmPointIndexPtr->IsEmpty() == false))
-            {
-            if (queryType == DTM_QUERY_FULL_RESOLUTION)
-                {                                    
-                //MST Should be done by using the highest resolution.
-                //iScalableMeshQueryPtr = new ScalableMeshFullResolutionQuery(m_mrDTMPointIndexPtr);   
-                }
-            else
-            if (queryType == DTM_QUERY_VIEW_DEPENDENT)
-                {                        
-                iScalableMeshQueryPtr = new ScalableMeshViewDependentPointQuery<POINT>(&*m_scmPointIndexPtr);       
-                }
-            else
-            if (queryType == DTM_QUERY_FIX_RESOLUTION_VIEW)
-                {        
-                iScalableMeshQueryPtr = new ScalableMeshFixResolutionViewPointQuery<POINT>(&*m_scmPointIndexPtr, m_sourceGCS);
-                }
+        if (queryType == SCM_QUERY_FULL_RESOLUTION)
+            {                                    
+            //MST Should be done by using the highest resolution.
+            //iScalableMeshQueryPtr = new ScalableMeshFullResolutionQuery(m_mrDTMPointIndexPtr);   
+            }
+        else
+        if (queryType == SCM_QUERY_VIEW_DEPENDENT)
+            {                        
+            iScalableMeshQueryPtr = new ScalableMeshViewDependentPointQuery<POINT>(&*m_scmIndexPtr);       
+            }
+        else
+        if (queryType == SCM_QUERY_FIX_RESOLUTION_VIEW)
+            {        
+            iScalableMeshQueryPtr = new ScalableMeshFixResolutionViewPointQuery<POINT>(&*m_scmIndexPtr, m_sourceGCS);
             }
         }
-
-               
+                    
     return iScalableMeshQueryPtr;
     }
 
@@ -1185,13 +1455,13 @@ template <class POINT> IScalableMeshMeshQueryPtr ScalableMesh<POINT>::_GetMeshQu
     switch (queryType)
         {
         case MESH_QUERY_FULL_RESOLUTION:
-            return new ScalableMeshFullResolutionMeshQuery<POINT>(&*m_scmPointIndexPtr);
+            return new ScalableMeshFullResolutionMeshQuery<POINT>(&*m_scmIndexPtr);
         case MESH_QUERY_VIEW_DEPENDENT:
-            return new ScalableMeshViewDependentMeshQuery<POINT>(&*m_scmPointIndexPtr);
+            return new ScalableMeshViewDependentMeshQuery<POINT>(&*m_scmIndexPtr);
         case MESH_QUERY_PLANE_INTERSECT:
-            return new ScalableMeshNodePlaneQuery<POINT>(&*m_scmPointIndexPtr);
+            return new ScalableMeshNodePlaneQuery<POINT>(&*m_scmIndexPtr);
         default:
-            return new ScalableMeshViewDependentMeshQuery<POINT>(&*m_scmPointIndexPtr);
+            return new ScalableMeshViewDependentMeshQuery<POINT>(&*m_scmIndexPtr);
         }
     }
 
@@ -1201,7 +1471,7 @@ template <class POINT> IScalableMeshMeshQueryPtr ScalableMesh<POINT>::_GetMeshQu
     {
     GCS targetGCS = GetGCSFactory().Create(targetBaseGCSPtr);
     IScalableMeshMeshQueryPtr meshQueryPtr = new ScalableMeshReprojectionMeshQuery<POINT>(_GetMeshQueryInterface(queryType),
-                                                                            m_scmPointIndexPtr,
+                                                                            m_scmIndexPtr,
                                                                  m_sourceGCS,
                                                                  targetGCS,
                                                                  extentInTargetGCS);
@@ -1213,25 +1483,21 @@ template <class POINT> IScalableMeshMeshQueryPtr ScalableMesh<POINT>::_GetMeshQu
 +----------------------------------------------------------------------------*/
 template <class POINT> IScalableMeshNodeRayQueryPtr ScalableMesh<POINT>::_GetNodeQueryInterface() const
     {
-    return new ScalableMeshNodeRayQuery<POINT>(&*m_scmPointIndexPtr);
+    return new ScalableMeshNodeRayQuery<POINT>(&*m_scmIndexPtr);
     }
 
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_GetNbResolutions
 +----------------------------------------------------------------------------*/
-template <class POINT> int ScalableMesh<POINT>::_GetNbResolutions(DTMQueryDataType queryDataType) const
+template <class POINT> int ScalableMesh<POINT>::_GetNbResolutions() const
     {    
     int nbResolutions = 0;
-
-    if (queryDataType == DTM_QUERY_DATA_POINT)
+    
+    if (m_scmIndexPtr != 0)
         {
-        if (m_scmPointIndexPtr != 0)
-            {
-            nbResolutions = (int)(m_scmPointIndexPtr->GetDepth() + 1);
-            }        
-        }
-
-
+        nbResolutions = (int)(m_scmIndexPtr->GetDepth() + 1);
+        }        
+    
     return nbResolutions;    
     }
 
@@ -1273,7 +1539,44 @@ template <class POINT> bool ScalableMesh<POINT>::IsValidInContextOf (const GCS& 
 |ScalableMesh::_SetSourceGCS
 +----------------------------------------------------------------------------*/
 template <class POINT> StatusInt ScalableMesh<POINT>::_SetGCS(const GCS& newGCS)
-    {         
+{
+#ifdef SCALABLE_MESH_DGN
+    const GCS& savedGCS = (newGCS.IsNull()) ? GetDefaultGCS() : newGCS;
+
+    HCPWKT wkt;
+
+    GCS::Status wktCreateStatus = GCS::S_SUCCESS;
+    wkt = HCPWKT(savedGCS.GetWKT(wktCreateStatus).GetCStr());
+
+    WString extendedWktStr(wkt.GetCStr());
+
+    if (WKTKeyword::TYPE_UNKNOWN == GetWktType(extendedWktStr))
+    {
+        wchar_t wktFlavor[2] = { (wchar_t)IDTMFile::WktFlavor_Autodesk, L'\0' };
+
+        extendedWktStr += WString(wktFlavor);
+        wkt = HCPWKT(extendedWktStr.c_str());
+    }
+
+    if (GCS::S_SUCCESS != wktCreateStatus)
+        return BSIERROR;
+
+    // This is called even if there are no GCS provided... In such case the WKT AString
+    // is that of the default GCS.
+    WString wktStr;
+    m_smSQLitePtr->GetWkt(wktStr);
+    HCPWKT oldWkt = HCPWKT(wktStr.c_str());
+
+    if (!m_smSQLitePtr->SetWkt(wkt.GetCStr()))
+    {
+        bool result = m_smSQLitePtr->SetWkt(oldWkt.GetCStr());
+        assert(result);
+
+        return BSIERROR;
+    }
+
+    m_sourceGCS = savedGCS;
+#else
     IDTMFile::LayerDir* const layerDir = (m_iDTMFilePtr->GetRootDir()->HasLayerDir(m_workingLayer)) ? 
                                                 m_iDTMFilePtr->GetRootDir()->GetLayerDir(m_workingLayer) : 
                                                 m_iDTMFilePtr->GetRootDir()->CreateLayerDir(m_workingLayer);
@@ -1314,7 +1617,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_SetGCS(const GCS& newGCS)
         }
 
     m_sourceGCS = savedGCS;
-       
+#endif
     return BSISUCCESS;
     }
 
@@ -1326,12 +1629,30 @@ template <class POINT> inline bool ScalableMesh<POINT>::IsEmpty () const
     {
     // NTERAY: Not sure if this test is required anymore... If not, we can move this
     //         method to base class.
-    if (0 == m_scmPointIndexPtr)
+    if (0 == m_scmIndexPtr)
         return true;
 
     return EqEps(m_contentExtent.low.x, m_contentExtent.high.x) &&
            EqEps(m_contentExtent.low.y, m_contentExtent.high.y) &&
            EqEps(m_contentExtent.low.z, m_contentExtent.high.z);
+    }
+
+/*----------------------------------------------------------------------------+
+|ScalableMesh::_AddClip
++----------------------------------------------------------------------------*/
+template <class POINT> uint64_t ScalableMesh<POINT>::_AddClip(const DPoint3d* pts, size_t ptsSize)
+    {
+    if (m_scmIndexPtr->GetClipRegistry() == nullptr) return ((uint64_t)-1);
+    if (bsiGeom_getXYPolygonArea(pts, (int)ptsSize) < 0) //need to flip polygon so it's counterclockwise
+        {
+        uint64_t clipId = 0;
+        DPoint3d* flippedPts = new DPoint3d[ptsSize];
+        for (size_t pt = 0; pt < ptsSize; ++pt) flippedPts[pt] = pts[ptsSize - 1 - pt];
+        clipId = m_scmIndexPtr->GetClipRegistry()->AddClip(flippedPts, ptsSize) + 1;
+        delete[] flippedPts;
+        return clipId;
+        }
+    return m_scmIndexPtr->GetClipRegistry()->AddClip(pts, ptsSize)+1;
     }
 
 
@@ -1350,7 +1671,11 @@ template <class POINT> ScalableMeshState ScalableMesh<POINT>::_GetState() const
 |ScalableMesh::_InSynchWithSources
 +----------------------------------------------------------------------------*/
 template <class POINT> bool ScalableMesh<POINT>::_InSynchWithSources() const
-    { 
+    {
+#ifdef SCALABLE_MESH_DGN
+        // Get LastModifiedTime from sqlite file
+        return false;
+#else
     assert(0 != m_iDTMFilePtr);
     const SourcesDir* sourceDirPtr = m_iDTMFilePtr->GetRootDir()->GetSourcesDir();
     if (0 == sourceDirPtr)
@@ -1358,6 +1683,7 @@ template <class POINT> bool ScalableMesh<POINT>::_InSynchWithSources() const
 
     const bool InSync = sourceDirPtr->GetLastModifiedTime() < sourceDirPtr->GetLastSyncTime();
     return InSync;    
+#endif
     }
 
 /*----------------------------------------------------------------------------+
@@ -1390,6 +1716,9 @@ template <class POINT> int ScalableMesh<POINT>::_GetRangeInSpecificGCS(DPoint3d&
 +----------------------------------------------------------------------------*/
 template <class POINT> bool ScalableMesh<POINT>::_LastSynchronizationCheck(time_t& lastCheckTime) const
     {
+#ifdef SCALABLE_MESH_DGN
+        return false;
+#else
     assert(0 != m_iDTMFilePtr);
 
     const SourcesDir* sourceDirPtr = m_iDTMFilePtr->GetRootDir()->GetSourcesDir();
@@ -1401,6 +1730,7 @@ template <class POINT> bool ScalableMesh<POINT>::_LastSynchronizationCheck(time_
 
     lastCheckTime = sourceDirPtr->GetLastModifiedCheckTime();
     return true;
+#endif
     }
 
 /*----------------------------------------------------------------------------+
@@ -1425,18 +1755,26 @@ template <class POINT> bool ScalableMesh<POINT>::_IsProgressive() const
 |ScalableMesh::_IsReadOnly
 +----------------------------------------------------------------------------*/
 template <class POINT> bool ScalableMesh<POINT>::_IsReadOnly() const
-    {            
+    {
+#ifdef SCALABLE_MESH_DGN
+        return false;
+#else
     return (m_iDTMFilePtr->GetAccessMode().m_HasWriteAccess == false) && 
            (m_iDTMFilePtr->GetAccessMode().m_HasWriteShare == false);
+#endif
     } 
 
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_IsShareable
 +----------------------------------------------------------------------------*/
 template <class POINT> bool ScalableMesh<POINT>::_IsShareable() const
-    {    
+    {
+#ifdef SCALABLE_MESH_DGN
+        return true;
+#else
     return (m_iDTMFilePtr->GetAccessMode().m_HasReadShare == false) && 
            (m_iDTMFilePtr->GetAccessMode().m_HasWriteShare == false);                
+#endif
     } 
 
 /*----------------------------------------------------------------------------+
@@ -1445,7 +1783,7 @@ template <class POINT> bool ScalableMesh<POINT>::_IsShareable() const
 #ifdef SCALABLE_MESH_ATP
 template <class POINT> int ScalableMesh<POINT>::_LoadAllNodeHeaders(size_t& nbLoadedNodes) const
     {    
-    //m_scmPointIndexPtr->LoadTree(nbLoadedNodes);    
+    m_scmIndexPtr->LoadTree(nbLoadedNodes);    
     return SUCCESS;
     } 
 #endif
@@ -1457,7 +1795,7 @@ template <class POINT> ScalableMeshSingleResolutionPointIndexView<POINT>::Scalab
                                                                                                        GeoCoords::GCS                                   sourceGCS)
 : m_sourceGCS(sourceGCS)
     {    
-    m_scmPointIndexPtr = scmPointIndexPtr;
+    m_scmIndexPtr = scmPointIndexPtr;
     m_resolutionIndex    = resolutionIndex;    
     }
 
@@ -1468,7 +1806,7 @@ template <class POINT> ScalableMeshSingleResolutionPointIndexView<POINT>::~Scala
 // Inherited from IDTM   
 template <class POINT> __int64 ScalableMeshSingleResolutionPointIndexView<POINT>::_GetPointCount()
     {
-    return m_scmPointIndexPtr->GetNbObjectsAtLevel(m_resolutionIndex);
+    return m_scmIndexPtr->GetNbObjectsAtLevel(m_resolutionIndex);
     }
 
 
@@ -1478,19 +1816,8 @@ template <class POINT> __int64 ScalableMeshSingleResolutionPointIndexView<POINT>
     return 0;
     }
 
-template <class POINT> IDTMDrapingP ScalableMeshSingleResolutionPointIndexView<POINT>::_GetDTMDraping()
-    {
-    assert(0);
-    return 0;
-    }
 
-template <class POINT> IDTMDrainageP    ScalableMeshSingleResolutionPointIndexView<POINT>::_GetDTMDrainage()
-    {
-    assert(0);
-    return 0;
-    }
-
-template <class POINT> IDTMContouringP  ScalableMeshSingleResolutionPointIndexView<POINT>::_GetDTMContouring()
+template <class POINT> Bentley::TerrainModel::IDTM* ScalableMeshSingleResolutionPointIndexView<POINT>::_GetDTMInterface()
     {
     assert(0);
     return 0;
@@ -1502,24 +1829,10 @@ template <class POINT> IDTMVolumeP  ScalableMeshSingleResolutionPointIndexView<P
     return 0;
     }
 
-template <class POINT> DTMStatusInt ScalableMeshSingleResolutionPointIndexView<POINT>::_CalculateSlopeArea (double&, double&, const DPoint3d*, int)
-    {
-    return DTM_ERROR;
-    }
-
-template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_GetTransformation(TransformR)
-    {
-    return true;
-    }
-
-template <class POINT> DTMStatusInt ScalableMeshSingleResolutionPointIndexView<POINT>::_GetTransformDTM(DTMPtr& transformedDTM, TransformCR)
-    {
-    return DTM_ERROR;
-    }
 
 template <class POINT> DTMStatusInt ScalableMeshSingleResolutionPointIndexView<POINT>::_GetRange(DRange3dR range)
     {        
-    YProtPtExtentType ExtentPoints = m_scmPointIndexPtr->GetContentExtent();
+    YProtPtExtentType ExtentPoints = m_scmIndexPtr->GetContentExtent();
 
     range.low.x = ExtentOp<YProtPtExtentType>::GetXMin(ExtentPoints);
     range.high.x = ExtentOp<YProtPtExtentType>::GetXMax(ExtentPoints);
@@ -1530,6 +1843,12 @@ template <class POINT> DTMStatusInt ScalableMeshSingleResolutionPointIndexView<P
     return DTM_SUCCESS;
     }
 
+template <class POINT> uint64_t ScalableMeshSingleResolutionPointIndexView<POINT>::_AddClip(const DPoint3d* pts, size_t ptsSize)
+    {
+    assert(false && "Not implemented");
+    return ((uint64_t)-1);
+    }
+
 /*----------------------------------------------------------------------------+
 |ScalableMeshSingleResolutionPointIndexView::_GetRangeInSpecificGCS
 +----------------------------------------------------------------------------*/
@@ -1537,7 +1856,7 @@ template <class POINT> int ScalableMeshSingleResolutionPointIndexView<POINT>::_G
     {
     StatusInt status = SUCCESS;
 
-    YProtPtExtentType ExtentPoints = m_scmPointIndexPtr->GetContentExtent();
+    YProtPtExtentType ExtentPoints = m_scmIndexPtr->GetContentExtent();
 
     DRange3d initialRange;
     initialRange.low.x = ExtentOp<YProtPtExtentType>::GetXMin(ExtentPoints);
@@ -1559,18 +1878,6 @@ template <class POINT> int ScalableMeshSingleResolutionPointIndexView<POINT>::_G
 
 
     return status;    
-    }
-
-template <class POINT> BcDTMP ScalableMeshSingleResolutionPointIndexView<POINT>::_GetBcDTM()
-    {
-    assert(0);
-    return 0;
-    }
-
-template <class POINT> DTMStatusInt ScalableMeshSingleResolutionPointIndexView<POINT>::_GetBoundary(DTMPointArray&)
-    {
-    assert(0);
-    return DTM_ERROR;
     }
 
 // Inherited from IMRDTM     
@@ -1595,56 +1902,43 @@ template <class POINT> ScalableMeshCompressionType ScalableMeshSingleResolutionP
     return SCM_COMPRESSION_NONE;
     }
 
-template <class POINT> int ScalableMeshSingleResolutionPointIndexView<POINT>::_GetNbResolutions(DTMQueryDataType queryDataType) const
+template <class POINT> int ScalableMeshSingleResolutionPointIndexView<POINT>::_GetNbResolutions() const
     {
-    int nbResolutions;
-
-    if (queryDataType == DTM_QUERY_DATA_POINT)
-        {
-        nbResolutions = 1;
-        }
-    else
-        {
-        nbResolutions = 0;
-        }
-
-    return nbResolutions;
+    return 1;    
     }
 
-template <class POINT> IScalableMeshQueryPtr ScalableMeshSingleResolutionPointIndexView<POINT>::_GetQueryInterface(DTMQueryType                         queryType, 
-                                                                                                     DTMQueryDataType                     queryDataType, 
-                                                                                                     Bentley::GeoCoordinates::BaseGCSPtr& targetGCS,
-                                                                                                     const DRange3d&                      extentInTargetGCS) const
+template <class POINT> IScalableMeshPointQueryPtr ScalableMeshSingleResolutionPointIndexView<POINT>::_GetQueryInterface(ScalableMeshQueryType                queryType,                                                                                                      
+                                                                                                                        Bentley::GeoCoordinates::BaseGCSPtr& targetGCS,
+                                                                                                                        const DRange3d&                      extentInTargetGCS) const
     {                   
     GeoCoords::GCS targetGeoCoord(GetGCSFactory().Create(targetGCS));           
    
     // TODO: Remove once smart pointers are const aware
     ScalableMeshSingleResolutionPointIndexView<POINT>* UNCONST_THIS = const_cast<ScalableMeshSingleResolutionPointIndexView<POINT>*>(this);
 
-    IScalableMeshQueryPtr scmQueryPtr = ScalableMeshQuery::GetReprojectionQueryInterface(UNCONST_THIS, queryType, queryDataType, m_sourceGCS, targetGeoCoord, extentInTargetGCS);
+    IScalableMeshPointQueryPtr scmQueryPtr = ScalableMeshPointQuery::GetReprojectionQueryInterface(UNCONST_THIS, queryType, m_sourceGCS, targetGeoCoord, extentInTargetGCS);
 
     return scmQueryPtr;                
     }
 
-template <class POINT> IScalableMeshQueryPtr ScalableMeshSingleResolutionPointIndexView<POINT>::_GetQueryInterface(DTMQueryType     queryType, 
-                                                                                                     DTMQueryDataType queryDataType) const
+template <class POINT> IScalableMeshPointQueryPtr ScalableMeshSingleResolutionPointIndexView<POINT>::_GetQueryInterface(ScalableMeshQueryType queryType) const
     {    
-    IScalableMeshQueryPtr iScalableMeshQueryPtr;
+    IScalableMeshPointQueryPtr iScalableMeshQueryPtr;
 
-    if (queryDataType == DTM_QUERY_DATA_POINT && (m_scmPointIndexPtr != 0) && (m_scmPointIndexPtr->IsEmpty() == false))
+    if ((m_scmIndexPtr != 0) && (m_scmIndexPtr->IsEmpty() == false))
         {    
-        if (queryType == DTM_QUERY_FULL_RESOLUTION)
+        if (queryType == SCM_QUERY_FULL_RESOLUTION)
             {
-            iScalableMeshQueryPtr =  new ScalableMeshFullResolutionPointQuery<POINT>(m_scmPointIndexPtr, 
-                                                                       m_resolutionIndex);
+            iScalableMeshQueryPtr =  new ScalableMeshFullResolutionPointQuery<POINT>(m_scmIndexPtr, 
+                                                                                     m_resolutionIndex);
             }
         else
-        if (queryType == DTM_QUERY_VIEW_DEPENDENT)
+        if (queryType == SCM_QUERY_VIEW_DEPENDENT)
             {
-            iScalableMeshQueryPtr =  new ScalableMeshViewDependentPointQuery<POINT>(m_scmPointIndexPtr);       
+            iScalableMeshQueryPtr =  new ScalableMeshViewDependentPointQuery<POINT>(m_scmIndexPtr);       
             }
 
-        //DTM_QUERY_FIX_RESOLUTION_VIEW is meaningless for a single resolution view.         
+        //SCM_QUERY_FIX_RESOLUTION_VIEW is meaningless for a single resolution view.         
         }
         
     return iScalableMeshQueryPtr;
@@ -1742,9 +2036,69 @@ DTMStatusInt IDTMVolume::ComputeVolumeCutAndFill(PolyfaceHeaderPtr& terrainMesh,
     {
     return _ComputeVolumeCutAndFill(terrainMesh, cut, fill, mesh, is2d, volumeMeshVector);
     }
-template class ScalableMesh<IDTMFile::Point3d64f>;
-//template class ScalableMesh<IDTMFile::Point3d64fM64f>;
-//template class ScalableMeshSingleResolutionPointIndexView<IDTMFile::Point3d64f>;
-//template class ScalableMeshSingleResolutionPointIndexView<IDTMFile::Point3d64fM64f>;
+
+
+void edgeCollapseTest(WCharCP param)
+    {
+    FILE* mesh = _wfopen(param, L"rb");
+
+    size_t ct;
+    fread(&ct, sizeof(size_t), 1, mesh);
+    void* graph = new byte[ct];
+    fread(graph, 1, ct, mesh);
+    MTGGraph g;
+    g.LoadFromBinaryStream(graph, ct);
+    size_t npts;
+    fread(&npts, sizeof(size_t), 1, mesh);
+    std::vector<DPoint3d> pts(npts);
+    fread(&pts[0], sizeof(DPoint3d), npts, mesh);
+    CGALEdgeCollapse(&g, pts, 20000000);
+    fclose(mesh);
+    }
+
+void edgeCollapsePrintGraph(WCharCP param)
+    {
+    FILE* mesh = _wfopen(param, L"rb");
+
+    size_t ct;
+    fread(&ct, sizeof(size_t), 1, mesh);
+    void* graph = new byte[ct];
+    fread(graph, 1, ct, mesh);
+    MTGGraph g;
+    g.LoadFromBinaryStream(graph, ct);
+    size_t npts;
+    fread(&npts, sizeof(size_t), 1, mesh);
+    std::vector<DPoint3d> pts(npts);
+    fread(&pts[0], sizeof(DPoint3d), npts, mesh);
+    fclose(mesh);
+    Utf8String path = "E:\\output\\scmesh\\2016-01-28\\";
+    Utf8String str1 = "tested";
+    PrintGraphWithPointInfo(path, str1, &g, &pts[0], npts);
+    }
+
+void edgeCollapseShowMesh(WCharCP param, PolyfaceQueryP& outMesh)
+    {
+    FILE* mesh = _wfopen(param, L"rb");
+    size_t ct;
+    fread(&ct, sizeof(size_t), 1, mesh);
+    void* graph = new byte[ct];
+    fread(graph, 1, ct, mesh);
+    MTGGraph g;
+    g.LoadFromBinaryStream(graph, ct);
+    size_t npts;
+    fread(&npts, sizeof(size_t), 1, mesh);
+    DPoint3d* pts = new DPoint3d[npts];
+    fread(pts, sizeof(DPoint3d), npts, mesh);
+    fclose(mesh);
+    std::vector<int32_t> indices;
+    ExtractMeshIndicesFromGraph(indices, &g);
+    int32_t* indicesArray = new int32_t[indices.size()];
+    memcpy(indicesArray, &indices[0], indices.size()*sizeof(int32_t));
+    for (size_t i = 0; i < npts; ++i) pts[i].Scale(10000);
+    outMesh = new PolyfaceQueryCarrier(3, false, indices.size(), npts, pts,indicesArray);
+    }
+
+template class ScalableMesh<DPoint3d>;
+template class ScalableMeshSingleResolutionPointIndexView<DPoint3d>;
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

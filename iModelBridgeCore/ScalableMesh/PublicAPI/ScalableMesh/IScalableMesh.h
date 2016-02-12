@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 |
 +--------------------------------------------------------------------------------------*/
@@ -36,7 +36,7 @@ struct Count;
 * Interface implemented by MRDTM engines.
 * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
-struct IScalableMesh abstract:  Bentley::TerrainModel::IDTM
+struct IScalableMesh abstract:  IRefCounted //Bentley::TerrainModel::IDTM
     {
     private:
         
@@ -45,7 +45,11 @@ struct IScalableMesh abstract:  Bentley::TerrainModel::IDTM
     /*__PUBLISH_CLASS_VIRTUAL__*/
     protected:                         
 
-        //Methods for the public interface.                
+        //Methods for the public interface.        
+        virtual __int64          _GetPointCount() = 0;
+
+        virtual DTMStatusInt     _GetRange(DRange3dR range) = 0;
+
         virtual int                    _GenerateSubResolutions() = 0;      
 
         virtual __int64                _GetBreaklineCount() const = 0;
@@ -54,25 +58,25 @@ struct IScalableMesh abstract:  Bentley::TerrainModel::IDTM
         
         virtual Count                  _GetCountInRange (const DRange2d& range, const CountType& type, const unsigned __int64& maxNumberCountedPoints) const = 0;
 
-        virtual int                    _GetNbResolutions(DTMQueryDataType queryDataType) const = 0;
+        virtual int                    _GetNbResolutions() const = 0;
 
-        virtual IScalableMeshQueryPtr         _GetQueryInterface(DTMQueryType     queryType, 
-                                                          DTMQueryDataType queryDataType) const = 0;
+        virtual IScalableMeshPointQueryPtr         _GetQueryInterface(ScalableMeshQueryType queryType) const = 0;
 
-        virtual IScalableMeshQueryPtr         _GetQueryInterface(DTMQueryType                         queryType, 
-                                                          DTMQueryDataType                     queryDataType, 
-                                                          Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr,
-                                                          const DRange3d&                      extentInTargetGCS) const = 0;
+        virtual IScalableMeshPointQueryPtr         _GetQueryInterface(ScalableMeshQueryType                queryType,                                                           
+                                                                      Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr,
+                                                                      const DRange3d&                      extentInTargetGCS) const = 0;
 
         virtual IScalableMeshMeshQueryPtr     _GetMeshQueryInterface(MeshQueryType queryType) const = 0;
 
-        virtual IScalableMeshMeshQueryPtr     _GetMeshQueryInterface(MeshQueryType queryType,
-                                                              Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr,
-                                                              const DRange3d&                      extentInTargetGCS) const = 0;
+        virtual IScalableMeshMeshQueryPtr     _GetMeshQueryInterface(MeshQueryType                        queryType,
+                                                                     Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr,
+                                                                     const DRange3d&                      extentInTargetGCS) const = 0;
 
         virtual IScalableMeshNodeRayQueryPtr     _GetNodeQueryInterface() const = 0;
 
         virtual IDTMVolumeP             _GetDTMVolume() = 0;
+
+        virtual Bentley::TerrainModel::IDTM*   _GetDTMInterface() = 0;
 
         virtual const GeoCoords::GCS&               _GetGCS() const = 0;
 
@@ -98,7 +102,7 @@ struct IScalableMesh abstract:  Bentley::TerrainModel::IDTM
 #ifdef SCALABLE_MESH_ATP
         virtual int                                 _LoadAllNodeHeaders(size_t& nbLoadedNodes) const = 0; 
 #endif
-
+        virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) = 0;
     /*__PUBLISH_SECTION_START__*/
     public:
         //! Gets the number of points of the DTM.
@@ -107,21 +111,23 @@ struct IScalableMesh abstract:  Bentley::TerrainModel::IDTM
         //! Gets the draping interface.
         //! @return The draping interface.
 
+        BENTLEYSTM_EXPORT __int64          GetPointCount();
+
+        BENTLEYSTM_EXPORT DTMStatusInt     GetRange(DRange3dR range);
+
         BENTLEYSTM_EXPORT int                    GenerateSubResolutions();
 
         BENTLEYSTM_EXPORT __int64                GetBreaklineCount() const;
             
         BENTLEYSTM_EXPORT ScalableMeshCompressionType   GetCompressionType() const;
 
-        BENTLEYSTM_EXPORT int                    GetNbResolutions(DTMQueryDataType queryDataType) const;          
+        BENTLEYSTM_EXPORT int                    GetNbResolutions() const;          
 
-        BENTLEYSTM_EXPORT IScalableMeshQueryPtr         GetQueryInterface(DTMQueryType     queryType, 
-                                                             DTMQueryDataType queryDataType) const;
+        BENTLEYSTM_EXPORT IScalableMeshPointQueryPtr         GetQueryInterface(ScalableMeshQueryType queryType) const;
 
-        BENTLEYSTM_EXPORT IScalableMeshQueryPtr         GetQueryInterface(DTMQueryType                         queryType, 
-                                                             DTMQueryDataType                     queryDataType, 
-                                                             Bentley::GeoCoordinates::BaseGCSPtr& targetGCS,
-                                                             const DRange3d&                      extentInTargetGCS) const;
+        BENTLEYSTM_EXPORT IScalableMeshPointQueryPtr         GetQueryInterface(ScalableMeshQueryType                queryType,                                                              
+                                                                               Bentley::GeoCoordinates::BaseGCSPtr& targetGCS,
+                                                                               const DRange3d&                      extentInTargetGCS) const;
 
         BENTLEYSTM_EXPORT IScalableMeshMeshQueryPtr    GetMeshQueryInterface(MeshQueryType queryType) const;
 
@@ -132,6 +138,8 @@ struct IScalableMesh abstract:  Bentley::TerrainModel::IDTM
         BENTLEYSTM_EXPORT IScalableMeshNodeRayQueryPtr    GetNodeQueryInterface() const;
 
         BENTLEYSTM_EXPORT  IDTMVolumeP             GetDTMVolume();
+
+        BENTLEYSTM_EXPORT Bentley::TerrainModel::IDTM*   GetDTMInterface();
 
         BENTLEYSTM_EXPORT const Bentley::GeoCoordinates::BaseGCSPtr&
                                            GetBaseGCS() const;
@@ -162,6 +170,8 @@ struct IScalableMesh abstract:  Bentley::TerrainModel::IDTM
 
         BENTLEYSTM_EXPORT Count                  GetCountInRange (const DRange2d& range, const CountType& type, const unsigned __int64& maxNumberCountedPoints) const;
 
+        BENTLEYSTM_EXPORT uint64_t               AddClip(const DPoint3d* pts, size_t ptsSize);
+
     
         BENTLEYSTM_EXPORT static IScalableMeshPtr        GetFor                 (const WChar*          filePath,
                                                                     bool                    openReadOnly,
@@ -185,5 +195,11 @@ struct Count
     unsigned __int64 m_nbLinears;
     Count(unsigned __int64 nbPoints, unsigned __int64 nbLinears) { m_nbPoints = nbPoints; m_nbLinears = nbLinears; }
     };
+
+
+void BENTLEYSTM_EXPORT edgeCollapseTest(WCharCP param);
+void BENTLEYSTM_EXPORT edgeCollapsePrintGraph(WCharCP param);
+void BENTLEYSTM_EXPORT edgeCollapseShowMesh(WCharCP param, PolyfaceQueryP& outMesh);
+
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

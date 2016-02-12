@@ -6,7 +6,7 @@
 |       $Date: 2012/06/27 14:06:54 $
 |     $Author: Chantal.Poulin $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -69,11 +69,9 @@ int SetClipToDTM (Bentley::TerrainModel::DTMPtr& dtmPtr,
                   const DRange3d&                spatialIndexRange,
                   const HVE2DShape&              shape);
 
-struct ToBcPtConverter
-    {
-    DPoint3d operator () (const IDTMFile::Point3d64fM64f& inputPt) const;
-
-    DPoint3d operator () (const IDTMFile::Point3d64f& inputPt) const;    
+struct PtToPtConverter
+    {        
+    DPoint3d operator () (const DPoint3d& inputPt) const;
 
     DPoint3d operator () (const HGF3DCoord<double>& inputPt) const;        
     };

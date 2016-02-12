@@ -2,6 +2,7 @@
 //
 
 #include <ScalableMeshPCH.h>
+using namespace std;
 #include <iomanip>
 
 #include "tetGen\tetgen.h"

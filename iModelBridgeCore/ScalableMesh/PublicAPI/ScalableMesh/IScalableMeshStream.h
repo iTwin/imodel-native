@@ -6,7 +6,7 @@
 |       $Date: 2011/11/18 15:51:10 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -26,7 +26,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 struct BinaryIOS
     {
 private:
-    typedef basic_ios<byte>             bios;
+    typedef std::basic_ios<byte>             bios;
     bios&                               m_impl;
 
     // Uncopiable
@@ -47,8 +47,8 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct BinaryOStream : virtual public BinaryIOS
     {
-    typedef basic_ostream<byte>         bostream;
-    typedef UInt                        streamsize;
+    typedef std::basic_ostream<byte>         bostream;
+    typedef uint32_t                        streamsize;
 private:
     bostream&                           m_impl;
 
@@ -71,7 +71,7 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct BinaryIStream : virtual public BinaryIOS
     {
-    typedef basic_istream<byte>         bistream;
+    typedef std::basic_istream<byte>         bistream;
     typedef int                         int_type;
 
 private:
@@ -83,7 +83,7 @@ public:
     virtual                             ~BinaryIStream                         ();
 
     BENTLEYSTM_EXPORT BinaryIStream&          read                                   (byte*                   elements,
-                                                                                streamsize              count);
+                                                                                std::streamsize              count);
 
     BENTLEYSTM_EXPORT int_type                get                                    ();
     BENTLEYSTM_EXPORT int_type                peek                                   ();
@@ -97,7 +97,7 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct BinaryIOStream : public BinaryOStream, public BinaryIStream
     {
-    typedef basic_iostream<byte>        biostream;
+    typedef std::basic_iostream<byte>        biostream;
 public:
     // NOTE: Constructor meant only to be used inside this module. Do not export.
     explicit                            BinaryIOStream                         (biostream&              stream);

@@ -6,11 +6,11 @@
 |       $Date: 2011/10/20 18:47:55 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
-
+#include "ImagePPHeaders.h"
 #include "ScalableMeshSourcesImport.h"
 
 #include <ScalableMesh/Import/Source.h>

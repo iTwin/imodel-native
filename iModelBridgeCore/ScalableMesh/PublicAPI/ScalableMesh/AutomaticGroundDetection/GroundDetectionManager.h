@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ScalableMesh/AutomaticGroundDetection/GroundDetectionManager.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -42,17 +42,17 @@ typedef struct GroundDetectionParameters const& GroundDetectionParametersCR;
 *</category>
 * @bsimethod                                    Marc.Bedard                     04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct GroundDetectionLogger
+/*struct GroundDetectionLogger
     {
     public:
         BENTLEYSTM_EXPORT static void GroundDetectionLogger::OutputTimerToLogger(StopWatch& timer);
         BENTLEYSTM_EXPORT static  Bentley::NativeLogging::ILogger* Get();
     };
 
-#define GROUNDDLOG GroundDetectionLogger::Get()
+#define GROUNDDLOG GroundDetectionLogger::Get()*/
 
 //Uncomment line below to prevent running logger code (disable completely the logger) 
-//#define DISABLELOGGER 1
+#define DISABLELOGGER 1
 
 /*__PUBLISH_SECTION_START__*/
 

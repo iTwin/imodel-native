@@ -2,12 +2,12 @@
 |
 |     $Source: STM/ImportPlugins/DEMRasterImporter.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
-
+#include "../ImagePPHeaders.h"
 #include <ScalableMesh\GeoCoords\DGNModelGeoref.h>
 #include <ScalableMesh\GeoCoords\Reprojection.h>
 #include <ScalableMesh\Import\Plugin\InputExtractorV0.h>
@@ -260,6 +260,7 @@ class DEMRasterFileSourceCreator : public LocalFileSourceCreatorBase
         const GCS gcs(GetDEMFileGCS(extractor));
         DRange3d range(GetDEMFileRange(extractor, gcs));
         ScalableMeshData data = ScalableMeshData::GetNull();
+        data.SetIsGridData(true);
         data.AddExtent(range);
 
         return ContentDescriptor

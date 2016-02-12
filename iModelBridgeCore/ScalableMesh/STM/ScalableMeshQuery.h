@@ -6,7 +6,7 @@
 |       $Date: 2012/06/27 14:07:12 $
 |     $Author: Chantal.Poulin $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -20,19 +20,31 @@
 
 #pragma once
 
+#include <GeoCoord\BaseGeoCoord.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include <ScalableMesh/GeoCoords/Reprojection.h>
 
-#include <ImagePP/all/h/HCPGCoordModel.h>
 
-#include <ScalableMesh/IScalableMeshClipContainer.h>
+#include <ImagePP/all/h/HCPGCoordModel.h>
+//#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+//#include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>
+//#include <ImagePP/all/h/HRFBmpFile.h>
+
 #include <ScalableMesh/IScalableMesh.h>
+#include <ScalableMesh/IScalableMeshClipContainer.h>
+#include <ScalableMesh\IScalableMeshProgressiveQuery.h>
+
 #include "SMMeshIndex.h"
 #include "./ScalableMesh/ScalableMeshGraph.h"
+#include "Edits/DifferenceSet.h"
 #ifdef SCALABLE_MESH_ATP
 #include <ScalableMesh/IScalableMeshATP.h>
 #endif
 #include <hash_map>
+
+//NEEDS_WORK_SM_STREAMING : remove this!
+extern std::mutex s_streamingMutex;
+
 
 //Only way found to deactivate warning C4250 since the pragma warning(disable... doesn't work
 #pragma warning( push, 0 )
@@ -56,25 +68,12 @@ typedef RefCountedPtr<ScalableMeshExtentQuery> ScalableMeshExtentQueryPtr;
 struct ScalableMeshQueryParameters : public virtual IScalableMeshQueryParameters                              
     {    
     private: 
-       
-        bool                                m_isReturnedDataTriangulated;
+               
         Bentley::GeoCoordinates::BaseGCSPtr m_sourceGCSPtr;
         Bentley::GeoCoordinates::BaseGCSPtr m_targetGCSPtr;
-        long                                m_edgeOption;      
-        double                              m_maxSideLength;   
-
+                
     protected:                  
-        
-        virtual bool _GetTriangulationState() override
-            {
-            return m_isReturnedDataTriangulated;
-            }
-        
-        virtual void _SetTriangulationState(bool pi_isReturnedDataTriangulated) override
-            {
-            m_isReturnedDataTriangulated = pi_isReturnedDataTriangulated;
-            }
-
+                
         virtual Bentley::GeoCoordinates::BaseGCSPtr _GetSourceGCS() override
             {
             return m_sourceGCSPtr;
@@ -91,39 +90,16 @@ struct ScalableMeshQueryParameters : public virtual IScalableMeshQueryParameters
             m_sourceGCSPtr = sourceGCSPtr;
             m_targetGCSPtr = targetGCSPtr;
             }
-
-        virtual long _GetEdgeOptionTriangulationParam() override
-            {
-            return m_edgeOption;
-            }
-
-        virtual double _GetMaxSideLengthTriangulationParam() override
-            {
-            return m_maxSideLength;
-            }
-                            
-        virtual void _SetEdgeOptionTriangulationParam(long edgeOption) override
-            {
-            m_edgeOption = edgeOption;
-            }
-
-        virtual void _SetMaxSideLengthTriangulationParam(double maxSideLength) override
-            {
-            m_maxSideLength = maxSideLength;
-            }
-                            
+                                   
     public:
 
-        ScalableMeshQueryParameters()
-        : m_isReturnedDataTriangulated(true),
-          m_edgeOption(2),
-          m_maxSideLength(500)
+        ScalableMeshQueryParameters()        
             {                 
             }    
     };
 
 struct ScalableMeshFullResolutionQueryParams :  public virtual ScalableMeshQueryParameters,
-                                         public virtual IScalableMeshFullResolutionQueryParams
+                                                public virtual IScalableMeshFullResolutionQueryParams
                                         
     {    
     private : 
@@ -309,37 +285,12 @@ struct ScalableMeshViewDependentQueryParams : public virtual IScalableMeshViewDe
 
         double   m_minScreenPixelsPerPoint;
         double   m_rootToViewMatrix[4][4];
-
-        //Determine if the same or different resolution method is used when the camera is off
-        bool     m_useSameResolutionWhenCameraIsOff;        
-
-        //Same resolution method's parameters 
-        bool     m_useSplitThresholdForLevelSelection;
-
-        //Different resolution method's parameters
-        bool     m_useSplitThresholdForTileSelection;
-                
-
+                                
         virtual double        _GetMinScreenPixelsPerPoint() const override
             {
             return m_minScreenPixelsPerPoint;
             } 
-
-        virtual bool          _GetUseSameResolutionWhenCameraIsOff() const override
-            {
-            return m_useSameResolutionWhenCameraIsOff;
-            }
-
-        virtual bool          _GetUseSplitThresholdForLevelSelection() const override
-            {
-            return m_useSplitThresholdForLevelSelection;
-            } 
-
-        virtual bool          _GetUseSplitThresholdForTileSelection() const override
-            {
-            return m_useSplitThresholdForTileSelection;
-            }
-
+        
         virtual const double* _GetRootToViewMatrix() const override
             {
             return (double*)m_rootToViewMatrix;
@@ -354,29 +305,11 @@ struct ScalableMeshViewDependentQueryParams : public virtual IScalableMeshViewDe
             {
             memcpy(m_rootToViewMatrix, rootToViewMatrix, sizeof(m_rootToViewMatrix));
             }
-
-        virtual void          _SetUseSameResolutionWhenCameraIsOff(bool useSameResolution) override
-            {
-            m_useSameResolutionWhenCameraIsOff = useSameResolution;
-            }
-
-        virtual void          _SetUseSplitThresholdForLevelSelection(bool useSplitThreshold) override
-            {
-            m_useSplitThresholdForLevelSelection = useSplitThreshold;
-            }
-
-        virtual void          _SetUseSplitThresholdForTileSelection(bool useSplitThreshold) override
-            {
-            m_useSplitThresholdForTileSelection = useSplitThreshold;
-            }          
-               
+                      
     public : 
 
         ScalableMeshViewDependentQueryParams()
             {
-            m_useSameResolutionWhenCameraIsOff = false;                
-            m_useSplitThresholdForLevelSelection = true;        
-            m_useSplitThresholdForTileSelection = false;    
             m_minScreenPixelsPerPoint = 100;                        
             }
 
@@ -514,7 +447,7 @@ struct ScalableMeshQueryAllLinearsQueryParams : public virtual IScalableMeshQuer
 /*==================================================================*/
 /*        QUERY PARAMETERS IMPLEMENTATION SECTION - END             */
 /*==================================================================*/ 
-class ScalableMeshQuery : public IScalableMeshQuery
+class ScalableMeshPointQuery : public IScalableMeshPointQuery
     {
                                         
     protected :
@@ -523,17 +456,15 @@ class ScalableMeshQuery : public IScalableMeshQuery
 
         HFCPtr<HVEShape> m_clipShapePtr;        
         
-        ScalableMeshQuery();
-        ~ScalableMeshQuery();
+        ScalableMeshPointQuery();
+        ~ScalableMeshPointQuery();
         
 
         HFCPtr<HVEShape>  CreateClipShape(DRange3d& spatialIndexRange) const;
         HFCPtr<HVEShape>  CreateClipShape(HFCPtr<HVEShape> areaShape) const;
                
-        template <class POINT> int AddPoints(const DTMPtr&          dtmPtr, 
-                                             const list<POINT>&     pointList) const;
-        
-        //Inherited from IScalableMeshQuery
+                
+        //Inherited from IScalableMeshPointQuery
         virtual int _GetNbClip() const;
 /*
         virtual int _GetClip(DPoint3d*& clipPointsP,
@@ -550,7 +481,7 @@ class ScalableMeshQuery : public IScalableMeshQuery
     public :
        
         //NEEDS_WORK_SM - TEMP in public
-        template <class POINT> static int AddPoints(const DTMPtr&          dtmPtr, 
+        template <class POINT> static int AddPoints(bvector<DPoint3d>&                   points, 
                                                     const HPMMemoryManagedVector<POINT>& pointList) /*const*/;
 
         template<class EXTENT> static EXTENT GetExtentFromClipShape(const DPoint3d* pClipShapePts, 
@@ -564,21 +495,20 @@ class ScalableMeshQuery : public IScalableMeshQuery
                        size_t                             maxNumberOfPoints,
                        bool                               useDecimation);
 
-        static IScalableMeshQueryPtr GetReprojectionQueryInterface(IScalableMeshPtr              scmToQueryPtr,
-                                                            DTMQueryType           queryType, 
-                                                            DTMQueryDataType       queryDataType, 
-                                                            const GeoCoords::GCS&   sourceGCStr,
-                                                            const GeoCoords::GCS&   targetGCStr,
-                                                            const DRange3d&        extentInTargetGCS);
+        static IScalableMeshPointQueryPtr GetReprojectionQueryInterface(IScalableMeshPtr        scmToQueryPtr,
+                                                                        ScalableMeshQueryType   queryType,                                                             
+                                                                        const GeoCoords::GCS&   sourceGCStr,
+                                                                        const GeoCoords::GCS&   targetGCStr,
+                                                                        const DRange3d&         extentInTargetGCS);
 
-        int _Query(Bentley::TerrainModel::DTMPtr&   dtmPtr, 
+        int _Query(bvector<DPoint3d>&               points, 
                    const DPoint3d*                  pClipShapePts, 
                    int                              nbClipShapePts, 
                    const IScalableMeshQueryParametersPtr&  scmQueryParamsPtr) const ;
 
 };
 
-template <class POINT> class ScalableMeshFullResolutionPointQuery : public ScalableMeshQuery
+template <class POINT> class ScalableMeshFullResolutionPointQuery : public ScalableMeshPointQuery
     {   
     public:  // OPERATOR_NEW_KLUDGE  >>> BEIJING_WIP_STM add a static create method
         void*   operator new(size_t size) { return bentleyAllocator_allocateRefCounted (size); }
@@ -588,13 +518,13 @@ template <class POINT> class ScalableMeshFullResolutionPointQuery : public Scala
 
     private : 
                 
-        HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> m_scmPointIndexPtr;
+        HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> m_scmIndexPtr;
         int                                             m_resolutionIndex;
 
     protected :
 
-        // Inherited from IScalableMeshQuery
-        virtual int _Query(Bentley::TerrainModel::DTMPtr&   dtmPtr, 
+        // Inherited from IScalableMeshPointQuery
+        virtual int _Query(bvector<DPoint3d>&               points,
                            const DPoint3d*                  pQueryShapePts, 
                            int                              nbQueryShapePts, 
                            const IScalableMeshQueryParametersPtr&  scmQueryParamsPtr) const;
@@ -607,7 +537,7 @@ template <class POINT> class ScalableMeshFullResolutionPointQuery : public Scala
         virtual ~ScalableMeshFullResolutionPointQuery();     
     }; 
 
-template <class POINT> class ScalableMeshViewDependentPointQuery : public ScalableMeshQuery
+template <class POINT> class ScalableMeshViewDependentPointQuery : public ScalableMeshPointQuery
     {   
     public:  // OPERATOR_NEW_KLUDGE  >>> BEIJING_WIP_STM add a static create method
         void*   operator new(size_t size) { return bentleyAllocator_allocateRefCounted (size); }
@@ -617,13 +547,13 @@ template <class POINT> class ScalableMeshViewDependentPointQuery : public Scalab
 
     private : 
                 
-        HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> m_scmPointIndexPtr;
+        HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> m_scmIndexPtr;
         int                                             m_resolutionIndex;
 
     protected :
 
-        // Inherited from IScalableMeshQuery
-        virtual int _Query(Bentley::TerrainModel::DTMPtr&            dtmPtr, 
+        // Inherited from IScalableMeshPointQuery
+        virtual int _Query(bvector<DPoint3d>&               points,
                            const DPoint3d*                  pQueryShapePts, 
                            int                              nbQueryShapePts, 
                            const IScalableMeshQueryParametersPtr&  scmQueryParamsPtr) const;
@@ -638,7 +568,7 @@ template <class POINT> class ScalableMeshViewDependentPointQuery : public Scalab
     };
 
 
-template <class POINT> class ScalableMeshFixResolutionViewPointQuery : public ScalableMeshQuery 
+template <class POINT> class ScalableMeshFixResolutionViewPointQuery : public ScalableMeshPointQuery 
     {  
     public:  // OPERATOR_NEW_KLUDGE  >>> BEIJING_WIP_STM add a static create method
         void*   operator new(size_t size) { return bentleyAllocator_allocateRefCounted (size); }
@@ -648,13 +578,13 @@ template <class POINT> class ScalableMeshFixResolutionViewPointQuery : public Sc
 
     private : 
         
-        HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> m_scmPointIndexPtr;
+        HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> m_scmIndexPtr;
         GeoCoords::GCS                                  m_pointIndexGCS;
 
     protected :
 
-        // Inherited from IScalableMeshQuery
-        virtual int _Query(Bentley::TerrainModel::DTMPtr&            dtmPtr, 
+        // Inherited from IScalableMeshPointQuery
+        virtual int _Query(bvector<DPoint3d>&               points,
                            const DPoint3d*                  pQueryShapePts, 
                            int                              nbQueryShapePts, 
                            const IScalableMeshQueryParametersPtr&  scmQueryParamsPtr) const;
@@ -668,7 +598,7 @@ template <class POINT> class ScalableMeshFixResolutionViewPointQuery : public Sc
     };
 
 
-class ScalableMeshReprojectionQuery : public ScalableMeshQuery 
+class ScalableMeshReprojectionQuery : public ScalableMeshPointQuery 
     {
     public:  // OPERATOR_NEW_KLUDGE  >>> BEIJING_WIP_STM add a static create method
         void*   operator new(size_t size) { return bentleyAllocator_allocateRefCounted (size); }
@@ -678,7 +608,7 @@ class ScalableMeshReprojectionQuery : public ScalableMeshQuery
 
     private : 
         
-        IScalableMeshQueryPtr         m_originalQueryPtr;
+        IScalableMeshPointQueryPtr         m_originalQueryPtr;
 
         GeoCoords::GCS          m_sourceGCS;
         GeoCoords::GCS          m_targetGCS;
@@ -688,11 +618,13 @@ class ScalableMeshReprojectionQuery : public ScalableMeshQuery
                    
     protected :
 
-        // Inherited from IScalableMeshQuery
-        virtual int _Query(Bentley::TerrainModel::DTMPtr&            dtmPtr, 
+        // Inherited from IScalableMeshPointQuery
+        /*NEEDS_WORK_SM : need mesh reprojection interface.
+        virtual int _Query(bvector<DPoint3d>&               points,
                            const DPoint3d*                  pQueryShapePts, 
                            int                              nbQueryShapePts, 
                            const IScalableMeshQueryParametersPtr&  scmQueryParamsPtr) const;
+                           */
 
         virtual int _AddClip(DPoint3d* clipPointsP,
                              int   numberOfPoints, 
@@ -701,7 +633,7 @@ class ScalableMeshReprojectionQuery : public ScalableMeshQuery
                            
     public :
         
-        ScalableMeshReprojectionQuery(IScalableMeshQueryPtr         originalQueryPtr, 
+        ScalableMeshReprojectionQuery(IScalableMeshPointQueryPtr         originalQueryPtr, 
                                const GeoCoords::GCS&      sourceGCS, 
                                const GeoCoords::GCS&      targetGCS,
                                const DRange3d&        extentInTargetGCS);
@@ -723,12 +655,15 @@ class ScalableMeshMesh : public IScalableMeshMesh
 
     private : 
         DVec3d m_viewNormal;
-                mutable size_t    m_nbFaceIndexes;
-                int32_t*    m_faceIndexes;
-                size_t    m_normalCount;
-                DVec3d*   m_pNormal;
-                int32_t*    m_pNormalIndex;
-                mutable DVec3d*   m_pNormalAuto;
+        mutable size_t    m_nbFaceIndexes;
+        int32_t*    m_faceIndexes;
+        size_t    m_normalCount;
+        DVec3d*   m_pNormal;
+        int32_t*    m_pNormalIndex;
+        mutable DVec3d*   m_pNormalAuto;
+        DPoint2d*     m_pUv;
+        int32_t*    m_pUvIndex;
+        size_t      m_uvCount;
 
         mutable PolyfaceQueryCarrier* m_polyfaceQueryCarrier; 
 
@@ -740,7 +675,11 @@ class ScalableMeshMesh : public IScalableMeshMesh
 
         virtual size_t _GetNbPoints() const override;
 
+        virtual size_t _GetNbFaces() const override;
+
         virtual DPoint3d* _EditPoints() override;
+
+        virtual DTMStatusInt _GetAsBcDTM(BcDTMPtr& bcdtm)override;
 
         virtual bool _FindTriangleForProjectedPoint(int* outTriangle, DPoint3d& point, bool use2d = false) const override;
         virtual bool _FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DPoint3d& point, bool use2d = false) const override;
@@ -755,7 +694,7 @@ class ScalableMeshMesh : public IScalableMeshMesh
         virtual bool _CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d& cuttingPlane) const override;
 
 
-        ScalableMeshMesh(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex);
+        ScalableMeshMesh(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, size_t uvCount, DVec2d* pUv, int32_t* pUvIndex);
 
         ScalableMeshMesh(DVec3d viewNormal);
 
@@ -771,11 +710,53 @@ class ScalableMeshMesh : public IScalableMeshMesh
               size_t GetNbFaceIndexes() const {return m_nbFaceIndexes;}
         const Int32* GetFaceIndexes() const {return m_faceIndexes;}
 
-        int AppendMesh(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex);
+        int AppendMesh(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, size_t uvCount, DPoint2d* pUv, int32_t* pUvIndex);
+
+        void ApplyDifferenceSet(const DifferenceSet& d);
+
+        void ApplyClipMesh(const DifferenceSet& d);
+
+        void RecalculateUVs(DRange3d& nodeRange);
 
         static ScalableMeshMeshPtr Create (DVec3d viewNormal);
         static ScalableMeshMeshPtr Create ();
     };
+
+class ScalableMeshTexture;
+typedef RefCountedPtr<ScalableMeshTexture> ScalableMeshTexturePtr;
+
+class ScalableMeshTexture : public IScalableMeshTexture
+{
+    friend IScalableMeshTexture;
+
+private:
+    Byte* m_data;
+    size_t m_dataSize;
+    Point2d m_dimension;
+    int m_id;
+//    MaterialPtr m_material;
+
+protected:
+    virtual size_t _GetSize() const override;
+    virtual Point2d _GetDimension() const override;
+    virtual Byte* _GetData() const override;
+    virtual int _GetID() const override;
+//    virtual MaterialPtr _GetMaterial() const override;
+
+    ScalableMeshTexture(Byte* data, size_t size, Point2d dimension, int id);
+    virtual ~ScalableMeshTexture();
+
+public:
+    Byte* GetData() const { return m_data; }
+    Point2d GetDimension() const { return m_dimension; }
+    size_t GetSize() const { return m_dataSize; }
+    int GetID() const { return m_id; }
+//    MaterialPtr GetMaterial() const { return m_material; }
+
+    static ScalableMeshTexturePtr Create(byte* pData, size_t dataSize, Point2d dimension, int id);
+};
+
+
 
 class ScalableMeshMeshWithGraph;
 
@@ -794,17 +775,35 @@ class ScalableMeshMeshWithGraph : public ScalableMeshMesh
         virtual bool _FindTriangleAlongRay(int* outTriangle, DRay3d& ray, MTGNodeId edge = -1) const override;
         virtual bool _FindTriangleAlongRay(MTGNodeId& outTriangle, DRay3d& ray) const override;
         virtual bool _FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DPoint3d& point, bool use2d = false) const override;
-        ScalableMeshMeshWithGraph(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, MTGGraph* pGraph, bool is3d);
+        ScalableMeshMeshWithGraph(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, MTGGraph* pGraph, bool is3d, size_t uvCount, DVec2d* pUv, int32_t* pUvIndex);
         ScalableMeshMeshWithGraph(MTGGraph* pGraph, bool is3d);
 
         virtual ~ScalableMeshMeshWithGraph();
 
     public:
 
-        static ScalableMeshMeshWithGraphPtr Create(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, MTGGraph* pGraph, bool is3d);
+        static ScalableMeshMeshWithGraphPtr Create(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, MTGGraph* pGraph, bool is3d, size_t uvCount, DVec2d* pUv, int32_t* pUvIndex);
         static ScalableMeshMeshWithGraphPtr Create(MTGGraph* pGraph, bool is3d);
     };
 
+
+/*struct ScalableMeshTexture : RefCountedBase
+{
+    bvector<byte>   m_data;
+    bvector<byte>   m_compressedData;
+    Point2d         m_size;
+    MaterialPtr     m_material;
+
+    ScalableMeshTexture(byte const* pData, size_t dataSize);
+    ~ScalableMeshTexture();
+
+    void Initialize(size_t nodeID, size_t elementID, ViewContextR viewContext);
+    void Activate(ViewContextR viewContext);
+    size_t GetMemorySize() const;
+    bool IsInitialized() const;
+
+    static ScalableMeshTexturePtr Create(byte const* pData, size_t dataSize);
+};*/
 
 struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDependentMeshQueryParams 
     {    
@@ -813,27 +812,17 @@ struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDepend
         Bentley::GeoCoordinates::BaseGCSPtr m_sourceGCSPtr;
         Bentley::GeoCoordinates::BaseGCSPtr m_targetGCSPtr;
 
+        bool     m_isProgressiveDisplay;
         double   m_minScreenPixelsPerPoint;
         double   m_rootToViewMatrix[4][4];
+        
 
-        //Determine if the same or different resolution method is used when the camera is off
-        bool     m_useSameResolutionWhenCameraIsOff;        
-
-        //Same resolution method's parameters 
-        bool     m_useSplitThresholdForLevelSelection;
-
-        //Different resolution method's parameters
-        bool     m_useSplitThresholdForTileSelection;
-
-        DPoint3d m_viewBox[8];                    
-
-        //NEEDS_WORK_SM : Maybe should be activate only on a specialized define
-        bool                m_gatherQueriedNodeBoundaries;
-        bvector<DSegment3d> m_queriedNodeBoundaries;
-
-
+        //NEEDS_WORK_SM : Only one of those is likely required
+        DPoint3d m_viewBox[8];                 
         ClipVectorPtr m_viewClipVector;
 
+        StopQueryCallbackFP m_stopQueryCallbackFP;
+        
         virtual const DPoint3d* _GetViewBox() const override
             {
             return m_viewBox;
@@ -849,21 +838,11 @@ struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDepend
             return m_minScreenPixelsPerPoint;
             } 
 
-        virtual bool          _GetUseSameResolutionWhenCameraIsOff() const override
+        virtual StopQueryCallbackFP _GetStopQueryCallback() const
             {
-            return m_useSameResolutionWhenCameraIsOff;
+            return m_stopQueryCallbackFP;
             }
-
-        virtual bool          _GetUseSplitThresholdForLevelSelection() const override
-            {
-            return m_useSplitThresholdForLevelSelection;
-            } 
-
-        virtual bool          _GetUseSplitThresholdForTileSelection() const override
-            {
-            return m_useSplitThresholdForTileSelection;
-            }
-
+      
         virtual const double* _GetRootToViewMatrix() const override
             {
             return (double*)m_rootToViewMatrix;
@@ -874,9 +853,19 @@ struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDepend
             return m_viewClipVector;
             }
 
+        virtual bool _IsProgressiveDisplay() const override
+            {
+            return m_isProgressiveDisplay;
+            }
+
         virtual void          _SetMinScreenPixelsPerPoint(double minScreenPixelsPerPoint) override
             {
             m_minScreenPixelsPerPoint = minScreenPixelsPerPoint;
+            }
+
+        virtual void          _SetProgressiveDisplay(bool isProgressiveDisplay) override
+            {
+            m_isProgressiveDisplay = isProgressiveDisplay;
             }
 
         virtual void          _SetRootToViewMatrix(const double rootToViewMatrix[][4]) override
@@ -884,49 +873,17 @@ struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDepend
             memcpy(m_rootToViewMatrix, rootToViewMatrix, sizeof(m_rootToViewMatrix));
             }
 
-        virtual void          _SetUseSameResolutionWhenCameraIsOff(bool useSameResolution) override
+        virtual StatusInt     _SetStopQueryCallback(StopQueryCallbackFP stopQueryCallbackFP) override
             {
-            m_useSameResolutionWhenCameraIsOff = useSameResolution;
-            }
-
-        virtual void          _SetUseSplitThresholdForLevelSelection(bool useSplitThreshold) override
-            {
-            m_useSplitThresholdForLevelSelection = useSplitThreshold;
-            }
-
-        virtual void          _SetUseSplitThresholdForTileSelection(bool useSplitThreshold) override
-            {
-            m_useSplitThresholdForTileSelection = useSplitThreshold;
-            }                          
+            m_stopQueryCallbackFP = stopQueryCallbackFP;
+            return SUCCESS;
+            }                 
 
         virtual void          _SetViewClipVector(ClipVectorPtr& viewClipVector) override
             {
             m_viewClipVector = viewClipVector;           
             }        
-
-          //NEEDS_WORK_SM : Maybe should be activate only on a specialized define
-        virtual bool          _GetGatherQueriedNodeBoundaries() const override
-            {
-            return m_gatherQueriedNodeBoundaries;
-            }
-
-        virtual void          _SetGatherQueriedNodeBoundaries(bool gatherNodeBoundaries) override
-            {
-            m_gatherQueriedNodeBoundaries = gatherNodeBoundaries;
-            }
-
-        virtual bool          _GetQueriedNodeBoundaries(bvector<DSegment3d>& queriedNodeBoundaries) const override
-            {
-            queriedNodeBoundaries = m_queriedNodeBoundaries;
-
-            return true;
-            }
-
-        virtual void          _SetQueriedNodeBoundaries(bvector<DSegment3d>& nodeBoundaries) override
-            {
-            m_queriedNodeBoundaries = nodeBoundaries;
-            }
-
+     
         virtual Bentley::GeoCoordinates::BaseGCSPtr _GetSourceGCS() override
             {
             return m_sourceGCSPtr;
@@ -942,20 +899,15 @@ struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDepend
             {
             m_sourceGCSPtr = sourceGCSPtr;
             m_targetGCSPtr = targetGCSPtr;
-            }
-        //NEEDS_WORK_SM : Maybe should be activate only on a specialized define END
+            }        
         
     public : 
 
         ScalableMeshViewDependentMeshQueryParams()
-            {
-            m_useSameResolutionWhenCameraIsOff = false;                
-            m_useSplitThresholdForLevelSelection = true;        
-            m_useSplitThresholdForTileSelection = false;    
-            m_minScreenPixelsPerPoint = 100;          
-
-            //NEEDS_WORK_SM : Maybe should be activate only on a specialized define
-            m_gatherQueriedNodeBoundaries = false;
+            {            
+            m_minScreenPixelsPerPoint = 100;      
+            m_isProgressiveDisplay = false;
+            m_stopQueryCallbackFP = 0;
             }
 
         virtual ~ScalableMeshViewDependentMeshQueryParams()
@@ -1006,7 +958,7 @@ template <class POINT> class ScalableMeshFullResolutionMeshQuery : public IScala
 
     private : 
                 
-        HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> m_scmPointIndexPtr;
+        HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> m_scmIndexPtr;
         
     protected :
 
@@ -1039,7 +991,7 @@ template <class POINT> class ScalableMeshViewDependentMeshQuery : public IScalab
 
     private:
 
-        HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> m_scmPointIndexPtr;
+        HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> m_scmIndexPtr;
 
     protected:
 
@@ -1072,7 +1024,7 @@ template <class POINT> class ScalableMeshReprojectionMeshQuery : public IScalabl
     private:
 
         IScalableMeshMeshQueryPtr         m_originalQueryPtr;
-        HFCPtr<SMMeshIndex<POINT, YProtPtExtentType>> m_scmPointIndexPtr;
+        HFCPtr<SMMeshIndex<POINT, YProtPtExtentType>> m_scmIndexPtr;
 
         GeoCoords::GCS          m_sourceGCS;
         GeoCoords::GCS          m_targetGCS;
@@ -1161,7 +1113,7 @@ template <class POINT> class ScalableMeshNodeRayQuery : public IScalableMeshNode
 
     private:
 
-        HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> m_scmPointIndexPtr;
+        HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> m_scmIndexPtr;
 
     protected:
 
@@ -1171,6 +1123,12 @@ template <class POINT> class ScalableMeshNodeRayQuery : public IScalableMeshNode
                            const DPoint3d*                               pClipShapePts,
                            int                                           nbClipShapePts,
                            const IScalableMeshNodeQueryParamsPtr&  scmQueryParamsPtr) const override;
+
+        virtual int _Query(bvector<IScalableMeshNodePtr>&                                nodePtr,
+                            const DPoint3d*                               pTestPt,
+                            const DPoint3d*                               pClipShapePts,
+                            int                                           nbClipShapePts,
+                            const IScalableMeshNodeQueryParamsPtr&  scmQueryParamsPtr) const override;
 
     public:
 
@@ -1241,7 +1199,7 @@ template <class POINT> class ScalableMeshNodePlaneQuery : public IScalableMeshMe
 
     private:
 
-        HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> m_scmPointIndexPtr;
+        HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> m_scmIndexPtr;
 
     protected:
 
@@ -1262,18 +1220,41 @@ template <class POINT> class ScalableMeshNodePlaneQuery : public IScalableMeshMe
         virtual ~ScalableMeshNodePlaneQuery();
     };
 
-template<class POINT> class ScalableMeshNode : public IScalableMeshNode
+template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
-    {
-
+    {                
     protected:
-        HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>> m_node;
+        HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>> m_node;        
+
+        void ComputeDiffSet(DifferenceSet& diffs, const bvector<bool>& clipsToShow, ScalableMeshTextureID texID) const;
+
+        virtual BcDTMPtr   _GetBcDTM() const override;
 
         virtual bool    _ArePoints3d() const override;
 
         virtual bool    _ArePointsFullResolution() const override;
 
-        virtual IScalableMeshMeshPtr _GetMesh(bool loadGraph) const override;
+        virtual IScalableMeshMeshPtr _GetMesh(bool loadGraph, bvector<bool>& clipsToShow) const override;
+
+        virtual IScalableMeshMeshPtr _GetMeshByParts(const bvector<bool>& clipsToShow, ScalableMeshTextureID texId) const override;
+
+        virtual void   _ApplyAllExistingClips() const override;
+
+        virtual void   _RefreshMergedClip() const override;
+
+        virtual bool   _AddClip(uint64_t id, bool isVisible) const override;
+
+        virtual bool   _AddClipAsync(uint64_t id, bool isVisible) const override;
+
+        virtual bool   _ModifyClip(uint64_t id,  bool isVisible) const override;
+
+        virtual bool   _DeleteClip(uint64_t id, bool isVisible) const override;
+
+        virtual IScalableMeshTexturePtr _GetTexture(size_t texture_id) const override;
+
+        virtual int _GetTextureID(size_t texture_id) const override;
+
+        virtual size_t _GetNbTexture() const override;
 
         virtual bvector<IScalableMeshNodePtr> _GetNeighborAt( char relativePosX, char relativePosY, char relativePosZ) const override;
 
@@ -1302,8 +1283,147 @@ template<class POINT> class ScalableMeshNode : public IScalableMeshNode
             {
             return m_node;
             }
+    };
+
+
+template<class POINT> class ScalableMeshCachedMeshNode : public virtual IScalableMeshCachedDisplayNode, 
+                                                         public virtual ScalableMeshNode<POINT>
+    {    
+
+    private: 
+            bvector<IScalableMeshMeshPtr>    m_loadedMeshes;
+            bvector<IScalableMeshTexturePtr> m_loadedTextures;            
+            size_t                           m_nbMeshes; 
+
+    protected: 
+
+            virtual IScalableMeshMeshPtr _GetMesh(bool loadGraph, bvector<bool>& clipsToShow) const override;
+
+            virtual IScalableMeshMeshPtr _GetMeshByParts(const bvector<bool>& clipsToShow, ScalableMeshTextureID texId) const override;
+
+            virtual IScalableMeshTexturePtr _GetTexture(size_t texture_id) const override;
+
+    public:             
+
+            ScalableMeshCachedMeshNode(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr, bool loadTexture)
+            : ScalableMeshNode(nodePtr)
+                {           
+                auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
+
+                if (loadTexture)
+                    m_nbMeshes = meshNode->GetNbPtsIndiceArrays();
+                else
+                    m_nbMeshes = 1;
+                }
+
+            ScalableMeshCachedMeshNode() {};
+
+            void LoadMeshes(bool loadGraph, const bvector<bool>& clipsToShow);
+
+            virtual StatusInt _GetCachedMesh(SmCachedDisplayMesh*& cachedMesh, size_t cachedMeshId) const override {return ERROR;}
+
+            virtual StatusInt _GetCachedTexture(SmCachedDisplayTexture*& cachedTexture, size_t cachedMeshId) const override {return ERROR;}
+
+            virtual size_t    _GetNbMeshes() const override {return m_nbMeshes;}
+
+            static ScalableMeshCachedMeshNode* Create(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr, bool loadTexture) 
+                {
+                return new ScalableMeshCachedMeshNode(nodePtr, loadTexture);
+                }
+    };
+
+
+template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScalableMeshCachedDisplayNode, 
+                                                            public virtual ScalableMeshNode<POINT>
+    {    
+
+    private: 
+            //IScalableMeshMeshPtr m_loadedMeshPtr;
+            bvector<SmCachedDisplayMesh*>       m_cachedDisplayMeshes;
+            bvector<SmCachedDisplayTexture*>    m_cachedDisplayTextures;
+            IScalableMeshDisplayCacheManagerPtr m_displayCacheManagerPtr;
+            bool                                m_isLoaded;
+            size_t                              m_nbMeshes; 
+
+
+    protected:         
+                                    
+            virtual StatusInt _GetCachedMesh(SmCachedDisplayMesh*& cachedMesh, size_t cachedMeshId) const override 
+                {                            
+                if (cachedMeshId < m_cachedDisplayMeshes.size()) 
+                    {
+                    cachedMesh = m_cachedDisplayMeshes[cachedMeshId];
+                    return SUCCESS;
+                    }
+
+                return ERROR;                
+                }
+
+            virtual StatusInt _GetCachedTexture(SmCachedDisplayTexture*& cachedTexture, size_t cachedMeshId) const override                 
+                {
+                //Cached mesh Id 0 is the mesh without texture, which can be empty
+                if (cachedMeshId < m_cachedDisplayTextures.size()) 
+                    {
+                    cachedTexture = m_cachedDisplayTextures[cachedMeshId];
+                    return SUCCESS;
+                    }
+
+                return ERROR;                                
+                }            
+
+            virtual size_t _GetNbMeshes() const override
+                {                
+                return m_nbMeshes;
+                }
+
+    public:             
+
+            ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr)
+            : ScalableMeshNode(nodePtr)
+                {                
+                m_isLoaded = false;
+
+                auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
+
+                m_nbMeshes = meshNode->GetNbPtsIndiceArrays();                
+                }
+
+            ~ScalableMeshCachedDisplayNode()
+                {                                
+                for (auto& mesh : m_cachedDisplayMeshes)
+                    {
+                    if (mesh != 0)
+                        {
+                        assert(m_displayCacheManagerPtr != 0);
+                    
+                        BentleyStatus status = m_displayCacheManagerPtr->_DestroyCachedMesh(mesh); 
+
+                        assert(status == SUCCESS);                    
+                        }
+                    }
+
+                for (auto& texture : m_cachedDisplayTextures)
+                    {
+                    if (texture != 0)
+                        {
+                        assert(m_displayCacheManagerPtr != 0);
+                    
+                        BentleyStatus status = m_displayCacheManagerPtr->_DestroyCachedTexture(texture); 
+
+                        assert(status == SUCCESS);                    
+                        }
+                    }
+                }
+            
+            void LoadMeshes(bool loadGraph, const bvector<bool>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture);                               
+
+            static ScalableMeshCachedDisplayNode<POINT>* Create(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr)
+                {
+                return new ScalableMeshCachedDisplayNode<POINT>(nodePtr);
+                }
 
     };
+       
 
 //NEEDS_WORK_SM : Should inherit from ScalableMeshNode instead
 template<class POINT> class ScalableMeshNodeEdit : public IScalableMeshNodeEdit
@@ -1314,13 +1434,35 @@ template<class POINT> class ScalableMeshNodeEdit : public IScalableMeshNodeEdit
     protected:
         HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>> m_node;
 
+        virtual BcDTMPtr   _GetBcDTM() const override;
+
         virtual bool    _ArePoints3d() const override;
 
         virtual bool    _ArePointsFullResolution() const override;
+        
+        virtual IScalableMeshMeshPtr _GetMesh(bool loadGraph, bvector<bool>& clipsToShow) const override;
 
-        virtual IScalableMeshMeshPtr _GetMesh(bool loadGraph) const override;
+        virtual IScalableMeshMeshPtr _GetMeshByParts(const bvector<bool>& clipsToShow, ScalableMeshTextureID texId) const override;
+
+        virtual IScalableMeshTexturePtr _GetTexture(size_t texture_id) const override;
+
+        virtual int _GetTextureID(size_t texture_id) const override;
+
+        virtual size_t _GetNbTexture() const override;
 
         virtual bvector<IScalableMeshNodePtr> _GetNeighborAt(char relativePosX, char relativePosY, char relativePosZ) const override;
+
+        virtual void   _ApplyAllExistingClips() const override;
+
+        virtual void   _RefreshMergedClip() const override;
+
+        virtual bool   _AddClip(uint64_t id, bool isVisible) const override;
+
+        virtual bool   _AddClipAsync(uint64_t id, bool isVisible) const override;
+
+        virtual bool   _ModifyClip(uint64_t id,  bool isVisible) const override;
+
+        virtual bool   _DeleteClip(uint64_t id, bool isVisible) const override;
 
         virtual DRange3d _GetNodeExtent() const override;
 
@@ -1333,10 +1475,13 @@ template<class POINT> class ScalableMeshNodeEdit : public IScalableMeshNodeEdit
         virtual size_t _GetPointCount() const override;
 
         virtual StatusInt _AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices) override;
-
+        virtual StatusInt _AddTextures(bvector<bvector<Byte>>& data, size_t numTextures, bool sibling = false) override;
+        virtual StatusInt _AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture) override;
         virtual StatusInt _SetNodeExtent(DRange3d& extent) override;
 
         virtual StatusInt _SetContentExtent(DRange3d& extent) override;
+
+        virtual StatusInt _SetArePoints3d(bool arePoints3d) override;
 
         virtual bool _IsHeaderLoaded() const override;
 
@@ -1362,7 +1507,9 @@ template<class POINT> class ScalableMeshNodeWithReprojection : public ScalableMe
     private:
         GeoCoords::Reprojection  m_reprojectFunction;
     protected:
-        virtual IScalableMeshMeshPtr _GetMesh(bool loadGraph) const override;
+        virtual IScalableMeshMeshPtr _GetMesh(bool loadGraph, bvector<bool>& clipsToShow) const override;
+
+        virtual IScalableMeshMeshPtr _GetMeshByParts(const bvector<bool>& clipsToShow, ScalableMeshTextureID texId) const override;
     public:
         ScalableMeshNodeWithReprojection(IScalableMeshNodePtr nodeInfo, const GeoCoords::Reprojection& reproject);
         ScalableMeshNodeWithReprojection(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr, const GeoCoords::Reprojection& reproject);
@@ -1373,6 +1520,6 @@ template<class POINT> class ScalableMeshNodeWithReprojection : public ScalableMe
 /*==================================================================*/
 
 
-#include "ScalableMeshQuery.hpp"
+//#include "ScalableMeshPointQuery.hpp"
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

@@ -2,12 +2,12 @@
 |
 |     $Source: STM/ImportPlugins/PODImporter.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
-
+#include "../ImagePPHeaders.h"
 #include <ScalableMesh\ScalableMeshLib.h>
 #include <ScalableMesh/Import/ScalableMeshData.h>
 #include <ScalableMesh\Import\Plugin\TypeConversionFilterV0.h>
@@ -158,12 +158,7 @@ private:
 
         if (gcsError == true)
             {
-/*NEEDS_WORK_SM_IMPORTER : Message in app
-            WChar messageStr [1024]=L"";
-            LoadStringFromGEODTM(messageStr, MSGLISTIDS_GeoDTMErrors, MSGError_CannotCreateGCSFromSource);
-            mdlOutput_messageCenter(OutputMessagePriority::Warning, messageStr, m_fileQueryPtr->GetFileName(), OutputMessageAlert::None);
-*/
-
+            assert(!"GCS error");
             gcs = GetGCSFactory().Create(Unit::GetMeter());
             }
 

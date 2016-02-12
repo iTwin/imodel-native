@@ -6,7 +6,7 @@
 |       $Date: 2011/12/20 16:23:45 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -205,87 +205,6 @@ template <> struct is_pod<long> {enum {value = 1};};
 template <> struct is_pod<unsigned long> {enum {value = 1};};
 template <> struct is_pod<float> {enum {value = 1};};
 template <> struct is_pod<double> {enum {value = 1};};
-
-
-/*---------------------------------------------------------------------------------**//**
-* @description  This is a trait class that permits to validate whether a specified
-*               type is const or not.
-*
-* TDORAY: Replace with std::is_const or std::tr1::is_const when available.
-* @bsiclass                                                  Raymond.Gauthier   4/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename T>
-struct is_const 
-    { 
-    enum {value = 0}; 
-    };
-template <typename T> struct is_const<const T> { enum {value = 1}; };
-
-
-
-/*---------------------------------------------------------------------------------**//**
-* @description  This is a trait class that permits to validate whether a specified
-*               type is an integral type.
-*
-* TDORAY: Incomplete, does not exclude cases with user defined types that behave like
-*         integral types...
-*
-* TDORAY: Replace with std::is_integral or std::tr1::is_integral when available.
-* @bsiclass                                                  Raymond.Gauthier   12/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename T>
-struct is_integral
-    {
-    enum {value = (0 == (T(1) / T(2)) ? 1 : 0)};
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @description  Return a C++ array's end
-* TDORAY: Optimize with C++0x const_exp when available
-* @bsimethod                                                Raymond.Gauthier   5/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename T, size_t N>
-const T*                            carray_end                         (const T (&array)[N])        { return array + N; }
-template <typename T, size_t N> 
-T*                                  carray_end                         (T (&array)[N])              { return array + N; }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @description  Return a C++ array's end
-* @bsimethod                                                Raymond.Gauthier   5/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename T, size_t N>
-std::pair<const T*, const T*>       carray_range                       (const T (&array)[N])        { return std::make_pair(array, array + N); }
-template <typename T, size_t N> 
-std::pair<T*, T*>                   carray_range                       (T (&array)[N])              { return std::make_pair(array, array + N); }
-
-/*---------------------------------------------------------------------------------**//**
-* @description  Return a C++ array's size
-* TDORAY: Optimize with C++0x const_exp when available
-* @bsimethod                                                Raymond.Gauthier   5/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename T, size_t N>
-size_t                              carray_size                        (const T (&array)[N])        { return N; }
-
-/*---------------------------------------------------------------------------------**//**
-* @description  Return a C AString's size
-* TDORAY: Optimize with C++0x const_exp when available
-* @bsimethod                                                Raymond.Gauthier   5/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename CharT, size_t N>
-size_t                              cstring_len                        (const CharT (&str)[N])    { return N - 1; }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @description  Return a C AString's size
-* TDORAY: Optimize with C++0x const_exp when available
-* @bsimethod                                                Raymond.Gauthier   5/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename CharT, size_t N>
-const CharT*                        cstring_end                        (const CharT (&str)[N])    { return str + (N - 1); }
-template <typename CharT, size_t N> 
-CharT*                              cstring_end                        (CharT (&str)[N])          { return str + (N - 1); }
-
 
 
 /*---------------------------------------------------------------------------------**//**

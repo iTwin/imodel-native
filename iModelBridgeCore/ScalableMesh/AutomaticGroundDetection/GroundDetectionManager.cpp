@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/GroundDetectionManager.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ScalableMeshPCH.h"
@@ -126,7 +126,7 @@ void ProgressReport::_OnSignalError()
     m_pProgressListener->_OnSignalError();
     }
 
-
+#ifndef DISABLELOGGER
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -147,7 +147,7 @@ void GroundDetectionLogger::OutputTimerToLogger(StopWatch& timer)
     GROUNDDLOG->tracev(L"%.2lf seconds (%ld days %ld h %ld min %ld s)", timer.GetElapsedSeconds(), days, hours, minutes, seconds);
     }
 
-
+#endif
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -311,7 +311,7 @@ StatusInt GroundDetectionManager::DoGroundDetection(EditElementHandleR elHandle,
     std::vector<std::vector<bool>> invalidSeedIndexes;
 
     invalidSeedIndexes.resize(seeds.size());
-    vector<QuadSeedPtr>::iterator pSeedItr = seeds.begin();
+    std::vector<QuadSeedPtr>::iterator pSeedItr = seeds.begin();
     for (size_t k = 0; k < seeds.size(); k++, pSeedItr++)
         invalidSeedIndexes[k].resize((*pSeedItr)->seedPoints.size());
 
@@ -438,7 +438,7 @@ StatusInt GroundDetectionManager::DoGroundDetectionFromDTM(Bentley::DgnPlatform:
     std::vector<std::vector<bool>> invalidSeedIndexes;
 
     invalidSeedIndexes.resize(seeds.size());
-    vector<QuadSeedPtr>::iterator pSeedItr = seeds.begin();
+    std::vector<QuadSeedPtr>::iterator pSeedItr = seeds.begin();
     for (size_t k = 0; k < seeds.size(); k++, pSeedItr++)
         invalidSeedIndexes[k].resize((*pSeedItr)->seedPoints.size());
 

@@ -6,12 +6,12 @@
 //:>       $Date: 2010/11/29 13:15:52 $
 //:>     $Author: Daryl.Holmwood $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 #include <ScalableMeshPCH.h>
-
+#include "ImagePPHeaders.h"
 /*----------------------------------------------------------------------+
 | Include MicroStation SDK header files
 +----------------------------------------------------------------------*/

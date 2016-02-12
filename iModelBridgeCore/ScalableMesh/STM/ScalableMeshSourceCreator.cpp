@@ -6,12 +6,12 @@
 |       $Date: 2015/07/15 10:41:29 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
-
+#include "ImagePPHeaders.h"
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 #include "ScalableMesh.h"
@@ -29,6 +29,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 #include <ScalableMesh/Import/Source.h>
 #include <ScalableMesh/Import/Importer.h>
+#include <ScalableMesh/Import/DataSQLite.h>
 
 #include "../Import/Sink.h"
 #include "ScalableMeshSourcesImport.h"
@@ -42,25 +43,37 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <ScalableMesh/Import/Error/Source.h>
 #include "ScalableMeshTime.h"
 #include "Plugins/ScalableMeshClipMaskFilterFactory.h"
+#include <ImagePP/all/h/HIMOnDemandMosaic.h>
+#include <ImagePP/all/h/HIMMosaic.h>
+#include <Imagepp/all/h/HRSObjectStore.h>
+#include "ScalableMeshQuery.h"
+#include "Edits/ClipUtilities.hpp"
+#include "SMSQLiteFeatureTileStore.h"
 using namespace IDTMFile;
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
-
+extern bool s_inEditing;
+bool s_useThreadsInStitching = false;
+bool s_useThreadsInMeshing = false;
+bool s_useThreadsInFiltering = false;
+size_t s_nCreatedNodes = 0;
+bool s_useSpecialTriangulationOnGrids = false;
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 
+static HPMPool* s_rasterMemPool = nullptr;
 IScalableMeshSourceCreatorPtr IScalableMeshSourceCreator::GetFor(const WChar*  filePath,
 StatusInt&      status)
     {
     RegisterDelayedImporters();
 
     using namespace IDTMFile;
-
+#ifndef SCALABLE_MESH_DGN
     if (!fileExist(filePath))
         {
         status = BSISUCCESS;
         return new IScalableMeshSourceCreator(new Impl(filePath)); // Return early. File does not exist.
         }
-
+#endif
     IScalableMeshSourceCreatorPtr pCreator = new IScalableMeshSourceCreator(new Impl(filePath));
 
     status = pCreator->m_implP->LoadFromFile();
@@ -173,7 +186,7 @@ DocumentEnv IScalableMeshSourceCreator::Impl::CreateSourceEnvFrom(const WChar* f
     }
 
 
-int IScalableMeshSourceCreator::Impl::CreateScalableMesh()
+int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile)
     {
     int status = BSISUCCESS;
 
@@ -188,20 +201,49 @@ int IScalableMeshSourceCreator::Impl::CreateScalableMesh()
             // NOTE: Need to be able to recreate : Or the file offers some functions for deleting all its data directory or the file name can be obtained
             }
 
+#ifdef SCALABLE_MESH_DGN
+        SetupFileForCreation();
+        /*if (m_isDgnDb)
+            {
+            //IDTMFile::AccessMode accessMode = filePtr->GetAccessMode();
+            Bentley::WString filename = m_scmFileName;
+            DgnDbFilename(filename);
+            //assert(accessMode.m_HasCreateAccess);
+            char* tmpCharP = new char[filename.GetMaxLocaleCharBytes()];
+            filename.ConvertToLocaleChars(tmpCharP, filename.GetMaxLocaleCharBytes());
+            m_smSQLitePtr->Create(tmpCharP);
+            }*/
+
+        // Sync only when there are sources with which to sync
+        // TR #325614: This special condition provides us with a way of efficiently detecting if STM is empty
+        //             as indexes won't be initialized.
+
+        m_smSQLitePtr->SetSingleFile(isSingleFile);
+
+        if (0 < m_sources.GetCount() &&
+            BSISUCCESS != SyncWithSources())
+            return BSIERROR;
+#else
         File::Ptr filePtr = SetupFileForCreation();
         if (0 == filePtr)
             return BSIERROR;
 
-#ifdef SCALABLE_MESH_DGN
-        if (m_isDgnDb)
-            {
-            IDTMFile::AccessMode accessMode = filePtr->GetAccessMode();
-            Bentley::WString filename = m_scmFileName;
-            DgnDbFilename(filename);
-            assert(accessMode.m_HasCreateAccess);
-            m_dgnScalableMeshPtr->Create(filename.GetWCharCP());
-            }
-#endif
+        // Create a MasterHeaderTileStore to store if the ScalableMesh is in streaming or not
+        typedef SMPointTaggedTileStore<PointType,
+        PointIndexExtentType>             TileStoreType;
+        HFCPtr<TileStoreType> pFinalTileStore;
+        pFinalTileStore = new TileStoreType(filePtr, (SCM_COMPRESSION_DEFLATE == m_compressionType));
+        SMPointIndexHeader<PointIndexExtentType>* pointIndexHeader = new SMPointIndexHeader<PointIndexExtentType>();
+        pointIndexHeader->m_singleFile = isSingleFile;
+        pointIndexHeader->m_SplitTreshold = 10000;
+        pointIndexHeader->m_depth = 0;
+        pointIndexHeader->m_HasMaxExtent = false;
+        pointIndexHeader->m_balanced = false;
+        pFinalTileStore->StoreMasterHeader(pointIndexHeader, 0);
+        //pFinalTileStore->save();
+        pFinalTileStore = nullptr;
+        delete pointIndexHeader;
+
 
         // Sync only when there are sources with which to sync
         // TR #325614: This special condition provides us with a way of efficiently detecting if STM is empty
@@ -209,16 +251,24 @@ int IScalableMeshSourceCreator::Impl::CreateScalableMesh()
         if (0 < m_sources.GetCount() &&
             BSISUCCESS != SyncWithSources(filePtr))
             return BSIERROR;
-
+#endif
 
         // Update last synchronization time
         m_lastSyncTime = Time::CreateActual();
-
+        
+#ifdef SCALABLE_MESH_DGN
         // Ensure that last modified times are up-to-date and that sources are saved.
         if (BSISUCCESS != UpdateLastModified() ||
-            BSISUCCESS != SaveSources(*filePtr) ||
+            (isSingleFile && BSISUCCESS != SaveSources(m_smSQLitePtr)) ||
+            BSISUCCESS != SaveGCS())
+            status = BSIERROR;
+#else
+        // Ensure that last modified times are up-to-date and that sources are saved.
+        if (BSISUCCESS != UpdateLastModified() ||
+            (isSingleFile && BSISUCCESS != SaveSources(*filePtr)) ||
             BSISUCCESS != SaveGCS(*filePtr))
             status = BSIERROR;
+#endif
         }
     catch (...)
         {
@@ -228,6 +278,38 @@ int IScalableMeshSourceCreator::Impl::CreateScalableMesh()
     return status;
     }
 
+#ifdef SCALABLE_MESH_DGN
+void IScalableMeshSourceCreator::Impl::SetupFileForCreation()
+{
+    using namespace IDTMFile;
+
+    //File::Ptr filePtr;
+    bool bAllRemoved = true;
+    bool bAllAdded = true;
+    for (IDTMSourceCollection::const_iterator it = m_sources.Begin(); it != m_sources.End(); it++)
+    {
+        SourceImportConfig conf = it->GetConfig();
+        ScalableMeshData data = conf.GetReplacementSMData();
+        if (data.GetUpToDateState() != UpToDateState::REMOVE)
+            bAllRemoved = false;
+        if (data.GetUpToDateState() != UpToDateState::ADD)
+            bAllAdded = false;
+    }
+
+    if (bAllRemoved)
+    {
+        _wremove(m_scmFileName.c_str());
+        // Remove sources.
+        m_sources.Clear();
+        return;
+    }
+
+    // Ensure GCS and sources are save to the file.
+    m_gcsDirty = true;
+    m_sourcesDirty = true;
+    //return filePtr;
+}
+#else
 IDTMFile::File::Ptr IScalableMeshSourceCreator::Impl::SetupFileForCreation()
     {
     using namespace IDTMFile;
@@ -280,6 +362,7 @@ IDTMFile::File::Ptr IScalableMeshSourceCreator::Impl::SetupFileForCreation()
     m_sourcesDirty = true;
     return filePtr;
     }
+#endif
 
 //NEEDS_WORK_SM : To be removed
 static bool s_dumpOctreeNodes = false;
@@ -331,15 +414,22 @@ double IScalableMeshSourceCreator::GetLastStitchingDuration()
 * @description
 * @bsimethod                                                  Raymond.Gauthier   12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(const IDTMFile::File::Ptr& filePtr)
+StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
+#ifndef SCALABLE_MESH_DGN
+    const IDTMFile::File::Ptr& filePtr
+#endif
+    )
     {
     using namespace IDTMFile;
 
     HFCPtr<IndexType>          pDataIndex;
 
     HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment myMemMgr(100, 2000 * sizeof(PointType));
-
-    CreateDataIndex(pDataIndex, filePtr, myMemMgr);
+#ifdef SCALABLE_MESH_DGN
+    CreateDataIndex(pDataIndex, myMemMgr, true);
+#else
+    CreateDataIndex(pDataIndex, filePtr, myMemMgr, true);
+#endif
 
     size_t previousDepth = pDataIndex->GetDepth();
 
@@ -367,6 +457,10 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(const IDTMFile::File
         {
         SourceImportConfig& conf = it->EditConfig();
         ScalableMeshData data = conf.GetReplacementSMData();
+        if (data.GetUpToDateState() != UpToDateState::ADD)
+            {
+            s_inEditing = true;
+            }
 
         if (data.GetUpToDateState() == UpToDateState::REMOVE || data.GetUpToDateState() == UpToDateState::MODIFY)
             {
@@ -428,10 +522,13 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(const IDTMFile::File
         PointIndexExtentType>             TileStoreType;
     typedef SMPointTileStore<int32_t,
         PointIndexExtentType>             GenericTileStoreType;
-    WString featureFilePath = m_scmFileName.append(L"_feature"); //temporary file, deleted after generation
-    IDTMFile::File::Ptr featureFilePtr = IDTMFile::File::Create(featureFilePath.c_str());
-    HFCPtr<GenericTileStoreType>  pFeatureTileStore = new TileStoreType(featureFilePtr, (SCM_COMPRESSION_DEFLATE == m_compressionType));
-    pFeatureTileStore->StoreMasterHeader(NULL, 0);
+    WString name = m_scmFileName;
+    WString featureFilePath = name.append(L"_feature"); //temporary file, deleted after generation
+    //IDTMFile::File::Ptr featureFilePtr = IDTMFile::File::Create(featureFilePath.c_str());
+    SMSQLiteFilePtr sqliteFeatureFile = new SMSQLiteFile();
+    sqliteFeatureFile->Create(featureFilePath.c_str());
+    HFCPtr<GenericTileStoreType>  pFeatureTileStore = new SMSQLiteFeatureTileStore<PointIndexExtentType>(sqliteFeatureFile);//new TileStoreType(featureFilePtr, (SCM_COMPRESSION_DEFLATE == m_compressionType));
+    //pFeatureTileStore->StoreMasterHeader(NULL, 0);
     pDataIndex->SetFeatureStore(pFeatureTileStore);
     auto pool = ScalableMeshMemoryPools<PointType>::Get()->GetFeaturePool();
     pDataIndex->SetFeaturePool(pool);
@@ -549,8 +646,11 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(const IDTMFile::File
             s_getLastFilteringDuration += clock() - startClock;
             startClock = clock();
 #endif
-            if (BSISUCCESS != IScalableMeshCreator::Impl::Stitch<IndexType>(*pDataIndex, level, false))
-                return BSIERROR;
+           // if (level == (int)depth)
+                {
+                if (BSISUCCESS != IScalableMeshCreator::Impl::Stitch<IndexType>(*pDataIndex, level, false))
+                    return BSIERROR;
+                }
 
 #ifdef SCALABLE_MESH_ATP    
             s_getLastStitchingDuration += clock() - startClock;
@@ -567,14 +667,6 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(const IDTMFile::File
         }
     //ShowMessageBoxWithTimes(s_getLastMeshingDuration, s_getLastFilteringDuration, s_getLastStitchingDuration);    
 
-#ifdef INDEX_DUMPING_ACTIVATED
-    if (s_dumpOctreeNodes)
-        {
-        //pointIndex.DumpOctTree("D:\\MyDoc\\Scalable Mesh Iteration 7\\Partial Update - Remove\\Log\\NodeAferCreation.xml", false);    
-        pDataIndex->DumpOctTree("C:\\Users\\Thomas.Butzbach\\Documents\\data_scalableMesh\\ATP\\NodeAferCreation.xml", false);
-        pDataIndex->DumpOctTree("D:\\NodeAferCreation.xml", false);
-        }
-#endif
 
 #ifndef NDEBUG
 
@@ -604,9 +696,44 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(const IDTMFile::File
         pDataIndex->ValidateIs3dDataStates(source2_5dRanges, source3dRanges);
         }
 #endif
+    ImportRasterSourcesTo(pDataIndex);
+    ApplyEditsFromSources(pDataIndex);
 
+#ifdef ACTIVATE_TEXTURE_DUMP
+    pDataIndex->DumpAllNodeTextures();
+#endif
+#ifdef INDEX_DUMPING_ACTIVATED
+    if (s_dumpOctreeNodes)
+        {
+        //pointIndex.DumpOctTree("D:\\MyDoc\\Scalable Mesh Iteration 7\\Partial Update - Remove\\Log\\NodeAferCreation.xml", false);    
+        //pDataIndex->DumpOctTree("C:\\Users\\Thomas.Butzbach\\Documents\\data_scalableMesh\\ATP\\NodeAferCreation.xml", false);
+        pDataIndex->DumpOctTree("e:\\output\\scmesh\\NodeAferCreation.xml", false);
+        }
+#endif
+
+    if (!pDataIndex->IsSingleFile() && s_save_grouped_store && !pDataIndex->IsEmpty())
+        {
+        // Make sure node headers are stored
+        pDataIndex->Store();
+
+        auto position = m_scmFileName.find_last_of(L".stm");
+        auto filenameWithoutExtension = m_scmFileName.substr(0, position - 3);
+        WString streamingFilePath = filenameWithoutExtension + L"_stream\\";
+        auto groupedStreamingFilePath = filenameWithoutExtension + L"_grouped_stream\\";
+        WString point_store_path = streamingFilePath + L"point_store\\";
+        pDataIndex->SaveCloudReady(groupedStreamingFilePath, point_store_path);
+        }
+//    auto& store = pDataIndex->GetClipStore();
     pDataIndex = 0;
-    featureFilePtr->Close();
+    //store->Close();
+    if (s_rasterMemPool != nullptr) delete s_rasterMemPool;
+    //featureFilePtr->Close();
+   // featureFilePtr = 0;
+    sqliteFeatureFile->Close();
+    sqliteFeatureFile = 0;
+    char* outPath = new char[featureFilePath.GetMaxLocaleCharBytes()];
+    std::remove(featureFilePath.ConvertToLocaleChars(outPath));
+    delete[] outPath;
     return BSISUCCESS;
     }
 
@@ -628,7 +755,17 @@ bool IScalableMeshSourceCreator::Impl::IsFileDirty()
     return m_sourcesDirty || m_gcsDirty;
     }
 
+#ifdef SCALABLE_MESH_DGN
+StatusInt IScalableMeshSourceCreator::Impl::Save()
+{
+    return BSISUCCESS == SaveSources(m_smSQLitePtr) && BSISUCCESS == SaveGCS();
+}
 
+StatusInt IScalableMeshSourceCreator::Impl::Load()
+{
+    return BSISUCCESS == LoadSources(m_smSQLitePtr) && BSISUCCESS == LoadGCS();
+}
+#else
 StatusInt IScalableMeshSourceCreator::Impl::Save(IDTMFile::File::Ptr& filePtr)
     {
     return BSISUCCESS == SaveSources(*filePtr) && BSISUCCESS == SaveGCS(*filePtr);
@@ -638,6 +775,7 @@ StatusInt IScalableMeshSourceCreator::Impl::Load(IDTMFile::File::Ptr& filePtr)
     {
     return BSISUCCESS == LoadSources(*filePtr) && BSISUCCESS == LoadGCS(*filePtr);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
  * @description
@@ -695,6 +833,92 @@ int IScalableMeshSourceCreator::Impl::UpdateLastModified()
 
     return status;
     }
+
+int IScalableMeshSourceCreator::Impl::ApplyEditsFromSources(HFCPtr<IndexType>& pIndex)
+    {
+    const GCS& fileGCS = GetGCS();
+    Sink* sinkP = new ScalableMeshNonDestructiveEditStorage<PointType>(*pIndex, fileGCS);
+    SinkPtr sinkPtr(sinkP);
+    LocalFileSourceRef sinkSourceRef(m_scmFileName.c_str());
+
+    const ContentDescriptor& targetContentDescriptor(sinkPtr->GetDescriptor());
+    assert(1 == targetContentDescriptor.GetLayerCount());
+
+    const GCS& targetGCS(targetContentDescriptor.LayersBegin()->GetGCS());
+    // NEEDS_WORK_SM : PARTIAL_UPDATE :remove
+    const ScalableMeshData& targetScalableMeshData = ScalableMeshData::GetNull();
+
+    SourcesImporter sourcesImporter(sinkSourceRef, sinkPtr);
+
+    HFCPtr<HVEClipShape>  resultingClipShapePtr(new HVEClipShape(new HGF2DCoordSys()));
+
+    int status;
+
+    status = TraverseSourceCollectionEditsOnly(sourcesImporter,
+                                      m_sources,
+                                      resultingClipShapePtr,
+                                      targetGCS,
+                                      targetScalableMeshData);
+
+    if (BSISUCCESS == status)
+        {
+        if (SourcesImporter::S_SUCCESS != sourcesImporter.Import())
+            {
+            status = BSIERROR;
+            }
+        }
+    return status;
+    }
+
+int IScalableMeshSourceCreator::Impl::ImportRasterSourcesTo(HFCPtr<IndexType>& pIndex)
+    {
+    const GCS& fileGCS = GetGCS();
+    const ScalableMeshData& targetScalableMeshData = ScalableMeshData::GetNull();
+
+    HFCPtr<HVEClipShape>  resultingClipShapePtr(new HVEClipShape(new HGF2DCoordSys()));
+
+    int status = BSISUCCESS;
+    bvector<IDTMSource*> filteredSources;
+    status = TraverseSourceCollectionRasters(filteredSources,
+                                               m_sources,
+                                               resultingClipShapePtr,
+                                               fileGCS,
+                                               targetScalableMeshData);
+    s_rasterMemPool = new HPMPool(30000, HPMPool::None);
+    auto cluster = new HGFHMRStdWorldCluster();
+    HFCPtr<HIMMosaic> mosaicP = new HIMMosaic(HFCPtr<HGF2DCoordSys>(cluster->GetWorldReference(HGF2DWorld_HMRWORLD).GetPtr()));
+    HIMMosaic::RasterList rasterList;
+    for (auto& source : filteredSources)
+        {
+        const ILocalFileMoniker* moniker(dynamic_cast<const ILocalFileMoniker*>(&source->GetMoniker()));
+        WString path = WString(L"file://")+moniker->GetURL().GetPath();
+        HFCPtr<HGF2DCoordSys>  pLogicalCoordSys;
+        HFCPtr<HRSObjectStore> pObjectStore;
+        HFCPtr<HRFRasterFile>  pRasterFile;
+        HFCPtr<HRARaster>      pRaster;
+       // HFCPtr<HRAOnDemandRaster> pOnDemandRaster;
+        pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(path), TRUE);
+        pLogicalCoordSys = cluster->GetWorldReference(pRasterFile->GetPageWorldIdentificator(0));
+        pObjectStore = new HRSObjectStore(s_rasterMemPool,
+                                          pRasterFile,
+                                          0,
+                                          pLogicalCoordSys);
+
+        // Get the raster from the store
+        pRaster = pObjectStore->LoadRaster();
+       // pOnDemandRaster = new HRAOnDemandRaster(rasterMemPool, pRaster->IsOpaque(), pRaster->GetEffectiveShape(), ,new HPSWorldCluster(), HGF2DWorld_HMRWORLD, , pRaster->HasLookAhead(), false, false);
+        HASSERT(pRaster != NULL);
+        //NEEDS_WORK_SM: do not do this if raster does not intersect sm extent
+        rasterList.push_back(pRaster.GetPtr());
+        pRaster = 0;
+        }
+    mosaicP->Add(rasterList);
+    rasterList.clear();
+    pIndex->TextureFromRaster(mosaicP.GetPtr());
+    delete cluster;
+    return status;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @description
 * @bsimethod                                                  Mathieu.St-Pierre   11/2014
@@ -758,6 +982,54 @@ StatusInt IScalableMeshSourceCreator::Impl::ImportSourcesTo(Sink* sinkP)
 * @description
 * @bsimethod                                                  Raymond.Gauthier   03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef SCALABLE_MESH_DGN
+int IScalableMeshSourceCreator::Impl::LoadSources(SMSQLiteFilePtr& smSQLiteFile)
+{
+    if (!smSQLiteFile->HasSources())
+        return BSISUCCESS; // No sources were added to the STM.
+
+    // Create SourceDataSQLite to wrap SQLite and Serializer
+    SourcesDataSQLite* sourcesData = new SourcesDataSQLite();
+    smSQLiteFile->LoadSources(*sourcesData);
+    bool success = true;
+    success &= Bentley::ScalableMesh::LoadSources(m_sources, *sourcesData, m_sourceEnv);
+
+    m_lastSourcesModificationCheckTime = CreateTimeFrom(sourcesData->GetLastModifiedCheckTime());
+    m_lastSourcesModificationTime = CreateTimeFrom(sourcesData->GetLastModifiedTime());
+    m_lastSyncTime = CreateTimeFrom(sourcesData->GetLastSyncTime());
+
+    return (success) ? BSISUCCESS : BSIERROR;
+}
+
+int IScalableMeshSourceCreator::Impl::SaveSources(SMSQLiteFilePtr& smSQLiteFile)
+{
+    if (!m_sourcesDirty)
+        return BSISUCCESS;
+
+    SourcesDataSQLite* sourcesData = new SourcesDataSQLite();
+
+
+    bool success = true;
+
+    // Create Data
+    success &= Bentley::ScalableMesh::SaveSources(m_sources, *sourcesData, m_sourceEnv);
+    sourcesData->SetLastModifiedCheckTime(GetCTimeFor(m_lastSourcesModificationCheckTime));
+    sourcesData->SetLastModifiedTime(GetCTimeFor(m_lastSourcesModificationTime));
+    sourcesData->SetLastSyncTime(GetCTimeFor(m_lastSyncTime));
+
+    smSQLiteFile->SaveSource(*sourcesData);
+
+    if (success)
+    {
+        m_sourcesDirty = false;
+        return BSISUCCESS;
+    }
+    else
+    {
+        return BSIERROR;
+    }
+}
+#else
 int IScalableMeshSourceCreator::Impl::LoadSources(const IDTMFile::File& file)
     {
     using namespace IDTMFile;
@@ -827,6 +1099,7 @@ int IScalableMeshSourceCreator::Impl::SaveSources (IDTMFile::File& file)
         return BSIERROR;
         }
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @description
@@ -1043,7 +1316,8 @@ int IScalableMeshSourceCreator::Impl::TraverseSourceCollection(SourcesImporter& 
             {
             status = ImportClipMaskSource(source,
                 clipShapeStoragePtr);
-            }   
+            }
+        else if (source.GetSourceType() == DTM_SOURCE_DATA_IMAGE) {}
         else
             if (dynamic_cast<const IDTMSourceGroup*>(&source) != 0)
                 {
@@ -1069,6 +1343,125 @@ int IScalableMeshSourceCreator::Impl::TraverseSourceCollection(SourcesImporter& 
                     targetGCS,
                     targetScalableMeshData);
                 }
+        }
+
+    return status;
+    }
+
+int IScalableMeshSourceCreator::Impl::TraverseSourceCollectionEditsOnly(SourcesImporter&                                            importer,
+                                                               IDTMSourceCollection&                                 sources,
+                                                               const HFCPtr<HVEClipShape>&                                 totalClipShapePtr,
+                                                               const GCS&                                                  targetGCS,
+                                                               const ScalableMeshData&                        targetScalableMeshData)
+
+    {
+    int status = BSISUCCESS;
+
+    ClipShapeStoragePtr clipShapeStoragePtr = new ClipShapeStorage(totalClipShapePtr, targetGCS);
+
+
+    typedef IDTMSourceCollection::reverse_iterator RevSourceIter;
+
+    //The sources need to be parsed in the reverse order.
+    for (RevSourceIter sourceIt = sources.rBeginEdit(), sourcesEnd = sources.rEndEdit();
+         sourceIt != sourcesEnd && BSISUCCESS == status;
+         ++sourceIt)
+        {
+        IDTMSource& source = *sourceIt;
+
+        if ((source.GetSourceType() == DTM_SOURCE_DATA_CLIP) ||
+            (source.GetSourceType() == DTM_SOURCE_DATA_MASK))
+            {
+            status = ImportClipMaskSource(source,
+                                          clipShapeStoragePtr);
+            }
+        else if (source.GetSourceType() == DTM_SOURCE_DATA_HARD_MASK)
+            if (dynamic_cast<const IDTMSourceGroup*>(&source) != 0)
+                {
+                const IDTMSourceGroup& sourceGroup = dynamic_cast<const IDTMSourceGroup&>(source);
+
+                // Copy clip shape so that group clip and mask don't affect global clip shape.
+                HFCPtr<HVEClipShape> groupClipShapePtr = new HVEClipShape(*(clipShapeStoragePtr->GetResultingClipShape()));
+
+                status = TraverseSourceCollectionEditsOnly(importer,
+                                                  const_cast<IDTMSourceCollection&>(sourceGroup.GetSources()),
+                                                  groupClipShapePtr,
+                                                  targetGCS,
+                                                  targetScalableMeshData);
+                }
+            else
+                {
+                // Copy clip shape so that group clip and mask don't affect global clip shape.
+                HFCPtr<HVEClipShape> groupClipShapePtr = new HVEClipShape(*(clipShapeStoragePtr->GetResultingClipShape()));
+                SourceImportConfig& srcImportConfig = source.EditConfig();
+                ScalableMeshData data = srcImportConfig.GetReplacementSMData();
+                data.SetUpToDateState(Import::UpToDateState::ADD);
+                srcImportConfig.SetReplacementSMData(data);
+                status = TraverseSource(importer,
+                                        source,
+                                        groupClipShapePtr,
+                                        targetGCS,
+                                        targetScalableMeshData);
+                }
+        }
+
+    return status;
+    }
+
+
+int IScalableMeshSourceCreator::Impl::TraverseSourceCollectionRasters(bvector<IDTMSource*>&                                  filteredSources,
+                                                                        IDTMSourceCollection&                                 sources,
+                                                                        const HFCPtr<HVEClipShape>&                                 totalClipShapePtr,
+                                                                        const GCS&                                                  targetGCS,
+                                                                        const ScalableMeshData&                        targetScalableMeshData)
+
+    {
+    int status = BSISUCCESS;
+
+    ClipShapeStoragePtr clipShapeStoragePtr = new ClipShapeStorage(totalClipShapePtr, targetGCS);
+
+
+    typedef IDTMSourceCollection::reverse_iterator RevSourceIter;
+
+    //The sources need to be parsed in the reverse order.
+    for (RevSourceIter sourceIt = sources.rBeginEdit(), sourcesEnd = sources.rEndEdit();
+         sourceIt != sourcesEnd && BSISUCCESS == status;
+         ++sourceIt)
+        {
+        IDTMSource& source = *sourceIt;
+
+        if ((source.GetSourceType() == DTM_SOURCE_DATA_CLIP) ||
+            (source.GetSourceType() == DTM_SOURCE_DATA_MASK))
+            {
+            status = ImportClipMaskSource(source,
+                                          clipShapeStoragePtr);
+            }
+        else if (source.GetSourceType() == DTM_SOURCE_DATA_IMAGE)
+            {
+            if (dynamic_cast<const IDTMSourceGroup*>(&source) != 0)
+                {
+                const IDTMSourceGroup& sourceGroup = dynamic_cast<const IDTMSourceGroup&>(source);
+
+                // Copy clip shape so that group clip and mask don't affect global clip shape.
+                HFCPtr<HVEClipShape> groupClipShapePtr = new HVEClipShape(*(clipShapeStoragePtr->GetResultingClipShape()));
+
+                status = TraverseSourceCollectionRasters(filteredSources,
+                                                         const_cast<IDTMSourceCollection&>(sourceGroup.GetSources()),
+                                                         groupClipShapePtr,
+                                                         targetGCS,
+                                                         targetScalableMeshData);
+                }
+            else
+                {
+                // Copy clip shape so that group clip and mask don't affect global clip shape.
+                HFCPtr<HVEClipShape> groupClipShapePtr = new HVEClipShape(*(clipShapeStoragePtr->GetResultingClipShape()));
+                SourceImportConfig& srcImportConfig = source.EditConfig();
+                ScalableMeshData data = srcImportConfig.GetReplacementSMData();
+                data.SetUpToDateState(Import::UpToDateState::ADD);
+                srcImportConfig.SetReplacementSMData(data);
+                filteredSources.push_back(&source);
+                }
+            }
         }
 
     return status;

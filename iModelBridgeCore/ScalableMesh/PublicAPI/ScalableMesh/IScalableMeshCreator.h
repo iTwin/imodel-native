@@ -6,7 +6,7 @@
 |       $Date: 2012/03/21 18:37:07 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -61,7 +61,7 @@ public:
 
         //BENTLEYSTM_EXPORT bool                    AreAllSourcesReachable     () const;
 
-        BENTLEYSTM_EXPORT StatusInt               Create                     ();    
+        BENTLEYSTM_EXPORT StatusInt               Create                     (bool isSingleFile = true);    
 
 
         // TDORAY: Rename in GetGCS once GetBaseGCS is used.

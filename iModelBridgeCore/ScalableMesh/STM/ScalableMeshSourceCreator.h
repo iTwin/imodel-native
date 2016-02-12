@@ -6,7 +6,7 @@
 |       $Date: 2015/07/15 11:02:24 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -57,22 +57,46 @@ struct IScalableMeshSourceCreator::Impl : public IScalableMeshCreator::Impl, pub
                                                                      const HFCPtr<HVEClipShape>&             totalClipShapePtr,
                                                                      const GeoCoords::GCS&                   targetGCS,
                                                                      const Import::ScalableMeshData&         targetScalableMeshData);
+        //NEEDS_WORK_SM: refactor this by adding "source type" filter to TraverseSourceCollection
+        int                                 TraverseSourceCollectionEditsOnly(SourcesImporter&                        importer,
+                                                                     IDTMSourceCollection&                   sources,
+                                                                     const HFCPtr<HVEClipShape>&             totalClipShapePtr,
+                                                                     const GeoCoords::GCS&                   targetGCS,
+                                                                     const Import::ScalableMeshData&         targetScalableMeshData);
+        int                                 TraverseSourceCollectionRasters(bvector<IDTMSource*>&                                  filteredSources,
+                                                                              IDTMSourceCollection&                   sources,
+                                                                              const HFCPtr<HVEClipShape>&             totalClipShapePtr,
+                                                                              const GeoCoords::GCS&                   targetGCS,
+                                                                              const Import::ScalableMeshData&         targetScalableMeshData);
 
-        StatusInt                           SyncWithSources(const IDTMFile::File::Ptr&              filePtr);
+
+        StatusInt                           ApplyEditsFromSources(HFCPtr<IndexType>& pIndex);
+
+        StatusInt                           ImportRasterSourcesTo(HFCPtr<IndexType>& pIndex);
 
         StatusInt                           ImportSourcesTo(Import::Sink*                           sinkP);
 
         template <typename PointIndex>
         StatusInt                           RemoveSourcesFrom(PointIndex& pointIndex, list<IDTMFile::Extent3d64f> listRemoveExtent) const;
-        virtual IDTMFile::File::Ptr                 SetupFileForCreation() override;
-        StatusInt                           SaveSources();
-        StatusInt                           SaveSources(IDTMFile::File&                         file);
+
+
         StatusInt                           UpdateLastModified();
         void                                ResetLastModified();
 
         virtual bool                        IsFileDirty() override;
+#ifdef SCALABLE_MESH_DGN
+        virtual StatusInt                   Save() override;
+        virtual StatusInt                   Load() override;
+        void                                SetupFileForCreation();// override;
+        StatusInt                           SyncWithSources();
+        StatusInt                           SaveSources(SMSQLiteFilePtr& smSQLiteFile);
+#else
         virtual StatusInt                   Save(IDTMFile::File::Ptr& filePtr) override;
         virtual StatusInt                   Load(IDTMFile::File::Ptr& filePtr) override;
+        virtual IDTMFile::File::Ptr         SetupFileForCreation() override;
+        StatusInt                           SyncWithSources(const IDTMFile::File::Ptr&              filePtr);
+        StatusInt                           SaveSources(IDTMFile::File&                         file);
+#endif
 
         void InitSources();
 
@@ -81,9 +105,12 @@ struct IScalableMeshSourceCreator::Impl : public IScalableMeshCreator::Impl, pub
         explicit                            Impl(const IScalableMeshPtr&                        iDTMFilePtr);
 
         ~Impl();
-
+#ifdef SCALABLE_MESH_DGN
+        StatusInt                           LoadSources(SMSQLiteFilePtr& smSQLiteFile);
+#else
         StatusInt                           LoadSources(const IDTMFile::File&                   file);
-        virtual StatusInt                           CreateScalableMesh() override;
+#endif
+        virtual StatusInt                   CreateScalableMesh(bool isSingleFile) override;
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

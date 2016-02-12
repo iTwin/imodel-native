@@ -6,12 +6,12 @@
 |       $Date: 2012/02/16 22:19:26 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
-
+#include "ImagePPHeaders.h"
 #include <ScalableMesh/IScalableMeshStream.h>
 
 
@@ -56,6 +56,20 @@ bool IMoniker::IsTargetReachable () const
 /*----------------------------------------------------------------------------+
 |IMoniker::Serialize
 +----------------------------------------------------------------------------*/
+#ifdef SCALABLE_MESH_DGN
+StatusInt IMoniker::Serialize(Import::SourceDataSQLite&        sourceData,
+    const DocumentEnv&    env) const
+{
+    const byte monikerTypeField = static_cast<byte>(GetType());
+    sourceData.SetMonikerType(monikerTypeField);
+    /*if (!stream.put(monikerTypeField).good())
+        return BSIERROR;*/
+
+    // SM_NEEDS_WORK : just ignore it for now
+    return _Serialize(sourceData, env);
+    //return BSISUCCESS;
+}
+#else
 StatusInt IMoniker::Serialize(BinaryOStream&        stream,
                               const DocumentEnv&    env) const
     {
@@ -65,6 +79,7 @@ StatusInt IMoniker::Serialize(BinaryOStream&        stream,
 
     return _Serialize(stream, env);
     }
+#endif
 
 /*----------------------------------------------------------------------------+
 |IMoniker::Accept
@@ -340,6 +355,26 @@ void IMonikerFactory::Unregister (BinStreamCreatorID id)
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef SCALABLE_MESH_DGN
+IMonikerPtr IMonikerFactory::Create(Import::SourceDataSQLite&      sourceData,
+    const DocumentEnv&  env)
+{
+    const UInt typeField = sourceData.GetMonikerType();
+    if (typeField >= DTM_SOURCE_MONIKER_QTY)
+        return 0;
+
+    const DTMSourceMonikerType type = static_cast<DTMSourceMonikerType>(typeField);
+
+    const Impl::BinStreamCreatorMap::value_type creatorP = m_implP->m_binStreamCreators[type];
+    if (0 == creatorP)
+        return 0;
+
+    //stream.get(); // Skip moniker type
+
+    StatusInt dummyStatus;
+    return creatorP->_Create(sourceData, env, dummyStatus);
+}
+#else
 IMonikerPtr IMonikerFactory::Create    (BinaryIStream&      stream,
                                         const DocumentEnv&  env)
     {
@@ -358,6 +393,6 @@ IMonikerPtr IMonikerFactory::Create    (BinaryIStream&      stream,
     StatusInt dummyStatus;
     return creatorP->_Create(stream, env, dummyStatus);
     }
-
+#endif
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

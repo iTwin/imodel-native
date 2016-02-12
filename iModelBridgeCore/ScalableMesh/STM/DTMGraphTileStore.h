@@ -16,20 +16,6 @@ class DTMGraphTileStore : public IHPMPermanentStore<MTGGraph, Byte, Byte>
             return static_cast<IDTMFile::NodeID>(blockID.m_integerID);
             }
 
-        DTMGraphTileStore(WCharCP filename, const IDTMFile::AccessMode& accessMode, size_t layerID)
-            {
-            m_receivedOpenedFile = false;
-
-            m_DTMFile = IDTMFile::File::Open(filename, accessMode);
-
-            if (m_DTMFile == NULL)
-                throw;
-
-            m_layerID = layerID;
-
-            }
-
-
         DTMGraphTileStore(IDTMFile::File::Ptr openedDTMFile, size_t layerID)
             :
             m_layerID(layerID),
@@ -62,8 +48,8 @@ class DTMGraphTileStore : public IHPMPermanentStore<MTGGraph, Byte, Byte>
             {
             if (m_DTMFile == NULL)
                 return false;
-
-            //HPRECONDITION(!m_DTMFile->IsReadOnly()); //TDORAY: Reactivate
+            
+            std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
 
             if (NULL == m_tileHandler)
                 {
@@ -84,8 +70,7 @@ class DTMGraphTileStore : public IHPMPermanentStore<MTGGraph, Byte, Byte>
                 if (NULL == featureDir)
                     {
 
-                    // No Point dir ... we create one
-                    //NEEDS_WORK_SM: Why is this a feature dir (and is it necessary for storing packets at all?)
+                    // No Point dir ... we create one                    
                     featureDir = layerDir->CreatePointsOnlyUniformFeatureDir(GRAPH_FEATURE_TYPE,
                                                                              IDTMFile::PointTypeIDTrait<int32_t>::value,
                                                                              HTGFF::Compression::Deflate::Create());
@@ -141,6 +126,9 @@ class DTMGraphTileStore : public IHPMPermanentStore<MTGGraph, Byte, Byte>
             {
             if (m_DTMFile == NULL)
                 return 0;
+
+            std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
+
             if (NULL == m_tileHandler)
                 {
                 IDTMFile::LayerDir* layerDir = m_DTMFile->GetRootDir()->GetLayerDir(m_layerID);
@@ -199,10 +187,13 @@ class DTMGraphTileStore : public IHPMPermanentStore<MTGGraph, Byte, Byte>
         virtual HPMBlockID StoreNewBlock(MTGGraph* DataTypeArray, size_t countData)
             {
             HPRECONDITION(m_tileHandler != NULL);
+            HPRECONDITION(m_DTMFile != NULL);
+            
             void** serializedGraph = new void*[countData];
             size_t countAsPts = 0;
             size_t countAsBytes = 0;
-            size_t* ct = new size_t[countData];
+            size_t* ct = new size_t[countData];            
+
             for (size_t i = 0; i < countData; i++)
                 {
                 ct[i] = DataTypeArray[i].WriteToBinaryStream(serializedGraph[i]);
@@ -226,6 +217,9 @@ class DTMGraphTileStore : public IHPMPermanentStore<MTGGraph, Byte, Byte>
             IDTMFile::PointTileHandler<int32_t>::PointArray arrayOfPoints(ptArray, countAsPts);
 
             IDTMFile::NodeID newNodeID;
+
+            std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
+
             if (!m_tileHandler->AddPoints(newNodeID, arrayOfPoints))
                 {
                 HASSERT(!"Write failed!");
@@ -241,7 +235,7 @@ class DTMGraphTileStore : public IHPMPermanentStore<MTGGraph, Byte, Byte>
             //HPRECONDITION(m_tileHandler != NULL);
             //HPRECONDITION(!m_DTMFile->IsReadOnly()); //TDORAY: Reactivate
 
-            if (!blockID.IsValid() || blockID.m_integerID == IDTMFile::VariableSubNodesTable::GetNoSubNodeID())
+            if (!blockID.IsValid() || blockID.m_integerID == IDTMFile::SubNodesTable::GetNoSubNodeID())
                 return StoreNewBlock(DataTypeArray, countData);
 
             void** serializedGraph = new void*[countData];
@@ -270,6 +264,8 @@ class DTMGraphTileStore : public IHPMPermanentStore<MTGGraph, Byte, Byte>
             delete[] ct;
             IDTMFile::PointTileHandler<int32_t>::PointArray arrayOfPoints(ptArray, countAsPts);
            // PointArray arrayOfPoints(DataTypeArray, countData);
+
+            std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
 
             if (!m_tileHandler->SetPoints(ConvertBlockID(blockID), arrayOfPoints))
                 {
@@ -304,6 +300,8 @@ class DTMGraphTileStore : public IHPMPermanentStore<MTGGraph, Byte, Byte>
             {
             HPRECONDITION(m_tileHandler != NULL);
 
+            std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
+
             IDTMFile::PointTileHandler<int32_t>::PointArray arrayOfPoints;
             //get size of packet in number of ints
             size_t packetSize = m_tileHandler->GetDir().CountPoints(ConvertBlockID(blockID));
@@ -329,6 +327,8 @@ class DTMGraphTileStore : public IHPMPermanentStore<MTGGraph, Byte, Byte>
             {
             HPRECONDITION(m_tileHandler != NULL);
             //HPRECONDITION(!m_DTMFile->IsReadOnly()); //TDORAY: Reactivate
+
+            std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
 
              return m_tileHandler->RemovePoints(ConvertBlockID(blockID));
             }

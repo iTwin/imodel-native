@@ -2,12 +2,12 @@
 |
 |     $Source: STM/ImportPlugins/ElemSourceRef.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
-
+#include "../ImagePPHeaders.h"
 #include <ScalableMesh\Import\SourceReference.h>
 #include <ScalableMesh\Import\Plugin\SourceReferenceV0.h>
 #include <ScalableMesh\ScalableMeshLib.h>

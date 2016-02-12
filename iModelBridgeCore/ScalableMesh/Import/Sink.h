@@ -6,7 +6,7 @@
 |       $Date: 2011/09/01 14:06:58 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -80,9 +80,12 @@ private:
         
     virtual void                            _Write                 () = 0;
 
+    virtual void                            _NotifySourceImported() {};
+
 protected:
 
      bool m_is3dData;
+     bool m_isGridData;
 
      explicit                    BackInserter           ();
 public:
@@ -90,7 +93,11 @@ public:
 
      void                        SetIs3dData(bool is3dData);
 
+     void                        SetIsGridData(bool isGridData);
+
      void                        Write                  () { _Write(); }     
+
+     void                        NotifySourceImported() { _NotifySourceImported(); }
     };
 
 

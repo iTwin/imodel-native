@@ -1,4 +1,5 @@
 ﻿#include "ScalableMeshPCH.h"
+#include "ImagePPHeaders.h"
 #include "ScalableMeshVolume.h"
 #include <Mtg/MtgApi.h>
 
@@ -569,6 +570,7 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(PolyfaceHeaderPtr& ter
                 ptCP[visitor.ClientPointIndex()[1]].x, ptCP[visitor.ClientPointIndex()[1]].y, ptCP[visitor.ClientPointIndex()[1]].z,
                 ptCP[visitor.ClientPointIndex()[2]].x, ptCP[visitor.ClientPointIndex()[2]].y, ptCP[visitor.ClientPointIndex()[2]].z);
             size_t NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pOutputFileStream);
+            NbWrittenChars = NbWrittenChars;
             HASSERT(NbWrittenChars == NbChars);
             }
 
@@ -1332,7 +1334,8 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(double& cut, double& f
     meshQueryInterface->Query(returnedNodes, box, 4, params);
     for (auto& node : returnedNodes)
         {
-        IScalableMeshMeshPtr scalableMesh = node->GetMesh(false);
+        bvector<bool> clips;
+        IScalableMeshMeshPtr scalableMesh = node->GetMesh(false,clips);
         //ScalableMeshMeshWithGraphPtr scalableMeshWithGraph((ScalableMeshMeshWithGraph*)scalableMesh.get(), true);
         double tileCut, tileFill;
         totalVolume += _ComputeVolumeCutAndFillForTile(scalableMesh, tileCut, tileFill, intersectingMeshSurface, true, meshRange, volumeMeshVector);

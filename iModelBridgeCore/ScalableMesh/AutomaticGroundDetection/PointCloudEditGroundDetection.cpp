@@ -1,6 +1,6 @@
 //#include "PointCloudEditPCH.h" //always first
 #include "ScalableMeshPCH.h"
-
+#include "../STM/ImagePPHeaders.h"
 #include "AMPKernels.h"
 using namespace concurrency;
 #include "PointCloudClassification.h"
@@ -625,7 +625,8 @@ bool GroundDetection::isPointWithinSlopeOfTin(double allowedSlope, DPoint3d& poi
 long GroundDetection::triangulation(DPoint3d**& dtmPtsPP, BC_DTM_OBJ* dtmObject)
     {
     long numTriangles = 0;
-    long* trianglesP = 0;
+    assert(false);
+   /* long* trianglesP = 0;
     int status = bcdtmCheck_tinComponentDtmObject(dtmObject);
 
     BeAssert(status == SUCCESS);
@@ -641,7 +642,7 @@ long GroundDetection::triangulation(DPoint3d**& dtmPtsPP, BC_DTM_OBJ* dtmObject)
 
     BeAssert(status == SUCCESS);
 
-    delete trianglesP;
+    delete trianglesP;*/
 
     return numTriangles;
     }
@@ -924,13 +925,13 @@ void GroundDetection::filterGroundForTile(QuadSeedPtr currentTile, BcDTMPtr dtmO
 
 
     long numTriangles = 0;
-    DPoint3d **dtmPtsPP = 0; /* <== Pointer To Dtm Points Array ( Dpoint3d )       */
+   // DPoint3d **dtmPtsPP = 0; /* <== Pointer To Dtm Points Array ( Dpoint3d )       */
     std::vector<DPoint3d> removedPts;
     std::vector<DPoint3d> insertedPoints;
         {
         timer = clock();
         makeTriangulationForExtent(dtmObj->GetTinHandle(), minPt, maxPt, remainingTriIndices, insertedPoints, node);
-        numTriangles = triangulation(dtmPtsPP, dtmObj->GetTinHandle());
+        numTriangles = dtmObj->GetTrianglesCount();//triangulation(dtmPtsPP, dtmObj->GetTinHandle());
         endT = clock();
         if (endT > 0 && timer > 0) s_ticksToTriangulate += (float)(endT - timer) / CLOCKS_PER_SEC;
         }
@@ -966,7 +967,7 @@ void GroundDetection::filterGroundForTile(QuadSeedPtr currentTile, BcDTMPtr dtmO
         {
         timer = clock();
         makeTriangulation(dtmObj->GetTinHandle(), insertedPoints);
-        numTriangles = triangulation(dtmPtsPP, dtmObj->GetTinHandle());
+        numTriangles = dtmObj->GetTrianglesCount();//triangulation(dtmPtsPP, dtmObj->GetTinHandle());
         s_ticksToTriangulate2 += (float)(clock() - timer) / CLOCKS_PER_SEC;
         }
     timer = clock();
@@ -1249,8 +1250,8 @@ StatusInt GroundDetection::filterGround(std::vector<QuadSeedPtr>& seeds, EditEle
         {
         return ERROR;
         }
-    DPoint3d **dtmPtsPP = 0; /* <== Pointer To Dtm Points Array ( Dpoint3d )       */
-    triangulation(dtmPtsPP, bcDtmObjPtr->GetTinHandle());
+    //DPoint3d **dtmPtsPP = 0; /* <== Pointer To Dtm Points Array ( Dpoint3d )       */
+    //triangulation(dtmPtsPP, bcDtmObjPtr->GetTinHandle());
     // get all triangles
 #ifdef SCALABLE_MESH_ATP
     double nTimeToEstimateParams = 0.0;

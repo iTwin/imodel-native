@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/SMPointTileStore.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -17,13 +17,13 @@
 #include <ImagePP/all/h/HGFSpatialIndex.h>
 #include <ImagePP/all/h/HVEDTMLinearFeature.h>
 #include <ImagePP/all/h/HGFPointTileStore.h>
+#include <BeJsonCpp/BeJsonUtilities.h>
+#include "SMSQLiteFile.h"
+
 #if 0
 class IDTMFilePointFamily {};
 
-template <> struct PointFamilyTrait<IDTMFile::Point3d64f>       {
-    typedef IDTMFilePointFamily type;
-    };
-template <> struct PointFamilyTrait<IDTMFile::Point3d64fM64f>   {
+template <> struct PointFamilyTrait<DPoint3d>       {
     typedef IDTMFilePointFamily type;
     };
 
@@ -281,6 +281,7 @@ public:
             bool        m_totalCountDefined;         // Indicates if the total count of objects in node and subnode is up to date
             uint64_t      m_totalCount;                // This value indicates the total number of points in node all recursively all sub-nodes.
             bool        m_arePoints3d;               //Indicates if the node contains 3D points or 2.5D points only. 
+            bool        m_areTextured;               // Indicates if the node contains Texture or not
 
 
             //INFORMATION NOT PERSISTED
@@ -318,6 +319,8 @@ public:
             bool                    m_HasMaxExtent;                 // indicated if the index is extent limited.
 
             bool                    m_balanced;                     // Control variable that indicates if the tree must be balanced
+            bool                    m_textured;
+            bool                    m_singleFile;
             size_t                  m_numberOfSubNodesOnSplit;      // Control value that hold either 4 or 8 to indicate if a quadtree or octtree is used.
             size_t                  m_depth;                        // Cached (maximum) number of levels in the tree.
         };
@@ -332,22 +335,120 @@ public:
     vector<HPMBlockID>  m_apSubNodeID;
     HPMBlockID  m_SubNodeNoSplitID;
     bool        m_filtered;    
-    double      m_ViewDependentMetrics[9];
-
+    
     //NEEDS_WORK_SM - m_meshed ?
     size_t      m_nbFaceIndexes;
+    size_t        m_nbUvIndexes;
+    size_t        m_nbTextures;
     HPMBlockID  m_graphID;
+    vector<HPMBlockID>  m_textureID;
+    HPMBlockID  m_uvID;
+    vector<HPMBlockID>  m_ptsIndiceID;
+    vector<HPMBlockID>  m_uvsIndicesID;
     size_t      m_numberOfMeshComponents;
     int*        m_meshComponents;
+    size_t m_nodeCount;
 
 
-    vector<HPMBlockID> m_apNeighborNodeID[26];    
-    bool               m_apAreNeighborNodesStitched[26];    
+    vector<HPMBlockID> m_apNeighborNodeID[IDTMFile::NeighborNodesTable::MAX_QTY];    
+    bool               m_apAreNeighborNodesStitched[IDTMFile::NeighborNodesTable::MAX_QTY];    
+
+    vector<HPMBlockID> m_clipSetsID;
 
     ~SMPointNodeHeader()
          {
               //  if (nullptr != m_meshComponents) delete[] m_meshComponents;
          }
+
+    SMPointNodeHeader<EXTENT>& operator=(const SQLiteNodeHeader& nodeHeader)
+        {
+        m_arePoints3d = nodeHeader.m_arePoints3d;
+        m_areTextured = nodeHeader.m_areTextured;
+        m_contentExtentDefined = nodeHeader.m_contentExtentDefined;
+        m_contentExtent = ExtentOp<EXTENT>::Create(nodeHeader.m_contentExtent.low.x, nodeHeader.m_contentExtent.low.y, nodeHeader.m_contentExtent.low.z,
+                                                   nodeHeader.m_contentExtent.high.x, nodeHeader.m_contentExtent.high.y, nodeHeader.m_contentExtent.high.z);
+        m_nodeExtent = ExtentOp<EXTENT>::Create(nodeHeader.m_nodeExtent.low.x, nodeHeader.m_nodeExtent.low.y, nodeHeader.m_nodeExtent.low.z,
+                                                nodeHeader.m_nodeExtent.high.x, nodeHeader.m_nodeExtent.high.y, nodeHeader.m_nodeExtent.high.z);
+        if (nodeHeader.m_graphID != SQLiteNodeHeader::NO_NODEID) m_graphID = HPMBlockID(nodeHeader.m_graphID);
+        m_filtered = nodeHeader.m_filtered;
+        m_level = nodeHeader.m_level;
+        m_nbFaceIndexes = nodeHeader.m_nbFaceIndexes;
+        m_nbTextures = nodeHeader.m_nbTextures;
+        m_nbUvIndexes = nodeHeader.m_nbUvIndexes;
+        m_numberOfMeshComponents = nodeHeader.m_numberOfMeshComponents;
+        m_meshComponents = nodeHeader.m_meshComponents;
+        m_numberOfSubNodesOnSplit = nodeHeader.m_numberOfSubNodesOnSplit;
+        if (nodeHeader.m_parentNodeID != SQLiteNodeHeader::NO_NODEID) m_parentNodeID = HPMBlockID(nodeHeader.m_parentNodeID);
+        else m_parentNodeID = IDTMFile::GetNullNodeID();
+        if (nodeHeader.m_SubNodeNoSplitID != SQLiteNodeHeader::NO_NODEID) m_SubNodeNoSplitID = HPMBlockID(nodeHeader.m_SubNodeNoSplitID);
+        if (nodeHeader.m_uvID != SQLiteNodeHeader::NO_NODEID) m_uvID = HPMBlockID(nodeHeader.m_uvID);
+        m_totalCountDefined = nodeHeader.m_totalCountDefined;
+        m_totalCount = nodeHeader.m_totalCount;
+        m_nodeCount = nodeHeader.m_nodeCount;
+        m_SplitTreshold = nodeHeader.m_SplitTreshold;
+        m_clipSetsID.resize(nodeHeader.m_clipSetsID.size());
+        for (auto& id : m_clipSetsID) if (nodeHeader.m_clipSetsID[&id - &m_clipSetsID.front()] != SQLiteNodeHeader::NO_NODEID) id = HPMBlockID(nodeHeader.m_clipSetsID[&id - &m_clipSetsID.front()]);
+        m_textureID.resize(nodeHeader.m_textureID.size());
+        for (auto& id : m_textureID) if (nodeHeader.m_textureID[&id - &m_textureID.front()] != SQLiteNodeHeader::NO_NODEID) id = HPMBlockID(nodeHeader.m_textureID[&id - &m_textureID.front()]);
+        m_ptsIndiceID.resize(nodeHeader.m_ptsIndiceID.size());
+        for (auto& id : m_ptsIndiceID) if (nodeHeader.m_ptsIndiceID[&id - &m_ptsIndiceID.front()] != SQLiteNodeHeader::NO_NODEID) id = HPMBlockID(nodeHeader.m_ptsIndiceID[&id - &m_ptsIndiceID.front()]);
+        m_uvsIndicesID.resize(nodeHeader.m_uvsIndicesID.size());
+        for (auto& id : m_uvsIndicesID) if (nodeHeader.m_uvsIndicesID[&id - &m_uvsIndicesID.front()] != SQLiteNodeHeader::NO_NODEID) id = HPMBlockID(nodeHeader.m_uvsIndicesID[&id - &m_uvsIndicesID.front()]);
+        m_apSubNodeID.resize(nodeHeader.m_apSubNodeID.size());
+        for (auto& id : m_apSubNodeID) if (nodeHeader.m_apSubNodeID[&id - &m_apSubNodeID.front()] != SQLiteNodeHeader::NO_NODEID) id = HPMBlockID(nodeHeader.m_apSubNodeID[&id - &m_apSubNodeID.front()]);
+        for (size_t i = 0; i < 26; ++i)
+            {
+            for (auto& id : nodeHeader.m_apNeighborNodeID[i])
+                if (id != SQLiteNodeHeader::NO_NODEID)
+                    m_apNeighborNodeID[i].push_back(HPMBlockID(id));
+            }
+
+        return *this;
+        }
+
+    operator SQLiteNodeHeader()
+        {
+        SQLiteNodeHeader header;
+        header.m_arePoints3d = m_arePoints3d;
+        header.m_areTextured = m_areTextured;
+        header.m_contentExtentDefined = m_contentExtentDefined;
+        header.m_contentExtent = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_contentExtent), ExtentOp<EXTENT>::GetYMin(m_contentExtent), ExtentOp<EXTENT>::GetZMin(m_contentExtent),
+                                                ExtentOp<EXTENT>::GetXMax(m_contentExtent), ExtentOp<EXTENT>::GetYMax(m_contentExtent), ExtentOp<EXTENT>::GetZMax(m_contentExtent));
+        header.m_nodeExtent = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeExtent), ExtentOp<EXTENT>::GetZMin(m_nodeExtent),
+                                             ExtentOp<EXTENT>::GetXMax(m_nodeExtent), ExtentOp<EXTENT>::GetYMax(m_nodeExtent), ExtentOp<EXTENT>::GetZMax(m_nodeExtent));
+        header.m_graphID = m_graphID.IsValid() ? m_graphID.m_integerID : -1;
+        header.m_filtered = m_filtered;
+        header.m_level = m_level;
+        header.m_nbFaceIndexes = m_nbFaceIndexes;
+        header.m_nbTextures = m_nbTextures;
+        header.m_nbUvIndexes = m_nbUvIndexes;
+        header.m_numberOfMeshComponents = m_numberOfMeshComponents;
+        header.m_meshComponents = m_meshComponents;
+        header.m_numberOfSubNodesOnSplit = m_numberOfSubNodesOnSplit;
+        header.m_parentNodeID = m_parentNodeID.IsValid() && m_parentNodeID != IDTMFile::GetNullNodeID() ? m_parentNodeID.m_integerID : -1;
+        header.m_SubNodeNoSplitID = m_SubNodeNoSplitID.IsValid() && m_SubNodeNoSplitID != IDTMFile::GetNullNodeID() ? m_SubNodeNoSplitID.m_integerID : -1;
+        header.m_uvID = m_uvID.IsValid() ? m_uvID.m_integerID : -1;
+        header.m_totalCountDefined = m_totalCountDefined;
+        header.m_totalCount = m_totalCount;
+        header.m_SplitTreshold = m_SplitTreshold;
+        header.m_clipSetsID.resize(m_clipSetsID.size());
+        header.m_nodeCount = m_nodeCount;
+        for (auto& id : m_clipSetsID) header.m_clipSetsID[&id - &m_clipSetsID.front()] = id.IsValid() && id != IDTMFile::GetNullNodeID() ? id.m_integerID : -1;
+        header.m_textureID.resize(m_textureID.size());
+        for (auto& id : m_textureID) header.m_textureID[&id - &m_textureID.front()] = id.IsValid() && id != IDTMFile::GetNullNodeID() ? id.m_integerID : -1;
+        header.m_ptsIndiceID.resize(m_ptsIndiceID.size());
+        for (auto& id : m_ptsIndiceID) header.m_ptsIndiceID[&id - &m_ptsIndiceID.front()] = id.IsValid() && id != IDTMFile::GetNullNodeID() ? id.m_integerID : -1;
+        header.m_uvsIndicesID.resize(m_uvsIndicesID.size());
+        for (auto& id : m_uvsIndicesID) header.m_uvsIndicesID[&id - &m_uvsIndicesID.front()] = id.IsValid() && id != IDTMFile::GetNullNodeID() ? id.m_integerID : -1;
+        header.m_apSubNodeID.resize(m_apSubNodeID.size());
+        for (auto& id : m_apSubNodeID) header.m_apSubNodeID[&id - &m_apSubNodeID.front()] = id.IsValid() && id != IDTMFile::GetNullNodeID() ? id.m_integerID : -1;
+        for (size_t i = 0; i < 26; ++i)
+            {
+            header.m_apNeighborNodeID[i].resize(m_apNeighborNodeID[i].size());
+            for (auto& id : m_apNeighborNodeID[i]) header.m_apNeighborNodeID[i][&id - &m_apNeighborNodeID[i].front()] = id.IsValid() && id != IDTMFile::GetNullNodeID() ? id.m_integerID : -1;
+            }
+        return header;
+        }
     };
 
 
@@ -356,6 +457,38 @@ template <class EXTENT> class SMPointIndexHeader: public SMSpatialIndexHeader<EX
 public:
 
     HPMBlockID              m_rootNodeBlockID;
+
+    SMPointIndexHeader<EXTENT>& operator=(const SQLiteIndexHeader& indexHeader)
+        {
+        if (indexHeader.m_rootNodeBlockID != SQLiteNodeHeader::NO_NODEID) m_rootNodeBlockID = HPMBlockID(indexHeader.m_rootNodeBlockID);
+        m_balanced = indexHeader.m_balanced;
+        m_depth = indexHeader.m_depth;
+        m_HasMaxExtent = indexHeader.m_HasMaxExtent;
+        m_MaxExtent = ExtentOp<EXTENT>::Create(indexHeader.m_MaxExtent.low.x, indexHeader.m_MaxExtent.low.y, indexHeader.m_MaxExtent.low.z,
+                                               indexHeader.m_MaxExtent.high.x, indexHeader.m_MaxExtent.high.y, indexHeader.m_MaxExtent.high.z);
+        m_numberOfSubNodesOnSplit = indexHeader.m_numberOfSubNodesOnSplit;
+        m_singleFile = indexHeader.m_singleFile;
+        m_SplitTreshold = indexHeader.m_SplitTreshold;
+        m_textured = indexHeader.m_textured;
+        return *this;
+        }
+
+
+    operator SQLiteIndexHeader()
+        {
+        SQLiteIndexHeader header;
+        header.m_rootNodeBlockID = m_rootNodeBlockID.IsValid() ? m_rootNodeBlockID.m_integerID : -1;
+        header.m_balanced = m_balanced;
+        header.m_depth = m_depth;
+        header.m_HasMaxExtent = m_HasMaxExtent;
+        header.m_MaxExtent = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_MaxExtent), ExtentOp<EXTENT>::GetYMin(m_MaxExtent), ExtentOp<EXTENT>::GetZMin(m_MaxExtent),
+                                            ExtentOp<EXTENT>::GetXMax(m_MaxExtent), ExtentOp<EXTENT>::GetYMax(m_MaxExtent), ExtentOp<EXTENT>::GetZMax(m_MaxExtent));
+        header.m_numberOfSubNodesOnSplit = m_numberOfSubNodesOnSplit;
+        header.m_singleFile = m_singleFile;
+        header.m_SplitTreshold = m_SplitTreshold;
+        header.m_textured = m_textured;
+        return header;
+        }
     };
 
 
@@ -370,7 +503,7 @@ public:
 
 template <typename POINT, typename EXTENT> class SMPointTaggedTileStore : public SMPointTileStore<POINT, EXTENT>// , public HFCShareableObject<SMPointTileStore<POINT, EXTENT> >
     {
-private:
+protected:
     typedef IDTMFile::PointTileHandler<POINT> TileHandler;
         typedef IDTMFile::BTreeIndexHandler IndexHandler;
 
@@ -381,69 +514,53 @@ private:
         return static_cast<IDTMFile::NodeID>(blockID.m_integerID);
         }
 
-    /*static IDTMFile::VariableSubNodesTable::value_type ConvertChildID(const HPMBlockID& childID)
+    static IDTMFile::SubNodesTable::value_type ConvertChildID (const HPMBlockID& childID)
         {
-        return static_cast<IDTMFile::VariableSubNodesTable::value_type>(childID.m_integerID);
+        return static_cast<IDTMFile::SubNodesTable::value_type>(childID.m_integerID);
         }
 
     static IDTMFile::NeighborNodesTable::value_type ConvertNeighborID (const HPMBlockID& neighborID)
         {
         return static_cast<IDTMFile::NeighborNodesTable::value_type>(neighborID.m_integerID);
-        }*/
+        }
 
 public:
     // Constructor / Destroyer
-    SMPointTaggedTileStore(const char* filename, const IDTMFile::AccessMode& accessMode, bool compress, size_t layerID = 0)
-        {
-        m_receivedOpenedFile = false;
-
-        m_DTMFile = IDTMFile::Open (filename, accessMode);
-
-        if (m_DTMFile == NULL)
-            throw;
-
-        m_compress = compress;
-
-        m_layerID = layerID;
-
-        }
-
+    
     SMPointTaggedTileStore(IDTMFile::File::Ptr openedDTMFile, bool compress, size_t layerID = 0)
             :   m_filteringDir(0),
                 m_layerID(layerID),
-            m_compress(compress),
-            m_receivedOpenedFile(true),
+            m_compress(compress),            
             m_DTMFile(openedDTMFile)
         {
-        if (m_DTMFile == NULL)
-            throw;
+        //if (m_DTMFile == NULL)
+        //    throw;
         }
 
     virtual ~SMPointTaggedTileStore ()
-        {
-        if (!m_receivedOpenedFile)
-            if (m_DTMFile != NULL)
-                m_DTMFile->Close ();
-
+        {        
         m_DTMFile = NULL;
         }
 
     // New function
     virtual bool HasSpatialReferenceSystem()
         {
-            IDTMFile::LayerDir* layerDir = m_DTMFile->GetRootDir()->GetLayerDir (m_layerID);
+        std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
+                    
+        IDTMFile::LayerDir* layerDir = m_DTMFile->GetRootDir()->GetLayerDir (m_layerID);
+            
         if (NULL == layerDir)
             return false;
 
-
-            return layerDir->HasWkt();
-
+        return layerDir->HasWkt();
         }
 
 
     // New function
     virtual std::string GetSpatialReferenceSystem()
         {
+        std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
+
         IDTMFile::LayerDir* layerDir = m_DTMFile->GetRootDir()->GetLayerDir (m_layerID);
         if (NULL == layerDir)
             return false;
@@ -458,11 +575,7 @@ public:
 
     // ITileStore interface
     virtual void Close ()
-        {
-        if (!m_receivedOpenedFile)
-            if (m_DTMFile != NULL)
-                m_DTMFile->Close ();
-
+        {        
         m_DTMFile = NULL;
         }
 
@@ -470,6 +583,8 @@ public:
         {
         if (m_DTMFile == NULL)
             return false;
+
+        std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
 
         //HPRECONDITION(!m_DTMFile->IsReadOnly()); //TDORAY: Reactivate
 
@@ -485,13 +600,13 @@ public:
                     return false;
 
                 m_layerID = layerDir->GetIndex();
-                HASSERT(0 == m_layerID);
+                //HASSERT(0 == m_layerID);
                 }
 
             IDTMFile::UniformFeatureDir* featureDir = layerDir->GetUniformFeatureDir(MASS_POINT_FEATURE_TYPE);
             if (NULL == featureDir)
                 {
-                HASSERT(0 == layerDir->CountUniformFeatureDirs());
+                //HASSERT(0 == layerDir->CountPointOnlyUniformFeatureDirs());
 
                 // No Point dir ... we create one
                 featureDir = layerDir->CreatePointsOnlyUniformFeatureDir(MASS_POINT_FEATURE_TYPE,
@@ -534,7 +649,9 @@ public:
             {
             // For this particular implementation the header size is unused ... The indexHeader is unique and of known size
             m_indexHandler->SetBalanced(indexHeader->m_balanced);
- //           m_indexHandler->SetDepth((uint32_t)indexHeader->m_depth);
+            m_indexHandler->SetDepth((uint32_t)indexHeader->m_depth);
+
+            m_indexHandler->SetSingleFile(indexHeader->m_singleFile);
 
             if (indexHeader->m_rootNodeBlockID.m_integerInitialized)
                 m_indexHandler->SetTopNode(ConvertBlockID(indexHeader->m_rootNodeBlockID));
@@ -546,10 +663,12 @@ public:
         }
 
     virtual size_t LoadMasterHeader (SMPointIndexHeader<EXTENT>* indexHeader, size_t headerSize)
-        {
+        {            
         if (m_DTMFile == NULL)
             return 0;
-       // IDTMFile::BTreeIndexHandler::s_FixedSizeSubNodes = false;
+
+        std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
+
         if (NULL == m_tileHandler)
             {
                 IDTMFile::LayerDir* layerDir = m_DTMFile->GetRootDir()->GetLayerDir (m_layerID);
@@ -580,8 +699,9 @@ public:
             indexHeader->m_SplitTreshold = m_indexHandler->GetSplitTreshold();
             indexHeader->m_balanced = m_indexHandler->IsBalanced();
 
- //           indexHeader->m_depth = m_indexHandler->GetDepth();
+            indexHeader->m_depth = m_indexHandler->GetDepth();
 
+            indexHeader->m_singleFile = m_indexHandler->IsSingleFile();
 
             if (m_indexHandler->GetTopNode() != IDTMFile::GetNullNodeID())
                 indexHeader->m_rootNodeBlockID = m_indexHandler->GetTopNode();
@@ -600,6 +720,9 @@ public:
         PointArray MyArray(DataTypeArray, countData);
 
         IDTMFile::NodeID newNodeID;
+
+        std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
+
         if (!m_tileHandler->AddPoints(newNodeID, MyArray))
             {
             HASSERT(!"Write failed!");
@@ -615,10 +738,12 @@ public:
         HPRECONDITION(m_tileHandler != NULL);
         //HPRECONDITION(!m_DTMFile->IsReadOnly()); //TDORAY: Reactivate
 
-        if (!blockID.IsValid() || blockID.m_integerID == IDTMFile::VariableSubNodesTable::GetNoSubNodeID())
+        if (!blockID.IsValid() || blockID.m_integerID == IDTMFile::SubNodesTable::GetNoSubNodeID())
             return StoreNewBlock (DataTypeArray, countData);
 
         PointArray arrayOfPoints (DataTypeArray, countData);
+
+        std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
 
         if (!m_tileHandler->SetPoints(ConvertBlockID(blockID), arrayOfPoints))
             {
@@ -633,6 +758,7 @@ public:
     virtual size_t GetBlockDataCount (HPMBlockID blockID) const
         {
         HPRECONDITION(m_tileHandler != NULL);
+        std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
         return m_tileHandler->GetDir().CountPoints(ConvertBlockID(blockID));
 
         }
@@ -640,8 +766,6 @@ public:
 
     virtual size_t StoreHeader (SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
         {
-        return 1;
-        #if 0
         HPRECONDITION(m_tileHandler != NULL);
         HPRECONDITION(m_indexHandler != NULL);
         HPRECONDITION(m_filteringDir != NULL);
@@ -658,6 +782,8 @@ public:
             */
             }
 
+        std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
+
         m_tileHandler->GetDir().SetResolution (ConvertBlockID(blockID), (IDTMFile::ResolutionID)header->m_level);
         m_filteringDir->SetFiltered (ConvertBlockID(blockID), header->m_filtered);                
 
@@ -670,7 +796,7 @@ public:
             m_indexHandler->EditParentNode(ConvertBlockID(blockID)) = IDTMFile::GetNullNodeID();
             }
 
-        IDTMFile::VariableSubNodesTable& rChildren = m_indexHandler->EditSubNodesVar(ConvertBlockID(blockID));
+        IDTMFile::SubNodesTable& rChildren = m_indexHandler->EditSubNodes(ConvertBlockID(blockID));
         
         size_t nbChildren = header->m_IsLeaf || (!header->m_IsBranched  && !header->m_SubNodeNoSplitID.IsValid())? 0 : (!header->m_IsBranched ? 1 : header->m_numberOfSubNodesOnSplit);
 
@@ -763,21 +889,88 @@ public:
         m_indexHandler->SetTotalPointCount(ConvertBlockID(blockID), header->m_totalCount);    
         m_indexHandler->SetArePoints3d(ConvertBlockID(blockID), header->m_arePoints3d);  
 
-        /*
-        assert(header->m_3dPointsDescBins.size() <= USHORT_MAX);
-        m_indexHandler->SetNb3dPointsBins(ConvertBlockID(blockID), header->m_3dPointsDescBins.size());  
-        */
+        //why was this commented?
+       // assert(header->m_3dPointsDescBins.size() <= USHORT_MAX);
+       // m_indexHandler->SetNb3dPointsBins(ConvertBlockID(blockID), header->m_3dPointsDescBins.size());  
         
         
-       m_indexHandler->SetMeshIndexesCount(ConvertBlockID(blockID), header->m_nbFaceIndexes);
+        
+        m_indexHandler->SetMeshIndexesCount(ConvertBlockID(blockID), header->m_nbFaceIndexes);
         if (header->m_graphID.IsValid())
             {
-           m_indexHandler->EditGraphBlockID(ConvertBlockID(blockID)) = ConvertBlockID(header->m_graphID);
+            m_indexHandler->EditGraphBlockID(ConvertBlockID(blockID)) = ConvertBlockID(header->m_graphID);
             }
         else
             {
-           m_indexHandler->EditGraphBlockID(ConvertBlockID(blockID)) = IDTMFile::GetNullNodeID();
+            m_indexHandler->EditGraphBlockID(ConvertBlockID(blockID)) = IDTMFile::GetNullNodeID();
             }
+
+        IDTMFile::PtsIndicesTable& rPtsIndices = m_indexHandler->EditPtsIndices(ConvertBlockID(blockID));
+        rPtsIndices.SetNbVarData((int)header->m_ptsIndiceID.size());
+        IDTMFile::NodeID* ptsIndiceInfo = m_indexHandler->EditPtsIndicesVarData(rPtsIndices, header->m_ptsIndiceID.size());
+        for (auto& id : header->m_ptsIndiceID)
+        //if(header->m_ptsIndiceID.IsValid())
+            {
+            if (id.IsValid())
+                {
+            //m_indexHandler->EditPtsIndiceBlockID(ConvertBlockID(blockID)) = ConvertBlockID(header->m_ptsIndiceID);
+                    ptsIndiceInfo[&id - &header->m_ptsIndiceID.front()] = ConvertBlockID(id);
+                }
+            else
+                {
+            //m_indexHandler->EditPtsIndiceBlockID(ConvertBlockID(blockID)) = IDTMFile::GetNullNodeID();
+                    ptsIndiceInfo[&id - &header->m_ptsIndiceID.front()] = IDTMFile::GetNullNodeID();
+                }
+            }
+
+        IDTMFile::UVsIndicesTable& rUVsIndices = m_indexHandler->EditUVsIndices(ConvertBlockID(blockID));
+        rUVsIndices.SetNbVarData((int)header->m_uvsIndicesID.size());
+        IDTMFile::NodeID* uvsIndicesInfo = m_indexHandler->EditUVsIndicesVarData(rUVsIndices, header->m_uvsIndicesID.size());
+        for (auto& id : header->m_uvsIndicesID)
+            //if(header->m_ptsIndiceID.IsValid())
+        {
+            if (id.IsValid())
+            {
+                //m_indexHandler->EditPtsIndiceBlockID(ConvertBlockID(blockID)) = ConvertBlockID(header->m_ptsIndiceID);
+                uvsIndicesInfo[&id - &header->m_uvsIndicesID.front()] = ConvertBlockID(id);
+            }
+            else
+            {
+                //m_indexHandler->EditPtsIndiceBlockID(ConvertBlockID(blockID)) = IDTMFile::GetNullNodeID();
+                uvsIndicesInfo[&id - &header->m_uvsIndicesID.front()] = IDTMFile::GetNullNodeID();
+            }
+        }
+
+        
+//        for (auto& id : header->m_uvID)
+            {
+            if (header->m_uvID.IsValid())
+                {
+                m_indexHandler->EditUVBlockID(ConvertBlockID(blockID)) = ConvertBlockID(header->m_uvID);
+                //uvInfo[&id - &header->m_uvID.front()] = ConvertBlockID(id);
+                }
+            else
+                {
+                m_indexHandler->EditUVBlockID(ConvertBlockID(blockID)) = IDTMFile::GetNullNodeID();
+                //uvInfo[&id - &header->m_uvID.front()] = IDTMFile::GetNullNodeID();
+                }
+            }
+       
+        IDTMFile::TexturesTable& rTextures = m_indexHandler->EditTextures(ConvertBlockID(blockID));
+        rTextures.SetNbVarData((int)header->m_textureID.size());
+        IDTMFile::NodeID* textureInfo = m_indexHandler->EditTexturesVarData(rTextures, header->m_textureID.size());
+        for(auto& id : header->m_textureID)
+        {
+        if (id.IsValid())
+        {
+            textureInfo[&id - &header->m_textureID.front()] = ConvertBlockID(id);
+        }
+        else
+        {
+            textureInfo[&id - &header->m_textureID.front()] = IDTMFile::GetNullNodeID();
+        }
+        }
+
         m_indexHandler->SetMeshComponentsCount(ConvertBlockID(blockID), header->m_numberOfMeshComponents);
         if (header->m_numberOfMeshComponents > 0)
             {
@@ -785,19 +978,25 @@ public:
             int* allComponents = m_indexHandler->EditMeshComponentsVarData(list, header->m_numberOfMeshComponents);
             memcpy(allComponents, header->m_meshComponents, header->m_numberOfMeshComponents * sizeof(int));
             }
+        IDTMFile::ClipSetsList &clipSets = m_indexHandler->EditClipSets(ConvertBlockID(blockID));
+        if (header->m_clipSetsID.size() > 0)
+            {
+            IDTMFile::NodeID* pClipSetInfo = m_indexHandler->EditClipSetsVarData(clipSets, header->m_clipSetsID.size());
+            for (size_t i = 0; i < header->m_clipSetsID.size(); ++i) pClipSetInfo[i] = ConvertNeighborID(header->m_clipSetsID[i]);
+            }
+      //  else
+            clipSets.SetNbVarData((uint32_t)header->m_clipSetsID.size());
 
         return 1;
-        #endif
         }
 
     virtual size_t LoadHeader (SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
         {
-        return 1;
-        #if 0
         HPRECONDITION(m_tileHandler != NULL);
         HPRECONDITION(m_indexHandler != NULL);
         HPRECONDITION(m_filteringDir != NULL);
 
+        std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
 
         const IDTMFile::Extent3d64f& rExtent = m_tileHandler->GetDir().GetExtent (ConvertBlockID(blockID));
         ExtentOp<EXTENT>::SetXMin(header->m_nodeExtent, rExtent.xMin);
@@ -811,7 +1010,7 @@ public:
         header->m_filtered = m_filteringDir->IsFiltered (ConvertBlockID(blockID));
         header->m_parentNodeID = m_indexHandler->GetParentNode(ConvertBlockID(blockID));   
 
-        const IDTMFile::VariableSubNodesTable& rChildren = m_indexHandler->GetSubNodesVar(ConvertBlockID(blockID));
+        const IDTMFile::SubNodesTable& rChildren = m_indexHandler->GetSubNodes(ConvertBlockID(blockID));
         header->m_numberOfSubNodesOnSplit = rChildren.GetNbVarData();
         header->m_apSubNodeID.resize(header->m_numberOfSubNodesOnSplit);
         if (rChildren.GetNbVarData() > 0)
@@ -849,7 +1048,7 @@ public:
         header->m_IsBranched = !header->m_IsLeaf && (header->m_apSubNodeID.size() > 1 && header->m_apSubNodeID[1].IsValid());
 
         header->m_SplitTreshold = m_indexHandler->GetSplitTreshold();
-        // header->m_balanced = m_indexHandler->IsBalanced();
+         header->m_balanced = m_indexHandler->IsBalanced();
 
 
         const IDTMFile::Extent3d64f& rContentExtent = m_indexHandler->GetContentExtent (ConvertBlockID(blockID));
@@ -895,17 +1094,86 @@ public:
 
         header->m_nbFaceIndexes = (size_t)m_indexHandler->GetMeshIndexesCount(ConvertBlockID(blockID));
         header->m_graphID = m_indexHandler->GetGraphBlockID(ConvertBlockID(blockID));
+        header->m_uvID = m_indexHandler->GetUVBlockID(ConvertBlockID(blockID));
+
+        /*        header->m_indiceID = m_indexHandler->GetIndiceBlockID(ConvertBlockID(blockID));
+        header->m_uvID = m_indexHandler->GetUVBlockID(ConvertBlockID(blockID));*/
+        
+        const IDTMFile::PtsIndicesTable& rPtsIndices = m_indexHandler->GetPtsIndices(ConvertBlockID(blockID));
+        header->m_ptsIndiceID.resize(rPtsIndices.GetNbVarData());
+        if (rPtsIndices.GetNbVarData() > 0)
+            {
+
+            const IDTMFile::NodeID* pPtsIndiceInfo(m_indexHandler->GetPtsIndicesVarData(rPtsIndices));
+
+            for (size_t ptsIndiceID = 0; ptsIndiceID < (size_t)rPtsIndices.GetNbVarData(); ptsIndiceID++)
+                {
+                header->m_ptsIndiceID[ptsIndiceID] = pPtsIndiceInfo[ptsIndiceID] != IDTMFile::GetNullNodeID() ? pPtsIndiceInfo[ptsIndiceID] : HPMBlockID();
+                }
+            }
+        else
+            {
+            header->m_ptsIndiceID.resize(1);
+            header->m_ptsIndiceID[0] = HPMBlockID();
+            }
+
+        const IDTMFile::UVsIndicesTable& rUvsIndices = m_indexHandler->GetUVsIndices(ConvertBlockID(blockID));
+        header->m_uvsIndicesID.resize(rUvsIndices.GetNbVarData());
+        if (rUvsIndices.GetNbVarData() > 0)
+        {
+
+            const IDTMFile::NodeID* pUvsIndicesInfo(m_indexHandler->GetUVsIndicesVarData(rUvsIndices));
+
+            for (size_t uvsIndicesID = 0; uvsIndicesID < (size_t)rUvsIndices.GetNbVarData(); uvsIndicesID++)
+            {
+                header->m_uvsIndicesID[uvsIndicesID] = pUvsIndicesInfo[uvsIndicesID] != IDTMFile::GetNullNodeID() ? pUvsIndicesInfo[uvsIndicesID] : HPMBlockID();
+            }
+        }
+        else
+        {
+            header->m_uvsIndicesID.resize(1);
+            header->m_uvsIndicesID[0] = HPMBlockID();
+        }
+
+        const IDTMFile::TexturesTable& rTextures = m_indexHandler->GetTextures(ConvertBlockID(blockID));
+        header->m_textureID.resize(rTextures.GetNbVarData());
+        if (rTextures.GetNbVarData() > 0)
+            {
+
+            const IDTMFile::NodeID* pTextureInfo(m_indexHandler->GetTexturesVarData(rTextures));
+
+            for (size_t textureID = 0; textureID < (size_t)rTextures.GetNbVarData(); textureID++)
+                {
+                header->m_textureID[textureID] = pTextureInfo[textureID] != IDTMFile::GetNullNodeID() ? pTextureInfo[textureID] : HPMBlockID();;
+                }
+            }
+        else
+            {
+            header->m_textureID.resize(1);
+            header->m_textureID[0] = HPMBlockID();
+            }
+
+        if (ConvertBlockID(header->m_graphID) == IDTMFile::GetNullNodeID()) header->m_graphID = HPMBlockID();
+        if (ConvertBlockID(header->m_uvID) == IDTMFile::GetNullNodeID()) header->m_uvID = HPMBlockID();
         header->m_numberOfMeshComponents = (size_t)m_indexHandler->GetMeshComponentsCount(ConvertBlockID(blockID));
-        const IDTMFile::MeshComponentsList& list = m_indexHandler->GetMeshComponents(ConvertBlockID(blockID));
-        header->m_meshComponents = new int[header->m_numberOfMeshComponents];
+                        
         if (header->m_numberOfMeshComponents > 0)
             {
+            const IDTMFile::MeshComponentsList& list = m_indexHandler->GetMeshComponents(ConvertBlockID(blockID));
+            header->m_meshComponents = new int[header->m_numberOfMeshComponents];
+
             const int* allComponents = m_indexHandler->GetMeshComponentsVarData(list);
             memcpy(header->m_meshComponents, allComponents, header->m_numberOfMeshComponents * sizeof(int));
             }
-              
+
+        const IDTMFile::ClipSetsList &clipSets = m_indexHandler->GetClipSets(ConvertBlockID(blockID));
+        header->m_clipSetsID.resize(clipSets.GetNbVarData());
+        if (header->m_clipSetsID.size() > 0)
+            {
+            const IDTMFile::NodeID* pClipSetInfo(m_indexHandler->GetClipSetsVarData(clipSets));
+            for(size_t i =0; i < header->m_clipSetsID.size(); ++i) header->m_clipSetsID[i] = pClipSetInfo[i];
+            }
         return 1;
-        #endif
         }
 
 
@@ -915,6 +1183,8 @@ public:
 
         PointArray arrayOfPoints;
         arrayOfPoints.WrapEditable(DataTypeArray, 0, maxCountData);
+
+        std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
 
         if (!m_tileHandler->GetPoints(ConvertBlockID(blockID), arrayOfPoints))
             throw; //TDORAY: Do something else
@@ -927,6 +1197,8 @@ public:
         HPRECONDITION(m_tileHandler != NULL);
         //HPRECONDITION(!m_DTMFile->IsReadOnly()); //TDORAY: Reactivate
 
+        std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
+
         return m_tileHandler->RemovePoints(ConvertBlockID(blockID));
         }
 
@@ -938,15 +1210,13 @@ protected:
         return m_DTMFile;
         }
 
-private:
-
     IDTMFile::File::Ptr m_DTMFile;
-    bool m_compress;
     typename TileHandler::Ptr m_tileHandler;
     IndexHandler::Ptr m_indexHandler;
-        IDTMFile::FilteringDir* m_filteringDir;
+    IDTMFile::FilteringDir* m_filteringDir;
     size_t m_layerID;
-    bool m_receivedOpenedFile;
 
+private:
+
+    bool m_compress;
     };
-

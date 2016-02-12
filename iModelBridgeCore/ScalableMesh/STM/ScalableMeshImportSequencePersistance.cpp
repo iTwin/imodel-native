@@ -6,11 +6,11 @@
 |       $Date: 2012/02/16 22:19:29 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
-
+#include "ImagePPHeaders.h"
 #include "ScalableMeshImportSequencePersistance.h"
 
 #include <ScalableMesh/Import/ImportSequenceVisitor.h>
@@ -80,6 +80,49 @@ enum TypeFamilyID
 +---------------+---------------+---------------+---------------+---------------+------*/
 class CmdVisitor : public IImportSequenceVisitor
     {
+#ifdef SCALABLE_MESH_DGN
+        SourceDataSQLite&               m_sourceData;
+        bool                            m_success;
+
+        bool                            OutputCommandID(CommandSerializationID                      id)
+        {
+            assert(id < CSID_QTY);
+            m_sourceData.AddCommandID(id);
+            return true;
+            //return m_stream.put(static_cast<byte>(id)).good();
+        }
+
+        bool                            OutputLayer(UInt                                        layer)
+        {
+            const uint32_t layerField = layer;
+            m_sourceData.SetLayer(layerField);
+            return true;
+            //return WriteValue(m_stream, layerField);
+        }
+
+        bool                            OutputType(const DataTypeFamily&                       type)
+        {
+            static const DataTypeFamily POINT_TYPE_FAMILY(PointTypeFamilyCreator().Create());
+            static const DataTypeFamily LINEAR_TYPE_FAMILY(LinearTypeFamilyCreator().Create());
+            static const DataTypeFamily TIN_TYPE_FAMILY(TINTypeFamilyCreator().Create());
+            static const DataTypeFamily MESH_TYPE_FAMILY(MeshTypeFamilyCreator().Create());
+
+            bool success = true;
+
+            if (POINT_TYPE_FAMILY == type)
+                m_sourceData.SetTypeFamilyID(static_cast<byte>(TFID_POINT));
+            else if (LINEAR_TYPE_FAMILY == type)
+                m_sourceData.SetTypeFamilyID(static_cast<byte>(TFID_LINEAR));
+            else if (TIN_TYPE_FAMILY == type)
+                m_sourceData.SetTypeFamilyID(static_cast<byte>(TFID_TIN));
+            else if (MESH_TYPE_FAMILY == type)
+                m_sourceData.SetTypeFamilyID(static_cast<byte>(TFID_MESH));
+            else
+                success = false;
+
+            return success;
+        }
+#else
     BinaryOStream&                  m_stream;
     bool                            m_success;
 
@@ -117,6 +160,7 @@ class CmdVisitor : public IImportSequenceVisitor
 
         return success && m_stream.good();
         }
+#endif
 
     virtual void                    _Visit                     (const ImportAllCommand&                     command) override
         {
@@ -219,11 +263,19 @@ class CmdVisitor : public IImportSequenceVisitor
         }
 
 public:
+#ifdef SCALABLE_MESH_DGN
+    explicit                        CmdVisitor(SourceDataSQLite&                              sourceData)
+        : m_sourceData(sourceData),
+        m_success(true)
+    {
+    }
+#else
     explicit                        CmdVisitor                 (BinaryOStream&                              stream)
         :   m_stream(stream),
             m_success(true)
         {
         }
+#endif
 
     bool                            Succeded                   () const { return m_success; }
 
@@ -237,12 +289,44 @@ struct CmdCreator
     {
 private:
     friend struct               CmdFactory;
-    
+#ifdef SCALABLE_MESH_DGN
+    virtual ImportCommandBase*  _Create(SourceDataSQLite&      sourceData) const = 0;
+#else
     virtual ImportCommandBase*  _Create                    (BinaryIStream&      stream) const = 0;
+#endif
 protected:
     virtual                     ~CmdCreator                () = 0 {}
 
+#ifdef SCALABLE_MESH_DGN
+    const DataTypeFamily*       LoadType(SourceDataSQLite&      sourceData) const
+    {
+        static const DataTypeFamily POINT_TYPE_FAMILY(PointTypeFamilyCreator().Create());
+        static const DataTypeFamily LINEAR_TYPE_FAMILY(LinearTypeFamilyCreator().Create());
+        static const DataTypeFamily TIN_TYPE_FAMILY(TINTypeFamilyCreator().Create());
+        static const DataTypeFamily MESH_TYPE_FAMILY(MeshTypeFamilyCreator().Create());
 
+        const UInt DataTypeFamilyField = sourceData.GetTypeFamilyID();
+        switch (DataTypeFamilyField)
+        {
+        case TFID_POINT:
+            return &POINT_TYPE_FAMILY;
+        case TFID_LINEAR:
+            return &LINEAR_TYPE_FAMILY;
+        case TFID_TIN:
+            return &TIN_TYPE_FAMILY;
+        case TFID_MESH:
+            return &MESH_TYPE_FAMILY;
+        default:
+            return 0;
+        }
+    }
+
+    UInt                        LoadLayer(SourceDataSQLite&      sourceData) const
+    {
+        uint32_t layerField = sourceData.GetLayer();
+        return layerField;
+    }
+#else
     const DataTypeFamily*       LoadType                   (BinaryIStream&      stream) const
         {
         static const DataTypeFamily POINT_TYPE_FAMILY(PointTypeFamilyCreator().Create());
@@ -272,6 +356,7 @@ protected:
         ReadValue(stream, layerField);
         return layerField;
         }
+#endif
 
     static const UInt           INVALID_LAYER;
     };
@@ -290,11 +375,247 @@ private:
     static const CreatorItem*   GetCreatorIndex            ();
 
 public:
+#ifdef SCALABLE_MESH_DGN
+    ImportCommandBase*          Create(SourceDataSQLite&      sourceData) const;
+#else
     ImportCommandBase*          Create                     (BinaryIStream&      stream) const;
+#endif
 };
 
 
+#ifdef SCALABLE_MESH_DGN
+struct ImportAllCommandCreator : CmdCreator
+{
+    virtual ImportCommandBase*  _Create(SourceDataSQLite&      sourceData) const override
+    {
+        return new ImportAllCommand();
+    }
+} s_ImportAllCommandCreator;
 
+struct ImportAllToLayerCommandCreator : CmdCreator
+{
+    virtual ImportCommandBase*  _Create(SourceDataSQLite&      sourceData) const override
+    {
+        const UInt targetLayer = LoadLayer(sourceData);
+        if (INVALID_LAYER == targetLayer)
+            return 0;
+
+        return new ImportAllToLayerCommand(targetLayer);
+    }
+} s_ImportAllToLayerCommandCreator;
+
+struct ImportAllToLayerTypeCommandCreator : CmdCreator
+{
+    virtual ImportCommandBase*  _Create(SourceDataSQLite&      sourceData) const override
+    {
+        const UInt targetLayer = LoadLayer(sourceData);
+        const DataTypeFamily* targetTypeP = LoadType(sourceData);
+
+        if (INVALID_LAYER == targetLayer ||
+            0 == targetTypeP)
+            return 0;
+
+        return new ImportAllToLayerTypeCommand(targetLayer, *targetTypeP);
+    }
+} s_ImportAllToLayerTypeCommandCreator;
+
+struct ImportAllToTypeCommandCreator : CmdCreator
+{
+    virtual ImportCommandBase*  _Create(SourceDataSQLite&      sourceData) const override
+    {
+        const DataTypeFamily* targetTypeP = LoadType(sourceData);
+        if (0 == targetTypeP)
+            return 0;
+
+        return new ImportAllToTypeCommand(*targetTypeP);
+    }
+} s_ImportAllToTypeCommandCreator;
+
+struct ImportLayerCommandCreator : CmdCreator
+{
+    virtual ImportCommandBase*  _Create(SourceDataSQLite&      sourceData) const override
+    {
+        const UInt sourceLayer = LoadLayer(sourceData);
+        if (INVALID_LAYER == sourceLayer)
+            return 0;
+
+        return new ImportLayerCommand(sourceLayer);
+    }
+} s_ImportLayerCommandCreator;
+
+struct ImportLayerToLayerCommandCreator : CmdCreator
+{
+    virtual ImportCommandBase*  _Create(SourceDataSQLite&      sourceData) const override
+    {
+        const UInt sourceLayer = LoadLayer(sourceData);
+        const UInt targetLayer = LoadLayer(sourceData);
+        if (INVALID_LAYER == sourceLayer ||
+            INVALID_LAYER == targetLayer)
+            return 0;
+
+        return new ImportLayerToLayerCommand(sourceLayer, targetLayer);
+    }
+} s_ImportLayerToLayerCommandCreator;
+
+struct ImportLayerToLayerTypeCommandCreator : CmdCreator
+{
+    virtual ImportCommandBase*  _Create(SourceDataSQLite&      sourceData) const override
+    {
+        const UInt sourceLayer = LoadLayer(sourceData);
+        const UInt targetLayer = LoadLayer(sourceData);
+        const DataTypeFamily* targetTypeP = LoadType(sourceData);
+
+        if (INVALID_LAYER == sourceLayer ||
+            INVALID_LAYER == targetLayer ||
+            0 == targetTypeP)
+            return 0;
+
+        return new ImportLayerToLayerTypeCommand(sourceLayer, targetLayer, *targetTypeP);
+    }
+} s_ImportLayerToLayerTypeCommandCreator;
+
+struct ImportLayerToTypeCommandCreator : CmdCreator
+{
+    virtual ImportCommandBase*  _Create(SourceDataSQLite&      sourceData) const override
+    {
+        const UInt sourceLayer = LoadLayer(sourceData);
+        const DataTypeFamily* targetTypeP = LoadType(sourceData);
+
+        if (INVALID_LAYER == sourceLayer ||
+            0 == targetTypeP)
+            return 0;
+
+        return new ImportLayerToTypeCommand(sourceLayer, *targetTypeP);
+    }
+} s_ImportLayerToTypeCommandCreator;
+
+struct ImportLayerTypeCommandCreator : CmdCreator
+{
+    virtual ImportCommandBase*  _Create(SourceDataSQLite&      sourceData) const override
+    {
+        const UInt sourceLayer = LoadLayer(sourceData);
+        const DataTypeFamily* sourceTypeP = LoadType(sourceData);
+
+        if (INVALID_LAYER == sourceLayer ||
+            0 == sourceTypeP)
+            return 0;
+
+        return new ImportLayerTypeCommand(sourceLayer, *sourceTypeP);
+    }
+} s_ImportLayerTypeCommandCreator;
+
+struct ImportLayerTypeToLayerCommandCreator : CmdCreator
+{
+    virtual ImportCommandBase*  _Create(SourceDataSQLite&      sourceData) const override
+    {
+        const UInt sourceLayer = LoadLayer(sourceData);
+        const DataTypeFamily* sourceTypeP = LoadType(sourceData);
+        const UInt targetLayer = LoadLayer(sourceData);
+
+        if (INVALID_LAYER == sourceLayer ||
+            0 == sourceTypeP ||
+            INVALID_LAYER == targetLayer)
+            return 0;
+
+        return new ImportLayerTypeToLayerCommand(sourceLayer, *sourceTypeP, targetLayer);
+    }
+} s_ImportLayerTypeToLayerCommandCreator;
+
+struct ImportLayerTypeToLayerTypeCommandCreator : CmdCreator
+{
+    virtual ImportCommandBase*  _Create(SourceDataSQLite&      sourceData) const override
+    {
+        const UInt sourceLayer = LoadLayer(sourceData);
+        const DataTypeFamily* sourceTypeP = LoadType(sourceData);
+        const UInt targetLayer = LoadLayer(sourceData);
+        const DataTypeFamily* targetTypeP = LoadType(sourceData);
+
+        if (INVALID_LAYER == sourceLayer ||
+            0 == sourceTypeP ||
+            INVALID_LAYER == targetLayer ||
+            0 == targetTypeP)
+            return 0;
+
+        return new ImportLayerTypeToLayerTypeCommand(sourceLayer, *sourceTypeP, targetLayer, *targetTypeP);
+    }
+} s_ImportLayerTypeToLayerTypeCommandCreator;
+
+struct ImportLayerTypeToTypeCommandCreator : CmdCreator
+{
+    virtual ImportCommandBase*  _Create(SourceDataSQLite&      sourceData) const override
+    {
+        const UInt sourceLayer = LoadLayer(sourceData);
+        const DataTypeFamily* sourceTypeP = LoadType(sourceData);
+        const DataTypeFamily* targetTypeP = LoadType(sourceData);
+
+        if (INVALID_LAYER == sourceLayer ||
+            0 == sourceTypeP ||
+            0 == targetTypeP)
+            return 0;
+
+        return new ImportLayerTypeToTypeCommand(sourceLayer, *sourceTypeP, *targetTypeP);
+    }
+} s_ImportLayerTypeToTypeCommandCreator;
+
+struct ImportTypeCommandCreator : CmdCreator
+{
+    virtual ImportCommandBase*  _Create(SourceDataSQLite&      sourceData) const override
+    {
+        const DataTypeFamily* sourceTypeP = LoadType(sourceData);
+        if (0 == sourceTypeP)
+            return 0;
+
+        return new ImportTypeCommand(*sourceTypeP);
+    }
+} s_ImportTypeCommandCreator;
+
+struct ImportTypeToLayerCommandCreator : CmdCreator
+{
+    virtual ImportCommandBase*  _Create(SourceDataSQLite&      sourceData) const override
+    {
+        const DataTypeFamily* sourceTypeP = LoadType(sourceData);
+        const UInt targetLayer = LoadLayer(sourceData);
+
+        if (0 == sourceTypeP ||
+            INVALID_LAYER == targetLayer)
+            return 0;
+
+        return new ImportTypeToLayerCommand(*sourceTypeP, targetLayer);
+    }
+} s_ImportTypeToLayerCommandCreator;
+
+struct ImportTypeToLayerTypeCommandCreator : CmdCreator
+{
+    virtual ImportCommandBase*  _Create(SourceDataSQLite&      sourceData) const override
+    {
+        const DataTypeFamily* sourceTypeP = LoadType(sourceData);
+        const UInt targetLayer = LoadLayer(sourceData);
+        const DataTypeFamily* targetTypeP = LoadType(sourceData);
+
+        if (0 == sourceTypeP ||
+            INVALID_LAYER == targetLayer ||
+            0 == targetTypeP)
+            return 0;
+
+        return new ImportTypeToLayerTypeCommand(*sourceTypeP, targetLayer, *targetTypeP);
+    }
+} s_ImportTypeToLayerTypeCommandCreator;
+
+struct ImportTypeToTypeCommandCreator : CmdCreator
+{
+    virtual ImportCommandBase*  _Create(SourceDataSQLite&      sourceData) const override
+    {
+        const DataTypeFamily* sourceTypeP = LoadType(sourceData);
+        const DataTypeFamily* targetTypeP = LoadType(sourceData);
+
+        if (0 == sourceTypeP ||
+            0 == targetTypeP)
+            return 0;
+
+        return new ImportTypeToTypeCommand(*sourceTypeP, *targetTypeP);
+    }
+} s_ImportTypeToTypeCommandCreator;
+#else
 struct ImportAllCommandCreator : CmdCreator
     {
     virtual ImportCommandBase*  _Create                    (BinaryIStream&      stream) const override
@@ -526,6 +847,7 @@ struct ImportTypeToTypeCommandCreator : CmdCreator
         return new ImportTypeToTypeCommand(*sourceTypeP, *targetTypeP);
         }
     } s_ImportTypeToTypeCommandCreator;
+#endif
 
 
 
@@ -566,6 +888,22 @@ const CmdFactory::CreatorItem* CmdFactory::GetCreatorIndex ()
 * @description  
 * @bsiclass                                                  Raymond.Gauthier   06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef SCALABLE_MESH_DGN
+ImportCommandBase* CmdFactory::Create(SourceDataSQLite& sourceData) const
+{
+    const UInt commandIDField = sourceData.PopCommandID();
+
+    if (CSID_QTY <= commandIDField)
+        return 0;
+
+    CommandSerializationID commandID = static_cast<CommandSerializationID>(commandIDField);
+
+    CreatorItem creatorP = GetCreatorIndex()[commandID];
+    assert(0 != creatorP);
+
+    return creatorP->_Create(sourceData);
+}
+#else
 ImportCommandBase* CmdFactory::Create (BinaryIStream& stream) const
     {
     const UInt commandIDField = stream.get();
@@ -580,6 +918,7 @@ ImportCommandBase* CmdFactory::Create (BinaryIStream& stream) const
     
     return creatorP->_Create(stream);
     }
+#endif
 
 
 } // END unnamed namespace
@@ -594,6 +933,56 @@ ImportCommandBase* CmdFactory::Create (BinaryIStream& stream) const
 * @description  
 * @bsiclass                                                  Raymond.Gauthier   06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef SCALABLE_MESH_DGN
+bool ImportSequenceSerializer::Serialize(const ImportSequence&   sequence,
+    SourceDataSQLite&          sourceData) const
+{
+    const uint32_t commandCountField = (uint32_t)sequence.GetCount();
+
+    if (0 == commandCountField)
+        return true;// Generate empty packet so that it improves load performances
+
+    CmdVisitor visitor(sourceData);
+
+    //WriteValue(sourceData, commandCountField);
+    sourceData.SetCommandCount(commandCountField);
+    sequence.Accept(visitor);
+
+    return visitor.Succeded();
+}
+
+
+/*---------------------------------------------------------------------------------**//**
+* @description
+* @bsiclass                                                  Raymond.Gauthier   06/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ImportSequenceSerializer::Deserialize(SourceDataSQLite&      sourceData,
+    ImportSequence&     sequence,
+    UInt                formatVersion) const
+{
+    if (ImportSequenceSerializer::FORMAT_VERSION != formatVersion)
+    {
+        assert(!"Invalid version! Need to handle backward compatibility!");
+        return false;
+    }
+
+    uint32_t commandCountField = sourceData.GetCommandCount();
+
+    static const CmdFactory COMMAND_FACTORY;
+
+    for (uint32_t i = 0; i < commandCountField; ++i)
+    {
+        RefCountedPtr<ImportCommandBase> commandP(COMMAND_FACTORY.Create(sourceData));
+
+        if (0 == commandP.get())
+            return false;
+
+        sequence.push_back(*commandP);
+    }
+
+    return true;
+}
+#else
 bool ImportSequenceSerializer::Serialize   (const ImportSequence&   sequence,
                                             BinaryOStream&          stream) const
     {
@@ -645,7 +1034,7 @@ bool ImportSequenceSerializer::Deserialize (BinaryIStream&      stream,
 
     return true;
     }
-
+#endif
 
 
 

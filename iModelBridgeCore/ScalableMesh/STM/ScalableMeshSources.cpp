@@ -6,12 +6,12 @@
 |       $Date: 2012/02/23 01:54:03 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
-
+#include "ImagePPHeaders.h"
 #include "ScalableMeshSources.h"
 #include <ScalableMesh/IScalableMeshSourceVisitor.h>
 #include <ScalableMesh/IScalableMeshStream.h>
@@ -265,7 +265,8 @@ bool DoImportSourceLinear (DTMSourceDataType type)
     return DTM_SOURCE_DATA_DTM == type || 
            DTM_SOURCE_DATA_BREAKLINE == type ||
            DTM_SOURCE_DATA_CLIP == type ||
-           DTM_SOURCE_DATA_MASK == type;
+           DTM_SOURCE_DATA_MASK == type ||
+           DTM_SOURCE_DATA_HARD_MASK == type;
     }
 
 
@@ -315,6 +316,7 @@ const ImportSequence& GetImportSequenceFor (DTMSourceDataType type)
     case DTM_SOURCE_DATA_POINT:
         return IMPORT_POINTS_SEQUENCE;
     case DTM_SOURCE_DATA_BREAKLINE:
+    case DTM_SOURCE_DATA_HARD_MASK:
         return IMPORT_LINEARS_SEQUENCE;
     case DTM_SOURCE_DATA_CLIP:
     case DTM_SOURCE_DATA_MASK:
