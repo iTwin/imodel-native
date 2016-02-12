@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Util/ECDbHelper.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -22,7 +22,7 @@ ECSchemaPtr ECDbHelper::LocateSchema(SchemaKeyCR schemaKey, BeFileNameCR schemaD
 
     SchemaKey schemaKey_ = schemaKey;
 
-    ECSchemaPtr schema = ecSchemaContext->LocateSchema(schemaKey_, SchemaMatchType::SCHEMAMATCHTYPE_Exact);
+    ECSchemaPtr schema = ecSchemaContext->LocateSchema(schemaKey_, SchemaMatchType::Exact);
     BeAssert(!schema.IsNull());
 
     return schema;

@@ -125,7 +125,7 @@ Utf8String SchemaManager::ToFullNameListString(const std::vector<ECSchemaPtr>& s
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaPtr SchemaManager::LoadSchema(SchemaKey key, ECSchemaReadContext& context)
     {
-    ECSchemaPtr schema = context.LocateSchema(key, SchemaMatchType::SCHEMAMATCHTYPE_Exact);
+    ECSchemaPtr schema = context.LocateSchema(key, SchemaMatchType::Exact);
     if (!schema.IsValid())
         {
         LOG.errorv(L"Could not load schema: %ls.%ls. Check assets or dependencies",

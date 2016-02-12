@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/ServerQueryHelperTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -46,7 +46,7 @@ Utf8StringCR ecExpression
 
     SchemaKey beStandardsSchemaKey = SchemaKey("Bentley_Standard_CustomAttributes", 1, 0);
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr beStandardsSchema = context->LocateSchema(beStandardsSchemaKey, SchemaMatchType::SCHEMAMATCHTYPE_LatestCompatible);
+    ECSchemaPtr beStandardsSchema = context->LocateSchema(beStandardsSchemaKey, SchemaMatchType::LatestCompatible);
 
     ECClassCP caClass = beStandardsSchema->GetClassCP("CalculatedECPropertySpecification");
     IECInstancePtr caInstance = caClass->GetDefaultStandaloneEnabler()->CreateInstance();
