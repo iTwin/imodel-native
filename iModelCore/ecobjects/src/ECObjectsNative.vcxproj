@@ -166,8 +166,9 @@
     <ClInclude Include="SchemaXml.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\mki\ECObjects.mki" />
     <None Include="ecobjects.mke" />
-    <None Include="ecobjects.mki" />
+    <None Include="ECObjectsCompileOpts.mki" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
