@@ -21,7 +21,19 @@ private:
     ECSqlSystemProperty m_kind;
     std::vector<std::weak_ptr<ECDbSqlColumn>> m_columns;
 
-    virtual bool _IsVirtual () const override { return !m_columns.front().expired() && m_columns.front().lock()->GetPersistenceType() == PersistenceType::Virtual; }
+    virtual bool _IsVirtual () const override 
+        { 
+        bool isVirtual =  !m_columns.front().expired() && m_columns.front().lock()->GetPersistenceType() == PersistenceType::Virtual; 
+        //BeAssert(std::find_if_not (
+        //    m_columns.begin(), 
+        //    m_columns.end(), 
+        //    [](std::weak_ptr<ECDbSqlColumn> v) 
+        //        {
+        //        return v.lock()->GetPersistenceType() == PersistenceType::Virtual;
+        //    }) != m_columns.end());
+
+        return isVirtual;
+        }
     virtual bool _IsSystemPropertyMap() const override { return true; }
     virtual void _GetColumns (std::vector<ECDbSqlColumn const*>& columns) const override;
 

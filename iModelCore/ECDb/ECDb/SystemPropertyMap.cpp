@@ -312,7 +312,7 @@ PropertyMapRelationshipConstraint::PropertyMapRelationshipConstraint(ECN::ECProp
 //---------------------------------------------------------------------------------------
 void PropertyMapRelationshipConstraint::AppendSelectClauseSqlSnippetForView (NativeSqlBuilder& viewSql, ECDbSqlTable const& table) const
     {
-    ECDbSqlColumn const* column = GetSingleColumn (table);
+    ECDbSqlColumn const* column = ColumnCount() > 1?  GetSingleColumn (table) : GetSingleColumn();
     if (column == nullptr)
         {
         BeAssert(column != nullptr && "Expecting a column");

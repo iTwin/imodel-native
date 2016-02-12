@@ -817,7 +817,8 @@ BentleyStatus ViewGenerator::AppendSystemPropMapsToNullView(NativeSqlBuilder& vi
 //static
 BentleyStatus ViewGenerator::AppendConstraintClassIdPropMap(NativeSqlBuilder& viewSql, ECSqlPrepareContext const& prepareContext, PropertyMapRelationshipConstraint const& propMap, ECDbMapCR ecdbMap, RelationshipClassMapCR relationMap, ECRelationshipConstraintCR constraint, ECDbSqlTable const& contextTable)
     {
-    auto column = propMap.GetSingleColumn(contextTable);
+    
+    auto column = propMap.ColumnCount() > 1 ? propMap.GetSingleColumn(contextTable) : propMap.GetSingleColumn();
     if (column->GetPersistenceType() == PersistenceType::Virtual)
         {
         bool hasAnyClass = false;

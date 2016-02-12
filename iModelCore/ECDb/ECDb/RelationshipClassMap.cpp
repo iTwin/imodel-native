@@ -505,6 +505,8 @@ MapStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMap
             }
 
         ForeignKeyActionType userRequestedDeleteAction = relationshipClassMapInfo.GetOnDeleteAction();
+        ForeignKeyActionType userRequestedUpdateAction = relationshipClassMapInfo.GetOnUpdateAction();
+
         //if FK table is a joined table, CASCADE is not allowed as it would leave orphaned rows in the parent of joined table.
         if (fkTable.GetParentOfJoinedTable() != nullptr)
             {
@@ -543,6 +545,9 @@ MapStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMap
                 else
                     foreignKeyConstraint->SetOnDeleteAction(ForeignKeyActionType::SetNull);
                 }
+
+            if (userRequestedUpdateAction != ForeignKeyActionType::NotSpecified)
+                foreignKeyConstraint->SetOnUpdateAction(userRequestedUpdateAction);
 
             //! remove the fk constraint if already exist due to another relationship on same column
             foreignKeyConstraint->RemoveIfDuplicate();

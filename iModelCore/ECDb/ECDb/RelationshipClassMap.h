@@ -172,12 +172,11 @@ public:
         if (sourceColumns.size() == 1 && targetColumns.size() == 1)
             {
             return  sourceColumns.front() == targetColumns.front()
-                && sourceColumns.front()->GetPersistenceType() == PersistenceType::Persisted && !GetSourceECClassIdPropMap()->IsVirtual();
+                && sourceColumns.front()->GetPersistenceType() == PersistenceType::Persisted 
+                && targetColumns.front()->GetPersistenceType() == PersistenceType::Persisted;
             }
-        else
-            {
-            return false;
-            }
+
+        return false;
         }
     };
 
