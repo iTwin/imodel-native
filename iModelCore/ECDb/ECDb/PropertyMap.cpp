@@ -144,7 +144,8 @@ PropertyMapPtr PropertyMap::CreateAndEvaluateMapping(ClassMapLoadContext& ctx, E
 // @bsimethod                                                Krischan.Eberle     01/2016
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus PropertyMap::DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, ECDbSqlColumn::Constraint::Collation& collation, ECPropertyCR ecProp, Utf8CP propAccessString)
+BentleyStatus PropertyMap::DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, ECDbSqlColumn::Constraint::Collation& collation, 
+                                               ECDbCR ecdb, ECPropertyCR ecProp, Utf8CP propAccessString)
     {
     columnName.clear();
     isNullable = true;
@@ -154,6 +155,14 @@ BentleyStatus PropertyMap::DetermineColumnInfo(Utf8StringR columnName, bool& isN
     ECDbPropertyMap customPropMap;
     if (ECDbMapCustomAttributeHelper::TryGetPropertyMap(customPropMap, ecProp))
         {
+        if (!ecProp.GetIsPrimitive())
+            {
+            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                        "Failed to map ECProperty '%s:%s': only primitive ECProperties can have the custom attribute PropertyMap.",
+                        ecProp.GetClass().GetFullName(), ecProp.GetName().c_str());
+            return ERROR;
+            }
+
         if (ECObjectsStatus::Success != customPropMap.TryGetColumnName(columnName))
             return ERROR;
 
@@ -169,11 +178,13 @@ BentleyStatus PropertyMap::DetermineColumnInfo(Utf8StringR columnName, bool& isN
 
         if (!ECDbSqlColumn::Constraint::TryParseCollationString(collation, collationStr.c_str()))
             {
-            LOG.errorv("Custom attribute PropertyMap on ECProperty %s:%s has an invalid value for the property 'Collation': %s",
+            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                       "Failed to map ECProperty '%s:%s': Custom attribute PropertyMap has an invalid value for the property 'Collation': %s",
                        ecProp.GetClass().GetFullName(), ecProp.GetName().c_str(),
                        collationStr.c_str());
             return ERROR;
             }
+
         }
 
     // PropertyMappingRule: if custom attribute PropertyMap does not supply a column name for an ECProperty, 
@@ -800,7 +811,7 @@ BentleyStatus PropertyMapSingleColumn::_FindOrCreateColumnsInTable (ClassMap& cl
     bool isNullable = true;
     bool isUnique = false;
     ECDbSqlColumn::Constraint::Collation collation = ECDbSqlColumn::Constraint::Collation::Default;
-    if (SUCCESS != DetermineColumnInfo(colName, isNullable, isUnique, collation))
+    if (SUCCESS != DetermineColumnInfo(colName, isNullable, isUnique, collation, classMap.GetECDbMap().GetECDb()))
         return ERROR;
 
     const PrimitiveType colType = GetProperty().GetAsPrimitiveProperty()->GetType();
@@ -992,7 +1003,7 @@ BentleyStatus PropertyMapPoint::_FindOrCreateColumnsInTable(ClassMap& classMap, 
     bool isNullable = true;
     bool isUnique = false;
     ECDbSqlColumn::Constraint::Collation collation = ECDbSqlColumn::Constraint::Collation::Default;
-    if (SUCCESS != DetermineColumnInfo(columnName, isNullable, isUnique, collation))
+    if (SUCCESS != DetermineColumnInfo(columnName, isNullable, isUnique, collation, classMap.GetECDbMap().GetECDb()))
         return ERROR;
 
     bset<ECDbSqlTable const*> tables;
@@ -1070,7 +1081,7 @@ BentleyStatus PropertyMapPrimitiveArray::_FindOrCreateColumnsInTable(ClassMap& c
     bool isNullable = true;
     bool isUnique = false;
     ECDbSqlColumn::Constraint::Collation collation = ECDbSqlColumn::Constraint::Collation::Default;
-    if (SUCCESS != DetermineColumnInfo(colName, isNullable, isUnique, collation))
+    if (SUCCESS != DetermineColumnInfo(colName, isNullable, isUnique, collation, classMap.GetECDbMap().GetECDb()))
         return ERROR;
 
     //prim array is persisted as BLOB in a single col

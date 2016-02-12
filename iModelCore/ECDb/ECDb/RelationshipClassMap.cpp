@@ -350,7 +350,7 @@ MapStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMap
                     error = "Failed to map ECRelationshipClass '%s'. It specified a KeyProperty which is not nullable "
                     "although the relationship's cardinality implies that the KeyProperty is nullable. Please modify the cardinality accordingly.";
 
-                GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, error, relationshipClass.GetFullName());
+                GetECDbMap().GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, error, relationshipClass.GetFullName());
                 return MapStatus::Error;
                 }
 
@@ -371,7 +371,7 @@ MapStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMap
         Utf8String fkColumnName(relationshipClassMapInfo.GetColumnsMapping(GetForeignEnd()).GetECInstanceIdColumnName());
         if (fkColumnName.empty())
             {
-            if (SUCCESS != TryGetConstraintIdColumnNameFromNavigationProperty(fkColumnName, foreignEndConstraint, relationshipClass, GetForeignEnd()))
+            if (SUCCESS != TryGetConstraintIdColumnNameFromNavigationProperty(fkColumnName, GetECDbMap().GetECDb(), foreignEndConstraint, relationshipClass, GetForeignEnd()))
                 return MapStatus::Error;
             }
 
@@ -382,7 +382,7 @@ MapStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMap
             {
             if (foreignEndTable->FindColumnCP(fkColumnName.c_str()) != nullptr)
                 {
-                GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                GetECDbMap().GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
                                                                                  "Failed to map ECRelationshipClass '%s'. ForeignKey column name '%s' is already used by another column in the foreign key end table %s.",
                                                                                  fkColumnName.c_str(), relationshipClass.GetFullName(), foreignEndTable->GetName().c_str());
 
@@ -406,7 +406,7 @@ MapStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMap
 
     if (!referencedTablePrimaryKeyCols.empty())
         {
-        GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+        GetECDbMap().GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
                                                                          "Failed to map ECRelationshipClass '%s' because a KeyProperty is defined on the %s constraint. "
                                                                          "A KeyProperty can only be specified on the foreign key end constraint of the ECRelationshipClass (here: %s constraint)",
                                                                          relationshipClass.GetFullName(),
@@ -951,7 +951,7 @@ BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(std::set<ECD
 //---------------------------------------------------------------------------------------
 // @bsimethod                      Krischan.Eberle                          01/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus RelationshipClassEndTableMap::TryGetConstraintIdColumnNameFromNavigationProperty(Utf8StringR columnName, ECN::ECRelationshipConstraintCR constraint, ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipEnd constraintEnd) const
+BentleyStatus RelationshipClassEndTableMap::TryGetConstraintIdColumnNameFromNavigationProperty(Utf8StringR columnName, ECDbCR ecdb, ECN::ECRelationshipConstraintCR constraint, ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipEnd constraintEnd) const
     {
     columnName.clear();
     ECRelationshipConstraintClassList const& constraintClasses = constraint.GetConstraintClasses();
@@ -985,7 +985,7 @@ BentleyStatus RelationshipClassEndTableMap::TryGetConstraintIdColumnNameFromNavi
 
     bool isNullable, isUnique; //unused
     ECDbSqlColumn::Constraint::Collation collation;//unused
-    return PropertyMap::DetermineColumnInfo(columnName, isNullable, isUnique, collation, *singleNavProperty, singleNavProperty->GetName().c_str());
+    return PropertyMap::DetermineColumnInfo(columnName, isNullable, isUnique, collation, ecdb, *singleNavProperty, singleNavProperty->GetName().c_str());
     }
 
 //************************** RelationshipClassLinkTableMap *****************************************
