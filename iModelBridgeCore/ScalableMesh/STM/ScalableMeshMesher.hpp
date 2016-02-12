@@ -56,8 +56,8 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
     bool isMeshingDone = false;
     LOG_SET_PATH("E:\\output\\scmesh\\2015-12-15\\")
     LOG_SET_PATH_W("E:\\output\\scmesh\\2015-12-15\\")
-    LOGSTRING_NODE_INFO(node, LOG_PATH_STR)
-    LOGSTRING_NODE_INFO_W(node, LOG_PATH_STR_W)
+    //LOGSTRING_NODE_INFO(node, LOG_PATH_STR)
+    //LOGSTRING_NODE_INFO_W(node, LOG_PATH_STR_W)
     //NEEDS_WORK_SM
     if (node->size() > 4)
         {
@@ -1359,37 +1359,37 @@ template<class POINT, class EXTENT> void ScalableMesh2DDelaunayMesher<POINT, EXT
     }
 
     struct compare3D;
-    template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXTENT>::Stitch(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const
+template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXTENT>::Stitch(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const
     {
     //return true;
+    LOG_SET_PATH("E:\\output\\scmesh\\2015-12-15\\")
+    LOG_SET_PATH_W("E:\\output\\scmesh\\2015-12-15\\")
+    //LOGSTRING_NODE_INFO(node, LOG_PATH_STR)
+    //LOGSTRING_NODE_INFO_W(node, LOG_PATH_STR_W)
+
     if (node->m_nodeHeader.m_nbFaceIndexes == 0) return true;
+
     if (NULL == node->GetGraphPtr()) node->LoadGraph(s_useThreadsInStitching);
-MTGGraph* meshGraphP = node->GetGraphPtr();
-if (NULL == meshGraphP) return true;
-MTGGraph meshGraph = *meshGraphP;
-//node->ReleaseGraph();
-node->Pin();
-size_t neighborIndices[26] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25 };//{ 1, 3, 4, 6, 12, 21 }; //only neighbors that share a face at the moment
-size_t nodeIndicesInNeighbor[26] = { 7, 6, 5, 4, 3, 2, 1, 0, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8 };//{ 6, 4, 3, 1, 21, 12 };
-vector<DPoint3d> stitchedPoints;
-vector<int> pointsToDestPointsMap(node->size());
-std::fill_n(pointsToDestPointsMap.begin(), pointsToDestPointsMap.size(), -1);//
-//MTGGraph* meshGraphNeighbor = new MTGGraph();
-std::vector<DPoint3d> nodePoints(node->size());
+    MTGGraph* meshGraphP = node->GetGraphPtr();
+    if (NULL == meshGraphP) return true;
+    MTGGraph meshGraph = *meshGraphP;
+
+    //node->ReleaseGraph();
+    node->Pin();
+
+    size_t neighborIndices[26] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25 };
+    size_t nodeIndicesInNeighbor[26] = { 7, 6, 5, 4, 3, 2, 1, 0, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8 };
+    vector<DPoint3d> stitchedPoints;
+    vector<int> pointsToDestPointsMap(node->size());
+    std::fill_n(pointsToDestPointsMap.begin(), pointsToDestPointsMap.size(), -1);
+    
+    std::vector<DPoint3d> nodePoints(node->size());
+
 #if SM_TRACE_MESH_STATS
-Utf8String nameStats = "e:\\output\\scmesh\\2015-11-18\\defects\\tilebeforestitching_";
-nameStats.append(std::to_string(node->m_nodeHeader.m_level).c_str());
-nameStats.append("_");
-nameStats.append(std::to_string(ExtentOp<EXTENT>::GetXMin(node->m_nodeHeader.m_nodeExtent)).c_str());
-nameStats.append("_");
-nameStats.append(std::to_string(ExtentOp<EXTENT>::GetYMin(node->m_nodeHeader.m_nodeExtent)).c_str());
-nameStats.append(".txt");
-std::ofstream stats;
-stats.open(nameStats.c_str(), std::ios_base::trunc);
-stats << " N OF POINTS " + std::to_string(node->size()) + "\n";
-stats << "N OF INDICES " + std::to_string(node->m_nodeHeader.m_nbFaceIndexes) + "\n";
-stats << " NODE TOTAL COUNT " + std::to_string(node->m_nodeHeader.m_totalCount) + "\n";
-stats.close();
+    Utf8String fileName = (LOG_PATH_STR);
+    LOGSTRING_NODE_INFO(node, fileName)
+    fileName.append("_stats.txt");
+    LOG_STATS_FOR_NODE(fileName, node)
 #endif
 std::map<DPoint3d, int, compare3D> stitchedSet;
 
@@ -1400,26 +1400,16 @@ for (size_t i = 0; i < node->size(); i++)
     nodePoints[i].z = (*node)[i].z;
     }
 #if SM_OUTPUT_MESHES_STITCHING
-WString nameBefore = L"E:\\output\\scmesh\\2016-01-22\\prestitchmesh_";
-nameBefore.append(std::to_wstring(node->m_nodeHeader.m_level).c_str());
-nameBefore.append(L"_");
-nameBefore.append(std::to_wstring(ExtentOp<EXTENT>::GetXMin(node->m_nodeHeader.m_nodeExtent)).c_str());
-nameBefore.append(L"_");
-nameBefore.append(std::to_wstring(ExtentOp<EXTENT>::GetYMin(node->m_nodeHeader.m_nodeExtent)).c_str());
+WString nameBefore = LOG_PATH_STR_W + L"prestitchmesh_";
+LOGSTRING_NODE_INFO_W(node, nameBefore)
 nameBefore.append(L".m");
-size_t nVertices = nodePoints.size();
-size_t nIndices = node->m_nodeHeader.m_nbFaceIndexes;
-FILE* meshBeforeStitch = _wfopen(nameBefore.c_str(), L"wb");
-fwrite(&nVertices, sizeof(size_t), 1, meshBeforeStitch);
-fwrite(&nodePoints[0], sizeof(DPoint3d), nVertices, meshBeforeStitch);
-fwrite(&nIndices, sizeof(size_t), 1, meshBeforeStitch);
-fwrite((int32_t*)node->GetPtsIndicePtr(0), sizeof(int32_t), nIndices, meshBeforeStitch);
-fclose(meshBeforeStitch);
+LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(nameBefore, nodePoints.size(), node->m_nodeHeader.m_nbFaceIndexes, &nodePoints[0], (int32_t*)node->GetPtsIndicePtr(0));
 #endif
 bvector<bvector<DPoint3d>> boundary;
 EXTENT ext = node->GetContentExtent();
 std::vector<bvector<DPoint3d>> stitchedNeighborsBoundary;
 std::vector<EXTENT> stitchedNeighborsExtents;
+
 addedMask = meshGraph.GrabMask();
 //std::string s;
 if (!(ExtentOp<EXTENT>::GetXMin(ext) > TILE_X || ExtentOp<EXTENT>::GetXMax(ext) < TILE_X || ExtentOp<EXTENT>::GetYMin(ext) > TILE_Y || ExtentOp<EXTENT>::GetYMax(ext) < TILE_Y))
@@ -1459,37 +1449,6 @@ for (size_t& neighborInd : neighborIndices)
                 
                     SelectPointsToStitch(stitchedPoints, node, &meshGraph, node->m_apNeighborNodes[neighborInd][neighborSubInd]->GetContentExtent(), nullptr);
                   
-#ifdef SINGLE_TILE
-                   /* if (!(ExtentOp<EXTENT>::GetXMin(ext) > TILE_X || ExtentOp<EXTENT>::GetXMax(ext) < TILE_X || ExtentOp<EXTENT>::GetYMin(ext) > TILE_Y || ExtentOp<EXTENT>::GetYMax(ext) < TILE_Y))
-                        {
-                        MTGMask visitedMask = meshGraphNeighbor->GrabMask();
-                        MTGARRAY_SET_LOOP(edgeID, meshGraphNeighbor)
-                            {
-                            int vtx = -1;
-                            meshGraphNeighbor->TryGetLabel(edgeID, 1, vtx);
-                            if (meshGraphNeighbor->GetMaskAt(edgeID, MTG_EXTERIOR_MASK))
-                                {
-                                MTGARRAY_FACE_LOOP(extID, meshGraphNeighbor, edgeID)
-                                    {
-                                    if (meshGraphNeighbor->GetMaskAt(extID, visitedMask) || !meshGraphNeighbor->GetMaskAt(extID, MTG_EXTERIOR_MASK)) break;
-                                    MTGARRAY_FACE_LOOP(faceID, meshGraphNeighbor, meshGraphNeighbor->EdgeMate(extID))
-                                        {
-                                        int vtx2 = -1;
-                                        meshGraphNeighbor->TryGetLabel(faceID, 0, vtx2);
-                                        stitchedPoints.push_back(DPoint3d::From(pts[vtx2 - 1].x, pts[vtx2 - 1].y, pts[vtx2 - 1].z));
-                                        }
-                                    MTGARRAY_END_FACE_LOOP(faceID, meshGraphNeighbor, meshGraphNeighbor->EdgeMate(extID))
-                                        meshGraphNeighbor->SetMaskAt(extID, visitedMask);
-                                    }
-                                MTGARRAY_END_FACE_LOOP(extID, meshGraphNeighbor, edgeID)
-                                }
-                            }
-                        MTGARRAY_END_SET_LOOP(edgeID, meshGraphNeighbor)
-                            meshGraphNeighbor->ClearMask(visitedMask);
-                        meshGraphNeighbor->DropMask(visitedMask);
-                        }
-                    else */
-#endif
                     //node->m_apNeighborNodes[neighborInd][neighborSubInd]->Pin();
                    // s += " CURRENT N OF POINTS TO STITCH " + std::to_string(stitchedPoints.size()) + "\n";
                     if (node->m_nodeHeader.m_apAreNeighborNodesStitched[neighborInd] == false)
@@ -1542,40 +1501,19 @@ for (size_t& neighborInd : neighborIndices)
 
         }
     }
-        {
-        /*Utf8String path = "E:\\output\\scmesh\\2016-01-28\\";
-        Utf8String str1 = "beforeStitch_graph_";
-        str1 += std::to_string(node->GetBlockID().m_integerID).c_str();
-            {
-            void* graphData;
-            size_t ct = meshGraph.WriteToBinaryStream(graphData);
-            FILE* graphSaved = fopen((path + str1).c_str(), "wb");
-            fwrite(&ct, sizeof(size_t), 1, graphSaved);
-            fwrite(graphData, 1, ct, graphSaved);
-            size_t npts = nodePoints.size();
-            fwrite(&npts, sizeof(size_t), 1, graphSaved);
-            fwrite(&nodePoints[0], sizeof(DPoint3d), npts, graphSaved);
-            delete[] graphData;
-            fclose(graphSaved);
-            }*/
-        }
-GetGraphExteriorBoundary(&meshGraph, boundary, &nodePoints[0], true);
-//mesh aggregated points
-MTGGraph meshGraphStitched;
-IScalableMeshMeshPtr meshPtr;
-POINT* newNodePointData = nullptr;
-int nfaces = 0;
-size_t arraySize;
-bvector<int> componentsPointsId;
-DPoint3d extentMin, extentMax;
-extentMin = DPoint3d::FromXYZ(ExtentOp<EXTENT>::GetXMin(node->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(node->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(node->m_nodeHeader.m_nodeExtent));
-extentMax = DPoint3d::FromXYZ(ExtentOp<EXTENT>::GetXMax(node->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(node->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(node->m_nodeHeader.m_nodeExtent));
-/*DRange3d totalExtent = DRange3d::From(extentMin, extentMax);
-for (auto& ext2 : stitchedNeighborsExtents)
-    {
-    totalExtent.Extend(DPoint3d::FromXYZ(ExtentOp<EXTENT>::GetXMin(ext2), ExtentOp<EXTENT>::GetYMin(ext2), ExtentOp<EXTENT>::GetZMin(ext2)));
-    totalExtent.Extend(DPoint3d::FromXYZ(ExtentOp<EXTENT>::GetXMax(ext2), ExtentOp<EXTENT>::GetYMax(ext2), ExtentOp<EXTENT>::GetZMax(ext2)));
-    }*/
+    GetGraphExteriorBoundary(&meshGraph, boundary, &nodePoints[0], true);
+    //mesh aggregated points
+    MTGGraph meshGraphStitched;
+    IScalableMeshMeshPtr meshPtr;
+    POINT* newNodePointData = nullptr;
+    int nfaces = 0;
+    size_t arraySize;
+    bvector<int> componentsPointsId;
+    DPoint3d extentMin, extentMax;
+
+    extentMin = DPoint3d::FromXYZ(ExtentOp<EXTENT>::GetXMin(node->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(node->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(node->m_nodeHeader.m_nodeExtent));
+    extentMax = DPoint3d::FromXYZ(ExtentOp<EXTENT>::GetXMax(node->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(node->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(node->m_nodeHeader.m_nodeExtent));
+
 if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
     {
     Bentley::TerrainModel::DTMPtr dtmPtr;
@@ -1584,6 +1522,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
     BC_DTM_OBJ* dtmObjP(dtmPtr->GetBcDTM()->GetTinHandle());
     status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, DTMFeatureType::RandomSpots, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &stitchedPoints[0], (int)stitchedPoints.size());
     assert(status == SUCCESS);
+
     /*DPoint3d box[8];
     totalExtent.Get8Corners(box);
     status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, DTMFeatureType::Hull, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, (DPoint3d*)&(box[0]), (long)8);
@@ -1929,27 +1868,13 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
         ScalableMeshMesh* meshP((ScalableMeshMesh*)meshPtr.get());
         if (meshP == 0) return false;
         assert(meshP != 0);
+
 #if SM_OUTPUT_MESHES_STITCHING
-        WString path = L"E:\\output\\scmesh\\2016-01-28\\";
-            {
-            //path += (std::to_wstring((unsigned long long)node->GetParentNode().GetPtr()) + L"_" + std::to_wstring((unsigned long long)node.GetPtr()) + L"_").c_str();
-            WString nameStitched = path + L"posttrimesh_new_";
-            nameStitched.append(std::to_wstring(node->GetBlockID().m_integerID).c_str());
-            nameStitched.append(L"_");
-            nameStitched.append(std::to_wstring(node->m_nodeHeader.m_level).c_str());
-            nameStitched.append(L"_");
-            nameStitched.append(std::to_wstring(ExtentOp<EXTENT>::GetXMin(node->m_nodeHeader.m_nodeExtent)).c_str());
-            nameStitched.append(L"_");
-            nameStitched.append(std::to_wstring(ExtentOp<EXTENT>::GetYMin(node->m_nodeHeader.m_nodeExtent)).c_str());
-            nameStitched.append(L".m");
-            size_t nVertices = meshP->GetNbPoints();
-            size_t nIndices = meshP->GetNbFaceIndexes();
-            FILE* meshAfterStitch = _wfopen(nameStitched.c_str(), L"wb");
-            fwrite(&nVertices, sizeof(size_t), 1, meshAfterStitch);
-            fwrite(meshP->GetPoints(), sizeof(DPoint3d), nVertices, meshAfterStitch);
-            fwrite(&nIndices, sizeof(size_t), 1, meshAfterStitch);
-            fwrite((int32_t*)meshP->GetFaceIndexes(), sizeof(int32_t), nIndices, meshAfterStitch);
-            fclose(meshAfterStitch);
+        {
+        WString nameStitched = LOG_PATH_STR_W + L"posttrimesh_new_";
+        LOGSTRING_NODE_INFO_W(node, nameStitched)
+        nameStitched.append(L".m");
+        LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(nameStitched, meshP->GetNbPoints(), meshP->GetNbFaceIndexes(), meshP->GetPoints(), (int32_t*)meshP->GetFaceIndexes())
         }
 #endif
             vector<vector<int32_t>> indices;
@@ -1963,23 +1888,10 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
 
 #if SM_OUTPUT_MESHES_STITCHING
                 {
-                WString nameStitched2 = path + L"posttrimesh_old_";
-                nameStitched2.append(std::to_wstring(node->GetBlockID().m_integerID).c_str());
-                nameStitched2.append(L"_");
-                nameStitched2.append(std::to_wstring(node->m_nodeHeader.m_level).c_str());
-                nameStitched2.append(L"_");
-                nameStitched2.append(std::to_wstring(ExtentOp<EXTENT>::GetXMin(node->m_nodeHeader.m_nodeExtent)).c_str());
-                nameStitched2.append(L"_");
-                nameStitched2.append(std::to_wstring(ExtentOp<EXTENT>::GetYMin(node->m_nodeHeader.m_nodeExtent)).c_str());
-                nameStitched2.append(L".m");
-                size_t nVertices2 = nodePoints.size();
-                size_t nIndices2 = indices[0].size();
-                FILE* meshAfterStitch2 = _wfopen(nameStitched2.c_str(), L"wb");
-                fwrite(&nVertices2, sizeof(size_t), 1, meshAfterStitch2);
-                fwrite(&pts[0][0], sizeof(DPoint3d), nVertices2, meshAfterStitch2);
-                fwrite(&nIndices2, sizeof(size_t), 1, meshAfterStitch2);
-                fwrite((int32_t*)&indices[0][0], sizeof(int32_t), nIndices2, meshAfterStitch2);
-                fclose(meshAfterStitch2);
+                WString nameStitched = LOG_PATH_STR_W + L"posttrimesh_old_";
+                LOGSTRING_NODE_INFO_W(node, nameStitched)
+                nameStitched.append(L".m");
+                LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(nameStitched, nodePoints.size(), indices[0].size(), &pts[0][0], (int32_t*)&indices[0][0])
                 }
 #endif
             memcpy(&pts[1][0], meshP->GetPoints(), sizeof(DPoint3d)*pts[1].size());
@@ -2017,8 +1929,8 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
     if (node->m_nodeHeader.m_nbFaceIndexes > 0)
         {
         node->push_back(&newNodePointData[0], stitchedPoints.size());
-    node->ReplacePtsIndices(0, (int32_t*)&newNodePointData[stitchedPoints.size()], node->m_nodeHeader.m_nbFaceIndexes);
-    node->SetPtsIndiceDirty(0);
+        node->ReplacePtsIndices(0, (int32_t*)&newNodePointData[stitchedPoints.size()], node->m_nodeHeader.m_nbFaceIndexes);
+        node->SetPtsIndiceDirty(0);
         //node->setNbPointsUsedForMeshIndex(arraySize-stitchedPoints.size());
         if (node->IsLeaf()) node->m_nodeHeader.m_totalCount = stitchedPoints.size();
         else
@@ -2029,44 +1941,24 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
         node->m_nodeHeader.m_nodeCount = stitchedPoints.size();
         assert(node->size() == stitchedPoints.size());
 #if SM_OUTPUT_MESHES_STITCHING
-        WString path = L"E:\\output\\scmesh\\2016-01-22\\";
-        path += (std::to_wstring((unsigned long long)node->GetParentNode().GetPtr()) + L"_"+ std::to_wstring(node->size())+L"_").c_str();
-        WString nameAfter = path + L"poststitchmesh_";
-        nameAfter.append(std::to_wstring(node->m_nodeHeader.m_level).c_str());
-        nameAfter.append(L"_");
-        nameAfter.append(std::to_wstring(ExtentOp<EXTENT>::GetXMin(node->m_nodeHeader.m_nodeExtent)).c_str());
-        nameAfter.append(L"_");
-        nameAfter.append(std::to_wstring(ExtentOp<EXTENT>::GetYMin(node->m_nodeHeader.m_nodeExtent)).c_str());
-        nameAfter.append(L".m");
-        size_t nVertices = stitchedPoints.size();
-        size_t nIndices = node->m_nodeHeader.m_nbFaceIndexes;
-        FILE* meshAfterStitch = _wfopen(nameAfter.c_str(), L"wb");
-        fwrite(&nVertices, sizeof(size_t), 1, meshAfterStitch);
-        fwrite(newNodePointData, sizeof(DPoint3d), nVertices, meshAfterStitch);
-        fwrite(&nIndices, sizeof(size_t), 1, meshAfterStitch);
-        fwrite((int32_t*)&newNodePointData[stitchedPoints.size()], sizeof(int32_t), nIndices, meshAfterStitch);
-        fclose(meshAfterStitch);
+            {
+            WString nameStitched = LOG_PATH_STR_W + L"poststitchmesh_";
+            LOGSTRING_NODE_INFO_W(node, nameStitched)
+            nameStitched.append(L".m");
+            LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(nameStitched, stitchedPoints.size(), node->m_nodeHeader.m_nbFaceIndexes, newNodePointData, (int32_t*)&newNodePointData[stitchedPoints.size()])
+            }
 #endif
 #if SM_TRACE_MESH_STATS
-        Utf8String nameStats = "e:\\output\\scmesh\\2015-11-18\\defects\\tileafterstitching_";
-        nameStats.append(std::to_string(node->m_nodeHeader.m_level).c_str());
-        nameStats.append("_");
-        nameStats.append(std::to_string(ExtentOp<EXTENT>::GetXMin(node->m_nodeHeader.m_nodeExtent)).c_str());
-        nameStats.append("_");
-        nameStats.append(std::to_string(ExtentOp<EXTENT>::GetYMin(node->m_nodeHeader.m_nodeExtent)).c_str());
-        nameStats.append(".txt");
-        std::ofstream stats;
-        stats.open(nameStats.c_str(), std::ios_base::trunc);
-        stats << " N OF POINTS " + std::to_string(node->size()) + "\n";
-        stats << "N OF INDICES " + std::to_string(node->m_nodeHeader.m_nbFaceIndexes) + "\n";
-        stats << " NODE TOTAL COUNT " + std::to_string(node->m_nodeHeader.m_totalCount) + "\n";
-        stats.close();
+        Utf8String fileName2 = (LOG_PATH_STR);
+        LOGSTRING_NODE_INFO(node, fileName2)
+        fileName2.append("_stats_after_stitch.txt");
+        LOG_STATS_FOR_NODE(fileName2, node)
 #endif
         delete[] newNodePointData;
-        }
+            }
     //node->m_nodeHeader.m_nbFaceIndexes = nfaces;
     return true;
-    }
+        }
 //return false;
 //    }
 //#pragma optimize("", on)  
