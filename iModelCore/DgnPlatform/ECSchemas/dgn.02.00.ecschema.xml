@@ -771,7 +771,7 @@
                 <OnUpdateAction>Restrict</OnUpdateAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
-        <Source cardinality="(1,1)" roleLabel="is referenced by" polymorphic="true">
+        <Source cardinality="(0,1)" roleLabel="is referenced by" polymorphic="true">
             <Class class="ViewDefinition"/>
         </Source>
         <Target cardinality="(1,1)" roleLabel="references" polymorphic="true">
@@ -784,7 +784,7 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding">
-        <Source cardinality="(1,1)" roleLabel="is on 1 element" polymorphic="true">
+        <Source cardinality="(0,1)" roleLabel="is on 1 element" polymorphic="true">
             <Class class="Element"/>
         </Source>
         <Target cardinality="(0,N)" roleLabel="is on N elements" polymorphic="true">
@@ -1151,7 +1151,7 @@
                 <OnUpdateAction>Restrict</OnUpdateAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
-        <Source cardinality="(1,1)" roleLabel="is base model for view" polymorphic="true">
+        <Source cardinality="(0,1)" roleLabel="is base model for view" polymorphic="true">
             <Class class="Model"/>
         </Source>
         <Target cardinality="(0,N)" roleLabel="is used by N views" polymorphic="true">
