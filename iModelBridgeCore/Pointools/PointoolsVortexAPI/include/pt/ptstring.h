@@ -52,7 +52,7 @@ namespace pt
 		inline operator bool() const { return c_wstr() ? true : false; }
 
 		const char* getEncoded(Encoding enc, char * buffer, int buffsize) const;
-		const wchar_t* getW(wchar_t *buffer, int buffsize) const;
+		const wchar_t* getW(wchar_t *buffer, size_t buffsize) const;
 
 		String &operator = (const String &);
 		String &operator = (const char *);
@@ -66,7 +66,7 @@ namespace pt
 		int compare(const char *str)	const { return strcmp(c_u8str(), str); }  
 
 	private:		
-		void allocBuffer(int);
+		void allocBuffer(size_t);
 		void freeBuffer();
 
 		const char *encode(Encoding enc);

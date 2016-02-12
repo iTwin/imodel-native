@@ -142,7 +142,7 @@ inline DataSourceAnalyzer::SampleCounter DataSourceAnalyzer::getSampleCounter(vo
 
 inline void DataSourceAnalyzer::setSeries(SeriesIndex index, DataSourceAnalyzerSeries *initSeries)
 {
-	if(index >= getNumSeries())
+	if(index >= (int)getNumSeries())
 	{
 		series.resize(index + 1);
 	}
@@ -153,13 +153,13 @@ inline void DataSourceAnalyzer::setSeries(SeriesIndex index, DataSourceAnalyzerS
 
 inline unsigned int DataSourceAnalyzer::getNumSeries(void)
 {
-	return series.size();
+	return (unsigned int)series.size();
 }
 
 
 inline DataSourceAnalyzerSeries *DataSourceAnalyzer::getSeries(SeriesIndex index)
 {
-	if(index < getNumSeries())
+	if(index < (int)getNumSeries())
 	{
 		return series[index];
 	}

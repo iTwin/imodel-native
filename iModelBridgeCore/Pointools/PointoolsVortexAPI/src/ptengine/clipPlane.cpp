@@ -5,6 +5,7 @@
 // Copyright (c) 2014 Bentley Systems, Incorporated. All rights reserved.
 //
 //----------------------------------------------------------------------------
+#include "PointoolsVortexAPIInternal.h"
 #include <ptengine/clipPlane.h>
 #include <ptengine/clipManager.h>
 #include <ptcloud2/pointcloud.h>

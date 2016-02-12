@@ -32,12 +32,12 @@ Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 #include "../include/timer.h"
 
 /* API headers */ 
-#include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_import.h>
-#include <PointoolsVortexAPI_FeatureExtract_DLL/VortexFeatureExtract.h>
+#include <PTAPI/PointoolsVortexAPI_import.h>
+#include <VortexFeatureExtract.h>
 
 /* license code -   Contact vortex@pointools.com if you do not have this*/ 
 /*					or replace with one you have been provided			*/ 
-//#include "../lic/vortexLicense.c"
+#include "../../lic/vortexLicense.c"
 
 /* vortex initialization state */ 
 bool	isVortexLoaded = false;

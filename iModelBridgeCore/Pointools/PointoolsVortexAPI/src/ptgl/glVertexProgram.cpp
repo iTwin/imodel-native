@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptgl/glvertexprogram.h>
 #include <ptgl/glEffects.h>
 

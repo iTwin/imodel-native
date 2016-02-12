@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 
 #include <ptds/DataSourceManager.h>
 #include <ptds/DataSourceCache.h>

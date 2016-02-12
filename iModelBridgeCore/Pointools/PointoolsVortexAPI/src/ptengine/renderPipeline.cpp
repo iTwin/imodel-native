@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptengine/renderPointsMethod.h>
 
 using namespace pointsengine;

@@ -1,5 +1,6 @@
-#include <WildMagic4/Wm4Plane3.h>
-#include <WildMagic4/Wm4ApprPlanefit3.h>
+#include "PointoolsVortexAPIInternal.h"
+#include <wildmagic/math/Wm5Plane3.h>
+#include <wildmagic/math/Wm5ApprPlanefit3.h>
 
 #include <ptedit/planefilter.h>
 
@@ -16,8 +17,8 @@ void  PlaneSelect::computePlane()
 	}
 	else
 	{
-		Wm4::Vector3d mgcPoints[500];
-		Wm4::Vector3d planeOrigin, planeNormal;
+		Wm5::Vector3d mgcPoints[500];
+		Wm5::Vector3d planeOrigin, planeNormal;
 		
 		int size = points.size();
 		if (size > 500) size = 500;
@@ -29,7 +30,7 @@ void  PlaneSelect::computePlane()
 			mgcPoints[i].Z() = points[i].z;
 		}
 		
-		Wm4::Plane3d wplane = Wm4::OrthogonalPlaneFit3( size, mgcPoints );
+		Wm5::Plane3d wplane = Wm5::OrthogonalPlaneFit3( size, mgcPoints );
 		plane.normal( (const double*)wplane.Normal );
 		plane.constant( wplane.Constant );
 		plane.base();

@@ -5,6 +5,7 @@
 /*  Last Updated 12 Dec 2003 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
 
+#include "PointoolsVortexAPIInternal.h"
 #ifdef WIN32
 #include <windows.h>
 #endif
@@ -12,8 +13,8 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 
-#include <WildMagic4/Wm4Matrix3.h>
-#include <WildMagic4/Wm4Quaternion.h>
+#include <wildmagic/math/Wm5Matrix3.h>
+#include <wildmagic/math/Wm5Quaternion.h>
 #include <math/matrix_math.h>
 #include <ptgl/glCamera.h>
 
@@ -1161,13 +1162,13 @@ void Camera::rotate()
 			m_angleX -= (m_mouseY - m_lastY) / 180.0f;
 			break;
 		}
-		Wm4::Matrix3f m;
+		Wm5::Matrix3f m;
 
 		float x = m_angleX;
 		float y = m_angleY;
 		float z = m_angleZ;
 
-		m.FromEulerAnglesZYX(m_angleZ, m_angleY, m_angleX);
+        m.MakeEulerZYX(m_angleZ, m_angleY, m_angleX);
 		rotationFromMatrix(m);
 	}
 	m_model_needs_update = true;
@@ -1285,8 +1286,8 @@ float Camera::distanceToTarget() const
 //----------------------------------------------------------
 void Camera::rotationFromAxisAngle(float angle, const vector3 &axis)
 {
-	Wm4::Quaternionf q;
-	Wm4::Vector3f ax(axis);
+	Wm5::Quaternionf q;
+	Wm5::Vector3f ax(axis[0], axis[1], axis[2]);
 	q.FromAxisAngle(ax, angle);
 	m_arcball.SetQuat(gl_unitquaternion(gl_quaternion(q.W(), q.X(), q.Y(), q.Z())));
 
@@ -1297,10 +1298,10 @@ void Camera::rotationFromAxisAngle(float angle, const vector3 &axis)
 //----------------------------------------------------------
 void Camera::rotationFromMatrix(const float *mat)
 {
-	Wm4::Matrix3f M;
-	memcpy(&M, mat, sizeof(Wm4::Matrix3f));
+	Wm5::Matrix3f M;
+	memcpy(&M, mat, sizeof(Wm5::Matrix3f));
 	
-	Wm4::Quaternionf q;
+	Wm5::Quaternionf q;
 	q.FromRotationMatrix(M);
 	m_arcball.SetQuat(gl_unitquaternion(gl_quaternion(q.W(), q.X(), q.Y(), q.Z())));
 
@@ -1311,13 +1312,13 @@ void Camera::rotationFromMatrix(const float *mat)
 //----------------------------------------------------------
 void Camera::rotationFromEulerZYX(float z, float y, float x)
 {
-	Wm4::Matrix3f m;
+	Wm5::Matrix3f m;
 
 	m_angleZ = z;
 	m_angleY = y;
 	m_angleX = x;
 
-	m.FromEulerAnglesZYX(z,y,x);
+    m.MakeEulerZYX(z, y, x);
 	rotationFromMatrix(m);
 }
 //----------------------------------------------------------
@@ -1326,9 +1327,9 @@ void Camera::rotationFromEulerZYX(float z, float y, float x)
 void Camera::resolveEulers()
 {
 	gl_tmatrix m = m_arcball.GetMatrix();
-	Wm4::Matrix3f M;	for (int i=0; i<3; i++)	for (int j=0; j<3; j++)	M[i][j] = m(i,j);
+	Wm5::Matrix3f M;	for (int i=0; i<3; i++)	for (int j=0; j<3; j++)	M[i][j] = m(i,j);
 	M.Transpose();
-	M.Inverse().ToEulerAnglesZYX(m_angleZ, m_angleY, m_angleX);
+    M.Inverse().ExtractEulerZYX(m_angleZ, m_angleY, m_angleX);
 	m_angleX += PI;
 	m_angleY += PI;
 	m_angleZ += PI;
@@ -1348,7 +1349,7 @@ void Camera::rotationFromLookAt(const vector3 &location, const vector3 &_up)
 	vector3 xv(zv.unit_cross(up));
 	vector3 yv(xv.unit_cross(zv));
 
-	Wm4::Matrix3f M;
+	Wm5::Matrix3f M;
 	
 	M[0][0] = -xv.x;
 	M[1][0] = -xv.y;

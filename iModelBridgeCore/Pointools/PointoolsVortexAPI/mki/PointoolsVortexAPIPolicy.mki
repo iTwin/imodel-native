@@ -1,0 +1,73 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: mki/PointoolsVortexAPIPolicy.mki $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+%include $(SrcRoot)/Pointools/PointoolsCommon/mki/PolicyCommon.mki
+%include PointoolsVortexAPI_Version.mki
+
+appName                         = PointoolsVortexAPI
+o                               = $(OutputRootDir)build/Pointools/$(appName)$(VSOutputSubfolder)/
+CCompPDBName                    = $(appName)
+MultiCompileIntermediatePdbFile = $(o)$(CCompPDBName).pdb
+IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
+
+PointoolsVortexAPIShaderSrc=$(SrcRoot)Pointools/PointoolsVortexAPI/shaders/
+PointoolsVortexAPIShaderSrcEnc=$(o)shaders/
+pointoolsVortexAPIVendorAPI     = $(OutBuildContexts)PointoolsVortexAPI/VendorAPI/
+
+nameToDefine = __PointoolsVortexAPI_BUILD__
+%include cdefapnd.mki
+
+dirToSearch=$(PointoolsVortexAPIInclude)
+%include cincapnd.mki
+
+dirToSearch=$(pointoolsVortexAPIVendorAPI)glew
+%include cincapnd.mki
+
+dirToSearch=$(pointoolsVortexAPIVendorAPI)OpenGLExt
+%include cincapnd.mki
+
+dirToSearch=$(pointoolsVortexAPIVendorAPI)Boost_1_5_7_0
+%include cincapnd.mki
+
+dirToSearch=$(pointoolsVortexAPIVendorAPI)wildmagic/core
+%include cincapnd.mki
+
+#dirToSearch=$(PointoolsLibsVendorAPI)
+#%include cincapnd.mki
+
+warnLevel = -W1
+NO_LEAN_AND_MEAN=1
+BUILD_NO_STACK_CHECK=1
+
+NOSTRICT=1
+
+CCompOpts + -D"UNICODE"
+CCompOpts + -D"_UNICODE"
+CCompOpts + -D"PTRMI_LOGGING"
+CCompOpts + -D"_TEST"
+CCompOpts + -D"_WINDOWS"
+CCompOpts + -D"_USRDLL"
+CCompOpts + -D"POINTOOLS_API"
+CCompOpts + -D"POINTOOLS_API_INCLUDE"
+CCompOpts + -D"PTENG_DELAY_LOAD"
+CCompOpts + -D"PTLANG_ENGLISH"
+CCompOpts + -D"_CRT_SECURE_NO_DEPRECATE"
+CCompOpts + -D"_CRT_NON_CONFORMING_SWPRINTFS"
+CCompOpts + -D"BOOST_ALL_NO_LIB"
+CCompOpts + -D"DATATREE_NO_PARAMMAP"
+CCompOpts + -D"GLEW_STATIC"
+CCompOpts + -D"POINTOOLS_PTRMI_PIPE_MANAGER_EXT"
+CCompOpts + -D"VORTEX_OBJECTS_API"
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
+    CCompOpts + -D"WIN64"
+%else
+    CCompOpts + -D"WIN32"
+%endif
+CCompOpts + -D"POINTOOLS_API"
+CCompOpts + -D"BOOST_DISABLE_UNKNOWN_COMPILER_VERSION_MESSAGE"
+CCompOpts + -wd4005							# Ignore macro redefinition warnings (conflicts between Boost and Microsoft librairies)

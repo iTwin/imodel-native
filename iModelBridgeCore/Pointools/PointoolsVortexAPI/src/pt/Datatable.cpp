@@ -6,6 +6,7 @@
 /*  Last Updated 9 Jan 2003 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
 #pragma warning (disable : 4786)
+#include "PointoolsVortexAPIInternal.h"
 #include <pt\datatable.h>
 using namespace pt;
 

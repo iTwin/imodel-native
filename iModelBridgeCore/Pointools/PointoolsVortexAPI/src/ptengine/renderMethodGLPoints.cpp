@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptgl/glstate.h>
 #include <ptengine/renderMethodGLPoints.h>
 #include <assert.h>

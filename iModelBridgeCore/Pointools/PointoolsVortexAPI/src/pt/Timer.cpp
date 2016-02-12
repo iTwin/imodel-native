@@ -11,6 +11,7 @@
  * OpenSceneGraph Public License for more details.
 */
 //#include <stdlib.h>
+#include "PointoolsVortexAPIInternal.h"
 #include <stdio.h>
 #include <string.h>
 

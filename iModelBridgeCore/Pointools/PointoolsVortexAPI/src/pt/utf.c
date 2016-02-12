@@ -268,22 +268,22 @@ int utf8bytes(unsigned ucs) {
 */
 int utf8encode(unsigned ucs, char* buf) {
   if (ucs < 0x000080U) {
-    buf[0] = ucs;
+    buf[0] = (char)ucs;
     return 1;
   } else if (ucs < 0x000800U) {
-    buf[0] = 0xc0 | (ucs >> 6);
-    buf[1] = 0x80 | (ucs & 0x3F);
+    buf[0] = (char) (0xc0 | (ucs >> 6));
+    buf[1] = (char) (0x80 | (ucs & 0x3F));
     return 2;
   } else if (ucs < 0x010000U) {
-    buf[0] = 0xe0 | (ucs >> 12);
-    buf[1] = 0x80 | ((ucs >> 6) & 0x3F);
-    buf[2] = 0x80 | (ucs & 0x3F);
+    buf[0] = (char) (0xe0 | (ucs >> 12));
+    buf[1] = (char) (0x80 | ((ucs >> 6) & 0x3F));
+    buf[2] = (char) (0x80 | (ucs & 0x3F));
     return 3;
   } else if (ucs < 0x0010ffffU) {
-    buf[0] = 0xf0 | (ucs >> 18);
-    buf[1] = 0x80 | ((ucs >> 12) & 0x3F);
-    buf[2] = 0x80 | ((ucs >> 6) & 0x3F);
-    buf[3] = 0x80 | (ucs & 0x3F);
+    buf[0] = (char) (0xf0 | (ucs >> 18));
+    buf[1] = (char) (0x80 | ((ucs >> 12) & 0x3F));
+    buf[2] = (char) (0x80 | ((ucs >> 6) & 0x3F));
+    buf[3] = (char) (0x80 | (ucs & 0x3F));
     return 4;
   } else {
     // encode 0xfffd:
@@ -340,7 +340,7 @@ unsigned utf8towc(const char* src, unsigned srclen,
       p += len;
 #ifdef _WIN32
       if (ucs < 0x10000) {
-	dst[count] = ucs;
+	dst[count] = (char)ucs;
       } else {
 	// make a surrogate pair:
 	if (count+2 >= dstlen) {dst[count] = 0; count += 2; break;}
@@ -407,7 +407,7 @@ unsigned utf8toa(const char* src, unsigned srclen,
     } else {
       int len; unsigned ucs = utf8decode(p,e,&len);
       p += len;
-      if (ucs < 0x100) dst[count] = ucs;
+      if (ucs < 0x100) dst[count] = (char)ucs;
       else dst[count] = '?';
     }
     if (++count >= dstlen) {dst[count-1] = 0; break;}
@@ -461,12 +461,12 @@ unsigned utf8fromwc(char* dst, unsigned dstlen,
     if (i >= srclen) {dst[count] = 0; return count;}
     ucs = src[i++];
     if (ucs < 0x80U) {
-      dst[count++] = ucs;
+      dst[count++] = (char)ucs;
       if (count >= dstlen) {dst[count-1] = 0; break;}
     } else if (ucs < 0x800U) { // 2 bytes
       if (count+2 >= dstlen) {dst[count] = 0; count += 2; break;}
-      dst[count++] = 0xc0 | (ucs >> 6);
-      dst[count++] = 0x80 | (ucs & 0x3F);
+      dst[count++] = (char) (0xc0 | (ucs >> 6));
+      dst[count++] = (char) (0x80 | (ucs & 0x3F));
 #ifdef _WIN32
     } else if (ucs >= 0xd800 && ucs <= 0xdbff && i < srclen &&
 	       src[i] >= 0xdc00 && src[i] <= 0xdfff) {
@@ -482,17 +482,17 @@ unsigned utf8fromwc(char* dst, unsigned dstlen,
       }
 #endif
       if (count+4 >= dstlen) {dst[count] = 0; count += 4; break;}
-      dst[count++] = 0xf0 | (ucs >> 18);
-      dst[count++] = 0x80 | ((ucs >> 12) & 0x3F);
-      dst[count++] = 0x80 | ((ucs >> 6) & 0x3F);
-      dst[count++] = 0x80 | (ucs & 0x3F);
+      dst[count++] = (char) (0xf0 | (ucs >> 18));
+      dst[count++] = (char) (0x80 | ((ucs >> 12) & 0x3F));
+      dst[count++] = (char) (0x80 | ((ucs >> 6) & 0x3F));
+      dst[count++] = (char) (0x80 | (ucs & 0x3F));
     } else {
 #ifndef _WIN32
     J1:
 #endif
       // all others are 3 bytes:
       if (count+3 >= dstlen) {dst[count] = 0; count += 3; break;}
-      dst[count++] = 0xe0 | (ucs >> 12);
+      dst[count++] = (char) (0xe0 | (ucs >> 12));
       dst[count++] = 0x80 | ((ucs >> 6) & 0x3F);
       dst[count++] = 0x80 | (ucs & 0x3F);
     }
@@ -628,7 +628,7 @@ unsigned utf8tomb(const char* src, unsigned srclen,
     wchar_t lbuf[1024];
     wchar_t* buf = lbuf;
     unsigned length = utf8towc(src, srclen, buf, 1024);
-    unsigned ret;
+    unsigned ret = 0;
     if (length >= 1024) {
       buf = (wchar_t*)(malloc((length+1)*sizeof(wchar_t)));
       utf8towc(src, srclen, buf, length+1);

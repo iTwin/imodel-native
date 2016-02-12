@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptedit/constriants.h>
 
 using namespace ptedit;

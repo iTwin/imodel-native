@@ -67,48 +67,50 @@
     <_ProjectFileVersion>11.0.61030.0</_ProjectFileVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(Pointools_Examples_Out)\Winx86\PointoolsExamples\vc110\$(Configuration)\</OutDir>
-    <IntDir>$(Pointools_Examples_Out)\Winx86\PointoolsExamples\vc110\$(Configuration)\$(ProjectName)\Build\</IntDir>
+    <OutDir>$(SolutionDir)..\out\Winx86\vc110\PointoolsExamples\$(ProjectName)\$(Configuration)\</OutDir>
+    <IntDir>$(OutDir)Build\</IntDir>
     <LinkIncremental>true</LinkIncremental>
+    <TargetName>$(ProjectName)_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(Pointools_Examples_Out)\Winx64\PointoolsExamples\vc110\$(Configuration)\</OutDir>
-    <IntDir>$(Pointools_Examples_Out)\Winx64\PointoolsExamples\vc110\$(Configuration)\$(ProjectName)\Build\</IntDir>
+    <OutDir>$(SolutionDir)..\out\Winx64\vc110\PointoolsExamples\$(ProjectName)\$(Configuration)\</OutDir>
+    <IntDir>$(OutDir)Build\</IntDir>
     <LinkIncremental>true</LinkIncremental>
+    <TargetName>$(ProjectName)_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(Pointools_Examples_Out)\Winx86\PointoolsExamples\vc110\$(Configuration)\</OutDir>
-    <IntDir>$(Pointools_Examples_Out)\Winx86\PointoolsExamples\vc110\$(Configuration)\$(ProjectName)\Build\</IntDir>
+    <OutDir>$(SolutionDir)..\out\Winx86\vc110\PointoolsExamples\$(ProjectName)\$(Configuration)\</OutDir>
+    <IntDir>$(OutDir)Build\</IntDir>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(Pointools_Examples_Out)\Winx64\PointoolsExamples\vc110\$(Configuration)\</OutDir>
-    <IntDir>$(Pointools_Examples_Out)\Winx64\PointoolsExamples\vc110\$(Configuration)\$(ProjectName)\Build\</IntDir>
+    <OutDir>$(SolutionDir)..\out\Winx64\vc110\PointoolsExamples\$(ProjectName)\$(Configuration)\</OutDir>
+    <IntDir>$(OutDir)Build\</IntDir>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(Pointools_Libs_Include_x86_VS2012);$(Pointools_Vortex_Include_x86_VS2012);..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE; _CRT_SECURE_NO_WARNINGS; _CRT_NON_CONFORMING_SWPRINTFS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\dependencies\VS2012\include;$(SolutionDir)\..\include\PointoolsIO_PODWriter_DLL;$(SolutionDir)\..\include\PointoolsVortexAPI_FeatureExtract_DLL;$(SolutionDir)\..\include\PointoolsVortexAPI_DLL;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_CRT_NON_CONFORMING_SWPRINTFS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader />
       <WarningLevel>Level3</WarningLevel>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>glui32d.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>freeglut.lib;glui32d.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(TargetPath)</OutputFile>
-      <AdditionalLibraryDirectories>$(Pointools_Libs_Libs_x86_VS2012);$(Pointools_Vortex_Libs_x86_VS2012);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)\dependencies\VS2012\lib\x86;$(SolutionDir)\..\lib\VS2012\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>
-      </Command>
+      <Command>if not exist "$(OutDir)freeglut.dll" mklink "$(OutDir)freeglut.dll" "$(SolutionDir)Dependencies\VS2012\bin\x86\freeglut.dll"
+if not exist "$(OutDir)PointoolsVortexAPI.dll" mklink "$(OutDir)PointoolsVortexAPI.dll" "$(SolutionDir)..\bin\VS2012\x86\PointoolsVortexAPI.dll"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -117,42 +119,44 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(Pointools_Libs_Include_x64_VS2012);$(Pointools_Vortex_Include_x64_VS2012);..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE; _CRT_SECURE_NO_WARNINGS; _CRT_NON_CONFORMING_SWPRINTFS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\dependencies\VS2012\include;$(SolutionDir)\..\include\PointoolsIO_PODWriter_DLL;$(SolutionDir)\..\include\PointoolsVortexAPI_FeatureExtract_DLL;$(SolutionDir)\..\include\PointoolsVortexAPI_DLL;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN64;_CONSOLE; _CRT_SECURE_NO_WARNINGS; _CRT_NON_CONFORMING_SWPRINTFS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <PrecompiledHeader />
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4244</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>freeglut.lib;glui64.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(TargetPath)</OutputFile>
+      <AdditionalLibraryDirectories>$(SolutionDir)\dependencies\VS2012\lib\x64;$(SolutionDir)\..\lib\VS2012\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <TargetMachine>MachineX64</TargetMachine>
+      <IgnoreSpecificDefaultLibraries>glui32.lib;glut32.lib</IgnoreSpecificDefaultLibraries>
+      <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
+    </Link>
+    <PostBuildEvent>
+      <Command>if not exist "$(OutDir)freeglut.dll" mklink "$(OutDir)freeglut.dll" "$(SolutionDir)Dependencies\VS2012\bin\x64\freeglut.dll"
+if not exist "$(OutDir)PointoolsVortexAPI.dll" mklink "$(OutDir)PointoolsVortexAPI.dll" "$(SolutionDir)..\bin\VS2012\x64\PointoolsVortexAPI.dll"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(SolutionDir)\dependencies\VS2012\include;$(SolutionDir)\..\include\PointoolsIO_PODWriter_DLL;$(SolutionDir)\..\include\PointoolsVortexAPI_FeatureExtract_DLL;$(SolutionDir)\..\include\PointoolsVortexAPI_DLL;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_CRT_NON_CONFORMING_SWPRINTFS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader />
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>glui64d.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>..\bin\vc110\x64\$(TargetName)_d.exe</OutputFile>
-      <AdditionalLibraryDirectories>$(Pointools_Libs_Libs_x64_VS2012);$(Pointools_Vortex_Libs_x64_VS2012);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <SubSystem>Console</SubSystem>
-      <TargetMachine>MachineX64</TargetMachine>
-      <IgnoreSpecificDefaultLibraries>glui32.lib;glut32.lib</IgnoreSpecificDefaultLibraries>
-    </Link>
-    <PostBuildEvent>
-      <Command>
-      </Command>
-    </PostBuildEvent>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <ClCompile>
-      <AdditionalIncludeDirectories>$(Pointools_Libs_Include_x86_VS2012);$(Pointools_Vortex_Include_x86_VS2012);..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_CRT_NON_CONFORMING_SWPRINTFS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <PrecompiledHeader />
-      <WarningLevel>Level3</WarningLevel>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-    </ClCompile>
-    <Link>
-      <AdditionalDependencies>glui32.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>freeglut.lib;glui32.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(TargetPath)</OutputFile>
-      <AdditionalLibraryDirectories>$(Pointools_Libs_Libs_x86_VS2012);$(Pointools_Vortex_Libs_x86_VS2012);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)\dependencies\VS2012\lib\x86;$(SolutionDir)\..\lib\VS2012\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
@@ -160,8 +164,8 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>
-      </Command>
+      <Command>if not exist "$(OutDir)freeglut.dll" mklink "$(OutDir)freeglut.dll" "$(SolutionDir)Dependencies\VS2012\bin\x86\freeglut.dll"
+if not exist "$(OutDir)PointoolsVortexAPI.dll" mklink "$(OutDir)PointoolsVortexAPI.dll" "$(SolutionDir)..\bin\VS2012\x86\PointoolsVortexAPI.dll"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -169,17 +173,18 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(Pointools_Libs_Include_x64_VS2012);$(Pointools_Vortex_Include_x64_VS2012);..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\dependencies\VS2012\include;$(SolutionDir)\..\include\PointoolsIO_PODWriter_DLL;$(SolutionDir)\..\include\PointoolsVortexAPI_FeatureExtract_DLL;$(SolutionDir)\..\include\PointoolsVortexAPI_DLL;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;WIN64;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_CRT_NON_CONFORMING_SWPRINTFS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader />
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4244</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <AdditionalDependencies>glui64.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(TargetPath)</OutputFile>
-      <AdditionalLibraryDirectories>$(Pointools_Libs_Libs_x64_VS2012);$(Pointools_Vortex_Libs_x64_VS2012);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)\dependencies\VS2012\lib\x64;$(SolutionDir)\..\lib\VS2012\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
@@ -188,8 +193,8 @@
       <IgnoreSpecificDefaultLibraries>glui32.lib;glut32.lib</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
-      <Command>
-      </Command>
+      <Command>if not exist "$(OutDir)freeglut.dll" mklink "$(OutDir)freeglut.dll" "$(SolutionDir)Dependencies\VS2012\bin\x64\freeglut.dll"
+if not exist "$(OutDir)PointoolsVortexAPI.dll" mklink "$(OutDir)PointoolsVortexAPI.dll" "$(SolutionDir)..\bin\VS2012\x64\PointoolsVortexAPI.dll"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

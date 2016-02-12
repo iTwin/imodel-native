@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptengine/renderLayersEffect.h>
 #include <ptengine/renderShaderUniforms.h>
 #include <ptengine/pointLayers.h>

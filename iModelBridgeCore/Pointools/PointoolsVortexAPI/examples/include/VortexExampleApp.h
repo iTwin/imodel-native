@@ -64,7 +64,7 @@ this.
 #include "../include/timer.h"
 
 // API header 
-#include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_import.h>
+#include <PTAPI/PointoolsVortexAPI_import.h>
 
 // UI constants
 #define PANEL_WIDTH			270

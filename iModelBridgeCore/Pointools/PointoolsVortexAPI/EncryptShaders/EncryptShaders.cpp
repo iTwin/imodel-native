@@ -34,7 +34,7 @@ void encryptFile( const char *filepath, const char*name, const char *outFilepath
 	char buff[260];
 	char cbuff[260];
 	char shaderName[64];
-	int l = strlen(outFilepath);
+	size_t l = strlen(outFilepath);
 	sprintf( buff, "%senc", outFilepath );
 	sprintf( cbuff, "%s.cpp", outFilepath );
 	strcpy(shaderName, name);
@@ -126,7 +126,7 @@ void encryptFiles( const char * appFolder, const char * searchExt, const char *o
 	/* search folder for files */ 
 	HANDLE hFind = ::FindFirstFile(searchpath, &ff);
 	
-	int i=0;
+	//int i=0;
 
 	if (hFind != INVALID_HANDLE_VALUE)
 	{			

@@ -26,8 +26,8 @@ namespace ptedit
  */
 struct IsolationFilter
 {
-	typedef pt::FastDelegate1<const pt::BoundingBoxD&, SelectionResult> IntersectCallback;	
-	typedef pt::FastDelegate2<int, const pt::vector3d&, bool> InsideCallback;	
+	typedef fastdelegate::FastDelegate1<const pt::BoundingBoxD&, SelectionResult> IntersectCallback;	
+	typedef fastdelegate::FastDelegate2<int, const pt::vector3d&, bool> InsideCallback;	
 
 	IntersectCallback intersect;
 	InsideCallback inside;

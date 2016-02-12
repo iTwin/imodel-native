@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptds/DataSourceRead.h>
 
 namespace ptds

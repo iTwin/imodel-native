@@ -109,7 +109,7 @@ public:
 	/*-------------------------------------------------------------*/ 
 	void set_filename(const char* filename)
 	{
-		utf8towc(filename, strlen(filename), m_filename, sizeof(m_filename));
+		utf8towc(filename, (unsigned int)strlen(filename), m_filename, sizeof(m_filename));
 	}
 	void set_filename(const wchar_t* filename)
 	{
@@ -182,7 +182,7 @@ public:
 		if (fromstart) m_pos = 0;
 		int pos = 0;
 	
-		int len = strlen(m_buffer);
+		size_t len = strlen(m_buffer);
 
 		clear_val_buffer();
 	
@@ -226,7 +226,7 @@ public:
 		if (fromstart) m_pos = 0;
 		int pos = 0;
 	
-		int len = strlen(m_buffer);
+		size_t len = strlen(m_buffer);
 
 		clear_val_buffer();
 		
@@ -269,7 +269,7 @@ public:
 		if (fromstart) m_pos = 0;
 		int pos = 0;
 	
-		int len = strlen(m_buffer);
+		size_t len = strlen(m_buffer);
 
 		clear_val_buffer();
 	
@@ -327,7 +327,7 @@ protected:
 
 	/*file*/ 
 	wchar_t m_filename[512];
-	int	 m_pos;
+	size_t	 m_pos;
 	int	 m_fileline;
 	__int64 m_bytes_read;
 };

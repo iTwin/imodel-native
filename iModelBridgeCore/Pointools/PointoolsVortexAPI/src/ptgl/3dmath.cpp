@@ -7,6 +7,7 @@
  \author Alessandro Falappa
 */
 
+#include "PointoolsVortexAPIInternal.h"
 #include <ptgl\3dmath.h>
 
 #ifdef REAL_IS_FLOAT
@@ -453,7 +454,7 @@ gl_unitquaternion& gl_unitquaternion::operator*=(const gl_unitquaternion& other)
 /*!
 This function has been defined to trap the use of an operation which is not allowed
 */
-gl_unitquaternion operator+(const gl_unitquaternion& q1,const gl_unitquaternion& q2)
+gl_unitquaternion operator+(const gl_unitquaternion& q1,const gl_unitquaternion& /*q2*/)
 {
 	// THIS OPERATION IS NOT ALLOWED CAUSE DOESN'T MANTAIN THE UNIT LENGTH
 	assert(false);
@@ -463,7 +464,7 @@ gl_unitquaternion operator+(const gl_unitquaternion& q1,const gl_unitquaternion&
 /*!
 This function has been defined to trap the use of an operation which is not allowed
 */
-gl_unitquaternion operator-(const gl_unitquaternion& q1,const gl_unitquaternion& q2)
+gl_unitquaternion operator-(const gl_unitquaternion& q1,const gl_unitquaternion& /*q2*/)
 {
 	// THIS OPERATION IS NOT ALLOWED CAUSE DOESN'T MANTAIN THE UNIT LENGTH
 	assert(false);
@@ -474,7 +475,7 @@ gl_unitquaternion operator-(const gl_unitquaternion& q1,const gl_unitquaternion&
 /*!
 This function has been defined to trap the use of an operation which is not allowed
 */
-gl_unitquaternion operator*(const gl_unitquaternion& q,const real& s)
+gl_unitquaternion operator*(const gl_unitquaternion& q,const real& /*s*/)
 {
 	// THIS OPERATION IS NOT ALLOWED CAUSE DOESN'T MANTAIN THE UNIT LENGTH
 	assert(false);
@@ -485,7 +486,7 @@ gl_unitquaternion operator*(const gl_unitquaternion& q,const real& s)
 /*!
 This function has been defined to trap the use of an operation which is not allowed
 */
-gl_unitquaternion operator*(const real& s,const gl_unitquaternion& q)
+gl_unitquaternion operator*(const real& /*s*/,const gl_unitquaternion& q)
 {
 	// THIS OPERATION IS NOT ALLOWED CAUSE DOESN'T MANTAIN THE UNIT LENGTH
 	assert(false);
@@ -496,7 +497,7 @@ gl_unitquaternion operator*(const real& s,const gl_unitquaternion& q)
 /*!
 This function has been defined to trap the use of an operation which is not allowed
 */
-gl_unitquaternion operator/(const gl_unitquaternion& q,const real& s)
+gl_unitquaternion operator/(const gl_unitquaternion& q,const real& /*s*/)
 {
 	// THIS OPERATION IS NOT ALLOWED CAUSE DOESN'T MANTAIN THE UNIT LENGTH
 	assert(false);

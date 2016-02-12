@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <pt/os.h>
 #define POINTOOLS_API_BUILD_DLL
 #include <gl/glew.h>
@@ -4786,11 +4787,11 @@ struct OrientedBoxCondition
 //-----------------------------------------------------------------------------
 struct SphereCondition
 {
-	SphereCondition( const SphereCondition &b ) { cen  = b.cen; rad2 = b.rad2; m_clipManager = b.m_clipManager; }
+	SphereCondition( const SphereCondition &b ) { cen  = b.cen; radSqr = b.radSqr; m_clipManager = b.m_clipManager; }
 	SphereCondition( const pt::vector3d &c, double rad ) : m_clipManager(&pointsengine::ClipManager::instance())
 	{
 		cen = c;
-		rad2 = rad * rad;
+		radSqr = rad * rad;
 	}
 	static const char* name()  { return "SPHERE"; }
 	bool sphereContains()
@@ -4831,7 +4832,7 @@ struct SphereCondition
 				d += s*s;
 			}
 		}
-		return d <= rad2 ? true : false;
+		return d <= radSqr ? true : false;
 	}
 	bool nodeCheck(const Node *n)	{ return !n->flag( pcloud::WholeClipped ); }
 	bool boundsCheck(const pt::BoundingBoxD &box) { nodeBox = box; return boxIntersects(); }
@@ -4840,9 +4841,9 @@ struct SphereCondition
 
 	inline bool validPoint(const vector3d &pnt, ubyte &f)
 	{
-		return ((pnt.dist2(cen) < rad2) && m_clipManager->inside(pnt)) ? true : false;
+		return ((pnt.dist2(cen) < radSqr) && m_clipManager->inside(pnt)) ? true : false;
 	}
-	double rad2;
+	double radSqr;
 	pt::vector3d cen;
 	pt::BoundingBoxD nodeBox;
 	pointsengine::ClipManager* m_clipManager;

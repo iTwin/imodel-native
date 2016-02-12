@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptedit/pointVisitors.h>
 #include <pt/project.h>
 

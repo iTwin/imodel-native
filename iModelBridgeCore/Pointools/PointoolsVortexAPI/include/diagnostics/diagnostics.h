@@ -4,7 +4,9 @@
 #include <pt/typedefs.h>
 #include <queue>
 
-namespace boost { 	namespace interprocess { class message_queue; } }
+//namespace boost { 	namespace interprocess { class message_queue; } }
+
+#include <boost/interprocess/ipc/message_queue.hpp>
 
 namespace ptdg
 {

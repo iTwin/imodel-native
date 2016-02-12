@@ -10,6 +10,7 @@ Hinweis: © 1999 by Christian Rodemeyer
          - MSDN: 'HLS Color Spaces'
          - MSDN: 'Converting Colors Between RGB and HLS'
 \****************************************************************************/
+#include "PointoolsVortexAPIInternal.h"
 #include <assert.h>
 #include <pt/color.h>
 #include <cstdio>

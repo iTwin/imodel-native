@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <Windows.h>
 
 #include <ptds/GraphManager.h>

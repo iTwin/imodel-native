@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <pt/os.h>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/xtime.hpp>

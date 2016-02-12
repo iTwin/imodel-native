@@ -1,12 +1,13 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <pt/OBBox.h>
-#include <WildMagic4/Wm4ApprGaussPointsFit3.h>
+#include <wildmagic/math/Wm5ApprGaussPointsFit3.h>
 
 namespace pt
 {
 /*
 OBBoxf	createFittingOBBf( const vector3 *pts, int numPoints )
 {
-	Wm4::Box3f wbox= Wm4::GaussPointsFit3<float>(numPoints, (Wm4::Vector3f*)pts);
+	Wm5::Box3f wbox= Wm5::GaussPointsFit3<float>(numPoints, (Wm5::Vector3f*)pts);
 	vector3 axis[] = { &wbox.Axis[0].X(), &wbox.Axis[1].X(), &wbox.Axis[2].X() };
 
 	OBBoxf box( &wbox.Center.X(), axis, wbox.Extent );
@@ -74,7 +75,7 @@ OBBoxd createFittingOBBd( const std::vector<vector3d> &pts )
 
 OBBoxd	createFittingOBBd(const vector3d *pts, int numPoints)
 {
-	Wm4::Box3d wbox= Wm4::GaussPointsFit3<double>(numPoints, (Wm4::Vector3d*) pts);
+	Wm5::Box3d wbox= Wm5::GaussPointsFit3<double>(numPoints, (Wm5::Vector3d*) pts);
 	vector3d axis[] = { &wbox.Axis[0].X(), &wbox.Axis[1].X(), &wbox.Axis[2].X() };
 
 	OBBoxd box( &wbox.Center.X(), axis, wbox.Extent );

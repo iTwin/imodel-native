@@ -9,6 +9,7 @@
   @feb 07 - unicode support added by Faraz Ravi
  */
 
+#include "PointoolsVortexAPIInternal.h"
 #include <pt/Log.h>
 #include <pt/format.h>
 #include <pt/Array.h>

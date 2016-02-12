@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptengine/renderShaderUniforms.h>
 #include <ptengine/renderClipEffect.h>
 #include <ptengine/renderContext.h>

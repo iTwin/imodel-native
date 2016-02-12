@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <PTRMI/GUID.h>
 #include <PTRMI/DataBuffer.h>
 

@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 
 //Method.cpp
 #include <encryption/Method.h>

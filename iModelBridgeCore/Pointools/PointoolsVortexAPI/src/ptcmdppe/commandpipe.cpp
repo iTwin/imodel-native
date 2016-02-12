@@ -9,6 +9,7 @@
 #pragma warning (disable : 4251)
 #endif
 
+#include "PointoolsVortexAPIInternal.h"
 #include <pt\os.h>
 
 #include <ptcmdppe\CommandPipe.h>

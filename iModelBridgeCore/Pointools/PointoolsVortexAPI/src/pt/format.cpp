@@ -7,6 +7,7 @@
  @edited  2004-01-03
 */
 
+#include "PointoolsVortexAPIInternal.h"
 #include <pt/format.h>
 #include <pt/ptunicode.h>
 

@@ -28,8 +28,8 @@ struct ClashObject : public vortex::IClashObject
 
 	virtual ~ClashObject();
 
-	typedef pt::FastDelegate1<float, bool> TreeFeedbackFunc;
-	typedef pt::FastDelegate1<float, bool> CompareFeedbackFunc;
+    typedef fastdelegate::FastDelegate1<float, bool> TreeFeedbackFunc;
+    typedef fastdelegate::FastDelegate1<float, bool> CompareFeedbackFunc;
 
 	// reference valid and tree generated
 	bool							isPrepared() const;

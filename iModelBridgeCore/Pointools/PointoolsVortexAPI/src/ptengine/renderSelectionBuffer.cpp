@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptengine/renderPointsBuffer.h>
 #include <ptedit/edit.h>
 

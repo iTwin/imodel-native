@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 // clashObjectManager.cpp
 
 #include <ptapi/PointoolsVortexAPI_ResultCodes.h>

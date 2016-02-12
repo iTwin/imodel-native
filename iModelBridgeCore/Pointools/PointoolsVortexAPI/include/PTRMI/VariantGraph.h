@@ -159,7 +159,7 @@ public:
 	static void					setType		(VariantType initType)			{type = initType;}
 	VariantType				&	getType		(void) const					{return type;}
 
-	static void					setTypeName	(VariantTypeName &initTypeName)	{typeName = initTypeName;}
+	static void					setTypeName	(const VariantTypeName &initTypeName)	{typeName = initTypeName;}
 	const VariantTypeName	&	getTypeName	(void)							{return typeName;}
 
 	static VariantType		&	getTypeS	(void)							{return type;}
@@ -520,7 +520,7 @@ public:
 	void					setType			(VariantType &initType)				{type = initType;}
 	VariantType			&	getType			(void)								{return type;}
 
-	void					setTypeName		(VariantTypeName &initTypeName)		{typeName = initTypeName;}
+	void					setTypeName		(const VariantTypeName &initTypeName)		{typeName = initTypeName;}
 	const VariantTypeName &	getTypeName		(void)								{return typeName;}
 
 	void					setMethodNew	(VariantMethodNew method)			{variantMethodNew = method;}
@@ -619,7 +619,7 @@ protected:
 	VariantMeta<VT> *	getVariantMeta			(VT type);
 	VariantMeta<VT>	*	getVariantMeta			(VariantTypeName &typeName);
 
-	bool				addVariantNameMeta		(VT type, VariantTypeName &typeName);
+	bool				addVariantNameMeta		(VT type, const VariantTypeName &typeName);
 
 	bool				clear					(VT type);
 
@@ -640,7 +640,7 @@ public:
 						VariantGraph				(void);
 					   ~VariantGraph				(void);
 
-	template<typename V> VariantMeta<VT> *addType(VT type, typename Variant<VT>::VariantTypeName &typeName)
+	template<typename V> VariantMeta<VT> *addType(VT type, typename const Variant<VT>::VariantTypeName &typeName)
 	{
 		VariantMeta<VT> *	meta;
 
@@ -872,7 +872,7 @@ inline VariantMeta<VT>	*PTRMI::VariantGraph<K, VT>::newVariantMeta(VT type)
 
 
 template<typename K, typename VT>
-inline bool PTRMI::VariantGraph<K, VT>::addVariantNameMeta(VT type, VariantTypeName &typeName)
+inline bool PTRMI::VariantGraph<K, VT>::addVariantNameMeta(VT type, const VariantTypeName &typeName)
 {
 	VariantMeta<VT>	*meta;
 
@@ -1009,7 +1009,7 @@ inline std::wostringstream& operator << (std::wostringstream &out, VariantGraph<
 template<typename K, typename VT>
 inline Variant<VT> * PTRMI::VariantGraph<K, VT>::newVariant(VT type)
 {
-	Variant<VT>						*	v;
+	//Variant<VT>						*	v;
 	VariantMeta<VT>					*	meta;
 															// Get Variant type's Meta class
 	if(meta = getVariantMeta(type))
@@ -1327,7 +1327,7 @@ template<typename K, typename VT>
 inline bool PTRMI::VariantGraph<K, VT>::getKey(Variant<VT> *variant, Key &key) const
 {
 	KeyVariantMap::const_iterator		it;
-	Variant<VT>						*	v;
+	//Variant<VT>						*	v;
 
 	for(it = keyVariants.begin(); it != keyVariants.end(); it++)
 	{
@@ -1438,7 +1438,7 @@ inline void PTRMI::VariantGraph<K, VT>::getString(std::wostringstream &string, u
 template<typename K, typename VT>
 inline bool PTRMI::VariantGraph<K, VT>::readGroup(std::wifstream &in)
 {
-	Group *childGroup;
+	//Group *childGroup;
 
 	VariantKeyName		keyName;
 	VariantTypeName		typeName;

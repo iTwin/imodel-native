@@ -76,9 +76,10 @@
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(Pointools_Examples_Out)\Winx64\PointoolsExamples\vc110\$(Configuration)\</OutDir>
-    <IntDir>$(Pointools_Examples_Out)\Winx64\PointoolsExamples\vc110\$(Configuration)\$(ProjectName)\Build\</IntDir>
+    <OutDir>$(SolutionDir)..\out\Winx64\vc110\PointoolsExamples\$(ProjectName)\$(Configuration)\</OutDir>
+    <IntDir>$(OutDir)Build\</IntDir>
     <LinkIncremental>true</LinkIncremental>
+    <TargetName>$(ProjectName)_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(Pointools_Examples_Out)\Winx86\PointoolsExamples\vc110\$(Configuration)\</OutDir>
@@ -86,8 +87,8 @@
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(Pointools_Examples_Out)\Winx64\PointoolsExamples\vc110\$(Configuration)\</OutDir>
-    <IntDir>$(Pointools_Examples_Out)\Winx64\PointoolsExamples\vc110\$(Configuration)\$(ProjectName)\Build\</IntDir>
+    <OutDir>$(SolutionDir)..\out\Winx64\vc110\PointoolsExamples\$(ProjectName)\$(Configuration)\</OutDir>
+    <IntDir>$(OutDir)Build\</IntDir>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -98,7 +99,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(Pointools_Libs_Include_x86_VS2012);$(Pointools_Vortex_Include_x86_VS2012);..\include;PropertyGrid\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(Pointools_Libs_Include_x86_VS2012);$(Pointools_Vortex_Include);..\include;PropertyGrid\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_GWCPROPCTRL_STATIC_ ;_CRT_NON_CONFORMING_SWPRINTFS.;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -132,14 +133,15 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(Pointools_Libs_Include_x64_VS2012);$(Pointools_Vortex_Include_x64_VS2012);..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;WIN64;_WINDOWS;_DEBUG;_GWCPROPCTRL_STATIC_ ;_CRT_NON_CONFORMING_SWPRINTFS.;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\dependencies\VS2012\include;$(SolutionDir)\..\include\PointoolsIO_PODWriter_DLL;$(SolutionDir)\..\include\PointoolsVortexAPI_FeatureExtract_DLL;$(SolutionDir)\..\include\PointoolsVortexAPI_DLL;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN64;_WINDOWS;_GWCPROPCTRL_STATIC_ ;_CRT_NON_CONFORMING_SWPRINTFS.;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4244</DisableSpecificWarnings>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -147,12 +149,14 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <OutputFile>..\bin\vc110\x64\$(TargetName)_d.exe</OutputFile>
-      <AdditionalLibraryDirectories>$(Pointools_Libs_Libs_x64_VS2012);$(Pointools_Vortex_Libs_x64_VS2012);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <OutputFile>$(TargetPath)</OutputFile>
+      <AdditionalLibraryDirectories>$(SolutionDir)\dependencies\VS2012\lib\x64;$(SolutionDir)\..\lib\VS2012\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX64</TargetMachine>
       <IgnoreSpecificDefaultLibraries>glui32.lib;glut32.lib</IgnoreSpecificDefaultLibraries>
+      <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <AdditionalDependencies>freeglut.lib;</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -200,13 +204,14 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(Pointools_Libs_Include_x64_VS2012);$(Pointools_Vortex_Include_x64_VS2012);..\include;PropertyGrid\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\dependencies\VS2012\include;$(SolutionDir)\..\include\PointoolsIO_PODWriter_DLL;$(SolutionDir)\..\include\PointoolsVortexAPI_FeatureExtract_DLL;$(SolutionDir)\..\include\PointoolsVortexAPI_DLL;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_GWCPROPCTRL_STATIC_;_CRT_NON_CONFORMING_SWPRINTFS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4244</DisableSpecificWarnings>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -215,7 +220,7 @@
     </ResourceCompile>
     <Link>
       <OutputFile>$(TargetPath)</OutputFile>
-      <AdditionalLibraryDirectories>$(Pointools_Libs_Libs_x64_VS2012);$(Pointools_Vortex_Libs_x64_VS2012);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)\dependencies\VS2012\lib\x64;$(SolutionDir)\..\lib\VS2012\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>

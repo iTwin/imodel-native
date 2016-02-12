@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptlic/PointoolsBentleyLicenseAPI.h>
 
 PointoolsBentleyLicense	pointoolsBentleyLicense;

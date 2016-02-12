@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptedit/paintFilters.h>
 #include <ptcloud2/datachannel.h>
 #include <ptedit/editstack.h>
@@ -147,8 +148,8 @@ RGBMAP g_rgbmap;
 	PaintSettings::PaintSettings() : blend(PaintModeNormal), alpha(1.0f) 
 	{
 		static StateHandler s;
-		s.read = pt::MakeDelegate( this, &PaintSettings::readState );
-		s.write = pt::MakeDelegate( this, &PaintSettings::writeState );
+        s.read = fastdelegate::MakeDelegate(this, &PaintSettings::readState);
+        s.write = fastdelegate::MakeDelegate(this, &PaintSettings::writeState);
 		OperationStack::addStateHandler( &s );
 
 		col[0] = 255; col[1] = 255; col[2] = 255; 
@@ -156,8 +157,8 @@ RGBMAP g_rgbmap;
 	SelBrushSettings::SelBrushSettings()
 	{
 		static StateHandler s;
-		s.read = pt::MakeDelegate( this, &SelBrushSettings::readState );
-		s.write = pt::MakeDelegate( this, &SelBrushSettings::writeState );
+        s.read = fastdelegate::MakeDelegate(this, &SelBrushSettings::readState);
+        s.write = fastdelegate::MakeDelegate(this, &SelBrushSettings::writeState);
 		OperationStack::addStateHandler( &s );
 	}
 	void SelBrushSettings::readState( const pt::datatree::Branch* b )

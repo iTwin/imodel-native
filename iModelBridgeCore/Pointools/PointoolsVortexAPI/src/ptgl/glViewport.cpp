@@ -4,6 +4,7 @@
 /*																			*/
 /*  Last Updated 12 Dec 2003 Faraz Ravi										*/
 /*--------------------------------------------------------------------------*/
+#include "PointoolsVortexAPIInternal.h"
 #include <pt\os.h>
 
 #include <ptgl\glViewport.h>
@@ -225,13 +226,13 @@ void Viewport::getViewRect(Recti &r)
 	r = m_viewRect;
 }
 //---- Set back Color ---------------------------------------------------
-void Viewport::setBackColor(const Color &col) { m_backcolor = col; }
+void Viewport::setBackColor(const ptgl::Color &col) { m_backcolor = col; }
 //----- GetBackColor ----------------------------------------------------
-void Viewport::getBackColor(Color &p) const	 { p = m_backcolor; }
+void Viewport::getBackColor(ptgl::Color &p) const	 { p = m_backcolor; }
 //---- Set back Color ---------------------------------------------------
-void Viewport::setBackColor2(const Color &col) { m_backcolor2 = col; }
+void Viewport::setBackColor2(const ptgl::Color &col) { m_backcolor2 = col; }
 //----- GetBackColor ----------------------------------------------------
-void Viewport::getBackColor2(Color &p) const   { p = m_backcolor2; }
+void Viewport::getBackColor2(ptgl::Color &p) const   { p = m_backcolor2; }
 //----- SetFrameRate ----------------------------------------------------
 void Viewport::setFrameRate(int fr) { PTTRACEOUT << "SetFrameRate = " << fr; m_framerate = fr; }
 //----- GetFrameRate ----------------------------------------------------
@@ -241,9 +242,9 @@ void Viewport::setUseGradient(bool use) { m_usegradient = use; }
 //----- getUseGradient --------------------------------------------------
 bool Viewport::getUseGradient() const { return m_usegradient; }
 //----- setGridColor ----------------------------------------------------
-void Viewport::setGridColor(const Color &col) { m_gridcolor = col; }
+void Viewport::setGridColor(const ptgl::Color &col) { m_gridcolor = col; }
 //----- getGridColor ----------------------------------------------------
-void Viewport::getGridColor(Color &col) const { col = m_gridcolor; }
+void Viewport::getGridColor(ptgl::Color &col) const { col = m_gridcolor; }
 //---------------------------------------------------------------------
 // Draw Axis
 //---------------------------------------------------------------------

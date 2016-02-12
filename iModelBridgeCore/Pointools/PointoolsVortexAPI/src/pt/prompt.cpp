@@ -9,6 +9,7 @@
  @edited  2003-09-13
  */
 
+#include "PointoolsVortexAPIInternal.h"
 #include <pt/prompt.h>
 
 #include <stdio.h>

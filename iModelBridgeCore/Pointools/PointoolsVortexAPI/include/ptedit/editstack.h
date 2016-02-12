@@ -10,8 +10,8 @@ namespace ptedit
 {
 struct StateHandler
 {
-	typedef pt::FastDelegate1< pt::datatree::Branch *>			WriteCB;	// write state callback
-	typedef pt::FastDelegate1< const pt::datatree::Branch *>	ReadCB;		// read state callback
+    typedef fastdelegate::FastDelegate1< pt::datatree::Branch *>			WriteCB;	// write state callback
+    typedef fastdelegate::FastDelegate1< const pt::datatree::Branch *>	    ReadCB;		// read state callback
 
 	WriteCB write;
 	ReadCB	read;

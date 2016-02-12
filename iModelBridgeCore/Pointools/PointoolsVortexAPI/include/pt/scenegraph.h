@@ -48,7 +48,11 @@ namespace ptgl { class Viewport; }
 namespace pt
 {
 /* 120 so that object is on 16 byte boundary allowing 4bytes for vftptr and 4 for key*/ 
+#ifdef PT_IDENTIFIER_LENGTH
+#undef PT_IDENTIFIER_LENGTH
+#endif
 #define PT_IDENTIFIER_LENGTH 60
+
 //-------------------------------------------------------------------------
 // Output
 /// Output base class for diagnostics and object composition display

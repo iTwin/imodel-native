@@ -10,12 +10,12 @@ Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 
 *******************************************************************************/
 #include "clashTest.h"
-#include <PointoolsVortexAPI_FeatureExtract_DLL/VortexFeatureExtract.h>
-#include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_import.h>
-#include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_resultCodes.h>
-#include <PointoolsVortexAPI_DLL/VortexObjects/IClashObjectManager.h>
-#include <PointoolsVortexAPI_DLL/VortexObjects/IClashTree.h>
-#include <PointoolsVortexAPI_DLL/VortexObjects/IClashNode.h>
+#include <VortexFeatureExtract.h>
+#include <PTAPI/PointoolsVortexAPI_import.h>
+#include <PTAPI/PointoolsVortexAPI_resultCodes.h>
+#include <VortexObjects/IClashObjectManager.h>
+#include <VortexObjects/IClashTree.h>
+#include <VortexObjects/IClashNode.h>
 
 
 //-----------------------------------------------------------------------------

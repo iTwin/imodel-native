@@ -12,6 +12,7 @@
 	purpose:	Refactored points renderer
 *********************************************************************/
 
+#include "PointoolsVortexAPIInternal.h"
 #include <ptengine/renderContext.h>
 #include <ptengine/renderFrameData.h>
 #include <ptengine/pointLayers.h>

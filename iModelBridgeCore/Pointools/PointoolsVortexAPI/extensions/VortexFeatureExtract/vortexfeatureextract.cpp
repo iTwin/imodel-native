@@ -7,8 +7,8 @@
 
 #include "Plane.h"
 
-#include <WildMagic4/Wm4ApprCylinderFit3.h>
-#include <WildMagic4/Wm4ApprPlaneFit3.h>
+#include <wildmagic/math/Wm5ApprCylinderFit3.h>
+#include <wildmagic/math/Wm5ApprPlaneFit3.h>
 
 //#define ENABLE_CLUSTER_ANALYSIS	1
 
@@ -66,28 +66,28 @@ T	FitCylinderToPoints( PThandle query, Cylinder<T> &res_cylinder,
 		// test clusters for best fit
 		for ( i=0;i<clusters.numClusters();i++)
 		{
-			const Wm4::Vector3<T> *candidate_pnts = reinterpret_cast<const Wm4::Vector3<T> *>
+			const Wm5::Vector3<T> *candidate_pnts = reinterpret_cast<const Wm5::Vector3<T> *>
 				(clusters.getPointsCluster(i, num_pnts));
 
 			if (num_pnts<5) continue;	// ignore small numbers of points
 
 #else
 			buffer.executeQuery();
-			const Wm4::Vector3<T> *candidate_pnts = reinterpret_cast<const Wm4::Vector3<T> *>(buffer.getPointsBuffer());
+			const Wm5::Vector3<T> *candidate_pnts = reinterpret_cast<const Wm5::Vector3<T> *>(buffer.getPointsBuffer());
 			num_pnts = buffer.numPntsInQueryIteration();
 
 			if (num_pnts<5) return 0;
 #endif	
 
-			Wm4::Vector3<T> cen, cen2;
-			Wm4::Vector3<T> axis;
+			Wm5::Vector3<T> cen, cen2;
+			Wm5::Vector3<T> axis;
 			T height = 0;
 
 			Cylinder<T> candidate_cylinders[10];
 			T errors[10];
 			for (int j=0;j<10;j++) errors[j] =1e6;
 
-			min_error = error0 = Wm4::CylinderFit3<T> (num_pnts, 
+			min_error = error0 = Wm5::CylinderFit3<T> (num_pnts, 
 				candidate_pnts, cen, axis, radius, height, 
 				(radius > 0 && !cylinder.axis.isZero()) || constrainToAxis);
 		
@@ -101,7 +101,7 @@ T	FitCylinderToPoints( PThandle query, Cylinder<T> &res_cylinder,
 			// multiple
 			for (int j = 1; j <= 10; j++)
 			{
-				error1 = Wm4::CylinderFit3<T> (num_pnts, 
+				error1 = Wm5::CylinderFit3<T> (num_pnts, 
 					candidate_pnts, cen, axis, radius, height, true);
 
 				if (error1 < min_error)
@@ -180,7 +180,7 @@ double	PTVFIT_API FitCylinderToPointsd( PThandle query, Cylinderd &res_cylinder,
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-static T computeRMSToPlane( const Wm4::Plane3<T> &plane, int num_points, const Wm4::Vector3<T> *points )
+static T computeRMSToPlane( const Wm5::Plane3<T> &plane, int num_points, const Wm5::Vector3<T> *points )
 //-----------------------------------------------------------------------------
 {
 	T rms=0;
@@ -205,10 +205,10 @@ T	FitPlaneToPoints( QueryBuffer<T> &pointsBuffer, Vector3<T> &planeNormal,
 
 	int		num_pnts=pointsBuffer.numPntsInQueryIteration();
 
-	const Wm4::Vector3<T> *candidate_pnts = 
-		reinterpret_cast<const Wm4::Vector3<T> *>(pointsBuffer.getPointsBuffer());
+	const Wm5::Vector3<T> *candidate_pnts = 
+		reinterpret_cast<const Wm5::Vector3<T> *>(pointsBuffer.getPointsBuffer());
 
-	Wm4::Plane3<T> plane =  Wm4::OrthogonalPlaneFit3( 
+	Wm5::Plane3<T> plane =  Wm5::OrthogonalPlaneFit3( 
 		pointsBuffer.numPntsInQueryIteration(), candidate_pnts );
 	
 	if (constrainToNormal)
@@ -217,7 +217,7 @@ T	FitPlaneToPoints( QueryBuffer<T> &pointsBuffer, Vector3<T> &planeNormal,
 	}
 	T rms = computeRMSToPlane( plane, num_pnts, candidate_pnts );
 
-	Wm4::Vector3<T> pOrigin = plane.Normal * plane.Constant;
+	Wm5::Vector3<T> pOrigin = plane.Normal * plane.Constant;
 
 	memcpy(&planeNormal, &plane.Normal, sizeof(Vector3<T>));
 	memcpy(&planeOrigin, &pOrigin, sizeof(Vector3<T>));

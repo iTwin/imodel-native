@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptcmdppe/cmdprogress.h>
 #include <ptcmdppe/cmdstate.h>
 #include <ptcmdppe/cmdoutput.h>

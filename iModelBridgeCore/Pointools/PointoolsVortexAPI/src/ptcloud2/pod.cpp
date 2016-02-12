@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <pt/trace.h>
 #include <pt/ptmath.h>
 #include <pt/unicodeconversion.h>

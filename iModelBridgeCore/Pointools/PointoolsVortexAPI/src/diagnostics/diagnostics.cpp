@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <pt/os.h>
 #include <diagnostics/diagnostics.h>
 

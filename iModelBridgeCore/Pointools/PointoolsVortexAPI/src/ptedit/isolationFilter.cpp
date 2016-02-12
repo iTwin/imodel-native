@@ -6,6 +6,7 @@
 //
 //----------------------------------------------------------------------------
 
+#include "PointoolsVortexAPIInternal.h"
 #include <ptedit/isolationFilter.h>
 #include <ptengine/clipManager.h>
 

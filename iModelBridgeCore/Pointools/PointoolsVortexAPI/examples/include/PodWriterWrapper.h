@@ -14,7 +14,7 @@
 #include <tchar.h>
 
 /* API headers */ 
-#include <PointoolsIO_PODWriter_DLL/podwriter.h>
+#include <podwriter.h>
 
 #define POD_CloudRGB			4
 #define POD_CloudIntensity		8

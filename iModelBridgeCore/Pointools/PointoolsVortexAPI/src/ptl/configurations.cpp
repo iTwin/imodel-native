@@ -5,6 +5,7 @@
 /*  Last Updated 02 May 2005 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
 
+#include "PointoolsVortexAPIInternal.h"
 #include <ptl/project.h>
 #include <ptl/block.h>
 #include <ptappdll/ptapp.h>

@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptds/DataSourceReadSet.h>
 
 #include <ptcloud2/voxel.h>

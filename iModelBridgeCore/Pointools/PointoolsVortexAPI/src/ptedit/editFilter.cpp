@@ -5,8 +5,8 @@
 //-----------------------------------------------------------------------------------------------
 #pragma warning (disable : 4786 )
 
-#include <Wm4matrix3.h>
-#include <Wm4ApprPlaneFit3.h>
+#include <Wm5matrix3.h>
+#include <Wm5ApprPlaneFit3.h>
 
 #include <pt/os.h>
 

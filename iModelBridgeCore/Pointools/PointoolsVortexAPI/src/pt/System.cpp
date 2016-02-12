@@ -20,6 +20,7 @@
   @feb 07 - unicode support added by Faraz Ravi
  */
 
+#include "PointoolsVortexAPIInternal.h"
 #include <pt/System.h>
 #include <pt/debug.h>
 #include <pt/pterror.h>

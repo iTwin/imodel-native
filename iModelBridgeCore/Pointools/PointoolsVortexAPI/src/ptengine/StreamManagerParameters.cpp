@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptengine/StreamManagerParameters.h>
 
 namespace pointsengine

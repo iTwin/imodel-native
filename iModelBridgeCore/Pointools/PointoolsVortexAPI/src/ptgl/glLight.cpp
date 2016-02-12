@@ -1,4 +1,4 @@
-
+#include "PointoolsVortexAPIInternal.h"
 #include <pt/os.h>
 #include <gl/gl.h>
 #include <gl/glExt.h>

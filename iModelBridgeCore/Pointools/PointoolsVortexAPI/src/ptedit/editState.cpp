@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptedit/editState.h>
 #include <ptedit/editStack.h>
 #include <ptedit/editApply.h>
@@ -34,8 +35,8 @@ static ubyte pointLayerMask( ubyte layerMask )
 GlobalState::GlobalState() : layer(1,1,0,1)
 {
 	static StateHandler h;
-	h.read = pt::MakeDelegate( this, &GlobalState::readState );
-	h.write =  pt::MakeDelegate( this, &GlobalState::writeState );
+    h.read = fastdelegate::MakeDelegate(this, &GlobalState::readState);
+    h.write = fastdelegate::MakeDelegate(this, &GlobalState::writeState);
 	
 	constraint = 0;
 	selPntTest = 0;

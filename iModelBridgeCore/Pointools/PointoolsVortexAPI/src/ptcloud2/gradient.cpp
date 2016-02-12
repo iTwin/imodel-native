@@ -1,5 +1,6 @@
 #pragma once
 
+#include "PointoolsVortexAPIInternal.h"
 #include <ptcloud2/gradient.h>
 #include <vector>
 #include <assert.h>

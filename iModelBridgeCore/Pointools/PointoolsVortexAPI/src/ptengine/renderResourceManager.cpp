@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptengine/renderResourceManager.h>
 #include <pt/typedefs.h>
 #include <set>

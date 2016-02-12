@@ -13,7 +13,8 @@
 #include <stdio.h>
 #include <assert.h>
 
-#include "../include/PointoolsVortexAPI_import.h"
+// #include "../include/PointoolsVortexAPI_import.h"
+#include <PTAPI/PointoolsVortexAPI_import.h>
 
 #ifndef PT_VORTEX_STATIC_LIB
 

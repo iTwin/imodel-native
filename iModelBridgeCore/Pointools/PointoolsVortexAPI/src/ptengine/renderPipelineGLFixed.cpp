@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptengine/renderPipelineGLFixed.h>
 #include <ptengine/renderContext.h>
 #include <ptengine/userChannels.h>

@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptcloud2/pcimage.h>
 #include <ptcloud2/scene.h>
 //#include <il/il.h>

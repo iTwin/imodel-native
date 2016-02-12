@@ -6,6 +6,7 @@
 /*--------------------------------------------------------------------------*/ 
 #pragma warning ( disable : 4251)
 
+#include "PointoolsVortexAPIInternal.h"
 #include <ptappdll/ptapp.h>
 #include <pt/parametermap.h>
 #include <ptfs/filepath.H>

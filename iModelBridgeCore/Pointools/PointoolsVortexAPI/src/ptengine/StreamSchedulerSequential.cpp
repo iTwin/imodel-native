@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 
 #include <ptengine/StreamSchedulerSequential.h>
 #include <ptengine/StreamHost.h>

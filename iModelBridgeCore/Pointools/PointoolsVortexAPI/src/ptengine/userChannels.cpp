@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptengine/userchannels.h>
 #include <ptengine/pointsScene.h>
 #include <ptengine/renderengine.h>

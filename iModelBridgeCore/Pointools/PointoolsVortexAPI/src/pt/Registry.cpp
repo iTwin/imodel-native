@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <pt/registry.h>
 
 #ifdef _MFC_VER

@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptlic/PointoolsBentleyLicense.h>
 
 std::wstring		PointoolsBentleyLicense::activationWizardExe			= L"ActivationWizard.exe";

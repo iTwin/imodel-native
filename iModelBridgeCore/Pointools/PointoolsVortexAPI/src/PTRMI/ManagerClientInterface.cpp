@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 
 #include <PTRMI/ManagerClientInterface.h>
 #include <PTRMI/Manager.h>

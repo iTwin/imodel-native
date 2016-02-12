@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptapi/pointoolsVortexAPI.h>
 #include <pt/viewparams.h>
 #include <pt/geomtypes.h>

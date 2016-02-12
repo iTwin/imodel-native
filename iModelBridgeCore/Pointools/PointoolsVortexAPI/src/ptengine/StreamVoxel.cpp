@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 
 #include <ptengine/StreamVoxel.h>
 #include <ptcloud2/Voxel.h>

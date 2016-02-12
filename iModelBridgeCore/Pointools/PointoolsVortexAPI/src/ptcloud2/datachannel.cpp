@@ -7,6 +7,7 @@
 /* Written by Faraz Ravi									*/ 
 /*----------------------------------------------------------*/ 
 
+#include "PointoolsVortexAPIInternal.h"
 #include <memory.h>
 
 //#define DEBUG_OUTPUT

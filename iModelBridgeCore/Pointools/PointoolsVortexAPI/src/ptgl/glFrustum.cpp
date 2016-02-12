@@ -5,6 +5,7 @@
 /*  Last Updated 12 Dec 2003 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
 
+#include "PointoolsVortexAPIInternal.h"
 #include <pt/os.h>
 #include <ptgl/glfrustum.h>
 #include <gl/gl.h>

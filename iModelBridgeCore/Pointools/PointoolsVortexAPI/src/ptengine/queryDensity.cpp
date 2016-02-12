@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptengine/queryDensity.h>
 #include <ptengine/voxelLoader.h>
 

@@ -7,6 +7,7 @@
 /* Written by Faraz Ravi												*/ 
 /*----------------------------------------------------------------------*/ 
 
+#include "PointoolsVortexAPIInternal.h"
 #include <assert.h>
 #include <stack>
 

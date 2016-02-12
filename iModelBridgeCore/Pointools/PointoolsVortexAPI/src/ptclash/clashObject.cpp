@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 // clashObject.cpp
 
 #include <ptapi/PointoolsVortexAPI_ResultCodes.h>
@@ -663,7 +664,7 @@ PTres ClashObject::_generateClashTree(vortex::IClashObjectCallback* callback)
 {
 	m_iclashObjectCallback = callback;
 
-	ClashObject::TreeFeedbackFunc stub = MakeDelegate( this, &ClashObject::feedbackForIClashObject);
+    ClashObject::TreeFeedbackFunc stub = fastdelegate::MakeDelegate(this, &ClashObject::feedbackForIClashObject);
 	if (prepareForTest((m_iclashObjectCallback) ? stub : NULL))
 		return PTV_SUCCESS;
 

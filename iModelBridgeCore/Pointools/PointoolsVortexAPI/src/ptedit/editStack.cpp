@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptedit/editStack.h>
 #include <ptedit/editState.h>
 #include <ptedit/editStackState.h>

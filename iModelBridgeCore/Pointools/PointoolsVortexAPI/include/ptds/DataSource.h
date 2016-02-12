@@ -159,8 +159,8 @@ public:
 	virtual Size			readBytes					(Data *buffer, Size numBytes) = 0;
 	virtual Size			writeBytes					(const Data *buffer, Size numBytes) = 0;
 
-	virtual Size			readBytesFrom				(Data *buffer, DataPointer position, Size numBytes) {return 0;}
-	virtual Size			writeBytesFrom				(const Data *buffer, DataPointer position, Size numBytes) {return 0;}
+	virtual Size			readBytesFrom				(Data * /*buffer*/, DataPointer /*position*/, Size /*numBytes*/) {return 0;}
+	virtual Size			writeBytesFrom				(const Data * /*buffer*/, DataPointer /*position*/, Size /*numBytes*/) {return 0;}
 
 #ifndef NO_DATA_SOURCE_SERVER
 	virtual Size			readBytesReadSet			(Data *buffer, DataSourceReadSet *readSet);

@@ -8,6 +8,7 @@
 //-----------------------------------------------------------------------------
 // Copyright Pointools Ltd 2003-2011 All rights reserved
 //-----------------------------------------------------------------------------
+#include "PointoolsVortexAPIInternal.h"
 #include <pt/datatreeBranch.h>
 #include <pt/datatreeUtils.h>
 

@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptgl/glState.h>
 #include <ptengine/renderPointsEffect.h>
 #include <ptengine/renderFrameData.h>

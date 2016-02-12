@@ -1,4 +1,5 @@
 #pragma warning ( disable : 4786)
+#include "PointoolsVortexAPIInternal.h"
 #include <pt/os.h>
 #include <gl/gl.h>
 #include <gl/glu.h>

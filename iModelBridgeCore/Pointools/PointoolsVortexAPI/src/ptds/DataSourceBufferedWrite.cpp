@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptds/DataSourceBufferedWrite.h>
 #include <ptds/DataSourceStringIO.h>
 

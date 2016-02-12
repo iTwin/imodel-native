@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 
 //TEA.cpp
 #include <encryption/TEA.h>

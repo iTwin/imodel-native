@@ -8,6 +8,7 @@
 /*----------------------------------------------------------*/ 
 #undef _VERBOSE
 
+#include "PointoolsVortexAPIInternal.h"
 #include <pt/os.h>
 
 #include <ptcloud2/indexstream.h>
@@ -16,8 +17,8 @@
 
 #include <ptcloud2/scene.h>
 
-#include <WildMagic4/wm4Plane3.h>
-#include <WildMagic4/Wm4ApprPlaneFit3.h>
+#include <wildmagic/math/Wm5Plane3.h>
+#include <wildmagic/math/Wm5ApprPlaneFit3.h>
 
 #include <ptcmdppe/cmdprogress.h>
 #include <utility/ptstr.h>
@@ -919,8 +920,8 @@ bool IndexStream::_buildNormals(int cloud_idx, pt::vector3s* _normals, bool tran
 	/*load data*/ 
 	/*allocate channel*/ 
 	int cpm[150];
-	Wm4::Vector3f _v[150];
-	Wm4::Vector3f _n, _o, _n1, _origin(0,0,0);
+	Wm5::Vector3f _v[150];
+	Wm5::Vector3f _n, _o, _n1, _origin(0,0,0);
 
 	unsigned int errors =0 ;
 #ifdef _VERBOSE
@@ -954,7 +955,7 @@ bool IndexStream::_buildNormals(int cloud_idx, pt::vector3s* _normals, bool tran
 			{
 				// validate points
 				//crude check to see if all the points are the same
-				//this is required to avoid exception occuring in Wm4::method  
+				//this is required to avoid exception occuring in Wm5::method  
 				//also invalidate points with z distance
 
 				int valid_points = 0;
@@ -982,7 +983,7 @@ bool IndexStream::_buildNormals(int cloud_idx, pt::vector3s* _normals, bool tran
 				if (valid_points > 3 && !diff.is_zero())
 				{
 					count++;
-					Wm4::Plane3f plane = Wm4::OrthogonalPlaneFit3(valid_points, _v);
+					Wm5::Plane3f plane = Wm5::OrthogonalPlaneFit3(valid_points, _v);
 					_n = plane.Normal;
 					_o = plane.Constant * plane.Normal;
 
@@ -1007,13 +1008,13 @@ bool IndexStream::_buildNormals(int cloud_idx, pt::vector3s* _normals, bool tran
 				else
 				{
 					/*point toward scanner by default*/ 
-					_n = Wm4::Vector3f(zvec);
+					_n = Wm5::Vector3f(zvec.x, zvec.y, zvec.z);
 					sparse++;
 				}
 			}
 			else
 			{
-				_n = Wm4::Vector3f(zvec);
+                _n = Wm5::Vector3f(zvec.x, zvec.y, zvec.z);
 				sparse++;
 			}
 			normals[p].set(_n.X(), _n.Y(), _n.Z()); 

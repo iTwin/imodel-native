@@ -10,6 +10,7 @@
 #pragma warning ( disable:4305 ) 
 #endif
 
+#include "PointoolsVortexAPIInternal.h"
 #include <pt\os.h>
 
 #include <ptgl\glArcball.h>
@@ -318,6 +319,9 @@ void Arcball::ResetRotations()
 }
 void Arcball::initVars()
 {
+    const gl_vector X_AXIS(1,0,0);
+    const gl_vector Y_AXIS(0,1,0);
+    const gl_vector Z_AXIS(0,0,1);
 	winWidth=winHeight=0;
 	previousQuat=currentQuat=gl_unitquaternion(0,X_AXIS);
 

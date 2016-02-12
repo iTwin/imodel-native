@@ -5,12 +5,13 @@
 // Copyright (c) 2014 Bentley Systems, Incorporated. All rights reserved.
 //
 //----------------------------------------------------------------------------
+#include "PointoolsVortexAPIInternal.h"
 #include <ptengine/clipPlane.h>
 #include <ptengine/clipManager.h>
 #include <ptapi/PointoolsVortexAPI.h>
 #include <ptedit/isolationFilter.h>
 #include <assert.h>
-
+#include <fastdelegate/fastdelegate.h>
 
 namespace pointsengine
 {
@@ -50,8 +51,8 @@ m_clipStyle(PT_CLIP_OUTSIDE)
 		m_clipPlanes.push_back(plane);
 	}
 
-	m_currentIsolationFilter.intersect = pt::MakeDelegate(&s_filterNone, &ptedit::IsolationFilterNone::intersect);
-	m_currentIsolationFilter.inside = pt::MakeDelegate(&s_filterNone, &ptedit::IsolationFilterNone::inside);
+	m_currentIsolationFilter.intersect = fastdelegate::MakeDelegate(&s_filterNone, &ptedit::IsolationFilterNone::intersect);
+	m_currentIsolationFilter.inside = fastdelegate::MakeDelegate(&s_filterNone, &ptedit::IsolationFilterNone::inside);
 
 	_instance = this;
 }
@@ -74,8 +75,8 @@ void ClipManager::enableClipping()
 	m_enabled = true;
 
 	// set the current isolation filter that will be used to clip editing operations
-	m_currentIsolationFilter.intersect = pt::MakeDelegate(&s_filterClip, &ptedit::IsolationFilterClip::intersect);
-	m_currentIsolationFilter.inside = pt::MakeDelegate(&s_filterClip, &ptedit::IsolationFilterClip::inside);
+	m_currentIsolationFilter.intersect = fastdelegate::MakeDelegate(&s_filterClip, &ptedit::IsolationFilterClip::intersect);
+	m_currentIsolationFilter.inside = fastdelegate::MakeDelegate(&s_filterClip, &ptedit::IsolationFilterClip::inside);
 
 	ptEnable(PT_CLIPPING);
 }
@@ -85,8 +86,8 @@ void ClipManager::disableClipping()
 	m_enabled = false;
 
 	// switch off the isolation filter
-	m_currentIsolationFilter.intersect = pt::MakeDelegate(&s_filterNone, &ptedit::IsolationFilterNone::intersect);
-	m_currentIsolationFilter.inside = pt::MakeDelegate(&s_filterNone, &ptedit::IsolationFilterNone::inside);
+	m_currentIsolationFilter.intersect = fastdelegate::MakeDelegate(&s_filterNone, &ptedit::IsolationFilterNone::intersect);
+	m_currentIsolationFilter.inside = fastdelegate::MakeDelegate(&s_filterNone, &ptedit::IsolationFilterNone::inside);
 
 	ptDisable(PT_CLIPPING);
 }

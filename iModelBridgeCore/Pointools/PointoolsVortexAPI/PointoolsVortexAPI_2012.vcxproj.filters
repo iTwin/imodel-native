@@ -779,6 +779,9 @@
     <ClCompile Include="src\vortexobjects\IClashTree.cpp">
       <Filter>Source Files\vortexobjects</Filter>
     </ClCompile>
+    <ClCompile Include="src\PointoolsVortexAPIInternal.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\ptedit\isolationFilter.cpp">
       <Filter>Source Files\edit</Filter>
     </ClCompile>
@@ -1489,6 +1492,7 @@
     <ClInclude Include="include\vortexobjects\VortexObjects_import.h">
       <Filter>Header Files\vortexobjects</Filter>
     </ClInclude>
+    <ClInclude Include="include\PointoolsVortexAPIInternal.h">
     <ClInclude Include="include\ptedit\isolationFilter.h">
       <Filter>Header Files\edit</Filter>
     </ClInclude>

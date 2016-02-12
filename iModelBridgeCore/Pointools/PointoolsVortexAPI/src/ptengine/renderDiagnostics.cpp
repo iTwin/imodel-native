@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptengine/renderDiagnostics.h>
 #include <ptcloud2/pointcloud.h>
 #include <pt/project.h>

@@ -669,6 +669,9 @@ inline int operator!=(const gl_vector& v1,const gl_vector& v2)
 //=============================================================================
 //=============================================================================
 
+#pragma warning(disable:4263)
+#pragma warning(disable:4264)
+
 /*!
 A unit lenght gl_quaternion class.
 

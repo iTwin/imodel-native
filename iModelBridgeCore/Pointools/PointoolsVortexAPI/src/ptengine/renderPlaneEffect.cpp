@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptengine/renderPlaneEffect.h>
 #include <ptengine/renderContext.h>
 #include <ptengine/renderShaderUniforms.h>

@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 // IClashObjectManager.cpp
 
 #include <ptapi/PointoolsVortexAPI_ResultCodes.h>

@@ -1,3 +1,5 @@
+#include "PointoolsVortexAPIInternal.h"
+
 #include <ptds/GraphManager.h>
 
 #include <ptengine/StreamHost.h>

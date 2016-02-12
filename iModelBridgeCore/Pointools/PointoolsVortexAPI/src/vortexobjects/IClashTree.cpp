@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 // IClashTree.cpp
 
 #include <ptapi/PointoolsVortexAPI_ResultCodes.h>

@@ -8,9 +8,9 @@
 #ifdef _DEBUG
 #define FILE_TRACE 1
 #endif
-
-#include <WildMagic4/Wm4matrix3.h>
-#include <WildMagic4/Wm4ApprPlaneFit3.h>
+#include "PointoolsVortexAPIInternal.h"
+#include <wildmagic/math/Wm5matrix3.h>
+#include <wildmagic/math/Wm5ApprPlaneFit3.h>
 
 #include <pt/os.h>
 #include <pt/trace.h>

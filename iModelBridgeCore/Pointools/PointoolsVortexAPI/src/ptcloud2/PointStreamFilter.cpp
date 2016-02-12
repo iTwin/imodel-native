@@ -22,6 +22,7 @@
 // ***************************************************************************************
 
 
+#include "PointoolsVortexAPIInternal.h"
 // Local
 #include <ptcloud2/PointStreamFilter.h>
 

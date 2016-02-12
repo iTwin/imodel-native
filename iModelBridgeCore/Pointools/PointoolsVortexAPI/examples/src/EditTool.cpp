@@ -16,9 +16,9 @@ Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 #include <math.h>
 #include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_ResultCodes.h>
 
-static RGBc layerButtonCol(96,96,96);
-static RGBc layerButtonSelCol(35,174,183);
-static RGBc layerButtonVisCol(255, 86, 91);
+//static RGBc layerButtonCol(96,96,96);
+//static RGBc layerButtonSelCol(35,174,183);
+//static RGBc layerButtonVisCol(255, 86, 91);
 static RGBc labelCol(60,210,210);
 
 #define PI 3.14159265

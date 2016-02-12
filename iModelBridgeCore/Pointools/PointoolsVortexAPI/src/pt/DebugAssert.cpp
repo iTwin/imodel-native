@@ -11,6 +11,7 @@
   @feb 07 - unicode support added by Faraz Ravi
  */
 
+#include "PointoolsVortexAPIInternal.h"
 #include <pt/ptUnicode.h>
 #include <pt/debugAssert.h>
 #ifdef WIN32
@@ -121,11 +122,11 @@ static void createErrorMessage(
     #endif
 
     // Build the message.
-    outMessage =
-        _stprintf(_T("%s%s%sExpression: %s%s%s:%d%s%s%s"),
+    _stprintf(formatBuffer, _T("%s%s%sExpression: %s%s%s:%d%s%s%s"),
 		/*pt::format(_T("%s%s%sExpression: %s%s%s:%d%s%s%s"),*/ 
                  message.c_str(), newline, newline, expression, newline, 
                  filename, lineNumber, newline, newline, le.c_str());
+    outMessage = formatBuffer;
 }
 
 

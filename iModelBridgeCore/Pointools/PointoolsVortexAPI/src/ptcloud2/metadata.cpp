@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 
 #include <ptcloud2\metadata.h>
 #include <ptcloud2\datachannel.h>

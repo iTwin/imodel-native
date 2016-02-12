@@ -320,10 +320,13 @@ namespace ptds
 				_blockErrors.increment();
 			if (_tracker)
 			{
+                if (note)
+                {
 #ifdef _VERBOSE
-				std::cout << std::endl << "[" << (note? note : " ") << " Block  | " << _buffersize << "bytes  | fp = " << _tracker->position() << " ] " << std::endl;
-				std::cout << "{" << std::endl;
+                    std::cout << std::endl << "[" << (note? note : " ") << " Block  | " << _buffersize << "bytes  | fp = " << _tracker->position() << " ] " << std::endl;
+                    std::cout << "{" << std::endl;
 #endif
+                }
 				_tracker->advance(INT_SIZE);		
 				_tracker->advance(_chunksize);
 			}
@@ -350,10 +353,13 @@ namespace ptds
 			
 			if (_tracker)
 			{
+                if (note)
+                {
 #ifdef _VERBOSE
-				std::cout << std::endl << "[" << (note? note : " ") << " Block  | " << _buffersize << "bytes  | fp = " << _tracker->position() << " ] " << std::endl;
-				std::cout << "{" << std::endl;
+                    std::cout << std::endl << "[" << (note? note : " ") << " Block  | " << _buffersize << "bytes  | fp = " << _tracker->position() << " ] " << std::endl;
+                    std::cout << "{" << std::endl;
 #endif
+                }
 				_tracker->advance(INT_SIZE);		
 				_tracker->advance(_chunksize);
 			}
@@ -411,7 +417,7 @@ namespace ptds
 		/*read																*/ 
 		template <class T> uint read(T &d)
 		{
-			if (_pos + sizeof(T) > _chunkstart + _chunksize)
+			if (_pos + uint(sizeof(T)) > _chunkstart + _chunksize)
 				if (!readChunk()) 
 				{
 					_blockErrors.increment();
@@ -426,10 +432,13 @@ namespace ptds
 		/*read	with output															*/ 
 		template <class T> uint read(T &d, const char* note)
 		{
+            if (note)
+            {
 #ifdef _VERBOSE
-			if (_tracker && note) std::cout << "     " << note << " : fp = " << position() 
-		 		<< " value = " << d << std::endl;
+                if (_tracker && note) std::cout << "     " << note << " : fp = " << position() 
+                    << " value = " << d << std::endl;
 #endif
+            }
 			
 			unsigned int ret = read(d);
 			if (!ret)
@@ -479,9 +488,12 @@ namespace ptds
 		}
 		uint read(void *d, int size, const char* note)
 		{
+            if (note)
+            {
 #ifdef _VERBOSE
-			if (_tracker && note) std::cout << "     " << note << " : fp = " << position() << std::endl;			
+                if (_tracker && note) std::cout << "     " << note << " : fp = " << position() << std::endl;			
 #endif			
+            }
 			unsigned int ret = read(d, size);
 			if (!ret)
 				_blockErrors.increment();
@@ -523,10 +535,13 @@ namespace ptds
 			/*record position if this is referenced*/ 
 			if (refid)	{ tracker->placeReference(refid); }
 			_startpos = _tracker->position();
+            if (note)
+            {
 #ifdef _VERBOSE
-			std::cout << std::endl << "[ " << (note ? note : " ") << " Block | fp = " << _tracker->position() << "] " << std::endl;
-			std::cout << "{ " << std::endl;
+                std::cout << std::endl << "[ " << (note ? note : " ") << " Block | fp = " << _tracker->position() << "] " << std::endl;
+                std::cout << "{ " << std::endl;
 #endif
+            }
 			_buffersize = buffersize;		
 			_buffer = new ubyte[_buffersize];
 			_commitpos = 0;
@@ -580,7 +595,7 @@ namespace ptds
 		{
 			assert(_buffer);
 
-			if (_buffersize < _pos + sizeof(T))	
+			if (_buffersize < _pos + uint(sizeof(T)))	
 			{
 				if (!commitBuffer()) 
 				{
@@ -598,10 +613,13 @@ namespace ptds
 		template <class T> bool write(const T &d, const char *note)
 		{
 			assert(_buffer);
+            if (note)
+            {
 #ifdef _VERBOSE
-			std::cout << "     " << note << " : fp = " << _tracker->position() << 
-				"  value = " << d << std::endl;
+                std::cout << "     " << note << " : fp = " << _tracker->position() << 
+                    "  value = " << d << std::endl;
 #endif
+            }
 			bool res = write(d);
 			if (!res)
 				_blockErrors.increment();
@@ -653,9 +671,12 @@ namespace ptds
 		bool write(const void *d, uint size, const char *note)
 		{
 			assert(_buffer);
+            if (note)
+            {
 #ifdef _VERBOSE
-			std::cout << "     " << note << " : fp = " << _tracker->position() << std::endl;			
+                std::cout << "     " << note << " : fp = " << _tracker->position() << std::endl;			
 #endif
+            }
 			bool res = write(d, size);
 			if (!res)
 				_blockErrors.increment();
@@ -665,9 +686,12 @@ namespace ptds
 		bool insertPlaceholder(uint id, const char* note=0)
 		{
 			assert(_buffer);
+            if (note)
+            {
 #ifdef _VERBOSE
-			if (note) std::cout << "     " << note << " : fp = " << _tracker->position() << std::endl;
+                if (note) std::cout << "     " << note << " : fp = " << _tracker->position() << std::endl;
 #endif
+            }
 			if (_buffersize < _pos + INT64_SIZE) 
 			{
 				if (!commitBuffer())
@@ -683,9 +707,12 @@ namespace ptds
 		bool insertDataPlaceholder(uint id, uint num_bytes, const char *note=0)
 		{
 			assert(_buffer);
+            if (note)
+            {
 #ifdef _VERBOSE
-			if (note) std::cout << "     " << note << " : fp = " << _tracker->position() << std::endl;
+                if (note) std::cout << "     " << note << " : fp = " << _tracker->position() << std::endl;
 #endif
+            }
 			if (_buffersize < _pos + num_bytes) 
 			{
 				if (!commitBuffer())
@@ -712,7 +739,7 @@ namespace ptds
 				}
 			}
 #ifdef _VERBOSE
-			std::cout << "     " << "Reserve " << " : fp = " << _tracker->position() << std::endl;
+            std::cout << "     " << "Reserve " << " : fp = " << _tracker->position() << std::endl;
 #endif
 			memset(&_buffer[_pos], 0, size);
 

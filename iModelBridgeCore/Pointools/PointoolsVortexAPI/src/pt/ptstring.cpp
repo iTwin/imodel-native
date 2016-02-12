@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <pt/os.h>
 #include <string.h>
 #include <pt/utf.h>
@@ -90,7 +91,7 @@ String &String::operator = (const String &s)
 
 		if (!s._abufferDirty && s._abuffer)
 		{
-			int size = strlen(s._abuffer) + 1;
+			size_t size = strlen(s._abuffer) + 1;
 			_abuffer = new char[size];
 			strcpy_s(_abuffer, size, s._abuffer);
 			_encoding = s._encoding;
@@ -117,7 +118,7 @@ String &String::operator = (const char *s)
 		int len = strlen(s)+1;
 		allocBuffer(len);
 		
-		utf8towc(s, len, _wbuffer, _wbuffsize);
+		utf8towc(s, (unsigned)len, _wbuffer, _wbuffsize);
 		
 		_abufferDirty = false;
 		_abuffer = new char[len];
@@ -138,7 +139,7 @@ String &String::operator = (const wchar_t *s)
 {
 	if (s && s[0] != L'\0')
 	{
-		int len = wcslen(s)+1;	// +1 for terminator
+		size_t len = wcslen(s)+1;	// +1 for terminator
 		allocBuffer(len);
 
 		memcpy(_wbuffer, s, sizeof(wchar_t) * len);
@@ -163,8 +164,8 @@ String &String::operator = (const wchar_t *s)
 //
 void String::operator += (const String &s)
 {
-	int len = s.length();
-	int tlen = length();
+        int len = s.length();
+        int tlen = length();
 	
 	String st;
 	st.allocBuffer(len+tlen);
@@ -193,9 +194,9 @@ String String::operator + (const String &s) const
 //
 // get the Wchar string
 //
-const wchar_t *String::getW(wchar_t *buffer, int buffsize) const
+const wchar_t *String::getW(wchar_t *buffer, size_t buffsize) const
 {
-	int chars=length();
+	size_t chars=length();
 	if (buffsize < chars) chars = buffsize;
 	memcpy(buffer, _wbuffer, (chars+1)*sizeof(wchar_t));
 	return buffer;
@@ -216,7 +217,7 @@ const char* String::getEncoded(Encoding enc, char * buffer, int buffsize) const
 	
 	if (_abuffer && !_abufferDirty && _encoding == enc)
 	{
-		assert (strnlen(_abuffer, MAX_STRING_LENGTH) <= buffsize);
+		assert (strnlen(_abuffer, MAX_STRING_LENGTH) <= (size_t)buffsize);
 		strcpy(buffer, _abuffer);
 	}
 	else
@@ -226,15 +227,15 @@ const char* String::getEncoded(Encoding enc, char * buffer, int buffsize) const
 		case AsciiEncoding:
 			try		{
 				BOOL defa;
-				::WideCharToMultiByte( CP_ACP, WC_NO_BEST_FIT_CHARS, _wbuffer, 
-					buffsize, buffer, static_cast<int>(chars), 0, &defa );		
+                                if (!::WideCharToMultiByte( CP_ACP, WC_NO_BEST_FIT_CHARS, _wbuffer, 
+					static_cast<int>(chars), buffer, buffsize, 0, &defa )) throw;		
 			}
 			catch( ... ) {
 				assert(0);
 			}
 			break;
 		case UTF8Encoding:
-			utf8fromwc(buffer, buffsize, _wbuffer, chars);
+			utf8fromwc(buffer, buffsize, _wbuffer, (unsigned)chars);
 			break;
 		default:
 			assert(0);
@@ -245,17 +246,17 @@ const char* String::getEncoded(Encoding enc, char * buffer, int buffsize) const
 //
 // buffer allocation
 //
-void String::allocBuffer(int size)
+void String::allocBuffer(size_t size)
 {
 	/*round size to chunk boundary*/ 
-	int newsize = ((size / MIN_CHUNK) + 1) * MIN_CHUNK;
+	size_t newsize = ((size / MIN_CHUNK) + 1) * MIN_CHUNK;
 	if (newsize > _wbuffsize)
 	{
 		freeBuffer();
 		try
 		{
 		_wbuffer = new wchar_t[newsize];
-		_wbuffsize = newsize;
+		_wbuffsize = (unsigned short)newsize;
 		}
 		catch(...) 
 		{
@@ -305,7 +306,7 @@ const char* String::encode(Encoding enc)
 	_abuffer = new char[abuffsize];
 	getEncoded(enc, _abuffer, abuffsize);
 	
-	_encoding = enc;
+	_encoding = (unsigned char)enc;
 	_abufferDirty = false;
 	return _abuffer;
 }

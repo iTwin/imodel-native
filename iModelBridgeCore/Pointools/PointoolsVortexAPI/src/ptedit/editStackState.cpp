@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptedit/editStackState.h>
 #include <ptengine/pointsVisitor.h>
 #include <ptengine/pointsScene.h>
@@ -179,8 +180,8 @@ struct PointCloudStateHandler
 		// register self
 		static StateHandler s;	// just aggregates delegates..hmm might be issues in multi-thread stack use (not supported)
 
-		s.read = pt::MakeDelegate( this, &PointCloudStateHandler::readState );
-		s.write = pt::MakeDelegate( this, &PointCloudStateHandler::writeState );
+		s.read = fastdelegate::MakeDelegate( this, &PointCloudStateHandler::readState );
+		s.write = fastdelegate::MakeDelegate( this, &PointCloudStateHandler::writeState );
 		OperationStack::addStateHandler( &s );
 	}
 	void writeState(pt::datatree::Branch *b) const

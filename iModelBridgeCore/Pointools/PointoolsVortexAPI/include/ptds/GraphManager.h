@@ -22,6 +22,8 @@
 
 namespace ptds
 {
+        using std::min;
+        using std::max;
 
 	void testGraph(void);
 

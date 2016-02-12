@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptengine/pointlayers.h>
 
 using namespace pointsengine;

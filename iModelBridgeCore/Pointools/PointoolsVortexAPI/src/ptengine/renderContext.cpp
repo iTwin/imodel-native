@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptengine/renderContext.h>
 #include <ptengine/renderMethodGLPoints.h>
 #include <ptengine/renderGLResourceAdaptor.h>

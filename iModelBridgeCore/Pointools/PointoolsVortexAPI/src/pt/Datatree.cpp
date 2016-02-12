@@ -1,4 +1,4 @@
-//#include "stdafx.h"
+#include "PointoolsVortexAPIInternal.h"
 #include <pt\datatree.h>
 #include <pt\datatreePrintf.h>
 

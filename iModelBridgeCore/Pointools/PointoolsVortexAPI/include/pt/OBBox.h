@@ -10,7 +10,7 @@
 #include <pt/geomtypes.h>
 #include <pt/BoundingBox.h>
 #include <math/matrix_math.h>
-#include <WildMagic4/Wm4Quaternion.h>
+#include <wildmagic/math/Wm5Quaternion.h>
 
 namespace pt
 {
@@ -480,7 +480,7 @@ void OBBox<T>::merge( const OBBox<T>& box1 )
     // the slerp of the two input quaternions with t-value of 1/2.  The result
     // is converted back to a rotation matrix and its columns are selected as
     // the merged box axes.
-	Wm4::Quaternion<T> q0, q1;
+	Wm5::Quaternion<T> q0, q1;
     q0.FromRotationMatrix(m_axis);
     q1.FromRotationMatrix(box1.m_axis);
 
@@ -489,8 +489,8 @@ void OBBox<T>::merge( const OBBox<T>& box1 )
         q1 = -q1;
     }
 
-    Wm4::Quaternion<T> q = q0 + q1;
-	T invLength = Wm4::Math<T>::InvSqrt(q.Dot(q));
+    Wm5::Quaternion<T> q = q0 + q1;
+	T invLength = Wm5::Math<T>::InvSqrt(q.Dot(q));
     q = invLength*q;
     q.ToRotationMatrix(&m_axis[0].x);
 

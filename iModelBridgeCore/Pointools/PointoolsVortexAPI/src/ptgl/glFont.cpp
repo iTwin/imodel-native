@@ -4,6 +4,7 @@
 //See glfont.html for terms of use
 //May 14, 2002
 //*******************************************************************
+#include "PointoolsVortexAPIInternal.h"
 #include <pt/os.h>
 #include <GL/gl.h>
 

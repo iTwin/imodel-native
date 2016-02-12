@@ -1,4 +1,5 @@
 #pragma once
+#include "PointoolsVortexAPIInternal.h"
 #include <ptedit/cloudSelect.h>
 #include <vector>
 using namespace pointsengine;

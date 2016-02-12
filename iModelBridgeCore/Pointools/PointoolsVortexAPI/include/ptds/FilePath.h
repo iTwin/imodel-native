@@ -316,7 +316,7 @@ public:
 			size_t i = f.rfind(L'.');
 
 				// Make sure it is before a slash!
-			size_t j = pt::iMax(f.rfind(L'/'), f.rfind(L'\\'));
+			size_t j = pt::iMax((int)f.rfind(L'/'), (int)f.rfind(L'\\'));
 			if ((i != std::wstring::npos) && (i > j))
 			{
 				ext = f.substr(i + 1, f.size() - i - 1);
@@ -327,7 +327,7 @@ public:
 			// Pull the basename off
 		{
 				// Find the last slash
-			size_t i = (size_t)pt::iMax(f.rfind(L'/'), f.rfind(L'\\'));
+			size_t i = (size_t)pt::iMax((int)f.rfind(L'/'), (int)f.rfind(L'\\'));
 
 			if (i == std::wstring::npos)
 			{
@@ -363,7 +363,7 @@ public:
 				j = f.size();
 			}
 
-			cur = (int)pt::iMin(i, j);
+			cur = (int)pt::iMin((int)i, (int)j);
 
 			if (cur == std::wstring::npos)
 			{

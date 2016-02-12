@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptgl/glState.h>
 #include <ptgl/glShader.h>
 #include <ptengine/renderContext.h>

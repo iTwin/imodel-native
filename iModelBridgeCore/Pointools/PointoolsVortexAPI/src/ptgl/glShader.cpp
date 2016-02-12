@@ -6,6 +6,7 @@ Last update: 2006/11/12 (Geometry Shader Support)
 (c) 2003-2006 by Martin Christen. All Rights reserved.
 *********************************************************************/
 
+#include "PointoolsVortexAPIInternal.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <iostream>

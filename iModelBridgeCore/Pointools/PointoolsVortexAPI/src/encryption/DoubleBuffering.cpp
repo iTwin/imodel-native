@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 
 //DoubleBuffering.cpp Source File
 

@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 
 //SHA.cpp
 #include <encryption/SHA.h>

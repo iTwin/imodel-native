@@ -12,7 +12,7 @@ namespace pointsengine
 	class PointsBoundsTree : public pt::OrientedBoxBoundsTreed
 	{
 	public:
-		typedef pt::FastDelegate1<float, bool>	ProgressFeedback;
+        typedef fastdelegate::FastDelegate1<float, bool>	ProgressFeedback;
 		typedef pt::BoundsTreeNode<pt::OBBoxd>	TreeNode;
 
 		PTENGINE_API static PointsBoundsTree *createFromScene( 

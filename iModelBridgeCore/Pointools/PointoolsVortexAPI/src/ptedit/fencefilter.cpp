@@ -1,10 +1,11 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptedit/fencefilter.h>
 
 #ifdef PI
 #undef PI
 #undef DEG_TO_RAD
 #undef RAD_TO_DEG
-#include <WildMagic4/wm4convexhull2.h>
+#include <wildmagic/math/Wm5convexhull2.h>
 #endif
 using namespace ptedit;
 using namespace pt;
@@ -101,17 +102,17 @@ bool FenceSelect::generateHullPlanes()
 	invmdl.invert();
 
 	/* get 2D hull */ 
-	Wm4::Vector2f *vertices = new Wm4::Vector2f[fence.numPoints()];
+	Wm5::Vector2f *vertices = new Wm5::Vector2f[fence.numPoints()];
 	for (int i=0; i<fence.numPoints(); i++)
 	{
 		vertices[i].X() = fence[i].x;
 		vertices[i].Y() = fence[i].y;
 	}
-	Wm4::ConvexHull2f chull( fence.numPoints(), vertices, 1e-5, false, Wm4::Query::QT_INTEGER);
+	Wm5::ConvexHull2f chull( fence.numPoints(), vertices, 1e-5, false, Wm5::Query::QT_INTEGER);
 	if (chull.GetDimension() >= 2)
 	{
 
-		int numEdges = chull.GetSimplexQuantity();
+		int numEdges = chull.GetNumSimplices();
 		isConvex = numEdges == fence.numPoints() ? true : false;
 
 		pt::vector3d p30,p31, p32;
@@ -119,8 +120,8 @@ bool FenceSelect::generateHullPlanes()
 		/* create planes */ 
 		for (int i=0; i<numEdges; i++)
 		{
-			Wm4::Vector2f p0 = vertices[ chull.GetIndices()[i] ];
-			Wm4::Vector2f p1 = vertices[ chull.GetIndices()[(i+1) % numEdges] ];
+			Wm5::Vector2f p0 = vertices[ chull.GetIndices()[i] ];
+			Wm5::Vector2f p1 = vertices[ chull.GetIndices()[(i+1) % numEdges] ];
 
 			if (isPerspective)
 			{

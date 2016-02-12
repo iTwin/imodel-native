@@ -4,6 +4,7 @@
 /*																			*/ 
 /*  Last Updated 28 Jan 2004 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
+#include "PointoolsVortexAPIInternal.h"
 #include <ptl/block.h>
 #include <ptl/dispatcher.h>
 #include <pt/trace.h>

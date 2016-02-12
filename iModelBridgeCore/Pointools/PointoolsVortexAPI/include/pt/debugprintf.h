@@ -71,7 +71,7 @@ namespace pt {
 #else
 
     // The compiler should optimize away this empty call
-    inline void __cdecl debugPrintf(const char* fmt ...) {};
+    inline void __cdecl debugPrintf(const char* /*fmt*/ ...) {};
 
 #endif
 

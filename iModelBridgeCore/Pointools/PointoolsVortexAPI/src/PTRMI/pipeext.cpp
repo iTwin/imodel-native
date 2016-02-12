@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 
 #include <PTRMI/PipeExt.h>
 #include <PTRMI/Stream.h>

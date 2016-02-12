@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptengine/renderVoxelBuffer.h>
 #include <boost/thread/locks.hpp>
 

@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptds/GraphManager.h>
 
 #include <ptds/DataSourceAnalyzer.h>

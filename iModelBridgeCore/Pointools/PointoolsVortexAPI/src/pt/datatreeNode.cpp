@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <pt/datatreeNode.h>
 namespace pt
 {

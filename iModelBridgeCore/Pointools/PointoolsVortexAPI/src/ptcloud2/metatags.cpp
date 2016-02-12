@@ -1,3 +1,4 @@
+#include "PointoolsVortexAPIInternal.h"
 #include <ptcloud2/metatags.h>
 
 using namespace pcloud;
