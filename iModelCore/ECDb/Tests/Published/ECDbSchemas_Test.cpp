@@ -1717,7 +1717,7 @@ TEST (ECDbSchemas, ClassDiff)
     EXPECT_STREQ (classPtr->GetName ().c_str (), "Employee");
     Utf8String classDisplayLabel = classPtr->GetDisplayLabel ();
     EXPECT_STREQ (classDisplayLabel.c_str (), "Employee Left");
-    EXPECT_STREQ (classPtr->GetSchema ().GetFullSchemaName ().c_str (), "LeftSchema.01.00");
+    EXPECT_STREQ (classPtr->GetSchema ().GetFullSchemaName ().c_str (), "LeftSchema.01.00.00");
 
     EXPECT_STREQ (mergedSchema->GetClassP ("RightFoo")->GetName ().c_str (), "RightFoo");
     EXPECT_STREQ (mergedSchema->GetClassP ("StableClass")->GetName ().c_str (), "StableClass");
