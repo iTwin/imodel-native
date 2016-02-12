@@ -776,6 +776,9 @@
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectSessionAuthenticationPersistence.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Connect\IConnectAuthenticationProvider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="WSClient.PartFile.xml" />
