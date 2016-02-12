@@ -501,7 +501,6 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMesh -f ScalableMesh 
     <ClInclude Include="STM\ScalableMeshCreator.h" />
     <ClInclude Include="STM\ScalableMeshEditListener.h" />
     <ClInclude Include="STM\ScalableMeshFeature.h" />
-    <ClInclude Include="STM\ScalableMeshFilteringOptions.h" />
     <ClInclude Include="STM\ScalableMeshImportSequencePersistance.h" />
     <ClInclude Include="STM\ScalableMeshMemoryPools.h" />
     <ClInclude Include="STM\ScalableMeshMesher.h" />

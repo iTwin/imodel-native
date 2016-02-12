@@ -3740,9 +3740,6 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Discar
             if (returnValue)
                 {
                 //NEEDS_WORK_SM : During partial update some synchro problem can occur.
-#ifndef SCALABLE_MESH_DGN
-                if (s_inEditing)
-#endif
                     {
                     for (size_t neighborPosInd = 0; neighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY; neighborPosInd++)
                         {

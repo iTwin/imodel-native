@@ -110,10 +110,9 @@ void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
 
     
     // Register Moniker
-    //InitMonikerFactories();
-#ifdef SCALABLE_MESH_DGN
+
     InitScalableMeshMonikerFactories();
-#endif
+
     t_scalableTerrainModelHost = &host;
     t_scalableTerrainModelHost->Initialize();
     }

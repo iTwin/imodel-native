@@ -56,7 +56,6 @@ bool IMoniker::IsTargetReachable () const
 /*----------------------------------------------------------------------------+
 |IMoniker::Serialize
 +----------------------------------------------------------------------------*/
-#ifdef SCALABLE_MESH_DGN
 StatusInt IMoniker::Serialize(Import::SourceDataSQLite&        sourceData,
     const DocumentEnv&    env) const
 {
@@ -69,17 +68,7 @@ StatusInt IMoniker::Serialize(Import::SourceDataSQLite&        sourceData,
     return _Serialize(sourceData, env);
     //return BSISUCCESS;
 }
-#else
-StatusInt IMoniker::Serialize(BinaryOStream&        stream,
-                              const DocumentEnv&    env) const
-    {
-    const byte monikerTypeField = static_cast<byte>(GetType());   
-    if (!stream.put(monikerTypeField).good())
-        return BSIERROR;
 
-    return _Serialize(stream, env);
-    }
-#endif
 
 /*----------------------------------------------------------------------------+
 |IMoniker::Accept
@@ -355,7 +344,6 @@ void IMonikerFactory::Unregister (BinStreamCreatorID id)
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef SCALABLE_MESH_DGN
 IMonikerPtr IMonikerFactory::Create(Import::SourceDataSQLite&      sourceData,
     const DocumentEnv&  env)
 {
@@ -374,25 +362,6 @@ IMonikerPtr IMonikerFactory::Create(Import::SourceDataSQLite&      sourceData,
     StatusInt dummyStatus;
     return creatorP->_Create(sourceData, env, dummyStatus);
 }
-#else
-IMonikerPtr IMonikerFactory::Create    (BinaryIStream&      stream,
-                                        const DocumentEnv&  env)
-    {
-    const UInt typeField = stream.peek();
-    if (typeField >= DTM_SOURCE_MONIKER_QTY)
-        return 0;
 
-    const DTMSourceMonikerType type = static_cast<DTMSourceMonikerType>(typeField);
-
-    const Impl::BinStreamCreatorMap::value_type creatorP = m_implP->m_binStreamCreators[type];
-    if (0 == creatorP)
-        return 0;
-
-    stream.get(); // Skip moniker type
-
-    StatusInt dummyStatus;
-    return creatorP->_Create(stream, env, dummyStatus);
-    }
-#endif
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

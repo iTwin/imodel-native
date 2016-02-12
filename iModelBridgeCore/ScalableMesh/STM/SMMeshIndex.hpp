@@ -377,11 +377,9 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_nodeHeader.m_uvID = IDTMFile::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
     m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
-#ifdef SCALABLE_MESH_DGN
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
     m_ptsIndiceVec[0].SetBlockID(GetBlockID());
     m_graphVec.SetBlockID(GetBlockID());
-#endif
     }
 
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(size_t pi_SplitTreshold,

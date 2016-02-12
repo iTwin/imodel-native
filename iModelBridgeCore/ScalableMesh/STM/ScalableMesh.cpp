@@ -49,9 +49,7 @@ extern bool   GET_HIGHEST_RES;
 #include "SMSQLiteUVIndiceTileStore.h"
 #include "SMSQLiteTextureTileStore.h"
 #include "CGALEdgeCollapse.h"
-/*#ifdef SCALABLE_MESH_DGN
-#include <DgnPlatform\Tools\ConfigurationManager.h>
-#endif*/
+
 
 
 ScalableMeshScheduler* s_clipScheduler = nullptr;
@@ -96,9 +94,7 @@ using namespace IDTMFile;
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_GEOCOORDINATES
-/*#ifdef SCALABLE_MESH_DGN
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
-#endif*/
+
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 #ifdef SM_BESQL_FORMAT
@@ -321,7 +317,7 @@ AccessMode GetAccessModeFor(bool                    openReadOnly,
 /*----------------------------------------------------------------------------+
 |IScalableMesh::GetFor
 +----------------------------------------------------------------------------*/
-#ifdef SCALABLE_MESH_DGN
+
 IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
     bool                    openReadOnly,
     bool                    openShareable,
@@ -348,90 +344,7 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
     }
     return ScalableMesh<DPoint3d>::Open(smSQLiteFile, filePath, status);
 }
-#else
-IScalableMeshPtr IScalableMesh::GetFor   (const WChar*          filePath,
-                            bool                    openReadOnly,
-                            bool                    openShareable,
-                            StatusInt&              status)
-    {
-    const UInt workingLayer = DEFAULT_WORKING_LAYER;
-    
-    status = BSISUCCESS;            
- 
-    if (0 != _waccess(filePath, 04))
-        {
-        status = BSISUCCESS; 
-        return 0; // File not found
-        }
-        
-    const AccessMode accessMode(GetAccessModeFor(openReadOnly, openShareable));
 
-    StatusInt openStatus;
-
-    IDTMFile::File::Ptr iDTMFilePtr(IDTMFile::File::Open(filePath, accessMode, openStatus));
-
-    if (0 == iDTMFilePtr)
-        {
-        if (openStatus == DTMFILE_UNSUPPORTED_VERSION)
-
-            status = DTMSTATUS_UNSUPPORTED_VERSION;
-
-        else
-
-            status = BSIERROR;
-
-            
-
-        return 0; // Error opening file
-        }
-           
-    if (!iDTMFilePtr->GetRootDir()->HasLayerDir(workingLayer))
-        {
-        //MST For now returns success until a layer is create which contains the 
-        //    data source information.
-        return ScalableMesh<DPoint3d>::Open(iDTMFilePtr, filePath, status);
-        }
-
-    const IDTMFile::LayerDir* layerDir = iDTMFilePtr->GetRootDir()->GetLayerDir (workingLayer);
-    if (0 == layerDir)
-        {
-        status = BSIERROR;
-        return 0; // Error accessing working layer
-        }
-
-    if (!layerDir->HasUniformFeatureDir(SMPointTaggedTileStore<DPoint3d, YProtPtExtentType>::MASS_POINT_FEATURE_TYPE))
-        {
-        //MST : The point type might be incorrect depending on the filtering chosen. 
-        //      The point type should probably be stored in the layer.
-        return ScalableMesh<DPoint3d>::Open(iDTMFilePtr, filePath, status);
-        }
-
-    const IDTMFile::UniformFeatureDir* featureDir = 
-        layerDir->GetUniformFeatureDir(SMPointTaggedTileStore<DPoint3d, YProtPtExtentType>::MASS_POINT_FEATURE_TYPE);
-
-    if (0 == featureDir)
-        {
-        status = BSIERROR;
-        return 0; // Error accessing specified feature dir
-        }
-
-    IScalableMeshPtr iScmPtr;
-
-    const IDTMFile::PointTypeID ptType = featureDir->GetPointType();
-    switch(ptType)
-        {
-        case IDTMFile::POINT_TYPE_POINT3D :                   
-            iScmPtr = ScalableMesh<DPoint3d>::Open(iDTMFilePtr, filePath, status);
-            break;
-        default : 
-            status = BSIERROR;
-            assert(!"This point type is not yet supported");
-            break;
-        }    
-                     
-    return iScmPtr;   
-    }
-#endif
 
 
 /*----------------------------------------------------------------------------+
@@ -454,21 +367,12 @@ Count IScalableMesh::GetCountInRange (const DRange2d& range, const CountType& ty
     return _GetCountInRange(range, type, maxNumberCountedPoints);
     }
 
-#ifdef SCALABLE_MESH_DGN
-/*static bool DgnDbFilename(Bentley::WString& stmFilename)
-    {
-    Bentley::WString dgndbFilename;
-    //stmFilename
-    size_t size = stmFilename.ReplaceAll(L".stm", L".dgndb");
-    assert(size==1);
-    return true;
-    }*/
-#endif
+
 
 /*----------------------------------------------------------------------------+
 |ScalableMeshBase::ScalableMeshBase
 +----------------------------------------------------------------------------*/
-#ifdef SCALABLE_MESH_DGN
+
 ScalableMeshBase::ScalableMeshBase(SMSQLiteFilePtr& smSQliteFile,
     const WString&             filePath)
     : m_workingLayer(DEFAULT_WORKING_LAYER),
@@ -480,19 +384,7 @@ ScalableMeshBase::ScalableMeshBase(SMSQLiteFilePtr& smSQliteFile,
 
     HPRECONDITION(smSQliteFile != 0);
 }
-#else
-ScalableMeshBase::ScalableMeshBase   (IDTMFile::File::Ptr&            filePtr, 
-                        const WString&             filePath)
-    :   m_iDTMFilePtr(filePtr),
-        m_workingLayer(DEFAULT_WORKING_LAYER),
-        m_sourceGCS(GetDefaultGCS()),
-        m_path(filePath)
-    {
-    memset(&m_contentExtent, 0, sizeof(m_contentExtent));
 
-    HPRECONDITION(filePtr != 0);
-    }
-#endif
 
 /*----------------------------------------------------------------------------+
 |ScalableMeshBase::~ScalableMeshBase
@@ -504,17 +396,11 @@ ScalableMeshBase::~ScalableMeshBase ()
 /*----------------------------------------------------------------------------+
 |ScalableMeshBase::GetIDTMFile
 +----------------------------------------------------------------------------*/
-#ifdef SCALABLE_MESH_DGN
 const SMSQLiteFilePtr& ScalableMeshBase::GetDbFile() const
 {
     return m_smSQLitePtr;
 }
-#else
-const IDTMFile::File::Ptr& ScalableMeshBase::GetIDTMFile () const
-    {
-    return m_iDTMFilePtr;
-    }
-#endif
+
 
 /*----------------------------------------------------------------------------+
 |ScalableMeshBase::GetPath
@@ -527,7 +413,7 @@ const WChar* ScalableMeshBase::GetPath () const
 /*----------------------------------------------------------------------------+
 |ScalableMeshBase::LoadGCSFrom
 +----------------------------------------------------------------------------*/
-#ifdef SCALABLE_MESH_DGN
+
 bool ScalableMeshBase::LoadGCSFrom()
 {
     WString wktStr;
@@ -552,42 +438,12 @@ bool ScalableMeshBase::LoadGCSFrom()
 
     return true;
 }
-#else
-bool ScalableMeshBase::LoadGCSFrom (const IDTMFile::LayerDir& layerDir)
-    {
-    if (!layerDir.HasWkt())
-        return true;
 
-    const HCPWKT wkt(layerDir.GetWkt());
-    if (wkt.IsEmpty())
-        return false;
-
-    WString wktStr(wkt.GetCStr());
-    
-    IDTMFile::WktFlavor fileWktFlavor = GetWKTFlavor(&wktStr, wktStr);
-    BaseGCS::WktFlavor  wktFlavor;
-            
-    bool result = MapWktFlavorEnum(wktFlavor, fileWktFlavor);
-
-    assert(result);    
-
-    GCSFactory::Status gcsCreateStatus;
-    GCS gcs(GetGCSFactory().Create(wktStr.c_str(), wktFlavor, gcsCreateStatus));
-        
-    if (GCSFactory::S_SUCCESS != gcsCreateStatus)
-        return false;
-
-    using std::swap;
-    swap(m_sourceGCS, gcs);
-
-    return true;
-    }
-#endif
 
 /*----------------------------------------------------------------------------+
 |ScalableMesh::ScalableMesh
 +----------------------------------------------------------------------------*/
-#ifdef SCALABLE_MESH_DGN
+
 template <class POINT> ScalableMesh<POINT>::ScalableMesh(SMSQLiteFilePtr& smSQLiteFile, const WString& path)
     : ScalableMeshBase(smSQLiteFile, path),
     m_areDataCompressed(false),
@@ -595,15 +451,7 @@ template <class POINT> ScalableMesh<POINT>::ScalableMesh(SMSQLiteFilePtr& smSQLi
     m_minScreenPixelsPerPoint(MEAN_SCREEN_PIXELS_PER_POINT)
     { 
     }
-#else
-template <class POINT> ScalableMesh<POINT>::ScalableMesh(IDTMFile::File::Ptr& iDTMFilePtr, const WString& path)
-    :   ScalableMeshBase(iDTMFilePtr, path),
-        m_areDataCompressed(false),
-        m_computeTileBoundary(false),
-        m_minScreenPixelsPerPoint(MEAN_SCREEN_PIXELS_PER_POINT)
-    {
-    }
-#endif
+
 
 /*----------------------------------------------------------------------------+
 |ScalableMesh::~ScalableMesh
@@ -712,7 +560,7 @@ template <class POINT> Count ScalableMesh<POINT>::_GetCountInRange (const DRange
 /*----------------------------------------------------------------------------+
 |ScalableMesh::Open
 +----------------------------------------------------------------------------*/
-#ifdef SCALABLE_MESH_DGN
+
 template <class POINT>
 IScalableMeshPtr ScalableMesh<POINT>::Open(SMSQLiteFilePtr& smSQLiteFile,
                                     const WString&     filePath,
@@ -724,18 +572,7 @@ IScalableMeshPtr ScalableMesh<POINT>::Open(SMSQLiteFilePtr& smSQLiteFile,
     status = scmPtr->Open();
     return (BSISUCCESS == status ? scmP : 0);
 }
-#else
-template <class POINT>
-ScalableMesh<POINT>* ScalableMesh<POINT>::Open   (IDTMFile::File::Ptr&    filePtr, 
-                                    const WString&     filePath, 
-                                    StatusInt&              status)
-    {
-    auto_ptr<ScalableMesh<POINT>> scmP(new ScalableMesh<POINT>(filePtr, filePath));                    
 
-    status = scmP->Open();
-    return (BSISUCCESS == status ? scmP.release() : 0);
-    }
-#endif
 /*----------------------------------------------------------------------------+
 |ScalableMesh::Open
 +----------------------------------------------------------------------------*/
@@ -744,21 +581,9 @@ static bool s_checkHybridNodeState = false;
 template <class POINT> int ScalableMesh<POINT>::Open()
     {
     m_scalableMeshDTM = ScalableMeshDTM::Create(this);
-#ifdef SCALABLE_MESH_DGN
-#else
-    HPRECONDITION(m_iDTMFilePtr != 0);
-    s_inEditing = false;   
 
-    if (!m_iDTMFilePtr->GetRootDir()->HasLayerDir(m_workingLayer))
-        return BSISUCCESS; // File is empty.
-
-    IDTMFile::LayerDir* layerDir = m_iDTMFilePtr->GetRootDir()->GetLayerDir(m_workingLayer);
-    if (0 == layerDir)
-        return BSIERROR; // Could not access existing layer
-#endif
     try 
         {
-#ifdef SCALABLE_MESH_DGN
         //m_smSQLitePtr->Open(m_path);
         // If there are no masterHeader => file empty ?
         bool notEmpty = m_smSQLitePtr->HasMasterHeader();
@@ -771,13 +596,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
         bool hasPoints = m_smSQLitePtr->HasPoints(); // NEEDS_WORKS : add AddPOints To DataSQLite, and test if there are somes points in the database.
 
 
-#else
-            bool hasPoints = layerDir->HasUniformFeatureDir(SMPointTaggedTileStore<POINT, YProtPtExtentType>::MASS_POINT_FEATURE_TYPE);
-//            const bool hasFeatures = layerDir->CountMixedFeatureDirs() > 0;
 
-            if (!LoadGCSFrom(*layerDir))
-                return BSIERROR; // Error loading layer gcs
-#endif
         HFCPtr<TileStoreType> pTileStore;
         HFCPtr<StreamingStoreType>  pStreamingTileStore;
         HFCPtr<SMStreamingPointTaggedTileStore<int32_t, YProtPtExtentType >> pStreamingIndiceTileStore;
@@ -791,17 +610,10 @@ template <class POINT> int ScalableMesh<POINT>::Open()
         HFCPtr<IHPMPermanentStore<MTGGraph, Byte, Byte>> pGraphTileStore;
         bool isSingleFile = true;
         
-#ifndef SCALABLE_MESH_DGN
-        
-        pTileStore = new SMPointTaggedTileStore<POINT, YProtPtExtentType>(m_iDTMFilePtr, AreDataCompressed());
-        SMPointIndexHeader<YProtPtExtentType>* indexHeader = new SMPointIndexHeader<YProtPtExtentType>;
-        pTileStore->LoadMasterHeader(indexHeader, 0);
-        isSingleFile = indexHeader->m_singleFile;
-        delete indexHeader;
-#else
+
         pTileStore = new SMSQLitePointTileStore<POINT, YProtPtExtentType>(m_smSQLitePtr);
         isSingleFile = m_smSQLitePtr->IsSingleFile();
-#endif
+
         if (hasPoints || !isSingleFile)
             {    
          //   HFCPtr<HPMCountLimitedPool<POINT> > pMemoryPool(PoolSingleton<POINT>());
@@ -809,23 +621,6 @@ template <class POINT> int ScalableMesh<POINT>::Open()
          //NEEDS_WORK_SM - Why correct filter is not saved?                                             
          //auto_ptr<ISMPointIndexFilter<POINT, YProtPtExtentType>> filterP(CreatePointIndexFilter(featureDir));
             auto_ptr<ISMMeshIndexFilter<POINT, YProtPtExtentType>> filterP(new ScalableMeshQuadTreeBCLIBMeshFilter1<POINT, YProtPtExtentType>());
-#ifndef SCALABLE_MESH_DGN
-            if (isSingleFile)
-                {
-                IDTMFile::UniformFeatureDir* featureDir =
-                    layerDir->GetUniformFeatureDir(SMPointTaggedTileStore<POINT, YProtPtExtentType>::MASS_POINT_FEATURE_TYPE);
-
-                if (0 == featureDir)
-                    return BSIERROR;
-
-                if (0 == filterP.get())
-                    return BSIERROR;
-
-                m_areDataCompressed = (featureDir->GetPointCompressType().GetType() != HTGFF::Compression::TYPE_NONE);
-                }
-            else
-                m_areDataCompressed = true;
-#endif
 
                 if (!isSingleFile)
                     {
@@ -854,17 +649,12 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                                                             ScalableMeshMemoryPools<POINT>::Get()->GetPtsIndicePool(),
                                                             &*pStreamingIndiceTileStore,
                                                             ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),
-#ifdef SCALABLE_MESH_DGN
                                                             new SMSQLiteGraphTileStore((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection()),
-#else
-                                                            new DTMGraphTileStore(m_iDTMFilePtr, 0),
-#endif
+
                                                             ScalableMeshMemoryPools<POINT>::Get()->GetTexturePool(),
-#ifdef SCALABLE_MESH_DGN
+
                                                             pTextureTileStore,
-#else
-                                                            new TextureTileStore(m_iDTMFilePtr, 4),
-#endif
+
                                                             ScalableMeshMemoryPools<POINT>::Get()->GetUVPool(),
                                                             &*pStreamingUVTileStore,
                                                             ScalableMeshMemoryPools<POINT>::Get()->GetUVsIndicesPool(),
@@ -887,47 +677,38 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                 else
                     {
                     //                    size_t n = 4;
-#ifndef SCALABLE_MESH_DGN
-                    pIndiceTileStore = new SMPointTaggedTileStore<int32_t, YProtPtExtentType >(m_iDTMFilePtr, AreDataCompressed(), 1);
-                    pUVTileStore = new SMPointTaggedTileStore<DPoint2d, YProtPtExtentType >(m_iDTMFilePtr, AreDataCompressed(), 2);
-                    pUVsIndicesTileStore = new SMPointTaggedTileStore<int32_t, YProtPtExtentType >(m_iDTMFilePtr, AreDataCompressed(), 3);
-                    pTextureTileStore = new TextureTileStore(m_iDTMFilePtr, 4);
-                    pGraphTileStore = new DTMGraphTileStore(m_iDTMFilePtr, 0);
-#else
+
                     pIndiceTileStore = new SMSQLiteIndiceTileStore<YProtPtExtentType >(m_smSQLitePtr);
                     pUVTileStore = new SMSQLiteUVTileStore<YProtPtExtentType >((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection());
                     pUVsIndicesTileStore = new SMSQLiteUVIndiceTileStore<YProtPtExtentType >((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection());
                     pTextureTileStore = new SMSQLiteTextureTileStore((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection());
                     pGraphTileStore = new SMSQLiteGraphTileStore((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection());
-#endif
-					
+
+
                     m_scmIndexPtr = new PointIndexType(//pMemoryPool, 
-															ScalableMeshMemoryPools<POINT>::Get()->GetPointPool(),
-															&*pTileStore,
-															ScalableMeshMemoryPools<POINT>::Get()->GetPtsIndicePool(),
-															&*pIndiceTileStore,
-															ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),
-															//new HPMIndirectCountLimitedPool<MTGGraph>(new HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment(100, 2000*sizeof(POINT)), 600000000),
-															&*pGraphTileStore,
-															ScalableMeshMemoryPools<POINT>::Get()->GetTexturePool(),
-															&*pTextureTileStore,
-															ScalableMeshMemoryPools<POINT>::Get()->GetUVPool(),
-															&*pUVTileStore,
-															ScalableMeshMemoryPools<POINT>::Get()->GetUVsIndicesPool(),
-															&*pUVsIndicesTileStore,
-															10000,
-															filterP.get(),
-															false,
-															false,
-															false,
-															0,
-															0);  //NEEDS_WORK_SM - Should we store mesher information in STM file like filter?
+                                                       ScalableMeshMemoryPools<POINT>::Get()->GetPointPool(),
+                                                       &*pTileStore,
+                                                       ScalableMeshMemoryPools<POINT>::Get()->GetPtsIndicePool(),
+                                                       &*pIndiceTileStore,
+                                                       ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),
+                                                       //new HPMIndirectCountLimitedPool<MTGGraph>(new HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment(100, 2000*sizeof(POINT)), 600000000),
+                                                       &*pGraphTileStore,
+                                                       ScalableMeshMemoryPools<POINT>::Get()->GetTexturePool(),
+                                                       &*pTextureTileStore,
+                                                       ScalableMeshMemoryPools<POINT>::Get()->GetUVPool(),
+                                                       &*pUVTileStore,
+                                                       ScalableMeshMemoryPools<POINT>::Get()->GetUVsIndicesPool(),
+                                                       &*pUVsIndicesTileStore,
+                                                       10000,
+                                                       filterP.get(),
+                                                       false,
+                                                       false,
+                                                       false,
+                                                       0,
+                                                       0);  //NEEDS_WORK_SM - Should we store mesher information in STM file like filter?
                     }
-#ifndef SCALABLE_MESH_DGN
+
                 m_scmIndexPtr->m_useSTMFormat = false;
-#else
-                m_scmIndexPtr->m_useSTMFormat = true;
-#endif
             WString clipFilePath = m_path;
             clipFilePath.append(L"_clips"); 
            // IDTMFile::File::Ptr clipFilePtr = IDTMFile::File::Create(clipFilePath.c_str());
@@ -954,7 +735,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
 
 #ifndef NDEBUG
-#ifdef SCALABLE_MESH_DGN
+
         if (s_checkHybridNodeState)
         {
             if (!m_smSQLitePtr->HasSources())
@@ -969,22 +750,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
             bool success = Bentley::ScalableMesh::LoadSources(sources, *sourcesData, sourceEnv);
             assert(success == true);
 
-#else
-        if (s_checkHybridNodeState)
-            {
-            if (!m_iDTMFilePtr->GetRootDir()->HasSourcesDir())
-            return BSISUCCESS; // No sources were added to the STM.
 
-            const IDTMFile::SourcesDir* sourceDirPtr = m_iDTMFilePtr->GetRootDir()->GetSourcesDir();
-            if (0 == sourceDirPtr)
-                return BSIERROR; // Could not load existing sources dir
-            
-            IDTMSourceCollection sources;            
-            DocumentEnv          sourceEnv(L"");
-
-            bool success = Bentley::ScalableMesh::LoadSources(sources, *sourceDirPtr, sourceEnv);
-            assert(success == true);
-#endif
             auto sourceIter(sources.Begin());
             auto sourceIterEnd(sources.End());
 
@@ -1014,28 +780,6 @@ template <class POINT> int ScalableMesh<POINT>::Open()
             }            
 #endif
                        
-       /* if (hasFeatures)
-            {
-#ifndef SCALABLE_MESH_DGN
-            bool m_isDgnDB = false;
-#endif
-            if (pTileStore == 0 && !m_isDgnDB)
-                {
-//                pTileStore = new TileStoreType(m_iDTMFilePtr, AreDataCompressed());
-                }
-#ifdef SCALABLE_MESH_DGN
-//            else if (pDgnPointTileStore == 0 && m_isDgnDB)
-                {
-                //pDgnTileStore = new DgnStoreType(m_dgnScalableMeshPtr, m_iDTMFilePtr, HFC_READ_ONLY | HFC_SHARE_READ_ONLY, AreDataCompressed());
-                //pDgnGraphTileStore = new SMDgnDBGraphTileStore(m_dgnScalableMeshPtr, m_iDTMFilePtr, HFC_READ_ONLY | HFC_SHARE_READ_ONLY, AreDataCompressed());
-//                pDgnPointTileStore = new SMDgnDBPointTileStore(m_dgnScalableMeshPtr, m_iDTMFilePtr, HFC_READ_ONLY | HFC_SHARE_READ_ONLY, AreDataCompressed());
-                //pDgnTextureTileStore = new SMDgnDBTextureTileStore(m_dgnScalableMeshPtr, m_iDTMFilePtr, HFC_READ_ONLY | HFC_SHARE_READ_ONLY, AreDataCompressed());
-               // m_mrDTMLinearIndexPtr = new LinearIndexType (&*pDgnTileStore, 400, false);
-                }
-#endif
-           
-            
-            }*/
 
         m_contentExtent = ComputeTotalExtentFor(&*m_scmIndexPtr);
 
@@ -1055,13 +799,11 @@ template <class POINT> int ScalableMesh<POINT>::Close
 )
     {
     m_scmIndexPtr = 0;
-#ifdef SCALABLE_MESH_DGN
+
     if(m_smSQLitePtr != nullptr)
         m_smSQLitePtr->Close();
     m_smSQLitePtr = nullptr;
-#else
-    m_iDTMFilePtr = 0;
-#endif
+
     
     return SUCCESS;        
     }
@@ -1166,10 +908,6 @@ template <class POINT> double ScalableMesh<POINT>::GetMinScreenPixelsPerPoint()
 +----------------------------------------------------------------------------*/
 template <class POINT> bool ScalableMesh<POINT>::AreDataCompressed()
     {
-#ifdef SCALABLE_MESH_DGN
-#else
-    assert(m_iDTMFilePtr != 0);
-#endif
     return m_areDataCompressed;
     }
 
@@ -1540,7 +1278,6 @@ template <class POINT> bool ScalableMesh<POINT>::IsValidInContextOf (const GCS& 
 +----------------------------------------------------------------------------*/
 template <class POINT> StatusInt ScalableMesh<POINT>::_SetGCS(const GCS& newGCS)
 {
-#ifdef SCALABLE_MESH_DGN
     const GCS& savedGCS = (newGCS.IsNull()) ? GetDefaultGCS() : newGCS;
 
     HCPWKT wkt;
@@ -1576,48 +1313,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_SetGCS(const GCS& newGCS)
     }
 
     m_sourceGCS = savedGCS;
-#else
-    IDTMFile::LayerDir* const layerDir = (m_iDTMFilePtr->GetRootDir()->HasLayerDir(m_workingLayer)) ? 
-                                                m_iDTMFilePtr->GetRootDir()->GetLayerDir(m_workingLayer) : 
-                                                m_iDTMFilePtr->GetRootDir()->CreateLayerDir(m_workingLayer);
 
-    if (0 == layerDir)
-        return BSIERROR;
-
-    const GCS& savedGCS = (newGCS.IsNull()) ? GetDefaultGCS() : newGCS;
-
-    HCPWKT wkt;
-   
-    GCS::Status wktCreateStatus = GCS::S_SUCCESS;
-    wkt = HCPWKT(savedGCS.GetWKT(wktCreateStatus).GetCStr());
-
-    WString extendedWktStr(wkt.GetCStr());
-
-    if (WKTKeyword::TYPE_UNKNOWN == GetWktType(extendedWktStr))
-        {
-        wchar_t wktFlavor[2] = {(wchar_t)IDTMFile::WktFlavor_Autodesk, L'\0'};
-
-        extendedWktStr += WString(wktFlavor);        
-        wkt = HCPWKT(extendedWktStr.c_str());
-        }    
-
-    if (GCS::S_SUCCESS != wktCreateStatus)
-        return BSIERROR;
-
-    // This is called even if there are no GCS provided ... In such case the WKT AString
-    // is that of the default GCS.
-    HCPWKT oldWkt = layerDir->GetWkt();
-
-    if (!layerDir->SetWkt(wkt))
-        {
-        bool result = layerDir->SetWkt(oldWkt);
-        assert(result);
-
-        return BSIERROR;
-        }
-
-    m_sourceGCS = savedGCS;
-#endif
     return BSISUCCESS;
     }
 
@@ -1672,18 +1368,9 @@ template <class POINT> ScalableMeshState ScalableMesh<POINT>::_GetState() const
 +----------------------------------------------------------------------------*/
 template <class POINT> bool ScalableMesh<POINT>::_InSynchWithSources() const
     {
-#ifdef SCALABLE_MESH_DGN
-        // Get LastModifiedTime from sqlite file
-        return false;
-#else
-    assert(0 != m_iDTMFilePtr);
-    const SourcesDir* sourceDirPtr = m_iDTMFilePtr->GetRootDir()->GetSourcesDir();
-    if (0 == sourceDirPtr)
+        //NEEDS_WORK_SM: Get LastModifiedTime from sqlite file
         return false;
 
-    const bool InSync = sourceDirPtr->GetLastModifiedTime() < sourceDirPtr->GetLastSyncTime();
-    return InSync;    
-#endif
     }
 
 /*----------------------------------------------------------------------------+
@@ -1716,21 +1403,7 @@ template <class POINT> int ScalableMesh<POINT>::_GetRangeInSpecificGCS(DPoint3d&
 +----------------------------------------------------------------------------*/
 template <class POINT> bool ScalableMesh<POINT>::_LastSynchronizationCheck(time_t& lastCheckTime) const
     {
-#ifdef SCALABLE_MESH_DGN
         return false;
-#else
-    assert(0 != m_iDTMFilePtr);
-
-    const SourcesDir* sourceDirPtr = m_iDTMFilePtr->GetRootDir()->GetSourcesDir();
-    if (0 == sourceDirPtr)
-        {
-        lastCheckTime = 0; // Make it very remote in time
-        return false;
-        }
-
-    lastCheckTime = sourceDirPtr->GetLastModifiedCheckTime();
-    return true;
-#endif
     }
 
 /*----------------------------------------------------------------------------+
@@ -1756,12 +1429,9 @@ template <class POINT> bool ScalableMesh<POINT>::_IsProgressive() const
 +----------------------------------------------------------------------------*/
 template <class POINT> bool ScalableMesh<POINT>::_IsReadOnly() const
     {
-#ifdef SCALABLE_MESH_DGN
+
         return false;
-#else
-    return (m_iDTMFilePtr->GetAccessMode().m_HasWriteAccess == false) && 
-           (m_iDTMFilePtr->GetAccessMode().m_HasWriteShare == false);
-#endif
+
     } 
 
 /*----------------------------------------------------------------------------+
@@ -1769,12 +1439,9 @@ template <class POINT> bool ScalableMesh<POINT>::_IsReadOnly() const
 +----------------------------------------------------------------------------*/
 template <class POINT> bool ScalableMesh<POINT>::_IsShareable() const
     {
-#ifdef SCALABLE_MESH_DGN
+
         return true;
-#else
-    return (m_iDTMFilePtr->GetAccessMode().m_HasReadShare == false) && 
-           (m_iDTMFilePtr->GetAccessMode().m_HasWriteShare == false);                
-#endif
+
     } 
 
 /*----------------------------------------------------------------------------+

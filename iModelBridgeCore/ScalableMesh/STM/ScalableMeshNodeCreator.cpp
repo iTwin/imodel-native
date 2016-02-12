@@ -119,38 +119,16 @@ int IScalableMeshNodeCreator::Impl::CreateScalableMesh(bool isSingleFile)
             // NOTE: Need to be able to recreate : Or the file offers some functions for deleting all its data directory or the file name can be obtained
             }
 
-#ifdef SCALABLE_MESH_DGN
+
         SetupFileForCreation();
-        /*
-        if (m_isDgnDb)
-            {
-            //IDTMFile::AccessMode accessMode = filePtr->GetAccessMode();
-            Bentley::WString filename = m_scmFileName;
-            DgnDbFilename(filename);
-            //assert(accessMode.m_HasCreateAccess);
-            char* tmpCharP = new char[filename.GetMaxLocaleCharBytes()];
-            filename.ConvertToLocaleChars(tmpCharP, filename.GetMaxLocaleCharBytes());
-            m_smSQLitePtr->Create(tmpCharP);
-            }*/
 
         m_smSQLitePtr->SetSingleFile(isSingleFile);
-#ifndef SCALABLE_MESH_DGN
-        SetupFileFormatInfo(filePtr, isSingleFile);
-#endif
+
         //NEEDS_WORK_SM : Try put it in CreateDataIndex as sharedptr
         HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment myMemMgr(100, 2000 * sizeof(PointType));
 
         StatusInt status = CreateDataIndex(m_pDataIndex, myMemMgr);
-#else
-        IDTMFile::File::Ptr filePtr = SetupFileForCreation();
-        if (0 == filePtr)
-            return BSIERROR;
 
-        //NEEDS_WORK_SM : Try put it in CreateDataIndex as sharedptr
-        HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment myMemMgr(100, 2000 * sizeof(PointType));
-
-        StatusInt status = CreateDataIndex(m_pDataIndex, filePtr, myMemMgr);
-#endif
         assert(status == SUCCESS && m_pDataIndex != 0);
 
         }

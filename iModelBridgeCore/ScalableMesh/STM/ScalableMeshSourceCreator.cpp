@@ -67,13 +67,7 @@ StatusInt&      status)
     RegisterDelayedImporters();
 
     using namespace IDTMFile;
-#ifndef SCALABLE_MESH_DGN
-    if (!fileExist(filePath))
-        {
-        status = BSISUCCESS;
-        return new IScalableMeshSourceCreator(new Impl(filePath)); // Return early. File does not exist.
-        }
-#endif
+
     IScalableMeshSourceCreatorPtr pCreator = new IScalableMeshSourceCreator(new Impl(filePath));
 
     status = pCreator->m_implP->LoadFromFile();
@@ -201,18 +195,8 @@ int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile)
             // NOTE: Need to be able to recreate : Or the file offers some functions for deleting all its data directory or the file name can be obtained
             }
 
-#ifdef SCALABLE_MESH_DGN
+
         SetupFileForCreation();
-        /*if (m_isDgnDb)
-            {
-            //IDTMFile::AccessMode accessMode = filePtr->GetAccessMode();
-            Bentley::WString filename = m_scmFileName;
-            DgnDbFilename(filename);
-            //assert(accessMode.m_HasCreateAccess);
-            char* tmpCharP = new char[filename.GetMaxLocaleCharBytes()];
-            filename.ConvertToLocaleChars(tmpCharP, filename.GetMaxLocaleCharBytes());
-            m_smSQLitePtr->Create(tmpCharP);
-            }*/
 
         // Sync only when there are sources with which to sync
         // TR #325614: This special condition provides us with a way of efficiently detecting if STM is empty
@@ -223,52 +207,17 @@ int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile)
         if (0 < m_sources.GetCount() &&
             BSISUCCESS != SyncWithSources())
             return BSIERROR;
-#else
-        File::Ptr filePtr = SetupFileForCreation();
-        if (0 == filePtr)
-            return BSIERROR;
 
-        // Create a MasterHeaderTileStore to store if the ScalableMesh is in streaming or not
-        typedef SMPointTaggedTileStore<PointType,
-        PointIndexExtentType>             TileStoreType;
-        HFCPtr<TileStoreType> pFinalTileStore;
-        pFinalTileStore = new TileStoreType(filePtr, (SCM_COMPRESSION_DEFLATE == m_compressionType));
-        SMPointIndexHeader<PointIndexExtentType>* pointIndexHeader = new SMPointIndexHeader<PointIndexExtentType>();
-        pointIndexHeader->m_singleFile = isSingleFile;
-        pointIndexHeader->m_SplitTreshold = 10000;
-        pointIndexHeader->m_depth = 0;
-        pointIndexHeader->m_HasMaxExtent = false;
-        pointIndexHeader->m_balanced = false;
-        pFinalTileStore->StoreMasterHeader(pointIndexHeader, 0);
-        //pFinalTileStore->save();
-        pFinalTileStore = nullptr;
-        delete pointIndexHeader;
-
-
-        // Sync only when there are sources with which to sync
-        // TR #325614: This special condition provides us with a way of efficiently detecting if STM is empty
-        //             as indexes won't be initialized.
-        if (0 < m_sources.GetCount() &&
-            BSISUCCESS != SyncWithSources(filePtr))
-            return BSIERROR;
-#endif
 
         // Update last synchronization time
         m_lastSyncTime = Time::CreateActual();
         
-#ifdef SCALABLE_MESH_DGN
         // Ensure that last modified times are up-to-date and that sources are saved.
         if (BSISUCCESS != UpdateLastModified() ||
             (isSingleFile && BSISUCCESS != SaveSources(m_smSQLitePtr)) ||
             BSISUCCESS != SaveGCS())
             status = BSIERROR;
-#else
-        // Ensure that last modified times are up-to-date and that sources are saved.
-        if (BSISUCCESS != UpdateLastModified() ||
-            (isSingleFile && BSISUCCESS != SaveSources(*filePtr)) ||
-            BSISUCCESS != SaveGCS(*filePtr))
-            status = BSIERROR;
-#endif
+
         }
     catch (...)
         {
@@ -278,7 +227,6 @@ int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile)
     return status;
     }
 
-#ifdef SCALABLE_MESH_DGN
 void IScalableMeshSourceCreator::Impl::SetupFileForCreation()
 {
     using namespace IDTMFile;
@@ -309,60 +257,7 @@ void IScalableMeshSourceCreator::Impl::SetupFileForCreation()
     m_sourcesDirty = true;
     //return filePtr;
 }
-#else
-IDTMFile::File::Ptr IScalableMeshSourceCreator::Impl::SetupFileForCreation()
-    {
-    using namespace IDTMFile;
 
-    File::Ptr filePtr;
-    bool bAllRemoved = true;
-    bool bAllAdded = true;
-    for (IDTMSourceCollection::const_iterator it = m_sources.Begin(); it != m_sources.End(); it++)
-        {
-        SourceImportConfig conf = it->GetConfig();
-        ScalableMeshData data = conf.GetReplacementSMData();
-        if (data.GetUpToDateState() != UpToDateState::REMOVE)
-            bAllRemoved = false;
-        if (data.GetUpToDateState() != UpToDateState::ADD)
-            bAllAdded = false;
-        }
-
-    if (bAllRemoved)
-        {
-        _wremove(m_scmFileName.c_str());
-        // Remove sources.
-        m_sources.Clear();
-        return 0;
-        }
-
-    if (bAllAdded)
-        filePtr = GetFile(HFC_CREATE_ONLY);
-    else
-        filePtr = GetFile(HFC_READ_WRITE);
-    if (0 == filePtr)
-        return 0;
-
-    // Ensure that layer directory is present
-    if (!filePtr->GetRootDir()->HasLayerDir(m_workingLayer) &&
-        0 == filePtr->GetRootDir()->CreateLayerDir(m_workingLayer))
-        {
-        return 0; // Failed to create layer dir
-        }
-
-    // Ensure source dir is present
-    if (!filePtr->GetRootDir()->HasSourcesDir() &&
-        0 == filePtr->GetRootDir()->CreateSourcesDir())
-        {
-        return 0; // Failed to create source dir
-        }
-
-
-    // Ensure GCS and sources are save to the file.
-    m_gcsDirty = true;
-    m_sourcesDirty = true;
-    return filePtr;
-    }
-#endif
 
 //NEEDS_WORK_SM : To be removed
 static bool s_dumpOctreeNodes = false;
@@ -415,9 +310,7 @@ double IScalableMeshSourceCreator::GetLastStitchingDuration()
 * @bsimethod                                                  Raymond.Gauthier   12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
-#ifndef SCALABLE_MESH_DGN
-    const IDTMFile::File::Ptr& filePtr
-#endif
+
     )
     {
     using namespace IDTMFile;
@@ -425,11 +318,9 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     HFCPtr<IndexType>          pDataIndex;
 
     HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment myMemMgr(100, 2000 * sizeof(PointType));
-#ifdef SCALABLE_MESH_DGN
+
     CreateDataIndex(pDataIndex, myMemMgr, true);
-#else
-    CreateDataIndex(pDataIndex, filePtr, myMemMgr, true);
-#endif
+
 
     size_t previousDepth = pDataIndex->GetDepth();
 
@@ -755,7 +646,6 @@ bool IScalableMeshSourceCreator::Impl::IsFileDirty()
     return m_sourcesDirty || m_gcsDirty;
     }
 
-#ifdef SCALABLE_MESH_DGN
 StatusInt IScalableMeshSourceCreator::Impl::Save()
 {
     return BSISUCCESS == SaveSources(m_smSQLitePtr) && BSISUCCESS == SaveGCS();
@@ -765,17 +655,7 @@ StatusInt IScalableMeshSourceCreator::Impl::Load()
 {
     return BSISUCCESS == LoadSources(m_smSQLitePtr) && BSISUCCESS == LoadGCS();
 }
-#else
-StatusInt IScalableMeshSourceCreator::Impl::Save(IDTMFile::File::Ptr& filePtr)
-    {
-    return BSISUCCESS == SaveSources(*filePtr) && BSISUCCESS == SaveGCS(*filePtr);
-    }
 
-StatusInt IScalableMeshSourceCreator::Impl::Load(IDTMFile::File::Ptr& filePtr)
-    {
-    return BSISUCCESS == LoadSources(*filePtr) && BSISUCCESS == LoadGCS(*filePtr);
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
  * @description
@@ -982,7 +862,6 @@ StatusInt IScalableMeshSourceCreator::Impl::ImportSourcesTo(Sink* sinkP)
 * @description
 * @bsimethod                                                  Raymond.Gauthier   03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef SCALABLE_MESH_DGN
 int IScalableMeshSourceCreator::Impl::LoadSources(SMSQLiteFilePtr& smSQLiteFile)
 {
     if (!smSQLiteFile->HasSources())
@@ -1029,78 +908,6 @@ int IScalableMeshSourceCreator::Impl::SaveSources(SMSQLiteFilePtr& smSQLiteFile)
         return BSIERROR;
     }
 }
-#else
-int IScalableMeshSourceCreator::Impl::LoadSources(const IDTMFile::File& file)
-    {
-    using namespace IDTMFile;
-
-    if (!file.GetRootDir()->HasSourcesDir())
-        return BSISUCCESS; // No sources were added to the STM.
-
-    const IDTMFile::SourcesDir* sourceDirPtr = file.GetRootDir()->GetSourcesDir();
-    if (0 == sourceDirPtr)
-        return BSIERROR; // Could not load existing sources dir
-
-    bool success = true;
-    success &= Bentley::ScalableMesh::LoadSources(m_sources, *sourceDirPtr, m_sourceEnv);
-
-    m_lastSourcesModificationCheckTime = CreateTimeFrom(sourceDirPtr->GetLastModifiedCheckTime());
-    m_lastSourcesModificationTime = CreateTimeFrom(sourceDirPtr->GetLastModifiedTime());
-    m_lastSyncTime = CreateTimeFrom(sourceDirPtr->GetLastSyncTime());
-
-    return (success) ? BSISUCCESS : BSIERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @description
-* @bsimethod                                                  Raymond.Gauthier   03/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-int IScalableMeshSourceCreator::Impl::SaveSources (IDTMFile::File& file)
-    {
-    using namespace IDTMFile;
-
-    if (!m_sourcesDirty)
-        return BSISUCCESS;
-
-
-
-    SourcesDir* sourceDirPtr = 0;
-
-    if (file.GetRootDir()->HasSourcesDir())
-        {
-        sourceDirPtr = file.GetRootDir()->GetSourcesDir();
-        if (0 == sourceDirPtr)
-            return BSIERROR; // Error loading existing source dir
-
-        sourceDirPtr->ClearAll(); // Clear existing data
-        }
-    else
-        {
-        sourceDirPtr = file.GetRootDir()->CreateSourcesDir();
-        if (0 == sourceDirPtr)
-            return BSIERROR; // Error creating source dir
-        }
-
-
-    bool success = true;
-
-    success &= Bentley::ScalableMesh::SaveSources(m_sources, *sourceDirPtr, m_sourceEnv);
-    success &= sourceDirPtr->SetLastModifiedCheckTime(GetCTimeFor(m_lastSourcesModificationCheckTime));
-    success &= sourceDirPtr->SetLastModifiedTime(GetCTimeFor(m_lastSourcesModificationTime));
-    success &= sourceDirPtr->SetLastSyncTime(GetCTimeFor(m_lastSyncTime));
-
-    if (success)
-        {
-        m_sourcesDirty = false;
-        return BSISUCCESS;
-        }
-    else
-        {
-        return BSIERROR;
-        }
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @description
 * @bsimethod                                                  Raymond.Gauthier   03/2011

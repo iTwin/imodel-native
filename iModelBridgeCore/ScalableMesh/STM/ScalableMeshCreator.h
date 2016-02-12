@@ -93,9 +93,9 @@ inline bool fileExist(const WChar* fileName)
     }
 
 
-#ifdef SCALABLE_MESH_DGN
+
 bool DgnDbFilename(Bentley::WString& stmFilename);
-#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @description  
 * @bsiclass                                                  Raymond.Gauthier   06/2011
@@ -114,63 +114,26 @@ struct IScalableMeshCreator::Impl
         WString                             m_scmFileName;    
         IScalableMeshPtr                    m_scmPtr;  
         //SMSQLiteFile                        m_smSQLite;
-#ifdef SCALABLE_MESH_DGN
+
         SMSQLiteFilePtr                     m_smSQLitePtr;
         bool                                m_isDgnDb;
-#endif
+
         Time                                m_lastSyncTime;
-#if 0
-        Time                                m_lastSourcesModificationTime;
-        Time                                m_lastSourcesModificationCheckTime;
-        bool                                m_sourcesDirty;
-#endif
+
         bool                                m_gcsDirty;
        // DocumentEnv                         m_sourceEnv;
         const size_t                        m_workingLayer;
 
         //CREATOR2
 
-#if 0
-        virtual void                        _NotifyOfPublicEdit            () override;
-        virtual void                        _NotifyOfLastEditUpdate        (Time                                    updatedLastEditTime) override;
 
-        static DocumentEnv                  CreateSourceEnvFrom            (const WChar*                          filePath);
 
-        int                                 ImportClipMaskSource           (const IDTMSource&                   dataSource,
-                                                                            const ClipShapeStoragePtr&              clipShapeStoragePtr) const;
-
-        int                                 TraverseSource                 (SourcesImporter&                        importer,
-                                                                            IDTMSource&                             dataSource,
-                                                                            const HFCPtr<HVEClipShape>&             clipShapePtr,
-                                                                            const GeoCoords::GCS&                   targetGCS,
-                                                                            const Import::ScalableMeshData&         targetScalableMeshData) const;
-        
-        int                                 TraverseSourceCollection       (SourcesImporter&                        importer,
-                                                                            IDTMSourceCollection&                   sources,                                              
-                                                                            const HFCPtr<HVEClipShape>&             totalClipShapePtr,
-                                                                            const GeoCoords::GCS&                   targetGCS,
-                                                                            const Import::ScalableMeshData&         targetScalableMeshData);     
-#endif
-
-#ifdef SCALABLE_MESH_DGN
         StatusInt                           CreateDataIndex(HFCPtr<IndexType>&                                    pDataIndex,
                                                             HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment& myMemMgr,
                                                             bool needBalancing = false);
-#else
-        StatusInt                           CreateDataIndex (HFCPtr<IndexType>&                                    pDataIndex, 
-                                                             const IDTMFile::File::Ptr&                            filePtr, 
-                                                             HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment& myMemMgr,
-                                                             bool needBalancing = false);
-#endif
 
-#if 0
-        StatusInt                           SyncWithSources                     (const IDTMFile::File::Ptr&              filePtr);
 
-        StatusInt                           ImportSourcesTo                (Import::Sink*                           sinkP);
 
-        template <typename PointIndex>
-        StatusInt                           RemoveSourcesFrom(PointIndex& pointIndex, list<IDTMFile::Extent3d64f> listRemoveExtent) const;
-#endif
         
         template <typename PointType, typename PointIndex, typename LinearIndex>
         static StatusInt                    AddPointOverviewOfLinears      (PointIndex&                             pointIndex,
@@ -178,27 +141,16 @@ struct IScalableMeshCreator::Impl
 
         bool                                FileExist                      () const;
 
-#ifdef SCALABLE_MESH_DGN
+
         //IDTMFile::File::Ptr                 GetFile(const IDTMFile::AccessMode&             accessMode);
         virtual StatusInt                           Save();
         virtual StatusInt                           Load();
         void                                        SetupFileForCreation();
         SMSQLiteFilePtr                             GetFile(bool fileExists);
-#else
-        IDTMFile::File::Ptr                 GetFile                        (const IDTMFile::AccessMode&             accessMode);
 
-        virtual StatusInt                           Save(IDTMFile::File::Ptr& filePtr);
-        virtual StatusInt                           Load(IDTMFile::File::Ptr& filePtr);
-        virtual  void                               SetupFileFormatInfo(IDTMFile::File::Ptr& filePtr, bool isSingleFile);
-        virtual IDTMFile::File::Ptr                 SetupFileForCreation();
-#endif
 
         virtual bool                                IsFileDirty();
-#if 0
 
-        StatusInt                           SaveSources                    ();  
-        StatusInt                           SaveSources                    (IDTMFile::File&                         file);
-#endif
     protected:
         template <typename PointIndex>
           StatusInt                    Filter(PointIndex&                             pointIndex,
@@ -226,18 +178,9 @@ struct IScalableMeshCreator::Impl
         const GeoCoords::GCS&               GetGCS                         () const;
 
 
-#if 0                     
-        StatusInt                           UpdateLastModified             ();
-        void                                ResetLastModified              ();
-#endif
-#ifdef SCALABLE_MESH_DGN
         StatusInt                           LoadGCS();
         StatusInt                           SaveGCS();
-#else
-        StatusInt                           LoadGCS                        (const IDTMFile::File&                   file);
-        StatusInt                           SaveGCS(IDTMFile::File&                         file);
-        //StatusInt                           LoadSources                    (const IDTMFile::File&                   file);
-#endif
+
         StatusInt                           LoadFromFile                   ();
         StatusInt                           SaveToFile                     ();  
 

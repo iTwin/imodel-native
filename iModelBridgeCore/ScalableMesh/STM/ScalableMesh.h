@@ -48,10 +48,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include "SMPointIndex.h"
 #include "SMMeshIndex.h"
 #include "SMPointTileStore.h"
-#ifdef SCALABLE_MESH_DGN
-//#include <ImagePP/all/h/DgnTileStore.h>
-//#include "DgnTileStore.h"
-#endif
+
 #include "SMStreamingTileStore.h"
 #include <ScalableMesh/GeoCoords/Reprojection.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
@@ -76,12 +73,10 @@ struct ScalableMeshBase : public RefCounted<IScalableMesh>
 
     protected:
 /*__PUBLISH_SECTION_END__*/
-#ifdef SCALABLE_MESH_DGN
+
     SMSQLiteFilePtr                     m_smSQLitePtr;
     bool                                m_isDgnDB;
-#else
-    IDTMFile::File::Ptr                 m_iDTMFilePtr;
-#endif
+
     size_t                              m_workingLayer;
 
     GeoCoords::GCS                      m_sourceGCS;
@@ -91,29 +86,22 @@ struct ScalableMeshBase : public RefCounted<IScalableMesh>
     // this interface anymore (take only a path).
     const WString                  m_path; 
 
-#ifdef SCALABLE_MESH_DGN
+
     explicit                            ScalableMeshBase(SMSQLiteFilePtr& smSQLiteFile, const WString&             filePath);
-#else
-    explicit                            ScalableMeshBase                  (IDTMFile::File::Ptr&            filePtr, 
-                                                                    const WString&             filePath);
-#endif
+
 
 /*__PUBLISH_SECTION_START__*/
 
     virtual                             ~ScalableMeshBase                 () = 0;
 
-#ifdef SCALABLE_MESH_DGN
+
     bool                                LoadGCSFrom();
-#else
-    bool                                LoadGCSFrom                (const IDTMFile::LayerDir&       layerDir);
-#endif
+
 
 public:
-#ifdef SCALABLE_MESH_DGN
+
     const SMSQLiteFilePtr&              GetDbFile() const;
-#else
-    const IDTMFile::File::Ptr&          GetIDTMFile                () const;
-#endif
+
     const WChar*                      GetPath                    () const;
 
     };
@@ -173,13 +161,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 #endif*/
         typedef SMPointTileStore<INDEXPOINT, YProtPtExtentType >
             TileStoreType;
-#ifdef SCALABLE_MESH_DGN
-        /*typedef DgnTaggedTileStore<HFCPtr<HVEDTMLinearFeature>,
-            INDEXPOINT,
-            YProtPtExtentType,
-            HGF3DCoord<double>,
-            YProtFeatureExtentType >     DgnStoreType;*/
-#endif
+
 
         typedef SMStreamingPointTaggedTileStore<
             INDEXPOINT,
@@ -196,24 +178,17 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         HFCPtr<PointIndexType>          m_scmIndexPtr;                                                    
         RefCountedPtr<ScalableMeshDTM>                m_scalableMeshDTM;
 
-#ifdef SCALABLE_MESH_DGN
+
         explicit                        ScalableMesh(SMSQLiteFilePtr& smSQLiteFile,const WString&             path);
-#else
-        explicit                        ScalableMesh                          (IDTMFile::File::Ptr&            iDTMFilePtr, 
-                                                                        const WString&             path);
-#endif
+
 
         virtual                         ~ScalableMesh                         ();
 
-#ifdef SCALABLE_MESH_DGN
+
         static IScalableMeshPtr       Open                           (SMSQLiteFilePtr& smSQLiteFile,
                                                                         const WString&             filePath,
                                                                         StatusInt&                      status);
-#else
-        static IScalableMeshPtr       Open                           (IDTMFile::File::Ptr&            filePtr, 
-                                                                        const WString&             filePath, 
-                                                                        StatusInt&                      status);
-#endif
+
 
         int                             Open                           ();                
                     

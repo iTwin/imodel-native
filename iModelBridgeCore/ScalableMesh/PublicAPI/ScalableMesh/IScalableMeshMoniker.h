@@ -71,14 +71,10 @@ private:
 
     virtual bool                        _IsTargetReachable             () const = 0;
 
-#ifdef SCALABLE_MESH_DGN
     virtual StatusInt                   _Serialize(Import::SourceDataSQLite&                      sourceData,
         const DocumentEnv&                  env) const = 0;
-#else
-    virtual StatusInt                   _Serialize                     (BinaryOStream&                      stream,
-                                                                        const DocumentEnv&                  env) const = 0;
-#endif
-        
+
+       
 protected:
     BENTLEYSTM_EXPORT explicit                IMoniker                       ();
 public: 
@@ -90,13 +86,10 @@ public:
 
     bool                                IsTargetReachable              () const;
 
-#ifdef SCALABLE_MESH_DGN
+
     StatusInt                           Serialize(Import::SourceDataSQLite&                      sourceData,
         const DocumentEnv&                  env) const;
-#else
-    StatusInt                           Serialize                      (BinaryOStream&                      stream,
-                                                                        const DocumentEnv&                  env) const;
-#endif
+
 
     };
 
@@ -203,15 +196,11 @@ private :
 
     virtual DTMSourceMonikerType        _GetSupportedType              () const = 0;
 
-#ifdef SCALABLE_MESH_DGN
+
     virtual IMonikerPtr                 _Create(Import::SourceDataSQLite&                      sourceData,
         const DocumentEnv&                  env,
         StatusInt&                          status) const = 0;
-#else
-    virtual IMonikerPtr                 _Create                        (BinaryIStream&                      stream,
-                                                                        const DocumentEnv&                  env,
-                                                                        StatusInt&                          status) const = 0;
-#endif
+
     
 protected:
     typedef IMoniker                    IMoniker; // Avoid name ambiguities
@@ -247,13 +236,10 @@ public:
     BENTLEYSTM_EXPORT BinStreamCreatorID      Register                       (const IMonikerBinStreamCreator&     creator);
     BENTLEYSTM_EXPORT void                    Unregister                     (BinStreamCreatorID                  id);
 
-#ifdef SCALABLE_MESH_DGN
+
     BENTLEYSTM_EXPORT IMonikerPtr             Create(Import::SourceDataSQLite&                      sourceData,
         const DocumentEnv&                  env);
-#else
-    BENTLEYSTM_EXPORT IMonikerPtr             Create                         (BinaryIStream&                      stream,
-                                                                        const DocumentEnv&                  env);
-#endif
+
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

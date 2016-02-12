@@ -35,7 +35,7 @@ private:
         m_mrdtmMonikerPtr->ResolveFileName(&status);
         return BSISUCCESS == status;
     }
-#ifdef SCALABLE_MESH_DGN
+
     virtual StatusInt                   _Serialize(Import::SourceDataSQLite&                      sourceData,
         const Bentley::ScalableMesh::DocumentEnv&                  env) const override
     {
@@ -49,20 +49,7 @@ private:
 
         return BSISUCCESS;
     }
-#else
-    virtual StatusInt                   _Serialize(Bentley::ScalableMesh::BinaryOStream&                      stream,
-        const Bentley::ScalableMesh::DocumentEnv&                  env) const override
-    {
-        // TDORAY: Recreate the moniker using new env prior to serializing it in order so
-        // that relative path is correct on s_dgnFile moves...
 
-        const WString& monikerString(m_mrdtmMonikerPtr->Externalize());
-        if (!WriteStringW(stream, monikerString.c_str()))
-            return BSIERROR;
-
-        return BSISUCCESS;
-    }
-#endif
 
     explicit                            MyMSDocumentMoniker(const DgnDocumentMonikerPtr&         monikerPtr)
         : m_mrdtmMonikerPtr(monikerPtr)
@@ -123,7 +110,6 @@ private:
         return Bentley::ScalableMesh::DTM_SOURCE_MONIKER_MSDOCUMENT;
     }
 
-#ifdef SCALABLE_MESH_DGN
     virtual Bentley::ScalableMesh::IMonikerPtr                 _Create(Import::SourceDataSQLite&                      sourceData,
         const Bentley::ScalableMesh::DocumentEnv&                  env,
         StatusInt&                          status) const override
@@ -154,38 +140,7 @@ private:
 
         return MyMSDocumentMoniker::Create(documentMonikerPtr.get());
     }
-#else
-    virtual Bentley::ScalableMesh::IMonikerPtr                 _Create(Bentley::ScalableMesh::BinaryIStream&                      stream,
-        const Bentley::ScalableMesh::DocumentEnv&                  env,
-        StatusInt&                          status) const override
-    {
-        WString monikerString;
-        if (!ReadStringW(stream, monikerString))
-        {
-            status = BSIERROR;
-            return 0;
-        }
 
-        const WChar* basePath = env.GetCurrentDirCStr();
-
-        Bentley::RefCountedPtr<DgnDocumentMoniker> documentMonikerPtr
-            (
-                DgnDocumentMoniker::Create(monikerString.GetWCharCP(),
-                    basePath,
-                    false)
-                );
-
-        if (documentMonikerPtr == 0)
-        {
-            status = BSIERROR;
-            return 0;
-        }
-
-        status = BSISUCCESS;
-
-        return MyMSDocumentMoniker::Create(documentMonikerPtr.get());
-    }
-#endif
 };
 
 
@@ -240,7 +195,7 @@ namespace {
             m_mrdtmMonikerPtr->ResolveFileName(&status);
             return BSISUCCESS == status;
         }
-#ifdef SCALABLE_MESH_DGN
+
         virtual StatusInt                   _Serialize(Import::SourceDataSQLite&                      sourceData,
             const DocumentEnv&                  env) const override
         {
@@ -254,20 +209,7 @@ namespace {
 
             return BSISUCCESS;
         }
-#else
-        virtual StatusInt                   _Serialize(BinaryOStream&                      stream,
-            const DocumentEnv&                  env) const override
-        {
-            // TDORAY: Recreate the moniker using new env prior to serializing it in order so
-            // that relative path is correct on file moves...
 
-            const WString& monikerString(m_mrdtmMonikerPtr->Externalize());
-            if (!WriteStringW(stream, monikerString.c_str()))
-                return BSIERROR;
-
-            return BSISUCCESS;
-        }
-#endif
 
         explicit                            GeoDtmMSDocumentMoniker(const DgnDocumentMonikerPtr&         monikerPtr)
             : m_mrdtmMonikerPtr(monikerPtr)
@@ -328,7 +270,7 @@ namespace {
             return DTM_SOURCE_MONIKER_MSDOCUMENT;
         }
 
-#ifdef SCALABLE_MESH_DGN
+
         virtual IMonikerPtr                 _Create(Import::SourceDataSQLite&                      sourceData,
             const DocumentEnv&                  env,
             StatusInt&                          status) const override
@@ -359,38 +301,7 @@ namespace {
 
             return GeoDtmMSDocumentMoniker::Create(documentMonikerPtr.get());
         }
-#else
-        virtual IMonikerPtr                 _Create(BinaryIStream&                      stream,
-            const DocumentEnv&                  env,
-            StatusInt&                          status) const override
-        {
-            WString monikerString;
-            if (!ReadStringW(stream, monikerString))
-            {
-                status = BSIERROR;
-                return 0;
-            }
 
-            const WChar* basePath = env.GetCurrentDirCStr();
-
-            DgnDocumentMonikerPtr documentMonikerPtr
-                (
-                    DgnDocumentMoniker::Create(monikerString.GetWCharCP(),
-                        basePath,
-                        false)
-                    );
-
-            if (documentMonikerPtr == 0)
-            {
-                status = BSIERROR;
-                return 0;
-            }
-
-            status = BSISUCCESS;
-
-            return GeoDtmMSDocumentMoniker::Create(documentMonikerPtr.get());
-        }
-#endif
     } s_MonikerBinStreamCreator;
 
 

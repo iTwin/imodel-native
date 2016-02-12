@@ -21,10 +21,6 @@
 #include <ImagePP/all/h/HVE2DComplexShape.h>
 #include <ImagePP/all/h/HFCException.h>
 
-/*#ifdef SCALABLE_MESH_DGN
-//#include <ImagePP/all/h/DgnTileStore.h>
-#include "DgnTileStore.h"
-#endif*/
 
 #include "SMSQLiteFile.h"
 

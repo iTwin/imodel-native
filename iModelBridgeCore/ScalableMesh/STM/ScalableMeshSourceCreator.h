@@ -84,19 +84,13 @@ struct IScalableMeshSourceCreator::Impl : public IScalableMeshCreator::Impl, pub
         void                                ResetLastModified();
 
         virtual bool                        IsFileDirty() override;
-#ifdef SCALABLE_MESH_DGN
+
         virtual StatusInt                   Save() override;
         virtual StatusInt                   Load() override;
         void                                SetupFileForCreation();// override;
         StatusInt                           SyncWithSources();
         StatusInt                           SaveSources(SMSQLiteFilePtr& smSQLiteFile);
-#else
-        virtual StatusInt                   Save(IDTMFile::File::Ptr& filePtr) override;
-        virtual StatusInt                   Load(IDTMFile::File::Ptr& filePtr) override;
-        virtual IDTMFile::File::Ptr         SetupFileForCreation() override;
-        StatusInt                           SyncWithSources(const IDTMFile::File::Ptr&              filePtr);
-        StatusInt                           SaveSources(IDTMFile::File&                         file);
-#endif
+
 
         void InitSources();
 
@@ -105,11 +99,9 @@ struct IScalableMeshSourceCreator::Impl : public IScalableMeshCreator::Impl, pub
         explicit                            Impl(const IScalableMeshPtr&                        iDTMFilePtr);
 
         ~Impl();
-#ifdef SCALABLE_MESH_DGN
+
         StatusInt                           LoadSources(SMSQLiteFilePtr& smSQLiteFile);
-#else
-        StatusInt                           LoadSources(const IDTMFile::File&                   file);
-#endif
+
         virtual StatusInt                   CreateScalableMesh(bool isSingleFile) override;
     };
 

@@ -264,9 +264,6 @@
     <ClInclude Include="STM\ScalableMeshEditListener.h">
       <Filter>Includes\STM</Filter>
     </ClInclude>
-    <ClInclude Include="STM\ScalableMeshFilteringOptions.h">
-      <Filter>Includes\STM</Filter>
-    </ClInclude>
     <ClInclude Include="STM\ScalableMeshImportSequencePersistance.h">
       <Filter>Includes\STM</Filter>
     </ClInclude>

@@ -29,7 +29,6 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 struct IDTMSourceCollection;
 struct DocumentEnv;
 
-#ifdef SCALABLE_MESH_DGN
 bool                            SaveSources                        (const IDTMSourceCollection&         sources,
                                                                     SourcesDataSQLite&                  sourcesData,
                                                                     const DocumentEnv&                  sourceEnv);
@@ -37,15 +36,7 @@ bool                            SaveSources                        (const IDTMSo
 bool                            LoadSources                        (IDTMSourceCollection&               sources,
                                                                     SourcesDataSQLite&                  sourcesData,
                                                                     const DocumentEnv&                  sourceEnv);
-#else
-bool                            SaveSources                        (const IDTMSourceCollection&         sources,
-                                                                    IDTMFile::SourcesDir&               sourcesDir,
-                                                                    const DocumentEnv&                  sourceEnv);
 
-bool                            LoadSources                        (IDTMSourceCollection&               sources,
-                                                                    const IDTMFile::SourcesDir&         sourcesDir,
-                                                                    const DocumentEnv&                  sourceEnv);
-#endif
 
 bool                            SaveSources                        (const IDTMSourceCollection&         sources,
                                                                     IScalableMeshSourceImporterStoragePtr&     sourceImporterStoragePtr,

@@ -27,21 +27,12 @@ struct BinaryIStream;
 struct ContentConfigSerializer
     {
     static const UInt           FORMAT_VERSION;
-#ifdef SCALABLE_MESH_DGN
     bool                        Serialize(const Import::ContentConfig&    config,
         SourceDataSQLite&                  sourceData) const;
 
     bool                        Deserialize(SourceDataSQLite&                  sourceData,
         Import::ContentConfig&          config,
         UInt                            formatVersion) const;
-#else
-    bool                        Serialize                              (const Import::ContentConfig&    config,
-                                                                        BinaryOStream&                  stream) const;
-
-    bool                        Deserialize                            (BinaryIStream&                  stream,
-                                                                        Import::ContentConfig&          config,
-                                                                        UInt                            formatVersion) const;
-#endif
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

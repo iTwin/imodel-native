@@ -29,7 +29,7 @@ struct DocumentEnv;
 struct SourceSerializer
     {
     static const UInt           FORMAT_VERSION;
-#ifdef SCALABLE_MESH_DGN
+
     bool                        Serialize(const IDTMSource&               source,
         const DocumentEnv&              env,
         Import::SourceDataSQLite&                  sourceData) const;
@@ -37,15 +37,7 @@ struct SourceSerializer
     IDTMSourcePtr               Deserialize(Import::SourceDataSQLite&                  sourceData,
         const DocumentEnv&              env,
         UInt                            formatVersion) const;
-#else
-    bool                        Serialize                              (const IDTMSource&               source,
-                                                                        const DocumentEnv&              env,
-                                                                        BinaryOStream&                  stream) const;
 
-    IDTMSourcePtr               Deserialize                            (BinaryIStream&                  stream,
-                                                                        const DocumentEnv&              env,
-                                                                        UInt                            formatVersion) const;
-#endif
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

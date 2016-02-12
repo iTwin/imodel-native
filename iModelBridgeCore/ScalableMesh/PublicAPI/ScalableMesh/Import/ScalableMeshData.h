@@ -39,11 +39,7 @@ public:
     IMPORT_DLLE                                 ~ScalableMeshData               ();
 
     IMPORT_DLLE static const ScalableMeshData&  GetNull                         ();
-#ifdef SCALABLE_MESH_DGN
-    //IMPORT_DLLE                                 ScalableMeshData(SourceDataSQLite& sourceData);
-#else
-    IMPORT_DLLE                                 ScalableMeshData                (BinaryIStream& stream);
-#endif
+
     IMPORT_DLLE                                 ScalableMeshData                (const ScalableMeshData&    rhs);
     IMPORT_DLLE ScalableMeshData&               operator=                       (const ScalableMeshData&    rhs);
 
@@ -67,10 +63,7 @@ public:
 
     IMPORT_DLLE __int64                         GetMaximumNbPoints() const;
     IMPORT_DLLE void                            SetMaximumNbPoints(__int64 maximumNbPoints);
-#ifdef SCALABLE_MESH_DGN
-#else
-    IMPORT_DLLE void                            Serialize                       (BinaryOStream& stream) const;
-#endif
+
 
     IMPORT_DLLE std::vector<DRange3d>           GetVectorRangeAdd();
     IMPORT_DLLE void                            ClearVectorRangeAdd();

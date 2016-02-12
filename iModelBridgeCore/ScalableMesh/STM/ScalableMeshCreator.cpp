@@ -152,13 +152,7 @@ IScalableMeshCreatorPtr IScalableMeshCreator::GetFor (const WChar*  filePath,
     RegisterDelayedImporters();
 
     using namespace IDTMFile;
-#ifndef SCALABLE_MESH_DGN
-    if (!fileExist(filePath))
-        {
-        status = BSISUCCESS;
-        return new IScalableMeshCreator(new Impl(filePath)); // Return early. File does not exist.
-        }
-#endif
+
 
     IScalableMeshCreatorPtr pCreator = new IScalableMeshCreator(new Impl(filePath));
 
@@ -392,7 +386,7 @@ IScalableMeshCreator::Impl::Impl(const WChar* scmFileName)
     // m_sources.RegisterEditListener(*this);
     //m_dgnScalableMesh.Create();
 
-#ifdef SCALABLE_MESH_DGN
+
     WString smStoreDgnDbStr;
     m_isDgnDb = false;
 
@@ -403,16 +397,8 @@ IScalableMeshCreator::Impl::Impl(const WChar* scmFileName)
         m_isDgnDb = _wtoi(smStoreDgnDbStr.c_str()) > 0;
         isBlobMode = _wtoi(smStoreDgnDbStr.c_str()) > 1;
         }
-    /*    if(m_isDgnDb)
-            {
-            //bool status = IDgnDbScalableMesh::Initialize(m_dgnScalableMeshPtr, isBlobMode);
-            /*DgnDbFormat dbFormat;
-            dbFormat.Create("C:\\dev\\ScalableMesh-Topaz\\test.dgn");*/
-    /*            m_smSQLitePtr = new SMSQLiteFile();
-            /*if(!status)
-            throw;*/
-    //        }
-#endif
+
+
     WString multithreadStr;
     if (BSISUCCESS == ConfigurationManager::GetVariable(multithreadStr, L"SM_MULTITHREAD_GENERATION"))
         {
@@ -429,16 +415,12 @@ IScalableMeshCreator::Impl::Impl(const IScalableMeshPtr& scmPtr)
     :   m_gcs(GetDefaultGCS()),
         m_scmPtr(scmPtr),
         m_lastSyncTime(Time::CreateSmallestPossible()),
-       // m_lastSourcesModificationTime(CreateUnknownModificationTime()),
-       // m_lastSourcesModificationCheckTime(Time::CreateSmallestPossible()),
-      //  m_sourcesDirty(false),
-        m_gcsDirty(false),
-      //  m_sourceEnv(CreateSourceEnvFrom(dynamic_cast<const ScalableMeshBase&>(*m_scmPtr).GetPath())),
+        m_gcsDirty(false),     
         m_compressionType(SCM_COMPRESSION_DEFLATE),
         m_workingLayer(DEFAULT_WORKING_LAYER)
     {
-   // m_sources.RegisterEditListener(*this);
-#ifdef SCALABLE_MESH_DGN
+  
+
     WString smStoreDgnDbStr;
     m_isDgnDb = false;
 
@@ -449,14 +431,8 @@ IScalableMeshCreator::Impl::Impl(const IScalableMeshPtr& scmPtr)
         m_isDgnDb = _wtoi(smStoreDgnDbStr.c_str()) > 0;
         isBlobMode = _wtoi(smStoreDgnDbStr.c_str()) > 1;
         }
-    if(m_isDgnDb)
-        {
-        /*bool status = IDgnDbScalableMesh::Initialize(m_dgnScalableMeshPtr, isBlobMode);
-        if(!status)
-            throw;*/
-            //m_smSQLitePtr = new SMSQLiteFile();
-        }
-#endif
+
+
     }
 
 IScalableMeshCreator::Impl::~Impl()
@@ -604,7 +580,7 @@ bool scm_isCompressed ()
     return true;
     }
 
-#ifdef SCALABLE_MESH_DGN
+
 bool DgnDbFilename(Bentley::WString& stmFilename)
             {
             Bentley::WString dgndbFilename;
@@ -613,60 +589,11 @@ bool DgnDbFilename(Bentley::WString& stmFilename)
             assert(size==1);
             return true;
             }
-#endif
+
 
 int IScalableMeshCreator::Impl::CreateScalableMesh(bool isSingleFile)
     {    
     int status = BSIERROR;
-#if 0
-    //MS : Some cleanup needs to be done here.
-    try
-        {
-        if (m_scmPtr != 0)
-            {
-            if (SCM_STATE_UP_TO_DATE == m_scmPtr->GetState())
-                return BSIERROR;
-
-            // NOTE: Need to be able to recreate : Or the file offers some functions for deleting all its data directory or the file name can be obtained
-            }
-
-        File::Ptr filePtr = SetupFileForCreation();
-        if (0 == filePtr)
-            return BSIERROR;
-
-#ifdef SCALABLE_MESH_DGN
-        if(m_isDgnDb)
-            {
-            IDTMFile::AccessMode accessMode = filePtr->GetAccessMode();
-            Bentley::WString filename = m_scmFileName;
-            DgnDbFilename(filename);
-            assert(accessMode.m_HasCreateAccess);
-                m_dgnScalableMeshPtr->Create(filename.GetWCharCP());
-            }
-#endif
-
-        // Sync only when there are sources with which to sync
-        // TR #325614: This special condition provides us with a way of efficiently detecting if STM is empty
-        //             as indexes won't be initialized.
-        if (0 < m_sources.GetCount() &&
-            BSISUCCESS != SyncWithSources(filePtr))
-            return BSIERROR;
-
-
-        // Update last synchronization time
-        m_lastSyncTime = Time::CreateActual();
-
-        // Ensure that last modified times are up-to-date and that sources are saved.
-        if (BSISUCCESS != UpdateLastModified() ||
-            BSISUCCESS != SaveSources(*filePtr) ||
-            BSISUCCESS != SaveGCS(*filePtr))
-            status = BSIERROR;
-        }
-    catch (...)
-        {
-        return BSIERROR;
-        }
-#endif
     return status;
     }
 
@@ -676,41 +603,18 @@ int IScalableMeshCreator::Impl::CreateScalableMesh(bool isSingleFile)
 * @description
 * @bsimethod                                                  Raymond.Gauthier   12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-#if 0
-//NEEDS_WORK_SM : To be removed
-static bool s_dumpOctreeNodes = false;
-static bool s_mesh = true;
-static bool s_filter = true;
-static bool s_stitchFilteredByLevel = true;
-static bool s_validateIs3dDataState = false;
-#endif
 
 
 StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&                                    pDataIndex, 
-#ifndef SCALABLE_MESH_DGN
-                                                       const IDTMFile::File::Ptr&                            filePtr,
-#endif
+
                                                        HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment& myMemMgr,
                                                        bool needBalancing) 
     {    
-#ifndef SCALABLE_MESH_DGN
-    //Create the storage object.
-    typedef SMPointTaggedTileStore<PointType,
-        PointIndexExtentType>             TileStoreType;
 
-#else
     typedef SMSQLitePointTileStore<PointType,
         PointIndexExtentType>             TileStoreType;
-#endif
 
-#ifdef SCALABLE_MESH_DGN
-    /*typedef DgnPointTileStore<
-        PointType,
-        PointIndexExtentType >     DgnStoreType;*/
-    /*typedef SMSQLiteTaggedTileStore<
-        PointType,
-        PointIndexExtentType> SQLiteTileStoreType;*/
-#endif    
+  
 
     typedef SMStreamingPointTaggedTileStore<
         PointType,
@@ -720,57 +624,27 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
     HFCPtr<TileStoreType> pFinalTileStore;
     HFCPtr<IHPMPermanentStore<MTGGraph, Byte, Byte>> pGraphTileStore;
     bool isSingleFile = true;
-#ifndef SCALABLE_MESH_DGN
-    //IDTMFile::AccessMode         accessMode;
-    pFinalTileStore = new TileStoreType(filePtr, (SCM_COMPRESSION_DEFLATE == m_compressionType));
-    SMPointIndexHeader<PointIndexExtentType>* indexHeader = new SMPointIndexHeader<PointIndexExtentType>;
-    pFinalTileStore->LoadMasterHeader(indexHeader, 0);
-    isSingleFile = indexHeader->m_singleFile;
-    pFinalTileStore = nullptr;
-    delete indexHeader;
-#else
-    isSingleFile = m_smSQLitePtr->IsSingleFile();
-#endif
 
-#ifdef SCALABLE_MESH_DGN
-    //HFCPtr<SQLiteTileStoreType>  pSMSQlitePointTileStore;
-    //HGCPtr<SMDgnDBGraphTileStore> pDgnGraphTileStore;
-    //HGCPtr<SMDgnDBPointTileStore> pDgnPointTileStore;
-    //HGCPtr<SMDgnDBTextureTileStore> pDgnTextureTileStore;
-#endif
+    isSingleFile = m_smSQLitePtr->IsSingleFile();
+
+
 
     HFCPtr<StreamingStoreType>  pStreamingTileStore;
     HFCPtr<SMStreamingPointTaggedTileStore<Int32, PointIndexExtentType>> pStreamingIndiceTileStore;
     HFCPtr<SMStreamingPointTaggedTileStore<DPoint2d, PointIndexExtentType>> pStreamingUVTileStore;
     HFCPtr<SMStreamingPointTaggedTileStore<int32_t, PointIndexExtentType>> pStreamingUVsIndicesTileStore;
 
-#ifndef SCALABLE_MESH_DGN
-    HFCPtr<SMPointTaggedTileStore<int32_t, YProtPtExtentType >> pIndiceTileStore;
-    HFCPtr<SMPointTaggedTileStore<DPoint2d, PointIndexExtentType>> pUVTileStore;
-    HFCPtr<SMPointTaggedTileStore<int32_t, PointIndexExtentType>> pUVsIndicesTileStore;
-    HFCPtr<TextureTileStore> pTextureTileStore;
-#else
+
     HFCPtr<SMSQLiteIndiceTileStore<YProtPtExtentType >> pIndiceTileStore;
     HFCPtr<SMSQLiteUVTileStore<YProtPtExtentType >> pUVTileStore;
     HFCPtr<SMSQLiteUVIndiceTileStore<YProtPtExtentType >> pUVsIndicesTileStore;
     HFCPtr<SMSQLiteTextureTileStore> pTextureTileStore;
-#endif
+
 
     // HFC_CREATE_ONLY if all sources are ADD (if one remove or one uptodate => read_write)
     //accessMode = filePtr->GetAccessMode();
     s_inEditing = false;
-/*    for (IDTMSourceCollection::const_iterator it = m_sources.Begin(); it != m_sources.End(); it++)
-        {
-        SourceImportConfig conf = it->GetConfig();
-        ScalableMeshData data = conf.GetReplacementSMData();
-        if(data.GetUpToDateState() != UpToDateState::ADD)
-            {
-            accessMode = HFC_READ_WRITE;
-            s_inEditing = true;  
-            }
-        }*/
 
-//    pFinalTileStore = new TileStoreType(filePtr, accessMode, (MRDTM_COMPRESSION_DEFLATE == m_compressionType));
 
     ISMPointIndexFilter<PointType, PointIndexExtentType>* pFilter =
         scm_createFilterFromType<PointType, PointIndexExtentType>(scm_getFilterType());
@@ -783,45 +657,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
         
 
             // SM_NEEDS_WORK : replace all tilestore by SQLiteTileStore
-#if 0
-#ifndef SCALABLE_MESH_DGN
-            pFinalTileStore = new TileStoreType(filePtr, (SCM_COMPRESSION_DEFLATE == m_compressionType));
-#else
-        pFinalTileStore = new TileStoreType(dbFilePath, filePtr->GetAccessMode());
-#endif
-            pGraphTileStore = new DTMGraphTileStore(filePtr, 0);
 
-            pIndiceTileStore = new SMPointTaggedTileStore< int32_t, PointIndexExtentType>(filePtr, (SCM_COMPRESSION_DEFLATE == m_compressionType), 1);
-            pUVTileStore = new SMPointTaggedTileStore< DPoint2d, PointIndexExtentType>(filePtr, (SCM_COMPRESSION_DEFLATE == m_compressionType), 2);
-            pUVsIndicesTileStore = new SMPointTaggedTileStore< int32_t, PointIndexExtentType>(filePtr, (SCM_COMPRESSION_DEFLATE == m_compressionType), 3);
-            pDataIndex = new IndexType(ScalableMeshMemoryPools<PointType>::Get()->GetPointPool(),
-                &*pFinalTileStore,
-                ScalableMeshMemoryPools<PointType>::Get()->GetPtsIndicePool(),
-                &*pIndiceTileStore,
-                ScalableMeshMemoryPools<PointType>::Get()->GetGraphPool(),
-                &*pGraphTileStore,
-                ScalableMeshMemoryPools<PointType>::Get()->GetTexturePool(),
-                new TextureTileStore(filePtr, 4),
-                ScalableMeshMemoryPools<PointType>::Get()->GetUVPool(),
-                &*pUVTileStore,
-                ScalableMeshMemoryPools<PointType>::Get()->GetUVsIndicesPool(),
-                &*pUVsIndicesTileStore,
-                10000,
-                pFilter,
-                needBalancing, false, false,
-                pMesher2_5d,
-                pMesher3d);
-        /*pFinalDgnTileStore = new DgnStoreType(m_dgnScalableMeshPtr, filePtr, (SCM_COMPRESSION_DEFLATE == m_compressionType));
-        pDataIndex = new IndexType(new HPMCountLimitedPool<PointType>(&myMemMgr, 20000000),
-                                   &*pFinalDgnTileStore,
-                                   new HPMIndirectCountLimitedPool<MTGGraph>(/*&myMemMgr,*/ /*100000000),
-                                   new DgnGraphTileStore(m_dgnScalableMeshPtr, filePtr, 0),
-                                   10000,
-                                   pFilter,
-                                   needBalancing, false,
-                                   pMesher2_5d,
-                                   pMesher3d);*/
-#endif
         if (!isSingleFile)
             {
             auto position = m_scmFileName.find_last_of(L".stm");
@@ -847,17 +683,13 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
                                        ScalableMeshMemoryPools<PointType>::Get()->GetPtsIndicePool(),
                                        &*pStreamingIndiceTileStore,
                                        ScalableMeshMemoryPools<PointType>::Get()->GetGraphPool(),
-#ifdef SCALABLE_MESH_DGN 
+
                                        pGraphTileStore = new SMSQLiteGraphTileStore(m_smSQLitePtr),
-#else
-                                       pGraphTileStore = new DTMGraphTileStore(filePtr, 0),
-#endif
+
                                        ScalableMeshMemoryPools<PointType>::Get()->GetTexturePool(),
-#ifdef SCALABLE_MESH_DGN
+
                                        pStreamingTextureTileStore,
-#else
-                                       new TextureTileStore(filePtr, 4),
-#endif
+
                                        ScalableMeshMemoryPools<PointType>::Get()->GetUVPool(),
                                        //pUVTileStore,
                                        //new UVTileStore<PointType>(filePtr, 0),
@@ -886,15 +718,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
             }
         else {
 //            size_t n =4;
-#ifndef SCALABLE_MESH_DGN
-            pFinalTileStore = new TileStoreType(filePtr, (SCM_COMPRESSION_DEFLATE == m_compressionType));
-            pIndiceTileStore = new SMPointTaggedTileStore< int32_t, PointIndexExtentType>(filePtr, (SCM_COMPRESSION_DEFLATE == m_compressionType), 1);
-            // SM_NEEDS_WORKS : layerID 
-            pUVTileStore = new SMPointTaggedTileStore< DPoint2d, PointIndexExtentType>(filePtr, (SCM_COMPRESSION_DEFLATE == m_compressionType), 2);
-            pUVsIndicesTileStore = new SMPointTaggedTileStore< int32_t, PointIndexExtentType>(filePtr, (SCM_COMPRESSION_DEFLATE == m_compressionType), 3);
-            pTextureTileStore = new TextureTileStore(filePtr, 4);
-            pGraphTileStore = new DTMGraphTileStore(filePtr, 0);
-#else
+
             WString dbFilePath = m_scmFileName;
             dbFilePath.ReplaceI(L".stm", L".db");
             pFinalTileStore = new TileStoreType(m_smSQLitePtr);
@@ -904,7 +728,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
             pUVsIndicesTileStore = new SMSQLiteUVIndiceTileStore<YProtPtExtentType >(m_smSQLitePtr);
             pTextureTileStore = new SMSQLiteTextureTileStore(m_smSQLitePtr);
             pGraphTileStore = new SMSQLiteGraphTileStore(m_smSQLitePtr);
-#endif
+
             //pIndiceTileStore = new TileStoreType(filePtr, (SCM_COMPRESSION_DEFLATE == m_compressionType));
             pDataIndex = new IndexType(ScalableMeshMemoryPools<PointType>::Get()->GetPointPool(),
                                        &*pFinalTileStore,
@@ -941,377 +765,13 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
             pDataIndex->SetClipRegistry(registry);
             }
 
-#ifdef SCALABLE_MESH_DGN
         pDataIndex->m_useSTMFormat = false;
-#else 
-        pDataIndex->m_useSTMFormat = true;
-#endif
 
-#ifdef SCALABLE_MESH_DGN
- /*   if(m_isDgnDb)
-        linearIndexPtr = new FeatureIndexType(&*pFinalDgnTileStore, 400, false);
-    else*/
-#endif
+
 
     return SUCCESS;
     }
 
-#if 0
-StatusInt IScalableMeshCreator::Impl::SyncWithSources (const IDTMFile::File::Ptr& filePtr) 
-    {     
-    using namespace IDTMFile;
-
-    HFCPtr<IndexType>          pDataIndex;
-
-    HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment myMemMgr (100, 2000 * sizeof(PointType));
-    
-    CreateDataIndex (pDataIndex, filePtr, myMemMgr);
-   
-    size_t previousDepth = pDataIndex->GetDepth();
-    
-    const GCS& fileGCS = GetGCS();
-
-#ifdef SCALABLE_MESH_ATP
-
-    s_getImportPointsDuration = -1; 
-    s_getLastBalancingDuration = -1;
-    s_getLastMeshingDuration = -1;
-    s_getLastFilteringDuration = -1;
-    s_getLastStitchingDuration = -1;
-    pDataIndex->m_nbInputPoints = 0;
-
-    clock_t startClock = clock();    
-#endif
-
-
-
-
-    std::list<IDTMFile::Extent3d64f> listRemoveExtent;
-    IDTMSourceCollection::const_iterator it = m_sources.Begin();
-
-    for (IDTMSourceCollection::iterator it = m_sources.BeginEdit(); it != m_sources.EndEdit(); it++)
-        {
-        SourceImportConfig& conf = it->EditConfig();
-        ScalableMeshData data = conf.GetReplacementSMData();
-
-        if (data.GetUpToDateState() == UpToDateState::REMOVE || data.GetUpToDateState() == UpToDateState::MODIFY)
-            {
-            DRange3d sourceRange = data.GetExtentByLayer(0);
-            IDTMFile::Extent3d64f removeExtent;
-            removeExtent.xMin = sourceRange.low.x;
-            removeExtent.xMax = sourceRange.high.x;
-            removeExtent.yMin = sourceRange.low.y;
-            removeExtent.yMax = sourceRange.high.y;
-            removeExtent.zMin = sourceRange.low.z;
-            removeExtent.zMax = sourceRange.high.z;
-
-            for(size_t i = 1; i < data.GetLayerCount(); i++)
-                {
-                DRange3d sourceRange = data.GetExtentByLayer((int)i);
-                removeExtent.xMin = removeExtent.xMin > sourceRange.low.x ? sourceRange.low.x : removeExtent.xMin;
-                removeExtent.xMax = removeExtent.xMax > sourceRange.high.x ? removeExtent.xMax : sourceRange.high.x;
-                removeExtent.yMin = removeExtent.yMin > sourceRange.low.y ? sourceRange.low.y : removeExtent.yMin;
-                removeExtent.yMax = removeExtent.yMax > sourceRange.high.y ? removeExtent.yMax : sourceRange.high.y;
-                removeExtent.zMin = removeExtent.zMin > sourceRange.low.z ? sourceRange.low.z : removeExtent.zMin;
-                removeExtent.zMax = removeExtent.zMax > sourceRange.high.z ? removeExtent.zMax : sourceRange.high.z;
-                }
-            
-            if(data.GetUpToDateState() == UpToDateState::MODIFY)
-                {
-                data.SetUpToDateState(UpToDateState::ADD);
-                conf.SetReplacementSMData(data);
-                }
-
-            listRemoveExtent.push_back(removeExtent);
-            for(IDTMSourceCollection::iterator itAdd = m_sources.BeginEdit(); itAdd != m_sources.EndEdit(); itAdd++)
-                {
-                if(itAdd == it)
-                    continue;
-                SourceImportConfig& confAdd = itAdd->EditConfig();
-                ScalableMeshData dataAdd = confAdd.GetReplacementSMData();
-                if(dataAdd.GetUpToDateState() != UpToDateState::UP_TO_DATE && dataAdd.GetUpToDateState() != UpToDateState::PARTIAL_ADD)
-                    continue;
-                DRange3d targetRange = dataAdd.GetExtentByLayer(0);
-                for(size_t i = 1; i<dataAdd.GetLayerCount(); i++)
-                    {
-                    DRange3d targetRangeTemp = dataAdd.GetExtentByLayer((int)i);
-                    targetRange.UnionOf(targetRange,targetRangeTemp);
-                    }
-                if(sourceRange.IntersectsWith(targetRange,3))
-                    {
-                    // save extent in vector and the iterator.
-                    dataAdd.SetUpToDateState(PARTIAL_ADD);
-                    dataAdd.PushBackVectorRangeAdd(sourceRange);
-                    confAdd.SetReplacementSMData(dataAdd);
-                    }
-                }
-            }
-        }
-
-
-
-
-    // Remove sources which have been removed or modified
-
-    if (BSISUCCESS != RemoveSourcesFrom<IndexType>(*pDataIndex, listRemoveExtent))
-        return BSIERROR;
-
-    // Import sources
-
-    if (BSISUCCESS != ImportSourcesTo(new ScalableMeshStorage<PointType>(*pDataIndex, fileGCS)))
-        return BSIERROR;
-
-#ifdef SCALABLE_MESH_ATP
-    s_getImportPointsDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
-    s_getNbImportedPoints = pDataIndex->m_nbInputPoints;
-
-    startClock = clock();
-#endif
-
-    // Remove and Add sources
-    for (IDTMSourceCollection::iterator it = m_sources.BeginEdit(); it != m_sources.End();)
-        {
-        SourceImportConfig& conf = it->EditConfig();
-        ScalableMeshData data = conf.GetReplacementSMData();
-
-        if (data.GetUpToDateState() == UpToDateState::ADD || data.GetUpToDateState() == UpToDateState::PARTIAL_ADD)
-            {
-            data.SetUpToDateState(UpToDateState::UP_TO_DATE);
-            conf.SetReplacementSMData(data);
-            }
-        if (data.GetUpToDateState() == UpToDateState::REMOVE)
-            it = m_sources.Remove(it);
-        else
-            it++;
-        }
-
-    //True when only linear feature are imported.
-    if (pDataIndex->GetRootNode() == 0)
-        {
-        assert(pDataIndex->m_nbInputPoints == 0);
-
-        return BSISUCCESS;
-        }
-
-    // Balance data             
-    if (BSISUCCESS != BalanceDown(*pDataIndex, previousDepth))
-        return BSIERROR;
-
-#ifdef SCALABLE_MESH_ATP
-    s_getLastBalancingDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;                        
-
-    startClock = clock();
-#endif
-
-    if (s_mesh)
-        {
-        // Mesh data             
-        if (BSISUCCESS != Mesh(*pDataIndex))
-            return BSIERROR;        
-        }
-
-#ifdef SCALABLE_MESH_ATP
-    s_getLastMeshingDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;                        
-#endif
-
-    if (s_stitchFilteredByLevel == false)
-        {
-#ifdef SCALABLE_MESH_ATP    
-        startClock = clock();
-#endif
-
-        if (s_filter)
-            {
-            // Filter data (in order to create sub-resolutions)
-            if (BSISUCCESS != Filter(*pDataIndex,  -1))
-                return BSIERROR;
-            }
-
-#ifdef SCALABLE_MESH_ATP
-        s_getLastFilteringDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;                        
-
-        startClock = clock();
-#endif
-          
-        if (BSISUCCESS != Stitch(pointIndex, -1))
-            return BSIERROR; 
-            
-
-#ifdef SCALABLE_MESH_ATP
-        s_getLastStitchingDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;                        
-#endif
-        }
-    else
-        {
-#ifdef SCALABLE_MESH_ATP    
-        s_getLastStitchingDuration = 0;
-        s_getLastFilteringDuration = 0;
-#endif
-
-        size_t depth = pDataIndex->GetDepth();
-
-        for (int level = (int)depth; level >= 0; level--)
-            {
-
-#ifdef SCALABLE_MESH_ATP    
-            startClock = clock();
-#endif
-            if (BSISUCCESS != Filter(*pDataIndex, level))
-                return BSIERROR;
-
-#ifdef SCALABLE_MESH_ATP    
-            s_getLastFilteringDuration += clock() - startClock;
-            startClock = clock();
-#endif
-            if (BSISUCCESS != Stitch(*pDataIndex, level, false))
-                return BSIERROR;
-
-#ifdef SCALABLE_MESH_ATP    
-            s_getLastStitchingDuration += clock() - startClock;
-            startClock = clock();
-#endif
-
-
-            }
-
-#ifdef SCALABLE_MESH_ATP    
-        s_getLastStitchingDuration = s_getLastStitchingDuration / CLOCKS_PER_SEC / 60.0;                        
-        s_getLastFilteringDuration = s_getLastFilteringDuration / CLOCKS_PER_SEC / 60.0;  
-#endif
-        }
-
-    //ShowMessageBoxWithTimes(s_getLastMeshingDuration, s_getLastFilteringDuration, s_getLastStitchingDuration);    
-
-#ifdef INDEX_DUMPING_ACTIVATED
-    if (s_dumpOctreeNodes)
-        {        
-        //pointIndex.DumpOctTree("D:\\MyDoc\\Scalable Mesh Iteration 7\\Partial Update - Remove\\Log\\NodeAferCreation.xml", false);    
-        pDataIndex->DumpOctTree("C:\\Users\\Thomas.Butzbach\\Documents\\data_scalableMesh\\ATP\\NodeAferCreation.xml", false);  
-        pDataIndex->DumpOctTree("D:\\NodeAferCreation.xml", false);  
-        }        
-#endif
-
-#ifndef NDEBUG
-
-    if (s_validateIs3dDataState)
-        {
-        vector<DRange3d> source2_5dRanges;
-        vector<DRange3d> source3dRanges;
-
-        // Remove and Add sources
-        for (IDTMSourceCollection::iterator it = m_sources.BeginEdit(); it != m_sources.End(); it++)
-            {
-            SourceImportConfig& conf = it->EditConfig();
-            ScalableMeshData data = conf.GetReplacementSMData();
-
-            assert(data.GetExtent().size() > 0);
-             
-            if (data.IsRepresenting3dData() == SMis3D::is3D)
-                {               
-                source3dRanges.insert(source3dRanges.begin(), data.GetExtent().begin(), data.GetExtent().end());
-                }        
-            else
-                {
-                source2_5dRanges.insert(source2_5dRanges.begin(), data.GetExtent().begin(), data.GetExtent().end());                
-                }
-            }
-
-        pDataIndex->ValidateIs3dDataStates(source2_5dRanges, source3dRanges);    
-        }   
-#endif
-
-    pDataIndex = 0;
-      
-    return BSISUCCESS;
-    }
-
-
-
-
-namespace {
-
-    template <typename PointIndexT>
-    struct PointIndexTypeTrait
-        {
-        // Default: Fail
-        };
-
-    template <typename PointT, typename ExtentT>
-    struct PointIndexTypeTrait<SMPointIndex<PointT, ExtentT>>
-        {
-        typedef PointT  PointType;
-        typedef ExtentT ExtentType;
-        };
-
-    template <typename PointT, typename ExtentT>
-    struct PointIndexTypeTrait<SMMeshIndex<PointT, ExtentT>>
-        {
-        typedef PointT  PointType;
-        typedef ExtentT ExtentType;
-        };
-    }
-#endif
-#if 0
-/*---------------------------------------------------------------------------------**//**
-* @description
-* @bsimethod                                                  Mathieu.St-Pierre   11/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename PointIndex>       
-StatusInt IScalableMeshCreator::Impl::RemoveSourcesFrom(PointIndex& pointIndex, list<IDTMFile::Extent3d64f> listRemoveExtent) const
-    {
-    //NEEDS_WORK_SM : Logic for determining the extent to remove should be here.  
-    std::list<IDTMFile::Extent3d64f>::const_iterator it = listRemoveExtent.begin();
-    for (std::list<IDTMFile::Extent3d64f>::const_iterator it = listRemoveExtent.begin(); it != listRemoveExtent.end(); it++)
-        {
-            {
-            pointIndex.RemovePoints(*it);
-            }
-        }
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @description
-* @bsimethod                                                  Raymond.Gauthier   09/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt IScalableMeshCreator::Impl::ImportSourcesTo (Sink* sinkP)
-    {
-    SinkPtr sinkPtr(sinkP);
-    LocalFileSourceRef sinkSourceRef(m_scmFileName.c_str());
-
-    const ContentDescriptor& targetContentDescriptor(sinkPtr->GetDescriptor());
-    assert(1 == targetContentDescriptor.GetLayerCount());
-
-    const GCS& targetGCS(targetContentDescriptor.LayersBegin()->GetGCS());
-    // NEEDS_WORK_SM : PARTIAL_UPDATE :remove
-    const ScalableMeshData& targetScalableMeshData = ScalableMeshData::GetNull();
-
-    SourcesImporter sourcesImporter(sinkSourceRef, sinkPtr);
-
-    HFCPtr<HVEClipShape>  resultingClipShapePtr(new HVEClipShape(new HGF2DCoordSys()));
-
-    int status;
-
-    status = TraverseSourceCollection(sourcesImporter,
-        m_sources,
-        resultingClipShapePtr,
-        targetGCS,
-        targetScalableMeshData);
-
-    if (BSISUCCESS == status)
-        {
-        if (SourcesImporter::S_SUCCESS != sourcesImporter.Import())
-            {
-            status = BSIERROR;
-            }
-        }
-
-
-    return status;
-    }
-
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @description
@@ -1423,7 +883,7 @@ bool IScalableMeshCreator::Impl::FileExist () const
 * @description
 * @bsimethod                                                  Raymond.Gauthier   03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef SCALABLE_MESH_DGN
+
 SMSQLiteFilePtr IScalableMeshCreator::Impl::GetFile(bool fileExists)
 {
     bool success = true;
@@ -1449,217 +909,22 @@ SMSQLiteFilePtr IScalableMeshCreator::Impl::GetFile(bool fileExists)
         assert(m_smSQLitePtr->IsOpen());
     return m_smSQLitePtr;
 }
-#else
-IDTMFile::File::Ptr IScalableMeshCreator::Impl::GetFile (const IDTMFile::AccessMode&  accessMode)
-    {
-    using namespace IDTMFile;
-    File::Ptr filePtr;
-
-    //Create the storage object.
-    if (m_scmPtr == 0)
-        {
-        assert(!m_scmFileName.empty());
-        filePtr = File::Open(m_scmFileName.c_str(), accessMode);
-        }
-    else
-        {
-        filePtr = dynamic_cast<const ScalableMeshBase&>(*m_scmPtr).GetIDTMFile();
-        }
-
-    return filePtr;
-    }
-#endif
 
 
 /*---------------------------------------------------------------------------------**//**
 * @description
 * @bsimethod                                                  Raymond.Gauthier   03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef SCALABLE_MESH_DGN
+
 void IScalableMeshCreator::Impl::SetupFileForCreation()
 {
     m_gcsDirty = true;
 }
-#else
-IDTMFile::File::Ptr IScalableMeshCreator::Impl::SetupFileForCreation()
-    {
-    using namespace IDTMFile;
 
-    File::Ptr filePtr;
-    filePtr = GetFile(HFC_CREATE_ONLY);
-    if (0 == filePtr)
-        return 0;
-
-    // Ensure that layer directory is present
-    if (!filePtr->GetRootDir()->HasLayerDir(m_workingLayer) &&
-        0 == filePtr->GetRootDir()->CreateLayerDir(m_workingLayer))
-        {
-        return 0; // Failed to create layer dir
-        }
-
-    // Ensure source dir is present
-    if (!filePtr->GetRootDir()->HasSourcesDir() &&
-        0 == filePtr->GetRootDir()->CreateSourcesDir())
-        {
-        return 0; // Failed to create source dir
-        }
-
-
-    // Ensure GCS and sources are save to the file.
-    m_gcsDirty = true;
-    return filePtr;
-    }
-#endif
-#if 0
-
-/*---------------------------------------------------------------------------------**//**
-* @description
-* @bsimethod                                                  Raymond.Gauthier   03/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-int IScalableMeshCreator::Impl::UpdateLastModified()
-    {
-    StatusInt status = BSISUCCESS;
-
-    Time lastModified = Time::CreateSmallestPossible();
-
-    for (IDTMSourceCollection::iterator sourceIt = m_sources.BeginEditInternal(), sourceEnd = m_sources.EndEditInternal(); sourceIt != sourceEnd; ++sourceIt)
-        {
-        StatusInt sourceStatus = sourceIt->InternalUpdateLastModified();
-
-        if (BSISUCCESS != sourceStatus)
-            {
-            status = BSIERROR;
-            lastModified = CreateUnknownModificationTime();
-            }
-        else
-            {
-            lastModified = (std::max) (lastModified, sourceIt->GetLastModified());
-            // NEEDS_WORK_SM : ScalableMeshData -> get time compare to file time.
-            SourceImportConfig& conf = sourceIt->EditConfig();
-
-            ScalableMeshData data = conf.GetReplacementSMData();
-            
-            const IDTMLocalFileSource& localFileSource(static_cast<const IDTMLocalFileSource&>(*sourceIt));
-            const WChar*  localFileNameTemp = localFileSource.GetPath();
-
-            //struct tm* clock;
-            struct stat attrib;
-
-            char fileName[2048];
-            wcstombs(fileName, localFileNameTemp, localFileSource.GetURL().GetPath().GetMaxLocaleCharBytes());
-            stat(fileName, &attrib);
-            //clock = gmtime(&(attrib.st_mtime));
-            //time_t time = mktime(clock);
-            time_t time = attrib.st_mtime;
-            if(difftime(data.GetTimeFile(),time) < 0)
-                {
-                if (data.GetUpToDateState() == UpToDateState::UP_TO_DATE && data.GetTimeFile() != 0)
-                    data.SetUpToDateState(UpToDateState::MODIFY);
-                data.SetTimeFile(time);
-                conf.SetReplacementSMData(data);
-                }
-            }
-        }
-
-    m_lastSourcesModificationTime = (std::max)(m_lastSourcesModificationTime, lastModified);
-    m_lastSourcesModificationCheckTime = Time::CreateActual();
-
-    m_sourcesDirty = true;
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @description
-* @bsimethod                                                  Raymond.Gauthier   03/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void IScalableMeshCreator::Impl::ResetLastModified ()
-    {
-    for (IDTMSourceCollection::iterator sourceIt = m_sources.BeginEditInternal(), sourceEnd = m_sources.EndEditInternal(); sourceIt != sourceEnd; ++sourceIt)
-        sourceIt->ResetLastModified();
-
-    m_lastSourcesModificationTime = CreateUnknownModificationTime();
-    m_lastSourcesModificationCheckTime = Time::CreateSmallestPossible();
-    }
-/*---------------------------------------------------------------------------------**//**
-* @description
-* @bsimethod                                                  Raymond.Gauthier   03/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-int IScalableMeshCreator::Impl::LoadSources (const IDTMFile::File& file)
-    {
-    using namespace IDTMFile;
-
-    if (!file.GetRootDir()->HasSourcesDir())
-        return BSISUCCESS; // No sources were added to the STM.
-
-    const IDTMFile::SourcesDir* sourceDirPtr = file.GetRootDir()->GetSourcesDir();
-    if (0 == sourceDirPtr)
-        return BSIERROR; // Could not load existing sources dir
-
-    bool success = true;
-    success &= Bentley::ScalableMesh::LoadSources(m_sources, *sourceDirPtr, m_sourceEnv);
-
-    m_lastSourcesModificationCheckTime = CreateTimeFrom(sourceDirPtr->GetLastModifiedCheckTime());
-    m_lastSourcesModificationTime = CreateTimeFrom(sourceDirPtr->GetLastModifiedTime());
-    m_lastSyncTime = CreateTimeFrom(sourceDirPtr->GetLastSyncTime());
-
-    return (success) ? BSISUCCESS : BSIERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @description
-* @bsimethod                                                  Raymond.Gauthier   03/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-int IScalableMeshCreator::Impl::SaveSources (IDTMFile::File& file)
-    {
-    using namespace IDTMFile;
-
-    if (!m_sourcesDirty)
-        return BSISUCCESS;
-
-
-
-    SourcesDir* sourceDirPtr = 0;
-
-    if (file.GetRootDir()->HasSourcesDir())
-        {
-        sourceDirPtr = file.GetRootDir()->GetSourcesDir();
-        if (0 == sourceDirPtr)
-            return BSIERROR; // Error loading existing source dir
-
-        sourceDirPtr->ClearAll(); // Clear existing data
-        }
-    else
-        {
-        sourceDirPtr = file.GetRootDir()->CreateSourcesDir();
-        if (0 == sourceDirPtr)
-            return BSIERROR; // Error creating source dir
-        }
-
-
-    bool success = true;
-
-    success &= Bentley::ScalableMesh::SaveSources(m_sources, *sourceDirPtr, m_sourceEnv);
-    success &= sourceDirPtr->SetLastModifiedCheckTime(GetCTimeFor(m_lastSourcesModificationCheckTime));
-    success &= sourceDirPtr->SetLastModifiedTime(GetCTimeFor(m_lastSourcesModificationTime));
-    success &= sourceDirPtr->SetLastSyncTime(GetCTimeFor(m_lastSyncTime));
-
-    if (success)
-        {
-        m_sourcesDirty = false;
-        return BSISUCCESS;
-        }
-    else
-        {
-        return BSIERROR;
-        }
-    }
-#endif
 /*---------------------------------------------------------------------------------**//**
 * @description
 * @bsimethod                                                  Raymond.Gauthier   06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef SCALABLE_MESH_DGN
 StatusInt IScalableMeshCreator::Impl::LoadGCS()
 {
     if(!m_smSQLitePtr->HasWkt())
@@ -1691,56 +956,14 @@ StatusInt IScalableMeshCreator::Impl::LoadGCS()
 
     return BSISUCCESS;
 }
-#else
-StatusInt IScalableMeshCreator::Impl::LoadGCS (const IDTMFile::File&   file)
-    {
-    using namespace IDTMFile;
 
-    if (!file.GetRootDir()->HasLayerDir(m_workingLayer))
-        return BSISUCCESS; // Ok, layer not yet created
-
-    const LayerDir* layerDirP = file.GetRootDir()->GetLayerDir(m_workingLayer);
-    if (0 == layerDirP)
-        return BSIERROR;
-
-    if (!layerDirP->HasWkt())
-        {
-        // Use default GCS when no WKT is found
-        m_gcs = GetDefaultGCS();
-        return BSISUCCESS;
-        }
-
-    HCPWKT wkt(layerDirP->GetWkt());
-
-    WString wktStr(wkt.GetCStr());
-
-    IDTMFile::WktFlavor fileWktFlavor = GetWKTFlavor(&wktStr, wktStr);
-
-    BaseGCS::WktFlavor wktFlavor;
-
-    bool result = MapWktFlavorEnum(wktFlavor, fileWktFlavor);
-
-    assert(result);    
-
-    GCSFactory::Status gcsFromWKTStatus = GCSFactory::S_SUCCESS;
-    GCS fileGCS(GetGCSFactory().Create(wktStr.c_str(), wktFlavor, gcsFromWKTStatus));
-    if (GCSFactory::S_SUCCESS != gcsFromWKTStatus)
-        return BSIERROR;
-
-    assert(!m_gcsDirty);
-    using std::swap;
-    swap(m_gcs, fileGCS);
-
-    return BSISUCCESS;
-    }
-#endif
 
 
 /*---------------------------------------------------------------------------------**//**
 * @description
 * @bsimethod                                                  Mathieu.St-Pierre   04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef SCALABLE_MESH_DGN
+
 int IScalableMeshCreator::Impl::SaveGCS()
 {
     if(!m_gcsDirty)
@@ -1774,99 +997,22 @@ int IScalableMeshCreator::Impl::SaveGCS()
     m_gcsDirty = false;
     return BSISUCCESS;
 }
-#else
-int IScalableMeshCreator::Impl::SaveGCS(IDTMFile::File& file)
-    {
-    using namespace IDTMFile;
 
-    if (!m_gcsDirty)
-        return BSISUCCESS;
 
-    LayerDir* layerDirP = (file.GetRootDir()->HasLayerDir(m_workingLayer)) ?
-                                file.GetRootDir()->GetLayerDir(m_workingLayer) :
-                                file.GetRootDir()->CreateLayerDir(m_workingLayer);
-
-    if (0 == layerDirP)
-        return BSIERROR; // Could not access or create working layer dir
-
-    const GCS& newSourceGCS = m_gcs;
-
-    if (newSourceGCS.IsNull())
-        {
-        assert(!"Unexpected!");
-        return BSIERROR;
-        }
-
-    GCS::Status wktCreateStatus = GCS::S_SUCCESS;
-    const WKT wkt(newSourceGCS.GetWKT(wktCreateStatus));
-    if (GCS::S_SUCCESS != wktCreateStatus)
-        return BSIERROR;   
-
-    WString extendedWktStr(wkt.GetCStr());    
-
-    if (WKTKeyword::TYPE_UNKNOWN == GetWktType(extendedWktStr))
-        {
-        wchar_t wktFlavor[2] = {(wchar_t)IDTMFile::WktFlavor_Autodesk, L'\0'};
-
-        extendedWktStr += WString(wktFlavor);            
-        }      
-
-    if (!layerDirP->SetWkt(HCPWKT(extendedWktStr.c_str())))
-        return BSIERROR;
-
-    m_gcsDirty = false;
-    return BSISUCCESS;
-    }
-#endif
-#if 0
-/*---------------------------------------------------------------------------------**//**
-* @description
-* @bsimethod                                                  Raymond.Gauthier   03/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-int IScalableMeshCreator::Impl::SaveSources()
-    {
-    using namespace IDTMFile;
-
-    File::Ptr filePtr = GetFile(FileExist() ? HFC_READ_WRITE : HFC_READ_WRITE_CREATE);
-    if (0 == filePtr)
-        return BSIERROR;
-
-    return SaveSources(*filePtr);
-    }
-#endif
 /*---------------------------------------------------------------------------------**//**
 * @description
 * @bsimethod                                                  Raymond.Gauthier   06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt IScalableMeshCreator::Impl::LoadFromFile  ()
     {
-#ifdef SCALABLE_MESH_DGN
 
-//        bool openReadOnly = false;
-//        StatusInt openStatus;
 
-        //m_scmFileName = dynamic_cast<const ScalableMeshBase&>(*m_scmPtr).GetPath();
-        //bool exist = false;
         m_smSQLitePtr = GetFile(fileExist(m_scmFileName.c_str()));
         
-        /*SMSQLiteFilePtr smSQLiteFile(SMSQLiteFile::Open(m_scmFileName, openReadOnly, openStatus));
-        if (!openStatus)
-            return BSIERROR;
-        m_smSQLitePtr = smSQLiteFile;*/
 
         if (!Load())
             return BSIERROR;
-#else
-    using namespace IDTMFile;
 
-    File::Ptr filePtr = GetFile(HFC_SHARE_READ_ONLY | HFC_READ_ONLY);
-    if (0 == filePtr)
-        return BSIERROR;
-
-    if (/*BSISUCCESS != LoadSources(*filePtr) ||
-        BSISUCCESS != LoadGCS(*filePtr)*/!Load(filePtr))
-        return BSIERROR;
-#endif
     return BSISUCCESS;
     }
 
@@ -1875,28 +1021,9 @@ bool IScalableMeshCreator::Impl::IsFileDirty()
     return m_gcsDirty;
     }
 
-#ifndef SCALABLE_MESH_DGN
-void IScalableMeshCreator::Impl::SetupFileFormatInfo(IDTMFile::File::Ptr& filePtr, bool isSingleFile)
-    {
-    // Create a MasterHeaderTileStore to store if the ScalableMesh is in streaming or not
-    typedef SMPointTaggedTileStore<PointType,
-        PointIndexExtentType>             TileStoreType;
-    HFCPtr<TileStoreType> pFinalTileStore;
-    pFinalTileStore = new TileStoreType(filePtr, (SCM_COMPRESSION_DEFLATE == m_compressionType));
-    SMPointIndexHeader<PointIndexExtentType>* pointIndexHeader = new SMPointIndexHeader<PointIndexExtentType>();
-    pointIndexHeader->m_singleFile = isSingleFile;
-    pointIndexHeader->m_SplitTreshold = 10000;
-    pointIndexHeader->m_depth = 0;
-    pointIndexHeader->m_HasMaxExtent = false;
-    pointIndexHeader->m_balanced = false;
-    pFinalTileStore->StoreMasterHeader(pointIndexHeader, 0);
-    //pFinalTileStore->save();
-    pFinalTileStore = nullptr;
-    delete pointIndexHeader;
-    }
-#endif
 
-#ifdef SCALABLE_MESH_DGN
+
+
 StatusInt IScalableMeshCreator::Impl::Load()
 {
     return BSISUCCESS == LoadGCS();
@@ -1906,24 +1033,13 @@ StatusInt IScalableMeshCreator::Impl::Save()
 {
     return BSISUCCESS == SaveGCS();
 }
-#else
-StatusInt IScalableMeshCreator::Impl::Load(IDTMFile::File::Ptr& filePtr)
-    {
-    return BSISUCCESS == LoadGCS(*filePtr);
-    }
 
-StatusInt IScalableMeshCreator::Impl::Save(IDTMFile::File::Ptr& filePtr)
-{
-    return BSISUCCESS == SaveGCS(*filePtr);
-}
-#endif
 /*---------------------------------------------------------------------------------**//**
 * @description
 * @bsimethod                                                  Mathieu.St-Pierre  04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 int IScalableMeshCreator::Impl::SaveToFile()
     {
-#ifdef SCALABLE_MESH_DGN
         const bool fileExists = FileExist();
         
         if (fileExists && !IsFileDirty())
@@ -1939,23 +1055,7 @@ int IScalableMeshCreator::Impl::SaveToFile()
             return BSIERROR;
 
         return BSISUCCESS;
-#else
-    using namespace IDTMFile;
 
-    const bool fileExists = FileExist();
-
-    if (fileExists && !IsFileDirty())
-        return BSISUCCESS; // Nothing to save
-
-    File::Ptr filePtr = GetFile(fileExists ? HFC_READ_WRITE : HFC_READ_WRITE_CREATE);
-    if (0 == filePtr)
-        return BSIERROR;
-
-    if (!Save(filePtr))
-        return BSIERROR;
-
-    return filePtr->Save() ? BSISUCCESS : BSIERROR;
-#endif
     }
 
 
