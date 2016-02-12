@@ -1047,7 +1047,7 @@ TEST_F (SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
 TEST_F (SchemaDeserializationTest, ExpectSuccessWhenRoundtripEnumerationUsingString)
     {
     ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     ASSERT_TRUE(schema.IsValid());
 
     //Create Enumeration
@@ -1512,7 +1512,7 @@ TEST_F (SchemaDeserializationTest, TestMultipleConstraintClassesWithKeyPropertie
 TEST_F(SchemaDeserializationTest, KindOfQuantityTest)
     {
     ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, "KindOfQuantitySchema", 5, 6);
+    ECSchema::CreateSchema(schema, "KindOfQuantitySchema", "koq", 5, 0, 6);
     ASSERT_TRUE(schema.IsValid());
 
     ECEntityClassP entityClass;
