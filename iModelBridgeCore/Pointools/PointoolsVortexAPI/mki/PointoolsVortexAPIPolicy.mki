@@ -45,7 +45,11 @@ NO_LEAN_AND_MEAN=1
 BUILD_NO_STACK_CHECK=1
 
 NOSTRICT=1
-
+CCompOpts + -DREL_V=$(REL_V)
+CCompOpts + -DMAJ_V=$(MAJ_V)
+CCompOpts + -DMIN_V=$(MIN_V)
+CCompOpts + -DSUBMIN_V=$(SUBMIN_V)
+CCompOpts + -DVERSION=$(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
 CCompOpts + -D"UNICODE"
 CCompOpts + -D"_UNICODE"
 CCompOpts + -D"PTRMI_LOGGING"

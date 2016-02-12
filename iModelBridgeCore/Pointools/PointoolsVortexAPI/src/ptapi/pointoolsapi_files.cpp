@@ -284,28 +284,46 @@ int setLastErrorCode( int code )
 //-------------------------------------------------------------------------------
 // Version info
 //-------------------------------------------------------------------------------
-const PTstr PTAPI ptGetVersionString()
-{
-	return L"Pointools Vortex 2.3.0.1";
-}
 
 void PTAPI ptGetVersionNum(PTubyte *version)
 {
-	version[0] = 2;
-	version[1] = 3;
-	version[2] = 0;
-	version[3] = 1;
+	version[0] = REL_V;
+	version[1] = MAJ_V;
+	version[2] = MIN_V;
+	version[3] = SUBMIN_V;
 }
 //-------------------------------------------------------------------------------
 // (not a published API, for internal use only)
 //-------------------------------------------------------------------------------
+
+std::wstring version;
+
 const PTstr getShortVersionString()
 {
 	// this string is used with SELECT and must be of the form xx.xx.xx.xx
 	// Note that versions of the for xx.xx.xx.xxx are not accepted by the 
 	// Bentley licensing lib.
-	return L"01.07.00.02";
+	if(version.length() == 0)
+	{
+		PTubyte	v[4];
+		
+		ptGetVersionNum(v);
+		
+		wchar_t versionString[12];
+		
+		swprintf(L"%02d.%02d.%02d.%02d", 12, versionString, v[0], v[1], v[2], v[3]);
+
+		version = versionString;
+	}
+
+	return version.c_str();
 }
+
+const PTstr PTAPI ptGetVersionString()
+{
+	return getShortVersionString();
+}
+
 //-------------------------------------------------------------------------------
 // demo license code and some global stuff
 //-------------------------------------------------------------------------------
