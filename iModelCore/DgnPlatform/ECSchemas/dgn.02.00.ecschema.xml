@@ -486,11 +486,8 @@
         <!-- An element that occupies real world space -->
         <BaseClass>GeometricElement3d</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="PhysicalElement">
+    <ECEntityClass typeName="PhysicalElement" modifier="Abstract">
         <!-- A SpatialElement that has mass and can be "touched" -->
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
-        </ECCustomAttributes>
         <BaseClass>SpatialElement</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="SpatialLocationElement" modifier="Abstract">

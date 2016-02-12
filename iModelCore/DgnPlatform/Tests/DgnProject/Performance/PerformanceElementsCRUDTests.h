@@ -214,9 +214,9 @@ typedef RefCountedPtr<TestMultiAspect> TestMultiAspectPtr;
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Carole.MacDonald            08/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-struct PerformanceElement1Handler : Dgn::dgn_ElementHandler::Physical
+struct PerformanceElement1Handler : Dgn::dgn_ElementHandler::Geometric3d
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS (ELEMENT_PERFORMANCE_ELEMENT1_CLASS, PerformanceElement1, PerformanceElement1Handler, Dgn::dgn_ElementHandler::Physical, )
+    ELEMENTHANDLER_DECLARE_MEMBERS (ELEMENT_PERFORMANCE_ELEMENT1_CLASS, PerformanceElement1, PerformanceElement1Handler, Dgn::dgn_ElementHandler::Geometric3d, )
     protected: virtual void _GetClassParams (Dgn::ECSqlClassParams& params) override;
     };
 

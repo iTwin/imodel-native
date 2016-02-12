@@ -43,7 +43,6 @@ namespace dgn_ElementHandler
 HANDLER_DEFINE_MEMBERS(Element)
 HANDLER_DEFINE_MEMBERS(Geometric2d)
 HANDLER_DEFINE_MEMBERS(Geometric3d)
-HANDLER_DEFINE_MEMBERS(Physical)
 HANDLER_DEFINE_MEMBERS(Annotation2d)
 HANDLER_DEFINE_MEMBERS(Drawing)
 };
@@ -99,7 +98,6 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ElementHandler::Element::GetHandler());
     RegisterHandler(dgn_ElementHandler::Geometric2d::GetHandler());
     RegisterHandler(dgn_ElementHandler::Geometric3d::GetHandler());
-    RegisterHandler(dgn_ElementHandler::Physical::GetHandler());
     RegisterHandler(dgn_ElementHandler::Annotation2d::GetHandler());
     RegisterHandler(dgn_ElementHandler::Drawing::GetHandler());
     RegisterHandler(dgn_ElementHandler::VolumeElementHandler::GetHandler());

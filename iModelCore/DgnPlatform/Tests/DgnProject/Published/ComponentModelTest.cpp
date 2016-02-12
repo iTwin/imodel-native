@@ -158,7 +158,6 @@ void VariationSpec::MakeVariation(DgnElementCPtr& variation, SpatialModelR destM
     ASSERT_TRUE(variation.IsValid()) << Utf8PrintfString("MakeVariation failed with error %x", status);
     }
 
-
 /*=================================================================================**//**
 * @bsiclass                                                     Sam.Wilson     02/2012
 +===============+===============+===============+===============+===============+======*/
@@ -452,9 +451,8 @@ void ComponentModelTest::Client_InsertNonInstanceElement(Utf8CP modelName, Utf8C
     {
     SpatialModelPtr targetModel = DgnDbTestUtils::GetModelByName<SpatialModel>(*m_clientDb, modelName);
     ASSERT_TRUE( targetModel.IsValid() );
-    DgnClassId classid = DgnClassId(m_clientDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
     DgnCategoryId catid = DgnCategory::QueryHighestCategoryId(*m_clientDb);
-    auto el = PhysicalElement::Create(PhysicalElement::CreateParams(*m_clientDb, targetModel->GetModelId(), classid, catid));
+    auto el = GenericPhysicalObject::Create(*targetModel, catid);
     ASSERT_TRUE( el.IsValid() );
     ASSERT_TRUE( el->Insert().IsValid() );
     }

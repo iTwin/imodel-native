@@ -2,12 +2,13 @@
 |
 |  $Source: Tests/DgnProject/Published/DgnHandlersTests.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 #include <DgnPlatform/DgnPlatformApi.h>
+#include <DgnPlatform/GenericDomain.h>
 #include <Bentley/BeTest.h>
 #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
 #include "../TestFixture/GenericDgnModelTestFixture.h"

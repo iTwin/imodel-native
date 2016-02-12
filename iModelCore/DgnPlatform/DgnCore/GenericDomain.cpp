@@ -17,7 +17,6 @@ DOMAIN_DEFINE_MEMBERS(GenericDomain)
 
 namespace generic_ElementHandler
     {
-    HANDLER_DEFINE_MEMBERS(GenericSpatialObjectHandler)
     HANDLER_DEFINE_MEMBERS(GenericSpatialGroupHandler)
     HANDLER_DEFINE_MEMBERS(GenericSpatialLocationHandler)
     HANDLER_DEFINE_MEMBERS(GenericPhysicalObjectHandler)
@@ -30,7 +29,6 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 //---------------------------------------------------------------------------------------
 GenericDomain::GenericDomain() : DgnDomain(GENERIC_DOMAIN_NAME, "Generic Domain", 1) 
     {
-    RegisterHandler(generic_ElementHandler::GenericSpatialObjectHandler::GetHandler());
     RegisterHandler(generic_ElementHandler::GenericSpatialGroupHandler::GetHandler());
     RegisterHandler(generic_ElementHandler::GenericSpatialLocationHandler::GetHandler());
     RegisterHandler(generic_ElementHandler::GenericPhysicalObjectHandler::GetHandler());

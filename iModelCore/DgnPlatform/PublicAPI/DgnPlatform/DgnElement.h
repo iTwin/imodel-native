@@ -1441,22 +1441,11 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : SpatialElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalElement, SpatialElement)
-
+    DEFINE_T_SUPER(SpatialElement)
 protected:
     PhysicalElementCP _ToPhysicalElement() const override final {return this;}
-
 public:
     explicit PhysicalElement(CreateParams const& params) : T_Super(params) {}
-
-    //! Create an instance of a PhysicalElement from a CreateParams.
-    //! @note This is a static method that creates an instance of the PhysicalElement class. To create subclasses, use static methods on the appropriate class.
-    static PhysicalElementPtr Create(CreateParams const& params) {return new PhysicalElement(params);}
-
-    //! Create an instance of a PhysicalElement from a model and DgnCategoryId, using the default values for all other parameters.
-    //! @param[in] model The SpatialModel for the new PhysicalElement.
-    //! @param[in] categoryId The category for the new PhysicalElement.
-    DGNPLATFORM_EXPORT static PhysicalElementPtr Create(SpatialModelR model, DgnCategoryId categoryId);
 };
 
 //=======================================================================================

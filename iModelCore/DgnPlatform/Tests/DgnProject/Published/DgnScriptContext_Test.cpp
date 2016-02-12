@@ -9,6 +9,7 @@
 #include "DgnHandlersTests.h"
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnScript.h>
+#include <DgnPlatform/GenericDomain.h>
 #include <Bentley/BeTimeUtilities.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -34,7 +35,7 @@ static RefCountedCPtr<DgnElement> insertElement(DgnModelR model)
 
     DgnElementPtr gelem;
     if (model.Is3d())
-        gelem = PhysicalElement::Create(PhysicalElement::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement)), cat, Placement3d()));
+        gelem = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASSNAME_PhysicalObject)), cat, Placement3d()));
     else
         gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement2d)), cat, Placement2d()));
 

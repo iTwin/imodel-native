@@ -8,6 +8,7 @@
 #include "DgnHandlersTests.h"
 #include <Bentley/BeTest.h>
 #include <DgnPlatform/DgnTrueColor.h>
+#include <DgnPlatform/GenericDomain.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
@@ -731,9 +732,9 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::ServerAd
     DgnElementPtr Create3dElement(DgnModelR model)
         {
         DgnDbR db = model.GetDgnDb();
-        DgnClassId classId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
+        DgnClassId classId(db.Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASSNAME_PhysicalObject));
         DgnCategoryId catId = DgnCategory::QueryHighestCategoryId(db);
-        return PhysicalElement::Create(PhysicalElement::CreateParams(db, model.GetModelId(), classId, catId, Placement3d()));
+        return GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(db, model.GetModelId(), classId, catId, Placement3d()));
         }
 
     DgnElementPtr Create2dElement(DgnModelR model)

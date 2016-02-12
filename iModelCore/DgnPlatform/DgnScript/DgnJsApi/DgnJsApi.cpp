@@ -23,7 +23,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 static RefCountedPtr<PhysicalElement> createPhysicalElement(DgnModelR model, Utf8CP ecSqlClassName, DgnCategoryId catid)//, RefCountedPtr<T> geom)
     {
     if (!ecSqlClassName || !*ecSqlClassName)
-        ecSqlClassName = DGN_SCHEMA(DGN_CLASSNAME_PhysicalElement);
+        ecSqlClassName = GENERIC_SCHEMA(GENERIC_CLASSNAME_PhysicalObject);
     Utf8CP dot = strchr(ecSqlClassName, '.');
     if (nullptr == dot)
         return nullptr;
@@ -31,9 +31,8 @@ static RefCountedPtr<PhysicalElement> createPhysicalElement(DgnModelR model, Utf
     Utf8String ecclass(dot+1);
     DgnDbR db = model.GetDgnDb();
     DgnClassId pclassId = DgnClassId(db.Schemas().GetECClassId(ecschema.c_str(), ecclass.c_str()));
-    PhysicalElementPtr el = PhysicalElement::Create(PhysicalElement::CreateParams(db, model.GetModelId(), pclassId, catid));
 
-    return el;
+    return new PhysicalElement(PhysicalElement::CreateParams(db, model.GetModelId(), pclassId, catid));
     }
 
 //---------------------------------------------------------------------------------------
