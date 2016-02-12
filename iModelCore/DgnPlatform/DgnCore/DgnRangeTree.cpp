@@ -41,6 +41,7 @@ static inline double rangeExtentSquared(DRange3dCR range)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2013
 //---------------------------------------------------------------------------------------
+#ifdef UNUSED
 static inline double rangeExtentSquared(RTree3dValCR range)
     {
     double extentX = (double) range.m_maxx - range.m_minx;
@@ -48,6 +49,7 @@ static inline double rangeExtentSquared(RTree3dValCR range)
     double extentZ = (double) range.m_maxz - range.m_minz;
     return extentX * extentX + extentY * extentY + extentZ * extentZ;
     }
+#endif
 
 #ifdef UNUSED
 /*---------------------------------------------------------------------------------**//**
