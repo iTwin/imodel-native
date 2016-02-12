@@ -362,6 +362,20 @@ ECDbSqlColumn const* PropertyMap::GetSingleColumn() const
 
     return columns.front();
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    casey.mullen      08/2013
+//---------------------------------------------------------------------------------------
+ECDbSqlColumn const* PropertyMap::GetSingleColumn(ECDbSqlTable const& table) const
+    {
+    std::vector<ECDbSqlColumn const*> columns;
+    GetColumns(columns, table);
+    BeAssert(columns.size() == 1 && "Expecting Single Column for given table");
+    if (columns.empty() || columns.size() > 1)
+        return nullptr;
+
+    return columns.front();
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      08/2013
 //---------------------------------------------------------------------------------------

@@ -503,10 +503,14 @@ MapStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMap
             }
 
         ForeignKeyActionType userRequestedDeleteAction = relationshipClassMapInfo.GetOnDeleteAction();
+        ForeignKeyActionType userRequestedUpdateAction = relationshipClassMapInfo.GetOnUpdateAction();
+
         //if FK table is a joined table, CASCADE is not allowed as it would leave orphaned rows in the parent of joined table.
         if (fkTable.GetParentOfJoinedTable() != nullptr)
             {
             //WIP_AFFAN. The DGN schema has such cases. What should we do with them?
+            //We support it in one direction but not in another e.g. if FK is stored in a table that is not a JoinedTable then we can support otherwise no.
+
             /*if (userRequestedDeleteAction == ForeignKeyActionType::Cascade ||
                 (userRequestedDeleteAction == ForeignKeyActionType::NotSpecified && relationshipClass.GetStrength() == StrengthType::Embedding))
                 {
@@ -539,6 +543,9 @@ MapStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMap
                 else
                     foreignKeyConstraint->SetOnDeleteAction(ForeignKeyActionType::SetNull);
                 }
+
+            if (userRequestedUpdateAction != ForeignKeyActionType::NotSpecified)
+                foreignKeyConstraint->SetOnUpdateAction(userRequestedUpdateAction);
 
             //! remove the fk constraint if already exist due to another relationship on same column
             foreignKeyConstraint->RemoveIfDuplicate();

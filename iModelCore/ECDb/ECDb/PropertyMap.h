@@ -145,9 +145,10 @@ public:
     //! Gets the columns (if any) mapped to this property
     void GetColumns(std::vector<ECDbSqlColumn const*>&) const;
     void GetColumns(std::vector<ECDbSqlColumn const*>&, ECDbSqlTable const&) const;
-
+    size_t ColumnCount() const { std::vector<ECDbSqlColumn const*> columns; GetColumns(columns); return columns.size(); }
     //! Gets the first column if any
     ECDbSqlColumn const* GetSingleColumn() const;
+    ECDbSqlColumn const* GetSingleColumn(ECDbSqlTable const&) const;
     ECDbSqlTable const* GetSingleTable() const;
 
     //! Generates the native SQL snippets from the columns related to this property map.
@@ -162,7 +163,7 @@ public:
     //! @return List of native SQL snippets, one snippet per column this PropertyMap maps to.
     NativeSqlBuilder::List ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses, ECDbSqlTable const* tableFilter = nullptr) const;
 
-
+  
     //! Saves the base column name, if it differs from the property name
     BentleyStatus Save(ECDbClassMapInfo & classMapInfo) const;
     BentleyStatus Load(ECDbClassMapInfo const& classMapInfo) { return _Load(classMapInfo); }
