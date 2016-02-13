@@ -2687,41 +2687,6 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryStreamEntryId::operator==(GeometryStreamEntryIdCR rhs) const
-    {
-    if (this == &rhs)
-        return true;
-
-    return (m_type == rhs.m_type &&
-            m_partId == rhs.m_partId &&
-            m_index == rhs.m_index &&
-            m_partIndex == rhs.m_partIndex);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryStreamEntryId::operator!=(GeometryStreamEntryIdCR rhs) const
-    {
-    return !(*this == rhs);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeometryStreamEntryIdR GeometryStreamEntryId::operator=(GeometryStreamEntryIdCR rhs)
-    {
-    m_type = rhs.m_type;
-    m_partId = rhs.m_partId;
-    m_index = rhs.m_index;
-    m_partIndex = rhs.m_partIndex;
-
-    return *this;
-    }
-
 //=======================================================================================
 //! Helper class for setting GeometryStream entry identifier
 //=======================================================================================
@@ -2730,22 +2695,17 @@ struct GeometryStreamEntryIdHelper
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool SetActive(GeometryStreamEntryId& entryId, bool enable)
+static void SetActive(GeometryStreamEntryId& entryId, bool enable)
     {
-    if (GeometryStreamEntryId::Type::Invalid != entryId.GetType() && entryId.GetGeometryPartId().IsValid())
+    if (entryId.GetGeometryPartId().IsValid())
         {
         if (!enable)
-            entryId.SetGeometryPartId(DgnGeometryPartId()); // Clear part and remain active...
+            entryId.SetGeometryPartId(DgnGeometryPartId()); // Clear part and part index...
 
-        return false; // Already active (or remaining active)...
+        return;
         }
 
     entryId.Init();
-
-    if (enable)
-        entryId.SetType(GeometryStreamEntryId::Type::Indexed);
-
-    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2753,9 +2713,6 @@ static bool SetActive(GeometryStreamEntryId& entryId, bool enable)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void SetActiveGeometryPart(GeometryStreamEntryId& entryId, DgnGeometryPartId partId)
     {
-    if (GeometryStreamEntryId::Type::Invalid == entryId.GetType())
-        return;
-
     entryId.SetGeometryPartId(partId);
     }
 
@@ -2764,9 +2721,6 @@ static void SetActiveGeometryPart(GeometryStreamEntryId& entryId, DgnGeometryPar
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void Increment(GeometryStreamEntryId& entryId)
     {
-    if (GeometryStreamEntryId::Type::Indexed != entryId.GetType())
-        return;
-
     if (entryId.GetGeometryPartId().IsValid())
         entryId.SetPartIndex(entryId.GetPartIndex()+1);
     else
@@ -3338,7 +3292,7 @@ Render::GraphicPtr GeometrySource::_Stroke(ViewContextR context, double pixelSiz
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR hit) const
     {
-    if (GeometryStreamEntryId::Type::Invalid == hit.GetGeomDetail().GetGeometryStreamEntryId().GetType())
+    if (0 == hit.GetGeomDetail().GetGeometryStreamEntryId().GetIndex())
         return nullptr;
 
     switch (hit.GetSubSelectionMode())
@@ -3869,7 +3823,6 @@ GeometryStreamEntryId GeometryBuilder::GetGeometryStreamEntryId() const
                 {
                 auto ppfb = flatbuffers::GetRoot<FB::GeometryPart>(egOp.m_data);
 
-                entryId.SetType(GeometryStreamEntryId::Type::Indexed);
                 entryId.SetGeometryPartId(DgnGeometryPartId((uint64_t)ppfb->geomPartId()));
                 entryId.SetIndex(entryId.GetIndex()+1);
                 break;
@@ -3886,7 +3839,6 @@ GeometryStreamEntryId GeometryBuilder::GetGeometryStreamEntryId() const
                 if (!egOp.IsGeometryOp())
                     break;
 
-                entryId.SetType(GeometryStreamEntryId::Type::Indexed);
                 entryId.SetGeometryPartId(DgnGeometryPartId());
                 entryId.SetIndex(entryId.GetIndex()+1);
                 break;

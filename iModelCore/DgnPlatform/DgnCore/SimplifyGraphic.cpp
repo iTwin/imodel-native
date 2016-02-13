@@ -556,8 +556,9 @@ void SimplifyGraphic::ProcessAsCurvePrimitives(CurveVectorCR geom, bool filled)
 void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
     {
     bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
+    GeometryStreamEntryId entryId = m_context.GetGeometryStreamEntryId();
 
-    CurveTopologyId::AddCurveVectorIds(geom, CurvePrimitiveId::Type_CurveVector, CurveTopologyId::FromCurveVector(), nullptr);
+    CurveTopologyId::AddCurveVectorIds(geom, CurvePrimitiveId::Type::CurveVector, CurveTopologyId::FromCurveVector(), entryId.GetIndex(), entryId.GetPartIndex());
 
     // Give output a chance to handle geometry directly...
     if (doClipping)
@@ -769,7 +770,7 @@ void SimplifyGraphic::ClipAndProcessSolidPrimitive(ISolidPrimitiveCR geom)
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Curve & unhandled))
         {
-        CurveVectorPtr curves = WireframeGeomUtil::CollectCurves(geom, m_context.GetDgnDb(), m_processor._IncludeWireframeEdges(), m_processor._IncludeWireframeFaceIso());
+        CurveVectorPtr curves = WireframeGeomUtil::CollectCurves(geom, m_context.GetDgnDb(), m_processor._IncludeWireframeEdges(), m_processor._IncludeWireframeFaceIso(), &m_context);
 
         if (!curves.IsValid())
             return;
@@ -884,7 +885,7 @@ void SimplifyGraphic::ClipAndProcessSurface(MSBsplineSurfaceCR geom)
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Curve & unhandled))
         {
-        CurveVectorPtr curves = WireframeGeomUtil::CollectCurves(geom, m_context.GetDgnDb(), m_processor._IncludeWireframeEdges(), m_processor._IncludeWireframeFaceIso());
+        CurveVectorPtr curves = WireframeGeomUtil::CollectCurves(geom, m_context.GetDgnDb(), m_processor._IncludeWireframeEdges(), m_processor._IncludeWireframeFaceIso(), &m_context);
 
         if (!curves.IsValid())
             return;
@@ -1005,6 +1006,7 @@ void SimplifyGraphic::ClipAndProcessPolyfaceAsCurves(PolyfaceQueryCR geom)
         return;
 
     bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
+    GeometryStreamEntryId entryId = m_context.GetGeometryStreamEntryId();
 
     for (size_t readIndex = 0; readIndex < numIndices; readIndex++)
         {    
@@ -1021,7 +1023,7 @@ void SimplifyGraphic::ClipAndProcessPolyfaceAsCurves(PolyfaceQueryCR geom)
                 int closeVertexId = (abs(prevIndex) - 1);
                 int segmentVertexId = (abs(thisIndex) - 1);
                 ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine(DSegment3d::From(verts[closeVertexId], verts[segmentVertexId]));
-                CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type_PolyfaceEdge, CurveTopologyId(CurveTopologyId::Type_PolyfaceEdge, closeVertexId, segmentVertexId), nullptr);
+                CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type::PolyfaceEdge, CurveTopologyId(CurveTopologyId::Type::PolyfaceEdge, closeVertexId, segmentVertexId), entryId.GetIndex(), entryId.GetPartIndex());
 
                 curve->SetId(newId.get());
 
@@ -1061,7 +1063,7 @@ void SimplifyGraphic::ClipAndProcessPolyfaceAsCurves(PolyfaceQueryCR geom)
                 int closeVertexId = (abs(prevIndex) - 1);
                 int segmentVertexId = (abs(firstIndex) - 1);
                 ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine(DSegment3d::From(verts[closeVertexId], verts[segmentVertexId]));
-                CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type_PolyfaceEdge, CurveTopologyId(CurveTopologyId::Type_PolyfaceEdge, closeVertexId, segmentVertexId), nullptr);
+                CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type::PolyfaceEdge, CurveTopologyId(CurveTopologyId::Type::PolyfaceEdge, closeVertexId, segmentVertexId), entryId.GetIndex(), entryId.GetPartIndex());
 
                 curve->SetId(newId.get());
 
@@ -1143,7 +1145,7 @@ void SimplifyGraphic::ClipAndProcessBody(ISolidKernelEntityCR geom)
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Curve & unhandled))
         {
-        CurveVectorPtr curves = WireframeGeomUtil::CollectCurves(geom, m_context.GetDgnDb(), m_processor._IncludeWireframeEdges(), m_processor._IncludeWireframeFaceIso());
+        CurveVectorPtr curves = WireframeGeomUtil::CollectCurves(geom, m_context.GetDgnDb(), m_processor._IncludeWireframeEdges(), m_processor._IncludeWireframeFaceIso(), &m_context);
 
         if (!curves.IsValid())
             return;
