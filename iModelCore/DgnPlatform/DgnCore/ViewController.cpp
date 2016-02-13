@@ -907,7 +907,7 @@ ClipVectorPtr SectionDrawingViewController::GetProjectClipVector() const
     {
     auto sectionView = GetSectioningViewController();
     if (!sectionView.IsValid())
-        return ClipVector::Create();
+        return new ClipVector();
     return sectionView->GetInsideForwardClipVector();
     }
 

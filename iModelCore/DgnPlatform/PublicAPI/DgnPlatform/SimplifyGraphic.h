@@ -108,7 +108,7 @@ public:
     //! Call to output a CurveVector as individual ICurvePrimitives using IGeometryProcessor::_ProcessCurvePrimitive.
     DGNPLATFORM_EXPORT void ProcessAsCurvePrimitives(CurveVectorCR, bool filled);
 
-    DGNPLATFORM_EXPORT ClipVectorCP GetCurrentClip() const;
+    ClipVectorCP GetCurrentClip() const {return nullptr;}
 
     DGNPLATFORM_EXPORT void ClipAndProcessCurveVector(CurveVectorCR, bool filled);
     DGNPLATFORM_EXPORT void ClipAndProcessSolidPrimitive(ISolidPrimitiveCR);

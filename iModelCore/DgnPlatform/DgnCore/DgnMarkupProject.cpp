@@ -329,7 +329,6 @@ void SpatialRedlineViewController::_DrawView(ViewContextR context)
     //  Draw subject model
         {
         //  set up to draw subject model 
-        ViewContext::ContextMark mark(&context);
         m_targetModelIsInSubjectView = true;   // causes GetTargetModel to return subject view's target model
         BeAssert(GetTargetModel() == m_subjectView.GetTargetModel());
 

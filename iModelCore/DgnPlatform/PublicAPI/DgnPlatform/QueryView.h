@@ -24,6 +24,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::VirtualSet
 {
     DEFINE_T_SUPER(CameraViewController)
+
     friend struct DgnQueryQueue::Task;
 
     //=======================================================================================
@@ -70,13 +71,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
     };
     typedef RefCountedPtr<QueryResults> QueryResultsPtr;
 
-    //! Clip planes for a single frustum
-    struct FrustumPlanes : ConvexClipPlaneSet
-    {
-        void Init(FrustumCR frustum);
-        BeSQLite::RTreeMatchFunction::Within TestBox(FrustumCR box); // test all 8 points of a box
-    };
-
     //=======================================================================================
     // This object is created on the Client thread and queued to the Query thread. It populates its
     // QueryResults with the set of n-best elements that satisfy both range and view criteria.
@@ -95,7 +89,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
         uint64_t    m_lastId = 0;
         BeSQLite::RTree3dVal m_boundingRange;    // only return entries whose range intersects this cube.
         BeSQLite::RTree3dVal m_backFace;
-        FrustumPlanes m_clips;
+        Render::FrustumPlanes m_planes;
+        ClipPrimitivePtr m_activeVolume;
         Frustum     m_frustum;
         DMatrix4d   m_localToNpc;
         DVec3d      m_viewVec;  // vector from front face to back face, for SkewScan
@@ -160,6 +155,7 @@ protected:
     double m_sceneLODSize    = 6.0; 
     double m_nonSceneLODSize = 7.0; 
     SpecialElements m_special;
+    ClipPrimitivePtr m_activeVolume;     //!< the active volume. If present, elements inside this volume may be treated specially
     mutable QueryResultsPtr m_results;
 
     void QueryModelExtents(DRange3dR, DgnViewportR);
@@ -168,14 +164,15 @@ protected:
     bool AbortRequested() const {return m_abortQuery;} //!< @private
     void SetAbortQuery(bool val) const {m_abortQuery=val;} //!< @private
     StatusInt VisitElement(ViewContextR context, DgnElementId, bool allowLoad);
+    virtual DgnQueryViewCP _ToQueryView() const override {return this;}
     DGNPLATFORM_EXPORT virtual bool _IsInSet(int nVal, BeSQLite::DbValue const*) const override;
     DGNPLATFORM_EXPORT virtual void _InvalidateScene() override;
     DGNPLATFORM_EXPORT virtual bool _IsSceneReady() const override;
     virtual void _FillModels() override {} // query views do not load elements in advance
-    DGNPLATFORM_EXPORT void _OnUpdate(DgnViewportR vp, UpdatePlan const& plan) override;
+    DGNPLATFORM_EXPORT virtual void _OnUpdate(DgnViewportR vp, UpdatePlan const& plan) override;
     DGNPLATFORM_EXPORT virtual void _OnAttachedToViewport(DgnViewportR) override;
     DGNPLATFORM_EXPORT virtual void _CreateScene(SceneContextR) override;
-    DGNPLATFORM_EXPORT void _VisitAllElements(ViewContextR) override;
+    DGNPLATFORM_EXPORT virtual void _VisitAllElements(ViewContextR) override;
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR context) override;
     DGNPLATFORM_EXPORT virtual void _OnCategoryChange(bool singleEnabled) override;
     DGNPLATFORM_EXPORT virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff) override;
@@ -227,6 +224,10 @@ public:
 
     //! Requests that any active or pending queries for this view be canceled, optionally not returning until the request is satisfied
     DGNPLATFORM_EXPORT void RequestAbort(bool waitUntilFinished);
+
+    DGNPLATFORM_EXPORT void AssignActiveVolume(ClipPrimitiveR volume);
+    DGNPLATFORM_EXPORT void ClearActiveVolume();
+    ClipPrimitivePtr GetActiveVolume() const {return m_activeVolume;}
 };
 
 END_BENTLEY_DGN_NAMESPACE

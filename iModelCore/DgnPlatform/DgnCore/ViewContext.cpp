@@ -54,14 +54,9 @@ void ViewContext::NpcToWorld(DPoint3dP worldPts, DPoint3dCP npcPts, int nPts) co
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt ViewContext::_InitContextForView()
     {
-    BeAssert(0 == GetTransClipDepth());
-
     m_worldToNpc  = *m_viewport->GetWorldToNpcMap();
     m_worldToView = *m_viewport->GetWorldToViewMap();
-    m_transformClipStack.Clear();
     m_scanRangeValid = false;
-
-    _PushFrustumClip();
 
     SetDgnDb(m_viewport->GetViewController().GetDgnDb());
 
@@ -94,67 +89,12 @@ Frustum ViewContext::GetFrustum()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_PushFrustumClip()
-    {
-    if (m_ignoreViewRange)
-        return;
-
-    int         nPlanes;
-    ClipPlane   frustumPlanes[6];
-    ViewFlags viewFlags = GetViewFlags();
-    Frustum polyhedron = GetFrustum();
-
-    if (0 != (nPlanes = ClipUtil::RangePlanesFromFrustum(frustumPlanes, polyhedron, !viewFlags.noFrontClip, !viewFlags.noBackClip, 1.0E-6)))
-        m_transformClipStack.PushClipPlanes(frustumPlanes, nPlanes);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    11/02
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_InitScanRangeAndPolyhedron()
     {
     // set up scanner search criteria
     _ScanRangeFromPolyhedron();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      09/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::PushClipPlanes(ClipPlaneSetCR clipPlanes)
-    {
-    _PushClip(*ClipVector::CreateFromPrimitive(ClipPrimitive::CreateFromClipPlanes(clipPlanes)));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_PushClip(ClipVectorCR clip)
-    {
-    m_transformClipStack.PushClip(clip);
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    for (ClipPrimitivePtr const& primitive : clip)
-        {
-        GetCurrentGraphicR()._PushTransClip(nullptr, primitive->GetClipPlanes());
-        m_transformClipStack.IncrementPushedToDrawGeom();
-        }
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      03/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_PopClip()
-    {
-    if (m_transformClipStack.IsEmpty())
-        {
-        BeAssert(false);
-        return;
-        }
-
-    m_transformClipStack.Pop(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -210,7 +150,6 @@ void ViewContext::_Detach()
     BeAssert(IsAttached());
 
     m_isAttached = false;
-    m_transformClipStack.PopAll(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -322,7 +261,8 @@ bool ViewContext::_ScanRangeFromPolyhedron()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewContext::_FilterRangeIntersection(GeometrySourceCR source)
     {
-    return ClipPlaneContainment_StronglyOutside == m_transformClipStack.ClassifyRange(source.CalculateRange3d(), nullptr != source.ToGeometrySource3d());
+    Frustum box(source.CalculateRange3d());
+    return FrustumPlanes::Contained::Outside != m_frustumPlanes.Contains(box.m_pts, 8);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -590,62 +530,36 @@ void ViewContext::_SetScanReturn()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ScanCriteria::Result ViewContext::_CheckNodeRange(ScanCriteriaCR scanCriteria, DRange3dCR testRange, bool is3d)
     {
-    return ClipPlaneContainment_StronglyOutside != m_transformClipStack.ClassifyElementRange(testRange, is3d, true) ? ScanCriteria::Result::Pass : ScanCriteria::Result::Fail;
+    Frustum box(testRange);
+    return (m_frustumPlanes.Contains(box.m_pts, 8) != FrustumPlanes::Contained::Outside) ? ScanCriteria::Result::Pass : ScanCriteria::Result::Fail;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::IsWorldPointVisible(DPoint3dCR worldPoint, bool boresite)
+bool ViewContext::IsPointVisible(DPoint3dCR worldPoint, bool boresite)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    DPoint3d    localPoint;
-
-    WorldToLocal(&localPoint, &worldPoint, 1);
-
-    return IsLocalPointVisible(localPoint, boresite);
-#else
-    if (m_transformClipStack.IsEmpty())
+    if (m_frustumPlanes.ContainsPoint(worldPoint))
         return true;
 
     if (!boresite)
-        return m_transformClipStack.TestPoint(worldPoint);
+        return false;
 
-    DVec3d      worldZVec;
-
+    DVec3d worldZVec;
     if (IsCameraOn())
         {
-        worldZVec.NormalizedDifference(worldPoint, GetViewport()->GetCamera().GetEyePoint());
+        worldZVec.NormalizedDifference(worldPoint, m_viewport->GetCamera().GetEyePoint());
         }
     else
         {
         DPoint3d    zPoints[2];
-
         zPoints[0].Zero();
         zPoints[1].Init(0.0, 0.0, 1.0);
-
         NpcToWorld(zPoints, zPoints, 2);
         worldZVec.NormalizedDifference(zPoints[1], zPoints[0]);
         }
 
-    return m_transformClipStack.TestRay(worldPoint, worldZVec);
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      01/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::PointInsideClip(DPoint3dCR point)
-    {
-    return m_transformClipStack.TestPoint(point);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      01/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::GetRayClipIntersection(double& distance, DPoint3dCR origin, DVec3dCR direction)
-    {
-    return  m_transformClipStack.GetRayIntersection(distance, origin, direction);
+    return m_frustumPlanes.IntersectsRay(worldPoint, worldZVec);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -711,6 +625,7 @@ void ViewContext::SetSubRectNpc(DRange3dCR subRect)
 bool ViewContext::VisitAllViewElements(BSIRectCP updateRect)
     {
     ClearAborted();
+
     if (nullptr != updateRect)
         SetSubRectFromViewRect(updateRect);
 
@@ -727,16 +642,8 @@ bool ViewContext::VisitAllViewElements(BSIRectCP updateRect)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewContext::_VisitAllModelElements()
     {
-    SpatialViewControllerCP physController = m_viewport->GetSpatialViewControllerCP();
-    ClipVectorPtr clipVector = physController ? physController->GetClipVector() : nullptr;
-    if (clipVector.IsValid())
-        PushClip(*clipVector);
-
     // The ViewController must orchestrate the display of all of the elements in the view.
     m_viewport->GetViewControllerR().DrawView(*this);
-
-    if (clipVector.IsValid())
-        PopClip();
 
     return WasAborted();
     }
@@ -1048,37 +955,6 @@ void ViewContext::RasterDisplayParams::SetQualityFactor(double factor)
     m_flags |= ViewContext::RasterDisplayParams::RASTER_PARAM_Quality;
     }
 #endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    05/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::ContextMark::Pop()
-    {
-    if (nullptr == m_context)
-        return;
-
-    while (m_context->GetTransClipDepth() > (int)m_transClipMark)
-        m_context->GetTransformClipStack().Pop(*m_context);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-inline void ViewContext::ContextMark::SetNow()
-    {
-    m_transClipMark = m_context->GetTransClipDepth();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-ViewContext::ContextMark::ContextMark(ViewContextP context)
-    {
-    if (nullptr == (m_context = context))
-        Init(context);
-    else
-        SetNow();
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
@@ -1902,6 +1778,3 @@ void DecorateContext::DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix,
     drawGrid(*graphic, isoGrid, drawDots, gridOrg, gridX, gridY, gridsPerRef, repetitions);
     AddWorldDecoration(*graphic);
     }
-
-
-

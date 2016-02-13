@@ -439,20 +439,13 @@ void SimplifyGraphic::ViewToLocal(DPoint3dP localPts, DPoint3dCP viewPts, int nP
     worldToLocal.Multiply(localPts, localPts, nPts);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-ClipVectorCP SimplifyGraphic::GetCurrentClip() const
-    {
-    return m_context.GetTransformClipStack().GetDrawGeomClip();
-    }
-
 /*---------------------------------------------------------------------------------**//**  
 * @bsimethod                                                    RayBentley      12/08
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SimplifyGraphic::IsRangeTotallyInside(DRange3dCR range) const
     {
-    return ClipPlaneContainment_StronglyInside == m_context.GetTransformClipStack().ClassifyRange(range);
+    Frustum box(range);
+    return m_context.GetFrustumPlanes().Contains(box.m_pts, 8) == FrustumPlanes::Contained::Inside;
     }
 
 /*---------------------------------------------------------------------------------**//**  
@@ -461,9 +454,7 @@ bool SimplifyGraphic::IsRangeTotallyInside(DRange3dCR range) const
 bool SimplifyGraphic::IsRangeTotallyInsideClip(DRange3dCR range) const
     { 
     DPoint3d    corners[8];
-    
     range.Get8Corners(corners);
-
     return ArePointsTotallyInsideClip(corners, 8);
     }
 

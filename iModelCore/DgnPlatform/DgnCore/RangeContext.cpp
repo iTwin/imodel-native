@@ -546,7 +546,7 @@ void RangeClipPlanes::ClipPoints(ElemRangeCalc* rangeCalculator, ClipStackCP cli
             if (thisInside)
                 *outputPoint++ = *pThisPoint;
 
-            pLastPoint    = pThisPoint;
+            pLastPoint   = pThisPoint;
             lastDistance = thisDistance;
             lastInside   = thisInside;
             }
@@ -739,8 +739,6 @@ StatusInt DgnViewport::ComputeFittedElementRange(DRange3dR rangeUnion, DgnElemen
 
         if (nullptr == geomElem)
             continue;
-
-        ViewContext::ContextMark mark(&context);
 
         context.VisitGeometry(*geomElem);
         }

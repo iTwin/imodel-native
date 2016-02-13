@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/QueryView.h>
 #include <Bentley/BeSystemInfo.h>
 
 #define TRACE_QUERY_LOGIC 1
@@ -20,7 +19,7 @@
 
 BEGIN_UNNAMED_NAMESPACE
 //=======================================================================================
-// @bsiclass                                                    Keith.Bentley   12/11
+// @bsiclass                                                    Keith.Bentley   02/16
 //=======================================================================================
 struct SpatialFitQuery : DgnQueryView::SpatialQuery
     {
@@ -34,55 +33,55 @@ public:
     DRange3dCR GetRange() const {return m_fitRange;}
     };
 
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   02/16
-//=======================================================================================
-struct CornerBox : Frustum
-{
-    CornerBox(RTree3dValCR from)
-        {
-        m_pts[0].x = m_pts[3].x = m_pts[4].x = m_pts[7].x = from.m_minx;   //       7+------+6
-        m_pts[1].x = m_pts[2].x = m_pts[5].x = m_pts[6].x = from.m_maxx;   //       /|     /|
-                                                                           //      / |    / |
-        m_pts[0].y = m_pts[1].y = m_pts[4].y = m_pts[5].y = from.m_miny;   //     / 4+---/--+5
-        m_pts[2].y = m_pts[3].y = m_pts[6].y = m_pts[7].y = from.m_maxy;   //   3+------+2 /    y   z
-                                                                           //    | /    | /     |  /
-        m_pts[0].z = m_pts[1].z = m_pts[2].z = m_pts[3].z = from.m_minz;   //    |/     |/      |/
-        m_pts[4].z = m_pts[5].z = m_pts[6].z = m_pts[7].z = from.m_maxz;   //   0+------+1      *---x
-        }
-    
-    CornerBox(DRange3dCR range)
-        {
-        m_pts[0].x = m_pts[3].x = m_pts[4].x = m_pts[7].x = range.low.x; 
-        m_pts[1].x = m_pts[2].x = m_pts[5].x = m_pts[6].x = range.high.x;
-        m_pts[0].y = m_pts[1].y = m_pts[4].y = m_pts[5].y = range.low.y; 
-        m_pts[2].y = m_pts[3].y = m_pts[6].y = m_pts[7].y = range.high.y;
-        m_pts[0].z = m_pts[1].z = m_pts[2].z = m_pts[3].z = range.low.y; 
-        m_pts[4].z = m_pts[5].z = m_pts[6].z = m_pts[7].z = range.high.z;
-        }
-};
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::FrustumPlanes::Init(FrustumCR frustum)
-    {
-    resize(6);
-    ClipUtil::RangePlanesFromFrustum(&front(), frustum, true, true, 1.0E-6);
-    }
+Frustum::Frustum(RTree3dValCR from)
+    {                                                                  //       7+------+6
+    m_pts[0].x = m_pts[3].x = m_pts[4].x = m_pts[7].x = from.m_minx;   //       /|     /|
+    m_pts[1].x = m_pts[2].x = m_pts[5].x = m_pts[6].x = from.m_maxx;   //      / |    / |
+    m_pts[0].y = m_pts[1].y = m_pts[4].y = m_pts[5].y = from.m_miny;   //     / 4+---/--+5
+    m_pts[2].y = m_pts[3].y = m_pts[6].y = m_pts[7].y = from.m_maxy;   //   3+------+2 /    y   z
+    m_pts[0].z = m_pts[1].z = m_pts[2].z = m_pts[3].z = from.m_minz;   //    | /    | /     |  /
+    m_pts[4].z = m_pts[5].z = m_pts[6].z = m_pts[7].z = from.m_maxz;   //    |/     |/      |/
+    }                                                                  //   0+------+1      *---x
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::RTreeMatchFunction::Within DgnQueryView::FrustumPlanes::TestBox(FrustumCR frustum)
+Frustum::Frustum(DRange3dCR range)
+    {                                                                  
+    m_pts[0].x = m_pts[3].x = m_pts[4].x = m_pts[7].x = range.low.x;   
+    m_pts[1].x = m_pts[2].x = m_pts[5].x = m_pts[6].x = range.high.x;  
+    m_pts[0].y = m_pts[1].y = m_pts[4].y = m_pts[5].y = range.low.y;   
+    m_pts[2].y = m_pts[3].y = m_pts[6].y = m_pts[7].y = range.high.y;  
+    m_pts[0].z = m_pts[1].z = m_pts[2].z = m_pts[3].z = range.low.y;   
+    m_pts[4].z = m_pts[5].z = m_pts[6].z = m_pts[7].z = range.high.z;  
+    }                                                                  
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+int SpatialFitQuery::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
     {
-    auto containment = ClassifyPointContainment(frustum.m_pts, 8);
-    if (containment == ClipPlaneContainment_StronglyInside) 
-        return RTreeMatchFunction::Within::Inside;
-    if (containment == ClipPlaneContainment_StronglyOutside) 
-        return RTreeMatchFunction::Within::Outside;
-    return RTreeMatchFunction::Within::Partly;
+    RTree3dValCP testRange = (RTree3dValCP) info.m_coords;
+
+    if (m_fitRange.IsContained(testRange->m_minx, testRange->m_miny, testRange->m_minz) &&
+        m_fitRange.IsContained(testRange->m_maxx, testRange->m_maxy, testRange->m_maxz))
+        {
+        info.m_within = RTreeMatchFunction::Within::Outside; // If this range is entirely contained there is no reason to continue (it cannot contribute to the fit)
+        }
+    else
+        {
+        info.m_within = RTreeMatchFunction::Within::Partly; 
+        info.m_score  = info.m_level; // to get depth-first traversal
+        if (info.m_level == 0)
+            m_lastRange = DRange3d::From(testRange->m_minx, testRange->m_miny, testRange->m_minz, testRange->m_maxx, testRange->m_maxy, testRange->m_maxz);
+        }
+
+    return  BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -141,9 +140,27 @@ void DgnQueryView::QueueQuery(DgnViewportR viewport, UpdatePlan::Query const& pl
     query->SetSizeFilter(viewport, GetSceneLODSize());
 
     if (m_noQuery)
-        m_results = query->GetResults(); // we're just showing a fixed set of elements. Don't perform a query, just get the results.
+        m_results = query->GetResults(); // we're only showing a fixed set of elements. Don't perform a query, just get the results (created in ctor of RangeQuery)
     else
         m_dgndb.GetQueryQueue().Add(*query);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnQueryView::AssignActiveVolume(ClipPrimitiveR volume)
+    {
+    RequestAbort(true);
+    m_activeVolume = &volume;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnQueryView::ClearActiveVolume()
+    {
+    RequestAbort(true);
+    m_activeVolume = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -218,29 +235,6 @@ void DgnQueryView::_OnCategoryChange(bool singleEnabled)
     T_Super::_OnCategoryChange(singleEnabled); 
     RequestAbort(true);
     m_forceNewQuery = true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-int SpatialFitQuery::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
-    {
-    RTree3dValCP testRange = (RTree3dValCP) info.m_coords;
-
-    if (m_fitRange.IsContained(testRange->m_minx, testRange->m_miny, testRange->m_minz) &&
-        m_fitRange.IsContained(testRange->m_maxx, testRange->m_maxy, testRange->m_maxz))
-        {
-        info.m_within = RTreeMatchFunction::Within::Outside; // If this range is entirely contained there is no reason to continue (it cannot contribute to the fit)
-        }
-    else
-        {
-        info.m_within = RTreeMatchFunction::Within::Partly; 
-        info.m_score  = info.m_level; // to get depth-first traversal
-        if (info.m_level == 0)
-            m_lastRange = DRange3d::From(testRange->m_minx, testRange->m_miny, testRange->m_minz, testRange->m_maxx, testRange->m_maxy, testRange->m_maxz);
-        }
-
-    return  BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -374,7 +368,7 @@ void DgnQueryView::AddtoSceneQuick(SceneContextR context, SceneMembers& members,
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Create the scene and potentially schedule a progressive display 
+* Create the scene and potentially schedule a progressive task
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::_CreateScene(SceneContextR context) 
@@ -390,6 +384,9 @@ void DgnQueryView::_CreateScene(SceneContextR context)
     DgnViewportR vp = *context.GetViewport();
     if (!results.IsValid())
         return;
+
+    if (m_activeVolume.IsValid())
+        context.SetActiveVolume(*m_activeVolume);
 
     SceneMembersPtr members = new SceneMembers();
     AddtoSceneQuick(context, *members, *results);
@@ -693,7 +690,7 @@ void DgnQueryView::RangeQuery::_Go()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
+* @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::RangeQuery::AddAlwaysDrawn(DgnQueryViewCR view)
     {
@@ -708,12 +705,12 @@ void DgnQueryView::RangeQuery::AddAlwaysDrawn(DgnQueryViewCR view)
         if (nullptr == geom || !geom->HasGeometry())
             continue;
 
-        CornerBox box(geom->CalculateRange3d());
-        if (RTreeMatchFunction::Within::Outside == m_clips.TestBox(box))
+        Frustum box(geom->CalculateRange3d());
+        if (RTreeMatchFunction::Within::Outside == (RTreeMatchFunction::Within) m_planes.Contains(box))
             continue;
 
         if (TestElement(curr))
-            m_results->m_scores.Insert(3.0, curr); // value has to be higher than max occlusion score which is really 2.0
+            m_results->m_scores.Insert(10.0, curr); // value just has to be higher than max occlusion score which is really 2.0
         }
     }
 
@@ -781,7 +778,7 @@ int DgnQueryView::RangeQuery::_TestRTree(RTreeMatchFunction::QueryInfo const& in
     info.m_within = RTreeMatchFunction::Within::Outside;
 
     RTree3dValCP coords = (RTree3dValCP) info.m_coords;
-    CornerBox box(*coords);
+    Frustum box(*coords);
 
     RTreeMatchFunction::Within rangeTest;
     if (info.m_parentWithin == RTreeMatchFunction::Within::Inside)
@@ -791,9 +788,19 @@ int DgnQueryView::RangeQuery::_TestRTree(RTreeMatchFunction::QueryInfo const& in
         if (!m_boundingRange.Intersects(*coords) || !SkewTest(coords)) // quick test for entirely outside axis-aligned bounding range
             return BE_SQLITE_OK;
 
-        rangeTest = m_clips.TestBox(box);
+        rangeTest = (RTreeMatchFunction::Within) m_planes.Contains(box);
         if (rangeTest == RTreeMatchFunction::Within::Outside)
             return BE_SQLITE_OK; // overlaps outer bounding range but not inside clip planes
+
+        if (m_activeVolume.IsValid())
+            {
+            auto volumeTest = m_activeVolume->ClassifyPointContainment(box.m_pts, 8);
+            if (ClipPlaneContainment_StronglyOutside == volumeTest)
+                return BE_SQLITE_OK;
+
+            if (ClipPlaneContainment_Ambiguous == volumeTest)
+                rangeTest = RTreeMatchFunction::Within::Partly; // make sure we keep testing
+            }
         }
 
     if (!ComputeOcclusionScore(m_lastScore, box))
@@ -913,29 +920,6 @@ StatusInt DgnQueryView::VisitElement(ViewContextR context, DgnElementId elementI
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     10/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-inline bool DgnQueryView::RangeQuery::ComputeNPC(DPoint3dR npcOut, DPoint3dCR localIn)
-    {
-    double w;
-    if (m_cameraOn)
-        {
-        w = m_localToNpc.coff[3][0] * localIn.x + m_localToNpc.coff[3][1] * localIn.y + m_localToNpc.coff[3][2] * localIn.z + m_localToNpc.coff[3][3];
-        if (w < 1.0E-5)
-            return false;
-        }
-    else
-        {
-        w = 1.0;
-        }
-
-    npcOut.x = (m_localToNpc.coff[0][0] * localIn.x + m_localToNpc.coff[0][1] * localIn.y + m_localToNpc.coff[0][2] * localIn.z + m_localToNpc.coff[0][3]) / w;
-    npcOut.y = (m_localToNpc.coff[1][0] * localIn.x + m_localToNpc.coff[1][1] * localIn.y + m_localToNpc.coff[1][2] * localIn.z + m_localToNpc.coff[1][3]) / w;
-    npcOut.z = (m_localToNpc.coff[2][0] * localIn.x + m_localToNpc.coff[2][1] * localIn.y + m_localToNpc.coff[2][2] * localIn.z + m_localToNpc.coff[2][3]) / w;
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * Set the size of a filter that eliminates elements smaller than a given size (in pixels). To enable this filter, you must also call SetTestLOD.
 * For range queries, we only enable this after we've found our maximum number of hits.
 * @bsimethod                                    Keith.Bentley                   02/16
@@ -955,11 +939,13 @@ void DgnQueryView::RangeQuery::SetSizeFilter(DgnViewportCR vp, double size)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnQueryView::RangeQuery::RangeQuery(DgnQueryViewCR view, FrustumCR frustum, DgnViewportCR vp, UpdatePlan::Query const& plan) : SpatialQuery(&view.m_special), DgnQueryQueue::Task(view, plan)
+DgnQueryView::RangeQuery::RangeQuery(DgnQueryViewCR view, FrustumCR frustum, DgnViewportCR vp, UpdatePlan::Query const& plan) : 
+        SpatialQuery(&view.m_special), DgnQueryQueue::Task(view, plan)
     {
     m_count=0;
     m_localToNpc = vp.GetWorldToNpcMap()->M0;
     m_cameraOn   = vp.IsCameraOn();
+    m_activeVolume = view.GetActiveVolume();
 
     if (m_cameraOn)
         {
@@ -983,6 +969,29 @@ DgnQueryView::RangeQuery::RangeQuery(DgnQueryViewCR view, FrustumCR frustum, Dgn
     SetFrustum(frustum);
     m_results = new QueryResults();
     AddAlwaysDrawn(view);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnQueryView::RangeQuery::ComputeNPC(DPoint3dR npcOut, DPoint3dCR localIn)
+    {
+    double w;
+    if (m_cameraOn)
+        {
+        w = m_localToNpc.coff[3][0] * localIn.x + m_localToNpc.coff[3][1] * localIn.y + m_localToNpc.coff[3][2] * localIn.z + m_localToNpc.coff[3][3];
+        if (w < 1.0E-5)
+            return false;
+        }
+    else
+        {
+        w = 1.0;
+        }
+
+    npcOut.x = (m_localToNpc.coff[0][0] * localIn.x + m_localToNpc.coff[0][1] * localIn.y + m_localToNpc.coff[0][2] * localIn.z + m_localToNpc.coff[0][3]) / w;
+    npcOut.y = (m_localToNpc.coff[1][0] * localIn.x + m_localToNpc.coff[1][1] * localIn.y + m_localToNpc.coff[1][2] * localIn.z + m_localToNpc.coff[1][3]) / w;
+    npcOut.z = (m_localToNpc.coff[2][0] * localIn.x + m_localToNpc.coff[2][1] * localIn.y + m_localToNpc.coff[2][2] * localIn.z + m_localToNpc.coff[2][3]) / w;
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1087,7 +1096,6 @@ bool DgnQueryView::RangeQuery::ComputeOcclusionScore(double& score, FrustumCR bo
         }
 
     double  zTotal = 0.0;
-
     for (uint32_t i=0, mask = 0x0001; i<nVertices; i++, mask <<= 1)
         {
         int  cornerIndex = s_indexList[projectionIndex][i];
@@ -1142,27 +1150,6 @@ bool DgnQueryView::RangeQuery::ComputeOcclusionScore(double& score, FrustumCR bo
     score *= .5 * (zTotal / (double) nVertices);
 
     return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::RangeQuery::SetFrustum(FrustumCR frustum)
-    {
-    DRange3d range = frustum.ToRange();
-    m_boundingRange.FromRange(range);
-
-    range.InitFrom(frustum.GetPts(), 4);
-    m_backFace.FromRange(range);
-
-    // get unit bvector from front plane to back plane
-    m_viewVec = DVec3d::FromStartEndNormalize(*frustum.GetPts(), *(frustum.GetPts()+4));
-
-    // check to see if it's worthwhile using skew scan (skew vector not along one of the three major axes)
-    int alongAxes = (fabs(m_viewVec.x) < 1e-8) + (fabs(m_viewVec.y) < 1e-8) + (fabs(m_viewVec.z) < 1e-8);
-    m_doSkewTest = alongAxes<2;
-
-    m_clips.Init(frustum);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1261,6 +1248,27 @@ bool DgnQueryView::RangeQuery::SkewTest(RTree3dValCP testRange)
         }
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnQueryView::RangeQuery::SetFrustum(FrustumCR frustum)
+    {
+    DRange3d range = frustum.ToRange();
+    m_boundingRange.FromRange(range);
+
+    range.InitFrom(frustum.GetPts(), 4);
+    m_backFace.FromRange(range);
+
+    // get unit bvector from front plane to back plane
+    m_viewVec = DVec3d::FromStartEndNormalize(*frustum.GetPts(), *(frustum.GetPts()+4));
+
+    // check to see if it's worthwhile using skew scan (skew vector not along one of the three major axes)
+    int alongAxes = (fabs(m_viewVec.x) < 1e-8) + (fabs(m_viewVec.y) < 1e-8) + (fabs(m_viewVec.z) < 1e-8);
+    m_doSkewTest = alongAxes<2;
+
+    m_planes.Init(frustum);
     }
 
 /*---------------------------------------------------------------------------------**//**

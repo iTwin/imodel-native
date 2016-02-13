@@ -65,7 +65,7 @@ private:
     mutable ClipPlaneSet* m_clipPlaneSet = nullptr;
 
     ClipVectorPtr CreateClipVector() const;
-    std::unique_ptr<FenceParams> CreateFence (DgnViewportP viewport, bool allowPartialOverlaps) const;
+    FenceParams CreateFence (DgnViewportP viewport, bool allowPartialOverlaps) const;
     static DgnViewportPtr CreateNonVisibleViewport (DgnDbR dgnDb);
 
     BentleyStatus GetRange(DRange3d& range) const; // Gets the range of the volume, described from the Project Coordinate System in storage units 

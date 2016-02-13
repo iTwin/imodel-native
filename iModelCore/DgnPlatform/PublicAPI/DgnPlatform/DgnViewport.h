@@ -447,6 +447,10 @@ public:
     SheetViewControllerCP GetSheetViewControllerCP() const {return GetViewController()._ToSheetView();}
     //! If this view is a sheet view, get a writeable pointer to the sheet view controller.
     SheetViewControllerP GetSheetViewControllerP() {return (SheetViewControllerP) GetSheetViewControllerCP();}
+    //! If this view is a query view, get the query view controller.
+    DgnQueryViewCP GetQueryViewCP() {return (DgnQueryViewCP) GetViewController()._ToQueryView();}
+    //! If this view is a query view, get a writeable pointer to the query view controller.
+    DgnQueryViewP GetQueryViewP() {return (DgnQueryViewP) GetQueryViewCP();}
 
     //! Get View Origin for this DgnViewport.
     //! @return the root coordinates of the lower left back corner of the DgnViewport.

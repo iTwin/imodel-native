@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/SectioningPhysicalViewController.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -121,8 +121,6 @@ ClipVectorPtr SectioningViewController::GetClipVectorInternal(ClipVolumePass pas
     return insideForward;
     }
 
-ClipVectorPtr SectioningViewController::_GetClipVector() const {return ClipVector::Create();}
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      03/14
 //---------------------------------------------------------------------------------------
@@ -182,13 +180,11 @@ void SectioningViewController::_DrawView(ViewContextR context)
         return;
         }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context.PushClip(*insideForward);
     DrawViewInternal(context);
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context.PopTransformClip();
-#else
     context.PopClip();
-#endif
 
     //  Draw the clip planes themselves
     m_clip->Draw(context);
@@ -197,22 +193,14 @@ void SectioningViewController::_DrawView(ViewContextR context)
     context.PushClip(*GetClipVectorInternal(m_pass = ClipVolumePass::InsideBackward));
     SetOverrideGraphicParams(context);
     DrawViewInternal(context);
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context.PopTransformClip();
-#else
     context.PopClip();
-#endif
 
     context.PushClip(*GetClipVectorInternal(m_pass = ClipVolumePass::Outside));
     SetOverrideGraphicParams(context);
     DrawViewInternal(context);
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context.PopTransformClip();
-#else
     context.PopClip();
-#endif
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context.GetOverrideGraphicParams()->Clear();
     context.GetCurrentGraphicR().ActivateOverrideGraphicParams(context.GetOverrideGraphicParams());
 #endif

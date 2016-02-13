@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/macro/MacroConfigurationAdmin.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -10,6 +10,7 @@
 #include <DgnPlatform/DesktopTools/envvutil.h>
 #include <DgnPlatform/DesktopTools/fileutil.h>
 #include <DgnPlatform/DesktopTools/MacroFileProcessor.h>
+#include <Bentley/BeFileListIterator.h>
 
 #include "macro.h"
 #if defined (BENTLEY_WIN32)

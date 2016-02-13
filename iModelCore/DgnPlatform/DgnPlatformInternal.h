@@ -13,24 +13,15 @@
 #include <Bentley/BeThread.h>
 #include <Bentley/BeNumerical.h>
 #include <Bentley/BeTimeUtilities.h>
-#include <Bentley/BeStringUtilities.h>
 #include <Bentley/BeFileName.h>
-#include <Bentley/BeFile.h>
 #include <Bentley/CatchNonPortable.h>
-#include <Bentley/BeFileListIterator.h>
 #include <DgnPlatform/DgnPlatform.h>
 #include <Bentley/BeAssert.h>
 #include <Bentley/BeDebugLog.h>
-#include <Vu/VuApi.h>
 #include <Mtg/GpaApi.h>
 #include <Geom/GeoPoint.h>
-#include <iterator>
-#include <map>
 #include <valarray>
-#include <set>
-#include <sys/stat.h>
 #include <math.h>
-#include <DgnPlatform/Tools/BitMask.h>
 #include <DgnPlatform/VecMath.h>
 #include <DgnPlatform/ECUtils.h>
 #include <DgnPlatform/DgnCoreAPI.h>
@@ -55,21 +46,13 @@
 #include <DgnPlatform/AutoRestore.h>
 #include <Logging/bentleylogging.h>
 #include <Bentley/BeStringUtilities.h>
-#include <BeXml/BeXml.h>
 #include <Bentley/BeThreadLocalStorage.h>
 #include <DgnPlatform/DgnProgressMeter.h>
 #include <ECObjects/ECSchema.h>
-#include <DgnPlatform/TransformClipStack.h>
 #include "DgnCore/JsonUtils.h"
 #include <DgnPlatform/DgnHandlersAPI.h>
 #include <DgnPlatform/RegionUtil.h>
-#include <Mtg/MtgApi.h>
-#include <Regions/regionsAPI.h>
-#include <Regions/rimsbsAPI.h>
-#include <DgnPlatform/IEditActionSource.h>
 #include <Logging/bentleylogging.h>
-#include <DgnPlatform/Tools/stringop.h>
-#include <DgnPlatformInternal/DgnCore/ElemRangeCalc.h>
 #include <DgnPlatform/IGeoCoordServices.h>
 #include <DgnPlatform/DgnMaterial.h>
 #include <DgnPlatform/RenderMaterial.h>
@@ -80,14 +63,9 @@
 #include <DgnPlatform/DgnTrueColor.h>
 #include <DgnPlatform/GenericDomain.h>
 #include <DgnPlatform/QueryView.h>
-
 #include "DgnCore/DgnCoreLog.h"
 
 #define ___DGNPLATFORM_SERIALIZED___ BeSystemMutexHolder ___holdBeSystemMutexInScope___
-
-#define ASSERT_CORRECT_HOST(t)  BeAssert(((t) == DgnPlatformLib::QueryHost()) && "This object cannot be used on this thread")
-
-#define unslong_to_double(ul)  (double)(ul)
 
 #define DGNCORE_RUNONCE_CHECK(VAR) {if (VAR) return; VAR=true;}
 #define DGNCORELOG NativeLogging::LoggingManager::GetLogger(L"DgnPlatform")

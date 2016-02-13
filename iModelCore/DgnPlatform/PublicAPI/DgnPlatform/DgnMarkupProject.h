@@ -333,7 +333,6 @@ protected:
     virtual bool _Allow3dManipulations() const override;
     virtual AxisAlignedBox3d _GetViewedExtents() const override;
     virtual ColorDef _GetBackgroundColor() const override;
-    virtual ClipVectorPtr _GetClipVector() const override {return NULL;}
     virtual bool _IsSnapAdjustmentRequired(DgnViewportR vp, bool snapLockEnabled) const override {return true;} // Always project snap to ACS plane...
     virtual bool _IsContextRotationRequired(DgnViewportR vp, bool contextLockEnabled) const override {return true;} // Always orient AccuDraw to ACS plane...
     virtual void _OnViewOpened(DgnViewportR vp) override;

@@ -25,6 +25,7 @@
 #include "DgnHost.h"
 #include <BeSQLite/BeSQLite.h>
 #include <BeSQLite/ChangeSet.h>
+#include <BeSQLite/RTreeMatch.h>
 #include <ECDb/ECDbApi.h>
 
 #define USING_NAMESPACE_BENTLEY_DGNPLATFORM using namespace BentleyApi::Dgn; // for backwards compatibility, do not use
@@ -65,7 +66,6 @@ DGNPLATFORM_TYPEDEFS(Caret)
 DGNPLATFORM_TYPEDEFS(ChangeAnnotationScale)
 DGNPLATFORM_TYPEDEFS(ClipPrimitive)
 DGNPLATFORM_TYPEDEFS(ClipVector)
-DGNPLATFORM_TYPEDEFS(ClipVolumeOverrides)
 DGNPLATFORM_TYPEDEFS(ColorDef)
 DGNPLATFORM_TYPEDEFS(ComponentDef)
 DGNPLATFORM_TYPEDEFS(ComponentModel)
@@ -572,6 +572,9 @@ struct Frustum
     void Invalidate() {memset(this, 0, sizeof(*this));}
     bool operator==(Frustum const& rhs) const {return 0==memcmp(m_pts, rhs.m_pts, sizeof(*this));}
     bool operator!=(Frustum const& rhs) const {return !(*this == rhs);}
+    Frustum() {} // uninitialized!
+    DGNPLATFORM_EXPORT explicit Frustum(DRange3dCR);
+    explicit Frustum(BeSQLite::RTree3dValCR);
 };
 
 //=======================================================================================

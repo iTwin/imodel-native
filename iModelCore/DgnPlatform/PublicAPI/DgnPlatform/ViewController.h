@@ -358,6 +358,11 @@ public:
     virtual SheetViewControllerCP _ToSheetView() const {return nullptr;}
     SheetViewControllerP  ToSheetViewP() {return const_cast<SheetViewControllerP>(_ToSheetView());}
 
+    //! perform the equivalent of a dynamic_cast to a DgnQueryView.
+    //! @return a valid DgnQueryViewCP, or nullptr if this is not a query view
+    virtual DgnQueryViewCP _ToQueryView() const {return nullptr;}
+    DgnQueryViewP ToQueryViewP() {return const_cast<DgnQueryViewP>(_ToQueryView());}
+
     //! determine whether this is a physical view
     bool IsSpatialView() const {return nullptr != _ToSpatialView();}
 
@@ -369,6 +374,9 @@ public:
 
     //! determine whether this is a sheet view
     bool IsSheetView() const {return nullptr != _ToSheetView();}
+
+    //! determine whether this is a query view
+    bool IsQueryView() const {return nullptr != _ToQueryView();}
 
     //! Get the ViewFlags.
     Render::ViewFlags GetViewFlags() const {return m_viewFlags;}
@@ -533,7 +541,6 @@ protected:
     IAuxCoordSysPtr m_auxCoordSys;      //!< The auxiliary coordinate system in use.
 
     virtual SpatialViewControllerCP _ToSpatialView() const override {return this;}
-    virtual ClipVectorPtr _GetClipVector() const {return nullptr;}
 
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(double, bool expandView) override;
     virtual DPoint3d _GetOrigin() const override {return m_origin;}
@@ -559,7 +566,6 @@ public:
     //! @param[in] viewId the id of the view in the project.
     DGNPLATFORM_EXPORT SpatialViewController(DgnDbR project, DgnViewId viewId);
 
-    ClipVectorPtr GetClipVector() const {return _GetClipVector();}
     DGNPLATFORM_EXPORT void TransformBy(TransformCR);
 
 //__PUBLISH_SECTION_END__
@@ -644,7 +650,6 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraViewController : SpatialViewController
 
     bool            m_isCameraOn;       //!< if true, m_camera is valid.
     CameraInfo      m_camera;           //!< Information about the camera lens used for the view.
-    ClipVectorPtr   m_clipVector;       //!< The clip currently applied to this view
 
 protected:
     //! Calculate and save the lens angle formed by the current delta and focus distance
@@ -655,7 +660,6 @@ protected:
     DGNPLATFORM_EXPORT virtual DPoint3d _GetTargetPoint() const override;
     DGNPLATFORM_EXPORT virtual bool _OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) override;
     DGNPLATFORM_EXPORT virtual bool _OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui) override;
-    DGNPLATFORM_EXPORT virtual ClipVectorPtr _GetClipVector() const override;
     DGNPLATFORM_EXPORT virtual ViewportStatus _SetupFromFrustum(Frustum const&) override;
     DGNPLATFORM_EXPORT virtual void _SaveToSettings(JsonValueR) const override;
     DGNPLATFORM_EXPORT virtual void _RestoreFromSettings(JsonValueCR) override;
@@ -796,11 +800,6 @@ public:
     void SetEyePoint(DPoint3dCR pt) {m_camera.SetEyePoint(pt);}
 /** @} */
 
-/** @name ClipVector */
-/** @{ */
-    void SetClipVector(ClipVectorR clip) {m_clipVector = &clip;}
-    void ClearClipVector() {m_clipVector=nullptr;}
-/** @} */
 };
 
 //=======================================================================================
@@ -819,8 +818,6 @@ protected:
     mutable uint32_t m_foremostCutPlaneIndex;
     mutable DPlane3d m_foremostCutPlane;
     ClipVolumePass m_pass;
-
-    DGNPLATFORM_EXPORT virtual ClipVectorPtr _GetClipVector() const override;
 
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR) override;
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeGeometry(ViewContextR, GeometrySourceCR, double) override;
@@ -883,7 +880,7 @@ public:
     };
 
 //=======================================================================================
-//! A DrawingViewController is used to control views of DrawingModel's
+//! A DrawingViewController is used to control views of DrawingModels
 //! @ingroup DgnViewGroup
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
@@ -983,7 +980,6 @@ private:
     virtual DPoint3d _GetTargetPoint() const override;
     virtual bool _Allow3dManipulations() const override;
     virtual AxisAlignedBox3d _GetViewedExtents() const override;
-    virtual ClipVectorPtr _GetClipVector() const override;
 
     void PushClipsForSpatialView(ViewContextR) const;
     void PopClipsForSpatialView(ViewContextR) const;

@@ -52,7 +52,6 @@ DG_INLINE StatusInt IViewClipObject::GetTransform(TransformR trans) const {retur
 DG_INLINE size_t IViewClipObject::GetPrimaryCutPlaneCount() const {return _GetPrimaryCutPlaneCount();}
 DG_INLINE StatusInt IViewClipObject::ApplyTransform(TransformCR t) {return _ApplyTransform(t);}
 DG_INLINE void IViewClipObject::Draw(ViewContextR c) {return _Draw(c);}
-DG_INLINE ClipVectorPtr CameraViewController::_GetClipVector() const {return m_clipVector;}
 
 DG_INLINE IACSManagerR IACSManager::GetManager() {return T_HOST.GetAcsManager();}
 DG_INLINE void IAuxCoordSys::DisplayInView(DecorateContextR context, ACSDisplayOptions options, bool drawName) const {return _DisplayInView(context, options, drawName);}

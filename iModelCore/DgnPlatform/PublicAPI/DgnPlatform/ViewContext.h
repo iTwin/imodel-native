@@ -25,39 +25,6 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 +===============+===============+===============+===============+===============+======*/
 
 //=======================================================================================
-//! @note This is stored persistently as part of the Reference Dynamic View Settings XAttributes, and thus cannot be changed
-//=======================================================================================
-struct  ClipVolumeOverrides
-{
-    struct
-    {
-        unsigned    m_display:1;        //!< If true, the clip volume area displays.
-        unsigned    m_disableLocate:1;  //!< If true, the elements in the clip volume area cannot be located.
-        unsigned    m_disableSnap:1;    //!< If true, the elements in the clip volume area cannot be snaped.
-        unsigned    m_reflected:1;      //!< If true, the clip volume area is reflected.
-        unsigned    m_unused:28;
-    } m_flags;
-
-    int32_t    m_styleIndex;       //!< Display style of the clip volume area. -1 to match that view.
-
-    int32_t GetDisplayStyleIndex() const {return m_styleIndex;}
-    void SetDisplayStyleIndex(int32_t index) {m_styleIndex = index;}
-    bool IsEqual(const ClipVolumeOverrides& other) const
-        {
-        if (m_flags.m_display != other.m_flags.m_display)
-            return false;
-        if (m_flags.m_disableLocate != other.m_flags.m_disableLocate)
-            return false;
-        if (m_flags.m_disableSnap != other.m_flags.m_disableSnap)
-            return false;
-        if (m_styleIndex != other.m_styleIndex)
-            return false;
-
-        return true;
-        }
-};
-
-//=======================================================================================
 // @bsiclass
 //=======================================================================================
 struct     ILineStyleComponent
@@ -126,22 +93,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewContext : NonCopyableClass, CheckStop, RangeN
 public:
 
     //=======================================================================================
-    // @bsiclass                                                     KeithBentley    04/01
-    //=======================================================================================
-    struct ContextMark
-    {
-        ViewContextP m_context;
-        size_t       m_transClipMark;
-
-    public:
-        DGNPLATFORM_EXPORT explicit ContextMark(ViewContextP context);
-        ~ContextMark() {Pop();}
-        DGNPLATFORM_EXPORT void Pop();
-        DGNPLATFORM_EXPORT void SetNow();
-        void Init(ViewContextP context) {m_transClipMark = 0; m_context = context;}
-    };
-
-    //=======================================================================================
     // @bsiclass                                                     Brien.Bastings  11/07
     //=======================================================================================
     struct  ClipStencil
@@ -161,14 +112,14 @@ public:
     };
 
 protected:
-    DgnDbP                  m_dgnDb = nullptr;
-    bool                    m_isAttached = false;
-    bool                    m_is3dView = true;
-    bool                    m_wantMaterials = false;
-    bool                    m_useNpcSubRange = false;
-    bool                    m_ignoreViewRange = false;
-    bool                    m_scanRangeValid = false;
-    bool                    m_stopAfterTimeout = false;
+    DgnDbP m_dgnDb = nullptr;
+    bool m_isAttached = false;
+    bool m_is3dView = true;
+    bool m_wantMaterials = false;
+    bool m_useNpcSubRange = false;
+    bool m_ignoreViewRange = false;
+    bool m_scanRangeValid = false;
+    bool m_stopAfterTimeout = false;
     uint64_t                m_endTime = 0;     // abort after this time.
     Render::ViewFlags       m_viewflags;
     DrawPurpose             m_purpose;
@@ -176,7 +127,7 @@ protected:
     DMap4d                  m_worldToNpc;
     DMap4d                  m_worldToView;
     ScanCriteria            m_scanCriteria;
-    TransformClipStack      m_transformClipStack;
+    Render::FrustumPlanes   m_frustumPlanes;
     DgnViewportP            m_viewport = nullptr;
     IElemTopologyCPtr       m_currElemTopo;
     GeometryStreamEntryId   m_currGeometryStreamEntryId;
@@ -189,6 +140,7 @@ protected:
     virtual Render::GraphicP _GetCachedPartGraphic(DgnGeometryPartId, double pixelSize, ElementAlignedBox3dR) {return nullptr;}
     virtual void _SavePartGraphic(DgnGeometryPartId, Render::GraphicR, ElementAlignedBox3dCR) {}
     virtual void _OutputGraphic(Render::GraphicR, GeometrySourceCP) {}
+    virtual void _SetActiveVolume(ClipPrimitiveCR) {}
     virtual Render::GraphicP _GetCachedGraphic(GeometrySourceCR, double pixelSize) {return nullptr;}
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize);
     DGNPLATFORM_EXPORT virtual bool _WantAreaPatterns();
@@ -206,8 +158,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _InitScanRangeAndPolyhedron();
     DGNPLATFORM_EXPORT virtual bool _VisitAllModelElements();
     DGNPLATFORM_EXPORT virtual StatusInt _VisitDgnModel(DgnModelP);
-    DGNPLATFORM_EXPORT virtual void _PushClip(ClipVectorCR clip);
-    DGNPLATFORM_EXPORT virtual void _PopClip();    
     DGNPLATFORM_EXPORT virtual bool _FilterRangeIntersection(GeometrySourceCR);
     virtual IPickGeomP _GetIPickGeom() {return nullptr;}
     virtual Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) = 0;
@@ -217,7 +167,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _AddContextOverrides(Render::OvrGraphicParamsR, GeometrySourceCP source);
     DGNPLATFORM_EXPORT virtual void _CookGeometryParams(Render::GeometryParamsR, Render::GraphicParamsR);
     DGNPLATFORM_EXPORT virtual void _SetScanReturn();
-    DGNPLATFORM_EXPORT virtual void _PushFrustumClip();
     DGNPLATFORM_EXPORT virtual StatusInt _ScanDgnModel(DgnModelP model);
     DGNPLATFORM_EXPORT virtual bool _ScanRangeFromPolyhedron();
     DGNPLATFORM_EXPORT virtual void _SetDgnDb(DgnDbR);
@@ -225,7 +174,6 @@ protected:
     DGNPLATFORM_EXPORT ViewContext();
 
 public:
-    int GetTransClipDepth() {return (int) m_transformClipStack.GetSize();}
     DMap4dCR GetWorldToView() const {return m_worldToView;}
     DMap4dCR GetWorldToNpc() const {return m_worldToNpc;}
     bool GetWantMaterials() {return m_wantMaterials;};
@@ -240,15 +188,14 @@ public:
     bool VisitAllModelElements() {return _VisitAllModelElements();}
     DGNPLATFORM_EXPORT bool VisitAllViewElements(BSIRectCP updateRect=nullptr);
     StatusInt InitContextForView() {return _InitContextForView();}
-    DGNPLATFORM_EXPORT bool IsWorldPointVisible(DPoint3dCR worldPoint, bool boresite);
-    DGNPLATFORM_EXPORT bool PointInsideClip(DPoint3dCR point);
-    DGNPLATFORM_EXPORT bool GetRayClipIntersection(double& distance, DPoint3dCR origin, DVec3dCR direction);
+    DGNPLATFORM_EXPORT bool IsPointVisible(DPoint3dCR worldPoint, bool boresite);
     DGNPLATFORM_EXPORT Frustum GetFrustum();
-    TransformClipStackR GetTransformClipStack() {return m_transformClipStack;}
+    Render::FrustumPlanes const& GetFrustumPlanes() const {return m_frustumPlanes;}
     ScanCriteriaCP GetScanCriteria() const {return &m_scanCriteria;}
     void InitScanRangeAndPolyhedron() {_InitScanRangeAndPolyhedron();}
     StatusInt VisitDgnModel(DgnModelP model){return _VisitDgnModel(model);}
     void SetScanReturn() {_SetScanReturn();}
+    void SetActiveVolume(ClipPrimitiveCR volume) {_SetActiveVolume(volume);}
     void EnableStopAfterTimout(uint32_t timeout) {m_endTime = BeTimeUtilities::QueryMillisecondsCounter()+timeout; m_stopAfterTimeout=true;}
 
     Render::GraphicPtr CreateGraphic(Render::Graphic::CreateParams const& params=Render::Graphic::CreateParams()) {return _CreateGraphic(params);}
@@ -314,21 +261,6 @@ public:
     //! @return the length, in the current coordinate system units, of a unit bvector in the x direction in DgnCoordSystem::View, starting at \c origin.
     DGNPLATFORM_EXPORT double GetPixelSizeAtPoint(DPoint3dCP origin) const;
 
-    //@}
-
-    /// @name Pushing and Popping Transforms and Clips
-    //@{
-    //! Push a ClipVector, creating a new local clip region.
-    //! @param[in]      clip       A clipping descriptor to push.
-    //! @see   PopTransformClip
-    void PushClip(ClipVectorCR clip) {_PushClip(clip);}
-
-    //! Push a set of clip planes, creating a new local clip region.
-    //! @param[in]      clipPlanes  Clipping planes to push - the intersections of their half planes define clip region.
-    //! @see   PopTransformClip
-    DGNPLATFORM_EXPORT void PushClipPlanes(ClipPlaneSetCR clipPlanes);
-
-    void PopClip() {_PopClip();}
     //@}
 
     /// @name Query Methods
@@ -463,10 +395,12 @@ public:
 struct RenderContext : ViewContext
 {
     DEFINE_T_SUPER(ViewContext);
+    friend struct DgnViewport;
 
 protected:
     Render::OvrGraphicParams m_ovrParams;
     Render::TargetR m_target;
+    ClipPrimitiveCPtr m_volume;
 
 public:
     Render::OvrGraphicParams& GetOvrGraphicParams() {return m_ovrParams;}
@@ -476,7 +410,7 @@ public:
     Render::GraphicP _GetCachedGraphic(GeometrySourceCR source, double pixelSize) override {return source.Graphics().Find(*m_viewport, pixelSize);}
     DGNVIEW_EXPORT Render::GraphicP _GetCachedPartGraphic(DgnGeometryPartId, double pixelSize, ElementAlignedBox3dR) override;
     DGNVIEW_EXPORT Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize) override;
-    void _PushFrustumClip() override {}
+    void _SetActiveVolume(ClipPrimitiveCR volume) override {m_volume=&volume;}
     Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return m_target.CreateGraphic(params);}
     void _SavePartGraphic(DgnGeometryPartId partId, Render::GraphicR graphic, ElementAlignedBox3dCR localRange) override;
 };
