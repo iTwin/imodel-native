@@ -119,10 +119,10 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationElement2d, AnnotationElement2d, Annotation2d, Geometric2d, DGNPLATFORM_EXPORT)
     };
 
-    //! The ElementHandler for DrawingElement
-    struct EXPORT_VTABLE_ATTRIBUTE Drawing : Geometric2d
+    //! The ElementHandler for DrawingGraphicElement
+    struct EXPORT_VTABLE_ATTRIBUTE DrawingGraphic : Geometric2d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, DrawingElement, Drawing, Geometric2d, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingGraphic, DrawingGraphicElement, DrawingGraphic, Geometric2d, DGNPLATFORM_EXPORT)
     };
 };
 

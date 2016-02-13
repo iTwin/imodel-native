@@ -22,7 +22,7 @@ BENTLEY_NAMESPACE_TYPEDEFS(HeapZone);
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometric3d; struct Physical; struct Annotation2d; struct Drawing; struct Group;};
+namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometric3d; struct Physical; struct Annotation2d; struct DrawingGraphic; struct Group;};
 namespace dgn_TxnTable {struct Element; struct Model;};
 
 DEFINE_REF_COUNTED_PTR(ElementGeometry)
@@ -818,7 +818,7 @@ protected:
     virtual SpatialElementCP _ToSpatialElement() const {return nullptr;}
     virtual PhysicalElementCP _ToPhysicalElement() const {return nullptr;}
     virtual AnnotationElement2dCP _ToAnnotationElement2d() const {return nullptr;}
-    virtual DrawingElementCP _ToDrawingElement() const {return nullptr;}
+    virtual DrawingGraphicElementCP _ToDrawingGraphicElement() const {return nullptr;}
     virtual DefinitionElementCP _ToDefinitionElement() const {return nullptr;}
     virtual DictionaryElementCP _ToDictionaryElement() const {return nullptr;}
     virtual IElementGroupCP _ToIElementGroup() const {return nullptr;}
@@ -858,7 +858,7 @@ public:
     SpatialElementCP ToSpatialElement() const {return _ToSpatialElement();}             //!< more efficient substitute for dynamic_cast<SpatialElementCP>(el)
     PhysicalElementCP ToPhysicalElement() const {return _ToPhysicalElement();}          //!< more efficient substitute for dynamic_cast<PhysicalElementCP>(el)
     AnnotationElement2dCP ToAnnotationElement2d() const {return _ToAnnotationElement2d();} //!< more efficient substitute for dynamic_cast<AnnotationElement2dCP>(el)
-    DrawingElementCP ToDrawingElement() const {return _ToDrawingElement();}             //!< more efficient substitute for dynamic_cast<DrawingElementCP>(el)
+    DrawingGraphicElementCP ToDrawingGraphicElement() const {return _ToDrawingGraphicElement();} //!< more efficient substitute for dynamic_cast<DrawingGraphicElementCP>(el)
     IElementGroupCP ToIElementGroup() const {return _ToIElementGroup();}                //!< more efficient substitute for dynamic_cast<IElementGroup>(el)
     
     GeometrySourceP ToGeometrySourceP() {return const_cast<GeometrySourceP>(_ToGeometrySource());} //!< more efficient substitute for dynamic_cast<GeometrySourceP>(el)
@@ -870,7 +870,7 @@ public:
     SpatialElementP ToSpatialElementP() {return const_cast<SpatialElementP>(_ToSpatialElement());}              //!< more efficient substitute for dynamic_cast<PhysicalElementP>(el)
     PhysicalElementP ToPhysicalElementP() {return const_cast<PhysicalElementP>(_ToPhysicalElement());}          //!< more efficient substitute for dynamic_cast<PhysicalElementP>(el)
     AnnotationElement2dP ToAnnotationElement2dP() {return const_cast<AnnotationElement2dP>(_ToAnnotationElement2d());} //!< more efficient substitute for dynamic_cast<AnnotationElement2dP>(el)
-    DrawingElementP ToDrawingElementP() {return const_cast<DrawingElementP>(_ToDrawingElement());}              //!< more efficient substitute for dynamic_cast<DrawingElementP>(el)
+    DrawingGraphicElementP ToDrawingGraphicElementP() {return const_cast<DrawingGraphicElementP>(_ToDrawingGraphicElement());} //!< more efficient substitute for dynamic_cast<DrawingGraphicElementP>(el)
     //! @}
 
     bool Is3d() const {return nullptr != ToGeometrySource3d();}                     //!< Determine whether this element is 3d or not
@@ -879,7 +879,7 @@ public:
     bool IsDefinitionElement() const {return nullptr != ToDefinitionElement();}     //!< Determine whether this element is a definition or not
     bool IsDictionaryElement() const {return nullptr != ToDictionaryElement();}
     bool IsAnnotationElement2d() const {return nullptr != ToAnnotationElement2d();} //!< Determine whether this element is an AnnotationElement2d
-    bool IsDrawingElement() const {return nullptr != ToDrawingElement();}           //!< Determine whether this element is an DrawingElement
+    bool IsDrawingGraphicElement() const {return nullptr != ToDrawingGraphicElement();} //!< Determine whether this element is an DrawingGraphicElement
     bool IsSameType(DgnElementCR other) {return m_classId == other.m_classId;}      //!< Determine whether this element is the same type (has the same DgnClassId) as another element.
 
     //! Determine whether this is a copy of the "persistent state" (i.e. an exact copy of what is saved in the DgnDb) of a DgnElement.
@@ -1496,18 +1496,18 @@ protected:
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Paul.Connelly   12/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DrawingElement : GraphicalElement2d
+struct EXPORT_VTABLE_ATTRIBUTE DrawingGraphicElement : GraphicalElement2d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, GraphicalElement2d)
-    friend struct dgn_ElementHandler::Drawing;
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingGraphic, GraphicalElement2d)
+    friend struct dgn_ElementHandler::DrawingGraphic;
 public:
-    //! Create a DrawingElement from CreateParams.
-    static DrawingElementPtr Create(CreateParams const& params) {return new DrawingElement(params);}
+    //! Create a DrawingGraphicElement from CreateParams.
+    static DrawingGraphicElementPtr Create(CreateParams const& params) {return new DrawingGraphicElement(params);}
 protected:
-    virtual DrawingElementCP _ToDrawingElement() const override final {return this;}
+    virtual DrawingGraphicElementCP _ToDrawingGraphicElement() const override final {return this;}
 
-    explicit DrawingElement(CreateParams const& params) : T_Super(params) { }
-}; // DrawingElement
+    explicit DrawingGraphicElement(CreateParams const& params) : T_Super(params) { }
+}; // DrawingGraphicElement
 
 //=======================================================================================
 //! Helper class for maintaining and querying the ElementGroupsMembers relationship

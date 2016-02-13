@@ -544,7 +544,7 @@
         </ECCustomAttributes>
         <BaseClass>GraphicalElement2d</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="DrawingElement">
+    <ECEntityClass typeName="DrawingGraphic">
         <!-- 2D element used in drawings -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
