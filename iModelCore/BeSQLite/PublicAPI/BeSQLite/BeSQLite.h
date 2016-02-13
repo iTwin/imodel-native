@@ -2163,7 +2163,7 @@ protected:
     virtual void _OnDbClose() {}
 
     //! Called when a new transaction is started on a connection, and a different connection (either in the same process or from another process)
-    //! has changed the database since the last transaction from this connection was committed. This give subclasses an opportunity to clear internal
+    //! has changed the database since the last transaction from this connection was committed. This gives subclasses an opportunity to clear internal
     //! caches or user interface that may now be invalid.
     //! @note This method is only relevant for connections opened with DefaultTxn::No, since when a default transaction is active, other
     //! processes are blocked from making changes to the database.
