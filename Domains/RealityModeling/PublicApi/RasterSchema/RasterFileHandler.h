@@ -33,7 +33,27 @@ struct RasterFileProperties
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RasterFileModel : RasterModel
 {
-DGNMODEL_DECLARE_MEMBERS(RASTER_CLASSNAME_RasterFileModel, RasterModel)
+    DGNMODEL_DECLARE_MEMBERS(RASTER_CLASSNAME_RasterFileModel, RasterModel)
+
+    struct CreateParams : T_Super::CreateParams
+        {
+        DEFINE_T_SUPER(RasterModel::CreateParams);
+
+        Utf8String m_fileId;
+
+        public:
+            //! This constructor is used only by the model handler to create a new instance, prior to calling ReadProperties on the model object
+            CreateParams(Dgn::DgnModel::CreateParams const& params) : T_Super(params) {}
+
+            //! Parameters to create a new instance of a RasterFileModel.
+            //! @param[in] dgndb The DgnDb for the new DgnModel
+            //! @param[in] code The Code for the DgnModel
+            //! @param[in] fileId File Id of the raster file.
+            CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnCode code, Utf8StringCR fileId) :
+                T_Super(dgndb, RasterFileModel::QueryClassId(dgndb), code), m_fileId(fileId)
+                {}
+        };
+
 
 private:
     RasterFileProperties    m_fileProperties;
@@ -57,6 +77,9 @@ protected:
 
 public:
 
+    //! Query the DgnClassId of the RasterFileModel ECClass in the specified DgnDb.
+    //! @note This is a static method that always returns the DgnClassId of the RasterFileModel class - it does @em not return the class of a specific instance.
+    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR dgndb) { return Dgn::DgnClassId(dgndb.Schemas().GetECClassId(BENTLEY_RASTER_SCHEMA_NAME, RASTER_CLASSNAME_RasterFileModel)); }
 };
 
 //=======================================================================================
@@ -66,13 +89,13 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RasterFileModelHandler : RasterModelHandler
 {
-    RASTERMODELHANDLER_DECLARE_MEMBERS (RASTER_CLASSNAME_RasterFileModel, RasterFileModel, RasterFileModelHandler, RasterModelHandler, RASTERSCHEMA_EXPORT)
+    RASTERMODELHANDLER_DECLARE_MEMBERS(RASTER_CLASSNAME_RasterFileModel, RasterFileModel, RasterFileModelHandler, RasterModelHandler, RASTERSCHEMA_EXPORT)
 
 private:
                         static  ReprojectStatus GetRasterExtentInUors(DRange2d &range, RasterFileCR rasterFile, Dgn::DgnDbCR db);
 
 public:
-    RASTERSCHEMA_EXPORT static  Dgn::DgnModelId CreateRasterFileModel(Dgn::DgnDbR db, Utf8StringCR fileId);
+    RASTERSCHEMA_EXPORT static  RasterFileModelPtr CreateRasterFileModel(RasterFileModel::CreateParams const& params);
 };
 
 END_BENTLEY_RASTERSCHEMA_NAMESPACE

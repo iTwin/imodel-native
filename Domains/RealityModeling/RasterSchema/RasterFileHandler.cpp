@@ -89,18 +89,14 @@ void RasterFileProperties::FromJson(Json::Value const& v)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-DgnModelId RasterFileModelHandler::CreateRasterFileModel(DgnDbR db, Utf8StringCR fileId)
+RasterFileModelPtr RasterFileModelHandler::CreateRasterFileModel(RasterFileModel::CreateParams const& params)
     {
-    DgnClassId classId(db.Schemas().GetECClassId(BENTLEY_RASTER_SCHEMA_NAME, RASTER_CLASSNAME_RasterFileModel));
-    BeAssert(classId.IsValid());
-
     // Find resolved file name for the raster
     BeFileName fileName;
-    BentleyStatus status = T_HOST.GetRasterAttachmentAdmin()._ResolveFileName(fileName, fileId, db);
+    BentleyStatus status = T_HOST.GetRasterAttachmentAdmin()._ResolveFileName(fileName, params.m_fileId, params.m_dgndb);
     if (status != SUCCESS)
         {
-        // Return an invalid model id.
-        return DgnModelId();
+        return nullptr;
         }
     Utf8String resolvedName(fileName);
     Utf8String modelName(fileName.GetFileNameWithoutExtension().c_str());
@@ -109,26 +105,26 @@ DgnModelId RasterFileModelHandler::CreateRasterFileModel(DgnDbR db, Utf8StringCR
     RasterFilePtr rasterFilePtr = RasterFile::Create(resolvedName);
     if (rasterFilePtr == nullptr)
         {
-        // Can't create model; probably that file name is invalid. Return an invalid model id.
-        return DgnModelId();
+        // Can't create model; probably that file name is invalid.
+        return nullptr;
         }
 
     // Find raster range (in the DgnDb world)
     DRange2d rasterRange;
-    if (REPROJECT_Success != GetRasterExtentInUors(rasterRange, *rasterFilePtr, db))
+    if (REPROJECT_Success != GetRasterExtentInUors(rasterRange, *rasterFilePtr, params.m_dgndb))
         {
-        // Can't get raster extent. Return invalid model.
-        return DgnModelId();
+        // Can't get raster extent.
+        return nullptr;
         }
 
     RasterFileProperties props;
-    props.m_fileId = fileId;
+    props.m_fileId = params.m_fileId;
     props.m_boundingBox = rasterRange;
 
     // Create model in DgnDb
-    RasterFileModelPtr model = new RasterFileModel(DgnModel::CreateParams(db, classId, DgnModel::CreateModelCode(modelName)), props);
-    model->Insert();
-    return model->GetModelId();
+    RasterFileModelPtr model = new RasterFileModel(params, props);
+
+    return model;
     }
 
 //----------------------------------------------------------------------------------------
