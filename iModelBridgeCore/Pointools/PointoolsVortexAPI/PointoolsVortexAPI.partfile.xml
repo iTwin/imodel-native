@@ -271,7 +271,7 @@
   <Part Name="PointoolsVortexAPI_API_Examples_Dependencies_VS2012_x86" BMakeFile="Examples\Dependencies" OnlyPlatforms="x86" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
     <SubPart PartName="FreeGlut_VS2012"        PartFile="opengl_VS2012" Repository="libsrc-opengl"/>
     <SubPart PartName="GLUI_VS2012"            PartFile="opengl_VS2012" Repository="libsrc-opengl" LibType="static"/>
-    <SubPart PartName="glewVendorAPI_VS2012"   PartFile="opengl_VS2012" Repository="libsrc-opengl"/>
+    <SubPart PartName="glewVendorAPI"          PartFile="openglHeaders" Repository="libsrc-opengl"/>
     <SubPart PartName="OpenGLExt"              PartFile="openglHeaders" Repository="libsrc-opengl"/>
     <Bindings>
       <Files SubPartDirectory="Examples\Dependencies\Include" ProductDirectoryName="PointoolsVortexAPI_API_VS2012_Examples_Dependencies_Include_GL">
@@ -300,7 +300,7 @@
   <Part Name="PointoolsVortexAPI_API_Examples_Dependencies_VS2012_x64" BMakeFile="Examples\Dependencies" OnlyPlatforms="x64" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
     <SubPart PartName="FreeGlut_VS2012"        PartFile="opengl_VS2012" Repository="libsrc-opengl"/>
     <SubPart PartName="GLUI_VS2012"            PartFile="opengl_VS2012" Repository="libsrc-opengl" LibType="static"/>
-    <SubPart PartName="glewVendorAPI_VS2012"   PartFile="opengl_VS2012" Repository="libsrc-opengl"/>
+    <SubPart PartName="glewVendorAPI"          PartFile="openglHeaders" Repository="libsrc-opengl"/>
     <SubPart PartName="OpenGLExt"              PartFile="openglHeaders" Repository="libsrc-opengl"/>
     <Bindings>
       <Files SubPartDirectory="Examples\Dependencies\Include" ProductDirectoryName="PointoolsVortexAPI_API_VS2012_Examples_Dependencies_Include_GL">
