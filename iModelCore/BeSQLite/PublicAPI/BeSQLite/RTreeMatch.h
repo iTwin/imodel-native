@@ -53,7 +53,8 @@ struct RTree3dVal
     void Invalidate() {m_minx=m_miny=m_minz=1; m_maxx=m_maxy=m_maxz=-1;}
     double Margin() const {return (m_maxx-m_minx) + (m_maxy-m_miny) + (m_maxz-m_minz);}
     double Margin2d() const {return (m_maxx-m_minx) + (m_maxy-m_miny);}
-    DRange3d ToRange() const {DRange3d range; range.low.x=m_minx; range.low.y=m_miny; range.low.z=m_minz; range.high.x=m_maxx; range.high.y=m_maxy; range.high.z=m_maxz; return range;}
+    void ToRangeR(DRange3dR range) const {range.low.x=m_minx; range.low.y=m_miny; range.low.z=m_minz; range.high.x=m_maxx; range.high.y=m_maxy; range.high.z=m_maxz;}
+    DRange3d ToRange() const {DRange3d range; ToRangeR(range); return range;}
     void FromRange(DRange3dCR range) {m_minx=range.low.x; m_maxx=range.high.x; m_miny=range.low.y; m_maxy=range.high.y; m_minz=range.low.z; m_maxz=range.high.z;}
     bool IsValid() const {return m_maxx>=m_minx && m_maxy>=m_miny && m_maxz>=m_minz;}
     void Union(RTree3dVal const& other) {m_minx=std::min(m_minx,other.m_minx); m_miny=std::min(m_miny,other.m_miny); m_minz=std::min(m_minz,other.m_minz);
