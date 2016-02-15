@@ -355,7 +355,6 @@ struct ECDbRelationshipsIntegrityTests : ECDbMappingTestFixture
 
     protected:
         ECSchemaPtr testSchema = nullptr;
-        ECSchemaReadContextPtr readContext = nullptr;
 
         void CreateSchema (Utf8CP schemaName, Utf8CP schemaNamePrefix);
 
@@ -418,17 +417,10 @@ ECRelatedInstanceDirection ECDbRelationshipsIntegrityTests::GetRelationDirection
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECDbRelationshipsIntegrityTests::CreateSchema (Utf8CP schemaName, Utf8CP schemaNamePrefix)
     {
-    readContext = ECSchemaReadContext::CreateContext ();
-    readContext->AddSchemaLocater (m_ecdb.GetSchemaLocater ());
-    SchemaKey ecdbmapKey = SchemaKey ("ECDbMap", 1, 0);
-    ECSchemaPtr ecdbmapSchema = readContext->LocateSchema (ecdbmapKey, SchemaMatchType::SCHEMAMATCHTYPE_LatestCompatible);
-    ASSERT_TRUE (ecdbmapSchema.IsValid ());
-
     ECSchema::CreateSchema (testSchema, schemaName, 1, 0);
     ASSERT_TRUE (testSchema.IsValid ());
 
     testSchema->SetNamespacePrefix (schemaNamePrefix);
-    testSchema->AddReferencedSchema (*ecdbmapSchema);
     }
 
 //---------------------------------------------------------------------------------------
@@ -436,6 +428,8 @@ void ECDbRelationshipsIntegrityTests::CreateSchema (Utf8CP schemaName, Utf8CP sc
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECDbRelationshipsIntegrityTests::AssertSchemaImport (bool isSchemaImportExpectedToSucceed)
     {
+
+    ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext ();
     EXPECT_EQ (ECObjectsStatus::Success, readContext->AddSchema (*testSchema));
     if (isSchemaImportExpectedToSucceed)
         {
@@ -494,9 +488,10 @@ void ECDbRelationshipsIntegrityTests::InsertEntityClassInstances (Utf8CP classNa
     for (int i = 0; i < numberOfInstances; i++)
         {
         ECInstanceKey key;
+        SqlPrintfString textVal = SqlPrintfString ("%s_%d", className, i);
         ASSERT_EQ (stmt.Reset (), ECSqlStatus::Success);
         ASSERT_EQ (stmt.ClearBindings (), ECSqlStatus::Success);
-        ASSERT_EQ (stmt.BindText (1, SqlPrintfString ("%s_%d", className, i).GetUtf8CP (), IECSqlBinder::MakeCopy::No), ECSqlStatus::Success);
+        ASSERT_EQ (stmt.BindText (1, textVal.GetUtf8CP(), IECSqlBinder::MakeCopy::No), ECSqlStatus::Success);
         ASSERT_EQ (stmt.Step (key), BE_SQLITE_DONE);
         classKeys.push_back (key);
         }
