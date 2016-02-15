@@ -343,7 +343,7 @@ protected:
 
     //virtual ScanRange _ShowTxnSummary(TxnSummaryCR summary) override; -- we don't need to override this, because the subject view will never have changed elements that must be displayed
     virtual void _OnAttachedToViewport(DgnViewportR) override;
-    virtual FitComplete _ComputeFitRange (DRange3dR range, DgnViewportR viewport, FitViewParamsR params) override;
+    virtual FitComplete _ComputeFitRange(FitContextR) override;
 
 #ifdef WIP_SpatialRedlineViewController
     // QueryView

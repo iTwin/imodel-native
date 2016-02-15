@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/NullContext.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -50,7 +50,7 @@ struct NullContext : ViewContext
         virtual void _AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2d const *range) override {}
         virtual void _AddDgnOle(Render::DgnOleDraw*) override {}
         virtual void _AddPointCloud(Render::PointCloudDraw* drawParams) override {}
-        virtual void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsR) override {}
+        virtual void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR) override {}
         virtual Render::GraphicPtr _CreateSubGraphic(TransformCR) const override {return new NullGraphic();}
     };
 

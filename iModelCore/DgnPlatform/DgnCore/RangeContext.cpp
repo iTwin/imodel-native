@@ -9,6 +9,15 @@
 #include    <Bentley/ScopedArray.h>
 #include    <DgnPlatformInternal/DgnCore/ElemRangeCalc.h>
 
+#define TRACE_FIT 1
+#ifdef TRACE_FIT
+#   define DEBUG_PRINTF THREADLOG.debugv
+#   define DEBUG_ERRORLOG THREADLOG.errorv
+#else
+#   define DEBUG_PRINTF(fmt, ...)
+#   define DEBUG_ERRORLOG(fmt, ...)
+#endif
+
 struct SafeDPoint3dArray : ScopedArray<DPoint3d,500> {SafeDPoint3dArray(size_t n) : ScopedArray<DPoint3d,500>(n){}};
 
 /*---------------------------------------------------------------------------------**//**
@@ -326,52 +335,6 @@ void ElemRangeCalc::Union(DEllipse3dCP ellipse, ClipStackCP currClip)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* convert the value of this range into a ScanRange.
-* @return ERROR if the range is not valid.
-* @bsimethod                                                    Keith.Bentley   09/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ElemRangeCalc::ToScanRange(AxisAlignedBox3dR range, bool is3d)
-    {
-    if (!IsValid())
-        {
-        range.Init();
-        return ERROR;
-        }
-
-    range = AxisAlignedBox3d(m_range);
-
-    static const double s_smallVal = .0005;
-
-    // low and high are no longer allowed to be equal...
-    if (range.low.x == range.high.x)
-        {
-        range.low.x -= s_smallVal;
-        range.high.x += s_smallVal;
-        }
-
-    if (range.low.y == range.high.y)
-        {
-        range.low.y -= s_smallVal;
-        range.high.y += s_smallVal;
-        }
-
-    if (is3d)
-        {
-        if (range.low.z == range.high.z)
-            {
-            range.low.z -= s_smallVal;
-            range.high.z += s_smallVal;
-            }
-        }
-    else
-        {
-        range.low.z = range.high.z = 0.0;
-        }
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    RayBentley                      08/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 void addPlaneFromPoints(ClipPlane& plane, DPoint3dCR origin, DPoint3dCR cross0, DPoint3dCR cross1, DPoint3d rayEnd)
@@ -560,24 +523,17 @@ void RangeClipPlanes::ClipPoints(ElemRangeCalc* rangeCalculator, ClipStackCP cli
 * Context to caclulate the range of all elements within a view.
 * @bsiclass                                                     RayBentley    09/06
 +===============+===============+===============+===============+===============+======*/
-struct FitContext : NullContext
+struct Dgn::FitContext : NullContext
 {
     DEFINE_T_SUPER(NullContext)
-protected:
-    FitViewParams&      m_params;
-    ElemRangeCalc       m_fitRange;
-    RotMatrix           m_rMatrix;
+    FitViewParams&  m_params;
+    ElemRangeCalc   m_fitRange;
+    Transform       m_trans;
+    DRange3d        m_lastRange;
+    int             m_rangeChecks=0;
+    int             m_elemChecks=0;
 
-public:
-    FitContext(FitViewParams& params) : NullContext(), m_params(params)
-        {
-        m_ignoreViewRange = !params.m_useScanRange;
-        m_purpose = DrawPurpose::FitView;
-        m_is3dView = true;
-        m_rMatrix.InitIdentity();
-        }
-
-    ElemRangeCalc& GetFitRange() {return m_fitRange;}
+    FitContext(FitViewParams& params) : m_params(params) {m_purpose = DrawPurpose::FitView;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/06
@@ -587,10 +543,10 @@ virtual StatusInt _InitContextForView() override
     if (SUCCESS != T_Super::_InitContextForView())
         return ERROR;
 
-    if (nullptr != m_params.m_rMatrix)
-        m_rMatrix = *m_params.m_rMatrix;
-    else if (nullptr != m_viewport)
-        m_rMatrix = m_viewport->GetRotMatrix();
+    if (nullptr == m_params.m_rMatrix && nullptr==m_viewport)
+        m_trans.InitIdentity();
+    else
+        m_trans.InitFrom(nullptr != m_params.m_rMatrix ? *m_params.m_rMatrix : m_viewport->GetRotMatrix());
 
     return SUCCESS;
     }
@@ -598,29 +554,20 @@ virtual StatusInt _InitContextForView() override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool IsRangeContainedInCurrentRange(DRange3dCR range, bool is3d)
+bool IsRangeContainedInCurrentRange(DRange3dCR range)
     {
-    // If the range of the element is within our current fit range then don't bother visiting it.
-    DRange3d   currentRange;
-    if (SUCCESS != m_fitRange.GetRange(currentRange))
+    ++m_rangeChecks;
+    Frustum box(range);
+    box.Multiply(m_trans);
+    m_lastRange = box.ToRange();
+
+    if (!m_fitRange.IsValid())  // NOTE: test this AFTER setting m_lastRange!
         return false;
 
-    ElemRangeCalc elemRangeCalc;
+    if (m_params.m_fitDepthOnly)
+        return (m_lastRange.low.z > m_fitRange.CurrRange().low.z) && (m_lastRange.high.z < m_fitRange.CurrRange().high.z);
 
-    DRange3d dRange = range;
-    if (!is3d)
-        dRange.low.z = dRange.high.z = 0;
-
-    if (SUCCESS != elemRangeCalc.GetRange(dRange))
-        return true;
-
-     if (m_params.m_fitMaxDepth || m_params.m_fitMinDepth)
-        {
-        return (!m_params.m_fitMinDepth || dRange.low.z > currentRange.low.z) &&
-               (!m_params.m_fitMaxDepth || dRange.high.z < currentRange.high.z);
-        }
-
-    return dRange.IsContained(currentRange);
+    return m_lastRange.IsContained(m_fitRange.CurrRange());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -631,7 +578,7 @@ virtual ScanCriteria::Result _CheckNodeRange(ScanCriteriaCR criteria, DRange3dCR
     if (ScanCriteria::Result::Fail == T_Super::_CheckNodeRange(criteria, range, is3d))
         return ScanCriteria::Result::Fail;
 
-    return IsRangeContainedInCurrentRange(range, is3d) ? ScanCriteria::Result::Fail : ScanCriteria::Result::Pass;
+    return IsRangeContainedInCurrentRange(range) ? ScanCriteria::Result::Fail : ScanCriteria::Result::Pass;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -660,33 +607,118 @@ bool _ScanRangeFromPolyhedron()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt _VisitGeometry(GeometrySourceCR source) override
     {
-    DRange3d range = source.CalculateRange3d();
+    ++m_elemChecks;
+    // NOTE: Can just use element aligned box instead of drawing element geometry...
     bool is3d = (nullptr != source.ToGeometrySource3d());
-
-    if (IsRangeContainedInCurrentRange(range, is3d))
-        return SUCCESS;
-
-    // NOTE: Can just element aligned box instead of drawing element geometry...
-    DPoint3d corners[8];
     ElementAlignedBox3d elementBox = (is3d ? source.ToGeometrySource3d()->GetPlacement().GetElementBox() : ElementAlignedBox3d(source.ToGeometrySource2d()->GetPlacement().GetElementBox()));
 
-    elementBox.Get8Corners(corners);
-    source.GetPlacementTransform().Multiply(corners, corners, 8);
-    m_rMatrix.Multiply(corners, corners, 8);
-    m_fitRange.Union(8, corners, nullptr);
+    Frustum box(elementBox);
+    box.Multiply(source.GetPlacementTransform());
+    box.Multiply(m_trans);
+
+    m_fitRange.Union(8, box.m_pts, nullptr);
 
     return SUCCESS;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void AcceptRangeElement(DgnElementId id)
+    {
+    if (!m_params.m_useElementAlignedBox)
+        m_fitRange.Union(&m_lastRange, false);
+    else
+        VisitElement(id, true);
+    }
 };
+
+BEGIN_UNNAMED_NAMESPACE
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   02/16
+//=======================================================================================
+struct SpatialFitQuery : DgnQueryView::SpatialQuery
+    {
+    FitContextR m_context;
+    virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
+
+public:
+    SpatialFitQuery(DgnQueryView::SpecialElements const* special, FitContextR context) : DgnQueryView::SpatialQuery(special), m_context(context) {}
+    };
+
+END_UNNAMED_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+int SpatialFitQuery::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
+    {
+    RTree3dValCP testRange = (RTree3dValCP) info.m_coords;
+
+    DRange3d thisRange = testRange->ToRange();
+
+    if (m_context.IsRangeContainedInCurrentRange(thisRange))
+        info.m_within = RTreeMatchFunction::Within::Outside; // If this range is entirely contained there is no reason to continue (it cannot contribute to the fit)
+    else
+        {
+        info.m_within = RTreeMatchFunction::Within::Partly; 
+        info.m_score  = info.m_level; // to get depth-first traversal
+        }
+
+    return  BE_SQLITE_OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewController::FitComplete ViewController::_ComputeFitRange(FitContextR context)
+    {
+    context._VisitAllModelElements();
+    return FitComplete::Yes;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewController::FitComplete DgnQueryView::_ComputeFitRange(FitContextR context)
+    {
+    SpatialFitQuery filter(&m_special, context);
+    filter.Start(*this);
+
+    DgnElementId thisId;
+    while ((thisId = filter.StepRtree()).IsValid())
+        {
+        if (filter.TestElement(thisId))
+            context.AcceptRangeElement(thisId);
+        }
+    return FitComplete::Yes;
+    }
+
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewController::FitComplete DgnQueryView::_ComputeFitRange(FitContextR context)
+    {
+    range = GetViewedExtents();
+    Transform  transform;
+    transform.InitFrom((nullptr == params.m_rMatrix) ? vp.GetRotMatrix() : *params.m_rMatrix);
+    transform.Multiply(range, range);
+
+    return FitComplete::Yes;
+    }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt DgnViewport::ComputeViewRange(DRange3dR range, FitViewParams& params) 
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // first give the viewController a chance to compute the range 
     if (ViewController::FitComplete::Yes == m_viewController->_ComputeFitRange(range, *this, params))
         return  SUCCESS;
+#endif
 
     Json::Value oldState;
     m_viewController->SaveToSettings(oldState);
@@ -702,14 +734,16 @@ StatusInt DgnViewport::ComputeViewRange(DRange3dR range, FitViewParams& params)
     if (SUCCESS != context.Attach (this, context.GetDrawPurpose()))
         return ERROR;
 
-    context.VisitAllViewElements();
-    context.Detach();
-    
+    StopWatch watch(true);
+    DEBUG_PRINTF("Begin fit");
+    m_viewController->_ComputeFitRange(context);
+    DEBUG_PRINTF("Fit Time=%lf, rangeChecks=%d, elemChecks=%d", watch.GetCurrentSeconds(), context.m_rangeChecks, context.m_elemChecks);
+
     m_viewController->RestoreFromSettings(oldState);
     SynchWithViewController(false);
 
     DRange3d fullRange;
-    if (SUCCESS == context.GetFitRange().GetRange(fullRange))
+    if (SUCCESS == context.m_fitRange.GetRange(fullRange))
         range = fullRange;
 
     return SUCCESS;
@@ -743,9 +777,7 @@ StatusInt DgnViewport::ComputeFittedElementRange(DRange3dR rangeUnion, DgnElemen
         context.VisitGeometry(*geomElem);
         }
     
-    context.Detach();
-
-    return context.GetFitRange().GetRange(rangeUnion);
+    return context.m_fitRange.GetRange(rangeUnion);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -755,8 +787,7 @@ StatusInt DgnViewport::DetermineVisibleDepthNpc(double& lowNpc, double& highNpc,
     {
     FitViewParams params;
 
-    params.m_useScanRange = true;
-    params.m_fitMinDepth = params.m_fitMaxDepth = true;
+    params.m_fitDepthOnly = true;
 
     FitContext context(params);
 
@@ -766,23 +797,24 @@ StatusInt DgnViewport::DetermineVisibleDepthNpc(double& lowNpc, double& highNpc,
     if (SUCCESS != context.Attach (this, context.GetDrawPurpose()))
         return ERROR;
 
-    context.VisitAllViewElements();
-    context.Detach();
+    StopWatch watch(true);
+    DEBUG_PRINTF("Begin depth");
+    m_viewController->_ComputeFitRange(context);
+    DEBUG_PRINTF("Depth Time=%lf, rangeChecks=%d, elemChecks=%d", watch.GetCurrentSeconds(), context.m_rangeChecks, context.m_elemChecks);
 
     lowNpc = 0.0;
     highNpc = 1.0;
     DRange3d range;
 
-    if (SUCCESS != context.GetFitRange().GetRange(range))
+    if (SUCCESS != context.m_fitRange.GetRange(range))
         return ERROR;
 
-    DPoint3d corner[8];
-    range.Get8Corners(corner);
+    Frustum corner(range);
     
-    m_rotMatrix.MultiplyTranspose(corner, corner, 8);
-    WorldToNpc(corner, corner, 8);
+    m_rotMatrix.MultiplyTranspose(corner.m_pts, corner.m_pts, 8);
+    WorldToNpc(corner.m_pts, corner.m_pts, 8);
 
-    range.InitFrom(corner, 8);
+    range = corner.ToRange();
     lowNpc = range.low.z;
     highNpc = range.high.z;
 
@@ -796,19 +828,18 @@ StatusInt DgnViewport::ComputeVisibleDepthRange(double& minDepth, double& maxDep
     {
     FitViewParams params;
     
-    params.m_useScanRange = !ignoreViewExtent;
-    params.m_fitMinDepth = params.m_fitMaxDepth = true;
+//    params.m_useScanRange = !ignoreViewExtent;
+    params.m_fitDepthOnly = true;
 
     FitContext context(params);
 
     if (SUCCESS != context.Attach (this, context.GetDrawPurpose()))
         return ERROR;
 
-    context.VisitAllViewElements();
-    context.Detach();
+    m_viewController->_ComputeFitRange(context);
 
     DRange3d range;
-    if (SUCCESS != context.GetFitRange().GetRange(range))
+    if (SUCCESS != context.m_fitRange.GetRange(range))
         return ERROR;
 
     minDepth = range.low.z;

@@ -117,13 +117,13 @@ public:
 
     ElemRangeCalc() {Invalidate();}
     DGNPLATFORM_EXPORT StatusInt GetRange(DRange3dR range);
+    DRange3dCR CurrRange() const {return m_range;}
     void SetRange(DRange3dCR range) {m_range = range;}
 
     DGNPLATFORM_EXPORT void Union(int numPoints, DPoint3dCP points, ClipStackCP currClip);
     DGNPLATFORM_EXPORT void Union(int numPoints, DPoint2d const* points, ClipStackCP currClip);
     DGNPLATFORM_EXPORT void Union(DRange3d const* in, ClipStackCP currClip);
     DGNPLATFORM_EXPORT void Union(DEllipse3d const* ellipse, ClipStackCP currClip);
-    DGNPLATFORM_EXPORT StatusInt ToScanRange(AxisAlignedBox3dR range, bool is3d);
 };
 
 END_BENTLEY_DGN_NAMESPACE

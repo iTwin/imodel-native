@@ -886,7 +886,7 @@ protected:
     virtual void _AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2d const *range) = 0;
     virtual void _AddDgnOle(DgnOleDraw*) = 0;
     virtual void _AddPointCloud(PointCloudDraw* drawParams) = 0;
-    virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsR) = 0;
+    virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR) = 0;
     virtual Render::GraphicPtr _CreateSubGraphic(TransformCR) const = 0;
     virtual ~Graphic() {}
 
@@ -1060,7 +1060,7 @@ public:
     //! Draw OLE object.
     void AddDgnOle(DgnOleDraw* ole) {_AddDgnOle(ole);}
 
-    void AddSubGraphic(GraphicR graphic, TransformCR subToGraphic, GraphicParams& params) {_AddSubGraphic(graphic, subToGraphic, params);}
+    void AddSubGraphic(GraphicR graphic, TransformCR subToGraphic, GraphicParamsCR params) {_AddSubGraphic(graphic, subToGraphic, params);}
 
     //! Return whether this decoration will be drawn to a viewport as opposed to being collected for some other purpose (ex. geometry export).
     bool IsForDisplay() const {return _IsForDisplay();}

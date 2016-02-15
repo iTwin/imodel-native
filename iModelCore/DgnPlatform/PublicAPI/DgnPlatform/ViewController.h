@@ -139,7 +139,7 @@ protected:
     virtual void _SetDelta(DVec3dCR viewDelta) = 0;
     virtual void _SetRotation(RotMatrixCR viewRot) = 0;
     enum class FitComplete {No=0, Yes=1};
-    virtual FitComplete _ComputeFitRange(DRange3dR range, DgnViewportR, FitViewParamsR) {return FitComplete::No;}
+    DGNPLATFORM_EXPORT virtual FitComplete _ComputeFitRange(FitContextR);
     virtual void _OnViewOpened(DgnViewportR) {}
     virtual bool _Allow3dManipulations() const {return false;}
     virtual void _OnAttachedToViewport(DgnViewportR) {}

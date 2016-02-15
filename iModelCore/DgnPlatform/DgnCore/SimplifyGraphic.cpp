@@ -1894,7 +1894,7 @@ void SimplifyGraphic::_AddMosaic(int numX, int numY, uintptr_t const* tileIds, D
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddSubGraphic(GraphicR, TransformCR, GraphicParamsR) 
+void SimplifyGraphic::_AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR) 
     {
     // NEEDS_WORK_CONTINUOUS_RENDER
     }

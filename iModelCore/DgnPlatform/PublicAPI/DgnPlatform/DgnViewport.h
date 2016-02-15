@@ -41,16 +41,10 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //=======================================================================================
 struct FitViewParams
 {
-    RotMatrixCP m_rMatrix;
-    bool        m_useScanRange;
-    bool        m_fitMinDepth;
-    bool        m_fitMaxDepth;
-
-    FitViewParams()
-        {
-        m_rMatrix = nullptr;
-        m_useScanRange = m_fitMinDepth = m_fitMaxDepth = false;
-        }
+    RotMatrixCP m_rMatrix = nullptr;
+    bool m_useElementAlignedBox = false;
+    bool m_fitDepthOnly = false;
+    bool m_limitByVolume = false;
 };
 
 /*=================================================================================**//**

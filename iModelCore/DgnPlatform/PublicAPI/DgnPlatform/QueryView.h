@@ -158,12 +158,11 @@ protected:
     ClipPrimitivePtr m_activeVolume;     //!< the active volume. If present, elements inside this volume may be treated specially
     mutable QueryResultsPtr m_results;
 
-    void QueryModelExtents(DRange3dR, DgnViewportR);
+    void QueryModelExtents(FitContextR);
     void QueueQuery(DgnViewportR, UpdatePlan::Query const&);
     void AddtoSceneQuick(SceneContextR context, SceneMembers&, QueryResults& results);
     bool AbortRequested() const {return m_abortQuery;} //!< @private
     void SetAbortQuery(bool val) const {m_abortQuery=val;} //!< @private
-    StatusInt VisitElement(ViewContextR context, DgnElementId, bool allowLoad);
     virtual DgnQueryViewCP _ToQueryView() const override {return this;}
     DGNPLATFORM_EXPORT virtual bool _IsInSet(int nVal, BeSQLite::DbValue const*) const override;
     DGNPLATFORM_EXPORT virtual void _InvalidateScene() override;
@@ -176,14 +175,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR context) override;
     DGNPLATFORM_EXPORT virtual void _OnCategoryChange(bool singleEnabled) override;
     DGNPLATFORM_EXPORT virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff) override;
-
-    //! Compute the range of the elements and graphics in the QueryView.
-    //! @remarks This function may also load elements to determine the range.
-    //! @param[out] range    the computed range
-    //! @param[in]  viewport the viewport that will display the graphics
-    //! @param[in]  params   options for computing the range.
-    //! @return \a true if the returned \a range is complete. Otherwise the caller will compute the tightest fit for all loaded elements.
-    DGNPLATFORM_EXPORT virtual FitComplete _ComputeFitRange(DRange3dR range, DgnViewportR viewport, FitViewParamsR params) override;
+    DGNPLATFORM_EXPORT virtual FitComplete _ComputeFitRange(struct FitContext&) override;
 
 public:
     //! @param dgndb  The DgnDb for the view

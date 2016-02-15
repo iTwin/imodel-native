@@ -24,6 +24,47 @@ ViewContext::ViewContext()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt ViewContext::VisitElement(DgnElementId elementId, bool allowLoad) 
+    {
+    DgnElements& pool = m_dgndb->Elements();
+    DgnElementCPtr el = allowLoad ? pool.GetElement(elementId) : pool.FindElement(elementId);
+    if (!el.IsValid())
+        {
+        BeAssert(!allowLoad);
+        return ERROR;
+        }
+
+    GeometrySourceCP geomElem = el->ToGeometrySource();
+    if (nullptr == geomElem)
+        return ERROR;
+
+    return VisitGeometry(*geomElem);
+
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    if (pool.GetTotalAllocated() < (int64_t) m_elementReleaseTrigger)
+        return true;
+
+    pool.DropFromPool(*el);
+
+    // Purging the element does not purge the symbols so it may be necessary to do a full purge
+    if (pool.GetTotalAllocated() < (int64_t) m_purgeTrigger)
+        return true;
+
+    pool.Purge(m_elementReleaseTrigger);   // Try to get back to the elementPurgeTrigger
+
+    static const double s_purgeFactor = 1.3;
+
+    // The purge may not have succeeded if there are elements in the QueryView's list of elements and those elements hold symbol references.
+    // When that is true, we leave it to QueryView::_DrawView to try to clean up.  This logic just tries to recover from the
+    // growth is caused.  It allows some growth between calls to purge to avoid spending too much time in purge.
+    uint64_t newTotalAllocated = (uint64_t)pool.GetTotalAllocated();
+    m_purgeTrigger = (uint64_t)(s_purgeFactor * std::max(newTotalAllocated, m_elementReleaseTrigger));
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::ViewToNpc(DPoint3dP npcVec, DPoint3dCP screenVec, int nPts) const
@@ -102,7 +143,7 @@ void ViewContext::_InitScanRangeAndPolyhedron()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_SetDgnDb(DgnDbR dgnDb)
     {
-    m_dgnDb = &dgnDb;
+    m_dgndb = &dgnDb;
     _SetupScanCriteria();
     }
 
@@ -119,18 +160,10 @@ void ViewContext::_SetupScanCriteria()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ViewContext::_Attach(DgnViewportP viewport, DrawPurpose purpose)
+StatusInt ViewContext::Attach(DgnViewportP viewport, DrawPurpose purpose)
     {
     if (nullptr == viewport)
         return  ERROR;
-
-    if (IsAttached())
-        {
-        BeAssert(!IsAttached());
-        return  ERROR;
-        }
-
-    m_isAttached = true;
 
     m_viewport = viewport;
     m_purpose = purpose;
@@ -140,16 +173,6 @@ StatusInt ViewContext::_Attach(DgnViewportP viewport, DrawPurpose purpose)
     SetViewFlags(viewport->GetViewFlags());
 
     return _InitContextForView();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    05/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_Detach()
-    {
-    BeAssert(IsAttached());
-
-    m_isAttached = false;
     }
 
 /*---------------------------------------------------------------------------------**//**

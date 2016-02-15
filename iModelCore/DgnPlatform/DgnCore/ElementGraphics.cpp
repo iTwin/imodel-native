@@ -958,8 +958,6 @@ virtual void _OutputGraphics(ViewContextR context) override
     if (nullptr != m_sourceContext)
         context.GetGeometryStreamEntryIdR() = saveGeomId;
 
-    if (nullptr != vp)
-        context.Detach();
     }
 
 /*---------------------------------------------------------------------------------**//**

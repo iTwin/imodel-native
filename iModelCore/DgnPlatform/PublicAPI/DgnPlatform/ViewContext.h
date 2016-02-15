@@ -19,8 +19,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 
 /*=================================================================================**//**
  @addtogroup ViewContext
- A ViewContext holds the <i>current state</i> of an operation on a DgnViewport. A ViewContext must be first
- \e attached to a DgnViewport to be useful, and must be \e detached from the DgnViewport to free any memory associated with its internal state.
+ A ViewContext holds the <i>current state</i> of an operation on a DgnViewport. A ViewContext must be first attached to a DgnViewport.
  @beginGroup 
 +===============+===============+===============+===============+===============+======*/
 
@@ -112,8 +111,7 @@ public:
     };
 
 protected:
-    DgnDbP m_dgnDb = nullptr;
-    bool m_isAttached = false;
+    DgnDbP m_dgndb = nullptr;
     bool m_is3dView = true;
     bool m_wantMaterials = false;
     bool m_useNpcSubRange = false;
@@ -133,8 +131,6 @@ protected:
     GeometryStreamEntryId   m_currGeometryStreamEntryId;
 
     void InvalidateScanRange() {m_scanRangeValid = false;}
-    DGNPLATFORM_EXPORT virtual StatusInt _Attach(DgnViewportP, DrawPurpose purpose);
-    DGNPLATFORM_EXPORT virtual void _Detach();
     DGNPLATFORM_EXPORT virtual StatusInt _OutputGeometry(GeometrySourceCR);
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _AddSubGraphic(Render::GraphicR, DgnGeometryPartId, TransformCR, Render::GeometryParamsR);
     virtual Render::GraphicP _GetCachedPartGraphic(DgnGeometryPartId, double pixelSize, ElementAlignedBox3dR) {return nullptr;}
@@ -174,17 +170,16 @@ protected:
     DGNPLATFORM_EXPORT ViewContext();
 
 public:
+    StatusInt VisitElement(DgnElementId elementId, bool allowLoad);
     DMap4dCR GetWorldToView() const {return m_worldToView;}
     DMap4dCR GetWorldToNpc() const {return m_worldToNpc;}
     bool GetWantMaterials() {return m_wantMaterials;};
-    bool IsAttached() {return m_isAttached;}
     void SetSubRectFromViewRect(BSIRectCP viewRect);
     DGNPLATFORM_EXPORT void SetSubRectNpc(DRange3dCR subRect);
     void SetWantMaterials(bool wantMaterials) {m_wantMaterials = wantMaterials;}
     bool IsUndisplayed(GeometrySourceCR source);
     bool ValidateScanRange() {return m_scanRangeValid ? true : _ScanRangeFromPolyhedron();}
-    StatusInt Attach(DgnViewportP vp, DrawPurpose purpose) {return _Attach(vp,purpose);}
-    void Detach() {_Detach();}
+    DGNPLATFORM_EXPORT StatusInt Attach(DgnViewportP vp, DrawPurpose purpose);
     bool VisitAllModelElements() {return _VisitAllModelElements();}
     DGNPLATFORM_EXPORT bool VisitAllViewElements(BSIRectCP updateRect=nullptr);
     StatusInt InitContextForView() {return _InitContextForView();}
@@ -276,7 +271,7 @@ public:
     void SetViewFlags(Render::ViewFlags flags) {m_viewflags = flags;}
 
     //! Get the DgnDb for this ViewContext.
-    DgnDbR GetDgnDb() const {BeAssert(nullptr != m_dgnDb); return *m_dgnDb;}
+    DgnDbR GetDgnDb() const {BeAssert(nullptr != m_dgndb); return *m_dgndb;}
 
     //! Set the project for this ViewContext when not attaching a viewport.
     void SetDgnDb(DgnDbR dgnDb) {return _SetDgnDb(dgnDb);}

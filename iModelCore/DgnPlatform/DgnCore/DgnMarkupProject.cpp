@@ -263,7 +263,7 @@ double SpatialRedlineViewController::_GetMinimumSizePixels (DrawPurpose updateTy
 uint64_t SpatialRedlineViewController::_GetMaxElementMemory () {return m_subjectView._GetMaxElementMemory();}
 #endif
 
-ViewController::FitComplete SpatialRedlineViewController::_ComputeFitRange (DRange3dR range, DgnViewportR viewport, FitViewParamsR params) {return m_subjectView._ComputeFitRange(range,viewport,params);}
+ViewController::FitComplete SpatialRedlineViewController::_ComputeFitRange (FitContextR context) {return m_subjectView._ComputeFitRange(context);}
 
 
 /*---------------------------------------------------------------------------------**//**

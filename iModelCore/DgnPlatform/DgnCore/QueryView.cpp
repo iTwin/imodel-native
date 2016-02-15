@@ -17,24 +17,6 @@
 #   define DEBUG_ERRORLOG(fmt, ...)
 #endif
 
-BEGIN_UNNAMED_NAMESPACE
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   02/16
-//=======================================================================================
-struct SpatialFitQuery : DgnQueryView::SpatialQuery
-    {
-    DRange3d m_fitRange;
-    DRange3d m_lastRange;
-
-    virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
-
-public:
-    SpatialFitQuery(DgnQueryView::SpecialElements const* special) : DgnQueryView::SpatialQuery(special) {m_fitRange = DRange3d::NullRange();}
-    DRange3dCR GetRange() const {return m_fitRange;}
-    };
-
-END_UNNAMED_NAMESPACE
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -60,29 +42,6 @@ Frustum::Frustum(DRange3dCR range)
     m_pts[0].z = m_pts[1].z = m_pts[2].z = m_pts[3].z = range.low.y;   
     m_pts[4].z = m_pts[5].z = m_pts[6].z = m_pts[7].z = range.high.z;  
     }                                                                  
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-int SpatialFitQuery::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
-    {
-    RTree3dValCP testRange = (RTree3dValCP) info.m_coords;
-
-    if (m_fitRange.IsContained(testRange->m_minx, testRange->m_miny, testRange->m_minz) &&
-        m_fitRange.IsContained(testRange->m_maxx, testRange->m_maxy, testRange->m_maxz))
-        {
-        info.m_within = RTreeMatchFunction::Within::Outside; // If this range is entirely contained there is no reason to continue (it cannot contribute to the fit)
-        }
-    else
-        {
-        info.m_within = RTreeMatchFunction::Within::Partly; 
-        info.m_score  = info.m_level; // to get depth-first traversal
-        if (info.m_level == 0)
-            m_lastRange = DRange3d::From(testRange->m_minx, testRange->m_miny, testRange->m_minz, testRange->m_maxx, testRange->m_maxy, testRange->m_maxz);
-        }
-
-    return  BE_SQLITE_OK;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/12
@@ -237,34 +196,6 @@ void DgnQueryView::_OnCategoryChange(bool singleEnabled)
     m_forceNewQuery = true;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::QueryModelExtents(DRange3dR range, DgnViewportR vp)
-    {
-    SpatialFitQuery filter(&m_special);
-    filter.Start(*this);
-
-    DgnElementId thisId;
-    while ((thisId = filter.StepRtree()).IsValid())
-        {
-        if (filter.TestElement(thisId))
-            range.Extend(filter.m_lastRange);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-ViewController::FitComplete DgnQueryView::_ComputeFitRange(DRange3dR range, DgnViewportR vp, FitViewParamsR params) 
-    {
-    range = GetViewedExtents();
-    Transform  transform;
-    transform.InitFrom((nullptr == params.m_rMatrix) ? vp.GetRotMatrix() : *params.m_rMatrix);
-    transform.Multiply(range, range);
-
-    return FitComplete::Yes;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
@@ -358,7 +289,7 @@ void DgnQueryView::AddtoSceneQuick(SceneContextR context, SceneMembers& members,
     // NOTE: This is not CheckStop'ed! It must be fast.
     for (auto& thisScore : results.m_scores)
         {
-        if (SUCCESS == VisitElement(context, thisScore.second, false))
+        if (SUCCESS == context.VisitElement(thisScore.second, false))
             members.insert(thisScore.second);
         }
 
@@ -399,7 +330,7 @@ void DgnQueryView::_CreateScene(SceneContextR context)
             if (members->Contains(thisScore.second))
                 continue; // was already added during "quick" pass
 
-            if (SUCCESS == VisitElement(context, thisScore.second, true))
+            if (SUCCESS == context.VisitElement(thisScore.second, true))
                 members->insert(thisScore.second);
 
             if (context.WasAborted())
@@ -452,7 +383,7 @@ void DgnQueryView::_VisitAllElements(ViewContextR context)
         if (rangeQuery.TestElement(thisId))
             {
             ++count;
-            VisitElement(context, thisId, true);
+            context.VisitElement(thisId, true);
             }
 
         if (context.CheckStop())
@@ -841,7 +772,7 @@ ProgressiveTask::Completion DgnQueryView::NonScene::_DoProgressive(SceneContext&
         if (!m_scene->Contains(thisId) && m_rangeQuery.TestElement(thisId))
             {
             ++m_total;
-            m_view.VisitElement(context, thisId, true); // no, draw it now
+            context.VisitElement(thisId, true); // no, draw it now
 
             if (!m_setTimeout) // don't set the timeout until after we've drawn one element
                 {
@@ -876,47 +807,6 @@ ProgressiveTask::Completion DgnQueryView::NonScene::_DoProgressive(SceneContext&
     wantShow = WantShow::Yes;
     DEBUG_PRINTF("finished progressive. Total=%d", m_total);
     return Completion::Finished;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnQueryView::VisitElement(ViewContextR context, DgnElementId elementId, bool allowLoad) 
-    {
-    DgnElements& pool = m_dgndb.Elements();
-    DgnElementCPtr el = allowLoad ? pool.GetElement(elementId) : pool.FindElement(elementId);
-    if (!el.IsValid())
-        {
-        BeAssert(!allowLoad);
-        return ERROR;
-        }
-
-    GeometrySourceCP geomElem = el->ToGeometrySource();
-    if (nullptr == geomElem)
-        return ERROR;
-
-    return context.VisitGeometry(*geomElem);
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    if (pool.GetTotalAllocated() < (int64_t) m_elementReleaseTrigger)
-        return true;
-
-    pool.DropFromPool(*el);
-
-    // Purging the element does not purge the symbols so it may be necessary to do a full purge
-    if (pool.GetTotalAllocated() < (int64_t) m_purgeTrigger)
-        return true;
-
-    pool.Purge(m_elementReleaseTrigger);   // Try to get back to the elementPurgeTrigger
-
-    static const double s_purgeFactor = 1.3;
-
-    // The purge may not have succeeded if there are elements in the QueryView's list of elements and those elements hold symbol references.
-    // When that is true, we leave it to QueryView::_DrawView to try to clean up.  This logic just tries to recover from the
-    // growth is caused.  It allows some growth between calls to purge to avoid spending too much time in purge.
-    uint64_t newTotalAllocated = (uint64_t)pool.GetTotalAllocated();
-    m_purgeTrigger = (uint64_t)(s_purgeFactor * std::max(newTotalAllocated, m_elementReleaseTrigger));
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
