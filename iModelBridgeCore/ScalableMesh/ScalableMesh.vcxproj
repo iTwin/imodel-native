@@ -716,6 +716,8 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMesh -f ScalableMesh 
     <None Include="PublicAPI\ScalableMesh\Memory\_Description.mki" />
     <None Include="PublicAPI\ScalableMesh\_Description.mki" />
     <None Include="PublicAPI\ScalableMesh\__BENTLEY_INTERNAL_ONLY__" />
+    <None Include="ScalableMesh.mke" />
+    <None Include="ScalableMesh.mki" />
     <None Include="ScalableTerrainModel.mke" />
     <None Include="ScalableTerrainModel.mki" />
   </ItemGroup>
