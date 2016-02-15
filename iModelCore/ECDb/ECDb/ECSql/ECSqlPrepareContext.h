@@ -380,7 +380,7 @@ struct ECSqlPrepareContext
         ECSqlColumnInfo const* m_parentColumnInfo;
         NativeSqlBuilder m_nativeSqlBuilder;
         bool m_nativeStatementIsNoop;
-        bool m_nativeNothingToUpdate;
+        bool m_onlyExecuteStepTasks;
         ExpScopeStack m_scopes;
         SelectionOptions m_selectionOptions;
         std::unique_ptr<JoinedTableInfo> m_joinedTableInfo;
@@ -409,24 +409,20 @@ struct ECSqlPrepareContext
         bool IsParentOfJoinedTable() const { return m_joinedTableClassId != ECClass::UNSET_ECCLASSID; }
         void MarkAsParentOfJoinedTable(ECN::ECClassId classId) { BeAssert(!IsParentOfJoinedTable()); m_joinedTableClassId = classId; }
         JoinedTableInfo const* GetJoinedTableInfo() const { return m_joinedTableInfo.get(); }
-        JoinedTableInfo const* TrySetupJoinedTableInfo(ECSqlParseTreeCR exp, Utf8CP orignalECSQL);
+        JoinedTableInfo const* TrySetupJoinedTableInfo(ECSqlParseTreeCR exp, Utf8CP originalECSQL);
         
         ECSqlStatementBase& GetECSqlStatementR() const;
-                NativeSqlBuilder const& GetSqlBuilder() const { return m_nativeSqlBuilder; }
+        NativeSqlBuilder const& GetSqlBuilder() const { return m_nativeSqlBuilder; }
         NativeSqlBuilder& GetSqlBuilderR() { return m_nativeSqlBuilder; }
         Utf8CP GetNativeSql() const;
 
         bool NativeStatementIsNoop() const { return m_nativeStatementIsNoop; }
-        bool NativeNothingToUpdate() const { return m_nativeNothingToUpdate; }
-
         void SetNativeStatementIsNoop(bool flag) { m_nativeStatementIsNoop = flag; }
-        void SetNativeNothingToUpdate(bool flag) { m_nativeNothingToUpdate = flag; }
-
+        bool OnlyExecuteStepTasks() const { return m_onlyExecuteStepTasks; }
+        void SetOnlyExecuteStepTasks() { m_onlyExecuteStepTasks = true; }
 
         ExpScope const& GetCurrentScope() const { return m_scopes.Current(); }
         ExpScope& GetCurrentScopeR() { return m_scopes.CurrentR(); }
-
-
         void PushScope(ExpCR exp, OptionsExp const* options = nullptr) { m_scopes.Push(exp, options); }
         void PopScope() { m_scopes.Pop(); }
 

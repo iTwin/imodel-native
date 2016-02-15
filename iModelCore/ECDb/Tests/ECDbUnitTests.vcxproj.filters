@@ -130,9 +130,6 @@
     <ClCompile Include="BackDoor\ECDbTests.cpp">
       <Filter>BackDoor</Filter>
     </ClCompile>
-    <ClCompile Include="Performance\PerformanceECInstanceECSqlSelectAdapterTests.cpp">
-      <Filter>Performance</Filter>
-    </ClCompile>
     <ClCompile Include="Performance\PerformanceECDbReferentialIntegrityTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
@@ -187,12 +184,6 @@
     <ClCompile Include="Published\ECSqlStatementCache_Test.cpp">
       <Filter>Published\ECSql</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECSqlMetadataQueryTest.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ECSqlStatementTestsSchemaHelper.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Performance\PerformanceECSqlVsSqliteTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
@@ -211,8 +202,14 @@
     <ClCompile Include="Published\ECSqlInsertTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
+    <ClCompile Include="Published\ECSqlStatementTestsSchemaHelper.cpp">
+      <Filter>Published\ECSql</Filter>
+    </ClCompile>
     <ClCompile Include="Published\ECSqlSelectTests.cpp">
-      <Filter>Published</Filter>
+      <Filter>Published\ECSql</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlMetadataQueryTest.cpp">
+      <Filter>Published\ECSql</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -279,14 +276,14 @@
     <ClInclude Include="Published\ECSqlUpdateTestDataset.h">
       <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
     </ClInclude>
-    <ClInclude Include="Published\ECSqlStatementTestsSchemaHelper.h">
-      <Filter>Published</Filter>
-    </ClInclude>
     <ClInclude Include="Performance\PerformanceCRUDTestsHelper.h">
       <Filter>Performance</Filter>
     </ClInclude>
     <ClInclude Include="Published\ECDbTestHelper.h">
       <Filter>Published</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ECSqlStatementTestsSchemaHelper.h">
+      <Filter>Published\ECSql</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
