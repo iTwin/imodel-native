@@ -1085,7 +1085,6 @@ StatusInt FenceParams::StoreClippingPoints(bool outside, DPoint2dP pPoints, int 
 
     if (m_viewport && m_viewport->Is3dView())
         {
-//        double      activeZ = m_viewport->GetActiveZRoot (); remvoed in graphite
         DPoint3d    viewOrigin = *m_viewport->GetViewOrigin(), rotatedViewOrigin;
         RotMatrix   viewRMatrix = m_viewport->GetRotMatrix();
 

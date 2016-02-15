@@ -134,7 +134,7 @@ AxisAlignedBox3d DgnUnits::ComputeProjectExtents()
 
     auto rc=stmt.Step();
     BeAssert(rc==BE_SQLITE_DONE);
-    bounds.m_bounds.ToRange(m_extent);
+    bounds.m_bounds.ToRangeR(m_extent);
     return m_extent;
     }
 

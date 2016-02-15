@@ -47,17 +47,30 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
     //=======================================================================================
     struct SpatialQuery
     {
+        bool m_doSkewTest = false;
+        int m_idCol = 0;
         BeSQLite::CachedStatementPtr m_rangeStmt;
         BeSQLite::CachedStatementPtr m_viewStmt;
         SpecialElements const* m_special;
-        int m_idCol = 0;
+        BeSQLite::RTree3dVal m_boundingRange;    // only return entries whose range intersects this cube.
+        BeSQLite::RTree3dVal m_backFace;
+        Render::FrustumPlanes m_planes;
+        ClipPrimitivePtr m_activeVolume;
+        Frustum m_frustum;
+        DMatrix4d m_localToNpc;
+        DVec3d m_viewVec;  // vector from front face to back face, for SkewScan
+        DPoint3d m_cameraPosition;
+
         virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) = 0;
         DgnElementId StepRtree();
+        bool SkewTest(BeSQLite::RTree3dValCP testRange);
+        BeSQLite::RTreeMatchFunction::Within TestVolume(FrustumCR box, BeSQLite::RTree3dValCP);
         bool TestElement(DgnElementId);
         void Start(DgnQueryViewCR); //!< when this method is called the SQL string for the "ViewStmt" is obtained from the DgnQueryView supplied.
         bool IsNever(DgnElementId id) const {return m_special && m_special->m_never.Contains(id);}
         bool IsAlways(DgnElementId id) const {return m_special && m_special->m_always.Contains(id);}
-        bool HasAlways() const {return m_special && !m_special->m_always.empty();}
+        bool HasAlwaysList() const {return m_special && !m_special->m_always.empty();}
+        void SetFrustum(FrustumCR);
         SpatialQuery(SpecialElements const* special) {m_special = (special && !special->IsEmpty()) ? special : nullptr;}
     };
 
@@ -82,19 +95,10 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
         bool        m_depthFirst = false;
         bool        m_cameraOn = false;
         bool        m_testLOD = false;
-        bool        m_doSkewTest = false;
         uint32_t    m_orthogonalProjectionIndex;
         uint32_t    m_count = 0;
         uint32_t    m_hitLimit = 0;     // find this many "best" elements sorted by occlusion score
         uint64_t    m_lastId = 0;
-        BeSQLite::RTree3dVal m_boundingRange;    // only return entries whose range intersects this cube.
-        BeSQLite::RTree3dVal m_backFace;
-        Render::FrustumPlanes m_planes;
-        ClipPrimitivePtr m_activeVolume;
-        Frustum     m_frustum;
-        DMatrix4d   m_localToNpc;
-        DVec3d      m_viewVec;  // vector from front face to back face, for SkewScan
-        DPoint3d    m_cameraPosition;
         double      m_lodFilterNPCArea = 0.0;
         double      m_minScore = 0.0;
         double      m_lastScore = 0.0;
@@ -103,13 +107,11 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
         virtual void _Go() override;
         virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
         void AddAlwaysDrawn(DgnQueryViewCR);
-        bool SkewTest(BeSQLite::RTree3dValCP testRange);
         void SetDepthFirst() {m_depthFirst=true;}
         void SetTestLOD(bool onOff) {m_testLOD=onOff;}
         void SetSizeFilter(DgnViewportCR, double size);
         bool ComputeNPC(DPoint3dR npcOut, DPoint3dCR localIn);
         bool ComputeOcclusionScore(double& score, FrustumCR);
-        void SetFrustum(FrustumCR);
 
     public:
         RangeQuery(DgnQueryViewCR, FrustumCR, DgnViewportCR, UpdatePlan::Query const& plan);

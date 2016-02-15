@@ -625,7 +625,7 @@ void DgnQueryView::RangeQuery::_Go()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::RangeQuery::AddAlwaysDrawn(DgnQueryViewCR view)
     {
-    if (!HasAlways())
+    if (!HasAlwaysList())
         return;
 
     DgnElements& pool = view.GetDgnDb().Elements();
@@ -700,6 +700,28 @@ DgnQueryView::QueryResultsPtr DgnQueryView::RangeQuery::DoQuery()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+RTreeMatchFunction::Within DgnQueryView::SpatialQuery::TestVolume(FrustumCR box, RTree3dValCP coords)
+    {
+    if (!m_boundingRange.Intersects(*coords) || !SkewTest(coords)) // quick test for entirely outside axis-aligned bounding range
+        return RTreeMatchFunction::Within::Outside;
+
+    auto rangeTest = (RTreeMatchFunction::Within) m_planes.Contains(box);
+    if (rangeTest == RTreeMatchFunction::Within::Outside || !m_activeVolume.IsValid())
+        return rangeTest;
+
+    auto volumeTest = m_activeVolume->ClassifyPointContainment(box.m_pts, 8);
+    if (ClipPlaneContainment_StronglyOutside == volumeTest)
+        return RTreeMatchFunction::Within::Outside; // overlaps outer bounding range but not inside clip planes
+
+    if (ClipPlaneContainment_Ambiguous == volumeTest)
+        return RTreeMatchFunction::Within::Partly; // make sure we keep testing
+
+    return rangeTest;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * callback function for "MATCH DGN_rTree(?1)" against the spatial index
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -715,24 +737,7 @@ int DgnQueryView::RangeQuery::_TestRTree(RTreeMatchFunction::QueryInfo const& in
     if (info.m_parentWithin == RTreeMatchFunction::Within::Inside)
         rangeTest = RTreeMatchFunction::Within::Inside; // if parent is contained, we're contained and don't need to test
     else
-        {
-        if (!m_boundingRange.Intersects(*coords) || !SkewTest(coords)) // quick test for entirely outside axis-aligned bounding range
-            return BE_SQLITE_OK;
-
-        rangeTest = (RTreeMatchFunction::Within) m_planes.Contains(box);
-        if (rangeTest == RTreeMatchFunction::Within::Outside)
-            return BE_SQLITE_OK; // overlaps outer bounding range but not inside clip planes
-
-        if (m_activeVolume.IsValid())
-            {
-            auto volumeTest = m_activeVolume->ClassifyPointContainment(box.m_pts, 8);
-            if (ClipPlaneContainment_StronglyOutside == volumeTest)
-                return BE_SQLITE_OK;
-
-            if (ClipPlaneContainment_Ambiguous == volumeTest)
-                rangeTest = RTreeMatchFunction::Within::Partly; // make sure we keep testing
-            }
-        }
+        rangeTest = TestVolume(box, coords);
 
     if (!ComputeOcclusionScore(m_lastScore, box))
         return BE_SQLITE_OK; // eliminated by LOD filter
@@ -1055,12 +1060,8 @@ static inline void exchangeAndNegate(double& dbl1, double& dbl2)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnQueryView::RangeQuery::SkewTest(RTree3dValCP testRange)
+bool DgnQueryView::SpatialQuery::SkewTest(RTree3dValCP testRange)
     {
-    static bool s_doskew=true;
-    if (!s_doskew)
-        return true;
-
     if (!m_doSkewTest || testRange->Intersects(m_backFace))
         return true;
 
@@ -1143,7 +1144,7 @@ bool DgnQueryView::RangeQuery::SkewTest(RTree3dValCP testRange)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::RangeQuery::SetFrustum(FrustumCR frustum)
+void DgnQueryView::SpatialQuery::SetFrustum(FrustumCR frustum)
     {
     DRange3d range = frustum.ToRange();
     m_boundingRange.FromRange(range);
