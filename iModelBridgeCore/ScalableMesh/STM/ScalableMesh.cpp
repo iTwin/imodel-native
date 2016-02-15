@@ -628,7 +628,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     auto position = m_path.find_last_of(L".stm");
                     auto filenameWithoutExtension = m_path.substr(0, position - 3);
                     // NEEDS_WORK_SM - Remove hardcoded azure dataset name
-                    WString azureDatasetName(L"c1sub_grouped_plus\\");
+                    WString azureDatasetName(L"quebeccity\\");
                     // NEEDS_WORK_SM - Check existence of the following directories
                     WString streamingFilePath = (s_stream_from_disk ? m_path.substr(0, position - 3) + L"_stream\\" : L"");
                     WString groupedStreamingFilePath = (s_stream_from_disk ? filenameWithoutExtension + L"_grouped_stream\\" : azureDatasetName + L"headers\\");
