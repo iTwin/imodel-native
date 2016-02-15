@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMElementDisplayHandler.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
@@ -1489,20 +1489,20 @@ StatusInt DTMElementDisplayHandler::_DrawCut (ElementHandleCR thisElm, ICutPlane
 
                     if (idtm->GetDTMDraping()->DrapeLinear(result, res, numOut) == DTM_SUCCESS)
                         {
-                        Int64 count = result->GetPointCount();                    
+                        Int64 count = result->GetPointCount();
                         BeAssert(count <= INT_MAX);
-                        DPoint3d* pts = (DPoint3d*)_alloca((int)count * sizeof (DPoint3d));
+                        DPoint3d* pts = (DPoint3d*)_alloca((int)count * sizeof(DPoint3d));
                         int ptNum = 0;
-                        context.BeginAddToCutGraphicsCache ();
-                        XGraphicsRecorder xgRecorder (thisElm.GetModelRef());
-                        xgRecorder.GetContext()->CookElemDisplayParams (thisElm);
-                        xgRecorder.SetUseCache (true);
+                        context.BeginAddToCutGraphicsCache();
+                        XGraphicsRecorder xgRecorder(thisElm.GetModelRef());
+                        xgRecorder.GetContext()->CookElemDisplayParams(thisElm);
+                        xgRecorder.SetUseCache(true);
 
                         for (int i = 0; i < count; i++)
                             {
                             DTMDrapedLineCode code = DTMDrapedLineCode::External;
 
-                            result->GetPointByIndex (pts[ptNum], nullptr, &code, i);
+                            result->GetPointByIndex(pts[ptNum], nullptr, &code, i);
 
                             if (code == DTMDrapedLineCode::External || code == DTMDrapedLineCode::Void)
                                 {
@@ -1512,7 +1512,7 @@ StatusInt DTMElementDisplayHandler::_DrawCut (ElementHandleCR thisElm, ICutPlane
                                 }
                             else
                                 {
-                                trsf.multiply (&pts[ptNum]);
+                                trsf.multiply(&pts[ptNum]);
                                 ptNum++;
                                 }
                             }
@@ -1523,18 +1523,20 @@ StatusInt DTMElementDisplayHandler::_DrawCut (ElementHandleCR thisElm, ICutPlane
                         XGraphicsContainer const& xgContainer = xgRecorder.GetContainer();
                         bvector<XGraphicsContainer>  xgContainerVector;
 
-                        xgContainer.ExtractPrimitives (xgContainerVector);
+                        xgContainer.ExtractPrimitives(xgContainerVector);
 
                         for (bvector<XGraphicsContainer>::const_iterator region = xgContainerVector.begin(); region != xgContainerVector.end(); ++region)
-                            context.AddToCutGraphicsCache (thisElm, const_cast<XGraphicsContainer&>(*region), cutPlane);
+                            context.AddToCutGraphicsCache(thisElm, const_cast<XGraphicsContainer&>(*region), cutPlane);
 
-                        if (NULL == (cutGraphics = context.EndAddToCutGraphicsCache (thisElm, cutPlane)))
+                        if (NULL == (cutGraphics = context.EndAddToCutGraphicsCache(thisElm, cutPlane)))
                             {
-                            BeAssert (false);
+                            BeAssert(false);
                             return ERROR;
                             }
                         }
                     }
+                else
+                    return ERROR;
                 }
             context.DrawCutGraphicsCache (thisElm, context.GetCurrDisplayPath(), *cutGraphics, cutPlane);
 
