@@ -123,7 +123,7 @@ ECSchemaReadContextPtr LocateECSchema (ECDbR ecDB, BeFileNameCR ecSchemaFile, EC
             contextPtr->AddSchemaLocater (ecDB. GetSchemaLocater ());
             contextPtr->AddSchemaPath (ecSchemaFile.GetDirectoryName ().c_str ());
             auto sk = SchemaKey (schemaName.c_str (), schemaMajor, schemaMinor);
-            ecSchema = contextPtr->LocateSchema (sk, SCHEMAMATCHTYPE_Identical);
+            ecSchema = contextPtr->LocateSchema (sk, SchemaMatchType::Identical);
             if (!ecSchema.IsNull ())
                 return contextPtr;
             }
@@ -1491,7 +1491,7 @@ TEST(ECDbSchemas, DynamicSchemaTest)
     //reference BCSA, DynamicSchema CA introduce in 1.6
     ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
     SchemaKey bscaKey ("Bentley_Standard_CustomAttributes", 1, 6);
-    ECSchemaPtr bscaSchema =  ctx->LocateSchema (bscaKey, SCHEMAMATCHTYPE_Latest);
+    ECSchemaPtr bscaSchema =  ctx->LocateSchema (bscaKey, SchemaMatchType::Latest);
     ASSERT_TRUE (bscaSchema.IsValid());
     ASSERT_EQ (testSchema->AddReferencedSchema(*bscaSchema), ECObjectsStatus::Success);
     ASSERT_EQ (testSchema->SetIsDynamicSchema(true), ECObjectsStatus::Success);
@@ -1717,7 +1717,7 @@ TEST (ECDbSchemas, ClassDiff)
     EXPECT_STREQ (classPtr->GetName ().c_str (), "Employee");
     Utf8String classDisplayLabel = classPtr->GetDisplayLabel ();
     EXPECT_STREQ (classDisplayLabel.c_str (), "Employee Left");
-    EXPECT_STREQ (classPtr->GetSchema ().GetFullSchemaName ().c_str (), "LeftSchema.01.00");
+    EXPECT_STREQ (classPtr->GetSchema ().GetFullSchemaName ().c_str (), "LeftSchema.01.00.00");
 
     EXPECT_STREQ (mergedSchema->GetClassP ("RightFoo")->GetName ().c_str (), "RightFoo");
     EXPECT_STREQ (mergedSchema->GetClassP ("StableClass")->GetName ().c_str (), "StableClass");
@@ -1904,7 +1904,7 @@ TEST_F(ECDbSchemaFixture,ClassMapCustomAttributeOwnTableNonPolymorphic)
     ECSchemaReadContextPtr MappingSchemaContext=ECSchemaReadContext::CreateContext();
     ECDbTestUtility::ReadECSchemaFromDisk(MappingSchema,MappingSchemaContext,L"SchemaMapping.01.00.ecschema.xml");
     SchemaKey schemaKey ("ECDbMap", 1, 0);
-    ECSchemaPtr ecdbMapSchema = MappingSchemaContext->LocateSchema(schemaKey, SCHEMAMATCHTYPE_LatestCompatible);
+    ECSchemaPtr ecdbMapSchema = MappingSchemaContext->LocateSchema(schemaKey, SchemaMatchType::LatestCompatible);
     EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.m_schemaName.c_str() << "' not found.";
     ECClassCP testClass = ecdbMapSchema->GetClassCP("ClassMap");
     IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -1927,7 +1927,7 @@ TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeOwnTablePolymorphic)
     ECSchemaReadContextPtr MappingSchemaContext=ECSchemaReadContext::CreateContext();
     ECDbTestUtility::ReadECSchemaFromDisk(MappingSchema,MappingSchemaContext,L"SchemaMapping.01.00.ecschema.xml");
     SchemaKey schemaKey ("ECDbMap", 1, 0);
-    ECSchemaPtr ecdbMapSchema = MappingSchemaContext->LocateSchema(schemaKey, SCHEMAMATCHTYPE_LatestCompatible);
+    ECSchemaPtr ecdbMapSchema = MappingSchemaContext->LocateSchema(schemaKey, SchemaMatchType::LatestCompatible);
     EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.m_schemaName.c_str() << "' not found.";
     ECClassCP testClass = ecdbMapSchema->GetClassCP("ClassMap");
     IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -1951,7 +1951,7 @@ TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeNotMapped)
     ECSchemaReadContextPtr MappingSchemaContext=ECSchemaReadContext::CreateContext();
     ECDbTestUtility::ReadECSchemaFromDisk(MappingSchema,MappingSchemaContext,L"SchemaMapping.01.00.ecschema.xml");
     SchemaKey schemaKey ("ECDbMap", 1, 0);
-    ECSchemaPtr ecdbMapSchema = MappingSchemaContext->LocateSchema(schemaKey, SCHEMAMATCHTYPE_LatestCompatible);
+    ECSchemaPtr ecdbMapSchema = MappingSchemaContext->LocateSchema(schemaKey, SchemaMatchType::LatestCompatible);
     EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.m_schemaName.c_str() << "' not found.";
     ECClassCP testClass = ecdbMapSchema->GetClassCP("ClassMap");
     IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -1973,7 +1973,7 @@ TEST_F(ECDbSchemaFixture,ClassMapCustomAttributeSharedTablePolymorphic)
     {
     ECDbTestUtility::ReadECSchemaFromDisk(MappingSchema,MappingSchemaContext,L"SchemaMapping.01.00.ecschema.xml");
     SchemaKey schemaKey("ECDbMap", 1, 0);
-    ECSchemaPtr ecdbMapSchema = MappingSchemaContext->LocateSchema(schemaKey, SCHEMAMATCHTYPE_LatestCompatible);
+    ECSchemaPtr ecdbMapSchema = MappingSchemaContext->LocateSchema(schemaKey, SchemaMatchType::LatestCompatible);
     EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.m_schemaName.c_str() << "' not found.";
     ECClassCP testClass = ecdbMapSchema->GetClassCP("ClassMap");
     IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -1999,7 +1999,7 @@ TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeNotMappedPolymorphic)
     ECSchemaReadContextPtr MappingSchemaContext=ECSchemaReadContext::CreateContext();
     ECDbTestUtility::ReadECSchemaFromDisk(MappingSchema,MappingSchemaContext,L"SchemaMapping.01.00.ecschema.xml");
     SchemaKey schemaKey ("ECDbMap", 1, 0);
-    ECSchemaPtr ecdbMapSchema =  MappingSchemaContext->LocateSchema(schemaKey,SCHEMAMATCHTYPE_LatestCompatible);
+    ECSchemaPtr ecdbMapSchema =  MappingSchemaContext->LocateSchema(schemaKey, SchemaMatchType::LatestCompatible);
     EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.m_schemaName.c_str() << "' not found.";
     ECClassCP testClass = ecdbMapSchema->GetClassCP("ClassMap");
     IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();

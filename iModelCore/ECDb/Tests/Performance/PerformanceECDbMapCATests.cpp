@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Performance/PerformanceECDbMapCATests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceCRUDTestsHelper.h"
@@ -31,7 +31,7 @@ TEST_F (PerformanceECDbMapCATests, CRUDPerformance_SharedTable_SharedColumnsForS
     ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext ();
     readContext->AddSchemaLocater (ecdb.GetSchemaLocater ());
     SchemaKey ecdbmapKey = SchemaKey ("ECDbMap", 1, 0);
-    ECSchemaPtr ecdbmapSchema = readContext->LocateSchema (ecdbmapKey, SchemaMatchType::SCHEMAMATCHTYPE_LatestCompatible);
+    ECSchemaPtr ecdbmapSchema = readContext->LocateSchema (ecdbmapKey, SchemaMatchType::LatestCompatible);
     ASSERT_TRUE (ecdbmapSchema.IsValid ());
     readContext->AddSchema (*testSchema);
     testSchema->AddReferencedSchema (*ecdbmapSchema);
@@ -107,7 +107,7 @@ TEST_F (PerformanceECDbMapCATests, CRUDPerformance_SharedTableForSubClasses)
     ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext ();
     readContext->AddSchemaLocater (ecdb.GetSchemaLocater ());
     SchemaKey ecdbmapKey = SchemaKey ("ECDbMap", 1, 0);
-    ECSchemaPtr ecdbmapSchema = readContext->LocateSchema (ecdbmapKey, SchemaMatchType::SCHEMAMATCHTYPE_LatestCompatible);
+    ECSchemaPtr ecdbmapSchema = readContext->LocateSchema (ecdbmapKey, SchemaMatchType::LatestCompatible);
     ASSERT_TRUE (ecdbmapSchema.IsValid ());
     readContext->AddSchema (*testSchema);
     testSchema->AddReferencedSchema (*ecdbmapSchema);
