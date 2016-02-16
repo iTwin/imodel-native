@@ -93,14 +93,14 @@ MapStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext, bvector<
         return stat;
         }
 
-    if (SUCCESS != CreateOrUpdateRequiredTables())
+    if (SUCCESS != SaveMappings())
         {
         ClearCache();
         m_schemaImportContext = nullptr;
         return MapStatus::Error;
         }
 
-    if (SUCCESS != SaveMappings())
+    if (SUCCESS != CreateOrUpdateRequiredTables())
         {
         ClearCache();
         m_schemaImportContext = nullptr;
@@ -215,6 +215,7 @@ MapStatus ECDbMap::DoMapSchemas(bvector<ECSchemaCP> const& mapSchemas)
             return status;
         }
 
+    //need to finish tables (e.g. add classid cols where necessary) for classes before processing relationships
     if (FinishTableDefinition() == ERROR)
         return MapStatus::Error;
 
@@ -236,6 +237,10 @@ MapStatus ECDbMap::DoMapSchemas(bvector<ECSchemaCP> const& mapSchemas)
         if (SUCCESS != kvpair.first->CreateUserProvidedIndexes(*GetSchemaImportContext(), kvpair.second->GetIndexInfos()))
             return MapStatus::Error;
         }
+
+    //now finish tables for the relationship classes
+    if (FinishTableDefinition() != SUCCESS)
+        return MapStatus::Error;
 
     timer.Stop();
     if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
@@ -618,9 +623,6 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables() const
     BeMutexHolder lock(m_mutex);
     m_ecdb.GetStatementCache().Empty();
     StopWatch timer(true);
-
-    if (FinishTableDefinition() != SUCCESS)
-        return ERROR;
 
     int nCreated = 0;
     int nUpdated = 0;
