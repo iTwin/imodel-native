@@ -43,6 +43,7 @@ MOBILEDGN_TRANSLATABLE_STRINGS_START(ConnectL10N, Connect)
     FIELDAPPS_EulaChecking,                  // =="Checking EULA..."==
     FIELDAPPS_EulaAccepting,                 // =="Accepting EULA..."==
     FIELDAPPS_SignInConnecting,              // =="Connecting to sign-in page..."==
+    FIELDAPPS_SigningOut,                    // =="Signing out..."==
     FIELDAPPS_TokenExpired,                  // =="Session expired. Please sign in again."==
     };
 MOBILEDGN_TRANSLATABLE_STRINGS_END
