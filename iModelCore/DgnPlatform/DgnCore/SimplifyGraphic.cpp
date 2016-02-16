@@ -558,7 +558,8 @@ void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
     bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
     GeometryStreamEntryId entryId = m_context.GetGeometryStreamEntryId();
 
-    CurveTopologyId::AddCurveVectorIds(geom, CurvePrimitiveId::Type::CurveVector, CurveTopologyId::FromCurveVector(), entryId.GetIndex(), entryId.GetPartIndex());
+    if (entryId.IsValid())
+        CurveTopologyId::AddCurveVectorIds(geom, CurvePrimitiveId::Type::CurveVector, CurveTopologyId::FromCurveVector(), entryId.GetIndex(), entryId.GetPartIndex());
 
     // Give output a chance to handle geometry directly...
     if (doClipping)
@@ -1022,10 +1023,13 @@ void SimplifyGraphic::ClipAndProcessPolyfaceAsCurves(PolyfaceQueryCR geom)
                 {
                 int closeVertexId = (abs(prevIndex) - 1);
                 int segmentVertexId = (abs(thisIndex) - 1);
-                ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine(DSegment3d::From(verts[closeVertexId], verts[segmentVertexId]));
-                CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type::PolyfaceEdge, CurveTopologyId(CurveTopologyId::Type::PolyfaceEdge, closeVertexId, segmentVertexId), entryId.GetIndex(), entryId.GetPartIndex());
+                ICurvePrimitivePtr curve = ICurvePrimitive::CreateLine(DSegment3d::From(verts[closeVertexId], verts[segmentVertexId]));
 
-                curve->SetId(newId.get());
+                if (entryId.IsValid())
+                    {
+                    CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type::PolyfaceEdge, CurveTopologyId(CurveTopologyId::Type::PolyfaceEdge, closeVertexId, segmentVertexId), entryId.GetIndex(), entryId.GetPartIndex());
+                    curve->SetId(newId.get());
+                    }
 
                 CurveVectorPtr curvePtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve);
 
@@ -1062,10 +1066,13 @@ void SimplifyGraphic::ClipAndProcessPolyfaceAsCurves(PolyfaceQueryCR geom)
                 {
                 int closeVertexId = (abs(prevIndex) - 1);
                 int segmentVertexId = (abs(firstIndex) - 1);
-                ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine(DSegment3d::From(verts[closeVertexId], verts[segmentVertexId]));
-                CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type::PolyfaceEdge, CurveTopologyId(CurveTopologyId::Type::PolyfaceEdge, closeVertexId, segmentVertexId), entryId.GetIndex(), entryId.GetPartIndex());
+                ICurvePrimitivePtr curve = ICurvePrimitive::CreateLine(DSegment3d::From(verts[closeVertexId], verts[segmentVertexId]));
 
-                curve->SetId(newId.get());
+                if (entryId.IsValid())
+                    {
+                    CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type::PolyfaceEdge, CurveTopologyId(CurveTopologyId::Type::PolyfaceEdge, closeVertexId, segmentVertexId), entryId.GetIndex(), entryId.GetPartIndex());
+                    curve->SetId(newId.get());
+                    }
 
                 CurveVectorPtr curvePtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve);
 

@@ -397,6 +397,7 @@ public:
     DgnGeometryPartId GetGeometryPartId() const {return m_partId;}
     uint16_t GetIndex() const {return m_index;}
     uint16_t GetPartIndex() const {return m_partIndex;}
+    bool IsValid() const {return 0 != m_index;}
 };
 
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
