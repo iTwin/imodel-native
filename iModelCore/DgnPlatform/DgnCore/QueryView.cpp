@@ -248,7 +248,7 @@ void DgnQueryView::_DrawView(ViewContextR context)
         auto geomModel = model.IsValid() ? model->ToGeometricModelP() : nullptr;
 
         if (nullptr != geomModel)
-            geomModel->DrawModel(context);
+            geomModel->_DrawModel(context);
         }
     }
 
@@ -299,7 +299,7 @@ void DgnQueryView::AddtoSceneQuick(SceneContextR context, SceneMembers& members,
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Create the scene and potentially schedule a progressive task
+* Create the scene and potentially schedule progressive tasks
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::_CreateScene(SceneContextR context) 
@@ -322,6 +322,15 @@ void DgnQueryView::_CreateScene(SceneContextR context)
     SceneMembersPtr members = new SceneMembers();
     AddtoSceneQuick(context, *members, *results);
 
+    // Next, allow external data models to draw or schedule external data. Note: Do this even if we're already aborted
+    for (DgnModelId modelId : GetViewedModels())
+        {
+        DgnModelPtr model = m_dgndb.Models().GetModel(modelId);
+        auto geomModel = model.IsValid() ? model->ToGeometricModelP() : nullptr;
+        if (nullptr != geomModel)
+            geomModel->_AddGraphicsToScene(context);
+        }
+
     if (members->size() < results->GetCount()) // did we get them all?
         {
         DEBUG_PRINTF("Begin create scene with load");
@@ -336,15 +345,6 @@ void DgnQueryView::_CreateScene(SceneContextR context)
             if (context.WasAborted())
                 break;
             }
-        }
-
-    // Next, allow external data models to draw or schedule external data. Note: Do this even if we're already aborted
-    for (DgnModelId modelId : GetViewedModels())
-        {
-        DgnModelPtr model = m_dgndb.Models().GetModel(modelId);
-        auto geomModel = model.IsValid() ? model->ToGeometricModelP() : nullptr;
-        if (nullptr != geomModel)
-            geomModel->AddGraphicsToScene(context);
         }
 
     BeAssert(members->size() <= results->GetCount());
@@ -377,22 +377,16 @@ void DgnQueryView::_VisitAllElements(ViewContextR context)
 
     // the range tree will return all elements in the volume. Filter them by the view criteria
     DgnElementId thisId;
-    int count = 0;
     while ((thisId = rangeQuery.StepRtree()).IsValid())
         {           
         if (rangeQuery.TestElement(thisId))
             {
-            ++count;
             context.VisitElement(thisId, true);
             }
 
         if (context.CheckStop())
-            {
-            DEBUG_PRINTF("pick aborted %d", count);
             return;
-            }
         }
-    DEBUG_PRINTF("pick finished %d", count);
     }
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)

@@ -1,32 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnCore/RangeContext.cpp $
+|     $Source: DgnCore/FitContext.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
-/*=================================================================================**//**
-* Context to caclulate the range of all elements either within a view or from the view's non-range criteria.
-* @bsiclass                                                     RayBentley    09/06
-+===============+===============+===============+===============+===============+======*/
-struct Dgn::FitContext : NullContext
-{
-    DEFINE_T_SUPER(NullContext)
-    FitViewParams   m_params;
-    Transform       m_trans;        // usually view transform 
-    DRange3d        m_fitRange;     // union of all view-aligned element ranges
-    DRange3d        m_lastRange;    // last view-aligned range tested
-
-    void AcceptRangeElement(DgnElementId id);
-    bool IsRangeContained(DRange3dCR range);
-    virtual StatusInt _InitContextForView() override;
-    virtual StatusInt _VisitGeometry(GeometrySourceCR source) override;
-    virtual bool _ScanRangeFromPolyhedron() override;
-    virtual ScanCriteria::Result _CheckNodeRange(ScanCriteriaCR criteria, DRange3dCR range, bool is3d) override;
-    FitContext(FitViewParams const& params) : m_params(params) {m_fitRange.Init();}
-};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/06
@@ -92,19 +72,26 @@ bool FitContext::_ScanRangeFromPolyhedron()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void FitContext::ExtendFitRange(ElementAlignedBox3dCR elementBox, TransformCR placement)
+    {
+    Frustum box(elementBox);
+    box.Multiply(Transform::FromProduct(m_trans, placement)); // put 8 corners from element coordintes to view coordinates
+    m_fitRange.Extend(box.m_pts, 8);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt FitContext::_VisitGeometry(GeometrySourceCR source) 
     {
     // NOTE: Can just use element aligned box instead of drawing element geometry...
     bool is3d = (nullptr != source.ToGeometrySource3d());
-    ElementAlignedBox3d elementBox = (is3d ? source.ToGeometrySource3d()->GetPlacement().GetElementBox() : ElementAlignedBox3d(source.ToGeometrySource2d()->GetPlacement().GetElementBox()));
+    ExtendFitRange(is3d ? source.ToGeometrySource3d()->GetPlacement().GetElementBox() : 
+                          ElementAlignedBox3d(source.ToGeometrySource2d()->GetPlacement().GetElementBox()),
+                   source.GetPlacementTransform());
 
-    Frustum box(elementBox);
-    box.Multiply(source.GetPlacementTransform());
-    box.Multiply(m_trans);
-
-    m_fitRange.Extend(box.m_pts, 8);
     return SUCCESS;
     }
 
@@ -193,6 +180,11 @@ ViewController::FitComplete DgnQueryView::_ComputeFitRange(FitContextR context)
         if (filter.TestElement(thisId))
             context.AcceptRangeElement(thisId);
         }
+    
+    for (DgnModelId modelId : GetViewedModels())
+        {
+        }
+
     return FitComplete::Yes;
     }
 
