@@ -214,7 +214,7 @@ struct LayerConfig::Impl : public ShareableObjectTypeTrait<LayerConfig::Impl>::t
 * @description  
 * @bsiclass                                                    Raymond.Gauthier  05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-LayerConfig::LayerConfig (UInt layerID)
+LayerConfig::LayerConfig (uint32_t layerID)
     :   m_flags(0),
         m_layerID(layerID),
         m_implP(new Impl) 

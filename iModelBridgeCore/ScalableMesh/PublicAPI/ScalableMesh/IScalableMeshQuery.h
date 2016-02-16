@@ -23,6 +23,7 @@
 #include <Geom\Polyface.h>
 #include <list>
 #include <DgnPlatform/DgnPlatform.h>
+#include <DgnPlatform/ClipVector.h>
 
 //#include <Bentley/RefCounted.h>
 
@@ -86,20 +87,20 @@ struct IScalableMeshQueryParameters abstract: virtual public RefCountedBase
                  IScalableMeshQueryParameters();                    
         virtual ~IScalableMeshQueryParameters();                
 
-        virtual Bentley::GeoCoordinates::BaseGCSPtr _GetSourceGCS() = 0;
+        virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr _GetSourceGCS() = 0;
 
-        virtual Bentley::GeoCoordinates::BaseGCSPtr _GetTargetGCS() = 0;
+        virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr _GetTargetGCS() = 0;
 
-        virtual void _SetGCS(Bentley::GeoCoordinates::BaseGCSPtr& sourceGCSPtr, 
-                             Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr) = 0;
+        virtual void _SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr, 
+                             BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr) = 0;
                                        
     public:    
                     
-        BENTLEYSTM_EXPORT Bentley::GeoCoordinates::BaseGCSPtr GetSourceGCS();
-        BENTLEYSTM_EXPORT Bentley::GeoCoordinates::BaseGCSPtr GetTargetGCS();
+        BENTLEYSTM_EXPORT BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr GetSourceGCS();
+        BENTLEYSTM_EXPORT BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr GetTargetGCS();
 
-        BENTLEYSTM_EXPORT void SetGCS(Bentley::GeoCoordinates::BaseGCSPtr& sourceGCSPtr, 
-                                      Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr);                        
+        BENTLEYSTM_EXPORT void SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr, 
+                                      BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr);                        
             
         BENTLEYSTM_EXPORT static double GetToleranceTriangulationParam();
     };
@@ -374,7 +375,7 @@ struct IScalableMeshMesh : public RefCountedBase
 
     protected:         
 
-        virtual const Bentley::PolyfaceQuery* _GetPolyfaceQuery() const = 0;
+        virtual const BENTLEY_NAMESPACE_NAME::PolyfaceQuery* _GetPolyfaceQuery() const = 0;
 
         virtual DPoint3d* _EditPoints() = 0;
 
@@ -382,7 +383,7 @@ struct IScalableMeshMesh : public RefCountedBase
 
         virtual size_t _GetNbFaces() const = 0;
 
-        virtual DTMStatusInt _GetAsBcDTM(Bentley::TerrainModel::BcDTMPtr& bcdtm) = 0;
+        virtual DTMStatusInt _GetAsBcDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr& bcdtm) = 0;
 
         virtual bool _FindTriangleForProjectedPoint(int* outTriangle, DPoint3d& point, bool use2d = false) const = 0;
         virtual bool _FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DPoint3d& point, bool use2d = false) const = 0;
@@ -397,7 +398,7 @@ struct IScalableMeshMesh : public RefCountedBase
 
     public: 
 
-        BENTLEYSTM_EXPORT const Bentley::PolyfaceQuery* GetPolyfaceQuery() const;
+        BENTLEYSTM_EXPORT const BENTLEY_NAMESPACE_NAME::PolyfaceQuery* GetPolyfaceQuery() const;
 
         BENTLEYSTM_EXPORT size_t GetNbPoints() const;
 
@@ -405,7 +406,7 @@ struct IScalableMeshMesh : public RefCountedBase
 
         DPoint3d* EditPoints();
 
-        BENTLEYSTM_EXPORT DTMStatusInt GetAsBcDTM(Bentley::TerrainModel::BcDTMPtr& bcdtm);
+        BENTLEYSTM_EXPORT DTMStatusInt GetAsBcDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr& bcdtm);
 
         //NEEDS_WORK_SM: maybe move all geometry-related functions to util interface
         
@@ -470,7 +471,7 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
     {
     private:
     protected:
-        virtual Bentley::TerrainModel::BcDTMPtr  _GetBcDTM() const = 0;
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr  _GetBcDTM() const = 0;
 
         virtual bool    _ArePoints3d() const = 0;
 
@@ -520,7 +521,7 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
     public:
         static const BENTLEYSTM_EXPORT ScalableMeshTextureID UNTEXTURED_PART = 0;
 
-        BENTLEYSTM_EXPORT Bentley::TerrainModel::BcDTMPtr          GetBcDTM() const;
+        BENTLEYSTM_EXPORT BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr          GetBcDTM() const;
         
         BENTLEYSTM_EXPORT bool          ArePoints3d() const;
 
@@ -618,20 +619,20 @@ struct IScalableMeshMeshQueryParams abstract : virtual public RefCountedBase
         IScalableMeshMeshQueryParams();
         virtual ~IScalableMeshMeshQueryParams();
 
-        virtual Bentley::GeoCoordinates::BaseGCSPtr _GetSourceGCS() = 0;
+        virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr _GetSourceGCS() = 0;
 
-        virtual Bentley::GeoCoordinates::BaseGCSPtr _GetTargetGCS() = 0;
+        virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr _GetTargetGCS() = 0;
 
-        virtual void _SetGCS(Bentley::GeoCoordinates::BaseGCSPtr& sourceGCSPtr,
-                             Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr) = 0;
+        virtual void _SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
+                             BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr) = 0;
     public:
         BENTLEYSTM_EXPORT static IScalableMeshMeshQueryParamsPtr CreateParams();
 
-        BENTLEYSTM_EXPORT Bentley::GeoCoordinates::BaseGCSPtr GetSourceGCS();
-        BENTLEYSTM_EXPORT Bentley::GeoCoordinates::BaseGCSPtr GetTargetGCS();
+        BENTLEYSTM_EXPORT BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr GetSourceGCS();
+        BENTLEYSTM_EXPORT BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr GetTargetGCS();
 
-        BENTLEYSTM_EXPORT void SetGCS(Bentley::GeoCoordinates::BaseGCSPtr& sourceGCSPtr,
-                                      Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr);
+        BENTLEYSTM_EXPORT void SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
+                                      BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr);
     };
 
 

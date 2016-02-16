@@ -170,12 +170,13 @@ template <class POINT> int ScalableMeshFullResolutionPointQuery<POINT>::_Query(b
         }
     else
         {             
-        queryExtent.xMin = ExtentOp<YProtPtExtentType>::GetXMin(contentExtent);
+        /*queryExtent.xMin = ExtentOp<YProtPtExtentType>::GetXMin(contentExtent);
         queryExtent.xMax = ExtentOp<YProtPtExtentType>::GetXMax(contentExtent);
         queryExtent.yMin = ExtentOp<YProtPtExtentType>::GetYMin(contentExtent);
         queryExtent.yMax = ExtentOp<YProtPtExtentType>::GetYMax(contentExtent);
         queryExtent.zMin = ExtentOp<YProtPtExtentType>::GetZMin(contentExtent);
-        queryExtent.zMax = ExtentOp<YProtPtExtentType>::GetZMax(contentExtent);
+        queryExtent.zMax = ExtentOp<YProtPtExtentType>::GetZMax(contentExtent);*/
+        queryExtent = contentExtent;
         
         DRange3d spatialIndexRange;
         spatialIndexRange.low.x = ExtentOp<YProtPtExtentType>::GetXMin(queryExtent);
@@ -320,8 +321,8 @@ template <class POINT> int ScalableMeshViewDependentPointQuery<POINT>::_Query(bv
         //MS : Might need to be done at the ScalableMeshReprojectionQuery level.
         if ((scmQueryParamsPtr->GetSourceGCS() != 0) && (scmQueryParamsPtr->GetTargetGCS() != 0))
             {
-            BaseGCSPtr sourcePtr = scmQueryParamsPtr->GetSourceGCS();
-            BaseGCSPtr targetPtr = scmQueryParamsPtr->GetTargetGCS();
+            BaseGCSCPtr sourcePtr = scmQueryParamsPtr->GetSourceGCS();
+            BaseGCSCPtr targetPtr = scmQueryParamsPtr->GetTargetGCS();
             viewDependentQueryP->SetReprojectionInfo(sourcePtr, targetPtr);
             }
             
@@ -523,8 +524,8 @@ template <class POINT> int ScalableMeshViewDependentMeshQuery<POINT>::_Query(ISc
     
     if ((scmQueryParamsPtr->GetSourceGCS() != 0) && (scmQueryParamsPtr->GetTargetGCS() != 0))
         {
-        BaseGCSPtr sourcePtr = scmQueryParamsPtr->GetSourceGCS();
-        BaseGCSPtr targetPtr = scmQueryParamsPtr->GetTargetGCS();
+        BaseGCSCPtr sourcePtr = scmQueryParamsPtr->GetSourceGCS();
+        BaseGCSCPtr targetPtr = scmQueryParamsPtr->GetTargetGCS();
         viewDependentQueryP->SetReprojectionInfo(sourcePtr, targetPtr);
         }
         
@@ -653,8 +654,8 @@ template <class POINT> int ScalableMeshViewDependentMeshQuery<POINT>::_Query(bve
     
     if ((scmQueryParamsPtr->GetSourceGCS() != 0) && (scmQueryParamsPtr->GetTargetGCS() != 0))
         {
-        BaseGCSPtr sourcePtr = scmQueryParamsPtr->GetSourceGCS();
-        BaseGCSPtr targetPtr = scmQueryParamsPtr->GetTargetGCS();
+        BaseGCSCPtr sourcePtr = scmQueryParamsPtr->GetSourceGCS();
+        BaseGCSCPtr targetPtr = scmQueryParamsPtr->GetTargetGCS();
         viewDependentQueryP->SetReprojectionInfo(sourcePtr, targetPtr);
         }
         
@@ -912,8 +913,8 @@ template <class POINT> int ScalableMeshReprojectionMeshQuery<POINT>::_Query(ISca
     if (nbQueryExtentPts > 0)
         {
         // Create a shape from clip points
-        HFCPtr<HVE2DShape> pReprojectedShape = ReprojectShapeDomainLimited((BaseGCSPtr&)m_sourceGCS.GetGeoRef().GetBasePtr(),
-                                                                           (BaseGCSPtr&)m_targetGCS.GetGeoRef().GetBasePtr(), pQueryExtentPts, nbQueryExtentPts);
+        HFCPtr<HVE2DShape> pReprojectedShape = ReprojectShapeDomainLimited(const_cast<BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr&>(m_sourceGCS.GetGeoRef().GetBasePtr()),
+                                                                           const_cast<BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr&>(m_targetGCS.GetGeoRef().GetBasePtr()), pQueryExtentPts, nbQueryExtentPts);
 
         if (NULL == pReprojectedShape) return ERROR;
 
@@ -949,8 +950,8 @@ template <class POINT> int ScalableMeshReprojectionMeshQuery<POINT>::_Query(bvec
     if (nbQueryExtentPts > 0)
         {
         // Create a shape from clip points
-        HFCPtr<HVE2DShape> pReprojectedShape = ReprojectShapeDomainLimited((BaseGCSPtr&)m_sourceGCS.GetGeoRef().GetBasePtr(),
-                                                                           (BaseGCSPtr&)m_targetGCS.GetGeoRef().GetBasePtr(), pQueryExtentPts, nbQueryExtentPts);
+        HFCPtr<HVE2DShape> pReprojectedShape = ReprojectShapeDomainLimited(const_cast<BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr&>(m_sourceGCS.GetGeoRef().GetBasePtr()),
+                                                                           const_cast<BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr&>(m_targetGCS.GetGeoRef().GetBasePtr()), pQueryExtentPts, nbQueryExtentPts);
 
         if (NULL == pReprojectedShape) return ERROR;
 
@@ -971,8 +972,8 @@ template <class POINT> int ScalableMeshReprojectionMeshQuery<POINT>::_Query(bvec
         std::transform(listOfPoints.begin(), listOfPoints.end(), &extentReprojected[0], HGF2DLocationToDPoint3d());
         }
     IScalableMeshMeshQueryParamsPtr reprojectedQueryParams = new ScalableMeshViewDependentMeshQueryParams(*dynamic_cast<ScalableMeshViewDependentMeshQueryParams*>(scmQueryParamsPtr.get()));
-    GeoCoordinates::BaseGCSPtr targetGCSP = &*m_targetGCS.GetGeoRef().GetBasePtr();
-    GeoCoordinates::BaseGCSPtr sourceGCSP = &*m_sourceGCS.GetGeoRef().GetBasePtr();
+    GeoCoordinates::BaseGCSCPtr targetGCSP = &*m_targetGCS.GetGeoRef().GetBasePtr();
+    GeoCoordinates::BaseGCSCPtr sourceGCSP = &*m_sourceGCS.GetGeoRef().GetBasePtr();
     reprojectedQueryParams->SetGCS(sourceGCSP,
                                 targetGCSP);
     int status = m_originalQueryPtr->Query(meshNodes, &extentReprojected[0], (int)nbQueryExtentPts, reprojectedQueryParams);
@@ -1360,7 +1361,7 @@ template <class POINT> IScalableMeshTexturePtr ScalableMeshNode<POINT>::_GetText
         //std::ofstream file_s;
         //file_s.open("C:\\dev\\ContextCapture\\_log.txt", ios_base::app);
         //file_s << "PushIndices etc... -- shit 11" << endl;
-        //Int32* faceIndexes = m_meshNode->GetPtsIndicePtr(0);
+        //int32_t* faceIndexes = m_meshNode->GetPtsIndicePtr(0);
 
         //int status = meshPtr->AppendMesh(m_node->size(), &dataPoints[0], m_node->m_nodeHeader.m_nbFaceIndexes, (int32_t*)&m_node->operator[](m_node->size()), 0, 0, 0);
         //int status = meshPtr->AppendMesh(m_node->size(), &dataPoints[0], m_node->m_nodeHeader.m_nbFaceIndexes, faceIndexes, 0, 0, 0);
@@ -2225,7 +2226,7 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddMesh(DPoint3d*
     bvector<int> componentPointsId;
     if (NULL == m_meshNode->GetGraphPtr()) m_meshNode->CreateGraph();
     CreateGraphFromIndexBuffer(m_meshNode->GetGraphPtr(), (const long*)&indicesVec[0], (int)nIndices, (int)nodePts.size(), componentPointsId, &nodePts[0]);
-    m_meshNode->GetGraphPtr()->SortNodesBasedOnLabel(0);
+   // m_meshNode->GetGraphPtr()->SortNodesBasedOnLabel(0);
     m_meshNode->SetGraphDirty();
     m_meshNode->StoreGraph();
 
@@ -2297,7 +2298,7 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(b
     if (NULL == m_meshNode->GetGraphPtr()) m_meshNode->CreateGraph();
 
     CreateGraphFromIndexBuffer(m_meshNode->GetGraphPtr(), (const long*)&indicesLine[0], (int)indicesLine.size(), (int)nodePts.size(), componentPointsId, &vertices[0]);
-    m_meshNode->GetGraphPtr()->SortNodesBasedOnLabel(0);
+    //m_meshNode->GetGraphPtr()->SortNodesBasedOnLabel(0);
     m_meshNode->SetGraphDirty();
     m_meshNode->StoreGraph();
 
@@ -2419,8 +2420,8 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNodeWithReprojection<POI
             {
             m_meshNode->LoadGraph();
             }
-        POINT* pts = new POINT[m_node->sizeTotal()];
-        m_node->get(pts, m_node->sizeTotal());
+        POINT* pts = new POINT[m_node->size()];
+        m_node->get(pts, m_node->size());
 
         DPoint3d* points = new DPoint3d[m_node->size()];
         m_reprojectFunction.Reproject(points, m_node->size(), points);

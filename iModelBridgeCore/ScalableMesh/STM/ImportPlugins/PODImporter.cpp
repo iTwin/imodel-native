@@ -363,12 +363,12 @@ class PODFileSourceCreator : public LocalFileSourceCreatorBase
 +---------------+---------------+---------------+---------------+---------------+------*/
 class PODElementSourceCreator : public DGNElementSourceCreatorBase
     {
-    virtual UInt                    _GetElementType                    () const override
+    virtual uint32_t                    _GetElementType                    () const override
         {
         return EXTENDED_ELM;
         }
 
-    virtual UInt                    _GetElementHandlerID               () const override
+    virtual uint32_t                    _GetElementHandlerID               () const override
         {
         return ElementHandlerId(XATTRIBUTEID_PointCloudHandler, PointCloudMinorId_Handler).GetId();
         }
@@ -408,7 +408,7 @@ class PODPointExtractor : public InputExtractorBase
 private:
     friend class                    PODPointExtractorCreator;
 
-    static const UInt               MAX_PT_QTY = 100000;
+    static const uint32_t               MAX_PT_QTY = 100000;
 
     IPointCloudDataQueryPtr          m_dataQueryPtr;
 
@@ -455,7 +455,7 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual void                    _Read                          () override
         {        
-        const UInt pointsReadQty = m_dataQueryPtr->GetPoints (*m_pointCloudQueryBufferPtr);                        
+        const uint32_t pointsReadQty = m_dataQueryPtr->GetPoints (*m_pointCloudQueryBufferPtr);                        
 
         UChar* filterBufferP(m_pointCloudQueryBufferPtr->GetFilterBuffer());
 
@@ -510,7 +510,7 @@ class PODPointExtractorWithInternalClassif : public InputExtractorBase
 private:
     friend class                    PODPointExtractorCreator;
 
-    static const UInt               MAX_PT_QTY = 100000;
+    static const uint32_t               MAX_PT_QTY = 100000;
 
 
 
@@ -589,7 +589,7 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual void                    _Read                          () override
         {
-        const UInt pointsReadQty = m_dataQueryPtr->GetPoints (*m_pointCloudQueryBufferPtr);
+        const uint32_t pointsReadQty = m_dataQueryPtr->GetPoints (*m_pointCloudQueryBufferPtr);
                 
         size_t packetInd = 0;
 
@@ -676,7 +676,7 @@ class PODPointExtractorCreator : public InputExtractorCreatorMixinBase<PODSource
     * @bsimethod                                                  Raymond.Gauthier   07/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual RawCapacities                       _GetOutputCapacities               (PODSource&                              sourceBase,
-                                                                                    const Bentley::ScalableMesh::Import::Source&   source,
+                                                                                    const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source&   source,
                                                                                     const ExtractionQuery&                  selection) const override
         {
         SourceImportConfig* sourceImportConf = source.GetSourceImportConfigC();
@@ -719,7 +719,7 @@ class PODPointExtractorCreator : public InputExtractorCreatorMixinBase<PODSource
     * @bsimethod                                                  Raymond.Gauthier   07/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual InputExtractorBase*                 _Create                            (PODSource&                              sourceBase,
-                                                                                    const Bentley::ScalableMesh::Import::Source&  source,
+                                                                                    const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source&  source,
                                                                                     const ExtractionQuery&                  selection,
                                                                                     const ExtractionConfig&                 config,
                                                                                     Log&                                    log) const override

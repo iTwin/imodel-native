@@ -6,7 +6,7 @@
 |       $Date: 2011/11/22 21:28:22 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -37,7 +37,7 @@ private:
     typedef SharedPtrTypeTrait<Impl>::type
                                         ImplPtr;
 
-    UInt                                m_layerID;
+    uint32_t                                m_layerID;
     uint32_t                              m_flags;
     ImplPtr                             m_implP;
 public:
@@ -49,12 +49,12 @@ public:
 
     IMPORT_DLLE static ClassID          s_GetClassID                   ();
 
-    IMPORT_DLLE explicit                LayerConfig                    (UInt                                layerID);
+    IMPORT_DLLE explicit                LayerConfig                    (uint32_t                                layerID);
     IMPORT_DLLE virtual                 ~LayerConfig                   ();
 
     IMPORT_DLLE                         LayerConfig                    (const LayerConfig&                  rhs);
 
-    UInt                                GetID                          () const;
+    uint32_t                                GetID                          () const;
 
     IMPORT_DLLE LayerConfig&            push_back                      (const ContentConfigComponent&       config);
     IMPORT_DLLE LayerConfig&            push_back                      (const ContentConfigComponentBase&   config);
@@ -68,7 +68,7 @@ public:
     };
 
 
-inline UInt LayerConfig::GetID () const
+inline uint32_t LayerConfig::GetID () const
     { return m_layerID; }
 
 END_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE

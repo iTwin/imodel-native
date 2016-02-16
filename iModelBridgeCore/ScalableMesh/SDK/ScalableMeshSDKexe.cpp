@@ -284,7 +284,7 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
         return true;
         }
     
-    void ImportThread(DgnPlatformLib::Host* hostToAdopt, Bentley::ScalableMesh::IScalableMeshSourceImporterPtr& importerPtr)
+    void ImportThread(DgnPlatformLib::Host* hostToAdopt, BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceImporterPtr& importerPtr)
         {    
         DgnPlatformLib::AdoptHost(*hostToAdopt);
 
@@ -314,7 +314,7 @@ StatusInt GetApproximationNbPtsNeedToExtract(IMrDTMPtr                    mrDTMP
     //Query the linears 
     
     //Get the query interfaces
-    fullResLinearQueryPtr = mrDTMPtr->GetQueryInterface(Bentley::MrDTM::DTM_QUERY_FULL_RESOLUTION, Bentley::MrDTM::DTM_QUERY_DATA_LINEAR);
+    fullResLinearQueryPtr = mrDTMPtr->GetQueryInterface(BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_FULL_RESOLUTION, BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_DATA_LINEAR);
     
     if (fullResLinearQueryPtr != 0)
         {              
@@ -333,20 +333,20 @@ StatusInt GetApproximationNbPtsNeedToExtract(IMrDTMPtr                    mrDTMP
                           
     dtmPtr = 0;                    
     
-    IMrDTMQueryPtr fixResPointQueryPtr = mrDTMPtr->GetQueryInterface(Bentley::MrDTM::DTM_QUERY_FIX_RESOLUTION_VIEW, Bentley::MrDTM::DTM_QUERY_DATA_POINT);                  
+    IMrDTMQueryPtr fixResPointQueryPtr = mrDTMPtr->GetQueryInterface(BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_FIX_RESOLUTION_VIEW, BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_DATA_POINT);                  
 
     assert(fixResPointQueryPtr != 0 || mrDTMPtr->GetPointCount() == 0);
 
     if (fixResPointQueryPtr != 0)
         {        
         // Find the last res that have the less than 200000 points
-        Bentley::MrDTM::IMrDTMFixResolutionIndexQueryParamsPtr mrDtmFixResqueryParamsPtr(Bentley::MrDTM::IMrDTMFixResolutionIndexQueryParams::CreateParams());                                                           
+        BENTLEY_NAMESPACE_NAME::MrDTM::IMrDTMFixResolutionIndexQueryParamsPtr mrDtmFixResqueryParamsPtr(BENTLEY_NAMESPACE_NAME::MrDTM::IMrDTMFixResolutionIndexQueryParams::CreateParams());                                                           
     
         int  res = 0;
         bool found = false;
         DTMPtr singleResolutionViewDtmPtr = 0;                         
         
-        for (res=0; res<mrDTMPtr->GetNbResolutions(Bentley::MrDTM::DTM_QUERY_DATA_POINT); res++) 
+        for (res=0; res<mrDTMPtr->GetNbResolutions(BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_DATA_POINT); res++) 
             {                
             mrDtmFixResqueryParamsPtr->SetResolutionIndex(res);  
             mrDtmFixResqueryParamsPtr->SetTriangulationState(false);                
@@ -370,7 +370,7 @@ StatusInt GetApproximationNbPtsNeedToExtract(IMrDTMPtr                    mrDTMP
         IMrDTMPtr      singleResMrDTMViewPtr = IMrDTMPtr((IMrDTM*)singleResolutionViewDtmPtr.get());
         IMrDTMQueryPtr fullResQueryPtr;
        
-        fullResQueryPtr = singleResMrDTMViewPtr->GetQueryInterface(Bentley::MrDTM::DTM_QUERY_FULL_RESOLUTION, Bentley::MrDTM::DTM_QUERY_DATA_POINT);                
+        fullResQueryPtr = singleResMrDTMViewPtr->GetQueryInterface(BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_FULL_RESOLUTION, BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_DATA_POINT);                
         
         assert(fullResQueryPtr != 0);
 
@@ -383,7 +383,7 @@ StatusInt GetApproximationNbPtsNeedToExtract(IMrDTMPtr                    mrDTMP
         if (fullResQueryPtr->Query(dtmPtr, &regionPointsInStorageCS[0], (int)regionPointsInStorageCS.size(), mrdtmQueryParamPtr) != IMrDTMQuery::S_SUCCESS)     
             return ERROR;
                      
-        *nbPointsForPointFeatures = (unsigned int)dtmPtr->GetPointCount() * (int)pow(4.0, mrDTMPtr->GetNbResolutions(Bentley::MrDTM::DTM_QUERY_DATA_POINT) - res - 1);
+        *nbPointsForPointFeatures = (unsigned int)dtmPtr->GetPointCount() * (int)pow(4.0, mrDTMPtr->GetNbResolutions(BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_DATA_POINT) - res - 1);
         }
                                                    
     return SUCCESS;
@@ -405,9 +405,9 @@ StatusInt QuerySubResolutionData(DTMPtr&         dtmPtr,
     IMrDTMQueryParametersPtr queryParameterPtr;
      
     //Query the linears     
-    fullResLinearQueryPtr = mrDTMPtr->GetQueryInterface(Bentley::MrDTM::DTM_QUERY_FULL_RESOLUTION, Bentley::MrDTM::DTM_QUERY_DATA_LINEAR);
+    fullResLinearQueryPtr = mrDTMPtr->GetQueryInterface(BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_FULL_RESOLUTION, BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_DATA_LINEAR);
 
-    IMrDTMQueryPtr fixResPointQueryPtr(mrDTMPtr->GetQueryInterface(Bentley::MrDTM::DTM_QUERY_FIX_RESOLUTION_VIEW, Bentley::MrDTM::DTM_QUERY_DATA_POINT));    
+    IMrDTMQueryPtr fixResPointQueryPtr(mrDTMPtr->GetQueryInterface(BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_FIX_RESOLUTION_VIEW, BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_DATA_POINT));    
 
     if (fullResLinearQueryPtr != 0)
         {                                    
@@ -467,11 +467,11 @@ StatusInt QuerySubResolutionData(DTMPtr&         dtmPtr,
 
         if (decimationFactorForPointFeatures == 1.0)
             {
-            mrDtmFixResqueryParamsPtr->SetResolutionIndex(mrDTMPtr->GetNbResolutions(Bentley::MrDTM::DTM_QUERY_DATA_POINT)-1);                      
+            mrDtmFixResqueryParamsPtr->SetResolutionIndex(mrDTMPtr->GetNbResolutions(BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_DATA_POINT)-1);                      
             }
         else
             {
-            int nbResolutions = mrDTMPtr->GetNbResolutions(Bentley::MrDTM::DTM_QUERY_DATA_POINT);
+            int nbResolutions = mrDTMPtr->GetNbResolutions(BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_DATA_POINT);
             assert(nbResolutions >= 1);
             assert(decimationFactorForPointFeatures <= 1.0);
                         
@@ -493,7 +493,7 @@ StatusInt QuerySubResolutionData(DTMPtr&         dtmPtr,
         IMrDTMPtr      singleResMrDTMViewPtr = IMrDTMPtr((IMrDTM*)singleResolutionViewDtmPtr.get());
         IMrDTMQueryPtr fullResQueryPtr;
                 
-        fullResQueryPtr = singleResMrDTMViewPtr->GetQueryInterface(Bentley::MrDTM::DTM_QUERY_FULL_RESOLUTION, Bentley::MrDTM::DTM_QUERY_DATA_POINT);                                
+        fullResQueryPtr = singleResMrDTMViewPtr->GetQueryInterface(BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_FULL_RESOLUTION, BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_DATA_POINT);                                
         assert(fullResQueryPtr != 0);
 
         IMrDTMFullResolutionQueryParamsPtr mrDtmFullResQueryParam(IMrDTMFullResolutionQueryParams::CreateParams());
@@ -801,7 +801,7 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
         {               
         BeXmlStatus status;       
 
-        Bentley::ScalableMesh::IScalableMeshSourceImporterPtr importerPtr(Bentley::ScalableMesh::IScalableMeshSourceImporter::Create());
+        BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceImporterPtr importerPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceImporter::Create());
         s_pipe = m_pipe;
         importerPtr->SetFeatureCallback(StreamFeatureCallback);
         importerPtr->SetPointsCallback(StreamPointsCallback);
@@ -861,8 +861,8 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
                 FILE* tempStmstreamFile = _wfopen(tempStmstream.c_str(), L"w+");
                 assert(tempStmstreamFile != 0);
 
-                Bentley::MrDTM::IDTMSourcePtr stmSourcePtr(CreateSourceFor(tempStmstream.c_str(),
-                                                                           Bentley::MrDTM::DTM_SOURCE_DATA_DTM));
+                BENTLEY_NAMESPACE_NAME::MrDTM::IDTMSourcePtr stmSourcePtr(CreateSourceFor(tempStmstream.c_str(),
+                                                                           BENTLEY_NAMESPACE_NAME::MrDTM::DTM_SOURCE_DATA_DTM));
 
                 mrdtmCreatorPtr->EditSources().Add(stmSourcePtr);
 

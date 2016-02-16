@@ -1337,8 +1337,11 @@
     <None Include="PublicAPI\ScalableMesh\Memory\_Description.mki" />
     <None Include="PublicAPI\ScalableMesh\_Description.mki" />
     <None Include="PublicAPI\ScalableMesh\__BENTLEY_INTERNAL_ONLY__" />
+    <None Include="ScalableMesh.mke" />
+    <None Include="ScalableMesh.mki" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="transkit\transkit.xml" />
+    <Xml Include="ScalableMesh.PartFile.xml" />
   </ItemGroup>
 </Project>

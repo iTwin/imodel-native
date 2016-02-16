@@ -92,10 +92,10 @@ MeshType3d64fCreator::MeshType3d64fCreator ()
 
 namespace {
 const WChar MESH_AS_LINEAR_HEADER_TYPE_NAME[] = L"MeshAsLinearHeader";
-Bentley::ScalableMesh::Import::DimensionType::Register s_RegisterMeshAsLinearHeaderType(MESH_AS_LINEAR_HEADER_TYPE_NAME, sizeof(IDTMFile::FeatureHeader));
+BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterMeshAsLinearHeaderType(MESH_AS_LINEAR_HEADER_TYPE_NAME, sizeof(IDTMFile::FeatureHeader));
 
 const WChar MESH_AS_LINEAR_POINT_TYPE_NAME[] = L"MeshAsLinearPoint";
-Bentley::ScalableMesh::Import::DimensionType::Register s_RegisterMeshAsLinearPointType(MESH_AS_LINEAR_POINT_TYPE_NAME, sizeof(DPoint3d));
+BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterMeshAsLinearPointType(MESH_AS_LINEAR_POINT_TYPE_NAME, sizeof(DPoint3d));
 
 }
 

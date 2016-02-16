@@ -6,7 +6,7 @@
 |       $Date: 2011/08/10 17:03:32 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -42,8 +42,8 @@ private:
 
     virtual DGNElementSourceRefBase*    _Clone                                 () const = 0;
 
-    virtual UInt                        _GetElementType                        () const = 0;
-    virtual UInt                        _GetElementHandlerID                   () const = 0;
+    virtual uint32_t                        _GetElementType                        () const = 0;
+    virtual uint32_t                        _GetElementHandlerID                   () const = 0;
 
     virtual ElementReferenceP           _GetElementRef                         () const = 0;
 

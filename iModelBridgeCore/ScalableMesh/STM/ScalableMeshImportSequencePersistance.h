@@ -26,14 +26,14 @@ struct BinaryIStream;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ImportSequenceSerializer
     {
-    static const UInt           FORMAT_VERSION;
+    static const uint32_t           FORMAT_VERSION;
 
     bool                        Serialize(const Import::ImportSequence&   sequence,
         SourceDataSQLite&                  sourceData) const;
 
     bool                        Deserialize(SourceDataSQLite&                  sourceData,
         Import::ImportSequence&         sequence,
-        UInt                            formatVersion) const;
+        uint32_t                            formatVersion) const;
 
     };
 

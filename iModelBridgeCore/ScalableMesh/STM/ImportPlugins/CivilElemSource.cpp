@@ -2,7 +2,7 @@
 |
 |     $Source: STM/ImportPlugins/CivilElemSource.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -128,12 +128,12 @@ class CivilElementSourceDecorator : public SourceBase
 +---------------+---------------+---------------+---------------+---------------+------*/
 class CivilElementSourceCreator : public DGNElementSourceCreatorBase
     {
-    virtual UInt                    _GetElementType                        () const override
+    virtual uint32_t                    _GetElementType                        () const override
         {
         return EXTENDED_ELM;
         }
 
-    virtual UInt                    _GetElementHandlerID                   () const override
+    virtual uint32_t                    _GetElementHandlerID                   () const override
         {
         //DTMElementHandlerManager::InitializeDgnPlatform();
         return DTMElementHandler::GetElemHandlerId().GetId();
@@ -155,7 +155,7 @@ class CivilElementSourceCreator : public DGNElementSourceCreatorBase
     virtual SourceBase*             _Create                                (const DGNElementSourceRef&  sourceRef,
                                                                             Log&                        log) const override
         {
-        using namespace Bentley::ScalableMesh::Plugin::V0;
+        using namespace BENTLEY_NAMESPACE_NAME::ScalableMesh::Plugin::V0;
 
 
         //Retrieve BcDTM
@@ -167,7 +167,7 @@ class CivilElementSourceCreator : public DGNElementSourceCreatorBase
         if (0 == ref.get())
             return 0;
 
-        Bentley::TerrainModel::DTMPtr dtm;
+        BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtm;
         ref->GetDTMReferenceStorage(dtm);
         if (0 == dtm.get())
             return 0;

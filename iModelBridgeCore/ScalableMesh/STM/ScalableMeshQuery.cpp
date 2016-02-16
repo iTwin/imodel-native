@@ -82,18 +82,18 @@ IScalableMeshQueryParameters::~IScalableMeshQueryParameters()
     {
     }
 
-Bentley::GeoCoordinates::BaseGCSPtr IScalableMeshQueryParameters::GetSourceGCS()
+BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr IScalableMeshQueryParameters::GetSourceGCS()
     {
     return _GetSourceGCS();
     }
 
-Bentley::GeoCoordinates::BaseGCSPtr IScalableMeshQueryParameters::GetTargetGCS()
+BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr IScalableMeshQueryParameters::GetTargetGCS()
     {
     return _GetTargetGCS();
     }
 
-void IScalableMeshQueryParameters::SetGCS(Bentley::GeoCoordinates::BaseGCSPtr& sourceGCSPtr,
-                                   Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr)
+void IScalableMeshQueryParameters::SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
+                                   BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr)
     {
     _SetGCS(sourceGCSPtr, targetGCSPtr);
     }
@@ -320,7 +320,7 @@ IScalableMeshFixResolutionMaxPointsQueryParamsPtr IScalableMeshFixResolutionMaxP
     {
     return new ScalableMeshFixResolutionMaxPointsQueryParams();
     }
-
+#if 0
 /*==================================================================*/
 /*                   IScalableMeshQueryAllLinearsQueryParams               */
 /*==================================================================*/
@@ -346,7 +346,7 @@ IScalableMeshQueryAllLinearsQueryParamsPtr IScalableMeshQueryAllLinearsQueryPara
     {
     return new ScalableMeshQueryAllLinearsQueryParams();
     }
-
+#endif
 /*==================================================================*/
 /*        QUERY PARAMETERS SECTION - END                            */
 /*==================================================================*/
@@ -575,8 +575,8 @@ int ScalableMeshReprojectionQuery::_AddClip(DPoint3d* clipPointsP,
                          int   numberOfPoints,
                          bool  isClipMask)
     {
-    if(HRFGeoCoordinateProvider::GetServices() == NULL)
-        return ERROR;
+   // if(HRFGeoCoordinateProvider::GetServices() == NULL)
+   //     return ERROR;
 
     // We first validate the clip shape being provided
     HFCPtr<HGF2DCoordSys>   coordSysPtr(new HGF2DCoordSys());       HArrayAutoPtr<double> tempBuffer(new double[numberOfPoints * 2]);
@@ -618,12 +618,12 @@ int ScalableMeshReprojectionQuery::_AddClip(DPoint3d* clipPointsP,
     assert(m_sourceGCS.HasGeoRef());
     assert(m_targetGCS.HasGeoRef());
 
-    IRasterBaseGcsPtr pSource = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(m_sourceGCS.GetGeoRef().GetBasePtr().get());
-    IRasterBaseGcsPtr pTarget = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(m_targetGCS.GetGeoRef().GetBasePtr().get());
+    //IRasterBaseGcsPtr pSource = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(m_sourceGCS.GetGeoRef().GetBasePtr().get());
+    //IRasterBaseGcsPtr pTarget = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(m_targetGCS.GetGeoRef().GetBasePtr().get());
 
     // We then create the Image++ compatible geographic transformation between these
     // Geographic coordinate systems...
-    HFCPtr<HCPGCoordModel> pTransfo = new HCPGCoordModel(*pTarget,*pSource);
+    HFCPtr<HCPGCoordModel> pTransfo = new HCPGCoordModel(*m_targetGCS.GetGeoRef().GetBasePtr(), *m_sourceGCS.GetGeoRef().GetBasePtr());
 
     // We create two dummies coordinate systems linked using this geographic transformation
     HFCPtr<HGF2DCoordSys> pSourceCS = new HGF2DCoordSys();
@@ -1081,7 +1081,7 @@ bool ScalableMeshMesh::_FindTriangleForProjectedPoint(int* outTriangle, DPoint3d
             pts[1] = m_points[m_faceIndexes[i + 1] - 1];
             pts[2] = m_points[m_faceIndexes[i + 2] - 1];
             DPoint3d bary, projectedPt;
-            double param;
+            double param=0;
             bool doIntersect = true;
             if (use2d)
                 {
@@ -1452,8 +1452,8 @@ bool ScalableMeshMesh::_CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d&
             for (size_t j = 0; j < 3 && nOfIntersects < 2; j++)
                 {
                 DSegment3d edgeSegment = DSegment3d::From(pts[j], pts[(j + 1) % 3]);
-                double param;
-                if (bsiDSegment3d_intersectDPlane3d(&edgeSegment, &intersectPts[nOfIntersects], &param, &cuttingPlane) && param > -1.0e-5 && param <= 1.0)
+                double param = -DBL_MAX;
+                if (edgeSegment.Intersect(intersectPts[nOfIntersects], param, cuttingPlane) && param > -1.0e-5 && param <= 1.0)
                     {
                     ++nOfIntersects;
                     }
@@ -1675,7 +1675,7 @@ bool ScalableMeshMeshWithGraph::_FindTriangleForProjectedPoint(MTGNodeId& outTri
         pts[1] = m_points[labels[1] - 1];
         pts[2] = m_points[labels[2] - 1];
         DPoint3d bary, projectedPt;
-        double param;
+        double param=0;
         if (use2d)
             {
             double minX = pts[0].x, minY = pts[0].y, maxX = pts[0].x, maxY = pts[0].y;
@@ -1881,18 +1881,18 @@ IScalableMeshMeshQueryParams::IScalableMeshMeshQueryParams()
 IScalableMeshMeshQueryParams::~IScalableMeshMeshQueryParams()
     {}
 
-Bentley::GeoCoordinates::BaseGCSPtr IScalableMeshMeshQueryParams::GetSourceGCS()
+BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr IScalableMeshMeshQueryParams::GetSourceGCS()
     {
     return _GetSourceGCS();
     }
 
-Bentley::GeoCoordinates::BaseGCSPtr IScalableMeshMeshQueryParams::GetTargetGCS()
+BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr IScalableMeshMeshQueryParams::GetTargetGCS()
     {
     return _GetTargetGCS();
     }
 
-void IScalableMeshMeshQueryParams::SetGCS(Bentley::GeoCoordinates::BaseGCSPtr& sourceGCSPtr,
-                                   Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr)
+void IScalableMeshMeshQueryParams::SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
+                                   BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr)
     {
     _SetGCS(sourceGCSPtr, targetGCSPtr);
     }
@@ -2004,10 +2004,10 @@ int draw(DTMFeatureType dtmFeatureType,int numTriangles, int numMeshPts,DPoint3d
     size_t indexCount = numMeshFaces;
     size_t pointCount = numMeshPts;
     DPoint3dCP pPoint = meshPtsP;
-    Int32 const* pPointIndex = (Int32*)meshFacesP;
+    int32_t const* pPointIndex = (int32_t*)meshFacesP;
     size_t normalCount = numMeshPts;
     DVec3dCP  pNormal = (DVec3dCP)meshVectorsP;
-    Int32 const* pNormalIndex = (Int32*)meshFacesP;
+    int32_t const* pNormalIndex = (int32_t*)meshFacesP;
     */
     if (s_passNormal)
         {

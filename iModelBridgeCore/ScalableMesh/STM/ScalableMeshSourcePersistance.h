@@ -28,7 +28,7 @@ struct DocumentEnv;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SourceSerializer
     {
-    static const UInt           FORMAT_VERSION;
+    static const uint32_t           FORMAT_VERSION;
 
     bool                        Serialize(const IDTMSource&               source,
         const DocumentEnv&              env,
@@ -36,7 +36,7 @@ struct SourceSerializer
 
     IDTMSourcePtr               Deserialize(Import::SourceDataSQLite&                  sourceData,
         const DocumentEnv&              env,
-        UInt                            formatVersion) const;
+        uint32_t                            formatVersion) const;
 
     };
 

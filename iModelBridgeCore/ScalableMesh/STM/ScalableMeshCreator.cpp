@@ -15,8 +15,8 @@
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 #include "ScalableMeshCreator.h"
-#include "DTMGraphTileStore.h"
-#include "SMTextureTileStore.h"
+//#include "DTMGraphTileStore.h"
+//#include "SMTextureTileStore.h"
 #include <ScalableMesh/GeoCoords/GCS.h>
 
 /*----------------------------------------------------------------------+
@@ -65,9 +65,9 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <STMInternal/GeoCoords/WKTUtils.h>
 
 #include "ScalableMeshMesher.h"
-#include "Edits\DiffSetTileStore.h"
+//#include "Edits\DiffSetTileStore.h"
 #include "Edits\ClipRegistry.h"
-#include <DgnPlatform\Tools\ConfigurationManager.h>
+//#include <DgnPlatform\Tools\ConfigurationManager.h>
 #include "Edits/ClipUtilities.hpp"
 
 #include "SMSQLitePointTileStore.h"
@@ -141,7 +141,7 @@ void RegisterDelayedImporters()
 
     if (!s_areRegistered)
         {
-        RegisterPODImportPlugin();
+        //RegisterPODImportPlugin();
         s_areRegistered = true;
         }
     }
@@ -218,7 +218,7 @@ StatusInt IScalableMeshCreator::Create (bool isSingleFile)
 
 
 
-const Bentley::GeoCoordinates::BaseGCSPtr& IScalableMeshCreator::GetBaseGCS () const
+const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& IScalableMeshCreator::GetBaseGCS () const
     {
     return GetAdvancedGCS().GetGeoRef().GetBasePtr();
     }
@@ -334,7 +334,7 @@ StatusInt IScalableMeshCreator::SetCompression(ScalableMeshCompressionType compr
 
 
 
-StatusInt IScalableMeshCreator::SetBaseGCS (const Bentley::GeoCoordinates::BaseGCSPtr& gcsPtr)
+StatusInt IScalableMeshCreator::SetBaseGCS (const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& gcsPtr)
     {
     return SetGCS(GetGCSFactory().Create(gcsPtr));
     }
@@ -391,7 +391,7 @@ IScalableMeshCreator::Impl::Impl(const WChar* scmFileName)
     m_isDgnDb = false;
 
     //FeatureIndexType linearIndex;
-    bool isBlobMode = true;
+   /* bool isBlobMode = true;
     if (BSISUCCESS == ConfigurationManager::GetVariable(smStoreDgnDbStr, L"SM_STORE_DGNDB"))
         {
         m_isDgnDb = _wtoi(smStoreDgnDbStr.c_str()) > 0;
@@ -408,7 +408,7 @@ IScalableMeshCreator::Impl::Impl(const WChar* scmFileName)
             s_useThreadsInStitching = true;
             s_useThreadsInFiltering = true;
             }
-        }
+        }*/
     }
 
 IScalableMeshCreator::Impl::Impl(const IScalableMeshPtr& scmPtr)
@@ -425,12 +425,12 @@ IScalableMeshCreator::Impl::Impl(const IScalableMeshPtr& scmPtr)
     m_isDgnDb = false;
 
     //FeatureIndexType linearIndex;
-    bool isBlobMode;
+    /*bool isBlobMode;
     if (BSISUCCESS == ConfigurationManager::GetVariable(smStoreDgnDbStr, L"SM_STORE_DGNDB"))
         {
         m_isDgnDb = _wtoi(smStoreDgnDbStr.c_str()) > 0;
         isBlobMode = _wtoi(smStoreDgnDbStr.c_str()) > 1;
-        }
+        }*/
 
 
     }
@@ -468,7 +468,7 @@ IScalableMeshCreator::Impl::~Impl()
 template<class POINT, class EXTENT>
 static ISMPointIndexFilter<POINT, EXTENT>* scm_createFilterFromType (ScalableMeshFilterType filterType)
     {
-    WString filterTypeStr;
+    /*WString filterTypeStr;
 
     //NEEDS_WORK_SM : Document all environments variable like this one somewhere (e.g. : pw:\\Alpo.bentley.com:alpo-bentleygeospatial\Documents\Raster Products\General\environment variables.doc)
     if (BSISUCCESS == ConfigurationManager::GetVariable(filterTypeStr, L"SM_FILTER_TYPE"))
@@ -482,7 +482,7 @@ static ISMPointIndexFilter<POINT, EXTENT>* scm_createFilterFromType (ScalableMes
             {
             assert(!"Unknown filter type");
             }        
-        }
+        }*/
 
 
     switch (filterType)
@@ -493,8 +493,8 @@ static ISMPointIndexFilter<POINT, EXTENT>* scm_createFilterFromType (ScalableMes
             return new ScalableMeshQuadTreeBCLIBProgressiveFilter1<POINT, EXTENT>();        
         case SCM_FILTER_DUMB_MESH:
             return new ScalableMeshQuadTreeBCLIBMeshFilter1<POINT, EXTENT>();        
-        case SCM_FILTER_CGAL_SIMPLIFIER:
-            return new ScalableMeshQuadTreeBCLIB_CGALMeshFilter<POINT, EXTENT>();
+/*        case SCM_FILTER_CGAL_SIMPLIFIER:
+            return new ScalableMeshQuadTreeBCLIB_CGALMeshFilter<POINT, EXTENT>();*/
         default :
             assert(!"Not supposed to be here");
         }
@@ -514,7 +514,7 @@ static ISMPointIndexMesher<POINT, EXTENT>* Create2_5dMesherFromType (ScalableMes
 template<class POINT, class EXTENT>
 static ISMPointIndexMesher<POINT, EXTENT>* Create3dMesherFromType (ScalableMeshMesherType mesherType)
     {    
-    WString mesherTypeStr;
+    /*WString mesherTypeStr;
 
     if (BSISUCCESS == ConfigurationManager::GetVariable(mesherTypeStr, L"SM_3D_MESHER_TYPE"))
         {
@@ -527,18 +527,18 @@ static ISMPointIndexMesher<POINT, EXTENT>* Create3dMesherFromType (ScalableMeshM
             {
             assert(!"Unknown mesher type");
             }        
-        }
+        }*/
 
     switch (mesherType)
         {
         case SCM_MESHER_2D_DELAUNAY:
             return new ScalableMesh2DDelaunayMesher<POINT, EXTENT>();
-        case SCM_MESHER_LMS_MARCHING_CUBE:
+/*        case SCM_MESHER_LMS_MARCHING_CUBE:
             return new ScalableMeshAPSSOutOfCoreMesher<POINT, EXTENT>();
         case SCM_MESHER_3D_DELAUNAY:
             return new ScalableMesh3DDelaunayMesher<POINT, EXTENT> (false);
         case SCM_MESHER_TETGEN:
-            return new ScalableMesh3DDelaunayMesher<POINT, EXTENT> (true);
+            return new ScalableMesh3DDelaunayMesher<POINT, EXTENT> (true);*/
         default:
             assert(!"Not supposed to be here");
         }
@@ -581,9 +581,9 @@ bool scm_isCompressed ()
     }
 
 
-bool DgnDbFilename(Bentley::WString& stmFilename)
+bool DgnDbFilename(BENTLEY_NAMESPACE_NAME::WString& stmFilename)
             {
-            Bentley::WString dgndbFilename;
+            BENTLEY_NAMESPACE_NAME::WString dgndbFilename;
             //stmFilename
             size_t size = stmFilename.ReplaceAll(L".stm", L".dgndb");
             assert(size==1);
@@ -630,7 +630,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
 
 
     HFCPtr<StreamingStoreType>  pStreamingTileStore;
-    HFCPtr<SMStreamingPointTaggedTileStore<Int32, PointIndexExtentType>> pStreamingIndiceTileStore;
+    HFCPtr<SMStreamingPointTaggedTileStore<int32_t, PointIndexExtentType>> pStreamingIndiceTileStore;
     HFCPtr<SMStreamingPointTaggedTileStore<DPoint2d, PointIndexExtentType>> pStreamingUVTileStore;
     HFCPtr<SMStreamingPointTaggedTileStore<int32_t, PointIndexExtentType>> pStreamingUVsIndicesTileStore;
 
@@ -674,7 +674,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
 
             pStreamingTileStore = new StreamingStoreType(point_store_path, WString(), (SCM_COMPRESSION_DEFLATE == m_compressionType));
             // SM_NEEDS_WORKS : layerID 
-            pStreamingIndiceTileStore = new SMStreamingPointTaggedTileStore< Int32, PointIndexExtentType>(indice_store_path, WString(), (SCM_COMPRESSION_DEFLATE == m_compressionType));
+            pStreamingIndiceTileStore = new SMStreamingPointTaggedTileStore< int32_t, PointIndexExtentType>(indice_store_path, WString(), (SCM_COMPRESSION_DEFLATE == m_compressionType));
             pStreamingUVTileStore = new SMStreamingPointTaggedTileStore< DPoint2d, PointIndexExtentType>(uv_store_path, WString(), (SCM_COMPRESSION_DEFLATE == m_compressionType));
             pStreamingUVsIndicesTileStore = new SMStreamingPointTaggedTileStore< int32_t, PointIndexExtentType>(uvIndice_store_path, WString(), (SCM_COMPRESSION_DEFLATE == m_compressionType));
             auto pStreamingTextureTileStore = new StreamingTextureTileStore(texture_store_path.c_str(), 4);
@@ -703,14 +703,14 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
                                        pMesher3d);
             pDataIndex->SetSingleFile(false);
             pDataIndex->SetGenerating(true);
-            WString clipFilePath = m_scmFileName;
-            clipFilePath.append(L"_clips");
+           // WString clipFilePath = m_scmFileName;
+            //clipFilePath.append(L"_clips");
             //IDTMFile::File::Ptr clipFilePtr = IDTMFile::File::Create(clipFilePath.c_str());
-            HFCPtr<IHPMPermanentStore<DifferenceSet, Byte, Byte>> store = new DiffSetTileStore(clipFilePath, 0, true);
+           /* HFCPtr<IHPMPermanentStore<DifferenceSet, Byte, Byte>> store = new DiffSetTileStore(clipFilePath, 0, true);
             store->StoreMasterHeader(NULL, 0);
             pDataIndex->SetClipStore(store);
             auto pool = ScalableMeshMemoryPools<POINT>::Get()->GetDiffSetPool();
-            pDataIndex->SetClipPool(pool);
+            pDataIndex->SetClipPool(pool);*/
             WString clipFileDefPath = m_scmFileName;
             clipFileDefPath.append(L"_clipDefinitions");
             ClipRegistry* registry = new ClipRegistry(clipFileDefPath);
@@ -751,14 +751,14 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
                                        pMesher2_5d,
                                        pMesher3d);
             pDataIndex->SetGenerating(true);
-            WString clipFilePath = m_scmFileName;
-            clipFilePath.append(L"_clips");
+            //WString clipFilePath = m_scmFileName;
+            //clipFilePath.append(L"_clips");
             //IDTMFile::File::Ptr clipFilePtr = IDTMFile::File::Create(clipFilePath.c_str());
-            HFCPtr<IHPMPermanentStore<DifferenceSet, Byte, Byte>> store = new DiffSetTileStore(clipFilePath, 0, true);
+            /*HFCPtr<IHPMPermanentStore<DifferenceSet, Byte, Byte>> store = new DiffSetTileStore(clipFilePath, 0, true);
             //store->StoreMasterHeader(NULL, 0);
             pDataIndex->SetClipStore(store);
             auto pool = ScalableMeshMemoryPools<POINT>::Get()->GetDiffSetPool();
-            pDataIndex->SetClipPool(pool);
+            pDataIndex->SetClipPool(pool);*/
             WString clipFileDefPath = m_scmFileName;
             clipFileDefPath.append(L"_clipDefinitions");
             ClipRegistry* registry = new ClipRegistry(clipFileDefPath);
@@ -777,6 +777,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
 * @description
 * @bsimethod                                                  Mathieu.St-Pierre  11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if 0
 template <typename PointType, typename PointIndex, typename LinearIndex>
 StatusInt IScalableMeshCreator::Impl::AddPointOverviewOfLinears (PointIndex&  pointIndex,
                                                           LinearIndex& linearIndex)
@@ -866,7 +867,7 @@ StatusInt IScalableMeshCreator::Impl::AddPointOverviewOfLinears (PointIndex&  po
 
     return SUCCESS;
     }
-
+#endif
 /*---------------------------------------------------------------------------------**//**
 * @description
 * @bsimethod                                                  Raymond.Gauthier   03/2011

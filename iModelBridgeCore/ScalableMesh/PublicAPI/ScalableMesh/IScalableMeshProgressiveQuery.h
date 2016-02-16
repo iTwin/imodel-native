@@ -68,16 +68,16 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
 
         virtual BentleyStatus _StartQuery(int                                                                      queryId, 
                                           IScalableMeshViewDependentMeshQueryParamsPtr                             queryParam, 
-                                          const bvector<Bentley::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes, 
+                                          const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes, 
                                           bool                                                                     loadTexture, 
                                           const bvector<bool>&                                                     clipVisibilities,
                                           const DMatrix4d*                                                         prevLocalToView,
                                           const DMatrix4d*                                                         newLocalToView) = 0; 
 
-        virtual BentleyStatus _GetOverviewNodes(bvector<Bentley::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
+        virtual BentleyStatus _GetOverviewNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
                                                 int                                                                queryId) const = 0;
 
-        virtual BentleyStatus _GetQueriedNodes(bvector<Bentley::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
+        virtual BentleyStatus _GetQueriedNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
                                                int                                                                queryId) const = 0;
 
         virtual BentleyStatus _StopQuery(int queryId) = 0; 
@@ -91,16 +91,16 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
                                 
         BENTLEYSTM_EXPORT BentleyStatus StartQuery(int                                                                      queryId, 
                                                    IScalableMeshViewDependentMeshQueryParamsPtr                             queryParam, 
-                                                   const bvector<Bentley::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes, 
+                                                   const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes, 
                                                    bool                                                                     loadTexture, 
                                                    const bvector<bool>&                                                     clipVisibilities,
                                                    const DMatrix4d*                                                         prevLocalToView,
                                                    const DMatrix4d*                                                         newLocalToView); 
 
-        BENTLEYSTM_EXPORT BentleyStatus GetOverviewNodes(bvector<Bentley::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
+        BENTLEYSTM_EXPORT BentleyStatus GetOverviewNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
                                                          int                                                   queryId);
 
-        BENTLEYSTM_EXPORT BentleyStatus GetQueriedNodes(bvector<Bentley::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
+        BENTLEYSTM_EXPORT BentleyStatus GetQueriedNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
                                                         int                                                   queryId);
 
         BENTLEYSTM_EXPORT BentleyStatus StopQuery(int queryId); 

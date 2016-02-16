@@ -26,7 +26,7 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH
 USING_NAMESPACE_RASTER
 USING_NAMESPACE_IMAGEPP
 
-using Bentley::GeoCoordinates::DgnGCS;
+using BENTLEY_NAMESPACE_NAME::GeoCoordinates::DgnGCS;
 
 namespace { //BEGIN UNAMED NAMESPACE
 
@@ -166,7 +166,7 @@ GCS                                 GetDEMFileGCS                          (cons
     if (0 == geoCodingP)
         return GCS::GetNull();
     
-    const BaseGCSPtr coordSysPtr(Bentley::GeoCoordinates::BaseGCS::CreateGCS (*geoCodingP->GetBaseGCS()));
+    const BaseGCSPtr coordSysPtr(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS (*geoCodingP->GetBaseGCS()));
     Unit gcsUnit((0 == coordSysPtr.get()) ? Unit::GetMeter() : GetUnitFor(*coordSysPtr));
 
     if (0 == coordSysPtr.get() && !ExtractUnitFromGeoTiffKeys(gcsUnit, *geoCodingP))
@@ -284,12 +284,12 @@ class DEMRasterFileSourceCreator : public LocalFileSourceCreatorBase
 +---------------+---------------+---------------+---------------+---------------+------*/
 class DEMRasterElementSourceCreator : public DGNElementSourceCreatorBase
     {
-    virtual UInt                    _GetElementType                    () const override
+    virtual uint32_t                    _GetElementType                    () const override
         {
         return RASTER_FRAME_ELM;
         }
 
-    virtual UInt                    _GetElementHandlerID               () const override
+    virtual uint32_t                    _GetElementHandlerID               () const override
         {
         return 0;
         }
@@ -607,7 +607,7 @@ class DEMRasterPointExtractorCreator : public InputExtractorCreatorMixinBase<DEM
     * @bsimethod                                                  Raymond.Gauthier   07/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual RawCapacities                       _GetOutputCapacities               (DEMRasterSource&                      sourceBase,
-                                                                                    const Bentley::ScalableMesh::Import::Source& source,
+                                                                                    const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source& source,
                                                                                     const ExtractionQuery&                selection) const override
         {
         return RawCapacities (sourceBase.GetPointExtractor().GetMaxPointQtyForXYZPointsIterator()*sizeof(DPoint3d));
@@ -618,7 +618,7 @@ class DEMRasterPointExtractorCreator : public InputExtractorCreatorMixinBase<DEM
     * @bsimethod                                                  Raymond.Gauthier   07/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual InputExtractorBase*                 _Create                            (DEMRasterSource&                      sourceBase,
-                                                                                    const Bentley::ScalableMesh::Import::Source& source,
+                                                                                    const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source& source,
                                                                                     const ExtractionQuery&                selection,
                                                                                     const ExtractionConfig&               config,
                                                                                     Log&                                  log) const override

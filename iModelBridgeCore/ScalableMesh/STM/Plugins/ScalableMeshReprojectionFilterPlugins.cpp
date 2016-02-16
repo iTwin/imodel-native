@@ -79,17 +79,13 @@ public:
 
     SrcT operator () (const SrcT& pi_pt) const
         { 
-        DPoint3d pt(PointTrait<DPoint3d>::Create(PointTrait<SrcT>::GetX(pi_pt), 
-                                                 PointTrait<SrcT>::GetY(pi_pt), 
-                                                 PointTrait<SrcT>::GetZ(pi_pt)));
+        DPoint3d pt(pi_pt.x, pi_pt.y, pi_pt.z);
 
         const Reprojection::Status status = m_rReprojection.Reproject(pt, pt);
         if (Reprojection::S_SUCCESS != status)
                 throw ReprojectionException(status);
 
-        return PointTrait<SrcT>::Create(PointTrait<DPoint3d>::GetX(pt), 
-                                        PointTrait<DPoint3d>::GetY(pt), 
-                                        PointTrait<DPoint3d>::GetZ(pt)); 
+        return SrcT(pt);
         }
 
 

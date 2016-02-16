@@ -860,7 +860,7 @@ size_t GetNbPtsIndices(size_t texture_id) const
             return GetParentNodePtr()->size();
             };
 
-        virtual const POINT& operator[](size_t index) const override
+        virtual const POINT& operator[](size_t index) const //override
             {
             return GetParentNodePtr()->operator[](index);
             };

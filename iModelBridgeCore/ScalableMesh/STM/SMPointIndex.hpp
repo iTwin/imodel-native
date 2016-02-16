@@ -6,7 +6,7 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP\all\h\HGFSpatialIndex.h>
+//#include <ImagePP\all\h\HGFSpatialIndex.h>
 
 using namespace IDTMFile;
 
@@ -536,7 +536,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Load()
             }
         }
    
-     for (size_t neighborPosIndex = 0; neighborPosIndex < IDTMFile::NeighborNodesTable::MAX_QTY; neighborPosIndex++)
+     for (size_t neighborPosIndex = 0; neighborPosIndex < MAX_NEIGHBORNODES_COUNT; neighborPosIndex++)
         {            
         for (size_t neigborIndex = 0; neigborIndex < UNCONSTTHIS->m_nodeHeader.m_apNeighborNodeID[neighborPosIndex].size(); neigborIndex++)
             {            
@@ -635,7 +635,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Unload
             }
 
         
-        for (size_t indexNode = 0 ; indexNode < IDTMFile::NeighborNodesTable::MAX_QTY; indexNode++)
+        for (size_t indexNode = 0 ; indexNode < MAX_NEIGHBORNODES_COUNT; indexNode++)
             {
             if (UNCONSTTHIS->m_apNeighborNodes[indexNode].size() > 0)
                 {
@@ -720,7 +720,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Destro
         }
 
     /*NEEDS_WORK_SM Does we need that?
-    for (size_t indexNode = 0 ; indexNode < IDTMFile::NeighborNodesTable::MAX_QTY; indexNode++)
+    for (size_t indexNode = 0 ; indexNode < MAX_NEIGHBORNODES_COUNT; indexNode++)
     {
     if (m_apNeighborNodes[indexNode] != 0)
     {
@@ -729,7 +729,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Destro
     }
     */
 
-    for (size_t neighborPosInd = 0; neighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY; neighborPosInd++)
+    for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
         {
         for (size_t neighborInd = 0; neighborInd < m_apNeighborNodes[neighborPosInd].size(); neighborInd++)
             {
@@ -885,8 +885,7 @@ void SMPointIndexNode<POINT, EXTENT>::SplitNode(POINT splitPosition, bool propag
             while (pCurrentNode != NULL)
                 {
                 deepestLevelNumber = pCurrentNode->m_nodeHeader.m_level;
-                CopyVector<CONTAINER>::Copy(this, &*pCurrentNode);
-
+                this->push_back(&*pCurrentNode);
                 // Note that we do not need to update the Z mins and Max even though we are quadtree because
                 // The copied upon node is a parent and already contains the whole Z extent.
 
@@ -1743,7 +1742,7 @@ void SMPointIndexNode<POINT, EXTENT>::PushNodeDown(size_t targetLevel)
         else m_pSubNodeNoSplit->SetNumberOfSubNodesOnSplit(8);
         OnPushNodeDown(); //we push the feature definitions first so that they can take care of their own point data
 
-        CopyVector<CONTAINER>::Copy(m_pSubNodeNoSplit, this);
+        m_pSubNodeNoSplit->push_back(this);
 
         m_pSubNodeNoSplit->m_nodeHeader.m_contentExtent = m_nodeHeader.m_contentExtent;
         m_pSubNodeNoSplit->m_nodeHeader.m_contentExtentDefined = m_nodeHeader.m_contentExtentDefined;
@@ -2198,13 +2197,13 @@ template<class POINT, class EXTENT>
 void SMPointIndexNode<POINT, EXTENT>::ValidateDualNeighborship(HFCPtr<SMPointIndexNode<POINT, EXTENT>> pi_node)
     {
 
-    for (size_t neighborPosInd = 0; neighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY; neighborPosInd++)
+    for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
         {
         for (size_t neighborInd = 0; neighborInd < pi_node->m_apNeighborNodes[neighborPosInd].size(); neighborInd++)
             {
             size_t otherNeighborPosInd = 0;
 
-            for (; otherNeighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY; otherNeighborPosInd++)
+            for (; otherNeighborPosInd < MAX_NEIGHBORNODES_COUNT; otherNeighborPosInd++)
                 {
                 size_t otherNeighborInd = 0;
 
@@ -2220,7 +2219,7 @@ void SMPointIndexNode<POINT, EXTENT>::ValidateDualNeighborship(HFCPtr<SMPointInd
                     break;
                 }
 
-            assert(otherNeighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY);
+            assert(otherNeighborPosInd < MAX_NEIGHBORNODES_COUNT);
             }
         }
     }
@@ -3741,7 +3740,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Discar
                 {
                 //NEEDS_WORK_SM : During partial update some synchro problem can occur.
                     {
-                    for (size_t neighborPosInd = 0; neighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY; neighborPosInd++)
+                    for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
                         {
                         m_nodeHeader.m_apNeighborNodeID[neighborPosInd].resize(m_apNeighborNodes[neighborPosInd].size());
 
@@ -3770,7 +3769,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Discar
             if (GetParentNode() != NULL)
                 GetParentNode()->AdviseSubNodeIDChanged(const_cast<SMPointIndexNode<POINT, EXTENT>*>(this));
             
-            for (size_t neighborPosInd = 0; neighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY; neighborPosInd++)
+            for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
                 {       
                 for (size_t neighborInd = 0; neighborInd < m_apNeighborNodes[neighborPosInd].size(); neighborInd++)
                     {                    
@@ -3828,7 +3827,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Advise
         
     size_t neighborPosInd = 0;
     
-    for (; neighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY; neighborPosInd++)
+    for (; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
         {       
         size_t neighborInd = 0;
 
@@ -3852,7 +3851,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Advise
             }
         }
     
-    assert(neighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY);
+    assert(neighborPosInd < MAX_NEIGHBORNODES_COUNT);
 
     SetDirty(true);
     }
@@ -3897,7 +3896,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Advise
     size_t neighborPosInd = 0;
 
     //NEEDS_WORK_SM : Could change those loops in Advise function by direct position mapping
-    for (; neighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY; neighborPosInd++)
+    for (; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
         {
         vector<HFCPtr<SMPointIndexNode<POINT, EXTENT> >>::iterator neighborIter(m_apNeighborNodes[neighborPosInd].begin());
         vector<HFCPtr<SMPointIndexNode<POINT, EXTENT> >>::iterator neighborIterEnd(m_apNeighborNodes[neighborPosInd].end());
@@ -3973,7 +3972,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Advise
             }
         }
 
-    //assert(neighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY);
+    //assert(neighborPosInd < MAX_NEIGHBORNODES_COUNT);
 
     SetDirty(true);
     }
@@ -4136,7 +4135,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SetNei
         
 
     size_t neighborPosIndex;
-    for (neighborPosIndex = 0 ; neighborPosIndex < IDTMFile::NeighborNodesTable::MAX_QTY; neighborPosIndex++)
+    for (neighborPosIndex = 0 ; neighborPosIndex < MAX_NEIGHBORNODES_COUNT; neighborPosIndex++)
         {
         for (size_t neighborInd = 0; neighborInd < m_apNeighborNodes[neighborPosIndex].size(); neighborInd++)
             {
@@ -4161,7 +4160,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::AreAll
     {
     bool areAllNeighbor2_5d = true;
 
-    for (size_t neighborPosInd = 0; areAllNeighbor2_5d == true && neighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY; neighborPosInd++)
+    for (size_t neighborPosInd = 0; areAllNeighbor2_5d == true && neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
         {
         auto neighborIter(m_apNeighborNodes[neighborPosInd].begin());
         auto neighborIterEnd(m_apNeighborNodes[neighborPosInd].end());
@@ -4312,7 +4311,7 @@ HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMPointIndexNode<POINT, EXTENT>::PullSu
 
                     //NEEDS_WORK_SM : Don't duplicate loop - see below
                     //Neighbors of replaced node become neighbors of replacing node.
-                    for (size_t neighborPosInd = 0; neighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY; neighborPosInd++)
+                    for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
                         {
                         pulledNode->m_apNeighborNodes[neighborPosInd].clear();
                         pulledNode->m_nodeHeader.m_apNeighborNodeID[neighborPosInd].clear();
@@ -4369,7 +4368,7 @@ HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMPointIndexNode<POINT, EXTENT>::PullSu
                     assert(pulledNode != 0);
 
                     //Neighbors of replaced node become neighbors of replacing node.
-                    for (size_t neighborPosInd = 0; neighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY; neighborPosInd++)
+                    for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
                         {
                         pulledNode->m_apNeighborNodes[neighborPosInd].clear();
                         pulledNode->m_nodeHeader.m_apNeighborNodeID[neighborPosInd].clear();
@@ -4588,7 +4587,7 @@ bool SMPointIndexNode<POINT, EXTENT>::InvalidateFilteringMeshing(bool becauseDat
             //                of neighbor nodes. 
             size_t ind = size();
             //size_t totalSize = sizeTotal();
-            size_t totalSize = sizeTotal();
+            size_t totalSize = size();
 
 //            setNbPointsUsedForMeshIndex(0);
 
@@ -4624,7 +4623,7 @@ bool SMPointIndexNode<POINT, EXTENT>::InvalidateStitching()
     {
     assert(s_inEditing == true);
 
-    for (size_t neighborPosInd = 0; neighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY; neighborPosInd++)
+    for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
         {
         size_t reciprocalPos = GetReciprocalNeighborPos(neighborPosInd);
         m_nodeHeader.m_apAreNeighborNodesStitched[neighborPosInd] = false;
@@ -6951,7 +6950,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Serial
         pi_pDataSize += sizeof(id);
         }
 
-    for (size_t neighborPosInd = 0; neighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY; neighborPosInd++)
+    for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
         {
         const auto numNeighbors = m_nodeHeader.m_apNeighborNodeID[neighborPosInd].size();
         memcpy(pi_pData.get() + pi_pDataSize, &numNeighbors, sizeof(numNeighbors));
@@ -7178,7 +7177,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::DumpOc
 
     HASSERT(NbWrittenChars == NbChars);
 
-    for (size_t neighborPosInd = 0; neighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY; neighborPosInd++)
+    for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
         {              
         for (size_t neighborInd = 0; neighborInd < m_nodeHeader.m_apNeighborNodeID[neighborPosInd].size(); neighborInd++)
             {
@@ -7210,7 +7209,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::DumpOc
 
     HASSERT(NbWrittenChars == NbChars);
 
-    for (size_t neighborPosInd = 0; neighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY; neighborPosInd++)
+    for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
         {      
         if (m_nodeHeader.m_apAreNeighborNodesStitched[neighborPosInd] == true)
             {
@@ -8115,7 +8114,7 @@ template<class POINT, class EXTENT> bool SMPointIndex<POINT, EXTENT>::BalanceRoo
             }
 
 #ifndef NDEBUG        
-        for (size_t neighborPosInd = 0; neighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY; neighborPosInd++)
+        for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
             {       
             assert(pNewRootNode->m_apNeighborNodes[neighborPosInd].size() == 0);
             assert(pNewRootNode->m_nodeHeader.m_apNeighborNodeID[neighborPosInd].size() == 0);
@@ -8586,6 +8585,133 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SetZRa
             }
         }
     }
+
+/**----------------------------------------------------------------------------
+PRIVATE METHOD
+This method inserts a new root that contains the old root in order
+to attempt inclusion of given extent. The root is pushed down by one level.
+-----------------------------------------------------------------------------*/
+template<typename POINT, typename EXTENT> EXTENT ComputeExtentForPushRootDown(const EXTENT& pi_rObjectExtent, const EXTENT& RootExtent)
+    {
+    // Calculate center of current root extent
+    POINT RootExtentCenter = PointOp<POINT>::Create((ExtentOp<EXTENT>::GetXMax(RootExtent) + ExtentOp<EXTENT>::GetXMin(RootExtent)) / 2.0,
+                                                    (ExtentOp<EXTENT>::GetYMax(RootExtent) + ExtentOp<EXTENT>::GetYMin(RootExtent)) / 2.0,
+                                                    (ExtentOp<EXTENT>::GetZMax(RootExtent) + ExtentOp<EXTENT>::GetZMin(RootExtent)) / 2.0);
+
+    // Calculate center of spatial object
+    POINT ObjectExtentCenter = PointOp<POINT>::Create((ExtentOp<EXTENT>::GetXMax(pi_rObjectExtent) + ExtentOp<EXTENT>::GetXMin(pi_rObjectExtent)) / 2.0,
+                                                      (ExtentOp<EXTENT>::GetYMax(pi_rObjectExtent) + ExtentOp<EXTENT>::GetYMin(pi_rObjectExtent)) / 2.0,
+                                                      (ExtentOp<EXTENT>::GetZMax(pi_rObjectExtent) + ExtentOp<EXTENT>::GetZMin(pi_rObjectExtent)) / 2.0);
+
+
+    // Find out what sub-node of new root will current root be
+    // and create subnodes appropriately
+    EXTENT NewRootExtent;
+    if (PointOp<POINT>::GetZ(ObjectExtentCenter) > PointOp<POINT>::GetZ(RootExtentCenter))
+        {
+        if (PointOp<POINT>::GetX(ObjectExtentCenter) > PointOp<POINT>::GetX(RootExtentCenter))
+            {
+            if (PointOp<POINT>::GetY(ObjectExtentCenter) > PointOp<POINT>::GetY(RootExtentCenter))
+                {
+
+                // Oldroot becomes number 2
+                NewRootExtent = ExtentOp<EXTENT>::Create(ExtentOp<EXTENT>::GetXMin(RootExtent),
+                                                         ExtentOp<EXTENT>::GetYMin(RootExtent),
+                                                         ExtentOp<EXTENT>::GetZMin(RootExtent),
+                                                         ExtentOp<EXTENT>::GetXMax(RootExtent) + ExtentOp<EXTENT>::GetWidth(RootExtent),
+                                                         ExtentOp<EXTENT>::GetYMax(RootExtent) + ExtentOp<EXTENT>::GetHeight(RootExtent),
+                                                         ExtentOp<EXTENT>::GetZMax(RootExtent) + ExtentOp<EXTENT>::GetThickness(RootExtent));
+                }
+            else
+                {
+                // Oldroot becomes number 0
+                NewRootExtent = ExtentOp<EXTENT>::Create(ExtentOp<EXTENT>::GetXMin(RootExtent),
+                                                         ExtentOp<EXTENT>::GetYMin(RootExtent) - ExtentOp<EXTENT>::GetHeight(RootExtent),
+                                                         ExtentOp<EXTENT>::GetZMin(RootExtent),
+                                                         ExtentOp<EXTENT>::GetXMax(RootExtent) + ExtentOp<EXTENT>::GetWidth(RootExtent),
+                                                         ExtentOp<EXTENT>::GetYMax(RootExtent),
+                                                         ExtentOp<EXTENT>::GetZMax(RootExtent) + ExtentOp<EXTENT>::GetThickness(RootExtent));
+                }
+            }
+        else
+            {
+            if (PointOp<POINT>::GetY(ObjectExtentCenter) > PointOp<POINT>::GetY(RootExtentCenter))
+                {
+                // Oldroot becomes number 3
+                NewRootExtent = ExtentOp<EXTENT>::Create(ExtentOp<EXTENT>::GetXMin(RootExtent) - ExtentOp<EXTENT>::GetWidth(RootExtent),
+                                                         ExtentOp<EXTENT>::GetYMin(RootExtent),
+                                                         ExtentOp<EXTENT>::GetZMin(RootExtent),
+                                                         ExtentOp<EXTENT>::GetXMax(RootExtent),
+                                                         ExtentOp<EXTENT>::GetYMax(RootExtent) + ExtentOp<EXTENT>::GetHeight(RootExtent),
+                                                         ExtentOp<EXTENT>::GetZMax(RootExtent) + ExtentOp<EXTENT>::GetThickness(RootExtent));
+                }
+            else
+                {
+                // Oldroot becomes number 1
+                NewRootExtent = ExtentOp<EXTENT>::Create(ExtentOp<EXTENT>::GetXMin(RootExtent) - ExtentOp<EXTENT>::GetWidth(RootExtent),
+                                                         ExtentOp<EXTENT>::GetYMin(RootExtent) - ExtentOp<EXTENT>::GetHeight(RootExtent),
+                                                         ExtentOp<EXTENT>::GetZMin(RootExtent),
+                                                         ExtentOp<EXTENT>::GetXMax(RootExtent),
+                                                         ExtentOp<EXTENT>::GetYMax(RootExtent),
+                                                         ExtentOp<EXTENT>::GetZMax(RootExtent) + ExtentOp<EXTENT>::GetThickness(RootExtent));
+                }
+            }
+        }
+    else
+        {
+        if (PointOp<POINT>::GetX(ObjectExtentCenter) > PointOp<POINT>::GetX(RootExtentCenter))
+            {
+            if (PointOp<POINT>::GetY(ObjectExtentCenter) > PointOp<POINT>::GetY(RootExtentCenter))
+                {
+
+                // Oldroot becomes number 2
+                NewRootExtent = ExtentOp<EXTENT>::Create(ExtentOp<EXTENT>::GetXMin(RootExtent),
+                                                         ExtentOp<EXTENT>::GetYMin(RootExtent),
+                                                         ExtentOp<EXTENT>::GetZMin(RootExtent) - ExtentOp<EXTENT>::GetThickness(RootExtent),
+                                                         ExtentOp<EXTENT>::GetXMax(RootExtent) + ExtentOp<EXTENT>::GetWidth(RootExtent),
+                                                         ExtentOp<EXTENT>::GetYMax(RootExtent) + ExtentOp<EXTENT>::GetHeight(RootExtent),
+                                                         ExtentOp<EXTENT>::GetZMax(RootExtent));
+                }
+            else
+                {
+                // Oldroot becomes number 0
+                NewRootExtent = ExtentOp<EXTENT>::Create(ExtentOp<EXTENT>::GetXMin(RootExtent),
+                                                         ExtentOp<EXTENT>::GetYMin(RootExtent) - ExtentOp<EXTENT>::GetHeight(RootExtent),
+                                                         ExtentOp<EXTENT>::GetZMin(RootExtent) - ExtentOp<EXTENT>::GetThickness(RootExtent),
+                                                         ExtentOp<EXTENT>::GetXMax(RootExtent) + ExtentOp<EXTENT>::GetWidth(RootExtent),
+                                                         ExtentOp<EXTENT>::GetYMax(RootExtent),
+                                                         ExtentOp<EXTENT>::GetZMax(RootExtent));
+                }
+            }
+        else
+            {
+            if (PointOp<POINT>::GetY(ObjectExtentCenter) > PointOp<POINT>::GetY(RootExtentCenter))
+                {
+                // Oldroot becomes number 3
+                NewRootExtent = ExtentOp<EXTENT>::Create(ExtentOp<EXTENT>::GetXMin(RootExtent) - ExtentOp<EXTENT>::GetWidth(RootExtent),
+                                                         ExtentOp<EXTENT>::GetYMin(RootExtent),
+                                                         ExtentOp<EXTENT>::GetZMin(RootExtent) - ExtentOp<EXTENT>::GetThickness(RootExtent),
+                                                         ExtentOp<EXTENT>::GetXMax(RootExtent),
+                                                         ExtentOp<EXTENT>::GetYMax(RootExtent) + ExtentOp<EXTENT>::GetHeight(RootExtent),
+                                                         ExtentOp<EXTENT>::GetZMax(RootExtent));
+                }
+            else
+                {
+                // Oldroot becomes number 1
+                NewRootExtent = ExtentOp<EXTENT>::Create(ExtentOp<EXTENT>::GetXMin(RootExtent) - ExtentOp<EXTENT>::GetWidth(RootExtent),
+                                                         ExtentOp<EXTENT>::GetYMin(RootExtent) - ExtentOp<EXTENT>::GetHeight(RootExtent),
+                                                         ExtentOp<EXTENT>::GetZMin(RootExtent) - ExtentOp<EXTENT>::GetThickness(RootExtent),
+                                                         ExtentOp<EXTENT>::GetXMax(RootExtent),
+                                                         ExtentOp<EXTENT>::GetYMax(RootExtent),
+                                                         ExtentOp<EXTENT>::GetZMax(RootExtent));
+                }
+            }
+        }
+
+    return NewRootExtent;
+
+    }
+
 /**----------------------------------------------------------------------------
 PRIVATE METHOD
 This method inserts a new root that contains the old root in order
@@ -8655,7 +8781,7 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::PushRootDo
                 }
 
             //Propagate neighbor to old root
-            for (size_t nodeInd = 0; nodeInd < IDTMFile::NeighborNodesTable::MAX_QTY; nodeInd++)
+            for (size_t nodeInd = 0; nodeInd < MAX_NEIGHBORNODES_COUNT; nodeInd++)
                 {
                 assert(m_pRootNode->m_apNeighborNodes[nodeInd].size() == 0);
 
@@ -8665,14 +8791,14 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::PushRootDo
                 }
 
             //Connect old root to its new neighbors
-            for (size_t neighborPosInd = 0; neighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY; neighborPosInd++)
+            for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
                 {
                 for (size_t neighborInd = 0; neighborInd < pNewRootNode->m_apSubNodes[indexNode]->m_apNeighborNodes[neighborPosInd].size(); neighborInd++)
                     {
                     HFCPtr<SMPointIndexNode<POINT, EXTENT>> otherNeighbor(pNewRootNode->m_apSubNodes[indexNode]->m_apNeighborNodes[neighborPosInd][neighborInd]);
                     bool isFound = false;
 
-                    for (size_t otherNeighborPosInd = 0; otherNeighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY && !isFound; otherNeighborPosInd++)
+                    for (size_t otherNeighborPosInd = 0; otherNeighborPosInd < MAX_NEIGHBORNODES_COUNT && !isFound; otherNeighborPosInd++)
                         {
                         for (size_t otherNeighborInd = 0; otherNeighborInd < otherNeighbor->m_apNeighborNodes[otherNeighborPosInd].size(); otherNeighborInd++)
                             {
@@ -8989,7 +9115,7 @@ bool SMPointIndexNode<POINT, EXTENT>::Remove(const POINT& pi_rpSpatialObject)
         for (; !Removed && itr != this->end(); itr++)
             {
             // Check if current object is the one to remove ...
-            if (*itr == pi_rpSpatialObject)
+            if (PointOp<POINT>::AreEqual(*itr, pi_rpSpatialObject))
                 {
                 // We have found it... erase it
                 this->erase(itr);

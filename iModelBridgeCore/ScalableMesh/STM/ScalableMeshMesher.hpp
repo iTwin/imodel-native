@@ -14,11 +14,11 @@
 #include <ImagePP/all/h/HFCException.h>
 #include <ScalableMesh\ScalableMeshUtilityFunctions.h>
 #include <ScalableMesh\IScalableMeshQuery.h>
-#include <eigen\Eigen\Dense>
-#include <PCLWrapper\IDefines.h>
-#include <PCLWrapper\INormalCalculator.h>
+//#include <eigen\Eigen\Dense>
+//#include <PCLWrapper\IDefines.h>
+//#include <PCLWrapper\INormalCalculator.h>
 #include "ScalableMeshQuery.h"
-#include "MeshingFunctions.h"
+//#include "MeshingFunctions.h"
 #include <ScalableMesh\ScalableMeshUtilityFunctions.h>
 #include <Mtg/MtgStructs.h>
 #include <Geom/bsp/bspbound.fdf>
@@ -75,7 +75,7 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
             }
 #endif
 
-        Bentley::TerrainModel::DTMPtr dtmPtr;
+        BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr;
 
         int status = CreateBcDTM(dtmPtr);
 
@@ -318,7 +318,7 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                     {
                     if (NULL == node->GetGraphPtr()) node->CreateGraph();
                     CreateGraphFromIndexBuffer(node->GetGraphPtr(), (const long*)&faceIndexes[0], (int)faceIndexes.size(), (int)nodePts.size(), componentPointsId, &pts[0]);
-                    node->GetGraphPtr()->SortNodesBasedOnLabel(0);
+                   // node->GetGraphPtr()->SortNodesBasedOnLabel(0);
                     //CreateGraphFromIndexBuffer(node->GetGraphPtr(), (const long*)meshP->GetFaceIndexes(), (int)meshP->GetNbFaceIndexes(), (int)nodePts.size(),componentPointsId, meshP->GetPoints());
                     node->SetGraphDirty();
                     node->StoreGraph();
@@ -449,7 +449,7 @@ For this algorithm nodes provided in input should have duplicated points (includ
         p.z -= z;
         });
     //compute normals for point set
-    Bentley::PCLUtility::INormalCalculator::ComputeNormals(&normals[0], &points[0], node->size());
+    BENTLEY_NAMESPACE_NAME::PCLUtility::INormalCalculator::ComputeNormals(&normals[0], &points[0], node->size());
     //create distances for cell grid
     Eigen::Vector3f boxmin(ExtentOp<EXTENT>::GetXMin(extent)-x, ExtentOp<EXTENT>::GetYMin(extent)-y, ExtentOp<EXTENT>::GetZMin(extent)-z);
     Eigen::Vector3f boxmax(ExtentOp<EXTENT>::GetXMax(extent)-x, ExtentOp<EXTENT>::GetYMax(extent)-y, ExtentOp<EXTENT>::GetZMax(extent)-z);
@@ -1029,9 +1029,9 @@ POINT* pts = nullptr;
                 s += "Found face..." + std::to_string(face[0]) + "  " + std::to_string(face[1]) + "  " + std::to_string(face[2])+"\n";
                 s += "Found points..." + std::to_string(faceIdx[0]) + "  " + std::to_string(faceIdx[1]) + "  " + std::to_string(faceIdx[2]) + "\n";
                 }
-        DPoint3d sphereCenter;
-        double sphereRadius;
-        bound_sphereCompute(&sphereCenter, &sphereRadius, facePoints, 3);
+            DPoint3d sphereCenter = DPoint3d::From(0, 0, 0);
+            double sphereRadius = 0;
+        //bound_sphereCompute(&sphereCenter, &sphereRadius, facePoints, 3);
         //EXTENT neighborExt = node->m_apNeighborNodes[neighborInd][neighborSubInd]->GetContentExtent();
         if (ExtentOp<EXTENT>::Overlap(neighborExt, ExtentOp<EXTENT>::Create(sphereCenter.x - sphereRadius, sphereCenter.y - sphereRadius,
             sphereCenter.z, sphereCenter.x + sphereRadius,
@@ -1269,7 +1269,7 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
     bvector<int> componentPointsId;
     if (faceIndices.size() >= 3 && geomData.size() > 0)
     CreateGraphFromIndexBuffer(&tempGraph, (const long*)&faceIndices[0], (int)faceIndices.size(), (int)geomData.size(), componentPointsId, &geomData[0]);
-    tempGraph.SortNodesBasedOnLabel(0);
+    //tempGraph.SortNodesBasedOnLabel(0);
 /*    str1 += std::to_string(geomData.size()).c_str();
     PrintGraph(path, str1, &tempGraph);
     std::ofstream f;
@@ -1461,8 +1461,8 @@ for (size_t& neighborInd : neighborIndices)
                         {
                         bvector<bvector<DPoint3d>> b;
                         if(s_useThreadsInStitching) node->m_apNeighborNodes[neighborInd][neighborSubInd]->LockPts();
-                        POINT* pts = new POINT[node->m_apNeighborNodes[neighborInd][neighborSubInd]->sizeTotal()];
-                        node->m_apNeighborNodes[neighborInd][neighborSubInd]->get(pts, node->m_apNeighborNodes[neighborInd][neighborSubInd]->sizeTotal());
+                        POINT* pts = new POINT[node->m_apNeighborNodes[neighborInd][neighborSubInd]->size()];
+                        node->m_apNeighborNodes[neighborInd][neighborSubInd]->get(pts, node->m_apNeighborNodes[neighborInd][neighborSubInd]->size());
                         vector<DPoint3d> nPts(node->m_apNeighborNodes[neighborInd][neighborSubInd]->size());
                         if (s_useThreadsInStitching) node->m_apNeighborNodes[neighborInd][neighborSubInd]->UnlockPts();
                         for (int i = 0; i < nPts.size(); i++)
@@ -1516,7 +1516,7 @@ for (size_t& neighborInd : neighborIndices)
 
 if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
     {
-    Bentley::TerrainModel::DTMPtr dtmPtr;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr;
     int status = CreateBcDTM(dtmPtr);
     assert(status == SUCCESS);
     BC_DTM_OBJ* dtmObjP(dtmPtr->GetBcDTM()->GetTinHandle());
@@ -2286,9 +2286,9 @@ return true;
             bounds.pop();
             continue;
             }
-        DPoint3d sphereCenter;
-        double sphereRadius;
-        bound_sphereCompute(&sphereCenter, &sphereRadius, facePoints,3);
+        DPoint3d sphereCenter=DPoint3d::From(0,0,0);
+        double sphereRadius=0;
+        //bound_sphereCompute(&sphereCenter, &sphereRadius, facePoints,3);
         //EXTENT neighborExt = node->m_apNeighborNodes[neighborInd][neighborSubInd]->GetContentExtent();
         if (ExtentOp<EXTENT>::Overlap(neighborExt, ExtentOp<EXTENT>::Create(sphereCenter.x - sphereRadius, sphereCenter.y - sphereRadius,
             sphereCenter.z - sphereRadius, sphereCenter.x + sphereRadius,
@@ -2368,7 +2368,7 @@ Initiates the stitching of the mesh present in neighbor nodes.
 -----------------------------------------------------------------------------*/
 struct compare3D
     {
-    bool operator()(const DPoint3d& a, const DPoint3d& b)
+    bool operator()(const DPoint3d& a, const DPoint3d& b) const
          {
          if (a.x < b.x) return true;
          if (a.x > b.x) return false;

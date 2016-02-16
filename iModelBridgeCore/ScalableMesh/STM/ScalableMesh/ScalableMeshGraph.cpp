@@ -941,13 +941,14 @@ void RemoveTrianglesWithinExtent(MTGGraph* graphP, const DPoint3d* points, DPoin
         DSegment3d right = DSegment3d::From(DPoint3d::From(maxCorner.x, minCorner.y, 0), DPoint3d::From(maxCorner.x, maxCorner.y, 0));
 
         double param1, param2;
+        DPoint3d pt1, pt2;
 
-        if ((bsiGeom_intersectXYDSegment3dDSegment3d(NULL, &param1, NULL, &param2, &edge1, &top) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1) || (bsiGeom_intersectXYDSegment3dDSegment3d(NULL, &param1, NULL, &param2, &edge2, &top) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1)
-            || (bsiGeom_intersectXYDSegment3dDSegment3d(NULL, &param1, NULL, &param2, &edge3, &top) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1) || (bsiGeom_intersectXYDSegment3dDSegment3d(NULL, &param1, NULL, &param2, &edge1, &bottom) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1)
-            || (bsiGeom_intersectXYDSegment3dDSegment3d(NULL, &param1, NULL, &param2, &edge2, &bottom) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1) || (bsiGeom_intersectXYDSegment3dDSegment3d(NULL, &param1, NULL, &param2, &edge3, &bottom) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1)
-            || (bsiGeom_intersectXYDSegment3dDSegment3d(NULL, &param1, NULL, &param2, &edge1, &left) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1) || (bsiGeom_intersectXYDSegment3dDSegment3d(NULL, &param1, NULL, &param2, &edge2, &left) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1)
-            || (bsiGeom_intersectXYDSegment3dDSegment3d(NULL, &param1, NULL, &param2, &edge3, &left) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1) || (bsiGeom_intersectXYDSegment3dDSegment3d(NULL, &param1, NULL, &param2, &edge1, &right) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1)
-            || (bsiGeom_intersectXYDSegment3dDSegment3d(NULL, &param1, NULL, &param2, &edge2, &right) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1) || (bsiGeom_intersectXYDSegment3dDSegment3d(NULL, &param1, NULL, &param2, &edge3, &right) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1))
+        if ((DSegment3d::IntersectXY(param1, param2, pt1, pt2, edge1, top) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1) || (DSegment3d::IntersectXY(param1, param2, pt1, pt2, edge2, top) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1)
+            || (DSegment3d::IntersectXY(param1, param2, pt1, pt2, edge3, top) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1) || (DSegment3d::IntersectXY(param1, param2, pt1, pt2, edge1, bottom) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1)
+            || (DSegment3d::IntersectXY(param1, param2, pt1, pt2, edge2, bottom) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1) || (DSegment3d::IntersectXY(param1, param2, pt1, pt2, edge3, bottom) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1)
+            || (DSegment3d::IntersectXY(param1, param2, pt1, pt2, edge1, left) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1) || (DSegment3d::IntersectXY(param1, param2, pt1, pt2, edge2, left) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1)
+            || (DSegment3d::IntersectXY(param1, param2, pt1, pt2, edge3, left) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1) || (DSegment3d::IntersectXY(param1, param2, pt1, pt2, edge1, right) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1)
+            || (DSegment3d::IntersectXY(param1, param2, pt1, pt2, edge2, right) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1) || (DSegment3d::IntersectXY(param1, param2, pt1, pt2, edge3, right) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1))
            for(size_t i =0; i < 3; i++) graphP->SetMaskAt(faceEdges[i], toDeleteMask);
         }
     MTGARRAY_END_SET_LOOP(edgeID, graphP)
@@ -1295,50 +1296,60 @@ void RemoveTrianglesWithinExtent(MTGGraph* graphP, const DPoint3d* points, DPoin
 
     MTGNodeId FindFaceInGraph(MTGGraph* graphP, int vertex1, int vertex2, int vertex3)
         {
-        size_t nNodesInGraph = (size_t)(graphP)->GetNodeIdCount();
-        bool found = false;
-        int minV = std::min(vertex1, std::min(vertex2, vertex3));
-        MTGNodeId edgeId = (MTGNodeId)nNodesInGraph / 2;
-        int upper = (MTGNodeId)nNodesInGraph;
-        int lower = 0;
-        while (!found)
+        /* size_t nNodesInGraph = (size_t)(graphP)->GetNodeIdCount();
+         bool found = false;
+         int minV = std::min(vertex1, std::min(vertex2, vertex3));
+         MTGNodeId edgeId = (MTGNodeId)nNodesInGraph / 2;
+         int upper = (MTGNodeId)nNodesInGraph;
+         int lower = 0;
+         while (!found)
+         {
+         if (edgeId == -1 || edgeId == (MTGNodeId)nNodesInGraph) break;
+         int v = -1, v1 = -1;
+         graphP->TryGetLabel(edgeId, 0,v);
+         if (v < minV)
+         {
+         lower = edgeId;
+         if (edgeId == (MTGNodeId)nNodesInGraph - 1) edgeId = (MTGNodeId)nNodesInGraph;
+         else edgeId = lower+ (upper-lower) / 2;
+         continue;
+         }
+         else if (v > minV)
+         {
+         upper = edgeId;
+         if (edgeId == 1) edgeId = 0;
+         else if (edgeId == 0) edgeId = -1;
+         else
+         {
+         edgeId = lower + (upper - lower) / 2;
+         }
+         continue;
+         }*/
+
+        MTGARRAY_SET_LOOP(edgeId, graphP)
             {
-            if (edgeId == -1 || edgeId == (MTGNodeId)nNodesInGraph) break;
-            int v = -1, v1 = -1;
-            graphP->TryGetLabel(edgeId, 0,v);
-            if (v < minV)
+            int v = -1;
+            graphP->TryGetLabel(edgeId, 0, v);
+            if ((v == vertex1 || v == vertex2 || v == vertex3))
                 {
-                lower = edgeId;
-                if (edgeId == (MTGNodeId)nNodesInGraph - 1) edgeId = (MTGNodeId)nNodesInGraph;
-                else edgeId = lower+ (upper-lower) / 2;
-                continue;
-                }
-            else if (v > minV)
-                {
-                upper = edgeId;
-                if (edgeId == 1) edgeId = 0;
-                else if (edgeId == 0) edgeId = -1;
-                else
+                MTGARRAY_VERTEX_LOOP(edgeId2, graphP, edgeId)
                     {
-                    edgeId = lower + (upper - lower) / 2;
+                    int v1 = -1;
+                    graphP->TryGetLabel(graphP->FSucc(edgeId2), 0, v1);
+                    if ((v1 == vertex1 || v1 == vertex2 || v1 == vertex3))
+                        {
+                        int v2 = -1;
+                        graphP->TryGetLabel(graphP->FSucc(graphP->FSucc(edgeId2)), 0, v2);
+                        if (v2 == vertex1 || v2 == vertex2 || v2 == vertex3) return edgeId2;
+                        graphP->TryGetLabel(graphP->FSucc(graphP->FSucc(graphP->EdgeMate(edgeId2))), 0, v2);
+                        if (v2 == vertex1 || v2 == vertex2 || v2 == vertex3) return graphP->EdgeMate(edgeId2);
+                        //return -1;
+                        }
                     }
-                continue;
+                MTGARRAY_END_VERTEX_LOOP(edgeId2, graphP, edgeId)
                 }
-            MTGARRAY_VERTEX_LOOP(edgeId2, graphP, edgeId)
-                {
-                graphP->TryGetLabel(graphP->FSucc(edgeId2), 0, v1);
-                if ((v1 == vertex1 || v1 == vertex2 || v1 == vertex3))
-                    {
-                    int v2 = -1;
-                    graphP->TryGetLabel(graphP->FSucc(graphP->FSucc(edgeId2)), 0, v2);
-                    if (v2 == vertex1 || v2 == vertex2 || v2 == vertex3) return edgeId2;
-                    graphP->TryGetLabel(graphP->FSucc(graphP->FSucc(graphP->EdgeMate(edgeId2))), 0, v2);
-                    if (v2 == vertex1 || v2 == vertex2 || v2 == vertex3) return graphP->EdgeMate(edgeId2);
-                    //return -1;
-                    }
-                }
-            MTGARRAY_END_VERTEX_LOOP(edgeId2, graphP, edgeId)
             }
+        MTGARRAY_END_SET_LOOP(edgeId, graphP)
             return -1;
         }
 
@@ -1526,7 +1537,7 @@ void RemoveTrianglesWithinExtent(MTGGraph* graphP, const DPoint3d* points, DPoin
             DPoint3d intersectPt = {0,0,0};
             size_t i = 0;
             bool backwards = false;
-            DPoint3d lastPt;
+            DPoint3d lastPt = DPoint3d::From(0,0,0);
             double lastParam = -1;
             int intersectedEdge = -1;
             for (; i < 3 && !intersectFound; i++)

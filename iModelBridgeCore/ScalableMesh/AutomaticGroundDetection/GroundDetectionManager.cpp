@@ -130,9 +130,9 @@ void ProgressReport::_OnSignalError()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Bentley::NativeLogging::ILogger* GroundDetectionLogger::Get()
+BENTLEY_NAMESPACE_NAME::NativeLogging::ILogger* GroundDetectionLogger::Get()
     {
-    return Bentley::NativeLogging::LoggingManager::GetLogger(L"ScalableMesh.GroundDetection");
+    return BENTLEY_NAMESPACE_NAME::NativeLogging::LoggingManager::GetLogger(L"ScalableMesh.GroundDetection");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -235,7 +235,7 @@ StatusInt GroundDetectionManager::DoGroundDetection(EditElementHandleR elHandle,
         if (NULL != pPCFile.get())
             {
             WString name(pPCFile->GetFileName());
-            UInt32 num_clouds(pPCFile->GetNumberOfClouds());
+            uint32_t num_clouds(pPCFile->GetNumberOfClouds());
             UInt64 num_points(pPCFile->GetNumberOfPoints());
 
             GROUNDDLOG->tracev(L"%ls", name.c_str());
@@ -349,7 +349,7 @@ StatusInt GroundDetectionManager::DoGroundDetection(EditElementHandleR elHandle,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                       06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt GroundDetectionManager::DoGroundDetectionFromDTM(Bentley::DgnPlatform::EditElementHandle& elHandle, DTMPtr& terrainModel, GroundDetectionParametersCR params, IGroundDetectionProgressListenerP pProgressListener)
+StatusInt GroundDetectionManager::DoGroundDetectionFromDTM(BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle& elHandle, DTMPtr& terrainModel, GroundDetectionParametersCR params, IGroundDetectionProgressListenerP pProgressListener)
     {
     StatusInt status(ERROR);
     PointCloudQuadTreePtr quadTree;
@@ -361,7 +361,7 @@ StatusInt GroundDetectionManager::DoGroundDetectionFromDTM(Bentley::DgnPlatform:
         if (NULL != pPCFile.get())
             {
             WString name(pPCFile->GetFileName());
-            UInt32 num_clouds(pPCFile->GetNumberOfClouds());
+            uint32_t num_clouds(pPCFile->GetNumberOfClouds());
             UInt64 num_points(pPCFile->GetNumberOfPoints());
 
             GROUNDDLOG->tracev(L"%ls", name.c_str());

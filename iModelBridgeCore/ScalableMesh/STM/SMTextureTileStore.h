@@ -204,7 +204,7 @@ class TextureTileStore : public IHPMPermanentStore<Byte, float, float> // JPEGDa
         bool WriteCompressedPacket(const HCDPacket& pi_uncompressedPacket,
             HCDPacket& pi_compressedPacket, int width, int height, int nOfChannels = 3)
         {
-            HPRECONDITION(pi_uncompressedPacket.GetDataSize() <= (numeric_limits<UInt32>::max) ());
+            HPRECONDITION(pi_uncompressedPacket.GetDataSize() <= (numeric_limits<uint32_t>::max) ());
 
             // initialize codec
             auto codec = new HCDCodecIJG(width, height, 8*nOfChannels);
@@ -418,7 +418,7 @@ class TextureTileStore : public IHPMPermanentStore<Byte, float, float> // JPEGDa
 
         bool LoadCompressedPacket(const HCDPacket& pi_compressedPacket, HCDPacket& pi_uncompressedPacket, size_t width, size_t height, size_t nOfChannels=3)
         {
-            HPRECONDITION(pi_compressedPacket.GetDataSize() <= (numeric_limits<UInt32>::max)());
+            HPRECONDITION(pi_compressedPacket.GetDataSize() <= (numeric_limits<uint32_t>::max)());
 
             // initialize codec
             //HFCPtr<HCDCodec> pCodec = new HCDCodecImage("CodecName", piWidth, piHeight, piBitPerPixel);// (pi_compressedPacket.GetDataSize());
@@ -426,12 +426,12 @@ class TextureTileStore : public IHPMPermanentStore<Byte, float, float> // JPEGDa
             /*
             union MyUnion
             {
-                UInt32 m_IntValue;
+                uint32_t m_IntValue;
                 Byte m_ByteValue[4];
             } SubType;
-            UInt32 Type;
+            uint32_t Type;
 
-            Type = ((UINT32*) pi_compressedPacket)*/
+            Type = ((uint32_t*) pi_compressedPacket)*/
 
             //pi_compressedPacket.GetCodec();
             /*
@@ -551,7 +551,7 @@ class TextureTileStore : public IHPMPermanentStore<Byte, float, float> // JPEGDa
             memcpy(DataTypeArray, resultDecompressed, size);
 
             // Get our internal copy for easier code reading and data manipulation.
-            /*UInt32 widthInByteToRead = (UInt32)ceil((float)(m_pResolutionDescriptor->GetWidth()) * ((float)m_BitPerPixel / 8.0));
+            /*uint32_t widthInByteToRead = (uint32_t)ceil((float)(m_pResolutionDescriptor->GetWidth()) * ((float)m_BitPerPixel / 8.0));
 
             HCDPacket uncompress(DataTypeArray, widthInByteToRead);
 

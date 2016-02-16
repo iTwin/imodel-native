@@ -76,7 +76,7 @@ const ContentDescriptor& Sink::GetDescriptor () const
 * @bsimethod                                                  Raymond.Gauthier   03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 BackInserterPtr Sink::CreateBackInserterFor(const PacketGroup&      src,
-                                            UInt                    layerID,
+                                            uint32_t                    layerID,
                                             const DataType&         type,
                                             Log&             log) const
     {

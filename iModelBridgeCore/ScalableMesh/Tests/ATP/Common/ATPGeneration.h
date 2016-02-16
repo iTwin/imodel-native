@@ -48,5 +48,5 @@ WString GetIndexMethodValue(int indexMethod);
 
 WString GetTrimmingMethodValue(int trimmingMethod);
 
-Bentley::WString UpdateTest_GetStmFileNameWithSuffix(Bentley::WString stmFileName, Bentley::WString suffix);
+BENTLEY_NAMESPACE_NAME::WString UpdateTest_GetStmFileNameWithSuffix(BENTLEY_NAMESPACE_NAME::WString stmFileName, BENTLEY_NAMESPACE_NAME::WString suffix);
 

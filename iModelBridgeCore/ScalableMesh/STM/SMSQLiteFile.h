@@ -11,7 +11,7 @@ using namespace std;
 
 class SMSQLiteFile;
 
-typedef Bentley::RefCountedPtr<SMSQLiteFile> SMSQLiteFilePtr;
+typedef BENTLEY_NAMESPACE_NAME::RefCountedPtr<SMSQLiteFile> SMSQLiteFilePtr;
 
 
 struct SQLiteNodeHeader
@@ -80,16 +80,16 @@ struct SQLiteSourcesData
     WString m_path;
 };
 
-class SMSQLiteFile : public Bentley::RefCountedBase
+class SMSQLiteFile : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 {
 public:
     SMSQLiteFile();
     ~SMSQLiteFile();
 
-    bool Open(Bentley::Utf8CP filename, bool openReadOnly = true);
-    bool Open(Bentley::WString filename, bool openReadOnly = true);
-    bool Create(Bentley::Utf8CP filename);
-    bool Create(Bentley::WString filename);
+    bool Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOnly = true);
+    bool Open(BENTLEY_NAMESPACE_NAME::WString filename, bool openReadOnly = true);
+    bool Create(BENTLEY_NAMESPACE_NAME::Utf8CP filename);
+    bool Create(BENTLEY_NAMESPACE_NAME::WString filename);
     bool Close();
     bool IsOpen() { return m_database->IsDbOpen(); }
 

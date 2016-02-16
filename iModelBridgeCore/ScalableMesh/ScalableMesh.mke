@@ -7,16 +7,16 @@
 #----------------------------------------------------------------------------------------
      
 baseDir         = $(_MakeFilePath)
-PolicyFile      = $(SrcRoot)ScalableMesh/mki/AssertScalableMeshPolicy.mki
-SolutionPolicyMki=$(baseDir)ScalableMesh.mki
 
 %include  mdl.mki
+%include $(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy.mki
+%include $(baseDir)ScalableMesh.mki
 
 #this means we can use CGAL with the modules that were licensed to us
-%include $(BuildContext)SubParts/Files/LicensedComponents.mki
+#%include $(BuildContext)SubParts/Files/LicensedComponents.mki
 
-dirToSearch=$(BuildContext)VendorAPI/CGAL
-%include cincapnd.mki
+#dirToSearch=$(BuildContext)VendorAPI/CGAL
+#%include cincapnd.mki
 
 #----------------------------------------------------------------------
 #       Create output directories
@@ -24,6 +24,7 @@ dirToSearch=$(BuildContext)VendorAPI/CGAL
 always:
     !~@mkdir $(o)
 
+%message $(BuildContext)PublicAPI/ScalableMesh=$(SCMPublicAPISrc)ScalableMesh
 #----------------------------------------------------------------------
 #   Symlink APIs
 #----------------------------------------------------------------------
@@ -38,7 +39,7 @@ CCompOpts + -DNO_3D_MESH
 %endif
 
 %if !defined (GarlandFilter)
-CCompOpts + -DNO_GARLAND_FILTER
+CCompOpts + -DNO_GARLAND_FILTER 
 %endif
 #----------------------------------------------------------------------
 #       Inform user of compile options
@@ -47,16 +48,21 @@ always:
         |  Compiler options: $(cDefs)$(cDefsPost) $(copt) $(cIncs) $(PublicApiIncludes) $(CCompOpts)
         |  -------- --------
 
+CCompOpts + $(PublicApiIncludes) 
+
+#disable warning: "'argument': conversion from 'int64_t' to 'uint32_t', possible loss of data". NEEDS_WORK_SM: switch all node ID types to uint64_t once and for all, then change this.
+CCompOpts + -wd4244
 #----------------------------------------------------------------------
 #   Build precompiled header
 #----------------------------------------------------------------------
 PchCompiland = $(stmDir)ScalableMeshPCH.cpp
 PchOutputDir = $(o)
-PchExtraOptions    = -Zm180 -openmp
+PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTM_BUILD__ -DSCALABLE_MESH_DGN -DNOMINMAX 
+CompileOptionsMki =  $(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy.mki
 %include $(SharedMki)PreCompileHeader.mki
 
 # UsePrecompiledHeaderOptions is defined for us by PreCompileHeader.mki
-CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECTION
+CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECTION 
 
 %if !defined (3DMesh)
 CCPchOpts + -DNO_3D_MESH
@@ -187,7 +193,7 @@ $(o)ScalableMeshMesher$(oext) : $(stmDir)ScalableMeshMesher.cpp $(PCHHeaderDepen
 
 $(o)SMMeshIndex$(oext) : $(stmDir)SMMeshIndex.cpp $(stmDir)SMMeshIndex.hpp $(stmDir)SMMeshIndex.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
-$(o)CGALEdgeCollapse$(oext) : $(stmDir)CGALEdgeCollapse.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)CGALEdgeCollapse$(oext) : $(stmDir)CGALEdgeCollapse.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)ScalableMeshCreator$(oext) : $(stmDir)ScalableMeshCreator.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
@@ -265,22 +271,24 @@ $(o)LightThreadPool$(oext) : $(stmDir)Threading/LightThreadPool.cpp $(PCHHeaderD
 
 $(o)SMSQLiteFile$(oext) : $(stmDir)SMSQLiteFile.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
+$(o)HPUPacket$(oext) : $(stmDir)HPUPacket.cpp $(stmDir)HPUPacket.h ${MultiCompileDepends}
+
 #-----------------------------------------------------------------------
 #   Build Compile Automatic Ground Detection 
 #-----------------------------------------------------------------------
-$(o)GroundDetectionManager$(oext) : $(automaticGroundDetectionDir)GroundDetectionManager.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)GroundDetectionManager$(oext) : $(automaticGroundDetectionDir)GroundDetectionManager.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)PointCloudClassification$(oext) : $(automaticGroundDetectionDir)PointCloudClassification.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)PointCloudClassification$(oext) : $(automaticGroundDetectionDir)PointCloudClassification.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)AutomaticGroundDetectionInternalConfig$(oext) : $(automaticGroundDetectionDir)AutomaticGroundDetectionInternalConfig.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)AutomaticGroundDetectionInternalConfig$(oext) : $(automaticGroundDetectionDir)AutomaticGroundDetectionInternalConfig.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)PointCloudEditGroundDetection$(oext) : $(automaticGroundDetectionDir)PointCloudEditGroundDetection.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)PointCloudEditGroundDetection$(oext) : $(automaticGroundDetectionDir)PointCloudEditGroundDetection.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)PointCloudQuadTree$(oext) : $(automaticGroundDetectionDir)PointCloudQuadTree.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)PointCloudQuadTree$(oext) : $(automaticGroundDetectionDir)PointCloudQuadTree.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)TileLoaderQueue$(oext) : $(automaticGroundDetectionDir)TileLoaderQueue.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)TileLoaderQueue$(oext) : $(automaticGroundDetectionDir)TileLoaderQueue.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)PointCloudSisterFileManager$(oext) : $(automaticGroundDetectionDir)PointCloudSisterFileManager.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)PointCloudSisterFileManager$(oext) : $(automaticGroundDetectionDir)PointCloudSisterFileManager.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 #-----------------------------------------------------------------------
 #   Build Compile Importer plugins
@@ -291,31 +299,31 @@ $(o)CivilDTMFileImporter$(oext) : $(importerPluginsDir)CivilDTMFileImporter.cpp 
 
 $(o)XYZFileImporter$(oext) : $(importerPluginsDir)XYZFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)GDALFileImporter$(oext) : $(importerPluginsDir)GDALFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)GDALFileImporter$(oext) : $(importerPluginsDir)GDALFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)LandXMLFileImporter$(oext) : $(importerPluginsDir)LandXMLFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)IDTMFileImporter$(oext) : $(importerPluginsDir)IDTMFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)IDTMFileImporter$(oext) : $(importerPluginsDir)IDTMFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)XYZAsciiFileImporter$(oext) : $(importerPluginsDir)XYZAsciiFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 
 #   Importer from DcStmCore
-$(o)DEMRasterImporter$(oext) : $(importerPluginsDir)DEMRasterImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)DEMRasterImporter$(oext) : $(importerPluginsDir)DEMRasterImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)DGNLevelImporter$(oext) : $(importerPluginsDir)DGNLevelImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)DGNLevelImporter$(oext) : $(importerPluginsDir)DGNLevelImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)DGNModelUtilities$(oext) : $(importerPluginsDir)DGNModelUtilities.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)DGNModelUtilities$(oext) : $(importerPluginsDir)DGNModelUtilities.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)ElementType$(oext) : $(importerPluginsDir)ElementType.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)ElementType$(oext) : $(importerPluginsDir)ElementType.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)ElemSourceRef$(oext) : $(importerPluginsDir)ElemSourceRef.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)ElemSourceRef$(oext) : $(importerPluginsDir)ElemSourceRef.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)DGNModelGeoRef$(oext) : $(geocoordsDir)DGNModelGeoRef.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)DGNModelGeoRef$(oext) : $(geocoordsDir)DGNModelGeoRef.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)PODImporter$(oext) : $(importerPluginsDir)PODImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)PODImporter$(oext) : $(importerPluginsDir)PODImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)STMSource$(oext) : $(importerPluginsDir)STMSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)STMSource$(oext) : $(importerPluginsDir)STMSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)XYZAsciiSource$(oext) : $(importerPluginsDir)XYZAsciiSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
@@ -372,35 +380,32 @@ DLM_OBJECT_PCH      = $(o)ScalableMeshPCH$(oext)
 DLM_OBJECT_FILES    = $(MultiCompileObjectList) 
 
 #SCALABLE_MESH_DGN=1
-
+#    $(ContextSubpartsLibs)wastorage.lib \
+#    $(ContextSubpartsLibs)cpprest120_2_6.lib \
 LINKER_LIBRARIES_DELAYLOADED  = \
-    $(ContextSubpartsLibs)wastorage.lib \
-    $(ContextSubpartsLibs)cpprest120_2_6.lib \
     $(ContextSubpartsLibs)BeCurl.lib \
     $(ContextSubpartsLibs)BeSQLite.lib \
     $(ContextSubpartsLibs)$(BaseGeocoordLib) \
     ws2_32.lib \
     $(ContextSubpartsLibs)$(TerrainModelCoreLib) \
-    $(ContextSubpartsLibs)$(TerrainModelFormatsLib) \
-    
+    $(ContextSubpartsLibs)$(TerrainModelFormatsLib)
+
+
+#    $(ContextSubpartsLibs)PCLWrapper.lib \
+#    $(ContextSubpartsLibs)Imagepp-gdal.lib \
+#    $(ContextSubpartsLibs)PointCloud.lib \
+#    $(ContextSubpartsLibs)RmgrTools.lib \
+#    $(ContextSubpartsLibs)DgnGeoCoord.lib \
+#    $(ContextSubpartsLibs)DgnView.lib \
+#    $(ContextSubpartsLibs)RasterCore.lib \
+#    $(ContextSubpartsLibs)libboost_system-vc120-mt-1_57$(libext) \
+#    $(ContextSubpartsLibs)libboost_thread-vc120-mt-1_57$(libext) \
+#    $(ContextSubpartsLibs)CGAL.lib
 LINKER_LIBRARIES            = \
-    $(ContextSubpartsLibs)$(IppGraLibsLib) \
-    $(ContextSubpartsLibs)$(IppUtlLibsLib) \
+    $(ContextSubpartsLibs)Imagepp.lib \
     $(ContextSubpartsLibs)$(BeJsonCppLib) \
     $(ContextSubpartsLibs)$(BentleyGeomLib) \
-    $(ContextSubpartsLibs)DgnPlatform.lib \
-    $(ContextSubpartsLibs)PCLWrapper.lib \
-    $(ContextSubpartsLibs)Imagepp-gdal.lib \
-    $(ContextSubpartsLibs)IppZlib.lib \
-    $(ContextSubpartsLibs)PointCloud.lib \
-    $(ContextSubpartsLibs)RmgrTools.lib \
-    $(ContextSubpartsLibs)DgnGeoCoord.lib \
-    $(ContextSubpartsLibs)DgnView.lib \
-    $(ContextSubpartsLibs)RasterCore.lib \
-    $(ContextSubpartsLibs)libboost_system-vc120-mt-1_57$(libext) \
-    $(ContextSubpartsLibs)libboost_thread-vc120-mt-1_57$(libext) \
-    $(ContextSubpartsLibs)CGAL.lib
-    
+    $(ContextSubpartsLibs)DgnPlatform.lib
 
 %include $(sharedMki)LinkLibrary.mki
 

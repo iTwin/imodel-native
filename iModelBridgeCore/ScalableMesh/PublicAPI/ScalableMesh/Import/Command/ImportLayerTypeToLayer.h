@@ -6,7 +6,7 @@
 |       $Date: 2011/11/22 21:58:18 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -32,24 +32,24 @@ public:  // OPERATOR_NEW_KLUDGE
     void operator delete [] (void *rawMemory, size_t size) { bentleyAllocator_deleteArrayRefCounted (rawMemory, size); }
 
 private:
-    UInt                                m_sourceLayer;
+    uint32_t                                m_sourceLayer;
     DataTypeFamily                      m_sourceType;
-    UInt                                m_targetLayer;
+    uint32_t                                m_targetLayer;
 
 public:
-    IMPORT_DLLE explicit                ImportLayerTypeToLayerCommand      (UInt                            sourceLayer,
+    IMPORT_DLLE explicit                ImportLayerTypeToLayerCommand      (uint32_t                            sourceLayer,
                                                                             const DataTypeFamily&           sourceType,
-                                                                            UInt                            targetLayer);
+                                                                            uint32_t                            targetLayer);
 
     IMPORT_DLLE virtual                 ~ImportLayerTypeToLayerCommand     ();
 
     IMPORT_DLLE                         ImportLayerTypeToLayerCommand      (const ImportLayerTypeToLayerCommand& 
                                                                                                             rhs);
 
-    UInt                                GetSourceLayer                     () const;
+    uint32_t                                GetSourceLayer                     () const;
     const DataTypeFamily&               GetSourceType                      () const;
 
-    UInt                                GetTargetLayer                     () const;
+    uint32_t                                GetTargetLayer                     () const;
     };
 
 

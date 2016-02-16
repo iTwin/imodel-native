@@ -300,12 +300,12 @@ const DataType& StaticDataTypeCreator::Create () const
 
 namespace {
 
-bool RoleRangeIsValid (const DimensionOrgGroup& orgGroup, UInt roleQty)
+bool RoleRangeIsValid (const DimensionOrgGroup& orgGroup, uint32_t roleQty)
     {
     struct IsRoleValid : std::unary_function<DimensionDef, bool>
         {
-        UInt        m_roleQty;
-        explicit IsRoleValid (UInt roleQty) : m_roleQty(roleQty) {}
+        uint32_t        m_roleQty;
+        explicit IsRoleValid (uint32_t roleQty) : m_roleQty(roleQty) {}
 
         bool operator () (const DimensionDef& rhs) const
             {
@@ -315,8 +315,8 @@ bool RoleRangeIsValid (const DimensionOrgGroup& orgGroup, UInt roleQty)
 
     struct IsOrgRoleValid : std::unary_function<DimensionOrg, bool>
         {
-        UInt        m_roleQty;
-        explicit IsOrgRoleValid (UInt roleQty) : m_roleQty(roleQty) {}
+        uint32_t        m_roleQty;
+        explicit IsOrgRoleValid (uint32_t roleQty) : m_roleQty(roleQty) {}
 
         bool operator () (const DimensionOrg& rhs) const
             {

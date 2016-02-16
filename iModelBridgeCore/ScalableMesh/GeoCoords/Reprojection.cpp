@@ -6,7 +6,7 @@
 |       $Date: 2011/11/23 21:47:18 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -609,8 +609,8 @@ Reprojection ReprojectionFactory::Create   (const GCS&      sourceGCS,
         LT_SOURCE_AND_TARGET,
         };
 
-    const LocalTransformCase localTransformCase = static_cast<LocalTransformCase>(UInt(sourceGCS.HasLocalTransform()) | 
-                                                                                  (UInt(targetGCS.HasLocalTransform()) << 1));
+    const LocalTransformCase localTransformCase = static_cast<LocalTransformCase>(uint32_t(sourceGCS.HasLocalTransform()) | 
+                                                                                  (uint32_t(targetGCS.HasLocalTransform()) << 1));
 
     const Reprojection reprojection(m_implP->Create(sourceGCS, targetGCS, sourceExtentP, status));
 

@@ -365,8 +365,8 @@ LocalFileSourceCreator::ExtensionCIter LocalFileSourceCreator::ExtensionsEnd () 
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline DGNElementID::DGNElementID  (UInt    type,
-                                    UInt    handlerID)
+inline DGNElementID::DGNElementID  (uint32_t    type,
+                                    uint32_t    handlerID)
     :   m_type(type),
         m_handlerID(handlerID)
     {
@@ -416,7 +416,7 @@ DGNElementSourceCreator::~DGNElementSourceCreator ()
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt DGNElementSourceCreator::GetElementType () const
+uint32_t DGNElementSourceCreator::GetElementType () const
     {
     return m_baseP->_GetElementType();
     }
@@ -425,7 +425,7 @@ UInt DGNElementSourceCreator::GetElementType () const
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt DGNElementSourceCreator::GetElementHandlerID () const
+uint32_t DGNElementSourceCreator::GetElementHandlerID () const
     {
     return m_baseP->_GetElementHandlerID();
     }

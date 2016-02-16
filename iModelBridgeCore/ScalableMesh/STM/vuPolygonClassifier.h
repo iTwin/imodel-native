@@ -295,7 +295,7 @@ VuPolygonClassifier (double graphAbsTol = 0, double graphRelTol = 1.0e-7)
 // and change the default to ((void*)-1) so that 0 can be distinguished as a valid user data 
 void SetDefaultEdgeData (void *pDefaultEdgeData)
     {
-    vu_setDefaultUserDataPAsInt (mpGraph, (int)pDefaultEdgeData);
+    vu_setDefaultUserDataPAsInt (mpGraph, (int)0);
     }
 // Destructor.  Dispose of array and graph ...
 ~VuPolygonClassifier ()

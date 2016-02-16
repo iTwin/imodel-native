@@ -36,7 +36,7 @@ void ScalableMeshLib::Host::Initialize()
     {
     BeAssert (NULL == m_scalableTerrainModelAdmin);   
     m_scalableTerrainModelAdmin = &_SupplyScalableMeshAdmin();  
-    //Bentley::TerrainModel::Element::DTMElementHandlerManager::InitializeDgnPlatform();
+    //BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementHandlerManager::InitializeDgnPlatform();
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -111,7 +111,7 @@ void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
     
     // Register Moniker
 
-    InitScalableMeshMonikerFactories();
+    //InitScalableMeshMonikerFactories();
 
     t_scalableTerrainModelHost = &host;
     t_scalableTerrainModelHost->Initialize();

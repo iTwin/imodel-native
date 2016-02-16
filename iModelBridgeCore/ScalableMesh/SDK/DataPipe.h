@@ -14,7 +14,7 @@
 #include <Geom\msgeomstructs_typedefs.h>
 #include <Bentley\stdcxx\bvector.h>
 
-using namespace Bentley::Bstdcxx;
+using namespace BENTLEY_NAMESPACE_NAME::Bstdcxx;
 
 #include <Geom\dpoint3d.h>
 

@@ -172,9 +172,9 @@ const WChar* ContentDescriptor::GetNameCStr () const
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt ContentDescriptor::GetLayerCount () const
+uint32_t ContentDescriptor::GetLayerCount () const
     {
-    return (UInt) m_pImpl->m_layers.size();
+    return (uint32_t) m_pImpl->m_layers.size();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -398,9 +398,9 @@ const WChar* LayerDescriptor::GetNameCStr () const
 * @description  
 * @bsimethod                                                  Raymond.Gauthier  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt LayerDescriptor::GetTypeCount () const
+uint32_t LayerDescriptor::GetTypeCount () const
     {
-    return (UInt) m_pImpl->m_storedTypes.size();
+    return (uint32_t) m_pImpl->m_storedTypes.size();
     }
 
 /*---------------------------------------------------------------------------------**//**

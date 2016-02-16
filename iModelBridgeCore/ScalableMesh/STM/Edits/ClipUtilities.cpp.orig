@@ -388,7 +388,7 @@ DifferenceSet Clipper::TriangulateAroundHole(const DPoint3d* triangle, const vec
     {
     DifferenceSet d;
     d.firstIndex = 4;
-    Bentley::TerrainModel::DTMPtr dtmPtr;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr;
     int status = CreateBcDTM(dtmPtr);
     BC_DTM_OBJ* dtmObjP(dtmPtr->GetBcDTM()->GetTinHandle());
     vector<DPoint3d> points;
@@ -490,7 +490,7 @@ DifferenceSet Clipper::Triangulate(const vector<DPoint3d>& pts, const vector<vec
         polys.push_back(vector<int32_t>());
         }
     d.addedVertices.insert(d.addedVertices.begin(), toAdd.begin(), toAdd.end());
-    Bentley::TerrainModel::DTMPtr dtmPtr;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr;
 
     for (auto& poly : polys)
         {
@@ -956,7 +956,7 @@ DifferenceSetWithTracking Clipper::ClipPolygon2DDTM(const DPoint3d* poly, size_t
         l.AddFace(m_indexBuffer[i], m_indexBuffer[i + 1], m_indexBuffer[i + 2], (int)i / 3);
         }
     vector<bool> vertexRemoved(m_nVertices, true);
-    Bentley::TerrainModel::DTMPtr dtmPtr;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr;
     MakeDTMFromIndexList(dtmPtr);
    // assert(status == SUCCESS);
     DTMUserTag    userTag = 0;
@@ -992,7 +992,7 @@ DifferenceSetWithTracking Clipper::ClipPolygon2DDTM(const DPoint3d* poly, size_t
                                                        (long)polySize);
 
    // assert(status == SUCCESS);
-    Bentley::TerrainModel::DTMMeshEnumeratorPtr en = Bentley::TerrainModel::DTMMeshEnumerator::Create(*dtmPtr->GetBcDTM());
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtmPtr->GetBcDTM());
 
     en->SetExcludeAllRegions();
     en->SetMaxTriangles(dtmPtr->GetBcDTM()->GetTrianglesCount() * 2);
@@ -1029,7 +1029,7 @@ DifferenceSetWithTracking Clipper::ClipPolygon2DDTM(const DPoint3d* poly, size_t
 
 bool s_printDTM = false;
 
-void Clipper::MakeDTMFromIndexList(Bentley::TerrainModel::DTMPtr& dtmPtr)
+void Clipper::MakeDTMFromIndexList(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr)
     {
     BC_DTM_OBJ* bcDtmP = 0;
     int dtmCreateStatus = bcdtmObject_createDtmObject(&bcDtmP);
@@ -1082,7 +1082,7 @@ void Clipper::MakeDTMFromIndexList(Bentley::TerrainModel::DTMPtr& dtmPtr)
 
 bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, bmap<DPoint3d, bvector<bpair<bpair<DPoint3d, DPoint3d>, bvector<DPoint2d>>>, DPoint3dZYXTolerancedSortComparison>& uvs)
     {
-    Bentley::TerrainModel::DTMPtr dtmPtr;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr;
     MakeDTMFromIndexList(dtmPtr);
     return GetRegionsFromClipPolys(polyfaces, polygons, uvs,dtmPtr);
     }
@@ -1092,7 +1092,7 @@ size_t s_nclip = 0;
 const wchar_t* s_path = L"E:\\output\\scmesh\\2015-11-16\\";
 
 
-DTMInsertPointCallback Clipper::GetUVInterpolationCallback(bmap<DPoint3d, bvector<bpair<bpair<DPoint3d, DPoint3d>, bvector<DPoint2d>>>, DPoint3dZYXTolerancedSortComparison>& uvs, Bentley::TerrainModel::DTMPtr& dtmPtr)
+DTMInsertPointCallback Clipper::GetUVInterpolationCallback(bmap<DPoint3d, bvector<bpair<bpair<DPoint3d, DPoint3d>, bvector<DPoint2d>>>, DPoint3dZYXTolerancedSortComparison>& uvs, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr)
     {
     if (m_uvBuffer == nullptr || m_uvIndices == nullptr) return nullptr;
     for (size_t idx = 0; idx < m_nIndices; idx += 3)
@@ -1124,7 +1124,7 @@ DTMInsertPointCallback Clipper::GetUVInterpolationCallback(bmap<DPoint3d, bvecto
 
     }
 
-bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, bmap<DPoint3d, bvector<bpair<bpair<DPoint3d, DPoint3d>, bvector<DPoint2d>>>, DPoint3dZYXTolerancedSortComparison>& uvs, Bentley::TerrainModel::DTMPtr& dtmPtr)
+bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, bmap<DPoint3d, bvector<bpair<bpair<DPoint3d, DPoint3d>, bvector<DPoint2d>>>, DPoint3dZYXTolerancedSortComparison>& uvs, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr)
     {
     bool dbg = false;
     if (dbg)
@@ -1174,7 +1174,7 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
                                                   m_uvBuffer ? GetUVInterpolationCallback(uvs, dtmPtr) : nullptr);
         userTag++;
         }
-    Bentley::TerrainModel::DTMMeshEnumeratorPtr en = Bentley::TerrainModel::DTMMeshEnumerator::Create(*dtmPtr->GetBcDTM());
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtmPtr->GetBcDTM());
 
     en->SetExcludeAllRegions();
     en->SetMaxTriangles(dtmPtr->GetBcDTM()->GetTrianglesCount() * 2);
@@ -1286,7 +1286,7 @@ DifferenceSet Clipper::ClipSeveralPolygons(bvector<bvector<DPoint3d>>& polygons)
         l.AddFace(m_indexBuffer[i], m_indexBuffer[i + 1], m_indexBuffer[i + 2], (int)i / 3);
         }
     vector<bool> vertexRemoved(m_nVertices, true);
-    Bentley::TerrainModel::DTMPtr dtmPtr;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr;
     MakeDTMFromIndexList(dtmPtr);
     DTMUserTag    userTag = 0;
     DTMFeatureId* textureRegionIdsP = 0;
@@ -1304,7 +1304,7 @@ DifferenceSet Clipper::ClipSeveralPolygons(bvector<bvector<DPoint3d>>& polygons)
                                                   (long)poly.size());
         userTag++;
         }
-    Bentley::TerrainModel::DTMMeshEnumeratorPtr en = Bentley::TerrainModel::DTMMeshEnumerator::Create(*dtmPtr->GetBcDTM());
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtmPtr->GetBcDTM());
 
     en->SetExcludeAllRegions();
     en->SetMaxTriangles(dtmPtr->GetBcDTM()->GetTrianglesCount() * 2);

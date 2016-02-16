@@ -91,10 +91,10 @@ TINType3d64fCreator::TINType3d64fCreator ()
 
 namespace {
 const WChar TIN_AS_LINEAR_HEADER_TYPE_NAME[] = L"TINAsLinearHeader";
-Bentley::ScalableMesh::Import::DimensionType::Register s_RegisterTINAsLinearHeaderType(TIN_AS_LINEAR_HEADER_TYPE_NAME, sizeof(IDTMFile::FeatureHeader));
+BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterTINAsLinearHeaderType(TIN_AS_LINEAR_HEADER_TYPE_NAME, sizeof(IDTMFile::FeatureHeader));
 
 const WChar TIN_AS_LINEAR_POINT_TYPE_NAME[] = L"TINAsLinearPoint";
-Bentley::ScalableMesh::Import::DimensionType::Register s_RegisterTINAsLinearPointType(TIN_AS_LINEAR_POINT_TYPE_NAME, sizeof(DPoint3d));
+BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterTINAsLinearPointType(TIN_AS_LINEAR_POINT_TYPE_NAME, sizeof(DPoint3d));
 }
 
 /*---------------------------------------------------------------------------------**//**

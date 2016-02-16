@@ -46,7 +46,7 @@ typedef struct GroundDetectionParameters const& GroundDetectionParametersCR;
     {
     public:
         BENTLEYSTM_EXPORT static void GroundDetectionLogger::OutputTimerToLogger(StopWatch& timer);
-        BENTLEYSTM_EXPORT static  Bentley::NativeLogging::ILogger* Get();
+        BENTLEYSTM_EXPORT static  BENTLEY_NAMESPACE_NAME::NativeLogging::ILogger* Get();
     };
 
 #define GROUNDDLOG GroundDetectionLogger::Get()*/
@@ -193,9 +193,9 @@ private:
 
 struct GroundDetectionManager
     {
-    BENTLEYSTM_EXPORT static StatusInt DoGroundDetection(Bentley::DgnPlatform::EditElementHandle& elHandle, GroundDetectionParametersCR params, IGroundDetectionProgressListenerP pProgressListener = NULL);
-    BENTLEYSTM_EXPORT static StatusInt DoGroundDetectionFromDTM(Bentley::DgnPlatform::EditElementHandle& elHandle, Bentley::TerrainModel::DTMPtr& terrainModel, GroundDetectionParametersCR params, IGroundDetectionProgressListenerP pProgressListener = NULL);
-    BENTLEYSTM_EXPORT static IPointCloudChannelP GetChannelFromPODElement(Bentley::DgnPlatform::ElementHandle& elHandle);
+    BENTLEYSTM_EXPORT static StatusInt DoGroundDetection(BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle& elHandle, GroundDetectionParametersCR params, IGroundDetectionProgressListenerP pProgressListener = NULL);
+    BENTLEYSTM_EXPORT static StatusInt DoGroundDetectionFromDTM(BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle& elHandle, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& terrainModel, GroundDetectionParametersCR params, IGroundDetectionProgressListenerP pProgressListener = NULL);
+    BENTLEYSTM_EXPORT static IPointCloudChannelP GetChannelFromPODElement(BENTLEY_NAMESPACE_NAME::DgnPlatform::ElementHandle& elHandle);
     BENTLEYSTM_EXPORT static void SetConfigFromString(const char* allParameters);
     };
 

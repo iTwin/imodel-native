@@ -33,7 +33,7 @@ typedef RefCountedPtr<IScalableMeshCreator>            IScalableMeshCreatorPtr;
 * Interface implemented by MRDTM engines.
 * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
-typedef StatusInt (*ResolveMrtmFileNameFP)(Bentley::WString& fileName, const Bentley::DgnPlatform::EditElementHandle& elHandle);
+//typedef StatusInt (*ResolveMrtmFileNameFP)(BENTLEY_NAMESPACE_NAME::WString& fileName, const BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle& elHandle);
 
 struct IScalableMeshCreator : public RefCountedBase                       
     {
@@ -69,7 +69,7 @@ public:
 
         BENTLEYSTM_EXPORT const GeoCoords::GCS&   GetGCS                     () const;
 
-        BENTLEYSTM_EXPORT const Bentley::GeoCoordinates::BaseGCSPtr& 
+        BENTLEYSTM_EXPORT const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& 
                                                   GetBaseGCS                 () const;
 
         BENTLEYSTM_EXPORT Time                    GetLastSyncTime            () const;
@@ -96,7 +96,7 @@ public:
 
         BENTLEYSTM_EXPORT StatusInt               SetGCS                     (const GeoCoords::GCS&       gcs);
 
-        BENTLEYSTM_EXPORT StatusInt               SetBaseGCS                 (const Bentley::GeoCoordinates::BaseGCSPtr& 
+        BENTLEYSTM_EXPORT StatusInt               SetBaseGCS                 (const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& 
                                                                                                     gcsPtr);
 
 

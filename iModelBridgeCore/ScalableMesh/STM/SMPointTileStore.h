@@ -12,50 +12,200 @@
 
 
 #include <ImagePP/all/h/HPMDataStore.h>
-#include <ImagePP/all/h/IDTMTypes.h>
+/*#include <ImagePP/all/h/IDTMTypes.h>
 #include <ImagePP/all/h/IDTMFile.h>
 #include <ImagePP/all/h/HGFSpatialIndex.h>
 #include <ImagePP/all/h/HVEDTMLinearFeature.h>
-#include <ImagePP/all/h/HGFPointTileStore.h>
+#include <ImagePP/all/h/HGFPointTileStore.h>*/
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include "SMSQLiteFile.h"
+USING_NAMESPACE_IMAGEPP
 
-#if 0
+namespace IDTMFile
+    {
+    typedef HFCAccessMode                   AccessMode;
+    typedef uint32_t NodeID;
+    typedef uint32_t FeatureType;
+    inline uint32_t       GetNullNodeID               () {
+        return std::numeric_limits<uint32_t>::max();
+        };
+
+    struct FeatureHeader
+        {
+        typedef uint32_t                     feature_type;
+        typedef uint32_t                     group_id_type;
+        typedef uint32_t                     index_type;
+        typedef uint32_t                     size_type;
+
+        static group_id_type         GetNullID();
+
+        feature_type                        type;
+        index_type                          offset;     // In points
+        size_type                           size;       // In points
+        group_id_type                       groupId;    // Reference to the metadata for this feature
+        };
+    };
+//#if 0
 class IDTMFilePointFamily {};
 
-template <> struct PointFamilyTrait<DPoint3d>       {
+/*template <> struct PointFamilyTrait<DPoint3d>       {
     typedef IDTMFilePointFamily type;
-    };
+    };*/
 
-template <class POINT> struct PointOp<POINT, IDTMFilePointFamily>
+template <class POINT> struct PointOp
     {
     static double GetX(const POINT& point) {
-        return IDTMFile::PointTrait<POINT>::GetX(point);
+        return point.x;
         }
     static double GetY(const POINT& point) {
-        return IDTMFile::PointTrait<POINT>::GetY(point);
+        return point.y;
         }
     static double GetZ(const POINT& point) {
-        return IDTMFile::PointTrait<POINT>::GetZ(point);
+        return point.z;
         }
     static void   SetX(POINT& point, double x) {
-        IDTMFile::PointTrait<POINT>::SetX(point, x);
+        point.x = x;
         }
     static void   SetY(POINT& point, double y) {
-        IDTMFile::PointTrait<POINT>::SetY(point, y);
+        point.y = y;
         }
     static void   SetZ(POINT& point, double z) {
-        IDTMFile::PointTrait<POINT>::SetZ(point, z);
+        point.z = z;
         }
     static POINT  Create(double x, double y, double z) {
-        return IDTMFile::PointTrait<POINT>::Create(x, y, z);
+        return POINT(x, y, z);
         }
     static bool   AreEqual(const POINT& point1, const POINT& point2) {
-        return IDTMFile::PointTrait<POINT>::Equal(point1, point2);
+        return point1 == point2;
         }
     };
 
 
+template<> bool    PointOp < DPoint3d >::AreEqual(const DPoint3d& point1, const DPoint3d& point2)
+    {
+    return point1.DistanceSquared(point2) < 1e-8;
+    };
+
+template<> DPoint3d   PointOp < DPoint3d >::Create(double x, double y, double z)
+    {
+    return DPoint3d::From(x, y, z);
+    }
+
+    template<class EXTENT> class ExtentOp
+        {
+        };
+
+template <> class ExtentOp <DRange3d>
+{
+public:
+    static double GetXMin(const DRange3d& extent) { return extent.low.x; }
+    static double GetXMax(const DRange3d& extent) { return extent.high.x; }
+    static double GetYMin(const DRange3d& extent) { return extent.low.y; }
+    static double GetYMax(const DRange3d& extent) { return extent.high.y; }
+    static double GetZMin(const DRange3d& extent) { return extent.low.z; }
+    static double GetZMax(const DRange3d& extent) { return extent.high.z; }
+    static void   SetXMin(DRange3d& extent, double xMin) { extent.low.x = xMin; }
+    static void   SetXMax(DRange3d& extent, double xMax) { extent.high.x = xMax; }
+    static void   SetYMin(DRange3d& extent, double yMin) { extent.low.y = yMin; }
+    static void   SetYMax(DRange3d& extent, double yMax) { extent.high.y = yMax; }
+    static void   SetZMin(DRange3d& extent, double zMin) { extent.low.z = zMin; }
+    static void   SetZMax(DRange3d& extent, double zMax) { extent.high.z = zMax; }
+    static double GetWidth(const DRange3d& extent) { return extent.XLength(); }
+    static double GetHeight(const DRange3d& extent) { return extent.YLength(); }
+    static double GetThickness(const DRange3d& extent) { return extent.ZLength(); }
+    static bool   Contains2d(const DRange3d& extent1, const DRange3d& extent2) { return extent2.IsStrictlyContainedXY(extent1); }
+    static bool   Overlap(const DRange3d& extent1, const DRange3d& extent2) { return extent1.IntersectsWith(extent2); }
+    static bool   InnerOverlap(const DRange3d& extent1, const DRange3d& extent2) {
+        return extent1.high.x > extent2.low.x &&
+            extent1.low.x < extent2.high.x &&
+            extent1.high.y > extent2.low.y &&
+            extent1.low.y < extent2.high.y &&
+            extent1.high.z > extent2.low.z &&
+            extent1.low.z < extent2.high.z;
+        }
+    static bool   OutterOverlap(const DRange3d& extent1, const DRange3d& extent2)
+        {
+        return extent1.high.x >= extent2.low.x &&
+            extent1.low.x <= extent2.high.x &&
+            extent1.high.y >= extent2.low.y &&
+            extent1.low.y <= extent2.high.y &&
+            extent1.high.z >= extent2.low.z &&
+            extent1.low.z <= extent2.high.z;
+        }
+    __forceinline static DRange3d Create(double xMin, double yMin, double zMin, double xMax, double yMax, double zMax)
+    {
+    return DRange3d::From(xMin, yMin, zMin, xMax, yMax, zMax);
+        }
+    static DRange3d Create(double xMin, double yMin, double xMax, double yMax)
+        {
+        return DRange3d::From(xMin, yMin, 0.0, xMax, yMax, 0.0);
+        }
+
+    __forceinline static DRange3d MergeExtents(const DRange3d& extent1, const DRange3d& extent2)
+        {
+        DRange3d ext = extent1;
+        ext.Extend(extent2);
+        return ext;
+        }
+
+    };
+
+    template <class EXTENT, class POINT> class ExtentPointOp
+        {};
+
+
+template <class POINT> class ExtentPointOp<DRange3d, POINT>
+    {
+public:
+
+
+    static bool IsPointOutterIn3D(const DRange3d& extent, const POINT& point)
+        {
+        return (extent.low.x <= PointOp<POINT>::GetX(point) && extent.high.x >= PointOp<POINT>::GetX(point)) &&
+               (extent.low.y <= PointOp<POINT>::GetY(point) && extent.high.y >= PointOp<POINT>::GetY(point)) &&
+               (extent.low.z <= PointOp<POINT>::GetZ(point) && extent.high.z >= PointOp<POINT>::GetZ(point));
+        }
+
+
+    static bool IsPointOutterIn2D(const DRange3d& extent, const POINT& point)
+        {
+        return !extent.IsContainedXY(point);
+        }
+    };
+
+template<class SPATIAL, class POINT, class EXTENT> class SpatialOp
+    {
+    };
+
+template <> class SpatialOp <DPoint3d, DPoint3d, DRange3d>
+    {
+    public:
+        static DRange3d GetExtent(const DPoint3d& spatial)
+            {
+            return DRange3d::From(spatial);
+            }
+        static bool IsPointIn2D(const DPoint3d& spatial, const DPoint3d& point)
+            {
+            return spatial.AlmostEqualXY(point);
+            }
+
+        static bool IsSpatialInExtent2D(const DPoint3d& spatial, const DRange3d& extent)
+            {
+            return extent.IsContainedXY(spatial);
+            }
+
+        static bool IsSpatialInExtent3D(const DPoint3d& spatial, const DRange3d& extent)
+            {
+            return extent.IsContained(spatial);
+            }
+
+
+        static size_t GetPointCount(const DPoint3d& spatial)
+            {
+            return 1;
+            }
+    };
+#if 0
 template <> class SpatialOp<HFCPtr<HVEDTMLinearFeature>, HGF3DCoord<double>, HGF3DExtent<double> >
     {
 private:
@@ -113,9 +263,9 @@ public:
 
     };
 
+#endif
 
-
-
+#if 0
 template <> class ExtentOp <IDTMFile::Extent3d64f>
 {
 public:
@@ -325,7 +475,7 @@ public:
             size_t                  m_depth;                        // Cached (maximum) number of levels in the tree.
         };
 
-
+#define MAX_NEIGHBORNODES_COUNT 26
 
 template <typename EXTENT> class SMPointNodeHeader : public SMIndexNodeHeader<EXTENT>
     {
@@ -341,19 +491,19 @@ public:
     size_t        m_nbUvIndexes;
     size_t        m_nbTextures;
     HPMBlockID  m_graphID;
-    vector<HPMBlockID>  m_textureID;
+    std::vector<HPMBlockID>  m_textureID;
     HPMBlockID  m_uvID;
-    vector<HPMBlockID>  m_ptsIndiceID;
-    vector<HPMBlockID>  m_uvsIndicesID;
+    std::vector<HPMBlockID>  m_ptsIndiceID;
+    std::vector<HPMBlockID>  m_uvsIndicesID;
     size_t      m_numberOfMeshComponents;
     int*        m_meshComponents;
     size_t m_nodeCount;
 
 
-    vector<HPMBlockID> m_apNeighborNodeID[IDTMFile::NeighborNodesTable::MAX_QTY];    
-    bool               m_apAreNeighborNodesStitched[IDTMFile::NeighborNodesTable::MAX_QTY];    
+    std::vector<HPMBlockID> m_apNeighborNodeID[MAX_NEIGHBORNODES_COUNT];    
+    bool               m_apAreNeighborNodesStitched[MAX_NEIGHBORNODES_COUNT];
 
-    vector<HPMBlockID> m_clipSetsID;
+    std::vector<HPMBlockID> m_clipSetsID;
 
     ~SMPointNodeHeader()
          {
@@ -500,16 +650,15 @@ public:
     virtual ~SMPointTileStore() {};
     };
 
-
 template <typename POINT, typename EXTENT> class SMPointTaggedTileStore : public SMPointTileStore<POINT, EXTENT>// , public HFCShareableObject<SMPointTileStore<POINT, EXTENT> >
     {
 protected:
-    typedef IDTMFile::PointTileHandler<POINT> TileHandler;
-        typedef IDTMFile::BTreeIndexHandler IndexHandler;
+   // typedef IDTMFile::PointTileHandler<POINT> TileHandler;
+   //     typedef IDTMFile::BTreeIndexHandler IndexHandler;
 
-    typedef typename TileHandler::PointArray PointArray;
+  //  typedef typename TileHandler::PointArray PointArray;
 
-    static IDTMFile::NodeID ConvertBlockID (const HPMBlockID& blockID)
+ /*   static IDTMFile::NodeID ConvertBlockID (const HPMBlockID& blockID)
         {
         return static_cast<IDTMFile::NodeID>(blockID.m_integerID);
         }
@@ -522,12 +671,12 @@ protected:
     static IDTMFile::NeighborNodesTable::value_type ConvertNeighborID (const HPMBlockID& neighborID)
         {
         return static_cast<IDTMFile::NeighborNodesTable::value_type>(neighborID.m_integerID);
-        }
+        }*/
 
 public:
     // Constructor / Destroyer
     
-    SMPointTaggedTileStore(IDTMFile::File::Ptr openedDTMFile, bool compress, size_t layerID = 0)
+   /* SMPointTaggedTileStore(IDTMFile::File::Ptr openedDTMFile, bool compress, size_t layerID = 0)
             :   m_filteringDir(0),
                 m_layerID(layerID),
             m_compress(compress),            
@@ -540,10 +689,10 @@ public:
     virtual ~SMPointTaggedTileStore ()
         {        
         m_DTMFile = NULL;
-        }
+        }*/
 
     // New function
-    virtual bool HasSpatialReferenceSystem()
+    /*virtual bool HasSpatialReferenceSystem()
         {
         std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
                     
@@ -571,17 +720,17 @@ public:
 
 
         return string(valueMBS);
-        }
+        }*/
 
     // ITileStore interface
-    virtual void Close ()
+    /*virtual void Close ()
         {        
         m_DTMFile = NULL;
-        }
+        }*/
 
     virtual bool StoreMasterHeader (SMPointIndexHeader<EXTENT>* indexHeader, size_t headerSize)
         {
-        if (m_DTMFile == NULL)
+      /*  if (m_DTMFile == NULL)
             return false;
 
         std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
@@ -658,13 +807,13 @@ public:
             else
                 m_indexHandler->SetTopNode(IDTMFile::GetNullNodeID());
             }
-
+            */
         return true;
         }
 
     virtual size_t LoadMasterHeader (SMPointIndexHeader<EXTENT>* indexHeader, size_t headerSize)
         {            
-        if (m_DTMFile == NULL)
+        /*if (m_DTMFile == NULL)
             return 0;
 
         std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
@@ -707,35 +856,35 @@ public:
                 indexHeader->m_rootNodeBlockID = m_indexHandler->GetTopNode();
             else
                 indexHeader->m_rootNodeBlockID = HPMBlockID();
-            }
+            }*/
         return headerSize;
         }
 
     // New interface
-    virtual HPMBlockID StoreNewBlock (POINT* DataTypeArray, size_t countData)
+    virtual HPMBlockID StoreNewBlock(POINT* DataTypeArray, size_t countData)
         {
-        HPRECONDITION(m_tileHandler != NULL);
-        //HPRECONDITION(!m_DTMFile->IsReadOnly()); //TDORAY: Reactivate
+        /* HPRECONDITION(m_tileHandler != NULL);
+         //HPRECONDITION(!m_DTMFile->IsReadOnly()); //TDORAY: Reactivate
 
-        PointArray MyArray(DataTypeArray, countData);
+         PointArray MyArray(DataTypeArray, countData);
 
-        IDTMFile::NodeID newNodeID;
+         IDTMFile::NodeID newNodeID;
 
-        std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
+         std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
 
-        if (!m_tileHandler->AddPoints(newNodeID, MyArray))
-            {
-            HASSERT(!"Write failed!");
-            //&&MM TODO we cannot use custom exception string. AND the message seems wrong.
-            throw HFCWriteFaultException(L"Unable to obtain file name ... IDTMFile::File API should be modified.");
-            }
+         if (!m_tileHandler->AddPoints(newNodeID, MyArray))
+         {
+         HASSERT(!"Write failed!");
+         //&&MM TODO we cannot use custom exception string. AND the message seems wrong.
+         throw HFCWriteFaultException(L"Unable to obtain file name ... IDTMFile::File API should be modified.");
+         }
 
-        return HPMBlockID(newNodeID);
+         return HPMBlockID(newNodeID);*/return 0;
         }
 
     virtual HPMBlockID StoreBlock (POINT* DataTypeArray, size_t countData, HPMBlockID blockID)
         {
-        HPRECONDITION(m_tileHandler != NULL);
+      /*  HPRECONDITION(m_tileHandler != NULL);
         //HPRECONDITION(!m_DTMFile->IsReadOnly()); //TDORAY: Reactivate
 
         if (!blockID.IsValid() || blockID.m_integerID == IDTMFile::SubNodesTable::GetNoSubNodeID())
@@ -750,36 +899,31 @@ public:
             HASSERT(!"Write failed!");
             //&&MM TODO we cannot use custom exception string. AND the message seems wrong.
             throw HFCWriteFaultException(L"Unable to obtain file name ... IDTMFile::File API should be modified.");
-            }
+            }*/
 
         return blockID;
         }
 
-    virtual size_t GetBlockDataCount (HPMBlockID blockID) const
+    virtual size_t GetBlockDataCount(HPMBlockID blockID) const
         {
-        HPRECONDITION(m_tileHandler != NULL);
+        /*HPRECONDITION(m_tileHandler != NULL);
         std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
-        return m_tileHandler->GetDir().CountPoints(ConvertBlockID(blockID));
+        return m_tileHandler->GetDir().CountPoints(ConvertBlockID(blockID));*/ 
+        return 0;
 
         }
 
 
     virtual size_t StoreHeader (SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
         {
-        HPRECONDITION(m_tileHandler != NULL);
+      /*  HPRECONDITION(m_tileHandler != NULL);
         HPRECONDITION(m_indexHandler != NULL);
         HPRECONDITION(m_filteringDir != NULL);
         //HPRECONDITION(!m_DTMFile->IsReadOnly()); //TDORAY: Reactivate
 
         if (header->m_contentExtentDefined)
             {
-            //NEEDS_WORK_SM : Currently stitching triangles most often cross the node extent.
-            /*
-            HASSERT(ExtentOp<EXTENT>::GetXMin(header->m_contentExtent) >= ExtentOp<EXTENT>::GetXMin(header->m_nodeExtent));
-            HASSERT(ExtentOp<EXTENT>::GetXMax(header->m_contentExtent) <= ExtentOp<EXTENT>::GetXMax(header->m_nodeExtent));
-            HASSERT(ExtentOp<EXTENT>::GetYMin(header->m_contentExtent) >= ExtentOp<EXTENT>::GetYMin(header->m_nodeExtent));
-            HASSERT(ExtentOp<EXTENT>::GetYMax(header->m_contentExtent) <= ExtentOp<EXTENT>::GetYMax(header->m_nodeExtent));
-            */
+
             }
 
         std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
@@ -828,7 +972,7 @@ public:
 
         size_t nbNeighbors = 0; 
 
-        for (int neighborPosInd = 0; neighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY; neighborPosInd ++)
+        for (int neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd ++)
             {       
             rNeighbors.m_AreNeighborTilesStitched[neighborPosInd] = header->m_apAreNeighborNodesStitched[neighborPosInd];
             nbNeighbors += header->m_apNeighborNodeID[neighborPosInd].size();            
@@ -844,7 +988,7 @@ public:
 
         if (rNeighbors.GetNbVarData() > 0)
             {        
-            for (size_t neighborPosInd = 0; neighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY; neighborPosInd++)
+            for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
                 {       
                 for (size_t neighborInd = 0; neighborInd < header->m_apNeighborNodeID[neighborPosInd].size(); neighborInd++)
                     {
@@ -1027,7 +1171,7 @@ public:
 
         const IDTMFile::NeighborNodesTable& rNeighbors = m_indexHandler->GetNeighborNodes(ConvertBlockID(blockID));
 
-        for (int neighborPosInd = 0; neighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY; neighborPosInd++)
+        for (int neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
             {       
             header->m_apAreNeighborNodesStitched[neighborPosInd] = rNeighbors.m_AreNeighborTilesStitched[neighborPosInd];            
             }        
@@ -1038,7 +1182,7 @@ public:
                        
             for (size_t indexNodes = 0 ; indexNodes < (size_t)rNeighbors.GetNbVarData(); indexNodes++)
                 {                
-                assert(pNeighborNodeInfo[indexNodes].m_nodePos < IDTMFile::NeighborNodesTable::MAX_QTY);
+                assert(pNeighborNodeInfo[indexNodes].m_nodePos < MAX_NEIGHBORNODES_COUNT);
 
                 header->m_apNeighborNodeID[pNeighborNodeInfo[indexNodes].m_nodePos].push_back(pNeighborNodeInfo[indexNodes].m_nodeId);                        
                 }           
@@ -1064,41 +1208,19 @@ public:
 
         if (header->m_contentExtentDefined)
             {
-            //NEEDS_WORK_SM : Stitching triangles usually cross node frontier. 
-            /*
-            HASSERT(ExtentOp<EXTENT>::GetXMin(header->m_contentExtent) >= ExtentOp<EXTENT>::GetXMin(header->m_nodeExtent));
-            HASSERT(ExtentOp<EXTENT>::GetXMax(header->m_contentExtent) <= ExtentOp<EXTENT>::GetXMax(header->m_nodeExtent));
-            HASSERT(ExtentOp<EXTENT>::GetYMin(header->m_contentExtent) >= ExtentOp<EXTENT>::GetYMin(header->m_nodeExtent));
-            HASSERT(ExtentOp<EXTENT>::GetYMax(header->m_contentExtent) <= ExtentOp<EXTENT>::GetYMax(header->m_nodeExtent));
-            */
             }
 
         header->m_totalCountDefined = true;
         header->m_totalCount = m_indexHandler->GetTotalPointCount(ConvertBlockID(blockID));
         header->m_arePoints3d = m_indexHandler->GetArePoints3d(ConvertBlockID(blockID));        
-        /*
-        Points3dDescBinsInfo points3dDescBinInfo = m_indexHandler->Get3dPointsBinsInfo(ConvertBlockID(blockID));        
 
-        if (nbBins > 0)
-            {             
-            const IDTMFile::NeighborNodeInfo* pNeighborNodeInfo(m_indexHandler->Get3dPointsBins (points3dDescBinInfo));                    
-                       
-            for (size_t indexNodes = 0 ; indexNodes < rNeighbors.GetNbVarData(); indexNodes++)
-                {                
-                assert(pNeighborNodeInfo[indexNodes].m_nodePos < IDTMFile::NeighborNodesTable::MAX_QTY);
-
-                header->m_apNeighborNodeID[pNeighborNodeInfo[indexNodes].m_nodePos].push_back(pNeighborNodeInfo[indexNodes].m_nodeId);                        
-                }                       
-            }
-            */
+            
 
         header->m_nbFaceIndexes = (size_t)m_indexHandler->GetMeshIndexesCount(ConvertBlockID(blockID));
         header->m_graphID = m_indexHandler->GetGraphBlockID(ConvertBlockID(blockID));
         header->m_uvID = m_indexHandler->GetUVBlockID(ConvertBlockID(blockID));
 
-        /*        header->m_indiceID = m_indexHandler->GetIndiceBlockID(ConvertBlockID(blockID));
-        header->m_uvID = m_indexHandler->GetUVBlockID(ConvertBlockID(blockID));*/
-        
+
         const IDTMFile::PtsIndicesTable& rPtsIndices = m_indexHandler->GetPtsIndices(ConvertBlockID(blockID));
         header->m_ptsIndiceID.resize(rPtsIndices.GetNbVarData());
         if (rPtsIndices.GetNbVarData() > 0)
@@ -1172,14 +1294,14 @@ public:
             {
             const IDTMFile::NodeID* pClipSetInfo(m_indexHandler->GetClipSetsVarData(clipSets));
             for(size_t i =0; i < header->m_clipSetsID.size(); ++i) header->m_clipSetsID[i] = pClipSetInfo[i];
-            }
+            }*/
         return 1;
         }
 
 
     virtual size_t LoadBlock (POINT* DataTypeArray, size_t maxCountData, HPMBlockID blockID)
         {
-        HPRECONDITION(m_tileHandler != NULL);
+       /* HPRECONDITION(m_tileHandler != NULL);
 
         PointArray arrayOfPoints;
         arrayOfPoints.WrapEditable(DataTypeArray, 0, maxCountData);
@@ -1187,25 +1309,26 @@ public:
         std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
 
         if (!m_tileHandler->GetPoints(ConvertBlockID(blockID), arrayOfPoints))
-            throw; //TDORAY: Do something else
+            throw; //TDORAY: Do something else*/
 
         return 1;
         }
 
     virtual bool DestroyBlock (HPMBlockID blockID)
         {
-        HPRECONDITION(m_tileHandler != NULL);
+       /* HPRECONDITION(m_tileHandler != NULL);
         //HPRECONDITION(!m_DTMFile->IsReadOnly()); //TDORAY: Reactivate
 
         std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
 
-        return m_tileHandler->RemovePoints(ConvertBlockID(blockID));
+        return m_tileHandler->RemovePoints(ConvertBlockID(blockID));*/
+        return true;
         }
 
-    static const IDTMFile::FeatureType MASS_POINT_FEATURE_TYPE = 0;
+   // static const IDTMFile::FeatureType MASS_POINT_FEATURE_TYPE = 0;
 
 protected:
-    const IDTMFile::File::Ptr& GetFileP () const
+   /* const IDTMFile::File::Ptr& GetFileP () const
         {
         return m_DTMFile;
         }
@@ -1214,7 +1337,7 @@ protected:
     typename TileHandler::Ptr m_tileHandler;
     IndexHandler::Ptr m_indexHandler;
     IDTMFile::FilteringDir* m_filteringDir;
-    size_t m_layerID;
+    size_t m_layerID;*/
 
 private:
 

@@ -6,7 +6,7 @@
 |       $Date: 2011/12/01 18:51:33 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -30,7 +30,7 @@ namespace GeoCoordinates {
 class BaseGCS;
 
 typedef RefCountedPtr<BaseGCS>          BaseGCSPtr;
-typedef Bentley::RefCountedPtr<BaseGCS> BaseGCSCPtr; // TDORAY Make const when available
+typedef BENTLEY_NAMESPACE_NAME::RefCountedCPtr<BaseGCS> BaseGCSCPtr; 
 
 } // namespace GeoCoordinates
 END_BENTLEY_NAMESPACE
@@ -53,9 +53,9 @@ struct GeospatialReference;
 typedef GeospatialReference                 GeoRef;
 
 // Make BaseGCS and its pointers part of this namespace
-using Bentley::GeoCoordinates::BaseGCS;
-using Bentley::GeoCoordinates::BaseGCSPtr;
-using Bentley::GeoCoordinates::BaseGCSCPtr;
+using BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS;
+using BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr;
+using BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr;
 
 /*---------------------------------------------------------------------------------**//**
 * @description  Factory for creating GCS. User may specify custom log mechanism that will

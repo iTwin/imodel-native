@@ -41,6 +41,6 @@ template class SMPointIndexNode<DPoint3d, YProtPtExtentType>;
 
 template class SMPointIndex<DPoint3d, YProtPtExtentType>;
 
-template class SMPointIndex<HGF3DFilterCoord<double, double>, HGF3DExtent<double>>;
+//template class SMPointIndex<HGF3DFilterCoord<double, double>, HGF3DExtent<double>>;
 
-template class SMPointIndexNode<HGF3DFilterCoord<double, double>, HGF3DExtent<double>>;
+//template class SMPointIndexNode<HGF3DFilterCoord<double, double>, HGF3DExtent<double>>;

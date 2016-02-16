@@ -1,8 +1,9 @@
 #pragma once
 
 #include <ImagePP/all/h/HPMDataStore.h>
-#include <ImagePP/all/h/IDTMTypes.h>
-#include <ImagePP/all/h/IDTMFile.h>
+/*#include <ImagePP/all/h/IDTMTypes.h>
+#include <ImagePP/all/h/IDTMFile.h>*/
+#include <ImagePP/all/h/HCDPacket.h>
 #include <ImagePP/all/h/HCDCodecIJG.h>
 #include <ImagePP/all/h/HRFBmpFile.h>
 #include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>
@@ -12,11 +13,11 @@ class SMSQLiteTextureTileStore : public IHPMPermanentStore<Byte, float, float> /
 {
 public:
 
-    static IDTMFile::NodeID ConvertBlockID(const HPMBlockID& blockID)
+    /*static IDTMFile::NodeID ConvertBlockID(const HPMBlockID& blockID)
     {
         return static_cast<IDTMFile::NodeID>(blockID.m_integerID);
-    }
-   /* SMSQLiteTextureTileStore(Bentley::WString filename, const IDTMFile::AccessMode& accessMode)
+    }*/
+   /* SMSQLiteTextureTileStore(BENTLEY_NAMESPACE_NAME::WString filename, const IDTMFile::AccessMode& accessMode)
         {
         m_smSQLiteFile = SMSQLiteFile::Create();
         Utf8String filenameA;
@@ -52,7 +53,7 @@ public:
     bool WriteCompressedPacket(const HCDPacket& pi_uncompressedPacket,
         HCDPacket& pi_compressedPacket, int width, int height, int nOfChannels = 3)
     {
-        HPRECONDITION(pi_uncompressedPacket.GetDataSize() <= (numeric_limits<UInt32>::max) ());
+        HPRECONDITION(pi_uncompressedPacket.GetDataSize() <= (numeric_limits<uint32_t>::max) ());
 
         // initialize codec
         auto codec = new HCDCodecIJG(width, height, 8 * nOfChannels);

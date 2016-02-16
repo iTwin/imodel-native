@@ -3,11 +3,12 @@
 #include <ImagePP/all/h/HFCException.h>
 #include <ScalableMesh\ScalableMeshUtilityFunctions.h>
 #include <ScalableMesh\IScalableMeshQuery.h>
-#include <eigen\Eigen\Dense>
-#include <PCLWrapper\IDefines.h>
-#include <PCLWrapper\INormalCalculator.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+//#include <eigen\Eigen\Dense>
+//#include <PCLWrapper\IDefines.h>
+//#include <PCLWrapper\INormalCalculator.h>
 #include "ScalableMeshQuery.h"
-#include "MeshingFunctions.h"
+//#include "MeshingFunctions.h"
 #include <ScalableMesh\ScalableMeshUtilityFunctions.h>
 #include <Mtg/MtgStructs.h>
 #include <Geom/bsp/bspbound.fdf>
@@ -958,7 +959,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::DumpOct
 
     HASSERT(NbWrittenChars == NbChars);
 
-    for (size_t neighborPosInd = 0; neighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY; neighborPosInd++)
+    for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
         {
         for (size_t neighborInd = 0; neighborInd < m_nodeHeader.m_apNeighborNodeID[neighborPosInd].size(); neighborInd++)
             {
@@ -1009,7 +1010,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::DumpOct
 
     HASSERT(NbWrittenChars == NbChars);
 
-    for (size_t neighborPosInd = 0; neighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY; neighborPosInd++)
+    for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
         {
         if (m_nodeHeader.m_apAreNeighborNodesStitched[neighborPosInd] == true)
             {
@@ -1159,7 +1160,7 @@ template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::StoreP
             SetBlockID(m_nodeHeader.m_ptsIndiceID[0]);
             if (GetParentNode() != nullptr) ((SMMeshIndexNode<POINT, EXTENT>*)GetParentNode().GetPtr())->AdviseSubNodeIDChanged(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this));
             AdviseParentNodeIDChanged();
-            for (size_t neighborPosInd = 0; neighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY; neighborPosInd++)
+            for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
                 {
                 for (size_t neighborInd = 0; neighborInd < m_apNeighborNodes[neighborPosInd].size(); neighborInd++)
                     {
@@ -2305,14 +2306,13 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     memcpy(pixelBufferP + sizeof(int), &textureHeightInPixels, sizeof(int));
     int nOfChannels = 4;
     memcpy(pixelBufferP + 2 * sizeof(int), &nOfChannels, sizeof(int));
-    pTextureBitmap = new HRABitmap(textureWidthInPixels,
+
+    pTextureBitmap = HRABitmap::Create(textureWidthInPixels,
                                    textureHeightInPixels,
                                    pTransfoModel.GetPtr(),
                                    sourceRasterP->GetCoordSys(),
                                    pPixelType,
-                                   8,
-                                   HRABitmap::UPPER_LEFT_HORIZONTAL,
-                                   pCodec);
+                                   8);
     HGF2DExtent minExt, maxExt;
     sourceRasterP->GetPixelSizeRange(minExt, maxExt);
     minExt.ChangeCoordSys(pTextureBitmap->GetCoordSys());
@@ -2326,7 +2326,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     //CR 332863 - Quick trick to display the STM outside in smooth outside the area where texture data are available. 
     //              Note that this trick will lead to the translucent color shown throughout transparent raster being a shade of gray 
     //              instead of the color of the background.
-    UInt32 whiteOpaque = 0xFFFFFFFF;
+    uint32_t whiteOpaque = 0xFFFFFFFF;
 
     clearOptions.SetRawDataValue(&whiteOpaque);
 
@@ -2334,11 +2334,10 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
 
     HRACopyFromOptions copyFromOptions;
 
-    //Rasterlib set this option on the last tile of a row or a column to avoid black lines.     
-    copyFromOptions.SetGridShapeMode(true);
+
     copyFromOptions.SetAlphaBlend(true);
 
-    pTextureBitmap->CopyFrom(sourceRasterP, copyFromOptions);
+    pTextureBitmap->CopyFrom(*sourceRasterP, copyFromOptions);
 #ifdef ACTIVATE_TEXTURE_DUMP
     WString fileName = L"file://";
     fileName.append(L"e:\\output\\scmesh\\2015-11-19\\texture_before_");

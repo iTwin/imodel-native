@@ -20,6 +20,7 @@
 #include "ScalableMesh.h"
 #include "Plugins/ScalableMeshIDTMFileTraits.h"
 #include <ScalableMesh\IScalableMeshSourceImporter.h>
+#include "IDTMFeatureArray.h"
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -336,7 +337,7 @@ class ScalableMeshStorage : public IStorage
             );
         }
 
-    virtual Import::BackInserter*          _CreateBackInserterFor      (UInt                        layerID,
+    virtual Import::BackInserter*          _CreateBackInserterFor      (uint32_t                        layerID,
                                                                         const Import::DataType&     type,
                                                                         Import::Log&         log) const override
         {
@@ -373,7 +374,7 @@ template<typename PtType>
 class ScalableMeshNonDestructiveEditStorage : public ScalableMeshStorage<PtType>
     {
 
-    virtual Import::BackInserter*          _CreateBackInserterFor      (UInt                        layerID,
+    virtual Import::BackInserter*          _CreateBackInserterFor      (uint32_t                        layerID,
                                                                         const Import::DataType&     type,
                                                                         Import::Log&         log) const override
         {
@@ -438,7 +439,7 @@ class GenericStorage : public IStorage
             );
         }
 
-    virtual Import::BackInserter*          _CreateBackInserterFor      (UInt                        layerID,
+    virtual Import::BackInserter*          _CreateBackInserterFor      (uint32_t                        layerID,
                                                                         const Import::DataType&     type,
                                                                         Import::Log&         log) const override
         {
@@ -571,7 +572,7 @@ class ClipShapeStorage : public IStorage
             );
         }
 
-    virtual Import::BackInserter* _CreateBackInserterFor(UInt                    layerID,
+    virtual Import::BackInserter* _CreateBackInserterFor(uint32_t                    layerID,
                                                          const Import::DataType& dataType,
                                                          Import::Log&     log) const override
         {

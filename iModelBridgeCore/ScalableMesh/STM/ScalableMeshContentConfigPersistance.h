@@ -26,13 +26,13 @@ struct BinaryIStream;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ContentConfigSerializer
     {
-    static const UInt           FORMAT_VERSION;
+    static const uint32_t           FORMAT_VERSION;
     bool                        Serialize(const Import::ContentConfig&    config,
         SourceDataSQLite&                  sourceData) const;
 
     bool                        Deserialize(SourceDataSQLite&                  sourceData,
         Import::ContentConfig&          config,
-        UInt                            formatVersion) const;
+        uint32_t                            formatVersion) const;
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

@@ -33,9 +33,9 @@ CommandVisitor::CommandVisitor (ImporterImpl&       impl,
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline void CommandVisitor::ImportLayer   (UInt sourceLayer) const
+inline void CommandVisitor::ImportLayer   (uint32_t sourceLayer) const
     {
-    const UInt targetLayer = m_config.HasDefaultTargetLayer() ? m_config.GetDefaultTargetLayer() : sourceLayer;
+    const uint32_t targetLayer = m_config.HasDefaultTargetLayer() ? m_config.GetDefaultTargetLayer() : sourceLayer;
     ImportLayerToLayer(sourceLayer, targetLayer);
     }
 
@@ -43,8 +43,8 @@ inline void CommandVisitor::ImportLayer   (UInt sourceLayer) const
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CommandVisitor::ImportLayerToLayer    (UInt    sourceLayer,
-                                            UInt    targetLayer) const
+void CommandVisitor::ImportLayerToLayer    (uint32_t    sourceLayer,
+                                            uint32_t    targetLayer) const
     {
     if (m_config.HasDefaultTargetType())
         {
@@ -68,8 +68,8 @@ void CommandVisitor::ImportLayerToLayer    (UInt    sourceLayer,
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CommandVisitor::ImportLayerToLayerType    (UInt                    sourceLayer,
-                                                UInt                    targetLayer,
+void CommandVisitor::ImportLayerToLayerType    (uint32_t                    sourceLayer,
+                                                uint32_t                    targetLayer,
                                                 const DataTypeFamily&   targetType) const
     {
     if (!m_impl.m_sourceDesc.IsValidLayer(sourceLayer))
@@ -87,10 +87,10 @@ void CommandVisitor::ImportLayerToLayerType    (UInt                    sourceLa
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline void CommandVisitor::ImportLayerToType  (UInt                    sourceLayer,
+inline void CommandVisitor::ImportLayerToType  (uint32_t                    sourceLayer,
                                                 const DataTypeFamily&   targetType) const
     {
-    const UInt targetLayer = m_config.HasDefaultTargetLayer() ? m_config.GetDefaultTargetLayer() : sourceLayer;
+    const uint32_t targetLayer = m_config.HasDefaultTargetLayer() ? m_config.GetDefaultTargetLayer() : sourceLayer;
     ImportLayerToLayerType(sourceLayer, targetLayer, targetType);
     }
 
@@ -98,10 +98,10 @@ inline void CommandVisitor::ImportLayerToType  (UInt                    sourceLa
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline void CommandVisitor::ImportLayerType    (UInt                    sourceLayer,
+inline void CommandVisitor::ImportLayerType    (uint32_t                    sourceLayer,
                                                 const DataTypeFamily&   sourceType) const
     {
-    const UInt targetLayer = m_config.HasDefaultTargetLayer() ? m_config.GetDefaultTargetLayer() : sourceLayer;
+    const uint32_t targetLayer = m_config.HasDefaultTargetLayer() ? m_config.GetDefaultTargetLayer() : sourceLayer;
     const DataTypeFamily& targetType = m_config.HasDefaultTargetType() ? m_config.GetDefaultTargetType() : sourceType;
 
     ImportLayerTypeToLayerType(sourceLayer, sourceType, 
@@ -112,9 +112,9 @@ inline void CommandVisitor::ImportLayerType    (UInt                    sourceLa
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline void CommandVisitor::ImportLayerTypeToLayer (UInt                    sourceLayer,
+inline void CommandVisitor::ImportLayerTypeToLayer (uint32_t                    sourceLayer,
                                                     const DataTypeFamily&   sourceType,
-                                                    UInt                    targetLayer) const
+                                                    uint32_t                    targetLayer) const
     {
     const DataTypeFamily& targetType = m_config.HasDefaultTargetType() ? m_config.GetDefaultTargetType() : sourceType;
     ImportLayerTypeToLayerType(sourceLayer, sourceType, 
@@ -125,9 +125,9 @@ inline void CommandVisitor::ImportLayerTypeToLayer (UInt                    sour
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline void CommandVisitor::ImportLayerTypeToLayerType     (UInt                    sourceLayer,
+inline void CommandVisitor::ImportLayerTypeToLayerType     (uint32_t                    sourceLayer,
                                                             const DataTypeFamily&   sourceType,
-                                                            UInt                    targetLayer,
+                                                            uint32_t                    targetLayer,
                                                             const DataTypeFamily&   targetType) const
     {
     m_impl.Import(sourceLayer, sourceType, 
@@ -139,9 +139,9 @@ inline void CommandVisitor::ImportLayerTypeToLayerType     (UInt                
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline void CommandVisitor::ImportLayerTypeToLayerType (UInt                    sourceLayer,
+inline void CommandVisitor::ImportLayerTypeToLayerType (uint32_t                    sourceLayer,
                                                         const DataType&         sourceType,
-                                                        UInt                    targetLayer,
+                                                        uint32_t                    targetLayer,
                                                         const DataTypeFamily&   targetType) const
     {
     m_impl.Import(sourceLayer, sourceType, 
@@ -153,11 +153,11 @@ inline void CommandVisitor::ImportLayerTypeToLayerType (UInt                    
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline void CommandVisitor::ImportLayerTypeToType  (UInt                    sourceLayer,
+inline void CommandVisitor::ImportLayerTypeToType  (uint32_t                    sourceLayer,
                                                     const DataTypeFamily&   sourceType,
                                                     const DataTypeFamily&   targetType) const
     {
-    const UInt targetLayer = m_config.HasDefaultTargetLayer() ? m_config.GetDefaultTargetLayer() : sourceLayer;
+    const uint32_t targetLayer = m_config.HasDefaultTargetLayer() ? m_config.GetDefaultTargetLayer() : sourceLayer;
     ImportLayerTypeToLayerType(sourceLayer, sourceType, 
                                targetLayer, targetType);
     }
@@ -177,7 +177,7 @@ inline void CommandVisitor::ImportType  (const DataTypeFamily&   sourceType) con
 * @bsimethod                                                  Raymond.Gauthier   06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 inline void CommandVisitor::ImportTypeToLayer  (const DataTypeFamily&   sourceType,
-                                                UInt                    targetLayer) const
+                                                uint32_t                    targetLayer) const
     {
     const DataTypeFamily& targetType = m_config.HasDefaultTargetType() ? m_config.GetDefaultTargetType() : sourceType;
     ImportTypeToLayerType(sourceType, targetLayer, targetType);
@@ -188,7 +188,7 @@ inline void CommandVisitor::ImportTypeToLayer  (const DataTypeFamily&   sourceTy
 * @bsimethod                                                  Raymond.Gauthier   06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CommandVisitor::ImportTypeToLayerType     (const DataTypeFamily&   sourceType,
-                                                UInt                    targetLayer,
+                                                uint32_t                    targetLayer,
                                                 const DataTypeFamily&   targetType) const
     {
     for (ContentDesc::LayerCIter layerIt = m_impl.m_sourceDesc.LayersBegin(), layersEnd = m_impl.m_sourceDesc.LayersEnd();

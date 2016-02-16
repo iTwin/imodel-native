@@ -14,7 +14,7 @@
 #include "../ImagePPHeaders.h"
 #include <ScalableMesh/Import/DataTypeDescription.h>
 #include "../Import/DimensionIterator.h"
-
+#include "..\IDTMFeatureArray.h"
 #include "ScalableMeshDimensionTypeConversionFilter.h"
 
 #include "ScalableMeshIDTMFileTraits.h"
@@ -88,9 +88,7 @@ struct AnyToXYZConvertPoint
     {
     DPoint3d operator () (const SrcT& pi_pt) const
         { 
-        return PointTrait<DPoint3d>::Create(PointTrait<SrcT>::GetX(pi_pt), 
-                                              PointTrait<SrcT>::GetY(pi_pt), 
-                                              PointTrait<SrcT>::GetZ(pi_pt)); 
+        return DPoint3d::From(pi_pt.x, pi_pt.y, pi_pt.z); 
         }
     };
 
@@ -104,12 +102,8 @@ struct AnyToAnyConvertPoint
     {
     DstT operator () (const SrcT& pi_pt) const
         { 
-        DstT pt(PointTrait<DstT>::Create(PointTrait<SrcT>::GetX(pi_pt), 
-                                         PointTrait<SrcT>::GetY(pi_pt), 
-                                         PointTrait<SrcT>::GetZ(pi_pt)));
+        DstT pt(pi_pt.x, pi_pt.y,pi_pt.z);
 
-        PointGroupIdTrait<DstT>::Set(pt, PointGroupIdTrait<SrcT>::Get(pi_pt));
-        PointSignificanceTrait<DstT>::Set(pt, PointSignificanceTrait<SrcT>::Get(pi_pt));
 
         return pt; 
         }
@@ -578,7 +572,7 @@ struct PointDimConverterTrait
     template <>
     struct Impl<true>   { typedef DimTypeConvSame__To__Same type; };
 
-    typedef typename Impl<PointTypeIDTrait<SrcPointT>::value == PointTypeIDTrait<DstPointT>::value>::type type;
+    typedef typename Impl<std::is_same<SrcPointT,DstPointT>::value>::type type;
     };
 
 

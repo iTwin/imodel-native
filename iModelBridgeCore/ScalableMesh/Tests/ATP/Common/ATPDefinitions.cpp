@@ -115,7 +115,7 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             assert(defineStatus == SUCCESS);
             }
         StatusInt createStatus;
-        Bentley::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPtr(Bentley::ScalableMesh::IScalableMeshSourceCreator::GetFor(stmFileName.c_str(), createStatus));
+        BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(stmFileName.c_str(), createStatus));
 
         if (creatorPtr == 0)
             {
@@ -245,10 +245,10 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         WString suffixPartialUpdate("_partialUpdate");
         WString stmFileName_PartialUpdateTest(UpdateTest_GetStmFileNameWithSuffix(stmFileName, suffixPartialUpdate));
         StatusInt status;
-        Bentley::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPartialUpdatePtr(Bentley::ScalableMesh::IScalableMeshSourceCreator::GetFor(stmFileName_PartialUpdateTest.c_str(), status));
+        BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPartialUpdatePtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(stmFileName_PartialUpdateTest.c_str(), status));
         WString suffixGenerate("_generate");
         WString stmFileName_GenerateTest(UpdateTest_GetStmFileNameWithSuffix(stmFileName, suffixGenerate));
-        Bentley::ScalableMesh::IScalableMeshSourceCreatorPtr creatorGeneratePtr(Bentley::ScalableMesh::IScalableMeshSourceCreator::GetFor(stmFileName_GenerateTest.c_str(), status));
+        BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorGeneratePtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(stmFileName_GenerateTest.c_str(), status));
 
         fwprintf(pResultFile, L"Initial state\n");
         fwprintf(pResultFile, L",file name, state\n");
@@ -268,22 +268,22 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                 {
                 if (0 == BeStringUtilities::Stricmp(pSubNode->GetName(), "mesher"))
                     {
-                    Int32 mesherTypeAttr;
+                    int32_t mesherTypeAttr;
                     StatusInt status = pSubNode->GetAttributeInt32Value(mesherTypeAttr, "type");
 
                     if ((status == BEXML_Success) && (mesherTypeAttr >= 0) && (mesherTypeAttr < SCM_MESHER_QTY))
-                        mesherType = (Bentley::ScalableMesh::ScalableMeshMesherType)mesherTypeAttr;
+                        mesherType = (BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesherType)mesherTypeAttr;
                     else
                         printf("ERROR : invalid type attribute for mesher node\r\n");
                     }
                 else if (0 == BeStringUtilities::Stricmp(pSubNode->GetName(), "filter"))
                     {
-                    Int32 filterTypeAttr;
+                    int32_t filterTypeAttr;
 
                     StatusInt status = pSubNode->GetAttributeInt32Value(filterTypeAttr, "type");
 
                     if ((status == BEXML_Success) && (filterTypeAttr >= 0) && (filterTypeAttr < SCM_FILTER_QTY))
-                        filterType = (Bentley::ScalableMesh::ScalableMeshFilterType)filterTypeAttr;
+                        filterType = (BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshFilterType)filterTypeAttr;
                     else
                         printf("ERROR : invalid type attribute for filter node\r\n");
                     }
@@ -391,7 +391,7 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             defineStatus = ConfigurationManager::DefineVariable(L"SM_FILTER_TYPE", filterTypeChar);
             assert(defineStatus == SUCCESS);
             StatusInt status;
-            creatorGeneratePtr = Bentley::ScalableMesh::IScalableMeshSourceCreator::GetFor(stmFileName_GenerateTest.c_str(), status);
+            creatorGeneratePtr = BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(stmFileName_GenerateTest.c_str(), status);
             clock_t tGen = clock();
             // isSingleFile ?
             status = creatorGeneratePtr->Create();
@@ -417,14 +417,14 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             //creatorPartialUpdatePtr->Release();
             //delete creatorPartialUpdatePtr;
 
-            creatorPartialUpdatePtr = Bentley::ScalableMesh::IScalableMeshSourceCreator::GetFor(stmFileName_PartialUpdateTest.c_str(), status);
+            creatorPartialUpdatePtr = BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(stmFileName_PartialUpdateTest.c_str(), status);
             // isSingleFile
             status = creatorPartialUpdatePtr->Create();
             assert(status == 0);
             creatorPartialUpdatePtr->SaveToFile();
 
             creatorPartialUpdatePtr = 0;
-            creatorPartialUpdatePtr = Bentley::ScalableMesh::IScalableMeshSourceCreator::GetFor(stmFileName_PartialUpdateTest.c_str(), status);
+            creatorPartialUpdatePtr = BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(stmFileName_PartialUpdateTest.c_str(), status);
             // Generate partial update
             // use the initial stm and modify the state of source
             IDTMSourceCollection sourceCollection = creatorPartialUpdatePtr->GetSources();
@@ -475,7 +475,7 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
             creatorPartialUpdatePtr->SaveToFile();
             creatorPartialUpdatePtr = 0;
-            creatorPartialUpdatePtr = Bentley::ScalableMesh::IScalableMeshSourceCreator::GetFor(stmFileName_PartialUpdateTest.c_str(), status);
+            creatorPartialUpdatePtr = BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(stmFileName_PartialUpdateTest.c_str(), status);
             clock_t t = clock();
             status = creatorPartialUpdatePtr->Create();
             t = clock() - t;

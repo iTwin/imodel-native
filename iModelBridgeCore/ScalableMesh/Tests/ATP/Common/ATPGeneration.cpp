@@ -254,13 +254,13 @@ bool ParseGenerationOptions(ScalableMeshMesherType* mesherType, ScalableMeshFilt
             {
             if (mesherType != 0)
                 {
-                Int32 mesherTypeAttr;
+                int32_t mesherTypeAttr;
 
                 StatusInt status = pTestChildNode->GetAttributeInt32Value(mesherTypeAttr, "type");
 
                 if ((status == BEXML_Success) && (mesherTypeAttr >= 0) && (mesherTypeAttr < SCM_MESHER_QTY))
                     {
-                    *mesherType = (Bentley::ScalableMesh::ScalableMeshMesherType)mesherTypeAttr;
+                    *mesherType = (BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesherType)mesherTypeAttr;
                     }
                 else
                     {
@@ -294,13 +294,13 @@ bool ParseGenerationOptions(ScalableMeshMesherType* mesherType, ScalableMeshFilt
                 {
                 if (filterType != 0)
                     {
-                    Int32 filterTypeAttr;
+                    int32_t filterTypeAttr;
 
                     StatusInt status = pTestChildNode->GetAttributeInt32Value(filterTypeAttr, "type");
 
                     if ((status == BEXML_Success) && (filterTypeAttr >= 0) && (filterTypeAttr < SCM_FILTER_QTY))
                         {
-                        *filterType = (Bentley::ScalableMesh::ScalableMeshFilterType)filterTypeAttr;
+                        *filterType = (BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshFilterType)filterTypeAttr;
                         }
                     else
                         {
@@ -317,13 +317,13 @@ bool ParseGenerationOptions(ScalableMeshMesherType* mesherType, ScalableMeshFilt
                     {
                     if (saveType != 0)
                         {
-                        Int32 saveTypeAttr;
+                        int32_t saveTypeAttr;
 
                         StatusInt status = pTestChildNode->GetAttributeInt32Value(saveTypeAttr, "type");
 
                         if ((status == BEXML_Success) && (saveTypeAttr >= 0) && (saveTypeAttr < SCM_SAVE_QTY))
                             {
-                            *saveType = (Bentley::ScalableMesh::ScalableMeshSaveType)saveTypeAttr;
+                            *saveType = (BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshSaveType)saveTypeAttr;
                             }
                         else
                             {
@@ -451,14 +451,14 @@ bool ParseBaselineSubNodes(WString& baselinePointFileName, WString& baselineFeat
     return baselineSubNodeFound;
     }
 
-Bentley::WString UpdateTest_GetStmFileNameWithSuffix(Bentley::WString stmFileName, Bentley::WString suffix)
+BENTLEY_NAMESPACE_NAME::WString UpdateTest_GetStmFileNameWithSuffix(BENTLEY_NAMESPACE_NAME::WString stmFileName, BENTLEY_NAMESPACE_NAME::WString suffix)
     {
     // Testfile.stm will become TestFileSuffix.stm.
     // Could be used to create a file like "TestFile_Add.stm"
     // to specify that the file is the result of a partial update of type "Add".
 
-    Bentley::WString stmFileExtension(".stm");
-    Bentley::WString prefix = stmFileName.substr(0, stmFileName.length() - stmFileExtension.length());
+    BENTLEY_NAMESPACE_NAME::WString stmFileExtension(".stm");
+    BENTLEY_NAMESPACE_NAME::WString prefix = stmFileName.substr(0, stmFileName.length() - stmFileExtension.length());
 
     bvector<WString> newPathStrings;
     newPathStrings.push_back(prefix);

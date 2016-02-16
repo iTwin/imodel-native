@@ -28,7 +28,7 @@ template <class EXTENT> class SMSQLiteUVIndiceTileStore : public SMPointTileStor
         bool LoadCompressedPacket(const HCDPacket& pi_compressedPacket,
                                   HCDPacket& pi_uncompressedPacket)
             {
-            HPRECONDITION(pi_compressedPacket.GetDataSize() <= (numeric_limits<UInt32>::max) ());
+            HPRECONDITION(pi_compressedPacket.GetDataSize() <= (numeric_limits<uint32_t>::max) ());
 
             // initialize codec
             HFCPtr<HCDCodec> pCodec = new HCDCodecZlib(pi_compressedPacket.GetDataSize());
@@ -41,7 +41,7 @@ template <class EXTENT> class SMSQLiteUVIndiceTileStore : public SMPointTileStor
             }
 
     public:
-        /*SMSQLiteUVIndiceTileStore(Bentley::WString filename, const IDTMFile::AccessMode& accessMode)
+        /*SMSQLiteUVIndiceTileStore(BENTLEY_NAMESPACE_NAME::WString filename, const IDTMFile::AccessMode& accessMode)
             {
             m_smSQLiteFile = SMSQLiteFile::Create();
             Utf8String filenameA;

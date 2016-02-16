@@ -160,7 +160,7 @@ DefaultTargetLayerConfig::DefaultTargetLayerConfig (const DefaultTargetLayerConf
 * @description  
 * @bsiclass                                                  Raymond.Gauthier   06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-DefaultTargetLayerConfig::DefaultTargetLayerConfig (UInt layer)
+DefaultTargetLayerConfig::DefaultTargetLayerConfig (uint32_t layer)
     :   m_layer(layer),
         m_implP(0)
     {
@@ -178,7 +178,7 @@ DefaultTargetLayerConfig::~DefaultTargetLayerConfig ()
 * @description  
 * @bsiclass                                                  Raymond.Gauthier   06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt DefaultTargetLayerConfig::Get () const
+uint32_t DefaultTargetLayerConfig::Get () const
     {
     return m_layer;
     }

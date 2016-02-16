@@ -62,7 +62,7 @@ struct LineElemUtils
     static bool IsSinglePoint(const Line_3d& line);
     static bool IsSinglePoint(MSElementDescrCP elmDesc);
 
-    static UInt CountPoints (MSElementDescrCP elmDesc);
+    static uint32_t CountPoints (MSElementDescrCP elmDesc);
 
     static DPoint3d* Copy (const Line_2d& line, DPoint3d* outIt);
     static DPoint3d* Copy (const Line_3d& line, DPoint3d* outIt);
@@ -75,7 +75,7 @@ struct LineElemUtils
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct LineStringElemUtils
     {
-    static UInt CountPoints (MSElementDescrCP elmDesc);
+    static uint32_t CountPoints (MSElementDescrCP elmDesc);
 
     static DPoint3d* Copy (MSElementDescrCP elmDescP, DPoint3d* outIt);
     static DPoint3d* Copy (const Line_String_2d& lineString, DPoint3d* outIt);
@@ -119,7 +119,7 @@ inline bool LineElemUtils::IsSinglePoint(MSElementDescrCP elmDescP)
 * @description
 * @bsimethod                                                Raymond.Gauthier   02/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline UInt LineElemUtils::CountPoints (MSElementDescrCP elmDesc)
+inline uint32_t LineElemUtils::CountPoints (MSElementDescrCP elmDesc)
     {
     return IsSinglePoint(elmDesc) ? 1 : 2;
     }
@@ -166,7 +166,7 @@ DPoint3d* LineElemUtils::Copy (const Line_2d& line, DPoint3d* outIt)
 * @description
 * @bsimethod                                                Raymond.Gauthier   02/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline UInt LineStringElemUtils::CountPoints (MSElementDescrCP elmDescP)
+inline uint32_t LineStringElemUtils::CountPoints (MSElementDescrCP elmDescP)
     {
     return elmDescP->el.line_string_3d.numverts;
     }
@@ -376,7 +376,7 @@ class LineStringElemLinExtractor : public ElementLinearExtractor
     {
     virtual void ComputeStats(MSElementDescrCP elmDescP, ElementLinearStats& stats) const override
         {
-        UInt nbPts = LineStringElemUtils::CountPoints(elmDescP);
+        uint32_t nbPts = LineStringElemUtils::CountPoints(elmDescP);
 
         stats.SetMaxPointQty(nbPts);
         stats.m_pointCount += nbPts;
@@ -441,9 +441,9 @@ class LineStringElem2dLinExtractor : public LineStringElemLinExtractor
 +---------------+---------------+---------------+---------------+---------------+------*/
 class ComplexElemLinExtractor : public ElementLinearExtractor
     {
-    static UInt CountPoints (MSElementDescrCP elmDescP)
+    static uint32_t CountPoints (MSElementDescrCP elmDescP)
         {
-        UInt pointCount = 0;
+        uint32_t pointCount = 0;
 
         for(MSElementDescrCP childCP = elmDescP->h.firstElem; NULL != childCP; childCP = childCP->h.next)
             {
@@ -476,7 +476,7 @@ class ComplexElemLinExtractor : public ElementLinearExtractor
         if(!IsSupported(elmDescP))
             return;
 
-        UInt nbPts = CountPoints(elmDescP);
+        uint32_t nbPts = CountPoints(elmDescP);
 
         stats.SetMaxPointQty(nbPts);
         stats.m_pointCount += nbPts;

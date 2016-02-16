@@ -26,7 +26,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 /*
  * Driver current version
  */ 
-const UInt SourceSerializer::FORMAT_VERSION = 0;
+const uint32_t SourceSerializer::FORMAT_VERSION = 0;
 
 namespace {
 enum DTMSourceId
@@ -321,7 +321,7 @@ bool                            LoadSourcePart(SourceDataSQLite&      sourceData
     DTMSourceDataType&  sourceType,
     IMonikerPtr&        monikerPtr)
 {
-    //const UInt sourceTypeField = stream.get();
+    //const uint32_t sourceTypeField = stream.get();
     uint32_t sourceTypeField = sourceData.GetSourceType();
     if (sourceTypeField >= DTM_SOURCE_DATA_QTY)
         return false;
@@ -575,7 +575,7 @@ const IDTMSourceFactory::CreatorItem* IDTMSourceFactory::GetCreatorIndex ()
 IDTMSource* IDTMSourceFactory::Create(SourceDataSQLite&          sourceData,
     const DocumentEnv&        env) const
 {
-    const UInt sourceIDField = sourceData.GetDTMSourceID();
+    const uint32_t sourceIDField = sourceData.GetDTMSourceID();
 
     if (DTM_SOURCE_ID_QTY <= sourceIDField)
         return 0;
@@ -616,7 +616,7 @@ bool SourceSerializer::Serialize(const IDTMSource&   source,
 +---------------+---------------+---------------+---------------+---------------+------*/
 IDTMSourcePtr SourceSerializer::Deserialize(SourceDataSQLite&          sourceData,
     const DocumentEnv&      env,
-    UInt                    formatVersion) const
+    uint32_t                    formatVersion) const
 {
     if (SourceSerializer::FORMAT_VERSION != formatVersion)
     {

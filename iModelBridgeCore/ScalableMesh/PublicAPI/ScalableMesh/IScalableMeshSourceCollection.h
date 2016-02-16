@@ -6,7 +6,7 @@
 |       $Date: 2011/10/26 17:55:51 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -79,8 +79,8 @@ struct IDTMSourceCollection
         BENTLEYSTM_EXPORT IteratorBase                _GetIterFor            (const IDTMSource&       source) const;
         BENTLEYSTM_EXPORT IteratorBase                _EditIterFor           (const IDTMSource&       source);
 
-        BENTLEYSTM_EXPORT IteratorBase                _GetIterAt             (UInt                        index) const;
-        BENTLEYSTM_EXPORT IteratorBase                _EditIterAt            (UInt                        index);
+        BENTLEYSTM_EXPORT IteratorBase                _GetIterAt             (uint32_t                        index) const;
+        BENTLEYSTM_EXPORT IteratorBase                _EditIterAt            (uint32_t                        index);
 
         BENTLEYSTM_EXPORT IteratorBase                _Remove                (const IteratorBase&         sourceIt);  
 
@@ -145,10 +145,10 @@ struct IDTMSourceCollection
 
 
 
-        BENTLEYSTM_EXPORT const IDTMSource&           GetAt                  (UInt                        index) const;
-        BENTLEYSTM_EXPORT IDTMSource&                 EditAt                 (UInt                        index);
+        BENTLEYSTM_EXPORT const IDTMSource&           GetAt                  (uint32_t                        index) const;
+        BENTLEYSTM_EXPORT IDTMSource&                 EditAt                 (uint32_t                        index);
 
-        BENTLEYSTM_EXPORT UInt                        GetCount               () const;
+        BENTLEYSTM_EXPORT uint32_t                        GetCount               () const;
 
         const_iterator                          Begin                  () const;
         const_iterator                          End                    () const;
@@ -168,8 +168,8 @@ struct IDTMSourceCollection
         const_iterator                          GetIterFor             (const IDTMSource&       source) const;
         iterator                                EditIterFor            (const IDTMSource&       source);
 
-        const_iterator                          GetIterAt              (UInt                        index) const;
-        iterator                                EditIterAt             (UInt                        index);
+        const_iterator                          GetIterAt              (uint32_t                        index) const;
+        iterator                                EditIterAt             (uint32_t                        index);
 
 
         BENTLEYSTM_EXPORT StatusInt                   Add                    (const IDTMSourcePtr&    sourcePtr); 

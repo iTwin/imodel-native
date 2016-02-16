@@ -6,7 +6,7 @@
 |       $Date: 2011/04/20 19:39:03 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -20,7 +20,7 @@ BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
 * @description  
 * @bsiclass                                                    Raymond.Gauthier  04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-SourceTypeConfig::SourceTypeConfig     (UInt                layerID,
+SourceTypeConfig::SourceTypeConfig     (uint32_t                layerID,
                                         const DataType&     type)
     :   m_layerID(layerID),
         m_type(type)
@@ -41,7 +41,7 @@ void SourceTypeConfig::_Accept (ConfigVisitor& visitor) const
 * @description  
 * @bsiclass                                                    Raymond.Gauthier  04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ConfigComponent SourceTypeConfig::Create   (UInt            layerID,
+ConfigComponent SourceTypeConfig::Create   (uint32_t            layerID,
                                             const DataType& type)
     {
     return CreateFromBase(new SourceTypeConfig(layerID, type));
@@ -51,7 +51,7 @@ ConfigComponent SourceTypeConfig::Create   (UInt            layerID,
 * @description  
 * @bsiclass                                                    Raymond.Gauthier  04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt SourceTypeConfig::GetLayerID () const
+uint32_t SourceTypeConfig::GetLayerID () const
     {
     return m_layerID;
     }

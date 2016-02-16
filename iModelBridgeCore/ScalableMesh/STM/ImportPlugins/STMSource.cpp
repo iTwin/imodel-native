@@ -87,7 +87,7 @@ class STMElementSourceDecorator : public SourceBase
 
 
 
-    static LayerConfig              DecorateLayer                          (UInt                        layerID,
+    static LayerConfig              DecorateLayer                          (uint32_t                        layerID,
                                                                             const LayerDescriptor&      descriptor,
                                                                             const ElementHandle&           elHandle)
         {
@@ -136,12 +136,12 @@ class STMElementSourceDecorator : public SourceBase
 +---------------+---------------+---------------+---------------+---------------+------*/
 class STMElementSourceCreator : public DGNElementSourceCreatorBase
     {
-    virtual UInt                    _GetElementType                    () const override
+    virtual uint32_t                    _GetElementType                    () const override
         {
         return EXTENDED_ELM;
         }
 
-    virtual UInt                    _GetElementHandlerID               () const override
+    virtual uint32_t                    _GetElementHandlerID               () const override
         {        
         return MrDTMDefaultElementHandler::GetElemHandlerId().GetId();
         }
@@ -162,7 +162,7 @@ class STMElementSourceCreator : public DGNElementSourceCreatorBase
     virtual SourceBase*             _Create                                (const DGNElementSourceRef&  sourceRef,
                                                                             Log&                        log) const override
         {
-        using namespace Bentley::ScalableMesh::Plugin::V0;
+        using namespace BENTLEY_NAMESPACE_NAME::ScalableMesh::Plugin::V0;
         SourceBase* decoratedP = CreateSTMSource(sourceRef.GetLocalFileP()->GetPathCStr(), log);
         if (0 == decoratedP)
             return 0;

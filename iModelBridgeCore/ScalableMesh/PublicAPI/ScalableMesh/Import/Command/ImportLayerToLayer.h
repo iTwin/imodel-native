@@ -6,7 +6,7 @@
 |       $Date: 2011/11/22 21:58:12 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -31,19 +31,19 @@ struct ImportLayerToLayerCommand : public ImportCommandMixinBase<ImportLayerToLa
     void operator delete [] (void *rawMemory, size_t size) { bentleyAllocator_deleteArrayRefCounted (rawMemory, size); }
 
 private:
-    UInt                                m_sourceLayer;
-    UInt                                m_targetLayer;
+    uint32_t                                m_sourceLayer;
+    uint32_t                                m_targetLayer;
 public:
-    IMPORT_DLLE explicit                ImportLayerToLayerCommand          (UInt                                sourceLayer,
-                                                                            UInt                                targetLayer);
+    IMPORT_DLLE explicit                ImportLayerToLayerCommand          (uint32_t                                sourceLayer,
+                                                                            uint32_t                                targetLayer);
 
 
     IMPORT_DLLE virtual                 ~ImportLayerToLayerCommand         ();
 
     IMPORT_DLLE                         ImportLayerToLayerCommand          (const ImportLayerToLayerCommand&    rhs);
 
-    UInt                                GetSourceLayer                     () const;
-    UInt                                GetTargetLayer                     () const;
+    uint32_t                                GetSourceLayer                     () const;
+    uint32_t                                GetTargetLayer                     () const;
     };
 
 

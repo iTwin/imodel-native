@@ -6,7 +6,7 @@
 |       $Date: 2011/11/09 18:11:03 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -35,7 +35,7 @@ USING_NAMESPACE_BENTLEY_MRDTM_IMPORT_PLUGIN_VERSION(0)
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 USING_NAMESPACE_BENTLEY_MRDTM
 
-//using namespace Bentley::MrDTM::Plugin;
+//using namespace BENTLEY_NAMESPACE_NAME::MrDTM::Plugin;
 
 
 

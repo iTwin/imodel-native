@@ -1,8 +1,8 @@
 #pragma once
 
 #include <ImagePP/all/h/HPMDataStore.h>
-#include <ImagePP/all/h/IDTMTypes.h>
-#include <ImagePP/all/h/IDTMFile.h>
+/*#include <ImagePP/all/h/IDTMTypes.h>
+#include <ImagePP/all/h/IDTMFile.h>*/
 //#include <Mtg/MtgStructs.h>
 #include <ImagePP/all/h/HCDCodecIJG.h>
 #include <ImagePP/all/h/HRFBmpFile.h>
@@ -13,10 +13,10 @@ class StreamingTextureTileStore : public IHPMPermanentStore<Byte, float, float> 
     {
     public:
 
-        static IDTMFile::NodeID ConvertBlockID(const HPMBlockID& blockID)
+       /* static IDTMFile::NodeID ConvertBlockID(const HPMBlockID& blockID)
             {
             return static_cast<IDTMFile::NodeID>(blockID.m_integerID);
-            }
+            }*/
 
         StreamingTextureTileStore(WCharCP filename, size_t layerID)
             {
@@ -47,7 +47,7 @@ class StreamingTextureTileStore : public IHPMPermanentStore<Byte, float, float> 
         bool WriteCompressedPacket(const HCDPacket& pi_uncompressedPacket,
             HCDPacket& pi_compressedPacket, int width, int height, int nOfChannels = 3)
         {
-            HPRECONDITION(pi_uncompressedPacket.GetDataSize() <= (numeric_limits<UInt32>::max) ());
+            HPRECONDITION(pi_uncompressedPacket.GetDataSize() <= (numeric_limits<uint32_t>::max) ());
 
             // initialize codec
             auto codec = new HCDCodecIJG(width, height, 8*nOfChannels);
@@ -125,7 +125,7 @@ class StreamingTextureTileStore : public IHPMPermanentStore<Byte, float, float> 
 
         virtual HPMBlockID StoreBlock(Byte* DataTypeArray, size_t countData, HPMBlockID blockID)
             {
-            if (!blockID.IsValid() || blockID.m_integerID == IDTMFile::SubNodesTable::GetNoSubNodeID())
+            if (!blockID.IsValid() || blockID.m_integerID == IDTMFile::GetNullNodeID())
                 return StoreNewBlock(DataTypeArray, countData);
 
 
@@ -156,7 +156,7 @@ class StreamingTextureTileStore : public IHPMPermanentStore<Byte, float, float> 
 
         bool LoadCompressedPacket(const HCDPacket& pi_compressedPacket, HCDPacket& pi_uncompressedPacket, size_t width, size_t height, size_t nOfChannels=3)
         {
-            HPRECONDITION(pi_compressedPacket.GetDataSize() <= (numeric_limits<UInt32>::max)());
+            HPRECONDITION(pi_compressedPacket.GetDataSize() <= (numeric_limits<uint32_t>::max)());
 
             auto codec = new HCDCodecIJG(width, height, nOfChannels * 8);// (pi_compressedPacket.GetDataSize()); // 24 bits per pixels
             codec->SetSourceColorMode(HCDCodecIJG::ColorModes::RGB);

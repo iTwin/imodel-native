@@ -6,7 +6,7 @@
 |       $Date: 2011/07/12 13:25:18 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -21,7 +21,7 @@ BEGIN_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VXX_NAMESPACE(0)
 * @bsimethod                                                  Raymond.Gauthier   04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 DataTypeFamilyBase::DataTypeFamilyBase (ClassID     id,
-                                        UInt        roleQty)     
+                                        uint32_t        roleQty)     
     :   m_id(id), 
         m_roleQty(roleQty),
         m_implP(0)
@@ -141,7 +141,7 @@ DataTypeFamily::~DataTypeFamily ()
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt DataTypeFamily::GetRoleQty () const
+uint32_t DataTypeFamily::GetRoleQty () const
     {
     return m_pImpl->m_roleQty;
     }

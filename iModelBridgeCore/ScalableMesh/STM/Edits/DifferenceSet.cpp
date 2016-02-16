@@ -398,7 +398,7 @@ DifferenceSet DifferenceSet::MergeSetWith(DifferenceSet& d, const DPoint3d* vert
                 if (d.addedFaces[f + i] < firstIndex) neighborsOfMarkedVertices[d.addedFaces[f + i] - 1] = true;
             }
         }*/
-    Bentley::TerrainModel::DTMPtr dtmPtr;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr;
     BC_DTM_OBJ* bcDtmP = 0;
     int dtmCreateStatus = bcdtmObject_createDtmObject(&bcDtmP);
     if (dtmCreateStatus == 0)
@@ -431,7 +431,7 @@ DifferenceSet DifferenceSet::MergeSetWith(DifferenceSet& d, const DPoint3d* vert
                                               &numRegionTextureIds,
                                               &clip2[0],
                                               (long)clip2.size());
-    Bentley::TerrainModel::DTMMeshEnumeratorPtr en = Bentley::TerrainModel::DTMMeshEnumerator::Create(*dtmPtr->GetBcDTM());
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtmPtr->GetBcDTM());
 
     en->SetExcludeAllRegions();
     en->SetMaxTriangles(dtmPtr->GetBcDTM()->GetTrianglesCount() * 2);

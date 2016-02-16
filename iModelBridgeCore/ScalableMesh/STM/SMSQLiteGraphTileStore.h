@@ -43,7 +43,7 @@ public:
         return static_cast<IDTMFile::NodeID>(blockID.m_integerID);
     }
 
-    /*SMSQLiteGraphTileStore(Bentley::WString filename, const IDTMFile::AccessMode& accessMode)
+    /*SMSQLiteGraphTileStore(BENTLEY_NAMESPACE_NAME::WString filename, const IDTMFile::AccessMode& accessMode)
         {
         m_smSQLiteFile = SMSQLiteFile::Create();
         Utf8String filenameA;

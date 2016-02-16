@@ -373,7 +373,7 @@ void MeshTraversalQueue::ComputeDirectionOfNextNode(MeshTraversalStep& start)
             if (pt == m_numPointsOnPolyline - 2) m_endOfLineInNode = m_polylineToDrape[m_numPointsOnPolyline - 1]; //line ends in node
             continue;
             }
-        if (bsiDSegment3d_intersectDPlane3d(&seg, &m_endOfLineInNode, &param, &right) && param >= 0.0 && param <= 1.0 && ext.IsContained(m_endOfLineInNode, 2))
+        if (seg.Intersect(m_endOfLineInNode, param, right) && param >= 0.0 && param <= 1.0 && ext.IsContained(m_endOfLineInNode, 2))
             {
             if (lowestParam <= 1.0 && param > lowestParam)
                 {
@@ -383,7 +383,7 @@ void MeshTraversalQueue::ComputeDirectionOfNextNode(MeshTraversalStep& start)
             if (lowestParam > 1.0) m_intersectionWithNextNode = 0;
             lowestParam = param;
             }
-        if (bsiDSegment3d_intersectDPlane3d(&seg, &m_endOfLineInNode, &param, &left) && param >= 0.0 && param <= 1.0 && ext.IsContained(m_endOfLineInNode, 2))
+        if (seg.Intersect(m_endOfLineInNode, param, left) && param >= 0.0 && param <= 1.0 && ext.IsContained(m_endOfLineInNode, 2))
             {
             if (lowestParam <= 1.0 && param > lowestParam)
                 {
@@ -393,7 +393,7 @@ void MeshTraversalQueue::ComputeDirectionOfNextNode(MeshTraversalStep& start)
             if (lowestParam > 1.0) m_intersectionWithNextNode = 1;
             lowestParam = param;
             }
-        if (bsiDSegment3d_intersectDPlane3d(&seg, &m_endOfLineInNode, &param, &nearPlane) && param >= 0.0 && param <= 1.0 && ext.IsContained(m_endOfLineInNode, 2))
+        if (seg.Intersect(m_endOfLineInNode, param, nearPlane) && param >= 0.0 && param <= 1.0 && ext.IsContained(m_endOfLineInNode, 2))
             {
             if (lowestParam <= 1.0 && param > lowestParam)
                 {
@@ -403,7 +403,7 @@ void MeshTraversalQueue::ComputeDirectionOfNextNode(MeshTraversalStep& start)
             if (lowestParam > 1.0) m_intersectionWithNextNode = 2;
             lowestParam = param;
             }
-        if (bsiDSegment3d_intersectDPlane3d(&seg, &m_endOfLineInNode, &param, &farPlane) && param >= 0.0 && param <= 1.0 && ext.IsContained(m_endOfLineInNode, 2))
+        if (seg.Intersect(m_endOfLineInNode, param, farPlane) && param >= 0.0 && param <= 1.0 && ext.IsContained(m_endOfLineInNode, 2))
             {
             if (lowestParam <= 1.0 && param > lowestParam)
                 {
@@ -521,6 +521,12 @@ bool MeshTraversalQueue::SetStartPoint(DPoint3d pt)
     {
     m_currentStep.startPoint = pt;
     return true;
+    }
+
+bool ScalableMeshDraping::_ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint)
+    {
+    assert(!"notImplemented");
+    return false;
     }
 
 bool ScalableMeshDraping::_DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector)
@@ -657,7 +663,7 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
         queue.Clear();
         findTriangleAlongRay = false;
         DPoint3d endPoint;
-        MTGNodeId edge;// = triangle;
+        MTGNodeId edge = -1;// = triangle;
         //begin greedy drape
         if (!s_civilDraping)
             {
@@ -715,7 +721,7 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
                 findTriangleAlongRay = true;
                 }
             queue.SetStartPoint(endPoint);
-			queue.SetLastEdge(edge);
+            queue.SetLastEdge(edge);
             //bool addedNodes = false;
             if (findTriangleAlongRay && startNode.linkedNode->ArePoints3d()) //again for 3d we need to check the top and bottom neighbors
                 {

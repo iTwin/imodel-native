@@ -6,7 +6,7 @@
 |       $Date: 2011/11/07 14:26:49 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -437,7 +437,7 @@ TransfoMatrix& TransfoMatrix::operator*= (const TransfoMatrix& rhs)
 TransfoMatrix::Status TransfoMatrix::Inverse ()
     {
     Transform transform(ToTransform3d(*this));
-    if (!bsiTransform_invert(&transform, &transform))
+    if (!transform.InverseOf(transform))
         return S_ERROR;
 
     *this = FromTransform3d(transform);
@@ -488,7 +488,7 @@ TransfoMatrix   operator*  (const TransfoMatrix&    lhs,
 GEOCOORDS_DLLE TransfoMatrix InverseOf (const TransfoMatrix&    matrix)
     {
     Transform transform(ToTransform3d(matrix));
-    if (!bsiTransform_invert(&transform, &transform))
+    if (!transform.InverseOf(transform))
         throw CustomException(L"Could not invert matrix");
 
     return FromTransform3d(transform);
@@ -502,7 +502,7 @@ GEOCOORDS_DLLE TransfoMatrix InverseOf (const TransfoMatrix&    matrix,
                                         TransfoMatrix::Status&  status)
     {
     Transform transform(ToTransform3d(matrix));
-    status = bsiTransform_invert(&transform, &transform) ? TransfoMatrix::S_SUCCESS : TransfoMatrix::S_ERROR;
+    transform.InverseOf(transform) ? TransfoMatrix::S_SUCCESS : TransfoMatrix::S_ERROR;
 
     return FromTransform3d(transform);
     }

@@ -37,7 +37,7 @@ void FaceToUVMap::AddFacetOnEdge(const int32_t* indices, const DPoint2d* uvs, co
     {
     std::array<int32_t, 2> idx = { 0, 1};
     std::sort(idx.begin(), idx.end(), [&edge] (const int32_t& a, const int32_t&b) { return edge[a] < edge[b]; });
-    std::array<DPoint2d, 3> sortedUvs;
+    std::array<DPoint2d, 3> sortedUvs = std::array<DPoint2d,3>();
     int32_t lastIdx = -1;
     for (size_t i = 0; i < 3; ++i)
         {
@@ -286,7 +286,7 @@ bool FaceToUVMap::SplitEdge(DPoint2d* newUvs, const int32_t newPt, const int32_t
     return false;
     }
 
-void TranslateToDTMIndices(int32_t* translatedIndices, const DPoint3d* vertices, const int32_t* indices, Bentley::TerrainModel::DTMPtr& tm, size_t nIndices)
+void TranslateToDTMIndices(int32_t* translatedIndices, const DPoint3d* vertices, const int32_t* indices, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& tm, size_t nIndices)
     {
     bmap<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-6, 0));
     for (size_t i = 0; i < (size_t)tm->GetBcDTM()->GetPointCount(); ++i)
@@ -333,7 +333,8 @@ void TranslateToDTMIndices(int32_t* translatedIndices, const DPoint3d* vertices,
 bool GridBasedIntersect(const bvector<DPoint3d>& pts, const DRange3d& ptsBox, const DRange3d& box)
     {
     /*if (ptsBox.IsStrictlyContainedXY(box))*/ return true;
-    bool intersect[25*25] = { false };
+#if 0
+bool intersect[25*25] = { false };
     for (auto& pt : pts)
         {
         size_t posX = floor(24 * (pt.x - ptsBox.low.x) / (ptsBox.high.x - ptsBox.low.x));
@@ -368,6 +369,7 @@ bool GridBasedIntersect(const bvector<DPoint3d>& pts, const DRange3d& ptsBox, co
         for (size_t y = 0; y < 25; ++y)
             if (x >= posBoxMinX && x <= posBoxMaxX && y >= posBoxMinY && y <= posBoxMaxY && intersect[x * 25 + y]) return true;
     return false;
+    #endif
     }
 
 void PrintPoints(std::string& s, vector<DPoint3d>& points)
@@ -392,7 +394,7 @@ void PrintDiff(std::string& s, DifferenceSet& d, const DPoint3d* oldVert)
             s2 = "FACE\n";
             write = false;
             }
-        DPoint3d pt;
+        DPoint3d pt = DPoint3d::From(0,0,0);
         assert(d.addedFaces[i] != 0);
         if (d.addedFaces[i] >= d.firstIndex && d.addedFaces[i] - d.firstIndex >= d.addedVertices.size())
             {
@@ -692,7 +694,7 @@ DifferenceSet Clipper::TriangulateAroundHole(const DPoint3d* triangle, const vec
     {
     DifferenceSet d;
     d.firstIndex = 4;
-    Bentley::TerrainModel::DTMPtr dtmPtr;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr;
     int status = CreateBcDTM(dtmPtr);
     BC_DTM_OBJ* dtmObjP(dtmPtr->GetBcDTM()->GetTinHandle());
     vector<DPoint3d> points;
@@ -794,7 +796,7 @@ DifferenceSet Clipper::Triangulate(const vector<DPoint3d>& pts, const vector<vec
         polys.push_back(vector<int32_t>());
         }
     d.addedVertices.insert(d.addedVertices.begin(), toAdd.begin(), toAdd.end());
-    Bentley::TerrainModel::DTMPtr dtmPtr;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr;
 
     for (auto& poly : polys)
         {
@@ -1033,7 +1035,7 @@ DifferenceSet Clipper::ClipNonConvexPolygon2D(const DPoint3d* poly, size_t polyS
     if (s_maxClipTime < totalTime)s_maxClipTime = totalTime;
     return d;
     }
-
+/*
 class DifferenceSetFromClip : public PolyfaceQuery::IClipToPlaneSetDiffSetOutput
     {
 
@@ -1101,39 +1103,7 @@ class DifferenceSetFromClip : public PolyfaceQuery::IClipToPlaneSetDiffSetOutput
     virtual StatusInt _ProcessRemovedFacet(const int* face, size_t nPoints)
         {
         assert(nPoints == 3);
-      /*  int32_t lastFacet = d.splitFaces.size() >0?d.splitFaces.back() : -1;
-        bool unsplit = true;
-        size_t n = 0;
-        vector<int32_t> extraFaces;
-        for (size_t j = d.addedFaces.size() - 3; j >= 0 && lastFacet != -1; j -= 3,++n)
-            {
-            if (lastFacet != d.splitFaces[d.splitFaces.size() - 1 - n]) break;
-            if (d.addedFaces[j] > 0 && d.addedFaces[j + 1] > 0 && d.addedFaces[j + 2] > 0)unsplit = false;
-            else extraFaces.push_back((int)j);
-            }
-        if (lastFacet != -1 && unsplit)
-            {
-            d.removedFaces.resize(d.removedFaces.size() - 3);
-            d.addedFaces.resize(d.addedFaces.size() - 3*n);
-            d.splitFaces.resize(d.splitFaces.size() - n);
-            }
-        else
-            {
-            bvector<int32_t> faces(d.addedFaces.size() - extraFaces.size() * 3);
-            bvector<int32_t> newSplitFaces(d.splitFaces.size() - extraFaces.size());
-            for (size_t j = 0; j < d.splitFaces.size(); ++j)
-                {
-                bool toAdd = true;
-                for (auto i : extraFaces) if (j == i / 3) toAdd = false;
-                if (toAdd)
-                    {
-                    faces.insert(faces.end(), &d.addedFaces[j * 3], &d.addedFaces[j * 3 + 3]);
-                    newSplitFaces.push_back(d.splitFaces[j]);
-                    }
-                }
-            d.addedFaces = faces;
-            d.splitFaces = newSplitFaces;
-            }*/
+
         std::string s;
         s += " N VERTICES " + std::to_string(d.firstIndex) +"\n";
         for (int32_t i = 0; i < (int)nPoints; ++i)
@@ -1144,7 +1114,7 @@ class DifferenceSetFromClip : public PolyfaceQuery::IClipToPlaneSetDiffSetOutput
         return SUCCESS;
         }
     };
-
+    */
     bool s_stop = false;
 
     class FaceLookupList
@@ -1260,7 +1230,7 @@ DifferenceSetWithTracking Clipper::ClipPolygon2DDTM(const DPoint3d* poly, size_t
         l.AddFace(m_indexBuffer[i], m_indexBuffer[i + 1], m_indexBuffer[i + 2], (int)i / 3);
         }
     vector<bool> vertexRemoved(m_nVertices, true);
-    Bentley::TerrainModel::DTMPtr dtmPtr;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr;
     MakeDTMFromIndexList(dtmPtr);
    // assert(status == SUCCESS);
     DTMUserTag    userTag = 0;
@@ -1296,7 +1266,7 @@ DifferenceSetWithTracking Clipper::ClipPolygon2DDTM(const DPoint3d* poly, size_t
                                                        (long)polySize);
 
    // assert(status == SUCCESS);
-    Bentley::TerrainModel::DTMMeshEnumeratorPtr en = Bentley::TerrainModel::DTMMeshEnumerator::Create(*dtmPtr->GetBcDTM());
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtmPtr->GetBcDTM());
 
     en->SetExcludeAllRegions();
     en->SetMaxTriangles(dtmPtr->GetBcDTM()->GetTrianglesCount() * 2);
@@ -1333,7 +1303,7 @@ DifferenceSetWithTracking Clipper::ClipPolygon2DDTM(const DPoint3d* poly, size_t
 
 bool s_printDTM = false;
 
-void Clipper::MakeDTMFromIndexList(Bentley::TerrainModel::DTMPtr& dtmPtr)
+void Clipper::MakeDTMFromIndexList(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr)
     {
     BC_DTM_OBJ* bcDtmP = 0;
     int dtmCreateStatus = bcdtmObject_createDtmObject(&bcDtmP);
@@ -1387,7 +1357,7 @@ void Clipper::MakeDTMFromIndexList(Bentley::TerrainModel::DTMPtr& dtmPtr)
     }
 
 
-void Clipper::TagUVsOnPolyface(PolyfaceHeaderPtr& poly, Bentley::TerrainModel::DTMPtr& dtmPtr, FaceToUVMap& faceToUVMap)
+void Clipper::TagUVsOnPolyface(PolyfaceHeaderPtr& poly, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr, FaceToUVMap& faceToUVMap)
     {
     vector<int32_t> indices(poly->GetPointIndexCount());
     memcpy(&indices[0], poly->GetPointIndexCP(), poly->GetPointIndexCount()*sizeof(int32_t));
@@ -1481,12 +1451,12 @@ void Clipper::TagUVsOnPolyface(PolyfaceHeaderPtr& poly, Bentley::TerrainModel::D
 
 bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons)
     {
-    Bentley::TerrainModel::DTMPtr dtmPtr;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr;
     MakeDTMFromIndexList(dtmPtr);
     return GetRegionsFromClipPolys(polyfaces, polygons, dtmPtr);
     }
 
-DTMInsertPointCallback Clipper::GetInsertPointCallback(FaceToUVMap& faceToUVMap, Bentley::TerrainModel::DTMPtr& ptr)
+DTMInsertPointCallback Clipper::GetInsertPointCallback(FaceToUVMap& faceToUVMap, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& ptr)
     {
     return[&faceToUVMap, &ptr] (int newPtNum, DPoint3dCR pt, double&elevation, bool onEdge, const int pts[])
         {
@@ -1546,7 +1516,7 @@ DTMInsertPointCallback Clipper::GetInsertPointCallback(FaceToUVMap& faceToUVMap,
 
 size_t s_nclip = 0;
 
-bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, Bentley::TerrainModel::DTMPtr& dtmPtr)
+bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr)
     {
     bool dbg = false;
     if (dbg)
@@ -1605,7 +1575,7 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
                                                   m_uvBuffer && m_uvIndices ? GetInsertPointCallback(originalFaceMap, dtmPtr) : nullptr);
         userTag++;
         }
-    Bentley::TerrainModel::DTMMeshEnumeratorPtr en = Bentley::TerrainModel::DTMMeshEnumerator::Create(*dtmPtr->GetBcDTM());
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtmPtr->GetBcDTM());
     if (m_uvBuffer && m_uvIndices)en->SetUseRealPointIndexes(true);
     en->SetExcludeAllRegions();
     en->SetMaxTriangles(dtmPtr->GetBcDTM()->GetTrianglesCount() * 2);
@@ -1719,7 +1689,7 @@ DifferenceSet Clipper::ClipSeveralPolygons(bvector<bvector<DPoint3d>>& polygons)
         l.AddFace(m_indexBuffer[i], m_indexBuffer[i + 1], m_indexBuffer[i + 2], (int)i / 3);
         }
     vector<bool> vertexRemoved(m_nVertices, true);
-    Bentley::TerrainModel::DTMPtr dtmPtr;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr;
     MakeDTMFromIndexList(dtmPtr);
     DTMUserTag    userTag = 0;
     DTMFeatureId* textureRegionIdsP = 0;
@@ -1737,7 +1707,7 @@ DifferenceSet Clipper::ClipSeveralPolygons(bvector<bvector<DPoint3d>>& polygons)
                                                   (long)poly.size());
         userTag++;
         }
-    Bentley::TerrainModel::DTMMeshEnumeratorPtr en = Bentley::TerrainModel::DTMMeshEnumerator::Create(*dtmPtr->GetBcDTM());
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtmPtr->GetBcDTM());
 
     en->SetExcludeAllRegions();
     en->SetMaxTriangles(dtmPtr->GetBcDTM()->GetTrianglesCount() * 2);

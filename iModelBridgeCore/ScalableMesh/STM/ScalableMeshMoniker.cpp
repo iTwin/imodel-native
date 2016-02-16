@@ -209,7 +209,7 @@ void ILocalFileMonikerFactory::Unregister (CreatorID id)
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ILocalFileMonikerPtr ILocalFileMonikerFactory::Create  (const Bentley::DgnPlatform::MrDtmDgnDocumentMonikerPtr&  msMoniker) const
+ILocalFileMonikerPtr ILocalFileMonikerFactory::Create  (const BENTLEY_NAMESPACE_NAME::DgnPlatform::MrDtmDgnDocumentMonikerPtr&  msMoniker) const
     {
     if (0 == m_implP->m_creatorP)
         return 0;
@@ -347,7 +347,7 @@ void IMonikerFactory::Unregister (BinStreamCreatorID id)
 IMonikerPtr IMonikerFactory::Create(Import::SourceDataSQLite&      sourceData,
     const DocumentEnv&  env)
 {
-    const UInt typeField = sourceData.GetMonikerType();
+    const uint32_t typeField = sourceData.GetMonikerType();
     if (typeField >= DTM_SOURCE_MONIKER_QTY)
         return 0;
 

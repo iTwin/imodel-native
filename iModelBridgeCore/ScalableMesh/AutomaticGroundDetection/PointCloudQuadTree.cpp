@@ -339,7 +339,7 @@ void PointCloudQuadTree::excludeOutlierSeeds(std::vector<QuadSeedPtr>& seeds)
             DPoint3d* outliers = nullptr;
             size_t nOutliers = 0;
             size_t nInliers = 0;
-            Bentley::PCLUtility::IRansacUtility::GetOutliersFromBestPlaneFit(outliers, inliers, nOutliers, nInliers, &pointsAroundSeedNode[0], pointsAroundSeedNode.size(), 2 / avgDensity);
+            BENTLEY_NAMESPACE_NAME::PCLUtility::IRansacUtility::GetOutliersFromBestPlaneFit(outliers, inliers, nOutliers, nInliers, &pointsAroundSeedNode[0], pointsAroundSeedNode.size(), 2 / avgDensity);
             percentageOfInliers[it] = (float)nInliers / pointsAroundSeedNode.size();
             for (size_t i = 0; i < nOutliers && (float)nInliers / pointsAroundSeedNode.size() > SeedExclusionParams::thresholdOfRansacInliersForExclusion +
                                                         SeedExclusionParams::trustworthinessCorrectionFactorForInlierThreshold*seed->trustworthiness; i++)
@@ -816,7 +816,7 @@ void PointCloudQuadNode::drawNode(EditElementHandleR elHandle)
         if(color > 246)
             color=246;
         uint32_t weight = m_tree->getMaxDepth()-m_depth;
-        Int32 style = 0;
+        int32_t style = 0;
         mdlElement_setSymbology(lineElement.GetElementP(), &color, &weight, &style);
         lineElement.AddToModel();
         }

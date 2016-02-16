@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/PointCloudClassification.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma  once
@@ -20,7 +20,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 
 class ClassificationChannelHandler;
-typedef Bentley::RefCountedPtr<ClassificationChannelHandler>   ClassificationChannelHandlerPtr;
+typedef BENTLEY_NAMESPACE_NAME::RefCountedPtr<ClassificationChannelHandler>   ClassificationChannelHandlerPtr;
 
 typedef std::map<WString, ClassificationChannelHandlerPtr> ClassificationChannelHandlerMap;
 /*---------------------------------------------------------------------------------**//**
@@ -66,7 +66,7 @@ class ClassificationChannelManager : public IChannelFileListener
 class ClassificationChannelHandler :    public IPointCloudChannelQueryHandler,
                                         public IPointCloudChannelDisplayHandler,
                                         public PointCloudChannelHandler,
-                                        public Bentley::RefCountedBase
+                                        public BENTLEY_NAMESPACE_NAME::RefCountedBase
     {
     ClassificationChannelHandler (ElementHandleCR eh, IPointCloudChannelPtr channelPtr=NULL);
 

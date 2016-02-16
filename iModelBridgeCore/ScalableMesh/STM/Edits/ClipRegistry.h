@@ -21,7 +21,8 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
-typedef IDTMFile::Extent3d64f        YProtPtExtentType;
+//typedef IDTMFile::Extent3d64f        YProtPtExtentType;
+typedef DRange3d       YProtPtExtentType;
 class ClipRegistry : public HFCShareableObject<ClipRegistry>
     {
     //HFCPtr<SMPointTaggedTileStore<DPoint3d, YProtPtExtentType>> m_clipStore;

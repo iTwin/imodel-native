@@ -6,7 +6,7 @@
 |       $Date: 2011/12/01 18:51:38 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -83,7 +83,7 @@ public:
     /*
      * Default is to import all layers. Use this only to import only specific layers.
      */
-    BENTLEYSTM_EXPORT void                            AddImportedLayer           (UInt                                        layerID);
+    BENTLEYSTM_EXPORT void                            AddImportedLayer           (uint32_t                                        layerID);
 
 
 

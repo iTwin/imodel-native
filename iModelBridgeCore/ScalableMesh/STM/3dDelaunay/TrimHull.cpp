@@ -138,7 +138,7 @@ const int pointsToEdges[4][4] = { { -1, 0, 2, 3 },
 { 2, 1, -1, 5 },
 { 3, 4, 5, -1 } };
 
-//using Bentley::TerrainModel;
+//using BENTLEY_NAMESPACE_NAME::TerrainModel;
 struct pointLess
     {
     inline bool operator() (const DPoint3d& a, const DPoint3d& b) const
@@ -250,8 +250,8 @@ struct TrimChecker
             for (int i = 0; i < numPoints; i++)
                 m_ptMapper[points[i]] = i;
 
-            Bentley::TerrainModel::BcDTMPtr dtm;
-            dtm = Bentley::TerrainModel::BcDTM::Create ();
+            BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr dtm;
+            dtm = BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTM::Create ();
 
             dtm->SetTriangulationParameters (0.001, 0.001, 0, 0);
             dtm->AddPoints (points, numPoints);
@@ -272,8 +272,8 @@ struct TrimChecker
             InitFromPly (FROMPLY);
             return;
 #endif
-            Bentley::TerrainModel::BcDTMPtr dtm;
-            dtm = Bentley::TerrainModel::BcDTM::Create ();
+            BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr dtm;
+            dtm = BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTM::Create ();
 
             dtm->SetTriangulationParameters (0.001, 0.001, 0, 0);
             dtm->AddPoints (meshData.m_points.data (), meshData.m_ignorePtsAfterNum); // == -1 ? meshData.m_infPtNum : min (meshData.m_ignorePtsAfterNum, meshData.m_infPtNum));
@@ -371,7 +371,7 @@ struct TrimChecker
             size_t indexCount = numMeshFaces;
             size_t pointCount = numMeshPts;
             DPoint3dCP pPoint = meshPtsP;
-            int32_t const* pPointIndex = (Int32*)meshFacesP;
+            int32_t const* pPointIndex = (int32_t*)meshFacesP;
             std::vector<int> localPtMapper;
             localPtMapper.resize (numMeshPts);
 
@@ -2347,8 +2347,8 @@ inline int TrimHull::getIndexViaTriangulation (bvector<PointOnEdge>& pts, int ea
         t2.InverseOf (t);
         }
 
-    Bentley::TerrainModel::BcDTMPtr dtm;
-    dtm = Bentley::TerrainModel::BcDTM::Create ((int)pts.size () + 4, 10);
+    BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr dtm;
+    dtm = BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTM::Create ((int)pts.size () + 4, 10);
     dtm->SetTriangulationParameters (0, 0, 0, 0);
 
     DPoint3d p[4];
@@ -7208,7 +7208,7 @@ struct QuickPointFinder
 NewTrim::NewTrim (DPoint3dP points, int numPoints) : m_points (points), m_numPoints (numPoints)
     {
     m_hasPoint.resize (m_numPoints, false);
-    //Bentley::PCLUtility::INormalCalculator::InitKdTree (&handle, points, numPoints);
+    //BENTLEY_NAMESPACE_NAME::PCLUtility::INormalCalculator::InitKdTree (&handle, points, numPoints);
 
     m_qp = new QuickPointFinder (m_points, m_numPoints);
     }
@@ -7216,7 +7216,7 @@ NewTrim::NewTrim (DPoint3dP points, int numPoints) : m_points (points), m_numPoi
 NewTrim::~NewTrim ()
     {
     delete m_qp;
-    //Bentley::PCLUtility::INormalCalculator::ReleaseKdTree (handle);
+    //BENTLEY_NAMESPACE_NAME::PCLUtility::INormalCalculator::ReleaseKdTree (handle);
 
     }
 int NewTrim::FindPoint (int ea, int eb, int ec)
@@ -7440,7 +7440,7 @@ void NewTrim::Trim ()
         //point[0] = p.x;
         //point[1] = p.y;
         //point[2] = p.z;
-        //Bentley::PCLUtility::INormalCalculator::RadiusSearch (ret.data (), &size, handle, point, radius, max_nn);
+        //BENTLEY_NAMESPACE_NAME::PCLUtility::INormalCalculator::RadiusSearch (ret.data (), &size, handle, point, radius, max_nn);
         //ret.resize (size);
         }
 

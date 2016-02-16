@@ -23,7 +23,10 @@
 #include <Bentley/RefCounted.h>
 #include <ScalableMesh/Import/DataSQLite.h>
 
-namespace Bentley { namespace DgnPlatform {
+namespace BENTLEY_NAMESPACE_NAME
+    {
+    namespace DgnPlatform
+        {
 
 struct                                  DgnDocumentMoniker;
 typedef RefCountedPtr<DgnDocumentMoniker>
@@ -131,7 +134,7 @@ private:
                                         ILocalFileMonikerCreator       (const ILocalFileMonikerCreator&);
     ILocalFileMonikerCreator&           operator=                      (const ILocalFileMonikerCreator&);
 
-    virtual ILocalFileMonikerPtr        _Create                        (const Bentley::DgnPlatform::MrDtmDgnDocumentMonikerPtr&         
+    virtual ILocalFileMonikerPtr        _Create                        (const BENTLEY_NAMESPACE_NAME::DgnPlatform::MrDtmDgnDocumentMonikerPtr&         
                                                                                                             msMoniker,
                                                                         StatusInt&                          status) const = 0;
 
@@ -173,7 +176,7 @@ public:
     BENTLEYSTM_EXPORT void                    Unregister                     (CreatorID                           id);
 
 
-    BENTLEYSTM_EXPORT ILocalFileMonikerPtr    Create                         (const Bentley::DgnPlatform::MrDtmDgnDocumentMonikerPtr&         
+    BENTLEYSTM_EXPORT ILocalFileMonikerPtr    Create                         (const BENTLEY_NAMESPACE_NAME::DgnPlatform::MrDtmDgnDocumentMonikerPtr&         
                                                                                                             msMoniker) const;
 
     BENTLEYSTM_EXPORT ILocalFileMonikerPtr    Create                         (const WChar*                      fullPath) const;

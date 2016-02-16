@@ -35,16 +35,16 @@
 
 
 #ifndef BEGIN_BENTLEY_SCALABLEMESH_FOUNDATIONS_NAMESPACE
-    #define BEGIN_BENTLEY_SCALABLEMESH_FOUNDATIONS_NAMESPACE namespace Bentley { namespace ScalableMesh { namespace Foundations {
+#define BEGIN_BENTLEY_SCALABLEMESH_FOUNDATIONS_NAMESPACE namespace BENTLEY_NAMESPACE_NAME { namespace ScalableMesh { namespace Foundations {
     #define END_BENTLEY_SCALABLEMESH_FOUNDATIONS_NAMESPACE   }}}
-    #define USING_NAMESPACE_BENTLEY_SCALABLEMESH_FOUNDATIONS using namespace Bentley::ScalableMesh::Foundations;
+    #define USING_NAMESPACE_BENTLEY_SCALABLEMESH_FOUNDATIONS using namespace BENTLEY_NAMESPACE_NAME::ScalableMesh::Foundations;
 #endif //!BEGIN_BENTLEY_SCALABLEMESH_FOUNDATIONS_NAMESPACE
 
 
 #ifndef BEGIN_BENTLEY_SCALABLEMESH_FOUNDATIONS_ITERATOR_NAMESPACE
     #define BEGIN_BENTLEY_SCALABLEMESH_FOUNDATIONS_ITERATOR_NAMESPACE BEGIN_BENTLEY_SCALABLEMESH_FOUNDATIONS_NAMESPACE namespace Iterator {
     #define END_BENTLEY_SCALABLEMESH_FOUNDATIONS_ITERATOR_NAMESPACE   END_BENTLEY_SCALABLEMESH_FOUNDATIONS_NAMESPACE }
-    #define USING_NAMESPACE_BENTLEY_SCALABLEMESH_FOUNDATIONS_ITERATOR using namespace Bentley::ScalableMesh::Foundations::Iterator;
+    #define USING_NAMESPACE_BENTLEY_SCALABLEMESH_FOUNDATIONS_ITERATOR using namespace BENTLEY_NAMESPACE_NAME::ScalableMesh::Foundations::Iterator;
 #endif //!BEGIN_BENTLEY_SCALABLEMESH_FOUNDATIONS_ITERATOR_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -68,7 +68,7 @@
 BEGIN_BENTLEY_SCALABLEMESH_FOUNDATIONS_NAMESPACE
 
 // Make this namespace synonymous to Bentley. This has the same effect as if this namespace was part of Bentley.
-using namespace Bentley; 
+using namespace BENTLEY_NAMESPACE_NAME;
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
@@ -77,7 +77,7 @@ using namespace Bentley;
 template <typename T>
 struct ShareableObjectTypeTrait 
     {
-    class RefCountedBase : public Bentley::IRefCounted
+    class RefCountedBase : public BENTLEY_NAMESPACE_NAME::IRefCounted
         {
     private:
         mutable uint32_t  m_refCount;
@@ -110,9 +110,9 @@ struct ShareableObjectTypeTrait
     };
 
 template <typename T>
-struct SharedPtrTypeTrait {typedef Bentley::RefCountedPtr<T> type;};
+struct SharedPtrTypeTrait {typedef RefCountedPtr<T> type;};
 template <typename T>
-struct SharedPtrTypeTrait<const T> {typedef Bentley::RefCountedPtr<T> type;};
+struct SharedPtrTypeTrait<const T> {typedef RefCountedPtr<T> type;};
 
 
 
