@@ -8,6 +8,7 @@
 #include "..\ThreeMxSchemaInternal.h"
 
 #include    <windows.h>
+#include    <regex>
 
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -62,6 +63,50 @@ double MRMeshUtil::CalculateResolutionRatio ()
         return 100.0;
 
     return (100.0 - (double) s_memoryThresholdPercent) / (100.0 - (double) statex.dwMemoryLoad);
+    }
+
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                              Nicholas.Woodfield     01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus MRMeshUtil::ParseTileId(std::string const& name, uint32_t& tileX, uint32_t& tileY)
+    {
+    if(name.empty())
+        return ERROR;
+      
+    std::regex pattern("([0-9]*)");
+    std::sregex_token_iterator iter(name.begin(), name.end(), pattern);
+    std::sregex_token_iterator end;
+
+    uint32_t x = 0, y = 0;
+    uint32_t count = 0;
+
+    while (count < 2 && iter != end)
+        {
+        std::string substring = iter->str();
+        if (!substring.empty())
+            {
+            int val = std::stoi(substring);
+
+            if (count == 0)
+                x = (uint32_t)val;
+            else
+                y = (uint32_t)val;
+
+            count++;
+            }
+
+        iter++;
+        }
+
+    if (count == 2)
+        {
+        tileX = x;
+        tileY = y;
+        
+        return SUCCESS;
+        }
+
+    return ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**

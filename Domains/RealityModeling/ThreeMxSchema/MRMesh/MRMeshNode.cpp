@@ -658,6 +658,85 @@ void MRMeshNode::FlushStale (uint64_t staleTime)
         }
     }
 
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                Nicholas.Woodfield     01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void MRMeshNode::GetTiles(GetTileCallback callback, double resolution)
+    {
+    bool isUnderMaximumSize = resolution < m_info.m_dMax;
+    bool hasNoDisplayableChildren = true;
+
+    //Some levels of detail have multiple files and thus we get a node with multiple children that all correspond to the same tile...need to handle getting that geometry and returning it all in a single list
+    //rather than separate tiles
+    if (!m_primary && m_children.size() > 1)
+        {
+        hasNoDisplayableChildren = true;
+        }
+    else
+        {
+        for (bvector <MRMeshNodePtr>::const_iterator child = m_children.begin(); child != m_children.end(); child++)
+            {
+            if (resolution >= (*child)->m_info.m_dMax && !(*child)->m_info.m_children.empty())
+                {
+                //Load children up front, if we have one that has meshes keep loading 
+                (*child)->Load();
+                if ((*child)->GetMeshCount() > 0)
+                    hasNoDisplayableChildren = false;
+                }
+            }
+        }
+
+    if(m_meshes.size() > 0 && !m_info.m_children.empty() && (isUnderMaximumSize || hasNoDisplayableChildren))
+        {
+        uint32_t tileX, tileY;
+        if (MRMeshUtil::ParseTileId(m_info.m_children[0], tileX, tileY) == SUCCESS)
+            {
+            bvector<bpair<PolyfaceHeaderPtr, int>> geom;
+            geom.reserve(m_meshes.size());
+
+            bvector<bpair<Byte*, Point2d>> textures;
+            textures.reserve(m_textures.size());
+
+            for (bvector<MRMeshGeometryPtr>::const_iterator mesh = m_meshes.begin(); mesh != m_meshes.end(); mesh++)
+                {
+                PolyfaceHeaderCP polyface = (*mesh)->GetPolyfaceCP();
+                PolyfaceHeaderPtr copy = PolyfaceHeader::CreateVariableSizeIndexed();
+                copy->CopyFrom(*polyface);
+
+                int texId = (*mesh)->GetTextureId();
+
+                geom.push_back(bpair<PolyfaceHeaderPtr, int>(copy, texId));
+                }
+
+            for (bvector<MRMeshTexturePtr>::const_iterator tex = m_textures.begin(); tex != m_textures.end(); tex++)
+                {
+                ByteCP texData = (*tex)->GetData();
+                Point2d size = (*tex)->GetSize();
+
+                Byte* copy = new Byte[size.x * size.y * 4];
+                memcpy(copy, texData, size.x * size.y * 4);
+
+                textures.push_back(bpair<Byte*, Point2d>(copy, size));
+                }
+
+            callback(tileX, tileY, geom, textures);
+
+            geom.clear();
+            textures.clear();
+            }
+        }
+    else
+        {
+        for (bvector <MRMeshNodePtr>::const_iterator child = m_children.begin(); child != m_children.end(); child++)
+            {
+            (*child)->GetTiles(callback, resolution);
+            }
+        }
+
+    //Clear all non-primary nodes as we go so we don't load too much and potentially run out of memory
+    if (!m_primary)
+        Clear();
+    }
 
 
 
