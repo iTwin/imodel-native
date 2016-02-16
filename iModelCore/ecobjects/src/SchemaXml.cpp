@@ -684,27 +684,27 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
         }
 
     uint32_t versionMajor = DEFAULT_VERSION_MAJOR;
-    uint32_t versionMiddle = DEFAULT_VERSION_MIDDLE;
+    uint32_t versionWrite = DEFAULT_VERSION_WRITE;
     uint32_t versionMinor = DEFAULT_VERSION_MINOR;
 
     // OPTIONAL attributes - If these attributes exist they do not need to be valid.  We will ignore any errors setting them and use default values.
     // NEEDSWORK This is due to the current implementation in managed ECObjects.  We should reconsider whether it is the correct behavior.
     Utf8String     versionString;
     if ((BEXML_Success != schemaNode->GetAttributeStringValue(versionString, SCHEMA_VERSION_ATTRIBUTE)) ||
-        (ECObjectsStatus::Success != SchemaKey::ParseVersionString(versionMajor, versionMiddle, versionMinor, versionString.c_str())))
+        (ECObjectsStatus::Success != SchemaKey::ParseVersionString(versionMajor, versionWrite, versionMinor, versionString.c_str())))
         {
         LOG.warningv("Invalid version attribute has been ignored while reading ECSchema '%s'.  The default version number %s has been applied.",
-                     schemaName.c_str(), SchemaKey::FormatSchemaVersion(versionMajor, versionMiddle, versionMinor).c_str());
+                     schemaName.c_str(), SchemaKey::FormatSchemaVersion(versionMajor, versionWrite, versionMinor).c_str());
         }
 
-    LOG.debugv("Reading ECSchema %s", SchemaKey::FormatFullSchemaName(schemaName.c_str(), versionMajor, versionMiddle, versionMinor).c_str());
+    LOG.debugv("Reading ECSchema %s", SchemaKey::FormatFullSchemaName(schemaName.c_str(), versionMajor, versionWrite, versionMinor).c_str());
 
     //Using the old overload of CreateSchema as we don't have the namespace prefix at this point.
     ECObjectsStatus createStatus = ECSchema::CreateSchema(schemaOut, schemaName, versionMajor, versionMinor);
     if (ECObjectsStatus::Success != createStatus)
         return SchemaReadStatus::InvalidECSchemaXml;
 
-    if(schemaOut->SetVersionMiddle(versionMiddle) != ECObjectsStatus::Success)
+    if(schemaOut->SetVersionWrite(versionWrite) != ECObjectsStatus::Success)
         return SchemaReadStatus::InvalidECSchemaXml;
 
     schemaOut->m_key.m_checkSum = checkSum;

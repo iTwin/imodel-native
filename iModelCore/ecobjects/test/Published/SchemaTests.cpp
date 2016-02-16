@@ -468,14 +468,14 @@ TEST_F (SchemaSearchTest, FindSchemaByName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Raimondas.Rimkus 02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-static  void    ValidateSchemaNameParsing (Utf8CP fullName, bool expectFailure, Utf8CP expectName, uint32_t expectMajor, uint32_t expectMiddle, uint32_t expectMinor)
+static  void    ValidateSchemaNameParsing (Utf8CP fullName, bool expectFailure, Utf8CP expectName, uint32_t expectMajor, uint32_t expectWrite, uint32_t expectMinor)
     {
     Utf8String    shortName;
     uint32_t   versionMajor;
-    uint32_t   versionMiddle;
+    uint32_t   versionWrite;
     uint32_t   versionMinor;
 
-    ECObjectsStatus status = ECSchema::ParseSchemaFullName (shortName, versionMajor, versionMiddle, versionMinor, fullName);
+    ECObjectsStatus status = ECSchema::ParseSchemaFullName (shortName, versionMajor, versionWrite, versionMinor, fullName);
 
     if (expectFailure)
         {
@@ -487,7 +487,7 @@ static  void    ValidateSchemaNameParsing (Utf8CP fullName, bool expectFailure, 
 
     EXPECT_STREQ (shortName.c_str (), expectName);
     EXPECT_EQ (versionMajor, expectMajor);
-    EXPECT_EQ(versionMiddle, expectMiddle);
+    EXPECT_EQ(versionWrite, expectWrite);
     EXPECT_EQ (versionMinor, expectMinor);
     }
 
