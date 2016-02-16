@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/RasterHandler.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RasterSchemaInternal.h>
@@ -44,7 +44,7 @@ RasterQuadTreeP RasterModel::GetTree()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-void RasterModel::_AddGraphicsToScene (ViewContextR context)
+void RasterModel::_AddGraphicsToScene(SceneContextR context)
     {
     RasterQuadTreeP pTree = GetTree();
     if(NULL != pTree)

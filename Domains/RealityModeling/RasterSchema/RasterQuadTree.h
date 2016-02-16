@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/RasterQuadTree.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -118,7 +118,7 @@ public:
 
     Dgn::DgnDbR GetDgnDb() {return m_dgnDb;}
 
-    void Draw (Dgn::ViewContextR context);
+    void Draw (Dgn::SceneContextR context);
 
     //! Some format look best when increased quality is used. ex. WMS. Or we just want to display faster. Full quality is 1.0.
     void SetVisibleQualityFactor(double factor) {m_visibleQualityFactor=factor;}
