@@ -726,10 +726,26 @@ ECObjectsStatus ECSchema::RenameClass (ECClassR ecClass, Utf8CP newName)
     return ECObjectsStatus::Success != renameStatus ? renameStatus : addStatus;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+void ECSchema::FindUniqueClassName(Utf8StringR newName, Utf8CP originalName)
+    {
+    Utf8PrintfString testName("%s_", originalName);
+    while (1)
+        {
+        if (nullptr == GetClassP(testName.c_str()))
+            break;
+        testName.append("_");
+        }
+    newName = testName;
+    }
+
+
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::AddClass(ECClassP pClass)
+ECObjectsStatus ECSchema::AddClass(ECClassP pClass, bool resolveConflicts)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
@@ -745,8 +761,15 @@ ECObjectsStatus ECSchema::AddClass(ECClassP pClass)
     resultPair = m_classMap.insert (bpair<Utf8CP, ECClassP> (pClass->GetName().c_str(), pClass));
     if (resultPair.second == false)
         {
-        LOG.errorv("Cannot create class '%s' because it already exists in the schema", pClass->GetName().c_str());
-        return ECObjectsStatus::NamedItemAlreadyExists;
+        if (!resolveConflicts)
+            {
+            LOG.errorv("Cannot create class '%s' because it already exists in the schema %s", pClass->GetName().c_str(), GetName().c_str());
+            return ECObjectsStatus::NamedItemAlreadyExists;
+            }
+        Utf8String uniqueName;
+        FindUniqueClassName(uniqueName, pClass->GetName().c_str());
+        pClass->SetName(uniqueName);
+        return AddClass(pClass, resolveConflicts);
         }
     //DebugDump(); wprintf(L"\n");
     return ECObjectsStatus::Success;

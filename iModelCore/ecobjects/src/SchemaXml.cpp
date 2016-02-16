@@ -22,6 +22,7 @@ struct SchemaXmlReaderImpl
     protected:
         BeXmlDomR               m_xmlDom;
         ECSchemaReadContextR    m_schemaContext;
+        ECSchemaPtr m_conversionSchema;
 
         bool IsOpenPlantPidCircularReferenceSpecialCase(Utf8String& referencedECSchemaName, Utf8String& referencingECSchemaFullName);
         virtual bool ReadClassNode(ECClassP &ecClass, BeXmlNodeR classNode, ECSchemaPtr& schemaOut) = 0;
@@ -48,7 +49,6 @@ struct SchemaXmlReaderImpl
 struct SchemaXmlReader2 : SchemaXmlReaderImpl
     {
     private:
-        ECSchemaPtr m_conversionSchema;
         void DetermineClassTypeAndModifier(Utf8StringCR className, ECSchemaPtr schemaOut, ECClassType& classType, ECClassModifier& classModifier, bool isCA, bool isStruct, bool isDomain, bool isSealed) const;
         ECClassModifier DetermineRelationshipClassModifier(Utf8StringCR className, bool isDomain) const;
         bool DropClassAttributeDefined(Utf8StringCR className) const;
@@ -214,6 +214,9 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadSchemaReferencesFromXml(ECSchemaPtr& s
 SchemaReadStatus SchemaXmlReaderImpl::ReadClassStubsFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, ClassDeserializationVector& classes)
     {
     SchemaReadStatus status = SchemaReadStatus::Success;
+    bool resolveConflicts = false;
+    if (m_conversionSchema.IsValid())
+        resolveConflicts = m_conversionSchema->IsDefined("ResolveClassNameConflicts");
 
     // Create ECClass Stubs (no properties)
     for (BeXmlNodeP classNode = schemaNode.GetFirstChild(); NULL != classNode; classNode = classNode->GetNextSibling())
@@ -237,7 +240,7 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadClassStubsFromXml(ECSchemaPtr& schemaO
         else
             LOG.tracev("    Created ECEntityClass Stub: %s", ecClass->GetName().c_str());
 
-        ECObjectsStatus addStatus = schemaOut->AddClass(ecClass);
+        ECObjectsStatus addStatus = schemaOut->AddClass(ecClass, resolveConflicts);
 
         if (addStatus == ECObjectsStatus::NamedItemAlreadyExists)
             {
