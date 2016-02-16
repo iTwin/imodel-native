@@ -17117,7 +17117,9 @@ static int statConnect(
   int iDb;
 
   if( argc>=4 ){
-    iDb = sqlite3FindDbName(db, argv[3]);
+    Token nm;
+    sqlite3TokenInit(&nm, (char*)argv[3]);
+    iDb = sqlite3FindDb(db, &nm);
     if( iDb<0 ){
       *pzErr = sqlite3_mprintf("no such database: %s", argv[3]);
       return SQLITE_ERROR;
@@ -19286,9 +19288,13 @@ SQLITE_API void SQLITE_STDCALL sqlite3session_delete(sqlite3_session *pSession){
   ** database handle. Hold the db mutex while doing so.  */
   sqlite3_mutex_enter(sqlite3_db_mutex(db));
   pHead = (sqlite3_session*)sqlite3_preupdate_hook(db, 0, 0);
-  for(pp=&pHead; (*pp)!=pSession; pp=&((*pp)->pNext));
-  *pp = (*pp)->pNext;
-  if( pHead ) sqlite3_preupdate_hook(db, xPreUpdate, (void *)pHead);
+  for(pp=&pHead; ALWAYS((*pp)!=0); pp=&((*pp)->pNext)){
+    if( (*pp)==pSession ){
+      *pp = (*pp)->pNext;
+      if( pHead ) sqlite3_preupdate_hook(db, xPreUpdate, (void*)pHead);
+      break;
+    }
+  }
   sqlite3_mutex_leave(sqlite3_db_mutex(db));
 
   /* Delete all attached table objects. And the contents of their 
@@ -22209,7 +22215,11 @@ SQLITE_EXTENSION_INIT1
 /* #include <stdlib.h> */
 /* #include <stdarg.h> */
 
-#define UNUSED_PARAM(X)  (void)(X)
+/* Mark a function parameter as unused, to suppress nuisance compiler
+** warnings. */
+#ifndef UNUSED_PARAM
+# define UNUSED_PARAM(X)  (void)(X)
+#endif
 
 #ifndef LARGEST_INT64
 # define LARGEST_INT64  (0xffffffff|(((sqlite3_int64)0x7fffffff)<<32))
@@ -22454,10 +22464,33 @@ static void jsonAppendString(JsonString *p, const char *zIn, u32 N){
   if( (N+p->nUsed+2 >= p->nAlloc) && jsonGrow(p,N+2)!=0 ) return;
   p->zBuf[p->nUsed++] = '"';
   for(i=0; i<N; i++){
-    char c = zIn[i];
+    unsigned char c = ((unsigned const char*)zIn)[i];
     if( c=='"' || c=='\\' ){
+      json_simple_escape:
       if( (p->nUsed+N+3-i > p->nAlloc) && jsonGrow(p,N+3-i)!=0 ) return;
       p->zBuf[p->nUsed++] = '\\';
+    }else if( c<=0x1f ){
+      static const char aSpecial[] = {
+         0, 0, 0, 0, 0, 0, 0, 0, 'b', 't', 'n', 0, 'f', 'r', 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0,   0,   0,   0, 0,   0,   0, 0, 0
+      };
+      assert( sizeof(aSpecial)==32 );
+      assert( aSpecial['\b']=='b' );
+      assert( aSpecial['\f']=='f' );
+      assert( aSpecial['\n']=='n' );
+      assert( aSpecial['\r']=='r' );
+      assert( aSpecial['\t']=='t' );
+      if( aSpecial[c] ){
+        c = aSpecial[c];
+        goto json_simple_escape;
+      }
+      if( (p->nUsed+N+7+i > p->nAlloc) && jsonGrow(p,N+7-i)!=0 ) return;
+      p->zBuf[p->nUsed++] = '\\';
+      p->zBuf[p->nUsed++] = 'u';
+      p->zBuf[p->nUsed++] = '0';
+      p->zBuf[p->nUsed++] = '0';
+      p->zBuf[p->nUsed++] = '0' + (c>>4);
+      c = "0123456789abcdef"[c&0xf];
     }
     p->zBuf[p->nUsed++] = c;
   }
@@ -22498,7 +22531,7 @@ static void jsonAppendValue(
     default: {
       if( p->bErr==0 ){
         sqlite3_result_error(p->pCtx, "JSON cannot hold BLOB values", -1);
-        p->bErr = 1;
+        p->bErr = 2;
         jsonReset(p);
       }
       break;
@@ -23707,6 +23740,7 @@ static void jsonArrayStep(
   sqlite3_value **argv
 ){
   JsonString *pStr;
+  UNUSED_PARAM(argc);
   pStr = (JsonString*)sqlite3_aggregate_context(ctx, sizeof(*pStr));
   if( pStr ){
     if( pStr->zBuf==0 ){
@@ -23726,7 +23760,7 @@ static void jsonArrayFinal(sqlite3_context *ctx){
     pStr->pCtx = ctx;
     jsonAppendChar(pStr, ']');
     if( pStr->bErr ){
-      sqlite3_result_error_nomem(ctx);
+      if( pStr->bErr==1 ) sqlite3_result_error_nomem(ctx);
       assert( pStr->bStatic );
     }else{
       sqlite3_result_text(ctx, pStr->zBuf, pStr->nUsed,
@@ -23752,6 +23786,7 @@ static void jsonObjectStep(
   JsonString *pStr;
   const char *z;
   u32 n;
+  UNUSED_PARAM(argc);
   pStr = (JsonString*)sqlite3_aggregate_context(ctx, sizeof(*pStr));
   if( pStr ){
     if( pStr->zBuf==0 ){
@@ -23774,7 +23809,7 @@ static void jsonObjectFinal(sqlite3_context *ctx){
   if( pStr ){
     jsonAppendChar(pStr, '}');
     if( pStr->bErr ){
-      sqlite3_result_error_nomem(ctx);
+      if( pStr->bErr==0 ) sqlite3_result_error_nomem(ctx);
       assert( pStr->bStatic );
     }else{
       sqlite3_result_text(ctx, pStr->zBuf, pStr->nUsed,
