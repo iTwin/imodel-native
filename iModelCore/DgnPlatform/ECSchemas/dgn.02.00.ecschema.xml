@@ -741,7 +741,11 @@
             <Class class="Element"/>
         </Source>
         <Target cardinality="(0,N)" roleLabel="is on N elements" polymorphic="true">
-            <Class class="Element" />
+            <Class class="Element">
+                <Key>
+                    <Property name="ParentId"/>
+                </Key>
+            </Class>
         </Target>
     </ECRelationshipClass>
 
