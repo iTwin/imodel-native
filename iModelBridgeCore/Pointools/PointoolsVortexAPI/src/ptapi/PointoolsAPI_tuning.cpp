@@ -163,6 +163,8 @@ PTres	PTAPI _ptDiagnostic( PTvoid *data )
 				}
 			}
 		}
+		
+		return PTV_SUCCESS;
 	}
 	else return PTV_INVALID_PARAMETER;
 }

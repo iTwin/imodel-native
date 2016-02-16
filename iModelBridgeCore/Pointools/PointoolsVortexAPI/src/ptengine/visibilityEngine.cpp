@@ -320,8 +320,9 @@ struct ClippingCheck : public PointsVisitor
 		{
 			n->flag(pcloud::PartClipped, true, true);
 			n->flag(pcloud::WholeClipped, false, true);			
-			return true;
 		}
+		
+		return true;
 	}	
 };
 //---------------------------------------------------------
