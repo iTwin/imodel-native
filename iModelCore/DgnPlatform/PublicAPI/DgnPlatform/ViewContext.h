@@ -190,6 +190,7 @@ public:
     void InitScanRangeAndPolyhedron() {_InitScanRangeAndPolyhedron();}
     StatusInt VisitDgnModel(DgnModelP model){return _VisitDgnModel(model);}
     void SetScanReturn() {_SetScanReturn();}
+    void OutputGraphic(Render::GraphicR graphic, GeometrySourceCP source) {_OutputGraphic(graphic, source);}
     void SetActiveVolume(ClipPrimitiveCR volume) {_SetActiveVolume(volume);}
     void EnableStopAfterTimout(uint32_t timeout) {m_endTime = BeTimeUtilities::QueryMillisecondsCounter()+timeout; m_stopAfterTimeout=true;}
 
