@@ -5,7 +5,8 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include    <DgnPlatformInternal.h>
+#include <DgnPlatformInternal.h>
+#include <DgnPlatform/VecMath.h>
 
 #define     CIRCLE_ClipPoints           60
 #define     fc_cameraPlaneRatio         300.0
@@ -1084,7 +1085,6 @@ StatusInt FenceParams::StoreClippingPoints(bool outside, DPoint2dP pPoints, int 
 
     if (m_viewport && m_viewport->Is3dView())
         {
-//        double      activeZ = m_viewport->GetActiveZRoot (); remvoed in graphite
         DPoint3d    viewOrigin = *m_viewport->GetViewOrigin(), rotatedViewOrigin;
         RotMatrix   viewRMatrix = m_viewport->GetRotMatrix();
 
@@ -1149,11 +1149,11 @@ StatusInt FenceParams::StoreClippingPoints(bool outside, DPoint2dP pPoints, int 
 
         gpa->Add(ellipse);
 
-        m_clip = ClipVector::CreateFromPrimitive(ClipPrimitive::CreateFromGPA (*gpa, ClipPolygon(rFnc, nPoints), outside, pZLow, pZHigh, NULL));
+        m_clip = new ClipVector(ClipPrimitive::CreateFromGPA (*gpa, ClipPolygon(rFnc, nPoints), outside, pZLow, pZHigh, NULL).get());
         }
     else
         {
-        m_clip = ClipVector::CreateFromPrimitive(ClipPrimitive::CreateFromShape(rFnc, nPoints, outside, pZLow, pZHigh, NULL));
+        m_clip = new ClipVector(ClipPrimitive::CreateFromShape(rFnc, nPoints, outside, pZLow, pZHigh, NULL).get());
         }
 
     return SUCCESS;
@@ -2261,6 +2261,7 @@ void            FenceParams::PushClip(ViewContextP context, DgnViewportP vp, boo
 
     inverse.InverseOf(m_transform);
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // If we have a camera on we need to generate the planes that instersect the
     // camera point...
     if (m_camera)
@@ -2301,7 +2302,8 @@ void            FenceParams::PushClip(ViewContextP context, DgnViewportP vp, boo
         transformedClip->SetInvisible(!displayCut);
         context->PushClip(*transformedClip);
         }
-    }
+#endif
+   }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   07/03
@@ -2418,26 +2420,11 @@ FenceParams::~FenceParams()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-FenceParamsP    FenceParams::Create()
-    {
-    return new FenceParams();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            FenceParams::Delete(FenceParamsP fp)
-    {
-    delete fp;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       FenceParams::PushClip(ViewContextR context, TransformCP localToRoot) const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DgnViewportP   viewport;
 
     if (NULL == (viewport = context.GetViewport()) || !m_clip.IsValid())
@@ -2459,6 +2446,7 @@ StatusInt       FenceParams::PushClip(ViewContextR context, TransformCP localToR
 
     clip->TransformInPlace(clipToLocal);
     context.PushClip(*clip);
+#endif
 
     return SUCCESS;
     }

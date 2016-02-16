@@ -9,10 +9,10 @@
 //__PUBLISH_SECTION_START__
 
 #include "DgnDbTables.h"
-#include "QueryModel.h"
-#include "DgnDomain.h"
+#include "DgnModel.h"
 #include "MemoryManager.h"
 #include "RepositoryManager.h"
+#include "UpdatePlan.h"
 #include <Bentley/BeFileName.h>
 
 /** @addtogroup DgnDbGroup
@@ -154,16 +154,16 @@ protected:
     DgnFonts        m_fonts;
     DgnStyles       m_styles;
     DgnUnits        m_units;
-    DgnGeometryParts    m_geomParts;
+    DgnGeometryParts m_geomParts;
     DgnLinks        m_links;
     DgnAuthorities  m_authorities;
     TxnManagerPtr   m_txnManager;
     MemoryManager   m_memoryManager;
-    IBriefcaseManagerPtr    m_briefcaseManager;
+    IBriefcaseManagerPtr m_briefcaseManager;
     DgnSearchableText   m_searchableText;
     mutable RevisionManagerP m_revisionManager;
     BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
-    QueryModel::Queue m_queryQueue;
+    DgnQueryQueue m_queryQueue;
     LocalStateDb    m_localStateDb;
 
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _VerifySchemaVersion(BeSQLite::Db::OpenParams const& params) override;
@@ -224,7 +224,7 @@ public:
     DGNPLATFORM_EXPORT RevisionManagerR Revisions() const; //!< The Revisions for this DgnDb.
     MemoryManager& Memory() const { return const_cast<MemoryManager&>(m_memoryManager);} //!< Manages memory associated with this DgnDb.
     DGNPLATFORM_EXPORT IBriefcaseManager& BriefcaseManager(); //!< Manages this briefcase's held locks and codes
-    QueryModel::Queue& QueryQueue() const {return const_cast<QueryModel::Queue&>(m_queryQueue);}
+    DgnQueryQueue& GetQueryQueue() const {return const_cast<DgnQueryQueue&>(m_queryQueue);}
     LocalStateDb& GetLocalStateDb(); //!< @private
 
     //! Gets a cached and prepared ECSqlStatement.

@@ -252,7 +252,9 @@ BentleyStatus VolumeElement::SetClip(ViewContextR context) const
     m_clipPlaneSet->insert(m_clipPlaneSet->end(), tmpClipPlaneSet.begin(), tmpClipPlaneSet.end());
 
     m_viewContext = &context;
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     m_viewContext->PushClipPlanes(*m_clipPlaneSet);
+#endif
 
     return SUCCESS;
     }
@@ -262,11 +264,13 @@ BentleyStatus VolumeElement::SetClip(ViewContextR context) const
 //+---------------+---------------+---------------+---------------+---------------+-----
 void VolumeElement::ClearClip() const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (m_viewContext)
         {
         m_viewContext->PopClip();
         m_viewContext = nullptr;
         }
+#endif
 
     if (m_clipPlaneSet)
         {
@@ -293,25 +297,26 @@ ClipVectorPtr VolumeElement::CreateClipVector() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   01/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-unique_ptr<FenceParams> VolumeElement::CreateFence(DgnViewportP viewport, bool allowPartialOverlaps) const
+FenceParams VolumeElement::CreateFence(DgnViewportP viewport, bool allowPartialOverlaps) const
     {
-    unique_ptr<FenceParams> fence = std::unique_ptr<FenceParams> (FenceParams::Create ());
+    FenceParams fence;
     
-    ClipVectorPtr clipVector = this->CreateClipVector();
+    ClipVectorPtr clipVector = CreateClipVector();
     if (clipVector.IsNull())
-        return nullptr;
-    fence->SetClip (*clipVector);
-    fence->SetClipMode (FenceClipMode::None);
-    fence->SetOverlapMode (allowPartialOverlaps);
-    fence->SetViewParams (viewport);
+        return fence;
+
+    fence.SetClip (*clipVector);
+    fence.SetClipMode (FenceClipMode::None);
+    fence.SetOverlapMode (allowPartialOverlaps);
+    fence.SetViewParams (viewport);
     
     // Note: Setting view params from the viewport sets up the transform from the view, which is
     // not what we want since our clips are in the project's (world) coordinate system
     Transform identity;
     identity.InitIdentity();
-    fence->SetTransform (identity);
+    fence.SetTransform (identity);
 
-    return std::move (fence);
+    return fence;
     }
     
 //--------------------------------------------------------------------------------------
@@ -327,7 +332,7 @@ DgnViewportPtr VolumeElement::CreateNonVisibleViewport (DgnDbR project)
         return nullptr;
 
     DgnViewId viewId = (*viewIter.begin()).GetId(); 
-    CameraViewControllerP viewController = new CameraViewController(project, viewId);
+    DgnQueryViewP viewController = new DgnQueryView(project, viewId);
     viewController->Load();
     viewController->SetCameraOn (false); // Has to be done after Load()!!
 
@@ -377,7 +382,7 @@ void VolumeElement::FindElements(DgnElementIdSet& elementIds, FenceParamsR fence
 void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnDbR dgnDb, bool allowPartialOverlaps /*=true*/) const
     {
     DgnViewportPtr viewport = CreateNonVisibleViewport (dgnDb);
-    unique_ptr<FenceParams> fence = this->CreateFence (viewport.get(), allowPartialOverlaps);
+    FenceParams fence = CreateFence (viewport.get(), allowPartialOverlaps);
     
     // Prepare element query by range
     Statement stmt;
@@ -398,7 +403,7 @@ void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnDbR dgnDb, bool
     if (elementId.IsValid())
         stmt.BindId(7, GetElementId()); // Exclude the VolumeElement itself from the checks!!
 
-    this->FindElements (elementIds, *fence, stmt, dgnDb);
+    FindElements (elementIds, fence, stmt, dgnDb);
     }
 
 //--------------------------------------------------------------------------------------
@@ -406,7 +411,7 @@ void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnDbR dgnDb, bool
 //+---------------+---------------+---------------+---------------+---------------+-----
 void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnViewportR viewport, bool allowPartialOverlaps /*=true*/) const
     {
-    QueryViewControllerP viewController = dynamic_cast<QueryViewControllerP> (&viewport.GetViewControllerR());
+    DgnQueryViewP viewController = dynamic_cast<DgnQueryViewP> (&viewport.GetViewControllerR());
     BeAssert (viewController != nullptr);
     DgnDbR dgnDb = viewController->GetDgnDb();
     
@@ -416,7 +421,7 @@ void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnViewportR viewp
     viewController->SetCameraOn (false); 
     viewport.SynchWithViewController (false); 
     
-    unique_ptr<FenceParams> fence = this->CreateFence (&viewport, allowPartialOverlaps);
+    FenceParams fence = CreateFence (&viewport, allowPartialOverlaps);
     
     // Prepare element query by range, and by what's visible in the view
     Statement stmt;
@@ -445,7 +450,7 @@ void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnViewportR viewp
 
     stmt.BindVirtualSet (8, *viewController);
 
-    this->FindElements (elementIds, *fence, stmt, dgnDb);
+    FindElements (elementIds, fence, stmt, dgnDb);
 
     // Turn camera back on
     viewController->SetCameraOn (wasCameraOn);
@@ -462,9 +467,9 @@ bool VolumeElement::ContainsElement(DgnElementCR element, bool allowPartialOverl
         return false;
 
     DgnViewportPtr viewport = CreateNonVisibleViewport(element.GetDgnDb());
-    unique_ptr<FenceParams> fence = this->CreateFence (viewport.get(), allowPartialOverlaps);
+    FenceParams fence = CreateFence (viewport.get(), allowPartialOverlaps);
 
-    return fence->AcceptElement(*geomSource);
+    return fence.AcceptElement(*geomSource);
     }
 
 //--------------------------------------------------------------------------------------

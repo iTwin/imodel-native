@@ -215,7 +215,7 @@ public:
 // Dislays tiles of a street map as they become available over time.
 // @bsiclass                                                    Sam.Wilson      10/2014
 //=======================================================================================
-struct WebMercatorDisplay : ProgressiveDisplay, CopyrightSupplier
+struct WebMercatorDisplay : ProgressiveTask, CopyrightSupplier
 {
     friend struct WebMercatorModel;
 
@@ -260,7 +260,7 @@ protected:
     //! This function returns Finished if m_missingTiles becomes empty.
     //! This function stops whenever view.CheckStop is true.
     //! OUTPUT: This function removes 0 or more items from m_missingTiles.
-    DGNPLATFORM_EXPORT virtual Completion _Process(ViewContextR, uint32_t batchSize, WantShow&) override;
+    DGNPLATFORM_EXPORT virtual Completion _DoProgressive(SceneContext& context, WantShow&) override;
 
     DGNPLATFORM_EXPORT void DrawView (ViewContextR);
 
@@ -308,7 +308,7 @@ public:
     //! Create a new WebMercatorModel object, in preparation for loading it from the DgnDb.
     WebMercatorModel(CreateParams const& params) : T_Super(params) {}
 
-    DGNPLATFORM_EXPORT void _AddGraphicsToScene(ViewContextR) override;
+    DGNPLATFORM_EXPORT void _AddGraphicsToScene(SceneContextR) override;
     DGNPLATFORM_EXPORT void _WriteJsonProperties(Json::Value&) const override;
     DGNPLATFORM_EXPORT void _ReadJsonProperties(Json::Value const&) override;
     AxisAlignedBox3d _QueryModelRange() const override {return m_mercator.m_range;}

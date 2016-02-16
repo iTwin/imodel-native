@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/TransformClipStack.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -289,7 +289,7 @@ void    TransformClipStack::PushClip (ClipVectorCR clip)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    TransformClipStack::PushClipPlaneSets (ClipPlaneSetCR planeSet)
     {
-    PushClip (*ClipVector::CreateFromPrimitive (ClipPrimitive::CreateFromClipPlanes (planeSet)));
+    PushClip (*new ClipVector(ClipPrimitive::CreateFromClipPlanes(planeSet).get()));
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
+#include <DgnPlatform/VecMath.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 

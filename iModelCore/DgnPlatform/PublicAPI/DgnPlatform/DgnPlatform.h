@@ -15,16 +15,17 @@
 #include <Bentley/Bentley.h>
 #include <Bentley/RefCounted.h>
 #include <Bentley/BeFileName.h>
-#include <Bentley/ByteStream.h> 
+#include <Bentley/ByteStream.h>
 #include "ExportMacros.h"
 #include <Geom/GeomApi.h>
 #include <Bentley/NonCopyableClass.h>
 #include <Bentley/bvector.h>
 #include "DgnPlatform.r.h"
-#include "DgnPlatformErrors.r.h"
+#include "DgnPlatformErrors.h"
 #include "DgnHost.h"
 #include <BeSQLite/BeSQLite.h>
 #include <BeSQLite/ChangeSet.h>
+#include <BeSQLite/RTreeMatch.h>
 #include <ECDb/ECDbApi.h>
 
 #define USING_NAMESPACE_BENTLEY_DGNPLATFORM using namespace BentleyApi::Dgn; // for backwards compatibility, do not use
@@ -65,7 +66,6 @@ DGNPLATFORM_TYPEDEFS(Caret)
 DGNPLATFORM_TYPEDEFS(ChangeAnnotationScale)
 DGNPLATFORM_TYPEDEFS(ClipPrimitive)
 DGNPLATFORM_TYPEDEFS(ClipVector)
-DGNPLATFORM_TYPEDEFS(ClipVolumeOverrides)
 DGNPLATFORM_TYPEDEFS(ColorDef)
 DGNPLATFORM_TYPEDEFS(ComponentDef)
 DGNPLATFORM_TYPEDEFS(ComponentModel)
@@ -74,6 +74,7 @@ DGNPLATFORM_TYPEDEFS(DefinitionElement)
 DGNPLATFORM_TYPEDEFS(Dgn3DInputEvent)
 DGNPLATFORM_TYPEDEFS(DgnAuthority)
 DGNPLATFORM_TYPEDEFS(DgnButtonEvent)
+DGNPLATFORM_TYPEDEFS(DgnCode)
 DGNPLATFORM_TYPEDEFS(DgnColorMap)
 DGNPLATFORM_TYPEDEFS(DgnDb)
 DGNPLATFORM_TYPEDEFS(DgnDbExpressionContext);
@@ -86,7 +87,6 @@ DGNPLATFORM_TYPEDEFS(DgnGCS)
 DGNPLATFORM_TYPEDEFS(DgnGeometryPart)
 DGNPLATFORM_TYPEDEFS(DgnGestureEvent)
 DGNPLATFORM_TYPEDEFS(DgnGlyph)
-DGNPLATFORM_TYPEDEFS(DgnGlyph)
 DGNPLATFORM_TYPEDEFS(DgnGlyphLayoutContext)
 DGNPLATFORM_TYPEDEFS(DgnGlyphLayoutResult)
 DGNPLATFORM_TYPEDEFS(DgnHost)
@@ -95,7 +95,6 @@ DGNPLATFORM_TYPEDEFS(DgnMarkupProject)
 DGNPLATFORM_TYPEDEFS(DgnModel)
 DGNPLATFORM_TYPEDEFS(DgnMouseWheelEvent)
 DGNPLATFORM_TYPEDEFS(DgnProgressMeter)
-DGNPLATFORM_TYPEDEFS(DgnResourceURI)
 DGNPLATFORM_TYPEDEFS(DgnRevision)
 DGNPLATFORM_TYPEDEFS(DgnRscFont)
 DGNPLATFORM_TYPEDEFS(DgnScript)
@@ -106,7 +105,6 @@ DGNPLATFORM_TYPEDEFS(DictionaryElement)
 DGNPLATFORM_TYPEDEFS(DisplayStyle)
 DGNPLATFORM_TYPEDEFS(DisplayStyleFlags)
 DGNPLATFORM_TYPEDEFS(DrawingElement)
-DGNPLATFORM_TYPEDEFS (DgnCode)
 DGNPLATFORM_TYPEDEFS(DrawingModel)
 DGNPLATFORM_TYPEDEFS(DrawingViewDefinition)
 DGNPLATFORM_TYPEDEFS(DropGeometry)
@@ -120,6 +118,7 @@ DGNPLATFORM_TYPEDEFS(ElementAlignedBox3d)
 DGNPLATFORM_TYPEDEFS(ElementLocateManager)
 DGNPLATFORM_TYPEDEFS(FenceManager)
 DGNPLATFORM_TYPEDEFS(FenceParams)
+DGNPLATFORM_TYPEDEFS(FitContext)
 DGNPLATFORM_TYPEDEFS(Frustum)
 DGNPLATFORM_TYPEDEFS(GeomDetail)
 DGNPLATFORM_TYPEDEFS(GeometricPrimitive)
@@ -154,10 +153,7 @@ DGNPLATFORM_TYPEDEFS(IRedrawOperation)
 DGNPLATFORM_TYPEDEFS(IRepositoryManager)
 DGNPLATFORM_TYPEDEFS(ISolidKernelEntity)
 DGNPLATFORM_TYPEDEFS(ISubEntity)
-DGNPLATFORM_TYPEDEFS(ITransactionHandler)
-DGNPLATFORM_TYPEDEFS(ITransientGeometryHandler)
 DGNPLATFORM_TYPEDEFS(IVariableMonitor)
-DGNPLATFORM_TYPEDEFS(ImageBuffer)
 DGNPLATFORM_TYPEDEFS(NotificationManager)
 DGNPLATFORM_TYPEDEFS(ParagraphProperties)
 DGNPLATFORM_TYPEDEFS(PatternParams)
@@ -167,13 +163,13 @@ DGNPLATFORM_TYPEDEFS(PhysicalViewDefinition)
 DGNPLATFORM_TYPEDEFS(Placement2d)
 DGNPLATFORM_TYPEDEFS(Placement3d)
 DGNPLATFORM_TYPEDEFS(PropertyContext)
-DGNPLATFORM_TYPEDEFS(QueryModel)
-DGNPLATFORM_TYPEDEFS(QueryViewController)
+DGNPLATFORM_TYPEDEFS(DgnQueryView)
 DGNPLATFORM_TYPEDEFS(RedlineModel)
 DGNPLATFORM_TYPEDEFS(RedlineViewController)
 DGNPLATFORM_TYPEDEFS(RegionGraphicsContext)
 DGNPLATFORM_TYPEDEFS(RevisionManager)
 DGNPLATFORM_TYPEDEFS(ScanCriteria)
+DGNPLATFORM_TYPEDEFS(SceneContext)
 DGNPLATFORM_TYPEDEFS(SelectionSetManager)
 DGNPLATFORM_TYPEDEFS(SheetElement)
 DGNPLATFORM_TYPEDEFS(SheetViewController)
@@ -223,10 +219,9 @@ DGNPLATFORM_REF_COUNTED_PTR(DrawingViewDefinition)
 DGNPLATFORM_REF_COUNTED_PTR(IBriefcaseManager)
 DGNPLATFORM_REF_COUNTED_PTR(IElemTopology)
 DGNPLATFORM_REF_COUNTED_PTR(PatternParams)
-DGNPLATFORM_REF_COUNTED_PTR(PatternParams)
 DGNPLATFORM_REF_COUNTED_PTR(PhysicalElement)
-DGNPLATFORM_REF_COUNTED_PTR(ProgressiveDisplay)
-DGNPLATFORM_REF_COUNTED_PTR(QueryViewController)
+DGNPLATFORM_REF_COUNTED_PTR(ProgressiveTask)
+DGNPLATFORM_REF_COUNTED_PTR(DgnQueryView)
 DGNPLATFORM_REF_COUNTED_PTR(RedlineViewController)
 DGNPLATFORM_REF_COUNTED_PTR(SheetElement)
 DGNPLATFORM_REF_COUNTED_PTR(SheetViewController)
@@ -298,7 +293,6 @@ BEBRIEFCASEBASED_ID_SUBCLASS(DgnViewId, DgnElementId) //!< An element Id that re
 
 BESERVER_ISSUED_ID_CLASS(DgnAuthorityId)
 BESERVER_ISSUED_ID_CLASS(DgnFontId)
-BESERVER_ISSUED_ID_CLASS(DgnSessionId)       //!< An Id that is assigned to a session. See DgnDb#Sessions.
 
 namespace dgn_ElementHandler{struct Element;};
 namespace dgn_ModelHandler  {struct Model;};
@@ -377,43 +371,34 @@ struct DgnClassId : BeSQLite::BeInt64Id
     DgnClassId& operator=(DgnClassId const& rhs) {m_id = rhs.m_id; return *this;}
 };
 
+//=======================================================================================
 //! The GeometryStreamEntryId class identifies a geometric primitive in a GeometryStream.
 //=======================================================================================
 struct GeometryStreamEntryId
 {
-    enum class Type
-        {
-        Invalid = 0,
-        Indexed = 1,
-        };
-
 private:
-    Type            m_type;
-    DgnGeometryPartId   m_partId;
-    uint32_t        m_index;
-    uint32_t        m_partIndex;
+    DgnGeometryPartId   m_partId;       // Valid when m_index refers to a part
+    uint16_t            m_index;        // Index into top-level GeometryStream
+    uint16_t            m_partIndex;    // Index into part GeometryStream
 
 public:
     GeometryStreamEntryId() {Init();}
-    GeometryStreamEntryId(GeometryStreamEntryIdCR rhs) {m_type = rhs.m_type; m_partId = rhs.m_partId; m_index = rhs.m_index; m_partIndex = rhs.m_partIndex;}
+    GeometryStreamEntryId(GeometryStreamEntryIdCR rhs) {m_partId = rhs.m_partId; m_index = rhs.m_index; m_partIndex = rhs.m_partIndex;}
 
-    DGNPLATFORM_EXPORT bool operator==(GeometryStreamEntryIdCR rhs) const;
-    DGNPLATFORM_EXPORT bool operator!=(GeometryStreamEntryIdCR rhs) const;
-    DGNPLATFORM_EXPORT GeometryStreamEntryIdR operator=(GeometryStreamEntryIdCR rhs);
+    bool operator==(GeometryStreamEntryIdCR rhs) const {if (this == &rhs) return true; return (m_partId == rhs.m_partId && m_index == rhs.m_index && m_partIndex == rhs.m_partIndex);}
+    bool operator!=(GeometryStreamEntryIdCR rhs) const {return !(*this == rhs);}
+    GeometryStreamEntryIdR operator=(GeometryStreamEntryIdCR rhs) {m_partId = rhs.m_partId; m_index = rhs.m_index; m_partIndex = rhs.m_partIndex; return *this;}
 
-    void Init() {m_type = Type::Invalid; m_index = 0; m_partIndex = 0; m_partId = DgnGeometryPartId();}
-    void SetType(Type type) {m_type = type;}
+    void Init() {m_index = 0; m_partIndex = 0; m_partId = DgnGeometryPartId();}
     void SetGeometryPartId(DgnGeometryPartId partId) {m_partId = partId; m_partIndex = 0;}
-    void SetIndex(uint32_t index) {m_index = index;}
-    void SetPartIndex(uint32_t partIndex) {m_partIndex = partIndex;}
+    void SetIndex(uint16_t index) {m_index = index;}
+    void SetPartIndex(uint16_t partIndex) {m_partIndex = partIndex;}
 
-    Type GetType() const {return m_type;}
     DgnGeometryPartId GetGeometryPartId() const {return m_partId;}
-    uint32_t GetIndex() const {return m_index;}
-    uint32_t GetPartIndex() const {return m_partIndex;}
+    uint16_t GetIndex() const {return m_index;}
+    uint16_t GetPartIndex() const {return m_partIndex;}
 };
 
-//=======================================================================================
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
 //=======================================================================================
 //! The key (classId,instanceId) of a the Item aspect.
@@ -574,11 +559,15 @@ struct Frustum
     void Multiply(TransformCR trans) {trans.Multiply(m_pts, m_pts, 8);}
     void Translate(DVec3dCR offset) {for (auto& pt : m_pts) pt.Add(offset);}
     Frustum TransformBy(TransformCR trans) {Frustum out; trans.Multiply(out.m_pts, m_pts, 8); return out;}
+    void ToRangeR(DRange3dR range) const {range.InitFrom(m_pts, 8);}
     DRange3d ToRange() const {DRange3d range; range.InitFrom(m_pts, 8); return range;}
     DGNPLATFORM_EXPORT void ScaleAboutCenter(double scale);
     void Invalidate() {memset(this, 0, sizeof(*this));}
     bool operator==(Frustum const& rhs) const {return 0==memcmp(m_pts, rhs.m_pts, sizeof(*this));}
     bool operator!=(Frustum const& rhs) const {return !(*this == rhs);}
+    Frustum() {} // uninitialized!
+    DGNPLATFORM_EXPORT explicit Frustum(DRange3dCR);
+    explicit Frustum(BeSQLite::RTree3dValCR);
 };
 
 //=======================================================================================

@@ -263,7 +263,7 @@ double SpatialRedlineViewController::_GetMinimumSizePixels (DrawPurpose updateTy
 uint64_t SpatialRedlineViewController::_GetMaxElementMemory () {return m_subjectView._GetMaxElementMemory();}
 #endif
 
-ViewController::FitComplete SpatialRedlineViewController::_ComputeFitRange (DRange3dR range, DgnViewportR viewport, FitViewParamsR params) {return m_subjectView._ComputeFitRange(range,viewport,params);}
+ViewController::FitComplete SpatialRedlineViewController::_ComputeFitRange (FitContextR context) {return m_subjectView._ComputeFitRange(context);}
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -272,14 +272,6 @@ ViewController::FitComplete SpatialRedlineViewController::_ComputeFitRange (DRan
 GeometricModelP SpatialRedlineViewController::_GetTargetModel() const
     {
     return m_targetModelIsInSubjectView? m_subjectView.GetTargetModel(): T_Super::_GetTargetModel();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbR SpatialRedlineViewController::_GetDgnDb() const
-    {
-    return m_targetModelIsInSubjectView? m_subjectView.GetDgnDb(): T_Super::_GetDgnDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -315,15 +307,6 @@ void SpatialRedlineViewController::_OnAttachedToViewport(DgnViewportR vp)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2014
 //---------------------------------------------------------------------------------------
-void SpatialRedlineViewController::_OnUpdate(DgnViewportR viewport, UpdatePlan const& plan)
-    {
-    T_Super::_OnUpdate(viewport, plan);
-    m_subjectView._OnUpdate(viewport, plan);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    08/2014
-//---------------------------------------------------------------------------------------
 void SpatialRedlineViewController::_OnCategoryChange(bool singleEnabled)
     {
     T_Super::_OnCategoryChange(singleEnabled);
@@ -346,7 +329,6 @@ void SpatialRedlineViewController::_DrawView(ViewContextR context)
     //  Draw subject model
         {
         //  set up to draw subject model 
-        ViewContext::ContextMark mark(&context);
         m_targetModelIsInSubjectView = true;   // causes GetTargetModel to return subject view's target model
         BeAssert(GetTargetModel() == m_subjectView.GetTargetModel());
 

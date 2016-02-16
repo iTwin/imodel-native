@@ -37,7 +37,6 @@ static Utf8CP VIEWFLAG_fill                      = "fill";
 static Utf8CP VIEWFLAG_grid                      = "grid";
 static Utf8CP VIEWFLAG_acs                       = "acs";
 static Utf8CP VIEWFLAG_useBgImage                = "noBgImage";
-
 static Utf8CP VIEWFLAG_noTexture                 = "noTexture";
 static Utf8CP VIEWFLAG_noMaterial                = "noMaterial";
 static Utf8CP VIEWFLAG_noSceneLight              = "noSceneLight";
@@ -88,7 +87,7 @@ void ViewFlags::From3dJson(JsonValueCR val)
 
     m_renderMode = RenderMode(val[VIEWFLAG_renderMode].asUInt());
 
-#if defined (TEST_FORCE_SMOOTH_SHADE)
+#if defined (TEST_FORCE_VIEW_SMOOTH_SHADE)
     static bool s_forceSmooth=true;
     if (s_forceSmooth)
         m_renderMode = RenderMode::SmoothShade;
@@ -908,7 +907,7 @@ ClipVectorPtr SectionDrawingViewController::GetProjectClipVector() const
     {
     auto sectionView = GetSectioningViewController();
     if (!sectionView.IsValid())
-        return ClipVector::Create();
+        return new ClipVector();
     return sectionView->GetInsideForwardClipVector();
     }
 
@@ -2144,7 +2143,35 @@ void ViewController::_DrawGrid(DecorateContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley  10/06
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewController::CloseMe ViewController::_OnModelsDeleted(bset<DgnModelId> const& deletedIds, DgnDbR db)
+    {
+    if (&m_dgndb != &db)
+        return CloseMe::No;
+
+    // Remove deleted models from viewed models list
+    for (auto const& deletedId : deletedIds)
+        m_viewedModels.erase(deletedId);
+
+    // Ensure we still have a target model - choose a new one arbitrarily if previous was deleted
+    RefCountedPtr<GeometricModel> targetModel = GetTargetModel();
+    if (targetModel.IsNull())
+        {
+        for (auto const& viewedId : m_viewedModels)
+            if ((targetModel = m_dgndb.Models().Get<GeometricModel>(viewedId)).IsValid())
+                break;
+
+        if (targetModel.IsValid())
+            SetTargetModel(targetModel.get());  // NB: ViewController can reject target model...
+        }
+
+    // If no target model, no choice but to close the view
+    return (nullptr == GetTargetModel()) ? CloseMe::Yes : CloseMe::No;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::_DrawView(ViewContextR context) 
     {

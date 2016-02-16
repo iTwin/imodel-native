@@ -62,7 +62,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2d const *range) override;
     DGNPLATFORM_EXPORT virtual void _AddDgnOle(Render::DgnOleDraw*) override;
     DGNPLATFORM_EXPORT virtual void _AddPointCloud(Render::PointCloudDraw* drawParams) override;
-    DGNPLATFORM_EXPORT virtual void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsR) override;
+    DGNPLATFORM_EXPORT virtual void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR) override;
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _CreateSubGraphic(TransformCR) const override;
 
 public:
@@ -108,7 +108,7 @@ public:
     //! Call to output a CurveVector as individual ICurvePrimitives using IGeometryProcessor::_ProcessCurvePrimitive.
     DGNPLATFORM_EXPORT void ProcessAsCurvePrimitives(CurveVectorCR, bool filled);
 
-    DGNPLATFORM_EXPORT ClipVectorCP GetCurrentClip() const;
+    ClipVectorCP GetCurrentClip() const {return nullptr;}
 
     DGNPLATFORM_EXPORT void ClipAndProcessCurveVector(CurveVectorCR, bool filled);
     DGNPLATFORM_EXPORT void ClipAndProcessSolidPrimitive(ISolidPrimitiveCR);

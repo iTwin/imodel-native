@@ -24,6 +24,47 @@ ViewContext::ViewContext()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt ViewContext::VisitElement(DgnElementId elementId, bool allowLoad) 
+    {
+    DgnElements& pool = m_dgndb->Elements();
+    DgnElementCPtr el = allowLoad ? pool.GetElement(elementId) : pool.FindElement(elementId);
+    if (!el.IsValid())
+        {
+        BeAssert(!allowLoad);
+        return ERROR;
+        }
+
+    GeometrySourceCP geomElem = el->ToGeometrySource();
+    if (nullptr == geomElem)
+        return ERROR;
+
+    return VisitGeometry(*geomElem);
+
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    if (pool.GetTotalAllocated() < (int64_t) m_elementReleaseTrigger)
+        return true;
+
+    pool.DropFromPool(*el);
+
+    // Purging the element does not purge the symbols so it may be necessary to do a full purge
+    if (pool.GetTotalAllocated() < (int64_t) m_purgeTrigger)
+        return true;
+
+    pool.Purge(m_elementReleaseTrigger);   // Try to get back to the elementPurgeTrigger
+
+    static const double s_purgeFactor = 1.3;
+
+    // The purge may not have succeeded if there are elements in the QueryView's list of elements and those elements hold symbol references.
+    // When that is true, we leave it to QueryView::_DrawView to try to clean up.  This logic just tries to recover from the
+    // growth is caused.  It allows some growth between calls to purge to avoid spending too much time in purge.
+    uint64_t newTotalAllocated = (uint64_t)pool.GetTotalAllocated();
+    m_purgeTrigger = (uint64_t)(s_purgeFactor * std::max(newTotalAllocated, m_elementReleaseTrigger));
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::ViewToNpc(DPoint3dP npcVec, DPoint3dCP screenVec, int nPts) const
@@ -54,14 +95,9 @@ void ViewContext::NpcToWorld(DPoint3dP worldPts, DPoint3dCP npcPts, int nPts) co
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt ViewContext::_InitContextForView()
     {
-    BeAssert(0 == GetTransClipDepth());
-
     m_worldToNpc  = *m_viewport->GetWorldToNpcMap();
     m_worldToView = *m_viewport->GetWorldToViewMap();
-    m_transformClipStack.Clear();
     m_scanRangeValid = false;
-
-    _PushFrustumClip();
 
     SetDgnDb(m_viewport->GetViewController().GetDgnDb());
 
@@ -94,24 +130,6 @@ Frustum ViewContext::GetFrustum()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_PushFrustumClip()
-    {
-    if (m_ignoreViewRange)
-        return;
-
-    int         nPlanes;
-    ClipPlane   frustumPlanes[6];
-    ViewFlags viewFlags = GetViewFlags();
-
-    Frustum polyhedron = GetFrustum();
-
-    if (0 != (nPlanes = ClipUtil::RangePlanesFromPolyhedra(frustumPlanes, polyhedron.GetPts(), !viewFlags.noFrontClip, !viewFlags.noBackClip, 1.0E-6)))
-        m_transformClipStack.PushClipPlanes(frustumPlanes, nPlanes);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    11/02
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_InitScanRangeAndPolyhedron()
@@ -121,49 +139,11 @@ void ViewContext::_InitScanRangeAndPolyhedron()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      09/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::PushClipPlanes(ClipPlaneSetCR clipPlanes)
-    {
-    _PushClip(*ClipVector::CreateFromPrimitive(ClipPrimitive::CreateFromClipPlanes(clipPlanes)));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_PushClip(ClipVectorCR clip)
-    {
-    m_transformClipStack.PushClip(clip);
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    for (ClipPrimitivePtr const& primitive : clip)
-        {
-        GetCurrentGraphicR()._PushTransClip(nullptr, primitive->GetClipPlanes());
-        m_transformClipStack.IncrementPushedToDrawGeom();
-        }
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      03/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_PopClip()
-    {
-    if (m_transformClipStack.IsEmpty())
-        {
-        BeAssert(false);
-        return;
-        }
-
-    m_transformClipStack.Pop(*this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_SetDgnDb(DgnDbR dgnDb)
     {
-    m_dgnDb = &dgnDb;
+    m_dgndb = &dgnDb;
     _SetupScanCriteria();
     }
 
@@ -180,18 +160,10 @@ void ViewContext::_SetupScanCriteria()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ViewContext::_Attach(DgnViewportP viewport, DrawPurpose purpose)
+StatusInt ViewContext::Attach(DgnViewportP viewport, DrawPurpose purpose)
     {
     if (nullptr == viewport)
         return  ERROR;
-
-    if (IsAttached())
-        {
-        BeAssert(!IsAttached());
-        return  ERROR;
-        }
-
-    m_isAttached = true;
 
     m_viewport = viewport;
     m_purpose = purpose;
@@ -201,17 +173,6 @@ StatusInt ViewContext::_Attach(DgnViewportP viewport, DrawPurpose purpose)
     SetViewFlags(viewport->GetViewFlags());
 
     return _InitContextForView();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    05/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_Detach()
-    {
-    BeAssert(IsAttached());
-
-    m_isAttached = false;
-    m_transformClipStack.PopAll(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -323,47 +284,51 @@ bool ViewContext::_ScanRangeFromPolyhedron()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewContext::_FilterRangeIntersection(GeometrySourceCR source)
     {
-    return ClipPlaneContainment_StronglyOutside == m_transformClipStack.ClassifyRange(source.CalculateRange3d(), nullptr != source.ToGeometrySource3d());
+    Frustum box(source.CalculateRange3d());
+    return FrustumPlanes::Contained::Outside != m_frustumPlanes.Contains(box.m_pts, 8);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::GraphicPtr ViewContext::_StrokeGeometry(GeometrySourceCR source, double pixelSize)
+    {
+    Render::GraphicPtr graphic = (nullptr != m_viewport) ?
+                m_viewport->GetViewControllerR()._StrokeGeometry(*this, source, pixelSize) :
+                source.Stroke(*this, pixelSize);
+
+    // if we aborted, the graphic may not be complete, don't save it
+    return WasAborted() ? nullptr : graphic;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_OutputGeometry(GeometrySourceCR source)
+StatusInt ViewContext::_OutputGeometry(GeometrySourceCR source)
     {
     if (!source.HasGeometry())
-        return;
+        return ERROR;
 
     DPoint3d origin;
     source.GetPlacementTransform().GetTranslation(origin);
     double pixelSize = (nullptr != m_viewport ? m_viewport->GetPixelSizeAtPoint(&origin) : 0.0);
 
     Render::GraphicPtr graphic = _GetCachedGraphic(source, pixelSize);
+    if (!graphic.IsValid())
+        graphic = _StrokeGeometry(source, pixelSize);
 
     if (!graphic.IsValid())
-        {
-        graphic = (nullptr != m_viewport) ?
-                   m_viewport->GetViewControllerR()._StrokeGeometry(*this, source, pixelSize) :
-                   source.Stroke(*this, pixelSize);
-
-        if (WasAborted()) // if we aborted, the graphic may not be complete, don't save it
-            return;
-
-        _SaveGraphic(source, *graphic);
-        }
-
-    if (!graphic.IsValid())
-        return;
+        return ERROR;
 
     _OutputGraphic(*graphic, &source);
 
     static int s_drawRange; // 0 - Host Setting (Bounding Box Debug), 1 - Bounding Box, 2 - Element Range
     if (!s_drawRange)
-        return;
+        return SUCCESS;
 
     // Output element local range for debug display and locate...
     if (!graphic->IsForDisplay() && nullptr == GetIPickGeom())
-        return;
+        return SUCCESS;
 
     Render::GraphicPtr rangeGraphic = CreateGraphic(Graphic::CreateParams(nullptr, (2 == s_drawRange ? Transform::FromIdentity() : source.GetPlacementTransform())));
     Render::GeometryParams rangeParams;
@@ -419,6 +384,7 @@ void ViewContext::_OutputGeometry(GeometrySourceCR source)
         }
 
     _OutputGraphic(*rangeGraphic, &source);
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -520,12 +486,7 @@ StatusInt ViewContext::_VisitGeometry(GeometrySourceCR source)
     if (_CheckStop())
         return ERROR;
 
-    if (IsUndisplayed(source))
-        return SUCCESS;
-
-    _OutputGeometry(source);
-
-    return SUCCESS;
+    return IsUndisplayed(source) ? ERROR : _OutputGeometry(source);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -592,62 +553,36 @@ void ViewContext::_SetScanReturn()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ScanCriteria::Result ViewContext::_CheckNodeRange(ScanCriteriaCR scanCriteria, DRange3dCR testRange, bool is3d)
     {
-    return ClipPlaneContainment_StronglyOutside != m_transformClipStack.ClassifyElementRange(testRange, is3d, true) ? ScanCriteria::Result::Pass : ScanCriteria::Result::Fail;
+    Frustum box(testRange);
+    return (m_frustumPlanes.Contains(box.m_pts, 8) != FrustumPlanes::Contained::Outside) ? ScanCriteria::Result::Pass : ScanCriteria::Result::Fail;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::IsWorldPointVisible(DPoint3dCR worldPoint, bool boresite)
+bool ViewContext::IsPointVisible(DPoint3dCR worldPoint, bool boresite)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    DPoint3d    localPoint;
-
-    WorldToLocal(&localPoint, &worldPoint, 1);
-
-    return IsLocalPointVisible(localPoint, boresite);
-#else
-    if (m_transformClipStack.IsEmpty())
+    if (m_frustumPlanes.ContainsPoint(worldPoint))
         return true;
 
     if (!boresite)
-        return m_transformClipStack.TestPoint(worldPoint);
+        return false;
 
-    DVec3d      worldZVec;
-
+    DVec3d worldZVec;
     if (IsCameraOn())
         {
-        worldZVec.NormalizedDifference(worldPoint, GetViewport()->GetCamera().GetEyePoint());
+        worldZVec.NormalizedDifference(worldPoint, m_viewport->GetCamera().GetEyePoint());
         }
     else
         {
         DPoint3d    zPoints[2];
-
         zPoints[0].Zero();
         zPoints[1].Init(0.0, 0.0, 1.0);
-
         NpcToWorld(zPoints, zPoints, 2);
         worldZVec.NormalizedDifference(zPoints[1], zPoints[0]);
         }
 
-    return m_transformClipStack.TestRay(worldPoint, worldZVec);
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      01/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::PointInsideClip(DPoint3dCR point)
-    {
-    return m_transformClipStack.TestPoint(point);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      01/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::GetRayClipIntersection(double& distance, DPoint3dCR origin, DVec3dCR direction)
-    {
-    return  m_transformClipStack.GetRayIntersection(distance, origin, direction);
+    return m_frustumPlanes.IntersectsRay(worldPoint, worldZVec);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -713,6 +648,7 @@ void ViewContext::SetSubRectNpc(DRange3dCR subRect)
 bool ViewContext::VisitAllViewElements(BSIRectCP updateRect)
     {
     ClearAborted();
+
     if (nullptr != updateRect)
         SetSubRectFromViewRect(updateRect);
 
@@ -729,16 +665,8 @@ bool ViewContext::VisitAllViewElements(BSIRectCP updateRect)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewContext::_VisitAllModelElements()
     {
-    SpatialViewControllerCP physController = m_viewport->GetSpatialViewControllerCP();
-    ClipVectorPtr clipVector = physController ? physController->GetClipVector() : nullptr;
-    if (clipVector.IsValid())
-        PushClip(*clipVector);
-
     // The ViewController must orchestrate the display of all of the elements in the view.
     m_viewport->GetViewControllerR().DrawView(*this);
-
-    if (clipVector.IsValid())
-        PopClip();
 
     return WasAborted();
     }
@@ -1050,37 +978,6 @@ void ViewContext::RasterDisplayParams::SetQualityFactor(double factor)
     m_flags |= ViewContext::RasterDisplayParams::RASTER_PARAM_Quality;
     }
 #endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    05/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::ContextMark::Pop()
-    {
-    if (nullptr == m_context)
-        return;
-
-    while (m_context->GetTransClipDepth() > (int)m_transClipMark)
-        m_context->GetTransformClipStack().Pop(*m_context);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-inline void ViewContext::ContextMark::SetNow()
-    {
-    m_transClipMark = m_context->GetTransClipDepth();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-ViewContext::ContextMark::ContextMark(ViewContextP context)
-    {
-    if (nullptr == (m_context = context))
-        Init(context);
-    else
-        SetNow();
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
@@ -1689,7 +1586,7 @@ static void drawGridDots(Render::GraphicR graphic, bool doIsoGrid, DPoint3dCR or
 
     Frustum corners = vp.GetFrustum(DgnCoordSystem::World, true);
     ClipPlane clipPlanes[6];
-    ClipUtil::RangePlanesFromPolyhedra(clipPlanes, corners.GetPts(), true, true, false);
+    ClipUtil::RangePlanesFromFrustum(clipPlanes, corners, true, true, false);
 
     double minClipDistance, maxClipDistance;
     for (int i=0; i<rowRepetitions; i++)
@@ -1904,6 +1801,3 @@ void DecorateContext::DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix,
     drawGrid(*graphic, isoGrid, drawDots, gridOrg, gridX, gridY, gridsPerRef, repetitions);
     AddWorldDecoration(*graphic);
     }
-
-
-

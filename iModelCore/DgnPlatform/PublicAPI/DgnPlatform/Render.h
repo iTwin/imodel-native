@@ -886,7 +886,7 @@ protected:
     virtual void _AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2d const *range) = 0;
     virtual void _AddDgnOle(DgnOleDraw*) = 0;
     virtual void _AddPointCloud(PointCloudDraw* drawParams) = 0;
-    virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsR) = 0;
+    virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR) = 0;
     virtual Render::GraphicPtr _CreateSubGraphic(TransformCR) const = 0;
     virtual ~Graphic() {}
 
@@ -1060,7 +1060,7 @@ public:
     //! Draw OLE object.
     void AddDgnOle(DgnOleDraw* ole) {_AddDgnOle(ole);}
 
-    void AddSubGraphic(GraphicR graphic, TransformCR subToGraphic, GraphicParams& params) {_AddSubGraphic(graphic, subToGraphic, params);}
+    void AddSubGraphic(GraphicR graphic, TransformCR subToGraphic, GraphicParamsCR params) {_AddSubGraphic(graphic, subToGraphic, params);}
 
     //! Return whether this decoration will be drawn to a viewport as opposed to being collected for some other purpose (ex. geometry export).
     bool IsForDisplay() const {return _IsForDisplay();}
@@ -1104,12 +1104,10 @@ struct GraphicList : RefCounted<NonCopyableClass>
 
     bvector<Node> m_list;
 
-    GraphicList() {}
-    DGNPLATFORM_EXPORT virtual ~GraphicList();
     uint32_t GetCount() const {return (uint32_t) m_list.size();}
     bool IsEmpty() const {return m_list.empty();}
+    void Clear() {m_list.clear();}
     DGNPLATFORM_EXPORT void Add(Graphic& graphic, void* ovr, uint32_t ovrFlags);
-    DGNPLATFORM_EXPORT void Clear();
 };
 
 //=======================================================================================
@@ -1123,6 +1121,27 @@ struct Decorations
     GraphicListPtr m_world;          // drawn with zbuffer, with default lighting, smooth shading
     GraphicListPtr m_worldOverlay;   // drawn in overlay mode, world units
     GraphicListPtr m_viewOverlay;    // drawn in overlay mode, view units
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   02/16
+//=======================================================================================
+struct FrustumPlanes
+{
+    bool m_isValid = false;
+    ClipPlane m_planes[6];
+
+    FrustumPlanes() {}
+    ~FrustumPlanes() {}
+    explicit FrustumPlanes(FrustumCR frustum){Init(frustum);}
+    void Init(FrustumCR frustum);
+    bool IsValid() const {return m_isValid;}
+    enum struct Contained {Outside = 0, Partly = 1,Inside = 2,};
+    Contained Contains(FrustumCR box) const {return Contains(box.m_pts, 8);}
+    bool Intersects(FrustumCR box) const {return Contained::Outside != Contains(box);}
+    bool ContainsPoint(DPoint3dCR pt) const {return Contained::Outside != Contains(&pt, 1);}
+    DGNPLATFORM_EXPORT Contained Contains(DPoint3dCP, int nPts) const;
+    DGNPLATFORM_EXPORT bool IntersectsRay(DPoint3dCR origin, DVec3dCR direction);
 };
 
 //=======================================================================================
@@ -1156,13 +1175,14 @@ struct Plan
 struct Target : RefCounted<NonCopyableClass>
 {
 protected:
-    bool               m_abortProgressive;
+    bool               m_abort;
     Display::DevicePtr m_device;
+    ClipPrimitiveCPtr  m_activeVolume;
     GraphicListPtr     m_currentScene;
     GraphicListPtr     m_dynamics;        // drawn with zbuffer, with scene lighting
     Decorations        m_decorations;
-    BeAtomic<uint32_t> m_graphicsPerSecondProgressiveDisplay;
-    BeAtomic<uint32_t> m_graphicsPerSecond;
+    BeAtomic<uint32_t> m_graphicsPerSecondScene;
+    BeAtomic<uint32_t> m_graphicsPerSecondNonScene;
 
     virtual GraphicPtr _CreateGraphic(Graphic::CreateParams const& params) = 0;
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) = 0;
@@ -1189,7 +1209,7 @@ public:
         static void Show();
     };
 
-    virtual void _ChangeScene(GraphicListR scene) {VerifyRenderThread(); m_currentScene = &scene;}
+    virtual void _ChangeScene(GraphicListR scene, ClipPrimitiveCP activeVolume) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
     virtual void _ChangeDynamics(GraphicListR dynamics) {VerifyRenderThread(); m_dynamics = &dynamics;}
     virtual void _ChangeDecorations(Decorations& decorations) {VerifyRenderThread(); m_decorations = decorations;}
     virtual void _ChangeRenderPlan(PlanCR) = 0;
@@ -1198,7 +1218,7 @@ public:
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
 
-    void AbortProgressive() {m_abortProgressive=true;}
+    void AbortProgressive() {m_abort=true;}
     Point2d GetScreenOrigin() const {return _GetScreenOrigin();}
     BSIRect GetViewRect() const {return _GetViewRect();}
     DVec2d GetDpiScale() const {return _GetDpiScale();}
@@ -1211,8 +1231,8 @@ public:
     TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return _GetTexture(id, dgndb);}
     TexturePtr CreateTileSection(Image* image, bool enableAlpha) const {return _CreateTileSection(image, enableAlpha);}
 
-    uint32_t GetGraphicsPerSecond() const {return m_graphicsPerSecond.load();}
-    uint32_t GetProgressiveDisplayGraphicsPerSecond() const {return m_graphicsPerSecondProgressiveDisplay.load();}
+    uint32_t GetGraphicsPerSecondScene() const {return m_graphicsPerSecondScene.load();}
+    uint32_t GetGraphicsPerSecondNonScene() const {return m_graphicsPerSecondNonScene.load();}
     DGNPLATFORM_EXPORT void RecordFrameTime(GraphicList&, double seconds, bool isFromProgressiveDisplay);
 };
 

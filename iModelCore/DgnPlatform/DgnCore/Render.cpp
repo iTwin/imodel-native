@@ -35,22 +35,21 @@ void Render::Target::RecordFrameTime(GraphicList& scene, double seconds, bool is
     if (0 == count)
         return;
 
-    if (seconds < .001)
-        seconds = .001;
+    if (seconds < .0001)
+        seconds = .0001;
 
     uint32_t gps = (uint32_t) ((double) count / seconds);
     Render::Target::Debug::SaveGPS(gps);
 
-    //  Typically GPS increases as progressive display 
-    //  continues.  We cannot let CreateScene graphics
-    //  be affected by the progressive display rate.  
+    // Typically GPS increases as progressive display continues. We cannot let CreateScene graphics
+    // be affected by the progressive display rate.  
     //
-    //  The GPS from the beginning of progressive is likely to be less
-    //  than the GPS from the end of progressive display.  Therefore,
-    //  we reset the progressive display value by saving the create scene value.
-    m_graphicsPerSecondProgressiveDisplay.store(gps);
+    // The GPS from the beginning of progressive is likely to be less
+    // than the GPS from the end of progressive display. Therefore,
+    // we reset the progressive display value by saving the create scene value.
+    m_graphicsPerSecondNonScene.store(gps);
     if (!isFromProgressiveDisplay)
-        m_graphicsPerSecond.store(gps);
+        m_graphicsPerSecondScene.store(gps);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -131,7 +130,12 @@ void Render::Task::Perform(StopWatch& timer)
     timer.Start();
     m_outcome = _Process(timer);
     m_elapsedTime = timer.GetCurrentSeconds();
-    THREADLOG.debugv ("task=%s, elapsed=%lf", _GetName(), m_elapsedTime);
+    if (m_elapsedTime>.5)
+        THREADLOG.errorv("task=%s, elapsed=%lf", _GetName(), m_elapsedTime);
+    else if (m_elapsedTime>.125)
+        THREADLOG.warningv("task=%s, elapsed=%lf", _GetName(), m_elapsedTime);
+    else
+        THREADLOG.debugv("task=%s, elapsed=%lf", _GetName(), m_elapsedTime);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -225,9 +229,14 @@ Render::Graphic* GraphicSet::Find(DgnViewportCR vp, double metersPerPixel) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GraphicSet::DropFor(DgnViewportCR vp)
     {
-    auto found = std::find_if(m_graphics.begin(), m_graphics.end(), [&](GraphicPtr const& arg) { return arg->IsSpecificToViewport(vp); });
-    if (m_graphics.end() != found)
-        m_graphics.erase(found);
+    // NB: Note there can be more than one graphic for a viewport
+    for (auto it=m_graphics.begin(); it!=m_graphics.end(); )
+        {
+        if ((*it)->IsSpecificToViewport(vp))
+            it = m_graphics.erase(it);
+        else
+            ++it;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -235,21 +244,90 @@ void GraphicSet::DropFor(DgnViewportCR vp)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GraphicSet::Drop(Render::Graphic& graphic)
     {
-    for (auto it=m_graphics.begin(); it!=m_graphics.end(); ++it)
-        {
-        if (it->get() == &graphic)
-            {
-            m_graphics.erase(it);
-            return;
-            }
-        }
-    BeAssert(false);
+    auto size = m_graphics.erase(&graphic);
+    UNUSED_VARIABLE(size);
+    BeAssert(0 != size);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* these methods are here because we use std::dequeu which doesn't use the bentley allocator
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-GraphicList::~GraphicList() {}
-void GraphicList::Add(Graphic& graphic, void* ovr, uint32_t ovrFlags) {graphic.Close(); m_list.push_back(Node(graphic,ovr,ovrFlags));}
-void GraphicList::Clear() {m_list.clear();}
+void GraphicList::Add(Graphic& graphic, void* ovr, uint32_t ovrFlags) 
+    {
+    graphic.Close(); 
+    m_list.push_back(Node(graphic, ovr, ovrFlags));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void FrustumPlanes::Init(FrustumCR frustum)
+    {
+    m_isValid = true;
+    ClipUtil::RangePlanesFromFrustum(m_planes, frustum, true, true, 1.0E-6);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+FrustumPlanes::Contained FrustumPlanes::Contains(DPoint3dCP points, int nPts) const
+    {
+    BeAssert(IsValid());
+
+    bool allInside = true;
+    for (ClipPlaneCR plane : m_planes)
+        {
+        int nOutside = 0;
+        for (int j=0; j < nPts; ++j)
+            {
+            if (plane.EvaluatePoint(points[j]) < 1.0E-8)
+                {
+                ++nOutside;
+                allInside = false;
+                }
+            }
+
+        if (nOutside == nPts)
+            return Contained::Outside;
+        }
+    
+    return allInside ? Contained::Inside : Contained::Partly;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool FrustumPlanes::IntersectsRay(DPoint3dCR origin, DVec3dCR direction)
+    {
+    double tFar  =  1e37;
+    double tNear = -1e37;
+
+    for (ClipPlaneCR plane : m_planes)
+        {
+        double vD = plane.DotProduct(direction), vN = plane.EvaluatePoint(origin);
+
+        if (0.0 == vD)
+            {
+            // Ray is parallel... No need to continue testing if outside halfspace.
+            if (vN < 0.0)
+                return false;
+            }
+        else
+            {
+            double      rayDistance = -vN / vD;
+
+            if (vD < 0.0)
+                {
+                if (rayDistance < tFar)
+                   tFar = rayDistance;
+                }
+            else
+                {
+                if (rayDistance > tNear)
+                    tNear = rayDistance;
+                }
+            }
+        } 
+
+    return tNear <= tFar;
+    }
