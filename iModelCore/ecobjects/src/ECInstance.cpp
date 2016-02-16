@@ -2655,7 +2655,7 @@ InstanceReadStatus      GetInstance (ECClassCP& ecClass, IECInstancePtr& ecInsta
         }
     if (NULL == foundClass)
         {
-        LOG.errorv (L"Failed to find ECClass %ls in %ls", m_className.c_str (), m_fullSchemaName.c_str ());
+        LOG.errorv (L"Failed to find ECClass %s in %s", m_className.c_str (), m_fullSchemaName.c_str ());
         return InstanceReadStatus::ECClassNotFound;
         }
 
