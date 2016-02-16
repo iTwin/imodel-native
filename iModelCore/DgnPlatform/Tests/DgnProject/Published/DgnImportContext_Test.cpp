@@ -183,9 +183,8 @@ TEST_F(ImportTest, ImportGroups)
         ASSERT_TRUE(group->Insert().IsValid());
 
         //  Add a member
-        DgnClassId mclassid = DgnClassId(m_db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
         DgnCategoryId mcatid = DgnCategory::QueryHighestCategoryId(*m_db);
-        PhysicalElementPtr member = PhysicalElement::Create(PhysicalElement::CreateParams(*m_db, model1->GetModelId(), mclassid, mcatid, Placement3d()));
+        GenericPhysicalObjectPtr member = GenericPhysicalObject::Create(*model1, mcatid);
         ASSERT_TRUE(member.IsValid());
         ASSERT_TRUE(member->Insert().IsValid());
         ASSERT_EQ(DgnDbStatus::Success, group->AddMember(*member));
@@ -242,7 +241,7 @@ static DgnElementCPtr insertElement(DgnDbR db, DgnModelId mid, bool is3d, DgnSub
 
     DgnElementPtr gelem;
     if (is3d)
-        gelem = PhysicalElement::Create(PhysicalElement::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement)), cat, Placement3d()));
+        gelem = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASSNAME_PhysicalObject)), cat, Placement3d()));
     else
         gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement2d)), cat, Placement2d()));
 
@@ -655,7 +654,7 @@ TEST_F(ImportTest, ElementGeomIOCausesFontRemap)
     BentleyStatus db1_fontEmbedStatus = DgnFontPersistence::Db::Embed(db1->Fonts().DbFaceData(), *db1_font);
     ASSERT_TRUE(SUCCESS == db1_fontEmbedStatus);
 
-    BentleyApi::ECN::ECClassCP db1_physicalClass = db1->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
+    BentleyApi::ECN::ECClassCP db1_physicalClass = db1->Schemas().GetECClass(GENERIC_DOMAIN_NAME, GENERIC_CLASSNAME_PhysicalObject);
     BeAssert(nullptr != db1_physicalClass);
     DgnClassId db1_physicalDgnClass = DgnClassId(db1_physicalClass->GetId());
     BeAssert(db1_physicalDgnClass.IsValid());
@@ -665,7 +664,7 @@ TEST_F(ImportTest, ElementGeomIOCausesFontRemap)
     db1_text->GetStyleR().SetFont(*db1_font);
     db1_text->GetStyleR().SetHeight(1.0);
 
-    PhysicalElementPtr db1_element = PhysicalElement::Create(PhysicalElement::CreateParams(*db1, db1->Models().QueryFirstModelId(), db1_physicalDgnClass, DgnCategory::QueryFirstCategoryId(*db1)));
+    GenericPhysicalObjectPtr db1_element = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(*db1, db1->Models().QueryFirstModelId(), db1_physicalDgnClass, DgnCategory::QueryFirstCategoryId(*db1)));
     ElementGeometryBuilderPtr db1_builder = ElementGeometryBuilder::CreateWorld(*db1->Models().GetModel(db1->Models().QueryFirstModelId()), DgnCategory::QueryFirstCategoryId(*db1));
     db1_builder->Append(*db1_text);
     db1_builder->SetGeomStreamAndPlacement(*db1_element->ToGeometrySourceP());

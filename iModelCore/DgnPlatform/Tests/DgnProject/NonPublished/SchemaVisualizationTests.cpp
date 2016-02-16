@@ -9,8 +9,9 @@
 #ifdef BENTLEY_WIN32
 
 #include "DgnHandlersTests.h"
-#include <DgnPlatform\DgnPlatformApi.h>
-#include <ECObjects\ECObjectsAPI.h>
+#include <DgnPlatform/DgnPlatformApi.h>
+#include <DgnPlatform/GenericDomain.h>
+#include <ECObjects/ECObjectsAPI.h>
 
 #include <GraphViz/gvc.h>
 #include <GraphViz/gvplugin_render.h>
@@ -1844,7 +1845,7 @@ public:
 
     virtual void textspan           (GVJ_t* job, pointf p, textspan_t* span) override
         {
-        PhysicalElementPtr textspanElement = PhysicalElement::Create(PhysicalElement::CreateParams(*db, modelId, classId, categoryId));
+        GenericPhysicalObjectPtr textspanElement = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(*db, modelId, classId, categoryId));
         textspanElement->SetCode(DgnCode::CreateEmpty());
 
         DPoint3d origin = DPoint3d::From(p.x, p.y, 0.0);
@@ -1877,7 +1878,7 @@ public:
 
     virtual void polygon            (GVJ_t* job, pointf* A, int n, int filled) override
         {
-        PhysicalElementPtr polygonElement = PhysicalElement::Create(PhysicalElement::CreateParams(*db, modelId, classId, categoryId));
+        GenericPhysicalObjectPtr polygonElement = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(*db, modelId, classId, categoryId));
         polygonElement->SetCode(DgnCode::CreateEmpty());
 
         DPoint3d origin = DPoint3d::From(A[0].x, A[0].y, 0.0);
@@ -1900,7 +1901,7 @@ public:
 
     virtual void beziercurve        (GVJ_t* job, pointf* A, int n, int arrow_at_start, int arrow_at_end, int x) override
         {
-        PhysicalElementPtr bezierElement = PhysicalElement::Create(PhysicalElement::CreateParams(*db, modelId, classId, categoryId));
+        GenericPhysicalObjectPtr bezierElement = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(*db, modelId, classId, categoryId));
         bezierElement->SetCode(DgnCode::CreateEmpty());
 
         DPoint3d origin = DPoint3d::From(A[0].x, A[0].y, 0.0);
@@ -1933,7 +1934,7 @@ public:
 
     virtual void polyline           (GVJ_t* job, pointf* A, int n) override
         {
-        PhysicalElementPtr polylineElement = PhysicalElement::Create(PhysicalElement::CreateParams(*db, modelId, classId, categoryId));
+        GenericPhysicalObjectPtr polylineElement = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(*db, modelId, classId, categoryId));
         polylineElement->SetCode(DgnCode::CreateEmpty());
 
         DPoint3d origin = DPoint3d::From(A[0].x, A[0].y, 0.0);
@@ -2019,7 +2020,7 @@ TEST_F(SchemaVisualizationTests, GraphvizDiagramTest)
     DgnModelId modelId = model->GetModelId();
     ASSERT_TRUE(modelId.IsValid());
 
-    DgnClassId pclassId = DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
+    DgnClassId pclassId = DgnClassId(db->Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASSNAME_PhysicalObject));
     ASSERT_TRUE(pclassId.IsValid());
 
     //make diagram from scope

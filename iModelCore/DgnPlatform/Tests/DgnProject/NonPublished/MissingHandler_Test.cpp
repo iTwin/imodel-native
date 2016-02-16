@@ -71,17 +71,17 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct Elem1Handler : dgn_ElementHandler::Physical
+struct Elem1Handler : dgn_ElementHandler::Geometric3d
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS(MHTEST_ELEM1_CLASS, Elem1, Elem1Handler, dgn_ElementHandler::Physical, );
+    ELEMENTHANDLER_DECLARE_MEMBERS(MHTEST_ELEM1_CLASS, Elem1, Elem1Handler, dgn_ElementHandler::Geometric3d, );
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct Elem2Handler : dgn_ElementHandler::Physical
+struct Elem2Handler : dgn_ElementHandler::Geometric3d
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS(MHTEST_ELEM2_CLASS, Elem2, Elem2Handler, dgn_ElementHandler::Physical, );
+    ELEMENTHANDLER_DECLARE_MEMBERS(MHTEST_ELEM2_CLASS, Elem2, Elem2Handler, dgn_ElementHandler::Geometric3d, );
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -142,8 +142,8 @@ struct MissingHandlerTest : public ::testing::Test
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementId MissingHandlerTest::CreatePhysicalElement(DgnDbR db, DgnElementId parentId)
     {
-    DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Physical::GetHandler());
-    PhysicalElement elem(makeCreateParams(db, m_defaultModelId, classId, m_defaultCategoryId, parentId));
+    DgnClassId classId = db.Domains().GetClassId(generic_ElementHandler::GenericPhysicalObjectHandler::GetHandler());
+    GenericPhysicalObject elem(makeCreateParams(db, m_defaultModelId, classId, m_defaultCategoryId, parentId));
     elem.Insert();
     return elem.GetElementId();
     }
@@ -197,7 +197,7 @@ void MissingHandlerTest::InitDb(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MissingHandlerTest::TestDelete(DgnElementId elemId, DgnDbR db, bool allowed)
     {
-    auto cpElem = db.Elements().Get<PhysicalElement>(elemId);
+    auto cpElem = db.Elements().Get<GeometricElement3d>(elemId);
     ASSERT_TRUE(cpElem.IsValid());
     auto status = cpElem->Delete();
     if (allowed)
@@ -231,12 +231,12 @@ void MissingHandlerTest::TestRestrictions(ElemInfo const& info, DgnDbR db, uint6
 #define ALLOWED(ACTION) (0 == (restrictions & ACTION))
 
     // Look up the element
-    PhysicalElementCPtr cpElem = db.Elements().Get<PhysicalElement>(info.m_elemId);
+    DgnElementCPtr cpElem = db.Elements().Get<GeometricElement3d>(info.m_elemId);
     ASSERT_TRUE(cpElem.IsValid());
 
     // Verify handler
     EXPECT_EQ(0 != restrictions, cpElem->GetElementHandler()._IsMissingHandler());
-    EXPECT_TRUE(nullptr != dynamic_cast<dgn_ElementHandler::Physical*>(&cpElem->GetElementHandler()));
+    EXPECT_TRUE(nullptr != dynamic_cast<dgn_ElementHandler::Geometric3d*>(&cpElem->GetElementHandler()));
 
     // Clone
     DgnDbStatus status;
@@ -250,7 +250,7 @@ void MissingHandlerTest::TestRestrictions(ElemInfo const& info, DgnDbR db, uint6
         }
 
     // Change parent
-    auto pElem = cpElem->MakeCopy<PhysicalElement>();
+    auto pElem = cpElem->MakeCopy<GeometricElement3d>();
     DgnElementId parentId;
     ASSERT_TRUE(pElem.IsValid());
     status = pElem->SetParentId(parentId);
@@ -279,8 +279,8 @@ void MissingHandlerTest::TestRestrictions(ElemInfo const& info, DgnDbR db, uint6
     EXPECT_EQ(newChildId.IsValid(), ALLOWED(Restriction::InsertChild));
 
     // Modify child
-    PhysicalElementCPtr cpChild = db.Elements().Get<PhysicalElement>(info.m_childId);
-    PhysicalElementPtr pChild = cpChild.IsValid() ? cpChild->MakeCopy<PhysicalElement>() : nullptr;
+    auto cpChild = db.Elements().Get<GeometricElement3d>(info.m_childId);
+    auto pChild = cpChild.IsValid() ? cpChild->MakeCopy<GeometricElement3d>() : nullptr;
     ASSERT_TRUE(pChild.IsValid());
     EXPECT_EQ(DgnDbStatus::Success, pChild->SetCategoryId(m_alternateCategoryId));
     EXPECT_EQ(pChild->Update().IsValid(), ALLOWED(Restriction::UpdateChild));
@@ -288,7 +288,7 @@ void MissingHandlerTest::TestRestrictions(ElemInfo const& info, DgnDbR db, uint6
     // Delete child (schema is set up so that one element only supports insert, the other only supports delete - so try to delete the newly-added child
     if (newChildId.IsValid())
         {
-        cpChild = db.Elements().Get<PhysicalElement>(newChildId);
+        cpChild = db.Elements().Get<GeometricElement3d>(newChildId);
         ASSERT_TRUE(cpChild.IsValid());
         status = cpChild->Delete();
         if (ALLOWED(Restriction::DeleteChild))
