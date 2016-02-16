@@ -716,7 +716,9 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                 return ERROR;
                 }
 
-            if (!propertyMap->GetProperty().GetIsPrimitive())
+            ECPropertyCR prop = propertyMap->GetProperty();
+            NavigationECPropertyCP navProp = prop.GetAsNavigationProperty();
+            if (!prop.GetIsPrimitive() && (navProp == nullptr || navProp->IsMultiple()))
                 {
                 issues.Report(ECDbIssueSeverity::Error,
                               "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid: "
@@ -772,7 +774,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                 totalColumns.push_back(column);
                 switch (indexInfo->GetWhere())
                     {
-                        case EC::ClassIndexInfo::WhereConstraint::NotNull:
+                        case ClassIndexInfo::WhereConstraint::NotNull:
                         {
                         //if column is not nullable, no need to add IS NOT NULL expression to where clause of index
                         if (column->GetConstraint().IsNotNull())
