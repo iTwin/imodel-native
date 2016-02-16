@@ -8,6 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
+#include <RasterSchema/RasterSchemaApi.h>
 #include <RasterSchema/RasterHandler.h>
 #include <RasterSchema/RasterSchemaTypes.h>
 
