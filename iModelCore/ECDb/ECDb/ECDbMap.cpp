@@ -93,14 +93,14 @@ MapStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext, bvector<
         return stat;
         }
 
-    if (SUCCESS != SaveMappings())
+    if (SUCCESS != CreateOrUpdateRequiredTables())
         {
         ClearCache();
         m_schemaImportContext = nullptr;
         return MapStatus::Error;
         }
 
-    if (SUCCESS != CreateOrUpdateRequiredTables())
+    if (SUCCESS != SaveMappings())
         {
         ClearCache();
         m_schemaImportContext = nullptr;

@@ -70,8 +70,9 @@ private:
 
     BentleyStatus InsertIndexInfoIntoDb(ECDbCR, ECDbSqlIndex const&) const;
     BentleyStatus ReadIndexInfosFromDb(ECDbCR) const;
-
     bool IsNameInUse(Utf8CP name) const;
+
+    static BentleyStatus TruncateIndexInfoTables(ECDbCR);
 
 public:
     SchemaImportECDbMapDb(ECDbMapDb& coreECDbMapDb) : m_coreMapDb(coreECDbMapDb) {}
