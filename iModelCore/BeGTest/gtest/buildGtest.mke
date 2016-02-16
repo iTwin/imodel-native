@@ -82,6 +82,11 @@ GUNITTEST_LIBS       + $[@wildcard $(collectionProduct)Libs/*$(libext)]
 #   Satisfy the link requirements of begtest itself
 GUNITTEST_LIBS       + $[@wildcard $(BuildContext)SubParts/Libs/*$(libext)]
 
+%if $(TARGET_PLATFORM)=="MacOS"
+    # Also grab static libraries on this platform for gtest and gmock symbols.
+    GUNITTEST_LIBS       + $[@wildcard $(BuildContext)SubParts/Libs/*$(stlibext)]
+%endif
+
 %if $(TARGET_PLATFORM)=="Windows"
     GUNITTEST_LIBS   + advapi32$(libext) rpcrt4$(libext) Shlwapi$(libext) version$(libext) ws2_32$(libext) user32.lib
 %elif $(TARGET_PLATFORM)=="Linux"
