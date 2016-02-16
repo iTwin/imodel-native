@@ -113,14 +113,11 @@ struct DisplayTileCache
     ItemList m_lru;    
     };
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-struct RasterProgressiveDisplay : IProgressiveDisplay, NonCopyableClass
+struct RasterProgressiveDisplay : Dgn::ProgressiveTask
 {
-    DEFINE_BENTLEY_REF_COUNTED_MEMBERS
-
 protected:
     RasterQuadTreeR m_raster;
 
@@ -150,10 +147,7 @@ protected:
     virtual ~RasterProgressiveDisplay();
 
     //! Displays tiled rasters and schedules downloads. 
-    virtual Completion _Process(ViewContextR) override;
-
-    // set limit and returns true to cause caller to call EnableStopAfterTimout
-    virtual bool _WantTimeoutSet(uint32_t& limit) override {return false;}
+    virtual Completion _DoProgressive(SceneContextR context, WantShow&) override;
 
     bool ShouldDrawInConvext (ViewContextR context) const;
 
@@ -162,11 +156,10 @@ protected:
     void DrawLoadedChildren(RasterTileR tile, ViewContextR context, uint32_t resolutionDelta);
 
 public:
-    void Draw (ViewContextR context);
+    void Draw (SceneContextR context);
 
     static RefCountedPtr<RasterProgressiveDisplay> Create(RasterQuadTreeR raster, ViewContextR context);
 };
-#endif
 
 //----------------------------------------------------------------------------------------
 //-------------------------------  RasterTile --------------------------------------------
@@ -272,7 +265,6 @@ ReprojectStatus RasterTile::ReprojectCorners(DPoint3dP outUors, DPoint3dCP srcCa
 //----------------------------------------------------------------------------------------
 bool RasterTile::Draw(ViewContextR context)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // Corners are in this order:
     //  [0]  [1]
     //  [2]  [3]
@@ -289,7 +281,7 @@ bool RasterTile::Draw(ViewContextR context)
         }
     else
         {
-        BeSQLite::wt_OperationForGraphics highPriority;
+        //NEEDS_WORK_CONTINUOUS_RENDER BeSQLite::wt_OperationForGraphics highPriority;
         auto extents = context.GetViewport()->GetViewController().GetViewedExtents();
         for (auto& pt : uvPts)
             pt.z = extents.low.z - 1;
@@ -297,16 +289,19 @@ bool RasterTile::Draw(ViewContextR context)
 
     DisplayTilePtr pDisplayTile = GetDisplayTileP(false/*request*/);
 
-#ifndef NDEBUG  // debug build only.
-    static bool s_DrawTileShape = false;
+//#ifndef NDEBUG  // debug build only.
+    static bool s_DrawTileShape = true;
     if(pDisplayTile.IsNull() && s_DrawTileShape)
         {
-        ElemMatSymb elemMatSymb;
-        auto colorIdx = ColorDef(222, 0, 0, 128);
-        elemMatSymb.SetLineColor (colorIdx);
-        elemMatSymb.SetWidth (2);
-        elemMatSymb.SetIsFilled(false);
-        context.GetIDrawGeom().ActivateMatSymb (&elemMatSymb);
+        Render::GraphicPtr pTileGraphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport()));
+
+        // TODO ActivateGraphicParams
+//         ElemMatSymb elemMatSymb;
+//         auto colorIdx = ColorDef(222, 0, 0, 128);
+//         elemMatSymb.SetLineColor (colorIdx);
+//         elemMatSymb.SetWidth (2);
+//         elemMatSymb.SetIsFilled(false);
+//         context.GetIDrawGeom().ActivateMatSymb (&elemMatSymb);
 
         DPoint3d box[5];
         box[0] = uvPts[0];
@@ -314,7 +309,7 @@ bool RasterTile::Draw(ViewContextR context)
         box[2] = uvPts[3];
         box[3] = uvPts[2];
         box[4] = box[0];
-        context.GetIDrawGeom().DrawLineString3d (_countof(box), box, NULL);
+        pTileGraphic->AddLineString(_countof(box), box, NULL);
 
         DPoint3d centerPt = DPoint3d::FromInterpolate(uvPts[0], 0.5, uvPts[3]);
         double pixelSize = context.GetPixelSizeAtPoint(&centerPt);
@@ -328,24 +323,25 @@ bool RasterTile::Draw(ViewContextR context)
         textStr->GetStyleR().SetSize(pixelSize*10);
         textStr->SetOriginFromJustificationOrigin(centerPt, TextString::HorizontalJustification::Center, TextString::VerticalJustification::Middle);
 
-        elemMatSymb.SetWidth (0);
-        colorIdx = ColorDef(222, 0, 222, 128);
-        elemMatSymb.SetLineColor (colorIdx);
-        context.GetIDrawGeom().ActivateMatSymb (&elemMatSymb);
-        context.GetIViewDraw().DrawTextString (*textStr);
-        }
-#endif
+        // TODO ActivateGraphicParams
+//         elemMatSymb.SetWidth (0);
+//         colorIdx = ColorDef(222, 0, 222, 128);
+//         elemMatSymb.SetLineColor (colorIdx);
+//         context.GetIDrawGeom().ActivateMatSymb (&elemMatSymb);
+        pTileGraphic->AddTextString (*textStr);
 
+        //context.OutputGraphic(*pTileGraphic, nullptr);
+        }
+//#endif
+#if NEEDS_WORK_CONTINUOUS_RENDER
     if(!pDisplayTile.IsValid())
         return false;
 
     uintptr_t textureId = pDisplayTile->GetTextureId();
     context.GetIViewDraw().DrawMosaic (1,1, &textureId, uvPts); 
+#endif
     
     return true;
-#else
-    return false;
-#endif
     }
 
 //----------------------------------------------------------------------------------------
@@ -456,11 +452,12 @@ void RasterTile::QueryVisible(bvector<RasterTilePtr>& visibles, ViewContextR con
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RasterTile::IsVisible (ViewContextR viewContext, double& factor) const
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DPoint3d npcCorners[4];
     DPoint3d frustCorners[4];
-
-    viewContext.LocalToWorld(frustCorners, m_corners, 4);
+    
+    //&&MM What happened to localToWolrd?
+    //viewContext.LocalToWorld(frustCorners, m_corners, 4);
+    memcpy(frustCorners, m_corners, sizeof(frustCorners));
     viewContext.GetWorldToNpc().M0.MultiplyAndRenormalize(npcCorners, frustCorners, 4);
 
     DPoint3d npcOrigin;
@@ -518,9 +515,6 @@ bool RasterTile::IsVisible (ViewContextR viewContext, double& factor) const
 #endif
 
     return true;
-#else
-    return false;
-#endif
     }
 
 //----------------------------------------------------------------------------------------
@@ -562,19 +556,16 @@ void RasterQuadTree::QueryVisible(bvector<RasterTilePtr>& visibles, ViewContextR
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-void RasterQuadTree::Draw (ViewContextR context)
+void RasterQuadTree::Draw(Dgn::SceneContextR context)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    RefCountedPtr<RasterProgressiveDisplay> display = RasterProgressiveDisplay::Create(*this, context);
-    display->Draw(context);
-#endif
+    //&&MM not now
+//     RefCountedPtr<RasterProgressiveDisplay> display = RasterProgressiveDisplay::Create(*this, context);
+//     display->Draw(context);
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //----------------------------------------------------------------------------------------
 //-------------------------------  RasterProgressiveDisplay -----------------------------------------
 //----------------------------------------------------------------------------------------
-
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
@@ -606,12 +597,7 @@ bool RasterProgressiveDisplay::ShouldDrawInConvext (ViewContextR context) const
     {
     switch (context.GetDrawPurpose())
         {
-        case DrawPurpose::Hilite:
-        case DrawPurpose::Unhilite:
-        case DrawPurpose::ChangedPre:       // Erase, rely on Healing.
-        case DrawPurpose::RestoredPre:      // Erase, rely on Healing.
         case DrawPurpose::Pick:
-        case DrawPurpose::Flash:
         case DrawPurpose::CaptureGeometry:
         case DrawPurpose::FenceAccept:
         case DrawPurpose::RegionFlood:
@@ -620,6 +606,22 @@ bool RasterProgressiveDisplay::ShouldDrawInConvext (ViewContextR context) const
         case DrawPurpose::ModelFacet:
             return false;
         }
+//NEEDS_WORK_CONTINUOUS_RENDER review the list  
+//         NotSpecified = 0,
+//         CreateScene,
+//         Plot,
+//         Pick,
+//         CaptureGeometry,
+//         Decorate,
+//         FenceAccept,
+//         RegionFlood,                 //!< Collect graphics to find closed regions/flood...
+//         FitView,
+//         ExportVisibleEdges,
+//         ClashDetection,
+//         ModelFacet,
+//         Measure,
+//         VisibilityCalculation,
+//         Dynamics,
 
     return true;
     }
@@ -677,7 +679,7 @@ void RasterProgressiveDisplay::FindBackgroudTiles(SortedTiles& backgroundTiles, 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-void RasterProgressiveDisplay::Draw (ViewContextR context)
+void RasterProgressiveDisplay::Draw (SceneContextR context)
     {
     // **********************************
     // *** NB: This method must be fast. 
@@ -733,7 +735,7 @@ void RasterProgressiveDisplay::Draw (ViewContextR context)
 
     if(!m_missingTiles.empty())
         {
-        context.GetViewport()->ScheduleProgressiveDisplay (*this);
+        context.GetViewport()->ScheduleProgressiveTask(*this);
         m_waitTime = 50;
         m_nextRetryTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis() + m_waitTime;
         }
@@ -742,7 +744,7 @@ void RasterProgressiveDisplay::Draw (ViewContextR context)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-IProgressiveDisplay::Completion RasterProgressiveDisplay::_Process(ViewContextR context)
+ProgressiveTask::Completion RasterProgressiveDisplay::_DoProgressive(SceneContextR context, WantShow& wantShow)
     {
     if (BeTimeUtilities::GetCurrentTimeAsUnixMillis() < m_nextRetryTime)
         {
@@ -766,7 +768,7 @@ IProgressiveDisplay::Completion RasterProgressiveDisplay::_Process(ViewContextR 
             return Completion::Aborted;
         }
 
-    IProgressiveDisplay::Completion completion = Completion::Finished;
+    Completion completion = Completion::Finished;
 
     for (auto pTile = m_pendingTiles.begin(); pTile != m_pendingTiles.end();  /* incremented or erased in loop*/ )
         {
@@ -796,4 +798,3 @@ IProgressiveDisplay::Completion RasterProgressiveDisplay::_Process(ViewContextR 
 
     return completion;    
     }
-#endif

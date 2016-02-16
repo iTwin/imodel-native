@@ -29,7 +29,7 @@ protected:
     //! Destruct a RasterModel object.
     ~RasterModel();
         
-    virtual void _AddGraphicsToScene(Dgn::ViewContextR) override;
+    virtual void _AddGraphicsToScene(Dgn::SceneContextR) override;
     virtual void _WriteJsonProperties(Json::Value&) const override;
     virtual void _ReadJsonProperties(Json::Value const&) override;
 
