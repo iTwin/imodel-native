@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/RenderMaterial.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -43,7 +43,8 @@ public:
 DGNPLATFORM_EXPORT    static RenderMaterialPtr            Create (DgnDbR dgnDb, DgnMaterialId materialId);
 DGNPLATFORM_EXPORT    static RenderMaterialPtr            Create (Json::Value const& value, DgnMaterialId materialId);
                              Json::Value                  GetValue () { return m_value; }
-DGNPLATFORM_EXPORT           BentleyStatus                DoImport (DgnImportContext& context, DgnDbR sourceDb);
+DGNPLATFORM_EXPORT           BentleyStatus                RelocateToDestination (DgnImportContext& context);
+DGNPLATFORM_EXPORT    static BentleyStatus                RelocateToDestination (Utf8StringR json, DgnImportContext& context);
 
 DGNPLATFORM_EXPORT    virtual     RenderMaterialPtr       _Clone () const override { return new JsonRenderMaterial (*this); }
 DGNPLATFORM_EXPORT    virtual     double                  _GetDouble (char const* key, BentleyStatus* status = NULL) const override;
@@ -201,7 +202,7 @@ public:
 
     static RenderMaterialMapPtr  Create (Json::Value const& value) { return new JsonRenderMaterialMap (value); }
            Json::Value           GetValue () { return m_value; }
-           BentleyStatus         DoImport (DgnImportContext& context, DgnDbR sourceDb);
+           BentleyStatus         RelocateToDestination (DgnImportContext& context);
 
 
     DGNPLATFORM_EXPORT    virtual Mode                _GetMode () const override;
