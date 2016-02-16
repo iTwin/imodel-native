@@ -104,11 +104,11 @@ public:
 private:
     mutable BeMutex m_mutex;
 
-    ECDbR                       m_ecdb;
-    ECDbSQLManager              m_ecdbSqlManager;
-    mutable bmap<ECN::ECClassId, ClassMapPtr>  m_classMapDictionary;
-    mutable LightweightCache    m_lightweightCache;
-    SchemaImportContext*        m_schemaImportContext;
+    ECDbR m_ecdb;
+    ECDbSQLManager m_ecdbSqlManager;
+    mutable bmap<ECN::ECClassId, ClassMapPtr> m_classMapDictionary;
+    mutable LightweightCache m_lightweightCache;
+    SchemaImportContext* m_schemaImportContext;
 
     bool TryGetClassMap(ClassMapPtr&, ClassMapLoadContext&, ECN::ECClassCR) const;
     ClassMapPtr DoGetClassMap(ECN::ECClassCR) const;
@@ -120,6 +120,7 @@ private:
     BentleyStatus FinishTableDefinition() const;
     BentleyStatus SaveMappings() const;
     BentleyStatus CreateOrUpdateRequiredTables() const;
+    BentleyStatus EvaluateColumnNotNullConstraints() const;
     BentleyStatus CreateOrUpdateIndexesInDb() const;
 
     MapStatus AddClassMap(ClassMapPtr&) const;
@@ -127,7 +128,7 @@ private:
     DbResult UpdateHoldingView();
 
     ClassMapsByTable GetClassMapsByTable() const;
-    void GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>&, ECN::ECClassCR) const;
+    BentleyStatus GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>&, ECN::ECClassCR, bool recursive) const;
 
 public:
     explicit ECDbMap(ECDbR ecdb);

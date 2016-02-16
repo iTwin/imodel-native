@@ -613,6 +613,81 @@ ECDbMap::ClassMapsByTable ECDbMap::GetClassMapsByTable() const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle    02/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbMap::EvaluateColumnNotNullConstraints() const
+    {
+    //NOT NULL constraints (either implied from (1,1) multiplicity of
+    //relationship or because of PropertyMap CA) can only be enforced
+    //if classes other than subclasses of the respective class are mapped to the same column.
+    //If it can be enforced, a NOT NULL constraint will be added. Otherwise it is dropped
+    //and a warning is logged.
+    for (bpair<ECClassId, ClassMapPtr> const& kvPair : m_classMapDictionary)
+        {
+        ClassMapCR classMap = *kvPair.second;
+        if (classMap.GetClassMapType() != IClassMap::Type::RelationshipEndTable)
+            continue;
+
+        RelationshipClassEndTableMapCR relClassMap = static_cast<RelationshipClassEndTableMapCR> (classMap);
+        const bool impliesNotNullOnFkCol = relClassMap.GetConstraintMap(relClassMap.GetReferencedEnd()).GetRelationshipConstraint().GetCardinality().GetLowerLimit() > 0;
+        if (!impliesNotNullOnFkCol)
+            continue;
+
+        ECRelationshipConstraintCR foreignEndConstraint = relClassMap.GetConstraintMap(relClassMap.GetForeignEnd()).GetRelationshipConstraint();
+        const bool isPolymorphicConstraint = foreignEndConstraint.GetIsPolymorphic();
+
+        std::set<ClassMap const*> constraintClassMaps;
+        for (ECRelationshipConstraintClassCP constraintClass : relClassMap.GetConstraintMap(relClassMap.GetForeignEnd()).GetRelationshipConstraint().GetConstraintClasses())
+            {
+            if (SUCCESS != GetClassMapsFromRelationshipEnd(constraintClassMaps, constraintClass->GetClass(), isPolymorphicConstraint))
+                {
+                BeAssert(false);
+                return ERROR;
+                }
+            }
+
+        bmap<ECDbSqlTable const*, bset<ClassMap const*>> constraintClassesPerTable;
+        for (ClassMap const* constraintClassMap : constraintClassMaps)
+            {
+            for (ECDbSqlTable const* table : constraintClassMap->GetTables())
+                {
+                constraintClassesPerTable[table].insert(constraintClassMap);
+                }
+            }
+
+        LightweightCache const& lwc = GetLightweightCache();
+        for (ECDbSqlTable const* fkTable : relClassMap.GetTables())
+            {
+            std::vector<ECClassId> allClassIds = lwc.GetClassesForTable(*fkTable);
+            bset<ClassMap const*> const& constraintClassIds = constraintClassesPerTable[fkTable];
+
+            ECDbSqlColumn const* fkColumn = relClassMap.GetReferencedEndECInstanceIdPropMap()->GetSingleColumn(*fkTable, true);
+            if (fkColumn == nullptr)
+                {
+                BeAssert(false);
+                return ERROR;
+                }
+
+            if (allClassIds.size() == constraintClassIds.size())
+                {
+                ECDbSqlColumn* fkColumnP = const_cast<ECDbSqlColumn*> (fkColumn);
+                fkColumnP->GetConstraintR().SetIsNotNull(true);
+                continue;
+                }
+
+            BeAssert(!fkColumn->GetConstraint().IsNotNull());
+            m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning, "The cardinality of the ECRelationshipClass '%s' "
+                                                            "would imply the foreign key column to be 'not nullable'. ECDb cannot enforce that though for the "
+                                                            "foreign key column '%s' in table '%s' because other classes not involved in the ECRelationshipClass map to that table. "
+                                                            "Therefore the column is created without NOT NULL constraint.",
+                                                            relClassMap.GetClass().GetFullName(), fkColumn->GetName().c_str(), fkTable->GetName().c_str());
+            }
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      12/2011
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbMap::CreateOrUpdateRequiredTables() const
@@ -624,6 +699,9 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables() const
     m_ecdb.GetStatementCache().Empty();
     StopWatch timer(true);
 
+    if (SUCCESS != EvaluateColumnNotNullConstraints())
+        return ERROR;
+    
     int nCreated = 0;
     int nUpdated = 0;
     int nSkipped = 0;
@@ -662,7 +740,6 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables() const
     LOG.debugv("Created %d tables, skipped %d tables and updated %d table/view(s) in %.4f seconds", nCreated, nSkipped, nUpdated, timer.GetElapsedSeconds());
     return SUCCESS;
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2016
@@ -876,34 +953,52 @@ std::set<ClassMap const*> ECDbMap::GetClassMapsFromRelationshipEnd(ECRelationshi
             }
 
         ClassMap const* classMap = GetClassMap(*ecClass);
-        if (classMap->GetMapStrategy().IsNotMapped())
-            continue;
-
-        classMaps.insert(classMap);
-        if (classMap->GetMapStrategy().GetStrategy() != ECDbMapStrategy::Strategy::SharedTable && constraint.GetIsPolymorphic())
+        if (classMap == nullptr)
             {
-            GetClassMapsFromRelationshipEnd(classMaps, *ecClass);
+            BeAssert(false);
+            classMaps.clear();
+            return classMaps;
+            }
+
+        const bool recursive = classMap->GetMapStrategy().GetStrategy() != ECDbMapStrategy::Strategy::SharedTable && constraint.GetIsPolymorphic();
+        if (SUCCESS != GetClassMapsFromRelationshipEnd(classMaps, *ecClass, recursive))
+            {
+            BeAssert(false);
+            classMaps.clear();
+            return classMaps;
             }
         }
 
-    return classMaps;
+    return std::move(classMaps);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                      12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECDbMap::GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>& classMaps, ECClassCR ecClass) const
+BentleyStatus ECDbMap::GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>& classMaps, ECClassCR ecClass, bool recursive) const
     {    
-    for (ECClassCP subclass : GetECDb().Schemas().GetDerivedECClasses(ecClass))
+    ClassMap const* classMap = GetClassMap(ecClass);
+    if (classMap == nullptr)
         {
-        ClassMap const* subclassMap = GetClassMap(*subclass);
-        BeAssert(subclassMap != nullptr && "ClassMap should not be null");
-        if (subclassMap->GetMapStrategy().IsNotMapped())
-            continue;
-
-        classMaps.insert(subclassMap);
-        GetClassMapsFromRelationshipEnd(classMaps, *subclass);
+        BeAssert(classMap != nullptr && "ClassMap should not be null");
+        return ERROR;
         }
+
+    if (classMap->GetMapStrategy().IsNotMapped())
+        return SUCCESS;
+
+    classMaps.insert(classMap);
+    
+    if (!recursive)
+        return SUCCESS;
+
+    for (ECClassCP subclass : m_ecdb.Schemas().GetDerivedECClasses(ecClass))
+        {
+        if (SUCCESS != GetClassMapsFromRelationshipEnd(classMaps, *subclass, recursive))
+            return ERROR;
+        }
+
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1332,40 +1427,40 @@ void ECDbMap::LightweightCache::LoadHorizontalPartitions ()  const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-void ECDbMap::LightweightCache::LoadRelationshipByTable ()  const
+void ECDbMap::LightweightCache::LoadRelationshipByTable()  const
     {
     if (m_loadedFlags.m_relationshipPerTableLoaded)
         return;
 
     Utf8String sql;
     sql.Sprintf("SELECT DISTINCT ec_Class.Id, ec_Table.Name, ec_ClassMap.MapStrategy FROM ec_Column "
-        "INNER JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-        "INNER JOIN ec_PropertyMap ON  ec_PropertyMap.ColumnId = ec_Column.Id "
-        "INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
-        "INNER JOIN ec_Property ON ec_PropertyPath.RootPropertyId = ec_Property.Id "
-        "INNER JOIN ec_ClassMap ON ec_PropertyMap.ClassMapId = ec_ClassMap.Id "
-        "INNER JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
-        "WHERE ec_ClassMap.MapStrategy  <> 0 AND " 
-        "(ec_Column.ColumnKind & %d = 0) AND (ec_Column.ColumnKind & %d = 0) AND "
-        "ec_Class.Type=%d AND ec_Table.IsVirtual = 0",
+                "INNER JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
+                "INNER JOIN ec_PropertyMap ON  ec_PropertyMap.ColumnId = ec_Column.Id "
+                "INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+                "INNER JOIN ec_Property ON ec_PropertyPath.RootPropertyId = ec_Property.Id "
+                "INNER JOIN ec_ClassMap ON ec_PropertyMap.ClassMapId = ec_ClassMap.Id "
+                "INNER JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
+                "WHERE ec_ClassMap.MapStrategy  <> 0 AND "
+                "(ec_Column.ColumnKind & %d = 0) AND (ec_Column.ColumnKind & %d = 0) AND "
+                "ec_Class.Type=%d AND ec_Table.IsVirtual = 0",
                 Enum::ToInt(ColumnKind::ECInstanceId),
                 Enum::ToInt(ColumnKind::ECClassId),
                 Enum::ToInt(ECClassType::Relationship));
 
-    auto stmt = m_map.GetECDbR ().GetCachedStatement (sql.c_str());
-    while (stmt->Step () == BE_SQLITE_ROW)
+    auto stmt = m_map.GetECDbR().GetCachedStatement(sql.c_str());
+    while (stmt->Step() == BE_SQLITE_ROW)
         {
-        auto relationshipClassId = stmt->GetValueInt64 (0);
-        Utf8CP tableName = stmt->GetValueText (1);
+        auto relationshipClassId = stmt->GetValueInt64(0);
+        Utf8CP tableName = stmt->GetValueText(1);
         RelationshipType type = RelationshipType::Link;
-        if (stmt->GetValueInt (2) == Enum::ToInt (RelationshipType::Source))
+        if (stmt->GetValueInt(2) == Enum::ToInt(RelationshipType::Source))
             type = RelationshipType::Source;
-        else if (stmt->GetValueInt (2) == Enum::ToInt (RelationshipType::Target))
+        else if (stmt->GetValueInt(2) == Enum::ToInt(RelationshipType::Target))
             type = RelationshipType::Target;
 
-        auto table = m_map.GetSQLManager ().GetDbSchema ().FindTable (tableName);
-        BeAssert (table != nullptr);
-        m_relationshipPerTable[table][relationshipClassId] = type;       
+        auto table = m_map.GetSQLManager().GetDbSchema().FindTable(tableName);
+        BeAssert(table != nullptr);
+        m_relationshipPerTable[table][relationshipClassId] = type;
         }
 
     m_loadedFlags.m_relationshipPerTableLoaded = true;

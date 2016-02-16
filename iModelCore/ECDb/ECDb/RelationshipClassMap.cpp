@@ -397,7 +397,6 @@ MapStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMap
                 return MapStatus::Error;
                 }
 
-            fkCol->GetConstraintR().SetIsNotNull(cardinalityImpliesNotNullOnFkCol);
             fkTableFkCols.insert(fkCol);
             }
         }
