@@ -302,7 +302,11 @@ static bool areMaterialsEqual(DgnMaterialId lmatid, DgnDbR ldb, DgnMaterialId rm
     DgnMaterialCPtr rmat = DgnMaterial::QueryMaterial(rmatid, rdb);
     if (!lmat.IsValid() || !rmat.IsValid())
         return false;
-    return lmat->GetValue() == rmat->GetValue();
+    // Note that textureids will be different. So, we must compare only values that are not IDs.
+    // *** NEEDS WORK: Need a way to compare RenderMaterial and its various assets, such as textures
+    return lmat->GetMaterialName() == rmat->GetMaterialName()
+        && lmat->GetPaletteName() == rmat->GetPaletteName()
+        && lmat->GetDescr() == rmat->GetDescr();
     }
 
 struct NullContext : ViewContext
