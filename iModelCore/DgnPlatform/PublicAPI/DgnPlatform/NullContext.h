@@ -61,4 +61,30 @@ public:
     NullContext() {m_ignoreViewRange = true;}
 };
 
+//=======================================================================================
+// Caclulate the view-aligned range of all elements either within a view or from the view's non-range criteria.
+// @bsiclass                                                    Keith.Bentley   02/16
+//=======================================================================================
+struct FitContext : NullContext
+{
+protected:
+    DEFINE_T_SUPER(NullContext)
+    FitViewParams   m_params;
+    Transform       m_trans;        // usually view transform 
+    DRange3d        m_fitRange;     // union of all view-aligned element ranges
+    DRange3d        m_lastRange;    // last view-aligned range tested
+
+    void AcceptRangeElement(DgnElementId id);
+    bool IsRangeContained(DRange3dCR range);
+    virtual StatusInt _InitContextForView() override;
+    virtual StatusInt _VisitGeometry(GeometrySourceCR source) override;
+    virtual bool _ScanRangeFromPolyhedron() override;
+    virtual ScanCriteria::Result _CheckNodeRange(ScanCriteriaCR criteria, DRange3dCR range, bool is3d) override;
+
+public:
+    void ExtendFitRange(ElementAlignedBox3dCR box, TransformCR placement);
+    FitContext(FitViewParams const& params) : m_params(params) {m_fitRange.Init();}
+};
+
+
 END_BENTLEY_DGN_NAMESPACE
