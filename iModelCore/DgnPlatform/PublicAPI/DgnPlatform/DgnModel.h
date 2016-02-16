@@ -756,6 +756,7 @@ protected:
     //! a) make arrangements to obtain the data in the background and b) schedule itself for callbacks during progressive display in order to display the data when it becomes available.
     virtual void _AddGraphicsToScene(SceneContextR) {}
 
+    virtual void _OnFitView(FitContextR) {}
     virtual void _DrawModel(ViewContextR) {}
 
     DGNPLATFORM_EXPORT virtual DgnRangeTree* _GetRangeIndexP(bool create) const override;
