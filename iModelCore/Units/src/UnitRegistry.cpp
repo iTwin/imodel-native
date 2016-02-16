@@ -20,44 +20,31 @@ UnitRegistry& UnitRegistry::Instance()
 
 UnitRegistry::UnitRegistry()
 	{
-	AddGlobalSystems();
-	AddGlobalPhenomena();
-	AddGlobalConstants();
+	this->AddGlobalUnits ();
+	this->AddGlobalConstants ();
 	}
 
-void UnitRegistry::AddGlobalSystems()
+void UnitRegistry::AddGlobalUnits ()
 	{
 
 	}
 
-void UnitRegistry::AddGlobalPhenomena()
+void UnitRegistry::AddGlobalConstants ()
 	{
 
 	}
 
-void UnitRegistry::AddGlobalConstants()
+BentleyStatus UnitRegistry::AddUnit (Utf8CP name, Utf8CP phenomena, Utf8CP system, Utf8CP expression, double factor, double offset)
 	{
-
+	if (!(HasSystem(system) && HasPhenomena(phenomena)))
+		return ERROR;
+	
+	return SUCCESS;
 	}
 
-void UnitRegistry::AddSystem(Utf8CP systemName)
+BentleyStatus UnitRegistry::AddConstant (double magnitude, Utf8CP unitName)
 	{
-
-	}
-
-void UnitRegistry::AddPhenomena (Utf8CP phenomenaName)
-	{
-
-	}
-
-void UnitRegistry::AddUnit (Utf8CP name, int phenomena, int system, Utf8CP expression, double factor, double offset)
-	{
-
-	}
-
-void UnitRegistry::AddConstant (double magnitude, Utf8CP unitName)
-	{
-
+	return SUCCESS;
 	}
 
 Unit * UnitRegistry::LookupUnit (Utf8CP name)
@@ -68,4 +55,16 @@ Unit * UnitRegistry::LookupUnit (Utf8CP name)
 Constant * UnitRegistry::LookupConstant (Utf8CP name)
 	{
 	return nullptr;
+	}
+
+bool UnitRegistry::HasSystem (Utf8CP systemName)
+	{
+	auto iter = find (m_systems.begin(), m_systems.end(), Utf8String(systemName));
+	return iter != m_systems.end();
+	}
+
+bool UnitRegistry::HasPhenomena (Utf8CP phenomenaName)
+	{
+	auto iter = find (m_phenomena.begin(), m_phenomena.end(), Utf8String(phenomenaName));
+	return iter != m_phenomena.end();
 	}

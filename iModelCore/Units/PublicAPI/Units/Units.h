@@ -1,36 +1,50 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: src/Util.h $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 
 #pragma once
 
-struct UnitRegistry;
-
-struct Unit
+struct Unit : NonCopyableClass
 	{
 friend struct UnitRegistry;
 
 private:
+	Utf8String m_system;
+	Utf8String m_name;
+	Utf8String m_displayLabel;
 	bvector<Utf8String> m_numerator;
 	bvector<Utf8String> m_denominator;
 
-	Unit(Utf8CP system, Utf8CP phenomena, Utf8CP id, Utf8CP definition) { }
+	Unit(Utf8CP system, Utf8CP phenomena, Utf8CP name, Utf8CP displayLabel, 
+		   bvector<Utf8String>& numerator, bvector<Utf8String>& denominator);
+
+	void SimplifySubTypes (bvector<Utf8String> &n, bvector<Utf8String> &d);
+
+	static Unit * Create (Utf8CP sysName, Utf8CP phenomName, Utf8CP unitName, Utf8CP displayName, Utf8CP definition);
 
 protected:
 
 	bvector<Utf8String> Numerator() const { return m_numerator; }
 	bvector<Utf8String> Denominator() const { return m_denominator; }
 
-	//virtual Utf8CP _GetName() const;
-	//virtual Utf8CP _GetDisplayLabel() const;
+	virtual Utf8CP _GetName() const { return m_name.c_str(); }
+	virtual Utf8CP _GetDisplayLabel() const { return m_displayLabel.c_str(); }
 	
 public:
 	virtual ~Unit() { }
 
-	bool IsValid() { return true; }
+	bool IsRegistered();
 
-	//Utf8CP GetName() const { return _GetName(); }
-	//Utf8CP GetDisplayLabel() const { return _GetDisplayLabel(); }
+	Utf8CP GetName() const { return _GetName(); }
+	Utf8CP GetDisplayLabel() const { return _GetDisplayLabel(); }
 
 	// Overload operators.
-	//virtual Unit& operator*(const Unit& rhs) const = 0;
+	Unit& operator*(const Unit& rhs);
+	Unit& operator/(const Unit& rhs);
 	};
 
 struct QuantityBase
@@ -59,40 +73,3 @@ struct Constant : QuantityBase
 
 	};
 
-struct UnitRegistry
-	{
-private:
-	static UnitRegistry * s_instance;
-
-	bvector<Utf8String> m_systems;
-	bvector<Utf8String> m_phenomena;
-	bmap<Utf8String, Unit> m_baseUnits; // Indexed by Id.
-	bmap<Utf8String, Unit> m_units; // Indexed by Id.
-	bvector<Constant> m_constants;
-	bmap<bpair<Utf8String, Utf8String>, double> m_conversions;
-
-	UnitRegistry();
-	UnitRegistry(const UnitRegistry& rhs) = delete;
-	UnitRegistry & operator= (const UnitRegistry& rhs) = delete;
-
-	void AddGlobalSystems();
-	void AddGlobalPhenomena();
-	void AddGlobalConstants();
-
-	void AddSystem(Utf8CP systemName);
-	void AddPhenomena(Utf8CP phenomenaName);
-
-public:
-	static UnitRegistry & Instance();
-
-	// Register methods.
-	UNITS_EXPORT void AddUnit(Utf8CP name, int phenemona, int system, Utf8CP expression, double factor, double offset);
-	UNITS_EXPORT void AddConstant(double magnitude, Utf8CP unitName);
-
-	// Lookup methods
-	UNITS_EXPORT Unit *     LookupUnit(Utf8CP name);
-	UNITS_EXPORT Constant * LookupConstant(Utf8CP name);
-		
-	// bool Exists methods.
-	// Probably some query methods. (Find base for phenomena and system probably).
-	};
