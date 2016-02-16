@@ -499,6 +499,7 @@ template <typename APPDATA, typename KEY, typename HOST> struct DTMAppDataList
 
 // Callbacks
 typedef int (*DTMFeatureCallback)(DTMFeatureType dtmFeatureType, DTMUserTag userTag, DTMFeatureId featureId, DPoint3d *points, size_t numPoints, void* userArg);
+typedef std::function <void(int newPointNumber, DPoint3dCR pt, double& elevation, bool onEdge, const int existingPointsNumbers[])> DTMInsertPointCallback;
 typedef int (*DTMTransformPointsCallback)(DPoint3dP points, size_t numPoints, void * userArg);
 typedef int (*DTMBrowseSinglePointFeatureCallback)(DTMFeatureType featureType, DPoint3d& point, void *userP);
 typedef int (*DTMBrowseSlopeIndicatorCallback)(bool major, DPoint3d& point1, DPoint3d& point2, void *userP);
