@@ -1,0 +1,94 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: src/units.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+%include $(SrcRoot)Units/mki/Units.mki
+    
+baseDir             = $(_MakeFilePath)
+srcDir              = $(baseDir)src/
+o                   = $(OutBuildDir)Units/
+
+#----------------------------------------------------------------------
+# Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+nameToDefine    = __UNITS_BUILD__
+%include cdefapnd.mki
+nameToDefine =
+
+# Add the Private API directory.
+dirToSearch     = $(baseDir)PrivateAPI/
+%include cincapnd.mki
+dirToSearch = 
+
+# DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
+# If we define appName and use it for DLM_NAME, MultiCppCompileRule.mki will use it for CCompPDBName, and linkLibrary.mki will use DLM_NAME for LIB_NAME.
+# PreCompiledHeader.mki uses CCompPDBName
+appName         = Units
+CCompPDBName    = $(appName)
+
+#--------------------------------------------------------------------------------
+#  Bring our precompiled header up-to-date.  After including PreCompileHeader.mki
+#  $(UsePrecompiledHeaderOptions) will contain the /Yu and /Fp options that we
+#  need to consume the .pch.
+#----------------------------------------------------------------------
+PchCompiland        = $(baseDir)UnitsPch.cpp
+PchOutputDir        = $(o)
+%if defined (winNT) && $(BUILD_TOOLSET) == "GCC"
+    # Compiling using gch causes internal compiler error in GCC using windows ndk toolchain
+    GCC_NO_PRE_COMPILED_HEADER = 1
+%endif
+%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts           = $(UsePrecompiledHeaderOptions)
+CPchOpts            = $(UsePrecompiledHeaderOptions)
+
+#----------------------------------------------------------------------
+# Prepare to multi-compile using a uniform set of dependency blocks.
+# Note that you CANNOT change compiler options for just some of the
+# below compilands. The entire set of compilands must be content with
+# uniform treatment for multi-compilation to work.
+#----------------------------------------------------------------------
+MultiCompileDepends = $(_MakeFileSpec) 
+%include MultiCppCompileRule.mki
+
+#Units Compilands
+$(o)UnitRegistry$(oext)  :  $(srcDir)UnitRegistry.cpp ${MultiCompileDepends}
+
+$(o)Unit$(oext)          :  $(srcDir)Unit.cpp ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+cppObjects=%$(MultiCompileObjectList)
+CCPchOpts =
+CPchOpts =
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+#----------------------------------------------------------------------
+#   dependencies of the subsystem.
+#----------------------------------------------------------------------
+DLM_NO_DLS                  = 1
+DLM_NO_DEF                  = 1
+DLM_NAME                    = $(appName)
+DLM_DEST                    = $(o)
+DLM_OBJECT_DEST             = $(o)
+DLM_OBJECT_FILES            = $(cppObjects)
+DLM_OBJECT_PCH              = $(o)UnitsPch$(oext)
+DLM_EXPORT_OBJS             = $(cppObjects)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOINITFUNC              = 1
+DLM_NOMSBUILTINS            = 1
+DLM_NOENTRY                 = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+%include $(sharedMki)linkLibrary.mki
+                            
