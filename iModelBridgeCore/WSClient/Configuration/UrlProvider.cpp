@@ -140,12 +140,12 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::UsageTracking(
     );
 
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectXmpp(
-	"BeXMPP",
-	"dev-xmppcollab-eus.cloudapp.net",
-	"qa-xmppcollab-eus.cloudapp.net",
-	"xmppcollab-eus.cloudapp.net",
-	&s_urlRegistry
-	);
+    "BeXMPP",
+    "dev-xmppcollab-eus.cloudapp.net",
+    "qa-xmppcollab-eus.cloudapp.net",
+    "xmppcollab-eus.cloudapp.net",
+    &s_urlRegistry
+    );
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Brad.Hadden   11/2014
