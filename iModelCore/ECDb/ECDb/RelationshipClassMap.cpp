@@ -328,18 +328,17 @@ MapStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMap
 
     if (SUCCESS != TryGetKeyPropertyColumn(referencedTablePrimaryKeyCols, referencedEndConstraint, relationshipClass, GetReferencedEnd()))
         return MapStatus::Error;
-
-
+    
     //Note: The FK column is the column that refers to the referenced end. Therefore the ECRelationshipEnd of the referenced end has to be taken!
     ColumnKind foreignKeyColumnKind = GetReferencedEnd() == ECRelationshipEnd_Source ? ColumnKind::SourceECInstanceId : ColumnKind::TargetECInstanceId;
-
     const bool cardinalityImpliesNotNullOnFkCol = referencedEndConstraint.GetCardinality().GetLowerLimit() > 0;
-
     if (!fkTableFkCols.empty())
         {
         m_autogenerateForeignKeyColumns = false;
         for (ECDbSqlColumn const* fkCol : fkTableFkCols)
             {
+            ECDbSqlTable& fkTable = fkCol->GetTableR();
+
             if (fkCol->GetConstraint().IsNotNull() != cardinalityImpliesNotNullOnFkCol)
                 {
                 Utf8CP error = nullptr;
@@ -354,7 +353,6 @@ MapStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMap
                 return MapStatus::Error;
                 }
 
-            ECDbSqlTable& fkTable = fkCol->GetTableR();
             const bool tableIsReadonly = !fkTable.GetEditHandle().CanEdit();
             if (tableIsReadonly)
                 fkTable.GetEditHandleR().BeginEdit();
@@ -995,6 +993,7 @@ BentleyStatus RelationshipClassEndTableMap::TryGetConstraintIdColumnNameFromNavi
     ECDbSqlColumn::Constraint::Collation collation;//unused
     return PropertyMap::DetermineColumnInfo(columnName, isNullable, isUnique, collation, ecdb, *singleNavProperty, singleNavProperty->GetName().c_str());
     }
+
 
 //************************** RelationshipClassLinkTableMap *****************************************
 /*---------------------------------------------------------------------------------**//**
