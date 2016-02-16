@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include <UnitsPCH.h>
+#include <Parser.h>
 
 UnitRegistry * UnitRegistry::s_instance = nullptr;
 
@@ -34,26 +35,46 @@ void UnitRegistry::AddGlobalConstants ()
 
 	}
 
-BentleyStatus UnitRegistry::AddUnit (Utf8CP name, Utf8CP phenomena, Utf8CP system, Utf8CP expression, double factor, double offset)
+BentleyStatus UnitRegistry::AddUnit (Utf8CP systemName, Utf8CP phenomName, Utf8CP unitName, Utf8CP displayName, Utf8CP definition, double factor, double offset)
 	{
-	if (!(HasSystem(system) && HasPhenomena(phenomena)))
+	if (!(HasSystem(systemName) && HasPhenomena(phenomName)))
 		return ERROR;
-	
+
+	auto unit = Unit::Create (systemName, phenomName, unitName, displayName, definition);
+	if (nullptr == unit)
+		return ERROR;
+
+	auto nameStr = Utf8String(unitName);
+	m_units.insert (bpair<Utf8String, Unit *>(nameStr, unit));
+
+	// TODO: Add conversions.
+
 	return SUCCESS;
 	}
 
 BentleyStatus UnitRegistry::AddConstant (double magnitude, Utf8CP unitName)
 	{
+	auto unit = LookupUnit (unitName);
+	if (nullptr == unit)
+		return ERROR;
+
+	// TODO: Insert Constant.	
 	return SUCCESS;
 	}
 
 Unit * UnitRegistry::LookupUnit (Utf8CP name)
 	{
-	return nullptr;
+	auto nameStr = Utf8String(name);
+	auto val_iter = m_units.find (nameStr);
+	if (val_iter == m_units.end())
+		return nullptr;
+
+	return (*val_iter).second;
 	}
 
 Constant * UnitRegistry::LookupConstant (Utf8CP name)
 	{
+	// TODO: Implement
 	return nullptr;
 	}
 

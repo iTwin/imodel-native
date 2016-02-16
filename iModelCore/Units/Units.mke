@@ -63,6 +63,8 @@ $(o)UnitRegistry$(oext)  :  $(srcDir)UnitRegistry.cpp ${MultiCompileDepends}
 
 $(o)Unit$(oext)          :  $(srcDir)Unit.cpp ${MultiCompileDepends}
 
+$(o)Parser$(oext)        :  $(srcDir)Parser.cpp ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)
 CCPchOpts =

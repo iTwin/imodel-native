@@ -17,8 +17,7 @@ private:
 
 	bvector<Utf8String> m_systems;
 	bvector<Utf8String> m_phenomena;
-	bmap<Utf8String, Unit> m_baseUnits;
-	bmap<Utf8String, Unit> m_units;
+	bmap<Utf8String, Unit *> m_units;
 	bvector<Constant> m_constants;
 	bmap<bpair<Utf8String, Utf8String>, double> m_conversions;
 
@@ -36,7 +35,7 @@ public:
 	static UnitRegistry & Instance();
 
 	// Register methods.
-	UNITS_EXPORT BentleyStatus AddUnit(Utf8CP name, Utf8CP phenemona, Utf8CP system, Utf8CP expression, double factor, double offset);
+	UNITS_EXPORT BentleyStatus AddUnit(Utf8CP systemName, Utf8CP phenomName, Utf8CP unitName, Utf8CP displayName, Utf8CP definition, double factor, double offset);
 	UNITS_EXPORT BentleyStatus AddConstant(double magnitude, Utf8CP unitName);
 
 	// Lookup methods

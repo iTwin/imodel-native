@@ -8,7 +8,7 @@
 
 #pragma once
 
-struct Unit : NonCopyableClass
+struct Unit
 	{
 friend struct UnitRegistry;
 
