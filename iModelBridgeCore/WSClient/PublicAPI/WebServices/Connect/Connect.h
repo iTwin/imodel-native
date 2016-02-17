@@ -34,6 +34,7 @@ struct Connect
     private:
         static StatusInt GetStsToken(Utf8StringCR authorization, JsonValueCR issueExParams, SamlTokenR tokenOut, Utf8CP appliesToUrl, Utf8CP stsUrl);
         static Utf8String GetClientRelyingPartyUri();
+        static Utf8String GetClientRelyingPartyUriForWtrealm();
 
     public:
         //! Initialize once in app lifetime
@@ -41,6 +42,8 @@ struct Connect
         WSCLIENT_EXPORT static void Uninintialize();
 
         WSCLIENT_EXPORT static StatusInt Login(CredentialsCR creds, SamlTokenR tokenOut, Utf8CP appliesToUrl = nullptr, Utf8CP stsUrl = nullptr);
+        WSCLIENT_EXPORT static StatusInt RenewToken(SamlTokenCR parentToken, SamlTokenR tokenOut, Utf8CP appliesToUrl = nullptr, Utf8CP stsUrl = nullptr);
+
         WSCLIENT_EXPORT static StatusInt GetStsToken(CredentialsCR creds, SamlTokenR tokenOut, Utf8CP appliesToUrl, Utf8CP stsUrl);
         WSCLIENT_EXPORT static StatusInt GetStsToken(SamlTokenCR parentToken, SamlTokenR tokenOut, Utf8CP appliesToUrl, Utf8CP stsUrl);
 
