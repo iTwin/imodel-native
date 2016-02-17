@@ -59,11 +59,14 @@ MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
 #Units Compilands
-$(o)UnitRegistry$(oext)  :  $(srcDir)UnitRegistry.cpp ${MultiCompileDepends}
+$(o)UnitRegistry$(oext)      :  $(srcDir)UnitRegistry.cpp ${MultiCompileDepends}
 
-$(o)UnitTypes$(oext)     :  $(srcDir)UnitTypes.cpp ${MultiCompileDepends}
+$(o)UnitTypes$(oext)         :  $(srcDir)UnitTypes.cpp ${MultiCompileDepends}
 
-$(o)Parser$(oext)        :  $(srcDir)Parser.cpp ${MultiCompileDepends}
+$(o)Parser$(oext)            :  $(srcDir)Parser.cpp ${MultiCompileDepends}
+
+$(o)UnitDefinitions$(oext)   :  $(srcDir)UnitDefinitions.cpp ${MultiCompileDepends}
+
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)

@@ -54,26 +54,28 @@ void UnitRegistry::AddPhenomena (Utf8CP phenomenaName)
 void UnitRegistry::AddDefaultSystems ()
 	{
 	AddSystem ("SI");
-	AddSystem ("Metric");	
+	AddSystem ("Metric");
+	AddSystem ("CGS");
+	AddSystem ("Imperial");
+	AddSystem ("Physics");
+	AddSystem ("Chemistry");
 	// TODO: Add more.
 	}
 
 void UnitRegistry::AddDefaultPhenomena ()
 	{
 	AddPhenomena ("Length");
-	AddPhenomena ("Time");
 	AddPhenomena ("Mass");
+	AddPhenomena ("Time");
 	AddPhenomena ("Temperature");
 	AddPhenomena ("Current");
 	AddPhenomena ("Matter");
 	AddPhenomena ("Luminosity");
+	AddPhenomena ("Planar");
+	AddPhenomena ("Solid");
+	AddPhenomena ("Finance");
+	AddPhenomena ("Capita");
 	AddPhenomena ("Dimensionless");
-	}
-
-
-void UnitRegistry::AddDefaultUnits ()
-	{
-
 	}
 
 void UnitRegistry::AddDefaultConstants ()
