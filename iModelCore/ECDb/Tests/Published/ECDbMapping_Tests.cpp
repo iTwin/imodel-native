@@ -4299,6 +4299,14 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
             "      <Class class='B' />"
             "    </Target>"
             "  </ECRelationshipClass>"
+            "   <ECRelationshipClass typeName='Rel11Backwards' strength='embedding' strengthDirection='Backward'>"
+            "    <Source cardinality='(1,1)' polymorphic='True'>"
+            "      <Class class='A' />"
+            "    </Source>"
+            "    <Target cardinality='(1,1)' polymorphic='True'>"
+            "      <Class class='B' />"
+            "    </Target>"
+            "  </ECRelationshipClass>"
             "   <ECRelationshipClass typeName='RelWithKeyProp' strength='embedding'>"
             "    <Source cardinality='(1,1)' polymorphic='True'>"
             "      <Class class='A' />"
@@ -4336,7 +4344,8 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
 
         AssertIndex(ecdb, "ix_ts_B_fk_ts_Rel_target", false, "ts_B", {"ForeignECInstanceId_Rel"});
         AssertIndex(ecdb, "uix_ts_B_fk_ts_Rel11_target", true, "ts_B", {"ForeignECInstanceId_Rel11"});
-        
+        AssertIndex(ecdb, "uix_ts_A_fk_ts_Rel11Backwards_source", true, "ts_A", {"ForeignECInstanceId_Rel11Backwards"});
+
         //For relationships with key property, index is created if unique (as this is to enforce cardinality
         AssertIndexExists(ecdb, "ix_ts_B_fk_ts_RelWithKeyProp_target", false);
         AssertIndex(ecdb, "uix_ts_B_fk_ts_RelWithKeyProp11_target", true, "ts_B", {"AId"});
@@ -5121,6 +5130,264 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  02/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, OneToOneRelationshipMapping)
+    {
+    std::vector<SchemaItem> testSchemas;
+    testSchemas.push_back(SchemaItem("embedding relationships", "<?xml version='1.0' encoding='utf-8'?>"
+                        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                        "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                        "    <ECEntityClass typeName='A'>"
+                        "        <ECProperty propertyName='AName' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='B'>"
+                        "        <ECProperty propertyName='BName' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "  <ECRelationshipClass typeName='Rel11' strength='embedding'>"
+                        "    <Source cardinality='(1,1)' polymorphic='True'>"
+                        "      <Class class = 'A' />"
+                        "    </Source>"
+                        "    <Target cardinality='(1,1)' polymorphic='True'>"
+                        "      <Class class = 'B'/>"
+                        "    </Target>"
+                        "  </ECRelationshipClass>"
+                        "  <ECRelationshipClass typeName='Rel01' strength='embedding'>"
+                        "    <Source cardinality='(0,1)' polymorphic='True'>"
+                        "      <Class class = 'A' />"
+                        "    </Source>"
+                        "    <Target cardinality='(1,1)' polymorphic='True'>"
+                        "      <Class class = 'B'/>"
+                        "    </Target>"
+                        "  </ECRelationshipClass>"
+                        "  <ECRelationshipClass typeName='Rel10' strength='embedding'>"
+                        "    <Source cardinality='(1,1)' polymorphic='True'>"
+                        "      <Class class = 'A' />"
+                        "    </Source>"
+                        "    <Target cardinality='(0,1)' polymorphic='True'>"
+                        "      <Class class = 'B'/>"
+                        "    </Target>"
+                        "  </ECRelationshipClass>"
+                        "  <ECRelationshipClass typeName='Rel00' strength='embedding'>"
+                        "    <Source cardinality='(0,1)' polymorphic='True'>"
+                        "      <Class class = 'A' />"
+                        "    </Source>"
+                        "    <Target cardinality='(0,1)' polymorphic='True'>"
+                        "      <Class class = 'B'/>"
+                        "    </Target>"
+                        "  </ECRelationshipClass>"
+                        "  <ECRelationshipClass typeName='Rel11back' strength='embedding' strengthDirection='Backward'>"
+                        "    <Source cardinality='(1,1)' polymorphic='True'>"
+                        "      <Class class = 'A' />"
+                        "    </Source>"
+                        "    <Target cardinality='(1,1)' polymorphic='True'>"
+                        "      <Class class = 'B'/>"
+                        "    </Target>"
+                        "  </ECRelationshipClass>"
+                        "  <ECRelationshipClass typeName='Rel01back' strength='embedding' strengthDirection='Backward'>"
+                        "    <Source cardinality='(0,1)' polymorphic='True'>"
+                        "      <Class class = 'A' />"
+                        "    </Source>"
+                        "    <Target cardinality='(1,1)' polymorphic='True'>"
+                        "      <Class class = 'B'/>"
+                        "    </Target>"
+                        "  </ECRelationshipClass>"
+                        "  <ECRelationshipClass typeName='Rel10back' strength='embedding' strengthDirection='Backward'>"
+                        "    <Source cardinality='(1,1)' polymorphic='True'>"
+                        "      <Class class = 'A' />"
+                        "    </Source>"
+                        "    <Target cardinality='(0,1)' polymorphic='True'>"
+                        "      <Class class = 'B'/>"
+                        "    </Target>"
+                        "  </ECRelationshipClass>"
+                        "  <ECRelationshipClass typeName='Rel00back' strength='embedding' strengthDirection='Backward'>"
+                        "    <Source cardinality='(0,1)' polymorphic='True'>"
+                        "      <Class class = 'A' />"
+                        "    </Source>"
+                        "    <Target cardinality='(0,1)' polymorphic='True'>"
+                        "      <Class class = 'B'/>"
+                        "    </Target>"
+                        "  </ECRelationshipClass>"
+                        "</ECSchema>"));
+
+    testSchemas.push_back(SchemaItem("holding relationships", "<?xml version='1.0' encoding='utf-8'?>"
+                                     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                     "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                                     "    <ECEntityClass typeName='A'>"
+                                     "        <ECProperty propertyName='AName' typeName='string' />"
+                                     "    </ECEntityClass>"
+                                     "    <ECEntityClass typeName='B'>"
+                                     "        <ECProperty propertyName='BName' typeName='string' />"
+                                     "    </ECEntityClass>"
+                                     "  <ECRelationshipClass typeName='Rel11' strength='holding'>"
+                                     "    <Source cardinality='(1,1)' polymorphic='True'>"
+                                     "      <Class class = 'A' />"
+                                     "    </Source>"
+                                     "    <Target cardinality='(1,1)' polymorphic='True'>"
+                                     "      <Class class = 'B'/>"
+                                     "    </Target>"
+                                     "  </ECRelationshipClass>"
+                                     "  <ECRelationshipClass typeName='Rel01' strength='holding'>"
+                                     "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                     "      <Class class = 'A' />"
+                                     "    </Source>"
+                                     "    <Target cardinality='(1,1)' polymorphic='True'>"
+                                     "      <Class class = 'B'/>"
+                                     "    </Target>"
+                                     "  </ECRelationshipClass>"
+                                     "  <ECRelationshipClass typeName='Rel10' strength='holding'>"
+                                     "    <Source cardinality='(1,1)' polymorphic='True'>"
+                                     "      <Class class = 'A' />"
+                                     "    </Source>"
+                                     "    <Target cardinality='(0,1)' polymorphic='True'>"
+                                     "      <Class class = 'B'/>"
+                                     "    </Target>"
+                                     "  </ECRelationshipClass>"
+                                     "  <ECRelationshipClass typeName='Rel00' strength='holding'>"
+                                     "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                     "      <Class class = 'A' />"
+                                     "    </Source>"
+                                     "    <Target cardinality='(0,1)' polymorphic='True'>"
+                                     "      <Class class = 'B'/>"
+                                     "    </Target>"
+                                     "  </ECRelationshipClass>"
+                                     "  <ECRelationshipClass typeName='Rel11back' strength='holding' strengthDirection='Backward'>"
+                                     "    <Source cardinality='(1,1)' polymorphic='True'>"
+                                     "      <Class class = 'A' />"
+                                     "    </Source>"
+                                     "    <Target cardinality='(1,1)' polymorphic='True'>"
+                                     "      <Class class = 'B'/>"
+                                     "    </Target>"
+                                     "  </ECRelationshipClass>"
+                                     "  <ECRelationshipClass typeName='Rel01back' strength='holding' strengthDirection='Backward'>"
+                                     "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                     "      <Class class = 'A' />"
+                                     "    </Source>"
+                                     "    <Target cardinality='(1,1)' polymorphic='True'>"
+                                     "      <Class class = 'B'/>"
+                                     "    </Target>"
+                                     "  </ECRelationshipClass>"
+                                     "  <ECRelationshipClass typeName='Rel10back' strength='holding' strengthDirection='Backward'>"
+                                     "    <Source cardinality='(1,1)' polymorphic='True'>"
+                                     "      <Class class = 'A' />"
+                                     "    </Source>"
+                                     "    <Target cardinality='(0,1)' polymorphic='True'>"
+                                     "      <Class class = 'B'/>"
+                                     "    </Target>"
+                                     "  </ECRelationshipClass>"
+                                     "  <ECRelationshipClass typeName='Rel00back' strength='holding' strengthDirection='Backward'>"
+                                     "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                     "      <Class class = 'A' />"
+                                     "    </Source>"
+                                     "    <Target cardinality='(0,1)' polymorphic='True'>"
+                                     "      <Class class = 'B'/>"
+                                     "    </Target>"
+                                     "  </ECRelationshipClass>"
+                                     "</ECSchema>"));
+
+    testSchemas.push_back(SchemaItem("referencing relationships", "<?xml version='1.0' encoding='utf-8'?>"
+                                     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                     "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                                     "    <ECEntityClass typeName='A'>"
+                                     "        <ECProperty propertyName='AName' typeName='string' />"
+                                     "    </ECEntityClass>"
+                                     "    <ECEntityClass typeName='B'>"
+                                     "        <ECProperty propertyName='BName' typeName='string' />"
+                                     "    </ECEntityClass>"
+                                     "  <ECRelationshipClass typeName='Rel11' strength='referencing'>"
+                                     "    <Source cardinality='(1,1)' polymorphic='True'>"
+                                     "      <Class class = 'A' />"
+                                     "    </Source>"
+                                     "    <Target cardinality='(1,1)' polymorphic='True'>"
+                                     "      <Class class = 'B'/>"
+                                     "    </Target>"
+                                     "  </ECRelationshipClass>"
+                                     "  <ECRelationshipClass typeName='Rel01' strength='referencing'>"
+                                     "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                     "      <Class class = 'A' />"
+                                     "    </Source>"
+                                     "    <Target cardinality='(1,1)' polymorphic='True'>"
+                                     "      <Class class = 'B'/>"
+                                     "    </Target>"
+                                     "  </ECRelationshipClass>"
+                                     "  <ECRelationshipClass typeName='Rel10' strength='referencing'>"
+                                     "    <Source cardinality='(1,1)' polymorphic='True'>"
+                                     "      <Class class = 'A' />"
+                                     "    </Source>"
+                                     "    <Target cardinality='(0,1)' polymorphic='True'>"
+                                     "      <Class class = 'B'/>"
+                                     "    </Target>"
+                                     "  </ECRelationshipClass>"
+                                     "  <ECRelationshipClass typeName='Rel00' strength='referencing'>"
+                                     "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                     "      <Class class = 'A' />"
+                                     "    </Source>"
+                                     "    <Target cardinality='(0,1)' polymorphic='True'>"
+                                     "      <Class class = 'B'/>"
+                                     "    </Target>"
+                                     "  </ECRelationshipClass>"
+                                     "  <ECRelationshipClass typeName='Rel11back' strength='referencing' strengthDirection='Backward'>"
+                                     "    <Source cardinality='(1,1)' polymorphic='True'>"
+                                     "      <Class class = 'A' />"
+                                     "    </Source>"
+                                     "    <Target cardinality='(1,1)' polymorphic='True'>"
+                                     "      <Class class = 'B'/>"
+                                     "    </Target>"
+                                     "  </ECRelationshipClass>"
+                                     "  <ECRelationshipClass typeName='Rel01back' strength='referencing' strengthDirection='Backward'>"
+                                     "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                     "      <Class class = 'A' />"
+                                     "    </Source>"
+                                     "    <Target cardinality='(1,1)' polymorphic='True'>"
+                                     "      <Class class = 'B'/>"
+                                     "    </Target>"
+                                     "  </ECRelationshipClass>"
+                                     "  <ECRelationshipClass typeName='Rel10back' strength='referencing' strengthDirection='Backward'>"
+                                     "    <Source cardinality='(1,1)' polymorphic='True'>"
+                                     "      <Class class = 'A' />"
+                                     "    </Source>"
+                                     "    <Target cardinality='(0,1)' polymorphic='True'>"
+                                     "      <Class class = 'B'/>"
+                                     "    </Target>"
+                                     "  </ECRelationshipClass>"
+                                     "  <ECRelationshipClass typeName='Rel00back' strength='referencing' strengthDirection='Backward'>"
+                                     "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                     "      <Class class = 'A' />"
+                                     "    </Source>"
+                                     "    <Target cardinality='(0,1)' polymorphic='True'>"
+                                     "      <Class class = 'B'/>"
+                                     "    </Target>"
+                                     "  </ECRelationshipClass>"
+                                     "</ECSchema>"));
+
+    for (SchemaItem const& testSchema : testSchemas)
+        {
+        ECDb ecdb;
+        bool asserted = false;
+        AssertSchemaImport(ecdb, asserted, testSchema, "onetoonerelationshipmappings.ecdb");
+        ASSERT_FALSE(asserted);
+
+        AssertForeignKey(true, ecdb, "ts_b", "ForeignECInstanceId_Rel11");
+        AssertForeignKey(false, ecdb, "ts_a", "ForeignECInstanceId_Rel11");
+        AssertForeignKey(true, ecdb, "ts_b", "ForeignECInstanceId_Rel10");
+        AssertForeignKey(false, ecdb, "ts_a", "ForeignECInstanceId_Rel10");
+        AssertForeignKey(true, ecdb, "ts_b", "ForeignECInstanceId_Rel01");
+        AssertForeignKey(false, ecdb, "ts_a", "ForeignECInstanceId_Rel01");
+        AssertForeignKey(true, ecdb, "ts_b", "ForeignECInstanceId_Rel00");
+        AssertForeignKey(false, ecdb, "ts_a", "ForeignECInstanceId_Rel00");
+
+        AssertForeignKey(false, ecdb, "ts_b", "ForeignECInstanceId_Rel11back");
+        AssertForeignKey(true, ecdb, "ts_a", "ForeignECInstanceId_Rel11back");
+        AssertForeignKey(false, ecdb, "ts_b", "ForeignECInstanceId_Rel10back");
+        AssertForeignKey(true, ecdb, "ts_a", "ForeignECInstanceId_Rel10back");
+        AssertForeignKey(false, ecdb, "ts_b", "ForeignECInstanceId_Rel01back");
+        AssertForeignKey(true, ecdb, "ts_a", "ForeignECInstanceId_Rel01back");
+        AssertForeignKey(false, ecdb, "ts_b", "ForeignECInstanceId_Rel00back");
+        AssertForeignKey(true, ecdb, "ts_a", "ForeignECInstanceId_Rel00back");
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, ForeignKeyMapWhereLinkTableIsRequired)
@@ -5870,7 +6137,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithoutKeyProperty)
         auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
         ASSERT_TRUE(it != columns.end()) << childTableName << " table should contain a default-name extra foreign key column as there is the relationship map CA doesn't specify a value for ForeignKeyColumn";
 
-        AssertForeignKey(true, ecdb, childTableName, "ForeignEC");
+        AssertForeignKey(true, ecdb, childTableName, "ForeignECInstanceId_ParentHasChildren");
         }
 
         {
@@ -5924,7 +6191,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithoutKeyProperty)
         auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
         ASSERT_TRUE(it != columns.end()) << childTableName << " table should contain a default-name extra foreign key column as there is the relationship map CA doesn't specify a value for ForeignKeyColumn";
 
-        AssertForeignKey(true, ecdb, childTableName, "ForeignEC");
+        AssertForeignKey(true, ecdb, childTableName, "ForeignECInstanceId_ParentHasChildren");
         }
     }
 

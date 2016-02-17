@@ -689,7 +689,7 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
         if (userStrategyIsForeignKeyMapping)
             {
             m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                "Failed to map ECRelationshipClass %s. It implies a link table relationship with because of its cardinality or because it has ECProperties. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
+                "Failed to map ECRelationshipClass %s. It implies a link table relationship because of its cardinality or because it has ECProperties. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
                 GetECClass().GetFullName());
             return MapStatus::Error;
             }
@@ -712,8 +712,7 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
         return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::OwnTable, false) == SUCCESS ? MapStatus::Success : MapStatus::Error;
         }
 
-   
-
+    //FK type relationship mapping
     if (ResolveEndTables(EndTablesOptimizationOptions::ForeignEnd, EndTablesOptimizationOptions::ForeignEnd) == ERROR)
         {
         LogClassNotMapped(NativeLogging::LOG_WARNING, *relationshipClass, "Source or target constraints don't include any concrete classes or its classes are not mapped to tables.");
@@ -749,11 +748,21 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
                         }
 
                     resolvedStrategy = ECDbMapStrategy::Strategy::OwnTable;
+                    break;
                     }
-                else if (m_customMapType == CustomMapType::ForeignKeyOnSource)
+
+                if (m_customMapType == CustomMapType::ForeignKeyOnSource)
                     resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable;
-                else
+                else if (m_customMapType == CustomMapType::ForeignKeyOnTarget)
                     resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable;
+                else
+                    {
+                    BeAssert(m_customMapType == CustomMapType::None);
+                    if (relationshipClass->GetStrengthDirection() == ECRelatedInstanceDirection::Backward)
+                        resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable;
+                    else
+                        resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable;
+                    }
 
                 break;
                 }
