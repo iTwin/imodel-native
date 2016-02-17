@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/BackDoor/ECDbTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicAPI/BackDoor/ECDb/ECDbTests.h"
@@ -812,8 +812,12 @@ int64_t ECDbTestUtility::ReadCellValueAsInt64(DbR db, Utf8CP tableName, Utf8CP c
     Utf8String str;
     str.Sprintf("SELECT %s FROM %s %s", columnName, tableName, whereClause);
     Statement stmt;
-    DbResult result = stmt.Prepare(db, str.c_str());
-    BeAssert(result == BE_SQLITE_OK);
+    if (BE_SQLITE_OK != stmt.Prepare(db, str.c_str()))
+        {
+        LOG.errorv("Failed to prepare SQL %s. Error: %s", str.c_str(), db.GetLastError().c_str());
+        return -1;
+        }
+
     return (BE_SQLITE_ROW != stmt.Step()) ? 0 : stmt.GetValueInt64(0);
     }
 

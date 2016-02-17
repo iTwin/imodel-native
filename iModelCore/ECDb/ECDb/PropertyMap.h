@@ -119,7 +119,7 @@ protected:
         return *current;
         }
 
-    BentleyStatus DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, ECDbSqlColumn::Constraint::Collation& collation) const { return DetermineColumnInfo(columnName, isNullable, isUnique, collation, GetProperty(), GetPropertyAccessString()); }
+    BentleyStatus DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, ECDbSqlColumn::Constraint::Collation& collation, ECDbCR ecdb) const { return DetermineColumnInfo(columnName, isNullable, isUnique, collation, ecdb, GetProperty(), GetPropertyAccessString()); }
 
 public:
     virtual ~PropertyMap () {}
@@ -145,9 +145,8 @@ public:
     //! Gets the columns (if any) mapped to this property
     void GetColumns(std::vector<ECDbSqlColumn const*>&) const;
     void GetColumns(std::vector<ECDbSqlColumn const*>&, ECDbSqlTable const&) const;
-
-    //! Gets the first column if any
     ECDbSqlColumn const* GetSingleColumn() const;
+    ECDbSqlColumn const* GetSingleColumn(ECDbSqlTable const&, bool alwaysFilterByTable) const;
     ECDbSqlTable const* GetSingleTable() const;
 
     //! Generates the native SQL snippets from the columns related to this property map.
@@ -162,7 +161,7 @@ public:
     //! @return List of native SQL snippets, one snippet per column this PropertyMap maps to.
     NativeSqlBuilder::List ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses, ECDbSqlTable const* tableFilter = nullptr) const;
 
-
+  
     //! Saves the base column name, if it differs from the property name
     BentleyStatus Save(ECDbClassMapInfo & classMapInfo) const;
     BentleyStatus Load(ECDbClassMapInfo const& classMapInfo) { return _Load(classMapInfo); }
@@ -183,7 +182,7 @@ public:
     //! For debugging and logging
     Utf8String ToString() const;
 
-    static BentleyStatus DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, ECDbSqlColumn::Constraint::Collation&, ECN::ECPropertyCR, Utf8CP propAccessString);
+    static BentleyStatus DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, ECDbSqlColumn::Constraint::Collation&, ECDbCR, ECN::ECPropertyCR, Utf8CP propAccessString);
 
     static PropertyMapPtr CreateAndEvaluateMapping (ClassMapLoadContext&, ECDbCR, ECN::ECPropertyCR, ECN::ECClassCR rootClass, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap);
     //only called during schema import

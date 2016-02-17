@@ -307,8 +307,9 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
                                     "DisplayLabel TEXT,"
                                     "Description TEXT,"
                                     "NamespacePrefix TEXT,"
-                                    "VersionMajor INTEGER,"
-                                    "VersionMinor INTEGER)");
+                                    "VersionMajor INTEGER NOT NULL,"
+                                    "VersionMiddle INTEGER NOT NULL,"
+                                    "VersionMinor INTEGER NOT NULL)");
     if (BE_SQLITE_OK != stat)
         return stat;
 

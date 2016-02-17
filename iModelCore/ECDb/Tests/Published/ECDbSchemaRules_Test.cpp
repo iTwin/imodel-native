@@ -551,6 +551,7 @@ TEST_F(ECDbSchemaRules, RelationshipCardinalityTests)
                 "  </ECEntityClass>"
                 "  <ECEntityClass typeName='B'>"
                 "    <ECProperty propertyName='Id' typeName='string' />"
+                "    <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward' />"
                 "  </ECEntityClass>"
                 "  <ECRelationshipClass typeName='Rel' >"
                 "    <Source cardinality='(1,1)' polymorphic='True'>"
@@ -567,32 +568,30 @@ TEST_F(ECDbSchemaRules, RelationshipCardinalityTests)
 
             ECSqlStatement aStmt;
             ASSERT_EQ(ECSqlStatus::Success, aStmt.Prepare(ecdb, "INSERT INTO ts.A(ECInstanceId) VALUES (NULL)"));
+            ASSERT_EQ(BE_SQLITE_DONE, aStmt.Step(a1Key));
+            aStmt.Reset();
 
             ECSqlStatement bStmt;
-            ASSERT_EQ(ECSqlStatus::Success, bStmt.Prepare(ecdb, "INSERT INTO ts.B(ECInstanceId) VALUES (NULL)"));
-
-            ASSERT_EQ(BE_SQLITE_DONE, aStmt.Step(a1Key)) << "[(1,1):(1,1)]> Min of (1,1) cardinality constraint is not enforced yet. (1,1) is interpreted as (0,1)";
-            aStmt.Reset();
-
-            ASSERT_EQ(BE_SQLITE_DONE, bStmt.Step(b1Key)) << "[(1,1):(1,1)]> Min of (1,1) cardinality constraint is not enforced yet. (1,1) is interpreted as (0,1)";
+            ASSERT_EQ(ECSqlStatus::Success, bStmt.Prepare(ecdb, "INSERT INTO ts.B(AId) VALUES (?)"));
+            ASSERT_EQ(BE_SQLITE_CONSTRAINT_NOTNULL, bStmt.Step(b1Key)) << "Multiplicity of (1,1) means that a B instance cannot be created without assigning it an A instance";
             bStmt.Reset();
+            bStmt.ClearBindings();
+            ASSERT_EQ(ECSqlStatus::Success, bStmt.BindId(1, a1Key.GetECInstanceId()));
+            ASSERT_EQ(BE_SQLITE_DONE, bStmt.Step(b1Key));
+            bStmt.Reset();
+            bStmt.ClearBindings();
 
-            ASSERT_EQ(BE_SQLITE_DONE, aStmt.Step(a2Key));
+            ASSERT_EQ(BE_SQLITE_DONE, aStmt.Step(a2Key)) << "Multiplicity of (1,1) for referenced end is not enforced yet";
             aStmt.Reset();
+
+            ASSERT_EQ(ECSqlStatus::Success, bStmt.BindId(1, a2Key.GetECInstanceId()));
             ASSERT_EQ(BE_SQLITE_DONE, bStmt.Step(b2Key));
             bStmt.Reset();
+            bStmt.ClearBindings();
 
             //Test that child can have one parent at most (enforce (0,1) parent cardinality)
             ECSqlStatement relStmt;
             ASSERT_EQ(ECSqlStatus::Success, relStmt.Prepare(ecdb, "INSERT INTO ts.Rel(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES (?,?,?,?)"));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a1Key.GetECInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a1Key.GetECClassId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b1Key.GetECInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, b1Key.GetECClassId()));
-            ASSERT_EQ(BE_SQLITE_DONE, relStmt.Step());
-            relStmt.Reset();
-            relStmt.ClearBindings();
-
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a2Key.GetECInstanceId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a2Key.GetECClassId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b1Key.GetECInstanceId()));
@@ -617,6 +616,7 @@ TEST_F(ECDbSchemaRules, RelationshipCardinalityTests)
                 "  </ECEntityClass>"
                 "  <ECEntityClass typeName='B'>"
                 "    <ECProperty propertyName='Id' typeName='string' />"
+                "    <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward' />"
                 "  </ECEntityClass>"
                 "  <ECRelationshipClass typeName='Rel' >"
                 "    <Source cardinality='(1,1)' polymorphic='True'>"
@@ -633,32 +633,30 @@ TEST_F(ECDbSchemaRules, RelationshipCardinalityTests)
 
             ECSqlStatement aStmt;
             ASSERT_EQ(ECSqlStatus::Success, aStmt.Prepare(ecdb, "INSERT INTO ts.A(ECInstanceId) VALUES (NULL)"));
-
-            ECSqlStatement bStmt;
-            ASSERT_EQ(ECSqlStatus::Success, bStmt.Prepare(ecdb, "INSERT INTO ts.B(ECInstanceId) VALUES (NULL)"));
-
-            ASSERT_EQ(BE_SQLITE_DONE, aStmt.Step(a1Key)) << "[(1,1):(1,N)]> Min of (1,1) cardinality constraint is not enforced yet. (1,1) is interpreted as (0,1)";
+            ASSERT_EQ(BE_SQLITE_DONE, aStmt.Step(a1Key));
             aStmt.Reset();
 
-            ASSERT_EQ(BE_SQLITE_DONE, bStmt.Step(b1Key)) << "[(1,1):(1,N)]> Min of (1,N) cardinality constraint is not enforced yet. (1,1) is interpreted as (0,1)";
+            ECSqlStatement bStmt;
+            ASSERT_EQ(ECSqlStatus::Success, bStmt.Prepare(ecdb, "INSERT INTO ts.B(AId) VALUES (?)"));
+            ASSERT_EQ(BE_SQLITE_CONSTRAINT_NOTNULL, bStmt.Step(b1Key)) << "Multiplicity of (1,1) means that a B instance cannot be created without assigning it an A instance";
             bStmt.Reset();
+            bStmt.ClearBindings();
+            ASSERT_EQ(ECSqlStatus::Success, bStmt.BindId(1, a1Key.GetECInstanceId()));
+            ASSERT_EQ(BE_SQLITE_DONE, bStmt.Step(b1Key));
+            bStmt.Reset();
+            bStmt.ClearBindings();
 
             ASSERT_EQ(BE_SQLITE_DONE, aStmt.Step(a2Key));
             aStmt.Reset();
-            ASSERT_EQ(BE_SQLITE_DONE, bStmt.Step(b2Key));
+
+            ASSERT_EQ(ECSqlStatus::Success, bStmt.BindId(1, a1Key.GetECInstanceId()));
+            ASSERT_EQ(BE_SQLITE_DONE, bStmt.Step(b2Key)) << "[(1,1):(1,N)]> (1,N) cardinality is not expected to be violated by a second child" << bStmt.GetNativeSql() << " Error:" << ecdb.GetLastError().c_str();
             bStmt.Reset();
+            bStmt.ClearBindings();
 
             //Test that child can have one parent at most
             ECSqlStatement relStmt;
             ASSERT_EQ(ECSqlStatus::Success, relStmt.Prepare(ecdb, "INSERT INTO ts.Rel(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES (?,?,?,?)"));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a1Key.GetECInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a1Key.GetECClassId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b1Key.GetECInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, b1Key.GetECClassId()));
-            ASSERT_EQ(BE_SQLITE_DONE, relStmt.Step());
-            relStmt.Reset();
-            relStmt.ClearBindings();
-
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a2Key.GetECInstanceId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a2Key.GetECClassId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b1Key.GetECInstanceId()));
@@ -666,12 +664,6 @@ TEST_F(ECDbSchemaRules, RelationshipCardinalityTests)
             ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(1,1):(1,N)]> Max of (1,1) cardinality constraint is expected to be enforced";
             relStmt.Reset();
             relStmt.ClearBindings();
-
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a1Key.GetECInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a1Key.GetECClassId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b2Key.GetECInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, b2Key.GetECClassId()));
-            ASSERT_EQ(BE_SQLITE_DONE, relStmt.Step()) << "[(1,1):(1,N)]> (1,N) cardinality is not expected to be violated by a second child" << relStmt.GetNativeSql() << " Error:" << ecdb.GetLastError().c_str();
             }
 
             {
@@ -886,7 +878,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                       "    <ECStructProperty propertyName='Code' typeName='ElementCode' />"
                       "  </ECEntityClass>"
                       "  <ECRelationshipClass typeName='AuthorityIssuesCode' strength='referencing'>"
-                      "    <Source cardinality='(1,1)' polymorphic='False'>"
+                      "    <Source cardinality='(0,1)' polymorphic='False'>"
                       "        <Class class='Authority' />"
                       "     </Source>"
                       "     <Target cardinality='(0,N)' polymorphic='True'>"
@@ -899,6 +891,41 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                       "  </ECRelationshipClass>"
                       "</ECSchema>",
                  true, ""),
+
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                   "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                   "  <ECEntityClass typeName='Authority' >"
+                   "    <ECProperty propertyName='Name' typeName='string' />"
+                   "  </ECEntityClass>"
+                   "  <ECStructClass typeName='ElementCode' >"
+                   "    <ECProperty propertyName='AuthorityId' typeName='int' >"
+                   "     <ECCustomAttributes>"
+                   "        <PropertyMap xmlns='ECDbMap.01.00'>"
+                   "             <IsNullable>false</IsNullable>"
+                   "        </PropertyMap>"
+                   "     </ECCustomAttributes>"
+                   "    </ECProperty>"
+                   "    <ECProperty propertyName='Namespace' typeName='string' />"
+                   "    <ECProperty propertyName='Code' typeName='string' />"
+                   "  </ECStructClass>"
+                   "  <ECEntityClass typeName='Element' >"
+                   "    <ECProperty propertyName='ModelId' typeName='long' />"
+                   "    <ECStructProperty propertyName='Code' typeName='ElementCode' />"
+                   "  </ECEntityClass>"
+                   "  <ECRelationshipClass typeName='AuthorityIssuesCode' strength='referencing'>"
+                   "    <Source cardinality='(1,1)' polymorphic='False'>"
+                   "        <Class class='Authority' />"
+                   "     </Source>"
+                   "     <Target cardinality='(0,N)' polymorphic='True'>"
+                   "         <Class class='Element'>"
+                   "             <Key>"
+                   "                 <Property name='Code.AuthorityId'/>"
+                   "             </Key>"
+                   "         </Class>"
+                   "     </Target>"
+                   "  </ECRelationshipClass>"
+                   "</ECSchema>",
+                   true, ""),
 
         SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                       "  <ECEntityClass typeName='Authority' >"
@@ -914,7 +941,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                       "    <ECStructProperty propertyName='Code' typeName='ElementCode' />"
                       "  </ECEntityClass>"
                       "  <ECRelationshipClass typeName='AuthorityIssuesCode' strength='referencing'>"
-                      "    <Source cardinality='(1,1)' polymorphic='False'>"
+                      "    <Source cardinality='(0,1)' polymorphic='False'>"
                       "        <Class class='Authority' />"
                       "     </Source>"
                       "     <Target cardinality='(0,N)' polymorphic='True'>"
@@ -942,7 +969,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                  "    <ECStructProperty propertyName='Code' typeName='ElementCode' />"
                  "  </ECEntityClass>"
                  "  <ECRelationshipClass typeName='AuthorityIssuesCode' strength='referencing'>"
-                 "    <Source cardinality='(1,1)' polymorphic='False'>"
+                 "    <Source cardinality='(0,1)' polymorphic='False'>"
                  "        <Class class='Authority' />"
                  "     </Source>"
                  "     <Target cardinality='(0,N)' polymorphic='True'>"
@@ -970,7 +997,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                  "    <ECStructProperty propertyName='Code' typeName='ElementCode' />"
                  "  </ECEntityClass>"
                  "  <ECRelationshipClass typeName='AuthorityIssuesCode' strength='referencing'>"
-                 "    <Source cardinality='(1,1)' polymorphic='False'>"
+                 "    <Source cardinality='(0,1)' polymorphic='False'>"
                  "        <Class class='Authority' />"
                  "     </Source>"
                  "     <Target cardinality='(0,N)' polymorphic='True'>"
@@ -998,7 +1025,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                 "    <ECStructProperty propertyName='Code' typeName='ElementCode' />"
                 "  </ECEntityClass>"
                 "  <ECRelationshipClass typeName='AuthorityIssuesCode' strength='referencing'>"
-                "    <Source cardinality='(1,1)' polymorphic='False'>"
+                "    <Source cardinality='(0,1)' polymorphic='False'>"
                 "        <Class class='Authority' />"
                 "     </Source>"
                 "     <Target cardinality='(0,N)' polymorphic='True'>"
@@ -1026,7 +1053,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
             "    <ECStructProperty propertyName='Code' typeName='ElementCode' />"
             "  </ECEntityClass>"
             "  <ECRelationshipClass typeName='AuthorityIssuesCode' strength='referencing'>"
-            "    <Source cardinality='(1,1)' polymorphic='False'>"
+            "    <Source cardinality='(0,1)' polymorphic='False'>"
             "        <Class class='Authority' />"
             "     </Source>"
             "     <Target cardinality='(0,N)' polymorphic='True'>"
@@ -1054,7 +1081,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                 "    <ECStructProperty propertyName='Code' typeName='ElementCode' />"
                 "  </ECEntityClass>"
                 "  <ECRelationshipClass typeName='AuthorityIssuesCode' strength='referencing'>"
-                "    <Source cardinality='(1,1)' polymorphic='False'>"
+                "    <Source cardinality='(0,1)' polymorphic='False'>"
                 "        <Class class='Authority' />"
                 "     </Source>"
                 "     <Target cardinality='(0,N)' polymorphic='True'>"
@@ -1083,7 +1110,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                 "    <ECStructProperty propertyName='Code' typeName='ElementCode' />"
                 "  </ECEntityClass>"
                 "  <ECRelationshipClass typeName='AuthorityIssuesCode' strength='referencing'>"
-                "     <Source cardinality='(1,1)' polymorphic='False'>"
+                "     <Source cardinality='(0,1)' polymorphic='False'>"
                 "        <Class class='Authority' />"
                 "     </Source>"
                 "     <Target cardinality='(0,N)' polymorphic='True'>"
@@ -1096,7 +1123,167 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                  "     </Target>"
                 "  </ECRelationshipClass>"
                 "</ECSchema>",
-                false, "Multiple classes in a constraint with key properties are not supported")
+                false, "Multiple classes in a constraint with key properties are not supported"),
+
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                    "  <ECEntityClass typeName='Parent' >"
+                    "    <ECProperty propertyName='Name' typeName='string' />"
+                    "  </ECEntityClass>"
+                    "  <ECEntityClass typeName='Child' >"
+                    "    <ECProperty propertyName='ParentId' typeName='long' />"
+                    "  </ECEntityClass>"
+                    "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing'>"
+                    "    <Source cardinality='(0,1)' polymorphic='False'>"
+                    "        <Class class='Parent' />"
+                    "     </Source>"
+                    "     <Target cardinality='(0,N)' polymorphic='True'>"
+                    "         <Class class='Child'>"
+                    "             <Key>"
+                    "                 <Property name='ParentId'/>"
+                    "             </Key>"
+                    "         </Class>"
+                    "     </Target>"
+                    "  </ECRelationshipClass>"
+                    "</ECSchema>",
+                    true, "Parent multiplicity matches nullability of key property"),
+
+    SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                "  <ECEntityClass typeName='Parent' >"
+                "    <ECProperty propertyName='Name' typeName='string' />"
+                "  </ECEntityClass>"
+                "  <ECEntityClass typeName='Child' >"
+                "    <ECProperty propertyName='ParentId' typeName='long'>"
+                "     <ECCustomAttributes>"
+                "        <PropertyMap xmlns='ECDbMap.01.00'>"
+                "             <IsNullable>true</IsNullable>"
+                "        </PropertyMap>"
+                "     </ECCustomAttributes>"
+                "    </ECProperty>"
+                "  </ECEntityClass>"
+                "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing'>"
+                "    <Source cardinality='(0,1)' polymorphic='False'>"
+                "        <Class class='Parent' />"
+                "     </Source>"
+                "     <Target cardinality='(0,N)' polymorphic='True'>"
+                "         <Class class='Child'>"
+                "             <Key>"
+                "                 <Property name='ParentId'/>"
+                "             </Key>"
+                "         </Class>"
+                "     </Target>"
+                "  </ECRelationshipClass>"
+                "</ECSchema>",
+                true, "Parent multiplicity matches nullability of key property"),
+
+    SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                "  <ECEntityClass typeName='Parent' >"
+                "    <ECProperty propertyName='Name' typeName='string' />"
+                "  </ECEntityClass>"
+                "  <ECEntityClass typeName='Child' >"
+                "    <ECProperty propertyName='ParentId' typeName='long'>"
+                "     <ECCustomAttributes>"
+                "        <PropertyMap xmlns='ECDbMap.01.00'>"
+                "             <IsNullable>false</IsNullable>"
+                "        </PropertyMap>"
+                "     </ECCustomAttributes>"
+                "    </ECProperty>"
+                "  </ECEntityClass>"
+                "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing'>"
+                "    <Source cardinality='(0,1)' polymorphic='False'>"
+                "        <Class class='Parent' />"
+                "     </Source>"
+                "     <Target cardinality='(0,N)' polymorphic='True'>"
+                "         <Class class='Child'>"
+                "             <Key>"
+                "                 <Property name='ParentId'/>"
+                "             </Key>"
+                "         </Class>"
+                "     </Target>"
+                "  </ECRelationshipClass>"
+                "</ECSchema>",
+                false, "Parent multiplicity (0,1) and key property not nullable doesn't match"),
+
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                    "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                    "  <ECEntityClass typeName='Parent' >"
+                    "    <ECProperty propertyName='Name' typeName='string' />"
+                    "  </ECEntityClass>"
+                    "  <ECEntityClass typeName='Child' >"
+                    "    <ECProperty propertyName='ParentId' typeName='long'>"
+                    "     <ECCustomAttributes>"
+                    "        <PropertyMap xmlns='ECDbMap.01.00'>"
+                    "             <IsNullable>false</IsNullable>"
+                    "        </PropertyMap>"
+                    "     </ECCustomAttributes>"
+                    "    </ECProperty>"
+                    "  </ECEntityClass>"
+                    "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing'>"
+                    "    <Source cardinality='(1,1)' polymorphic='False'>"
+                    "        <Class class='Parent' />"
+                    "     </Source>"
+                    "     <Target cardinality='(0,N)' polymorphic='True'>"
+                    "         <Class class='Child'>"
+                    "             <Key>"
+                    "                 <Property name='ParentId'/>"
+                    "             </Key>"
+                    "         </Class>"
+                    "     </Target>"
+                    "  </ECRelationshipClass>"
+                    "</ECSchema>",
+                    true, "Parent multiplicity (1,1) and key property not nullable does match"),
+
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                    "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                    "  <ECEntityClass typeName='Parent' >"
+                    "    <ECProperty propertyName='Name' typeName='string' />"
+                    "  </ECEntityClass>"
+                    "  <ECEntityClass typeName='Child' >"
+                    "    <ECProperty propertyName='ParentId' typeName='long'>"
+                    "     <ECCustomAttributes>"
+                    "        <PropertyMap xmlns='ECDbMap.01.00'>"
+                    "             <IsNullable>true</IsNullable>"
+                    "        </PropertyMap>"
+                    "     </ECCustomAttributes>"
+                    "    </ECProperty>"
+                    "  </ECEntityClass>"
+                    "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing'>"
+                    "    <Source cardinality='(1,1)' polymorphic='False'>"
+                    "        <Class class='Parent' />"
+                    "     </Source>"
+                    "     <Target cardinality='(0,N)' polymorphic='True'>"
+                    "         <Class class='Child'>"
+                    "             <Key>"
+                    "                 <Property name='ParentId'/>"
+                    "             </Key>"
+                    "         </Class>"
+                    "     </Target>"
+                    "  </ECRelationshipClass>"
+                    "</ECSchema>",
+                    false, "Parent multiplicity (1,1) and key property nullable does not match"),
+
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                    "  <ECEntityClass typeName='Parent' >"
+                    "    <ECProperty propertyName='Name' typeName='string' />"
+                    "  </ECEntityClass>"
+                    "  <ECEntityClass typeName='Child' >"
+                    "    <ECProperty propertyName='ParentId' typeName='long' />"
+                    "  </ECEntityClass>"
+                    "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing'>"
+                    "    <Source cardinality='(1,1)' polymorphic='False'>"
+                    "        <Class class='Parent' />"
+                    "     </Source>"
+                    "     <Target cardinality='(0,N)' polymorphic='True'>"
+                    "         <Class class='Child'>"
+                    "             <Key>"
+                    "                 <Property name='ParentId'/>"
+                    "             </Key>"
+                    "         </Class>"
+                    "     </Target>"
+                    "  </ECRelationshipClass>"
+                    "</ECSchema>",
+                    false, "Parent multiplicity (1,1) and key property nullable does not match")
         };
 
     AssertSchemaImport(testItems, "ecdbschemarules.ecdb");

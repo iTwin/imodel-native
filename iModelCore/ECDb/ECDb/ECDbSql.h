@@ -252,40 +252,49 @@ struct ECDbSqlColumn : NonCopyableClass
     {
     enum class Type
         {
-        Integer, Long, Double, DateTime, Binary, Boolean, String, Json, Any
+        Any = 0, 
+        Boolean = 1,
+        Binary = 2, 
+        DateTime = 3, 
+        Double = 4, 
+        Integer = 5, 
+        Long = 6, 
+        String = 7,
+        Json = 8
         };
     struct Constraint : NonCopyableClass
         {
-
+    public:
         enum class Collation
             {
-            Default, // Default is really Binary in sqlite. But we will not provide collation for property to sqlite in this case and assume sqlite default.
-            Binary, // Compares string data using memcmp, regardless of text encoding
-            NoCase, // The same as binary, except the 26 upper case characters of ASCII are folded to their lower case equivalents before the comparison is performed. Note that only ASCII characters are case folded. SQLite does not attempt to do full UTF case folding due to the size of the tables required.
-            RTrim,  // The same as binary, except that trailing space characters are ignored.
+            Default = 0, // Default is really Binary in sqlite. But we will not provide collation for property to sqlite in this case and assume sqlite default.
+            Binary = 1, // Compares string data using memcmp, regardless of text encoding
+            NoCase = 2, // The same as binary, except the 26 upper case characters of ASCII are folded to their lower case equivalents before the comparison is performed. Note that only ASCII characters are case folded. SQLite does not attempt to do full UTF case folding due to the size of the tables required.
+            RTrim = 3  // The same as binary, except that trailing space characters are ignored.
             };
 
-        private:
-            bool m_constraintNotNull : 1;
-            bool m_constraintIsUnique : 2;
-            Utf8String m_constraintCheck;
-            Utf8String m_constraintDefaultValue;
-            Collation m_collation;
-        public:
-            Constraint() :m_constraintNotNull(false), m_constraintIsUnique(false), m_collation(Collation::Default)
-                {}
-            bool IsNotNull() const { return m_constraintNotNull; }
-            bool IsUnique() const { return m_constraintIsUnique; }
-            Utf8StringCR GetCheckExpression() const { return m_constraintCheck; }
-            Utf8StringCR GetDefaultExpression() const { return m_constraintDefaultValue; }
-            void SetIsNotNull(bool isNotNull) { m_constraintNotNull = isNotNull; }
-            void SetIsUnique(bool isUnique) { m_constraintIsUnique = isUnique; }
-            void SetCheckExpression(Utf8CP expression) { m_constraintCheck = expression; }
-            void SetDefaultExpression(Utf8CP expression) { m_constraintDefaultValue = expression; }
-            Collation GetCollation()  const { return m_collation; }
-            void SetCollation(Collation collation) { m_collation = collation; }
-            static Utf8CP CollationToString(Collation);
-            static bool TryParseCollationString(Collation&, Utf8CP);
+    private:
+        bool m_constraintNotNull : 1;
+        bool m_constraintIsUnique : 2;
+        Utf8String m_constraintCheck;
+        Utf8String m_constraintDefaultValue;
+        Collation m_collation;
+
+    public:
+        Constraint() : m_constraintNotNull(false), m_constraintIsUnique(false), m_collation(Collation::Default) {}
+
+        bool IsNotNull() const { return m_constraintNotNull; }
+        void SetIsNotNull(bool isNotNull) { m_constraintNotNull = isNotNull; }
+        bool IsUnique() const { return m_constraintIsUnique; }
+        void SetIsUnique(bool isUnique) { m_constraintIsUnique = isUnique; }
+        Utf8StringCR GetCheckExpression() const { return m_constraintCheck; }
+        void SetCheckExpression(Utf8CP expression) { m_constraintCheck = expression; }
+        Utf8StringCR GetDefaultExpression() const { return m_constraintDefaultValue; }
+        void SetDefaultExpression(Utf8CP expression) { m_constraintDefaultValue = expression; }           
+        Collation GetCollation()  const { return m_collation; }
+        void SetCollation(Collation collation) { m_collation = collation; }
+        static Utf8CP CollationToString(Collation);
+        static bool TryParseCollationString(Collation&, Utf8CP);
         };
 
     private:

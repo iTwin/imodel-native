@@ -361,11 +361,12 @@ MapStatus ECDbMap::MapClass(ECClassCR ecClass)
             }
         }
 
-    const bool classMapExists = GetClassMap(ecClass) != nullptr;
+    ClassMapPtr existingClassMap = nullptr;
+    const bool classMapExists = TryGetClassMap(existingClassMap, m_schemaImportContext->GetClassMapLoadContext(), ecClass);
     if (!classMapExists)
         {
         MapStatus status = MapStatus::Success;
-        std::unique_ptr<ClassMapInfo> classMapInfo = ClassMapInfoFactory::Create(status, *GetSchemaImportContext(), ecClass, *this);
+        std::unique_ptr<ClassMapInfo> classMapInfo = ClassMapInfoFactory::Create(status, *m_schemaImportContext, ecClass, *this);
         if ((status == MapStatus::BaseClassesNotMapped || status == MapStatus::Error))
             return status;
 
