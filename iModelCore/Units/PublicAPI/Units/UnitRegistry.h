@@ -10,6 +10,8 @@
 
 #include <Units/Units.h>
 
+BEGIN_BENTLEY_UNITS_NAMESPACE
+
 struct UnitRegistry
 	{
 private:
@@ -25,9 +27,12 @@ private:
 	UnitRegistry(const UnitRegistry& rhs) = delete;
 	UnitRegistry & operator= (const UnitRegistry& rhs) = delete;
 
-	void AddGlobalUnits ();
-	void AddGlobalConstants();
+    void AddDefaultSystems ();
+    void AddDefaultPhenomena ();
+	void AddDefaultUnits ();
+	void AddDefaultConstants();
 
+    void InsertUnique (bvector<Utf8String> &vec, Utf8String &str);
 	void AddSystem(Utf8CP systemName);
 	void AddPhenomena(Utf8CP phenomenaName);
 
@@ -50,3 +55,5 @@ public:
 
 	// Probably some query methods. (Find base for phenomena and system probably).
 	};
+
+END_BENTLEY_UNITS_NAMESPACE

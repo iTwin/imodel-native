@@ -61,7 +61,7 @@ MultiCompileDepends = $(_MakeFileSpec)
 #Units Compilands
 $(o)UnitRegistry$(oext)  :  $(srcDir)UnitRegistry.cpp ${MultiCompileDepends}
 
-$(o)Unit$(oext)          :  $(srcDir)Unit.cpp ${MultiCompileDepends}
+$(o)UnitTypes$(oext)     :  $(srcDir)UnitTypes.cpp ${MultiCompileDepends}
 
 $(o)Parser$(oext)        :  $(srcDir)Parser.cpp ${MultiCompileDepends}
 

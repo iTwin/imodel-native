@@ -8,6 +8,8 @@
 
 #include <UnitsPCH.h>
 
+USING_NAMESPACE_BENTLEY_UNITS
+
 Unit::Unit(Utf8CP system, Utf8CP phenomena, Utf8CP name, Utf8CP displayLabel, bvector<Utf8String>& numerator, bvector<Utf8String>& denominator)
 	: m_system (system), m_name(name), m_displayLabel(displayLabel)
 	{

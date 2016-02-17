@@ -8,6 +8,10 @@
 
 #pragma once
 
+#include <Units/Units.h>
+
+BEGIN_BENTLEY_UNITS_NAMESPACE
+
 struct Unit
 	{
 friend struct UnitRegistry;
@@ -73,3 +77,4 @@ struct Constant : QuantityBase
 
 	};
 
+END_BENTLEY_UNITS_NAMESPACE

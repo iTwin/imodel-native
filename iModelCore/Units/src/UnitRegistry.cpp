@@ -9,6 +9,8 @@
 #include <UnitsPCH.h>
 #include <Parser.h>
 
+USING_NAMESPACE_BENTLEY_UNITS
+
 UnitRegistry * UnitRegistry::s_instance = nullptr;
 
 UnitRegistry& UnitRegistry::Instance()
@@ -21,16 +23,60 @@ UnitRegistry& UnitRegistry::Instance()
 
 UnitRegistry::UnitRegistry()
 	{
-	this->AddGlobalUnits ();
-	this->AddGlobalConstants ();
+	AddDefaultSystems();
+	AddDefaultPhenomena();
+	AddDefaultUnits ();
+	AddDefaultConstants ();
 	}
 
-void UnitRegistry::AddGlobalUnits ()
+void UnitRegistry::InsertUnique (bvector<Utf8String> &vec, Utf8String &str)
+	{
+	// Don't insert duplicates.
+	auto iter = find (vec.begin(), vec.end(), str);
+	if (iter != vec.end())
+		return;
+
+	vec.push_back(str);
+	}
+
+void UnitRegistry::AddSystem (Utf8CP systemName)
+	{
+	auto str = Utf8String(systemName);
+	InsertUnique (m_systems, str);
+	}
+
+void UnitRegistry::AddPhenomena (Utf8CP phenomenaName)
+	{
+	auto str = Utf8String(phenomenaName);
+	InsertUnique (m_phenomena, str);
+	}
+
+void UnitRegistry::AddDefaultSystems ()
+	{
+	AddSystem ("SI");
+	AddSystem ("Metric");	
+	// TODO: Add more.
+	}
+
+void UnitRegistry::AddDefaultPhenomena ()
+	{
+	AddPhenomena ("Length");
+	AddPhenomena ("Time");
+	AddPhenomena ("Mass");
+	AddPhenomena ("Temperature");
+	AddPhenomena ("Current");
+	AddPhenomena ("Matter");
+	AddPhenomena ("Luminosity");
+	AddPhenomena ("Dimensionless");
+	}
+
+
+void UnitRegistry::AddDefaultUnits ()
 	{
 
 	}
 
-void UnitRegistry::AddGlobalConstants ()
+void UnitRegistry::AddDefaultConstants ()
 	{
 
 	}
