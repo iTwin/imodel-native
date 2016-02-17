@@ -11,7 +11,7 @@
 #include <Bentley/BeTest.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <Logging/bentleylogging.h>
-#include "..\src\Quantity.h"
+#include <Units/Units.h>
 #define BEGIN_UNITS_UNITTESTS_NAMESPACE BEGIN_BENTLEY_UNITS_NAMESPACE namespace Tests {
 #define END_UNITS_UNITTESTS_NAMESPACE } END_BENTLEY_UNITS_NAMESPACE
 

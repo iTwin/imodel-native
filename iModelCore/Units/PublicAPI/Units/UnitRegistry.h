@@ -42,7 +42,8 @@ private:
     void AddPhenomena(Utf8CP phenomenaName);
 
 public:
-    static UnitRegistry & Instance();
+    UNITS_EXPORT static UnitRegistry & Instance();
+    UNITS_EXPORT static void Clear();
 
     UnitPtr LookupUnitBySubTypes (const Utf8Vector &numerator, const Utf8Vector &denominator) const;
 
@@ -53,6 +54,7 @@ public:
     // Lookup methods
     UNITS_EXPORT UnitPtr     LookupUnit(Utf8CP name) const;
     UNITS_EXPORT ConstantPtr LookupConstant(Utf8CP name) const;
+    bmap<Utf8String, UnitP> const & AllUnits() const { return m_units; }
         
     // bool Exists methods.
     UNITS_EXPORT bool HasSystem (Utf8CP systemName) const;

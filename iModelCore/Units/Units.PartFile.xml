@@ -41,23 +41,47 @@
         <SubPart PartName="UnitsDll" />
     </Part>
 
-    <Part Name="Units">
-        <SubPart PartName="Units-Windows-Only" LibType="Dynamic" />
-        <SubPart PartName="Units-iOS-Only" LibType="Static" />
-        <SubPart PartName="Units-Android-Only" LibType="Static" />        
+    <Part Name="UnitsNative">
+        <SubPart PartName="Units-Windows-Only"  LibType="Dynamic" />
+        <SubPart PartName="Units-iOS-Only"      LibType="Static" />
+        <SubPart PartName="Units-Android-Only"  LibType="Static" />
     </Part>
 
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 <!-- ////////////////////////////////// Products ///////////////////////////////////////// -->
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 
-    
-    
-    <!--<Product Name="UnitsTested" PrgOutputDir="Units" SaveProduct="true" AddIn="true">
-        <SubProduct ProductName="Units" />
-      <SubProduct ProductName="Units-Tests"/>
+    <ProductDirectoryList ListName="UnitsTested" >
+        <ProductDirectory Name="PublicAPI"                          Deliver="false"/>
+        <ProductDirectory Name="VendorAPI"                          Deliver="false" />
+        <ProductDirectory Name="VendorNotices"                      Deliver="false" />
+        <ProductDirectory Name="LoggingWorkspaceData"               Deliver="false"/>
+        <ProductDirectory Name="LoggingManagedAssemblies"           Deliver="false"/>
+        <ProductDirectory Name="LoggingOptionalManagedAssemblies"   Deliver="false"/>
+        <ProductDirectory Name="libs"                               Deliver="false"/>
+
+        <ProductDirectory   Name="PublicAPI"                    LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="VendorAPI"                    LibType="Static"    Deliver="false" />
+        <ProductDirectory   Name="VendorNotices"                LibType="Static"    Deliver="false" />
+        <ProductDirectory   Name="libs"                         LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="BentleyNativeAssemblies"      LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="UnitsNativeAssemblies"        LibType="Static"    Deliver="false"/>
+
+        <ProductDirectory Name="loggingnativeassemblies"            Path="Runtime"/>
+        <ProductDirectory Name="LoggingOptionalNativeAssemblies"    Path="Runtime"/>
+        <ProductDirectory Name="BentleyNativeAssemblies"            Path="Runtime"/>
+        <ProductDirectory Name="UnitsNativeAssemblies"              Path="Runtime"/>
+        <ProductDirectory Name="PublishedApi"                       Path="Include"/>
+        <ProductDirectory Name="PublishedApi_Doc"                   Path="Docs"/>
+        <ProductDirectory Name="VendorNotices"                      Path="Notices"/>
+    </ProductDirectoryList>
+
+
+    <Product Name="UnitsTested" PrgOutputDir="Units" SaveProduct="true" AddIn="true">
+        <SubPart PartName="UnitsNative" />
+        <SubProduct ProductName="Units-Tests"/>
         <SubPart PartName="RunGtest" />
-      <Directories DirectoryListName="UnitsTested"/>
+        <Directories DirectoryListName="UnitsTested"/>
     </Product>
     
     <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/Units-Gtest/UnitsTest -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/Units" OnlyPlatforms="x86,x64,MacOs*,Linux*">
@@ -90,23 +114,23 @@
     </Part>
     
     <Part Name="UnitTests" BentleyBuildMakeFile="Test/BuildTests.mke" >
-    <SubPart PartName="TestDependencies" />
-    <Bindings>
-        <Directory ProductDirectoryName="UnitTests-Objects"    SourceName="Delivery/UnitTests/Objects/UnitTests"/>
-    </Bindings>
-  </Part>
+        <SubPart PartName="TestDependencies" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    SourceName="Delivery/UnitTests/Objects/UnitTests"/>
+        </Bindings>
+    </Part>
 
     <Part Name="TestDependencies" BentleyBuildMakeFile="Test/Prewire.mke">
-    <SubPart PartName="UnitsNative" />
-    <SubPart PartName="UnitsConversionData" />
-    <Bindings>
-        <Files ProductDirectoryName="UnitTests-IgnoreList"     ProductSubDirectory="Units" SubPartDirectory="UnitTests/Units">Delivery/UnitTests/ignore_list.txt</Files>
-    </Bindings>
-  </Part>
+        <SubPart PartName="UnitsNative" />
+        <SubPart PartName="UnitsConversionData" />
+        <Bindings>
+            <Files ProductDirectoryName="UnitTests-IgnoreList"     ProductSubDirectory="Units" SubPartDirectory="UnitTests/Units">Delivery/UnitTests/ignore_list.txt</Files>
+        </Bindings>
+    </Part>
 
-  <Part Name="UnitsConversionData" BentleyBuildMakeFile="test/ConversionData.prewire.mke">
-    <Bindings>
-      <Files SubPartDirectory="ConversionData" ProductDirectoryName="UnitTests-Assets" ProductSubDirectory="ConversionData">Delivery/ConversionData/*csv</Files>
-    </Bindings>
-  </Part>-->
+    <Part Name="UnitsConversionData" BentleyBuildMakeFile="test/ConversionData.prewire.mke">
+        <Bindings>
+        <Files SubPartDirectory="ConversionData" ProductDirectoryName="UnitTests-Assets" ProductSubDirectory="ConversionData">Delivery/ConversionData/*csv</Files>
+        </Bindings>
+    </Part>
 </BuildContext>
