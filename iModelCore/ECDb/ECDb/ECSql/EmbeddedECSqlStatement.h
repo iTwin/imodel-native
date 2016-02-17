@@ -38,10 +38,11 @@ public:
     void Initialize (ECSqlPrepareContext& parentPrepareContext, ArrayECPropertyCP arrayProperty = nullptr, ECSqlColumnInfo const* parentColumnInfo = nullptr);
     bool HasColumnInfo () const { return m_parentColumnInfo != nullptr; }
     };
+
 //=======================================================================================
-//! @bsiclass                                                Affan.Khan      10/2013
+//! @bsiclass                                                Affan.Khan      12/2015
 //+===============+===============+===============+===============+===============+======
-struct JoinedTableECSqlStatement: public ECSqlStatementBase
+struct ParentOfJoinedTableECSqlStatement: public ECSqlStatementBase
     {
 private:
     ECN::ECClassId m_classId;
@@ -50,8 +51,8 @@ private:
     virtual ECSqlPrepareContext _InitializePrepare(ECDbCR ecdb, Utf8CP ecsql) override { return ECSqlPrepareContext(ecdb, *this, m_classId); }
 
 public:
-    explicit JoinedTableECSqlStatement(ECN::ECClassId joinTableClassId) : ECSqlStatementBase(), m_classId(joinTableClassId), m_ecInstanceIdBinder(nullptr) {}
-    ~JoinedTableECSqlStatement() {}
+    explicit ParentOfJoinedTableECSqlStatement(ECN::ECClassId joinTableClassId) : ECSqlStatementBase(), m_classId(joinTableClassId), m_ecInstanceIdBinder(nullptr) {}
+    ~ParentOfJoinedTableECSqlStatement() {}
 
     ECN::ECClassId GetClassId() const {return m_classId;}
     void SetECInstanceIdBinder(int ecsqlParameterIndex) { m_ecInstanceIdBinder = &GetBinder(ecsqlParameterIndex); }

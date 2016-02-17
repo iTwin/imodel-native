@@ -21,8 +21,8 @@ struct JoinedTableECDbMapStrategyTests: ECDbMappingTestFixture
     protected:
         void AssertTableLayouts(ECDbCR, bmap<Utf8String, Utf8String> const& tableLayouts, Utf8CP scenario) const;
         ECInstanceId InsertTestInstance (ECDbCR ecdb, Utf8CP ecsql);
-        Utf8CP ToInsertECSql (ECDbCR ecdb, Utf8CP className);
-        Utf8CP ToSelectECSql (ECDbCR ecdb, Utf8CP className);
+        Utf8String ToInsertECSql (ECDbCR ecdb, Utf8CP className);
+        Utf8String ToSelectECSql (ECDbCR ecdb, Utf8CP className);
         void VerifyInsertedInstance (ECDbR ecdb, Utf8CP ecsql, ECInstanceId sourceInstanceId, ECInstanceId targetInstanceId, ECClassId sourceClassId, ECClassId targetClassId);
     };
 
@@ -1081,7 +1081,7 @@ void JoinedTableECDbMapStrategyTests::AssertTableLayouts(ECDbCR ecdb, bmap<Utf8S
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  11/15
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8CP JoinedTableECDbMapStrategyTests::ToInsertECSql (ECDbCR ecdb, Utf8CP className)
+Utf8String JoinedTableECDbMapStrategyTests::ToInsertECSql (ECDbCR ecdb, Utf8CP className)
     {
     ECN::ECClassCP ecClass = ecdb.Schemas ().GetECClass ("JoinedTableTest", className);
     EXPECT_TRUE (ecClass != nullptr);
@@ -1089,7 +1089,7 @@ Utf8CP JoinedTableECDbMapStrategyTests::ToInsertECSql (ECDbCR ecdb, Utf8CP class
     Utf8String insertECSql = "INSERT INTO ";
     insertECSql.append (ecClass->GetECSqlName()).append (" (SourceECInstanceId, TargetECInstanceId, SourceECClassId, TargetECClassId) VALUES (%lld, %lld, %lld, %lld)");
 
-    return insertECSql.c_str ();
+    return insertECSql;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1119,7 +1119,7 @@ ECInstanceId JoinedTableECDbMapStrategyTests::InsertTestInstance (ECDbCR ecdb, U
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  11/15
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8CP JoinedTableECDbMapStrategyTests::ToSelectECSql (ECDbCR ecdb, Utf8CP className)
+Utf8String JoinedTableECDbMapStrategyTests::ToSelectECSql (ECDbCR ecdb, Utf8CP className)
     {
     ECN::ECClassCP ecClass = ecdb.Schemas ().GetECClass ("JoinedTableTest", className);
     EXPECT_TRUE (ecClass != nullptr);
@@ -1127,7 +1127,7 @@ Utf8CP JoinedTableECDbMapStrategyTests::ToSelectECSql (ECDbCR ecdb, Utf8CP class
     Utf8String selecteECSql = "SELECT ";
     selecteECSql.append (className).append (".* FROM ").append (ecClass->GetECSqlName()).append (" WHERE ECInstanceId = %lld");
 
-    return selecteECSql.c_str ();
+    return selecteECSql;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1197,9 +1197,8 @@ TEST_F (JoinedTableECDbMapStrategyTests, SelfJoinRelationships)
         "    <Source cardinality='(0,1)' polymorphic='True'>"
         "      <Class class = 'Foo' />"
         "    </Source>"
-        "    <Target cardinality='(1,1)' polymorphic='True'>"
-        "      <Class class = 'Foo' >"
-        "      </Class>"
+        "    <Target cardinality='(0,1)' polymorphic='True'>"
+        "      <Class class = 'Foo' />"
         "    </Target>"
         "  </ECRelationshipClass>"
         "    <ECRelationshipClass typeName='FooHasManyFoo' strength='referencing'>"
@@ -1245,12 +1244,12 @@ TEST_F (JoinedTableECDbMapStrategyTests, SelfJoinRelationships)
     Savepoint savePoint (db, "1-1 Relationship Instances");
 
     Utf8String ecsql;
-    ecsql.Sprintf (ToInsertECSql (db, "FooHasFoo"), fooInstanceId1.GetValue (), fooInstanceId1.GetValue (), fooClassId, fooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "FooHasFoo").c_str(), fooInstanceId1.GetValue (), fooInstanceId1.GetValue (), fooClassId, fooClassId);
     fooHasFooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
 
     savePoint.Commit ();
 
-    ecsql.Sprintf (ToSelectECSql (db, "FooHasFoo"), fooHasFooInstanceId1.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "FooHasFoo").c_str (), fooHasFooInstanceId1.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), fooInstanceId1, fooInstanceId1, fooClassId, fooClassId);
     }
 
@@ -1261,18 +1260,18 @@ TEST_F (JoinedTableECDbMapStrategyTests, SelfJoinRelationships)
     Savepoint savePoint (db, "1-N Relationship Instances");
 
     Utf8String ecsql;
-    ecsql.Sprintf (ToInsertECSql (db, "FooHasManyFoo"), fooInstanceId1.GetValue (), fooInstanceId1.GetValue (), fooClassId, fooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "FooHasManyFoo").c_str (), fooInstanceId1.GetValue (), fooInstanceId1.GetValue (), fooClassId, fooClassId);
     fooHasManyFooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
 
-    ecsql.Sprintf (ToInsertECSql (db, "FooHasManyFoo"), fooInstanceId1.GetValue (), fooInstanceId2.GetValue (), fooClassId, fooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "FooHasManyFoo").c_str (), fooInstanceId1.GetValue (), fooInstanceId2.GetValue (), fooClassId, fooClassId);
     fooHasManyFooInstanceId2 = InsertTestInstance (db, ecsql.c_str ());
 
     savePoint.Commit ();
 
-    ecsql.Sprintf (ToSelectECSql (db, "FooHasManyFoo"), fooHasManyFooInstanceId1.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "FooHasManyFoo").c_str (), fooHasManyFooInstanceId1.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), fooInstanceId1, fooInstanceId1, fooClassId, fooClassId);
 
-    ecsql.Sprintf (ToSelectECSql (db, "FooHasManyFoo"), fooHasManyFooInstanceId2.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "FooHasManyFoo").c_str (), fooHasManyFooInstanceId2.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), fooInstanceId1, fooInstanceId2, fooClassId, fooClassId);
     }
 
@@ -1285,30 +1284,30 @@ TEST_F (JoinedTableECDbMapStrategyTests, SelfJoinRelationships)
     Savepoint savePoint (db, "N-N Relationship Instances");
 
     Utf8String ecsql;
-    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyFoo"), fooInstanceId1.GetValue (), fooInstanceId1.GetValue (), fooClassId, fooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyFoo").c_str (), fooInstanceId1.GetValue (), fooInstanceId1.GetValue (), fooClassId, fooClassId);
     manyFooHasManyFooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
 
-    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyFoo"), fooInstanceId1.GetValue (), fooInstanceId2.GetValue (), fooClassId, fooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyFoo").c_str (), fooInstanceId1.GetValue (), fooInstanceId2.GetValue (), fooClassId, fooClassId);
     manyFooHasManyFooInstanceId2 = InsertTestInstance (db, ecsql.c_str ());
 
-    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyFoo"), fooInstanceId2.GetValue (), fooInstanceId1.GetValue (), fooClassId, fooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyFoo").c_str (), fooInstanceId2.GetValue (), fooInstanceId1.GetValue (), fooClassId, fooClassId);
     manyFooHasManyFooInstanceId3 = InsertTestInstance (db, ecsql.c_str ());
 
-    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyFoo"), fooInstanceId2.GetValue (), fooInstanceId2.GetValue (), fooClassId, fooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyFoo").c_str (), fooInstanceId2.GetValue (), fooInstanceId2.GetValue (), fooClassId, fooClassId);
     manyFooHasManyFooInstanceId4 = InsertTestInstance (db, ecsql.c_str ());
 
     savePoint.Commit ();
 
-    ecsql.Sprintf (ToSelectECSql (db, "ManyFooHasManyFoo"), manyFooHasManyFooInstanceId1.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "ManyFooHasManyFoo").c_str (), manyFooHasManyFooInstanceId1.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), fooInstanceId1, fooInstanceId1, fooClassId, fooClassId);
 
-    ecsql.Sprintf (ToSelectECSql (db, "ManyFooHasManyFoo"), manyFooHasManyFooInstanceId2.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "ManyFooHasManyFoo").c_str (), manyFooHasManyFooInstanceId2.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), fooInstanceId1, fooInstanceId2, fooClassId, fooClassId);
 
-    ecsql.Sprintf (ToSelectECSql (db, "ManyFooHasManyFoo"), manyFooHasManyFooInstanceId3.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "ManyFooHasManyFoo").c_str (), manyFooHasManyFooInstanceId3.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), fooInstanceId2, fooInstanceId1, fooClassId, fooClassId);
 
-    ecsql.Sprintf (ToSelectECSql (db, "ManyFooHasManyFoo"), manyFooHasManyFooInstanceId4.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "ManyFooHasManyFoo").c_str (), manyFooHasManyFooInstanceId4.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), fooInstanceId2, fooInstanceId2, fooClassId, fooClassId);
     }
     }
@@ -1360,7 +1359,7 @@ TEST_F (JoinedTableECDbMapStrategyTests, BaseAndDirectDerivedClassRelationship)
         "    <Source cardinality='(0,1)' polymorphic='True'>"
         "      <Class class = 'Foo' />"
         "    </Source>"
-        "    <Target cardinality='(1,1)' polymorphic='True'>"
+        "    <Target cardinality='(0,1)' polymorphic='True'>"
         "      <Class class = 'Goo' >"
         "      </Class>"
         "    </Target>"
@@ -1413,12 +1412,12 @@ TEST_F (JoinedTableECDbMapStrategyTests, BaseAndDirectDerivedClassRelationship)
     Savepoint savePoint (db, "1-1 Relationship Instances");
 
     Utf8String ecsql;
-    ecsql.Sprintf (ToInsertECSql (db, "FooHasGoo"), fooInstanceId1.GetValue (), gooInstanceId1.GetValue (), fooClassId, gooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "FooHasGoo").c_str (), fooInstanceId1.GetValue (), gooInstanceId1.GetValue (), fooClassId, gooClassId);
     fooHasGooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
 
     savePoint.Commit ();
 
-    ecsql.Sprintf (ToSelectECSql (db, "FooHasGoo"), fooHasGooInstanceId1.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "FooHasGoo").c_str (), fooHasGooInstanceId1.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), fooInstanceId1, gooInstanceId1, fooClassId, gooClassId);
     }
 
@@ -1429,18 +1428,18 @@ TEST_F (JoinedTableECDbMapStrategyTests, BaseAndDirectDerivedClassRelationship)
     Savepoint savePoint (db, "1-N Relationship Instances");
 
     Utf8String ecsql;
-    ecsql.Sprintf (ToInsertECSql (db, "FooHasManyGoo"), fooInstanceId1.GetValue (), gooInstanceId1.GetValue (), fooClassId, gooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "FooHasManyGoo").c_str (), fooInstanceId1.GetValue (), gooInstanceId1.GetValue (), fooClassId, gooClassId);
     fooHasManyGooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
 
-    ecsql.Sprintf (ToInsertECSql (db, "FooHasManyGoo"), fooInstanceId1.GetValue (), gooInstanceId2.GetValue (), fooClassId, gooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "FooHasManyGoo").c_str (), fooInstanceId1.GetValue (), gooInstanceId2.GetValue (), fooClassId, gooClassId);
     fooHasManyGooInstanceId2 = InsertTestInstance (db, ecsql.c_str ());
 
     savePoint.Commit ();
 
-    ecsql.Sprintf (ToSelectECSql (db, "FooHasManyGoo"), fooHasManyGooInstanceId1.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "FooHasManyGoo").c_str (), fooHasManyGooInstanceId1.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), fooInstanceId1, gooInstanceId1, fooClassId, gooClassId);
 
-    ecsql.Sprintf (ToSelectECSql (db, "FooHasManyGoo"), fooHasManyGooInstanceId2.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "FooHasManyGoo").c_str (), fooHasManyGooInstanceId2.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), fooInstanceId1, gooInstanceId2, fooClassId, gooClassId);
     }
 
@@ -1453,30 +1452,30 @@ TEST_F (JoinedTableECDbMapStrategyTests, BaseAndDirectDerivedClassRelationship)
     Savepoint savePoint (db, "N-N Relationship Instances");
 
     Utf8String ecsql;
-    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyGoo"), fooInstanceId1.GetValue (), gooInstanceId1.GetValue (), fooClassId, gooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyGoo").c_str (), fooInstanceId1.GetValue (), gooInstanceId1.GetValue (), fooClassId, gooClassId);
     manyFooHasManyGooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
 
-    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyGoo"), fooInstanceId1.GetValue (), gooInstanceId2.GetValue (), fooClassId, gooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyGoo").c_str (), fooInstanceId1.GetValue (), gooInstanceId2.GetValue (), fooClassId, gooClassId);
     manyFooHasManyGooInstanceId2 = InsertTestInstance (db, ecsql.c_str ());
 
-    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyGoo"), fooInstanceId2.GetValue (), gooInstanceId1.GetValue (), fooClassId, gooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyGoo").c_str (), fooInstanceId2.GetValue (), gooInstanceId1.GetValue (), fooClassId, gooClassId);
     manyFooHasManyGooInstanceId3 = InsertTestInstance (db, ecsql.c_str ());
 
-    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyGoo"), fooInstanceId2.GetValue (), gooInstanceId2.GetValue (), fooClassId, gooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyGoo").c_str (), fooInstanceId2.GetValue (), gooInstanceId2.GetValue (), fooClassId, gooClassId);
     manyFooHasManyGooInstanceId4 = InsertTestInstance (db, ecsql.c_str ());
 
     savePoint.Commit ();
 
-    ecsql.Sprintf (ToSelectECSql (db, "ManyFooHasManyGoo"), manyFooHasManyGooInstanceId1.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "ManyFooHasManyGoo").c_str (), manyFooHasManyGooInstanceId1.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), fooInstanceId1, gooInstanceId1, fooClassId, gooClassId);
 
-    ecsql.Sprintf (ToSelectECSql (db, "ManyFooHasManyGoo"), manyFooHasManyGooInstanceId2.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "ManyFooHasManyGoo").c_str (), manyFooHasManyGooInstanceId2.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), fooInstanceId1, gooInstanceId2, fooClassId, gooClassId);
 
-    ecsql.Sprintf (ToSelectECSql (db, "ManyFooHasManyGoo"), manyFooHasManyGooInstanceId3.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "ManyFooHasManyGoo").c_str (), manyFooHasManyGooInstanceId3.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), fooInstanceId2, gooInstanceId1, fooClassId, gooClassId);
 
-    ecsql.Sprintf (ToSelectECSql (db, "ManyFooHasManyGoo"), manyFooHasManyGooInstanceId4.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "ManyFooHasManyGoo").c_str (), manyFooHasManyGooInstanceId4.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), fooInstanceId2, gooInstanceId2, fooClassId, gooClassId);
     }
     }
@@ -1528,7 +1527,7 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipsWithKeyProp)
         "    <Source cardinality='(0,1)' polymorphic='True'>"
         "      <Class class = 'Foo' />"
         "    </Source>"
-        "    <Target cardinality='(1,1)' polymorphic='True'>"
+        "    <Target cardinality='(0,1)' polymorphic='True'>"
         "      <Class class = 'Goo' >"
         "        <Key><Property name='A'/></Key>"
         "      </Class>"
@@ -1572,13 +1571,13 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipsWithKeyProp)
     Savepoint savePoint (db, "1-1 Relationship Instances");
 
     Utf8String ecsql;
-    ecsql.Sprintf (ToInsertECSql (db, "FooHasGooWithKeyProp"), fooInstanceId1.GetValue (), gooInstanceId1.GetValue (), fooClassId, gooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "FooHasGooWithKeyProp").c_str (), fooInstanceId1.GetValue (), gooInstanceId1.GetValue (), fooClassId, gooClassId);
     fooHasGooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
 
     savePoint.Commit ();
     db.SaveChanges();
 
-    ecsql.Sprintf (ToSelectECSql (db, "FooHasGooWithKeyProp"), fooHasGooInstanceId1.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "FooHasGooWithKeyProp").c_str (), fooHasGooInstanceId1.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), fooInstanceId1, gooInstanceId1, fooClassId, gooClassId);
     }
 
@@ -1589,19 +1588,19 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipsWithKeyProp)
     Savepoint savePoint (db, "1-N Relationship Instances");
 
     Utf8String ecsql;
-    ecsql.Sprintf (ToInsertECSql (db, "FooHasManyGooWithKeyProp"), fooInstanceId1.GetValue (), gooInstanceId1.GetValue (), fooClassId, gooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "FooHasManyGooWithKeyProp").c_str (), fooInstanceId1.GetValue (), gooInstanceId1.GetValue (), fooClassId, gooClassId);
     fooHasManyGooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
 
-    ecsql.Sprintf (ToInsertECSql (db, "FooHasManyGooWithKeyProp"), fooInstanceId1.GetValue (), gooInstanceId2.GetValue (), fooClassId, gooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "FooHasManyGooWithKeyProp").c_str (), fooInstanceId1.GetValue (), gooInstanceId2.GetValue (), fooClassId, gooClassId);
     fooHasManyGooInstanceId2 = InsertTestInstance (db, ecsql.c_str ());
 
     savePoint.Commit ();
     db.SaveChanges();
 
-    ecsql.Sprintf (ToSelectECSql (db, "FooHasManyGooWithKeyProp"), fooHasManyGooInstanceId1.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "FooHasManyGooWithKeyProp").c_str (), fooHasManyGooInstanceId1.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), fooInstanceId1, gooInstanceId1, fooClassId, gooClassId);
 
-    ecsql.Sprintf (ToSelectECSql (db, "FooHasManyGooWithKeyProp"), fooHasManyGooInstanceId2.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "FooHasManyGooWithKeyProp").c_str (), fooHasManyGooInstanceId2.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), fooInstanceId1, gooInstanceId2, fooClassId, gooClassId);
     }
     }
@@ -1666,7 +1665,7 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipBetweenSubClasses)
         "    <Source cardinality='(0,1)' polymorphic='True'>"
         "      <Class class = 'Goo' />"
         "    </Source>"
-        "    <Target cardinality='(1,1)' polymorphic='True'>"
+        "    <Target cardinality='(0,1)' polymorphic='True'>"
         "      <Class class = 'Roo' >"
         "      </Class>"
         "    </Target>"
@@ -1719,12 +1718,12 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipBetweenSubClasses)
     Savepoint savePoint (db, "1-1 Relationship Instances");
 
     Utf8String ecsql;
-    ecsql.Sprintf (ToInsertECSql (db, "GooHasRoo"), gooInstanceId1.GetValue (), rooInstanceId1.GetValue (), gooClassId, rooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "GooHasRoo").c_str (), gooInstanceId1.GetValue (), rooInstanceId1.GetValue (), gooClassId, rooClassId);
     gooHasRooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
 
     savePoint.Commit ();
 
-    ecsql.Sprintf (ToSelectECSql (db, "GooHasRoo"), gooHasRooInstanceId1.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "GooHasRoo").c_str (), gooHasRooInstanceId1.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), gooInstanceId1, rooInstanceId1, gooClassId, rooClassId);
     }
 
@@ -1735,18 +1734,18 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipBetweenSubClasses)
     Savepoint savePoint (db, "1-N Relationship Instances");
 
     Utf8String ecsql;
-    ecsql.Sprintf (ToInsertECSql (db, "GooHasManyRoo"), gooInstanceId1.GetValue (), rooInstanceId1.GetValue (), gooClassId, rooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "GooHasManyRoo").c_str (), gooInstanceId1.GetValue (), rooInstanceId1.GetValue (), gooClassId, rooClassId);
     gooHasManyRooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
 
-    ecsql.Sprintf (ToInsertECSql (db, "GooHasManyRoo"), gooInstanceId1.GetValue (), rooInstanceId2.GetValue (), gooClassId, rooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "GooHasManyRoo").c_str (), gooInstanceId1.GetValue (), rooInstanceId2.GetValue (), gooClassId, rooClassId);
     gooHasManyRooInstanceId2 = InsertTestInstance (db, ecsql.c_str ());
 
     savePoint.Commit ();
 
-    ecsql.Sprintf (ToSelectECSql (db, "GooHasManyRoo"), gooHasManyRooInstanceId1.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "GooHasManyRoo").c_str (), gooHasManyRooInstanceId1.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), gooInstanceId1, rooInstanceId1, gooClassId, rooClassId);
 
-    ecsql.Sprintf (ToSelectECSql (db, "GooHasManyRoo"), gooHasManyRooInstanceId2.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "GooHasManyRoo").c_str (), gooHasManyRooInstanceId2.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), gooInstanceId1, rooInstanceId2, gooClassId, rooClassId);
     }
 
@@ -1759,30 +1758,30 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipBetweenSubClasses)
     Savepoint savePoint (db, "N-N Relationship Instances");
 
     Utf8String ecsql;
-    ecsql.Sprintf (ToInsertECSql (db, "ManyGooHasManyRoo"), gooInstanceId1.GetValue (), rooInstanceId1.GetValue (), gooClassId, rooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "ManyGooHasManyRoo").c_str (), gooInstanceId1.GetValue (), rooInstanceId1.GetValue (), gooClassId, rooClassId);
     manyGooHasManyRooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
 
-    ecsql.Sprintf (ToInsertECSql (db, "ManyGooHasManyRoo"), gooInstanceId1.GetValue (), rooInstanceId2.GetValue (), gooClassId, rooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "ManyGooHasManyRoo").c_str (), gooInstanceId1.GetValue (), rooInstanceId2.GetValue (), gooClassId, rooClassId);
     manyGooHasManyRooInstanceId2 = InsertTestInstance (db, ecsql.c_str ());
 
-    ecsql.Sprintf (ToInsertECSql (db, "ManyGooHasManyRoo"), gooInstanceId2.GetValue (), rooInstanceId1.GetValue (), gooClassId, rooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "ManyGooHasManyRoo").c_str (), gooInstanceId2.GetValue (), rooInstanceId1.GetValue (), gooClassId, rooClassId);
     manyGooHasManyRooInstanceId3 = InsertTestInstance (db, ecsql.c_str ());
 
-    ecsql.Sprintf (ToInsertECSql (db, "ManyGooHasManyRoo"), gooInstanceId2.GetValue (), rooInstanceId2.GetValue (), gooClassId, rooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "ManyGooHasManyRoo").c_str (), gooInstanceId2.GetValue (), rooInstanceId2.GetValue (), gooClassId, rooClassId);
     manyGooHasManyRooInstanceId4 = InsertTestInstance (db, ecsql.c_str ());
 
     savePoint.Commit ();
 
-    ecsql.Sprintf (ToSelectECSql (db, "ManyGooHasManyRoo"), manyGooHasManyRooInstanceId1.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "ManyGooHasManyRoo").c_str (), manyGooHasManyRooInstanceId1.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), gooInstanceId1, rooInstanceId1, gooClassId, rooClassId);
 
-    ecsql.Sprintf (ToSelectECSql (db, "ManyGooHasManyRoo"), manyGooHasManyRooInstanceId2.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "ManyGooHasManyRoo").c_str (), manyGooHasManyRooInstanceId2.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), gooInstanceId1, rooInstanceId2, gooClassId, rooClassId);
 
-    ecsql.Sprintf (ToSelectECSql (db, "ManyGooHasManyRoo"), manyGooHasManyRooInstanceId3.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "ManyGooHasManyRoo").c_str (), manyGooHasManyRooInstanceId3.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), gooInstanceId2, rooInstanceId1, gooClassId, rooClassId);
 
-    ecsql.Sprintf (ToSelectECSql (db, "ManyGooHasManyRoo"), manyGooHasManyRooInstanceId4.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "ManyGooHasManyRoo").c_str (), manyGooHasManyRooInstanceId4.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), gooInstanceId2, rooInstanceId2, gooClassId, rooClassId);
     }
     }
@@ -1847,7 +1846,7 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipBetweenSubClassesWithKeyPro
         "    <Source cardinality='(0,1)' polymorphic='True'>"
         "      <Class class = 'Goo' />"
         "    </Source>"
-        "    <Target cardinality='(1,1)' polymorphic='True'>"
+        "    <Target cardinality='(0,1)' polymorphic='True'>"
         "      <Class class = 'Roo' >"
         "           <Key>"
         "              <Property name='E'/>"
@@ -1895,12 +1894,12 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipBetweenSubClassesWithKeyPro
     Savepoint savePoint (db, "1-1 Relationship Instances");
 
     Utf8String ecsql;
-    ecsql.Sprintf (ToInsertECSql (db, "GooHasRooWithKeyProp"), gooInstanceId1.GetValue (), rooInstanceId1.GetValue (), gooClassId, rooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "GooHasRooWithKeyProp").c_str (), gooInstanceId1.GetValue (), rooInstanceId1.GetValue (), gooClassId, rooClassId);
     gooHasRooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
 
     savePoint.Commit ();
 
-    ecsql.Sprintf (ToSelectECSql (db, "GooHasRooWithKeyProp"), gooHasRooInstanceId1.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "GooHasRooWithKeyProp").c_str (), gooHasRooInstanceId1.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), gooInstanceId1, rooInstanceId1, gooClassId, rooClassId);
     }
 
@@ -1911,18 +1910,18 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipBetweenSubClassesWithKeyPro
     Savepoint savePoint (db, "1-N Relationship Instances");
 
     Utf8String ecsql;
-    ecsql.Sprintf (ToInsertECSql (db, "GooHasManyRooWithKeyProp"), gooInstanceId1.GetValue (), rooInstanceId1.GetValue (), gooClassId, rooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "GooHasManyRooWithKeyProp").c_str (), gooInstanceId1.GetValue (), rooInstanceId1.GetValue (), gooClassId, rooClassId);
     gooHasManyRooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
 
-    ecsql.Sprintf (ToInsertECSql (db, "GooHasManyRooWithKeyProp"), gooInstanceId1.GetValue (), rooInstanceId2.GetValue (), gooClassId, rooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "GooHasManyRooWithKeyProp").c_str (), gooInstanceId1.GetValue (), rooInstanceId2.GetValue (), gooClassId, rooClassId);
     gooHasManyRooInstanceId2 = InsertTestInstance (db, ecsql.c_str ());
 
     savePoint.Commit ();
 
-    ecsql.Sprintf (ToSelectECSql (db, "GooHasManyRooWithKeyProp"), gooHasManyRooInstanceId1.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "GooHasManyRooWithKeyProp").c_str (), gooHasManyRooInstanceId1.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), gooInstanceId1, rooInstanceId1, gooClassId, rooClassId);
 
-    ecsql.Sprintf (ToSelectECSql (db, "GooHasManyRooWithKeyProp"), gooHasManyRooInstanceId2.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "GooHasManyRooWithKeyProp").c_str (), gooHasManyRooInstanceId2.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), gooInstanceId1, rooInstanceId2, gooClassId, rooClassId);
     }
     }
@@ -1978,7 +1977,7 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipWithStandAloneClass)
         "    <Source cardinality='(0,1)' polymorphic='True'>"
         "      <Class class = 'Foo' />"
         "    </Source>"
-        "    <Target cardinality='(1,1)' polymorphic='True'>"
+        "    <Target cardinality='(0,1)' polymorphic='True'>"
         "      <Class class = 'Roo' >"
         "      </Class>"
         "    </Target>"
@@ -2031,12 +2030,12 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipWithStandAloneClass)
     Savepoint savePoint (db, "1-1 Relationship Instances");
 
     Utf8String ecsql;
-    ecsql.Sprintf (ToInsertECSql (db, "FooHasRoo"), fooInstanceId1.GetValue (), rooInstanceId1.GetValue (), fooClassId, rooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "FooHasRoo").c_str (), fooInstanceId1.GetValue (), rooInstanceId1.GetValue (), fooClassId, rooClassId);
     fooHasRooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
     
     savePoint.Commit ();
 
-    ecsql.Sprintf (ToSelectECSql (db, "FooHasRoo"), fooHasRooInstanceId1.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "FooHasRoo").c_str (), fooHasRooInstanceId1.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), fooInstanceId1, rooInstanceId1, fooClassId, rooClassId);
     }
 
@@ -2047,18 +2046,18 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipWithStandAloneClass)
     Savepoint savePoint (db, "1-N Relationship Instances");
 
     Utf8String ecsql;
-    ecsql.Sprintf (ToInsertECSql (db, "FooHasManyRoo"), fooInstanceId1.GetValue (), rooInstanceId1.GetValue (), fooClassId, rooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "FooHasManyRoo").c_str (), fooInstanceId1.GetValue (), rooInstanceId1.GetValue (), fooClassId, rooClassId);
     fooHasManyRooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
 
-    ecsql.Sprintf (ToInsertECSql (db, "FooHasManyRoo"), fooInstanceId1.GetValue (), rooInstanceId2.GetValue (), fooClassId, rooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "FooHasManyRoo").c_str (), fooInstanceId1.GetValue (), rooInstanceId2.GetValue (), fooClassId, rooClassId);
     fooHasManyRooInstanceId2 = InsertTestInstance (db, ecsql.c_str ());
 
     savePoint.Commit ();
 
-    ecsql.Sprintf (ToSelectECSql (db, "FooHasManyRoo"), fooHasManyRooInstanceId1.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "FooHasManyRoo").c_str (), fooHasManyRooInstanceId1.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), fooInstanceId1, rooInstanceId1, fooClassId, rooClassId);
 
-    ecsql.Sprintf (ToSelectECSql (db, "FooHasManyRoo"), fooHasManyRooInstanceId2.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "FooHasManyRoo").c_str (), fooHasManyRooInstanceId2.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), fooInstanceId1, rooInstanceId2, fooClassId, rooClassId);
     }
 
@@ -2071,30 +2070,30 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipWithStandAloneClass)
     Savepoint savePoint (db, "N-N Relationship Instances");
 
     Utf8String ecsql;
-    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyRoo"), fooInstanceId1.GetValue (), rooInstanceId1.GetValue (), fooClassId, rooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyRoo").c_str (), fooInstanceId1.GetValue (), rooInstanceId1.GetValue (), fooClassId, rooClassId);
     manyFooHasManyRooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
 
-    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyRoo"), fooInstanceId1.GetValue (), rooInstanceId2.GetValue (), fooClassId, rooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyRoo").c_str (), fooInstanceId1.GetValue (), rooInstanceId2.GetValue (), fooClassId, rooClassId);
     manyFooHasManyRooInstanceId2 = InsertTestInstance (db, ecsql.c_str ());
 
-    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyRoo"), fooInstanceId2.GetValue (), rooInstanceId1.GetValue (), fooClassId, rooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyRoo").c_str (), fooInstanceId2.GetValue (), rooInstanceId1.GetValue (), fooClassId, rooClassId);
     manyFooHasManyRooInstanceId3 = InsertTestInstance (db, ecsql.c_str ());
 
-    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyRoo"), fooInstanceId2.GetValue (), rooInstanceId2.GetValue (), fooClassId, rooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyRoo").c_str (), fooInstanceId2.GetValue (), rooInstanceId2.GetValue (), fooClassId, rooClassId);
     manyFooHasManyRooInstanceId4 = InsertTestInstance (db, ecsql.c_str ());
 
     savePoint.Commit ();
 
-    ecsql.Sprintf (ToSelectECSql (db, "ManyFooHasManyRoo"), manyFooHasManyRooInstanceId1.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "ManyFooHasManyRoo").c_str (), manyFooHasManyRooInstanceId1.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), fooInstanceId1, rooInstanceId1, fooClassId, rooClassId);
 
-    ecsql.Sprintf (ToSelectECSql (db, "ManyFooHasManyRoo"), manyFooHasManyRooInstanceId2.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "ManyFooHasManyRoo").c_str (), manyFooHasManyRooInstanceId2.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), fooInstanceId1, rooInstanceId2, fooClassId, rooClassId);
 
-    ecsql.Sprintf (ToSelectECSql (db, "ManyFooHasManyRoo"), manyFooHasManyRooInstanceId3.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "ManyFooHasManyRoo").c_str (), manyFooHasManyRooInstanceId3.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), fooInstanceId2, rooInstanceId1, fooClassId, rooClassId);
 
-    ecsql.Sprintf (ToSelectECSql (db, "ManyFooHasManyRoo"), manyFooHasManyRooInstanceId4.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "ManyFooHasManyRoo").c_str (), manyFooHasManyRooInstanceId4.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), fooInstanceId2, rooInstanceId2, fooClassId, rooClassId);
     }
     }
@@ -2150,7 +2149,7 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipWithStandAloneClass1)
         "    <Source cardinality='(0,1)' polymorphic='True'>"
         "      <Class class = 'Roo' />"
         "    </Source>"
-        "    <Target cardinality='(1,1)' polymorphic='True'>"
+        "    <Target cardinality='(0,1)' polymorphic='True'>"
         "      <Class class = 'Foo' >"
         "      </Class>"
         "    </Target>"
@@ -2203,12 +2202,12 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipWithStandAloneClass1)
     Savepoint savePoint (db, "1-1 Relationship Instances");
 
     Utf8String ecsql;
-    ecsql.Sprintf (ToInsertECSql (db, "RooHasFoo"), rooInstanceId1.GetValue (),fooInstanceId1.GetValue (), rooClassId, fooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "RooHasFoo").c_str (), rooInstanceId1.GetValue (),fooInstanceId1.GetValue (), rooClassId, fooClassId);
     rooHasFooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
 
     savePoint.Commit ();
 
-    ecsql.Sprintf (ToSelectECSql (db, "RooHasFoo"), rooHasFooInstanceId1.GetValue());
+    ecsql.Sprintf (ToSelectECSql (db, "RooHasFoo").c_str (), rooHasFooInstanceId1.GetValue());
     VerifyInsertedInstance (db, ecsql.c_str (), rooInstanceId1, fooInstanceId1, rooClassId, fooClassId);
     }
 
@@ -2219,18 +2218,18 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipWithStandAloneClass1)
     Savepoint savePoint (db, "1-N Relationship Instances");
 
     Utf8String ecsql;
-    ecsql.Sprintf (ToInsertECSql (db, "RooHasManyFoo"), rooInstanceId1.GetValue (), fooInstanceId1.GetValue (), rooClassId, fooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "RooHasManyFoo").c_str (), rooInstanceId1.GetValue (), fooInstanceId1.GetValue (), rooClassId, fooClassId);
     rooHasManyFooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
 
-    ecsql.Sprintf (ToInsertECSql (db, "RooHasManyFoo"), rooInstanceId1.GetValue (), fooInstanceId2.GetValue (), rooClassId, fooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "RooHasManyFoo").c_str (), rooInstanceId1.GetValue (), fooInstanceId2.GetValue (), rooClassId, fooClassId);
     rooHasManyFooInstanceId2 = InsertTestInstance (db, ecsql.c_str ());
 
     savePoint.Commit ();
 
-    ecsql.Sprintf (ToSelectECSql (db, "RooHasManyFoo"), rooHasManyFooInstanceId1.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "RooHasManyFoo").c_str (), rooHasManyFooInstanceId1.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), rooInstanceId1, fooInstanceId1, rooClassId, fooClassId);
 
-    ecsql.Sprintf (ToSelectECSql (db, "RooHasManyFoo"), rooHasManyFooInstanceId2.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "RooHasManyFoo").c_str (), rooHasManyFooInstanceId2.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), rooInstanceId1, fooInstanceId2, rooClassId, fooClassId);
     }
 
@@ -2243,30 +2242,30 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipWithStandAloneClass1)
     Savepoint savePoint (db, "N-N Relationship Instances");
 
     Utf8String ecsql;
-    ecsql.Sprintf (ToInsertECSql (db, "ManyRooHasManyFoo"), rooInstanceId1.GetValue (), fooInstanceId1.GetValue (), rooClassId, fooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "ManyRooHasManyFoo").c_str (), rooInstanceId1.GetValue (), fooInstanceId1.GetValue (), rooClassId, fooClassId);
     manyRooHasManyFooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
 
-    ecsql.Sprintf (ToInsertECSql (db, "ManyRooHasManyFoo"), rooInstanceId1.GetValue (), fooInstanceId2.GetValue (), rooClassId, fooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "ManyRooHasManyFoo").c_str (), rooInstanceId1.GetValue (), fooInstanceId2.GetValue (), rooClassId, fooClassId);
     manyRooHasManyFooInstanceId2 = InsertTestInstance (db, ecsql.c_str ());
 
-    ecsql.Sprintf (ToInsertECSql (db, "ManyRooHasManyFoo"), rooInstanceId2.GetValue (), fooInstanceId1.GetValue (), rooClassId, fooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "ManyRooHasManyFoo").c_str (), rooInstanceId2.GetValue (), fooInstanceId1.GetValue (), rooClassId, fooClassId);
     manyRooHasManyFooInstanceId3 = InsertTestInstance (db, ecsql.c_str ());
 
-    ecsql.Sprintf (ToInsertECSql (db, "ManyRooHasManyFoo"), rooInstanceId2.GetValue (), fooInstanceId2.GetValue (), rooClassId, fooClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "ManyRooHasManyFoo").c_str (), rooInstanceId2.GetValue (), fooInstanceId2.GetValue (), rooClassId, fooClassId);
     manyRooHasManyFooInstanceId4 = InsertTestInstance (db, ecsql.c_str ());
 
     savePoint.Commit ();
 
-    ecsql.Sprintf (ToSelectECSql (db, "ManyRooHasManyFoo"), manyRooHasManyFooInstanceId1.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "ManyRooHasManyFoo").c_str (), manyRooHasManyFooInstanceId1.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), rooInstanceId1, fooInstanceId1, rooClassId, fooClassId);
 
-    ecsql.Sprintf (ToSelectECSql (db, "ManyRooHasManyFoo"), manyRooHasManyFooInstanceId2.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "ManyRooHasManyFoo").c_str (), manyRooHasManyFooInstanceId2.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), rooInstanceId1, fooInstanceId2, rooClassId, fooClassId);
 
-    ecsql.Sprintf (ToSelectECSql (db, "ManyRooHasManyFoo"), manyRooHasManyFooInstanceId3.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "ManyRooHasManyFoo").c_str (), manyRooHasManyFooInstanceId3.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), rooInstanceId2, fooInstanceId1, rooClassId, fooClassId);
 
-    ecsql.Sprintf (ToSelectECSql (db, "ManyRooHasManyFoo"), manyRooHasManyFooInstanceId4.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "ManyRooHasManyFoo").c_str (), manyRooHasManyFooInstanceId4.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), rooInstanceId2, fooInstanceId2, rooClassId, fooClassId);
     }
     }
@@ -2385,18 +2384,18 @@ TEST_F (JoinedTableECDbMapStrategyTests, PolymorphicRelationshipWithStandAloneCl
     Savepoint savePoint (db, "1-1 Relationship Instances");
 
     Utf8String ecsql;
-    ecsql.Sprintf (ToInsertECSql (db, "IFaceHasBody"), gooInstanceId1.GetValue (), bodyInstanceId1.GetValue (), gooClassId, bodyClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "IFaceHasBody").c_str (), gooInstanceId1.GetValue (), bodyInstanceId1.GetValue (), gooClassId, bodyClassId);
     IFaceHasBodyInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
 
-    ecsql.Sprintf (ToInsertECSql (db, "IFaceHasBody"), booInstanceId1.GetValue (), bodyInstanceId2.GetValue (), booClassId, bodyClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "IFaceHasBody").c_str (), booInstanceId1.GetValue (), bodyInstanceId2.GetValue (), booClassId, bodyClassId);
     IFaceHasBodyInstanceId2 = InsertTestInstance (db, ecsql.c_str ());
 
     savePoint.Commit ();
 
-    ecsql.Sprintf (ToSelectECSql (db, "IFaceHasBody"), IFaceHasBodyInstanceId1.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "IFaceHasBody").c_str (), IFaceHasBodyInstanceId1.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), gooInstanceId1, bodyInstanceId1, gooClassId, bodyClassId);
 
-    ecsql.Sprintf (ToSelectECSql (db, "IFaceHasBody"), IFaceHasBodyInstanceId2.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "IFaceHasBody").c_str (), IFaceHasBodyInstanceId2.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), booInstanceId1, bodyInstanceId2, booClassId, bodyClassId);
     }
 
@@ -2407,18 +2406,18 @@ TEST_F (JoinedTableECDbMapStrategyTests, PolymorphicRelationshipWithStandAloneCl
     Savepoint savePoint (db, "1-N Relationship Instances");
 
     Utf8String ecsql;
-    ecsql.Sprintf (ToInsertECSql (db, "IFaceHasManyBody"), gooInstanceId1.GetValue (), bodyInstanceId1.GetValue (), gooClassId, bodyClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "IFaceHasManyBody").c_str (), gooInstanceId1.GetValue (), bodyInstanceId1.GetValue (), gooClassId, bodyClassId);
     IFaceHasManyBodyInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
 
-    ecsql.Sprintf (ToInsertECSql (db, "IFaceHasManyBody"), booInstanceId1.GetValue (), bodyInstanceId2.GetValue (), booClassId, bodyClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "IFaceHasManyBody").c_str (), booInstanceId1.GetValue (), bodyInstanceId2.GetValue (), booClassId, bodyClassId);
     IFaceHasManyBodyInstanceId2 = InsertTestInstance (db, ecsql.c_str ());
 
     savePoint.Commit ();
 
-    ecsql.Sprintf (ToSelectECSql (db, "IFaceHasManyBody"), IFaceHasManyBodyInstanceId1.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "IFaceHasManyBody").c_str (), IFaceHasManyBodyInstanceId1.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), gooInstanceId1, bodyInstanceId1, gooClassId, bodyClassId);
 
-    ecsql.Sprintf (ToSelectECSql (db, "IFaceHasManyBody"), IFaceHasManyBodyInstanceId2.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "IFaceHasManyBody").c_str (), IFaceHasManyBodyInstanceId2.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), booInstanceId1, bodyInstanceId2, booClassId, bodyClassId);
     }
 
@@ -2431,30 +2430,30 @@ TEST_F (JoinedTableECDbMapStrategyTests, PolymorphicRelationshipWithStandAloneCl
     Savepoint savePoint (db, "N-N Relationship Instances");
 
     Utf8String ecsql;
-    ecsql.Sprintf (ToInsertECSql (db, "ManyIFaceHaveManyBody"), gooInstanceId1.GetValue (), bodyInstanceId1.GetValue (), gooClassId, bodyClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "ManyIFaceHaveManyBody").c_str (), gooInstanceId1.GetValue (), bodyInstanceId1.GetValue (), gooClassId, bodyClassId);
     ManyIFaceHaveManyBodyInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
 
-    ecsql.Sprintf (ToInsertECSql (db, "ManyIFaceHaveManyBody"), gooInstanceId2.GetValue (), bodyInstanceId2.GetValue (), gooClassId, bodyClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "ManyIFaceHaveManyBody").c_str (), gooInstanceId2.GetValue (), bodyInstanceId2.GetValue (), gooClassId, bodyClassId);
     ManyIFaceHaveManyBodyInstanceId2 = InsertTestInstance (db, ecsql.c_str ());
 
-    ecsql.Sprintf (ToInsertECSql (db, "ManyIFaceHaveManyBody"), booInstanceId1.GetValue (), bodyInstanceId1.GetValue (), booClassId, bodyClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "ManyIFaceHaveManyBody").c_str (), booInstanceId1.GetValue (), bodyInstanceId1.GetValue (), booClassId, bodyClassId);
     ManyIFaceHaveManyBodyInstanceId3 = InsertTestInstance (db, ecsql.c_str ());
 
-    ecsql.Sprintf (ToInsertECSql (db, "ManyIFaceHaveManyBody"), booInstanceId2.GetValue (), bodyInstanceId2.GetValue (), booClassId, bodyClassId);
+    ecsql.Sprintf (ToInsertECSql (db, "ManyIFaceHaveManyBody").c_str (), booInstanceId2.GetValue (), bodyInstanceId2.GetValue (), booClassId, bodyClassId);
     ManyIFaceHaveManyBodyInstanceId4 = InsertTestInstance (db, ecsql.c_str ());
 
     savePoint.Commit ();
 
-    ecsql.Sprintf (ToSelectECSql (db, "ManyIFaceHaveManyBody"), ManyIFaceHaveManyBodyInstanceId1.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "ManyIFaceHaveManyBody").c_str (), ManyIFaceHaveManyBodyInstanceId1.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), gooInstanceId1, bodyInstanceId1, gooClassId, bodyClassId);
 
-    ecsql.Sprintf (ToSelectECSql (db, "ManyIFaceHaveManyBody"), ManyIFaceHaveManyBodyInstanceId2.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "ManyIFaceHaveManyBody").c_str (), ManyIFaceHaveManyBodyInstanceId2.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), gooInstanceId2, bodyInstanceId2, gooClassId, bodyClassId);
 
-    ecsql.Sprintf (ToSelectECSql (db, "ManyIFaceHaveManyBody"), ManyIFaceHaveManyBodyInstanceId3.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "ManyIFaceHaveManyBody").c_str (), ManyIFaceHaveManyBodyInstanceId3.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), booInstanceId1, bodyInstanceId1, booClassId, bodyClassId);
 
-    ecsql.Sprintf (ToSelectECSql (db, "ManyIFaceHaveManyBody"), ManyIFaceHaveManyBodyInstanceId4.GetValue ());
+    ecsql.Sprintf (ToSelectECSql (db, "ManyIFaceHaveManyBody").c_str (), ManyIFaceHaveManyBodyInstanceId4.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), booInstanceId2, bodyInstanceId2, booClassId, bodyClassId);
     }
     db.Schemas ().CreateECClassViewsInDb ();

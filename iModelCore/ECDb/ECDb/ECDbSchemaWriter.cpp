@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 BentleyStatus ECDbSchemaWriter::CreateECSchemaEntry(ECSchemaCR ecSchema)
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_Schema(Id,Name,DisplayLabel,Description,NamespacePrefix,VersionMajor,VersionMinor) VALUES(?,?,?,?,?,?,?)"))
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_Schema(Id,Name,DisplayLabel,Description,NamespacePrefix,VersionDigit1,VersionDigit2,VersionDigit3) VALUES(?,?,?,?,?,?,?,?)"))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindInt64(1,ecSchema.GetId()))
@@ -40,7 +40,14 @@ BentleyStatus ECDbSchemaWriter::CreateECSchemaEntry(ECSchemaCR ecSchema)
     if (BE_SQLITE_OK != stmt->BindInt(6, ecSchema.GetVersionMajor()))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindInt(7, ecSchema.GetVersionMinor()))
+    //WIP_3DIGITVERSION
+    //if (BE_SQLITE_OK != stmt->BindInt(7, ecSchema.GetVersionMiddle()))
+    //    return ERROR;
+    //VersionMiddle is persisted as 0 until we have API support for it in 0601
+    if (BE_SQLITE_OK != stmt->BindInt(7, 0))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt(8, ecSchema.GetVersionMinor()))
         return ERROR;
 
     return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;

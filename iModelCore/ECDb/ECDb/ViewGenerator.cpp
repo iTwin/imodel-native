@@ -712,7 +712,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps (NativeSqlBuilder& viewSql, EC
     if (!ecId->IsVirtual ())
         viewSql.AppendEscaped (contextTable.GetName ().c_str ()).AppendDot ();
 
-    BeAssert(relationMap.GetECInstanceIdPropertyMap ()->GetSingleColumn(contextTable) != nullptr);
+    BeAssert(relationMap.GetECInstanceIdPropertyMap ()->GetSingleColumn(contextTable, true) != nullptr);
     viewSql.Append (relationMap.GetECInstanceIdPropertyMap ()->ToNativeSql ( nullptr, ECSqlType::Select, false, &contextTable)).AppendComma (true);
 
     //ECClassId-----------------------------------
@@ -720,7 +720,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps (NativeSqlBuilder& viewSql, EC
 
     //SourceECInstanceId-----------------------------------
     PropertyMapRelationshipConstraint const* idPropMap = static_cast<PropertyMapRelationshipConstraint const*> (relationMap.GetSourceECInstanceIdPropMap ());
-    BeAssert(idPropMap->GetSingleColumn(contextTable) != nullptr);
+    BeAssert(idPropMap->GetSingleColumn(contextTable, true) != nullptr);
     if (!idPropMap->IsVirtual ())
         viewSql.AppendEscaped (contextTable.GetName ().c_str ()).AppendDot ();
 
@@ -743,7 +743,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps (NativeSqlBuilder& viewSql, EC
     //TargetECInstanceId-----------------------------------
     BeAssert (dynamic_cast<PropertyMapRelationshipConstraint const*> (relationMap.GetTargetECInstanceIdPropMap ()) != nullptr);
     idPropMap = static_cast<PropertyMapRelationshipConstraint const*> (relationMap.GetTargetECInstanceIdPropMap ());
-    BeAssert(idPropMap->GetSingleColumn(contextTable) != nullptr);
+    BeAssert(idPropMap->GetSingleColumn(contextTable, true) != nullptr);
     if (!idPropMap->IsVirtual())
         viewSql.AppendEscaped(contextTable.GetName().c_str()).AppendDot();
 
@@ -817,8 +817,8 @@ BentleyStatus ViewGenerator::AppendSystemPropMapsToNullView(NativeSqlBuilder& vi
 //static
 BentleyStatus ViewGenerator::AppendConstraintClassIdPropMap(NativeSqlBuilder& viewSql, ECSqlPrepareContext const& prepareContext, PropertyMapRelationshipConstraint const& propMap, ECDbMapCR ecdbMap, RelationshipClassMapCR relationMap, ECRelationshipConstraintCR constraint, ECDbSqlTable const& contextTable)
     {
-    
-    auto column = propMap.ColumnCount() > 1 ? propMap.GetSingleColumn(contextTable) : propMap.GetSingleColumn();
+    ECDbSqlColumn const* column = propMap.GetSingleColumn(contextTable, false);
+    BeAssert(column != nullptr);
     if (column->GetPersistenceType() == PersistenceType::Virtual)
         {
         bool hasAnyClass = false;

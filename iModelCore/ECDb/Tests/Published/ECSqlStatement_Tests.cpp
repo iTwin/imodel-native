@@ -3566,12 +3566,11 @@ TEST_F(ECSqlStatementTestFixture, ClassWithStructHavingStructArrayUpdateWithDotO
         {
         auto &pStructArray = selectStatement.GetValue(0).GetArray();
         ASSERT_EQ(count, pStructArray.GetArrayLength());
-
         }
+
     ECSqlStatement updateStatement;
-    ecsql = "UPDATE  ONLY ecsql.SA SET SAStructProp.PStruct_Array = ? ";
-    prepareStatus = updateStatement.Prepare(ecdb, ecsql);
-    ASSERT_TRUE(prepareStatus == ECSqlStatus::Success);
+    ecsql = "UPDATE ONLY ecsql.SA SET SAStructProp.PStruct_Array=?";
+    ASSERT_EQ(ECSqlStatus::Success, updateStatement.Prepare(ecdb, ecsql)) << ecsql;
     count = 3;
     auto& updateArrayBinder = updateStatement.BindArray(1, (uint32_t)count);
     for (int i = 0; i < count; i++)

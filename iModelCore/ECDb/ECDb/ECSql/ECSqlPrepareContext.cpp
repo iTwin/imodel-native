@@ -97,19 +97,23 @@ ECSqlPrepareContext::ExpScope& ECSqlPrepareContext::ExpScopeStack::CurrentR ()
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment)
     : m_ecdb(ecdb), m_ecsqlStatement(preparedStatment), m_parentCtx(nullptr), m_parentArrayProperty(nullptr),
-    m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_nativeNothingToUpdate(false), m_joinedTableClassId(ECClass::UNSET_ECCLASSID), m_joinedTableInfo(nullptr)
+    m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_onlyExecuteStepTasks(false), m_joinedTableClassId(ECClass::UNSET_ECCLASSID), m_joinedTableInfo(nullptr)
     {}
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                    12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
 ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECClassId joinedTableClassId)
     : m_ecdb(ecdb), m_ecsqlStatement(preparedStatment), m_parentCtx(nullptr), m_parentArrayProperty(nullptr),
-    m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_nativeNothingToUpdate(false), m_joinedTableClassId(joinedTableClassId), m_joinedTableInfo(nullptr)
+    m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_onlyExecuteStepTasks(false), m_joinedTableClassId(joinedTableClassId), m_joinedTableInfo(nullptr)
     {}
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                    04/2014
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECSqlPrepareContext const& parentCtx)
     : m_ecdb(ecdb), m_ecsqlStatement(preparedStatment), m_parentCtx(&parentCtx), m_parentArrayProperty(nullptr),
-    m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_nativeNothingToUpdate(false), m_joinedTableClassId(ECClass::UNSET_ECCLASSID), m_joinedTableInfo(nullptr)
+    m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_onlyExecuteStepTasks(false), m_joinedTableClassId(ECClass::UNSET_ECCLASSID), m_joinedTableInfo(nullptr)
     {}
 
 //-----------------------------------------------------------------------------------------
@@ -118,7 +122,7 @@ ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& prepar
 ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECSqlPrepareContext const& parentCtx, ArrayECPropertyCR parentArrayProperty, ECSqlColumnInfo const* parentColumnInfo)
     : m_ecdb(ecdb), m_ecsqlStatement(preparedStatment), m_parentCtx(&parentCtx),
     m_parentArrayProperty(&parentArrayProperty), m_parentColumnInfo(parentColumnInfo),
-    m_nativeStatementIsNoop(false), m_nativeNothingToUpdate(false), m_joinedTableClassId(ECClass::UNSET_ECCLASSID), m_joinedTableInfo(nullptr)
+    m_nativeStatementIsNoop(false), m_onlyExecuteStepTasks(false), m_joinedTableClassId(ECClass::UNSET_ECCLASSID), m_joinedTableInfo(nullptr)
     {}
 
 //-----------------------------------------------------------------------------------------
@@ -403,11 +407,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
         for (auto exp : value->Find(Exp::Type::Parameter, true /* recursive*/))
             {
             auto param = static_cast<ParameterExp const*>(exp);
-            if (param->IsNamedParameter() && info->m_parameterMap.GetOrignal().Find(param->GetParameterName()))
-                {
-                //do nothing
-                }
-            else
+            if (!param->IsNamedParameter() || info->m_parameterMap.GetOrignal().Find(param->GetParameterName()) == nullptr)
                 thisValueParams.push_back(info->m_parameterMap.GetOrignalR().Add(*param));
             }
 

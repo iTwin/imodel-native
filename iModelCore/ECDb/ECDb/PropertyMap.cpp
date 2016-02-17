@@ -144,7 +144,8 @@ PropertyMapPtr PropertyMap::CreateAndEvaluateMapping(ClassMapLoadContext& ctx, E
 // @bsimethod                                                Krischan.Eberle     01/2016
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus PropertyMap::DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, ECDbSqlColumn::Constraint::Collation& collation, ECPropertyCR ecProp, Utf8CP propAccessString)
+BentleyStatus PropertyMap::DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, ECDbSqlColumn::Constraint::Collation& collation, 
+                                               ECDbCR ecdb, ECPropertyCR ecProp, Utf8CP propAccessString)
     {
     columnName.clear();
     isNullable = true;
@@ -154,6 +155,14 @@ BentleyStatus PropertyMap::DetermineColumnInfo(Utf8StringR columnName, bool& isN
     ECDbPropertyMap customPropMap;
     if (ECDbMapCustomAttributeHelper::TryGetPropertyMap(customPropMap, ecProp))
         {
+        if (!ecProp.GetIsPrimitive())
+            {
+            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                        "Failed to map ECProperty '%s:%s': only primitive ECProperties can have the custom attribute PropertyMap.",
+                        ecProp.GetClass().GetFullName(), ecProp.GetName().c_str());
+            return ERROR;
+            }
+
         if (ECObjectsStatus::Success != customPropMap.TryGetColumnName(columnName))
             return ERROR;
 
@@ -169,11 +178,13 @@ BentleyStatus PropertyMap::DetermineColumnInfo(Utf8StringR columnName, bool& isN
 
         if (!ECDbSqlColumn::Constraint::TryParseCollationString(collation, collationStr.c_str()))
             {
-            LOG.errorv("Custom attribute PropertyMap on ECProperty %s:%s has an invalid value for the property 'Collation': %s",
+            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                       "Failed to map ECProperty '%s:%s': Custom attribute PropertyMap has an invalid value for the property 'Collation': %s",
                        ecProp.GetClass().GetFullName(), ecProp.GetName().c_str(),
                        collationStr.c_str());
             return ERROR;
             }
+
         }
 
     // PropertyMappingRule: if custom attribute PropertyMap does not supply a column name for an ECProperty, 
@@ -328,13 +339,13 @@ void PropertyMap::GetColumns (std::vector<ECDbSqlColumn const*>& columns) const
 //---------------------------------------------------------------------------------------
 void PropertyMap::GetColumns(std::vector<ECDbSqlColumn const*>& columns, ECDbSqlTable const& table) const
     {
-    GetColumns(columns);
+    std::vector<ECDbSqlColumn const*> cols;
+    GetColumns(cols);
 
-    auto itor = std::find_if_not(columns.begin(), columns.end(), [&table] (ECDbSqlColumn const* column) { return &column->GetTable() == &table; });
-    while (itor != columns.end())
+    for (ECDbSqlColumn const* col : cols)
         {
-        columns.erase(itor);
-        itor = std::find_if_not(columns.begin(), columns.end(), [&table] (ECDbSqlColumn const* column) { return &column->GetTable() == &table; });
+        if (&col->GetTable() == &table)
+            columns.push_back(col);
         }
     }
 
@@ -355,16 +366,33 @@ ECDbSqlColumn const* PropertyMap::GetSingleColumn() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      08/2013
 //---------------------------------------------------------------------------------------
-ECDbSqlColumn const* PropertyMap::GetSingleColumn(ECDbSqlTable const& table) const
+ECDbSqlColumn const* PropertyMap::GetSingleColumn(ECDbSqlTable const& table, bool alwaysFilterByTable) const
     {
     std::vector<ECDbSqlColumn const*> columns;
-    GetColumns(columns, table);
-    BeAssert(columns.size() == 1 && "Expecting Single Column for given table");
-    if (columns.empty() || columns.size() > 1)
-        return nullptr;
+    GetColumns(columns);
 
-    return columns.front();
+    if (columns.size() == 1 && !alwaysFilterByTable)
+        return columns[0];
+
+    ECDbSqlColumn const* foundCol = nullptr;
+    for (ECDbSqlColumn const* col : columns)
+        {
+        if (&col->GetTable() == &table)
+            {
+            if (foundCol != nullptr)
+                {
+                BeAssert(false && "Cannot retrieve a single column for the given table");
+                return nullptr;
+                }
+
+            foundCol = col;
+            }
+        }
+
+    BeAssert(foundCol != nullptr && "PropertyMap doesn't have any columns matching the table");
+    return foundCol;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      08/2013
 //---------------------------------------------------------------------------------------
@@ -814,7 +842,7 @@ BentleyStatus PropertyMapSingleColumn::_FindOrCreateColumnsInTable (ClassMap& cl
     bool isNullable = true;
     bool isUnique = false;
     ECDbSqlColumn::Constraint::Collation collation = ECDbSqlColumn::Constraint::Collation::Default;
-    if (SUCCESS != DetermineColumnInfo(colName, isNullable, isUnique, collation))
+    if (SUCCESS != DetermineColumnInfo(colName, isNullable, isUnique, collation, classMap.GetECDbMap().GetECDb()))
         return ERROR;
 
     const PrimitiveType colType = GetProperty().GetAsPrimitiveProperty()->GetType();
@@ -1006,7 +1034,7 @@ BentleyStatus PropertyMapPoint::_FindOrCreateColumnsInTable(ClassMap& classMap, 
     bool isNullable = true;
     bool isUnique = false;
     ECDbSqlColumn::Constraint::Collation collation = ECDbSqlColumn::Constraint::Collation::Default;
-    if (SUCCESS != DetermineColumnInfo(columnName, isNullable, isUnique, collation))
+    if (SUCCESS != DetermineColumnInfo(columnName, isNullable, isUnique, collation, classMap.GetECDbMap().GetECDb()))
         return ERROR;
 
     bset<ECDbSqlTable const*> tables;
@@ -1084,7 +1112,7 @@ BentleyStatus PropertyMapPrimitiveArray::_FindOrCreateColumnsInTable(ClassMap& c
     bool isNullable = true;
     bool isUnique = false;
     ECDbSqlColumn::Constraint::Collation collation = ECDbSqlColumn::Constraint::Collation::Default;
-    if (SUCCESS != DetermineColumnInfo(colName, isNullable, isUnique, collation))
+    if (SUCCESS != DetermineColumnInfo(colName, isNullable, isUnique, collation, classMap.GetECDbMap().GetECDb()))
         return ERROR;
 
     //prim array is persisted as BLOB in a single col
@@ -1259,17 +1287,6 @@ bool NavigationPropertyMap::IsSupportedInECSql(bool logIfNotSupported, ECDbCP ec
         return false;
         }
 
-
-    PropertyMapRelationshipConstraintClassId const* classIdPropMap = GetConstraintMap(NavigationEnd::To).GetECClassIdPropMap();
-    if (!classIdPropMap->IsVirtual() && classIdPropMap->IsMappedToClassMapTables())
-        {
-        if (logIfNotSupported)
-            ecdb->GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "NavigationECProperty '%s.%s' cannot be used in ECSQL because the mapping requires an ECClassId column for the related instances.",
-                                                           m_navigationProperty->GetClass().GetFullName(), m_navigationProperty->GetName().c_str());
-        return false;
-
-        }
-
     return true;
     }
 
@@ -1279,9 +1296,6 @@ bool NavigationPropertyMap::IsSupportedInECSql(bool logIfNotSupported, ECDbCP ec
 void NavigationPropertyMap::_GetColumns(std::vector<ECDbSqlColumn const*>& columns) const
     {
     BeAssert(IsSupportedInECSql() && "NavProperty which is not supported in ECSQL");
-
-    //RelationshipConstraintMap const& constraintMap = GetConstraintMap(NavigationEnd::To);
-    //constraintMap.GetECInstanceIdPropMap()->GetColumns(columns);
     columns = m_columns;
     }
 

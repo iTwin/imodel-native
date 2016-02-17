@@ -15,8 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Casey.Mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDbMap::ECDbMap (ECDbR ecdb) 
-: m_ecdb (ecdb), m_classMapLoadAccessCounter (0), m_ecdbSqlManager (ecdb), m_schemaImportContext (nullptr), m_lightweightCache (*this)
+ECDbMap::ECDbMap(ECDbR ecdb) : m_ecdb(ecdb), m_ecdbSqlManager(ecdb), m_schemaImportContext(nullptr), m_lightweightCache(*this)
     {}
 
 //----------------------------------------------------------------------------------------
@@ -87,11 +86,18 @@ MapStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext, bvector<
 
     m_schemaImportContext = &schemaImportContext;
 
-    auto stat = DoMapSchemas(mapSchemas);
+    const MapStatus stat = DoMapSchemas(mapSchemas);
     if (MapStatus::Success != stat)
         {
         m_schemaImportContext = nullptr;
         return stat;
+        }
+
+    if (SUCCESS != SaveMappings())
+        {
+        ClearCache();
+        m_schemaImportContext = nullptr;
+        return MapStatus::Error;
         }
 
     if (SUCCESS != CreateOrUpdateRequiredTables())
@@ -101,15 +107,6 @@ MapStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext, bvector<
         return MapStatus::Error;
         }
 
-    if (SUCCESS != Save())
-        {
-        ClearCache();
-        m_schemaImportContext = nullptr;
-        return MapStatus::Error;
-        }
-
-    m_lightweightCache.Reset();
-
     if (SUCCESS != CreateOrUpdateIndexesInDb())
         {
         ClearCache();
@@ -118,7 +115,7 @@ MapStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext, bvector<
         }
 
     ECDbMapAnalyser mapAnalyser(*this);
-    if (mapAnalyser.Analyse(true /*apply changes*/) != BentleyStatus::SUCCESS)
+    if (mapAnalyser.Analyse(true /*apply changes*/) != SUCCESS)
         {
         m_schemaImportContext = nullptr;
         return MapStatus::Error;
@@ -178,7 +175,6 @@ MapStatus ECDbMap::DoMapSchemas(bvector<ECSchemaCP> const& mapSchemas)
 
     StopWatch timer(true);
 
-
     // Identify root classes/relationship-classes
     bvector<ECClassCP> rootClasses;
     bvector<ECRelationshipClassCP> rootRelationships;
@@ -191,19 +187,22 @@ MapStatus ECDbMap::DoMapSchemas(bvector<ECSchemaCP> const& mapSchemas)
 
         for (ECClassCP ecClass : schema->GetClasses())
             {
+            const bool isRootClass = ecClass->GetBaseClasses().empty();
             ECRelationshipClassCP relationshipClass = ecClass->GetRelationshipClassCP();
-            if (ecClass->GetBaseClasses().size() == 0)
+            if (relationshipClass != nullptr)
                 {
-                if (nullptr == relationshipClass)
-                    rootClasses.push_back(ecClass);
-                else
+                if (isRootClass)
                     rootRelationships.push_back(relationshipClass);
-                }
 
-            if (relationshipClass)
                 nRelationshipClasses++;
+                }
             else
+                {
+                if (isRootClass)
+                    rootClasses.push_back(ecClass);
+
                 nClasses++;
+                }
             }
         }
 
@@ -216,6 +215,7 @@ MapStatus ECDbMap::DoMapSchemas(bvector<ECSchemaCP> const& mapSchemas)
             return status;
         }
 
+    //need to finish tables (e.g. add classid cols where necessary) for classes before processing relationships
     if (FinishTableDefinition() == ERROR)
         return MapStatus::Error;
 
@@ -238,9 +238,12 @@ MapStatus ECDbMap::DoMapSchemas(bvector<ECSchemaCP> const& mapSchemas)
             return MapStatus::Error;
         }
 
+    //now finish tables for the relationship classes
+    if (FinishTableDefinition() != SUCCESS)
+        return MapStatus::Error;
+
     timer.Stop();
     if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
-
         LOG.debugv("Mapped %d ECSchemas containing %d ECClasses and %d ECRelationshipClasses to the database in %.4f seconds",
                    mapSchemas.size(), nClasses, nRelationshipClasses, timer.GetElapsedSeconds());
 
@@ -252,7 +255,7 @@ MapStatus ECDbMap::DoMapSchemas(bvector<ECSchemaCP> const& mapSchemas)
 //---------------------------------------------------------------------------------------
 ClassMapPtr ECDbMap::LoadClassMap(ClassMapLoadContext& ctx, ECN::ECClassCR ecClass) const
     {
-    BeMutexHolder lock(m_criticalSection);
+    BeMutexHolder lock(m_mutex);
     if (!GetSQLManager().IsLoaded())
         {
         if (GetSQLManager().Load() != SUCCESS)
@@ -314,16 +317,11 @@ ClassMapPtr ECDbMap::LoadClassMap(ClassMapLoadContext& ctx, ECN::ECClassCR ecCla
     classMap->SetId(classMapInfo.GetId());
 
     if (MapStatus::Error == AddClassMap(classMap))
-        {
-        LOG.errorv("Failed to add map for class %s", ecClass.GetFullName());
         return nullptr;
-        }
 
     std::set<ClassMap const*> loadGraph;
     if (SUCCESS != classMap->Load(loadGraph, ctx, classMapInfo, baseClassMap))
         return nullptr;
-
-    m_classMapLoadTable.push_back(&ecClass);
 
     ECRelationshipClassCP ecRelationshipClass = ecClass.GetRelationshipClassCP();
     // Construct and initialize the class map
@@ -420,7 +418,7 @@ MapStatus ECDbMap::MapClass(ECClassCR ecClass)
 +---------------+---------------+---------------+---------------+---------------+------*/
 MapStatus ECDbMap::AddClassMap (ClassMapPtr& classMap) const
     {
-    BeMutexHolder lock (m_criticalSection);
+    BeMutexHolder lock (m_mutex);
     ECClassCR ecClass = classMap->GetClass();
     if (m_classMapDictionary.end() != m_classMapDictionary.find(ecClass.GetId()))
         {
@@ -431,16 +429,6 @@ MapStatus ECDbMap::AddClassMap (ClassMapPtr& classMap) const
 
     m_classMapDictionary[ecClass.GetId()]= classMap;
     return MapStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                 Ramanujam.Raman                05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECDbMap::RemoveClassMap (IClassMap const& classMap)
-    {
-    BeMutexHolder lock (m_criticalSection);
-    ECClassCR ecClass = classMap.GetClass();
-    m_classMapDictionary.erase(ecClass.GetId());
     }
 
 //---------------------------------------------------------------------------------------
@@ -477,7 +465,7 @@ ClassMap const* ECDbMap::GetClassMap(ECN::ECClassId classId) const
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ECDbMap::TryGetClassMap (ClassMapPtr& classMap, ClassMapLoadContext& ctx, ECN::ECClassCR ecClass) const
     {
-    BeMutexHolder lock (m_criticalSection);
+    BeMutexHolder lock (m_mutex);
     if (!ecClass.HasId ())
         {
         ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema (m_ecdb, ecClass);
@@ -515,7 +503,7 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (SchemaImportContext* schemaImportConte
     if (AssertIfIsNotImportingSchema ())
         return nullptr;
 
-    BeMutexHolder lock (m_criticalSection);
+    BeMutexHolder lock (m_mutex);
     ECDbSqlTable* table = GetSQLManager ().GetDbSchema ().FindTableP (tableName);
     if (table != nullptr)
         {
@@ -602,22 +590,12 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (SchemaImportContext* schemaImportConte
     return table;   
     }
 
-
-
-
-#if defined (_MSC_VER)
-    #pragma warning (push)
-    #pragma warning (disable:4063)
-#endif // defined (_MSC_VER)
-
-
-#if defined (_MSC_VER)
-    #pragma warning (pop)
-#endif // defined (_MSC_VER)
-
-ECDbMap::ClassMapByTable ECDbMap::GetClassMapByTable() const
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+ECDbMap::ClassMapsByTable ECDbMap::GetClassMapsByTable() const
     {
-    ClassMapByTable map;
+    ClassMapsByTable map;
     for (auto const& entry : m_classMapDictionary)
         {
         if (entry.second->GetClassMapType() == IClassMap::Type::RelationshipEndTable ||
@@ -633,15 +611,16 @@ ECDbMap::ClassMapByTable ECDbMap::GetClassMapByTable() const
 
     return map;
     }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Affan.Khan      12/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      12/2011
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbMap::CreateOrUpdateRequiredTables() const
     {
     if (AssertIfIsNotImportingSchema())
         return ERROR;
 
-    BeMutexHolder lock(m_criticalSection);
+    BeMutexHolder lock(m_mutex);
     m_ecdb.GetStatementCache().Empty();
     StopWatch timer(true);
 
@@ -649,15 +628,12 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables() const
     int nUpdated = 0;
     int nSkipped = 0;
 
-    const ClassMapByTable clustersByTable = GetClassMapByTable();
-    if (FinishTableDefinition() != SUCCESS)
-        return ERROR;
-
-    ClassMapByTable::const_iterator it = clustersByTable.begin();
-    for (; it != clustersByTable.end(); ++it)
+    //WIP_FOR_AFFAN: Why can't we use GetSQLManager().GetDbSchema().GetTables() instead
+    //of creating a local bmap with class map information we don't need here?
+    const ClassMapsByTable classMapsByTable = GetClassMapsByTable();
+    for (bpair<ECDbSqlTable*, bset<ClassMap*>> const& kvPair : classMapsByTable)
         {
-        ECDbSqlTable* table = it->first;
-
+        ECDbSqlTable* table = kvPair.first;
         if (table->GetPersistenceType() == PersistenceType::Virtual || table->GetTableType() == TableType::Existing)
             continue;
 
@@ -665,8 +641,9 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables() const
             {
             if (GetSQLManager().IsTableChanged(*table))
                 {
-                if (table->GetPersistenceManager().CreateOrUpdate(GetECDbR()) != BentleyStatus::SUCCESS)
+                if (table->GetPersistenceManager().CreateOrUpdate(GetECDbR()) != SUCCESS)
                     return ERROR;
+
                 nUpdated++;
                 }
             else
@@ -674,7 +651,7 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables() const
             }
         else
             {
-            if (table->GetPersistenceManager().Create(GetECDbR()) != BentleyStatus::SUCCESS)
+            if (table->GetPersistenceManager().Create(GetECDbR()) != SUCCESS)
                 return ERROR;
 
             nCreated++;
@@ -682,9 +659,7 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables() const
         }
 
     timer.Stop();
-    if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
-        LOG.debugv("Created %d tables, skipped %d tables and updated %d table/view(s) in %.4f seconds", nCreated, nSkipped, nUpdated, timer.GetElapsedSeconds());
-
+    LOG.debugv("Created %d tables, skipped %d tables and updated %d table/view(s) in %.4f seconds", nCreated, nSkipped, nUpdated, timer.GetElapsedSeconds());
     return SUCCESS;
     }
 
@@ -777,13 +752,11 @@ BentleyStatus ECDbMap::CreateOrUpdateIndexesInDb() const
 BentleyStatus ECDbMap::FinishTableDefinition () const
     {
     AssertIfIsNotImportingSchema();
-    const ClassMapByTable clustersByTable = GetClassMapByTable();
-
-    ClassMapByTable::const_iterator it = clustersByTable.begin();
-    for (; it != clustersByTable.end(); ++it)
+    const ClassMapsByTable classMapsByTable = GetClassMapsByTable();
+    for (bpair<ECDbSqlTable*, bset<ClassMap*>> const& kvPair : classMapsByTable)
         {
-        ClassMapSet classMapSet = it->second;
-        ECDbSqlTable* table = it->first;
+        ECDbSqlTable* table = kvPair.first;
+        bset<ClassMap*> const& classMapSet = kvPair.second;
 
         //Create ECClassId column if required
         if (table->GetFilteredColumnFirst(ColumnKind::ECClassId) == nullptr &&
@@ -812,7 +785,7 @@ BentleyStatus ECDbMap::FinishTableDefinition () const
             }
         }
 
-    return BentleyStatus::SUCCESS;
+    return SUCCESS;
     }
 
 
@@ -1069,7 +1042,7 @@ ECDbSqlTable const* ECDbMap::GetFirstTableFromRelationshipEnd(ECRelationshipCons
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECDbMap::ClearCache()
     {
-    BeMutexHolder lock(m_criticalSection);
+    BeMutexHolder lock(m_mutex);
     m_classMapDictionary.clear();
     GetSQLManager().Reset();
     m_lightweightCache.Reset();
@@ -1079,9 +1052,9 @@ void ECDbMap::ClearCache()
 * Save map
 * @bsimethod                                 Affan Khan                          08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbMap::Save()
+BentleyStatus ECDbMap::SaveMappings() const
     {
-    BeMutexHolder lock(m_criticalSection);
+    BeMutexHolder lock(m_mutex);
     StopWatch stopWatch(true);
     int i = 0;
     std::set<ClassMap const*> doneList;
@@ -1100,13 +1073,13 @@ BentleyStatus ECDbMap::Save()
             }
         }
 
-    stopWatch.Stop();
     if (SUCCESS != GetSQLManager().Save())
         return ERROR;
 
-    if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
-        LOG.debugv ("Saving ECDbMap for %d ECClasses took %.4lf msecs.", i, stopWatch.GetElapsedSeconds () * 1000.0);
+    m_lightweightCache.Reset();
+    stopWatch.Stop();
 
+    LOG.debugv("Saving ECDbMap for %d ECClasses took %.4lf msecs.", i, stopWatch.GetElapsedSeconds() * 1000.0);
     return SUCCESS;
     }
 

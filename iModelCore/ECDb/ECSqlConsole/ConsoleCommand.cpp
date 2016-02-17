@@ -540,7 +540,8 @@ void ImportCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const&
 //---------------------------------------------------------------------------------------
 void ImportCommand::RunImportSchema(ECSqlConsoleSession& session, BeFileNameCR ecschemaPath) const
     {
-    auto context = ECN::ECSchemaReadContext::CreateContext();
+    ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext();
+    context->AddSchemaLocater(session.GetECDb().GetSchemaLocater());
 
     bvector<BeFileName> ecschemaFilePaths;
 
@@ -573,25 +574,21 @@ void ImportCommand::RunImportSchema(ECSqlConsoleSession& session, BeFileNameCR e
     Console::WriteLine("Preparing to import ecschema. Press any key to continue ...");
 
 
-    Savepoint savepoint(session.GetECDbR (), "import ecschema");
-    auto status = session.GetECDbR ().Schemas().ImportECSchemas(context->GetCache(), ECDbSchemaManager::ImportOptions());
-
     Utf8CP schemaStr = isFolder ? "ECSchemas in folder" : "ECSchema";
 
-    if (status != SUCCESS)
+    Savepoint savepoint(session.GetECDbR(), "import ecschema");
+    if (SUCCESS == session.GetECDb().Schemas().ImportECSchemas(context->GetCache(), ECDbSchemaManager::ImportOptions()))
         {
-        savepoint.Cancel();
-
-        if (session.GetIssues().HasIssue())
-            Console::WriteErrorLine("Failed to import %s '%s': %s", schemaStr, ecschemaPath.GetNameUtf8().c_str(), session.GetIssues().GetIssue());
-        else
-            Console::WriteErrorLine("Failed to import %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
-
+        savepoint.Commit(nullptr);
+        Console::WriteLine("Successfully imported %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
         return;
         }
 
-    savepoint.Commit(nullptr);
-    Console::WriteLine("Successfully imported %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
+    savepoint.Cancel();
+    if (session.GetIssues().HasIssue())
+        Console::WriteErrorLine("Failed to import %s '%s': %s", schemaStr, ecschemaPath.GetNameUtf8().c_str(), session.GetIssues().GetIssue());
+    else
+        Console::WriteErrorLine("Failed to import %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
     }
 
 //---------------------------------------------------------------------------------------

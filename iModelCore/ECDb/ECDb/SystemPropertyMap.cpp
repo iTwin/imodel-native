@@ -310,34 +310,35 @@ PropertyMapRelationshipConstraint::PropertyMapRelationshipConstraint(ECN::ECProp
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      12/2013
 //---------------------------------------------------------------------------------------
-void PropertyMapRelationshipConstraint::AppendSelectClauseSqlSnippetForView (NativeSqlBuilder& viewSql, ECDbSqlTable const& table) const
+void PropertyMapRelationshipConstraint::AppendSelectClauseSqlSnippetForView(NativeSqlBuilder& viewSql, ECDbSqlTable const& table) const
     {
-    ECDbSqlColumn const* column = ColumnCount() > 1?  GetSingleColumn (table) : GetSingleColumn();
+    ECDbSqlColumn const* column = GetSingleColumn(table, false);
     if (column == nullptr)
         {
         BeAssert(column != nullptr && "Expecting a column");
         return;
         }
 
-    viewSql.Append (column->GetName ().c_str());
-    if (HasViewColumnAlias ())
-        viewSql.AppendSpace ().Append (GetViewColumnAlias ());
+    viewSql.Append(column->GetName().c_str());
+    if (HasViewColumnAlias())
+        viewSql.AppendSpace().Append(GetViewColumnAlias());
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      12/2013
 //---------------------------------------------------------------------------------------
-void PropertyMapRelationshipConstraint::AppendSelectClauseSqlSnippetForView (NativeSqlBuilder& viewSql) const
+void PropertyMapRelationshipConstraint::AppendSelectClauseSqlSnippetForView(NativeSqlBuilder& viewSql) const
     {
-    ECDbSqlColumn const* column = GetSingleColumn ();
+    ECDbSqlColumn const* column = GetSingleColumn();
     if (column == nullptr)
         {
         BeAssert(column != nullptr && "Expecting a column");
         return;
         }
 
-    viewSql.Append (column->GetName ().c_str());
-    if (HasViewColumnAlias ())
-        viewSql.AppendSpace ().Append (GetViewColumnAlias ());
+    viewSql.Append(column->GetName().c_str());
+    if (HasViewColumnAlias())
+        viewSql.AppendSpace().Append(GetViewColumnAlias());
     }
 
 //******************************** PropertyMapRelationshipConstraintECInstanceId ****************************************

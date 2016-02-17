@@ -290,7 +290,7 @@ TEST (ECDbRelationships, ImportECRelationshipInstances)
     ECDbTestProject test;
     ECDbR db = test.Create ("importecrelationshipinstances.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
 
-    IECRelationshipInstancePtr relInstance;
+    IECRelationshipInstancePtr relInstance = nullptr;
 
     // Import a 1-to-1 relationship
     // EmployeePhone
@@ -302,7 +302,7 @@ TEST (ECDbRelationships, ImportECRelationshipInstances)
     ASSERT_EQ(SUCCESS, PersistRelationship(*relInstance, db));
     db.SaveChanges();
     ValidatePersistingRelationship (db, "sc_Asset", InstanceToId (*relInstance->GetTarget()), 
-        "Employee__src_01_id", InstanceToId (*relInstance->GetSource()).GetValue ());
+        "ForeignECInstanceId_EmployeePhone", InstanceToId (*relInstance->GetSource()).GetValue ());
     ValidateReadingRelationship (db,"StartupCompany", "EmployeePhone", *relInstance);
     ValidateReadingRelated (db, "StartupCompany", "EmployeePhone", relInstance->GetSource(), relInstance->GetTarget());
 
@@ -314,7 +314,7 @@ TEST (ECDbRelationships, ImportECRelationshipInstances)
     ASSERT_TRUE (relInstance.IsValid());
     ASSERT_EQ(SUCCESS, PersistRelationship (*relInstance, db));
     ValidatePersistingRelationship (db, "sc_Asset", InstanceToId (*relInstance->GetTarget()), 
-        "Employee__src_01_id", InstanceToId (*relInstance->GetSource()).GetValue ());
+        "ForeignECInstanceId_EmployeeFurniture", InstanceToId (*relInstance->GetSource()).GetValue ());
     ValidateReadingRelationship (db, "StartupCompany", "EmployeeFurniture", *relInstance);
     ValidateReadingRelated (db, "StartupCompany", "EmployeeFurniture", relInstance->GetSource(), relInstance->GetTarget());
 
@@ -322,7 +322,7 @@ TEST (ECDbRelationships, ImportECRelationshipInstances)
     ASSERT_TRUE (relInstance.IsValid());
     ASSERT_EQ(SUCCESS, PersistRelationship(*relInstance, db));
     ValidatePersistingRelationship (db, "sc_Asset", InstanceToId (*relInstance->GetTarget()),
-        "Employee__src_01_id", InstanceToId (*relInstance->GetSource()).GetValue ());
+        "ForeignECInstanceId_EmployeeFurniture", InstanceToId (*relInstance->GetSource()).GetValue ());
     ValidateReadingRelationship (db, "StartupCompany", "EmployeeFurniture", *relInstance);
     ValidateReadingRelated (db, "StartupCompany", "EmployeeFurniture", relInstance->GetSource(), relInstance->GetTarget());
 
