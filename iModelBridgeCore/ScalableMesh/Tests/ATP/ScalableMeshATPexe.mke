@@ -6,8 +6,8 @@
 #
 #----------------------------------------------------------------------
 baseDir         = $(_MakeFilePath)../../
-PolicyFile      = $(SrcRoot)TerrainModel/ScalableTerrainModel/mki/AssertScalableTerrainModelPolicy.mki
-SolutionPolicyMki=$(baseDir)ScalableTerrainModel.mki
+PolicyFile      = $(SrcRoot)scalablemesh/mki/AssertScalableMeshPolicy.mki
+SolutionPolicyMki=$(baseDir)ScalableMesh.mki
 consoleAppUnicode = 1
 %include mdl.mki
 
@@ -29,7 +29,19 @@ MultiCompileDepends = $(_MakeFileSpec)
 nameToDefine=SCALABLE_MESH_ATP
 %include cdefapnd.mki
 
+$(o)MrDTMUtil.obj: $(baseDir)TiledTriangulation/MrDTMUtil.cpp $(baseDir)TiledTriangulation/MrDTMUtil.h ${MultiCompileDepends}
+
+$(o)MrDTMFace.obj: $(baseDir)TiledTriangulation/MrDTMFace.cpp $(baseDir)TiledTriangulation/MrDTMFace.h ${MultiCompileDepends}
+
+$(o)TiledTriangulatorValidator.obj: $(baseDir)TiledTriangulation/TiledTriangulatorValidator.cpp $(baseDir)TiledTriangulation/TiledTriangulatorValidator.h ${MultiCompileDepends}
+
+$(o)TiledTriangulatorUtil.obj: $(baseDir)TiledTriangulation/TiledTriangulatorUtil.cpp $(baseDir)TiledTriangulation/TiledTriangulatorUtil.h ${MultiCompileDepends}
+
 $(o)ATPFileFinder.obj: $(baseDir)Common/ATPFileFinder.cpp ${MultiCompileDepends}
+
+$(o)DrapeLineTool.obj: $(baseDir)Tool/DrapeLineTool.cpp $(baseDir)Tool/DrapeLineTool.h ${MultiCompileDepends}
+
+$(o)VolumeCalculationTool.obj: $(baseDir)Tool/VolumeCalculationTool.cpp $(baseDir)Tool/VolumeCalculationTool.h ${MultiCompileDepends}
 
 $(o)ATPUtils.obj: $(baseDir)Common/ATPUtils.cpp ${MultiCompileDepends}
 
@@ -61,7 +73,7 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnPlatform.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BaseGeoCoord.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnView.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnGeoCoord.lib
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)ScalableTerrainModel.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)ScalableMesh.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)TerrainModelCore.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)IppGraLibs.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)IppUtlLibs.lib
