@@ -2100,7 +2100,7 @@ public:
 typedef RefCountedPtr<ECRelationshipClass>      ECRelationshipClassPtr;
 
 //! Defines what sort of match should be used when locating a schema
-enum SchemaMatchType
+enum class SchemaMatchType
     {
     //! Find exact VersionMajor, VersionWrite, VersionMinor match as well as Data
     Identical,
