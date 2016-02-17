@@ -157,6 +157,15 @@ PropertyMapRelationshipConstraintClassId const* RelationshipClassMap::GetConstra
     }
 
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                    02/2016
+//---------------------------------------------------------------------------------------
+bool RelationshipClassMap::_RequiresJoin(ECN::ECRelationshipEnd endPoint) const
+    {
+    PropertyMapRelationshipConstraintClassId const* referencedEndClassIdPropertyMap = endPoint == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? GetSourceECClassIdPropMap() : GetTargetECClassIdPropMap();
+    return !referencedEndClassIdPropertyMap->IsVirtual() && !referencedEndClassIdPropertyMap->IsMappedToClassMapTables();
+    }
+
 //************************ RelationshipConstraintMap ******************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2014
@@ -265,19 +274,47 @@ RelationshipClassEndTableMap::RelationshipClassEndTableMap (ECRelationshipClassC
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Affan.Khan                         1 / 16
 //---------------------------------------------------------------------------------------
-DataIntegrityEnforcementMethod RelationshipClassEndTableMap::GetDataIntegrityEnforcementMethod() const
+RelationshipClassMap::ReferentialIntegrityMethod RelationshipClassEndTableMap::_GetDataIntegrityEnforcementMethod() const
     {
     if (GetPrimaryTable().GetTableType() == TableType::Existing || GetRelationshipClass().GetClassModifier() == ECClassModifier::Abstract
         || GetRelationshipClass().GetSource().GetClasses().empty() || GetRelationshipClass().GetTarget().GetClasses().empty() )
-        return DataIntegrityEnforcementMethod::None;
+        return ReferentialIntegrityMethod::None;
 
     if (GetRelationshipClass().GetStrength() == StrengthType::Referencing || GetRelationshipClass().GetStrength() == StrengthType::Embedding || GetRelationshipClass().GetStrength() == StrengthType::Holding)
         {
-        return DataIntegrityEnforcementMethod::ForeignKey;
+        return ReferentialIntegrityMethod::ForeignKey;
         }
 
     BeAssert(false && "Trigger are not supported");
-    return DataIntegrityEnforcementMethod::Trigger;
+    return ReferentialIntegrityMethod::Trigger;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Affan.Khan                         1 / 16
+//---------------------------------------------------------------------------------------
+bool RelationshipClassEndTableMap::_RequiresJoin(ECN::ECRelationshipEnd endPoint) const
+    {
+    //We need to join if ECClassId is both SourceECClassId and TargetECClassId. This case of selfJoin where we must join.
+    if (endPoint == GetForeignEnd())
+        return false;
+
+    auto referencedEndClassIdPropertyMap = endPoint == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? GetSourceECClassIdPropMap() : GetTargetECClassIdPropMap();
+    if (!referencedEndClassIdPropertyMap->IsVirtual() && !referencedEndClassIdPropertyMap->IsMappedToClassMapTables())
+        return true;
+
+    std::vector<ECDbSqlColumn const*> sourceColumns, targetColumns;
+    GetSourceECClassIdPropMap()->GetColumns(sourceColumns);
+    GetTargetECClassIdPropMap()->GetColumns(targetColumns);
+
+    //SELF JOIN case
+    if (sourceColumns.size() == 1 && targetColumns.size() == 1)
+        {
+        return  sourceColumns.front() == targetColumns.front()
+            && sourceColumns.front()->GetPersistenceType() == PersistenceType::Persisted
+            && targetColumns.front()->GetPersistenceType() == PersistenceType::Persisted;
+        }
+
+    return false;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1082,10 +1119,10 @@ ECDbSqlColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(Relat
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Affan.Khan                         1 / 16
 //---------------------------------------------------------------------------------------
-DataIntegrityEnforcementMethod RelationshipClassLinkTableMap::GetDataIntegrityEnforcementMethod() const
+RelationshipClassMap::ReferentialIntegrityMethod RelationshipClassLinkTableMap::_GetDataIntegrityEnforcementMethod() const
     {
     if (GetPrimaryTable().GetTableType() == TableType::Existing)
-        return DataIntegrityEnforcementMethod::None;
+        return ReferentialIntegrityMethod::None;
 
     size_t nSourceTables = GetECDbMap().GetTableCountOnRelationshipEnd(GetRelationshipClass().GetSource());
     size_t nTargetTables = GetECDbMap().GetTableCountOnRelationshipEnd(GetRelationshipClass().GetTarget());
@@ -1095,12 +1132,12 @@ DataIntegrityEnforcementMethod RelationshipClassLinkTableMap::GetDataIntegrityEn
         {
         if (nSourceTables == 1 && nTargetTables == 1)
             {
-            return DataIntegrityEnforcementMethod::ForeignKey;
+            return ReferentialIntegrityMethod::ForeignKey;
             }
         }
 
     BeAssert(false && "Trigger not supported");
-    return DataIntegrityEnforcementMethod::Trigger;
+    return ReferentialIntegrityMethod::Trigger;
     }
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Ramanujam.Raman                   06 / 12
