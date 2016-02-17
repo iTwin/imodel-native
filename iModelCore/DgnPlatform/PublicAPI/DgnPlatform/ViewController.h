@@ -568,9 +568,7 @@ public:
 
     DGNPLATFORM_EXPORT void TransformBy(TransformCR);
 
-//__PUBLISH_SECTION_END__
     DGNPLATFORM_EXPORT static double CalculateMaxDepth(DVec3dCR delta, DVec3dCR zVec);
-//__PUBLISH_SECTION_START__
 
     //! Gets the Auxiliary Coordinate System for this view.
     IAuxCoordSysP GetAuxCoordinateSystem() const {return m_auxCoordSys.get();}
@@ -590,13 +588,13 @@ This is what the parameters to the camera methods, and the values stored by Came
           ^\   .                                    /  ^
           | \  .                                   /   |        p
         d |  \ .                                  /    |        o
-        e |   \.         {targetPoint}           /     |        i
-        l |    |---------------+----------------|      |        t    [focus plane]
-        t |     \  ^delta.x    ^               /     b |        i
-        a |      \             |              /      a |        v
-        . |       \            |             /       c |        e
-        z |        \           | f          /        k |        Z
-          |         \          | o         /         D |        |
+        e |   \.         {targetPoint}           /     |        s
+        l |    |---------------+----------------|      |        i    [focus plane]
+        t |     \  ^delta.x    ^               /     b |        t
+        a |      \             |              /      a |        i
+        . |       \            |             /       c |        v
+        z |        \           | f          /        k |        e
+          |         \          | o         /         D |        Z
           |          \         | c        /          i |        |
           |           \        | u       /           s |        v
           v            \       | s      /            t |
@@ -648,8 +646,8 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraViewController : SpatialViewController
 {
     DEFINE_T_SUPER(SpatialViewController);
 
-    bool            m_isCameraOn;       //!< if true, m_camera is valid.
-    CameraInfo      m_camera;           //!< Information about the camera lens used for the view.
+    bool       m_isCameraOn;       //!< if true, m_camera is valid.
+    CameraInfo m_camera;           //!< Information about the camera lens used for the view.
 
 protected:
     //! Calculate and save the lens angle formed by the current delta and focus distance
@@ -901,7 +899,7 @@ public:
 //! @ingroup DgnViewGroup
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingViewController : DrawingViewController
+struct SectionDrawingViewController : DrawingViewController
 {
     DEFINE_T_SUPER(DrawingViewController);
 

@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -22,13 +21,13 @@ StatusInt FitContext::_InitContextForView()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      01/07
+* @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool FitContext::IsRangeContained(DRange3dCR range)
     {
     Frustum box(range);
     box.Multiply(m_trans);
-    m_lastRange = box.ToRange();
+    m_lastRange = box.ToRange(); // view aligned range
 
     if (m_fitRange.IsNull())  // NOTE: test this AFTER setting m_lastRange!
         return false;
@@ -82,11 +81,11 @@ void FitContext::ExtendFitRange(ElementAlignedBox3dCR elementBox, TransformCR pl
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      09/06
+* @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt FitContext::_VisitGeometry(GeometrySourceCR source) 
     {
-    // NOTE: Can just use element aligned box instead of drawing element geometry...
+    // NOTE: Just use element aligned box instead of drawing geometry.
     bool is3d = (nullptr != source.ToGeometrySource3d());
     ExtendFitRange(is3d ? source.ToGeometrySource3d()->GetPlacement().GetElementBox() : 
                           ElementAlignedBox3d(source.ToGeometrySource2d()->GetPlacement().GetElementBox()),
@@ -133,7 +132,7 @@ int FitQuery::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
     RTree3dValCP testRange = (RTree3dValCP) info.m_coords;
 
     // if we're limiting the elements we test by the view's range (to find the range of the currently visible elements vs. find all elements)
-    // then we compare against the Frustum volume and (potentially)
+    // then we compare against the Frustum volume and potentially reject elements that are outside the view volume or active volume.
     if (m_context.m_params.m_limitByVolume)
         {
         Frustum box(*testRange);
@@ -147,7 +146,7 @@ int FitQuery::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
 
     DRange3d thisRange = testRange->ToRange();
     if (m_context.IsRangeContained(thisRange))
-        info.m_within = RTreeMatchFunction::Within::Outside; // If this range is entirely contained there is no reason to continue (it cannot contribute to the fit)
+        info.m_within = RTreeMatchFunction::Within::Outside; // If range is entirely contained, there's no reason to continue with it (or its children, if this is a node)
     else
         {
         info.m_within = RTreeMatchFunction::Within::Partly; 
@@ -181,8 +180,14 @@ ViewController::FitComplete DgnQueryView::_ComputeFitRange(FitContextR context)
             context.AcceptRangeElement(thisId);
         }
     
+    // Allow models to participate in fit
     for (DgnModelId modelId : GetViewedModels())
         {
+        DgnModelPtr model = m_dgndb.Models().GetModel(modelId);
+        auto geomModel = model.IsValid() ? model->ToGeometricModelP() : nullptr;
+
+        if (nullptr != geomModel)
+            geomModel->_OnFitView(context);
         }
 
     return FitComplete::Yes;
@@ -204,7 +209,7 @@ ViewController::FitComplete DgnQueryView::_ComputeFitRange(FitContextR context)
 #endif
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     09/06
+* @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt DgnViewport::ComputeViewRange(DRange3dR range, FitViewParams& params) 
     {
