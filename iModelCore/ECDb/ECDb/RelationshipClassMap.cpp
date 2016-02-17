@@ -581,7 +581,7 @@ MapStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMap
     //Create ForeignEnd ClassId propertyMap
     fkTableColAlias = GetForeignEnd() == ECRelationshipEnd_Source ? ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME : ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME;
     RefCountedPtr<PropertyMapRelationshipConstraintClassId> foreignEndClassIdPropertyMap = PropertyMapRelationshipConstraintClassId::Create(GetForeignEnd(), Schemas(), std::vector<ECDbSqlColumn const*>(fkTableClassIdCols.begin(), fkTableClassIdCols.end()),
-                                                                                                                           foreignEndConstraint.GetClasses()[0]->GetId(), *this, fkTableColAlias);
+                                                                                                                           referencedEndConstraint.GetClasses()[0]->GetId(), *this, fkTableColAlias);
 
     if (foreignEndClassIdPropertyMap == nullptr)
         {
@@ -610,7 +610,7 @@ MapStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMap
     fkTableColAlias = GetReferencedEnd() == ECRelationshipEnd_Source ? ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME : ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME;
     RefCountedPtr<PropertyMapRelationshipConstraintClassId> fkClassIdPropertyMap = PropertyMapRelationshipConstraintClassId::Create(GetReferencedEnd(), Schemas(),
                                                                                                                            std::vector<ECDbSqlColumn const*>(referencedEndClassIdCols.begin(), referencedEndClassIdCols.end()),
-                                                                                                                           referencedEndConstraint.GetClasses()[0]->GetId(), *this, fkTableColAlias);
+                                                                                                                           foreignEndConstraint.GetClasses()[0]->GetId(), *this, fkTableColAlias);
     if (fkClassIdPropertyMap == nullptr)
         {
         BeAssert(false);
@@ -647,7 +647,7 @@ BentleyStatus RelationshipClassEndTableMap::_Load(std::set<ClassMap const*>& loa
 
 
     ECClassId defaultSourceECClassId, defaultTargetECClassId;
-    if (GetForeignEnd() == ECRelationshipEnd_Source)
+    if (GetReferencedEnd() == ECRelationshipEnd_Source)
         {
         defaultSourceECClassId = relationshipClass.GetSource().GetClasses().empty() ? ECClass::UNSET_ECCLASSID : relationshipClass.GetSource().GetClasses().front()->GetId();
         defaultTargetECClassId = relationshipClass.GetTarget().GetClasses().empty() ? ECClass::UNSET_ECCLASSID : relationshipClass.GetTarget().GetClasses().front()->GetId();
