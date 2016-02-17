@@ -85,11 +85,11 @@ public:
     WString GetReferenceModelName();
 
     // Moniker
-    void SetMonikerType(byte monikerType);
-    void SetMonikerString(WString monikerString);
+    IMPORT_DLLE void SetMonikerType(byte monikerType);
+    IMPORT_DLLE void SetMonikerString(WString monikerString);
 
-    byte GetMonikerType();
-    WString GetMonikerString();
+    IMPORT_DLLE byte GetMonikerType();
+    IMPORT_DLLE WString GetMonikerString();
 
     void SetCommandCount(uint32_t);
 

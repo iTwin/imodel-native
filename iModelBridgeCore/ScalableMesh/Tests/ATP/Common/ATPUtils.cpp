@@ -30,6 +30,30 @@ WString GetHeaderForTestType(TestType t)
         case TEST_IMPORT_FEATURES_GIS:
             return  L"Test Case,Result,NOfBreaklines In Base STM, NOfBreaklines In Created STM, NOfBreaklines Different In New STM, Duration (minutes)\n";
             break;
+        case TEST_GROUND_DETECTION_BASELINE:
+            return L"Test Case, Baseline, Total points, Ground points (true), Object points (true), Type I error [N of ground points classified as objects], Type II error [N of object points classified as ground], Type I error %%, Type II error %%, Total error %%, Sensitivity %%, Specificity %%\n";
+            break;
+        case TEST_OPTIMIZE_GROUND_PARAMETERS:
+            return L"Avg Type I error %%, Avg Type II error %%, Avg Total error %%, Avg Sensitivity %%, Avg Specificity %%, Min Type I error %%, Min Type II error %%, Min Total error %%, Min Sensitivity %%, Min Specificity %%, Max Type I error %%, Max Type II error %%, Max Total error %%, Max Sensitivity %%, Max Specificity %%, Starred, Parameters\n";
+            break;
+        case TEST_ADD_NODES:
+            return L"";
+            break;
+        case TEST_LOADING:
+            return L"File Name, Time To Load (s), Nb of loaded nodes\n";
+            break;
+        case TEST_DRAPE_BASELINE:
+            return L"Test Case,  Pass/Fail, Baseline, Nb of Lines, Nb of Lines Draped (baseline), Nb of Lines Draped(test), Nb Of Different Lines, %% unmatched points, Time to drape (1st load) (baseline), Time to drape (1st load) (test), Time taken (1st load) variation, Time to drape (cached) (baseline), Time to drape (cached) (test), Time taken (cached) variation\n";
+            break;
+        case TEST_CONSTRAINTS:
+            return L"Test Case,  Pass/Fail, Nb of constraints, Nb of constraint points, Nb of valid constraints, Constraint error rate(%%), Nb of triangles violating constraints\n";
+            break;
+        case TEST_SDK_MESH:
+            return L"";
+            break;
+        case TEST_STREAMING:
+            return L"File Name Original, File Name Streaming, AllTestPass, Point Count Pass, Node Count Pass, time load all node headers, time streaming load all node headers, points Node Pass\n";
+            break;
         default: break;
         }
     return L"";
@@ -75,6 +99,20 @@ bool ParseTestType(BeXmlNodeP pRootNode, TestType& t)
             t = TEST_SELF_CONTAINED_IMPORTER;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"gisFeatures"))
             t = TEST_IMPORT_FEATURES_GIS;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"compareClassif"))
+            t = TEST_GROUND_DETECTION_BASELINE;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"groundDetectionParameters"))
+            t = TEST_OPTIMIZE_GROUND_PARAMETERS;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"nodeCreator"))
+            t = TEST_ADD_NODES;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"drapeBaseline"))
+            t = TEST_DRAPE_BASELINE;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"constraints"))
+            t = TEST_CONSTRAINTS;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"meshSDK"))
+            t = TEST_SDK_MESH;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"streaming"))
+            t = TEST_STREAMING;
         else return false;
         }
     else return false;
@@ -195,6 +233,30 @@ bool RunTestPlan(BeFileName& testPlanPath)
             case TEST_IMPORT_FEATURES_GIS:
                 PerformGISFeaturesImporterTest(pTestNode, pResultFile);
                 break;
+            case TEST_GROUND_DETECTION_BASELINE:
+                PerformClassificationCompareTest(pTestNode, pResultFile);
+                break;
+            case TEST_OPTIMIZE_GROUND_PARAMETERS:
+                PerformGroundParametersTest(pTestNode, pResultFile);
+                break;
+            case TEST_ADD_NODES:
+                PerformNodeCreationTest(pTestNode, pResultFile);
+                break;
+            case TEST_LOADING:
+                PerformLoadingTest(pTestNode, pResultFile);
+                break;
+            case TEST_DRAPE_BASELINE:
+                PerformDrapeBaselineTest(pTestNode, pResultFile, pRootNode);
+                break;
+            case TEST_CONSTRAINTS:
+                PerformConstraintTest(pTestNode, pResultFile);
+                break;
+            case TEST_SDK_MESH:
+                PerformSDKCreationTexturedMeshNode(pTestNode, pResultFile);
+                break;
+            case TEST_STREAMING:
+                PerformStreaming(pTestNode, pResultFile);
+                break;
             default: break;
             }
         pTestNode = pTestNode->GetNextSibling();
@@ -248,4 +310,130 @@ void ReadLinesFile(std::ifstream& file, bvector<bvector<DPoint3d>>& lineDefs)
 bool DPoint3dEqualityTest(const DPoint3d& point1, const DPoint3d& point2)
     {
     return point1.x== point2.x && point1.y == point2.y;
+    }
+
+DTMFeatureType ParseFeatureType(std::string& line)
+    {
+    std::istringstream str(line);
+    std::string word;
+    std::vector<std::string> tokens;
+    while (str >> word) tokens.push_back(word);
+    std::string featureText = tokens.back();
+    if (stricmp(featureText.c_str(), "Breakline") == 0)
+        {
+        return DTMFeatureType::Breakline;
+        }
+    else if (stricmp(featureText.c_str(), "SoftBreakline") == 0)
+        {
+        return DTMFeatureType::SoftBreakline;
+        }
+    else if (stricmp(featureText.c_str(), "Contour") == 0)
+        {
+        return DTMFeatureType::ContourLine;
+        }
+    else if (stricmp(featureText.c_str(), "Void") == 0)
+        {
+        return DTMFeatureType::Void;
+        }
+    else if (stricmp(featureText.c_str(), "BreakVoid") == 0)
+        {
+        return DTMFeatureType::BreakVoid;
+        }
+    else if (stricmp(featureText.c_str(), "DrapeVoid") == 0)
+        {
+        return DTMFeatureType::DrapeVoid;
+        }
+    else if (stricmp(featureText.c_str(), "Island") == 0)
+        {
+        return DTMFeatureType::Island;
+        }
+    else if (stricmp(featureText.c_str(), "Hole") == 0)
+        {
+        return DTMFeatureType::Hole;
+        }
+    else if (stricmp(featureText.c_str(), "Hull") == 0)
+        {
+        return DTMFeatureType::Hull;
+        }
+    else if (stricmp(featureText.c_str(), "DrapeHull") == 0)
+        {
+        return DTMFeatureType::DrapeHull;
+        }
+    else if (stricmp(featureText.c_str(), "HullLine") == 0)
+        {
+        return DTMFeatureType::HullLine;
+        }
+    else if (stricmp(featureText.c_str(), "VoidLine") == 0)
+        {
+        return DTMFeatureType::VoidLine;
+        }
+    else if (stricmp(featureText.c_str(), "HoleLine") == 0)
+        {
+        return DTMFeatureType::HoleLine;
+        }
+    else if (stricmp(featureText.c_str(), "SlopeToe") == 0)
+        {
+        return DTMFeatureType::SlopeToe;
+        }
+    else if (stricmp(featureText.c_str(), "GraphicBreak") == 0)
+        {
+        return DTMFeatureType::GraphicBreak;
+        }
+    else if (stricmp(featureText.c_str(), "Region") == 0)
+        {
+        return DTMFeatureType::Region;
+        }
+    else
+        {
+        return DTMFeatureType::None;
+        }
+    }
+
+DPoint3d ParsePoint(std::string& line)
+    {
+    std::string token;
+    size_t n = 0;
+    DPoint3d pt;
+    std::istringstream str(line);
+    while (std::getline(str, token, ','))
+        {
+        switch (n)
+            {
+            case 0:
+                pt.x = std::atof(token.c_str());
+                break;
+            case 1:
+                pt.y = std::atof(token.c_str());
+                break;
+            case 2:
+                pt.z = std::atof(token.c_str());
+                break;
+            default:
+                return pt;
+            }
+        n++;
+        }
+    return pt;
+    }
+
+void ReadFeatureFile(std::ifstream& file, std::vector<std::pair<std::vector<DPoint3d>, DTMFeatureType>>& features)
+    {
+    std::string line;
+    std::vector<DPoint3d> currentFeaturePoints;
+    DTMFeatureType currentFeatureType;
+    while (std::getline(file, line))
+        {
+        if (line[0] == 'F')
+            {
+            if (currentFeaturePoints.size() > 0) features.push_back(std::make_pair(currentFeaturePoints, currentFeatureType));
+            currentFeaturePoints.clear();
+            currentFeatureType = ParseFeatureType(line);
+            }
+        else
+            {
+            DPoint3d pt = ParsePoint(line);
+            currentFeaturePoints.push_back(pt);
+            }
+        }
+    if (currentFeaturePoints.size() > 0) features.push_back(std::make_pair(currentFeaturePoints, currentFeatureType));
     }
