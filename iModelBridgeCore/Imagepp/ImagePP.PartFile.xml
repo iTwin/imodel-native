@@ -19,8 +19,8 @@
         <SubPart PartName="ErdasEcwJpeg2000"        PartFile="${SrcRoot}bsicommon/CvsPartfiles/ErdasEcwJpeg2000"     Repository="Bin-ErdasEcwJpeg2000" />
         <Bindings>
             <VendorAPI Domain="ImagePP-GdalLib" />
-            <Libs>Delivery/$(stlibprefix)IppGdalLib$(stlibext)</Libs>
-            <Libs>Delivery/$(stlibprefix)IppGdalLib$(stlibdebugext)</Libs>
+            <Libs ProductDirectoryName="IppGdalLib" Required="false">Delivery/$(stlibprefix)IppGdalLib$(stlibext)</Libs>
+            <Libs ProductDirectoryName="IppGdalLib" Required="false">Delivery/$(stlibprefix)IppGdalLib$(stlibdebugext)</Libs>
             <Files ProductDirectoryName="VendorNotices" Required="true">Delivery/gdal-notice.txt</Files>
         </Bindings>
 
