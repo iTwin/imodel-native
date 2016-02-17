@@ -2,7 +2,7 @@
 |
 |     $Source: FormatsNET/MX.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -16,6 +16,27 @@ public ref class MXFilImporter : TerrainImporter
 
     public: static MXFilImporter^ Create (System::String^ filename);
     internal: MXFilImporter (MXFilImporterP importer);
+    };
+
+public ref class MXFilExporter : TerrainExporter
+    {
+    MXFilExporterP m_exporter;
+    public:
+        enum class MXExportError
+            {
+            Success,
+            CantOpenFile,
+            StringExists,
+            Error
+            };
+    private: MXFilExporter();
+
+    public: static MXFilExporter^ Create()
+        {
+        return gcnew MXFilExporter();
+        }
+
+    public: MXExportError Export(System::String^ filename, System::String^ modelName, System::String^ stringName, Bentley::TerrainModelNET::DTM^ dtm, bool allowOverwrite);
     };
 
 END_BENTLEY_TERRAINMODELNET_FORMATS_NAMESPACE

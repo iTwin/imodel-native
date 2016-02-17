@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/MX.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <TerrainModel/TerrainModel.h>
@@ -50,15 +50,15 @@ const TerrainInfoList& MXFilImporter::_GetTerrains () const
 
         if (modelFile.Open (m_filename.GetWCharCP()) == eOk)
             {
-            ModelTable* modelTable;
-            ErrorStatus es = modelFile.getModelTable(modelTable, ModelObject::Read);
+            MXModelObjectPtr<ModelTable> modelTable;
+            ErrorStatus es = modelFile.getModelTable(modelTable.GetR(), ModelObject::Read);
             if (es == eOk)
                 {
-                std::auto_ptr<ModelTableIterator> iter(modelTable->newIterator());
+                std::unique_ptr<ModelTableIterator> iter(modelTable->newIterator());
                 while(!iter->done())
                     {
-                    ModelTableRecord* modelTableRecord;
-                    if (iter->getRecord(modelTableRecord, ModelObject::Read) == eOk)
+                    MXModelObjectPtr<ModelTableRecord> modelTableRecord;
+                    if (iter->getRecord(modelTableRecord.GetR(), ModelObject::Read) == eOk)
                         {
                         WString modelName (modelTableRecord->modelName());
                         if (modelTableRecord->modelType() == 0 || asLong(modelTableRecord->modelType()) == asLong ("    "))
@@ -69,15 +69,15 @@ const TerrainInfoList& MXFilImporter::_GetTerrains () const
                         if (asLong(modelTableRecord->modelType()) == asLong ("TRIA"))
                             {
                             // triangulation model search for the strings.
-                            StringTable* stringTable;
-                            ErrorStatus es = modelTableRecord->getStringTable (stringTable, ModelObject::Read);
+                            MXModelObjectPtr<StringTable> stringTable;
+                            ErrorStatus es = modelTableRecord->getStringTable (stringTable.GetR(), ModelObject::Read);
                             if (es == eOk)
                                 {
-                                std::auto_ptr<StringTableIterator> iter(stringTable->newIterator());
+                                std::unique_ptr<StringTableIterator> iter(stringTable->newIterator());
                                 while(!iter->done())
                                     {
-                                    StringTableRecord* stringTableRecord;
-                                    if (iter->getRecord(stringTableRecord, ModelObject::Read) == eOk)
+                                    MXModelObjectPtr<StringTableRecord> stringTableRecord;
+                                    if (iter->getRecord(stringTableRecord.GetR(), ModelObject::Read) == eOk)
                                         {
                                         // triangulation string
                                         WString stringName (stringTableRecord->stringName());
@@ -91,9 +91,7 @@ const TerrainInfoList& MXFilImporter::_GetTerrains () const
                         }
                     iter->next();
                     }
-                modelTable->close();
                 }
-            modelFile.Close();
             }
         }
     return m_surfaces;
@@ -106,41 +104,41 @@ void MXFilImporter::DoImport (bmap <WString, Bentley::TerrainModel::BcDTMPtr>& n
 
     if (modelFile.Open (m_filename.GetWCharCP()) == eOk)
         {
-        ModelTable* modelTable;
-        ErrorStatus es = modelFile.getModelTable(modelTable, ModelObject::Read);
+        MXModelObjectPtr<ModelTable> modelTable;
+        ErrorStatus es = modelFile.getModelTable(modelTable.GetR(), ModelObject::Read);
         if (es == eOk)
             {
-            std::auto_ptr<ModelTableIterator> iter(modelTable->newIterator());
+            std::unique_ptr<ModelTableIterator> iter(modelTable->newIterator());
             while(!iter->done())
                 {
-                ModelTableRecord* modelTableRecord;
-                if (iter->getRecord(modelTableRecord, ModelObject::Read) == eOk)
+                MXModelObjectPtr<ModelTableRecord> modelTableRecord;
+                if (iter->getRecord(modelTableRecord.GetR(), ModelObject::Read) == eOk)
                     {
                     WString modelName (modelTableRecord->modelName());
                     if (modelTableRecord->modelType() == 0 || asLong(modelTableRecord->modelType()) == asLong ("    "))
                         {
                         // normal string model add this name.
                         if (importAll || nameDtms.find (modelName) != nameDtms.end())
-                            nameDtms[modelName] = ImportStringModel (modelTableRecord);
+                            nameDtms[modelName] = ImportStringModel (modelTableRecord.get());
                         }
                     if (asLong(modelTableRecord->modelType()) == asLong ("TRIA"))
                         {
                         // triangulation model search for the strings.
-                        StringTable* stringTable;
-                        ErrorStatus es = modelTableRecord->getStringTable (stringTable, ModelObject::Read);
+                        MXModelObjectPtr<StringTable> stringTable;
+                        ErrorStatus es = modelTableRecord->getStringTable (stringTable.GetR(), ModelObject::Read);
                         if (es == eOk)
                             {
-                            std::auto_ptr<StringTableIterator> iter(stringTable->newIterator());
+                            std::unique_ptr<StringTableIterator> iter(stringTable->newIterator());
                             while(!iter->done())
                                 {
-                                StringTableRecord* stringTableRecord;
-                                if (iter->getRecord(stringTableRecord, ModelObject::Read) == eOk)
+                                MXModelObjectPtr<StringTableRecord> stringTableRecord;
+                                if (iter->getRecord(stringTableRecord.GetR(), ModelObject::Read) == eOk)
                                     {
                                     // triangulation string
                                     WString stringName (stringTableRecord->stringName());
                                     WString name = stringName + modelName;
                                     if (importAll || nameDtms.find (name) != nameDtms.end())
-                                        nameDtms[name] = ImportTriangulation (stringTableRecord, name.GetWCharCP());
+                                        nameDtms[name] = ImportTriangulation (stringTableRecord.get(), name.GetWCharCP());
                                     }
                                 iter->next();
                                 }
@@ -149,9 +147,7 @@ void MXFilImporter::DoImport (bmap <WString, Bentley::TerrainModel::BcDTMPtr>& n
                     }
                 iter->next();
                 }
-            modelTable->close();
             }
-        modelFile.Close();
         }
     }
 
@@ -205,15 +201,15 @@ BcDTMPtr MXFilImporter::ImportStringModel (ModelTableRecord* modelTableRecord) c
     DTMFeatureId featureId;
     MXModelFile* modelFile = modelTableRecord->getModelFile();
     // triangulation model search for the strings.
-    StringTable* stringTable;
-    ErrorStatus es = modelTableRecord->getStringTable (stringTable, ModelObject::Read);
+    MXModelObjectPtr<StringTable> stringTable;
+    ErrorStatus es = modelTableRecord->getStringTable (stringTable.GetR(), ModelObject::Read);
     if (es == eOk)
         {
-        std::auto_ptr<StringTableIterator> iter(stringTable->newIterator());
+        std::unique_ptr<StringTableIterator> iter(stringTable->newIterator());
         while(!iter->done())
             {
-            StringTableRecord* stringTableRecord;
-            if (iter->getRecord(stringTableRecord, ModelObject::Read) == eOk)
+            MXModelObjectPtr<StringTableRecord> stringTableRecord;
+            if (iter->getRecord(stringTableRecord.GetR(), ModelObject::Read) == eOk)
                 {
                 WString stringName (stringTableRecord->stringName ());
                 int numDims = stringTableRecord->type() % 100;
@@ -226,13 +222,13 @@ BcDTMPtr MXFilImporter::ImportStringModel (ModelTableRecord* modelTableRecord) c
                 double z = 0;
                 if(stringTableRecord->isA() == MXContourString::desc())
                     {
-                    MXContourString* contourString = MXContourString::cast(stringTableRecord);
+                    MXContourString* contourString = MXContourString::cast(stringTableRecord.get());
                     isContour = true;
                     z = contourString->getContourHeight();
                     }
 
-                std::auto_ptr<DPoint3d> pointsP (new DPoint3d [stringTableRecord->numPoints()]);
-                std::auto_ptr<int> discosP (new int[stringTableRecord->numPoints()]);
+                std::unique_ptr<DPoint3d[]> pointsP (new DPoint3d [stringTableRecord->numPoints()]);
+                std::unique_ptr<int[]> discosP (new int[stringTableRecord->numPoints()]);
                 DPoint3d* points = pointsP.get();
                 int* discos = discosP.get();
                 int j = 0;
@@ -435,6 +431,150 @@ BcDTMPtr MXFilImporter::ImportTriangulation (StringTableRecord* stringTableRecor
             m_callback->EndTerrain (name, dtm.get ());
         }
     return dtm;
+    }
+
+
+MXFilExporterPtr MXFilExporter::Create()
+    {
+    return new MXFilExporter();
+    }
+
+bool IsValidModelName(WCharCP name)
+    {
+    int i = 0;
+    if (!name)
+        return false;
+    while (*name)
+        {
+        i++;
+        if (*name == L' ' || *name == L'_' || (*name >= L'0' && *name <= L'9') || (*name >= L'A' && *name <= L'Z'))
+            name++;
+        else
+            return false;
+        }
+    return i <= 28;
+    }
+
+bool IsValidStringName(WCharCP name)
+    {
+    int i = 0;
+    if (!name)
+        return false;
+    while (*name)
+        {
+        i++;
+        if ((*name >= L'0' && *name <= L'9') || (*name >= L'A' && *name <= L'Z'))
+            name++;
+        else
+            return false;
+        }
+    return i == 4;
+    }
+
+MXFilExporter::MXExportError MXFilExporter::Export(WCharCP filename, WCharCP inModelName, WCharCP inStringName, BcDTMP dtm, bool allowOverwrite) //AddToCurrentModelFile?
+    {
+    if (WString::IsNullOrEmpty(filename) || WString::IsNullOrEmpty(inModelName) || WString::IsNullOrEmpty(inStringName) || nullptr == dtm)
+        return MXExportError::Error;
+
+    Transform transform;
+    bool hasTransform = !dtm->GetTransformation(transform);
+    if (hasTransform)
+        {
+        DPoint3d fixedPoint;
+        DPoint3d directionVector;
+        double scale;
+        double aspectFix;
+
+        if (!transform.isUniformScaleAndRotateAroundLine(&fixedPoint, &directionVector, &aspectFix, &scale))
+            {
+            return MXExportError::Error;
+            }
+        else if (0 != aspectFix)
+            {
+            return MXExportError::Error;
+            }
+        }
+
+    WString wModelName(inModelName);
+    
+    wModelName.ToUpper();
+    if (!IsValidModelName(wModelName.c_str()))
+        return MXExportError::Error;
+
+    WString wStringName(inStringName);
+    wStringName.ToUpper();
+    if (!IsValidStringName(wStringName.c_str()))
+        return MXExportError::Error;
+
+    AString modelName(wModelName.c_str());
+    AString stringName(wStringName.c_str());
+    // Create modelFile.
+    MXModelFile modelFile;
+
+    if (modelFile.Open(filename, false, true) != eOk)
+        return MXExportError::CantOpenFile;
+
+    MXModelObjectPtr<ModelTable> modelTable;
+    if (eOk != modelFile.getModelTable(modelTable.GetR(), ModelObject::Read))
+        return MXExportError::Error;
+
+    // Create Model
+    MXModelObjectPtr<ModelTableRecord> modelTableRecord;
+    if (eOk != modelTable->getModel(modelName.c_str(), modelTableRecord.GetR(), ModelObject::Write, false))
+        {
+        std::unique_ptr<ModelTableRecord> newModelTableRecord = std::make_unique<ModelTableRecord>();
+        if (eOk != modelTable->addModel(modelName.c_str(), newModelTableRecord.get(), "TRIA"))
+            return MXExportError::Error;
+
+        modelTableRecord = newModelTableRecord.release();
+        }
+    
+    if (asLong(modelTableRecord->modelType()) != asLong("TRIA"))
+        return MXExportError::Error;
+
+    MXModelObjectPtr<StringTable> stringTable;
+    if (eOk != modelTableRecord->getStringTable(stringTable.GetR(), ModelObject::Write))
+        return MXExportError::Error;
+
+    MXModelObjectPtr<StringTableRecord> stringTableRecord;
+    if (eOk != stringTable->getString(stringName.c_str(), stringTableRecord.GetR(), ModelObject::Write, false))
+        {
+        std::unique_ptr<MXTriangleString> triangleStringTableRecord = std::make_unique<MXTriangleString>();
+        if (eOk != stringTable->addString(stringName.c_str(), triangleStringTableRecord.get()))
+            return MXExportError::Error;
+
+        stringTableRecord = triangleStringTableRecord.release();
+        }
+    else if (!allowOverwrite)
+        return MXExportError::StringExists;
+
+    MXTriangleString* triangleStringTableRecord = MXTriangleString::cast(stringTableRecord.get());
+
+    if (nullptr == triangleStringTableRecord)
+        return MXExportError::Error;
+
+    MXTriangle mxTriangulation;
+    MXTriangle::TriangleArray* triPtrP;
+    MXTriangle::PointArray* pointsPtrP;
+    mxTriangulation.getPtrs(triPtrP, pointsPtrP);
+
+    if (hasTransform) // Here we need to sort out unit conversions.
+        {
+        for (int i = 0; i < pointsPtrP->size(); i++)
+            {
+            auto& point = (*pointsPtrP)[i];
+            transform.Multiply(point);
+            //point.x *= 3.28084;
+            //point.y *= 3.28084;
+            //point.z *= 3.28084;
+            }
+        }
+    bcdtmExport_MXTriangulationFromDtmObject(dtm->GetTinHandle(), triPtrP, pointsPtrP);
+
+    if (eOk != triangleStringTableRecord->saveData(&mxTriangulation))
+        return MXExportError::Error;
+
+    return MXExportError::Success;
     }
 
 END_BENTLEY_TERRAINMODEL_NAMESPACE

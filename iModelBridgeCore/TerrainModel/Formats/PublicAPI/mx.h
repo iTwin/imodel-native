@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/PublicAPI/mx.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -12,6 +12,7 @@
 /*__PUBLISH_SECTION_START__*/
 #include <TerrainModel/Formats/Formats.h>
 #include <TerrainModel/Formats/TerrainImporter.h>
+#include <TerrainModel/Formats/TerrainExporter.h>
 #include <Bentley/WString.h>
 /*__PUBLISH_SECTION_END__*/
 #include <BeXml/BeXml.h>
@@ -21,6 +22,7 @@
 #include <TerrainModel/Core/bcDTMClass.h>
 
 
+/*__PUBLISH_SECTION_END__*/
 ///////// bcdtmMX/////////
 BENTLEYDTM_Private        int bcdtmFormatMX_clipUsingIslandFeatureIdDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureId dtmFeatureId) ;
 BENTLEYDTM_Private        int bcdtmFormatMX_getMxTriangleNumberDtmObject(BC_DTM_OBJ *dtmP,DTM_MX_TRG_INDEX *trgIndexP,long trgPnt1,long trgPnt2,long trgPnt3,long *trgNumP ) ;
@@ -29,13 +31,17 @@ BENTLEYDTM_Private        int bcdtmFormatMX_loadMxTrianglesFromDtmObject(BC_DTM_
 
 BENTLEYDTMFORMATS_EXPORT  int bcdtmExport_MXTriangulationFromDtmObject(BC_DTM_OBJ* dtmP, void* triPtrP, void* pointsPtrP);
 BENTLEYDTMFORMATS_EXPORT  int bcdtmImport_MXTriangulationToDtmObject(BC_DTM_OBJ* dtmP, void* triPtrP, void* pointsPtrP);
+/*__PUBLISH_SECTION_START__*/
 
-TERRAINMODEL_TYPEDEFS (MXFilImporter)
-ADD_BENTLEY_TYPEDEFS (Bentley::TerrainModel, MXFilImporter);
+TERRAINMODEL_TYPEDEFS(MXFilImporter)
+ADD_BENTLEY_TYPEDEFS(Bentley::TerrainModel, MXFilImporter);
+TERRAINMODEL_TYPEDEFS(MXFilExporter)
+ADD_BENTLEY_TYPEDEFS(Bentley::TerrainModel, MXFilExporter);
 
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 
 typedef RefCountedPtr<MXFilImporter> MXFilImporterPtr;
+typedef RefCountedPtr<MXFilExporter> MXFilExporterPtr;
 
 /*__PUBLISH_SECTION_END__*/
 class MXModelFile;
@@ -63,6 +69,28 @@ struct MXFilImporter : TerrainImporter
     public: BENTLEYDTMFORMATS_EXPORT static bool IsFileSupported (WCharCP filename);
     public: BENTLEYDTMFORMATS_EXPORT static MXFilImporterPtr Create (WCharCP filename);
 
+    };
+
+
+struct MXFilExporter : TerrainExporter
+    {
+    enum class MXExportError
+        {
+        Success,
+        CantOpenFile,
+        StringExists,
+        Error
+        };
+
+    /*__PUBLISH_SECTION_END__*/
+    protected: MXFilExporter()
+        {
+        }
+
+    /*__PUBLISH_SECTION_START__*/
+    public: BENTLEYDTMFORMATS_EXPORT static MXFilExporterPtr Create();
+
+    public: BENTLEYDTMFORMATS_EXPORT MXExportError Export(WCharCP filename, WCharCP inModelName, WCharCP inStringName, BcDTMP dtm, bool allowOverwrite);
     };
 
 END_BENTLEY_TERRAINMODEL_NAMESPACE
