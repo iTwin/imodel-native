@@ -11,7 +11,7 @@
 
 #include <WebServices/Configuration/UrlProvider.h>
 #include <WebServices/Connect/ConnectSignInManager.h>
-#include <MobileDgn/Utils/Http/HttpRequest.h>
+#include <DgnClientFx/Utils/Http/HttpRequest.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
