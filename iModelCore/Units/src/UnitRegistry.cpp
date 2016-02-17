@@ -143,7 +143,7 @@ BentleyStatus UnitRegistry::AddConstant (double magnitude, Utf8CP unitName)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitPtr UnitRegistry::LookupUnit (Utf8CP name)
+UnitPtr UnitRegistry::LookupUnit (Utf8CP name) const
 	{
 	auto nameStr = Utf8String(name);
 	auto val_iter = m_units.find (nameStr);
@@ -156,16 +156,22 @@ UnitPtr UnitRegistry::LookupUnit (Utf8CP name)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Constant * UnitRegistry::LookupConstant (Utf8CP name)
+ConstantPtr UnitRegistry::LookupConstant (Utf8CP name) const
 	{
-	// TODO: Implement
-	return nullptr;
+	auto nameStr = Utf8String(name);
+	auto iter = find_if (m_constants.begin(), m_constants.end(), 
+		[&](Constant *c) { return 0 == BeStringUtilities::Stricmp(c->GetConstantName(), name); });
+	
+	if (iter == m_constants.end())
+        return nullptr;
+
+	return *iter;
 	}
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UnitRegistry::HasSystem (Utf8CP systemName)
+bool UnitRegistry::HasSystem (Utf8CP systemName) const
 	{
 	auto iter = find (m_systems.begin(), m_systems.end(), Utf8String(systemName));
 	return iter != m_systems.end();
@@ -174,17 +180,68 @@ bool UnitRegistry::HasSystem (Utf8CP systemName)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UnitRegistry::HasPhenomena (Utf8CP phenomenaName)
+bool UnitRegistry::HasPhenomena (Utf8CP phenomenaName) const
 	{
 	auto iter = find (m_phenomena.begin(), m_phenomena.end(), Utf8String(phenomenaName));
 	return iter != m_phenomena.end();
 	}
-    
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool UnitRegistry::HasUnit (Utf8CP unitName) const
+	{
+	auto nameStr = Utf8String(unitName);
+	auto iter = m_units.find(nameStr);
+	return iter != m_units.end();
+	}
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool UnitRegistry::HasConstant (Utf8CP constantName) const
+	{
+	auto constant = LookupConstant (constantName);
+	return constant.IsValid();
+	}
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 UnitPtr UnitRegistry::LookupUnitBySubTypes (const Utf8Vector &numerator, const Utf8Vector &denominator) const
     {
-	// TODO: Implement this.
-    return nullptr;
+	auto n = Utf8Vector(numerator), d = Utf8Vector(denominator);
+	
+	sort(n.begin(), n.end());
+	sort(d.begin(), d.end());
+
+	auto comparison = [&](bpair<Utf8String, Unit*> pair)
+		{
+		auto unit = pair.second;
+
+		if (n.size() != unit->m_numerator.size())
+			return false;
+
+		if (d.size() != unit->m_denominator.size())
+			return false;
+
+		sort (unit->m_numerator.begin(), unit->m_denominator.end());
+		sort (unit->m_denominator.begin(), unit->m_denominator.end());
+
+    	auto nmatch = mismatch (n.begin(), n.end(), unit->m_numerator.begin());
+    	if (nmatch.first != n.end())
+    		return false;
+
+    	auto dmatch = mismatch (d.begin(), d.end(), unit->m_denominator.begin());
+    	if (dmatch.first != d.end())
+    		return false;
+
+    	return true;
+    	};
+
+    auto iter = find_if (m_units.begin(), m_units.end(), comparison);
+    if (iter != m_units.end())
+    	return nullptr;
+
+    return (*iter).second;
     }

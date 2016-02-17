@@ -22,10 +22,10 @@ struct UnitRegistry
 private:
 	static UnitRegistry * s_instance;
 
-	bvector<Utf8String> m_systems;
-	bvector<Utf8String> m_phenomena;
+	Utf8Vector m_systems;
+	Utf8Vector m_phenomena;
 	bmap<Utf8String, Unit *> m_units;
-	bvector<Constant> m_constants;
+	bvector<Constant *> m_constants;
 	bmap<bpair<Utf8String, Utf8String>, double> m_conversions;
 
 	UnitRegistry();
@@ -37,26 +37,28 @@ private:
 	void AddDefaultUnits ();
 	void AddDefaultConstants();
 
-    void InsertUnique (bvector<Utf8String> &vec, Utf8String &str);
+    void InsertUnique (Utf8Vector &vec, Utf8String &str);
 	void AddSystem(Utf8CP systemName);
 	void AddPhenomena(Utf8CP phenomenaName);
 
 public:
 	static UnitRegistry & Instance();
 
+    UnitPtr LookupUnitBySubTypes (const Utf8Vector &numerator, const Utf8Vector &denominator) const;
+
 	// Register methods.
 	UNITS_EXPORT BentleyStatus AddUnit(Utf8CP systemName, Utf8CP phenomName, Utf8CP unitName, Utf8CP displayName, Utf8CP definition, double factor, double offset);
 	UNITS_EXPORT BentleyStatus AddConstant(double magnitude, Utf8CP unitName);
 
 	// Lookup methods
-	UNITS_EXPORT UnitPtr    LookupUnit(Utf8CP name);
-	UNITS_EXPORT Constant * LookupConstant(Utf8CP name);
+	UNITS_EXPORT UnitPtr     LookupUnit(Utf8CP name) const;
+	UNITS_EXPORT ConstantPtr LookupConstant(Utf8CP name) const;
 		
-	UnitPtr LookupUnitBySubTypes (const bvector<Utf8String> &numerator, const bvector<Utf8String> &denominator) const;
-
 	// bool Exists methods.
-	UNITS_EXPORT bool HasSystem (Utf8CP systemName);
-	UNITS_EXPORT bool HasPhenomena (Utf8CP phenomenaName);
+	UNITS_EXPORT bool HasSystem (Utf8CP systemName) const;
+	UNITS_EXPORT bool HasPhenomena (Utf8CP phenomenaName) const;
+	UNITS_EXPORT bool HasUnit (Utf8CP unitName) const;
+    UNITS_EXPORT bool HasConstant (Utf8CP constantName) const;
 
 	// Probably some query methods. (Find base for phenomena and system probably).
 	};
