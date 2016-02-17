@@ -16,12 +16,30 @@
 #include <Bentley/BeFileListIterator.h>
 
 #include <ECObjects/StronglyConnectedGraph.h>
+#include <list>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 // If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.
 // Test programs generally want to get error status back and not assert, so they call ECSchema::AssertOnXmlError (false);
 static  bool        s_noAssert = false;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool ClassNameComparer(ECClassP class1, ECClassP class2)
+    {
+    // We should never have a NULL ECClass here.
+    // However we will pretend a NULL ECClass is always less than a non-NULL ECClass
+    BeAssert(NULL != class1 && NULL != class2);
+    if (NULL == class1)
+        return NULL != class2;      // class 1 < class2 if class2 non-null, equal otherwise
+    else if (NULL == class2)
+        return false;               // class1 > class2
+
+    int comparison = class1->GetName().CompareTo(class2->GetName());
+    return comparison < 0;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
@@ -243,7 +261,7 @@ void ECValidatedName::SetDisplayLabel (Utf8CP label)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchema::ECSchema ()
     :m_classContainer(m_classMap), m_enumerationContainer(m_enumerationMap), m_isSupplemented(false),
-        m_hasExplicitDisplayLabel(false), m_immutable(false), m_ecSchemaId(0)
+    m_hasExplicitDisplayLabel(false), m_immutable(false), m_ecSchemaId(0), m_serializationOrder(nullptr)
     {
     //
     };
@@ -692,6 +710,10 @@ ECObjectsStatus ECSchema::DeleteClass (ECClassR ecClass)
         return ECObjectsStatus::ClassNotFound;
 
     m_classMap.erase (iter);
+
+    if (m_serializationOrder != nullptr)
+    m_serializationOrder->RemoveElement(ecClass.GetName().c_str());
+
     delete &ecClass;
     return ECObjectsStatus::Success;
     }
@@ -706,6 +728,10 @@ ECObjectsStatus ECSchema::DeleteEnumeration (ECEnumerationR ecEnumeration)
         return ECObjectsStatus::EnumerationNotFound;
 
     m_enumerationMap.erase (iter);
+
+    if (m_serializationOrder != nullptr)
+    m_serializationOrder->RemoveElement(ecEnumeration.GetName().c_str());
+
     delete &ecEnumeration;
     return ECObjectsStatus::Success;
     }
@@ -748,6 +774,10 @@ ECObjectsStatus ECSchema::AddClass(ECClassP pClass)
         LOG.errorv("Cannot create class '%s' because it already exists in the schema", pClass->GetName().c_str());
         return ECObjectsStatus::NamedItemAlreadyExists;
         }
+
+    if (m_serializationOrder != nullptr)
+    m_serializationOrder->AddElement(pClass->GetName().c_str(), ECSchemaElementType::ECClass);
+
     //DebugDump(); wprintf(L"\n");
     return ECObjectsStatus::Success;
     }
@@ -1025,6 +1055,9 @@ ECObjectsStatus ECSchema::AddEnumeration(ECEnumerationP pEnumeration)
         LOG.errorv("Cannot create enumeration '%s' because it already exists in the schema", pEnumeration->GetName().c_str());
         return ECObjectsStatus::NamedItemAlreadyExists;
         }
+
+    if (m_serializationOrder != nullptr)
+    m_serializationOrder->AddElement(pEnumeration->GetName().c_str(), ECSchemaElementType::ECEnumeration);
 
     return ECObjectsStatus::Success;
     }
@@ -2473,6 +2506,83 @@ ECEnumerationP const& ECEnumerationContainer::const_iterator::operator*() const
     };
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECSchemaElementsOrder::AddElement(Utf8CP name, ECSchemaElementType type)
+    {
+    m_elementVector.push_back(make_bpair<Utf8String, ECSchemaElementType>(name, type));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECSchemaElementsOrder::RemoveElement(Utf8CP elementName)
+    {
+    for (auto iterator = m_elementVector.begin(); iterator != m_elementVector.end(); ++iterator)
+        {
+        if (iterator->first == elementName)
+            {
+            m_elementVector.erase(iterator);
+            return;
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECSchemaElementsOrder::CreateAlphabeticalOrder(ECSchemaElementsOrderP &elementOrder, ECSchemaCR ecSchema)
+    {
+    elementOrder = new ECSchemaElementsOrder();
+    for (ECEnumerationCP pEnum : ecSchema.GetEnumerations())
+        {
+        if (NULL == pEnum)
+            {
+            BeAssert(false);
+            continue;
+            }
+        else
+            elementOrder->AddElement(pEnum->GetName().c_str(), ECSchemaElementType::ECEnumeration);
+        }
+
+    std::list<ECClassP> sortedClasses;
+    // sort the classes by name so the order in which they are written is predictable.
+    for (ECClassP pClass : ecSchema.GetClasses())
+        {
+        if (NULL == pClass)
+            {
+            BeAssert(false);
+            continue;
+            }
+        else
+            sortedClasses.push_back(pClass);
+        }
+
+    sortedClasses.sort(ClassNameComparer);
+
+    for (ECClassP pClass : sortedClasses)
+        {
+        elementOrder->AddElement(pClass->GetName().c_str(), ECSchemaElementType::ECClass);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<bpair<Utf8String, ECSchemaElementType>>::const_iterator  ECSchemaElementsOrder::begin() const
+    {
+    return m_elementVector.begin();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<bpair<Utf8String, ECSchemaElementType>>::const_iterator  ECSchemaElementsOrder::end() const
+    {
+    return m_elementVector.end();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaKeyCR ECSchema::GetSchemaKey ()const
@@ -2983,7 +3093,6 @@ bool SchemaNameClassNamePair::Remap (ECSchemaCR pre, ECSchemaCR post, IECSchemaR
 
     return remapped;
     }
-
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 
