@@ -708,7 +708,8 @@
                 <OnUpdateAction>Restrict</OnUpdateAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
-        <Source cardinality="(1,1)" roleLabel="is referenced by" polymorphic="true">
+        <Source cardinality="(0,1)" roleLabel="is referenced by" polymorphic="true">
+            <!-- WIP: Source cardinality should be (1,1) -->
             <Class class="ViewDefinition"/>
         </Source>
         <Target cardinality="(0,N)" roleLabel="references" polymorphic="true">
@@ -1065,7 +1066,8 @@
                 <OnUpdateAction>Restrict</OnUpdateAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
-        <Source cardinality="(1,1)" roleLabel="is base model for view" polymorphic="true">
+        <Source cardinality="(0,1)" roleLabel="is base model for view" polymorphic="true">
+            <!-- WIP: Source cardinality should be (1,1) -->
             <Class class="Model"/>
         </Source>
         <Target cardinality="(0,N)" roleLabel="is used by N views" polymorphic="true">
