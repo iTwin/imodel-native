@@ -1323,6 +1323,9 @@
       <Filter>Source\STM</Filter>
     </ClCompile>
     <ClCompile Include="STM\Plugins\ScalableMeshTypeConversionFilterPlugins.cpp" />
+    <ClCompile Include="STM\SMStreamingTileStore.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="ScalableTerrainModel.mke" />

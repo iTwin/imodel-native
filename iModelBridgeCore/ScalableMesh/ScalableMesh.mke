@@ -171,7 +171,7 @@ $(o)ImportCommands$(oext) : $(importDir)ImportCommands.cpp $(PCHHeaderDepends)  
 #   Build STM
 #-----------------------------------------------------------------------
 
-$(o)SMPointIndex$(oext) : $(stmDir)SMPointIndex.cpp $(stmDir)SMPointIndex.hpp $(stmDir)SMPointIndex.h $(PCHHeaderDepends) ${MultiCompileDepends}
+$(o)SMPointIndex$(oext) : $(stmDir)SMPointIndex.cpp $(stmDir)SMPointIndex.hpp $(stmDir)SMPointIndex.h $(stmDir)SMStreamingTileStore.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)IScalableMeshATP$(oext) : $(stmDir)IScalableMeshATP.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 

@@ -7013,7 +7013,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveCl
     delete[] headerData.release();
     
     auto groupID = pi_pGroup->GetID();
-    pi_pGroupsHeader->operator[](groupID).AddNodeID(ConvertBlockID(m_storeBlockID));
+    pi_pGroupsHeader->AddNodeToGroup(groupID, ConvertBlockID(m_storeBlockID));
 
     if (pi_pGroup->IsFull() || pi_pGroup->IsCommonAncestorTooFar(this->GetLevel()))
         {
