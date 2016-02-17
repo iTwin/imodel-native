@@ -367,6 +367,12 @@
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     </Part>
 
+    <!-- Part for Visual Studio based builds on G0505 -->
+    <Part Name="WSClientUnitTests-VS" >
+        <SubPart PartName="WSClientUnitTests" />
+        <SubPart PartName="BeGTestExe" PartFile="BeGTest" Repository="BeGTest" />
+    </Part>
+
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // Integration Tests - used for debugging                                 // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->

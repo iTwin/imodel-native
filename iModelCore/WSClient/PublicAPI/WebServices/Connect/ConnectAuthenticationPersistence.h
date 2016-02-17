@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Connect/ConnectAuthenticationPersistence.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -67,6 +67,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ConnectAuthenticationPersistence : public IConnec
 
         WSCLIENT_EXPORT void SetToken(SamlTokenPtr token) override;
         WSCLIENT_EXPORT SamlTokenPtr GetToken() const override;
+
+        WSCLIENT_EXPORT DateTime GetTokenSetTime() const override;
 
         //! @param onUserChangedCallback - is executed when new user successfully logins thus replacing old user if there was one.
         //! @return key that can be used to unregister listener

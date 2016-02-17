@@ -2,11 +2,12 @@
 |
 |     $Source: Connect/ConnectAuthenticationPersistence.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
+#include <Bentley/Base64Utilities.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX
@@ -16,6 +17,7 @@ USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 #define SecureStoreKey_Token            "Token"
 #define SecureStoreKey_Username         "Username"
 #define SecureStoreKey_Password         "Password"
+#define SecureStoreKey_TokenSetTime     "TokenSetTime"
 
 ConnectAuthenticationPersistencePtr ConnectAuthenticationPersistence::s_shared;
 std::once_flag ConnectAuthenticationPersistence::s_shared_once;
@@ -106,7 +108,12 @@ Credentials ConnectAuthenticationPersistence::GetCredentials() const
 void ConnectAuthenticationPersistence::SetToken(SamlTokenPtr token)
     {
     BeMutexHolder lock (m_cs);
+
     m_secureStore->SaveValue(SecureStoreNameSpace_Connect, SecureStoreKey_Token, token ? token->AsString().c_str() : "");
+
+    Utf8String dateStr = DateTime::GetCurrentTimeUtc().ToUtf8String();
+    m_secureStore->SaveValue(SecureStoreNameSpace_Connect, SecureStoreKey_TokenSetTime, token ? dateStr.c_str() : "");
+
     m_token.reset();
     }
 
@@ -128,6 +135,20 @@ SamlTokenPtr ConnectAuthenticationPersistence::GetToken() const
         }
 
     return m_token;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Vytautas.Barkauskas    01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DateTime ConnectAuthenticationPersistence::GetTokenSetTime() const
+    {
+    Utf8String timeStr = m_secureStore->LoadValue(SecureStoreNameSpace_Connect, SecureStoreKey_TokenSetTime);
+
+    DateTime time;
+    if (SUCCESS != DateTime::FromString(time, timeStr.c_str()))
+        return DateTime();
+
+    return time;
     }
 
 /*--------------------------------------------------------------------------------------+
