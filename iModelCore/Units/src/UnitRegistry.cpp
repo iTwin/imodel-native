@@ -13,6 +13,9 @@ USING_NAMESPACE_BENTLEY_UNITS
 
 UnitRegistry * UnitRegistry::s_instance = nullptr;
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 UnitRegistry& UnitRegistry::Instance()
 	{
 	if (nullptr == s_instance)
@@ -21,6 +24,9 @@ UnitRegistry& UnitRegistry::Instance()
 	return *s_instance;
 	}
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 UnitRegistry::UnitRegistry()
 	{
 	AddDefaultSystems();
@@ -29,6 +35,9 @@ UnitRegistry::UnitRegistry()
 	AddDefaultConstants ();
 	}
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 void UnitRegistry::InsertUnique (bvector<Utf8String> &vec, Utf8String &str)
 	{
 	// Don't insert duplicates.
@@ -39,18 +48,27 @@ void UnitRegistry::InsertUnique (bvector<Utf8String> &vec, Utf8String &str)
 	vec.push_back(str);
 	}
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 void UnitRegistry::AddSystem (Utf8CP systemName)
 	{
 	auto str = Utf8String(systemName);
 	InsertUnique (m_systems, str);
 	}
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 void UnitRegistry::AddPhenomena (Utf8CP phenomenaName)
 	{
 	auto str = Utf8String(phenomenaName);
 	InsertUnique (m_phenomena, str);
 	}
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 void UnitRegistry::AddDefaultSystems ()
 	{
 	AddSystem ("SI");
@@ -62,6 +80,9 @@ void UnitRegistry::AddDefaultSystems ()
 	// TODO: Add more.
 	}
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 void UnitRegistry::AddDefaultPhenomena ()
 	{
 	AddPhenomena ("Length");
@@ -78,11 +99,17 @@ void UnitRegistry::AddDefaultPhenomena ()
 	AddPhenomena ("Dimensionless");
 	}
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 void UnitRegistry::AddDefaultConstants ()
 	{
 
 	}
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus UnitRegistry::AddUnit (Utf8CP systemName, Utf8CP phenomName, Utf8CP unitName, Utf8CP displayName, Utf8CP definition, double factor, double offset)
 	{
 	if (!(HasSystem(systemName) && HasPhenomena(phenomName)))
@@ -100,6 +127,9 @@ BentleyStatus UnitRegistry::AddUnit (Utf8CP systemName, Utf8CP phenomName, Utf8C
 	return SUCCESS;
 	}
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus UnitRegistry::AddConstant (double magnitude, Utf8CP unitName)
 	{
 	auto unit = LookupUnit (unitName);
@@ -110,6 +140,9 @@ BentleyStatus UnitRegistry::AddConstant (double magnitude, Utf8CP unitName)
 	return SUCCESS;
 	}
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 UnitPtr UnitRegistry::LookupUnit (Utf8CP name)
 	{
 	auto nameStr = Utf8String(name);
@@ -120,18 +153,27 @@ UnitPtr UnitRegistry::LookupUnit (Utf8CP name)
 	return (*val_iter).second;
 	}
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 Constant * UnitRegistry::LookupConstant (Utf8CP name)
 	{
 	// TODO: Implement
 	return nullptr;
 	}
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 bool UnitRegistry::HasSystem (Utf8CP systemName)
 	{
 	auto iter = find (m_systems.begin(), m_systems.end(), Utf8String(systemName));
 	return iter != m_systems.end();
 	}
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 bool UnitRegistry::HasPhenomena (Utf8CP phenomenaName)
 	{
 	auto iter = find (m_phenomena.begin(), m_phenomena.end(), Utf8String(phenomenaName));

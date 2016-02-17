@@ -11,6 +11,9 @@
 
 USING_NAMESPACE_BENTLEY_UNITS
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 Unit::Unit(Utf8CP system, Utf8CP phenomena, Utf8CP name, Utf8CP displayLabel, Utf8Vector& numerator, Utf8Vector& denominator)
 	: m_system (system), m_name(name), m_displayLabel(displayLabel)
 	{
@@ -18,15 +21,22 @@ Unit::Unit(Utf8CP system, Utf8CP phenomena, Utf8CP name, Utf8CP displayLabel, Ut
 	m_denominator = move(denominator);
 	}
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 UnitPtr Unit::Create (Utf8CP sysName, Utf8CP phenomName, Utf8CP unitName, Utf8CP displayName, Utf8CP definition)
 	{
 	auto n = Utf8Vector();
 	auto d = Utf8Vector();
-	Parser::ParseDefinition (definition, n, d);
+	if (SUCCESS != ParseDefinition (definition, n, d))
+		return nullptr;
 	
 	return new Unit (sysName, phenomName, unitName, displayName, n, d);
 	}
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 bool Unit::IsRegistered() const
 	{
 	auto newUnit = UnitRegistry::Instance().LookupUnitBySubTypes(m_numerator, m_denominator);
@@ -34,6 +44,9 @@ bool Unit::IsRegistered() const
 	return newUnit != nullptr;
 	}
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 void Unit::SimplifySubTypes(Utf8Vector &n, Utf8Vector &d)
 	{
 	auto temp = Utf8Vector();
@@ -49,6 +62,9 @@ void Unit::SimplifySubTypes(Utf8Vector &n, Utf8Vector &d)
 	move(temp.begin(), temp.end(), d.begin());
 	}
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 bool Unit::operator== (const Unit& rhs) const
 	{
 	if (m_numerator.size() != rhs.m_numerator.size())
@@ -61,11 +77,17 @@ bool Unit::operator== (const Unit& rhs) const
 	return true;
 	}
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 bool Unit::operator!= (const Unit& rhs) const
 	{
 	return !(*this == rhs);
 	}
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 Unit Unit::operator* (const Unit& rhs) const
 	{
 	Unit result = *this;
@@ -73,6 +95,9 @@ Unit Unit::operator* (const Unit& rhs) const
 	return result;
 	}
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 Unit Unit::operator/ (const Unit& rhs) const
 	{
 	Unit result = *this;
@@ -80,6 +105,9 @@ Unit Unit::operator/ (const Unit& rhs) const
 	return result;
 	}
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 Unit Unit::operator+ (const Unit& rhs) const
 	{
 	Unit result = *this;
@@ -87,6 +115,9 @@ Unit Unit::operator+ (const Unit& rhs) const
 	return result;
 	}
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 Unit Unit::operator- (const Unit& rhs) const
 	{
 	Unit result = *this;
@@ -94,18 +125,27 @@ Unit Unit::operator- (const Unit& rhs) const
 	return result;
 	}
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 Unit& Unit::operator+= (const Unit& rhs)
 	{
 	// TODO: This might not be right.
 	return *this;
 	}
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 Unit& Unit::operator-= (const Unit& rhs)
 	{
 	// TODO: This might not be right.
 	return *this;
 	}
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 Unit& Unit::operator*= (const Unit& rhs)
 	{
 	// Combine numerator and denominators.
@@ -124,6 +164,9 @@ Unit& Unit::operator*= (const Unit& rhs)
 	return *this;
 	}
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 Unit& Unit::operator/= (const Unit& rhs)
 	{
 	// Combine numerator and denominators.

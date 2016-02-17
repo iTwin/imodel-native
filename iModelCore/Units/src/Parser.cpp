@@ -4,7 +4,38 @@
 
 USING_NAMESPACE_BENTLEY_UNITS
 
-BentleyStatus Parser::ParseDefinition(Utf8CP definition, bvector<Utf8String>& numerator, bvector<Utf8String>& denominator)
+void UnitToken::AddToNumeratorOrDenominator(Utf8Vector& numerator, Utf8Vector& denominator)
+    {
+    if (IsNumerator())
+        AddToVector(numerator);
+    else
+        AddToVector(denominator);
+    }
+
+void UnitToken::AddToVector(Utf8Vector& ator)
+    {
+    for (int i = 0; i < abs(m_exponent); ++i)
+        ator.push_back(Utf8String(m_tolken.c_str()));
+
+    m_tolken.clear();
+    m_exponent = 1;
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Colin.Kerr         02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+int Exponent::GetExponent()
+	{
+    int value = 0;
+    BE_STRING_UTILITIES_UTF8_SSCANF(m_exponentChars.c_str(), "%d", &value);
+    m_exponentChars.clear();
+    return value;
+	}
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Colin.Kerr         02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Unit::ParseDefinition(Utf8CP definition, Utf8Vector& numerator, Utf8Vector& denominator)
     {
     if (Utf8String::IsNullOrEmpty(definition))
         return BentleyStatus::ERROR;

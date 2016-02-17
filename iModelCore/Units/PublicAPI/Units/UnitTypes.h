@@ -17,6 +17,10 @@ typedef bvector<Utf8String> Utf8Vector;
 struct Unit;
 typedef RefCountedPtr<Unit> UnitPtr;
 
+//=======================================================================================
+//! A base class for all units.
+// @bsiclass                                                    Chris.Tartamella   02/16
+//=======================================================================================
 struct Unit : RefCountedBase
 	{
 friend struct UnitRegistry;
@@ -28,6 +32,7 @@ private:
 	Utf8Vector m_numerator;
 	Utf8Vector m_denominator;
 
+	static BentleyStatus ParseDefinition(Utf8CP definition, Utf8Vector& numerator, Utf8Vector& denominator);
 	static UnitPtr Create (Utf8CP sysName, Utf8CP phenomName, Utf8CP unitName, 
 		                                    Utf8CP displayName, Utf8CP definition);
 
@@ -35,10 +40,8 @@ private:
 		   Utf8Vector& numerator, Utf8Vector& denominator);
 
 	void SimplifySubTypes (Utf8Vector &n, Utf8Vector &d);
-
 	
 protected:
-
 	Utf8Vector Numerator() const { return m_numerator; }
 	Utf8Vector Denominator() const { return m_denominator; }
 
@@ -57,7 +60,6 @@ public:
 	bool operator!= (const Unit& rhs) const;
 
 	// Arithmetic operators.
-	// TODO: Check that these are the right form.
 	Unit operator*(const Unit& rhs) const;
 	Unit operator/(const Unit& rhs) const;
 	Unit operator+(const Unit& rhs) const;
