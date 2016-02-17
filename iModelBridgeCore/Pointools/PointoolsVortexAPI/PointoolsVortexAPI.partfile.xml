@@ -650,13 +650,26 @@
   </Part>
   
   <ProductDirectoryList ListName="PointoolsVortexAPI_Runtime_List">
+  
+    <ProductDirectory Name="ConfigDir" Path="" Deliver="false"/>                   <!-- This shouldn't be needed? -->
 
     <ProductDirectory Name="PointoolsAssemblies" Path="" Deliver="true"/>
     <ProductDirectory Name="PointoolsAssemblies32Ext" Path="" Deliver="false"/>
     
     <ProductDirectory Name="VendorAPI" Path="VendorAPI" Deliver="false"/>
+    <ProductDirectory Name="VendorAPI" Path="VendorAPI" Deliver="false" LibType="Static"/>
+    <ProductDirectory Name="PublicAPI" Path="PublicAPI" Deliver="false"/>
+    <ProductDirectory Name="PublicAPI" Path="PublicAPI" Deliver="false" LibType="Static"/>
     <ProductDirectory Name="Libs" Path="Libs" Deliver="false"/>
+    <ProductDirectory Name="Libs" Path="Libs" Deliver="false" LibType="Static"/>
     <ProductDirectory Name="Assemblies" Path="Assemblies" Deliver="false"/>
+    <ProductDirectory Name="Assemblies" Path="Assemblies" Deliver="false" LibType="Static"/>
+    <ProductDirectory Name="VendorNotices" Path="VendorNotices" Deliver="false"/>
+    <ProductDirectory Name="VendorNotices" Path="VendorNotices" Deliver="false" LibType="Static"/>
+	
+    <ProductDirectory Name="LicenseAssemblies" Path="" Deliver="true" />
+    <ProductDirectory Name="MergeModules" Path="MergeModules" Deliver="true" />
+
     
     <ProductDirectory Name="PointoolsVortexAPI_VS2005" Path="PointoolsVortexAPI_VS2005" Deliver="true"/>
     <ProductDirectory Name="PointoolsVortexAPI_VS2005_Includes" Path="PointoolsVortexAPI_VS2005\include" Deliver="true"/>
@@ -681,17 +694,29 @@
     <ProductDirectory Name="PointoolsVortexAPI_API_VS2012_Examples" Path="Examples" Deliver="true"/>
     
     <ProductDirectory Name="BentleyEulaDelivery" Path="Eula" Deliver="true"/>
+	
+    <ProductDirectory Name="GlewAssemblies" Path="" LibType="Static" Deliver="false"/>
+	
 
   </ProductDirectoryList>
   
   
   <ProductDirectoryList ListName="PointoolsVortexAPI_API_List">
+    
+    <ProductDirectory Name="ConfigDir" Path="" Deliver="false"/>                   <!-- This shouldn't be needed? -->
   
     <ProductDirectory Name="PointoolsAssemblies" Path="" Deliver="false"/>
     
     <ProductDirectory Name="VendorAPI" Path="VendorAPI" Deliver="false"/>
+    <ProductDirectory Name="VendorAPI" Path="VendorAPI" Deliver="false" LibType="Static"/>
+    <ProductDirectory Name="PublicAPI" Path="PublicAPI" Deliver="false"/>
+    <ProductDirectory Name="PublicAPI" Path="PublicAPI" Deliver="false" LibType="Static"/>
     <ProductDirectory Name="Libs" Path="Libs" Deliver="false"/>
+    <ProductDirectory Name="Libs" Path="Libs" Deliver="false" LibType="Static"/>
     <ProductDirectory Name="Assemblies" Path="Assemblies" Deliver="false"/>
+    <ProductDirectory Name="Assemblies" Path="Assemblies" Deliver="false" LibType="Static"/>
+    <ProductDirectory Name="VendorNotices" Path="VendorNotices" Deliver="false"/>
+    <ProductDirectory Name="VendorNotices" Path="VendorNotices" Deliver="false" LibType="Static"/>
 
     <ProductDirectory Name="PointoolsVortexAPI_VS2012" Path="" Deliver="true"/>
     <ProductDirectory Name="PointoolsVortexAPI_VS2012_Src" Path="src" Deliver="true"/>
