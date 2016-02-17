@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/Util.h $
+|     $Source: src/UnitRegistry.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -179,3 +179,8 @@ bool UnitRegistry::HasPhenomena (Utf8CP phenomenaName)
 	auto iter = find (m_phenomena.begin(), m_phenomena.end(), Utf8String(phenomenaName));
 	return iter != m_phenomena.end();
 	}
+    
+Unit * UnitRegistry::LookupUnitBySubTypes (const bvector<Utf8String> &numerator, const bvector<Utf8String> &denominator) const
+    {
+    return nullptr;
+    }

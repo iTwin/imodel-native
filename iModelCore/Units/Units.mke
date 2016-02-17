@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: src/units.mke $
+#     $Source: Units.mke $
 #
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -9,6 +9,7 @@
 %include $(SrcRoot)Units/mki/Units.mki
     
 baseDir             = $(_MakeFilePath)
+programName         = Units
 srcDir              = $(baseDir)src/
 o                   = $(OutBuildDir)Units/
 
@@ -18,20 +19,14 @@ o                   = $(OutBuildDir)Units/
 always:
     !~@mkdir $(o)
 
-nameToDefine    = __UNITS_BUILD__
-%include cdefapnd.mki
-nameToDefine =
-
 # Add the Private API directory.
 dirToSearch     = $(baseDir)PrivateAPI/
 %include cincapnd.mki
 dirToSearch = 
 
-# DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
-# If we define appName and use it for DLM_NAME, MultiCppCompileRule.mki will use it for CCompPDBName, and linkLibrary.mki will use DLM_NAME for LIB_NAME.
-# PreCompiledHeader.mki uses CCompPDBName
-appName         = Units
-CCompPDBName    = $(appName)
+# include the compile options mki file.
+CompileOptionsMki   = $(baseDir)mki/UnitsCompileOpts.mki
+%include $(CompileOptionsMki)
 
 #--------------------------------------------------------------------------------
 #  Bring our precompiled header up-to-date.  After including PreCompileHeader.mki
@@ -57,6 +52,8 @@ CPchOpts            = $(UsePrecompiledHeaderOptions)
 #----------------------------------------------------------------------
 MultiCompileDepends = $(_MakeFileSpec) 
 %include MultiCppCompileRule.mki
+
+UnitsHeaders = $(unitsPublicAPISrc)Units.h
 
 #Units Compilands
 $(o)UnitRegistry$(oext)      :  $(srcDir)UnitRegistry.cpp ${MultiCompileDepends}
