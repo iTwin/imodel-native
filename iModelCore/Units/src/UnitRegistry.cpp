@@ -118,12 +118,12 @@ void UnitRegistry::AddDefaultConstants ()
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UnitRegistry::AddUnit (Utf8CP systemName, Utf8CP phenomName, Utf8CP unitName, Utf8CP displayName, Utf8CP definition, double factor, double offset)
+BentleyStatus UnitRegistry::AddUnit (Utf8CP systemName, Utf8CP phenomName, Utf8CP unitName, Utf8CP definition, double factor, double offset)
     {
     if (!(HasSystem(systemName) && HasPhenomena(phenomName)))
         return ERROR;
 
-    auto unit = Unit::Create (systemName, phenomName, unitName, displayName, definition);
+    auto unit = Unit::Create (systemName, phenomName, unitName, definition, factor, offset);
     if (!unit.IsValid())
         return ERROR;
 
@@ -227,20 +227,20 @@ UnitPtr UnitRegistry::LookupUnitBySubTypes (const Utf8Vector &numerator, const U
         {
         auto unit = pair.second;
 
-        if (n.size() != unit->m_numerator.size())
+        if (n.size() != unit->GetNumerator().size())
             return false;
 
-        if (d.size() != unit->m_denominator.size())
+        if (d.size() != unit->GetDenominator().size())
             return false;
 
-        sort (unit->m_numerator.begin(), unit->m_denominator.end());
-        sort (unit->m_denominator.begin(), unit->m_denominator.end());
+        sort (unit->GetNumerator().begin(), unit->GetNumerator().end());
+        sort (unit->GetDenominator().begin(), unit->GetDenominator().end());
 
-        auto nmatch = mismatch (n.begin(), n.end(), unit->m_numerator.begin());
+        auto nmatch = mismatch (n.begin(), n.end(), unit->GetNumerator().begin());
         if (nmatch.first != n.end())
             return false;
 
-        auto dmatch = mismatch (d.begin(), d.end(), unit->m_denominator.begin());
+        auto dmatch = mismatch (d.begin(), d.end(), unit->GetDenominator().begin());
         if (dmatch.first != d.end())
             return false;
 

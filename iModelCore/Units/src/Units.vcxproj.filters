@@ -53,6 +53,9 @@
     <ClInclude Include="UnitsNativeLogging.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\PrivateAPI\StandardNames.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\mki\Units.mki">

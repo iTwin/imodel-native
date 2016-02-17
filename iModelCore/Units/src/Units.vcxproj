@@ -33,6 +33,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\PrivateAPI\Parser.h" />
+    <ClInclude Include="..\PrivateAPI\StandardNames.h" />
     <ClInclude Include="..\PublicAPI\Units\Quantity.h" />
     <ClInclude Include="..\PublicAPI\Units\UnitRegistry.h" />
     <ClInclude Include="..\PublicAPI\Units\Units.h" />

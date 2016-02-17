@@ -92,5 +92,8 @@ BentleyStatus Unit::ParseDefinition(Utf8CP definition, Utf8Vector& numerator, Ut
     if (currentTolken.IsValid())
         currentTolken.AddToNumeratorOrDenominator(numerator, denominator);
  
+    sort(numerator.begin(), numerator.end());
+    sort(denominator.begin(), denominator.end());
+
     return numerator.size() > 0 || denominator.size() > 0 ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;
     }

@@ -48,7 +48,7 @@ public:
     UnitPtr LookupUnitBySubTypes (const Utf8Vector &numerator, const Utf8Vector &denominator) const;
 
     // Register methods.
-    UNITS_EXPORT BentleyStatus AddUnit(Utf8CP systemName, Utf8CP phenomName, Utf8CP unitName, Utf8CP displayName, Utf8CP definition, double factor, double offset);
+    UNITS_EXPORT BentleyStatus AddUnit(Utf8CP systemName, Utf8CP phenomName, Utf8CP unitName, Utf8CP definition, double factor, double offset = 0);
     UNITS_EXPORT BentleyStatus AddConstant(double magnitude, Utf8CP unitName);
 
     // Lookup methods
