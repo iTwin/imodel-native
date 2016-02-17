@@ -772,33 +772,12 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
 
                 involvedTables.insert(&table);
                 totalColumns.push_back(column);
-                switch (indexInfo->GetWhere())
-                    {
-                        case ClassIndexInfo::WhereConstraint::NotNull:
-                        {
-                        //if column is not nullable, no need to add IS NOT NULL expression to where clause of index
-                        if (column->GetConstraint().IsNotNull())
-                            break;
-
-                        if (!whereExpression.IsEmpty())
-                            whereExpression.AppendSpace().Append(BooleanSqlOperator::And, true);
-
-                        whereExpression.AppendEscaped(column->GetName().c_str()).AppendSpace();
-                        whereExpression.Append(BooleanSqlOperator::IsNot).Append("NULL");
-
-                        break;
-                        }
-
-                        default:
-                            break;
-                    }
                 }
             }
 
         ECDbSqlTable* involvedTable =  const_cast<ECDbSqlTable*>(*involvedTables.begin());
         if (nullptr == schemaImportContext.GetECDbMapDb().CreateIndex(m_ecDbMap.GetECDbR(), *involvedTable, indexInfo->GetName(), indexInfo->GetIsUnique(),
-                                                                      totalColumns, whereExpression.ToString(),
-                                                                      false, GetClass().GetId()))
+                                                                      totalColumns, indexInfo->IsAddPropsAreNotNullWhereExp(), false, GetClass().GetId()))
             {
             return ERROR;
             }

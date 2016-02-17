@@ -166,22 +166,15 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct ClassIndexInfo : RefCountedBase
     {
-public:
-    enum class WhereConstraint
-        {
-        None,
-        NotNull
-        };
-
 private:
     Utf8String m_name;
     bool m_isUnique;
     bvector<Utf8String> m_properties;
-    WhereConstraint m_where;
+    bool m_addPropsAreNotNullWhereExp;
     static std::vector<std::pair<Utf8String, Utf8String>> s_idSpecCustomAttributeNames;
 
-    ClassIndexInfo(Utf8CP name, bool isUnique, bvector<Utf8String> const& properties, WhereConstraint whereConstraint)
-        : m_name(name), m_isUnique(isUnique), m_properties(properties), m_where(whereConstraint)
+    ClassIndexInfo(Utf8CP name, bool isUnique, bvector<Utf8String> const& properties, bool addPropsAreNotNullWhereExp)
+        : m_name(name), m_isUnique(isUnique), m_properties(properties), m_addPropsAreNotNullWhereExp(addPropsAreNotNullWhereExp)
         {}
 
     static BentleyStatus CreateFromIdSpecificationCAs(bvector<ClassIndexInfoPtr>& indexInfos, ECDbCR, ECN::ECClassCR);
@@ -198,7 +191,7 @@ public:
     Utf8CP GetName() const { return m_name.c_str();}
     bool GetIsUnique() const { return m_isUnique;}
     bvector<Utf8String> const& GetProperties() const{ return m_properties;}
-    WhereConstraint GetWhere() const { return m_where; }
+    bool IsAddPropsAreNotNullWhereExp() const { return m_addPropsAreNotNullWhereExp; }
     };
 
 //======================================================================================

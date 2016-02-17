@@ -434,7 +434,6 @@ MapStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMap
                 return MapStatus::Error;
                 }
 
-            fkCol->GetConstraintR().SetIsNotNull(cardinalityImpliesNotNullOnFkCol);
             fkTableFkCols.insert(fkCol);
             }
         }
@@ -805,14 +804,7 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(SchemaImportContext
         else
             name.append("_target");
 
-        NativeSqlBuilder whereClause;
-        if (!referencedEndIdColumn->GetConstraint().IsNotNull())
-            {
-            whereClause.AppendEscaped(referencedEndIdColumn->GetName().c_str()).AppendSpace();
-            whereClause.Append(BooleanSqlOperator::IsNot, true).Append("NULL");
-            }
-
-        schemaImportContext.GetECDbMapDb().CreateIndex(GetECDbMap().GetECDbR(), persistenceEndTable, name.c_str(), isUniqueIndex, {referencedEndIdColumn}, whereClause.ToString(), true, GetClass().GetId());
+        schemaImportContext.GetECDbMapDb().CreateIndex(GetECDbMap().GetECDbR(), persistenceEndTable, name.c_str(), isUniqueIndex, {referencedEndIdColumn}, true, true, GetClass().GetId());
         }
     }
 
@@ -827,15 +819,6 @@ bool RelationshipClassEndTableMap::GetRelationshipColumnName (Utf8StringR column
     
     if (table.FindColumnCP (columnName.c_str()) == nullptr)
         return true;
-
-    //! ECSchema Upgrade creates a second column for ECRelationshipClass because of following.
-    //! Although following must have been added due to issue. A longterm solution is to store the
-    //! name of column in db. Otherwise we cannot tell if column that exist in db is for this this 
-    //! relation of some other relation. The information is currently not stored in database. Its
-    //! only create of ECDbHints or produced by default values.
-    //! We can qualify all relation with schema name to avoid this but it will be breaking changes
-    //! as older db will still construct the name by default without schema name. Thus we need the
-    //! the persistence of column name for ECRelationship Keys.
 
     if (mappingInProgress)
         {

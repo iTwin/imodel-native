@@ -4558,7 +4558,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
 
         ECDb ecdb;
         bool asserted = false;
-        AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships1.ecdb");
+        AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships.ecdb");
         ASSERT_FALSE(asserted);
 
         ECClassId b1ClassId = ecdb.Schemas().GetECClassId("TestSchema", "B1");

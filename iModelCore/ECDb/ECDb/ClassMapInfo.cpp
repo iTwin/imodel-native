@@ -873,14 +873,14 @@ std::vector<std::pair<Utf8String, Utf8String>> ClassIndexInfo::s_idSpecCustomAtt
 //static
 ClassIndexInfoPtr ClassIndexInfo::Create(ECDbCR ecdb, ECN::ECDbClassMap::DbIndex const& dbIndex)
     {
-    WhereConstraint whereConstraint = WhereConstraint::None;
+    bool addPropsAreNotNullWhereExp = false;
 
     Utf8CP whereClause = dbIndex.GetWhereClause();
     if (!Utf8String::IsNullOrEmpty(whereClause))
         {
         if (BeStringUtilities::Stricmp(whereClause, "IndexedColumnsAreNotNull") == 0 ||
             BeStringUtilities::Stricmp(whereClause, "ECDB_NOTNULL") == 0) //legacy support
-            whereConstraint = WhereConstraint::NotNull;
+            addPropsAreNotNullWhereExp = true;
         else
             {
             ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid where clause in ClassMap::DbIndex: %s. Only 'IndexedColumnsAreNotNull' is supported by ECDb.", dbIndex.GetWhereClause());
@@ -888,7 +888,7 @@ ClassIndexInfoPtr ClassIndexInfo::Create(ECDbCR ecdb, ECN::ECDbClassMap::DbIndex
             }
         }
 
-    return new ClassIndexInfo(dbIndex.GetName(), dbIndex.IsUnique(), dbIndex.GetProperties(), whereConstraint);
+    return new ClassIndexInfo(dbIndex.GetName(), dbIndex.IsUnique(), dbIndex.GetProperties(), addPropsAreNotNullWhereExp);
     }
 
 //---------------------------------------------------------------------------------
@@ -897,7 +897,7 @@ ClassIndexInfoPtr ClassIndexInfo::Create(ECDbCR ecdb, ECN::ECDbClassMap::DbIndex
 //static
 ClassIndexInfoPtr ClassIndexInfo::Clone(ClassIndexInfoCR rhs, Utf8CP newIndexName)
     {
-    return new ClassIndexInfo(newIndexName, rhs.GetIsUnique(), rhs.GetProperties(), rhs.GetWhere());
+    return new ClassIndexInfo(newIndexName, rhs.GetIsUnique(), rhs.GetProperties(), rhs.IsAddPropsAreNotNullWhereExp());
     }
 
 
@@ -964,7 +964,7 @@ BentleyStatus ClassIndexInfo::CreateFromIdSpecificationCAs(bvector<ClassIndexInf
 
         bvector<Utf8String> indexPropNameVector;
         indexPropNameVector.push_back(idPropName);
-        ClassIndexInfoPtr indexInfo = new ClassIndexInfo(indexName.c_str(), false, indexPropNameVector, WhereConstraint::None);
+        ClassIndexInfoPtr indexInfo = new ClassIndexInfo(indexName.c_str(), false, indexPropNameVector, false);
         indexInfos.push_back(indexInfo);
         }
 
