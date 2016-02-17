@@ -99,9 +99,14 @@ void DgnQueryView::QueueQuery(DgnViewportR viewport, UpdatePlan::Query const& pl
     query->SetSizeFilter(viewport, GetSceneLODSize());
 
     if (m_noQuery)
+        {
         m_results = query->GetResults(); // we're only showing a fixed set of elements. Don't perform a query, just get the results (created in ctor of RangeQuery)
-    else
-        m_dgndb.GetQueryQueue().Add(*query);
+        return;
+        }
+
+    m_dgndb.GetQueryQueue().Add(*query);
+    if (plan.WantWait())
+        m_dgndb.GetQueryQueue().WaitFor(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -529,6 +534,24 @@ void DgnQueryQueue::Add(Task& task)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Note: Must be called on client thread with query queue mutex held!
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnQueryQueue::HasActiveOrPending(DgnQueryViewCR view)
+    {
+    if (m_active.IsValid() && m_active->IsForView(view))
+        return true;
+    
+    for (auto const& pending : m_pending)
+        {
+        if (pending->IsForView(view))
+            return true;
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryQueue::WaitFor(DgnQueryViewCR view)
@@ -536,7 +559,7 @@ void DgnQueryQueue::WaitFor(DgnQueryViewCR view)
     DgnDb::VerifyClientThread();
 
     BeMutexHolder holder(m_cv.GetMutex());
-    while (m_active.IsValid() && m_active->IsForView(view))
+    while (HasActiveOrPending(view))
         m_cv.InfiniteWait(holder);
     }
 
