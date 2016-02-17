@@ -252,50 +252,30 @@ DgnMaterialId DgnMaterial::ImportMaterial(DgnMaterialId srcMaterialId, DgnImport
 
     //  No such material in the destination Db. Ask the source Material to import itself.
     auto importedElem = srcMaterial->Import(nullptr, importer.GetDestinationDb().GetDictionaryModel(), importer);
+
     return importedElem.IsValid()? DgnMaterialId(importedElem->GetElementId().GetValue()): DgnMaterialId();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
+* @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef WIP_MERGE_YII
-DgnMaterialId DgnMaterials::ImportMaterial(DgnImportContext& context, DgnDbR sourceDb, DgnMaterialId source)
+void DgnMaterial::_RemapIds(DgnImportContext& importer)
     {
-    Material sourceMaterial = sourceDb.Materials().Query(source);
-    if (!sourceMaterial.IsValid())
-        {
-        BeAssert(!source.IsValid() && "look up should fail only for an invalid materialid");
-        return DgnMaterialId();
-        }
-
-    // If the destination Db already contains a material by this name, then remap to it. Don't create another copy.
-    DgnMaterialId destMaterialId = context.GetDestinationDb().Materials().QueryMaterialId(sourceMaterial.GetName(), sourceMaterial.GetPalette());
-    if (destMaterialId.IsValid())
-        return destMaterialId;
-
-    //  Must copy and remap the source material.
-    Material destMaterial(sourceMaterial);
-    if (sourceMaterial.GetParentId().IsValid())
-        destMaterial.SetParentId(context.RemapMaterialId(sourceMaterial.GetParentId()));
+    T_Super::_RemapIds(importer);
+    if (!importer.IsBetweenDbs())
+        return;
 
     Json::Value renderingAsset;
-
-    if (SUCCESS == destMaterial.GetRenderingAsset (renderingAsset))
+    if (SUCCESS == GetRenderingAsset(renderingAsset))
         {
-        RenderMaterialPtr       renderMaterial = JsonRenderMaterial::Create (renderingAsset, source);
+        RenderMaterialPtr       renderMaterial = JsonRenderMaterial::Create (renderingAsset, DgnMaterialId());
         JsonRenderMaterial*     jsonRenderMaterial = dynamic_cast <JsonRenderMaterial*> (renderMaterial.get());
 
-        if (nullptr != jsonRenderMaterial &&
-            SUCCESS == jsonRenderMaterial->DoImport (context, sourceDb))
-           destMaterial.SetRenderingAsset (jsonRenderMaterial->GetValue());
+        if (nullptr != jsonRenderMaterial && BSISUCCESS == jsonRenderMaterial->RelocateToDestination(importer))
+           SetRenderingAsset (jsonRenderMaterial->GetValue());
         }
-
-    Insert (destMaterial);
-
-    return context.AddMaterialId(source, destMaterial.GetId());
     }
-#endif
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/

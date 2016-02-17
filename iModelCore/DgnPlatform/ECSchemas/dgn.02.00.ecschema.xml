@@ -317,11 +317,7 @@
             <Class class="Model"/>
         </Source>
         <Target cardinality="(0,N)" roleLabel="has N elements" polymorphic="true">
-            <Class class="Element">
-                <Key>
-                    <Property name="ModelId"/>
-                </Key>
-            </Class>
+            <Class class="Element" />
         </Target>
     </ECRelationshipClass>
 
@@ -354,12 +350,6 @@
                     <DbIndex>
                         <IsUnique>False</IsUnique>
                         <Properties>
-                            <string>ModelId</string>
-                        </Properties>
-                    </DbIndex>
-                    <DbIndex>
-                        <IsUnique>False</IsUnique>
-                        <Properties>
                             <string>Label</string>
                         </Properties>
                         <Where>IndexedColumnsAreNotNull</Where>
@@ -372,14 +362,11 @@
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
         <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
-        <ECProperty propertyName="ModelId" typeName="long">
-            <!-- Foreign key relationship: ModelContainsElements.ModelId -->
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
+        <ECNavigationProperty propertyName="ModelId" relationshipName="ModelContainsElements" direction="Backward"/>
+	<!--
+        WIP: Need to work out issues with ECRelationships that inherit from ElementOwnsChildElements before converting ParentId to an ECNavigationProperty
+        <ECNavigationProperty propertyName="ParentId" relationshipName="ElementOwnsChildElements" direction="Backward"/> 
+	-->
         <ECProperty propertyName="ParentId" typeName="long">
             <!-- Foreign key relationship: ElementOwnsChildElements.ParentId -->
             <ECCustomAttributes>
@@ -445,30 +432,16 @@
     <ECEntityClass typeName="GeometricElement3d" modifier="Abstract">
         <!-- Base class for elements with 3d geometry -->
 	<!-- GeometricElement3d elements are not inherently spatially located, but can be spatially located. -->
-        <BaseClass>GeometricElement</BaseClass> <!-- WIP: should inherit from GeometricElement, waiting for table split control -->
+        <BaseClass>GeometricElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Options>SharedColumnsForSubclasses</Options>
                 </MapStrategy>
-                <Indexes>
-                    <DbIndex>
-                        <IsUnique>False</IsUnique>
-                        <Properties>
-                            <string>CategoryId</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
             </ClassMap>
         </ECCustomAttributes>
-        <ECProperty propertyName="CategoryId" typeName="long">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
+        <ECNavigationProperty propertyName="CategoryId" relationshipName="GeometricElement3dIsInCategory" direction="Forward"/>
         <ECProperty propertyName="GeometryStream" typeName="binary"/>
         <ECProperty propertyName="InSpatialIndex" typeName="boolean"/>
         <ECProperty propertyName="Origin" typeName="point3d" />
@@ -503,30 +476,16 @@
     </ECEntityClass>
     <ECEntityClass typeName="GeometricElement2d" modifier="Abstract">
         <!-- Base class for elements with 2d geometry -->
-        <BaseClass>GeometricElement</BaseClass> <!-- WIP: should inherit from GeometricElement, waiting for table split control -->
+        <BaseClass>GeometricElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Options>SharedColumnsForSubclasses</Options>
                 </MapStrategy>
-                <Indexes>
-                    <DbIndex>
-                        <IsUnique>False</IsUnique>
-                        <Properties>
-                            <string>CategoryId</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
             </ClassMap>
         </ECCustomAttributes>
-        <ECProperty propertyName="CategoryId" typeName="long">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
+        <ECNavigationProperty propertyName="CategoryId" relationshipName="GeometricElement2dIsInCategory" direction="Forward"/>
         <ECProperty propertyName="GeometryStream" typeName="binary"/>
         <ECProperty propertyName="Origin" typeName="point2d" />
         <ECProperty propertyName="Rotation" typeName="double" />
@@ -755,10 +714,7 @@
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
         <BaseClass>GraphicalElement2d</BaseClass>
-        <ECProperty propertyName="ViewId" typeName="long">
-            <!-- Foreign key relationship: ViewIsAttached.ViewId -->
-            <!-- Should have IsNullable=False but shared table... -->
-        </ECProperty>
+        <ECNavigationProperty propertyName="ViewId" relationshipName="ViewIsAttached" direction="Backward"/>
         <ECProperty propertyName="Scale" typeName="double">
             <!-- Should have IsNullable=False but shared table... -->
         </ECProperty>
@@ -772,14 +728,11 @@
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(0,1)" roleLabel="is referenced by" polymorphic="true">
+            <!-- WIP: Source cardinality should be (1,1) -->
             <Class class="ViewDefinition"/>
         </Source>
-        <Target cardinality="(1,1)" roleLabel="references" polymorphic="true">
-            <Class class="ViewAttachment">
-                <Key>
-                    <Property name="ViewId"/>
-                </Key>
-            </Class>
+        <Target cardinality="(0,N)" roleLabel="references" polymorphic="true">
+            <Class class="ViewAttachment" />
         </Target>
     </ECRelationshipClass>
 
@@ -985,11 +938,7 @@
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="true">
-            <Class class="GeometricElement2d">
-                <Key>
-                    <Property name="CategoryId"/>
-                </Key>
-            </Class>
+            <Class class="GeometricElement2d" />
         </Source>
         <Target cardinality="(1,1)" roleLabel="contains elements" polymorphic="false">
             <Class class="Category"/>
@@ -1005,11 +954,7 @@
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="true">
-            <Class class="GeometricElement3d">
-                <Key>
-                    <Property name="CategoryId"/>
-                </Key>
-            </Class>
+            <Class class="GeometricElement3d" />
         </Source>
         <Target cardinality="(1,1)" roleLabel="contains elements" polymorphic="false">
             <Class class="Category"/>
@@ -1134,14 +1079,7 @@
         <BaseClass>DictionaryElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
         <ECProperty propertyName="Source" displayLabel="Source" typeName="int"/>
-        <ECProperty propertyName="BaseModelId" displayLabel="Base Model" typeName="long">
-            <!-- Foreign key relationship: BaseModelForView.ModelId -->
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>True</IsNullable><!-- Want "False" but shared table prohibits that...must enforce in code... -->
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
+        <ECNavigationProperty propertyName="BaseModelId" relationshipName="BaseModelForView" direction="Backward"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="BaseModelForView" strength="embedding">
         <ECCustomAttributes>
@@ -1152,14 +1090,11 @@
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(0,1)" roleLabel="is base model for view" polymorphic="true">
+            <!-- WIP: Source cardinality should be (1,1) -->
             <Class class="Model"/>
         </Source>
         <Target cardinality="(0,N)" roleLabel="is used by N views" polymorphic="true">
-            <Class class="ViewDefinition">
-                <Key>
-                    <Property name="BaseModelId"/>
-                </Key>
-            </Class>
+            <Class class="ViewDefinition"/>
         </Target>
     </ECRelationshipClass>
 
