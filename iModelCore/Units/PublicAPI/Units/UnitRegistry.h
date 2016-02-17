@@ -52,7 +52,7 @@ public:
 	UNITS_EXPORT UnitPtr    LookupUnit(Utf8CP name);
 	UNITS_EXPORT Constant * LookupConstant(Utf8CP name);
 		
-	Unit * LookupUnitBySubTypes (const bvector<Utf8String> &numerator, const bvector<Utf8String> &denominator) const;
+	UnitPtr LookupUnitBySubTypes (const bvector<Utf8String> &numerator, const bvector<Utf8String> &denominator) const;
 
 	// bool Exists methods.
 	UNITS_EXPORT bool HasSystem (Utf8CP systemName);

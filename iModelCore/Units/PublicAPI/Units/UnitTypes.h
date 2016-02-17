@@ -72,30 +72,4 @@ public:
 	Unit& operator-=(const Unit& rhs);
 	};
 
-struct QuantityBase
-	{
-private:
-	double   m_quantity;
-	Unit  *  m_unit;
-
-	QuantityBase() { }
-
-public:
-	// Lookup the unit type using a string (from UnitRegistry) and
-	// return the unit or null.
-	static QuantityBase& Create(double value, Utf8CP unit);
-
-	/// Overloaded Operators
-	};
-
-struct Quantity : QuantityBase
-	{
-	
-	};
-
-struct Constant : QuantityBase
-	{
-
-	};
-
 END_BENTLEY_UNITS_NAMESPACE

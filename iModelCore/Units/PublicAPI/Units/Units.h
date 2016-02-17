@@ -32,4 +32,5 @@ using namespace std;
 USING_NAMESPACE_BENTLEY
 
 #include <Units/UnitTypes.h>
+#include <Units/Quantity.h>
 #include <Units/UnitRegistry.h>

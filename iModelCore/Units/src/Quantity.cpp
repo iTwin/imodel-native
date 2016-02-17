@@ -6,185 +6,154 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include <UnitsPCH.h>
-#include <Parser.h>
-
-USING_NAMESPACE_BENTLEY_UNITS
-
-UnitRegistry * UnitRegistry::s_instance = nullptr;
+#include <Units/UnitsPCH.h>
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitRegistry& UnitRegistry::Instance()
+QuantityBase::QuantityBase (double quantity, Unit& unit) : m_unit(move(unit))
 	{
-	if (nullptr == s_instance)
-		s_instance = new UnitRegistry();
-
-	return *s_instance;
+	m_quantity = quantity;
 	}
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitRegistry::UnitRegistry()
+virtual bool operator== (const QuantityBase& rhs) const
 	{
-	AddDefaultSystems();
-	AddDefaultPhenomena();
-	AddDefaultUnits ();
-	AddDefaultConstants ();
+	return !(*this != rhs);
 	}
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UnitRegistry::InsertUnique (Utf8Vector &vec, Utf8String &str)
+virtual bool operator!= (const QuantityBase& rhs) const
 	{
-	// Don't insert duplicates.
-	auto iter = find (vec.begin(), vec.end(), str);
-	if (iter != vec.end())
-		return;
-
-	vec.push_back(str);
+	return rhs.m_quantity != m_quantity || rhs.m_unit != m_unit;
 	}
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UnitRegistry::AddSystem (Utf8CP systemName)
+virtual QuantityBase operator*(const QuantityBase& rhs) const
 	{
-	auto str = Utf8String(systemName);
-	InsertUnique (m_systems, str);
+	QuantityBase result = *this;
+	result *= rhs;
+	return result;
 	}
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UnitRegistry::AddPhenomena (Utf8CP phenomenaName)
+virtual QuantityBase operator/(const QuantityBase& rhs) const
 	{
-	auto str = Utf8String(phenomenaName);
-	InsertUnique (m_phenomena, str);
+	QuantityBase result = *this;
+	result /= rhs;
+	return result;
 	}
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UnitRegistry::AddDefaultSystems ()
+virtual QuantityBase operator+(const QuantityBase& rhs) const
 	{
-	AddSystem ("SI");
-	AddSystem ("Metric");
-	AddSystem ("CGS");
-	AddSystem ("Imperial");
-	AddSystem ("Physics");
-	AddSystem ("Chemistry");
-	// TODO: Add more.
+	QuantityBase result = *this;
+	result += rhs;
+	return result;
 	}
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UnitRegistry::AddDefaultPhenomena ()
+virtual QuantityBase operator-(const QuantityBase& rhs) const
 	{
-	AddPhenomena ("Length");
-	AddPhenomena ("Mass");
-	AddPhenomena ("Time");
-	AddPhenomena ("Temperature");
-	AddPhenomena ("Current");
-	AddPhenomena ("Matter");
-	AddPhenomena ("Luminosity");
-	AddPhenomena ("Planar");
-	AddPhenomena ("Solid");
-	AddPhenomena ("Finance");
-	AddPhenomena ("Capita");
-	AddPhenomena ("Dimensionless");
+	QuantityBase result = *this;
+	result -= rhs;
+	return result;
 	}
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UnitRegistry::AddDefaultConstants ()
+virtual QuantityBase& operator*=(const QuantityBase& rhs)
 	{
+	m_quantity *= rhs.m_quantity;
+	m_unit *= rhs.m_unit;
+
+	return *this;
+	}
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual QuantityBase& operator/=(const QuantityBase& rhs)
+	{
+	m_quantity /= rhs.m_quantity;
+	m_unit /= rhs.m_unit;
+
+	return *this;
+	}
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual QuantityBase& operator+=(const QuantityBase& rhs)
+	{
+	m_quantity += rhs.m_quantity;
+	m_unit += rhs.m_unit;
+
+	return *this;
+	}
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual QuantityBase& operator-=(const QuantityBase& rhs)
+	{
+	m_quantity -= rhs.m_quantity;
+	m_unit -= rhs.m_unit;
+
+	return *this;
+	}
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Quantity::Quantity(double quantity, Unit& unit) : QuantityBase(quantity, unit) 
+	{ 
 
 	}
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UnitRegistry::AddUnit (Utf8CP systemName, Utf8CP phenomName, Utf8CP unitName, Utf8CP displayName, Utf8CP definition, double factor, double offset)
+QuantityPtr Quantity::Create (double magnitude, Utf8CP unitName)
 	{
-	if (!(HasSystem(systemName) && HasPhenomena(phenomName)))
-		return ERROR;
-
-	auto unit = Unit::Create (systemName, phenomName, unitName, displayName, definition);
+	auto unit = UnitRegistry::Instance().LookupUnit(unitName);
 	if (!unit.IsValid())
-		return ERROR;
-
-	auto nameStr = Utf8String(unitName);
-	m_units.insert (bpair<Utf8String, Unit *>(nameStr, unit.get()));
-
-	// TODO: Add conversions.
-
-	return SUCCESS;
-	}
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UnitRegistry::AddConstant (double magnitude, Utf8CP unitName)
-	{
-	auto unit = LookupUnit (unitName);
-	if (!unit.IsValid())
-		return ERROR;
-
-	// TODO: Insert Constant.	
-	return SUCCESS;
-	}
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-UnitPtr UnitRegistry::LookupUnit (Utf8CP name)
-	{
-	auto nameStr = Utf8String(name);
-	auto val_iter = m_units.find (nameStr);
-	if (val_iter == m_units.end())
 		return nullptr;
 
-	return (*val_iter).second;
+	auto quant = new Quantity(magnitude, *unit);
+	return quant;
 	}
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Constant * UnitRegistry::LookupConstant (Utf8CP name)
+Constant::Constant (Utf8CP constantName, double magnitude, Unit &unit) : QuantityBase(magnitude, unit)
 	{
-	// TODO: Implement
-	return nullptr;
+	m_name = Utf8String(constantName);
 	}
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UnitRegistry::HasSystem (Utf8CP systemName)
+ConstantPtr Constant::Create (Utf8CP constantName, double magnitude, Utf8CP unitName)
 	{
-	auto iter = find (m_systems.begin(), m_systems.end(), Utf8String(systemName));
-	return iter != m_systems.end();
-	}
+	auto unit = UnitRegistry::Instance().LookupUnit(unitName);
+	if (!unit.IsValid())
+		return nullptr;
 
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool UnitRegistry::HasPhenomena (Utf8CP phenomenaName)
-	{
-	auto iter = find (m_phenomena.begin(), m_phenomena.end(), Utf8String(phenomenaName));
-	return iter != m_phenomena.end();
+	auto constant = new Constant(constantName, magnitude, unit);
+	return constant;
 	}
-    
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-UnitPtr UnitRegistry::LookupUnitBySubTypes (const Utf8Vector &numerator, const Utf8Vector &denominator) const
-    {
-	// TODO: Implement this.
-    return nullptr;
-    }
