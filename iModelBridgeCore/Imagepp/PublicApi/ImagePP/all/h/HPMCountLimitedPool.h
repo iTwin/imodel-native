@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPMCountLimitedPool.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -454,7 +454,7 @@ public:
         }
 
 
-protected:
+
 
     /**----------------------------------------------------------------------------
      The Pin method inflates object into memory if required and prevents it from being
@@ -502,7 +502,7 @@ protected:
         {
         m_discarded = discarded;
         }
-
+protected:
     /**----------------------------------------------------------------------------
      Returns pointer to memory used by pool item
     -----------------------------------------------------------------------------*/
@@ -1026,7 +1026,6 @@ public:
         }
 
 
-protected:
 
     /**----------------------------------------------------------------------------
      The Pin method inflates object into memory if required and prevents it from being
@@ -1065,7 +1064,7 @@ protected:
                 }
             }
         }
-
+protected:
     /**----------------------------------------------------------------------------
      Returns pointer to memory used by pool item
     -----------------------------------------------------------------------------*/
