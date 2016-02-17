@@ -18,6 +18,7 @@
 using namespace std;
 
 #include <Bentley/Bentley.h>
+#include <Bentley/RefCounted.h>
 #include <Bentley/bvector.h>
 #include <Bentley/bmap.h>
 

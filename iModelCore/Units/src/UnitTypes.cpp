@@ -11,32 +11,32 @@
 
 USING_NAMESPACE_BENTLEY_UNITS
 
-Unit::Unit(Utf8CP system, Utf8CP phenomena, Utf8CP name, Utf8CP displayLabel, bvector<Utf8String>& numerator, bvector<Utf8String>& denominator)
+Unit::Unit(Utf8CP system, Utf8CP phenomena, Utf8CP name, Utf8CP displayLabel, Utf8Vector& numerator, Utf8Vector& denominator)
 	: m_system (system), m_name(name), m_displayLabel(displayLabel)
 	{
 	m_numerator = move(numerator);
 	m_denominator = move(denominator);
 	}
 
-Unit * Unit::Create (Utf8CP sysName, Utf8CP phenomName, Utf8CP unitName, Utf8CP displayName, Utf8CP definition)
+UnitPtr Unit::Create (Utf8CP sysName, Utf8CP phenomName, Utf8CP unitName, Utf8CP displayName, Utf8CP definition)
 	{
-	auto n = bvector<Utf8String>();
-	auto d = bvector<Utf8String>();
+	auto n = Utf8Vector();
+	auto d = Utf8Vector();
 	Parser::ParseDefinition (definition, n, d);
 	
 	return new Unit (sysName, phenomName, unitName, displayName, n, d);
 	}
 
-bool Unit::IsRegistered()
+bool Unit::IsRegistered() const
 	{
 	auto newUnit = UnitRegistry::Instance().LookupUnitBySubTypes(m_numerator, m_denominator);
 	
 	return newUnit != nullptr;
 	}
 
-void Unit::SimplifySubTypes(bvector<Utf8String> &n, bvector<Utf8String> &d)
+void Unit::SimplifySubTypes(Utf8Vector &n, Utf8Vector &d)
 	{
-	auto temp = bvector<Utf8String>();
+	auto temp = Utf8Vector();
 	
 	// Remove the intersection between the two vectors.
 	set_difference (n.begin(), n.end(), d.begin(), d.end(), temp.begin());

@@ -44,7 +44,7 @@ public:
 	UNITS_EXPORT BentleyStatus AddConstant(double magnitude, Utf8CP unitName);
 
 	// Lookup methods
-	UNITS_EXPORT Unit *     LookupUnit(Utf8CP name);
+	UNITS_EXPORT UnitPtr    LookupUnit(Utf8CP name);
 	UNITS_EXPORT Constant * LookupConstant(Utf8CP name);
 		
 	Unit * LookupUnitBySubTypes (const bvector<Utf8String> &numerator, const bvector<Utf8String> &denominator) const;

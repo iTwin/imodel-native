@@ -89,11 +89,11 @@ BentleyStatus UnitRegistry::AddUnit (Utf8CP systemName, Utf8CP phenomName, Utf8C
 		return ERROR;
 
 	auto unit = Unit::Create (systemName, phenomName, unitName, displayName, definition);
-	if (nullptr == unit)
+	if (!unit.IsValid())
 		return ERROR;
 
 	auto nameStr = Utf8String(unitName);
-	m_units.insert (bpair<Utf8String, Unit *>(nameStr, unit));
+	m_units.insert (bpair<Utf8String, Unit *>(nameStr, unit.get()));
 
 	// TODO: Add conversions.
 
@@ -103,14 +103,14 @@ BentleyStatus UnitRegistry::AddUnit (Utf8CP systemName, Utf8CP phenomName, Utf8C
 BentleyStatus UnitRegistry::AddConstant (double magnitude, Utf8CP unitName)
 	{
 	auto unit = LookupUnit (unitName);
-	if (nullptr == unit)
+	if (!unit.IsValid())
 		return ERROR;
 
 	// TODO: Insert Constant.	
 	return SUCCESS;
 	}
 
-Unit * UnitRegistry::LookupUnit (Utf8CP name)
+UnitPtr UnitRegistry::LookupUnit (Utf8CP name)
 	{
 	auto nameStr = Utf8String(name);
 	auto val_iter = m_units.find (nameStr);
