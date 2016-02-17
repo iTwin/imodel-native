@@ -25,12 +25,12 @@ void UnitToken::AddToVector(Utf8Vector& ator)
 * @bsimethod                                              Colin.Kerr         02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 int Exponent::GetExponent()
-	{
+    {
     int value = 0;
     BE_STRING_UTILITIES_UTF8_SSCANF(m_exponentChars.c_str(), "%d", &value);
     m_exponentChars.clear();
     return value;
-	}
+    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Colin.Kerr         02/16
