@@ -24,11 +24,11 @@
     <None Include="..\Units.mke" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\UnitsPCH.cpp" />
     <ClCompile Include="Parser.cpp" />
     <ClCompile Include="Quantity.cpp" />
     <ClCompile Include="UnitDefinitions.cpp" />
     <ClCompile Include="UnitRegistry.cpp" />
+    <ClCompile Include="UnitsPCH.cpp" />
     <ClCompile Include="UnitTypes.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -37,7 +37,7 @@
     <ClInclude Include="..\PublicAPI\Units\UnitRegistry.h" />
     <ClInclude Include="..\PublicAPI\Units\Units.h" />
     <ClInclude Include="..\PublicAPI\Units\UnitTypes.h" />
-    <ClInclude Include="..\UnitsPCH.h" />
+    <ClInclude Include="UnitsPCH.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{B8AFA8DA-82F0-4A18-AB25-765B9C44140A}</ProjectGuid>
@@ -93,12 +93,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <NMakeOutput>Units.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions);BENTLEY_WIN32;WIN32;_DEBUG;__UNITS_BUILD__</NMakePreprocessorDefinitions>
-    <NMakeIncludeSearchPath>$(ProjectDir)\..\PublicAPI\;$(ProjectDir);$(VCInstallDir)INCLUDE\;$(OutRoot)Winx64\BuildContexts\Units\PublicAPI\;$(OutRoot)Winx64\BuildContexts\Units\VendorAPI\;$(OutRoot)Winx64\BuildContexts\bsibin\PublicAPI\;$(OutRoot)Winx64\BuildContexts\bsibin\VendorAPI\;$(SrcRoot)\Bentley\PublicAPI;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(ProjectDir)\..\PublicAPI\;$(ProjectDir)\..\PrivateAPI\;$(ProjectDir);$(VCInstallDir)INCLUDE\;$(OutRoot)Winx64\BuildContexts\Units\PublicAPI\;$(OutRoot)Winx64\BuildContexts\Units\VendorAPI\;$(OutRoot)Winx64\BuildContexts\bsibin\PublicAPI\;$(OutRoot)Winx64\BuildContexts\bsibin\VendorAPI\;$(SrcRoot)\Bentley\PublicAPI;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeOutput>Units.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions);BENTLEY_WIN32;WIN32;NDEBUG</NMakePreprocessorDefinitions>
-    <NMakeIncludeSearchPath>$(ProjectDir)\..\PublicAPI\;$(ProjectDir);$(VCInstallDir)INCLUDE\;$(OutRoot)Winx64\BuildContexts\Units\PublicAPI\;$(OutRoot)Winx64\BuildContexts\Units\VendorAPI\;$(OutRoot)Winx64\BuildContexts\bsibin\PublicAPI\;$(OutRoot)Winx64\BuildContexts\bsibin\VendorAPI\;$(SrcRoot)\Bentley\PublicAPI;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(ProjectDir)\..\PublicAPI\;$(ProjectDir);$(ProjectDir)\..\PrivateAPI\;$(VCInstallDir)INCLUDE\;$(OutRoot)Winx64\BuildContexts\Units\PublicAPI\;$(OutRoot)Winx64\BuildContexts\Units\VendorAPI\;$(OutRoot)Winx64\BuildContexts\bsibin\PublicAPI\;$(OutRoot)Winx64\BuildContexts\bsibin\VendorAPI\;$(SrcRoot)\Bentley\PublicAPI;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>

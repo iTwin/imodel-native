@@ -1,5 +1,13 @@
 
-#include <UnitsPCH.h>
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: src/Parser.cpp $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+
+#include "UnitsPCH.h"
 #include <Parser.h>
 
 USING_NAMESPACE_BENTLEY_UNITS

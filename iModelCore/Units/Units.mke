@@ -33,7 +33,7 @@ CompileOptionsMki   = $(baseDir)mki/UnitsCompileOpts.mki
 #  $(UsePrecompiledHeaderOptions) will contain the /Yu and /Fp options that we
 #  need to consume the .pch.
 #----------------------------------------------------------------------
-PchCompiland        = $(baseDir)UnitsPch.cpp
+PchCompiland        = $(unitsSrc)src\UnitsPch.cpp
 PchOutputDir        = $(o)
 %if defined (winNT) && $(BUILD_TOOLSET) == "GCC"
     # Compiling using gch causes internal compiler error in GCC using windows ndk toolchain
@@ -52,8 +52,6 @@ CPchOpts            = $(UsePrecompiledHeaderOptions)
 #----------------------------------------------------------------------
 MultiCompileDepends = $(_MakeFileSpec) 
 %include MultiCppCompileRule.mki
-
-UnitsHeaders = $(unitsPublicAPISrc)Units.h
 
 #Units Compilands
 $(o)UnitRegistry$(oext)      :  $(srcDir)UnitRegistry.cpp ${MultiCompileDepends}

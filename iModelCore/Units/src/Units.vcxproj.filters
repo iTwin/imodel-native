@@ -16,7 +16,7 @@
     <ClCompile Include="UnitTypes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\UnitsPCH.cpp">
+    <ClCompile Include="UnitsPCH.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -47,7 +47,7 @@
     <ClInclude Include="..\PrivateAPI\Parser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\UnitsPCH.h">
+    <ClInclude Include="UnitsPCH.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
