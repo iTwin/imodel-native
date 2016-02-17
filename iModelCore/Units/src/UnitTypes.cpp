@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include <UnitsPCH.h>
+#include <Parser.h>
 
 USING_NAMESPACE_BENTLEY_UNITS
 
@@ -21,7 +22,7 @@ Unit * Unit::Create (Utf8CP sysName, Utf8CP phenomName, Utf8CP unitName, Utf8CP 
 	{
 	auto n = bvector<Utf8String>();
 	auto d = bvector<Utf8String>();
-	//Parser::ParseDefinition (definition, n, d);
+	Parser::ParseDefinition (definition, n, d);
 	
 	return new Unit (sysName, phenomName, unitName, displayName, n, d);
 	}
@@ -48,42 +49,93 @@ void Unit::SimplifySubTypes(bvector<Utf8String> &n, bvector<Utf8String> &d)
 	move(temp.begin(), temp.end(), d.begin());
 	}
 
-Unit& Unit::operator* (const Unit& rhs)
+bool Unit::operator== (const Unit& rhs) const
 	{
-	auto n = bvector<Utf8String>(this->m_numerator);
-	auto d = bvector<Utf8String>(this->m_denominator);
+	if (m_numerator.size() != rhs.m_numerator.size())
+		return false;
 
+	if (m_denominator.size() != rhs.m_denominator.size())
+		return false;
+
+	// TODO: Compare the two vectors.
+	return true;
+	}
+
+bool Unit::operator!= (const Unit& rhs) const
+	{
+	return !(*this == rhs);
+	}
+
+Unit Unit::operator* (const Unit& rhs) const
+	{
+	Unit result = *this;
+	result *= rhs;
+	return result;
+	}
+
+Unit Unit::operator/ (const Unit& rhs) const
+	{
+	Unit result = *this;
+	result /= rhs;
+	return result;
+	}
+
+Unit Unit::operator+ (const Unit& rhs) const
+	{
+	Unit result = *this;
+	result += rhs;
+	return result;
+	}
+
+Unit Unit::operator- (const Unit& rhs) const
+	{
+	Unit result = *this;
+	result -= rhs;
+	return result;
+	}
+
+Unit& Unit::operator+= (const Unit& rhs)
+	{
+	// TODO: This might not be right.
+	return *this;
+	}
+
+Unit& Unit::operator-= (const Unit& rhs)
+	{
+	// TODO: This might not be right.
+	return *this;
+	}
+
+Unit& Unit::operator*= (const Unit& rhs)
+	{
 	// Combine numerator and denominators.
 	for_each (rhs.m_numerator.begin(), rhs.m_numerator.end(), 
-							[&](Utf8String s) { n.push_back(s); });
+							[&](Utf8String s) { m_numerator.push_back(s); });
 
 	for_each (rhs.m_denominator.begin(), rhs.m_denominator.end(), 
-							[&](Utf8String s) { d.push_back(s); });
+							[&](Utf8String s) { m_denominator.push_back(s); });
 
-	SimplifySubTypes (n, d);	
+	SimplifySubTypes(m_numerator, m_denominator);
 
-	auto newUnit = UnitRegistry::Instance().LookupUnitBySubTypes(n, d);
+	auto newUnit = UnitRegistry::Instance().LookupUnitBySubTypes(m_numerator, m_denominator);
 	if (newUnit != nullptr)
 		return *newUnit;
 
 	return *this;
 	}
 
-Unit& Unit::operator/ (const Unit& rhs)
+Unit& Unit::operator/= (const Unit& rhs)
 	{
-	auto n = bvector<Utf8String>(this->m_numerator);
-	auto d = bvector<Utf8String>(this->m_denominator);
-
 	// Combine numerator and denominators.
 	for_each (rhs.m_numerator.begin(), rhs.m_numerator.end(), 
-							[&](Utf8String s) { d.push_back(s); });
+							[&](Utf8String s) { m_denominator.push_back(s); });
 
 	for_each (rhs.m_denominator.begin(), rhs.m_denominator.end(), 
-							[&](Utf8String s) { n.push_back(s); });
+							[&](Utf8String s) { m_numerator.push_back(s); });
 
-	SimplifySubTypes(n, d);
+	SimplifySubTypes(m_numerator, m_denominator);
 
-	auto newUnit = UnitRegistry::Instance().LookupUnitBySubTypes(n, d);
+	auto newUnit = UnitRegistry::Instance().LookupUnitBySubTypes(m_numerator, m_denominator);
 	if (newUnit != nullptr)
 		return *newUnit;
 

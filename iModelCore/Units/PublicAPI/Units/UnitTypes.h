@@ -46,9 +46,20 @@ public:
 	Utf8CP GetName() const { return _GetName(); }
 	Utf8CP GetDisplayLabel() const { return _GetDisplayLabel(); }
 
+	bool operator== (const Unit& rhs) const;
+	bool operator!= (const Unit& rhs) const;
+
 	// Overload operators.
-	Unit& operator*(const Unit& rhs);
-	Unit& operator/(const Unit& rhs);
+	// TODO: Check that these are the right form.
+	Unit operator*(const Unit& rhs) const;
+	Unit operator/(const Unit& rhs) const;
+	Unit operator+(const Unit& rhs) const;
+	Unit operator-(const Unit& rhs) const;
+
+	Unit& operator*=(const Unit& rhs);
+	Unit& operator/=(const Unit& rhs);
+	Unit& operator+=(const Unit& rhs);
+	Unit& operator-=(const Unit& rhs);
 	};
 
 struct QuantityBase
