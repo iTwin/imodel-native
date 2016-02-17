@@ -624,6 +624,9 @@ BentleyStatus ECDbMap::EvaluateColumnNotNullConstraints() const
     //and a warning is logged.
     for (bpair<ECClassId, ClassMapPtr> const& kvPair : m_classMapDictionary)
         {
+        if (kvPair.second == nullptr)
+            continue;
+
         ClassMapCR classMap = *kvPair.second;
         if (classMap.GetClassMapType() != IClassMap::Type::RelationshipEndTable)
             continue;
