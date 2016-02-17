@@ -30,4 +30,4 @@ ECDbMappingTestFixture.RelationshipWithAbstractConstraintClassAndNoSubclasses
 ECDbRelationshipsIntegrityTests.BackwardEmbeddingRelationshipsTest
 
 #TFS 349690
-ECDbSchemaManagerTests.PersistEnumeration
+ECDbSchemaManagerTests.EnforceECEnumeration

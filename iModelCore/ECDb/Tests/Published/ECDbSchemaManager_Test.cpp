@@ -1039,9 +1039,9 @@ TEST_F(ECDbSchemaManagerTests, IGeometryTypes)
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                 01/16
+// @bsimethod                                     Muhammad.Hassane                 02/16
 //+---------------+---------------+---------------+---------------+---------------+-----
-TEST_F (ECDbSchemaManagerTests, PersistEnumeration)
+TEST_F (ECDbSchemaManagerTests, EnforceECEnumeration)
     {
     ECDbR ecdb = SetupECDb ("propertywithEnumerationType.ecdb",
         SchemaItem ("<?xml version='1.0' encoding='utf-8' ?>"
