@@ -311,7 +311,20 @@ module DgnScriptTests {
         ExerciseMesh(mesh, 2);
         }
 
+    function t_spiral ()
+        {
+        var spiral = Bentley.Dgn.SpiralCurve.CreateSpiralBearingRadiusLengthRadius
+                (10, Bentley.Dgn.Angle.CreateDegrees (0), 0.0, 2.0, 10.0, Bentley.Dgn.Transform.CreateIdentity (), 0.0, 1.0);
+        var df = 1.0 / 8.0;
+        var f = 0.0;
+        for (; f <= 1.0; f += df);
+            {
+            var xyz = spiral.FractionToPoint (f);
+            }
+
+        }
     t_polyfaceMeshA ();  
+    t_spiral ();
 
     logMessage('Test1 Z');
 }
