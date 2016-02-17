@@ -1923,7 +1923,7 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_ReadonlyCases)
                                   "     <BaseClass>Child</BaseClass>"
                                   "    <ECProperty propertyName='GrandchildBProp' typeName='int' />"
                                   "  </ECEntityClass>"
-                                  "  <ECRelationshipClass typeName='ParentHasGrandchildren' strength='embedding'>"
+                                  "  <ECRelationshipClass typeName='ParentHasGrandchildren' strength='referencing'>"
                                   "     <Source cardinality='(0,1)' polymorphic='True'>"
                                   "         <Class class='Parent' />"
                                   "     </Source>"

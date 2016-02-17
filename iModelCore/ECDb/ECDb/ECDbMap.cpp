@@ -699,8 +699,8 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables() const
     m_ecdb.GetStatementCache().Empty();
     StopWatch timer(true);
 
-    if (SUCCESS != EvaluateColumnNotNullConstraints())
-        return ERROR;
+  //  if (SUCCESS != EvaluateColumnNotNullConstraints())
+  //      return ERROR;
     
     int nCreated = 0;
     int nUpdated = 0;
