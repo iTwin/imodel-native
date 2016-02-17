@@ -343,13 +343,6 @@
                     <DbIndex>
                         <IsUnique>False</IsUnique>
                         <Properties>
-                            <string>ParentId</string>
-                        </Properties>
-                        <Where>IndexedColumnsAreNotNull</Where>
-                    </DbIndex>
-                    <DbIndex>
-                        <IsUnique>False</IsUnique>
-                        <Properties>
                             <string>Label</string>
                         </Properties>
                         <Where>IndexedColumnsAreNotNull</Where>
@@ -363,19 +356,7 @@
         </ECCustomAttributes>
         <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
         <ECNavigationProperty propertyName="ModelId" relationshipName="ModelContainsElements" direction="Backward"/>
-	<!--
-        WIP: Need to work out issues with ECRelationships that inherit from ElementOwnsChildElements before converting ParentId to an ECNavigationProperty
         <ECNavigationProperty propertyName="ParentId" relationshipName="ElementOwnsChildElements" direction="Backward"/> 
-	-->
-        <ECProperty propertyName="ParentId" typeName="long">
-            <!-- Foreign key relationship: ElementOwnsChildElements.ParentId -->
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <!-- Null means a "root level" element -->
-                    <IsNullable>True</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
         <ECProperty propertyName="Label" typeName="string">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
@@ -727,8 +708,7 @@
                 <OnUpdateAction>Restrict</OnUpdateAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
-        <Source cardinality="(0,1)" roleLabel="is referenced by" polymorphic="true">
-            <!-- WIP: Source cardinality should be (1,1) -->
+        <Source cardinality="(1,1)" roleLabel="is referenced by" polymorphic="true">
             <Class class="ViewDefinition"/>
         </Source>
         <Target cardinality="(0,N)" roleLabel="references" polymorphic="true">
@@ -741,11 +721,7 @@
             <Class class="Element"/>
         </Source>
         <Target cardinality="(0,N)" roleLabel="is on N elements" polymorphic="true">
-            <Class class="Element">
-                <Key>
-                    <Property name="ParentId"/>
-                </Key>
-            </Class>
+            <Class class="Element"/>
         </Target>
     </ECRelationshipClass>
 
@@ -1089,8 +1065,7 @@
                 <OnUpdateAction>Restrict</OnUpdateAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
-        <Source cardinality="(0,1)" roleLabel="is base model for view" polymorphic="true">
-            <!-- WIP: Source cardinality should be (1,1) -->
+        <Source cardinality="(1,1)" roleLabel="is base model for view" polymorphic="true">
             <Class class="Model"/>
         </Source>
         <Target cardinality="(0,N)" roleLabel="is used by N views" polymorphic="true">

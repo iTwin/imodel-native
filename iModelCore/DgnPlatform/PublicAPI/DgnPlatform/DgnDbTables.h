@@ -81,6 +81,7 @@
 #define DGN_RELNAME_ElementUsesGeometryParts    "ElementUsesGeometryParts"
 #define DGN_RELNAME_ElementGroupsMembers        "ElementGroupsMembers"
 #define DGN_RELNAME_ElementOwnsChildElements    "ElementOwnsChildElements"
+#define DGN_RELNAME_ModelContainsElements       "ModelContainsElements"
 #define DGN_RELNAME_SolutionOfComponent         "SolutionOfComponent"
 #define DGN_RELNAME_InstantiationOfTemplate     "InstantiationOfTemplate"
 #define DGN_RELNAME_ElementHasLinks             "ElementHasLinks"
