@@ -29,5 +29,5 @@ ECDbMappingTestFixture.RelationshipWithAbstractConstraintClassAndNoSubclasses
 #TFS 369937
 ECDbRelationshipsIntegrityTests.BackwardEmbeddingRelationshipsTest
 
-#TFS 372631
+#TFS 349690
 ECDbSchemaManagerTests.PersistEnumeration
