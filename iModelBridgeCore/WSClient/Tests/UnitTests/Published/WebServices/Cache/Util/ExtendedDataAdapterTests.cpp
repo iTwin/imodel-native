@@ -49,7 +49,7 @@ SeedFile ExtendedDataAdapterTests::s_seedECDb("ecdbAdapterTest.ecdb",
             </ECClass>
 
             <ECRelationshipClass typeName="TestEDRelClass" isDomainClass="True" strength="embedding">
-                <Source cardinality="(1,1)" polymorphic="True">
+                <Source cardinality="(0,1)" polymorphic="True">
                     <Class class="TestClass" />
                 </Source>
                 <Target cardinality="(0,1)" polymorphic="True">
