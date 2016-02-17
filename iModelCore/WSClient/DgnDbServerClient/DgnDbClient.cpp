@@ -119,7 +119,7 @@ DgnClientFx::Utils::AsyncTaskPtr<DgnDbRepositoriesResult> DgnDbClient::GetReposi
         {
         return CreateCompletedAsyncTask<DgnDbRepositoriesResult>(DgnDbRepositoriesResult::Error(Error::InvalidServerURL));
         }
-    if (!m_credentials.IsValid())
+    if (!m_credentials.IsValid() && !m_customHandler)
         {
         return CreateCompletedAsyncTask<DgnDbRepositoriesResult>(DgnDbRepositoriesResult::Error(Error::InvalidCredentials));
         }
@@ -209,6 +209,39 @@ AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::InitializeRepository(IWSReposit
             });
     }
 
+DgnDbPtr CleanDb(DgnDbR db, Utf8StringCR repositoryId)
+    {
+    //NEEDSWORK: Make a clean copy for a server. This code should move to the server once we have long running services.
+    BeFileName tempFile;
+    BeFileName::BeGetTempPath(tempFile);
+    tempFile.AppendToPath(db.GetFileName().GetFileNameAndExtension().c_str());
+    BeFileName::BeCopyFile(db.GetFileName(), tempFile);
+
+    BeSQLite::DbResult status;
+    Dgn::DgnDbPtr tempdb = Dgn::DgnDb::OpenDgnDb(&status, tempFile, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
+    if (BeSQLite::DbResult::BE_SQLITE_OK != status)
+        return nullptr;
+
+
+    //Do cleanup
+    TxnManager::TxnId cancelToId, tempId = tempdb->Txns().GetCurrentTxnId();            //Clear transaction table
+    while (tempId.IsValid())
+        {
+        cancelToId = tempId;
+        tempId = tempdb->Txns().QueryPreviousTxnId(tempId);
+        }
+    if (cancelToId.IsValid())
+        tempdb->Txns().CancelTo(cancelToId, TxnManager::AllowCrossSessions::Yes);
+    tempdb->SaveBriefcaseLocalValue("ParentRevisionId", "");                            //Clear parent revision id
+    tempdb->ChangeBriefcaseId(BeBriefcaseId(0));                                        //Set BriefcaseId to 0 (master)
+    tempdb->SaveBriefcaseLocalValue(DgnDbServer::Db::Local::RepositoryURL, "");         //Set URL
+    tempdb->SaveBriefcaseLocalValue(DgnDbServer::Db::Local::RepositoryId, repositoryId);//Set repository ID
+                                                                                        //Save changes
+    tempdb->SaveChanges();
+    //NEEDSWORK: end of file cleanup
+    return tempdb;
+    }
+
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
@@ -224,7 +257,7 @@ AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::CreateNewRepository(Dgn::DgnDbP
         {
         return CreateCompletedAsyncTask<DgnDbRepositoryResult>(DgnDbRepositoryResult::Error(Error::InvalidServerURL));
         }
-    if (!m_credentials.IsValid())
+    if (!m_credentials.IsValid() && !m_customHandler)
         {
         return CreateCompletedAsyncTask<DgnDbRepositoryResult>(DgnDbRepositoryResult::Error(Error::InvalidCredentials));
         }
@@ -233,33 +266,13 @@ AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::CreateNewRepository(Dgn::DgnDbP
         return CreateCompletedAsyncTask<DgnDbRepositoryResult>(DgnDbRepositoryResult::Error(Error::InvalidRepository));
         }
 
-    //NEEDSWORK: Make a clean copy for a server. This code should move to the server once we have long running services.
-    BeFileName tempFile;
-    BeFileName::BeGetTempPath (tempFile);
-    tempFile.AppendToPath (db->GetFileName ().GetFileNameAndExtension ().c_str ());
-    BeFileName::BeCopyFile (db->GetFileName (), tempFile);
-
-    BeSQLite::DbResult status;
-    Dgn::DgnDbPtr tempdb = Dgn::DgnDb::OpenDgnDb (&status, tempFile, Dgn::DgnDb::OpenParams (Dgn::DgnDb::OpenMode::ReadWrite));
-    if (BeSQLite::DbResult::BE_SQLITE_OK != status)
-        return CreateCompletedAsyncTask<DgnDbRepositoryResult> (DgnDbRepositoryResult::Error (Error::DbNotFound));
-        
-    Utf8String dbFileName = tempdb->GetDbFileName ();
-    BeFileName fileName   = tempdb->GetFileName ();
-    Utf8String dbFileId   = tempdb->GetDbGuid ().ToString ();
-
-    //Do cleanup
-    if (tempdb->Revisions ().StartCreateRevision ().IsValid ())              //Clear transaction table
-        tempdb->Revisions ().FinishCreateRevision ();
-    tempdb->SaveBriefcaseLocalValue ("ParentRevisionId", "");                //Clear parent revision id
-    tempdb->ChangeBriefcaseId (BeBriefcaseId (0));                           //Set BriefcaseId to 0 (master)
-    tempdb->SaveBriefcaseLocalValue (Db::Local::RepositoryURL, "");          //Set URL
-    tempdb->SaveBriefcaseLocalValue (Db::Local::RepositoryId, repositoryId); //Set repository ID
-    //Save changes
-    tempdb->SaveChanges ();
-    tempdb->CloseDb ();
-    //tempFile.BeDeleteFile ();
-    //NEEDSWOR: end of file cleanup
+    DgnDbPtr tempdb = CleanDb(*db, repositoryId);
+    if (!tempdb.IsValid())
+        CreateCompletedAsyncTask<DgnDbRepositoryResult>(DgnDbRepositoryResult::Error(Error::DbNotFound));
+    Utf8String dbFileName = tempdb->GetDbFileName();
+    BeFileName fileName = tempdb->GetFileName();
+    Utf8String dbFileId = tempdb->GetDbGuid().ToString();
+    tempdb->CloseDb();
 
     std::shared_ptr<DgnDbRepositoryResult> finalResult = std::make_shared<DgnDbRepositoryResult>();
     return GetRepositoriesByPlugin(ServerSchema::Plugin::Admin, cancellationToken)
@@ -372,7 +385,7 @@ AsyncTaskPtr<DgnDbBriefcaseResult> DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, 
         {
         return CreateCompletedAsyncTask<DgnDbBriefcaseResult>(DgnDbBriefcaseResult::Error(Error::DbNotFound));
         }
-    if (!m_credentials.IsValid())
+    if (!m_credentials.IsValid() && !m_customHandler)
         {
         return CreateCompletedAsyncTask<DgnDbBriefcaseResult>(DgnDbBriefcaseResult::Error(Error::InvalidCredentials));
         }
@@ -424,7 +437,7 @@ AsyncTaskPtr<DgnDbFileNameResult> DgnDbClient::AquireBriefcase(Utf8StringCR repo
         {
         return CreateCompletedAsyncTask<DgnDbFileNameResult>(DgnDbFileNameResult::Error(Error::InvalidServerURL));
         }
-    if (!m_credentials.IsValid())
+    if (!m_credentials.IsValid() && !m_customHandler)
         {
         return CreateCompletedAsyncTask<DgnDbFileNameResult>(DgnDbFileNameResult::Error(Error::InvalidCredentials));
         }

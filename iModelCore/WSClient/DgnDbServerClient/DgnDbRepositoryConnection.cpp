@@ -113,7 +113,7 @@ IHttpHandlerPtr       customHandler
         {
         return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Error(Error::InvalidRepository));
         }
-    if (!credentials.IsValid())
+    if (!credentials.IsValid() && !customHandler)
         {
         return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Error(Error::InvalidCredentials));
         }
