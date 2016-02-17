@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ChangeTestFixture.h"
 #include <DgnPlatform/DgnChangeSummary.h>
+#include <DgnPlatform/GenericDomain.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -81,8 +82,8 @@ protected:
 
     DgnElementCPtr InsertPhysicalElementByCode(DgnCode const& code)
         {
-        DgnClassId classId = m_testDb->Domains().GetClassId(dgn_ElementHandler::Physical::GetHandler());
-        PhysicalElement elem(PhysicalElement::CreateParams(*m_testDb, m_testModel->GetModelId(), classId, m_testCategoryId, Placement3d(), code, nullptr, DgnElementId()));
+        DgnClassId classId = m_testDb->Domains().GetClassId(generic_ElementHandler::GenericPhysicalObjectHandler::GetHandler());
+        GenericPhysicalObject elem(GenericPhysicalObject::CreateParams(*m_testDb, m_testModel->GetModelId(), classId, m_testCategoryId, Placement3d(), code, nullptr, DgnElementId()));
         return elem.Insert();
         }
 
