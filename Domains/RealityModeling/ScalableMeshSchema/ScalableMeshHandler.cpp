@@ -7,8 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "ScalableMeshSchemaPCH.h"
-#include <ScalableMeshSchema\\ScalableMeshHandler.h>
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
+#include <ScalableMeshSchema\ScalableMeshHandler.h>
+
 USING_NAMESPACE_BENTLEY_SCALABLEMESHSCHEMA
 
 //----------------------------------------------------------------------------------------
@@ -16,7 +17,7 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESHSCHEMA
 //----------------------------------------------------------------------------------------
 AxisAlignedBox3dCR ScalableMeshModel::_GetRange() const
     {
-
+    return m_range;
     }
 
 //----------------------------------------------------------------------------------------
@@ -24,7 +25,7 @@ AxisAlignedBox3dCR ScalableMeshModel::_GetRange() const
 //----------------------------------------------------------------------------------------
 BentleyStatus ScalableMeshModel::_QueryTexturesLod(bvector<ITerrainTexturePtr>& textures, size_t maxSizeBytes) const
     {
-
+    return ERROR;
     }
 
 //----------------------------------------------------------------------------------------
@@ -32,7 +33,7 @@ BentleyStatus ScalableMeshModel::_QueryTexturesLod(bvector<ITerrainTexturePtr>& 
 //----------------------------------------------------------------------------------------
 BentleyStatus ScalableMeshModel::_QueryTexture(ITextureTileId const& tileId, ITerrainTexturePtr& texture) const
     {
-
+    return ERROR;
     }
 
 //----------------------------------------------------------------------------------------
@@ -40,7 +41,7 @@ BentleyStatus ScalableMeshModel::_QueryTexture(ITextureTileId const& tileId, ITe
 //----------------------------------------------------------------------------------------
 BentleyStatus ScalableMeshModel::_ReloadClipMask(BentleyApi::Dgn::DgnElementId& clipMaskElementId, bool isNew)
     {
-
+    return ERROR;
     }
 
 //----------------------------------------------------------------------------------------
@@ -48,7 +49,7 @@ BentleyStatus ScalableMeshModel::_ReloadClipMask(BentleyApi::Dgn::DgnElementId& 
 //----------------------------------------------------------------------------------------
 BentleyStatus ScalableMeshModel::_ReloadAllClipMasks()
     {
-
+    return ERROR;
     }
 
 //----------------------------------------------------------------------------------------
@@ -56,7 +57,7 @@ BentleyStatus ScalableMeshModel::_ReloadAllClipMasks()
 //----------------------------------------------------------------------------------------
 BentleyStatus ScalableMeshModel::_StartClipMaskBulkInsert()
     {
-
+    return ERROR;
     }
 
 //----------------------------------------------------------------------------------------
@@ -64,7 +65,7 @@ BentleyStatus ScalableMeshModel::_StartClipMaskBulkInsert()
 //----------------------------------------------------------------------------------------
 BentleyStatus ScalableMeshModel::_StopClipMaskBulkInsert()
     {
-
+    return ERROR;
     }
 
 //----------------------------------------------------------------------------------------
@@ -72,7 +73,7 @@ BentleyStatus ScalableMeshModel::_StopClipMaskBulkInsert()
 //----------------------------------------------------------------------------------------
 BentleyStatus ScalableMeshModel::_CreateIterator(ITerrainTileIteratorPtr& iterator)
     {
-
+    return ERROR;
     }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
@@ -96,7 +97,7 @@ void ScalableMeshModel::_RegisterTilesChangedEventListener(ITerrainTileChangedHa
 //----------------------------------------------------------------------------------------
 bool ScalableMeshModel::_UnregisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener)
     {
-
+    return false;
     }
 
 //----------------------------------------------------------------------------------------
@@ -110,15 +111,20 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
-ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::CreateParams const& params)
+ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams const& params)
+    : T_Super(params)
     {
-
+    BeFileName tmFileName;
+    tmFileName = params.m_dgndb.GetFileName().GetDirectoryName();
+    tmFileName.AppendToPath(params.m_dgndb.GetFileName().GetFileNameWithoutExtension().c_str());
+    tmFileName.AppendString(L"\\terrain.stm");
+    m_smPtr = IScalableMesh::GetFor(tmFileName.GetWCharCP(), false, true);
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
-~ScalableMeshModel::ScalableMeshModel()
+ScalableMeshModel::~ScalableMeshModel()
     {
 
     }
@@ -128,17 +134,17 @@ ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::CreateParams const& params
 //----------------------------------------------------------------------------------------
 IMeshSpatialModelP ScalableMeshModel::GetTerrainModelP(BentleyApi::Dgn::DgnDbCR dgnDb)
     {
-    ECSqlStatement stmt;
-    if (ECSqlStatus::Success != stmt.Prepare(dgnDb, "SELECT ECInstanceId FROM ScalableMeshModel.ScalableMesh;"))
+    BeSQLite::EC::ECSqlStatement stmt;
+    if (BeSQLite::EC::ECSqlStatus::Success != stmt.Prepare(dgnDb, "SELECT ECInstanceId FROM ScalableMeshModel.ScalableMesh;"))
         return nullptr;
 
-    if (BE_SQLITE_ROW != stmt.Step()) return nullptr;
+    if (BeSQLite::BE_SQLITE_ROW != stmt.Step()) return nullptr;
     DgnModelId smModelID = DgnModelId(stmt.GetValueUInt64(0));
-    DgnModelPtr dgnModel = db.Models().FindModel(smModelID);
+    DgnModelPtr dgnModel = dgnDb.Models().FindModel(smModelID);
 
     if (dgnModel.get() == 0)
         {
-        dgnModel = db.Models().GetModel(smModelID);
+        dgnModel = dgnDb.Models().GetModel(smModelID);
         }
 
     if (dgnModel.get() != 0)
@@ -149,3 +155,5 @@ IMeshSpatialModelP ScalableMeshModel::GetTerrainModelP(BentleyApi::Dgn::DgnDbCR 
         }
     return nullptr;
     }
+
+HANDLER_DEFINE_MEMBERS(ScalableMeshModelHandler)

@@ -54,6 +54,26 @@
   <ItemGroup>
     <Text Include="readme.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="IMeshSpatialModel.cpp" />
+    <ClCompile Include="ScalableMeshHandler.cpp" />
+    <ClCompile Include="ScalableMeshSchemaPCH.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\PublicApi\ScalableMeshSchema\ExportMacros.h" />
+    <ClInclude Include="..\PublicApi\ScalableMeshSchema\IMeshSpatialModel.h" />
+    <ClInclude Include="..\PublicApi\ScalableMeshSchema\ScalableMeshHandler.h" />
+    <ClInclude Include="..\PublicApi\ScalableMeshSchema\ScalableMeshSchemaCommon.h" />
+    <ClInclude Include="ScalableMeshSchemaPCH.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ScalableMeshSchema.mke" />
+    <None Include="ScalableMeshSchema.mki" />
+    <None Include="ScalableMeshSchema.prewire.mke" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="ScalableMesh.01.00.ecschema.xml" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

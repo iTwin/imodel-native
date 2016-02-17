@@ -24,14 +24,15 @@ struct ScalableMeshModel : IMeshSpatialModel
     {
 
     DGNMODEL_DECLARE_MEMBERS("ScalableMeshModel", IMeshSpatialModel)
-    private
+        private:
 
         IScalableMeshPtr m_smPtr;
+        BentleyApi::Dgn::AxisAlignedBox3d m_range;
     protected:
  
 
         virtual bool _IsMultiResolution() const { return true; };
-        virtual AxisAlignedBox3dCR _GetRange() const override;
+        virtual BentleyApi::Dgn::AxisAlignedBox3dCR _GetRange() const override;
         virtual BentleyStatus _QueryTexturesLod(bvector<ITerrainTexturePtr>& textures, size_t maxSizeBytes) const override;
         virtual BentleyStatus _QueryTexture(ITextureTileId const& tileId, ITerrainTexturePtr& texture) const override;
 
@@ -48,7 +49,7 @@ struct ScalableMeshModel : IMeshSpatialModel
     public:
 
         //! Create a new TerrainPhysicalModel object, in preparation for loading it from the DgnDb.
-        ScalableMeshModel(BentleyApi::Dgn::CreateParams const& params);
+        ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams const& params);
 
         virtual ~ScalableMeshModel();
 
