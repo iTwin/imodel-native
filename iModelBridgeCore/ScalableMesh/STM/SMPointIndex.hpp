@@ -7083,7 +7083,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::DumpOc
     char   TempBuffer[3000];
     int    NbChars;
     size_t NbWrittenChars;        
-    uint32_t nodeId;
+    __int64 nodeId;
 
     if (GetBlockID().IsValid())
         {
@@ -7094,7 +7094,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::DumpOc
         nodeId = IDTMFile::GetNullNodeID();
         }   
 
-    NbChars = sprintf(TempBuffer, "<ChildNode NodeId=\"%i\" TotalPoints=\"%i\" SplitDepth=\"%i\" ArePoints3d=\"%i\">", nodeId, GetCount(), GetSplitDepth(), m_nodeHeader.m_arePoints3d ? 1 : 0);
+    NbChars = sprintf(TempBuffer, "<ChildNode NodeId=\"%lli\" TotalPoints=\"%lli\" SplitDepth=\"%zi\" ArePoints3d=\"%i\">", nodeId, GetCount(), GetSplitDepth(), m_nodeHeader.m_arePoints3d ? 1 : 0);
 
     NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pi_pOutputXmlFileStream);
 
@@ -7139,21 +7139,21 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::DumpOc
     HASSERT(NbWrittenChars == NbChars);
 
     //Cumulative Number Of Points
-    NbChars = sprintf(TempBuffer, "<CumulNbOfPoints>%u</CumulNbOfPoints>\n", GetCount());
+    NbChars = sprintf(TempBuffer, "<CumulNbOfPoints>%llu</CumulNbOfPoints>\n", GetCount());
 
     NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pi_pOutputXmlFileStream);
 
     HASSERT(NbWrittenChars == NbChars);
 
     //Level
-    NbChars = sprintf(TempBuffer, "<Level>%i</Level>\n", m_nodeHeader.m_level);
+    NbChars = sprintf(TempBuffer, "<Level>%zi</Level>\n", m_nodeHeader.m_level);
 
     NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pi_pOutputXmlFileStream);
 
     HASSERT(NbWrittenChars == NbChars);
 
     // SplitTreshold
-    NbChars = sprintf(TempBuffer, "<SplitTreshold>%i</SplitTreshold>", m_nodeHeader.m_SplitTreshold);
+    NbChars = sprintf(TempBuffer, "<SplitTreshold>%zi</SplitTreshold>", m_nodeHeader.m_SplitTreshold);
 
     NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pi_pOutputXmlFileStream);
 
@@ -7181,7 +7181,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::DumpOc
         {              
         for (size_t neighborInd = 0; neighborInd < m_nodeHeader.m_apNeighborNodeID[neighborPosInd].size(); neighborInd++)
             {
-            NbChars = sprintf(TempBuffer, "P %i I %i Id %i ", neighborPosInd, neighborInd, m_nodeHeader.m_apNeighborNodeID[neighborPosInd][neighborInd].m_integerID);
+            NbChars = sprintf(TempBuffer, "P %zi I %zi Id %lli ", neighborPosInd, neighborInd, m_nodeHeader.m_apNeighborNodeID[neighborPosInd][neighborInd].m_integerID);
         
             NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pi_pOutputXmlFileStream);
 
@@ -7196,7 +7196,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::DumpOc
     HASSERT(NbWrittenChars == NbChars);
 
     //GraphID
-    NbChars = sprintf(TempBuffer, "<GraphID>%u</GraphID>\n", m_nodeHeader.m_graphID.m_integerID);
+    NbChars = sprintf(TempBuffer, "<GraphID>%llu</GraphID>\n", m_nodeHeader.m_graphID.m_integerID);
 
     NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pi_pOutputXmlFileStream);
 
