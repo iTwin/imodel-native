@@ -18,9 +18,9 @@
 
 //static bool s_useStreamingStore = true;
 static bool s_save_grouped_store = false;
-static bool s_stream_from_disk = true;
+static bool s_stream_from_disk = false;
 static bool s_stream_from_file_server = false;
-static bool s_stream_from_grouped_store = false;
+static bool s_stream_from_grouped_store = true;
 static uint32_t s_max_number_nodes_in_group = 100;
 static size_t s_max_group_size = 256 << 10; // 256 KB
 static size_t s_max_group_depth = 5;
