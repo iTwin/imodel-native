@@ -8,7 +8,6 @@
 
 #include "ECObjectsPch.h"
 #include "SchemaXml.h"
-#include <list>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -41,6 +40,10 @@ struct SchemaXmlReaderImpl
         virtual SchemaReadStatus ReadClassStubsFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, ClassDeserializationVector& classes);
         virtual SchemaReadStatus ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector&  classes) = 0;
         SchemaReadStatus ReadEnumerationsFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode);
+        
+        ECSchemaElementsOrderP GetSchemaElementOrder(BeXmlNodeR schemaNode);
+        virtual bool IsECClassElementNode(BeXmlNodeR schemaNode);
+        virtual bool IsECEnumerationElementNode(BeXmlNodeR schemaNode);
     };
 
 //---------------------------------------------------------------------------------------
@@ -72,25 +75,9 @@ struct SchemaXmlReader3 : SchemaXmlReaderImpl
     public:
         SchemaXmlReader3(ECSchemaReadContextR context, BeXmlDomR xmlDom);
         SchemaReadStatus ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector&  classes) override;
+        
+        virtual bool IsECClassElementNode(BeXmlNodeR schemaNode) override;
     };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                01/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool ClassNameComparer(ECClassP class1, ECClassP class2)
-    {
-    // We should never have a NULL ECClass here.
-    // However we will pretend a NULL ECClass is always less than a non-NULL ECClass
-    BeAssert(NULL != class1 && NULL != class2);
-    if (NULL == class1)
-        return NULL != class2;      // class 1 < class2 if class2 non-null, equal otherwise
-    else if (NULL == class2)
-        return false;               // class1 > class2
-
-    int comparison = class1->GetName().CompareTo(class2->GetName());
-    return comparison < 0;
-    }
-
 
 // If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.
 // Test programs generally want to get error status back and not assert, so they call ECSchema::AssertOnXmlError (false);
@@ -340,6 +327,23 @@ ECRelationshipClassP SchemaXmlReaderImpl::CreateRelationshipClass(ECSchemaPtr& s
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                  
+//---------------+---------------+---------------+---------------+---------------+-------
+bool SchemaXmlReaderImpl::IsECEnumerationElementNode(BeXmlNodeR elementNode)
+    {
+    return 0 == strcmp(EC_ENUMERATION_ELEMENT, elementNode.GetName());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  
+//---------------+---------------+---------------+---------------+---------------+-------
+bool SchemaXmlReaderImpl::IsECClassElementNode(BeXmlNodeR elementNode)
+    {
+    return 0 == strcmp(EC_CLASS_ELEMENT, elementNode.GetName()) || 
+           0 == strcmp(EC_RELATIONSHIP_CLASS_ELEMENT, elementNode.GetName());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2015
 //---------------+---------------+---------------+---------------+---------------+-------
 SchemaXmlReader2::SchemaXmlReader2(ECSchemaReadContextR context, ECSchemaPtr schemaOut, BeXmlDomR xmlDom) : SchemaXmlReaderImpl(context, xmlDom)
@@ -518,6 +522,17 @@ SchemaReadStatus SchemaXmlReader2::ReadClassContentsFromXml(ECSchemaPtr& schemaO
 //---------------+---------------+---------------+---------------+---------------+-------
 SchemaXmlReader3::SchemaXmlReader3(ECSchemaReadContextR context, BeXmlDomR xmlDom) : SchemaXmlReaderImpl(context, xmlDom)
 { }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           
+//---------------+---------------+---------------+---------------+---------------+-------
+bool SchemaXmlReader3::IsECClassElementNode(BeXmlNodeR elementNode)
+    {
+    Utf8CP nodeName = elementNode.GetName();
+    return SchemaXmlReaderImpl::IsECClassElementNode(elementNode) ||
+           0 == strcmp(EC_STRUCTCLASS_ELEMENT, nodeName) ||
+           0 == strcmp(EC_CUSTOMATTRIBUTECLASS_ELEMENT, nodeName) ||
+           0 == strcmp(EC_ENTITYCLASS_ELEMENT, nodeName);
+    }
 
 //---------------------------------------------------------------------------------------
 // Create ECClass Stubs (no attributes or properties)
@@ -576,6 +591,33 @@ SchemaReadStatus SchemaXmlReader3::ReadClassContentsFromXml(ECSchemaPtr& schemaO
     return _ReadClassContentsFromXml(schemaOut, classes, 3);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   
+//---------------+---------------+---------------+---------------+---------------+-------
+ECSchemaElementsOrderP SchemaXmlReaderImpl::GetSchemaElementOrder(BeXmlNodeR schemaNode)
+    {
+    ECSchemaElementsOrderP elementOrder = new ECSchemaElementsOrder();
+    for (BeXmlNodeP candidateNode = schemaNode.GetFirstChild(); nullptr != candidateNode; candidateNode = candidateNode->GetNextSibling())
+        {
+        Utf8String typeName;
+        if (BEXML_Success != candidateNode->GetAttributeStringValue(typeName, TYPE_NAME_ATTRIBUTE))
+            {
+            // if it doesn't have a typename, it can't be an ECClass or an Enumeration, so
+            // loop can continue.
+            continue;
+            }
+
+        if (IsECClassElementNode(*candidateNode))
+            {
+            elementOrder->AddElement(typeName.c_str(), ECSchemaElementType::ECClass);
+            }
+        else if(IsECEnumerationElementNode(*candidateNode))
+            {
+            elementOrder->AddElement(typeName.c_str(), ECSchemaElementType::ECEnumeration);
+            }
+        }
+    return elementOrder;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Robert.Schili            11/2015
@@ -587,8 +629,7 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadEnumerationsFromXml(ECSchemaPtr& schem
     // Create ECClass Stubs (no properties)
     for (BeXmlNodeP candidateNode = schemaNode.GetFirstChild(); nullptr != candidateNode; candidateNode = candidateNode->GetNextSibling())
         {
-        Utf8CP nodeName = candidateNode->GetName();
-        if (0 != strcmp(EC_ENUMERATION_ELEMENT, nodeName))
+        if (!IsECEnumerationElementNode(*candidateNode))
             {
             continue; //node is not an enumeration
             }
@@ -786,6 +827,11 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     readingCustomAttributes.Stop();
     LOG.tracev("Reading custom attributes for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingCustomAttributes.GetElapsedSeconds());
 
+    // If switch is set in reading context, the class order of the schema xml will be preserved that it can be written out in the same order.
+    if (m_schemaContext.GetPreserveClassOrder())
+        {
+        schemaOut->m_serializationOrder = reader->GetSchemaElementOrder(*schemaNode);
+        }
 
     //Compute the schema checkSum
     overallTimer.Stop();
@@ -946,41 +992,37 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
     WriteCustomAttributeDependencies(m_ecSchema);
     m_ecSchema.WriteCustomAttributes(m_xmlWriter);
 
-    for (ECEnumerationCP pEnum : m_ecSchema.GetEnumerations())
+    // if there is no Element Order specified, create a new default one (enumerations, classes) ordered alphabetically.
+    ECSchemaElementsOrderP serializationOrder = m_ecSchema.m_serializationOrder;
+    if (serializationOrder == nullptr)
         {
-        if (NULL == pEnum)
-            {
-            BeAssert(false);
-            continue;
-            }
-        else
-            WriteEnumeration(*pEnum);
+        ECSchemaElementsOrder::CreateAlphabeticalOrder(serializationOrder, m_ecSchema);
         }
-
-    std::list<ECClassP> sortedClasses;
-    // sort the classes by name so the order in which they are written is predictable.
-    for (ECClassP pClass : m_ecSchema.GetClasses())
+    
+    // Serializes the Class and Enumerations in the given order...
+    for (auto schemaElementEntry : *serializationOrder)
         {
-        if (NULL == pClass)
+        Utf8CP elementName = schemaElementEntry.first.c_str();
+        if (schemaElementEntry.second == ECSchemaElementType::ECClass)
             {
-            BeAssert(false);
-            continue;
+            ECClassCP ecClass = m_ecSchema.GetClassCP(elementName);
+            if (ecClass != nullptr)
+                {
+                WriteClass(*ecClass);
+                }
             }
-        else
-            sortedClasses.push_back(pClass);
-        }
-
-    sortedClasses.sort(ClassNameComparer);
-
-    for (ECClassP pClass : sortedClasses)
-        {
-        WriteClass(*pClass);
+        else if (schemaElementEntry.second == ECSchemaElementType::ECEnumeration)
+            {
+            ECEnumerationCP ecEnumeration = m_ecSchema.GetEnumerationCP(elementName);
+            if (ecEnumeration != nullptr)
+                {
+                WriteEnumeration(*ecEnumeration);
+                }
+            }
         }
 
     m_xmlWriter.WriteElementEnd();
     return SchemaWriteStatus::Success;
-
     }
-
 END_BENTLEY_ECOBJECT_NAMESPACE
 

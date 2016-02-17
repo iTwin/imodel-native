@@ -50,6 +50,7 @@ private:
     IECSchemaRemapperCP                     m_remapper;
     bool                                    m_acceptLegacyImperfectLatestCompatibleMatch;
     bvector<WString>                        m_cultureStrings;
+    bool                                    m_preserveClassOrder = false;
 
     bool                        GetStandardPaths (bvector<WString>& standardPaths);
 
@@ -82,6 +83,11 @@ public:
     IECSchemaRemapperCP GetRemapper() const                         { return m_remapper; }
     void                SetRemapper (IECSchemaRemapperCP remapper)  { m_remapper = remapper; }
     void                ResolveClassName (Utf8StringR serializedClassName, ECSchemaCR schema) const;
+
+
+    bool GetPreserveClassOrder() { return m_preserveClassOrder; }
+    void SetPreserveClassOrder(bool flag) { m_preserveClassOrder = flag; }
+
 //__PUBLISH_SECTION_START__
 public:
     //! Host should call to establish search paths for standard ECSchemas.

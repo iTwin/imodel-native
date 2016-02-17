@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
+#include "BeXml/BeXml.h"
 
 using namespace BentleyApi::ECN;
 
@@ -1540,6 +1541,95 @@ TEST_F(SchemaDeserializationTest, KindOfQuantityTest)
     ASSERT_NE(property, nullptr);
 
     EXPECT_EQ("koq", property->GetKindOfQuantity());
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Stefan.Apfel    02/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, TestPreservingClassOrder)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->SetPreserveClassOrder(true);
+
+    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='TestSchema' version='01.00' nameSpacePrefix='ab' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEntityClass typeName=\"GHI\" description=\"Project ECClass\" displayLabel=\"Class GHI\"></ECEntityClass>"
+        "    <ECEntityClass typeName=\"ABC\" description=\"Project ECClass\" displayLabel=\"Class ABC\"></ECEntityClass>"
+        "    <ECEnumeration typeName=\"DEF\" displayLabel=\"Enumeration DEF\" backingTypeName=\"int\" />"
+        "</ECSchema>";
+    ECSchemaPtr schema;
+    SchemaReadStatus schemaReadingStatus = ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext);
+    EXPECT_EQ(SchemaReadStatus::Success, schemaReadingStatus);
+
+    Utf8String ecSchemaXmlString;
+    SchemaWriteStatus schemaWritingStatus = schema->WriteToXmlString(ecSchemaXmlString,3,0);
+    EXPECT_EQ(SchemaWriteStatus::Success, schemaWritingStatus);
+
+    size_t stringByteCount = ecSchemaXmlString.length() * sizeof(Utf8Char);
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, ecSchemaXmlString.c_str(), stringByteCount);
+    EXPECT_EQ(BEXML_Success, xmlStatus);
+
+    BeXmlNodeP root = xmlDom.get()->GetRootElement();
+    
+    Utf8String nodeNameGHI;
+    BeXmlNodeP classGHINode = root->GetFirstChild();
+    EXPECT_EQ(BeXmlStatus::BEXML_Success, classGHINode->GetAttributeStringValue(nodeNameGHI, "typeName"));
+    EXPECT_EQ(Utf8String("GHI"), nodeNameGHI);
+
+    Utf8String nodeNameABC;
+    BeXmlNodeP classABCNode = classGHINode->GetNextSibling();
+    EXPECT_EQ(BeXmlStatus::BEXML_Success, classABCNode->GetAttributeStringValue(nodeNameABC, "typeName"));
+    EXPECT_EQ(Utf8String("ABC"), nodeNameABC);
+
+    Utf8String nodeNameDEF;
+    BeXmlNodeP classDEFNode = classABCNode->GetNextSibling();
+    EXPECT_EQ(BeXmlStatus::BEXML_Success, classDEFNode->GetAttributeStringValue(nodeNameDEF, "typeName"));
+    EXPECT_EQ(Utf8String("DEF"), nodeNameDEF);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Stefan.Apfel    02/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, TestDefaultClassOrder)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='TestSchema' version='01.00' nameSpacePrefix='ab' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEntityClass typeName=\"GHI\" description=\"Project ECClass\" displayLabel=\"Class GHI\"></ECEntityClass>"
+        "    <ECEntityClass typeName=\"ABC\" description=\"Project ECClass\" displayLabel=\"Class ABC\"></ECEntityClass>"
+        "    <ECEnumeration typeName=\"DEF\" displayLabel=\"Enumeration DEF\" backingTypeName=\"int\" />"
+        "</ECSchema>";
+    ECSchemaPtr schema;
+    EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext));
+
+    WString ecSchemaXmlString;
+    EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(ecSchemaXmlString,3,0));
+
+    size_t stringByteCount = ecSchemaXmlString.length() * sizeof(Utf8Char);
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, ecSchemaXmlString.c_str(), stringByteCount);
+    EXPECT_EQ(BEXML_Success, xmlStatus);
+
+    BeXmlNodeP root = xmlDom.get()->GetRootElement();
+
+    // Enumerations are serializer first...
+    Utf8String nodeNameDEF; 
+    BeXmlNodeP classDEFNode = root->GetFirstChild();
+    EXPECT_EQ(BeXmlStatus::BEXML_Success, classDEFNode->GetAttributeStringValue(nodeNameDEF, "typeName"));
+    EXPECT_EQ(Utf8String("DEF"), nodeNameDEF);
+
+    // then ECClasses
+    Utf8String nodeNameABC;
+    BeXmlNodeP classABCNode = classDEFNode->GetNextSibling();
+    EXPECT_EQ(BeXmlStatus::BEXML_Success, classABCNode->GetAttributeStringValue(nodeNameABC, "typeName"));
+    EXPECT_EQ(Utf8String("ABC"), nodeNameABC);
+
+    Utf8String nodeNameGHI;
+    BeXmlNodeP classGHINode = classABCNode->GetNextSibling();
+    EXPECT_EQ(BeXmlStatus::BEXML_Success, classGHINode->GetAttributeStringValue(nodeNameGHI, "typeName"));
+    EXPECT_EQ(Utf8String("GHI"), nodeNameGHI);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3316,5 +3406,4 @@ TEST_F (SchemaImmutableTest, SetImmutable)
     EXPECT_EQ (schema->SetVersionMajor (13), ECObjectsStatus::SchemaIsImmutable);
     EXPECT_EQ (schema->SetVersionMinor (13), ECObjectsStatus::SchemaIsImmutable);
     }
-
 END_BENTLEY_ECN_TEST_NAMESPACE

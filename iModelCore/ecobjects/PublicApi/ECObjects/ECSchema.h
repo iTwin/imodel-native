@@ -2100,7 +2100,7 @@ public:
 typedef RefCountedPtr<ECRelationshipClass>      ECRelationshipClassPtr;
 
 //! Defines what sort of match should be used when locating a schema
-enum SchemaMatchType
+enum class SchemaMatchType
     {
     //! Find exact VersionMajor, VersionWrite, VersionMinor match as well as Data
     Identical,
@@ -2717,6 +2717,31 @@ public:
 struct SupplementalSchemaInfo;
 typedef RefCountedPtr<SupplementalSchemaInfo> SupplementalSchemaInfoPtr;
 
+enum class ECSchemaElementType
+    {
+    ECClass,
+    ECEnumeration
+    };
+
+//=======================================================================================
+//! 
+//! @bsiclass
+//=======================================================================================
+struct ECSchemaElementsOrder : RefCountedBase
+    {
+    private:
+        bvector<bpair<Utf8String, ECSchemaElementType>> m_elementVector;
+public:
+    void AddElement(Utf8CP name, ECSchemaElementType type);
+    void RemoveElement(Utf8CP name);
+    static void CreateAlphabeticalOrder(ECSchemaElementsOrder* &order, ECSchemaCR ecSchema);
+
+public:
+    ECOBJECTS_EXPORT bvector<bpair<Utf8String, ECSchemaElementType>>::const_iterator begin() const; //!< Returns the beginning of the iterator
+    ECOBJECTS_EXPORT bvector<bpair<Utf8String, ECSchemaElementType>>::const_iterator end()   const; //!< Returns the end of the iterator
+};
+typedef ECSchemaElementsOrder* ECSchemaElementsOrderP;
+
 //=======================================================================================
 //! The in-memory representation of a schema as defined by ECSchemaXML
 //! @bsiclass
@@ -2754,6 +2779,7 @@ private:
     bool                        m_hasExplicitDisplayLabel;
     SupplementalSchemaInfoPtr   m_supplementalSchemaInfo;
     bool                        m_immutable;
+    ECSchemaElementsOrderP      m_serializationOrder;
 
     bmap<ECSchemaP, Utf8String> m_referencedSchemaNamespaceMap;
     /*__PUBLISH_SECTION_END__*/
