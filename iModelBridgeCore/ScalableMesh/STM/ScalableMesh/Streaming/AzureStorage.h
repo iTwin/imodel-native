@@ -264,17 +264,16 @@ namespace scalable_mesh
                 {
                 point_buffer_type2 buffer;
                 auto block_blob = this->GetBlockBlob(blob_name);
-                if (block_blob.is_valid() && block_blob.exists())
+                assert(block_blob.is_valid() && block_blob.exists());
+                try
                     {
-                    try
-                        {
-                        block_blob.download_to_stream(concurrency::streams::ostream(buffer));
-                        callback(buffer.collection());
-                        }
-                    catch (const std::exception& e)
-                        {
-                        std::wcout << U("Error: ") << e.what() << std::endl;
-                        }
+                    block_blob.download_to_stream(concurrency::streams::ostream(buffer));
+                    callback(buffer.collection());
+                    }
+                catch (const std::exception& e)
+                    {
+                    assert(!"There is an error downloading from Azure");
+                    std::wcout << U("Error: ") << e.what() << std::endl;
                     }
                 }
 
