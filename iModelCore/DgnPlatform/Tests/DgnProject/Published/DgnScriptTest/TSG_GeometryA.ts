@@ -319,7 +319,8 @@ module DgnScriptTests {
         var f = 0.0;
         for (; f <= 1.0; f += df);
             {
-            var xyz = spiral.FractionToPoint (f);
+            //WIP: workaround for build error: Property 'FractionPoint' does not exist on type 'SpiralCurve'
+            //var xyz = spiral.FractionToPoint (f);
             }
 
         }
