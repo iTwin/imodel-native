@@ -65,7 +65,7 @@ void Unit::SimplifySubTypes(Utf8Vector &n, Utf8Vector &d)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Unit::operator== (const Unit& rhs) const
+bool Unit::operator== (const UnitR rhs) const
     {
     if (m_numerator.size() != rhs.m_numerator.size())
         return false;
@@ -80,7 +80,7 @@ bool Unit::operator== (const Unit& rhs) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Unit::operator!= (const Unit& rhs) const
+bool Unit::operator!= (const UnitR rhs) const
     {
     return !(*this == rhs);
     }
@@ -88,7 +88,7 @@ bool Unit::operator!= (const Unit& rhs) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Unit Unit::operator* (const Unit& rhs) const
+Unit Unit::operator* (const UnitR rhs) const
     {
     Unit result = *this;
     result *= rhs;
@@ -98,7 +98,7 @@ Unit Unit::operator* (const Unit& rhs) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Unit Unit::operator/ (const Unit& rhs) const
+Unit Unit::operator/ (const UnitR rhs) const
     {
     Unit result = *this;
     result /= rhs;
@@ -108,7 +108,7 @@ Unit Unit::operator/ (const Unit& rhs) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Unit Unit::operator+ (const Unit& rhs) const
+Unit Unit::operator+ (const UnitR rhs) const
     {
     Unit result = *this;
     result += rhs;
@@ -118,7 +118,7 @@ Unit Unit::operator+ (const Unit& rhs) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Unit Unit::operator- (const Unit& rhs) const
+Unit Unit::operator- (const UnitR rhs) const
     {
     Unit result = *this;
     result -= rhs;
@@ -128,7 +128,7 @@ Unit Unit::operator- (const Unit& rhs) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Unit& Unit::operator+= (const Unit& rhs)
+UnitR Unit::operator+= (const UnitR rhs)
     {
     // TODO: This might not be right.
     return *this;
@@ -137,7 +137,7 @@ Unit& Unit::operator+= (const Unit& rhs)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Unit& Unit::operator-= (const Unit& rhs)
+UnitR Unit::operator-= (const UnitR rhs)
     {
     // TODO: This might not be right.
     return *this;
@@ -146,7 +146,7 @@ Unit& Unit::operator-= (const Unit& rhs)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Unit& Unit::operator*= (const Unit& rhs)
+UnitR Unit::operator*= (const UnitR rhs)
     {
     // Combine numerator and denominators.
     for_each (rhs.m_numerator.begin(), rhs.m_numerator.end(), 
@@ -167,7 +167,7 @@ Unit& Unit::operator*= (const Unit& rhs)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Unit& Unit::operator/= (const Unit& rhs)
+UnitR Unit::operator/= (const UnitR rhs)
     {
     // Combine numerator and denominators.
     for_each (rhs.m_numerator.begin(), rhs.m_numerator.end(), 

@@ -19,7 +19,7 @@ BEGIN_BENTLEY_UNITS_NAMESPACE
 struct QuantityBase : RefCountedBase
     {
 protected:
-    QuantityBase(double quantity, Unit& unit);
+    QuantityBase(double quantity, UnitR unit);
 
     double   m_magnitude;
     Unit     m_unit;
@@ -55,7 +55,7 @@ typedef RefCountedPtr<Quantity> QuantityPtr;
 struct Quantity : QuantityBase
     {
 private:
-    Quantity(double quantity, Unit& unit);
+    Quantity(double quantity, UnitR unit);
 
 public:
     static QuantityPtr Create (double magnitude, Utf8CP unitName);
@@ -76,7 +76,7 @@ struct Constant : QuantityBase
 private:
     Utf8String m_name;
 
-    Constant(Utf8CP constantName, double quantity, Unit& unit);
+    Constant(Utf8CP constantName, double quantity, UnitR unit);
 
 public:
     static ConstantPtr Create (Utf8CP constantName, double magnitude, Utf8CP unitName);

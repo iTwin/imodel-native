@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/UnitRegistry.cpp $
+|     $Source: PublicAPI/Units/Units.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -19,6 +19,8 @@
 #define END_BENTLEY_UNITS_NAMESPACE   } }
 #define USING_NAMESPACE_BENTLEY_UNITS using namespace BENTLEY_NAMESPACE_NAME::Units;
 
+#define UNITS_TYPEDEFS(_name_)  \
+    BEGIN_BENTLEY_UNITS_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_UNITS_NAMESPACE
 
 #include <algorithm>
 

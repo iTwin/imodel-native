@@ -10,6 +10,8 @@
 
 #include <Units/Units.h>
 
+UNITS_TYPEDEFS(Unit);
+
 BEGIN_BENTLEY_UNITS_NAMESPACE
 
 typedef bvector<Utf8String> Utf8Vector;
@@ -56,20 +58,20 @@ public:
     Utf8CP GetDisplayLabel() const { return _GetDisplayLabel(); }
 
     // Binary comparison operators.
-    bool operator== (const Unit& rhs) const;
-    bool operator!= (const Unit& rhs) const;
+    bool operator== (const UnitR rhs) const;
+    bool operator!= (const UnitR rhs) const;
 
     // Arithmetic operators.
-    Unit operator*(const Unit& rhs) const;
-    Unit operator/(const Unit& rhs) const;
-    Unit operator+(const Unit& rhs) const;
-    Unit operator-(const Unit& rhs) const;
+    Unit operator*(const UnitR rhs) const;
+    Unit operator/(const UnitR rhs) const;
+    Unit operator+(const UnitR rhs) const;
+    Unit operator-(const UnitR rhs) const;
 
     // Compound assignment operators.
-    Unit& operator*=(const Unit& rhs);
-    Unit& operator/=(const Unit& rhs);
-    Unit& operator+=(const Unit& rhs);
-    Unit& operator-=(const Unit& rhs);
+    UnitR operator*=(const UnitR rhs);
+    UnitR operator/=(const UnitR rhs);
+    UnitR operator+=(const UnitR rhs);
+    UnitR operator-=(const UnitR rhs);
     };
 
 END_BENTLEY_UNITS_NAMESPACE

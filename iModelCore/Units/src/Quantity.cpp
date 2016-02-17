@@ -13,7 +13,7 @@ USING_NAMESPACE_BENTLEY_UNITS
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-QuantityBase::QuantityBase (double quantity, Unit& unit) : m_unit(move(unit))
+QuantityBase::QuantityBase (double quantity, UnitR unit) : m_unit(move(unit))
     {
     m_quantity = quantity;
     }
@@ -121,7 +121,7 @@ virtual QuantityBase& operator-=(const QuantityBase& rhs)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Quantity::Quantity(double quantity, Unit& unit) : QuantityBase(quantity, unit) 
+Quantity::Quantity(double quantity, UnitR unit) : QuantityBase(quantity, unit) 
     { 
 
     }

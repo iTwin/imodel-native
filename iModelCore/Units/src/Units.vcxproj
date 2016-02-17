@@ -37,6 +37,7 @@
     <ClInclude Include="..\PublicAPI\Units\UnitRegistry.h" />
     <ClInclude Include="..\PublicAPI\Units\Units.h" />
     <ClInclude Include="..\PublicAPI\Units\UnitTypes.h" />
+    <ClInclude Include="UnitsNativeLogging.h" />
     <ClInclude Include="UnitsPCH.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
