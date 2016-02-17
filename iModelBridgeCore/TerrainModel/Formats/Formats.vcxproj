@@ -55,7 +55,7 @@
     <NMakePreprocessorDefinitions>__BENTLEYTMFORMATS_BUILD__;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p Formats -f TerrainModel -r TerrainModel re Formats -x64
 </NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p Formats -f TerrainModel -r TerrainModel re Formats -x64  -d"BMAKE_OPT=$(BMAKE_OPT) -a"
+    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p Formats -f TerrainModel -r TerrainModel re Formats -x64  --bmakeOpt="-a"
 </NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p Formats -f TerrainModel -r TerrainModel re Formats -x64 -c
 </NMakeCleanCommandLine>

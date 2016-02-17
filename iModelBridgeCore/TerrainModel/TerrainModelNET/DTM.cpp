@@ -2,13 +2,13 @@
 |
 |     $Source: TerrainModelNET/DTM.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
-#include < vcclr.h >
-#include ".\dtm.h"
-#include ".\dtmexception.h"
+#include <vcclr.h>
+#include "dtm.h"
+#include "dtmexception.h"
 #if defined(Public)
 
 #undef Public
@@ -3835,6 +3835,18 @@ void DTM::FilterPoints (long numPointsToRemove, double percentageToRemove, long%
     pointsAfter = _pointsAfter;
     }
 
+DTM^ DTM::GetTransformedDTM(BGEO::DTransform3d transform)
+    {
+    ::Transform nativeTransform;
+    pin_ptr<BGEO::DTransform3d> pTransform = &transform;
+
+    nativeTransform = *(::Transform*)pTransform;
+    DTMPtr dtm = nullptr;
+    DTMException::CheckForErrorStatus(Handle->GetTransformDTM(dtm, nativeTransform));
+    if (dtm.IsValid())
+        return gcnew DTM(dynamic_cast<BcDTMP>(dtm.get()));
+    return nullptr;
+    }
 END_BENTLEY_TERRAINMODELNET_NAMESPACE
 
 

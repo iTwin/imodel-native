@@ -6,7 +6,7 @@
 |       $Date: 2012/08/16 16:17:17 $
 |     $Author: Daryl.Holmwood $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*
@@ -1090,7 +1090,7 @@ ErrorStatus ModelTable::getModel(const char* const modelName, ModelObjectId& mod
     return eKeyNotFound;
     }
 
-ErrorStatus ModelTable::addModel(const char* const inModelName, ModelTableRecord*& mr, const char* const modelType)
+ErrorStatus ModelTable::addModel(const char* const inModelName, ModelTableRecord* mr, const char* const modelType)
     {
     char modelName[33];
     int i;
@@ -1143,15 +1143,15 @@ ErrorStatus ModelTable::addModel(const char* const inModelName, ModelTableRecord
                 mt.models[j].stringTablePos = 0;
                 mt.models[j].date = 0;
 
-                ModelTableRecord* mr;
-                mr = new ModelTableRecord;
-                _models[_models.size()] = mr;
-                mr->set(mt.models[j]);
-                mr->setModelTable(this);
-                mr->setModelFile(_modelFile);
-                mr->ModelObject::erase(1);
-                mr->setModelFilePos(ModelFilePos(newRecordNumber, j + 1));
-                mr->close();
+                ModelTableRecord* mr2;
+                mr2 = new ModelTableRecord;
+                _models[_models.size()] = mr2;
+                mr2->set(mt.models[j]);
+                mr2->setModelTable(this);
+                mr2->setModelFile(_modelFile);
+                mr2->ModelObject::erase(1);
+                mr2->setModelFilePos(ModelFilePos(newRecordNumber, j + 1));
+                mr2->close();
                 }
             _modelFile->writeRecord(&mt, newRecordNumber);
             }

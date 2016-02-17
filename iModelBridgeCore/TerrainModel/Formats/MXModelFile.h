@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/MXModelFile.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -1262,7 +1262,7 @@ class DLL ModelTable : public ModelObject
         ErrorStatus getModel(const char* const modelName, ModelTableRecord*& modelTableRecord, ModelObject::OpenStatus mode, bool getDeleted = false);
         ErrorStatus getModel(const char* const modelName, ModelObjectId& modelTableObjectId, bool getDeleted = false);
 
-        ErrorStatus addModel(const char* const modelName, ModelTableRecord*& mr, const char* const modelType = NULL);
+        ErrorStatus addModel(const char* const modelName, ModelTableRecord* mr, const char* const modelType = NULL);
         virtual void setDelayWrite(bool l)
             {
             }
@@ -2579,5 +2579,179 @@ class ModelFileEvents
 void AddModelFileEventHandler(ModelFileEvents* mfeh);
 void RemoveModelFileEventHandler(ModelFileEvents* mfeh);
 #endif
+
+template<class T> class MXModelObjectPtr
+    {
+    private:
+
+        typedef MXModelObjectPtr this_type;
+
+    private:
+        MXModelObjectPtr(MXModelObjectPtr const&)
+            {
+            }
+    public:
+
+        typedef T element_type;
+
+        MXModelObjectPtr() : p_(0)
+            {
+            }
+
+        MXModelObjectPtr(T * p) : p_(p)
+            {
+            }
+
+        MXModelObjectPtr(MXModelObjectPtr&& rhs) : p_(std::move(rhs.p_))
+            {
+            rhs.p_ = 0;
+            }
+
+        MXModelObjectPtr& operator=(MXModelObjectPtr&& rhs)
+            {
+            this_type(std::move(rhs)).swap(*this);
+            return *this;
+            }
+
+        ~MXModelObjectPtr()
+            {
+            if (p_ != 0)
+                {
+                if (p_->isInModelFile())
+                    p_->close();
+                else
+                    delete p_;
+                }
+            }
+
+        template<class U> MXModelObjectPtr & operator=(MXModelObjectPtr<U> const & rhs)
+            {
+            this_type(rhs).swap(*this);
+            return *this;
+            }
+
+
+        bool operator== (MXModelObjectPtr<T> const& rhs) const
+            {
+            return p_ == rhs.p_;
+            }
+
+        template<class U> bool operator== (MXModelObjectPtr<U> const& rhs) const
+            {
+            return p_ == rhs.get();
+            }
+
+        bool operator!= (MXModelObjectPtr<T> const& rhs) const
+            {
+            return p_ != rhs.p_;
+            }
+
+        template<class U> bool operator!= (MXModelObjectPtr<U> const& rhs) const
+            {
+            return p_ != rhs.get();
+            }
+
+        MXModelObjectPtr & operator=(MXModelObjectPtr const & rhs)
+            {
+            this_type(rhs).swap(*this);
+            return *this;
+            }
+
+        MXModelObjectPtr & operator=(T * rhs)
+            {
+            this_type(rhs).swap(*this);
+            return *this;
+            }
+
+        //! Get a pointer the intenal object held by the reference-counted object
+        T * get() const
+            {
+            return p_;
+            }
+
+        //! Get a constant reference to the intenal object held by the reference-counted object
+        T* const& GetCR() const
+            {
+            return p_;
+            }
+
+        //! Get a reference to the intenal object held by the reference-counted object
+        T*& GetR()
+            {
+            return p_;
+            }
+
+        //! Get a reference to the intenal object held by the reference-counted object
+        T & operator*() const
+            {
+            return *p_;
+            }
+
+        //! Get a pointer to the intenal object held by the reference-counted object
+        T * operator->() const
+            {
+            return p_;
+            }
+
+        //! Return true if the ref-counted object has a valid (non-NULL) internal object.
+        bool IsValid() const
+            {
+            return 0 != p_;
+            }
+        //! Return true if the ref-counted object has a invalid (NULL) internal object.
+        bool IsNull() const
+            {
+            return !IsValid();
+            }
+        bool Equals(T const* other) const
+            {
+            return other == get();
+            }
+        bool Equals(MXModelObjectPtr const& other) const
+            {
+            return other.get() == get();
+            }
+
+        //! Swap the internal objects pointed to by two smart pointers.
+        void swap(MXModelObjectPtr & rhs)
+            {
+            T * tmp = p_;
+            p_ = rhs.p_;
+            rhs.p_ = tmp;
+            }
+
+
+    private:
+
+        T * p_;
+    };
+
+    template<class T> void swap(MXModelObjectPtr<T> & lhs, MXModelObjectPtr<T> & rhs)
+        {
+        lhs.swap(rhs);
+        }
+
+    // mem_fn support
+
+    template<class T> T * get_pointer(MXModelObjectPtr<T> const & p)
+        {
+        return p.get();
+        }
+
+    template<class T, class U> MXModelObjectPtr<T> static_pointer_cast(MXModelObjectPtr<U> const & p)
+        {
+        return static_cast<T *>(p.get());
+        }
+
+    template<class T, class U> MXModelObjectPtr<T> const_pointer_cast(MXModelObjectPtr<U> const & p)
+        {
+        return const_cast<T *>(p.get());
+        }
+
+    template<class T, class U> MXModelObjectPtr<T> dynamic_pointer_cast(MXModelObjectPtr<U> const & p)
+        {
+        return dynamic_cast<T *>(p.get());
+        }
+
 
 END_BENTLEY_TERRAINMODEL_NAMESPACE

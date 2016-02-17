@@ -2,7 +2,7 @@
 |
 |     $Source: TerrainModelNET/DTM.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -5039,6 +5039,13 @@ public ref class DTM
         /// <param name="pointsAfter">Number of points after the filter.</param>
         void FilterPoints (long numPointsToRemove, double percentageToRemove, [System::Runtime::InteropServices::Out]long% pointsBefore, [System::Runtime::InteropServices::Out]long% pointsAfter);
 
+
+        /// <summary>
+        /// Addes a Transformation to the DTM, This doesn't change the actual data, just what is returned.
+        /// Use this if you want to access a DTM in feet when the coordinates are currently in meters.
+        /// </summary>
+        /// <param name="transformation">The Transformation to add</param>
+        DTM^ GetTransformedDTM(BGEO::DTransform3d transformation);
         };
 
 END_BENTLEY_TERRAINMODELNET_NAMESPACE
