@@ -1087,8 +1087,8 @@ struct LocksManagerTest : RepositoryManagerTest
     DgnElementPtr Create2dElement(DgnModelR model)
         {
         DgnDbR db = model.GetDgnDb();
-        DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Annotation::GetHandler());
-        return AnnotationElement::Create(AnnotationElement::CreateParams(db, model.GetModelId(), classId, DgnCategory::QueryHighestCategoryId(db)));
+        DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Annotation2d::GetHandler());
+        return AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, model.GetModelId(), classId, DgnCategory::QueryHighestCategoryId(db)));
         }
 };
 
