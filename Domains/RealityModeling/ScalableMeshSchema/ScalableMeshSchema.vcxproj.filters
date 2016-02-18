@@ -27,6 +27,9 @@
     <ClCompile Include="ScalableMeshHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ScalableMeshDomain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ScalableMeshSchemaPCH.h">

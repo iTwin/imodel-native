@@ -9,7 +9,7 @@
 #include "ScalableMeshSchemaPCH.h"
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
-USING_NAMESPACE_BENTLEY_SCALABLEMESHSCHEMA
+USING_NAMESPACE_BENTLEY_SCALABLEMESH_SCHEMA
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     1/2016

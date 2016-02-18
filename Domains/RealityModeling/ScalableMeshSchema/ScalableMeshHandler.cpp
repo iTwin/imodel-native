@@ -7,10 +7,13 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "ScalableMeshSchemaPCH.h"
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
-#include <ScalableMeshSchema\ScalableMeshHandler.h>
 
-USING_NAMESPACE_BENTLEY_SCALABLEMESHSCHEMA
+#include <BeSQLite\BeSQLite.h>
+#include <ScalableMeshSchema\ScalableMeshHandler.h>
+    
+USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_SCALABLEMESH_SCHEMA
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
@@ -108,17 +111,25 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
 
     }
 
+//NEEDS_WORK_SM : Should be at application level
+void GetScalableMeshTerrainFileName(BeFileName& smtFileName, const BeFileName& dgnDbFileName)
+    {    
+    //smtFileName = params.m_dgndb.GetFileName().GetDirectoryName();
+
+    smtFileName = dgnDbFileName.GetDirectoryName();
+    smtFileName.AppendToPath(dgnDbFileName.GetFileNameWithoutExtension().c_str());
+    smtFileName.AppendString(L"\\terrain.smt");
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
 ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams const& params)
     : T_Super(params)
-    {
-    BeFileName tmFileName;
-    tmFileName = params.m_dgndb.GetFileName().GetDirectoryName();
-    tmFileName.AppendToPath(params.m_dgndb.GetFileName().GetFileNameWithoutExtension().c_str());
-    tmFileName.AppendString(L"\\terrain.stm");
-    m_smPtr = IScalableMesh::GetFor(tmFileName.GetWCharCP(), false, true);
+    {        
+    //GetScalableMeshTerrainFileName(BeFileName& smtFileName, const BeFileName& dgnDbFileName)
+    
+    
     }
 
 //----------------------------------------------------------------------------------------
@@ -132,28 +143,120 @@ ScalableMeshModel::~ScalableMeshModel()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
-IMeshSpatialModelP ScalableMeshModel::GetTerrainModelP(BentleyApi::Dgn::DgnDbCR dgnDb)
+void ScalableMeshModel::OpenFile(BeFileNameCR smFilename)
     {
-    BeSQLite::EC::ECSqlStatement stmt;
-    if (BeSQLite::EC::ECSqlStatus::Success != stmt.Prepare(dgnDb, "SELECT ECInstanceId FROM ScalableMeshModel.ScalableMesh;"))
-        return nullptr;
-
-    if (BeSQLite::BE_SQLITE_ROW != stmt.Step()) return nullptr;
-    DgnModelId smModelID = DgnModelId(stmt.GetValueUInt64(0));
-    DgnModelPtr dgnModel = dgnDb.Models().FindModel(smModelID);
-
-    if (dgnModel.get() == 0)
-        {
-        dgnModel = dgnDb.Models().GetModel(smModelID);
-        }
-
-    if (dgnModel.get() != 0)
-        {
-        assert(dynamic_cast<ScalableMeshModel*>(dgnModel.get()) != 0);
-
-        return static_cast<ScalableMeshModel*>(dgnModel.get());
-        }
-    return nullptr;
+    m_smPtr = IScalableMesh::GetFor(smFilename.GetWCharCP(), false, true);
     }
+
+//=======================================================================================
+//! Helper class used to kept pointers with a DgnDb in-memory
+//=======================================================================================
+struct ScalableMeshTerrainModelAppData : Db::AppData
+    {
+    static Key DataKey;
+
+    ScalableMeshModel*  m_smTerrainPhysicalModelP;
+    bool                m_modelSearched;
+
+    ScalableMeshTerrainModelAppData () 
+        {
+        m_smTerrainPhysicalModelP = 0;
+        m_modelSearched = false;
+        }
+    virtual ~ScalableMeshTerrainModelAppData () {}
+
+     ScalableMeshModel* GetModel(DgnDbCR db)
+        {
+        if (m_modelSearched == false)
+            {
+            //NEEDS_WORK_SM : Not yet done. 
+            /*
+            BeSQLite::EC::ECSqlStatement stmt;
+            if (BeSQLite::EC::ECSqlStatus::Success != stmt.Prepare(dgnDb, "SELECT ECInstanceId FROM ScalableMeshModel.ScalableMesh;"))
+                return nullptr;
+
+            if (BeSQLite::BE_SQLITE_ROW != stmt.Step()) return nullptr;
+            DgnModelId smModelID = DgnModelId(stmt.GetValueUInt64(0));
+            DgnModelPtr dgnModel = dgnDb.Models().FindModel(smModelID);
+
+            if (dgnModel.get() == 0)
+                {
+                dgnModel = dgnDb.Models().GetModel(smModelID);
+                }
+
+            if (dgnModel.get() != 0)
+                {
+                assert(dynamic_cast<ScalableMeshModel*>(dgnModel.get()) != 0);
+
+                return static_cast<ScalableMeshModel*>(dgnModel.get());
+                }
+                */        
+
+            m_modelSearched = true;
+            }
+
+        return m_smTerrainPhysicalModelP;
+        }
+    
+    static ScalableMeshTerrainModelAppData* Get (DgnDbCR dgnDb)
+        {
+        ScalableMeshTerrainModelAppData* appData = dynamic_cast<ScalableMeshTerrainModelAppData*>(dgnDb.FindAppData (ScalableMeshTerrainModelAppData::DataKey));
+        if (!appData)
+            {
+            appData = new ScalableMeshTerrainModelAppData ();
+            dgnDb.AddAppData (ScalableMeshTerrainModelAppData::DataKey, appData);
+            }
+
+        return appData;
+        }
+
+    static void Delete (DgnDbCR dgnDb)
+        {        
+        dgnDb.DropAppData (ScalableMeshTerrainModelAppData::DataKey);        
+        }    
+    };
+
+Db::AppData::Key ScalableMeshTerrainModelAppData::DataKey;
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Elenie.Godzaridis     2/2016
+//----------------------------------------------------------------------------------------
+IMeshSpatialModelP ScalableMeshModel::GetTerrainModelP(BentleyApi::Dgn::DgnDbCR dgnDb)
+    {   
+    return ScalableMeshTerrainModelAppData::Get(dgnDb)->GetModel(dgnDb);
+    }
+
+IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDbR db, Utf8StringCR modelName, BeFileNameCR smFilename)
+    {    
+    /*    
+    BeFileName smtFileName;
+    GetScalableMeshTerrainFileName(smtFileName, db.GetFileName());
+    
+    if (!smtFileName.GetDirectoryName().DoesPathExist())
+        BeFileName::CreateNewDirectory(smtFileName.GetDirectoryName().c_str());
+        */
+
+    
+    DgnClassId classId(db.Schemas().GetECClassId("ScalableMesh", "ScalableMeshModel"));
+    BeAssert(classId.IsValid());        
+         
+    RefCountedPtr<ScalableMeshModel> model(new ScalableMeshModel(DgnModel::CreateParams(db, classId, DgnModel::CreateModelCode(modelName))));
+
+    model->OpenFile(smFilename);
+
+    //After Insert model pointer is handled by DgnModels.
+    model->Insert();
+                    
+    ScalableMeshTerrainModelAppData* appData(ScalableMeshTerrainModelAppData::Get(db));        
+
+    appData->m_smTerrainPhysicalModelP = model.get();
+    appData->m_modelSearched = true;
+
+    db.SaveChanges();
+        
+    return model.get();    
+    }
+
+
 
 HANDLER_DEFINE_MEMBERS(ScalableMeshModelHandler)
