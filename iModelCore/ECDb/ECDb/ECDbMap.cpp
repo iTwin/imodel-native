@@ -622,6 +622,9 @@ BentleyStatus ECDbMap::EvaluateColumnNotNullConstraints() const
     //if classes other than subclasses of the respective class are mapped to the same column.
     //If it can be enforced, a NOT NULL constraint will be added. Otherwise it is dropped
     //and a warning is logged.
+
+    //put relevant classids in a local vector as processing will imply loading more class maps
+    //into the cache, hence modifying m_classMapDictionary, hence invalidating the iterator.
     std::vector<ECClassId> endTableRelClassIds;
     for (bpair<ECClassId, ClassMapPtr> const& kvPair : m_classMapDictionary)
         {
