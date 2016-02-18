@@ -141,8 +141,13 @@ DgnClientFx::Utils::AsyncTaskPtr<DgnDbRepositoriesResult> DgnDbClient::GetReposi
                     auto result = dynamic_pointer_cast<PackagedAsyncTask<DgnDbRepositoryConnectionResult>>(task)->GetResult();
                     if (result.IsSuccess())
                         repositories.push_back(std::make_shared<RepositoryInfo>(result.GetValue()->GetRepositoryInfo()));
+                    else
+                        finalResult->SetError(result.GetError());
                     }
-                finalResult->SetSuccess(repositories);
+                if (!repositories.empty())
+                    {
+                    finalResult->SetSuccess(repositories);
+                    }
                 });
             }
         else
@@ -213,7 +218,7 @@ DgnDbPtr CleanDb(DgnDbR db)
     {
     //NEEDSWORK: Make a clean copy for a server. This code should move to the server once we have long running services.
     BeFileName tempFile;
-    BeFileName::BeGetTempPath(tempFile);
+    DgnPlatformLib::QueryHost()->GetIKnownLocationsAdmin().GetLocalTempDirectory(tempFile, L"DgnDbServerClient");
     tempFile.AppendToPath(db.GetFileName().GetFileNameAndExtension().c_str());
     BeFileName::BeCopyFile(db.GetFileName(), tempFile);
 
@@ -388,6 +393,10 @@ AsyncTaskPtr<DgnDbBriefcaseResult> DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, 
     if (!m_credentials.IsValid() && !m_customHandler)
         {
         return CreateCompletedAsyncTask<DgnDbBriefcaseResult>(DgnDbBriefcaseResult::Error(Error::InvalidCredentials));
+        }
+    if (db->GetBriefcaseId().IsMasterId())
+        {
+        return CreateCompletedAsyncTask<DgnDbBriefcaseResult>(DgnDbBriefcaseResult::Error(Error::MasterId));
         }
     RepositoryInfoPtr repository = RepositoryInfo::ReadRepositoryInfo(*db);
     if (!repository)
