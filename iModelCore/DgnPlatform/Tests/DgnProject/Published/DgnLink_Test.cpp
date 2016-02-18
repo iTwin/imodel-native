@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/DgnProject/Published/DgnLink_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -41,10 +41,10 @@ TEST_F(DgnLinkTest, RoundTripUrlLink)
     DgnCategoryId categoryId = DgnCategory::QueryFirstCategoryId(db);
     ASSERT_TRUE(categoryId.IsValid());
 
-    DgnClassId elementClassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement));
+    DgnClassId elementClassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement2d));
     ASSERT_TRUE(elementClassId.IsValid());
 
-    AnnotationElementPtr elementPtr = AnnotationElement::Create(AnnotationElement::CreateParams(db, modelId, elementClassId, categoryId));
+    AnnotationElement2dPtr elementPtr = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, modelId, elementClassId, categoryId));
     ASSERT_TRUE(elementPtr.IsValid());
     DgnElementCPtr result = db.Elements().Insert(*elementPtr);
     ASSERT_TRUE(result.IsValid());
@@ -90,10 +90,10 @@ TEST_F(DgnLinkTest, Iterator)
     DgnCategoryId categoryId = DgnCategory::QueryFirstCategoryId(db);
     ASSERT_TRUE(categoryId.IsValid());
 
-    DgnClassId elementClassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement));
+    DgnClassId elementClassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement2d));
     ASSERT_TRUE(elementClassId.IsValid());
 
-    AnnotationElementPtr elementPtr = AnnotationElement::Create(AnnotationElement::CreateParams(db, modelId, elementClassId, categoryId));
+    AnnotationElement2dPtr elementPtr = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, modelId, elementClassId, categoryId));
     ASSERT_TRUE(elementPtr.IsValid());
     DgnElementCPtr result = db.Elements().Insert(*elementPtr);
     ASSERT_TRUE(result->GetElementId().IsValid());
@@ -171,15 +171,15 @@ TEST_F(DgnLinkTest, OtherIterators)
     DgnCategoryId categoryId = DgnCategory::QueryFirstCategoryId(db);
     ASSERT_TRUE(categoryId.IsValid());
 
-    DgnClassId elementClassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement));
+    DgnClassId elementClassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement2d));
     ASSERT_TRUE(elementClassId.IsValid());
 
-    AnnotationElementPtr element1 = AnnotationElement::Create(AnnotationElement::CreateParams(db, modelId, elementClassId, categoryId));
+    AnnotationElement2dPtr element1 = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, modelId, elementClassId, categoryId));
     ASSERT_TRUE(element1.IsValid());
     DgnElementCPtr result1 = db.Elements().Insert(*element1);
     ASSERT_TRUE(result1.IsValid());
 
-    AnnotationElementPtr element2 = AnnotationElement::Create(AnnotationElement::CreateParams(db, modelId, elementClassId, categoryId));
+    AnnotationElement2dPtr element2 = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, modelId, elementClassId, categoryId));
     ASSERT_TRUE(element2.IsValid());
     DgnElementCPtr result2 = db.Elements().Insert(*element2);
     ASSERT_TRUE(result2.IsValid());

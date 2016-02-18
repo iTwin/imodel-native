@@ -147,7 +147,6 @@ struct UpdatePlan
     struct Query
     {
         uint32_t    m_maxTime = 2000;    // maximum time query should run (milliseconds)
-        double      m_minPixelSize = 50;
         double      m_frustumScale = 1.25;
         bool        m_onlyAlwaysDrawn = false;
         mutable bool m_wait = false;
@@ -161,10 +160,9 @@ struct UpdatePlan
         uint32_t GetMaxElements() const {return m_maxElements;}
         void SetMinElements(uint32_t val) {m_minElements = val;}
         void SetMaxElements(uint32_t val) {m_maxElements = val;}
-        double GetMinimumSizePixels() const {return m_minPixelSize;}
-        void SetMinimumSizePixels(double val) {m_minPixelSize=val;}
         void SetTargetNumElements(uint32_t val) const {m_targetNumElements=val;}
         uint32_t GetTargetNumElements() const {return m_targetNumElements;}
+        void SetTimeout(uint32_t maxTime) {m_maxTime=maxTime;}
         void SetWait(bool val) const {m_wait=val;}
         bool WantWait() const {return m_wait;}
         uint32_t GetDelayAfter() const {return m_delayAfter;}
@@ -199,7 +197,7 @@ struct UpdatePlan
     };
 
     double      m_targetFPS = 20.0; // Frames Per second
-    double      m_timeout = 0; // seconds
+    uint32_t    m_timeout = 0; // seconds
     Query       m_query;
     AbortFlags  m_abortFlags;
 
@@ -210,8 +208,8 @@ public:
     Query const& GetQuery() const {return m_query;}
     AbortFlags const& GetAbortFlags() const {return m_abortFlags;}
     AbortFlags& GetAbortFlagsR() {return m_abortFlags;}
-    void SetTimeout(double seconds) {m_timeout=seconds;}
-    double GetTimeout() const {return m_timeout;}
+    void SetCreateSceneTimeout(uint32_t milliseconds) {m_timeout=milliseconds;}
+    uint32_t GetCreateSceneTimeout() const {return m_timeout;}
 };
 
 //=======================================================================================
@@ -251,6 +249,7 @@ private:
     TaskPtr             m_active;
     State               m_state;
     bool WaitForWork();
+    bool HasActiveOrPending(DgnQueryViewCR);
     void Process();
     THREAD_MAIN_DECL Main(void* arg);
 
