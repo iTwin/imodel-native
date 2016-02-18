@@ -335,8 +335,6 @@ $(CoreObjs)DgnAuthority$(oext) :                    $(DgnCoreDir)DgnAuthority.cp
 
 $(coreObjs)SearchableText$(oext) :                  $(DgnCoreDir)SearchableText.cpp $(DgnPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
-$(CoreObjs)SatelliteChangeSets$(oext) :             $(DgnCoreDir)SatelliteChangeSets.cpp $(DgnPlatformAPISrc)SatelliteChangeSets.h ${MultiCompileDepends}
-
 $(CoreObjs)DgnMarkupProject$(oext) :                $(DgnCoreDir)DgnMarkupProject.cpp $(DgnPlatformAPISrc)DgnMarkupProject.h $(DgnPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
 $(CoreObjs)DgnDomain$(oext) :                       $(DgnCoreDir)DgnDomain.cpp $(DgnPlatformAPISrc)DgnDomain.h ${MultiCompileDepends}
