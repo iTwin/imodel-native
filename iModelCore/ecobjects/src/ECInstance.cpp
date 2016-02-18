@@ -2655,7 +2655,7 @@ InstanceReadStatus      GetInstance (ECClassCP& ecClass, IECInstancePtr& ecInsta
         }
     if (NULL == foundClass)
         {
-        LOG.errorv (L"Failed to find ECClass %ls in %ls", m_className.c_str (), m_fullSchemaName.c_str ());
+        LOG.errorv ("Failed to find ECClass %s in %s", m_className.c_str (), m_fullSchemaName.c_str ());
         return InstanceReadStatus::ECClassNotFound;
         }
 
@@ -3908,7 +3908,7 @@ InstanceReadStatus  IECInstance::ReadFromBeXmlDom (IECInstancePtr& ecInstance, B
     if ( (BEXML_Success != xmlDom.SelectNode (instanceNode, "/", NULL, BeXmlDom::NODE_BIAS_First)) || (NULL == instanceNode) )
         {
         BeAssert (false);
-        LOG.errorv (L"Invalid ECInstanceXML: Missing a top-level instance node");
+        LOG.errorv ("Invalid ECInstanceXML: Missing a top-level instance node");
         return InstanceReadStatus::BadElement;
         }
 
@@ -3918,7 +3918,7 @@ InstanceReadStatus  IECInstance::ReadFromBeXmlDom (IECInstancePtr& ecInstance, B
     if (NULL == instanceNode)
         {
         BeAssert (false);
-        LOG.errorv (L"Invalid ECInstanceXML: Missing a top-level instance node");
+        LOG.errorv ("Invalid ECInstanceXML: Missing a top-level instance node");
         return InstanceReadStatus::BadElement;
         }
 
