@@ -90,7 +90,7 @@ struct MXFilExporter : TerrainExporter
     /*__PUBLISH_SECTION_START__*/
     public: BENTLEYDTMFORMATS_EXPORT static MXFilExporterPtr Create();
 
-    public: BENTLEYDTMFORMATS_EXPORT MXExportError Export(WCharCP filename, WCharCP inModelName, WCharCP inStringName, BcDTMP dtm, bool allowOverwrite);
+    public: BENTLEYDTMFORMATS_EXPORT MXExportError Export(WCharCP filename, WCharCP inModelName, WCharCP inStringName, NamedDTM const&  dtm, bool allowOverwrite);
     };
 
 END_BENTLEY_TERRAINMODEL_NAMESPACE

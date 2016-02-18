@@ -32,14 +32,18 @@ MXFilExporter::MXFilExporter()
     SetTerrainExporter(m_exporter);
     }
 
-MXFilExporter::MXExportError MXFilExporter::Export(System::String^ filename, System::String^ modelName, System::String^ stringName, Bentley::TerrainModelNET::DTM^ dtm, bool allowOverwrite)
+MXFilExporter::MXExportError MXFilExporter::Export(System::String^ filename, System::String^ modelName, System::String^ stringName, NamedTerrain^ dtm, bool allowOverwrite)
     {
     pin_ptr<const wchar_t> nFilename = PtrToStringChars(filename);
     pin_ptr<const wchar_t> nModelName = PtrToStringChars(modelName);
     pin_ptr<const wchar_t> nStringName = PtrToStringChars(stringName);
-    BcDTMP nDtm = (BcDTMP)dtm->ExternalHandle.ToPointer();
 
-    return (MXExportError)m_exporter->Export(nFilename, nModelName, nStringName, nDtm, allowOverwrite);
+    pin_ptr<const wchar_t> uName = PtrToStringChars(dtm->Name);
+    pin_ptr<const wchar_t> uDescription = PtrToStringChars(dtm->Description);
+    BcDTMP dtmP = (BcDTMP)dtm->Terrain->ExternalHandle.ToPointer();
+    Bentley::TerrainModel::LandXMLExporter::NamedDTM uTerrain(dtmP, uName, uDescription);
+
+    return (MXExportError)m_exporter->Export(nFilename, nModelName, nStringName, uTerrain, allowOverwrite);
     }
 
 END_BENTLEY_TERRAINMODELNET_FORMATS_NAMESPACE
