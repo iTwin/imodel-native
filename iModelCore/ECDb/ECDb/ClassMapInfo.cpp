@@ -201,22 +201,18 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
         else if (Enum::Intersects(parentStrategy.GetOptions(), ECDbMapStrategy::Options::JoinedTable | ECDbMapStrategy::Options::ParentOfJoinedTable))
             {
             //! Find out if there is any primitive property that need mapping. Simply looking at local property count does not work with multi inheritence
-            bool requireTable = false;
+            bool requiresJoinedTable = false;
             for (ECPropertyCP property : GetECClass().GetProperties(true))
                 {
-                //only consider properties that are directly mapped to the table of the class
-                if (property->GetIsStructArray() || property->GetIsNavigation())
-                    continue;
-
                 if (parentClassMap->GetPropertyMap(property->GetName().c_str()) == nullptr)
                     {
-                    requireTable = true; //There is at least one property local or inherited that require mapping.
+                    requiresJoinedTable = true; //There is at least one property local or inherited that require mapping.
                     break;
                     }
                 }
 
             const bool parentIsParentOfJoinedTable = Enum::Contains(parentStrategy.GetOptions(), ECDbMapStrategy::Options::ParentOfJoinedTable);
-            if (parentIsParentOfJoinedTable && !requireTable)
+            if (parentIsParentOfJoinedTable && !requiresJoinedTable)
                 options = options | ECDbMapStrategy::Options::ParentOfJoinedTable;
             else
                 {
