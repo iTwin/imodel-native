@@ -622,16 +622,29 @@ BentleyStatus ECDbMap::EvaluateColumnNotNullConstraints() const
     //if classes other than subclasses of the respective class are mapped to the same column.
     //If it can be enforced, a NOT NULL constraint will be added. Otherwise it is dropped
     //and a warning is logged.
+    std::vector<ECClassId> endTableRelClassIds;
     for (bpair<ECClassId, ClassMapPtr> const& kvPair : m_classMapDictionary)
         {
         ClassMapCR classMap = *kvPair.second;
-        if (classMap.GetClassMapType() != IClassMap::Type::RelationshipEndTable)
-            continue;
+        if (classMap.GetClassMapType() == IClassMap::Type::RelationshipEndTable)
+            {
+            RelationshipClassEndTableMap const& relClassMap = static_cast<RelationshipClassEndTableMap const&> (classMap);
+            const bool impliesNotNullOnFkCol = relClassMap.GetConstraintMap(relClassMap.GetReferencedEnd()).GetRelationshipConstraint().GetCardinality().GetLowerLimit() > 0;
+            if (impliesNotNullOnFkCol)
+                endTableRelClassIds.push_back(kvPair.first);
+            }
+        }
 
-        RelationshipClassEndTableMapCR relClassMap = static_cast<RelationshipClassEndTableMapCR> (classMap);
-        const bool impliesNotNullOnFkCol = relClassMap.GetConstraintMap(relClassMap.GetReferencedEnd()).GetRelationshipConstraint().GetCardinality().GetLowerLimit() > 0;
-        if (!impliesNotNullOnFkCol)
-            continue;
+    for (ECClassId relClassId : endTableRelClassIds)
+        {
+        ClassMap const* classMap = GetClassMap(relClassId);
+        if (classMap == nullptr || classMap->GetClassMapType() != IClassMap::Type::RelationshipEndTable)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        RelationshipClassEndTableMap const& relClassMap = static_cast<RelationshipClassEndTableMap const&> (*classMap);
 
         ECRelationshipConstraintCR foreignEndConstraint = relClassMap.GetConstraintMap(relClassMap.GetForeignEnd()).GetRelationshipConstraint();
         const bool isPolymorphicConstraint = foreignEndConstraint.GetIsPolymorphic();
@@ -699,8 +712,8 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables() const
     m_ecdb.GetStatementCache().Empty();
     StopWatch timer(true);
 
-    //if (SUCCESS != EvaluateColumnNotNullConstraints())
-    //    return ERROR;
+    if (SUCCESS != EvaluateColumnNotNullConstraints())
+        return ERROR;
     
     int nCreated = 0;
     int nUpdated = 0;
@@ -1153,16 +1166,16 @@ BentleyStatus ECDbMap::SaveMappings() const
     StopWatch stopWatch(true);
     int i = 0;
     std::set<ClassMap const*> doneList;
-    for (auto it =  m_classMapDictionary.begin(); it != m_classMapDictionary.end(); it++)
+    for (bpair<ECClassId, ClassMapPtr> const& kvPair : m_classMapDictionary)
         {
-        ClassMapPtr const& classMap = it->second;
-        ECClassCR ecClass = classMap->GetClass();
-        if (classMap->IsDirty())
+        ClassMapR classMap = *kvPair.second;
+        ECClassCR ecClass = classMap.GetClass();
+        if (classMap.IsDirty())
             {
             i++;
-            if (SUCCESS != classMap->Save (doneList))
+            if (SUCCESS != classMap.Save (doneList))
                 {
-                m_ecdb.GetECDbImplR().GetIssueReporter().Report (ECDbIssueSeverity::Error, "Failed to save ECDbMap for ECClass %s: %s", ecClass.GetFullName(), m_ecdb.GetLastError().c_str());
+                m_ecdb.GetECDbImplR().GetIssueReporter().Report (ECDbIssueSeverity::Error, "Failed to save mapping for ECClass %s: %s", ecClass.GetFullName(), m_ecdb.GetLastError().c_str());
                 return ERROR;
                 }
             }
