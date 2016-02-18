@@ -147,16 +147,48 @@ TEST_F(UnitsTests, UnitsConversion)
     
     }
 
-struct UnitsPerformanceTests : UnitsTests {};
-
 void GetAllUnitNames(UnitRegistry& hub, bvector<Utf8CP>& allUnitNames, bool includeSynonyms)
     {
     for (auto const& unitNameValue : hub.AllUnits())
         {
         allUnitNames.push_back(unitNameValue.first.c_str());
-        // TODO: Synonyms?
         }
     }
+
+void GetUnitsByName(UnitRegistry& hub, bvector<Utf8CP>& unitNames)
+    {
+    for (auto const& unitName : unitNames)
+        {
+        auto unit = hub.LookupUnit(unitName);
+        ASSERT_TRUE(unit != nullptr) << "Failed to get unit: " << unitName;
+        }
+    }
+
+void GetAllUnits(UnitRegistry& hub, bvector<UnitCP>& allUnits)
+    {
+    bvector<Utf8CP> allUnitNames;
+    GetAllUnitNames(hub, allUnitNames, false);
+    for (auto const& unitName : allUnitNames)
+        {
+        auto unit = hub.LookupUnit(unitName);
+        ASSERT_TRUE(unit != nullptr) << "Failed to get unit: " << unitName;
+        allUnits.push_back(unit);
+        }
+    }
+
+TEST_F(UnitsTests, UnitExpressions)
+    {
+    bvector<UnitCP> allUnits;
+    GetAllUnits(UnitRegistry::Instance(), allUnits);
+    for (auto const& unit : allUnits)
+        {
+        PERFORMANCELOG.error(unit->GetName());
+        PERFORMANCELOG.errorv("Numerator:   %s", BeStringUtilities::Join(unit->Numerator(), "*").c_str());
+        PERFORMANCELOG.errorv("Denominator: %s", BeStringUtilities::Join(unit->Denominator(), "*").c_str());
+        }
+    }
+
+struct UnitsPerformanceTests : UnitsTests {};
 
 TEST_F(UnitsPerformanceTests, InitUnitsHub)
     {
@@ -169,15 +201,6 @@ TEST_F(UnitsPerformanceTests, InitUnitsHub)
     GetAllUnitNames(hub, allUnitNames, false);
 
     PERFORMANCELOG.errorv("Time to load Units Hub with %lu units: %lf", allUnitNames.size(), timer.GetElapsedSeconds());
-    }
-
-void GetUnitsByName(UnitRegistry& hub, bvector<Utf8CP>& unitNames)
-    {
-    for (auto const& unitName : unitNames)
-        {
-        auto unit = hub.LookupUnit(unitName);
-        ASSERT_TRUE(unit != nullptr) << "Failed to get unit: " << unitName;
-        }
     }
 
 TEST_F(UnitsPerformanceTests, GetEveryUnitByName)

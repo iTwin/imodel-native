@@ -75,6 +75,8 @@ private:
     Unit (UnitCR unit) = delete;
     UnitR operator=(UnitCR unit) = delete;
 
+    //static double GenerateConversion(UnitCR from, UnitCR to);
+
 protected:
     virtual Utf8CP _GetName() const { return m_name.c_str(); }
     //virtual Utf8CP _GetDisplayLabel() const { return m_displayLabel.c_str(); }

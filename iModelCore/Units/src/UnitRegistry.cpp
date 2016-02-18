@@ -179,7 +179,7 @@ UnitCP UnitRegistry::AddSIBaseUnit(Utf8CP unitName, Utf8Char dimensionSymbol)
 +---------------+---------------+---------------+---------------+---------------+------*/
 UnitCP UnitRegistry::AddUnit (Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double factor, double offset)
     {
-    if (!(HasSystem(systemName) || !HasPhenomena(phenomName)))
+    if (!HasSystem(systemName) || !HasPhenomena(phenomName))
         return nullptr;
 
     auto unit = Unit::Create (systemName, phenomName, unitName, definition, ' ', factor, offset);

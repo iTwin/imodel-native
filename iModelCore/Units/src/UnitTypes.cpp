@@ -37,6 +37,7 @@ UnitP Unit::Create (Utf8CP sysName, Utf8CP phenomName, Utf8CP unitName, Utf8CP d
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Unit::IsRegistered() const
     {
+    // TODO: Should this be lookup by name?
     auto newUnit = UnitRegistry::Instance().LookupUnitBySubTypes(Numerator(), Denominator());
     
     return newUnit != nullptr;
@@ -97,6 +98,36 @@ UnitCR Unit::operator/ (UnitCR rhs) const
 
     return move(Unit(n, d));
     }
+
+// TODO: error handling
+//double Unit::GenerateConversion(UnitCR from, UnitCR to)
+//    {
+//    bvector<UnitCP> fromNumerator;
+//    if (!WalkUnitNameVactor(from.Numerator(), fromNumerator))
+//        return 0.0;
+//    
+//    bvector<UnitCP> fromDenominator;
+//    if (!WalkUnitNameVactor(from.Denominator(), fromDenominator))
+//        return 0.0;
+//
+//
+//    }
+//
+//bool WalkUnitNameVactor(const Utf8Vector& unitNameVector, bvector<UnitCP>& unitVector)
+//    {
+//    for (auto const& unitName : unitNameVector)
+//        {
+//        auto unit = UnitRegistry::Instance().LookupUnit(unitName.c_str());
+//        if (nullptr == unit)
+//            {
+//            LOG.errorv("Could not generate conversion factor because sub unit %s could not be found", unitName);
+//            return false;
+//            }
+//
+//        unitVector.push_back(unit);
+//        }
+//    return true;
+//    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
