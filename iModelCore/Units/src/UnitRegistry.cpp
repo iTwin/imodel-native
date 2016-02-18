@@ -19,7 +19,13 @@ UnitRegistry * UnitRegistry::s_instance = nullptr;
 UnitRegistry& UnitRegistry::Instance()
     {
     if (nullptr == s_instance)
+        {
         s_instance = new UnitRegistry();
+        s_instance->AddDefaultSystems();
+        s_instance->AddDefaultPhenomena();
+        s_instance->AddDefaultUnits();
+        s_instance->AddDefaultConstants();
+        }
 
     return *s_instance;
     }
@@ -37,10 +43,7 @@ void UnitRegistry::Clear()
 +---------------+---------------+---------------+---------------+---------------+------*/
 UnitRegistry::UnitRegistry()
     {
-    AddDefaultSystems();
-    AddDefaultPhenomena();
-    AddDefaultUnits ();
-    AddDefaultConstants ();
+    
     }
 
 /*--------------------------------------------------------------------------------**//**
