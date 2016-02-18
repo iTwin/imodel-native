@@ -491,44 +491,24 @@ struct TextureCache
     {
     struct Entry 
         {
-        uintptr_t   m_textureId;
+        Render::TexturePtr  m_textureId;
         ImageUtilities::RgbImageInfo m_imageInfo;
         uint64_t    m_insertTime;
         };
 
     bmap<Utf8String, Entry> m_map;
-    uintptr_t               m_nextTextureId;
 
     static TextureCache* s_instance;
     static TextureCache& Instance() { if (NULL==s_instance) s_instance = new TextureCache; return *s_instance;}
 
-    TextureCache() : m_nextTextureId(0) {;}
+    TextureCache(){;}
 
-    // Issue the next texture id that can be used to define a new texture. 
-    // Must ensure that no existing texture has this ID!
-    // When we trim, we leave some textures in the cache with lower number texture ids. All new textures must be greater than those ids.
-    uintptr_t GetNextTextureId() 
-        {
-        auto tid = (uintptr_t)this + m_nextTextureId++;
-        #ifndef NDEBUG
-            for (auto const& e : m_map)
-                {
-                BeAssert(e.second.m_textureId != tid);
-                }
-        #endif
-        return tid;
-        }  
 
-    void Insert(Utf8StringCR url, ImageUtilities::RgbImageInfo const& info, uintptr_t tid)
+    void Insert(Utf8StringCR url, ImageUtilities::RgbImageInfo const& info, Render::TextureR tid)
         {
         auto& entry = m_map[url];
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-        if (entry.m_textureId != 0)
-            T_HOST.GetGraphicsAdmin()._DeleteTexture(entry.m_textureId);
-#endif
-
-        entry.m_textureId = tid;
+        entry.m_textureId = &tid;
         entry.m_imageInfo = info;
         entry.m_insertTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
         }
@@ -555,9 +535,7 @@ struct TextureCache
                 {
                 if (!IsCacheTooLarge())
                     return;
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-                T_HOST.GetGraphicsAdmin()._DeleteTexture(m_map[url].m_textureId);
-#endif
+
                 m_map.erase(url);
                 }
             }
@@ -569,44 +547,33 @@ TextureCache* TextureCache::s_instance;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WebMercatorTileDisplayHelper::GetCachedTexture(uintptr_t& cachedTextureId, ImageUtilities::RgbImageInfo& cachedImageInfo, Utf8StringCR url)
+BentleyStatus WebMercatorTileDisplayHelper::GetCachedTexture(Render::TextureP cachedTextureId, ImageUtilities::RgbImageInfo& cachedImageInfo, Utf8StringCR url)
     {
     auto existingTexture = TextureCache::Instance().Get(url);
     if (existingTexture == NULL)
         return BSIERROR;
 
-    cachedTextureId = existingTexture->m_textureId;
+    cachedTextureId = existingTexture->m_textureId.get();
     cachedImageInfo = existingTexture->m_imageInfo;
-    return BSISUCCESS;
+    return cachedTextureId != nullptr ? BSIERROR : BSIERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t WebMercatorTileDisplayHelper::DefineTexture(ByteStream const& rgbData, ImageUtilities::RgbImageInfo const& imageInfo)
+Render::TexturePtr WebMercatorTileDisplayHelper::DefineTexture(ByteStream const& rgbData, ImageUtilities::RgbImageInfo const& imageInfo, SceneContextR context)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     BeAssert(!imageInfo.isBGR);
-    int format      = imageInfo.hasAlpha? QV_RGBA_FORMAT: QV_RGB_FORMAT;
-    int sizeofPixel = imageInfo.hasAlpha? 4: 3;
-    int pitch       = imageInfo.width * sizeofPixel;
+    
+    Render::ImagePtr pImage = new Render::Image(imageInfo.width, imageInfo.height, imageInfo.hasAlpha ? Render::Image::Format::Rgba : Render::Image::Format::Rgb, rgbData.GetData(), rgbData.GetSize());
 
-    Point2d sizeInPixels;
-    sizeInPixels.x = imageInfo.width;
-    sizeInPixels.y = imageInfo.height;
-        
-    uintptr_t textureId = TextureCache::Instance().GetNextTextureId();
-    T_HOST.GetGraphicsAdmin()._DefineTile(textureId, "", sizeInPixels, false, format, pitch, &rgbData[0]);
-
-    return textureId;
-#endif
-    return 0;
+    return context.GetTargetR().CreateTileSection(*pImage, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorTileDisplayHelper::CacheTexture(Utf8StringCR url, uintptr_t textureId, ImageUtilities::RgbImageInfo const& imageInfo)
+void WebMercatorTileDisplayHelper::CacheTexture(Utf8StringCR url, Render::TextureR textureId, ImageUtilities::RgbImageInfo const& imageInfo)
     {
     TextureCache::Instance().Trim();
     TextureCache::Instance().Insert(url, imageInfo, textureId);
@@ -615,7 +582,7 @@ void WebMercatorTileDisplayHelper::CacheTexture(Utf8StringCR url, uintptr_t text
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorTileDisplayHelper::DrawTile(ViewContextR context, WebMercatorTilingSystem::TileId const& tileid, ImageUtilities::RgbImageInfo const& imageInfo, uintptr_t textureId)
+void WebMercatorTileDisplayHelper::DrawTile(ViewContextR context, WebMercatorTilingSystem::TileId const& tileid, ImageUtilities::RgbImageInfo const& imageInfo, Render::TextureR textureId)
     {
     // Get 4 corners in this order:
     //  [0]     [1]
@@ -657,15 +624,16 @@ void WebMercatorTileDisplayHelper::DrawTile(ViewContextR context, WebMercatorTil
         DrawTileAsBox(context, tileid, z, false);
     #endif
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    context.GetCurrentGraphicR().AddMosaic(1,1, &textureId, uvPts);
-#endif
+    //NEEDS_WORK_CONTINUOUS_RENDER : TODO graphic object should be cached instead of texture
+    Render::GraphicPtr pTileGraphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport()));
+    pTileGraphic->AddTile(textureId, uvPts);     
+    context.OutputGraphic(*pTileGraphic, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorTileDisplayHelper::DrawAndCacheTile(ViewContextR context, WebMercatorTilingSystem::TileId const& tileid, Utf8StringCR url, TiledRaster& realityData)
+void WebMercatorTileDisplayHelper::DrawAndCacheTile(SceneContextR context, WebMercatorTilingSystem::TileId const& tileid, Utf8StringCR url, TiledRaster& realityData)
     {
     auto const& data = realityData.GetData();
     auto const& expectedImageInfo = realityData.GetImageInfo();
@@ -698,9 +666,9 @@ void WebMercatorTileDisplayHelper::DrawAndCacheTile(ViewContextR context, WebMer
     if (SUCCESS != status)
         return;
 
-    auto tid = DefineTexture(m_rgbBuffer, actualImageInfo);
-    CacheTexture(url, tid, actualImageInfo);
-    DrawTile(context, tileid, actualImageInfo, tid);
+    auto tid = DefineTexture(m_rgbBuffer, actualImageInfo, context);
+    CacheTexture(url, *tid, actualImageInfo);
+    DrawTile(context, tileid, actualImageInfo, *tid);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -992,10 +960,10 @@ BentleyStatus WebMercatorDisplay::DrawSubstituteTilesFinerFromTextureCache(ViewC
 
             // *** NB: Do not try to read from the RealityDataCache. This method is called from _DrawView, and it must be fast!
 
-            uintptr_t finerImageTid;
+            Render::TextureP finerImageTid = nullptr;
             if (m_helper.GetCachedTexture(finerImageTid, finerImageInfo, finerUrl) == BSISUCCESS)
                 {
-                m_helper.DrawTile(context, finerTileid, finerImageInfo, finerImageTid);
+                m_helper.DrawTile(context, finerTileid, finerImageInfo, *finerImageTid);
                 }
             else
                 {
@@ -1017,7 +985,10 @@ BentleyStatus WebMercatorDisplay::DrawCoarserTilesForViewFromTextureCache(ViewCo
     if (GetCachedTiles(coarserTileDisplayImageData, allCoarserTilesInTextureCache, zoomLevel, context) == BSISUCCESS && allCoarserTilesInTextureCache)
         {
         for (auto const& coarserTileddata : coarserTileDisplayImageData)
-            m_helper.DrawTile(context, coarserTileddata.tileid, coarserTileddata.imageInfo, coarserTileddata.textureId);
+            {
+            if (coarserTileddata.textureId.IsValid())
+                m_helper.DrawTile(context, coarserTileddata.tileid, coarserTileddata.imageInfo, *coarserTileddata.textureId);
+            }
         return BSISUCCESS;
         }
     
@@ -1073,11 +1044,13 @@ BentleyStatus WebMercatorDisplay::GetCachedTiles(bvector<TileDisplayImageData>& 
         if (CreateUrl(url, data.imageInfo, data.tileid) != BSISUCCESS)
             return BSIERROR; // ?? when would this ever happen??
 
-        if (m_helper.GetCachedTexture(data.textureId, data.imageInfo, url) != BSISUCCESS)
+        Render::TextureP pCachedTexture = nullptr;
+        if (m_helper.GetCachedTexture(pCachedTexture, data.imageInfo, url) != BSISUCCESS)
             {
-            data.textureId = 0;
             allFoundInTextureCache = false;
             }
+
+        data.textureId = pCachedTexture;
 
         tileDisplayImageData.push_back(data);
         }
@@ -1160,9 +1133,9 @@ void WebMercatorDisplay::DrawView(ViewContextR context)
         #endif
 
         auto tileid = tileddata.tileid;
-        if (tileddata.textureId != 0)
+        if (tileddata.textureId.IsValid())
             {
-            m_helper.DrawTile(context, tileid, tileddata.imageInfo, tileddata.textureId);
+            m_helper.DrawTile(context, tileid, tileddata.imageInfo, *tileddata.textureId);
             }
         else
             {
@@ -1192,7 +1165,7 @@ void WebMercatorDisplay::DrawView(ViewContextR context)
 * This callback is invoked on a timer during progressive display.
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveTask::Completion WebMercatorDisplay::_DoProgressive(SceneContext& context, WantShow& wantShow)
+ProgressiveTask::Completion WebMercatorDisplay::_DoProgressive(SceneContextR context, WantShow& wantShow)
     {
     if (BeTimeUtilities::GetCurrentTimeAsUnixMillis() < m_nextRetryTime)
         {
