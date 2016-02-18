@@ -187,21 +187,20 @@ void ConnectSpaces::SendStatusToUIThread(StatusAction action, StatusCode statusC
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ConnectSpaces::GetNewTokenIfNeeded(bool getNewToken, StatusAction action, SamlTokenR token, Utf8CP appliesToUrl)
     {
-    SamlToken newToken;
-
     m_credentialsCriticalSection.Enter();
     if (!getNewToken && !token.IsEmpty())
         {
         m_credentialsCriticalSection.Leave();
         return SUCCESS;
         }
-    StatusInt status = Connect::Login(m_credentials, newToken, appliesToUrl);
+
+    auto result = Connect::Login(m_credentials, appliesToUrl)->GetResult();
     m_credentialsCriticalSection.Leave();
 
-    if (SUCCESS == status)
+    if (result.IsSuccess())
         {
         m_credentialsCriticalSection.Enter();
-        token = newToken;
+        token = *result.GetValue();
         m_credentialsCriticalSection.Leave();
         // Note: even though the below access members (m_token and m_eulaToken) protected
         // by the critical section, it doesn't access their data, just their address,

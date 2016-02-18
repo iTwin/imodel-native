@@ -60,7 +60,7 @@ void Connect::Uninintialize()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Connect::GetStsToken(CredentialsCR creds, SamlTokenR tokenOut, Utf8CP appliesToUrlString, Utf8CP stsUrl)
+AsyncTaskPtr<SamlTokenResult> Connect::GetStsToken(CredentialsCR creds, Utf8CP appliesToUrlString, Utf8CP stsUrl)
     {
     Json::Value issueExParams;
     issueExParams["ActAs"] = "";
@@ -68,13 +68,13 @@ StatusInt Connect::GetStsToken(CredentialsCR creds, SamlTokenR tokenOut, Utf8CP 
     Utf8PrintfString credsPair("%s:%s", creds.GetUsername().c_str(), creds.GetPassword().c_str());
     Utf8PrintfString authorization("Basic %s", Base64Utilities::Encode(credsPair).c_str());
 
-    return GetStsToken(authorization, issueExParams, tokenOut, appliesToUrlString, stsUrl);
+    return GetStsToken(authorization, issueExParams, appliesToUrlString, stsUrl);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Connect::GetStsToken(SamlTokenCR parentToken, SamlTokenR tokenOut, Utf8CP appliesToUrlString, Utf8CP stsUrl)
+AsyncTaskPtr<SamlTokenResult> Connect::GetStsToken(SamlTokenCR parentToken, Utf8CP appliesToUrlString, Utf8CP stsUrl)
     {
     Json::Value issueExParams;
 
@@ -85,18 +85,18 @@ StatusInt Connect::GetStsToken(SamlTokenCR parentToken, SamlTokenR tokenOut, Utf
     Utf8String cert;
     if (SUCCESS != parentToken.GetX509Certificate(cert))
         {
-        return BC_ERROR;
+        return CreateCompletedAsyncTask(SamlTokenResult::Error({}));
         }
 
     Utf8PrintfString authorization("X509 access_token=%s", cert.c_str());
 
-    return GetStsToken(authorization, issueExParams, tokenOut, appliesToUrlString, stsUrl);
+    return GetStsToken(authorization, issueExParams, appliesToUrlString, stsUrl);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Travis.Cobbs    07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Connect::GetStsToken(Utf8StringCR authorization, JsonValueCR issueExParams, SamlTokenR tokenOut, Utf8CP appliesToUrlString, Utf8CP stsUrl)
+AsyncTaskPtr<SamlTokenResult> Connect::GetStsToken(Utf8StringCR authorization, JsonValueCR issueExParams, Utf8CP appliesToUrlString, Utf8CP stsUrl)
     {
     BeAssert(s_connectInitialized);
 
@@ -121,35 +121,34 @@ StatusInt Connect::GetStsToken(Utf8StringCR authorization, JsonValueCR issueExPa
     HttpStringBodyPtr requestBody = HttpStringBody::Create(Json::FastWriter().write(issueExParamsValue));
     request.SetRequestBody(requestBody);
 
-    HttpResponse httpResponse = request.Perform();
-    if (httpResponse.GetConnectionStatus() != ConnectionStatus::OK)
+    return request.PerformAsync()->Then<SamlTokenResult>([=] (HttpResponseCR response)
         {
-        return BC_ERROR;
-        }
-    if (httpResponse.GetHttpStatus() == HttpStatus::Unauthorized)
-        {
-        return BC_LOGIN_ERROR;
-        }
-    Json::Value root = httpResponse.GetBody().AsJson();
-    if (root["RequestedSecurityToken"].empty())
-        {
-        BeAssert(false && "Bentley::MobileUtils::Connect::GetStsToken(): Token not found.");
-        return BC_ERROR;
-        }
+        if (response.GetConnectionStatus() != ConnectionStatus::OK)
+            return SamlTokenResult::Error({response});
 
-    tokenOut = SamlToken(Utf8String(root["RequestedSecurityToken"].asString()));
-    if (!tokenOut.IsSupported())
-        {
-        return BC_ERROR;
-        }
+        if (response.GetHttpStatus() != HttpStatus::OK)
+            return SamlTokenResult::Error({response});
 
-    return BC_SUCCESS;
+        Json::Value root = response.GetBody().AsJson();
+        if (root["RequestedSecurityToken"].empty())
+            {
+            BeAssert(false && "Bentley::MobileUtils::Connect::GetStsToken(): Token not found.");
+            return SamlTokenResult::Error({});
+            }
+
+        auto token = std::make_shared<SamlToken>(root["RequestedSecurityToken"].asString());
+
+        if (!token->IsSupported())
+            return SamlTokenResult::Error({});
+
+        return SamlTokenResult::Success(token);
+        });
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Bentley Systems 04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Connect::Login(CredentialsCR creds, SamlTokenR tokenOut, Utf8CP appliesToUrl, Utf8CP stsUrl)
+AsyncTaskPtr<SamlTokenResult> Connect::Login(CredentialsCR creds, Utf8CP appliesToUrl, Utf8CP stsUrl)
     {
     Utf8String appliesToUrlString;
     if (appliesToUrl != nullptr)
@@ -171,7 +170,7 @@ StatusInt Connect::Login(CredentialsCR creds, SamlTokenR tokenOut, Utf8CP applie
         stsUrlString = UrlProvider::Urls::ImsStsAuth.Get();
         }
 
-    return GetStsToken(creds, tokenOut, appliesToUrlString.c_str(), stsUrlString.c_str());
+    return GetStsToken(creds, appliesToUrlString.c_str(), stsUrlString.c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -266,7 +265,7 @@ Utf8String Connect::GetClientRelyingPartyUriForWtrealm()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Vytautas.Barkauskas     11/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Connect::RenewToken(SamlTokenCR parentToken, SamlTokenR tokenOut, Utf8CP appliesToUrl, Utf8CP stsUrl)
+AsyncTaskPtr<SamlTokenResult> Connect::RenewToken(SamlTokenCR parentToken, Utf8CP appliesToUrl, Utf8CP stsUrl)
     {
     Utf8String appliesToUrlString;
     if (appliesToUrl != nullptr)
@@ -288,5 +287,5 @@ StatusInt Connect::RenewToken(SamlTokenCR parentToken, SamlTokenR tokenOut, Utf8
         stsUrlString = UrlProvider::Urls::ImsActiveStsDelegationService.Get() + "/json/IssueEx";
         }
 
-    return  GetStsToken(parentToken, tokenOut, appliesToUrlString.c_str(), stsUrlString.c_str());
+    return GetStsToken(parentToken, appliesToUrlString.c_str(), stsUrlString.c_str());
     }

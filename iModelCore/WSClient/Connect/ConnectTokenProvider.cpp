@@ -46,12 +46,14 @@ SamlTokenPtr ConnectTokenProvider::UpdateToken()
         }
 
     Credentials creds = m_persistence->GetCredentials();
-
-    auto token = std::make_shared<SamlToken>();
-    if (!creds.IsValid() || 0 != Connect::Login(creds, *token))
-        {
+    if (!creds.IsValid())
         return nullptr;
-        }
+
+    auto result = Connect::Login(creds)->GetResult();
+    if (!result.IsSuccess())
+        return nullptr;
+
+    SamlTokenPtr token = result.GetValue();
 
     m_persistence->SetToken(token);
     return token;
@@ -70,13 +72,14 @@ SamlTokenPtr ConnectTokenProvider::GetToken()
         if (tokenSetTime.IsValid() && ShouldRenewToken(tokenSetTime, RENEW_TOKEN_AFTER_MS))
             {
             auto oldToken = m_persistence->GetToken();
-            auto newToken = std::make_shared<SamlToken>();
-            if (nullptr == oldToken || SUCCESS != Connect::RenewToken(*oldToken, *newToken))
-                {
+            if (nullptr == oldToken)
                 return nullptr;
-                }
 
-            m_persistence->SetToken(newToken);
+            auto tokenResult = Connect::RenewToken(*oldToken)->GetResult();
+            if (!tokenResult.IsSuccess())
+                return nullptr;
+
+            m_persistence->SetToken(tokenResult.GetValue());
             }
         }
     return m_persistence->GetToken();

@@ -72,22 +72,25 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithToken(SamlTokenPtr to
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithCredentials(CredentialsCR credentials)
     {
-    auto token = std::make_shared<SamlToken>();
-    StatusInt result = Connect::Login(credentials, *token);
-    if (Connect::BC_LOGIN_ERROR == result)
+    return Connect::Login(credentials)->Then<SignInResult>([=] (SamlTokenResult result)
         {
-        return CreateCompletedAsyncTask(SignInResult::Error(ConnectLocalizedString(ALERT_SignInFailed_Message)));
-        }
-    else if (Connect::BC_SUCCESS != result)
-        {
-        return CreateCompletedAsyncTask(SignInResult::Error(ConnectLocalizedString(ALERT_SignInFailed_ServerError)));
-        }
+        if (!result.IsSuccess())
+            {
+            // TODO: return error directly and avoid additonal localized strings
+            if (HttpStatus::Unauthorized == result.GetError().GetHttpStatus())
+                return SignInResult::Error(ConnectLocalizedString(ALERT_SignInFailed_Message));
 
-    m_persistence = std::make_shared<ConnectSessionAuthenticationPersistence>();
-    m_persistence->SetToken(token);
-    m_persistence->SetCredentials(credentials);
+            return SignInResult::Error(ConnectLocalizedString(ALERT_SignInFailed_ServerError));
+            }
 
-    return CreateCompletedAsyncTask(SignInResult::Success());
+        SamlTokenPtr token = result.GetValue();
+
+        m_persistence = std::make_shared<ConnectSessionAuthenticationPersistence>();
+        m_persistence->SetToken(token);
+        m_persistence->SetCredentials(credentials);
+
+        return SignInResult::Success();
+        });
     }
 
 /*--------------------------------------------------------------------------------------+
