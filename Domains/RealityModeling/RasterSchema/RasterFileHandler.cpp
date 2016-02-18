@@ -91,7 +91,7 @@ void RasterFileProperties::FromJson(Json::Value const& v)
 //----------------------------------------------------------------------------------------
 DgnModelId RasterFileModelHandler::CreateRasterFileModel(DgnDbR db, Utf8StringCR fileId)
     {
-    DgnClassId classId(db.Schemas().GetECClassId(BENTLEY_RASTER_SCHEMA_NAME, RASTER_CLASSNAME_RasterFileModel));
+    DgnClassId classId(db.Schemas().GetECClassId(RASTER_SCHEMA_NAME, RASTER_CLASSNAME_RasterFileModel));
     BeAssert(classId.IsValid());
 
     // Find resolved file name for the raster

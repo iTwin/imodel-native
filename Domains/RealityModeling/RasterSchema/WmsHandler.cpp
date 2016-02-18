@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/WmsHandler.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RasterSchemaInternal.h>
@@ -197,7 +197,7 @@ void WmsMap::FromJson(Json::Value const& v)
 //----------------------------------------------------------------------------------------
 DgnModelId WmsModelHandler::CreateWmsModel(DgnDbR db, Utf8CP modelName, WmsMap const& mapInfo)
     {
-    DgnClassId classId(db.Schemas().GetECClassId(BENTLEY_RASTER_SCHEMA_NAME, RASTER_CLASSNAME_WmsModel));
+    DgnClassId classId(db.Schemas().GetECClassId(RASTER_SCHEMA_NAME, RASTER_CLASSNAME_WmsModel));
     BeAssert(classId.IsValid());
 
     if(!mapInfo.HasValidParameters())
