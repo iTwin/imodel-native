@@ -59,7 +59,7 @@
     <ClInclude Include="UnitsNativeLogging.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\PrivateAPI\StandardNames.h">
+    <ClInclude Include="StandardNames.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

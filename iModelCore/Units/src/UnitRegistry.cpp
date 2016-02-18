@@ -111,8 +111,8 @@ void UnitRegistry::AddBasePhenomena(Utf8Char dimensionalSymbol)
 
     auto phenomena = new Phenomenon(phenomenaName, phenomenaName, dimensionalSymbol);
 
-    auto nameStr = Utf8String(phenomenaName);
-    m_phenomena.insert(bpair<Utf8String, Phenomenon *>(nameStr, phenomena));
+    //auto nameStr = Utf8String(phenomenaName);
+    m_phenomena.insert(bpair<Utf8String, PhenomenonCP>(phenomenaName, phenomena));
     }
 
 //-------------------------------------------------------------------------------------//
@@ -122,8 +122,8 @@ void UnitRegistry::AddPhenomena (Utf8CP phenomenaName, Utf8CP definition)
     {
     auto phenomena = new Phenomenon(phenomenaName, definition, ' ');
 
-    auto nameStr = Utf8String(phenomenaName);
-    m_phenomena.insert(bpair<Utf8String, Phenomenon *>(nameStr, phenomena));
+    //auto nameStr = Utf8String(phenomenaName);
+    m_phenomena.insert(bpair<Utf8String, PhenomenonCP>(phenomenaName, phenomena));
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -131,48 +131,67 @@ void UnitRegistry::AddPhenomena (Utf8CP phenomenaName, Utf8CP definition)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UnitRegistry::AddDefaultSystems ()
     {
-    AddSystem ("SI");
-    AddSystem ("Metric");
-    AddSystem ("CGS");
-    AddSystem ("Imperial");
-    AddSystem ("Physics");
-    AddSystem ("Chemistry");
-    // TODO: Add more.
+    AddSystem (SI);
+    AddSystem (CGS);
+    AddSystem (METRIC);
+    AddSystem (IMPERIAL);
+    AddSystem (PHYSICS);
+    AddSystem (CHEMISTRY);
+    AddSystem (THERMODYNAMICS);
+    AddSystem (ASTRONOMY);
+    AddSystem (MARITIME);
+    AddSystem (SURVEYOR);
+    AddSystem (TYPOGRAPHY);
+    AddSystem (POSTSCRIPT);
+    AddSystem (TEXT);
+    AddSystem (INDUSTRIAL);
+    AddSystem (PHARMACEUTICAL);
+    AddSystem (AGRICULTURE);
+    AddSystem (INTERNATIONAL);
+    AddSystem (USCUSTOM);
+    AddSystem (BRITISH);
+    AddSystem (JAPANESE);
+    AddSystem (HISTORICAL);
+    AddSystem (STATISTICS);
+    AddSystem (BENTLEY);
+    AddSystem (CUSTOMARY);
+    AddSystem (FINANCE);
+    AddSystem (CONSTANT);
     }
 
-BentleyStatus UnitRegistry::AddSIBaseUnit(Utf8CP unitName, Utf8Char dimensionSymbol)
+UnitCP UnitRegistry::AddSIBaseUnit(Utf8CP unitName, Utf8Char dimensionSymbol)
     {
     Utf8CP phenomenonName = GetBasePhenomenonName(dimensionSymbol);
     if (Utf8String::IsNullOrEmpty(phenomenonName))
-        return BentleyStatus::ERROR;
+        return nullptr;
     
     // TODO: Error checking
     auto unit = Unit::Create(SI, phenomenonName, unitName, unitName, dimensionSymbol, 1, 0);
 
-    auto nameStr = Utf8String(unitName);
-    m_units.insert(bpair<Utf8String, Unit *>(nameStr, unit));
+    //auto nameStr = Utf8String(unitName);
+    m_units.insert(bpair<Utf8String, UnitCP>(unitName, unit));
 
-    return BentleyStatus::SUCCESS;
+    return unit;
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UnitRegistry::AddUnit (Utf8CP systemName, Utf8CP phenomName, Utf8CP unitName, Utf8CP definition, double factor, double offset)
+UnitCP UnitRegistry::AddUnit (Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double factor, double offset)
     {
-    if (!(HasSystem(systemName) && HasPhenomena(phenomName)))
-        return ERROR;
+    if (!(HasSystem(systemName) || !HasPhenomena(phenomName)))
+        return nullptr;
 
     auto unit = Unit::Create (systemName, phenomName, unitName, definition, ' ', factor, offset);
     if (nullptr == unit)
-        return ERROR;
+        return nullptr;
 
-    auto nameStr = Utf8String(unitName);
-    m_units.insert (bpair<Utf8String, Unit*>(nameStr, unit));
+    //auto nameStr = Utf8String(unitName);
+    m_units.insert (bpair<Utf8String, UnitCP>(unitName, unit));
 
-    // TODO: Add conversions.
+    // TODO: Add conversions.  Do we really do this here or when we are asked to convert between units?
 
-    return SUCCESS;
+    return unit;
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -183,8 +202,27 @@ BentleyStatus UnitRegistry::AddConstant(Utf8CP phenomName, Utf8CP constantName, 
     // TODO: Error checking
     auto constant = Unit::Create(CONSTANT, phenomName, constantName, definition, ' ', factor, 0);
 
-    auto nameStr = Utf8String(constantName);
-    m_constants.insert(bpair<Utf8String, Unit *>(nameStr, constant));
+    //auto nameStr = Utf8String(constantName);
+    m_constants.insert(bpair<Utf8String, UnitCP>(constantName, constant));
+
+    return BentleyStatus::SUCCESS;
+    }
+
+BentleyStatus UnitRegistry::AddSynonym(UnitCP unit, Utf8CP synonymName)
+    {
+    if (Utf8String::IsNullOrEmpty(synonymName))
+        return BentleyStatus::ERROR;
+
+    if (nullptr == unit)
+        return BentleyStatus::ERROR;
+
+    // TODO: Check to make sure not constant
+    auto iter = m_units.find(synonymName);
+    if (iter != m_units.end())
+        return BentleyStatus::ERROR;
+
+    //auto nameStr = Utf8String();
+    m_units.insert(bpair<Utf8String, UnitCP>(synonymName, unit));
 
     return BentleyStatus::SUCCESS;
     }
@@ -261,24 +299,25 @@ UnitCP UnitRegistry::LookupUnitBySubTypes (const Utf8Vector &numerator, const Ut
     sort(n.begin(), n.end());
     sort(d.begin(), d.end());
 
-    auto comparison = [&](bpair<Utf8String, Unit*> pair)
+    auto comparison = [&](bpair<Utf8String, UnitCP> pair)
         {
         auto unit = pair.second;
 
-        if (n.size() != unit->GetNumerator().size())
+        if (n.size() != unit->Numerator().size())
             return false;
 
-        if (d.size() != unit->GetDenominator().size())
+        if (d.size() != unit->Denominator().size())
             return false;
 
-        sort (unit->GetNumerator().begin(), unit->GetNumerator().end());
-        sort (unit->GetDenominator().begin(), unit->GetDenominator().end());
+        // TODO: Is this necessary?  We sort when creating the unit
+        //sort (unit->GetNumerator().begin(), unit->GetNumerator().end());
+        //sort (unit->GetDenominator().begin(), unit->GetDenominator().end());
 
-        auto nmatch = mismatch (n.begin(), n.end(), unit->GetNumerator().begin());
+        auto nmatch = mismatch (n.begin(), n.end(), unit->Numerator().begin());
         if (nmatch.first != n.end())
             return false;
 
-        auto dmatch = mismatch (d.begin(), d.end(), unit->GetDenominator().begin());
+        auto dmatch = mismatch (d.begin(), d.end(), unit->Denominator().begin());
         if (dmatch.first != d.end())
             return false;
 

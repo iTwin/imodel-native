@@ -9,6 +9,7 @@
 #pragma once
 
 #include <Units/Units.h>
+//#include <Units/UnitRegistry.h>
 
 UNITS_TYPEDEFS(Unit);
 UNITS_TYPEDEFS(Phenomenon);
@@ -18,7 +19,7 @@ BEGIN_BENTLEY_UNITS_NAMESPACE
 typedef bvector<Utf8String> Utf8Vector;
 
 struct SymbolicFraction
-	{
+    {
 friend struct Unit;
 friend struct Phenomenon;
 private:
@@ -46,13 +47,13 @@ public:
     bool operator!= (const SymbolicFraction& rhs) const;
 };
 
-
+struct UnitRegistry;
 //=======================================================================================
 //! A base class for all units.
 // @bsiclass                                                    Chris.Tartamella   02/16
 //=======================================================================================
 struct Unit : SymbolicFraction
-	{
+    {
 DEFINE_T_SUPER(SymbolicFraction);
 friend struct UnitRegistry;
 
@@ -66,26 +67,27 @@ private:
     static BentleyStatus ParseDefinition(Utf8CP definition, Utf8Vector& numerator, Utf8Vector& denominator);
     static UnitP Create (Utf8CP sysName, Utf8CP phenomName, Utf8CP unitName, Utf8CP definition, Utf8Char baseDimensionSymbol, double factor, double offset);
 
-	// TODO: Create a better definition of an "unknown" unit
-	Unit (Utf8Vector& numerator, Utf8Vector& denominator);
+    // TODO: Create a better definition of an "unknown" unit
+    Unit (Utf8Vector& numerator, Utf8Vector& denominator);
     Unit (Utf8CP system, Utf8CP phenomena, Utf8CP name, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset);
 
-	// Lifecycle is managed by the UnitRegistry so we don't allow copies or assignments.
-	Unit (UnitCR unit) = delete;
-	UnitR operator=(UnitCR unit) = delete;
+    // Lifecycle is managed by the UnitRegistry so we don't allow copies or assignments.
+    Unit (UnitCR unit) = delete;
+    UnitR operator=(UnitCR unit) = delete;
 
 protected:
     virtual Utf8CP _GetName() const { return m_name.c_str(); }
     //virtual Utf8CP _GetDisplayLabel() const { return m_displayLabel.c_str(); }
     
 public:
-	virtual ~Unit() { }
+    virtual ~Unit() { }
 
     bool   IsRegistered()    const;
     Utf8CP GetName()         const { return _GetName(); }
     //Utf8CP GetDisplayLabel() const { return _GetDisplayLabel(); }
 
     bool IsBaseUnit() const { return ' ' != m_dimensionSymbol; }
+
 
     // Binary comparison operators.
     bool operator== (UnitR rhs) const;

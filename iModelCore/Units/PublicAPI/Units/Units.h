@@ -31,7 +31,7 @@ using namespace std;
 #include <Bentley/bvector.h>
 #include <Bentley/bmap.h>
 
-USING_NAMESPACE_BENTLEY
+//USING_NAMESPACE_BENTLEY
 
 #include <Units/UnitTypes.h>
 #include <Units/Quantity.h>

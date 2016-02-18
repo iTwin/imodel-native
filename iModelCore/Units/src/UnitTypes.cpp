@@ -11,10 +11,10 @@
 USING_NAMESPACE_BENTLEY_UNITS
 
 Unit::Unit (Utf8Vector& numerator, Utf8Vector& denominator) : SymbolicFraction(numerator, denominator),
-	m_name(""), m_system (""), m_dimensionSymbol('\n'), m_factor(1.0), m_offset(0.0)
-	{
+    m_name(""), m_system (""), m_dimensionSymbol('\n'), m_factor(1.0), m_offset(0.0)
+    {
 
-	}
+    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
@@ -66,10 +66,10 @@ UnitCR Unit::operator* (UnitR rhs) const
     auto result = T_Super::operator/(rhs);
 
     UnitCP unit = UnitRegistry::Instance().LookupUnitBySubTypes(result.Numerator(), result.Denominator());
-	if (nullptr != unit)
-		return *unit;
+    if (nullptr != unit)
+        return *unit;
 
-	Utf8Vector n = Utf8Vector();
+    Utf8Vector n = Utf8Vector();
     copy (result.Numerator().begin(), result.Numerator().end(), n.begin());
 
     Utf8Vector d = Utf8Vector();
@@ -86,10 +86,10 @@ UnitCR Unit::operator/ (UnitR rhs) const
     auto result = T_Super::operator/(rhs);
 
     UnitCP unit = UnitRegistry::Instance().LookupUnitBySubTypes(result.Numerator(), result.Denominator());
-	if (nullptr != unit)
-		return *unit;
+    if (nullptr != unit)
+        return *unit;
 
-	Utf8Vector n = Utf8Vector();
+    Utf8Vector n = Utf8Vector();
     copy (result.Numerator().begin(), result.Numerator().end(), n.begin());
 
     Utf8Vector d = Utf8Vector();
@@ -103,7 +103,7 @@ UnitCR Unit::operator/ (UnitR rhs) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 UnitCR Unit::operator+ (UnitR rhs) const
     {
-	//TODO: Is this right?
+    //TODO: Is this right?
     return *this;
     }
 
@@ -112,7 +112,7 @@ UnitCR Unit::operator+ (UnitR rhs) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 UnitCR Unit::operator- (UnitR rhs) const
     {
-	//TODO: Is this right?
+    //TODO: Is this right?
     return *this;
     }
 
@@ -170,7 +170,7 @@ SymbolicFraction SymbolicFraction::operator*(const SymbolicFraction& rhs) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 SymbolicFraction SymbolicFraction::operator/(const SymbolicFraction& rhs) const
     {
-	auto n = Utf8Vector(m_numerator);
+    auto n = Utf8Vector(m_numerator);
     auto d = Utf8Vector(m_denominator);
 
     // Combine numerator and denominators.
