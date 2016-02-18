@@ -2,7 +2,7 @@
 <ECSchema schemaName="IntegrityCheck" nameSpacePrefix="ic" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
     <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap"/>
-    <ECEntityClass typeName="SourceBase" modifier="None">
+    <ECEntityClass typeName="SourceBase">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
@@ -14,15 +14,15 @@
         <ECProperty propertyName="S" typeName="string" readOnly="false"/>
         <ECProperty propertyName="I" typeName="int" readOnly="false"/>
     </ECEntityClass>
-    <ECEntityClass typeName="SourceDerived1" modifier="None">
+    <ECEntityClass typeName="SourceDerived1">
         <BaseClass>SourceBase</BaseClass>
         <ECProperty propertyName="D" typeName="string" readOnly="false"/>
     </ECEntityClass>
-    <ECEntityClass typeName="SourceDerived2" modifier="None">
+    <ECEntityClass typeName="SourceDerived2">
         <BaseClass>SourceBase</BaseClass>
         <ECProperty propertyName="L" typeName="long" readOnly="false"/>
     </ECEntityClass>
-    <ECEntityClass typeName="TargetBase" modifier="None">
+    <ECEntityClass typeName="TargetBase">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
@@ -34,7 +34,7 @@
         <ECProperty propertyName="I" typeName="int" readOnly="false"/>
         <ECProperty propertyName="S" typeName="string" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="SourceToTarget_Embedding" modifier="None" strength="embedding" strengthDirection="forward">
+    <ECRelationshipClass typeName="SourceToTarget_Embedding" strength="embedding" strengthDirection="forward">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
                 <OnDeleteAction>Cascade</OnDeleteAction>

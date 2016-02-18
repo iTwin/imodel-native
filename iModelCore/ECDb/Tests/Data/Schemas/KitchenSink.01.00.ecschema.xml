@@ -188,10 +188,10 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="ClonedRelationshipClass" modifier="None" strength="referencing" strengthDirection="forward">
         <BaseClass>BaseRelationshipClass</BaseClass>
-        <Source cardinality="(1,1)" roleLabel="source constraint2" polymorphic="true">
+        <Source cardinality="(0,1)" roleLabel="source constraint2" polymorphic="true">
             <Class class="TestClass"/>
         </Source>
-        <Target cardinality="(1,1)" roleLabel="target constraint2" polymorphic="true">
+        <Target cardinality="(0,1)" roleLabel="target constraint2" polymorphic="true">
             <Class class="Test2Class"/>
         </Target>
     </ECRelationshipClass>
@@ -213,19 +213,19 @@
         <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="DocumentHasOwner" description="FolderHasDocuments" modifier="None" strength="referencing" strengthDirection="forward">
-        <Source cardinality="(1,1)" roleLabel="has Owner" polymorphic="true">
+        <Source cardinality="(0,1)" roleLabel="has Owner" polymorphic="true">
             <Class class="Document"/>
         </Source>
-        <Target cardinality="(1,1)" roleLabel="owns a Document" polymorphic="true">
+        <Target cardinality="(0,1)" roleLabel="owns a Document" polymorphic="true">
             <Class class="User"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="ExplicitRelationshipClass" modifier="None" strength="referencing" strengthDirection="forward">
         <BaseClass>BaseRelationshipClass</BaseClass>
-        <Source cardinality="(1,1)" roleLabel="source constraint2" polymorphic="true">
+        <Source cardinality="(0,1)" roleLabel="source constraint2" polymorphic="true">
             <Class class="TestClass"/>
         </Source>
-        <Target cardinality="(1,1)" roleLabel="target constraint2" polymorphic="true">
+        <Target cardinality="(0,1)" roleLabel="target constraint2" polymorphic="true">
             <Class class="Test2Class"/>
         </Target>
     </ECRelationshipClass>
@@ -274,7 +274,7 @@
         <Source cardinality="(0,N)" roleLabel="Owned by employee" polymorphic="true">
             <Class class="FM_Employee"/>
         </Source>
-        <Target cardinality="(1,1)" roleLabel="that owns furniture" polymorphic="true">
+        <Target cardinality="(0,1)" roleLabel="that owns furniture" polymorphic="true">
             <Class class="FM_Chair"/>
             <Class class="FM_Desk"/>
         </Target>
@@ -306,7 +306,7 @@
         <ECProperty propertyName="UpdateTime" typeName="dateTime" readOnly="false"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="FolderHasDocuments" description="FolderHasDocuments" modifier="None" strength="referencing" strengthDirection="forward">
-        <Source cardinality="(1,1)" roleLabel="has Documents" polymorphic="true">
+        <Source cardinality="(0,1)" roleLabel="has Documents" polymorphic="true">
             <Class class="Folder"/>
         </Source>
         <Target cardinality="(0,N)" roleLabel="are held by Folder" polymorphic="true">
@@ -314,7 +314,7 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="FolderHasSubFolders" description="FolderHasSubFolders" modifier="None" strength="referencing" strengthDirection="forward">
-        <Source cardinality="(1,1)" roleLabel="has sub folders" polymorphic="true">
+        <Source cardinality="(0,1)" roleLabel="has sub folders" polymorphic="true">
             <Class class="Folder"/>
         </Source>
         <Target cardinality="(0,N)" roleLabel="are held by Folder" polymorphic="true">
@@ -328,18 +328,14 @@
                 <Writeable>False</Writeable>
             </AccessCustomAttributes>
         </ECCustomAttributes>
-        <Source cardinality="(1,1)" roleLabel="source constraint" polymorphic="true">
+        <Source cardinality="(0,1)" roleLabel="source constraint" polymorphic="true">
             <ECCustomAttributes>
                 <AccessCustomAttributes xmlns="KitchenSink.01.00">
                     <AccessLevel>6</AccessLevel>
                     <Writeable>True</Writeable>
                 </AccessCustomAttributes>
             </ECCustomAttributes>
-            <Class class="TestClass">
-                <Key>
-                    <Property name="ECInstanceId"/>
-                </Key>
-            </Class>
+            <Class class="TestClass" />
         </Source>
         <Target cardinality="(0,N)" roleLabel="target constraint" polymorphic="true">
             <ECCustomAttributes>
@@ -435,10 +431,10 @@
         <ECProperty propertyName="Name" typeName="string" displayLabel="Project Name" readOnly="false"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="ProjectHasPrimitive" modifier="None" strength="referencing" strengthDirection="forward">
-        <Source cardinality="(1,1)" polymorphic="false">
+        <Source cardinality="(0,1)" polymorphic="false">
             <Class class="ecProject"/>
         </Source>
-        <Target cardinality="(1,1)" polymorphic="false">
+        <Target cardinality="(0,1)" polymorphic="false">
             <Class class="PrimitiveClass"/>
         </Target>
     </ECRelationshipClass>
@@ -453,7 +449,7 @@
         <ECProperty propertyName="eclongattr" typeName="int" displayLabel="longattr" readOnly="false"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="ProjectHasWidget" modifier="None" strength="referencing" strengthDirection="forward">
-        <Source cardinality="(1,1)" polymorphic="false">
+        <Source cardinality="(0,1)" polymorphic="false">
             <Class class="ecProject"/>
         </Source>
         <Target cardinality="(0,N)" polymorphic="false">
@@ -461,10 +457,10 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="WidgetBelongsToProject" modifier="None" strength="referencing" strengthDirection="forward">
-        <Source cardinality="(1,1)" polymorphic="false">
+        <Source cardinality="(0,1)" polymorphic="false">
             <Class class="ecWidget"/>
         </Source>
-        <Target cardinality="(1,1)" polymorphic="false">
+        <Target cardinality="(0,1)" polymorphic="false">
             <Class class="ecProject"/>
         </Target>
     </ECRelationshipClass>

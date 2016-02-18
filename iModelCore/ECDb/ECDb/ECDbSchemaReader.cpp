@@ -474,7 +474,7 @@ BentleyStatus ECDbSchemaReader::LoadClassesAndEnumsFromDb(DbECSchemaEntry* ecSch
 BentleyStatus ECDbSchemaReader::LoadECSchemaFromDb(DbECSchemaEntry*& schemaEntry, ECSchemaId ecSchemaId) const
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT S.Name, S.DisplayLabel,S.Description,S.NamespacePrefix,S.VersionMajor,S.VersionMinor, "
+    if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT S.Name, S.DisplayLabel,S.Description,S.NamespacePrefix,S.VersionMajor,S.VersionMiddle,S.VersionMinor, "
         "(SELECT COUNT(*) FROM ec_Class C WHERE S.Id = C.SchemaID) + (SELECT COUNT(*) FROM ec_Enumeration e WHERE S.Id = e.SchemaID) "
         "FROM ec_Schema S WHERE S.Id = ?"))
         return ERROR;
@@ -490,10 +490,13 @@ BentleyStatus ECDbSchemaReader::LoadECSchemaFromDb(DbECSchemaEntry*& schemaEntry
     Utf8CP description = stmt->GetValueText(2);
     Utf8CP nsprefix = stmt->GetValueText(3);
     uint32_t versionMajor = (uint32_t) stmt->GetValueInt(4);
-    uint32_t versionMinor = (uint32_t) stmt->GetValueInt(5);
-    const int typesInSchema = stmt->GetValueInt(6);
+    //WIP_3DIGITVERSION
+    //uint32_t versionMiddle = (uint32_t) stmt->GetValueInt(5);
+    uint32_t versionMinor = (uint32_t) stmt->GetValueInt(6);
+    const int typesInSchema = stmt->GetValueInt(7);
 
     ECSchemaPtr schema = nullptr;
+    //WIP_3DIGITVERSION add versionMiddle to CreateSchema call
     if (ECSchema::CreateSchema(schema, schemaName, versionMajor, versionMinor) != ECObjectsStatus::Success)
         return ERROR;
 

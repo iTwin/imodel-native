@@ -29,7 +29,7 @@ bool ECDbSchemaPersistenceHelper::ContainsECClass(ECDbCR db, ECClassCR ecClass)
 bool ECDbSchemaPersistenceHelper::TryGetECSchemaKey(SchemaKey& key, ECDbCR ecdb, ECSchemaId schemaId)
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != ecdb.GetCachedStatement(stmt, "SELECT Name, VersionMajor, VersionMinor FROM ec_Schema WHERE Id=?"))
+    if (BE_SQLITE_OK != ecdb.GetCachedStatement(stmt, "SELECT Name, VersionMajor, VersionMiddle, VersionMinor FROM ec_Schema WHERE Id=?"))
         return false;
 
     if (BE_SQLITE_OK != stmt->BindInt64(1, schemaId))
@@ -38,7 +38,9 @@ bool ECDbSchemaPersistenceHelper::TryGetECSchemaKey(SchemaKey& key, ECDbCR ecdb,
     if (stmt->Step() != BE_SQLITE_ROW)
         return false;
 
-    key = SchemaKey(stmt->GetValueText(0), stmt->GetValueInt(1), stmt->GetValueInt(2));
+    //WIP_3DIGITVERSION
+    //key = SchemaKey(stmt->GetValueText(0), stmt->GetValueInt(1), stmt->GetValueInt(2), stmt->GetValueInt(3));
+    key = SchemaKey(stmt->GetValueText(0), stmt->GetValueInt(1), stmt->GetValueInt(3));
     return true;
     }
 /*---------------------------------------------------------------------------------------
@@ -48,18 +50,14 @@ BentleyStatus ECDbSchemaPersistenceHelper::GetECSchemaKeys(ECSchemaKeys& keys, E
     {
     keys.clear();
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT Id, Name, VersionMajor, VersionMinor, DisplayLabel FROM ec_Schema ORDER BY Name"))
+    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT Id, Name, VersionMajor, VersionMiddle, VersionMinor, DisplayLabel FROM ec_Schema ORDER BY Name"))
         return ERROR;
 
     while (stmt->Step() == BE_SQLITE_ROW)
         {
-        keys.push_back(
-            ECSchemaKey(
-            stmt->GetValueInt64(0),
-            stmt->GetValueText(1),
-            (uint32_t) stmt->GetValueInt(2),
-            (uint32_t) stmt->GetValueInt(3),
-            stmt->IsColumnNull(4) ? (Utf8CP)nullptr : stmt->GetValueText(4)));
+        keys.push_back(ECSchemaKey(stmt->GetValueInt64(0), stmt->GetValueText(1),
+                                   (uint32_t) stmt->GetValueInt(2), (uint32_t) stmt->GetValueInt(3), (uint32_t) stmt->GetValueInt(4),
+                                stmt->IsColumnNull(5) ? (Utf8CP)nullptr : stmt->GetValueText(5)));
         }
 
     return SUCCESS;

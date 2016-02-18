@@ -616,33 +616,42 @@ void ClassMap::SetTable(ECDbSqlTable& newTable, bool append /*= false*/)
 //---------------------------------------------------------------------------------------
 MapStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo,ClassMapInfo const* classMapInfo)
     {
-    bool isJoinedTable = isJoinedTable = Enum::Contains(GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::JoinedTable);
-    bool isMappingPhase = classMapInfo != nullptr && loadInfo == nullptr;
-    if (!isMappingPhase && isJoinedTable)
+    const bool isJoinedTableMapping = Enum::Contains(GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::JoinedTable);
+    const bool isImportingSchemas = classMapInfo != nullptr && loadInfo == nullptr;
+    if (!isImportingSchemas && isJoinedTableMapping)
         parentClassMap = nullptr;
 
-    std::vector<ECPropertyCP> propertiesToMap;
+    std::vector<ECPropertyCP> propertiesToCreatePropMapsFor;
     for (ECPropertyCP property : m_ecClass.GetProperties(true))
         {
-        PropertyMapPtr propMap = nullptr;
+        PropertyMapPtr propMapInBaseClass = nullptr;
         if (&property->GetClass() != &m_ecClass && parentClassMap != nullptr)
-            parentClassMap->GetPropertyMaps().TryGetPropertyMap(propMap, property->GetName().c_str());
+            parentClassMap->GetPropertyMaps().TryGetPropertyMap(propMapInBaseClass, property->GetName().c_str());
 
-        if (propMap == nullptr)
-            propertiesToMap.push_back(property);
-        else
+        if (propMapInBaseClass == nullptr)
             {
-            if (!isJoinedTable && propMap->GetAsNavigationPropertyMap() == nullptr)
-                GetPropertyMapsR().AddPropertyMap(propMap);
-            else
-                GetPropertyMapsR().AddPropertyMap(PropertyMap::Clone(m_ecDbMap, *propMap, GetClass(), nullptr));
+            propertiesToCreatePropMapsFor.push_back(property);
+            continue;
             }
+
+        if (!isJoinedTableMapping && propMapInBaseClass->GetAsNavigationPropertyMap() == nullptr)
+            {
+            GetPropertyMapsR().AddPropertyMap(propMapInBaseClass);
+            continue;
+            }
+
+        //nav prop maps and if the class is mapped to primary and joined table, create clones of property maps of the base class
+        //as the context (table, containing ECClass) is different
+        if (isImportingSchemas)
+            GetPropertyMapsR().AddPropertyMap(PropertyMap::Clone(m_ecDbMap, *propMapInBaseClass, GetClass(), nullptr));
+        else
+            propertiesToCreatePropMapsFor.push_back(property);
         }
 
-    if (loadInfo == nullptr)
+    if (isImportingSchemas)
         GetColumnFactoryR().Update();
 
-    for (ECPropertyCP property : propertiesToMap)
+    for (ECPropertyCP property : propertiesToCreatePropMapsFor)
         {
         Utf8CP propertyAccessString = property->GetName().c_str();
         PropertyMapPtr propMap = PropertyMap::CreateAndEvaluateMapping(ctx, m_ecDbMap.GetECDb(), *property, m_ecClass, propertyAccessString, nullptr);
@@ -655,15 +664,25 @@ MapStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, IClassMap const* p
             return MapStatus::Error;
             }
 
-        if (loadInfo == nullptr)
+        if (isImportingSchemas)
             {
-            if (SUCCESS == propMap->FindOrCreateColumnsInTable(*this, classMapInfo))
-                GetPropertyMapsR().AddPropertyMap(propMap);
+            if (SUCCESS != propMap->FindOrCreateColumnsInTable(*this, classMapInfo))
+                {
+                BeAssert(false);
+                return MapStatus::Error;
+                }
+
+            GetPropertyMapsR().AddPropertyMap(propMap);
             }
         else
             {
-            if (propMap->Load(*loadInfo) == SUCCESS)
-                GetPropertyMapsR().AddPropertyMap(propMap);
+            if (SUCCESS != propMap->Load(*loadInfo))
+                {
+                BeAssert(false);
+                return MapStatus::Error;
+                }
+
+            GetPropertyMapsR().AddPropertyMap(propMap);
             }
         }
 

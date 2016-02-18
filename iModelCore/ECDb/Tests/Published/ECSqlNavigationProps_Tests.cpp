@@ -513,17 +513,15 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
                                       "          <Class class ='DgnCategory' />"
                                       "      </Target>"
                                       "   </ECRelationshipClass>"
-                                      "</ECSchema>"), 3);
+                                      "</ECSchema>"), 0);
 
     ASSERT_TRUE(ecdb.IsDbOpen());
 
     ECInstanceKey catKey;
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT GetECClassId(), ECInstanceId FROM np.DgnCategory LIMIT 1"));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-
-    catKey = ECInstanceKey(stmt.GetValueInt64(0), stmt.GetValueId<ECInstanceId>(1));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO np.DgnCategory(Name) VALUES('Main')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(catKey));
     ASSERT_TRUE(catKey.IsValid());
     }
 

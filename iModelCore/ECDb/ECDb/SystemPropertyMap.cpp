@@ -310,13 +310,36 @@ PropertyMapRelationshipConstraint::PropertyMapRelationshipConstraint(ECN::ECProp
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      12/2013
 //---------------------------------------------------------------------------------------
-void PropertyMapRelationshipConstraint::AppendSelectClauseSqlSnippetForView (NativeSqlBuilder& viewSql) const
+void PropertyMapRelationshipConstraint::AppendSelectClauseSqlSnippetForView(NativeSqlBuilder& viewSql, ECDbSqlTable const& table) const
     {
-    viewSql.Append (GetColumn ().GetName ().c_str());
-    if (HasViewColumnAlias ())
-        viewSql.AppendSpace ().Append (GetViewColumnAlias ());
+    ECDbSqlColumn const* column = GetSingleColumn(table, false);
+    if (column == nullptr)
+        {
+        BeAssert(column != nullptr && "Expecting a column");
+        return;
+        }
+
+    viewSql.Append(column->GetName().c_str());
+    if (HasViewColumnAlias())
+        viewSql.AppendSpace().Append(GetViewColumnAlias());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      12/2013
+//---------------------------------------------------------------------------------------
+void PropertyMapRelationshipConstraint::AppendSelectClauseSqlSnippetForView(NativeSqlBuilder& viewSql) const
+    {
+    ECDbSqlColumn const* column = GetSingleColumn();
+    if (column == nullptr)
+        {
+        BeAssert(column != nullptr && "Expecting a column");
+        return;
+        }
+
+    viewSql.Append(column->GetName().c_str());
+    if (HasViewColumnAlias())
+        viewSql.AppendSpace().Append(GetViewColumnAlias());
+    }
 
 //******************************** PropertyMapRelationshipConstraintECInstanceId ****************************************
 
@@ -389,9 +412,10 @@ bool colIsDelayGenerated
 : PropertyMapRelationshipConstraint (constraintProperty, columns, kind, endTableColumnAlias),
 m_defaultConstraintClassId (defaultConstraintECClassId), m_isMappedToClassMapTables(false)
     {
+    m_isMappedToClassMapTables = true;
     for (ECDbSqlColumn const* column : columns)
         {
-        m_isMappedToClassMapTables = classMap.IsMappedTo(column->GetTable());
+        m_isMappedToClassMapTables = m_isMappedToClassMapTables && classMap.IsMappedTo(column->GetTable());
 
         if (colIsDelayGenerated)
             {
