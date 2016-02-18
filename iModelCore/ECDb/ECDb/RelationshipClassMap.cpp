@@ -563,23 +563,34 @@ MapStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMap
         if (fkTable.IsOwnedByECDb() && fkTable.GetPersistenceType() == PersistenceType::Persisted
             && referencedTable->GetPersistenceType() == PersistenceType::Persisted)
             {
-            ECDbSqlForeignKeyConstraint* foreignKeyConstraint = fkTable.CreateForeignKeyConstraint(*referencedTable);
-            foreignKeyConstraint->Add(fkCol->GetName().c_str(), referencedTablePKCol->GetName().c_str());
-            if (userRequestedDeleteAction != ForeignKeyActionType::NotSpecified)
-                foreignKeyConstraint->SetOnDeleteAction(userRequestedDeleteAction);
+            if (fkCol->IsReusable())
+                {
+                GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning,
+                     "The ECRelationshipClass '%s' implies a foreign key constraint. ECDb cannot create it though for the "
+                     "column '%s' in table '%s' because the column is used by other properties. Consider disabling column sharing "
+                     "(via ClassMap custom attribute) or redesigning the ECRelationshipClass without using a Key property.",
+                     relationshipClass.GetFullName(), fkCol->GetName().c_str(), fkTable.GetName().c_str());
+                }
             else
                 {
-                if (relationshipClass.GetStrength() == StrengthType::Embedding)
-                    foreignKeyConstraint->SetOnDeleteAction(ForeignKeyActionType::Cascade);
+                ECDbSqlForeignKeyConstraint* foreignKeyConstraint = fkTable.CreateForeignKeyConstraint(*referencedTable);
+                foreignKeyConstraint->Add(fkCol->GetName().c_str(), referencedTablePKCol->GetName().c_str());
+                if (userRequestedDeleteAction != ForeignKeyActionType::NotSpecified)
+                    foreignKeyConstraint->SetOnDeleteAction(userRequestedDeleteAction);
                 else
-                    foreignKeyConstraint->SetOnDeleteAction(ForeignKeyActionType::SetNull);
+                    {
+                    if (relationshipClass.GetStrength() == StrengthType::Embedding)
+                        foreignKeyConstraint->SetOnDeleteAction(ForeignKeyActionType::Cascade);
+                    else
+                        foreignKeyConstraint->SetOnDeleteAction(ForeignKeyActionType::SetNull);
+                    }
+
+                if (userRequestedUpdateAction != ForeignKeyActionType::NotSpecified)
+                    foreignKeyConstraint->SetOnUpdateAction(userRequestedUpdateAction);
+
+                //! remove the fk constraint if already exist due to another relationship on same column
+                foreignKeyConstraint->RemoveIfDuplicate();
                 }
-
-            if (userRequestedUpdateAction != ForeignKeyActionType::NotSpecified)
-                foreignKeyConstraint->SetOnUpdateAction(userRequestedUpdateAction);
-
-            //! remove the fk constraint if already exist due to another relationship on same column
-            foreignKeyConstraint->RemoveIfDuplicate();
             }
         }
 
