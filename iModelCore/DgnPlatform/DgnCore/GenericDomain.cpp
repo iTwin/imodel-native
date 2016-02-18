@@ -57,3 +57,19 @@ DgnDbStatus GenericDomain::ImportSchema(DgnDbR db, ImportSchemaOptions options)
     BeAssert(DgnDbStatus::Success == importSchemaStatus);
     return importSchemaStatus;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    02/2016
+//---------------------------------------------------------------------------------------
+GenericPhysicalObjectPtr GenericPhysicalObject::Create(SpatialModelR model, DgnCategoryId categoryId)
+    {
+    DgnClassId classId = model.GetDgnDb().Domains().GetClassId(generic_ElementHandler::GenericPhysicalObjectHandler::GetHandler());
+
+    if (!classId.IsValid() || !categoryId.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return new GenericPhysicalObject(CreateParams(model.GetDgnDb(), model.GetModelId(), classId, categoryId));
+    }
