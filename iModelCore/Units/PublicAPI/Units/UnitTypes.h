@@ -11,6 +11,7 @@
 #include <Units/Units.h>
 
 UNITS_TYPEDEFS(Unit);
+UNITS_TYPEDEFS(Phenomenon);
 
 BEGIN_BENTLEY_UNITS_NAMESPACE
 
@@ -24,13 +25,12 @@ private:
     Utf8Vector m_numerator;
     Utf8Vector m_denominator;
     static BentleyStatus ParseDefinition(Utf8CP definition, Utf8Vector& numerator, Utf8Vector& denominator);
+    
     SymbolicFraction(Utf8CP definition);
     SymbolicFraction(Utf8Vector& numerator, Utf8Vector& denominator);
 
 protected:
     static void SimplifySubTypes(Utf8Vector &n, Utf8Vector &d);
-
-    SymbolicFraction(Utf8Vector& numerator, Utf8Vector& denominator);
     
     Utf8Vector& GetNumerator() { return m_numerator; }
     Utf8Vector& GetDenominator() { return m_denominator; }
@@ -64,10 +64,10 @@ private:
     double      m_offset;
 
     static BentleyStatus ParseDefinition(Utf8CP definition, Utf8Vector& numerator, Utf8Vector& denominator);
-    static UnitP Create (Utf8CP sysName, Utf8CP phenomName, Utf8CP unitName, Utf8CP definition, double factor, double offset);
+    static UnitP Create (Utf8CP sysName, Utf8CP phenomName, Utf8CP unitName, Utf8CP definition, Utf8Char baseDimensionSymbol, double factor, double offset);
 
 	// TODO: Create a better definition of an "unknown" unit
-	Unit (Utf8Vector& numerator, Utf8Vector& denominator) : Unit("", "", "", numerator, denominator, 1.0, 0.0) { }
+	Unit (Utf8Vector& numerator, Utf8Vector& denominator);
     Unit (Utf8CP system, Utf8CP phenomena, Utf8CP name, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset);
 
 	// Lifecycle is managed by the UnitRegistry so we don't allow copies or assignments.

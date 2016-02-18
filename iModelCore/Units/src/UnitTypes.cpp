@@ -10,6 +10,12 @@
 
 USING_NAMESPACE_BENTLEY_UNITS
 
+Unit::Unit (Utf8Vector& numerator, Utf8Vector& denominator) : SymbolicFraction(numerator, denominator),
+	m_name(""), m_system (""), m_dimensionSymbol('\n'), m_factor(1.0), m_offset(0.0)
+	{
+
+	}
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -21,7 +27,7 @@ Unit::Unit(Utf8CP system, Utf8CP phenomena, Utf8CP name, Utf8CP definition, Utf8
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitPtr Unit::Create (Utf8CP sysName, Utf8CP phenomName, Utf8CP unitName, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset)
+UnitP Unit::Create (Utf8CP sysName, Utf8CP phenomName, Utf8CP unitName, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset)
     {
     return new Unit (sysName, phenomName, unitName, definition, dimensionSymbol, factor, offset);
     }

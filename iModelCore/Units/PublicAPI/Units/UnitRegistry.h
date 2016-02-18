@@ -55,8 +55,8 @@ public:
     UNITS_EXPORT BentleyStatus AddConstant(Utf8CP phenomName, Utf8CP constantName, Utf8CP definition, double factor);
 
     // Lookup methods
-    UNITS_EXPORT UnitCP     LookupUnit(Utf8CP name) const;
-    UNITS_EXPORT ConstantCP LookupConstant(Utf8CP name) const;
+    UNITS_EXPORT UnitCP LookupUnit(Utf8CP name) const;
+    UNITS_EXPORT UnitCP LookupConstant(Utf8CP name) const;
         
     // bool Exists methods.
     UNITS_EXPORT bool HasSystem (Utf8CP systemName) const;

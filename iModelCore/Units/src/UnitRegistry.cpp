@@ -147,7 +147,7 @@ BentleyStatus UnitRegistry::AddSIBaseUnit(Utf8CP unitName, Utf8Char dimensionSym
     auto unit = Unit::Create(SI, phenomenonName, unitName, unitName, dimensionSymbol, 1, 0);
 
     auto nameStr = Utf8String(unitName);
-    m_units.insert(bpair<Utf8String, Unit *>(nameStr, unit.get()));
+    m_units.insert(bpair<Utf8String, Unit *>(nameStr, unit));
 
     return BentleyStatus::SUCCESS;
     }
@@ -181,7 +181,7 @@ BentleyStatus UnitRegistry::AddConstant(Utf8CP phenomName, Utf8CP constantName, 
     auto constant = Unit::Create(CONSTANT, phenomName, constantName, definition, ' ', factor, 0);
 
     auto nameStr = Utf8String(constantName);
-    m_constants.insert(bpair<Utf8String, Unit *>(nameStr, constant.get()));
+    m_constants.insert(bpair<Utf8String, Unit *>(nameStr, constant));
 
     return BentleyStatus::SUCCESS;
     }
@@ -208,7 +208,7 @@ UnitCP UnitRegistry::LookupConstant (Utf8CP name) const
     if (val_iter == m_constants.end())
         return nullptr;
 
-    return *iter;
+    return (*val_iter).second;
     }
 
 /*--------------------------------------------------------------------------------**//**
