@@ -6,7 +6,7 @@
 #       $Date: 2007/03/07 13:34:13 $
 #     $Author: Bern.McCarty $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -24,8 +24,7 @@ PublicApiDir    = $(OutBuildContexts)RealityModFramework/PublicAPI/BentleyWMSPac
 #----------------------------------------------------------------------
 always:
     !~@mkdir $(o)
-
-
+    @CreateSymLinks.py -m"$(OutputRootDir)/TransKit/Tools/LanguagePackSpecs/=$(OutputRootDir)/TransKit/Tools/LanguagePackSpecs/TransKitTools/LanguagePackSpecs"
 
 #--------------------------------------------------------------------------------------
 #        Now build the managed DLL

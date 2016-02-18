@@ -155,6 +155,11 @@ ASSEMBLY_RES_TO_ADD_DIRECTORY = $(baseDir)Schema/
 
 %include assemblyResourceAppend.mki
 
+ASSEMBLY_RES_TO_ADD_FILENAME = NoImage.jpg
+ASSEMBLY_RES_TO_ADD_DIRECTORY = $(baseDir)Images/
+
+%include assemblyResourceAppend.mki
+
 %include mkcsharp.mki
 
 #----------------------------------------------------------------------
