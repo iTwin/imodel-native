@@ -1023,7 +1023,7 @@ TEST_F (ECSqlStatementTestFixture, PolymorphicUpdateWithSharedTable)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Muhammad Hassan                  08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, PolymorphicUpdateTest)
+TEST_F(ECSqlStatementTestFixture, PolymorphicUpdateWithNestedStructArrays)
     {
     // Create and populate a sample project
     ECDbR ecdb = SetupECDb("PolymorphicUpdateTest.ecdb", BeFileName(L"NestedStructArrayTest.01.00.ecschema.xml"));

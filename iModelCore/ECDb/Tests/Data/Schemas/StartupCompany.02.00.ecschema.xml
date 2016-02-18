@@ -62,10 +62,10 @@
         <ECProperty propertyName="stringOfWidget" typeName="string" readOnly="false"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="AAFoo_references_Widget_11" modifier="None" strength="referencing" strengthDirection="forward">
-        <Source cardinality="(1,1)" roleLabel="refers to" polymorphic="true">
+        <Source cardinality="(0,1)" roleLabel="refers to" polymorphic="true">
             <Class class="AAFoo"/>
         </Source>
-        <Target cardinality="(1,1)" roleLabel="is referred to by" polymorphic="true">
+        <Target cardinality="(0,1)" roleLabel="is referred to by" polymorphic="true">
             <Class class="Widget"/>
         </Target>
     </ECRelationshipClass>
@@ -152,7 +152,7 @@
                 <ForeignKeyColumn>Building__src_11_Id</ForeignKeyColumn>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
-        <Source cardinality="(1,1)" roleLabel="Floor" polymorphic="true">
+        <Source cardinality="(0,1)" roleLabel="Floor" polymorphic="true">
             <Class class="Building"/>
         </Source>
         <Target cardinality="(1,N)" roleLabel="Building containing floor" polymorphic="true">
@@ -478,7 +478,7 @@
                 <ForeignKeyColumn>Company__src_11_id</ForeignKeyColumn>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
-        <Source cardinality="(1,1)" polymorphic="true">
+        <Source cardinality="(0,1)" polymorphic="true">
             <Class class="Company"/>
         </Source>
         <Target cardinality="(0,N)" polymorphic="true">
@@ -760,15 +760,13 @@
         <Source cardinality="(1,N)" roleLabel="Employee working for the Company" polymorphic="true">
             <Class class="Employee"/>
         </Source>
-        <Target cardinality="(1,1)" roleLabel="Employee of Company" polymorphic="true">
+        <Target cardinality="(0,1)" roleLabel="Employee of Company" polymorphic="true">
             <Class class="Company"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="EmployeeFurniture" modifier="None" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <ForeignKeyColumn>Employee__src_01_id</ForeignKeyColumn>
-            </ForeignKeyRelationshipMap>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00" />
         </ECCustomAttributes>
         <Source cardinality="(0,1)" roleLabel="Employee using furniture" polymorphic="true">
             <Class class="Employee"/>
@@ -814,9 +812,7 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="EmployeePhone" modifier="None" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <ForeignKeyColumn>Employee__src_01_id</ForeignKeyColumn>
-            </ForeignKeyRelationshipMap>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00"/>
         </ECCustomAttributes>
         <Source cardinality="(0,1)" roleLabel="Phone used by employee" polymorphic="true">
             <Class class="Employee"/>
@@ -845,7 +841,7 @@
                 <ForeignKeyColumn>BuildingFloor__src_11_id</ForeignKeyColumn>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
-        <Source cardinality="(1,1)" polymorphic="true">
+        <Source cardinality="(0,1)" polymorphic="true">
             <Class class="BuildingFloor"/>
         </Source>
         <Target cardinality="(0,N)" polymorphic="true">
@@ -1027,7 +1023,7 @@
         </ECStructArrayProperty>
     </ECEntityClass>
     <ECRelationshipClass typeName="Foo_has_Bars" modifier="None" strength="embedding" strengthDirection="forward">
-        <Source cardinality="(1,1)" roleLabel="owns" polymorphic="true">
+        <Source cardinality="(0,1)" roleLabel="owns" polymorphic="true">
             <Class class="Foo"/>
         </Source>
         <Target cardinality="(1,N)" roleLabel="is owned by" polymorphic="true">
@@ -1035,7 +1031,7 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="Foo_has_Bars_hint" modifier="None" strength="embedding" strengthDirection="forward">
-        <Source cardinality="(1,1)" roleLabel="owns" polymorphic="true">
+        <Source cardinality="(0,1)" roleLabel="owns" polymorphic="true">
             <Class class="Foo"/>
         </Source>
         <Target cardinality="(1,N)" roleLabel="is owned by" polymorphic="true">

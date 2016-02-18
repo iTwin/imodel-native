@@ -21,7 +21,19 @@ private:
     ECSqlSystemProperty m_kind;
     std::vector<std::weak_ptr<ECDbSqlColumn>> m_columns;
 
-    virtual bool _IsVirtual () const override { return !m_columns.front().expired() && m_columns.front().lock()->GetPersistenceType() == PersistenceType::Virtual; }
+    virtual bool _IsVirtual () const override 
+        { 
+        bool isVirtual =  !m_columns.front().expired() && m_columns.front().lock()->GetPersistenceType() == PersistenceType::Virtual; 
+        //BeAssert(std::find_if_not (
+        //    m_columns.begin(), 
+        //    m_columns.end(), 
+        //    [](std::weak_ptr<ECDbSqlColumn> v) 
+        //        {
+        //        return v.lock()->GetPersistenceType() == PersistenceType::Virtual;
+        //    }) != m_columns.end());
+
+        return isVirtual;
+        }
     virtual bool _IsSystemPropertyMap() const override { return true; }
     virtual void _GetColumns (std::vector<ECDbSqlColumn const*>& columns) const override;
 
@@ -104,7 +116,9 @@ public:
     //! This is only to be called during SELECT view generation. It appends the column name
     //! and, if set, the view column alias to to the select clause of the view.
     //! @param[in,out] viewSql View SQL builder to append to
+    void AppendSelectClauseSqlSnippetForView (NativeSqlBuilder& viewSql, ECDbSqlTable const& table) const;
     void AppendSelectClauseSqlSnippetForView (NativeSqlBuilder& viewSql) const;
+
     };
 
 //=======================================================================================

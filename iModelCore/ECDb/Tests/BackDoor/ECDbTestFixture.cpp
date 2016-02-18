@@ -59,7 +59,9 @@ ECDb& ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFi
         seedFileName.ReplaceAll(".", "_");
         seedFileName.append(".ecdb");
 
-        CreateECDb(seedFilePath, seedFileName.c_str(), schemaECXmlFileName, instanceCountPerClass);
+        if (SUCCESS != CreateECDb(seedFilePath, seedFileName.c_str(), schemaECXmlFileName, instanceCountPerClass))
+            return m_ecdb; //return a closed ECDb in case of error
+
         s_seedECDbs[seedFileKey] = seedFilePath.GetNameUtf8();
         }
     else

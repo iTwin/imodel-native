@@ -65,16 +65,6 @@
             </ECCustomAttributes>
         </ECStructProperty>
     </ECEntityClass>
-    <ECRelationshipClass typeName="AssetRelationshipsBase" displayLabel="Asset Relationships Base" modifier="Abstract" strength="referencing" strengthDirection="forward">
-        <ECCustomAttributes>
-            <TreeColorCustomAttributes xmlns="Bentley_Standard_CustomAttributes.01.12">
-                <NodeBackColor>GrayText</NodeBackColor>
-                <NodeForeColor>Info</NodeForeColor>
-            </TreeColorCustomAttributes>
-        </ECCustomAttributes>
-        <Source cardinality="(0,1)" polymorphic="true"/>
-        <Target cardinality="(0,1)" polymorphic="true"/>
-    </ECRelationshipClass>
     <ECEntityClass typeName="ClassWithPrimitiveArrayProperties" modifier="None">
         <ECCustomAttributes>
             <ClassPriority xmlns="EditorCustomAttributes.01.02"/>
