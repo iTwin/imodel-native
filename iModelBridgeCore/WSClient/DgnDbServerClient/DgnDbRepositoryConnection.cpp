@@ -358,9 +358,7 @@ ICancellationTokenPtr cancellationToken
     //How to set description here?
     std::shared_ptr<WSChangeset> changeset (new WSChangeset ());
     SetLocksJsonRequestToChangeSet (locks.GetLockSet (), briefcaseId, lastRevisionId, *changeset, WSChangeset::ChangeState::Modified);
-    Json::Value requestJson;
-    changeset->ToRequestJson(requestJson);
-    HttpStringBodyPtr request = HttpStringBody::Create(requestJson.toStyledString());
+    HttpStringBodyPtr request = HttpStringBody::Create(changeset->ToRequestString());
     return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)->Then<DgnDbResult>
         ([=] (const WSChangesetResult& result)
         {
@@ -384,9 +382,7 @@ ICancellationTokenPtr cancellationToken
     //How to set description here?
     std::shared_ptr<WSChangeset> changeset (new WSChangeset ());
     SetLocksJsonRequestToChangeSet (locks, briefcaseId, "", *changeset, WSChangeset::ChangeState::Modified);
-    Json::Value requestJson;
-    changeset->ToRequestJson(requestJson);
-    HttpStringBodyPtr request = HttpStringBody::Create(requestJson.toStyledString());
+    HttpStringBodyPtr request = HttpStringBody::Create(changeset->ToRequestString());
     return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)->Then<DgnDbResult>([=] (const WSChangesetResult& result)
         {
         if (result.IsSuccess())
@@ -406,9 +402,7 @@ ICancellationTokenPtr cancellationToken
 )
     {
     auto changeset = LockDeleteAllJsonRequest (briefcaseId);
-    Json::Value requestJson;
-    changeset->ToRequestJson(requestJson);
-    HttpStringBodyPtr request = HttpStringBody::Create(requestJson.toStyledString());
+    HttpStringBodyPtr request = HttpStringBody::Create(changeset->ToRequestString());
     return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)->Then<DgnDbResult>([=] (const WSChangesetResult& result)
         {
         if (result.IsSuccess())

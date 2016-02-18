@@ -109,6 +109,7 @@ namespace Error
     static Utf8CP NotInitialized = "DgnDbServerClient library not initialized";
     static Utf8CP InvalidRepository = "Invalid repository.";
     static Utf8CP InvalidRevision = "Invalid revision.";
+    static Utf8CP MasterId = "Trying to open master file as briefcase.";
     static Utf8CP InvalidCredentials = "Invalid credentials.";
     static Utf8CP InvalidServerURL = "Invalid server URL";
     static Utf8CP DbNotFound = "Could not find briefcase db file.";

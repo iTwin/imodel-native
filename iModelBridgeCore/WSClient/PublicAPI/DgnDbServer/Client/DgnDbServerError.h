@@ -37,6 +37,7 @@ struct DgnDbServerError : public DgnClientFx::Utils::AsyncError
             RepositoryDoesNotExist,
             LockDoesNotExist,
             LockOwnedByAnotherBriefcase,
+            NoRepositoriesFound,
 
             //WebServices Errors
             LoginFailed,
