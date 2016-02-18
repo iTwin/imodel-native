@@ -448,7 +448,7 @@ WmsSource::WmsSource(WmsMap const& mapInfo)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-DisplayTilePtr WmsSource::_QueryTile(TileId const& id, bool request)
+Render::ImagePtr WmsSource::_QueryTile(TileId const& id, bool request)
     {
     Utf8String tileUrl = BuildTileUrl(id);
 
@@ -505,11 +505,16 @@ DisplayTilePtr WmsSource::_QueryTile(TileId const& id, bool request)
     if (SUCCESS != status)
         return NULL;
     
+    
     BeAssert (!actualImageInfo.isBGR);    //&&MM todo 
-    DisplayTile::PixelType pixelType = actualImageInfo.hasAlpha ? DisplayTile::PixelType::Rgba : DisplayTile::PixelType::Rgb;
-    DisplayTilePtr pDisplayTile = DisplayTile::Create(actualImageInfo.width, actualImageInfo.height, pixelType, m_mapInfo.m_transparent && actualImageInfo.hasAlpha, m_decompressBuffer.GetData(), 0/*notPadded*/);
+    Render::Image::Format pixelType = actualImageInfo.hasAlpha ? Render::Image::Format::Rgba : Render::Image::Format::Rgb;
 
-    return pDisplayTile;
+    //&&MM how to tell if we need to enable alpha?
+    //     We cannot reuse buffer anymore review...
+    Render::ImagePtr pImage = new Render::Image(actualImageInfo.width, actualImageInfo.height, pixelType, std::move(m_decompressBuffer));
+    //DisplayTilePtr pDisplayTile = DisplayTile::Create(actualImageInfo.width, actualImageInfo.height, pixelType, m_mapInfo.m_transparent && actualImageInfo.hasAlpha, m_decompressBuffer.GetData(), 0/*notPadded*/);
+
+    return pImage;
     }
 
 //----------------------------------------------------------------------------------------

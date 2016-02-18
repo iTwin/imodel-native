@@ -24,7 +24,7 @@ public:
     WmsMap const& GetMapInfo() {return m_mapInfo;}
 
 protected:
-    virtual DisplayTilePtr _QueryTile(TileId const& id, bool request) override;
+    virtual Render::ImagePtr _QueryTile(TileId const& id, bool request) override;
 
 private:
     WmsSource(WmsMap const& mapInfo);

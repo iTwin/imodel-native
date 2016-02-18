@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/RasterFileSource.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "RasterSchemaInternal.h"
@@ -61,7 +61,7 @@ RasterFileSource::RasterFileSource(Utf8StringCR resolvedName)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     6/2015
 //----------------------------------------------------------------------------------------
-DisplayTilePtr RasterFileSource::_QueryTile(TileId const& id, bool request)
+Render::ImagePtr RasterFileSource::_QueryTile(TileId const& id, bool request)
     {
     //&&ep need to take the 'request' param into account... When we will have a copyfrom thread.
 
@@ -90,11 +90,16 @@ DisplayTilePtr RasterFileSource::_QueryTile(TileId const& id, bool request)
 	pDisplayBitmap->CopyFrom(*m_rasterFilePtr->GetRasterP(), opts); //&&MM &&ep validate status and init we something red?  We have a Kodak somewhere in HRFWMS or virtual earth.
     Byte* pbSrcRow = pDisplayBitmap->GetPacket()->GetBufferAddress();
 
-    bool alphaBlend = m_rasterFilePtr->GetRasterP()->GetPixelType()->GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0) != HRPChannelType::FREE;
+    //bool alphaBlend = m_rasterFilePtr->GetRasterP()->GetPixelType()->GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0) != HRPChannelType::FREE;
 
-    DisplayTile::PixelType pixelType = DisplayTile::PixelType::Rgba;
-    DisplayTilePtr pDisplayTile = DisplayTile::Create(effectiveTileSizeX, effectiveTileSizeY, pixelType, alphaBlend, pbSrcRow, 0/*notPadded*/);
-    return pDisplayTile;
+   // DisplayTile::PixelType pixelType = DisplayTile::PixelType::Rgba;
+
+    //&&MM review buffer usage + tile alphaBlend
+
+    Render::ImagePtr pImage = new Render::Image(effectiveTileSizeX, effectiveTileSizeY, Render::Image::Format::Rgba, pbSrcRow, (uint32_t)pDisplayBitmap->GetPacket()->GetDataSize());
+
+    //DisplayTilePtr pDisplayTile = DisplayTile::Create(effectiveTileSizeX, effectiveTileSizeY, pixelType, alphaBlend, pbSrcRow, 0/*notPadded*/, context);
+    return pImage;
     }
 
 //----------------------------------------------------------------------------------------

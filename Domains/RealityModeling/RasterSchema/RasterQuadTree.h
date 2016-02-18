@@ -45,7 +45,7 @@ public:
     static RasterTilePtr CreateRoot(RasterQuadTreeR tree);
 
     //! return NULL if not available.
-    DisplayTilePtr GetDisplayTileP(bool request);
+    DisplayTilePtr GetDisplayTileP(bool request, Dgn::SceneContextR context);
 
     // Raster 4 corners(UOR) in this order:
     //  [0]  [1]
@@ -53,7 +53,7 @@ public:
     DPoint3dCR GetCorners() const; 
 
     //! Draw this tile in the view. Tile might not be loaded, it will be loaded only if locally available. Return true if successful.
-    bool Draw(Dgn::ViewContextR context);    
+    bool Draw(Dgn::SceneContextR context);
 
     TileId const& GetId() const {return m_tileId;}
 

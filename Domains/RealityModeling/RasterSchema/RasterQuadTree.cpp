@@ -128,6 +128,8 @@ protected:
     uint64_t m_nextRetryTime;                             //!< When to re-try m_pendingTiles. unix millis UTC
     uint64_t m_waitTime;                                  //!< How long to wait before re-trying m_pendingTiles. millis 
 
+    DgnViewportP                m_pViewport;        // the viewport we are scheduled on.
+
     struct SortByResolution
         {
         bool operator ()(const RasterTilePtr& lhs, const RasterTilePtr& rhs) const
@@ -153,7 +155,7 @@ protected:
 
     void FindBackgroudTiles(SortedTiles& backgroundTiles, bvector<RasterTilePtr> const& visibleTiles, uint32_t resolutionDelta);
     
-    void DrawLoadedChildren(RasterTileR tile, ViewContextR context, uint32_t resolutionDelta);
+    void DrawLoadedChildren(RasterTileR tile, SceneContextR context, uint32_t resolutionDelta);
 
 public:
     void Draw (SceneContextR context);
@@ -263,7 +265,7 @@ ReprojectStatus RasterTile::ReprojectCorners(DPoint3dP outUors, DPoint3dCP srcCa
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-bool RasterTile::Draw(ViewContextR context)
+bool RasterTile::Draw(SceneContextR context)
     {
     // Corners are in this order:
     //  [0]  [1]
@@ -274,24 +276,25 @@ bool RasterTile::Draw(ViewContextR context)
     // Make sure the map displays beneath element graphics. Note that this policy is appropriate for the background map, which is always
     // "on the ground". It is not appropriate for other kinds of reality data, even some images display. It is up to the individual reality
     // data handler to use the "surface" that is appprpriate to the reality data.
-    if (!context.GetViewport()->GetViewController().GetTargetModel()->Is3d())
-        {
-        for (auto& pt : uvPts)
-            pt.z = -DgnViewport::GetDisplayPriorityFrontPlane();  // lowest possibly priority
-        }
-    else
-        {
-        //NEEDS_WORK_CONTINUOUS_RENDER BeSQLite::wt_OperationForGraphics highPriority;
-        auto extents = context.GetViewport()->GetViewController().GetViewedExtents();
-        for (auto& pt : uvPts)
-            pt.z = extents.low.z - 1;
-        }
+//&&MM todo raster display priority.
+//     if (!context.GetViewport()->GetViewController().GetTargetModel()->Is3d())
+//         {
+//         for (auto& pt : uvPts)
+//             pt.z = -DgnViewport::GetDisplayPriorityFrontPlane();  // lowest possibly priority
+//         }
+//     else
+//         {
+//         //NEEDS_WORK_CONTINUOUS_RENDER BeSQLite::wt_OperationForGraphics highPriority;
+//         auto extents = context.GetViewport()->GetViewController().GetViewedExtents();
+//         for (auto& pt : uvPts)
+//             pt.z = extents.low.z - 1;
+//         }
 
-    DisplayTilePtr pDisplayTile = GetDisplayTileP(false/*request*/);
+    DisplayTilePtr pDisplayTile = GetDisplayTileP(false/*request*/, context);
 
-//#ifndef NDEBUG  // debug build only.
+#ifndef NDEBUG  // debug build only.
     static bool s_DrawTileShape = true;
-    if(pDisplayTile.IsNull() && s_DrawTileShape)
+    if(s_DrawTileShape)
         {
         Render::GraphicPtr pTileGraphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport()));
 
@@ -330,16 +333,21 @@ bool RasterTile::Draw(ViewContextR context)
 //         context.GetIDrawGeom().ActivateMatSymb (&elemMatSymb);
         pTileGraphic->AddTextString (*textStr);
 
-        //context.OutputGraphic(*pTileGraphic, nullptr);
+        context.OutputGraphic(*pTileGraphic, nullptr);
         }
-//#endif
-#if NEEDS_WORK_CONTINUOUS_RENDER
+#endif
     if(!pDisplayTile.IsValid())
         return false;
 
-    uintptr_t textureId = pDisplayTile->GetTextureId();
-    context.GetIViewDraw().DrawMosaic (1,1, &textureId, uvPts); 
-#endif
+    // &&MM eval if we need to combine all tiles in a single graphic. whenever possible.
+    Render::GraphicPtr pGraphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport()));
+    //&&MM make sure corners have the same origin than UOR. if not, abstract qv organization and make the switch in QV impl.
+    pGraphic->AddTile(*pDisplayTile->m_pTile, uvPts);
+
+    context.OutputGraphic(*pGraphic, nullptr);
+// 
+//     uintptr_t textureId = pDisplayTile->GetTextureId();
+//     context.GetIViewDraw().DrawMosaic (1,1, &textureId, uvPts); 
     
     return true;
     }
@@ -347,16 +355,21 @@ bool RasterTile::Draw(ViewContextR context)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-DisplayTilePtr RasterTile::GetDisplayTileP(bool request) 
+DisplayTilePtr RasterTile::GetDisplayTileP(bool request, SceneContextR context)
     {
     DisplayTilePtr pDisplayTile = DisplayTileCache::Instance().GetItem((uintptr_t)this);
     if(!pDisplayTile.IsValid())
         {
         // request=false : Load only if locally available. 
         // If not and request is turned on a request is made to the cache and NULL is returned. We will need to check back at a later time.
-        pDisplayTile = m_tree.GetSource().QueryTile(m_tileId, request);        
-        if(pDisplayTile.IsValid())
+        Render::ImagePtr pImage = m_tree.GetSource().QueryTile(m_tileId, request);
+
+        if (pImage.IsValid())
+            {
+            Render::TexturePtr pTile = context.GetTargetR().CreateTileSection(*pImage, false/*&&MM todo*/);
+            pDisplayTile = DisplayTile::Create(*pTile);
             DisplayTileCache::Instance().AddItem((uintptr_t)this, pDisplayTile);
+            }
         }
 
     return pDisplayTile;
@@ -558,9 +571,8 @@ void RasterQuadTree::QueryVisible(bvector<RasterTilePtr>& visibles, ViewContextR
 //----------------------------------------------------------------------------------------
 void RasterQuadTree::Draw(Dgn::SceneContextR context)
     {
-    //&&MM not now
-//     RefCountedPtr<RasterProgressiveDisplay> display = RasterProgressiveDisplay::Create(*this, context);
-//     display->Draw(context);
+    RefCountedPtr<RasterProgressiveDisplay> display = RasterProgressiveDisplay::Create(*this, context);
+    display->Draw(context);
     }
 
 //----------------------------------------------------------------------------------------
@@ -571,7 +583,8 @@ void RasterQuadTree::Draw(Dgn::SceneContextR context)
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
 RasterProgressiveDisplay::RasterProgressiveDisplay(RasterQuadTreeR raster, ViewContextR context)
-:m_raster(raster)
+:m_raster(raster),
+m_pViewport(context.GetViewport())
     {
     }
 
@@ -630,7 +643,7 @@ bool RasterProgressiveDisplay::ShouldDrawInConvext (ViewContextR context) const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  5/2015
 //----------------------------------------------------------------------------------------
-void RasterProgressiveDisplay::DrawLoadedChildren(RasterTileR tile, ViewContextR context, uint32_t resolutionDelta)
+void RasterProgressiveDisplay::DrawLoadedChildren(RasterTileR tile, SceneContextR context, uint32_t resolutionDelta)
     {
     if(0 == resolutionDelta)
         return;
@@ -757,7 +770,7 @@ ProgressiveTask::Completion RasterProgressiveDisplay::_DoProgressive(SceneContex
         auto pTile = m_missingTiles.back();
         m_missingTiles.pop_back();
 
-        DisplayTilePtr pDisplayTile = pTile->GetDisplayTileP(true/*request*/);  // Read from cache or request it. Won't be requested twice by the reality data cache.
+        DisplayTilePtr pDisplayTile = pTile->GetDisplayTileP(true/*request*/, context);  // Read from cache or request it. Won't be requested twice by the reality data cache.
         if(!pTile->Draw(context))
             {
             // Tile was not available and was requested. We'll check for it at a later time.
