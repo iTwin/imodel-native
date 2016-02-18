@@ -9,15 +9,16 @@
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #include <ScalableMeshSchema\ScalableMeshDomain.h>
 #include <ScalableMeshSchema\ScalableMeshHandler.h>
+#include <ScalableMeshSchema\ScalableMeshSchemaApi.h>
 
-USING_NAMESPACE_BENTLEY_SCALABLEMESHSCHEMA
+USING_NAMESPACE_BENTLEY_SCALABLEMESH_SCHEMA
 
 DOMAIN_DEFINE_MEMBERS(ScalableMeshDomain)
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Elenie.Godzaridis   02/16
 //-----------------------------------------------------------------------------------------
-ScalableMeshDomain::ScalableMeshDomain() : DgnDomain("ScalableMesh", "Scalable Mesh Domain", 1)
+ScalableMeshDomain::ScalableMeshDomain() : DgnDomain(BENTLEY_SCALABLEMESH_SCHEMA_NAME, "Scalable Mesh Domain", 1)
     {
     RegisterHandler(ScalableMeshModelHandler::GetHandler());
     }
@@ -26,5 +27,6 @@ ScalableMeshDomain::ScalableMeshDomain() : DgnDomain("ScalableMesh", "Scalable M
 // @bsimethod                                                   Elenie.Godzaridis   02/16
 //-----------------------------------------------------------------------------------------
 void ScalableMeshDomain::_OnSchemaImported(DgnDbR db) const
-    {}
+    {
+    }
 

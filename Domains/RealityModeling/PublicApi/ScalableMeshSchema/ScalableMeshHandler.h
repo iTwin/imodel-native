@@ -14,9 +14,12 @@
 #include <ScalableMeshSchema/IMeshSpatialModel.h>
 #include <TerrainModel/TerrainModel.h>
 
-SCALABLEMESHSCHEMA_TYPEDEFS(ScalableMeshModel)
-BEGIN_BENTLEY_SCALABLEMESHSCHEMA_NAMESPACE
+SCALABLEMESH_SCHEMA_TYPEDEFS(ScalableMeshModel)
+
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
+
+BEGIN_BENTLEY_SCALABLEMESH_SCHEMA_NAMESPACE
+
 //=======================================================================================
 // @bsiclass                                                  
 //=======================================================================================
@@ -45,7 +48,7 @@ struct ScalableMeshModel : IMeshSpatialModel
         virtual void _RegisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) override;
         virtual bool _UnregisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) override;
 
-        SCALABLEMESHSCHEMA_EXPORT virtual void _AddGraphicsToScene(BentleyApi::Dgn::ViewContextR context) override;
+        SCALABLEMESH_SCHEMA_EXPORT virtual void _AddGraphicsToScene(BentleyApi::Dgn::ViewContextR context) override;
     public:
 
         //! Create a new TerrainPhysicalModel object, in preparation for loading it from the DgnDb.
@@ -54,9 +57,11 @@ struct ScalableMeshModel : IMeshSpatialModel
         virtual ~ScalableMeshModel();
 
         SCALABLEMESHSCHEMA_EXPORT static ScalableMeshModelP CreateModel(BentleyApi::Dgn::DgnDbR dgnDb);
+        
+        void OpenFile(BeFileNameCR smFilename);
 
         //! A DgnDb can have only one terrain. 
-        SCALABLEMESHSCHEMA_EXPORT static IMeshSpatialModelP GetTerrainModelP(BentleyApi::Dgn::DgnDbCR dgnDb);
+        SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP GetTerrainModelP(BentleyApi::Dgn::DgnDbCR dgnDb);
 
         SCALABLEMESHSCHEMA_EXPORT static WString GetTerrainModelPath(BentleyApi::Dgn::DgnDbCR dgnDb);
 
@@ -65,7 +70,11 @@ struct ScalableMeshModel : IMeshSpatialModel
 
 struct EXPORT_VTABLE_ATTRIBUTE ScalableMeshModelHandler : Dgn::dgn_ModelHandler::Spatial
     {
-    MODELHANDLER_DECLARE_MEMBERS("ScalableMeshModel", ScalableMeshModel, ScalableMeshModelHandler, Dgn::dgn_ModelHandler::Spatial, SCALABLEMESHSCHEMA_EXPORT)
+    MODELHANDLER_DECLARE_MEMBERS("ScalableMeshModel", ScalableMeshModel, ScalableMeshModelHandler, Dgn::dgn_ModelHandler::Spatial, SCALABLEMESH_SCHEMA_EXPORT)
 
+    public : 
+                     
+        //NEEDS_WORK_SM : Currently for testing only
+        SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP AttachTerrainModel(DgnDb& db, Utf8StringCR modelName, BeFileNameCR smFilename);
     };
-END_BENTLEY_SCALABLEMESHSCHEMA_NAMESPACE
+END_BENTLEY_SCALABLEMESH_SCHEMA_NAMESPACE

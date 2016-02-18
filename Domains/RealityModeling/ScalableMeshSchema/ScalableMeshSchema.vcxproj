@@ -36,9 +36,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMeshSchema -r DgnDomains-RealityModeling -f RealityModeling b </NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMeshSchema -r DgnDomains-RealityModeling -f RealityModeling re ScalableMeshSchema</NMakeBuildCommandLine>
     <NMakeCleanCommandLine>BentleyBuild.py -p ScalableMeshSchema -r DgnDomains-RealityModeling -f RealityModeling re ScalableMeshSchema -c</NMakeCleanCommandLine>
-    <NMakeReBuildCommandLine>BentleyBuild.py -p ScalableMeshSchema -r DgnDomains-RealityModeling -f RealityModeling re ScalableMeshSchema</NMakeReBuildCommandLine>
+    <NMakeReBuildCommandLine>BentleyBuild.py -p ScalableMeshSchema -r DgnDomains-RealityModeling -f RealityModeling re ScalableMeshSchema -c
+BentleyBuild.py -p ScalableMeshSchema -r DgnDomains-RealityModeling -f RealityModeling re ScalableMeshSchema</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>E:\dgndb06SM\out\Release\Winx64\BuildContexts\RealityModeling\PublicAPI;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
@@ -57,6 +58,7 @@
   <ItemGroup>
     <ClCompile Include="..\ScalableMeshDomain.cpp" />
     <ClCompile Include="IMeshSpatialModel.cpp" />
+    <ClCompile Include="ScalableMeshDomain.cpp" />
     <ClCompile Include="ScalableMeshHandler.cpp" />
     <ClCompile Include="ScalableMeshSchemaPCH.cpp" />
   </ItemGroup>

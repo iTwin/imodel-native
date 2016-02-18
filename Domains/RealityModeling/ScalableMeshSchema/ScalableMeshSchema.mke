@@ -32,8 +32,9 @@ meshmodelDepends             = $(BuildContext)PublicAPI/DgnPlatform/DgnModel.h \
                                   $(BuildContext)PublicAPI/DgnPlatform/DgnPlatform.h \
                                   $(ScMeshSchemaPublicApiSrc)ScalableMeshSchemaCommon.h           \
                                   $(ScMeshSchemaPublicApiSrc)IMeshSpatialModel.h  \
-                                  $(ScMeshSchemaPublicApiSrc)ScalableMeshDomain.h  \
-                                  $(ScMeshSchemaPublicApiSrc)ScalableMeshHandler.h        
+                                  $(ScMeshSchemaPublicApiSrc)ScalableMeshHandler.h \
+                                  $(ScMeshSchemaPublicApiSrc)ScalableMeshDomain.h \
+                                  $(ScMeshSchemaPublicApiSrc)ScalableMeshSchemaApi.h
 always:
     !~@mkdir $(o)
 
@@ -61,6 +62,7 @@ $(o)IMeshSpatialModel$(oext)        : $(SrcScMeshSchema)IMeshSpatialModel.cpp   
 $(o)ScalableMeshHandler$(oext)        : $(SrcScMeshSchema)ScalableMeshHandler.cpp       $(meshmodelDepends) ${MultiCompileDepends}
 
 $(o)ScalableMeshDomain$(oext)        : $(SrcScMeshSchema)ScalableMeshDomain.cpp       $(meshmodelDepends) ${MultiCompileDepends}
+
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
