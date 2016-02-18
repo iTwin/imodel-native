@@ -257,6 +257,7 @@ WString ScalableMeshModel::GetTerrainModelPath(BentleyApi::Dgn::DgnDbCR dgnDb)
         BeFileName::CreateNewDirectory(tmFileName.c_str());
     tmFileName.AppendString(L"\\terrain.stm");
     return tmFileName;
+    }
 
 
 IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDbR db, Utf8StringCR modelName, BeFileNameCR smFilename)
