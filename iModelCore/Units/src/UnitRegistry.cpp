@@ -245,7 +245,7 @@ UnitCP UnitRegistry::LookupUnit (Utf8CP name) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 UnitCP UnitRegistry::LookupConstant (Utf8CP name) const
     {
-    auto val_iter = m_units.find(name);
+    auto val_iter = m_constants.find(name);
     if (val_iter == m_constants.end())
         return nullptr;
 

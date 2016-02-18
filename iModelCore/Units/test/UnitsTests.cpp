@@ -188,6 +188,37 @@ TEST_F(UnitsTests, UnitExpressions)
         }
     }
 
+void TestUnitAndConstantsExist(const bvector<Utf8String>& unitNames, Utf8CP unitName, Utf8CP atorName)
+    {
+    UnitRegistry& reg = UnitRegistry::Instance();
+    for (auto const& subUnitName : unitNames)
+        {
+        if (subUnitName.StartsWith("["))
+            {
+            Utf8String constantName = Utf8String(subUnitName.begin() + 1, subUnitName.end() - 1);
+            UnitCP constant = reg.LookupConstant(constantName.c_str());
+            ASSERT_NE(nullptr, constant) << "Could not find constant '" << constantName << "' for " << atorName << " of unit: " << unitName;
+            }
+        else
+            {
+            UnitCP subUnit = reg.LookupUnit(subUnitName.c_str());
+            ASSERT_NE(nullptr, subUnit) << "Could not find Sub unit '" << subUnitName << "' for " << atorName << " of unit: " << unitName;
+            }
+        }
+    }
+
+TEST_F(UnitsTests, EveryUnitIsMadeUpOfRegisteredUnits)
+    {
+    UnitRegistry& reg = UnitRegistry::Instance();
+    bvector<UnitCP> allUnits;
+    GetAllUnits(reg, allUnits);
+    for (auto const& unit : allUnits)
+        {
+        TestUnitAndConstantsExist(unit->Numerator(), unit->GetName(), "numerator");
+        TestUnitAndConstantsExist(unit->Denominator(), unit->GetName(), "denominator");
+        }
+    }
+
 struct UnitsPerformanceTests : UnitsTests {};
 
 TEST_F(UnitsPerformanceTests, InitUnitsHub)

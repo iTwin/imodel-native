@@ -51,7 +51,7 @@ void AddLengths(UnitRegistry& reg)
     reg.AddUnit(LENGTH, HISTORICAL, "CUBIT", "IN", 18.0);// ); //, BISQSecUom);
     reg.AddUnit(LENGTH, HISTORICAL, "ELL", "IN", 45.0);// ); //, BISQSecUom);
     reg.AddUnit(LENGTH, HISTORICAL, "FATHOM", "FT", 6.0);// ); //, BISQSecUom);
-    reg.AddUnit(LENGTH, ASTRONOMY, "LIGHT_SEC", "[C]*SEC");// ); //, BISQSecUom);
+    reg.AddUnit(LENGTH, ASTRONOMY, "LIGHT_SEC", "[C]*S");// ); //, BISQSecUom);
     reg.AddUnit(LENGTH, ASTRONOMY, "LIGHT_MIN", "[C]*MIN");// ); //, BISQSecUom);
     reg.AddUnit(LENGTH, ASTRONOMY, "LIGHT_HOUR", "[C]*HR");// ); //, BISQSecUom);
     reg.AddUnit(LENGTH, ASTRONOMY, "LIGHT_YEAR", "[C]*YR");// ); //, BISQSecUom);
@@ -98,16 +98,16 @@ void AddTime(UnitRegistry& reg)
 //TODO: Handle temperature and delta temperature
 void AddTemperature(UnitRegistry& reg)
     {
-    UnitCP unit = reg.AddUnit(TEMPERATURE, SI, "CELSIUS", "#K", 1.0, -273.15);
+    UnitCP unit = reg.AddUnit(TEMPERATURE, SI, "CELSIUS", "K", 1.0, -273.15);
     reg.AddSynonym(unit, "DEGREE_CELSIUS");
     //SimpleUOM(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "#CELSIUS", 1.8)->AddSynonym("DEGREE_FAHRENHEIT");
-    unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "#CELSIUS", 1.8, 1.0);
+    unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "CELSIUS", 1.8, 1.0);
     reg.AddSynonym(unit, "DEGREE_FAHRENHEIT");
-    unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "RANKINE", "#K", 1.8);
+    unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "RANKINE", "K", 1.8);
     reg.AddSynonym(unit, "DEGREE_RANKINE");
-    unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "ROMER", "#CELSIUS", 21.0 / 40.0, 7.5);
+    unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "ROMER", "CELSIUS", 21.0 / 40.0, 7.5);
     reg.AddSynonym(unit, "DEGREE_ROMER");
-    unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "REAMUR", "#CELSIUS", 0.8);
+    unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "REAMUR", "CELSIUS", 0.8);
     reg.AddSynonym(unit, "DEGREE_REAMUR");
 
     /* the algorithm will decided whether to use full conversion or delta
@@ -303,7 +303,7 @@ void AddHeatingValue(UnitRegistry& reg)
     reg.AddSynonym(unit, "KILOJOULE_PER_KILOGRAM");
     unit = reg.AddUnit(HEATING_VALUE, USCUSTOM, "BTU/LBM", "BTU*LBM(-1)");
     reg.AddSynonym(unit, "BTU_PER_POUND_MASS");
-    unit = reg.AddUnit(HEATING_VALUE, USCUSTOM, "BTU_PER_POUND_MOLE", "M_L2_PER_T2_MOL"); // TODO: Make expression and check dimension, add KILOJOULE_PER_KILOMOLE
+    //unit = reg.AddUnit(HEATING_VALUE, USCUSTOM, "BTU_PER_POUND_MOLE", "M_L2_PER_T2_MOL"); // TODO: Make expression and check dimension, add KILOJOULE_PER_KILOMOLE
     
     }
 
@@ -353,7 +353,7 @@ void AddVolumeFlowRate(UnitRegistry& reg)
     reg.AddUnit(FLOW, USCUSTOM, "GALLON_IMPERIAL_PER_DAY", "GALLON_IMPERIAL*DAY(-1)"); //, BISQSecUom);
     reg.AddUnit(FLOW, USCUSTOM, "GALLON_IMPERIAL_PER_MINUTE", "GALLON_IMPERIAL*MIN(-1)"); //, BISQSecUom);
     reg.AddUnit(FLOW, USCUSTOM, "GALLON_IMPERIAL_PER_SECOND", "GALLON_IMPERIAL*S(-1)"); //, BISQSecUom);
-    unit = reg.AddUnit(FLOW, USCUSTOM, "GALLON/S", "GALLON*SEC(-1)");
+    unit = reg.AddUnit(FLOW, USCUSTOM, "GALLON/S", "GALLON*S(-1)");
     reg.AddSynonym(unit, "GALLON_PER_SECOND");
     unit = reg.AddUnit(FLOW, USCUSTOM, "GALLON/MIN", "GALLON*MIN(-1)");
     reg.AddSynonym(unit, "GALLON_PER_MINUTE");
@@ -372,7 +372,7 @@ void AddFrequency(UnitRegistry& reg)
 
 void AddSurfaceFlowRate(UnitRegistry& reg)
     {
-    UnitCP unit = reg.AddUnit(SURFACE_FLOW_RATE, INDUSTRIAL, "CUB.M/(SECOND*SQ.M)", "M*SEC(-1)");
+    UnitCP unit = reg.AddUnit(SURFACE_FLOW_RATE, INDUSTRIAL, "CUB.M/(SECOND*SQ.M)", "M*S(-1)");
     reg.AddSynonym(unit, "METRE_CUBED_PER_METRE_SQUARED_PER_SECOND");
     unit = reg.AddUnit(SURFACE_FLOW_RATE, INDUSTRIAL, "CUB.M/(DAY*SQ.M)", "M*DAY(-1)");
     reg.AddSynonym(unit, "METRE_CUBED_PER_METRE_SQUARED_PER_DAY");
@@ -564,7 +564,7 @@ void AddPower(UnitRegistry& reg)
     reg.AddSynonym(unit, "BTU_PER_MONTH");
     unit = reg.AddUnit(POWER, INTERNATIONAL, "BTU/HOUR", "BTU*HOUR(-1)");
     reg.AddSynonym(unit, "BTU_PER_HOUR");
-    unit = reg.AddUnit(POWER, USCUSTOM, "KILOBTU/HOUR", "[KILO]BTU*HOUR(-1)");
+    unit = reg.AddUnit(POWER, USCUSTOM, "KILOBTU/HOUR", "[KILO]*BTU*HOUR(-1)");
     reg.AddSynonym(unit, "KILOBTU_PER_HOUR");
     unit = reg.AddUnit(POWER, USCUSTOM, "HP", "LBF*FT", 550.0);
     reg.AddSynonym(unit, "HORSEPOWER");
@@ -725,7 +725,7 @@ void AddVelocity(UnitRegistry& reg)
     reg.AddSynonym(unit, "KILOMETRE_PER_SECOND");
     unit = reg.AddUnit(VELOCITY, SI, "KM/HR", "KM*HR(-1)");
     reg.AddSynonym(unit, "KILOMETRE_PER_HOUR");
-    unit = reg.AddUnit(VELOCITY, SI, "IN/SEC", "IN*SEC(-1)");
+    unit = reg.AddUnit(VELOCITY, SI, "IN/SEC", "IN*S(-1)");
     reg.AddSynonym(unit, "INCH_PER_SECOND");
     unit = reg.AddUnit(VELOCITY, SI, "IN/MIN", "IN*MIN(-1)");
     reg.AddSynonym(unit, "INCH_PER_MINUTE");
@@ -733,7 +733,7 @@ void AddVelocity(UnitRegistry& reg)
     reg.AddSynonym(unit, "INCH_PER_HOUR");
     unit = reg.AddUnit(VELOCITY, SI, "IN/DAY", "IN*DAY(-1)");
     reg.AddSynonym(unit, "INCH_PER_DAY");
-    unit = reg.AddUnit(VELOCITY, SI, "FT/SEC", "FT*SEC(-1)");
+    unit = reg.AddUnit(VELOCITY, SI, "FT/SEC", "FT*S(-1)");
     reg.AddSynonym(unit, "FOOT_PER_SECOND");
     unit = reg.AddUnit(VELOCITY, SI, "FT/MIN", "FT*MIN(-1)");
     reg.AddSynonym(unit, "FOOT_PER_MINUTE");
@@ -741,7 +741,7 @@ void AddVelocity(UnitRegistry& reg)
     reg.AddSynonym(unit, "FOOT_PER_HOUR");
     unit = reg.AddUnit(VELOCITY, SI, "FT/DAY", "FT*DAY(-1)");
     reg.AddSynonym(unit, "FOOT_PER_DAY");
-    reg.AddUnit(VELOCITY, SI, "YRD/SEC", "YRD*SEC(-1)"); //, BISQSecUom);
+    reg.AddUnit(VELOCITY, SI, "YRD/SEC", "YRD*S(-1)"); //, BISQSecUom);
     unit = reg.AddUnit(VELOCITY, SI, "MPH", "MILE*HR(-1)");
     reg.AddSynonym(unit, "MILE_PER_HOUR");
 
