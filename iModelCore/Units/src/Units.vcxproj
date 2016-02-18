@@ -24,7 +24,9 @@
     <None Include="..\Units.mke" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ConstantDefinitions.cpp" />
     <ClCompile Include="Parser.cpp" />
+    <ClCompile Include="PhenomenonDefinitions.cpp" />
     <ClCompile Include="Quantity.cpp" />
     <ClCompile Include="UnitDefinitions.cpp" />
     <ClCompile Include="UnitRegistry.cpp" />

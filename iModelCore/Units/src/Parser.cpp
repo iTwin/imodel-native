@@ -43,7 +43,7 @@ int Exponent::GetExponent()
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Colin.Kerr         02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Unit::ParseDefinition(Utf8CP definition, Utf8Vector& numerator, Utf8Vector& denominator)
+BentleyStatus SymbolicFraction::ParseDefinition(Utf8CP definition, Utf8Vector& numerator, Utf8Vector& denominator)
     {
     if (Utf8String::IsNullOrEmpty(definition))
         return BentleyStatus::ERROR;

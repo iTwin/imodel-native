@@ -18,9 +18,14 @@ typedef bvector<Utf8String> Utf8Vector;
 
 struct SymbolicFraction
 	{
+friend struct Unit;
+friend struct Phenomenon;
 private:
     Utf8Vector m_numerator;
     Utf8Vector m_denominator;
+    static BentleyStatus ParseDefinition(Utf8CP definition, Utf8Vector& numerator, Utf8Vector& denominator);
+    SymbolicFraction(Utf8CP definition);
+    SymbolicFraction(Utf8Vector& numerator, Utf8Vector& denominator);
 
 protected:
     static void SimplifySubTypes(Utf8Vector &n, Utf8Vector &d);
@@ -39,7 +44,7 @@ public:
 
     bool operator== (const SymbolicFraction& rhs) const;
     bool operator!= (const SymbolicFraction& rhs) const;
-    };
+};
 
 
 //=======================================================================================
@@ -54,6 +59,7 @@ friend struct UnitRegistry;
 private:
     Utf8String  m_system;
     Utf8String  m_name;
+    Utf8Char    m_dimensionSymbol;
     double      m_factor;
     double      m_offset;
 
@@ -62,7 +68,7 @@ private:
 
 	// TODO: Create a better definition of an "unknown" unit
 	Unit (Utf8Vector& numerator, Utf8Vector& denominator) : Unit("", "", "", numerator, denominator, 1.0, 0.0) { }
-    Unit (Utf8CP system, Utf8CP phenomena, Utf8CP name, Utf8Vector& numerator, Utf8Vector& denominator, double factor, double offset);
+    Unit (Utf8CP system, Utf8CP phenomena, Utf8CP name, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset);
 
 	// Lifecycle is managed by the UnitRegistry so we don't allow copies or assignments.
 	Unit (UnitCR unit) = delete;
@@ -79,6 +85,8 @@ public:
     Utf8CP GetName()         const { return _GetName(); }
     //Utf8CP GetDisplayLabel() const { return _GetDisplayLabel(); }
 
+    bool IsBaseUnit() const { return ' ' != m_dimensionSymbol; }
+
     // Binary comparison operators.
     bool operator== (UnitR rhs) const;
     bool operator!= (UnitR rhs) const;
@@ -90,4 +98,18 @@ public:
     UnitCR operator-(UnitR rhs) const;
 };
 
+
+struct Phenomenon : SymbolicFraction
+{
+friend struct UnitRegistry;
+private:
+    Utf8String  m_name;
+    Utf8String  m_definition;
+    Utf8Char    m_dimensionSymbol;
+
+    Phenomenon(Utf8CP name, Utf8CP definition, Utf8Char dimensionalSymbol) : SymbolicFraction(definition), m_name(name) {}
+
+public:
+    bool IsBasePhenomena() { return ' ' != m_dimensionSymbol; }
+};
 END_BENTLEY_UNITS_NAMESPACE

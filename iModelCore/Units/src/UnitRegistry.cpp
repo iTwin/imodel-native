@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "UnitsPCH.h"
+#include "StandardNames.h"
 
 USING_NAMESPACE_BENTLEY_UNITS
 
@@ -64,13 +65,62 @@ void UnitRegistry::AddSystem (Utf8CP systemName)
     InsertUnique (m_systems, str);
     }
 
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void UnitRegistry::AddPhenomena (Utf8CP phenomenaName)
+Utf8CP GetBasePhenomenonName(Utf8Char dimensionSymbol)
     {
-    auto str = Utf8String(phenomenaName);
-    InsertUnique (m_phenomena, str);
+    switch (dimensionSymbol)
+        {
+            case BasePhenomena::Capita:
+                return CAPITA;
+            case BasePhenomena::ElectricCurrent:
+                return CURRENT;
+            case BasePhenomena::Finance:
+                return FINANCE;
+            case BasePhenomena::Length:
+                return LENGTH;
+            case BasePhenomena::Luminosity:
+                return LUMINOUSINTENSITY;
+            case BasePhenomena::Mass:
+                return MASS;
+            case BasePhenomena::Mole:
+                return MOLE;
+            case BasePhenomena::PlaneAngle:
+                return ANGLE;
+            case BasePhenomena::Ratio:
+                return RATIO;
+            case BasePhenomena::SolidAngle:
+                return SOLIDANGLE;
+            case BasePhenomena::Temperature:
+                return TEMPERATURE;
+            case BasePhenomena::Time:
+                return TIME;
+            default:
+                return "";
+        }
+    }
+//-------------------------------------------------------------------------------------//
+// @bsimethod                                              Colin.Kerr     02/16
+//+---------------+---------------+---------------+---------------+---------------+----//
+void UnitRegistry::AddBasePhenomena(Utf8Char dimensionalSymbol)
+    {
+    Utf8CP phenomenaName = GetBasePhenomenonName(dimensionalSymbol);
+    if (Utf8String::IsNullOrEmpty(phenomenaName))
+        return;
+
+    auto phenomena = new Phenomenon(phenomenaName, phenomenaName, dimensionalSymbol);
+
+    auto nameStr = Utf8String(phenomenaName);
+    m_phenomena.insert(bpair<Utf8String, Phenomenon *>(nameStr, phenomena));
+    }
+
+//-------------------------------------------------------------------------------------//
+// @bsimethod                                              Colin.Kerr     02/16
+//+---------------+---------------+---------------+---------------+---------------+----//
+void UnitRegistry::AddPhenomena (Utf8CP phenomenaName, Utf8CP definition)
+    {
+    auto phenomena = new Phenomenon(phenomenaName, definition, ' ');
+
+    auto nameStr = Utf8String(phenomenaName);
+    m_phenomena.insert(bpair<Utf8String, Phenomenon *>(nameStr, phenomena));
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -87,31 +137,19 @@ void UnitRegistry::AddDefaultSystems ()
     // TODO: Add more.
     }
 
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void UnitRegistry::AddDefaultPhenomena ()
+BentleyStatus UnitRegistry::AddSIBaseUnit(Utf8CP unitName, Utf8Char dimensionSymbol)
     {
-    AddPhenomena ("Length");
-    AddPhenomena ("Mass");
-    AddPhenomena ("Time");
-    AddPhenomena ("Temperature");
-    AddPhenomena ("Current");
-    AddPhenomena ("Matter");
-    AddPhenomena ("Luminosity");
-    AddPhenomena ("Planar");
-    AddPhenomena ("Solid");
-    AddPhenomena ("Finance");
-    AddPhenomena ("Capita");
-    AddPhenomena ("Dimensionless");
-    }
+    Utf8CP phenomenonName = GetBasePhenomenonName(dimensionSymbol);
+    if (Utf8String::IsNullOrEmpty(phenomenonName))
+        return BentleyStatus::ERROR;
+    
+    // TODO: Error checking
+    auto unit = Unit::Create(SI, phenomenonName, unitName, unitName, dimensionSymbol, 1, 0);
 
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void UnitRegistry::AddDefaultConstants ()
-    {
+    auto nameStr = Utf8String(unitName);
+    m_units.insert(bpair<Utf8String, Unit *>(nameStr, unit.get()));
 
+    return BentleyStatus::SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -122,7 +160,7 @@ BentleyStatus UnitRegistry::AddUnit (Utf8CP systemName, Utf8CP phenomName, Utf8C
     if (!(HasSystem(systemName) && HasPhenomena(phenomName)))
         return ERROR;
 
-    auto unit = Unit::Create (systemName, phenomName, unitName, definition, factor, offset);
+    auto unit = Unit::Create (systemName, phenomName, unitName, definition, ' ', factor, offset);
     if (nullptr == unit)
         return ERROR;
 
@@ -137,14 +175,15 @@ BentleyStatus UnitRegistry::AddUnit (Utf8CP systemName, Utf8CP phenomName, Utf8C
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UnitRegistry::AddConstant (double magnitude, Utf8CP unitName)
+BentleyStatus UnitRegistry::AddConstant(Utf8CP phenomName, Utf8CP constantName, Utf8CP definition, double factor)
     {
-    auto unit = LookupUnit (unitName);
-    if (nullptr == unit)
-        return ERROR;
+    // TODO: Error checking
+    auto constant = Unit::Create(CONSTANT, phenomName, constantName, definition, ' ', factor, 0);
 
-    // TODO: Insert Constant.    
-    return SUCCESS;
+    auto nameStr = Utf8String(constantName);
+    m_constants.insert(bpair<Utf8String, Unit *>(nameStr, constant.get()));
+
+    return BentleyStatus::SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -163,16 +202,13 @@ UnitCP UnitRegistry::LookupUnit (Utf8CP name) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ConstantCP UnitRegistry::LookupConstant (Utf8CP name) const
+UnitCP UnitRegistry::LookupConstant (Utf8CP name) const
     {
-    auto nameStr = Utf8String(name);
-    auto iter = find_if (m_constants.begin(), m_constants.end(), 
-        [&](Constant c) { return 0 == BeStringUtilities::Stricmp(c.GetConstantName(), name); });
-    
-    if (iter == m_constants.end())
+    auto val_iter = m_units.find(name);
+    if (val_iter == m_constants.end())
         return nullptr;
 
-    return &(*iter);
+    return *iter;
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -189,7 +225,7 @@ bool UnitRegistry::HasSystem (Utf8CP systemName) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool UnitRegistry::HasPhenomena (Utf8CP phenomenaName) const
     {
-    auto iter = find (m_phenomena.begin(), m_phenomena.end(), Utf8String(phenomenaName));
+    auto iter = m_phenomena.find(phenomenaName);
     return iter != m_phenomena.end();
     }
 

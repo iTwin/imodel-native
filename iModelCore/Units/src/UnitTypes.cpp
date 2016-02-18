@@ -13,22 +13,17 @@ USING_NAMESPACE_BENTLEY_UNITS
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Unit::Unit(Utf8CP system, Utf8CP phenomena, Utf8CP name, Utf8Vector& numerator, Utf8Vector& denominator, double factor, double offset) : SymbolicFraction(numerator, denominator),
-    m_name(name), m_system (system), m_factor(factor), m_offset(offset)
+Unit::Unit(Utf8CP system, Utf8CP phenomena, Utf8CP name, Utf8CP definition, Utf8Char dimensonSymbol, double factor, double offset) : SymbolicFraction(definition),
+    m_name(name), m_system (system), m_factor(factor), m_offset(offset), m_dimensionSymbol(dimensonSymbol)
     {
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitP Unit::Create (Utf8CP sysName, Utf8CP phenomName, Utf8CP unitName, Utf8CP definition, double factor, double offset)
+UnitPtr Unit::Create (Utf8CP sysName, Utf8CP phenomName, Utf8CP unitName, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset)
     {
-    auto n = Utf8Vector();
-    auto d = Utf8Vector();
-    if (SUCCESS != ParseDefinition (definition, n, d))
-        return nullptr;
-    
-    return new Unit (sysName, phenomName, unitName, n, d, factor, offset);
+    return new Unit (sysName, phenomName, unitName, definition, dimensionSymbol, factor, offset);
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -133,9 +128,10 @@ void SymbolicFraction::SimplifySubTypes(Utf8Vector &n, Utf8Vector &d)
     move(temp.begin(), temp.end(), d.begin());
     }
 
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
+SymbolicFraction::SymbolicFraction(Utf8CP definition)
+    {
+    ParseDefinition(definition, m_numerator, m_denominator);
+    }
 SymbolicFraction::SymbolicFraction(Utf8Vector& numerator, Utf8Vector& denominator)
     {
     m_numerator = move(numerator);
