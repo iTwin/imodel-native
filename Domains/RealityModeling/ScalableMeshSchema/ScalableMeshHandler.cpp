@@ -10,7 +10,8 @@
 
 #include <BeSQLite\BeSQLite.h>
 #include <ScalableMeshSchema\ScalableMeshHandler.h>
-    
+#include "ScalableMeshDisplayCacheManager.h"
+
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_SCHEMA
@@ -108,7 +109,44 @@ bool ScalableMeshModel::_UnregisterTilesChangedEventListener(ITerrainTileChanged
 //----------------------------------------------------------------------------------------
 void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     {
+    if (m_progressiveQueryEngine == nullptr)
+        {
+        m_displayNodesCache = new ScalableMeshDisplayCacheManager(context);
+        m_progressiveQueryEngine = IScalableMeshProgressiveQueryEngine::Create(m_smPtr, m_displayNodesCache);
+        }
+    Transform curViewTransform;
+    context.GetCurrLocalToWorldTrans(curViewTransform);
+    DMatrix4d curViewTransformMat = DMatrix4d::From(curViewTransform);
+   /* bvector<bool> clips;
 
+    BentleyStatus status = m_progressiveQueryEngine->StartQuery(0,
+                                                                viewDependentQueryParams,
+                                                                m_meshNodes,
+                                                                true,
+                                                                clips,
+                                                                &m_lastViewTransform,
+                                                                &curViewTransformMat);
+
+    assert(status == SUCCESS);
+
+    if (m_progressiveQueryEngine->IsQueryComplete(0))
+        {
+        m_meshNodes.clear();
+        status = m_progressiveQueryEngine->GetQueriedNodes(m_meshNodes, 0);
+        m_overviewNodes.clear();
+
+        assert(status == SUCCESS);
+        }
+    else
+        {
+        status = m_progressiveQueryEngine->GetOverviewNodes(m_overviewNodes, 0);
+        m_overviewNodes.insert(m_overviewNodes.end(), m_meshNodes.begin(), m_meshNodes.end());
+        m_meshNodes.clear();
+        assert(m_overviewNodes.size() > 0);
+        assert(status == SUCCESS);
+        }
+    m_lastViewTransform = curViewTransformMat;
+    DrawCurrentNodeList(m_meshNodes, m_overviewNodes, context);*/
     }
 
 //NEEDS_WORK_SM : Should be at application level

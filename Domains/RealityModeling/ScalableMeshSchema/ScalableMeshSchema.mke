@@ -34,7 +34,8 @@ meshmodelDepends             = $(BuildContext)PublicAPI/DgnPlatform/DgnModel.h \
                                   $(ScMeshSchemaPublicApiSrc)IMeshSpatialModel.h  \
                                   $(ScMeshSchemaPublicApiSrc)ScalableMeshHandler.h \
                                   $(ScMeshSchemaPublicApiSrc)ScalableMeshDomain.h \
-                                  $(ScMeshSchemaPublicApiSrc)ScalableMeshSchemaApi.h
+                                  $(ScMeshSchemaPublicApiSrc)ScalableMeshSchemaApi.h \
+                                  $(SrcScMeshSchema)ScalableMeshDisplayCacheManager.h
 always:
     !~@mkdir $(o)
 
@@ -62,6 +63,8 @@ $(o)IMeshSpatialModel$(oext)        : $(SrcScMeshSchema)IMeshSpatialModel.cpp   
 $(o)ScalableMeshHandler$(oext)        : $(SrcScMeshSchema)ScalableMeshHandler.cpp       $(meshmodelDepends) ${MultiCompileDepends}
 
 $(o)ScalableMeshDomain$(oext)        : $(SrcScMeshSchema)ScalableMeshDomain.cpp       $(meshmodelDepends) ${MultiCompileDepends}
+
+$(o)ScalableMeshDisplayCacheManager$(oext)        : $(SrcScMeshSchema)ScalableMeshDisplayCacheManager.cpp       $(meshmodelDepends) ${MultiCompileDepends}
 
 
 #
@@ -95,7 +98,8 @@ LINKER_LIBRARIES            =   $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(l
                                 $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext) \
                                 $(ContextSubpartsLibs)$(libprefix)ImagePP$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
-                                $(ContextSubpartsLibs)$(libprefix)ScalableMesh$(libext)
+                                $(ContextSubpartsLibs)$(libprefix)ScalableMesh$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)qvision$(libext)
 
 
 #$(SYSTEM_LIBRARIES)

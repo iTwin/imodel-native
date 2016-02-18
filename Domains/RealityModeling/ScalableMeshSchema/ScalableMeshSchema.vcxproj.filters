@@ -30,6 +30,12 @@
     <ClCompile Include="..\ScalableMeshDomain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ScalableMeshDomain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ScalableMeshDisplayCacheManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ScalableMeshSchemaPCH.h">
@@ -48,6 +54,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\PublicApi\ScalableMeshSchema\ScalableMeshDomain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ScalableMeshDisplayCacheManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

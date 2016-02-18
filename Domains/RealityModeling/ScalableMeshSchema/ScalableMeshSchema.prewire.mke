@@ -9,3 +9,6 @@
 
 $(BuildContext)PublicAPI/ScalableMeshSchema : $(_MakeFilePath)../PublicAPI/ScalableMeshSchema
     $(LinkFirstDepToFirstTargetAsDirectory)
+    
+$(BuildContext)ECSchemas/Domain/ScalableMesh.01.00.ecschema.xml : $(_MakeFilePath)ScalableMesh.01.00.ecschema.xml
+    $(LinkFirstDepToFirstTarget)

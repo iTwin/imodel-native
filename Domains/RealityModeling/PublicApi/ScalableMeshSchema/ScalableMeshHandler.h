@@ -13,6 +13,8 @@
 #include <ScalableMesh/IScalableMesh.h>
 #include <ScalableMeshSchema/IMeshSpatialModel.h>
 #include <TerrainModel/TerrainModel.h>
+#include <ScalableMesh\IScalableMeshProgressiveQuery.h>
+
 
 SCALABLEMESH_SCHEMA_TYPEDEFS(ScalableMeshModel)
 
@@ -29,8 +31,14 @@ struct ScalableMeshModel : IMeshSpatialModel
     DGNMODEL_DECLARE_MEMBERS("ScalableMeshModel", IMeshSpatialModel)
         private:
 
-        IScalableMeshPtr m_smPtr;
-        BentleyApi::Dgn::AxisAlignedBox3d m_range;
+        IScalableMeshPtr                        m_smPtr;
+        BentleyApi::Dgn::AxisAlignedBox3d       m_range;
+
+        IScalableMeshDisplayCacheManagerPtr     m_displayNodesCache;
+        IScalableMeshProgressiveQueryEnginePtr  m_progressiveQueryEngine;
+        DMatrix4d                               m_lastViewTransform;
+
+
     protected:
  
 
