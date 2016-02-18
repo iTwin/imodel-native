@@ -53,9 +53,12 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         virtual ~ScalableMeshModel();
 
+        SCALABLEMESHSCHEMA_EXPORT static ScalableMeshModelP CreateModel(BentleyApi::Dgn::DgnDbR dgnDb);
 
         //! A DgnDb can have only one terrain. 
         SCALABLEMESHSCHEMA_EXPORT static IMeshSpatialModelP GetTerrainModelP(BentleyApi::Dgn::DgnDbCR dgnDb);
+
+        SCALABLEMESHSCHEMA_EXPORT static WString GetTerrainModelPath(BentleyApi::Dgn::DgnDbCR dgnDb);
 
 
     };

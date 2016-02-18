@@ -55,11 +55,13 @@
     <Text Include="readme.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\ScalableMeshDomain.cpp" />
     <ClCompile Include="IMeshSpatialModel.cpp" />
     <ClCompile Include="ScalableMeshHandler.cpp" />
     <ClCompile Include="ScalableMeshSchemaPCH.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\PublicApi\ScalableMeshSchema\ScalableMeshDomain.h" />
     <ClInclude Include="..\PublicApi\ScalableMeshSchema\ExportMacros.h" />
     <ClInclude Include="..\PublicApi\ScalableMeshSchema\IMeshSpatialModel.h" />
     <ClInclude Include="..\PublicApi\ScalableMeshSchema\ScalableMeshHandler.h" />

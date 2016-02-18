@@ -156,4 +156,33 @@ IMeshSpatialModelP ScalableMeshModel::GetTerrainModelP(BentleyApi::Dgn::DgnDbCR 
     return nullptr;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Elenie.Godzaridis     2/2016
+//----------------------------------------------------------------------------------------
+ScalableMeshModelP ScalableMeshModel::CreateModel(BentleyApi::Dgn::DgnDbR dgnDb)
+    {
+    DgnClassId classId(dgnDb.Schemas().GetECClassId("ScalableMesh","ScalableMeshModel"));
+    BeAssert(classId.IsValid());
+
+    ScalableMeshModelP model = new ScalableMeshModel(DgnModel::CreateParams(dgnDb, classId, DgnModel::CreateModelCode("scalableTerrain")));
+
+    model->Insert();
+    dgnDb.SaveChanges();
+    return model;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Elenie.Godzaridis     2/2016
+//----------------------------------------------------------------------------------------
+WString ScalableMeshModel::GetTerrainModelPath(BentleyApi::Dgn::DgnDbCR dgnDb)
+    {
+    BeFileName tmFileName;
+    tmFileName = dgnDb.GetFileName().GetDirectoryName();
+    tmFileName.AppendToPath(dgnDb.GetFileName().GetFileNameWithoutExtension().c_str());
+    if (!tmFileName.DoesPathExist())
+        BeFileName::CreateNewDirectory(tmFileName.c_str());
+    tmFileName.AppendString(L"\\terrain.stm");
+    return tmFileName;
+    }
+
 HANDLER_DEFINE_MEMBERS(ScalableMeshModelHandler)
