@@ -72,6 +72,7 @@
     <ClInclude Include="Published\WebServices\Configuration\UrlProviderTests.h" />
     <ClInclude Include="Published\WebServices\Connect\ConnectAuthenticationHandlerTests.h" />
     <ClInclude Include="Published\WebServices\Connect\ConnectAuthenticationPersistenceTests.h" />
+    <ClInclude Include="Published\WebServices\Connect\ConnectSignInManagerTests.h" />
     <ClInclude Include="Published\WebServices\Connect\ConnectTests.h" />
     <ClInclude Include="Published\WebServices\Connect\ConnectTestsHelper.h" />
     <ClInclude Include="Published\WebServices\Connect\ConnectTokenProviderTests.h" />
@@ -195,6 +196,7 @@
     <ClCompile Include="Published\WebServices\Configuration\UrlProviderTests.cpp" />
     <ClCompile Include="Published\WebServices\Connect\ConnectAuthenticationHandlerTests.cpp" />
     <ClCompile Include="Published\WebServices\Connect\ConnectAuthenticationPersistenceTests.cpp" />
+    <ClCompile Include="Published\WebServices\Connect\ConnectSignInManagerTests.cpp" />
     <ClCompile Include="Published\WebServices\Connect\ConnectTests.cpp" />
     <ClCompile Include="Published\WebServices\Connect\ConnectTestsHelper.cpp" />
     <ClCompile Include="Published\WebServices\Connect\ConnectTokenProviderTests.cpp" />
@@ -319,7 +321,7 @@
     <NMakeReBuildCommandLine>bb -ax64 -r WSClient -f WSClient -p WSClientUnitTests-VS b</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -ax64 -r WSClient -f WSClient -p WSClientUnitTests-VS reb WebServices* WSClientUnitTests BeGTestExe -c</NMakeCleanCommandLine>
     <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;USE_GTEST;$(NMakePreprocessorDefinitions);WSCLIENT_ENABLE_DUPLICATING_SYMBOLS</NMakePreprocessorDefinitions>
-    <NMakeOutput>$(OutRoot)Winx64\Product\BeGTest\bin\begtest.exe</NMakeOutput>
+    <NMakeOutput>$(OutRoot)Winx64\build\BeGTest\bin\begtest.exe</NMakeOutput>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <IncludePath>$(OutRoot)Winx64\BuildContexts\WSClient\VendorAPI;$(OutRoot)Winx64\BuildContexts\WSClient\PublicAPI;$(IncludePath)</IncludePath>
   </PropertyGroup>
@@ -328,7 +330,7 @@
     <NMakeReBuildCommandLine>bb -ax86 -r WSClient -f WSClient -p WSClientUnitTests-VS b</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -ax86 -r WSClient -f WSClient -p WSClientUnitTests-VS reb WebServices* WSClientUnitTests BeGTestExe -c</NMakeCleanCommandLine>
     <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeOutput>$(OutRoot)Winx86\product\BeGTest\bin\BeGTest.exe</NMakeOutput>
+    <NMakeOutput>$(OutRoot)Winx86\build\BeGTest\bin\begtest.exe</NMakeOutput>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <IncludePath>$(SrcRoot)WSClient\PublicAPI;$(OutRoot)Winx86\build\WSClient\PublishedApi\;$(OutRoot)Winx86\BuildContexts\WSClient\VendorAPI;$(OutRoot)Winx86\BuildContexts\BeGTest\VendorAPI;$(IncludePath)</IncludePath>
   </PropertyGroup>
