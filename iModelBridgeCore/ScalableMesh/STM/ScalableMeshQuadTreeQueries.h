@@ -74,6 +74,11 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentPoint
                                                        shapeExtent.GetXMax(),
                                                        shapeExtent.GetYMax());
                 }
+            else
+                {
+                myExtent = ExtentOp<EXTENT>::Create(0, 0, 0, 0);
+                }
+
             return myExtent;
             }
                                             

@@ -1445,7 +1445,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 reader.parse(reinterpret_cast<char*>(&buffer.front()), reinterpret_cast<char*>(&buffer.back()), nodeHeader);
                 }
             else {
-                auto blob_name = filename.c_str();
+                //auto blob_name = filename.c_str();
                 /*m_stream_store.DownloadBlob(blob_name, [&nodeHeader](scalable_mesh::azure::Storage::point_buffer_type& buffer)
                     {
                     assert(!buffer.empty());

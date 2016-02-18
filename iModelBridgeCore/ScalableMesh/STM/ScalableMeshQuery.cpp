@@ -21,6 +21,8 @@
 
 // NEEDS_WORK_SM : add pragma to disable wnarning for templating
 #pragma warning (disable: 4250)
+#pragma warning (disable: 4589)
+
 
 USING_NAMESPACE_IMAGEPP;
 

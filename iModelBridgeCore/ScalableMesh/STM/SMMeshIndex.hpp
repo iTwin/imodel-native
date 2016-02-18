@@ -846,7 +846,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::DumpOct
     char   TempBuffer[3000];
     int    NbChars;
     size_t NbWrittenChars;
-    uint32_t nodeId;
+    __int64 nodeId;
 
     if (GetBlockID().IsValid())
         {
@@ -857,7 +857,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::DumpOct
         nodeId = IDTMFile::GetNullNodeID();
         }
 
-    NbChars = sprintf(TempBuffer, "<ChildNode NodeId=\"%i\" TotalPoints=\"%i\" SplitDepth=\"%i\" ArePoints3d=\"%i\">", nodeId, GetCount(), GetSplitDepth(), m_nodeHeader.m_arePoints3d ? 1 : 0);
+    NbChars = sprintf(TempBuffer, "<ChildNode NodeId=\"%lli\" TotalPoints=\"%lli\" SplitDepth=\"%zi\" ArePoints3d=\"%i\">", nodeId, GetCount(), GetSplitDepth(), m_nodeHeader.m_arePoints3d ? 1 : 0);
 
     NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pi_pOutputXmlFileStream);
 
@@ -902,28 +902,28 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::DumpOct
     HASSERT(NbWrittenChars == NbChars);
 
     //Cumulative Number Of Points
-    NbChars = sprintf(TempBuffer, "<CumulNbOfPoints>%u</CumulNbOfPoints>\n", GetCount());
+    NbChars = sprintf(TempBuffer, "<CumulNbOfPoints>%llu</CumulNbOfPoints>\n", GetCount());
 
     NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pi_pOutputXmlFileStream);
 
     HASSERT(NbWrittenChars == NbChars);
 
     //Number Of Points
-    NbChars = sprintf(TempBuffer, "<NbOfIndexes>%u</NbOfIndexes>\n", m_nodeHeader.m_nbFaceIndexes);
+    NbChars = sprintf(TempBuffer, "<NbOfIndexes>%zu</NbOfIndexes>\n", m_nodeHeader.m_nbFaceIndexes);
 
     NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pi_pOutputXmlFileStream);
 
     HASSERT(NbWrittenChars == NbChars);
 
     //Level
-    NbChars = sprintf(TempBuffer, "<Level>%i</Level>\n", m_nodeHeader.m_level);
+    NbChars = sprintf(TempBuffer, "<Level>%zi</Level>\n", m_nodeHeader.m_level);
 
     NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pi_pOutputXmlFileStream);
 
     HASSERT(NbWrittenChars == NbChars);
 
     // SplitTreshold
-    NbChars = sprintf(TempBuffer, "<SplitTreshold>%i</SplitTreshold>", m_nodeHeader.m_SplitTreshold);
+    NbChars = sprintf(TempBuffer, "<SplitTreshold>%zi</SplitTreshold>", m_nodeHeader.m_SplitTreshold);
 
     NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pi_pOutputXmlFileStream);
 
@@ -963,7 +963,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::DumpOct
         {
         for (size_t neighborInd = 0; neighborInd < m_nodeHeader.m_apNeighborNodeID[neighborPosInd].size(); neighborInd++)
             {
-            NbChars = sprintf(TempBuffer, "P %i I %i Id %i ", neighborPosInd, neighborInd, m_nodeHeader.m_apNeighborNodeID[neighborPosInd][neighborInd].m_integerID);
+            NbChars = sprintf(TempBuffer, "P %zi I %zi Id %lli ", neighborPosInd, neighborInd, m_nodeHeader.m_apNeighborNodeID[neighborPosInd][neighborInd].m_integerID);
 
             NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pi_pOutputXmlFileStream);
 
@@ -978,7 +978,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::DumpOct
     HASSERT(NbWrittenChars == NbChars);
 
     //GraphID
-    NbChars = sprintf(TempBuffer, "<GraphID>%u</GraphID>\n", m_nodeHeader.m_graphID.m_integerID);
+    NbChars = sprintf(TempBuffer, "<GraphID>%llu</GraphID>\n", m_nodeHeader.m_graphID.m_integerID);
 
     NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pi_pOutputXmlFileStream);
 
@@ -986,7 +986,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::DumpOct
 
     for (size_t i = 0; i < m_nodeHeader.m_ptsIndiceID.size(); ++i)
         {
-        NbChars = sprintf(TempBuffer, "<IndiceID>%u</IndiceID>\n", m_nodeHeader.m_ptsIndiceID[i].m_integerID);
+        NbChars = sprintf(TempBuffer, "<IndiceID>%llu</IndiceID>\n", m_nodeHeader.m_ptsIndiceID[i].m_integerID);
 
         NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pi_pOutputXmlFileStream);
 
@@ -996,7 +996,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::DumpOct
     for (size_t i = 0; i <m_ptsIndiceVec.size(); ++i)
         {
         if (m_ptsIndiceVec[i].Discarded() && m_ptsIndiceVec[i].GetBlockID().IsValid()) m_ptsIndiceVec[i].Inflate();
-        NbChars = sprintf(TempBuffer, "<IndiceVec Number=\"%i\" BlockID=\"%i\">%u</IndiceVec>\n", i, m_ptsIndiceVec[i].GetBlockID().m_integerID, m_ptsIndiceVec[i].size());
+        NbChars = sprintf(TempBuffer, "<IndiceVec Number=\"%zi\" BlockID=\"%lli\">%zu</IndiceVec>\n", i, m_ptsIndiceVec[i].GetBlockID().m_integerID, m_ptsIndiceVec[i].size());
 
         NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pi_pOutputXmlFileStream);
 
