@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "UnitsPCH.h"
-#include <Parser.h>
 
 USING_NAMESPACE_BENTLEY_UNITS
 
@@ -22,7 +21,7 @@ Unit::Unit(Utf8CP system, Utf8CP phenomena, Utf8CP name, Utf8Vector& numerator, 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitPtr Unit::Create (Utf8CP sysName, Utf8CP phenomName, Utf8CP unitName, Utf8CP definition, double factor, double offset)
+UnitP Unit::Create (Utf8CP sysName, Utf8CP phenomName, Utf8CP unitName, Utf8CP definition, double factor, double offset)
     {
     auto n = Utf8Vector();
     auto d = Utf8Vector();
@@ -45,7 +44,7 @@ bool Unit::IsRegistered() const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Unit::operator== (const UnitR rhs) const
+bool Unit::operator== (UnitR rhs) const
     {
     return T_Super::operator==(rhs);
     }
@@ -53,7 +52,7 @@ bool Unit::operator== (const UnitR rhs) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Unit::operator!= (const UnitR rhs) const
+bool Unit::operator!= (UnitR rhs) const
     {
     return !(*this == rhs);
     }
@@ -61,86 +60,58 @@ bool Unit::operator!= (const UnitR rhs) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Unit Unit::operator* (const UnitR rhs) const
+UnitCR Unit::operator* (UnitR rhs) const
     {
-    Unit result = *this;
-    result *= rhs;
-    return result;
+    auto result = T_Super::operator/(rhs);
+
+    UnitCP unit = UnitRegistry::Instance().LookupUnitBySubTypes(result.Numerator(), result.Denominator());
+	if (nullptr != unit)
+		return *unit;
+
+	Utf8Vector n = Utf8Vector();
+    copy (result.Numerator().begin(), result.Numerator().end(), n.begin());
+
+    Utf8Vector d = Utf8Vector();
+    copy (result.Denominator().begin(), result.Denominator().end(), d.begin());
+
+    return move(Unit(n, d));
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Unit Unit::operator/ (const UnitR rhs) const
+UnitCR Unit::operator/ (UnitR rhs) const
     {
-    Unit result = *this;
-    result /= rhs;
-    return result;
+    auto result = T_Super::operator/(rhs);
+
+    UnitCP unit = UnitRegistry::Instance().LookupUnitBySubTypes(result.Numerator(), result.Denominator());
+	if (nullptr != unit)
+		return *unit;
+
+	Utf8Vector n = Utf8Vector();
+    copy (result.Numerator().begin(), result.Numerator().end(), n.begin());
+
+    Utf8Vector d = Utf8Vector();
+    copy (result.Denominator().begin(), result.Denominator().end(), d.begin());
+
+    return move(Unit(n, d));
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Unit Unit::operator+ (const UnitR rhs) const
+UnitCR Unit::operator+ (UnitR rhs) const
     {
-    Unit result = *this;
-    result += rhs;
-    return result;
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Unit Unit::operator- (const UnitR rhs) const
-    {
-    Unit result = *this;
-    result -= rhs;
-    return result;
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-UnitR Unit::operator+= (const UnitR rhs)
-    {
-    // TODO: This might not be right.
+	//TODO: Is this right?
     return *this;
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitR Unit::operator-= (const UnitR rhs)
+UnitCR Unit::operator- (UnitR rhs) const
     {
-    // TODO: This might not be right.
-    return *this;
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-UnitR Unit::operator*= (const UnitR rhs)
-    {
-    T_Super::operator*=(rhs);
-
-    auto newUnit = UnitRegistry::Instance().LookupUnitBySubTypes(GetNumerator(), GetDenominator());
-    if (newUnit != nullptr)
-        return *newUnit;
-
-    return *this;
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-UnitR Unit::operator/= (const UnitR rhs)
-    {
-    T_Super::operator/=(rhs);
-
-    auto newUnit = UnitRegistry::Instance().LookupUnitBySubTypes(GetNumerator(), GetDenominator());
-    if (newUnit != nullptr)
-        return *newUnit;
-
+	//TODO: Is this right?
     return *this;
     }
 
@@ -162,42 +133,60 @@ void SymbolicFraction::SimplifySubTypes(Utf8Vector &n, Utf8Vector &d)
     move(temp.begin(), temp.end(), d.begin());
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 SymbolicFraction::SymbolicFraction(Utf8Vector& numerator, Utf8Vector& denominator)
     {
     m_numerator = move(numerator);
     m_denominator = move(denominator);
     }
 
-SymbolicFraction& SymbolicFraction::operator*=(const SymbolicFraction& rhs)
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+SymbolicFraction SymbolicFraction::operator*(const SymbolicFraction& rhs) const
     {
+    auto n = Utf8Vector(m_numerator);
+    auto d = Utf8Vector(m_denominator);
+
     // Combine numerator and denominators.
     for_each(rhs.m_numerator.begin(), rhs.m_numerator.end(),
-             [&] (Utf8String s) { m_numerator.push_back(s); });
-    sort(m_numerator.begin(), m_numerator.end());
+             [&] (Utf8String s) { n.push_back(s); });
+    sort(n.begin(), n.end());
 
     for_each(rhs.m_denominator.begin(), rhs.m_denominator.end(),
-             [&] (Utf8String s) { m_denominator.push_back(s); });
-    sort(m_denominator.begin(), m_denominator.end());
+             [&] (Utf8String s) { d.push_back(s); });
+    sort(d.begin(), d.end());
 
-    Simplify();
-    return *this;
+    SimplifySubTypes(n, d);
+    return SymbolicFraction(n,d);
     }
 
-SymbolicFraction& SymbolicFraction::operator/=(const SymbolicFraction& rhs)
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+SymbolicFraction SymbolicFraction::operator/(const SymbolicFraction& rhs) const
     {
+	auto n = Utf8Vector(m_numerator);
+    auto d = Utf8Vector(m_denominator);
+
     // Combine numerator and denominators.
     for_each(rhs.m_numerator.begin(), rhs.m_numerator.end(),
-             [&] (Utf8String s) { m_denominator.push_back(s); });
-    sort(m_denominator.begin(), m_denominator.end());
+             [&] (Utf8String s) { d.push_back(s); });
+    sort(d.begin(), d.end());
 
     for_each(rhs.m_denominator.begin(), rhs.m_denominator.end(),
-             [&] (Utf8String s) { m_numerator.push_back(s); });
-    sort(m_numerator.begin(), m_numerator.end());
+             [&] (Utf8String s) { n.push_back(s); });
+    sort(n.begin(), n.end());
 
-    Simplify();
-    return *this;
+    SimplifySubTypes(n, d);
+    return SymbolicFraction (n, d);
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 bool SymbolicFraction::operator==(const SymbolicFraction& rhs) const
     {
     if (m_numerator.size() != rhs.m_numerator.size())
@@ -209,6 +198,9 @@ bool SymbolicFraction::operator==(const SymbolicFraction& rhs) const
     return equal(m_numerator.begin(), m_numerator.end(), rhs.m_numerator.begin()) && equal(m_denominator.begin(), m_denominator.end(), rhs.m_denominator.begin());
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 bool SymbolicFraction::operator!= (const SymbolicFraction& rhs) const
     {
     return !(*this == rhs);

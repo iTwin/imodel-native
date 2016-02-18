@@ -8,7 +8,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "UnitsPCH.h"
-#include <Parser.h>
+#include "Parser.h"
 
 USING_NAMESPACE_BENTLEY_UNITS
 

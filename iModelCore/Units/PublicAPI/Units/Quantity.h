@@ -10,6 +10,9 @@
 
 #include <Units/Units.h>
 
+UNITS_TYPEDEFS(Quantity);
+UNITS_TYPEDEFS(Constant);
+
 BEGIN_BENTLEY_UNITS_NAMESPACE
 
 //=======================================================================================
@@ -22,11 +25,11 @@ protected:
     QuantityBase(double quantity, UnitR unit);
 
     double   m_magnitude;
-    Unit     m_unit;
+    UnitCP   m_unit;
 
 public:
     double GetMagnitude() { return m_magnitude; }
-    UnitPtr GetUnit () { return &m_unit; } 
+    UnitCP GetUnit () { return m_unit; } 
 
     // Binary comparison operators.
     virtual bool operator== (const QuantityBase& rhs) const;
@@ -45,9 +48,6 @@ public:
     virtual QuantityBase& operator-=(const QuantityBase& rhs);
     };
 
-struct Quantity;
-typedef RefCountedPtr<Quantity> QuantityPtr;
-
 //=======================================================================================
 //! A class to represent a quantity which consists of a unit and magnitude.
 // @bsiclass                                                    Chris.Tartamella   02/16
@@ -58,10 +58,10 @@ private:
     Quantity(double quantity, UnitR unit);
 
 public:
-    static QuantityPtr Create (double magnitude, Utf8CP unitName);
+    static Quantity Create (double magnitude, Utf8CP unitName);
 
     void SetMagnitude (double magnitude) { m_magnitude = magnitude; }
-    void SetUnit (Unit &unit) { m_unit = unit; }
+    void SetUnit (UnitCP unit) { m_unit = unit; }
     };
 
 struct Constant;

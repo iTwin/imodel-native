@@ -24,15 +24,15 @@ struct UnitsTests : UnitsTestFixture
 
     static Utf8String ParseUOM(Utf8CP unitName, bset<Utf8String>& notMapped)
         {
-        UnitPtr uom = LocateUOM(unitName);
-        if (uom.IsValid())
+        UnitCP uom = LocateUOM(unitName);
+        if (nullptr != uom)
             return uom->GetName();
 
         notMapped.insert(unitName);
         return "NULL";
         }
 
-    static UnitPtr LocateUOM(Utf8CP unitName)
+    static UnitCP LocateUOM(Utf8CP unitName)
         {
         return UnitRegistry::Instance().LookupUnit(unitName);
         }
@@ -80,7 +80,7 @@ void UnitsTests::TestUnitConversion (double fromVal, Utf8CP fromUnitName, double
     {
     //if either units are not in the library conversion is not possible
     //UnitsMapping test checks if all units are there and fails when a unit is not found
-    if (!LocateUOM(fromUnitName).IsValid() || !LocateUOM(targetUnitName).IsValid())
+    if (nullptr == LocateUOM(fromUnitName) || nullptr == LocateUOM(targetUnitName))
         return;
 
     //QuantityP q = SimpleQuantity(fromVal, fromUnitName);
@@ -176,7 +176,7 @@ void GetUnitsByName(UnitRegistry& hub, bvector<Utf8CP>& unitNames)
     for (auto const& unitName : unitNames)
         {
         auto unit = hub.LookupUnit(unitName);
-        ASSERT_TRUE(unit.IsValid()) << "Failed to get unit: " << unitName;
+        ASSERT_TRUE(unit != nullptr) << "Failed to get unit: " << unitName;
         }
     }
 

@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "UnitsPCH.h"
-#include <Parser.h>
 
 USING_NAMESPACE_BENTLEY_UNITS
 
@@ -124,11 +123,11 @@ BentleyStatus UnitRegistry::AddUnit (Utf8CP systemName, Utf8CP phenomName, Utf8C
         return ERROR;
 
     auto unit = Unit::Create (systemName, phenomName, unitName, definition, factor, offset);
-    if (!unit.IsValid())
+    if (nullptr == unit)
         return ERROR;
 
     auto nameStr = Utf8String(unitName);
-    m_units.insert (bpair<Utf8String, Unit *>(nameStr, unit.get()));
+    m_units.insert (bpair<Utf8String, Unit*>(nameStr, unit));
 
     // TODO: Add conversions.
 
@@ -141,7 +140,7 @@ BentleyStatus UnitRegistry::AddUnit (Utf8CP systemName, Utf8CP phenomName, Utf8C
 BentleyStatus UnitRegistry::AddConstant (double magnitude, Utf8CP unitName)
     {
     auto unit = LookupUnit (unitName);
-    if (!unit.IsValid())
+    if (nullptr == unit)
         return ERROR;
 
     // TODO: Insert Constant.    
@@ -151,7 +150,7 @@ BentleyStatus UnitRegistry::AddConstant (double magnitude, Utf8CP unitName)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitPtr UnitRegistry::LookupUnit (Utf8CP name) const
+UnitCP UnitRegistry::LookupUnit (Utf8CP name) const
     {
     auto nameStr = Utf8String(name);
     auto val_iter = m_units.find (nameStr);
@@ -164,16 +163,16 @@ UnitPtr UnitRegistry::LookupUnit (Utf8CP name) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ConstantPtr UnitRegistry::LookupConstant (Utf8CP name) const
+ConstantCP UnitRegistry::LookupConstant (Utf8CP name) const
     {
     auto nameStr = Utf8String(name);
     auto iter = find_if (m_constants.begin(), m_constants.end(), 
-        [&](Constant *c) { return 0 == BeStringUtilities::Stricmp(c->GetConstantName(), name); });
+        [&](Constant c) { return 0 == BeStringUtilities::Stricmp(c.GetConstantName(), name); });
     
     if (iter == m_constants.end())
         return nullptr;
 
-    return *iter;
+    return &(*iter);
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -210,13 +209,13 @@ bool UnitRegistry::HasUnit (Utf8CP unitName) const
 bool UnitRegistry::HasConstant (Utf8CP constantName) const
     {
     auto constant = LookupConstant (constantName);
-    return constant.IsValid();
+    return nullptr != constant;
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitPtr UnitRegistry::LookupUnitBySubTypes (const Utf8Vector &numerator, const Utf8Vector &denominator) const
+UnitCP UnitRegistry::LookupUnitBySubTypes (const Utf8Vector &numerator, const Utf8Vector &denominator) const
     {
     auto n = Utf8Vector(numerator), d = Utf8Vector(denominator);
     
@@ -251,5 +250,5 @@ UnitPtr UnitRegistry::LookupUnitBySubTypes (const Utf8Vector &numerator, const U
     if (iter != m_units.end())
         return nullptr;
 
-    return (*iter).second;
+    return ((*iter).second);
     }

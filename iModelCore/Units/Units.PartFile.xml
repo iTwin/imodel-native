@@ -79,8 +79,8 @@
 
     <Product Name="UnitsTested" PrgOutputDir="Units" SaveProduct="true" AddIn="true">
         <SubPart PartName="UnitsNative" />
-        <SubProduct ProductName="Units-Tests"/>
-        <SubPart PartName="RunGtest" />
+        <SubProduct ProductName="Units-Tests" ExcludePlatforms="ios*"/>
+        <SubPart PartName="RunGtest" ExcludePlatforms="ios*"/>
         <Directories DirectoryListName="UnitsTested"/>
     </Product>
     
@@ -109,11 +109,7 @@
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
     </Product>
     
-    <Part Name="Tests">
-        <SubPart PartName="UnitTests" />
-    </Part>
-    
-    <Part Name="UnitTests" BentleyBuildMakeFile="Test/BuildTests.mke" >
+    <Part Name="Tests" BentleyBuildMakeFile="Test/BuildTests.mke" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubPart PartName="TestDependencies" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    SourceName="Delivery/UnitTests/Objects/UnitTests"/>
@@ -130,7 +126,9 @@
 
     <Part Name="UnitsConversionData" BentleyBuildMakeFile="test/ConversionData.prewire.mke">
         <Bindings>
-        <Files SubPartDirectory="ConversionData" ProductDirectoryName="UnitTests-Assets" ProductSubDirectory="ConversionData">Delivery/ConversionData/*csv</Files>
+            <Files SubPartDirectory="ConversionData" ProductDirectoryName="UnitTests-Assets" ProductSubDirectory="ConversionData">
+                Delivery/ConversionData/*csv
+            </Files>
         </Bindings>
     </Part>
 </BuildContext>

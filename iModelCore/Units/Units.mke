@@ -19,11 +19,6 @@ o                   = $(OutBuildDir)Units/
 always:
     !~@mkdir $(o)
 
-# Add the Private API directory.
-dirToSearch     = $(baseDir)PrivateAPI/
-%include cincapnd.mki
-dirToSearch = 
-
 # include the compile options mki file.
 CompileOptionsMki   = $(baseDir)mki/UnitsCompileOpts.mki
 %include $(CompileOptionsMki)
