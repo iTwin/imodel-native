@@ -190,6 +190,7 @@ public:
     void InitScanRangeAndPolyhedron() {_InitScanRangeAndPolyhedron();}
     StatusInt VisitDgnModel(DgnModelP model){return _VisitDgnModel(model);}
     void SetScanReturn() {_SetScanReturn();}
+    void OutputGraphic(Render::GraphicR graphic, GeometrySourceCP source) {_OutputGraphic(graphic, source);}
     void SetActiveVolume(ClipPrimitiveCR volume) {_SetActiveVolume(volume);}
     void EnableStopAfterTimout(uint32_t timeout) {m_endTime = BeTimeUtilities::QueryMillisecondsCounter()+timeout; m_stopAfterTimeout=true;}
 
@@ -408,6 +409,7 @@ public:
     void _SetActiveVolume(ClipPrimitiveCR volume) override {m_volume=&volume;}
     Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return m_target.CreateGraphic(params);}
     void _SavePartGraphic(DgnGeometryPartId partId, Render::GraphicR graphic, ElementAlignedBox3dCR localRange) override;
+    Render::TargetR GetTargetR() {return m_target;}
 };
 
 //=======================================================================================

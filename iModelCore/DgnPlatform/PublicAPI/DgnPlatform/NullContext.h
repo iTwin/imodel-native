@@ -46,6 +46,7 @@ struct NullContext : ViewContext
         virtual void _AddTextString(TextStringCR text) override {}
         virtual void _AddTextString2d(TextStringCR text, double zDepth) override {}
         virtual void _AddMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) override {}
+        virtual void _AddTile(Render::TextureCR tile, DPoint3dCP corners) override {}
         virtual void _AddRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) override {}
         virtual void _AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2d const *range) override {}
         virtual void _AddDgnOle(Render::DgnOleDraw*) override {}
