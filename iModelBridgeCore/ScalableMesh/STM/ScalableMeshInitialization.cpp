@@ -45,7 +45,7 @@ private:
     void                    OnInit                         () const
         {
         // It is assumed that stm dll will be delivered only with MicroStation and thus that rastercore will have initialized ipp.
-        BeAssert(BENTLEY_NAMESPACE_NAME::ImagePP::ImageppLib::IsInitialized());
+        //BeAssert(BENTLEY_NAMESPACE_NAME::ImagePP::ImageppLib::IsInitialized());
         //InitializeGeoCoord();
         }
     

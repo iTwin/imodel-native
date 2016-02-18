@@ -1924,7 +1924,10 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
         delete[] node->m_nodeHeader.m_meshComponents;
         node->m_nodeHeader.m_meshComponents = new int[componentsPointsId.size()];
         }
-    memcpy(node->m_nodeHeader.m_meshComponents, componentsPointsId.data(), componentsPointsId.size()*sizeof(int));
+    if (componentsPointsId.size() > 0)
+        {
+        memcpy(node->m_nodeHeader.m_meshComponents, componentsPointsId.data(), componentsPointsId.size()*sizeof(int));
+        }
     node->m_nodeHeader.m_numberOfMeshComponents = componentsPointsId.size();
     if (node->m_nodeHeader.m_nbFaceIndexes > 0)
         {
