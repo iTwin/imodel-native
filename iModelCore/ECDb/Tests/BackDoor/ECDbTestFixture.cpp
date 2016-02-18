@@ -118,6 +118,8 @@ BentleyStatus ECDbTestFixture::CreateECDb(BeFileNameR filePath, Utf8CP fileName,
         return ERROR;
 
     ECSchemaReadContextPtr schemaReadContext = ECSchemaReadContext::CreateContext();
+    schemaReadContext->AddSchemaLocater(ecdb.GetSchemaLocater());
+
     ECSchemaPtr schema = nullptr;
     ECDbTestUtility::ReadECSchemaFromDisk(schema, schemaReadContext, schemaECXmlFileName);
     if (schema == nullptr)
@@ -126,7 +128,6 @@ BentleyStatus ECDbTestFixture::CreateECDb(BeFileNameR filePath, Utf8CP fileName,
     if (SUCCESS != ecdb.Schemas().ImportECSchemas(schemaReadContext->GetCache(), ECDbSchemaManager::ImportOptions()))
         return ERROR;
 
-    ecdb.ClearECDbCache();
     Populate(ecdb, instanceCountPerClass);
     ecdb.SaveChanges();
 

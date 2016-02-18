@@ -27,17 +27,17 @@ typedef int64_t ECDbClassMapId;
 
 enum class ColumnKind
     {
-    Unknown = 0x0U, //! Not known to ECDb or user define columns
-    ECInstanceId = 0x1U, //! ECInstanceId system column also primary key of the table
-    ECClassId = 0x2U, //! ECClassId system column. Use if more then on classes is mapped to this table
-    ParentECInstanceId = 0x4U, //! ParentECInstanceId column used in struct array
-    ECPropertyPathId = 0x8U, //! ECPropertyPathId column used in struct array
-    ECArrayIndex = 0x10U, //! ECArrayIndex column used in struct array
-    SourceECInstanceId = 0x20U,
-    SourceECClassId = 0x40U,
-    TargetECInstanceId = 0x80U,
-    TargetECClassId = 0x100U,
-    DataColumn = 0x200U, //! Data column defined by none key column in ECClass
+    Unknown = 0, //! Not known to ECDb or user define columns
+    ECInstanceId = 1, //! ECInstanceId system column also primary key of the table
+    ECClassId = 2, //! ECClassId system column. Use if more then on classes is mapped to this table
+    ParentECInstanceId = 4, //! ParentECInstanceId column used in struct array
+    ECPropertyPathId = 8, //! ECPropertyPathId column used in struct array
+    ECArrayIndex = 16, //! ECArrayIndex column used in struct array
+    SourceECInstanceId = 32,
+    SourceECClassId = 64,
+    TargetECInstanceId = 128,
+    TargetECClassId = 256,
+    DataColumn = 512, //! Data column defined by none key column in ECClass
     //Following is helper group for search operation. There cannot be a column with OR'ed flags
     ConstraintECInstanceId = SourceECInstanceId | TargetECInstanceId,
     NonRelSystemColumn = ECInstanceId | ECClassId | ParentECInstanceId | ECPropertyPathId | ECArrayIndex
