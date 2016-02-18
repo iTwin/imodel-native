@@ -6,7 +6,7 @@
 |       $Date: 2011/12/01 18:51:39 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -148,7 +148,9 @@ struct IDTMSource : public RefCountedBase
        
         BENTLEYSTM_EXPORT bool                    IsReachable                () const;
 
-        BENTLEYSTM_EXPORT const IMoniker&         GetMoniker                 () const;
+//        BENTLEYSTM_EXPORT const IMoniker&         GetMoniker                 () const;
+
+        BENTLEYSTM_EXPORT WString                 GetPath                    () const;
 
         BENTLEYSTM_EXPORT DTMSourceDataType       GetSourceType              () const;
 
@@ -213,6 +215,9 @@ struct IDTMLocalFileSource : public IDTMSource
         BENTLEYSTM_EXPORT static IDTMLocalFileSourcePtr 
                                             Create                     (DTMSourceDataType           sourceDataType, 
                                                                         const ILocalFileMonikerPtr& localFileMonikerPtr);   
+        BENTLEYSTM_EXPORT static IDTMLocalFileSourcePtr
+                                            Create(DTMSourceDataType           sourceDataType,
+                                                    const WCharCP fullPath);
     };
 
 /*---------------------------------------------------------------------------------**//**

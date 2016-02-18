@@ -773,8 +773,8 @@ int IScalableMeshSourceCreator::Impl::ImportRasterSourcesTo(HFCPtr<IndexType>& p
     HIMMosaic::RasterList rasterList;
     for (auto& source : filteredSources)
         {
-        const ILocalFileMoniker* moniker(dynamic_cast<const ILocalFileMoniker*>(&source->GetMoniker()));
-        WString path = WString(L"file://")+moniker->GetURL().GetPath();
+        //const ILocalFileMoniker* moniker(dynamic_cast<const ILocalFileMoniker*>(&source->GetPath()));
+        WString path = WString(L"file://") + source->GetPath();
         HFCPtr<HGF2DCoordSys>  pLogicalCoordSys;
         HFCPtr<HRSObjectStore> pObjectStore;
         HFCPtr<HRFRasterFile>  pRasterFile;

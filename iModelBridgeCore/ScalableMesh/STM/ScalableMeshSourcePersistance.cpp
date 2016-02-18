@@ -149,7 +149,9 @@ bool                            OutputSource(SourceDataSQLite&                  
 
     const byte sourceTypeField = static_cast<byte>(source.GetSourceType());
     sourceData.SetSourceType(sourceTypeField);
-    return BSISUCCESS == source.GetMoniker().Serialize(sourceData, env);
+    sourceData.SetMonikerString(source.GetPath());
+    return true;
+    //return BSISUCCESS == source.GetMoniker().Serialize(sourceData, env);
 }
 
 

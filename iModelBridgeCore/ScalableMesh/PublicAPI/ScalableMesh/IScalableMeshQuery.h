@@ -24,7 +24,7 @@
 #include <list>
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/ClipVector.h>
-
+USING_NAMESPACE_BENTLEY_DGNPLATFORM
 //#include <Bentley/RefCounted.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
