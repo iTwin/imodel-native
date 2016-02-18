@@ -387,7 +387,6 @@
     </ECEntityClass>
     <ECEntityClass typeName="DefinitionElement" modifier="Abstract">
         <BaseClass>InformationElement</BaseClass>
-        <!-- WIP: Causes ConstructionSchema unit tests to fail
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
@@ -395,7 +394,6 @@
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
-        -->
     </ECEntityClass>
     <ECEntityClass typeName="DictionaryElement" modifier="Abstract">
         <BaseClass>DefinitionElement</BaseClass>
@@ -708,8 +706,7 @@
                 <OnUpdateAction>Restrict</OnUpdateAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
-        <Source cardinality="(0,1)" roleLabel="is referenced by" polymorphic="true">
-            <!-- WIP: Source cardinality should be (1,1) -->
+        <Source cardinality="(1,1)" roleLabel="is referenced by" polymorphic="true">
             <Class class="ViewDefinition"/>
         </Source>
         <Target cardinality="(0,N)" roleLabel="references" polymorphic="true">
@@ -1066,8 +1063,7 @@
                 <OnUpdateAction>Restrict</OnUpdateAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
-        <Source cardinality="(0,1)" roleLabel="is base model for view" polymorphic="true">
-            <!-- WIP: Source cardinality should be (1,1) -->
+        <Source cardinality="(1,1)" roleLabel="is base model for view" polymorphic="true">
             <Class class="Model"/>
         </Source>
         <Target cardinality="(0,N)" roleLabel="is used by N views" polymorphic="true">
