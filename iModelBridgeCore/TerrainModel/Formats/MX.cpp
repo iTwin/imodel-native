@@ -471,8 +471,9 @@ bool IsValidStringName(WCharCP name)
     return i == 4;
     }
 
-MXFilExporter::MXExportError MXFilExporter::Export(WCharCP filename, WCharCP inModelName, WCharCP inStringName, BcDTMP dtm, bool allowOverwrite) //AddToCurrentModelFile?
+MXFilExporter::MXExportError MXFilExporter::Export(WCharCP filename, WCharCP inModelName, WCharCP inStringName, NamedDTM const& namedDtm, bool allowOverwrite) //AddToCurrentModelFile?
     {
+    BcDTMP dtm = namedDtm.GetBcDTMP();
     if (WString::IsNullOrEmpty(filename) || WString::IsNullOrEmpty(inModelName) || WString::IsNullOrEmpty(inStringName) || nullptr == dtm)
         return MXExportError::Error;
 

@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/LandXMLExporter.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/WString.h>
@@ -182,7 +182,7 @@ void LandXMLExporter::WriteSurface (const NamedDTM& namedDtm)
     if (!WString::IsNullOrEmpty (namedDtm.GetDescription ()))
         m_writer->WriteAttribute ("desc", namedDtm.GetDescription ());
 
-    BcDTMR dtm = *namedDtm.GetBcDTMPtr ().get ();
+    BcDTMR dtm = *namedDtm.GetBcDTMP ();
     if (dtm.GetDTMState () != DTMState::Tin)
         WriteSourceData (dtm);
     else

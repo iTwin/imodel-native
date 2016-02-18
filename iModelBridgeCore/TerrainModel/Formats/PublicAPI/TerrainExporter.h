@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/PublicAPI/TerrainExporter.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -29,9 +29,9 @@ struct TerrainExporter : RefCountedBase
             m_description = description;
             }
 
-        public: BcDTMPtr GetBcDTMPtr () const
+        public: BcDTMP GetBcDTMP () const
             {
-            return m_dtm;
+            return m_dtm.get();
             }
 
         public: WCharCP GetName () const

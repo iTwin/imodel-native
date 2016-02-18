@@ -36,7 +36,7 @@ public ref class MXFilExporter : TerrainExporter
         return gcnew MXFilExporter();
         }
 
-    public: MXExportError Export(System::String^ filename, System::String^ modelName, System::String^ stringName, Bentley::TerrainModelNET::DTM^ dtm, bool allowOverwrite);
+    public: MXExportError Export(System::String^ filename, System::String^ modelName, System::String^ stringName, NamedTerrain^ dtm, bool allowOverwrite);
     };
 
 END_BENTLEY_TERRAINMODELNET_FORMATS_NAMESPACE
