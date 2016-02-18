@@ -13,6 +13,7 @@
 
 UNITS_TYPEDEFS(Unit);
 UNITS_TYPEDEFS(Phenomenon);
+UNITS_TYPEDEFS(SymbolicFraction);
 
 BEGIN_BENTLEY_UNITS_NAMESPACE
 
@@ -37,8 +38,8 @@ protected:
     Utf8Vector& GetDenominator() { return m_denominator; }
 
 public:
-    SymbolicFraction operator*(const SymbolicFraction& rhs) const;
-    SymbolicFraction operator/(const SymbolicFraction& rhs) const;
+    SymbolicFraction operator*(SymbolicFractionCR rhs) const;
+    SymbolicFraction operator/(SymbolicFractionCR rhs) const;
     
     Utf8Vector const& Numerator() const { return m_numerator; }
     Utf8Vector const& Denominator() const { return m_denominator; }
@@ -64,7 +65,6 @@ private:
     double      m_factor;
     double      m_offset;
 
-    static BentleyStatus ParseDefinition(Utf8CP definition, Utf8Vector& numerator, Utf8Vector& denominator);
     static UnitP Create (Utf8CP sysName, Utf8CP phenomName, Utf8CP unitName, Utf8CP definition, Utf8Char baseDimensionSymbol, double factor, double offset);
 
     // TODO: Create a better definition of an "unknown" unit
@@ -88,16 +88,13 @@ public:
 
     bool IsBaseUnit() const { return ' ' != m_dimensionSymbol; }
 
-
     // Binary comparison operators.
-    bool operator== (UnitR rhs) const;
-    bool operator!= (UnitR rhs) const;
+    bool operator== (UnitCR rhs) const;
+    bool operator!= (UnitCR rhs) const;
 
     // Arithmetic operators.
-    UnitCR operator*(UnitR rhs) const;
-    UnitCR operator/(UnitR rhs) const;
-    UnitCR operator+(UnitR rhs) const;
-    UnitCR operator-(UnitR rhs) const;
+    UnitCR operator*(UnitCR rhs) const;
+    UnitCR operator/(UnitCR rhs) const;
 };
 
 

@@ -45,7 +45,7 @@ bool Unit::IsRegistered() const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Unit::operator== (UnitR rhs) const
+bool Unit::operator== (UnitCR rhs) const
     {
     return T_Super::operator==(rhs);
     }
@@ -53,7 +53,7 @@ bool Unit::operator== (UnitR rhs) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Unit::operator!= (UnitR rhs) const
+bool Unit::operator!= (UnitCR rhs) const
     {
     return !(*this == rhs);
     }
@@ -61,7 +61,7 @@ bool Unit::operator!= (UnitR rhs) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitCR Unit::operator* (UnitR rhs) const
+UnitCR Unit::operator* (UnitCR rhs) const
     {
     auto result = T_Super::operator/(rhs);
 
@@ -81,7 +81,7 @@ UnitCR Unit::operator* (UnitR rhs) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitCR Unit::operator/ (UnitR rhs) const
+UnitCR Unit::operator/ (UnitCR rhs) const
     {
     auto result = T_Super::operator/(rhs);
 
@@ -96,24 +96,6 @@ UnitCR Unit::operator/ (UnitR rhs) const
     copy (result.Denominator().begin(), result.Denominator().end(), d.begin());
 
     return move(Unit(n, d));
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-UnitCR Unit::operator+ (UnitR rhs) const
-    {
-    //TODO: Is this right?
-    return *this;
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-UnitCR Unit::operator- (UnitR rhs) const
-    {
-    //TODO: Is this right?
-    return *this;
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -147,7 +129,7 @@ SymbolicFraction::SymbolicFraction(Utf8Vector& numerator, Utf8Vector& denominato
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-SymbolicFraction SymbolicFraction::operator*(const SymbolicFraction& rhs) const
+SymbolicFraction SymbolicFraction::operator*(SymbolicFractionCR rhs) const
     {
     auto n = Utf8Vector(m_numerator);
     auto d = Utf8Vector(m_denominator);
@@ -168,7 +150,7 @@ SymbolicFraction SymbolicFraction::operator*(const SymbolicFraction& rhs) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-SymbolicFraction SymbolicFraction::operator/(const SymbolicFraction& rhs) const
+SymbolicFraction SymbolicFraction::operator/(SymbolicFractionCR rhs) const
     {
     auto n = Utf8Vector(m_numerator);
     auto d = Utf8Vector(m_denominator);
@@ -189,7 +171,7 @@ SymbolicFraction SymbolicFraction::operator/(const SymbolicFraction& rhs) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SymbolicFraction::operator==(const SymbolicFraction& rhs) const
+bool SymbolicFraction::operator==(SymbolicFractionCR rhs) const
     {
     if (m_numerator.size() != rhs.m_numerator.size())
         return false;
@@ -203,7 +185,7 @@ bool SymbolicFraction::operator==(const SymbolicFraction& rhs) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SymbolicFraction::operator!= (const SymbolicFraction& rhs) const
+bool SymbolicFraction::operator!= (SymbolicFractionCR rhs) const
     {
     return !(*this == rhs);
     }

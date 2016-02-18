@@ -61,7 +61,7 @@ $(o)ConstantDefinitions$(oext)      :   $(srcDir)ConstantDefinitions.cpp ${Multi
 
 $(o)PhenomenonDefinitions$(oext)    :   $(srcDir)PhenomenonDefinitions.cpp ${MultiCompileDepends}
 
-#$(o)Quantity$(oext)                 :   $(srcDir)Quantity.cpp ${MultiCompileDepends}
+$(o)Quantity$(oext)                 :   $(srcDir)Quantity.cpp ${MultiCompileDepends}
 
 
 

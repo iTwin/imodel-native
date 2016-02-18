@@ -13,15 +13,16 @@ USING_NAMESPACE_BENTLEY_UNITS
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-QuantityBase::QuantityBase (double quantity, UnitR unit) : m_unit(move(unit))
+QuantityBase::QuantityBase (double magnitude, UnitCR unit)
     {
-    m_quantity = quantity;
+    m_unit = &unit;
+    m_magnitude = magnitude;
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool operator== (const QuantityBase& rhs) const
+bool QuantityBase::operator== (const QuantityBase& rhs) const
     {
     return !(*this != rhs);
     }
@@ -29,15 +30,15 @@ virtual bool operator== (const QuantityBase& rhs) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool operator!= (const QuantityBase& rhs) const
+bool QuantityBase::operator!= (const QuantityBase& rhs) const
     {
-    return rhs.m_quantity != m_quantity || rhs.m_unit != m_unit;
+    return rhs.m_magnitude != m_magnitude || rhs.m_unit != m_unit;
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual QuantityBase operator*(const QuantityBase& rhs) const
+QuantityBase QuantityBase::operator*(const QuantityBase& rhs) const
     {
     QuantityBase result = *this;
     result *= rhs;
@@ -47,7 +48,7 @@ virtual QuantityBase operator*(const QuantityBase& rhs) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual QuantityBase operator/(const QuantityBase& rhs) const
+QuantityBase QuantityBase::operator/(const QuantityBase& rhs) const
     {
     QuantityBase result = *this;
     result /= rhs;
@@ -57,7 +58,7 @@ virtual QuantityBase operator/(const QuantityBase& rhs) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual QuantityBase operator+(const QuantityBase& rhs) const
+QuantityBase QuantityBase::operator+(const QuantityBase& rhs) const
     {
     QuantityBase result = *this;
     result += rhs;
@@ -67,7 +68,7 @@ virtual QuantityBase operator+(const QuantityBase& rhs) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual QuantityBase operator-(const QuantityBase& rhs) const
+QuantityBase QuantityBase::operator-(const QuantityBase& rhs) const
     {
     QuantityBase result = *this;
     result -= rhs;
@@ -77,10 +78,18 @@ virtual QuantityBase operator-(const QuantityBase& rhs) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual QuantityBase& operator*=(const QuantityBase& rhs)
+QuantityBase& QuantityBase::operator*=(const QuantityBase& rhs)
     {
-    m_quantity *= rhs.m_quantity;
-    m_unit *= rhs.m_unit;
+    m_magnitude *= rhs.m_magnitude;
+    UnitCR resultUnit = *m_unit * *rhs.m_unit;
+    if (!resultUnit.IsRegistered())
+        {
+        m_error = true;
+        m_errorMessage = Utf8PrintfString("Resulting unit is unregistered: %s", resultUnit.GetName());
+        return *this;
+        }
+
+    m_unit = &resultUnit;
 
     return *this;
     }
@@ -88,10 +97,18 @@ virtual QuantityBase& operator*=(const QuantityBase& rhs)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual QuantityBase& operator/=(const QuantityBase& rhs)
+QuantityBase& QuantityBase::operator/=(const QuantityBase& rhs)
     {
-    m_quantity /= rhs.m_quantity;
-    m_unit /= rhs.m_unit;
+    m_magnitude /= rhs.m_magnitude;
+    UnitCR resultUnit = *m_unit / *rhs.m_unit;
+    if (!resultUnit.IsRegistered())
+        {
+        m_error = true;
+        m_errorMessage = Utf8PrintfString("Resulting unit is unregistered: %s", resultUnit.GetName());
+        return *this;
+        }
+
+    m_unit = &resultUnit;
 
     return *this;
     }
@@ -99,10 +116,16 @@ virtual QuantityBase& operator/=(const QuantityBase& rhs)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual QuantityBase& operator+=(const QuantityBase& rhs)
+QuantityBase& QuantityBase::operator+=(const QuantityBase& rhs)
     {
-    m_quantity += rhs.m_quantity;
-    m_unit += rhs.m_unit;
+    if (m_unit != rhs.m_unit)
+        {
+        m_error = true;
+        m_errorMessage = Utf8PrintfString("Units are not compatible.  left: %s.  right: %s", m_unit->GetName(), rhs.m_unit->GetName());
+        return *this;
+        }
+
+    m_magnitude += rhs.m_magnitude;
 
     return *this;
     }
@@ -110,10 +133,16 @@ virtual QuantityBase& operator+=(const QuantityBase& rhs)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual QuantityBase& operator-=(const QuantityBase& rhs)
+QuantityBase& QuantityBase::operator-=(const QuantityBase& rhs)
     {
-    m_quantity -= rhs.m_quantity;
-    m_unit -= rhs.m_unit;
+    if (m_unit != rhs.m_unit)
+        {
+        m_error = true;
+        m_errorMessage = Utf8PrintfString("Units are not compatible.  left: %s.  right: %s", m_unit->GetName(), rhs.m_unit->GetName());
+        return *this;
+        }
+
+    m_magnitude -= rhs.m_magnitude;
 
     return *this;
     }
@@ -121,7 +150,7 @@ virtual QuantityBase& operator-=(const QuantityBase& rhs)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Quantity::Quantity(double quantity, UnitR unit) : QuantityBase(quantity, unit) 
+Quantity::Quantity(double magnitude, UnitCR unit) : QuantityBase(magnitude, unit)
     { 
 
     }
@@ -132,30 +161,31 @@ Quantity::Quantity(double quantity, UnitR unit) : QuantityBase(quantity, unit)
 QuantityPtr Quantity::Create (double magnitude, Utf8CP unitName)
     {
     auto unit = UnitRegistry::Instance().LookupUnit(unitName);
-    if (!unit.IsValid())
+    if (nullptr == unit)
         return nullptr;
 
     auto quant = new Quantity(magnitude, *unit);
     return quant;
     }
 
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Constant::Constant (Utf8CP constantName, double magnitude, Unit &unit) : QuantityBase(magnitude, unit)
-    {
-    m_name = Utf8String(constantName);
-    }
+/////*--------------------------------------------------------------------------------**//**
+////* @bsimethod                                              Chris.Tartamella     02/16
+////+---------------+---------------+---------------+---------------+---------------+------*/
+////Constant::Constant (Utf8CP constantName, double magnitude, Unit &unit) : QuantityBase(magnitude, unit)
+////    {
+////    m_name = Utf8String(constantName);
+////    }
+////
+/////*--------------------------------------------------------------------------------**//**
+////* @bsimethod                                              Chris.Tartamella     02/16
+////+---------------+---------------+---------------+---------------+---------------+------*/
+////ConstantPtr Constant::Create (Utf8CP constantName, double magnitude, Utf8CP unitName)
+////    {
+////    auto unit = UnitRegistry::Instance().LookupUnit(unitName);
+////    if (!unit.IsValid())
+////        return nullptr;
+////
+////    auto constant = new Constant(constantName, magnitude, unit);
+////    return constant;
+////    }
 
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-ConstantPtr Constant::Create (Utf8CP constantName, double magnitude, Utf8CP unitName)
-    {
-    auto unit = UnitRegistry::Instance().LookupUnit(unitName);
-    if (!unit.IsValid())
-        return nullptr;
-
-    auto constant = new Constant(constantName, magnitude, unit);
-    return constant;
-    }
