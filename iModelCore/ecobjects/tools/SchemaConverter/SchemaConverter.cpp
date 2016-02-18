@@ -28,7 +28,7 @@ BentleyApi::NativeLogging::ILogger* s_logger = BentleyApi::NativeLogging::Loggin
 //---------------------------------------------------------------------------------------
 static void ShowUsage(char* str)
     {
-    fprintf(stderr, "\n%s -i <inputSchemaPath> -o <outputDirectory> [-x exmlVersion] [-r directories] [-c directory] [-a] [-s] [-u] [-v version]\n\n%s\n\n%s\n\n%s\t\t%s\n%s\t%s\n%s\t%s\n%s\t\t%s\n%s\t\t%s\n%s\t\t%s\n%s\t\t%s\n\n",
+    fprintf(stderr, "\n%s -i <inputSchemaPath> -o <outputDirectory> [-x exmlVersion] [-r directories] [-c directory] [-a] [-s] [-u] [-v version]\n\n%s\n\n%s\n\n%s\t\t%s\n%s\t%s\n%s\t%s\n%s\t\t%s\n%s\t\t%s\n%s\t\t%s\n%s\t\t%s\n\n%s\t%s\n\t%s\n\n",
         str, "Tool to convert ECSchemas between different versions of ECXml", "options:",
         " -x --xml 2|3", "convert to the specified exmlversion",
         " -r --ref DIR0 [DIR1 ... DIRN]", "other directories for reference schemas",
@@ -36,7 +36,10 @@ static void ShowUsage(char* str)
         " -u --include", "include the standard schemas in the converted schemas",
         " -a --all", "convert the entire schema graph",
         " -s --sup", "convert all the supplemental schemas",
-        " -v --ver XX.XX", "specify the schema version");
+        " -v --ver XX.XX", "specify the schema version",
+        "Notes:",
+        "if the input path is a directory, all files matching '*.ecschema.xml' will be converted",
+        "if output directory is the same as the input directory, the files will be overwritten");
     }
 
 struct ConversionOptions
@@ -89,13 +92,6 @@ static bool TryWriteSchema(ECSchemaR schema, ConversionOptions options)
     {
     BeFileName outputFile;
     GetOutputFile(outputFile, schema, options);
-    // Check for overwriting the file already in the directory
-    if (BeStringUtilities::Wcsicmp(options.InputFile.GetName(), outputFile.GetName()) == 0)
-        {
-        s_logger->errorv(L"Warning: Can't overwrite the file '%ls'.", options.InputFile.c_str());
-        s_logger->errorv(L"Process terminated!!!");
-        return false;
-        }
 
     s_logger->infov(L"Saving converted version schema '%ls' in directory '%ls'", outputFile.GetFileNameAndExtension(), options.OutputDirectory.GetName());
     SchemaWriteStatus status = schema.WriteToXmlFile(outputFile.GetName(), options.TargetECXmlVersion, 0);
@@ -110,7 +106,7 @@ static bool TryWriteSchema(ECSchemaR schema, ConversionOptions options)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Colin.Kerr                      01/2016
 //--------------------------------------------------------------------------------------
-static int ConvertLoadedSchema(ECSchemaReadContextPtr context, ECSchemaR schema, ConversionOptions options)
+static int ConvertLoadedSchema(ECSchemaReadContextR context, ECSchemaR schema, ConversionOptions options)
     {
     if (!ECSchemaConverter::Convert(schema))
         return -1; 
@@ -121,7 +117,7 @@ static int ConvertLoadedSchema(ECSchemaReadContextPtr context, ECSchemaR schema,
     if (options.IncludeSupplementals || options.IncludeAll)
         {
         bvector<ECSchemaP> supplementalSchemas;
-        context->GetCache().GetSupplementalSchemasFor(schema.GetName().c_str(), supplementalSchemas);
+        context.GetCache().GetSupplementalSchemasFor(schema.GetName().c_str(), supplementalSchemas);
         for (auto const& supSchema : supplementalSchemas)
             {
             if (!TryWriteSchema(*supSchema, options))
@@ -144,6 +140,23 @@ static int ConvertLoadedSchema(ECSchemaReadContextPtr context, ECSchemaR schema,
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+static int ConvertSchema(ConversionOptions& options, BeFileName& inputFile, ECSchemaReadContextR context)
+    {
+    s_logger->infov(L"Reading schema '%ls'", inputFile.GetName());
+    ECSchemaPtr schema;
+    ECSchema::ReadFromXmlFile(schema, inputFile, context);
+    if (!schema.IsValid())
+        {
+        s_logger->errorv(L"Failed to read schema '%ls'", inputFile.GetName());
+        return -1;
+        }
+
+    return ConvertLoadedSchema(context, *schema, options);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
 static int ConvertSchema
@@ -159,28 +172,22 @@ ConversionOptions options
     if (options.HasConversionDirectory)
         context->AddConversionSchemaPath(options.ConversionDirectory.GetName());
     
-    Utf8String schemaName;
-    uint32_t versionMajor;
-    uint32_t versionMinor;
-    WString schemaFullName = options.InputFile.GetFileNameAndExtension();
-    schemaFullName.ReplaceI(L".ecschema.xml", L"");
-    ECObjectsStatus status = ECSchema::ParseSchemaFullName(schemaName, versionMajor, versionMinor, Utf8String(schemaFullName));
-    if (ECObjectsStatus::Success != status)
+    if (options.InputFile.IsDirectory())
         {
-        s_logger->errorv("Could not parse schema name and version from input file name '%s'", schemaFullName);
-        return -1;
+        BeFileName schemaPath(options.InputFile);
+        schemaPath.AppendToPath(L"*.ecschema.xml");
+        BeFileListIterator fileList(schemaPath.GetName(), false);
+        BeFileName filePath;
+        while (SUCCESS == fileList.GetNextFileName(filePath))
+            {
+            ConvertSchema(options, filePath, *context);
+            }
         }
-
-    s_logger->infov("Reading schema '%s'", options.InputFile.GetName());
-    SchemaKey key(schemaName.c_str(), versionMajor, versionMinor);
-    ECSchemaPtr schema = context->LocateSchema(key, SchemaMatchType::SCHEMAMATCHTYPE_Exact);
-    if (!schema.IsValid())
+    else
         {
-        s_logger->errorv("Failed to read schema '%s'", schemaFullName);
-        return -1;
+        return ConvertSchema(options, options.InputFile, *context);
         }
-
-    return ConvertLoadedSchema(context, *schema, options);
+    return 0;
     }
 
 static bool NoParameterNext(int argc, char** argv, int index)

@@ -2538,7 +2538,7 @@ ECSchemaCP GetSchema(Utf8String schemaName)
     if (ECObjectsStatus::Success != SchemaKey::ParseSchemaFullName(key, schemaName.c_str()))
         return NULL;
 
-    return m_context.FindSchemaCP(key, SCHEMAMATCHTYPE_LatestCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact 
+    return m_context.FindSchemaCP(key, SchemaMatchType::LatestCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact 
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   10/2011
@@ -2552,7 +2552,7 @@ ECSchemaCP       GetSchema()
     if (ECObjectsStatus::Success != SchemaKey::ParseSchemaFullName(key, m_fullSchemaName.c_str()))
         return NULL;
     
-    m_schema = m_context.FindSchemaCP(key, SCHEMAMATCHTYPE_LatestCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact 
+    m_schema = m_context.FindSchemaCP(key, SchemaMatchType::LatestCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact 
     return m_schema; 
     }
 
@@ -3338,7 +3338,7 @@ struct NamedAttributeDeserializer : ICustomAttributeDeserializer
             if (ECObjectsStatus::Success != SchemaKey::ParseSchemaFullName (key, schemaName.c_str ()))
                 return NULL;
 
-            return context.LocateSchema (key, SCHEMAMATCHTYPE_LatestCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact 
+            return context.LocateSchema (key, SchemaMatchType::LatestCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact 
             }
         
     public:
@@ -3449,9 +3449,8 @@ InstanceWriteStatus     WriteInstance (IECInstanceCR ecInstance, bool writeInsta
     ECClassCR   ecClass         = ecInstance.GetClass();
     ECSchemaCR  ecSchema        = ecClass.GetSchema();
     Utf8String  className       = ecClass.GetName();
-    Utf8String  fullSchemaName;
+    Utf8String  fullSchemaName = ecSchema.GetFullSchemaName();
 
-    fullSchemaName.Sprintf ("%s.%02d.%02d", ecSchema.GetName().c_str(), ecSchema.GetVersionMajor(), ecSchema.GetVersionMinor());
     m_xmlWriter->WriteElementStart(className.c_str(), fullSchemaName.c_str());
 
     auto relationshipInstance = dynamic_cast<IECRelationshipInstanceCP> (&ecInstance);

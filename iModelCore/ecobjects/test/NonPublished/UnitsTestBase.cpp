@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/UnitsTestBase.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -51,7 +51,7 @@ void UnitsTestBase::InitializeUnits (Utf8String testSchemaName, bvector< ECSchem
         schemaContext->AddSchemaLocater (*schemaLocater);
         SchemaKey key(testSchemaName.c_str(), 01, 00);
         
-        m_testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);//ECSchema::LocateSchema(key, *schemaContext);
+        m_testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Latest);//ECSchema::LocateSchema(key, *schemaContext);
 
         EXPECT_TRUE(m_testSchema.IsValid());
         EXPECT_FALSE(m_testSchema->ShouldNotBeStored());
@@ -61,7 +61,7 @@ void UnitsTestBase::InitializeUnits (Utf8String testSchemaName, bvector< ECSchem
 
         schemaContext = ECSchemaReadContext::CreateContext();
         schemaContext->AddSchemaLocater (*schemaLocater);
-        m_supplementedSchema = schemaContext->LocateSchema (key, SCHEMAMATCHTYPE_Latest);
+        m_supplementedSchema = schemaContext->LocateSchema (key, SchemaMatchType::Latest);
         EXPECT_TRUE (m_supplementedSchema.IsValid());
         EXPECT_FALSE (m_supplementedSchema.get() == m_testSchema.get());
 
@@ -70,9 +70,9 @@ void UnitsTestBase::InitializeUnits (Utf8String testSchemaName, bvector< ECSchem
                   defKey  ("TestUnitDefaults", 1, 0),
                   widthKey ("WidthDefaults", 1, 0);
 
-        m_supplementalSchemas.push_back ((schemaContext->LocateSchema(suppKey, SCHEMAMATCHTYPE_Latest)).get());
-        m_supplementalSchemas.push_back ((schemaContext->LocateSchema(defKey, SCHEMAMATCHTYPE_Latest)).get());
-        m_supplementalSchemas.push_back ((schemaContext->LocateSchema(widthKey, SCHEMAMATCHTYPE_Latest)).get());
+        m_supplementalSchemas.push_back ((schemaContext->LocateSchema(suppKey, SchemaMatchType::Latest)).get());
+        m_supplementalSchemas.push_back ((schemaContext->LocateSchema(defKey, SchemaMatchType::Latest)).get());
+        m_supplementalSchemas.push_back ((schemaContext->LocateSchema(widthKey, SchemaMatchType::Latest)).get());
         } 
 
     for (size_t i = 0; i < m_supplementalSchemas.size(); ++i)

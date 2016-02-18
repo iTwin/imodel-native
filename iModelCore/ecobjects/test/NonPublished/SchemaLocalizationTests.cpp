@@ -186,7 +186,7 @@ TEST_F(SchemaLocalizationTests, SupplementingLocalizationSupplemental)
     schemaContext->AddCulture(L"ur-PK");
     schemaContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
     SchemaKey key("House", 01, 00);
-    testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);
+    testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Latest);
     EXPECT_TRUE(testSchema->IsSupplemented());
     
     VerifyLocalized(testSchema, PK);
@@ -204,7 +204,7 @@ TEST_F(SchemaLocalizationTests, CopyingALocalizedSchema)
     schemaContext->AddCulture(L"en-GB");
     schemaContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
     SchemaKey key("House", 01, 00);
-    testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);
+    testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Latest);
     EXPECT_TRUE(testSchema->IsSupplemented());
     VerifyLocalized(testSchema, GB);
 
@@ -226,7 +226,7 @@ TEST_F(SchemaLocalizationTests, XmlSerializeALocalizedSchema)
     schemaContext->AddCulture(L"it");
     schemaContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
     SchemaKey key("House", 01, 00);
-    testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);
+    testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Latest);
     EXPECT_TRUE(testSchema->IsSupplemented());
     VerifyLocalized(testSchema, IT);
 
@@ -251,7 +251,7 @@ TEST_F(SchemaLocalizationTests, CustomStringsNotOverridden)
     schemaContext->AddCulture(L"ur");
     schemaContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
     SchemaKey key("House", 01, 00);
-    testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);
+    testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Latest);
     EXPECT_TRUE(testSchema->IsSupplemented());
     VerifyLocalized(testSchema, PK);
 

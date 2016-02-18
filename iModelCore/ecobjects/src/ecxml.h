@@ -130,7 +130,7 @@ static Utf8CP ECXML_MODIFIER_SEALED =     "Sealed";
 #define READ_REQUIRED_XML_ATTRIBUTE(_nodeVar, _xmlAttributeName, _setInPointer, _setInPropertyName, _elementName)   \
     if (BEXML_Success != _nodeVar.GetAttributeStringValue (value, _xmlAttributeName))   \
         {   \
-        LOG.errorv ("Invalid ECSchemaXML: %s element must contain a %s attribute", _xmlAttributeName, _elementName);     \
+        LOG.errorv ("Invalid ECSchemaXML: %s element must contain a %s attribute", _elementName, _xmlAttributeName);     \
         return SchemaReadStatus::InvalidECSchemaXml;        \
         }       \
     if (ECObjectsStatus::Success != _setInPointer->Set##_setInPropertyName (value.c_str())) \

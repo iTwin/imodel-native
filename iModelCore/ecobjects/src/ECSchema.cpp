@@ -16,15 +16,30 @@
 #include <Bentley/BeFileListIterator.h>
 
 #include <ECObjects/StronglyConnectedGraph.h>
+#include <list>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
-
-extern ECObjectsStatus GetSchemaFileName (WStringR fullFileName, uint32_t& foundVersionMinor, WCharCP schemaPath, bool useLatestCompatibleMatch);
-
 
 // If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.
 // Test programs generally want to get error status back and not assert, so they call ECSchema::AssertOnXmlError (false);
 static  bool        s_noAssert = false;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool ClassNameComparer(ECClassP class1, ECClassP class2)
+    {
+    // We should never have a NULL ECClass here.
+    // However we will pretend a NULL ECClass is always less than a non-NULL ECClass
+    BeAssert(NULL != class1 && NULL != class2);
+    if (NULL == class1)
+        return NULL != class2;      // class 1 < class2 if class2 non-null, equal otherwise
+    else if (NULL == class2)
+        return false;               // class1 > class2
+
+    int comparison = class1->GetName().CompareTo(class2->GetName());
+    return comparison < 0;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
@@ -246,7 +261,7 @@ void ECValidatedName::SetDisplayLabel (Utf8CP label)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchema::ECSchema ()
     :m_classContainer(m_classMap), m_enumerationContainer(m_enumerationMap), m_isSupplemented(false),
-        m_hasExplicitDisplayLabel(false), m_immutable(false), m_ecSchemaId(0)
+    m_hasExplicitDisplayLabel(false), m_immutable(false), m_ecSchemaId(0), m_serializationOrder(nullptr)
     {
     //
     };
@@ -492,18 +507,18 @@ bool ECSchema::IsStandardSchema () const
 
 static Utf8CP s_originalStandardSchemaFullNames[] =
     {
-    "Bentley_Standard_CustomAttributes.01.00",
-    "Bentley_Standard_Classes.01.00",
-    "EditorCustomAttributes.01.00",
-    "Bentley_Common_Classes.01.00",
-    "Dimension_Schema.01.00",
-    "iip_mdb_customAttributes.01.00",
-    "KindOfQuantity_Schema.01.00",
-    "rdl_customAttributes.01.00",
-    "SIUnitSystemDefaults.01.00",
-    "Unit_Attributes.01.00",
-    "Units_Schema.01.00",
-    "USCustomaryUnitSystemDefaults.01.00"
+    "Bentley_Standard_CustomAttributes.01.00.00",
+    "Bentley_Standard_Classes.01.00.00",
+    "EditorCustomAttributes.01.00.00",
+    "Bentley_Common_Classes.01.00.00",
+    "Dimension_Schema.01.00.00",
+    "iip_mdb_customAttributes.01.00.00",
+    "KindOfQuantity_Schema.01.00.00",
+    "rdl_customAttributes.01.00.00",
+    "SIUnitSystemDefaults.01.00.00",
+    "Unit_Attributes.01.00.00",
+    "Units_Schema.01.00.00",
+    "USCustomaryUnitSystemDefaults.01.00.00"
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -591,6 +606,25 @@ ECObjectsStatus ECSchema::SetVersionMajor (const uint32_t versionMajor)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t ECSchema::GetVersionWrite () const
+    {
+    return m_key.m_versionWrite;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::SetVersionWrite (const uint32_t value)
+    {
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
+
+    m_key.m_versionWrite = value;
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t ECSchema::GetVersionMinor
 (
 ) const
@@ -657,7 +691,7 @@ ECOBJECTS_EXPORT ECEnumerationP ECSchema::GetEnumerationP(Utf8CP name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECSchema::DebugDump()const
     {
-    printf("ECSchema: this=0x%" PRIx64 "  %s.%02d.%02d, nClasses=%d\n", (uint64_t)this, m_key.m_schemaName.c_str(), m_key.m_versionMajor, m_key.m_versionMinor, (int) m_classMap.size());
+    printf("ECSchema: this=0x%" PRIx64 "  %s, nClasses=%d\n", (uint64_t)this, m_key.GetFullSchemaName().c_str(), (int) m_classMap.size());
     for (ClassMap::const_iterator it = m_classMap.begin(); it != m_classMap.end(); ++it)
         {
         bpair<Utf8CP, ECClassP>const& entry = *it;
@@ -676,6 +710,10 @@ ECObjectsStatus ECSchema::DeleteClass (ECClassR ecClass)
         return ECObjectsStatus::ClassNotFound;
 
     m_classMap.erase (iter);
+
+    if (m_serializationOrder != nullptr)
+    m_serializationOrder->RemoveElement(ecClass.GetName().c_str());
+
     delete &ecClass;
     return ECObjectsStatus::Success;
     }
@@ -690,6 +728,10 @@ ECObjectsStatus ECSchema::DeleteEnumeration (ECEnumerationR ecEnumeration)
         return ECObjectsStatus::EnumerationNotFound;
 
     m_enumerationMap.erase (iter);
+
+    if (m_serializationOrder != nullptr)
+    m_serializationOrder->RemoveElement(ecEnumeration.GetName().c_str());
+
     delete &ecEnumeration;
     return ECObjectsStatus::Success;
     }
@@ -710,10 +752,26 @@ ECObjectsStatus ECSchema::RenameClass (ECClassR ecClass, Utf8CP newName)
     return ECObjectsStatus::Success != renameStatus ? renameStatus : addStatus;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+void ECSchema::FindUniqueClassName(Utf8StringR newName, Utf8CP originalName)
+    {
+    Utf8PrintfString testName("%s_", originalName);
+    while (1)
+        {
+        if (nullptr == GetClassP(testName.c_str()))
+            break;
+        testName.append("_");
+        }
+    newName = testName;
+    }
+
+
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::AddClass(ECClassP pClass)
+ECObjectsStatus ECSchema::AddClass(ECClassP pClass, bool resolveConflicts)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
@@ -729,9 +787,20 @@ ECObjectsStatus ECSchema::AddClass(ECClassP pClass)
     resultPair = m_classMap.insert (bpair<Utf8CP, ECClassP> (pClass->GetName().c_str(), pClass));
     if (resultPair.second == false)
         {
-        LOG.errorv("Cannot create class '%s' because it already exists in the schema", pClass->GetName().c_str());
-        return ECObjectsStatus::NamedItemAlreadyExists;
+        if (!resolveConflicts)
+            {
+            LOG.errorv("Cannot create class '%s' because it already exists in the schema %s", pClass->GetName().c_str(), GetName().c_str());
+            return ECObjectsStatus::NamedItemAlreadyExists;
+            }
+        Utf8String uniqueName;
+        FindUniqueClassName(uniqueName, pClass->GetName().c_str());
+        pClass->SetName(uniqueName);
+        return AddClass(pClass, resolveConflicts);
         }
+
+    if (m_serializationOrder != nullptr)
+    m_serializationOrder->AddElement(pClass->GetName().c_str(), ECSchemaElementType::ECClass);
+
     //DebugDump(); wprintf(L"\n");
     return ECObjectsStatus::Success;
     }
@@ -1010,144 +1079,14 @@ ECObjectsStatus ECSchema::AddEnumeration(ECEnumerationP pEnumeration)
         return ECObjectsStatus::NamedItemAlreadyExists;
         }
 
-    return ECObjectsStatus::Success;
-    }
+    if (m_serializationOrder != nullptr)
+    m_serializationOrder->AddElement(pEnumeration->GetName().c_str(), ECSchemaElementType::ECEnumeration);
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  11/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ECSchema::GetFullSchemaName () const
-    {
-    Utf8Char fullName[1024]; // we decided to use a large buffer instead of calculating the length and using _alloc to boost performance
-    BeStringUtilities::Snprintf(fullName, "%s.%02d.%02d", GetName().c_str(), GetVersionMajor(), GetVersionMinor());
-    return fullName;
+    return ECObjectsStatus::Success;
     }
 
 #define     ECSCHEMA_FULLNAME_FORMAT_EXPLANATION " Format must be Name.MM.mm where Name is the schema name, MM is major version and mm is minor version."
 #define     ECSCHEMA_FULLNAME_FORMAT_EXPLANATION_W L" Format must be Name.MM.mm where Name is the schema name, MM is major version and mm is minor version."
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::ParseSchemaFullName (Utf8StringR schemaName, uint32_t& versionMajor, uint32_t& versionMinor, Utf8StringCR  fullName)
-    {
-    if (fullName.empty())
-        return ECObjectsStatus::ParseError;
-
-    Utf8CP fullNameCP = fullName.c_str();
-    Utf8CP firstDot = strchr (fullNameCP, '.');
-    if (NULL == firstDot)
-        {
-        LOG.errorv ("Invalid ECSchema FullName String: '%s' does not contain a '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, fullName.c_str());
-        return ECObjectsStatus::ParseError;
-        }
-
-    size_t nameLen = firstDot - fullNameCP;
-    if (nameLen < 1)
-        {
-        LOG.errorv ("Invalid ECSchema FullName String: '%s' does not have any characters before the '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, fullName.c_str());
-        return ECObjectsStatus::ParseError;
-        }
-
-    schemaName.assign (fullNameCP, nameLen);
-
-    return ParseVersionString (versionMajor, versionMinor, firstDot+1);
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::ParseSchemaFullName (Utf8StringR schemaName, uint32_t& versionMajor, uint32_t& versionMinor, Utf8CP fullName)
-    {
-    if (NULL == fullName || '\0' == *fullName)
-        return ECObjectsStatus::ParseError;
-
-    Utf8CP firstDot = strchr (fullName, '.');
-    if (NULL == firstDot)
-        {
-        LOG.errorv ("Invalid ECSchema FullName String: '%s' does not contain a '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, fullName);
-        return ECObjectsStatus::ParseError;
-        }
-
-    size_t nameLen = firstDot - fullName;
-    if (nameLen < 1)
-        {
-        LOG.errorv ("Invalid ECSchema FullName String: '%s' does not have any characters before the '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, fullName);
-        return ECObjectsStatus::ParseError;
-        }
-
-    schemaName.assign (fullName, nameLen);
-
-    return ParseVersionString (versionMajor, versionMinor, firstDot+1);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  10/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ECSchema::FormatSchemaVersion (uint32_t versionMajor, uint32_t versionMinor)
-    {
-    Utf8Char versionString[80];
-    BeStringUtilities::Snprintf (versionString, "%02d.%02d", versionMajor, versionMinor);
-    return versionString;
-    }
-
-#define     ECSCHEMA_VERSION_FORMAT_EXPLANATION " Format must be MM.mm where MM is major version and mm is minor version."
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::ParseVersionString (uint32_t& versionMajor, uint32_t& versionMinor, Utf8CP versionString)
-    {
-    versionMajor = DEFAULT_VERSION_MAJOR;
-    versionMinor = DEFAULT_VERSION_MINOR;
-    if (NULL == versionString || '\0' == *versionString)
-        return ECObjectsStatus::Success;
-
-    Utf8CP theDot = strchr (versionString, L'.');
-    if (NULL == theDot)
-        {
-        LOG.errorv ("Invalid ECSchema Version String: '%s' does not contain a '.'!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
-        return ECObjectsStatus::ParseError;
-        }
-
-    size_t majorLen = theDot - versionString;
-    if (majorLen < 1 || majorLen > 3)
-        {
-        LOG.errorv ("Invalid ECSchema Version String: '%s' does not have 1-3 numbers before the '.'!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
-        return ECObjectsStatus::ParseError;
-        }
-
-    Utf8CP endDot = strchr (theDot+1, L'.');
-    size_t minorLen = (NULL != endDot) ? (endDot - theDot) - 1 : strlen (theDot) - 1;
-    if (minorLen < 1 || minorLen > 3)
-        {
-        LOG.errorv ("Invalid ECSchema Version String: '%s' does not have 1-3 numbers after the '.'!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
-        return ECObjectsStatus::ParseError;
-        }
-
-    Utf8P end = NULL;
-    uint32_t  localMajor = strtoul (versionString, &end, 10);
-    if (versionString == end)
-        {
-        LOG.errorv ("Invalid ECSchema Version String: '%s' The characters before the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
-        return ECObjectsStatus::ParseError;
-        }
-    else
-        {
-        versionMajor = localMajor;
-        }
-
-    uint32_t localMinor = strtoul (&theDot[1], &end, 10);
-    if (&theDot[1] == end)
-        {
-        LOG.errorv ("Invalid ECSchema Version String: '%s' The characters after the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
-        return ECObjectsStatus::ParseError;
-        }
-    else
-        {
-        versionMinor = localMinor;
-        }
-
-    return ECObjectsStatus::Success;
-    }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
@@ -1157,20 +1096,21 @@ ECObjectsStatus ECSchema::SetVersionFromString (Utf8CP versionString)
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     uint32_t versionMajor;
+    uint32_t versionWrite;
     uint32_t versionMinor;
     ECObjectsStatus status;
-    if ((ECObjectsStatus::Success != (status = ParseVersionString (versionMajor, versionMinor, versionString))) ||
+    if ((ECObjectsStatus::Success != (status = ParseVersionString (versionMajor, versionWrite, versionMinor, versionString))) ||
         (ECObjectsStatus::Success != (status = this->SetVersionMajor (versionMajor))) ||
+        (ECObjectsStatus::Success != (status = this->SetVersionWrite(versionWrite))) ||
         (ECObjectsStatus::Success != (status = this->SetVersionMinor (versionMinor))))
         return status;
     else
         return ECObjectsStatus::Success;
     }
 
-// TODO: deprecate, we want namespace prefix set all the time.
-//---------------------------------------------------------------------------------------//
-//@bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------//
+//-------------------------------------------------------------------------------------//
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+----//
 ECObjectsStatus ECSchema::CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR schemaName, uint32_t versionMajor, uint32_t versionMinor)
     {
     schemaOut = new ECSchema();
@@ -1187,12 +1127,11 @@ ECObjectsStatus ECSchema::CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR sche
 
     return ECObjectsStatus::Success;
     }
-
-
+    
 //-------------------------------------------------------------------------------------//
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+----//
-ECObjectsStatus ECSchema::CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR schemaName, Utf8StringCR namespacePrefix, uint32_t versionMajor, uint32_t versionMinor)
+ECObjectsStatus ECSchema::CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR schemaName, Utf8StringCR namespacePrefix, uint32_t versionMajor, uint32_t versionWrite, uint32_t versionMinor)
     {
     schemaOut = new ECSchema();
 
@@ -1201,6 +1140,7 @@ ECObjectsStatus ECSchema::CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR sche
     if (ECObjectsStatus::Success != (status = schemaOut->SetName(schemaName)) ||
         ECObjectsStatus::Success != (status = schemaOut->SetNamespacePrefix(namespacePrefix)) ||
         ECObjectsStatus::Success != (status = schemaOut->SetVersionMajor (versionMajor)) ||
+        ECObjectsStatus::Success != (status = schemaOut->SetVersionWrite(versionWrite)) ||
         ECObjectsStatus::Success != (status = schemaOut->SetVersionMinor (versionMinor)))
         {
         schemaOut = NULL;
@@ -1209,6 +1149,7 @@ ECObjectsStatus ECSchema::CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR sche
 
     return ECObjectsStatus::Success;
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
@@ -1541,158 +1482,7 @@ ECSchemaPtr IECSchemaLocater::LocateSchema(SchemaKeyR key, SchemaMatchType match
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaPtr     ECSchema::LocateSchema (SchemaKeyR key, ECSchemaReadContextR schemaContext)
     {
-    return schemaContext.LocateSchema(key, SCHEMAMATCHTYPE_LatestCompatible);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  11/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus GetMinorVersionFromSchemaFileName (uint32_t& versionMinor, WCharCP filePath)
-    {
-    BeFileName  fileName (filePath);
-
-    WString     name;
-    fileName.ParseName (NULL, NULL, &name, NULL);
-
-    // after fileName.parse, name contains "SchemaName.XX.XX.eschema".
-    WString::size_type firstDot;
-    if (WString::npos == (firstDot = name.find ('.')))
-        {
-        BeAssert (s_noAssert);
-        LOG.errorv (L"Invalid ECSchema FileName String: '%ls' does not contain the suffix '.ecschema.xml'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION_W, filePath);
-        return ECObjectsStatus::ParseError;
-        }
-
-    Utf8String     versionString;
-    versionString.Assign(name.substr (firstDot+1).c_str());
-    uint32_t    versionMajor;
-    return ECSchema::ParseVersionString (versionMajor, versionMinor, versionString.c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  11/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus GetSchemaFileName (WString& fullFileName, uint32_t& foundMinorVersion, WCharCP schemaPath, bool useLatestCompatibleMatch)
-    {
-    WString     schemaPathWithWildcard = schemaPath;
-    schemaPathWithWildcard += L"*";
-
-    BeFileListIterator  fileList (schemaPathWithWildcard.c_str(), false);
-    BeFileName          filePath;
-    uint32_t currentMinorVersion=0;
-
-    while (SUCCESS == fileList.GetNextFileName (filePath))
-        {
-        WCharCP     fileName = filePath.GetName();
-
-        if (!useLatestCompatibleMatch)
-            {
-            fullFileName = fileName;
-            return ECObjectsStatus::Success;
-            }
-
-        if (fullFileName.empty())
-            {
-            fullFileName = fileName;
-            GetMinorVersionFromSchemaFileName (foundMinorVersion, fileName);
-            continue;
-            }
-
-        if (ECObjectsStatus::Success != GetMinorVersionFromSchemaFileName (currentMinorVersion, fileName))
-            continue;
-
-        if (currentMinorVersion > foundMinorVersion)
-            {
-            foundMinorVersion = currentMinorVersion;
-            fullFileName = fileName;
-            }
-        }
-
-    if (fullFileName.empty())
-        return ECObjectsStatus::Error;
-
-    return ECObjectsStatus::Success;
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr       SearchPathSchemaFileLocater::FindMatchingSchema
-(
-WStringCR                       schemaMatchExpression,
-SchemaKeyR                      key,
-ECSchemaReadContextR            schemaContext,
-SchemaMatchType                 matchType,
-bvector<WString>&               searchPaths
-)
-    {
-    WString fullFileName;
-    for (WString schemaPathStr: searchPaths)
-        {
-        BeFileName schemaPath (schemaPathStr.c_str());
-        schemaPath.AppendToPath (schemaMatchExpression.c_str());
-        LOG.debugv (L"Checking for existence of %ls...", schemaPath.GetName());
-
-        //Finds latest
-        SchemaKey foundKey(key);
-        if (ECObjectsStatus::Success != GetSchemaFileName (fullFileName, foundKey.m_versionMinor, schemaPath,  matchType == SCHEMAMATCHTYPE_LatestCompatible))
-            continue;
-
-        ECSchemaPtr schemaOut = NULL;
-        //Check if schema is compatible before reading, as reading it would add the schema to the cache.
-        if (!foundKey.Matches(key, matchType))
-            {
-            if (schemaContext.m_acceptLegacyImperfectLatestCompatibleMatch && matchType == SCHEMAMATCHTYPE_LatestCompatible &&
-                0 == foundKey.m_schemaName.CompareTo(key.m_schemaName) && foundKey.m_versionMajor == key.m_versionMajor)
-                {
-                // See if this imperfect match ECSchema has is already cached (so we can avoid loading it, below)
-
-                //We found a different key;
-                if (matchType != SCHEMAMATCHTYPE_Exact)
-                    schemaOut = schemaContext.GetFoundSchema(foundKey, SCHEMAMATCHTYPE_Exact);
-
-                if (schemaOut.IsValid())
-                    {
-                    key.m_versionMinor = foundKey.m_versionMinor;
-                    return schemaOut;
-                    }
-                LOG.warningv (L"Located %ls, which does not meet 'latest compatible' criteria to match %ls, but is being accepted because some legacy schemas are known to require this",
-                                                  fullFileName.c_str(), key.GetFullSchemaName().c_str());
-                }
-            else
-                {
-                LOG.warningv (L"Located %ls, but it does not meet 'latest compatible' criteria to match %ls.%02d.%02d. Caller can use acceptImperfectLegacyMatch to cause it to be accepted.",
-                                                  fullFileName.c_str(), key.m_schemaName.c_str(),   key.m_versionMajor,   key.m_versionMinor);
-                continue;
-                }
-            }
-
-        if (SchemaReadStatus::Success != ECSchema::ReadFromXmlFile (schemaOut, fullFileName.c_str(), schemaContext))
-            continue;
-
-        LOG.debugv (L"Located %ls...", fullFileName.c_str());
-        // Now check this same path for supplemental schemas
-        bvector<ECSchemaP> supplementalSchemas;
-        TryLoadingSupplementalSchemas(key.m_schemaName.c_str(), schemaPathStr, schemaContext, supplementalSchemas);
-        
-        // Check for localization supplementals
-        for(WString culture : *(schemaContext.GetCultures()))
-            {
-            if(culture.Equals(L"en")) // not sure
-                continue;
-            BeFileName locDir(schemaPathStr.c_str());
-            locDir.AppendToPath(culture.c_str());
-            TryLoadingSupplementalSchemas(key.m_schemaName.c_str(), locDir, schemaContext, supplementalSchemas);
-            }
-        if (supplementalSchemas.size() > 0)
-            {
-            ECN::SupplementedSchemaBuilder builder;
-            builder.UpdateSchema(*schemaOut, supplementalSchemas);
-            }
-
-        return schemaOut;
-        }
-
-    return NULL;
+    return schemaContext.LocateSchema(key, SchemaMatchType::LatestCompatible);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1723,30 +1513,23 @@ bvector<ECSchemaP>& supplementalSchemas
         supplementalSchemas.push_back(schemaOut.get());
         }
 
+    BeFileName schemaPath2(schemaFilePath.c_str());
+    filter.AssignUtf8(schemaName.c_str());
+    filter += L"_Supplemental_*.*.*.*.ecschema.xml";
+    schemaPath2.AppendToPath(filter.c_str());
+    BeFileListIterator fileList2(schemaPath2.GetName(), false);
+    BeFileName filePath2;
+    while (SUCCESS == fileList2.GetNextFileName(filePath2))
+        {
+        WCharCP     fileName = filePath2.GetName();
+        ECSchemaPtr schemaOut = NULL;
+
+        if (SchemaReadStatus::Success != ECSchema::ReadFromXmlFile(schemaOut, fileName, schemaContext))
+            continue;
+        supplementalSchemas.push_back(schemaOut.get());
+        }
+
     return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr     SearchPathSchemaFileLocater::LocateSchemaByPath (SchemaKeyR key, ECSchemaReadContextR schemaContext, SchemaMatchType matchType, bvector<WString>& searchPaths)
-    {
-    wchar_t versionString[24];
-
-    if (matchType == SCHEMAMATCHTYPE_Latest)
-        BeStringUtilities::Snwprintf(versionString, L".*.*.ecschema.xml");
-    else if (matchType == SCHEMAMATCHTYPE_LatestCompatible)
-        BeStringUtilities::Snwprintf(versionString, L".%02d.*.ecschema.xml", key.m_versionMajor);
-    else
-        BeStringUtilities::Snwprintf(versionString, L".%02d.%02d.ecschema.xml", key.m_versionMajor, key.m_versionMinor);
-
-    WString schemaMatchExpression;
-    schemaMatchExpression.AssignUtf8(key.m_schemaName.c_str());
-    schemaMatchExpression += versionString;
-    WString fullFileName;
-
-    ECSchemaPtr   schemaOut = FindMatchingSchema (schemaMatchExpression, key, schemaContext, matchType, searchPaths);
-    return schemaOut;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1767,12 +1550,160 @@ SearchPathSchemaFileLocaterPtr SearchPathSchemaFileLocater::CreateSearchPathSche
     return new SearchPathSchemaFileLocater(searchPaths);
     }
 
+void SearchPathSchemaFileLocater::AddCandidateSchemas
+(
+bvector<CandidateSchema>& foundFiles,
+WStringCR schemaPath,
+WStringCR fileFilter,
+SchemaKeyR desiredSchemaKey,
+SchemaMatchType matchType,
+ECSchemaReadContextCR schemaContext
+)
+    {
+    BeFileName fileExpression(schemaPath.c_str());
+    fileExpression.AppendToPath(fileFilter.c_str());
+
+    LOG.debugv(L"Checking for existence of %ls...", fileExpression.GetName());
+
+    BeFileListIterator  fileList(fileExpression.c_str(), false);
+    BeFileName          filePath;
+
+    while (SUCCESS == fileList.GetNextFileName(filePath))
+        {
+        Utf8String fileName(filePath.GetFileNameWithoutExtension());
+
+        SchemaKey key;
+        if (SchemaKey::ParseSchemaFullName(key, fileName.c_str()) != ECObjectsStatus::Success)
+            {
+            LOG.warningv(L"Failed to parse schema file name %s. Skipping that file.", fileName.c_str());
+            continue;
+            }
+
+        //If key matches, OR the legacy compatible match evaluates true
+        if (key.Matches(desiredSchemaKey, matchType) ||
+            (schemaContext.m_acceptLegacyImperfectLatestCompatibleMatch && matchType == SchemaMatchType::LatestCompatible &&
+             0 == key.m_schemaName.CompareTo(desiredSchemaKey.m_schemaName) && key.m_versionMajor == desiredSchemaKey.m_versionMajor))
+            {
+            foundFiles.push_back(CandidateSchema());
+            auto& candidate = foundFiles.back();
+            candidate.FileName = filePath;
+            candidate.Key = key;
+            candidate.SearchPath = schemaPath;
+            }
+        }
+    }
+
+void SearchPathSchemaFileLocater::FindEligibleSchemaFiles
+(
+bvector<CandidateSchema>& foundFiles,
+SchemaKeyR desiredSchemaKey,
+SchemaMatchType matchType,
+ECSchemaReadContextCR schemaContext
+)
+    {
+    Utf8CP schemaName = desiredSchemaKey.m_schemaName.c_str();
+    WString twoVersionExpression;
+    WString threeVersionExpression;
+    twoVersionExpression.AssignUtf8(schemaName);
+    threeVersionExpression.AssignUtf8(schemaName);
+
+    Utf8String twoVersionSuffix;
+    Utf8String threeVersionSuffix;
+    
+    if (matchType == SchemaMatchType::Latest)
+        {
+        twoVersionSuffix = ".*.*.ecschema.xml";
+        threeVersionSuffix = ".*.*.*.ecschema.xml";
+        }
+    else if (matchType == SchemaMatchType::LatestCompatible)
+        {
+        twoVersionSuffix.Sprintf(".%02d.*.ecschema.xml", desiredSchemaKey.m_versionMajor);
+        threeVersionSuffix.Sprintf(".%02d.%02d.*.ecschema.xml", desiredSchemaKey.m_versionMajor, desiredSchemaKey.m_versionWrite);
+        }
+    else if (matchType == SchemaMatchType::LatestMajorCompatible)
+        {
+        twoVersionSuffix.Sprintf(".%02d.*.ecschema.xml", desiredSchemaKey.m_versionMajor);
+        threeVersionSuffix.Sprintf(".%02d.*.*.ecschema.xml", desiredSchemaKey.m_versionMajor);
+        }
+    else //MatchType_Exact
+        {
+        twoVersionSuffix.Sprintf(".%02d.%02d.ecschema.xml", desiredSchemaKey.m_versionMajor, desiredSchemaKey.m_versionMinor);
+        threeVersionSuffix.Sprintf(".%02d.%02d.%02d.ecschema.xml",
+                                   desiredSchemaKey.m_versionMajor, desiredSchemaKey.m_versionWrite, desiredSchemaKey.m_versionMinor);
+        }
+
+    twoVersionExpression.AppendUtf8(twoVersionSuffix.c_str());
+    threeVersionExpression.AppendUtf8(threeVersionSuffix.c_str());
+
+    for (WString schemaPathStr : m_searchPaths)
+        {
+        AddCandidateSchemas(foundFiles, schemaPathStr, twoVersionExpression, desiredSchemaKey, matchType, schemaContext);
+        AddCandidateSchemas(foundFiles, schemaPathStr, threeVersionExpression, desiredSchemaKey, matchType, schemaContext);
+        }
+    }
+
+//Returns true if the first element goes before the second
+bool SearchPathSchemaFileLocater::SchemyKeyIsLessByVersion(CandidateSchema const& first, CandidateSchema const& second)
+    {
+    auto& left = first.Key;
+    auto& right = second.Key;
+
+    if (left.m_versionMajor != right.m_versionMajor)
+        return left.m_versionMajor < right.m_versionMajor;
+
+    if (left.m_versionWrite != right.m_versionWrite)
+        return left.m_versionWrite < right.m_versionWrite;
+
+    return left.m_versionMinor < right.m_versionMinor;
+    }
+
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Casey.Mullen                09/2011
+* @bsimethod                                    Robert.Schili                   02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext)
     {
-    return LocateSchemaByPath (key, schemaContext, matchType, m_searchPaths);
+    bvector<CandidateSchema> eligibleSchemaFiles;
+    FindEligibleSchemaFiles(eligibleSchemaFiles, key, matchType, schemaContext);
+    
+    size_t resultCount = eligibleSchemaFiles.size();
+    if (resultCount == 0)
+        return nullptr;
+
+    auto& schemaToLoad = *std::max_element(eligibleSchemaFiles.begin(), eligibleSchemaFiles.end(), SchemyKeyIsLessByVersion);
+    LOG.debugv(L"Attempting to load schema %ls...", schemaToLoad.FileName.GetName());
+
+    //Get cached version of the schema
+    ECSchemaPtr schemaOut = schemaContext.GetFoundSchema(schemaToLoad.Key, SchemaMatchType::Exact);;
+    if (schemaOut.IsValid())
+        return schemaOut;
+     
+    if (SchemaReadStatus::Success != ECSchema::ReadFromXmlFile(schemaOut, schemaToLoad.FileName.c_str(), schemaContext))
+        return nullptr;
+
+    LOG.debugv(L"Located %ls...", schemaToLoad.FileName.c_str());
+
+    // Now check this same path for supplemental schemas
+    bvector<ECSchemaP> supplementalSchemas;
+    TryLoadingSupplementalSchemas(schemaToLoad.Key.m_schemaName.c_str(), schemaToLoad.SearchPath, schemaContext, supplementalSchemas);
+
+    // Check for localization supplementals
+    for (WString culture : *(schemaContext.GetCultures()))
+        {
+        if (culture.Equals(L"en")) // not sure
+            continue;
+
+        BeFileName locDir(schemaToLoad.SearchPath.c_str());
+        locDir.AppendToPath(culture.c_str());
+        TryLoadingSupplementalSchemas(key.m_schemaName.c_str(), locDir, schemaContext, supplementalSchemas);
+        }
+
+    if (supplementalSchemas.size() > 0)
+        {
+        ECN::SupplementedSchemaBuilder builder;
+        builder.UpdateSchema(*schemaOut, supplementalSchemas);
+        }
+
+    return schemaOut;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2410,7 +2341,7 @@ void                             ECSchemaCache::Clear ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaP       ECSchemaCache::GetSchema   (SchemaKeyCR key) const
     {
-    return GetSchema(key, SCHEMAMATCHTYPE_Identical);
+    return GetSchema(key, SchemaMatchType::Identical);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2421,7 +2352,7 @@ ECSchemaP       ECSchemaCache::GetSchema(SchemaKeyCR key, SchemaMatchType matchT
     SchemaMap::const_iterator iter;
     switch (matchType)
         {
-        case SCHEMAMATCHTYPE_Identical:
+        case SchemaMatchType::Identical:
             {
             iter = m_schemas.find (key);
             break;
@@ -2435,7 +2366,7 @@ ECSchemaP       ECSchemaCache::GetSchema(SchemaKeyCR key, SchemaMatchType matchT
         }
 
     if (iter == m_schemas.end())
-        return NULL;
+        return nullptr;
 
     return iter->second.get();
     }
@@ -2598,6 +2529,83 @@ ECEnumerationP const& ECEnumerationContainer::const_iterator::operator*() const
     };
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECSchemaElementsOrder::AddElement(Utf8CP name, ECSchemaElementType type)
+    {
+    m_elementVector.push_back(make_bpair<Utf8String, ECSchemaElementType>(name, type));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECSchemaElementsOrder::RemoveElement(Utf8CP elementName)
+    {
+    for (auto iterator = m_elementVector.begin(); iterator != m_elementVector.end(); ++iterator)
+        {
+        if (iterator->first == elementName)
+            {
+            m_elementVector.erase(iterator);
+            return;
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECSchemaElementsOrder::CreateAlphabeticalOrder(ECSchemaElementsOrderP &elementOrder, ECSchemaCR ecSchema)
+    {
+    elementOrder = new ECSchemaElementsOrder();
+    for (ECEnumerationCP pEnum : ecSchema.GetEnumerations())
+        {
+        if (NULL == pEnum)
+            {
+            BeAssert(false);
+            continue;
+            }
+        else
+            elementOrder->AddElement(pEnum->GetName().c_str(), ECSchemaElementType::ECEnumeration);
+        }
+
+    std::list<ECClassP> sortedClasses;
+    // sort the classes by name so the order in which they are written is predictable.
+    for (ECClassP pClass : ecSchema.GetClasses())
+        {
+        if (NULL == pClass)
+            {
+            BeAssert(false);
+            continue;
+            }
+        else
+            sortedClasses.push_back(pClass);
+        }
+
+    sortedClasses.sort(ClassNameComparer);
+
+    for (ECClassP pClass : sortedClasses)
+        {
+        elementOrder->AddElement(pClass->GetName().c_str(), ECSchemaElementType::ECClass);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<bpair<Utf8String, ECSchemaElementType>>::const_iterator  ECSchemaElementsOrder::begin() const
+    {
+    return m_elementVector.begin();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<bpair<Utf8String, ECSchemaElementType>>::const_iterator  ECSchemaElementsOrder::end() const
+    {
+    return m_elementVector.end();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaKeyCR ECSchema::GetSchemaKey ()const
@@ -2611,13 +2619,6 @@ SchemaKeyCR ECSchema::GetSchemaKey ()const
 IECCustomAttributeContainer& ECSchema::GetCustomAttributeContainer() { return *this; }
 IECCustomAttributeContainer const& ECSchema::GetCustomAttributeContainer() const { return *this; }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus SchemaKey::ParseSchemaFullName (SchemaKeyR key, Utf8CP schemaFullName)
-    {
-    return ECSchema::ParseSchemaFullName (key.m_schemaName, key.m_versionMajor, key.m_versionMinor, schemaFullName);
-    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2670,13 +2671,125 @@ bool            ECSchema::AddingSchemaCausedCycles () const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  03/2012
+* @bsimethod                                    Robert.Schili                  01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String         SchemaKey::GetFullSchemaName () const
+Utf8String SchemaKey::FormatFullSchemaName(Utf8CP schemaName, uint32_t versionMajor, uint32_t versionWrite, uint32_t versionMinor)
     {
-    Utf8Char schemaName[512] = {0};
-    BeStringUtilities::Snprintf(schemaName, "%s.%02d.%02d", m_schemaName.c_str(), m_versionMajor, m_versionMinor);
-    return schemaName;
+    Utf8PrintfString formattedString("%s.%s", schemaName, FormatSchemaVersion(versionMajor, versionWrite, versionMinor).c_str());
+    return formattedString;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Robert.Schili                  01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SchemaKey::FormatSchemaVersion (uint32_t versionMajor, uint32_t versionWrite, uint32_t versionMinor)
+    {
+    Utf8String versionString;
+    versionString.Sprintf("%02d.%02d.%02d", versionMajor, versionWrite, versionMinor);
+    return versionString;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Robert.Schili                  01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SchemaKey::FormatLegacyFullSchemaName(Utf8CP schemaName, uint32_t versionMajor, uint32_t versionMinor)
+    {
+    Utf8PrintfString formattedString("%s.%02d.%02d", schemaName, versionMajor, versionMinor);
+    return formattedString;
+    }
+
+#define ECSCHEMA_VERSION_FORMAT_EXPLANATION " Format must be either MM.mm or MM.ww.mm where MM is major version, ww is the  write compatibility version and mm is minor version."
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus SchemaKey::ParseSchemaFullName (Utf8StringR schemaName, uint32_t& versionMajor, uint32_t& versionWrite, uint32_t& versionMinor, Utf8CP fullName)
+    {
+    if (Utf8String::IsNullOrEmpty(fullName))
+        return ECObjectsStatus::ParseError;
+
+    Utf8CP firstDot = strchr (fullName, '.');
+    if (nullptr == firstDot)
+        {
+        LOG.errorv ("Invalid ECSchema FullName String: '%s' does not contain a '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, fullName);
+        return ECObjectsStatus::ParseError;
+        }
+
+    size_t nameLen = firstDot - fullName;
+    if (nameLen < 1)
+        {
+        LOG.errorv ("Invalid ECSchema FullName String: '%s' does not have any characters before the '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, fullName);
+        return ECObjectsStatus::ParseError;
+        }
+
+    schemaName.assign (fullName, nameLen);
+
+    return ParseVersionString (versionMajor, versionWrite, versionMinor, firstDot+1);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus SchemaKey::ParseVersionString (uint32_t& versionMajor, uint32_t& versionWrite, uint32_t& versionMinor, Utf8CP versionString)
+    {
+    
+
+    if(Utf8String::IsNullOrEmpty(versionString))
+        return ECObjectsStatus::Success;
+
+    bvector<Utf8String> tokens;
+    BeStringUtilities::Split(versionString, ".", tokens);
+    size_t digits = tokens.size();
+
+    if (digits < 2)
+        {
+        LOG.errorv("Invalid ECSchema Version String: '%s' at least version numbers are required!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
+        return ECObjectsStatus::ParseError;
+        }
+
+    Utf8P end = nullptr;
+    Utf8CP chars = tokens[0].c_str();
+    versionMajor = strtoul(chars, &end, 10);
+    if (end == chars)
+        {
+        versionMajor = DEFAULT_VERSION_MAJOR;
+        LOG.errorv("Invalid ECSchema Version String: '%s' The characters '%s' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString, chars);
+        return ECObjectsStatus::ParseError;
+        }
+
+    chars = tokens[1].c_str();
+    uint32_t second = strtoul(chars, &end, 10);
+    if (end == chars)
+        {
+        versionWrite = DEFAULT_VERSION_WRITE;
+        versionMinor = DEFAULT_VERSION_MINOR;
+        LOG.errorv("Invalid ECSchema Version String: '%s' The characters '%s' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString, chars);
+        return ECObjectsStatus::ParseError;
+        }
+
+    if (digits == 2)
+        {
+        versionWrite = DEFAULT_VERSION_WRITE;
+        versionMinor = second;
+        return ECObjectsStatus::Success;
+        }
+
+    
+    chars = tokens[2].c_str();
+    uint32_t third = strtoul(chars, &end, 10);
+    //We have to support this case because some callers pass stuff like "1.5.ecschema.xml" to this method, which used to work
+    //before 3 number versions were introduced.
+    if (end == chars)
+        {
+        versionWrite = DEFAULT_VERSION_WRITE;
+        versionMinor = second;
+        }
+    else
+        {
+        versionWrite = second;
+        versionMinor = third;
+        }
+
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2773,17 +2886,17 @@ int             SchemaKey::CompareByName (Utf8String schemaName) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  12/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            SchemaKey::LessThan (SchemaKeyCR rhs, SchemaMatchType matchType) const
+bool SchemaKey::LessThan (SchemaKeyCR rhs, SchemaMatchType matchType) const
     {
     switch (matchType)
         {
-        case SCHEMAMATCHTYPE_Identical:
+        case SchemaMatchType::Identical:
             {
             if (0 != m_checkSum || 0 != rhs.m_checkSum)
                 return m_checkSum < rhs.m_checkSum;
             //Fall through
             }
-        case SCHEMAMATCHTYPE_Exact:
+        case SchemaMatchType::Exact:
             {
             int nameCompare = CompareByName (rhs.m_schemaName);
 
@@ -2793,19 +2906,37 @@ bool            SchemaKey::LessThan (SchemaKeyCR rhs, SchemaMatchType matchType)
             if (m_versionMajor != rhs.m_versionMajor)
                 return m_versionMajor < rhs.m_versionMajor;
 
+            if (m_versionWrite != rhs.m_versionWrite)
+                return m_versionWrite < rhs.m_versionWrite;
+
             return m_versionMinor < rhs.m_versionMinor;
             break;
             }
-        case SCHEMAMATCHTYPE_LatestCompatible:
+        case SchemaMatchType::LatestCompatible:
             {
             int nameCompare = CompareByName (rhs.m_schemaName);
 
             if (nameCompare != 0)
                 return nameCompare < 0;
 
+            if (m_versionMajor < rhs.m_versionMajor)
+                return true;
+
+            if (m_versionMajor == rhs.m_versionMajor)
+                return m_versionWrite < rhs.m_versionWrite;
+
+            return false;
+            }
+        case SchemaMatchType::LatestMajorCompatible:
+            {
+            int nameCompare = CompareByName(rhs.m_schemaName);
+
+            if (nameCompare != 0)
+                return nameCompare < 0;
+
             return m_versionMajor < rhs.m_versionMajor;
             }
-        case SCHEMAMATCHTYPE_Latest: //Only compare by name
+        case SchemaMatchType::Latest: //Only compare by name
             {
             return CompareByName (rhs.m_schemaName) < 0;
             }
@@ -2817,21 +2948,34 @@ bool            SchemaKey::LessThan (SchemaKeyCR rhs, SchemaMatchType matchType)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  12/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            SchemaKey::Matches (SchemaKeyCR rhs, SchemaMatchType matchType) const
+bool SchemaKey::Matches (SchemaKeyCR rhs, SchemaMatchType matchType) const
     {
     switch (matchType)
         {
-        case SCHEMAMATCHTYPE_Identical:
+        case SchemaMatchType::Identical:
             {
             if (0 != m_checkSum && 0 != rhs.m_checkSum)
                 return m_checkSum == rhs.m_checkSum;
             //fall through
             }
-        case SCHEMAMATCHTYPE_Exact:
-            return 0 == CompareByName (rhs.m_schemaName) && m_versionMajor == rhs.m_versionMajor && m_versionMinor == rhs.m_versionMinor;
-        case SCHEMAMATCHTYPE_LatestCompatible:
-            return 0 == CompareByName (rhs.m_schemaName) && m_versionMajor == rhs.m_versionMajor && m_versionMinor >= rhs.m_versionMinor;
-        case SCHEMAMATCHTYPE_Latest:
+        case SchemaMatchType::Exact:
+            return 0 == CompareByName (rhs.m_schemaName) && m_versionMajor == rhs.m_versionMajor &&
+                m_versionWrite == rhs.m_versionWrite && m_versionMinor == rhs.m_versionMinor;
+        case SchemaMatchType::LatestMajorCompatible:
+            if (CompareByName(rhs.m_schemaName) != 0)
+                return false;
+
+            if (rhs.m_versionMajor != m_versionMajor)
+                return false;
+
+            if (m_versionWrite == rhs.m_versionWrite)
+                return m_versionMinor >= rhs.m_versionMinor;
+
+            return m_versionWrite > rhs.m_versionWrite;
+        case SchemaMatchType::LatestCompatible:
+            return 0 == CompareByName (rhs.m_schemaName) && m_versionMajor == rhs.m_versionMajor &&
+                m_versionWrite == rhs.m_versionWrite && m_versionMinor >= rhs.m_versionMinor;
+        case SchemaMatchType::Latest:
             return 0 == CompareByName (rhs.m_schemaName);
         default:
             return false;
@@ -2972,7 +3116,6 @@ bool SchemaNameClassNamePair::Remap (ECSchemaCR pre, ECSchemaCR post, IECSchemaR
 
     return remapped;
     }
-
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 

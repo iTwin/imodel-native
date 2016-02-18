@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECEnabler.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -32,7 +32,7 @@ StandaloneECEnablerPtr          ECEnabler::_LocateStandaloneEnabler (SchemaKeyCR
     if (NULL != m_standaloneInstanceEnablerLocater)
         return m_standaloneInstanceEnablerLocater->LocateStandaloneEnabler (schemaKey, className);
     
-    ECSchemaCP schema = m_ecClass.GetSchema().FindSchema(schemaKey, SCHEMAMATCHTYPE_Exact);//TODO: Test change of behavior we need to match schemas exactly:Abeesh
+    ECSchemaCP schema = m_ecClass.GetSchema().FindSchema(schemaKey, SchemaMatchType::Exact);//TODO: Test change of behavior we need to match schemas exactly:Abeesh
     if (NULL == schema)
         return NULL;
 

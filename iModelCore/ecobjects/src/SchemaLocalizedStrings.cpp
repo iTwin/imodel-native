@@ -65,7 +65,7 @@ Utf8StringCR SchemaLocalizedStrings::GetSchemaDisplayLabel(ECSchemaCP ecSchema, 
     // Standard:Schema.04.02.DisplayLabel:[Hash]
     Utf8String labelKey (STANDARD);
     labelKey.append(COLON);
-    labelKey.append(ecSchema->GetFullSchemaName());
+    labelKey.append(ecSchema->GetLegacyFullSchemaName());
     labelKey.append(DOT);
     labelKey.append(DISPLAYLABEL);
     labelKey.append(COLON);
@@ -83,7 +83,7 @@ Utf8StringCR SchemaLocalizedStrings::GetSchemaDescription(ECSchemaCP ecSchema, U
     // Standard:Schema.04.02.Description:[Hash]
     Utf8String descriptionKey(STANDARD);
     descriptionKey.append(COLON);
-    descriptionKey.append(ecSchema->GetFullSchemaName());
+    descriptionKey.append(ecSchema->GetLegacyFullSchemaName());
     descriptionKey.append(DOT);
     descriptionKey.append(DESCRIPTION);
     descriptionKey.append(COLON);
@@ -101,7 +101,7 @@ Utf8StringCR SchemaLocalizedStrings::GetClassDisplayLabel(ECClassCP ecClass, Utf
     // Standard:Schema.04.02:Class.DisplayLabel:[Hash]
     Utf8String labelKey(STANDARD);
     labelKey.append(COLON);
-    labelKey.append(ecClass->GetSchema().GetFullSchemaName());
+    labelKey.append(ecClass->GetSchema().GetLegacyFullSchemaName());
     labelKey.append(COLON);
     labelKey.append(ecClass->GetName());
     labelKey.append(DOT);
@@ -121,7 +121,7 @@ Utf8StringCR SchemaLocalizedStrings::GetEnumerationDisplayLabel(ECEnumerationCR 
     // Standard:Schema.04.02:Enumeration.DisplayLabel:[Hash]
     Utf8String labelKey(STANDARD);
     labelKey.append(COLON);
-    labelKey.append(ecEnumeration.GetSchema().GetFullSchemaName());
+    labelKey.append(ecEnumeration.GetSchema().GetLegacyFullSchemaName());
     labelKey.append(COLON);
     labelKey.append(ecEnumeration.GetName());
     labelKey.append(DOT);
@@ -141,7 +141,7 @@ Utf8StringCR SchemaLocalizedStrings::GetClassDescription(ECClassCP ecClass, Utf8
     // Standard:Schema.04.02:Class.Description:[Hash]
     Utf8String descriptionKey(STANDARD);
     descriptionKey.append(COLON);
-    descriptionKey.append(ecClass->GetSchema().GetFullSchemaName());
+    descriptionKey.append(ecClass->GetSchema().GetLegacyFullSchemaName());
     descriptionKey.append(COLON);
     descriptionKey.append(ecClass->GetName());
     descriptionKey.append(DOT);
@@ -162,7 +162,7 @@ Utf8StringCR SchemaLocalizedStrings::GetEnumerationDescription(ECEnumerationCR e
     // Standard:Schema.04.02:Class.Description:[Hash]
     Utf8String descriptionKey(STANDARD);
     descriptionKey.append(COLON);
-    descriptionKey.append(ecEnumeration.GetSchema().GetFullSchemaName());
+    descriptionKey.append(ecEnumeration.GetSchema().GetLegacyFullSchemaName());
     descriptionKey.append(COLON);
     descriptionKey.append(ecEnumeration.GetName());
     descriptionKey.append(DOT);
@@ -183,7 +183,7 @@ Utf8StringCR SchemaLocalizedStrings::GetPropertyDisplayLabel(ECPropertyCP ecProp
     // Standard:Schema.04.02:Class:Property.DisplayLabel:[Hash]
     Utf8String labelKey(STANDARD);
     labelKey.append(COLON);
-    labelKey.append(ecProperty->GetClass().GetSchema().GetFullSchemaName());
+    labelKey.append(ecProperty->GetClass().GetSchema().GetLegacyFullSchemaName());
     labelKey.append(COLON);
     labelKey.append(ecProperty->GetClass().GetName());
     labelKey.append(COLON);
@@ -206,7 +206,7 @@ Utf8StringCR SchemaLocalizedStrings::GetPropertyDescription(ECPropertyCP ecPrope
     // Standard:Schema.04.02:Class:Property.Description:[Hash]
     Utf8String descriptionKey(STANDARD);
     descriptionKey.append(COLON);
-    descriptionKey.append(ecProperty->GetClass().GetSchema().GetFullSchemaName());
+    descriptionKey.append(ecProperty->GetClass().GetSchema().GetLegacyFullSchemaName());
     descriptionKey.append(COLON);
     descriptionKey.append(ecProperty->GetClass().GetName());
     descriptionKey.append(COLON);
@@ -230,7 +230,7 @@ Utf8StringCR SchemaLocalizedStrings::GetEnumeratorDisplayLabel(ECEnumeratorCR ec
     Utf8String labelKey(STANDARD);
     labelKey.append(COLON);
     ECEnumerationCR e = ecEnumerator.GetEnumeration();
-    labelKey.append(e.GetSchema().GetFullSchemaName());
+    labelKey.append(e.GetSchema().GetLegacyFullSchemaName());
     labelKey.append(COLON);
     labelKey.append(e.GetName());
     labelKey.append(COLON);
@@ -260,7 +260,7 @@ Utf8StringCR SchemaLocalizedStrings::GetRelationshipSourceRoleLabel(ECRelationsh
     // Standard:Schema.04.02:RelClass.SourceRoleLabel:[Hash]
     Utf8String roleLabelKey(STANDARD);
     roleLabelKey.append(COLON);
-    roleLabelKey.append(relClass->GetSchema().GetFullSchemaName());
+    roleLabelKey.append(relClass->GetSchema().GetLegacyFullSchemaName());
     roleLabelKey.append(COLON);
     roleLabelKey.append(relClass->GetName());
     roleLabelKey.append(DOT);
@@ -280,7 +280,7 @@ Utf8StringCR SchemaLocalizedStrings::GetRelationshipTargetRoleLabel(ECRelationsh
     // Standard:Schema.04.02:RelClass.SourceRoleLabel:[Hash]
     Utf8String roleLabelKey(STANDARD);
     roleLabelKey.append(COLON);
-    roleLabelKey.append(relClass->GetSchema().GetFullSchemaName());
+    roleLabelKey.append(relClass->GetSchema().GetLegacyFullSchemaName());
     roleLabelKey.append(COLON);
     roleLabelKey.append(relClass->GetName());
     roleLabelKey.append(DOT);
@@ -330,7 +330,7 @@ SchemaLocalizedStrings::SchemaLocalizedStrings(ECSchemaCP localizationSupplement
     m_empty = false;
 
     // Length of the string Standard:[SchemaFullName]:  10 is for the chars 'Standard::'
-    size_t prefixLength = 10 + primarySchema.GetFullSchemaName().length();
+    size_t prefixLength = 10 + primarySchema.GetLegacyFullSchemaName().length();
     Utf8String lastContainerAccessor = ""; // This is the container accessor for the primary schema
     Utf8String lastCaClassName;
     IECCustomAttributeContainerP caContainer = &primarySchema;

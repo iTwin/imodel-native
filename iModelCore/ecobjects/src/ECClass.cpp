@@ -2683,10 +2683,6 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, EC
     if (status != SchemaReadStatus::Success)
         return status;
 
-    // skip relationship constraint classes for all supplemental schemas because they should never exist
-    if (Utf8String::npos != GetSchema().GetName().find("_Supplemental"))  
-        return SchemaReadStatus::Success;
-        
     BeXmlNodeP sourceNode = classNode.SelectSingleNode (EC_NAMESPACE_PREFIX ":" EC_SOURCECONSTRAINT_ELEMENT);
     if (NULL != sourceNode)
         status = m_source->ReadXml (*sourceNode, context);
