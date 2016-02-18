@@ -201,7 +201,7 @@ void AddEnergy(UnitRegistry& reg)
     }
 
 
-// TODO: Check these phenomenas
+// TODO: Check these phenomena, Energy Density?
 void AddEnergyDensity(UnitRegistry& reg)
     {
     reg.AddUnit(HEATING_VALUE, SI, "J/CUB.M", "J*M(-3)"); //, BISQPrimUom)->AddSynonym("JOULE_PER_METRE_CUBED");
@@ -209,9 +209,9 @@ void AddEnergyDensity(UnitRegistry& reg)
 
 void AddHeatingValue(UnitRegistry& reg)
     {
-    reg.AddUnit(HEATING_VALUE, SI, "J/KG", "J*M(-3)"); //, BISQPrimUom)->AddSynonym("JOULE_PER_METRE_CUBED"); // TODO: Check
+    reg.AddUnit(HEATING_VALUE, SI, "J/KG", "J*M(-3)"); //, BISQPrimUom)->AddSynonym("JOULE_PER_METRE_CUBED"); // TODO: Check expression
     reg.AddUnit(HEATING_VALUE, USCUSTOM, "BTU/LBM", "BTU*LBM(-1)"); //, BISQSecUom)->AddSynonym("BTU_PER_POUND_MASS");
-    reg.AddUnit(HEATING_VALUE, USCUSTOM, "BTU_PER_POUND_MOLE", "M_L2_PER_T2_MOL"); //, BISQSecUom)->AddSynonym("BTU_PER_POUND_MASS");
+    reg.AddUnit(HEATING_VALUE, USCUSTOM, "BTU_PER_POUND_MOLE", "M_L2_PER_T2_MOL"); //, BISQSecUom)->AddSynonym("BTU_PER_POUND_MASS"); // TODO: Make expression and check dimension
     }
 
 void AddEnergySpecificCapacity(UnitRegistry& reg)
@@ -320,8 +320,8 @@ void AddHeatFlux(UnitRegistry& reg)
 
 void AddHeatTransfer(UnitRegistry& reg)
     {
-    reg.AddUnit(HEATRASNFER, SI, "W/(SQ.M*K)", "W*M(-2)*K(-1)"); //, BISQPrimUom)->AddSynonym("WATT_PER_METRE_SQUARED_PER_DELTA_DEGREE_KELVIN");
-    reg.AddUnit(HEATRASNFER, SI, "W/(SQ.M*CELSIUS)", "W*M(-2)*CELSIUS(-1)"); //, BISQSecUom)->AddSynonym("WATT_PER_METRE_SQUARED_PER_DELTA_DEGREE_CELSIUS");
+    reg.AddUnit(HEATTRASNFER, SI, "W/(SQ.M*K)", "W*M(-2)*K(-1)"); //, BISQPrimUom)->AddSynonym("WATT_PER_METRE_SQUARED_PER_DELTA_DEGREE_KELVIN");
+    reg.AddUnit(HEATTRASNFER, SI, "W/(SQ.M*CELSIUS)", "W*M(-2)*CELSIUS(-1)"); //, BISQSecUom)->AddSynonym("WATT_PER_METRE_SQUARED_PER_DELTA_DEGREE_CELSIUS");
     }
 
 void AddLinearDensity(UnitRegistry& reg)
