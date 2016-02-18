@@ -13,7 +13,6 @@ USING_NAMESPACE_BENTLEY_UNITS
 
 void AddLengths(UnitRegistry& reg)
     {
-    reg.AddUnit(LENGTH, SI, "M", "M"); // BISQPrimUom)->AddSynonym("METRE");
     reg.AddUnit(LENGTH, SI, "MM", "[MILLI]*M");// BISQSecUom)->AddSynonym("MILLIMETRE");
     reg.AddUnit(LENGTH, SI, "CM", "[CENTI]*M");// BISQSecUom)->AddSynonym("CENTIMETRE");
     reg.AddUnit(LENGTH, SI, "DM", "[DECI]*M");// BISQSecUom)->AddSynonym("DECIMETRE");
@@ -48,7 +47,6 @@ void AddLengths(UnitRegistry& reg)
 
 void AddMass(UnitRegistry& reg)
     {
-    reg.AddUnit(MASS, SI, "KG", "KG"); //, BISQPrimUom)->AddSynonym("KILOGRAM");
     reg.AddUnit(MASS, SI, "G", "[MILLI]*KG"); //, BISQSecUom)->AddSynonym("GRAM");
     reg.AddUnit(MASS, SI, "MG", "[MILLI]*G"); //, BISQSecUom)->AddSynonym("MILLIGRAM");
     reg.AddUnit(MASS, SI, "MKG", "[MICRO]*G"); //, BISQSecUom)->AddSynonym("MICROGRAM");
@@ -61,7 +59,6 @@ void AddMass(UnitRegistry& reg)
 
 void AddTime(UnitRegistry& reg)
     {
-    reg.AddUnit(TIME, SI, "S", "S"); //, BISQPrimUom)->AddSynonyms("SEC", "SECOND");
     reg.AddUnit(TIME, SI, "MIN", "S", 60.0); //, BISQSecUom)->AddSynonym("MINUTE");
     reg.AddUnit(TIME, SI, "HR", "MIN", 60.0); //, BISQSecUom)->AddSynonym("HOUR");
     reg.AddUnit(TIME, SI, "DAY", "HR", 24.0); //, BISQSecUom);
@@ -75,7 +72,6 @@ void AddTime(UnitRegistry& reg)
 
 void AddTemperature(UnitRegistry& reg)
     {
-    reg.AddUnit(TEMPERATURE, SI, "K", "K"); //, BISQPrimUom)->AddSynonyms("KELVIN", "DEGREE_KELVIN");
     reg.AddUnit(TEMPERATURE, SI, "CELSIUS", "#K", 1.0, -273.15); //, BISQNoDescript); //, BISQSecUom)->AddSynonym("DEGREE_CELSIUS");
     //SimpleUOM(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "#CELSIUS", 1.8); //, BISQSecUom)->AddSynonym("DEGREE_FAHRENHEIT");
     reg.AddUnit(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "#CELSIUS", 1.8, 1.0); //, BISQZeroE10, 32.0); //, BISQNoDescript); //, BISQSecUom)->AddSynonym("DEGREE_FAHRENHEIT");
@@ -96,19 +92,16 @@ void AddTemperature(UnitRegistry& reg)
 
 void AddLuminosity(UnitRegistry& reg)
     {
-    reg.AddUnit(LUMINOUSINTENSITY, SI, "CD", "CD"); //, BISQPrimUom)->AddSynonym("CANDELA");
     }
 
 void AddMole(UnitRegistry& reg)
     {
-    reg.AddUnit(MOLE, SI, "MOL", "MOL"); //, BISQPrimUom)->AddSynonyms("MOLE", "GMOL", "GRAMMOLE");
     reg.AddUnit(MOLE, SI, "KMOL", "[KILO]*MOL"); //, BISQSecUom)->AddSynonym("KILOMOLE");
     reg.AddUnit(MOLE, SI, "LB-MOLE", "MOL", 453.59237); //, BISQSecUom)->AddSynonym("POUND_MOLE");
     }
 
 void AddCapita(UnitRegistry& reg)
     {
-    reg.AddUnit(CAPITA, STATISTICS, "PERSON", "PERSON"); //, BISQPrimUom);
     reg.AddUnit(CAPITA, STATISTICS, "CAPITA", "PERSON"); //, BISQSecUom);
     reg.AddUnit(CAPITA, STATISTICS, "CUSTOMER", "PERSON"); //, BISQSecUom);
     reg.AddUnit(CAPITA, STATISTICS, "EMPLOYEE", "PERSON"); //, BISQSecUom);
@@ -120,12 +113,10 @@ void AddCapita(UnitRegistry& reg)
 
 void AddFinance(UnitRegistry& reg)
     {
-    reg.AddUnit(FINANCE, SI, "US$", "US$"); //, BISQPrimUom)->AddSynonyms("DOLLAR", "US_DOLLAR");
     }
 
 void AddRatio(UnitRegistry& reg)
     {
-    reg.AddUnit(RATIO, SI, "ONE", "ONE"); //, BISQPrimUom);
     }
 
 void AddAcceleration(UnitRegistry& reg)
@@ -137,7 +128,6 @@ void AddAcceleration(UnitRegistry& reg)
 
 void AddPlaneAngle(UnitRegistry& reg)
     {
-    reg.AddUnit(ANGLE, SI, "RAD", "RAD"); //, BISQPrimUom)->AddSynonym("RADIAN");
     reg.AddUnit(ANGLE, SI, "ARC_DEG", "[PI]*RAD", 1.0 / 180.0); //, BISQSecUom)->AddSynonym("DEGREE"); // Check validity of the synonym
     reg.AddUnit(ANGLE, SI, "ARC_MINUTE", "ARC_DEG", 1.0 / 60.0); //, BISQSecUom)->AddSynonym("ANGLE_MINUTE");
     reg.AddUnit(ANGLE, SI, "ARC_SECOND", "ARC_DEG", 1.0 / 3600.0); //, BISQSecUom)->AddSynonym("ANGLE_SECOND");
@@ -148,7 +138,6 @@ void AddPlaneAngle(UnitRegistry& reg)
 
 void AddSolidAngle(UnitRegistry& reg)
     {
-    reg.AddUnit(SOLIDANGLE, SI, "STERAD", "STERAD"); //, BISQPrimUom)->AddSynonym("STERADIAN");
     }
 
 void AddArea(UnitRegistry& reg)
@@ -187,7 +176,6 @@ void AddPopulationDensity(UnitRegistry& reg)
 
 void AddElectriCurrent(UnitRegistry& reg)
     {
-    reg.AddUnit(CURRENT, SI, "AMPERE", "A"); //, BISQPrimUom);
     reg.AddUnit(CURRENT, SI, "MILLIAMPERE", "[MILLI]*A"); //, BISQSecUom);
     reg.AddUnit(CURRENT, SI, "MICROAMPERE", "[MICRO]*A"); //, BISQSecUom);
     }
@@ -574,6 +562,20 @@ void AddWarpingConstant(UnitRegistry& reg)
 void UnitRegistry::AddDefaultUnits ()
     {
     UnitRegistry& reg = UnitRegistry::Instance();
+    reg.AddSIBaseUnit("M", BasePhenomena::Length); // BISQPrimUom)->AddSynonym("METRE");
+    reg.AddSIBaseUnit("KG", BasePhenomena::Mass); //, BISQPrimUom)->AddSynonym("KILOGRAM");
+    reg.AddSIBaseUnit("S", BasePhenomena::Time); //, BISQPrimUom)->AddSynonyms("SEC", "SECOND");
+    reg.AddSIBaseUnit("K", BasePhenomena::Temperature); //, BISQPrimUom)->AddSynonyms("KELVIN", "DEGREE_KELVIN");
+    reg.AddSIBaseUnit("A", BasePhenomena::ElectricCurrent); //, BISQPrimUom);
+    reg.AddSIBaseUnit("MOL", BasePhenomena::Mole); //, BISQPrimUom)->AddSynonyms("MOLE", "GMOL", "GRAMMOLE");
+    reg.AddSIBaseUnit("CD", BasePhenomena::Luminosity); //, BISQPrimUom)->AddSynonym("CANDELA");
+    reg.AddSIBaseUnit("RAD", BasePhenomena::PlaneAngle); //, BISQPrimUom)->AddSynonym("RADIAN");
+    reg.AddSIBaseUnit("STERAD", BasePhenomena::SolidAngle); //, BISQPrimUom)->AddSynonym("STERADIAN");
+    reg.AddSIBaseUnit("US$", BasePhenomena::Finance); //, BISQPrimUom)->AddSynonyms("DOLLAR", "US_DOLLAR");
+    reg.AddSIBaseUnit("PERSON", BasePhenomena::Capita); //, BISQPrimUom);
+    reg.AddSIBaseUnit("ONE", BasePhenomena::Ratio); //, BISQPrimUom);
+
+
     AddLengths(reg);
     AddMass(reg);
     AddTime(reg);

@@ -23,9 +23,9 @@ private:
     static UnitRegistry * s_instance;
 
     Utf8Vector m_systems;
-    Utf8Vector m_phenomena;
+    bmap<Utf8String, Phenomenon*> m_phenomena;
     bmap<Utf8String, Unit *> m_units;
-    bvector<Constant *> m_constants;
+    bmap<Utf8String, UnitP> m_constants;
     bmap<bpair<Utf8String, Utf8String>, double> m_conversions;
 
     UnitRegistry();
@@ -39,7 +39,9 @@ private:
 
     void InsertUnique (Utf8Vector &vec, Utf8String &str);
     void AddSystem(Utf8CP systemName);
-    void AddPhenomena(Utf8CP phenomenaName);
+    void AddPhenomena(Utf8CP phenomenaName, Utf8CP definition);
+    void AddBasePhenomena(Utf8Char dimensionalSymbol);
+    BentleyStatus AddSIBaseUnit(Utf8CP unitName, Utf8Char dimensionSymbol);
 
 public:
     UNITS_EXPORT static UnitRegistry & Instance();
@@ -49,11 +51,11 @@ public:
 
     // Register methods.
     UNITS_EXPORT BentleyStatus AddUnit(Utf8CP systemName, Utf8CP phenomName, Utf8CP unitName, Utf8CP definition, double factor = 1, double offset = 0);
-    UNITS_EXPORT BentleyStatus AddConstant(double magnitude, Utf8CP unitName);
+    UNITS_EXPORT BentleyStatus AddConstant(Utf8CP phenomName, Utf8CP constantName, Utf8CP definition, double factor);
 
     // Lookup methods
     UNITS_EXPORT UnitPtr     LookupUnit(Utf8CP name) const;
-    UNITS_EXPORT ConstantPtr LookupConstant(Utf8CP name) const;
+    UNITS_EXPORT UnitCP LookupConstant(Utf8CP name) const;
     bmap<Utf8String, UnitP> const & AllUnits() const { return m_units; }
         
     // bool Exists methods.

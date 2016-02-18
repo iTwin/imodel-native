@@ -21,12 +21,16 @@ typedef RefCountedPtr<Unit> UnitPtr;
 
 struct SymbolicFraction
 {
+friend struct Unit;
+friend struct Phenomenon;
 private:
     Utf8Vector m_numerator;
     Utf8Vector m_denominator;
+    static BentleyStatus ParseDefinition(Utf8CP definition, Utf8Vector& numerator, Utf8Vector& denominator);
+    SymbolicFraction(Utf8CP definition);
+    SymbolicFraction(Utf8Vector& numerator, Utf8Vector& denominator);
 
 protected:
-    SymbolicFraction(Utf8Vector& numerator, Utf8Vector& denominator);
     static void SimplifySubTypes(Utf8Vector &n, Utf8Vector &d);
     void Simplify() { SimplifySubTypes(m_numerator, m_denominator); }
     Utf8Vector& GetNumerator() { return m_numerator; }
@@ -40,7 +44,7 @@ public:
     SymbolicFraction& operator/=(const SymbolicFraction& rhs);
     bool operator== (const SymbolicFraction& rhs) const;
     bool operator!= (const SymbolicFraction& rhs) const;
-    };
+};
 
 
 //=======================================================================================
@@ -55,13 +59,13 @@ friend struct UnitRegistry;
 private:
     Utf8String  m_system;
     Utf8String  m_name;
+    Utf8Char    m_dimensionSymbol;
     double      m_factor;
     double      m_offset;
 
-    static BentleyStatus ParseDefinition(Utf8CP definition, Utf8Vector& numerator, Utf8Vector& denominator);
-    static UnitPtr Create (Utf8CP sysName, Utf8CP phenomName, Utf8CP unitName, Utf8CP definition, double factor, double offset);
+    static UnitPtr Create (Utf8CP sysName, Utf8CP phenomName, Utf8CP unitName, Utf8CP definition, Utf8Char baseDimensionSymbol, double factor, double offset);
 
-    Unit(Utf8CP system, Utf8CP phenomena, Utf8CP name, Utf8Vector& numerator, Utf8Vector& denominator, double factor, double offset);
+    Unit(Utf8CP system, Utf8CP phenomena, Utf8CP name, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset);
 
 protected:
     virtual Utf8CP _GetName() const { return m_name.c_str(); }
@@ -73,6 +77,8 @@ public:
     bool   IsRegistered()    const;
     Utf8CP GetName()         const { return _GetName(); }
     //Utf8CP GetDisplayLabel() const { return _GetDisplayLabel(); }
+
+    bool IsBaseUnit() const { return ' ' != m_dimensionSymbol; }
 
     // Binary comparison operators.
     bool operator== (const UnitR rhs) const;
@@ -91,4 +97,18 @@ public:
     UnitR operator-=(const UnitR rhs);
 };
 
+
+struct Phenomenon : SymbolicFraction
+{
+friend struct UnitRegistry;
+private:
+    Utf8String  m_name;
+    Utf8String  m_definition;
+    Utf8Char    m_dimensionSymbol;
+
+    Phenomenon(Utf8CP name, Utf8CP definition, Utf8Char dimensionalSymbol) : SymbolicFraction(definition), m_name(name) {}
+
+public:
+    bool IsBasePhenomena() { return ' ' != m_dimensionSymbol; }
+};
 END_BENTLEY_UNITS_NAMESPACE

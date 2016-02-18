@@ -62,6 +62,13 @@ $(o)Parser$(oext)            :  $(srcDir)Parser.cpp ${MultiCompileDepends}
 
 $(o)UnitDefinitions$(oext)   :  $(srcDir)UnitDefinitions.cpp ${MultiCompileDepends}
 
+$(o)ConstantDefinitions$(oext)      :   $(srcDir)ConstantDefinitions.cpp ${MultiCompileDepends}
+
+$(o)PhenomenonDefinitions$(oext)    :   $(srcDir)PhenomenonDefinitions.cpp ${MultiCompileDepends}
+
+#$(o)Quantity$(oext)                 :   $(srcDir)Quantity.cpp ${MultiCompileDepends}
+
+
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)

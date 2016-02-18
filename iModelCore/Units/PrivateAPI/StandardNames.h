@@ -10,6 +10,11 @@
 
 #include "UnitsPCH.h"
 
+BEGIN_BENTLEY_UNITS_NAMESPACE
+
+static double const PI = 3.1415926535897932384626433832795;
+static double const E = 2.7182818284590452353602874713527;
+
 static Utf8CP const SI = "SI";
 static Utf8CP const CGS = "CGS";
 static Utf8CP const METRIC = "METRIC";
@@ -38,7 +43,6 @@ static Utf8CP const FINANCE = "FINANCE";
 static Utf8CP const CONSTANT = "CONSTANT";
 
 static Utf8CP const LENGTH = "LENGTH";
-
 static Utf8CP const MASS = "MASS";
 static Utf8CP const TIME = "TIME";
 static Utf8CP const TEMPERATURE = "TEMPERATURE";
@@ -48,6 +52,7 @@ static Utf8CP const LUMINOUSINTENSITY = "LUMINOUSINTENSITY";
 static Utf8CP const RATIO = "RATIO";
 static Utf8CP const ANGLE = "ANGLE";
 static Utf8CP const SOLIDANGLE = "SOLIDANGLE";
+
 static Utf8CP const AREA = "AREA";
 static Utf8CP const VOLUME = "VOLUME";
 static Utf8CP const VELOCITY = "VELOCITY";
@@ -104,3 +109,26 @@ static Utf8CP const LINEAR_LOAD = "LINEAR_LOAD";
 static Utf8CP const AREA_LOAD = "AREA_LOAD";
 static Utf8CP const HEATING_VALUE = "HEATING_VALUE";
 static Utf8CP const TBD = "TBD";
+
+
+struct BasePhenomena
+{
+private:
+    BasePhenomena();
+
+public:
+    static const Utf8Char Length = 'L';
+    static const Utf8Char Mass = 'M';
+    static const Utf8Char Time = 'T';
+    static const Utf8Char Temperature = 'K';
+    static const Utf8Char ElectricCurrent = 'I';
+    static const Utf8Char Mole = 'N';
+    static const Utf8Char Luminosity = 'J';
+    static const Utf8Char PlaneAngle = 'A';
+    static const Utf8Char SolidAngle = 'S';
+    static const Utf8Char Finance = '$';
+    static const Utf8Char Capita = 'X';
+    static const Utf8Char Ratio = 'R';
+};
+
+END_BENTLEY_UNITS_NAMESPACE
