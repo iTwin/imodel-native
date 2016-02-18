@@ -37,6 +37,7 @@ void UnitRegistry::AddDefaultPhenomena ()
     //AddPhenomena(ANGACCELERAT)
     AddPhenomena(FORCE, "MASS*LENGTH*TIME(-2)");
     AddPhenomena(PRESSURE, "MASS*LENGTH(-1)*TIME(-2)"); //TODO: Needs work
+    AddPhenomena(FORCE_DENSITY, "FORCE*VOLUME(-1)");
     AddPhenomena(PRESSURE_GRADIENT, "PRESSURE*LENGTH(-1)");
     AddPhenomena(TORQUE, "FORCE*LENGTH*ANGLE"); // TODO: Double Check
     AddPhenomena(MOMENTINERTIA, "ANGVELOCITY*MOMENTUM"); //TODO: Needs work
@@ -67,7 +68,6 @@ void UnitRegistry::AddDefaultPhenomena ()
     //AddPhenomena(RADABSORBDOSE)
     //AddPhenomena(RADEQUDOSE)
     //AddPhenomena(SIZELENRATE) // TODO: ?
-    AddPhenomena(CAPITA, "CAPITA");
     AddPhenomena(THERMOCONDUCT, "POWER*LENGTH(-1)*TEMPERATURE(-1)"); // TODO: Check
     AddPhenomena(MOLAR_VOLUME, "VOLUME*MOLE(-1)");
     AddPhenomena(MOLAR_CONCENTRATION, "MOLE*VOLUME(-1)");

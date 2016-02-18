@@ -229,6 +229,21 @@ void AddDensity(UnitRegistry& reg)
     unit = reg.AddUnit(DENSITY, SI, "LBM/CUB.IN", "LBM*IN(-3)");
     reg.AddSynonym(unit, "POUND_PER_INCH_CUBED");
     reg.AddUnit(DENSITY, USCUSTOM, "POUND_PER_MILLION_GALLON", "LBM*GALLON(-1)", 1.0e-6);
+
+    unit = reg.AddUnit(DENSITY, USCUSTOM, "SLUG/CUB.FT", "SLUG*FT(-3)");
+    reg.AddSynonym(unit, "SLUG_PER_FOOT_CUBED");
+    }
+
+void AddForceDensity(UnitRegistry& reg)
+    {
+    UnitCP unit = reg.AddUnit(FORCE_DENSITY, SI, "N/CUB.M", "N/M(-3)");
+    reg.AddSynonym(unit, "NEWTON_PER_METRE_CUBED");
+    unit = reg.AddUnit(FORCE_DENSITY, SI, "KN/CUB.M", "[KILO]*N/M(-3)");
+    reg.AddSynonym(unit, "KILONEWTON_PER_METRE_CUBED");
+    unit = reg.AddUnit(FORCE_DENSITY, USCUSTOM, "N/CUB.FT", "N/FT(-3)");
+    reg.AddSynonym(unit, "NEWTON_PER_FOOT_CUBED");
+    unit = reg.AddUnit(FORCE_DENSITY, USCUSTOM, "KN/CUB.FT", "[KILO]*N/FT(-3)");
+    reg.AddSynonym(unit, "KILONEWTON_PER_FOOT_CUBED");
     }
 
 void AddPopulationDensity(UnitRegistry& reg)
@@ -459,10 +474,10 @@ void AddForce(UnitRegistry& reg)
     reg.AddSynonym(unit, "KILONEWTON");
     unit = reg.AddUnit(FORCE, SI, "mN", "[MILLI]*N");
     reg.AddSynonym(unit, "MILLINEWTON");
-    unit = reg.AddUnit(FORCE, SI, "KGF", "[G]*KG");
+    unit = reg.AddUnit(FORCE, SI, "KGF", "[STD_G]*KG");
     reg.AddSynonym(unit, "KILOGRAM_FORCE");
     reg.AddSynonym(unit, "KILOPOND");
-    unit = reg.AddUnit(FORCE, SI, "LBF", "[G]*LBM");
+    unit = reg.AddUnit(FORCE, SI, "LBF", "[STD_G]*LBM");
     reg.AddSynonym(unit, "POUND_FORCE");
     unit = reg.AddUnit(FORCE, SI, "KPF", "[KILO]*LBF");
     reg.AddSynonym(unit, "KILOPOUND_FORCE");
@@ -568,6 +583,9 @@ void AddPower(UnitRegistry& reg)
     reg.AddSynonym(unit, "KILOBTU_PER_HOUR");
     unit = reg.AddUnit(POWER, USCUSTOM, "HP", "LBF*FT", 550.0);
     reg.AddSynonym(unit, "HORSEPOWER");
+
+    unit = reg.AddUnit(POWER, SI, "GJ/MONTH", "GJ*MONTH(-1)"); // TODO: Correct phen?
+    reg.AddSynonym(unit, "GIGAJOULE_PER_MONTH");
     }
 
 // TODO: Wrong
@@ -602,17 +620,17 @@ void AddPressure(UnitRegistry& reg)
     reg.AddUnit(PRESSURE, INDUSTRIAL, "BAR_GAUGE", "BAR", 1.0, -1.0); //, BISQNoDescript); //, BISQSecUom);
     unit = reg.AddUnit(PRESSURE, INDUSTRIAL, "ATM_GAUGE", "AT", 1.0, 1.0332274528);
     reg.AddSynonym(unit, "KILOGRAM_FORCE_PER_CENTIMETRE_SQUARED_GAUGE");
-    unit = reg.AddUnit(PRESSURE, SI, "METRE_OF_H2O_CONVENTIONAL", "[G]*[H2O_0C]*M");
+    unit = reg.AddUnit(PRESSURE, SI, "METRE_OF_H2O_CONVENTIONAL", "[STD_G]*[H2O_0C]*M");
     reg.AddSynonym(unit, "MAQ");
-    reg.AddUnit(PRESSURE, SI, "MILLIMETRE_OF_H2O_CONVENTIONAL", "[G]*[H2O_0C]*MM"); //, BISQSecUom);
-    reg.AddUnit(PRESSURE, USCUSTOM, "FOOT_OF_H2O_CONVENTIONAL", "[G]*[H2O_4C]*FT"); //, BISQSecUom);
-    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_H2O_AT_32_FAHRENHEIT", "[G]*[H2O_32F]*IN"); //, BISQSecUom);
-    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_H2O_AT_39_2_FAHRENHEIT", "[G]*[H2O_39.2F]*IN"); //, BISQSecUom);
-    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_H2O_AT_60_FAHRENHEIT", "[G]*[H2O_60F]*IN"); //, BISQSecUom);
-    reg.AddUnit(PRESSURE, USCUSTOM, "MILLIMETRE_OF_HG_AT_32_FAHRENHEIT", "[G]*[HG_0C]*MM"); //, BISQSecUom);
-    unit = reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_HG_CONVENTIONAL", "[G]*[HG_0C]*IN");
+    reg.AddUnit(PRESSURE, SI, "MILLIMETRE_OF_H2O_CONVENTIONAL", "[STD_G]*[H2O_0C]*MM"); //, BISQSecUom);
+    reg.AddUnit(PRESSURE, USCUSTOM, "FOOT_OF_H2O_CONVENTIONAL", "[STD_G]*[H2O_4C]*FT"); //, BISQSecUom);
+    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_H2O_AT_32_FAHRENHEIT", "[STD_G]*[H2O_32F]*IN"); //, BISQSecUom);
+    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_H2O_AT_39_2_FAHRENHEIT", "[STD_G]*[H2O_39.2F]*IN"); //, BISQSecUom);
+    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_H2O_AT_60_FAHRENHEIT", "[STD_G]*[H2O_60F]*IN"); //, BISQSecUom);
+    reg.AddUnit(PRESSURE, USCUSTOM, "MILLIMETRE_OF_HG_AT_32_FAHRENHEIT", "[STD_G]*[HG_0C]*MM"); //, BISQSecUom);
+    unit = reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_HG_CONVENTIONAL", "[STD_G]*[HG_0C]*IN");
     reg.AddSynonym(unit, "INCH_OF_HG_AT_32_FAHRENHEIT");
-    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_HG_AT_60_FAHRENHEIT", "[G]*[HG_60F]*IN"); //, BISQSecUom);
+    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_HG_AT_60_FAHRENHEIT", "[STD_G]*[HG_60F]*IN"); //, BISQSecUom);
     }
 
 void AddPressureGradient(UnitRegistry& reg)

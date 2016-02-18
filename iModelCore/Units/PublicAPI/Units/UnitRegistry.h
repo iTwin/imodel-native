@@ -43,6 +43,8 @@ private:
     void AddBasePhenomena(Utf8Char dimensionalSymbol);
     UnitCP AddSIBaseUnit(Utf8CP unitName, Utf8Char dimensionSymbol);
 
+    bool NameConflicts(Utf8CP name);
+
 public:
     UNITS_EXPORT static UnitRegistry & Instance();
     UNITS_EXPORT static void Clear();

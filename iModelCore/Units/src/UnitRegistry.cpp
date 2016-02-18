@@ -109,9 +109,14 @@ void UnitRegistry::AddBasePhenomena(Utf8Char dimensionalSymbol)
     if (Utf8String::IsNullOrEmpty(phenomenaName))
         return;
 
+    if (HasPhenomena(phenomenaName))
+        {
+        LOG.errorv("Cannot create Base Phenomenon '%s' because name is already in use", phenomenaName);
+        return;
+        }
+
     auto phenomena = new Phenomenon(phenomenaName, phenomenaName, dimensionalSymbol);
 
-    //auto nameStr = Utf8String(phenomenaName);
     m_phenomena.insert(bpair<Utf8String, PhenomenonCP>(phenomenaName, phenomena));
     }
 
@@ -120,9 +125,20 @@ void UnitRegistry::AddBasePhenomena(Utf8Char dimensionalSymbol)
 //+---------------+---------------+---------------+---------------+---------------+----//
 void UnitRegistry::AddPhenomena (Utf8CP phenomenaName, Utf8CP definition)
     {
+    if (Utf8String::IsNullOrEmpty(phenomenaName))
+        {
+        LOG.error("Failed to create Phenomenon because name is null");
+        return;
+        }
+
+    if (HasPhenomena(phenomenaName))
+        {
+        LOG.errorv("Cannot create Phenomenon '%s' because name is already in use", phenomenaName);
+        return;
+        }
+
     auto phenomena = new Phenomenon(phenomenaName, definition, ' ');
 
-    //auto nameStr = Utf8String(phenomenaName);
     m_phenomena.insert(bpair<Utf8String, PhenomenonCP>(phenomenaName, phenomena));
     }
 
@@ -161,14 +177,32 @@ void UnitRegistry::AddDefaultSystems ()
 
 UnitCP UnitRegistry::AddSIBaseUnit(Utf8CP unitName, Utf8Char dimensionSymbol)
     {
+    if (Utf8String::IsNullOrEmpty(unitName))
+        {
+        LOG.errorv("Cannot create base unit because the input name is null");
+        return nullptr;
+        }
+
     Utf8CP phenomenonName = GetBasePhenomenonName(dimensionSymbol);
     if (Utf8String::IsNullOrEmpty(phenomenonName))
+        {
+        LOG.errorv("Cannot create base unit '%s' because the input dimension symbol '%c' does not map to a base phenomenon", unitName, dimensionSymbol);
         return nullptr;
+        }
     
-    // TODO: Error checking
-    auto unit = Unit::Create(SI, phenomenonName, unitName, unitName, dimensionSymbol, 1, 0);
+    if (NameConflicts(unitName))
+        {
+        LOG.errorv("Cannot create base unit '%s' because the name is already taken", unitName);
+        return nullptr;
+        }
 
-    //auto nameStr = Utf8String(unitName);
+    auto unit = Unit::Create(SI, phenomenonName, unitName, unitName, dimensionSymbol, 1, 0);
+    if (nullptr == unit)
+        {
+        LOG.errorv("Failed to create base unit '%s'", unitName);
+        return nullptr;
+        }
+
     m_units.insert(bpair<Utf8String, UnitCP>(unitName, unit));
 
     return unit;
@@ -179,14 +213,22 @@ UnitCP UnitRegistry::AddSIBaseUnit(Utf8CP unitName, Utf8Char dimensionSymbol)
 +---------------+---------------+---------------+---------------+---------------+------*/
 UnitCP UnitRegistry::AddUnit (Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double factor, double offset)
     {
-    if (!HasSystem(systemName) || !HasPhenomena(phenomName))
+    if (Utf8String::IsNullOrEmpty(unitName))
+        {
+        LOG.errorv("Could not create unit because unit name is null");
         return nullptr;
+        }
+
+    if (NameConflicts(unitName))
+        {
+        LOG.errorv("Could not create unit '%s' because that name is already in use", unitName);
+        return nullptr;
+        }
 
     auto unit = Unit::Create (systemName, phenomName, unitName, definition, ' ', factor, offset);
     if (nullptr == unit)
         return nullptr;
 
-    //auto nameStr = Utf8String(unitName);
     m_units.insert (bpair<Utf8String, UnitCP>(unitName, unit));
 
     // TODO: Add conversions.  Do we really do this here or when we are asked to convert between units?
@@ -194,15 +236,43 @@ UnitCP UnitRegistry::AddUnit (Utf8CP phenomName, Utf8CP systemName, Utf8CP unitN
     return unit;
     }
 
+bool UnitRegistry::NameConflicts(Utf8CP name)
+    {
+    if (HasConstant(name))
+        {
+        LOG.errorv("Name '%s' conflicts with a constant that is already registered", name);
+        return true;
+        }
+
+    if (HasUnit(name))
+        {
+        LOG.errorv("Name '%s' conflicts with a unit that is already registered", name);
+        return true;
+        }
+    return false;
+    }
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus UnitRegistry::AddConstant(Utf8CP phenomName, Utf8CP constantName, Utf8CP definition, double factor)
     {
-    // TODO: Error checking
-    auto constant = Unit::Create(CONSTANT, phenomName, constantName, definition, ' ', factor, 0);
+    if (Utf8String::IsNullOrEmpty(constantName))
+        {
+        LOG.error("Could not create constant because name is null or empty");
+        return BentleyStatus::ERROR;
+        }
 
-    //auto nameStr = Utf8String(constantName);
+    if (NameConflicts(constantName))
+        {
+        LOG.errorv("Could not create constant with name '%s' because the name conflicts with an existing name", constantName);
+        return BentleyStatus::ERROR;
+        }
+
+    auto constant = Unit::Create(CONSTANT, phenomName, constantName, definition, ' ', factor, 0);
+    if (nullptr == constant)
+        return BentleyStatus::ERROR;
+
     m_constants.insert(bpair<Utf8String, UnitCP>(constantName, constant));
 
     return BentleyStatus::SUCCESS;
@@ -214,14 +284,17 @@ BentleyStatus UnitRegistry::AddSynonym(UnitCP unit, Utf8CP synonymName)
         return BentleyStatus::ERROR;
 
     if (nullptr == unit)
+        {
+        LOG.errorv("Could not create synonym with name '%s' because the unit it is for is null", synonymName);
         return BentleyStatus::ERROR;
+        }
 
-    // TODO: Check to make sure not constant
-    auto iter = m_units.find(synonymName);
-    if (iter != m_units.end())
+    if (NameConflicts(synonymName))
+        {
+        LOG.errorv("Could not create synonym with name '%s' becasue it conflicts with an existing name", synonymName);
         return BentleyStatus::ERROR;
+        }
 
-    //auto nameStr = Utf8String();
     m_units.insert(bpair<Utf8String, UnitCP>(synonymName, unit));
 
     return BentleyStatus::SUCCESS;

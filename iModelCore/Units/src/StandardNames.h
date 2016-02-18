@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PrivateAPI/StandardNames.h $
+|     $Source: src/StandardNames.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -62,6 +62,7 @@ static Utf8CP const ACCELERATION = "ACCELERATION";
 static Utf8CP const ANGACCELERAT = "ANGACCELERAT";
 static Utf8CP const FORCE = "FORCE";
 static Utf8CP const PRESSURE = "PRESSURE";
+static Utf8CP const FORCE_DENSITY = "FORCE_DENSITY";
 static Utf8CP const PRESSURE_GRADIENT = "PRESSURE_GRADIENT";
 static Utf8CP const TORQUE = "TORQUE";
 static Utf8CP const MOMENTINERTIA = "MOMENTINERTIA";
