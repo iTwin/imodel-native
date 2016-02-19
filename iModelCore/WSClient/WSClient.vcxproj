@@ -143,6 +143,7 @@
     <ClCompile Include="Connect\ConnectSignInManager.cpp" />
     <ClCompile Include="Connect\ConnectSpaces.cpp" />
     <ClCompile Include="Connect\ConnectTokenProvider.cpp" />
+    <ClCompile Include="Connect\DelegationTokenProvider.cpp" />
     <ClCompile Include="Connect\EulaClient.cpp" />
     <ClCompile Include="Connect\SamlToken.cpp" />
     <ClCompile Include="Licensing\MobileTracking.cpp" />
@@ -286,6 +287,7 @@
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectSignInManager.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectSpaces.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectTokenProvider.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\DelegationTokenProvider.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\EulaClient.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\IConnectAuthenticationProvider.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\IConnectAuthenticationPersistence.h" />

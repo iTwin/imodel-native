@@ -5,23 +5,17 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-// TODO: review unneccesary includes
 #include "ClientInternal.h"
 #include <WebServices/Connect/ConnectSignInManager.h>
 
-#include <Bentley/Base64Utilities.h>
-#include <MobileDgn/MobileDgnUi.h>
-#include <WebServices/Connect/Connect.h>
-#include <WebServices/Connect/ConnectAuthenticationPersistence.h>
-#include <WebServices/Connect/ConnectSpaces.h>
-#include <WebServices/Connect/Authentication.h>
 #include <WebServices/Configuration/UrlProvider.h>
-#include <WebServices/Connect/ConnectTokenProvider.h>
+#include <WebServices/Connect/Connect.h>
 #include <WebServices/Connect/ConnectAuthenticationHandler.h>
+#include <WebServices/Connect/ConnectAuthenticationPersistence.h>
 #include <WebServices/Connect/ConnectSessionAuthenticationPersistence.h>
-
+#include <WebServices/Connect/ConnectTokenProvider.h>
+#include <WebServices/Connect/DelegationTokenProvider.h>
 #include "Connect.xliff.h"
-#include "AuthenticationData.h"
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -61,6 +55,10 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithToken(SamlTokenPtr to
         return CreateCompletedAsyncTask(SignInResult::Error(ConnectLocalizedString(ALERT_UnsupportedToken)));
         }
 
+    BeCriticalSectionHolder lock(m_cs);
+
+    ClearSignInData();
+
     m_persistence = std::make_shared<ConnectSessionAuthenticationPersistence>();
     m_persistence->SetToken(token);
 
@@ -82,6 +80,10 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithCredentials(Credentia
 
             return SignInResult::Error(ConnectLocalizedString(ALERT_SignInFailed_ServerError));
             }
+
+        BeCriticalSectionHolder lock(m_cs);
+
+        ClearSignInData();
 
         SamlTokenPtr token = result.GetValue();
 
@@ -109,9 +111,31 @@ void ConnectSignInManager::FinalizeSignIn()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSignInManager::SignOut()
     {
+    BeCriticalSectionHolder lock(m_cs);
+    ClearSignInData();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectSignInManager::ClearSignInData()
+    {
     m_persistence = nullptr;
+    m_tokenProviders.clear();
+
     ConnectAuthenticationPersistence::GetShared()->SetToken(nullptr);
     ConnectAuthenticationPersistence::GetShared()->SetCredentials(Credentials());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                           Vytautas.Barkauskas    01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ConnectSignInManager::IsTokenBasedAuthentication()
+    {
+    return
+        m_persistence != nullptr &&
+        m_persistence->GetToken() != nullptr &&
+        m_persistence->GetCredentials().IsEmpty();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -119,6 +143,7 @@ void ConnectSignInManager::SignOut()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConnectSignInManager::IsSignedIn() const
     {
+    BeCriticalSectionHolder lock(m_cs);
     return nullptr != m_persistence && m_persistence->GetToken() != nullptr;
     }
 
@@ -127,6 +152,8 @@ bool ConnectSignInManager::IsSignedIn() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConnectSignInManager::UserInfo ConnectSignInManager::GetUserInfo() const
     {
+    BeCriticalSectionHolder lock(m_cs);
+
     UserInfo userInfo;
 
     if (!IsSignedIn())
@@ -146,24 +173,33 @@ ConnectSignInManager::UserInfo ConnectSignInManager::GetUserInfo() const
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                           Vytautas.Barkauskas    01/2016
+* @bsimethod                                                    Vincas.Razma    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<AuthenticationHandler> ConnectSignInManager::GetAuthenticationHandler(Utf8StringCR serverUrl, IHttpHandlerPtr customHandler)
+AuthenticationHandlerPtr ConnectSignInManager::GetAuthenticationHandler(Utf8StringCR serverUrl, IHttpHandlerPtr httpHandler)
     {
-    auto provider = std::make_shared<ConnectTokenProvider>(m_persistence, IsTokenBasedAuthentication(), m_tokenExpiredHandler);
-    auto handler = UrlProvider::GetSecurityConfigurator(customHandler);
-    return std::make_shared<ConnectAuthenticationHandler>(serverUrl, provider, handler);
+    BeCriticalSectionHolder lock(m_cs);
+
+    // Harcoded URI for first G0505 release (2016 Q1). Should match service server URL in future
+    Utf8String rpUri = "https://connect-wsg20.bentley.com";
+
+    auto handler = UrlProvider::GetSecurityConfigurator(httpHandler);
+    return std::make_shared<ConnectAuthenticationHandler>(serverUrl, GetTokenProvider(rpUri), handler);
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                           Vytautas.Barkauskas    01/2016
+* @bsimethod                                                    Vincas.Razma    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ConnectSignInManager::IsTokenBasedAuthentication()
+IConnectTokenProviderPtr ConnectSignInManager::GetTokenProvider(Utf8StringCR rpUri)
     {
-    return
-        m_persistence != nullptr &&
-        m_persistence->GetToken() != nullptr &&
-        m_persistence->GetCredentials().IsEmpty();
+    auto it = m_tokenProviders.find(rpUri);
+    if (it != m_tokenProviders.end())
+        return it->second;
+
+    auto baseProvider = std::make_shared<ConnectTokenProvider>(m_persistence, IsTokenBasedAuthentication(), m_tokenExpiredHandler);
+    auto delegationProvider = std::make_shared<DelegationTokenProvider>(rpUri, baseProvider);
+
+    m_tokenProviders[rpUri] = delegationProvider;
+    return delegationProvider;
     }
 
 /*--------------------------------------------------------------------------------------+
