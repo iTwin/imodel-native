@@ -13,7 +13,6 @@
 #include "ImageUtilities.h"
 #include "AreaPattern.h"
 #include <Bentley/BeTimeUtilities.h>
-#include <BeJavaScriptTools/BeJavaScriptTools.h>
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
 
