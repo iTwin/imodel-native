@@ -73,6 +73,8 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         SCALABLEMESH_SCHEMA_EXPORT static WString GetTerrainModelPath(BentleyApi::Dgn::DgnDbCR dgnDb);
 
+        SCALABLEMESH_SCHEMA_EXPORT IScalableMesh* GetScalableMesh();
+
 
     };
 
