@@ -47,8 +47,11 @@ int Exponent::GetExponent()
     }
 
 // TODO: These static methods probably belong in some other class besides unit.  Was lazy and this was quickest place to plop
-void Unit::MergeExpressions(Utf8CP definition, bvector<UnitExponent*>& targetExpression, bvector<UnitExponent*>& sourceExpression, int startingExponent)
+void Unit::MergeExpressions(Utf8CP targetDefinition, bvector<UnitExponent*>& targetExpression, UnitCP sourceUnit, int startingExponent)
     {
+    LOG.debugv("Evaluating %s", sourceUnit->GetName());
+    bvector<UnitExponent*> sourceExpression = sourceUnit->Evaluate();
+    LOG.debugv("Merging sub expression %s --> %s", sourceUnit->GetDefinition(), targetDefinition);
     for (const auto& uWE : sourceExpression)
         {
         int     mergedExponent = uWE->m_exponent * startingExponent;
@@ -56,12 +59,12 @@ void Unit::MergeExpressions(Utf8CP definition, bvector<UnitExponent*>& targetExp
         auto it = find_if(targetExpression.begin(), targetExpression.end(), [&] (UnitExponent* a) { return strcmp(uWE->m_unit->GetName(), a->m_unit->GetName()) == 0; });
         if (it != targetExpression.end())
             {
-            LOG.debugv("%s - Merging existing UFE for %s.  With Exponent: %d", definition, (*it)->m_unit->GetName(), mergedExponent);
+            LOG.debugv("%s --> %s - Merging existing UFE for %s.  With Exponent: %d", sourceUnit->GetDefinition(), targetDefinition, (*it)->m_unit->GetName(), mergedExponent);
             (*it)->m_exponent += mergedExponent;
             }
         else
             {
-            LOG.debugv("%s - Adding UFE for %s   With Exponent: %d", definition, uWE->m_unit->GetName(), mergedExponent);
+            LOG.debugv("%s --> %s - Adding UFE for %s   With Exponent: %d", sourceUnit->GetDefinition(), targetDefinition, uWE->m_unit->GetName(), mergedExponent);
             UnitExponent* copy = new UnitExponent(uWE->m_unit, mergedExponent);
             targetExpression.push_back(copy);
             }
@@ -74,14 +77,19 @@ BentleyStatus Unit::AddUFEToExpression(bvector<UnitExponent*>& unitExpression, U
     auto it = find_if(unitExpression.begin(), unitExpression.end(), [&] (UnitExponent* a) { return strcmp(token, a->m_unit->GetName()) == 0; });
     if (it != unitExpression.end())
         {
+        LOG.debugv("%s - Merging existing UFE for %s.  With Exponent: %d", definition, (*it)->m_unit->GetName(), mergedExponent);
         (*it)->m_exponent += mergedExponent;
         unit = (*it)->m_unit;
         }
     else
         {
+        LOG.debugv("%s - Adding UFE for %s   With Exponent: %d", definition, token, mergedExponent);
         unit = UnitRegistry::Instance().LookupUnit(token);
-        UnitExponent* uWE = new UnitExponent(unit, mergedExponent);
-        unitExpression.push_back(uWE);
+        if (nullptr != unit)
+            {
+            UnitExponent* uWE = new UnitExponent(unit, mergedExponent);
+            unitExpression.push_back(uWE);
+            }
         }
     
     if (nullptr == unit)
@@ -93,9 +101,7 @@ BentleyStatus Unit::AddUFEToExpression(bvector<UnitExponent*>& unitExpression, U
     // Could probably skip this block if is base unit ... would result in smaller expression but would not fully expand dimension
     if (!(unit->IsConstant() || unit->IsBaseUnit()))
         {
-        LOG.debugv("%s - Merging sub expression for %s", definition, unit->GetName());
-        bvector<UnitExponent*> subExpression = unit->Evaluate();
-        MergeExpressions(definition, unitExpression, subExpression, mergedExponent);
+        MergeExpressions(definition, unitExpression, unit, mergedExponent);
         }
     return BentleyStatus::SUCCESS;
     }
@@ -174,6 +180,8 @@ BentleyStatus Unit::ParseDefinition(Utf8CP definition, bvector<UnitExponent*>& u
         }
 
     remove_if(unitExpression.begin(), unitExpression.end(), [&] (UnitExponent* a) { return a->m_exponent == 0; });
+
+    LOG.debugv("%s - DONE", definition);
 
     return unitExpression.size() > 0 ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;
     }

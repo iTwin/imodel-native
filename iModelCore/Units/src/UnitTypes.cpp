@@ -36,7 +36,7 @@ bool Unit::IsRegistered() const
     return UnitRegistry::Instance().HasUnit(GetName());
     }
 
-void PrintForumula(UnitCP unit, bvector<UnitExponent*> expression)
+void Unit::PrintForumula(UnitCP unit, bvector<UnitExponent*> expression) const
     {
     LOG.debugv("Formula for: %s", unit->GetName());
     Utf8String output;
@@ -81,7 +81,7 @@ double Unit::GetConversionTo(UnitCP unit) const
     return fromFactor / toFactor;
     }
 
-bvector<UnitExponent*>& Unit::Evaluate() const
+bvector<Unit::UnitExponent*>& Unit::Evaluate() const
     {
     if (!m_evaluated)
         {
