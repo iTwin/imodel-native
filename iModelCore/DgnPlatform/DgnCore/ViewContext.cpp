@@ -1002,10 +1002,7 @@ void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
 
     if (nullptr != elParams.GetLineStyle())
         {
-        LineStyleInfoCR lsInfo = *elParams.GetLineStyle();
-        LineStyleSymbCR lsSymb = lsInfo.GetLineStyleSymb();
-
-        lsInfo.Cook(context);
+        LineStyleSymbCR lsSymb = elParams.GetLineStyle()->GetLineStyleSymb();
 
         if (nullptr != lsSymb.GetILineStyle())
             {
@@ -1016,7 +1013,8 @@ void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
                 }
             else
                 {
-                m_lineTexture = lsSymb.GetTexture(); // For 2d do we need to check that this wasn't a forced texture???
+                TextureP lsTexture = lsSymb.GetTexture(); // For 2d do we need to check that this wasn't a forced texture???
+                m_lineTexture = (nullptr != lsTexture ? new LineTexture(lsTexture) : nullptr);
                 }
             }
         }
@@ -1302,6 +1300,9 @@ void GeometryParams::Resolve(DgnDbR dgnDb, DgnViewportP vp)
 void GeometryParams::Resolve(ViewContextR context)
     {
     Resolve(context.GetDgnDb(), context.GetViewport());
+
+    if (m_styleInfo.IsValid())
+        m_styleInfo->Cook(context);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -340,7 +340,7 @@ private:
 
 public:
     DGNPLATFORM_EXPORT LineStyleSymb();
-    DGNPLATFORM_EXPORT Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DPoint3dCP startTangent, DPoint3dCP endTangent, ViewContextR context);
+    DGNPLATFORM_EXPORT void Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec3dCP startTangent, DVec3dCP endTangent, ViewContextR context);
 
     void Clear() {m_lStyle = nullptr; m_texture = nullptr;}
     void Init(ILineStyleCP);
