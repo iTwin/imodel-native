@@ -74,22 +74,22 @@ DbResult DgnDb::CreateDictionaryModel()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::CreateDgnDbTables()
     {
-    CreateTable(DGN_TABLE_Domain,    "Name CHAR UNIQUE NOT NULL PRIMARY KEY,"
-                                     "Descr CHAR,"
-                                     "Version INTEGER");
+    CreateTable(DGN_TABLE_Domain,   "[Name] TEXT NOT NULL UNIQUE COLLATE NoCase PRIMARY KEY,"
+                                    "[Descr] TEXT,"
+                                    "[Version] INTEGER");
 
-    CreateTable(DGN_TABLE_Handler,   "ClassId INTEGER PRIMARY KEY,"
-                                     "Domain CHAR NOT NULL REFERENCES " DGN_TABLE_Domain "(Name),"
-                                     "Name CHAR NOT NULL COLLATE NOCASE,"
-                                     "Permissions INT,"
-                                     "CONSTRAINT names UNIQUE(Domain,Name)");
+    CreateTable(DGN_TABLE_Handler,  "[ClassId] INTEGER PRIMARY KEY,"
+                                    "[Domain] TEXT NOT NULL COLLATE NoCase REFERENCES " DGN_TABLE_Domain "([Name]),"
+                                    "[Name] TEXT NOT NULL COLLATE NoCase,"
+                                    "[Permissions] INT,"
+                                    "CONSTRAINT names UNIQUE([Domain],[Name])");
 
-    CreateTable(DGN_TABLE_Txns, "Id INTEGER PRIMARY KEY NOT NULL," 
-                           "Deleted BOOL,"
-                           "Grouped BOOL,"
-                           "Operation CHAR,"
-                           "Time TIMESTAMP DEFAULT(julianday('now')),"
-                           "Change BLOB");
+    CreateTable(DGN_TABLE_Txns, "[Id] INTEGER PRIMARY KEY NOT NULL," 
+                                "[Deleted] BOOLEAN,"
+                                "[Grouped] BOOLEAN,"
+                                "[Operation] TEXT,"
+                                "[Time] TIMESTAMP DEFAULT(julianday('now')),"
+                                "[Change] BLOB");
 
     Fonts().DbFontMap().CreateFontTable();
 
