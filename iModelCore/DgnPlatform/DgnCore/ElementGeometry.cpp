@@ -1228,7 +1228,6 @@ void GeometryStreamIO::Writer::Append(GeometryParamsCR elParams, bool ignoreSubC
         Append(Operation(OpCode::BasicSymbology, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
         }
 
-#if LINESTYLES_ENABLED
     if (nullptr != elParams.GetLineStyle() && nullptr != elParams.GetLineStyle()->GetStyleParams())
         {
         FlatBufferBuilder   fbb;
@@ -1241,7 +1240,6 @@ void GeometryStreamIO::Writer::Append(GeometryParamsCR elParams, bool ignoreSubC
         fbb.Finish(modifiers);
         Append(Operation(OpCode::LineStyleModifiers, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
         }
-#endif
 
     if (FillDisplay::Never != elParams.GetFillDisplay())
         {
@@ -1614,10 +1612,9 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
 
             if (ppfb->useStyle())
                 {
-                DgnStyleId  styleId((uint64_t)ppfb->lineStyleId());
-                DgnStyleId  currStyleId = (nullptr != elParams.GetLineStyle() ? elParams.GetLineStyle()->GetStyleId() : DgnStyleId());
+                DgnStyleId styleId((uint64_t)ppfb->lineStyleId());
 
-                if (elParams.IsLineStyleFromSubCategoryAppearance() || styleId != currStyleId)
+                if (elParams.IsLineStyleFromSubCategoryAppearance() || styleId != (nullptr != elParams.GetLineStyle() ? elParams.GetLineStyle()->GetStyleId() : DgnStyleId()))
                     {
                     if (styleId.IsValid())
                         {

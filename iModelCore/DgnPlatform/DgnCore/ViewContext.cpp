@@ -674,31 +674,6 @@ bool ViewContext::_VisitAllModelElements()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP range, bool closed)
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    if (nPts < 1)
-        return;
-
-    LineStyleSymbP  currLsSymb;
-    ILineStyleCP    currLStyle = _GetCurrLineStyle(&currLsSymb);
-
-    if (currLStyle && (nPts > 2 || !pts->IsEqual(pts[1])))
-        {
-        currLStyle->_GetComponent()->_StrokeLineString(this, currLsSymb, pts, nPts, closed);
-        return;
-        }
-
-    if (closed)
-        GetCurrentGraphicR().AddShape(nPts, pts, false, range);
-    else
-        GetCurrentGraphicR().AddLineString(nPts, pts, range);
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    12/01
-+---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_DrawStyledLineString2d(int nPts, DPoint2dCP pts, double priority, DPoint2dCP range, bool closed)
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
@@ -724,30 +699,6 @@ void ViewContext::_DrawStyledLineString2d(int nPts, DPoint2dCP pts, double prior
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   06/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_DrawStyledArc3d(DEllipse3dCR ellipse, bool isEllipse, DPoint3dCP range)
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    LineStyleSymbP  currLsSymb;
-    ILineStyleCP    currLStyle = _GetCurrLineStyle(&currLsSymb);
-
-    if (currLStyle)
-        {
-        double      r0, r1, start, sweep;
-        RotMatrix   rMatrix;
-        DPoint3d    center;
-
-        ellipse.GetScaledRotMatrix(center, rMatrix, r0, r1, start, sweep);
-        currLStyle->_GetComponent()->_StrokeArc(this, currLsSymb, &center, &rMatrix, r0, r1, isEllipse ? nullptr : &start, isEllipse ? nullptr : &sweep, range);
-        return;
-        }
-
-    GetCurrentGraphicR().AddArc(ellipse, isEllipse, false, range);
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   06/03
-+---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_DrawStyledArc2d(DEllipse3dCR ellipse, bool isEllipse, double zDepth, DPoint2dCP range)
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
@@ -767,25 +718,6 @@ void ViewContext::_DrawStyledArc2d(DEllipse3dCR ellipse, bool isEllipse, double 
         }
 
     GetCurrentGraphicR().AddArc2d(ellipse, isEllipse, false, zDepth, range);
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   06/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_DrawStyledBSplineCurve3d(MSBsplineCurveCR bcurve)
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    LineStyleSymbP  currLsSymb;
-    ILineStyleCP    currLStyle = _GetCurrLineStyle(&currLsSymb);
-
-    if (currLStyle)
-        {
-        currLStyle->_GetComponent()->_StrokeBSplineCurve(this, currLsSymb, &bcurve, nullptr);
-        return;
-        }
-
-    GetCurrentGraphicR().AddBSplineCurve(bcurve, false);
 #endif
     }
 
@@ -992,16 +924,18 @@ GraphicParams::GraphicParams()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GraphicParams::Init()
     {
-    m_lineColor         = ColorDef::Black();
-    m_fillColor         = ColorDef::Black();
     m_isFilled          = false;
     m_isBlankingRegion  = false;
-    m_rasterWidth       = 1;
-    m_patternParams     = nullptr;
-    m_gradient          = nullptr;
-    m_material          = nullptr;
     m_linePixels        = (uint32_t) LinePixels::Solid;
-    m_lStyleSymb.Clear();
+    m_rasterWidth       = 1;
+    m_lineColor         = ColorDef::Black();
+    m_fillColor         = ColorDef::Black();
+    m_trueWidthStart    = 0.0;
+    m_trueWidthEnd      = 0.0;
+    m_lineTexture       = nullptr;
+    m_material          = nullptr;
+    m_gradient          = nullptr;
+    m_patternParams     = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1066,14 +1000,26 @@ void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
         m_fillColor.SetAlpha(netTransparency);
         }
 
-    // NEEDSWORK_LINESTYLES
-    // If this is a 3d view and we have a line style then we want to convert the line style
-    // to a texture line style.  We don't do it prior to this because generating the geometry map
-    // may use the current symbology.  This seems like a horrible place to do this,
-    // so we need to come up with something better.
-    LineStyleSymb& lsSym = GetLineStyleSymbR();
-    if (nullptr == lsSym.GetTexture() && nullptr != lsSym.GetILineStyle() && context.Is3dView())
-        lsSym.ConvertLineStyleToTexture(context, true);
+    if (nullptr != elParams.GetLineStyle())
+        {
+        LineStyleInfoCR lsInfo = *elParams.GetLineStyle();
+        LineStyleSymbCR lsSymb = lsInfo.GetLineStyleSymb();
+
+        lsInfo.Cook(context);
+
+        if (nullptr != lsSymb.GetILineStyle())
+            {
+            if (lsSymb.IsContinuous()) // NOTE: QVis can handle this case for 2d and 3d...
+                {
+                m_trueWidthStart = (lsSymb.HasOrgWidth() ? lsSymb.GetOriginWidth() : lsSymb.GetEndWidth());
+                m_trueWidthEnd = (lsSymb.HasEndWidth() ? lsSymb.GetEndWidth() : lsSymb.GetOriginWidth());
+                }
+            else
+                {
+                m_lineTexture = lsSymb.GetTexture(); // For 2d do we need to check that this wasn't a forced texture???
+                }
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1085,15 +1031,22 @@ bool GraphicParams::operator==(GraphicParamsCR rhs) const
     if (this == &rhs)
         return true;
 
-    if (rhs.m_lineColor        != m_lineColor        ||
-        rhs.m_fillColor        != m_fillColor        ||
-        rhs.m_isFilled         != m_isFilled         ||
+    if (rhs.m_isFilled         != m_isFilled ||
         rhs.m_isBlankingRegion != m_isBlankingRegion ||
-        rhs.m_material         != m_material         ||
-        rhs.m_rasterWidth      != m_rasterWidth)
+        rhs.m_linePixels       != m_linePixels ||
+        rhs.m_rasterWidth      != m_rasterWidth ||
+        rhs.m_lineColor        != m_lineColor ||
+        rhs.m_fillColor        != m_fillColor ||
+        rhs.m_trueWidthStart   != m_trueWidthStart ||
+        rhs.m_trueWidthEnd     != m_trueWidthEnd ||
+        rhs.m_lineTexture      != m_lineTexture ||
+        rhs.m_material         != m_material)
         return false;
 
     if (!(rhs.m_gradient == m_gradient))
+        return false;
+
+    if (!(rhs.m_patternParams == m_patternParams))
         return false;
 
     return true;
@@ -1104,14 +1057,18 @@ bool GraphicParams::operator==(GraphicParamsCR rhs) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 GraphicParams::GraphicParams(GraphicParamsCR rhs)
     {
-    m_lineColor         = rhs.m_lineColor;
-    m_fillColor         = rhs.m_fillColor;
     m_isFilled          = rhs.m_isFilled;
     m_isBlankingRegion  = rhs.m_isBlankingRegion;
-    m_material          = rhs.m_material;
+    m_linePixels        = rhs.m_linePixels;
     m_rasterWidth       = rhs.m_rasterWidth;
-    m_lStyleSymb        = rhs.m_lStyleSymb;
+    m_lineColor         = rhs.m_lineColor;
+    m_fillColor         = rhs.m_fillColor;
+    m_trueWidthStart    = rhs.m_trueWidthStart;
+    m_trueWidthEnd      = rhs.m_trueWidthEnd;
+    m_lineTexture       = rhs.m_lineTexture;
+    m_material          = rhs.m_material;
     m_gradient          = rhs.m_gradient;
+    m_patternParams     = rhs.m_patternParams;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1119,36 +1076,20 @@ GraphicParams::GraphicParams(GraphicParamsCR rhs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 GraphicParamsR GraphicParams::operator=(GraphicParamsCR rhs)
     {
-    m_lineColor         = rhs.m_lineColor;
-    m_fillColor         = rhs.m_fillColor;
     m_isFilled          = rhs.m_isFilled;
     m_isBlankingRegion  = rhs.m_isBlankingRegion;
-    m_material          = rhs.m_material;
+    m_linePixels        = rhs.m_linePixels;
     m_rasterWidth       = rhs.m_rasterWidth;
-    m_lStyleSymb        = rhs.m_lStyleSymb;
+    m_lineColor         = rhs.m_lineColor;
+    m_fillColor         = rhs.m_fillColor;
+    m_trueWidthStart    = rhs.m_trueWidthStart;
+    m_trueWidthEnd      = rhs.m_trueWidthEnd;
+    m_lineTexture       = rhs.m_lineTexture;
+    m_material          = rhs.m_material;
     m_gradient          = rhs.m_gradient;
+    m_patternParams     = rhs.m_patternParams;
 
     return *this;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void OvrGraphicParams::Clear()
-    {
-    SetFlags(FLAGS_None);
-    m_matSymb.Init();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void  OvrGraphicParams::SetLineStyle(int32_t styleNo, DgnModelR modelRef, DgnModelR styleDgnModel, LineStyleParamsCP lStyleParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent)
-    {
-#ifdef WIP_VANCOUVER_MERGE // linestyle
-    m_matSymb.GetLineStyleSymbR().FromResolvedStyle(styleNo, modelRef, styleDgnModel, lStyleParams, context, startTangent, endTangent);
-    m_flags |= MATSYMB_OVERRIDE_Style;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1157,12 +1098,13 @@ void  OvrGraphicParams::SetLineStyle(int32_t styleNo, DgnModelR modelRef, DgnMod
 GeometryParams::GeometryParams(GeometryParamsCR rhs)
     {
     m_appearanceOverrides   = rhs.m_appearanceOverrides;
+    m_resolved              = rhs.m_resolved;
     m_categoryId            = rhs.m_categoryId;
     m_subCategoryId         = rhs.m_subCategoryId;
+    m_materialId            = rhs.m_materialId;
     m_elmPriority           = rhs.m_elmPriority;
     m_netPriority           = rhs.m_netPriority;
     m_weight                = rhs.m_weight;       
-    m_geometryClass         = rhs.m_geometryClass;       
     m_lineColor             = rhs.m_lineColor;
     m_fillColor             = rhs.m_fillColor;
     m_fillDisplay           = rhs.m_fillDisplay;
@@ -1170,11 +1112,10 @@ GeometryParams::GeometryParams(GeometryParamsCR rhs)
     m_netElmTransparency    = rhs.m_netElmTransparency;
     m_fillTransparency      = rhs.m_fillTransparency;
     m_netFillTransparency   = rhs.m_netFillTransparency;
-    m_materialId            = rhs.m_materialId;
+    m_geometryClass         = rhs.m_geometryClass;       
     m_styleInfo             = rhs.m_styleInfo;
     m_gradient              = rhs.m_gradient;
     m_pattern               = rhs.m_pattern;
-    m_resolved              = rhs.m_resolved;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1183,12 +1124,13 @@ GeometryParams::GeometryParams(GeometryParamsCR rhs)
 GeometryParamsR GeometryParams::operator=(GeometryParamsCR rhs)
     {
     m_appearanceOverrides   = rhs.m_appearanceOverrides;
+    m_resolved              = rhs.m_resolved;
     m_categoryId            = rhs.m_categoryId;
     m_subCategoryId         = rhs.m_subCategoryId;
+    m_materialId            = rhs.m_materialId;
     m_elmPriority           = rhs.m_elmPriority;
     m_netPriority           = rhs.m_netPriority;
     m_weight                = rhs.m_weight;
-    m_geometryClass         = rhs.m_geometryClass;       
     m_lineColor             = rhs.m_lineColor;
     m_fillColor             = rhs.m_fillColor;
     m_fillDisplay           = rhs.m_fillDisplay;
@@ -1196,11 +1138,10 @@ GeometryParamsR GeometryParams::operator=(GeometryParamsCR rhs)
     m_netElmTransparency    = rhs.m_netElmTransparency;
     m_fillTransparency      = rhs.m_fillTransparency;
     m_netFillTransparency   = rhs.m_netFillTransparency;
-    m_materialId            = rhs.m_materialId;
+    m_geometryClass         = rhs.m_geometryClass;       
     m_styleInfo             = rhs.m_styleInfo;
     m_gradient              = rhs.m_gradient;
     m_pattern               = rhs.m_pattern;
-    m_resolved              = rhs.m_resolved;
 
     return *this;
     }
