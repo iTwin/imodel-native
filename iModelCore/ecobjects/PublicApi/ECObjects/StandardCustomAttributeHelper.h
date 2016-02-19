@@ -452,12 +452,6 @@ private:
 public:
     ECDbForeignKeyRelationshipMap() : m_relClass(nullptr), m_ca(nullptr) {}
 
-    //! Tries to get the value of the End property from the ForeignKeyRelationshipMap.
-    //! @param[out] foreignKeyEnd End of the relationship which carries the foreign key. @p foreignKeyEnd remains unchanged, 
-    //! if the End property wasn't set in the ForeignKeyRelationshipMap.
-    //! @return ECOBJECTSTATUS_Success if End was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
-    ECOBJECTS_EXPORT ECObjectsStatus TryGetEnd(ECRelationshipEnd& foreignKeyEnd) const;
-
     //! Tries to get the value of the OnDeleteAction property from the ForeignKeyRelationshipMap.
     //! @param[out] onDeleteAction OnDelete action.  @p onDeleteAction remains unchanged, if the OnDeleteAction property 
     //! wasn't set in the ForeignKeyRelationshipMap.
@@ -465,7 +459,7 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus TryGetOnDeleteAction(Utf8StringR onDeleteAction) const;
 
     //! Tries to get the value of the OnUpdateAction property from the ForeignKeyRelationshipMap.
-    //! @param[out] onUpdateAction Onpdate action. @p onDeleteAction remains unchanged, if the OnUpdateAction property 
+    //! @param[out] onUpdateAction OnUpdate action. @p onDeleteAction remains unchanged, if the OnUpdateAction property 
     //! wasn't set in the ForeignKeyRelationshipMap.
     //! @return ECOBJECTSTATUS_Success if OnUpdateAction was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
     ECOBJECTS_EXPORT ECObjectsStatus TryGetOnUpdateAction(Utf8StringR onUpdateAction) const;
@@ -482,12 +476,6 @@ public:
     //! It remains unchanged, if the ForeignKeyColumn property wasn't set in the ForeignKeyRelationshipMap.
     //! @return ECOBJECTSTATUS_Success if ForeignKeyColumn was set or unset in the ForeignKeyRelationshipMap, error codes otherwise
     ECOBJECTS_EXPORT ECObjectsStatus TryGetForeignKeyColumn(Utf8StringR foreignKeyColumnName) const;
-
-    //! Tries to get the value of the ForeignKeyClassId property from the ForeignKeyRelationshipMap.
-    //! @param[out] foreignKeyClassIdColumnName Name of column to which ForeignKeyClassId is mapped to. 
-    //! It remains unchanged, if the ForeignKeyClassId property wasn't set in the ForeignKeyRelationshipMap.
-    //! @return ECOBJECTSTATUS_Success if ForeignKeyClassId was set or unset in the ForeignKeyRelationshipMap, error codes otherwise
-    ECOBJECTS_EXPORT ECObjectsStatus TryGetForeignKeyClassIdColumn(Utf8StringR foreignKeyClassIdColumnName) const;
     };
 	
 /** @endGroup */
