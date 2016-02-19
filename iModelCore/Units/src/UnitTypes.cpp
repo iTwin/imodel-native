@@ -36,13 +36,13 @@ bool Unit::IsRegistered() const
     return UnitRegistry::Instance().HasUnit(GetName());
     }
 
-void PrintForumula(UnitCP unit, bvector<UnitFactorExponent*> expression)
+void PrintForumula(UnitCP unit, bvector<UnitExponent*> expression)
     {
     LOG.debugv("Formula for: %s", unit->GetName());
     Utf8String output;
     for (auto const& uWE : expression)
         {
-        Utf8PrintfString uWEString("Unit: %s   UnitFactor: %lf   UnitExponent: %d", uWE->m_unit->GetName(), uWE->m_unit->GetFactor(), uWE->m_exponent);
+        Utf8PrintfString uWEString("Unit: %s   UnitFactor: %lf   UnitExponent: %d \n", uWE->m_unit->GetName(), uWE->m_unit->GetFactor(), uWE->m_exponent);
         output.append(uWEString.c_str());
         }
     LOG.debug(output.c_str());
@@ -81,7 +81,7 @@ double Unit::GetConversionTo(UnitCP unit) const
     return fromFactor / toFactor;
     }
 
-bvector<UnitFactorExponent*>& Unit::Evaluate() const
+bvector<UnitExponent*>& Unit::Evaluate() const
     {
     if (!m_evaluated)
         {
