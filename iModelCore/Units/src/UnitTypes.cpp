@@ -36,13 +36,13 @@ bool Unit::IsRegistered() const
     return UnitRegistry::Instance().HasUnit(GetName());
     }
 
-void Unit::PrintForumula(UnitCP unit, bvector<UnitExponent*> expression) const
+void Unit::PrintForumula(UnitCP unit, const bvector<UnitExponent>& expression) const
     {
     LOG.debugv("Formula for: %s", unit->GetName());
     Utf8String output;
     for (auto const& uWE : expression)
         {
-        Utf8PrintfString uWEString("Unit: %s   UnitFactor: %lf   UnitExponent: %d \n", uWE->m_unit->GetName(), uWE->m_unit->GetFactor(), uWE->m_exponent);
+        Utf8PrintfString uWEString("Unit: %s   UnitFactor: %lf   UnitExponent: %d \n", uWE.m_unit->GetName(), uWE.m_unit->GetFactor(), uWE.m_exponent);
         output.append(uWEString.c_str());
         }
     LOG.debug(output.c_str());
@@ -68,20 +68,20 @@ double Unit::GetConversionTo(UnitCP unit) const
     LOG.debugv("Starting from factor for %s: %lf", GetName(), fromFactor);
     for (auto const& uWE : m_unitFormula)
         {
-        fromFactor *= pow(uWE->m_unit->GetFactor(), uWE->m_exponent);
+        fromFactor *= pow(uWE.m_unit->GetFactor(), uWE.m_exponent);
         }
     LOG.debugv("Final From factor for %s: %lf", GetName(), fromFactor);
     double toFactor = unit->m_factor;
     LOG.debugv("Starting to factor for %s: %lf", unit->GetName(), toFactor);
     for (auto const& uWE : unit->m_unitFormula)
         {
-        toFactor *= pow(uWE->m_unit->GetFactor(), uWE->m_exponent);
+        toFactor *= pow(uWE.m_unit->GetFactor(), uWE.m_exponent);
         }
     LOG.debugv("Final To factor for %s: %lf", unit->GetName(), toFactor);
     return fromFactor / toFactor;
     }
 
-bvector<Unit::UnitExponent*>& Unit::Evaluate() const
+bvector<Unit::UnitExponent>& Unit::Evaluate() const
     {
     if (!m_evaluated)
         {
