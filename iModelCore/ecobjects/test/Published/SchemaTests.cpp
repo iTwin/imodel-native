@@ -556,6 +556,39 @@ TEST_F(SchemaDeserializationTest, InvalidStructArrayPropertySpecification)
     ASSERT_TRUE(nullptr != typeReferences2);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, CaseSensitivity)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+
+    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='CaseInsensitive' version='01.00' displayLabel='Case Insensitive' description='Testing case sensitivity with struct names and custom attributes' nameSpacePrefix='cs' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECCustomAttributeClass typeName='CustomAttrib' description='CustomAttribute' displayLabel='CA' />"
+        "    <ECStructClass typeName='MyStruct'>"
+        "        <ECProperty propertyName='Prop1' typeName='string' />"
+        "    </ECStructClass>"
+        "    <ECEntityClass typeName='Entity'>"
+        "        <ECCustomAttributes>"
+        "            <Customattrib xmlns='CaseInsensitive.01.00' />"
+        "        </ECCustomAttributes>"
+        "        <ECStructProperty propertyName='StructProp' typeName='Mystruct' />"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext);
+    EXPECT_EQ(SchemaReadStatus::Success, status);
+    ECClassP ent = schema->GetClassP("Entity");
+    ASSERT_TRUE(nullptr != ent);
+    ECPropertyP prop = ent->GetPropertyP("StructProp");
+    ASSERT_TRUE(nullptr != prop);
+    StructECPropertyP structProp = prop->GetAsStructPropertyP();
+    ASSERT_TRUE(nullptr != structProp);
+    EXPECT_TRUE(ent->IsDefined("CustomAttrib"));
+
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Raimondas.Rimkus 02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
