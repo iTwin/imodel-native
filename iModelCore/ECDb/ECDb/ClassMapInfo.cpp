@@ -518,9 +518,7 @@ BentleyStatus RelationshipMapInfo::_InitializeFromSchema()
 
     if (hasForeignKeyRelMap)
         {
-        ECRelationshipEnd foreignKeyEnd = ECRelationshipEnd_Target;
-        if (ECObjectsStatus::Success != foreignKeyRelMap.TryGetEnd(foreignKeyEnd))
-            return ERROR;
+        ECRelationshipEnd foreignKeyEnd = relClass->GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? ECRelationshipEnd_Target : ECRelationshipEnd_Source;
 
         RelationshipEndColumns* foreignKeyColumnsMapping = nullptr;
         ECRelationshipConstraintCP foreignKeyConstraint = nullptr;
@@ -560,10 +558,7 @@ BentleyStatus RelationshipMapInfo::_InitializeFromSchema()
                 }
             }
 
-        if (ECObjectsStatus::Success != foreignKeyRelMap.TryGetForeignKeyClassIdColumn(foreignKeyClassIdColName))
-            return ERROR;
-
-        *foreignKeyColumnsMapping = RelationshipEndColumns(foreignKeyColName.c_str(), foreignKeyClassIdColName.c_str());
+        *foreignKeyColumnsMapping = RelationshipEndColumns(foreignKeyColName.c_str());
 
         Utf8String onDeleteActionStr;
         if (ECObjectsStatus::Success != foreignKeyRelMap.TryGetOnDeleteAction(onDeleteActionStr))
