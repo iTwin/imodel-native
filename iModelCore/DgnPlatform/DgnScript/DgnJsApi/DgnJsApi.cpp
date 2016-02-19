@@ -81,9 +81,7 @@ JsGeometryP JsGeometricPrimitive::GetGeometry() const
         case GeometricPrimitive::GeometryType::CurveVector:
             {
             CurveVectorPtr cv = m_value->GetAsCurveVector();
-            #ifdef WIP_DGNJSAPI // *** how to tell which subclass of JsCurveVector to use?
-            #endif
-            return new JsCurveVector(cv);
+            return JsCurveVector::StronglyTypedJsCurveVector(cv);
             }
         
         case GeometricPrimitive::GeometryType::Polyface:
