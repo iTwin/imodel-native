@@ -2098,6 +2098,10 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
     READ_OPTIONAL_XML_ATTRIBUTE (constraintNode, ROLELABEL_ATTRIBUTE, this, RoleLabel);
     READ_OPTIONAL_XML_ATTRIBUTE (constraintNode, CARDINALITY_ATTRIBUTE, this, Cardinality);
     
+    // For supplemental schemas, only read in the attributes
+    if (Utf8String::npos != _GetContainerSchema()->GetName().find("_Supplemental"))
+        return SchemaReadStatus::Success;
+
     for (BeXmlNodeP constraintClassNode = constraintNode.GetFirstChild(); nullptr != constraintClassNode; constraintClassNode = constraintClassNode->GetNextSibling())
         {
         if (0 != strcmp(constraintClassNode->GetName(), EC_CONSTRAINTCLASS_ELEMENT))

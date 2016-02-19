@@ -34,5 +34,3 @@ RelationshipConstraintTests.StructKeyPropertiesNotSupported # Not yet implemente
 RelationshipConstraintTests.MultipleKeyPropertiesNotSupported # Not yet implemented
 
 RelationshipConstraintTests.MultipleConstraintClassesWithKeyPropertyNotSupported # Not yet implemented
-
-SchemaReferenceTest.ExpectSuccessWithSpecialCaseOpenPlantSchema # Notified Carole
