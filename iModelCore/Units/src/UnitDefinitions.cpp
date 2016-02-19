@@ -796,11 +796,11 @@ void AddAngularVelocity(UnitRegistry& reg)
     unit = reg.AddUnit(ANGVELOCITY, SI, "RAD/HR", "RAD*HR(-1)");
     reg.AddSynonym(unit, "RADIAN/HOUR");
     reg.AddSynonym(unit, "RADIAN_PER_HOUR");
-    unit = reg.AddUnit(ANGVELOCITY, SI, "RPS", "[PI]*RAD*S(-1)", 1.0);
+    unit = reg.AddUnit(ANGVELOCITY, SI, "RPS", "[PI2]*RAD*S(-1)", 1.0);
     reg.AddSynonym(unit, "CYCLE_PER_SECOND");
-    unit = reg.AddUnit(ANGVELOCITY, SI, "RPM", "[PI]*RAD*MIN(-1)", 1.0);
+    unit = reg.AddUnit(ANGVELOCITY, SI, "RPM", "[PI2]*RAD*MIN(-1)", 1.0);
     reg.AddSynonym(unit, "CYCLE_PER_MINUTE");
-    unit = reg.AddUnit(ANGVELOCITY, SI, "RPH", "[PI]*RAD*HOUR(-1)", 1.0);
+    unit = reg.AddUnit(ANGVELOCITY, SI, "RPH", "[PI2]*RAD*HOUR(-1)", 1.0);
     reg.AddSynonym(unit, "CYCLE_PER_HOUR");
     unit = reg.AddUnit(ANGVELOCITY, SI, "DEG/S", "ARC_DEG*S(-1)", 1.0);
     reg.AddSynonym(unit, "ARC_DEG/S");
