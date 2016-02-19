@@ -88,6 +88,7 @@ void UnitsTests::TestUnitConversion (double fromVal, Utf8CP fromUnitName, double
         {
         Utf8PrintfString loadError("Could not convert from %s to %s because could not load one of the units", fromUnitName, targetUnitName);
         loadErrors.push_back(loadError);
+        EXPECT_TRUE(false) << "Failed due to missing units: " << fromUnitName << ", " << targetUnitName;
         return;
         }
 
@@ -169,6 +170,8 @@ TEST_F(UnitsTests, TestBasiConversion)
     TestUnitConversion(8.92179121619701e6, "POUND_PER_ACRE", 1.0e6, "GRAM_PER_METRE_SQUARED", 1.0e-7, loadErrors, conversionErrors);
     TestUnitConversion(8.54292974552351e7, "FOOT_POUNDAL", 1.0, "KILOWATT_HOUR", 1.0e-6, loadErrors, conversionErrors);
     TestUnitConversion(2.37303604042319e7, "FOOT_POUNDAL", 1.0, "MEGAJOULE", 1e-7, loadErrors, conversionErrors);
+    TestUnitConversion(42, "KG/S", 42000.0, "G/S", 1e-8, loadErrors, conversionErrors);
+    TestUnitConversion(42, "CUB.M/SEC", 2.562997252e6, "CUB.IN/SEC", 1e-8, loadErrors, conversionErrors);
     }
 
 TEST_F(UnitsTests, UnitsConversion)
