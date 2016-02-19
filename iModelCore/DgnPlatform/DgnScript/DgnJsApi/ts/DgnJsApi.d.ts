@@ -380,13 +380,111 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type ComponentDefP = cxx_pointer<ComponentDef>;
 
+    class ColorDef implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor 
+    {
+        /*** NATIVE_TYPE_NAME = JsColorDef ***/ 
+
+        /** 
+         * Construct a new ColorDef
+         * @param red   The red value. 0-255.
+         * @param green   The green value. 0-255.
+         * @param blue   The blue value. 0-255.
+         * @param alpha   The alpha value. 0-255.
+         */
+        constructor(red: cxx_uint8_t, green: cxx_uint8_t, blue: cxx_uint8_t, alpha: cxx_uint8_t);
+
+        /** The red value */
+        Red: cxx_uint8_t;
+        /** The green value */
+        Green: cxx_uint8_t;
+        /** The blue value */
+        Blue: cxx_uint8_t;
+        /** The alpha value */
+        Alpha: cxx_uint8_t;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type ColorDefP = cxx_pointer<ColorDef>;
+
+    enum RenderFillDisplay { }
+    enum RenderDgnGeometryClass { }
+
+    class RenderGeometryParams implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor 
+    {
+        /*** NATIVE_TYPE_NAME = JsRenderGeometryParams ***/ 
+
+        /** Construct a new empty RenderGeometryParams */
+        constructor();
+
+        /** The geometry's Category */
+        CategoryId: DgnObjectIdP;
+        /** The geometry's SubCategory */
+        SubCategoryId: DgnObjectIdP;
+        /** The geometry's weight. Must be an integer between 0 and ... */
+        Weight: cxx_uint32_t;
+        /** The geometry's line color. */
+        LineColor: ColorDefP;
+        /** Specify if or when the geometry should be filled. */
+        FillDisplay: cxx_enum_class_uint32_t<RenderFillDisplay>;
+        /** The geometry's fill color. */
+        FillColor: ColorDefP;
+        /** Set the geometry's fill color to match the view background. */
+        SetFillColorToViewBackground(): void;
+        /** The geometry class */
+        GeometryClass: cxx_enum_class_uint32_t<RenderDgnGeometryClass>;
+        /** The geometry's transparency. Must be a floating point number between ... */
+        Transparency: cxx_double;
+        /** The geometry's fill transparency. Must be a floating point number between ... */
+        FillTransparency: cxx_double;
+        /** The geometry's display priority. Must be an integer between ... */
+        DisplayPriority: cxx_int32_t;
+        /** The geometry's material. */
+        MaterialId: DgnObjectIdP;
+
+        /* *** TBD:  PatternParams, Gradient, LineStyle */
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type RenderGeometryParamsP = cxx_pointer<RenderGeometryParams>;
+
     class GeometryBuilder implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsGeometryBuilder ***/ 
+
+        /**
+         * Construct a new GeometryBuilder
+         * @param el    The element to which this geometry will be attached
+         * @param o     The placement origin
+         * @param angles The placement angles
+         * @see SetGeometryStreamAndPlacement for how to attach the geometry in this builder to an element.
+        */
         constructor(el: DgnElementP, o: DPoint3dP, angles: YawPitchRollAnglesP);
-        Append(geometry: GeometryP): void;
-        AppendSolidPrimitive(geometry: SolidPrimitiveP): void;
-        SetGeometryStreamAndPlacement(element: DgnElementP): cxx_double;
+        /**
+         * Append RenderGeometryParams to the builder. 
+         * @param params The parameters to apply to subsequent geometry
+         */
+        AppendRenderGeometryParams(params: RenderGeometryParamsP): void;
+        /**
+         * Append a SubCategoryId to the builder. 
+         * @param subcategoryId The SubCategoryId to apply to subsequent geometry.
+         */
+        AppendSubCategoryId(subcategoryId: DgnObjectIdP): void;
+        /**
+         * Append a geometry of some kind
+         * @param geometry  The geometry
+         */
+        AppendGeometry(geometry: GeometryP): void;
+        /**
+         * Attach the geometry in this builder to an element.
+         * @param element   The elment
+         * @return non-zero error status if \a element is invalid or if this geometry stream is invalid
+         */
+        SetGeometryStreamAndPlacement(element: DgnElementP): cxx_int32_t;
+
         OnDispose(): void;
         Dispose(): void;
     }

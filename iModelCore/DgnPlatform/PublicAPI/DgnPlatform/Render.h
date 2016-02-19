@@ -13,6 +13,7 @@
 #include "ImageUtilities.h"
 #include "AreaPattern.h"
 #include <Bentley/BeTimeUtilities.h>
+#include <BeJavaScriptTools/BeJavaScriptTools.h>
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
 
@@ -311,7 +312,10 @@ public:
 struct ISprite;
 struct DgnOleDraw;
 
-enum class FillDisplay //!< Whether a closed region should be drawn for wireframe display with its internal area filled or not.
+#ifdef WIP_DGNJSAPI // *** -- need a way to specify both the TS namespace and the C++ namespace
+BEJAVASCRIPT_EXPORT_CLASS (BentleyApi.DgnPlatform.Render)
+#endif
+enum class FillDisplay : uint32_t //!< Whether a closed region should be drawn for wireframe display with its internal area filled or not.
 {
     Never    = 0, //!< don't fill, even if fill attribute is on for the viewport
     ByView   = 1, //!< fill if the fill attribute is on for the viewport
@@ -319,7 +323,10 @@ enum class FillDisplay //!< Whether a closed region should be drawn for wirefram
     Blanking = 3, //!< always fill, fill will always be behind subsequent geometry
 };
 
-enum class DgnGeometryClass
+#ifdef WIP_DGNJSAPI // *** -- need a way to specify both the TS namespace and the C++ namespace
+BEJAVASCRIPT_EXPORT_CLASS (BentleyApi.DgnPlatform.Render)
+#endif
+enum class DgnGeometryClass : uint32_t
 {
     Primary      = 0,
     Construction = 1,

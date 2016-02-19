@@ -39,23 +39,27 @@ dgnJsApiTsDir = $(dgnScriptDir)DgnJsApi/ts/
 # Generate our Object Model ts declarations by scanning native code source files for special BEJAVASCRIPT_ comments
 # *** When you define new wrapper clases, add the source file to this list
 # ---------------------------------------------------------------------------------------------------------------
-$(dgnScriptGen)DgnJsApiCallbacks.cpp, $(dgnScriptGen)DgnJsApi.ts : $(dgnJsApiTsDir)DgnJsApi.d.ts $(dgnJsApiTsDir)DgnJsApiCallbacksTemplate.cpp $(dgnJsApiTsDir)DgnJsApiProjectionTemplate.h $(DgnPlatformAPISrc)DgnJsApi.h
+platformHeaderFilesWithJsDecls = $(DgnPlatformAPISrc)DgnPlatform.h $(DgnPlatformApiSrc)Render.h $(DgnPlatformAPISrc)DgnJsApi.h
+
+$(dgnScriptGen)DgnJsApiCallbacks.cpp, $(dgnScriptGen)DgnJsApi.ts : $(dgnJsApiTsDir)DgnJsApi.d.ts $(dgnJsApiTsDir)DgnJsApiCallbacksTemplate.cpp $(dgnJsApiTsDir)DgnJsApiProjectionTemplate.h $(platformHeaderFilesWithJsDecls)
     $(msg)
-    python $(BuildContext)SubParts/BeJavaScriptTools/createJavaScriptNativeProjection.py \
-        --declarationPath "$(dgnJsApiTsDir)DgnJsApi.d.ts" \
-        --nativeOutputTemplatePath "$(dgnJsApiTsDir)DgnJsApiCallbacksTemplate.cpp" \
-        --nativeOutputHeaderTemplatePath "$(dgnJsApiTsDir)DgnJsApiProjectionTemplate.h" \
-        --nativeSourcePaths "$(DgnPlatformAPISrc)DgnPlatform.h $(DgnPlatformAPISrc)DgnJsApi.h" \
-        --typeScriptOutputPath "$(dgnScriptGen)DgnJsApi.ts" \
-        --nativeOutputPath "$(dgnScriptGen)DgnJsApiCallbacks.cpp" \
-        --nativeOutputHeaderPath "$(dgnScriptGen)DgnPlatform/DgnJsApiProjection.h" \
-        --projectionTypeName "BentleyApi::Dgn::DgnJsApiProjection" \
-        --refCountedBaseType "BentleyApi::Dgn::RefCountedBaseWithCreate" \
-        --platformTsLibPath "$(BuildContext)SubParts/BeJavaScriptJs/BeJavaScriptTypes.ts" \
-        --exportMacroName "DGNPLATFORM_EXPORT" \
-        --forceBuiltInTsTypes \
-        --suppressTypeAliases \
+    > $(dgnScriptGen)DgnJsApiCallbacks.rsp
+        --declarationPath "$(dgnJsApiTsDir)DgnJsApi.d.ts" 
+        --nativeOutputTemplatePath "$(dgnJsApiTsDir)DgnJsApiCallbacksTemplate.cpp" 
+        --nativeOutputHeaderTemplatePath "$(dgnJsApiTsDir)DgnJsApiProjectionTemplate.h" 
+        --nativeSourcePaths "$(platformHeaderFilesWithJsDecls)" 
+        --typeScriptOutputPath "$(dgnScriptGen)DgnJsApi.ts" 
+        --nativeOutputPath "$(dgnScriptGen)DgnJsApiCallbacks.cpp" 
+        --nativeOutputHeaderPath "$(dgnScriptGen)DgnPlatform/DgnJsApiProjection.h" 
+        --projectionTypeName "BentleyApi::Dgn::DgnJsApiProjection" 
+        --refCountedBaseType "BentleyApi::Dgn::RefCountedBaseWithCreate" 
+        --platformTsLibPath "$(BuildContext)SubParts/BeJavaScriptJs/BeJavaScriptTypes.ts" 
+        --exportMacroName "DGNPLATFORM_EXPORT" 
+        --forceBuiltInTsTypes 
+        --suppressTypeAliases 
         --tscCommand "$(TypeScriptCompile)"
+        <
+        python $(BuildContext)SubParts/BeJavaScriptTools/createJavaScriptNativeProjection.py $(dgnScriptGen)DgnJsApiCallbacks.rsp
     ~time
 
 
