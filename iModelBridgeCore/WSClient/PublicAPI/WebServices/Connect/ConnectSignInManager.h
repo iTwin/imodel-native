@@ -9,11 +9,11 @@
 //__PUBLISH_SECTION_START__
 
 #include <WebServices/Client/WebServicesClient.h>
-#include <MobileDgn/MobileDgnApplication.h>
-#include <WebServices/Connect/SamlToken.h>
 #include <MobileDgn/Utils/Http/AuthenticationHandler.h>
 #include <WebServices/Connect/IConnectAuthenticationPersistence.h>
 #include <WebServices/Connect/IConnectAuthenticationProvider.h>
+#include <WebServices/Connect/IConnectTokenProvider.h>
+#include <WebServices/Connect/SamlToken.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
@@ -35,12 +35,16 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
             };
 
     private:
+        mutable BeCriticalSection m_cs;
         std::shared_ptr<IConnectAuthenticationPersistence> m_persistence;
+        bmap<Utf8String, IConnectTokenProviderPtr> m_tokenProviders;
         std::function<void()> m_tokenExpiredHandler;
 
     private:
         ConnectSignInManager();
         bool IsTokenBasedAuthentication();
+        IConnectTokenProviderPtr GetTokenProvider(Utf8StringCR rpUri);
+        void ClearSignInData();
 
     public:
         //! Must be created after mobileDgn is initialized
@@ -59,10 +63,10 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         //! Will be called when token expiration is detected
         WSCLIENT_EXPORT void SetTokenExpiredHandler(std::function<void()> handler);
 
-        WSCLIENT_EXPORT std::shared_ptr<AuthenticationHandler> GetAuthenticationHandler
-            (
-            Utf8StringCR serverUrl,
-            IHttpHandlerPtr customHandler = nullptr
-            ) override;
+        //! Get authentication handler for specific server.
+        //! Will configure each request to validate TLS certificate depending on UrlProvider environment.
+        //! @param serverUrl should contain server URL without any directories
+        //! @param httpHandler optional custom HTTP handler to send all requests trough
+        WSCLIENT_EXPORT AuthenticationHandlerPtr GetAuthenticationHandler(Utf8StringCR rpUrl, IHttpHandlerPtr httpHandler = nullptr) override;
     };
 END_BENTLEY_WEBSERVICES_NAMESPACE

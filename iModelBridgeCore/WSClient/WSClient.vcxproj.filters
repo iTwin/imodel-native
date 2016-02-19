@@ -357,6 +357,9 @@
     <ClCompile Include="Connect\ConnectSessionAuthenticationPersistence.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Connect\DelegationTokenProvider.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client\WebApi\WebApi.h">
@@ -777,6 +780,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Connect\IConnectAuthenticationProvider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Connect\DelegationTokenProvider.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

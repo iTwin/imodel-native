@@ -24,11 +24,10 @@ struct EXPORT_VTABLE_ATTRIBUTE IConnectAuthenticationProvider
         virtual ~IConnectAuthenticationProvider()
             {};
 
-        virtual std::shared_ptr<AuthenticationHandler> GetAuthenticationHandler
-            (
-            Utf8StringCR serverUrl,
-            IHttpHandlerPtr customHandler = nullptr
-            ) = 0;
+        //! Get authentication handler for specific service server
+        //! @param serverUrl should contain server URL without any directories
+        //! @param httpHandler optional custom HTTP handler to send all requests trough
+        virtual AuthenticationHandlerPtr GetAuthenticationHandler(Utf8StringCR serverUrl, IHttpHandlerPtr httpHandler = nullptr) = 0;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

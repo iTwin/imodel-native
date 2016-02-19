@@ -21,8 +21,9 @@ ConnectMkiHeaders = $(ConnectMkiPublicApiDir)Authentication.h                   
                     $(ConnectMkiPublicApiDir)ConnectSetup.h                               \
                     $(ConnectMkiPublicApiDir)ConnectSignInManager.h                       \
                     $(ConnectMkiPublicApiDir)ConnectSpaces.h                              \
-                    $(ConnectMkiPublicApiDir)EulaClient.h                                 \
                     $(ConnectMkiPublicApiDir)ConnectTokenProvider.h                       \
+                    $(ConnectMkiPublicApiDir)DelegationTokenProvider.h                    \
+                    $(ConnectMkiPublicApiDir)EulaClient.h                                 \
                     $(ConnectMkiPublicApiDir)IConnectAuthenticationPersistence.h          \
                     $(ConnectMkiPublicApiDir)IConnectAuthenticationProvider.h             \
                     $(ConnectMkiPublicApiDir)IConnectTokenProvider.h                      \
@@ -51,9 +52,11 @@ $(o)ConnectSignInManager$(oext)             : $(ConnectMkiSourceDir)ConnectSignI
 
 $(o)ConnectSpaces$(oext)                    : $(ConnectMkiSourceDir)ConnectSpaces.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 
-$(o)EulaClient$(oext)                       : $(ConnectMkiSourceDir)EulaClient.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
-
 $(o)ConnectTokenProvider$(oext)             : $(ConnectMkiSourceDir)ConnectTokenProvider.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
+
+$(o)DelegationTokenProvider$(oext)          : $(ConnectMkiSourceDir)DelegationTokenProvider.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
+
+$(o)EulaClient$(oext)                       : $(ConnectMkiSourceDir)EulaClient.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 
 $(o)Passport$(oext)                         : $(ConnectMkiSourceDir)Passport.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 

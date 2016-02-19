@@ -25,3 +25,6 @@ FileUtilTests.TruncateFilePath_PathIsFolder_Error
 
 #Fails on iOS; Vincas said to ignore
 ECDbAdapterTests.*
+
+# Pending fix on UniqueTaskHolder
+ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent
