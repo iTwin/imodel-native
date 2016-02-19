@@ -591,6 +591,18 @@
         <ECProperty propertyName="FooterColumnTextHeight" typeName="double"/>
         <ECProperty propertyName="TextSymbKey" typeName="int"/>
     </ECEntityClass>
+    <ECRelationshipClass typeName="AnnotationTableOwnsHeader" strength="embedding">
+        <Source cardinality="(1,1)" polymorphic="false">
+            <Class class="AnnotationTable"/>
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="false">
+            <Class class="AnnotationTableHeader">
+                <Key>
+                    <Property name="ECInstanceId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="AnnotationTableRow">
         <!-- The aspect that holds properties of a row of an AnnotationTable -->
@@ -604,6 +616,18 @@
         <ECProperty propertyName="HeightLock" typeName="boolean"/>
         <ECProperty propertyName="Height" typeName="double"/>
     </ECEntityClass>
+    <ECRelationshipClass typeName="AnnotationTableOwnsRow" strength="embedding">
+        <Source cardinality="(1,1)" polymorphic="false">
+            <Class class="AnnotationTable"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="false">
+            <Class class="AnnotationTableRow">
+                <Key>
+                    <Property name="ElementId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="AnnotationTableColumn">
         <!-- The aspect that holds properties of a column of an AnnotationTable -->
@@ -617,6 +641,18 @@
         <ECProperty propertyName="WidthLock" typeName="boolean"/>
         <ECProperty propertyName="Width" typeName="double"/>
     </ECEntityClass>
+    <ECRelationshipClass typeName="AnnotationTableOwnsColumn" strength="embedding">
+        <Source cardinality="(1,1)" polymorphic="false">
+            <Class class="AnnotationTable"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="false">
+            <Class class="AnnotationTableColumn">
+                <Key>
+                    <Property name="ElementId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
 
     <ECStructClass typeName="AnnotationTableCellIndex">
         <ECProperty propertyName="RowIndex" typeName="int"/>
@@ -629,6 +665,14 @@
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+                <Indexes>
+                    <DbIndex>
+                        <IsUnique>False</IsUnique>
+                        <Properties>
+                            <string>ElementId</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
             </ClassMap>
         </ECCustomAttributes>
         <ECStructProperty propertyName="CellIndex" typeName="AnnotationTableCellIndex"/>
@@ -641,6 +685,18 @@
         <ECProperty propertyName="MarginLeft" typeName="double"/>
         <ECProperty propertyName="MarginRight" typeName="double"/>
     </ECEntityClass>
+    <ECRelationshipClass typeName="AnnotationTableOwnsCell" strength="embedding">
+        <Source cardinality="(1,1)" polymorphic="false">
+            <Class class="AnnotationTable"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="false">
+            <Class class="AnnotationTableCell">
+                <Key>
+                    <Property name="ElementId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="AnnotationTableMerge">
         <!-- The aspect that holds properties describing merging of cells in an AnnotationTable -->
@@ -654,6 +710,18 @@
         <ECProperty propertyName="RowSpan" typeName="int"/>
         <ECProperty propertyName="ColumnSpan" typeName="int"/>
     </ECEntityClass>
+    <ECRelationshipClass typeName="AnnotationTableOwnsMerge" strength="embedding">
+        <Source cardinality="(1,1)" polymorphic="false">
+            <Class class="AnnotationTable"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="false">
+            <Class class="AnnotationTableMerge">
+                <Key>
+                    <Property name="ElementId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="AnnotationTableSymbology">
         <!-- The aspect that holds properties describing symbology in an AnnotationTable -->
@@ -671,6 +739,18 @@
         <ECProperty propertyName="LineStyleScale" typeName="double"/>
         <ECProperty propertyName="FillColor" typeName="int"/>
     </ECEntityClass>
+    <ECRelationshipClass typeName="AnnotationTableOwnsSymbology" strength="embedding">
+        <Source cardinality="(1,1)" polymorphic="false">
+            <Class class="AnnotationTable"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="false">
+            <Class class="AnnotationTableSymbology">
+                <Key>
+                    <Property name="ElementId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="AnnotationTableEdgeRun">
         <!-- The aspect that holds properties describing edges in an AnnotationTable -->
@@ -686,6 +766,18 @@
         <ECProperty propertyName="Span" typeName="int"/>
         <ECProperty propertyName="SymbologyKey" typeName="int"/>
     </ECEntityClass>
+    <ECRelationshipClass typeName="AnnotationTableOwnsEdgeRun" strength="embedding">
+        <Source cardinality="(1,1)" polymorphic="false">
+            <Class class="AnnotationTable"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="false">
+            <Class class="AnnotationTableEdgeRun">
+                <Key>
+                    <Property name="ElementId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="ViewAttachment">
         <!-- A reference to a ViewDefinition, placed onto a sheet -->
