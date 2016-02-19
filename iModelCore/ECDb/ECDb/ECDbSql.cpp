@@ -1450,6 +1450,7 @@ Utf8String DDLGenerator::GetColumnDDL(ECDbSqlColumn const& o)
             case ECDbSqlColumn::Type::Boolean:
                 sql.append(" BOOLEAN"); break;
             case ECDbSqlColumn::Type::DateTime:
+                sql.append(" TIMESTAMP"); break;
             case ECDbSqlColumn::Type::Double:
                 sql.append(" DOUBLE"); break;
             case ECDbSqlColumn::Type::Integer:
