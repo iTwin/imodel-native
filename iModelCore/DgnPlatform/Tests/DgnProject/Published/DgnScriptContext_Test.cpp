@@ -135,7 +135,7 @@ TEST_F(DgnScriptTest, TestEga)
         var boxSize = new Bentley.Dgn.DPoint3d(params.X, params.Y, params.Z); \
         var box = Bentley.Dgn.DgnBox.CreateCenteredBox (new Bentley.Dgn.DPoint3d(0,0,0), boxSize, true); \
         var builder = new Bentley.Dgn.GeometryBuilder(element, origin, angles); \
-        builder.Append(box); \
+        builder.AppendGeometry(box); \
         builder.SetGeometryStreamAndPlacement(element); \
         return 0;\
     } \

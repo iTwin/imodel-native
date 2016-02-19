@@ -72,16 +72,20 @@ module DgnScriptTests {
         //  Try out GeometryBuilder
         var builder = new be.GeometryBuilder(ele, new be.DPoint3d(0, 0, 0), new be.YawPitchRollAngles(0, 0, 0));
 
-        var gparams = new be.RenderGeometryParams();
+        //  1, add RenderGeometryParams. We will look for this in the collection test below
+        var gparams = builder.GeometryParams;
         gparams.LineColor = new be.ColorDef(255, 0, 0, 0);
+        gparams.GeometryClass = be.RenderDgnGeometryClass.Construction;
         builder.AppendRenderGeometryParams(gparams);
 
         var shiftCount = 0;
 
+        //  2, add DgnSphere. We will look for this in the collection test below
         var sphere = be.DgnSphere.CreateSphere(new be.DPoint3d(0, 0, 0), 1.0);
         Shift (sphere, shiftCount, 0);
         builder.AppendGeometry(sphere);
 
+        //  3, add DgnCone. We will look for this in the collection test below
         var cone = be.DgnCone.CreateCircularCone (
                 new be.DPoint3d (0,0,0),
                 new be.DPoint3d (1,1,0),
@@ -159,9 +163,61 @@ module DgnScriptTests {
 
         ele.Insert();
 
+        //  Test GeometryCollection 
+        var geomcollection = ele.Geometry;
+        var geomcollectionIter = geomcollection.Begin();
+        var igeom = 0;
+        while (geomcollection.IsValid(geomcollectionIter))
+        {
+            var geomParams = geomcollection.GetGeometryParams(geomcollectionIter);
+            var lineColor = geomParams.LineColor;
+            if (lineColor.Red != 255 || lineColor.Blue != 0 || lineColor.Green != 0)
+                be.Script.ReportError('append GeometryParams failed - LineColor');
+
+            if (geomParams.GeometryClass != be.RenderDgnGeometryClass.Construction)
+                be.Script.ReportError('append GeometryParams failed - RenderDgnGeometryClass');
+
+            var geomPrim = geomcollection.GetGeometry(geomcollectionIter);
+            if (igeom == 0)
+            {
+                if (!geomPrim)                
+                    be.Script.ReportError('first item should be a sphere');
+                var geom = geomPrim.Geometry;
+                /* *** WIP_DGNJSAPI - sub-classes of Geometry are not yet being exposed 
+                if (!(geom instanceof be.DgnSphere))
+                    be.Script.ReportError('first item should be a sphere');
+                var sphere: be.DgnSphere = <be.DgnSphere>geom;
+                if (!sphere)
+                    be.Script.ReportError('first item should be a sphere');
+                */
+            }
+            else if (igeom == 1)
+            {
+                if (!geomPrim)
+                    be.Script.ReportError('first item should be a cone');
+                /* *** WIP_DGNJSAPI - sub-classes of Geometry are not yet being exposed 
+                var geom = geomPrim.Geometry;
+                if (!(geom instanceof be.DgnCone))
+                    be.Script.ReportError('first item should be a cone');
+                var cone: be.DgnCone = <be.DgnCone>geom;
+                if (!cone)
+                    be.Script.ReportError('first item should be a cone');
+                */
+            }
+
+            geomcollection.ToNext(geomcollectionIter);
+        }
+
+        //  Test Element.Transform
+        if (ele.Placement.Angles.YawDegrees != 0.0)
+            be.Script.ReportError('Element should have been unrotated initially');
+
         var rotateTransform = be.Transform.CreateRotationAroundRay(new be.DRay3d(new be.DPoint3d(0, 0, 0), new be.DVector3d(0, 0, 1)), be.Angle.CreateDegrees(45.0));
         ele.Transform(rotateTransform);
         ele.Update();
+
+        if (ele.Placement.Angles.YawDegrees != 45.0)
+            be.Script.ReportError('Element.Transform failed');
 
         //  EC API
         var schemas: be.SchemaManager = db.Schemas;

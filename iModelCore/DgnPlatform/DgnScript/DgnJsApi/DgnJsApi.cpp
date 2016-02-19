@@ -14,6 +14,8 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnJsApi.h>
 #include <DgnPlatform/DgnJsApiProjection.h>
+#include <Geom/SolidPrimitive.h>
+#include <DgnPlatform/GeomJsTypes/JsCurvePrimitive.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
@@ -50,6 +52,75 @@ JsGeometryBuilder::JsGeometryBuilder(JsDgnElementP e, JsDPoint3dP o, JsYawPitchR
         if (nullptr != source2d)
             m_builder = GeometryBuilder::Create(*source2d, DPoint2d::From(o->GetX(), o->GetY()), AngleInDegrees::FromDegrees(a->GetYawDegrees ()));
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      02/16
+//---------------------------------------------------------------------------------------
+JsGeometryCollectionP JsPhysicalElement::GetGeometry() const {return new JsGeometryCollection(*m_el->ToGeometrySource());}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      02/16
+//---------------------------------------------------------------------------------------
+JsGeometryP JsGeometricPrimitive::GetGeometry() const 
+    {
+    switch (m_value->GetGeometryType())
+        {
+        case GeometricPrimitive::GeometryType::CurvePrimitive:
+            {
+            ICurvePrimitivePtr curve = m_value->GetAsICurvePrimitive();
+            switch (curve->GetCurvePrimitiveType())
+                {
+                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line               : return new JsLineSegment(curve);
+                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc                : return new JsEllipticArc(curve);
+                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Catenary           : return new JsCatenaryCurve(curve);
+                }
+            return new JsCurvePrimitive(curve);
+            }
+        
+        case GeometricPrimitive::GeometryType::CurveVector:
+            {
+            CurveVectorPtr cv = m_value->GetAsCurveVector();
+            #ifdef WIP_DGNJSAPI // *** how to tell which subclass of JsCurveVector to use?
+            #endif
+            return new JsCurveVector(cv);
+            }
+        
+        case GeometricPrimitive::GeometryType::Polyface:
+            return new JsPolyfaceMesh(m_value->GetAsPolyfaceHeader());
+
+        case GeometricPrimitive::GeometryType::SolidPrimitive:
+            {
+            ISolidPrimitivePtr solid = m_value->GetAsISolidPrimitive();
+            switch (solid->GetSolidPrimitiveType())
+                {
+                case SolidPrimitiveType::SolidPrimitiveType_DgnBox: return new JsDgnBox(solid);
+                case SolidPrimitiveType::SolidPrimitiveType_DgnTorusPipe: return new JsDgnTorusPipe(solid);
+                case SolidPrimitiveType::SolidPrimitiveType_DgnCone: return new JsDgnCone(solid);
+                case SolidPrimitiveType::SolidPrimitiveType_DgnSphere: return new JsDgnSphere(solid);
+                case SolidPrimitiveType::SolidPrimitiveType_DgnExtrusion: return new JsDgnExtrusion(solid);
+                case SolidPrimitiveType::SolidPrimitiveType_DgnRotationalSweep: return new JsDgnRotationalSweep(solid);
+                case SolidPrimitiveType::SolidPrimitiveType_DgnRuledSweep: return new JsDgnRuledSweep(solid);
+                }
+            return new JsSolidPrimitive(solid);
+            }
+        }
+
+    #ifdef WIP_DGNJSAPI // *** How to wrap BsplineSurface?
+        case GeometricPrimitive::GeometryType::BsplineSurface:
+            return new JsBsplineSurface(m_value->GetAsMSBsplineSurface());
+    #endif
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      02/16
+//---------------------------------------------------------------------------------------
+JsTextStringP JsGeometricPrimitive::GetTextString()  const
+    {
+    auto ts = m_value->GetAsTextString();
+    return nullptr;
     }
 
 //---------------------------------------------------------------------------------------

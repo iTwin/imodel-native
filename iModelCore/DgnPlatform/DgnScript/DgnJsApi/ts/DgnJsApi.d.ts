@@ -248,6 +248,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         */
         Transform(transform: TransformP): cxx_int32_t;
 
+        /** The element's geometry (read-only) */
+        Geometry: GeometryCollectionP;
+
         /**
          * Create a new PhysicalElement
          * @param model The model that is to contain the new element
@@ -451,6 +454,114 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type RenderGeometryParamsP = cxx_pointer<RenderGeometryParams>;
 
+    class TextString implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
+    {
+        /*** NATIVE_TYPE_NAME = JsTextString ***/
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type TextStringP = cxx_pointer<TextString>;
+
+    class GeometricPrimitive implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
+    {
+        /*** NATIVE_TYPE_NAME = JsGeometricPrimitive ***/
+
+        /** If the primitive is pure geometry, then this property returns its geometry */
+        Geometry: GeometryP;
+        /** If the primitive is a text string, then this property returns its text string */
+        TextString: TextStringP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type GeometricPrimitiveP = cxx_pointer<GeometricPrimitive>;
+
+    class DgnGeometryPart implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
+    {
+        /*** NATIVE_TYPE_NAME = JsDgnGeometryPart ***/
+
+        // *** TBD
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type DgnGeometryPartP = cxx_pointer<DgnGeometryPart>;
+
+    class GeometryCollectionIterator implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
+    {
+        /*** NATIVE_TYPE_NAME = JsGeometryCollectionIterator ***/
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type GeometryCollectionIteratorP = cxx_pointer<GeometryCollectionIterator>;
+
+    class GeometryCollection implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
+    {
+        /*** NATIVE_TYPE_NAME = JsGeometryCollection ***/
+
+        /**
+         * Get an interator that points to the first item in this collection 
+         */
+        Begin(): GeometryCollectionIteratorP;
+
+        /**
+         * Test if this iterator is not at the end of the collection
+         * @param iter  The iterator
+         * @return true if the iterator is not at the end of the collection
+         */
+        IsValid(iter: GeometryCollectionIteratorP): cxx_bool;
+
+        /**
+         * Move to the next item in this collection.
+         * @param iter  The iterator
+         * @return true if the new position of the iterator is not at the end of the collection
+         */
+        ToNext(iter: GeometryCollectionIteratorP): cxx_bool;
+
+        /**
+         * Get the GeometricPrimitive at the specified position in this collection.
+         * @param iter  The iterator
+         * @return a GeometricPrimiive or null if the current item is not a primitive.
+         * @see GetGeometryPart
+         * @see GetGeometryToWorld
+         */
+        GetGeometry(iter: GeometryCollectionIteratorP): GeometricPrimitiveP;
+
+        /**
+         * Get the DgnGeometryPart at the specified position in this collection.
+         * @param iter  The iterator
+         * @return a DgnGeometryPart or null if the current item is not a GeomPart reference.
+         * @see GetGeometry
+         * @see GetGeometryToWorld
+         */
+        GetGeometryPart(iter: GeometryCollectionIteratorP): DgnGeometryPartP;
+
+        /**
+         * Get the transform that relates the GeometricPrimitive at the specified position in this collection to the world coordinate system. 
+         * @param iter  The iterator
+         * @return The transform
+         */
+        GetGeometryToWorld(iter: GeometryCollectionIteratorP): TransformP;
+
+        /**
+         * Get the RenderGeometryParams that apply to geometry at the specified position in this collection.
+         * @param iter  The iterator
+         */
+        GetGeometryParams(iter: GeometryCollectionIteratorP): RenderGeometryParamsP;
+
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type GeometryCollectionP = cxx_pointer<GeometryCollection>;
+
     class GeometryBuilder implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsGeometryBuilder ***/ 
@@ -468,16 +579,22 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
          * @param params The parameters to apply to subsequent geometry
          */
         AppendRenderGeometryParams(params: RenderGeometryParamsP): void;
+
+        /** The RenderGeometryParams that will be applied to geometry appended to the builder. */
+        GeometryParams: RenderGeometryParamsP;
+
         /**
          * Append a SubCategoryId to the builder. 
          * @param subcategoryId The SubCategoryId to apply to subsequent geometry.
          */
         AppendSubCategoryId(subcategoryId: DgnObjectIdP): void;
+
         /**
          * Append a geometry of some kind
          * @param geometry  The geometry
          */
         AppendGeometry(geometry: GeometryP): void;
+
         /**
          * Attach the geometry in this builder to an element.
          * @param element   The elment
