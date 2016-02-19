@@ -259,9 +259,9 @@ struct ECDbSqlColumn : NonCopyableClass
         Double = 4, 
         Integer = 5, 
         Long = 6, 
-        String = 7,
-        Json = 8
+        String = 7
         };
+
     struct Constraint : NonCopyableClass
         {
     public:
@@ -311,7 +311,7 @@ struct ECDbSqlColumn : NonCopyableClass
             : m_name(name), m_ownerTable(owner), m_type(type), m_persistenceType(persistenceType), m_kind(ColumnKind::DataColumn), m_id(id)
             {}
 
-        virtual ~ECDbSqlColumn() {}
+        ~ECDbSqlColumn() {}
 
         ECDbColumnId GetId() const { return m_id; }
         void SetId(ECDbColumnId id) { m_id = id; }
@@ -322,16 +322,18 @@ struct ECDbSqlColumn : NonCopyableClass
         ECDbSqlTable&  GetTableR() const { return m_ownerTable; }
         Constraint const& GetConstraint() const { return m_constraints; };
         Constraint& GetConstraintR() { return m_constraints; };
-        bool IsReusable() const { return m_type == Type::Any; }
-        static Type StringToType(Utf8CP typeName);
-        static Utf8CP TypeToString(Type type);
+
         ColumnKind GetKind() const { return m_kind; }
         BentleyStatus SetKind(ColumnKind);
         BentleyStatus AddKind(ColumnKind);
-        const Utf8String GetFullName() const;
+
+        bool IsReusable() const { return m_type == Type::Any; }
+        Utf8String GetFullName() const;
         std::weak_ptr<ECDbSqlColumn> GetWeakPtr() const;
 
-        static const Utf8String BuildFullName(Utf8CP table, Utf8CP column);
+        static Type PrimitiveTypeToColumnType(ECN::PrimitiveType type);
+        static bool IsCompatible(Type lhs, Type rhs);
+        static Utf8String BuildFullName(Utf8CP table, Utf8CP column);
         static Utf8CP KindToString(ColumnKind);
     };
 
@@ -605,21 +607,6 @@ public:
 
     static BentleyStatus AddColumns(ECDbR, ECDbSqlTable const&, std::vector<Utf8CP> const& newColumns);
     static BentleyStatus CopyRows(ECDbR, Utf8CP sourceTable, bvector<Utf8String>& sourceColumns, Utf8CP targetTable, bvector<Utf8String>& targetColumns);
-    };
-
-
-//======================================================================================
-// @bsiclass                                                 Affan.Khan         09/2014
-//======================================================================================
-struct ECDbSqlHelper
-    {
-private:
-    ECDbSqlHelper();
-    ~ECDbSqlHelper();
-
-public:
-    static ECDbSqlColumn::Type PrimitiveTypeToColumnType (ECN::PrimitiveType type);
-    static bool IsCompatible (ECDbSqlColumn::Type target, ECDbSqlColumn::Type source);
     };
 
 

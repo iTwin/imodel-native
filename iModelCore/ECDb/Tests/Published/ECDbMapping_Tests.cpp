@@ -572,6 +572,46 @@ TEST_F (ECDbMappingTestFixture, SharedTableCATests)
         "</ECSchema>", false, "Strategy NotMapped-polymorphic is not supported within a  class hierarchy"));
 
     AssertSchemaImport (testItems, "sharedtablecatests.ecdb");
+
+    {
+    SchemaItem testSchema("<?xml version='1.0' encoding='utf-8'?>"
+               "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+               "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+               "    <ECEntityClass typeName='Parent' modifier='None'>"
+               "        <ECCustomAttributes>"
+               "            <ClassMap xmlns='ECDbMap.01.00'>"
+               "                <MapStrategy>"
+               "                   <Strategy>SharedTable</Strategy>"
+               "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+               "                </MapStrategy>"
+               "            </ClassMap>"
+               "        </ECCustomAttributes>"
+               "        <ECProperty propertyName='P1' typeName='int' />"
+               "    </ECEntityClass>"
+               "    <ECEntityClass typeName='Child1'>"
+               "        <BaseClass>Parent</BaseClass>"
+               "        <ECProperty propertyName='Price' typeName='double' />"
+               "    </ECEntityClass>"
+               "    <ECEntityClass typeName='Child2'>"
+               "        <BaseClass>Parent</BaseClass>"
+               "        <ECProperty propertyName='Price' typeName='double' />"
+               "    </ECEntityClass>"
+               "</ECSchema>");
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testSchema, "sharedtablecatests.ecdb");
+    ASSERT_FALSE(asserted);
+
+    Utf8CP tableName = "ts_Parent";
+    bvector<Utf8String> columnNames;
+    ecdb.GetColumns(columnNames, tableName);
+    ASSERT_EQ(4, columnNames.size()) << "Table " << tableName;
+    ASSERT_TRUE(std::find(columnNames.begin(), columnNames.end(), "ECInstanceId") != columnNames.end()) << "Table " << tableName;
+    ASSERT_TRUE(std::find(columnNames.begin(), columnNames.end(), "ECClassId") != columnNames.end()) << "Table " << tableName;
+    ASSERT_TRUE(std::find(columnNames.begin(), columnNames.end(), "P1") != columnNames.end()) << "Table " << tableName;
+    //As property type is the same, both Child1.Price and Child2.Price share the same column
+    ASSERT_TRUE(std::find(columnNames.begin(), columnNames.end(), "Price") != columnNames.end()) << "Table " << tableName;
+    }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1473,6 +1513,7 @@ TEST_F (ECDbMappingTestFixture, SharedColumnCATests)
         "</ECSchema>", true, "Defining SharedColumns in subclass of class with DisableSharedColumns is expected to work"));
 
     AssertSchemaImport (testItems, "sharedtablecatests.ecdb");
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -5076,7 +5117,6 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
         {
         SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
                             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                            "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                             "    <ECEntityClass typeName='A'>"
                             "        <ECProperty propertyName='AName' typeName='string' />"
                             "    </ECEntityClass>"
@@ -5103,7 +5143,6 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
         {
         SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
                             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                            "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                             "    <ECEntityClass typeName='A'>"
                             "        <ECProperty propertyName='AName' typeName='string' />"
                             "    </ECEntityClass>"
@@ -5126,6 +5165,126 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
 
         AssertSchemaImport(testItem, "notnullconstraintsonfkcolumns.ecdb");
         }
+
+        {
+        SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
+                            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                            "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                            "    <ECEntityClass typeName='A'>"
+                            "        <ECProperty propertyName='AName' typeName='string' />"
+                            "    </ECEntityClass>"
+                            "    <ECEntityClass typeName='B'>"
+                            "      <ECCustomAttributes>"
+                            "        <ClassMap xmlns='ECDbMap.01.00'>"
+                            "             <MapStrategy>"
+                            "                <Strategy>SharedTable</Strategy>"
+                            "                <AppliesToSubclasses>True</AppliesToSubclasses>"
+                            "             </MapStrategy>"
+                            "        </ClassMap>"
+                            "      </ECCustomAttributes>"
+                            "       <ECProperty propertyName='BName' typeName='string' />"
+                            "    </ECEntityClass>"
+                            "    <ECEntityClass typeName='BSub'>"
+                            "        <BaseClass>B</BaseClass>"
+                            "        <ECProperty propertyName='BSubName' typeName='string' />"
+                            "        <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward' />"
+                            "    </ECEntityClass>"
+                            "  <ECRelationshipClass typeName='Rel' strength='embedding'>"
+                            "    <Source cardinality='(1,1)' polymorphic='True'>"
+                            "      <Class class = 'A' />"
+                            "    </Source>"
+                            "    <Target cardinality='(0,N)' polymorphic='True'>"
+                            "      <Class class = 'BSub'/>"
+                            "    </Target>"
+                            "  </ECRelationshipClass>"
+                            "</ECSchema>", true, "(1,1) rel with dropped NOT NULL constraint");
+
+        ECDb ecdb;
+        bool asserted = false;
+        AssertSchemaImport(ecdb, asserted, testItem, "notnullconstraintsonfkcolumns.ecdb");
+        ASSERT_FALSE(asserted);
+
+        Utf8String ddl;
+        getDdl(ddl, ecdb, "ts_B");
+        ASSERT_FALSE(ddl.empty());
+
+        ASSERT_TRUE(ddl.ContainsI("[AId] INTEGER,"));
+        }
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  02/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, DroppedFkConstraintsForSharedKeyProperties)
+    {
+    SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
+                        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                        "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                        "    <ECEntityClass typeName='A'>"
+                        "        <ECProperty propertyName='AName' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='B'>"
+                        "     <ECCustomAttributes>"
+                        "        <ClassMap xmlns='ECDbMap.01.00'>"
+                        "             <MapStrategy>"
+                        "                <Strategy>SharedTable</Strategy>"
+                        "                <AppliesToSubclasses>True</AppliesToSubclasses>"
+                        "             </MapStrategy>"
+                        "        </ClassMap>"
+                        "     </ECCustomAttributes>"
+                        "        <ECProperty propertyName='BName' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='B1Sub'>"
+                        "     <ECCustomAttributes>"
+                        "        <ClassMap xmlns='ECDbMap.01.00'>"
+                        "             <MapStrategy>"
+                        "                <Options>SharedColumns</Options>"
+                        "             </MapStrategy>"
+                        "        </ClassMap>"
+                        "     </ECCustomAttributes>"
+                        "        <BaseClass>B</BaseClass>"
+                        "        <ECProperty propertyName='B1SubName' typeName='string' />"
+                        "        <ECProperty propertyName='AId' typeName='long' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='B2Sub'>"
+                        "        <BaseClass>B</BaseClass>"
+                        "        <ECProperty propertyName='B2SubName' typeName='string' />"
+                        "        <ECProperty propertyName='AId' typeName='long' />"
+                        "    </ECEntityClass>"
+                        "  <ECRelationshipClass typeName='Rel1' strength='embedding'>"
+                        "    <Source cardinality='(0,1)' polymorphic='True'>"
+                        "      <Class class = 'A' />"
+                        "    </Source>"
+                        "    <Target cardinality='(0,N)' polymorphic='True'>"
+                        "      <Class class = 'B1Sub'>"
+                        "           <Key>"
+                        "              <Property name='AId'/>"
+                        "           </Key>"
+                        "      </Class>"
+                        "    </Target>"
+                        "  </ECRelationshipClass>"
+                        "  <ECRelationshipClass typeName='Rel2' strength='embedding'>"
+                        "    <Source cardinality='(0,1)' polymorphic='True'>"
+                        "      <Class class = 'A' />"
+                        "    </Source>"
+                        "    <Target cardinality='(0,N)' polymorphic='True'>"
+                        "      <Class class = 'B2Sub'>"
+                        "           <Key>"
+                        "              <Property name='AId'/>"
+                        "           </Key>"
+                        "      </Class>"
+                        "    </Target>"
+                        "  </ECRelationshipClass>"
+                        "</ECSchema>");
+
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testItem, "fkconstraintsonsharedcolumns.ecdb");
+    ASSERT_FALSE(asserted);
+
+    AssertForeignKey(false, ecdb, "ts_B", "sc_02");
+    AssertForeignKey(true, ecdb, "ts_B", "AId");
 
     }
 

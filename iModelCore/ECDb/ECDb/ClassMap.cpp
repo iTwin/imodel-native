@@ -844,7 +844,7 @@ ECDbSqlColumn* ClassMap::FindOrCreateColumnForProperty(ClassMapCR classMap,Class
     {
     ColumnFactory::Specification::Strategy strategy = ColumnFactory::Specification::Strategy::CreateOrReuse;
     ColumnFactory::Specification::GenerateColumnNameOptions generateColumnNameOpts = ColumnFactory::Specification::GenerateColumnNameOptions::NameBasedOnClassIdAndCaseSaveAccessString;
-    ECDbSqlColumn::Type requestedColumnType = ECDbSqlHelper::PrimitiveTypeToColumnType(columnType);
+    ECDbSqlColumn::Type requestedColumnType = ECDbSqlColumn::PrimitiveTypeToColumnType(columnType);
  
     if (Enum::Contains(classMap.GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::SharedColumns))
         {
@@ -1335,10 +1335,10 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateStrategy(ColumnFactory::Specification c
 //-----------------------------------------------------------------------------------------
 ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseStrategy(Specification const& specifications, ECDbSqlTable& targetTable, ECClassId propertyLocalToClassId)
     {
-    auto existingColumn = specifications.GetColumnName().empty() ? nullptr : targetTable.FindColumnP (specifications.GetColumnName().c_str());
+    ECDbSqlColumn* existingColumn = specifications.GetColumnName().empty() ? nullptr : targetTable.FindColumnP (specifications.GetColumnName().c_str());
     if (existingColumn != nullptr && !IsColumnInUse(*existingColumn))
         {
-        if (ECDbSqlHelper::IsCompatible(existingColumn->GetType(), specifications.GetColumnType()))
+        if (ECDbSqlColumn::IsCompatible(existingColumn->GetType(), specifications.GetColumnType()))
             {
             if (GetTable().IsOwnedByECDb())
                 {

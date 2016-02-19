@@ -1474,8 +1474,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareSetFunctionCallExp(NativeSqlBuilder::List& 
     if (isAnyEveryOrSome)
         {
         //ANY, EVERY, SOME is not directly supported by SQLite. But they can be expressed by standard functions
-        //ANY,SOME: checks whether at least one row in the specified BOOL column is TRUE -> MAX(Col) <> 0
-        //EVERY: checks whether all rows in the specified BOOL column are TRUE -> MIN(Col) <> 0
+        //ANY,SOME: checks whether at least one row in the specified BOOLEAN column is TRUE -> MAX(Col) <> 0
+        //EVERY: checks whether all rows in the specified BOOLEAN column are TRUE -> MIN(Col) <> 0
         Utf8CP func = function == SetFunctionCallExp::Function::Every ? "MIN" : "MAX";
         nativeSql.Append(func);
         }
