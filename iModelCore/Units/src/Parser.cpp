@@ -46,6 +46,7 @@ int Exponent::GetExponent()
     return value;
     }
 
+// TODO: These static methods probably belong in some other class besides unit.  Was lazy and this was quickest place to plop
 void Unit::MergeExpressions(bvector<UnitFactorExponent*>& targetExpression, bvector<UnitFactorExponent*>& sourceExpression, int startingExponent)
     {
     for (const auto& uWE : sourceExpression)
