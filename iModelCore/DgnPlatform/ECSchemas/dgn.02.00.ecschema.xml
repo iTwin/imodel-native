@@ -200,6 +200,7 @@
                 </MapStrategy>
                 <Indexes>
                     <DbIndex>
+                        <Name>ix_dgn_Model_Code</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
                             <string>Code.AuthorityId</string>
@@ -333,6 +334,7 @@
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <Indexes>
                     <DbIndex>
+                        <Name>ix_dgn_Element_Code</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
                             <string>Code.AuthorityId</string>
@@ -341,6 +343,7 @@
                         </Properties>
                     </DbIndex>
                     <DbIndex>
+                        <Name>ix_dgn_Element_Label</Name>
                         <IsUnique>False</IsUnique>
                         <Properties>
                             <string>Label</string>
@@ -667,6 +670,7 @@
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <Indexes>
                     <DbIndex>
+                        <Name>ix_dgn_AnnotationTableCell_ElementId</Name>
                         <IsUnique>False</IsUnique>
                         <Properties>
                             <string>ElementId</string>
@@ -902,6 +906,7 @@
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <Indexes>
                     <DbIndex>
+                        <Name>ix_dgn_ElementExternalKey_ElementId_AuthorityId</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
                             <!-- Only one ExternalKey per Authority per Element -->
@@ -912,6 +917,7 @@
                     <DbIndex>
                         <!-- Index for looking up Element by ExternalKey -->
                         <!-- IsUnique=False to support ExternalKeys for types (multiple Elements have same ExternalKey) -->
+                        <Name>ix_dgn_ElementExternalKey_AuthorityId_ExternalKey</Name>
                         <IsUnique>False</IsUnique>
                         <Properties>
                             <string>AuthorityId</string>
@@ -1266,6 +1272,7 @@
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <Indexes>
                     <DbIndex>
+                        <Name>ix_dgn_GeometryPart_Code</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
                             <string>Code.AuthorityId</string>
