@@ -255,7 +255,12 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual bool                   _IsReadOnly() const override;
         virtual bool                   _IsShareable() const override;
         virtual int                    _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const;
+
+
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) override;
+        virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
+        virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
+        virtual bool                               _RemoveClip(uint64_t clipID) override;
         
 #ifdef SCALABLE_MESH_ATP
         virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes) const override; 
@@ -331,7 +336,12 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual bool                   _IsProgressive() const override;       
         virtual bool                   _IsReadOnly() const override;
         virtual bool                   _IsShareable() const override;
+
+
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) override;
+        virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
+        virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
+        virtual bool                               _RemoveClip(uint64_t clipID) override;
         
         //Data source synchronization functions.
         virtual bool                   _InSynchWithSources() const override; 

@@ -76,6 +76,14 @@ inline void HPMIndirectCountLimitedPoolItem<DifferenceSet>::RecomputeCount() con
 template<class POINT, class EXTENT> class ISMPointIndexMesher;
 template<class POINT, class EXTENT> class ISMMeshIndexFilter;
 
+BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
+enum ClipAction
+    {
+    ACTION_ADD = 0,
+    ACTION_DELETE,
+    ACTION_MODIFY
+    };
+END_BENTLEY_SCALABLEMESH_NAMESPACE
 
 template<class POINT, class EXTENT> class SMMeshIndex;
 
@@ -273,16 +281,22 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     //NEEDS_WORK_SM: refactor all meshIndex recursive calls into something more like a visitor pattern
     //NEEDS_WORK_SM: move clip and raster support to point index
+
     void                TextureFromRaster(HIMMosaic* sourceRasterP);
     void                TextureFromRasterRecursive(HIMMosaic* sourceRasterP);
 
     size_t                AddFeatureDefinitionUnconditional(IDTMFile::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
     size_t                AddFeatureDefinition(IDTMFile::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent, bool ExtentFixed);
 
+    //NEEDS_WORK_SM: clean up clipping API (remove extra calls, clarify uses, etc)
+
     //Synchronously add clip on this node and all descendants, used in generation.
     void                AddClipDefinitionRecursive(bvector<DPoint3d>& points, DRange3d& extent);
     //Synchronously update clips, if necessary, so as to merge them with other clips applied on the node, for this node and all descendants, if applicable. Used in generation.
     void                RefreshMergedClipsRecursive();
+
+    //Checks whether clip should apply to node and update lists accordingly
+    void                ClipActionRecursive(ClipAction action,uint64_t clipId, DRange3d& extent);
 
     ClipRegistry* GetClipRegistry() const
         {
@@ -313,12 +327,6 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         return m_differenceSets[index];
         }
 
-    enum ClipAction
-        {
-        ACTION_ADD =0,
-        ACTION_DELETE,
-        ACTION_MODIFY
-        };
 
     //Propagation of clips. Requests application of clip operations to descendants, usually asynchronously.
     void PropagateDeleteClipImmediately(uint64_t clipId);
@@ -773,6 +781,7 @@ size_t GetNbPtsIndices(size_t texture_id) const
         void                AddFeatureDefinition(IDTMFile::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
 
         void                AddClipDefinition(bvector<DPoint3d>& points, DRange3d& extent);
+        void                PerformClipAction(ClipAction action, uint64_t clipId, DRange3d& extent);
         void                RefreshMergedClips();
 
 
