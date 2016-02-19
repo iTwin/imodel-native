@@ -78,7 +78,7 @@ TEST_F(DgnBaseDomainSchemaTests, ValidateDomainSchemaDDL)
         ASSERT_TRUE(ddl.Contains("[Code_AuthorityId] INTEGER NOT NULL,"));
         ASSERT_TRUE(ddl.Contains("[Code_Namespace] TEXT NOT NULL COLLATE NoCase,"));
         ASSERT_TRUE(ddl.Contains("[Code_Value] TEXT COLLATE NoCase,"));
-        ASSERT_TRUE(ddl.Contains("[LastMod] TIMESTAMP NOT NULL DEFAULT (julianday('now')),"));
+        ASSERT_TRUE(ddl.Contains("[LastMod] DOUBLE NOT NULL DEFAULT (julianday('now')),"));
         ASSERT_TRUE(ddl.Contains("PRIMARY KEY ([Id])"));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([Code_AuthorityId]) REFERENCES [dgn_Authority] ([Id]) ON DELETE RESTRICT ON UPDATE RESTRICT"));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([ParentId]) REFERENCES [dgn_Element] ([Id]) ON DELETE CASCADE"));
