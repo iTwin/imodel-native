@@ -902,10 +902,9 @@
         <ECProperty propertyName="Props" typeName="string"/>
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="GeometricElement2dIsInCategory" description="Element is in Category" strength="referencing">
+    <ECRelationshipClass typeName="GeometricElement2dIsInCategory" description="Element is in Category" strength="referencing" strengthDirection="Backward">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <End>Source</End>
                 <!-- Cannot delete a Category or update its CategoryId if there is an element in that Category -->
                 <OnDeleteAction>Restrict</OnDeleteAction>
                 <OnUpdateAction>Restrict</OnUpdateAction>
@@ -918,10 +917,9 @@
             <Class class="Category"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="GeometricElement3dIsInCategory" description="Element is in Category" strength="referencing">
+    <ECRelationshipClass typeName="GeometricElement3dIsInCategory" description="Element is in Category" strength="referencing" strengthDirection="Backward">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <End>Source</End>
                 <!-- Cannot delete a Category or update its CategoryId if there is an element in that Category -->
                 <OnDeleteAction>Restrict</OnDeleteAction>
                 <OnUpdateAction>Restrict</OnUpdateAction>
