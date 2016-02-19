@@ -107,47 +107,158 @@ bool ScalableMeshModel::_UnregisterTilesChangedEventListener(ITerrainTileChanged
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
+#define QUERY_ID 0 
+
+static double s_minScreenPixelsPerPoint 50;
+
 void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     {
-    if (m_progressiveQueryEngine == nullptr)
-        {
-        m_displayNodesCache = new ScalableMeshDisplayCacheManager(context);
-        m_progressiveQueryEngine = IScalableMeshProgressiveQueryEngine::Create(m_smPtr, m_displayNodesCache);
-        }
-    Transform curViewTransform;
-    context.GetCurrLocalToWorldTrans(curViewTransform);
-    DMatrix4d curViewTransformMat = DMatrix4d::From(curViewTransform);
-   /* bvector<bool> clips;
+    if (context.GetViewport() == 0)
+        return;
+         
+    ScalableMeshDrawingInfoPtr nextDrawingInfoPtr(new ScalableMeshDrawingInfo(context));
 
-    BentleyStatus status = m_progressiveQueryEngine->StartQuery(0,
-                                                                viewDependentQueryParams,
-                                                                m_meshNodes,
-                                                                true,
-                                                                clips,
-                                                                &m_lastViewTransform,
-                                                                &curViewTransformMat);
+    if ((m_currentDrawingInfoPtr != nullptr) &&
+        (m_currentDrawingInfoPtr->GetDrawPurpose() != DrawPurpose::UpdateDynamic))
+        {
+        //If the m_dtmPtr equals 0 it could mean that the last data request to the STM was cancelled, so start a new request even
+        //if the view has not changed.
+        if (m_currentDrawingInfoPtr->HasAppearanceChanged(nextDrawingInfoPtr) == false)                
+            {
+            if (m_currentDrawingInfoPtr->m_overviewNodes.size() > 0)
+                {                    
+                int queryId = m_currentDrawingInfoPtr->GetViewNumber();
+
+                if (m_progressiveQueryEngine->IsQueryComplete(queryId))
+                    {
+                    m_currentDrawingInfoPtr->m_meshNodes.clear();
+                    StatusInt status = m_progressiveQueryEngine->GetQueriedNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
+
+                    assert(m_currentDrawingInfoPtr->m_overviewNodes.size() == 0 || m_currentDrawingInfoPtr->m_meshNodes.size() > 0);
+
+                    m_currentDrawingInfoPtr->m_overviewNodes.clear();
+
+                    assert(status == SUCCESS);
+                    return;
+                    }
+                else
+                    {                                                
+                    m_meshNodes.clear();
+                    StatusInt status = scalableMeshProgressiveQueryEnginePtr->GetQueriedNodes(m_meshNodes, queryId);
+                    assert(status == SUCCESS);                       
+                    return;
+                    }
+                }
+            else
+                {                    
+                return;
+                }
+            }                        
+        }        
+    
+    BentleyStatus status;
+
+    status = m_currentDrawingInfoPtr->StopQuery(nextDrawingInfoPtr->GetViewNumber()); 
+    assert(status == SUCCESS);
+                                   
+    m_currentDrawingInfoPtr = nextDrawingInfoPtr;
+
+    // Need to get the fence info.
+    /*
+    DTMDrawingInfo drawingInfo;
+    DTMElementDisplayHandler::GetDTMDrawingInfo(drawingInfo, m_DTMDataRef->GetElement(), m_DTMDataRef, context);
+
+    if (!drawingInfo.IsVisible ())
+        {
+        return;
+        }
+        */
+
+    DMatrix4d localToView(context.GetLocalToView());
+                                   
+    bsiDMatrix4d_multiply(&localToView, &localToView, &m_storageToUorsTransfo);              
+
+    DPoint3d viewBox[8];
+
+    //NEEDS_WORK_SM : Remove from query
+    //GetViewBoxFromContext(viewBox, _countof(viewBox), context, drawingInfo);        
+    DMatrix4d rootToStorage;
+
+    //Convert the view box in storage.
+    bool inverted = bsiDMatrix4d_invertQR(&rootToStorage, &scaleMatrix);
+
+    BeAssert(inverted != 0);
+
+    /*
+    bsiDMatrix4d_multiplyAndRenormalizeDPoint3dArray(&rootToStorage, viewBox, viewBox, 8);
+    */
+    
+    status = SUCCESS;
+            
+    IScalableMeshViewDependentMeshQueryParamsPtr viewDependentQueryParams(IScalableMeshViewDependentMeshQueryParams::CreateParams());
+
+    viewDependentQueryParams->SetMinScreenPixelsPerPoint(s_minScreenPixelsPerPoint);
+            
+    ClipVectorCP clip;
+    clip = context.GetTransformClipStack().GetClip();
+    //NEEDS_WORK_SM : Need to keep only SetViewBox or SetViewClipVector for visibility
+    //viewDependentQueryParams->SetViewBox(viewBox);
+    viewDependentQueryParams->SetRootToViewMatrix(localToView.coff);    
+
+    //NEEDS_WORK_SM : Needed?
+    /*
+    if (s_progressiveDraw)
+        {
+        viewDependentQueryParams->SetProgressiveDisplay(true);
+        viewDependentQueryParams->SetStopQueryCallback(CheckStopQueryCallback);
+        }            
+        */
+
+    ClipVectorPtr clipVectorCopy(ClipVector::CreateCopy(*clip));
+    
+    Transform rootToStorageTransform; 
+    bool result = rootToStorageTransform.InitFrom (rootToStorage); 
+    assert(result == true);
+
+    clipVectorCopy->TransformInPlace(rootToStorageTransform);
+    
+    viewDependentQueryParams->SetViewClipVector(clipVectorCopy);
+                          
+    m_overviewNodes.clear();
+    int queryId = nextDrawingInfoPtr->GetViewNumber();                 
+    
+    bvector<bool> clips;
+    /*NEEDS_WORK_SM : Get clips
+    m_DTMDataRef->GetVisibleClips(clips);
+    */
+
+    BentleyStatus status = scalableMeshProgressiveQueryEnginePtr->StartQuery(queryId, 
+                                                                             viewDependentQueryParams, 
+                                                                             m_currentDrawingInfoPtr->m_meshNodes, 
+                                                                             !IsWireframeRendering(*context), 
+                                                                             clips,
+                                                                             &m_currentDrawingInfoPtr->GetLocalToViewTransform(), 
+                                                                             &nextDrawingInfoPtr->GetLocalToViewTransform()); 
 
     assert(status == SUCCESS);
-
-    if (m_progressiveQueryEngine->IsQueryComplete(0))
+    
+    if (scalableMeshProgressiveQueryEnginePtr->IsQueryComplete(queryId))
         {
-        m_meshNodes.clear();
-        status = m_progressiveQueryEngine->GetQueriedNodes(m_meshNodes, 0);
-        m_overviewNodes.clear();
+        m_currentDrawingInfoPtr->m_meshNodes.clear();
+        status = scalableMeshProgressiveQueryEnginePtr->GetQueriedNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
+        m_currentDrawingInfoPtr->m_overviewNodes.clear();
 
         assert(status == SUCCESS);
         }
     else
         {
-        status = m_progressiveQueryEngine->GetOverviewNodes(m_overviewNodes, 0);
-        m_overviewNodes.insert(m_overviewNodes.end(), m_meshNodes.begin(), m_meshNodes.end());
-        m_meshNodes.clear();
-        assert(m_overviewNodes.size() > 0);
+        status = scalableMeshProgressiveQueryEnginePtr->GetOverviewNodes(m_currentDrawingInfoPtr->m_overviewNodes, queryId);
+        m_currentDrawingInfoPtr->m_overviewNodes.insert(m_currentDrawingInfoPtr->m_overviewNodes.end(), m_currentDrawingInfoPtr->m_meshNodes.begin(), m_currentDrawingInfoPtr->m_meshNodes.end());
+        m_currentDrawingInfoPtr->m_meshNodes.clear();
+        assert(m_currentDrawingInfoPtr->m_overviewNodes.size() > 0);
         assert(status == SUCCESS);
-        }
-    m_lastViewTransform = curViewTransformMat;
-    DrawCurrentNodeList(m_meshNodes, m_overviewNodes, context);*/
-    }
+        }                                                                    
+    }                 
 
 //NEEDS_WORK_SM : Should be at application level
 void GetScalableMeshTerrainFileName(BeFileName& smtFileName, const BeFileName& dgnDbFileName)
@@ -169,7 +280,8 @@ ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams con
     tmFileName = params.m_dgndb.GetFileName().GetDirectoryName();
     tmFileName.AppendToPath(params.m_dgndb.GetFileName().GetFileNameWithoutExtension().c_str());
     tmFileName.AppendString(L"\\terrain.stm");
-    m_smPtr = IScalableMesh::GetFor(tmFileName.GetWCharCP(), false, true);
+
+    OpenFile(tmFileName)    
     }
 
 //----------------------------------------------------------------------------------------
@@ -183,9 +295,43 @@ ScalableMeshModel::~ScalableMeshModel()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
-void ScalableMeshModel::OpenFile(BeFileNameCR smFilename)
-    {
+void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
+    {    
+    assert(m_smPtr == nullptr);
+
     m_smPtr = IScalableMesh::GetFor(smFilename.GetWCharCP(), false, true);
+
+    assert(m_smPtr != 0);
+
+    if (m_progressiveQueryEngine == nullptr)
+        {
+        m_displayNodesCache = new ScalableMeshDisplayCacheManager(context);
+        m_progressiveQueryEngine = IScalableMeshProgressiveQueryEngine::Create(m_smPtr, m_displayNodesCache);
+        }
+
+    const GeoCoords::GCS& gcs(m_smPtr->GetGCS()
+
+    double storageToUorsFactor;    
+    DgnGCSPtr dgnGcsPtr;
+
+    if (gcs.HasGeospatialReference())
+        {
+        dgnGcsPtr = DgnGCS::CreateGCS(gcs.GetGeospatialReference()->GetBasePtr().get(), dgnProject);       
+        }
+    else
+        {        
+        dgnGcsPtr = DgnGCS::CreateGCS(dgnProject);                      
+        }
+
+    DPoint3d scale;
+    scale.x = 1;
+    scale.y = 1;
+    scale.z = 1;
+    dgnGcsPtr->UorsFromCartesian(scale, scale);
+    
+    DPoint3d translation = {0,0,0};
+    
+    m_storageToUorsTransfo = DMatrix4d::FromScaleAndTranslation(scale, translation);                
     }
 
 //=======================================================================================

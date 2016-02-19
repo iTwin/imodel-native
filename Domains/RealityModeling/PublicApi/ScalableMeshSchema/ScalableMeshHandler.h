@@ -22,6 +22,58 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
 BEGIN_BENTLEY_SCALABLEMESH_SCHEMA_NAMESPACE
 
+class ScalableMeshDrawingInfo;
+
+class ScalableMeshDrawingInfo;
+
+typedef RefCountedPtr<ScalableMeshDrawingInfo> ScalableMeshDrawingInfoPtr;     
+
+class ScalableMeshDrawingInfo : public RefCountedBase
+    {
+private : 
+
+    DrawPurpose m_drawPurpose;            
+    DMatrix4d   m_localToViewTransformation;    
+    DPoint3d    m_low;
+    DPoint3d    m_high;
+
+    bvector<Bentley::ScalableMesh::IScalableMeshCachedDisplayNodePtr> m_meshNodes;
+    bvector<Bentley::ScalableMesh::IScalableMeshCachedDisplayNodePtr> m_overviewNodes;
+            
+public : 
+        
+    ScalableMeshDrawingInfo(ViewContextP viewContext)
+        : 
+        {
+        m_drawPurpose = viewContext->GetDrawPurpose();   
+        const DMatrix4d localToView(viewContext->GetLocalToView());     
+        memcpy(&m_localToViewTransformation, &localToView, sizeof(DMatrix4d));                
+        viewContext->GetViewCorners(m_low, m_high);
+        }
+
+    ~ScalableMeshDrawingInfo()
+        {
+        }
+
+    DrawPurpose GetDrawPurpose()
+        {
+        return m_drawPurpose;
+        }
+        
+    int GetViewNumber()
+        {
+        return m_viewInfo->GetViewNumber();
+        }    
+    
+    bool HasAppearanceChanged(const ScalableMeshDrawingInfoPtr& smDrawingInfoPtr)
+        {                                                                  
+        return (0 != memcmp(&smDrawingInfoPtr->m_localToViewTransformation, &m_localToViewTransformation, sizeof(DMatrix4d))) ||
+               (0 != memcmp(&smDrawingInfoPtr->m_low, &m_low, sizeof(DPoint3d))) ||
+               (0 != memcmp(&smDrawingInfoPtr->m_high, &m_high, sizeof(DPoint3d)));        
+        }
+    
+    };
+
 //=======================================================================================
 // @bsiclass                                                  
 //=======================================================================================
@@ -35,9 +87,9 @@ struct ScalableMeshModel : IMeshSpatialModel
         BentleyApi::Dgn::AxisAlignedBox3d       m_range;
 
         IScalableMeshDisplayCacheManagerPtr     m_displayNodesCache;
-        IScalableMeshProgressiveQueryEnginePtr  m_progressiveQueryEngine;
-        DMatrix4d                               m_lastViewTransform;
-
+        IScalableMeshProgressiveQueryEnginePtr  m_progressiveQueryEngine;        
+        ScalableMeshDrawingInfoPtr              m_currentDrawingInfoPtr;
+        DMatrix4d                               m_storageToUorsTransfo;        
 
     protected:
  
