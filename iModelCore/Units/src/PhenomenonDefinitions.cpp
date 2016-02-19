@@ -32,56 +32,55 @@ void UnitRegistry::AddDefaultPhenomena ()
     AddPhenomena(AREA, "LENGTH(2)");
     AddPhenomena(VOLUME, "LENGTH(3)");
     AddPhenomena(VELOCITY, "LENGTH*TIME(-1)");
-    //AddPhenomena(MOMENTUM, )
+    AddPhenomena(MOMENTUM, "MASS*VELOCITY");
     AddPhenomena(ANGVELOCITY, "SOLIDANGLE*TIME(-1)");
     AddPhenomena(ACCELERATION, "LENGTH*TIME(-2)");
-    //AddPhenomena(ANGACCELERAT)
-    AddPhenomena(FORCE, "MASS*LENGTH*TIME(-2)");
-    AddPhenomena(PRESSURE, "MASS*LENGTH(-1)*TIME(-2)"); //TODO: Needs work
+    AddPhenomena(ANGACCELERAT, "SOLIDANGLE*TIME(-2)");
+    AddPhenomena(FORCE, "MASS*ACCELERATION");
+    AddPhenomena(PRESSURE, "FORCE*AREA(-1)");
     AddPhenomena(FORCE_DENSITY, "FORCE*VOLUME(-1)");
     AddPhenomena(PRESSURE_GRADIENT, "PRESSURE*LENGTH(-1)");
-    AddPhenomena(TORQUE, "FORCE*LENGTH*ANGLE"); // TODO: Double Check
-    AddPhenomena(MOMENTINERTIA, "ANGVELOCITY*MOMENTUM"); //TODO: Needs work
-    AddPhenomena(AREA_MOMENT, "MASS(4)"); // TODO: Needs work
+    AddPhenomena(TORQUE, "FORCE*LENGTH*ANGLE");
+    AddPhenomena(MOMENTINERTIA, "MASS*LENGTH(2)");
+    AddPhenomena(AREA_MOMENT, "LENGTH(4)");
     AddPhenomena(MASS_RATIO, "MASS*MASS(-1)");
     AddPhenomena(DENSITY, "MASS*VOLUME(-1)");
     AddPhenomena(SPECVOLUME, "VOLUME*MASS(-1)");
     AddPhenomena(LINEARDENSITY, "MASS*LENGTH(-1)");
     AddPhenomena(SURFACEDENSITY, "MASS*AREA(-1)");
     AddPhenomena(WORK, "FORCE*LENGTH"); // TODO: Multiple phenomemon equations: PRESSURE*VOLUME, POWER*TIME, ELECTRIC_CURRENT*TIME*ELECTRIC_POTENTIAL
-    AddPhenomena(POWER, "WORK*TIME");
+    AddPhenomena(POWER, "WORK*TIME(-1)");
     AddPhenomena(FLOW, "VOLUME*TIME(-1)");
-    AddPhenomena(SURFACE_FLOW_RATE, "VOLUME*TIME(-1)*AREQ(-1)");
+    AddPhenomena(SURFACE_FLOW_RATE, "FLOW*AREA(-1)");
     AddPhenomena(MASS_FLOW, "MASS*TIME(-1)");
     AddPhenomena(PARTICLE_FLOW, "MOLE*TIME(-1)");
-    AddPhenomena(DYNVISCOSITY, "KINVISCOSITY*DENSITY"); // TODO: Check
-    AddPhenomena(KINVISCOSITY, "DYNVISCOSITY*DENSITY(-1)"); // TODO: Check
-    //AddPhenomena(ELECTRIC_CHARGE, )
-    //AddPhenomena(ELECTRIC_POTENTIAL)
-    //AddPhenomena(ELRESISTANCE)
-    //AddPhenomena(CAPACITANCE)
-    //AddPhenomena(MAGNETICFLUX)
-    //AddPhenomena(MAGFLUXDENSITY)
-    //AddPhenomena(INDUCTANCE)
-    //AddPhenomena(LUMINANCE)
-    //AddPhenomena(LUMINOUSFLUX)
-    //AddPhenomena(ILLUMINANCE)
+    AddPhenomena(DYNVISCOSITY, "PRESSURE*TIME"); // TODO: Check
+    AddPhenomena(KINVISCOSITY, "FORCE*DYNVISCOSITY(-1)"); // TODO: Check
+    AddPhenomena(ELECTRIC_CHARGE, "CURRENT*TIME");
+    AddPhenomena(ELECTRIC_POTENTIAL, "POWER*CURRENT(-1)");
+    AddPhenomena(ELRESISTANCE, "ELECTRIC_POTENTIAL*CURRENT(-1)");
+    AddPhenomena(CAPACITANCE, "ELECTRIC_CHARGE*ELECTRIC_POTENTIAL(-1)");
+    AddPhenomena(MAGNETICFLUX, "ELECTRIC_POTENTIAL*TIME");
+    AddPhenomena(MAGFLUXDENSITY, "MAGFLUXDENSITY*LENGTH(-2)");
+    AddPhenomena(INDUCTANCE, "MAGNETICFLUX*CURRENT(-1)");
+    AddPhenomena(LUMINOUSFLUX, "LUMINOUSINTENSITY*SOLIDANGLE(-1)"); // TODO: Check
+    AddPhenomena(ILLUMINANCE, "LUMINOUSFLUX*LENGTH(-2)");
     //AddPhenomena(RADIATION)
     //AddPhenomena(RADEXPOSURE)
-    //AddPhenomena(RADABSORBDOSE)
-    //AddPhenomena(RADEQUDOSE)
+    AddPhenomena(RADABSORBDOSE, "WORK*MASS(-1)");
+    AddPhenomena(RADEQUDOSE, "WORK*MASS(-1)");
     //AddPhenomena(SIZELENRATE) // TODO: ?
-    AddPhenomena(THERMOCONDUCT, "POWER*LENGTH(-1)*TEMPERATURE(-1)"); // TODO: Check
+    AddPhenomena(THERMOCONDUCT, "POWER*LENGTH(-1)*TEMPERATURE(-1)");
     AddPhenomena(MOLAR_VOLUME, "VOLUME*MOLE(-1)");
     AddPhenomena(MOLAR_CONCENTRATION, "MOLE*VOLUME(-1)");
     AddPhenomena(SLOPE, "LENGTH*LENGTH(-1)");
     AddPhenomena(GRAVCONSTANT, "GRAVCONSTANT"); // TODO: Necessary?
-    AddPhenomena(THREAD_PITCH, "LENGTH*ANGLE(-1)");
-    AddPhenomena(HEATTRASNFER, "POWER*AREA(-1)*TEMPERATURE(-1)"); // TODO: Check ... HEATFLUX*TEMPERATURE(-1)?
-    AddPhenomena(HEATFLUX, "POWER*AREA(-1)");
-    AddPhenomena(WARPING_CONSTANT, "WARPING_CONSTANT"); // TODO: Actually do
+    AddPhenomena(THREAD_PITCH, "LENGTH");
+    AddPhenomena(HEATTRASNFER, "POWER*AREA(-1)*TEMPERATURE(-1)"); // https://en.wikipedia.org/wiki/Heat_transfer_coefficient
+    AddPhenomena(HEATFLUX, "POWER"); // https://en.wikipedia.org/wiki/Heat_flux
+    AddPhenomena(WARPING_CONSTANT, "LENGTH(4)"); // https://en.wikipedia.org/wiki/Torsion_constant
     AddPhenomena(POPULATION_DENSITY, "CAPITA*AREA(-1)");
-    AddPhenomena(FREQUENCY, "TIME(-1)"); // TODO: Make sense?
+    AddPhenomena(FREQUENCY, "TIME(-1)");
     AddPhenomena(LINEAR_LOAD, "FORCE*LENGTH(-1)");
     //AddPhenomena(AREA_LOAD, );
     AddPhenomena(HEATING_VALUE_VOLUMETRIC, "WORK*VOLUME(-1)"); // TODO: Check
