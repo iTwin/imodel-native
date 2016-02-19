@@ -486,11 +486,8 @@
         <!-- An element that occupies real world space -->
         <BaseClass>GeometricElement3d</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="PhysicalElement">
+    <ECEntityClass typeName="PhysicalElement" modifier="Abstract">
         <!-- A SpatialElement that has mass and can be "touched" -->
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
-        </ECCustomAttributes>
         <BaseClass>SpatialElement</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="SpatialLocationElement" modifier="Abstract">
@@ -547,7 +544,7 @@
         </ECCustomAttributes>
         <BaseClass>GraphicalElement2d</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="DrawingElement">
+    <ECEntityClass typeName="DrawingGraphic">
         <!-- 2D element used in drawings -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
@@ -656,6 +653,23 @@
         <ECProperty propertyName="FooterColumnTextHeight" typeName="double"/>
         <ECProperty propertyName="TextSymbKey" typeName="int"/>
     </ECEntityClass>
+    <ECRelationshipClass typeName="AnnotationTableOwnsHeader" strength="embedding">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>Cascade</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(1,1)" polymorphic="true">
+            <Class class="AnnotationTableElement"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="true">
+            <Class class="AnnotationTableHeader">
+                <Key>
+                    <Property name="ECInstanceId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="AnnotationTableRow">
         <!-- The aspect that holds properties of a row of an AnnotationTable -->
@@ -669,6 +683,23 @@
         <ECProperty propertyName="HeightLock" typeName="boolean"/>
         <ECProperty propertyName="Height" typeName="double"/>
     </ECEntityClass>
+    <ECRelationshipClass typeName="AnnotationTableOwnsRow" strength="embedding">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>Cascade</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(1,1)" polymorphic="true">
+            <Class class="AnnotationTableElement"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="true">
+            <Class class="AnnotationTableRow">
+                <Key>
+                    <Property name="ElementId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="AnnotationTableColumn">
         <!-- The aspect that holds properties of a column of an AnnotationTable -->
@@ -682,6 +713,23 @@
         <ECProperty propertyName="WidthLock" typeName="boolean"/>
         <ECProperty propertyName="Width" typeName="double"/>
     </ECEntityClass>
+    <ECRelationshipClass typeName="AnnotationTableOwnsColumn" strength="embedding">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>Cascade</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(1,1)" polymorphic="true">
+            <Class class="AnnotationTableElement"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="true">
+            <Class class="AnnotationTableColumn">
+                <Key>
+                    <Property name="ElementId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
 
     <ECStructClass typeName="AnnotationTableCellIndex">
         <ECProperty propertyName="RowIndex" typeName="int"/>
@@ -694,6 +742,15 @@
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+                <Indexes>
+                    <DbIndex>
+                        <Name>idx_dgn_TableCell_Element</Name>
+                        <IsUnique>False</IsUnique>
+                        <Properties>
+                            <string>ElementId</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
             </ClassMap>
         </ECCustomAttributes>
         <ECStructProperty propertyName="CellIndex" typeName="AnnotationTableCellIndex"/>
@@ -706,6 +763,23 @@
         <ECProperty propertyName="MarginLeft" typeName="double"/>
         <ECProperty propertyName="MarginRight" typeName="double"/>
     </ECEntityClass>
+    <ECRelationshipClass typeName="AnnotationTableOwnsCell" strength="embedding">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>Cascade</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(1,1)" polymorphic="true">
+            <Class class="AnnotationTableElement"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="true">
+            <Class class="AnnotationTableCell">
+                <Key>
+                    <Property name="ElementId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="AnnotationTableMerge">
         <!-- The aspect that holds properties describing merging of cells in an AnnotationTable -->
@@ -719,6 +793,23 @@
         <ECProperty propertyName="RowSpan" typeName="int"/>
         <ECProperty propertyName="ColumnSpan" typeName="int"/>
     </ECEntityClass>
+    <ECRelationshipClass typeName="AnnotationTableOwnsMerge" strength="embedding">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>Cascade</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(1,1)" polymorphic="true">
+            <Class class="AnnotationTableElement"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="true">
+            <Class class="AnnotationTableMerge">
+                <Key>
+                    <Property name="ElementId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="AnnotationTableSymbology">
         <!-- The aspect that holds properties describing symbology in an AnnotationTable -->
@@ -736,6 +827,23 @@
         <ECProperty propertyName="LineStyleScale" typeName="double"/>
         <ECProperty propertyName="FillColor" typeName="int"/>
     </ECEntityClass>
+    <ECRelationshipClass typeName="AnnotationTableOwnsSymbology" strength="embedding">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>Cascade</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(1,1)" polymorphic="true">
+            <Class class="AnnotationTableElement"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="true">
+            <Class class="AnnotationTableSymbology">
+                <Key>
+                    <Property name="ElementId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="AnnotationTableEdgeRun">
         <!-- The aspect that holds properties describing edges in an AnnotationTable -->
@@ -751,6 +859,23 @@
         <ECProperty propertyName="Span" typeName="int"/>
         <ECProperty propertyName="SymbologyKey" typeName="int"/>
     </ECEntityClass>
+    <ECRelationshipClass typeName="AnnotationTableOwnsEdgeRun" strength="embedding">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>Cascade</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(1,1)" polymorphic="true">
+            <Class class="AnnotationTableElement"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="true">
+            <Class class="AnnotationTableEdgeRun">
+                <Key>
+                    <Property name="ElementId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="ViewAttachment">
         <!-- A reference to a ViewDefinition, placed onto a sheet -->
@@ -945,17 +1070,6 @@
                     <Strategy>SharedTable</Strategy>
                     <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
-                <!-- We must index the Priority column, so that we can do selects with ... ORDERBY Priority. Priority may be 0. That's why it's not unique. -->
-                <!-- WIP_ELEMENT_DEPENDENCY_GRAPH Incredibly, adding this index causes priority-order tests to fail. Must look into this soon.
-                <Indexes>
-                    <DbIndex>
-                        <IsUnique>False</IsUnique>
-                        <Properties>
-                            <string>Priority</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
-                -->
             </ClassMap>
             <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
                 <AllowDuplicateRelationships>True</AllowDuplicateRelationships>
