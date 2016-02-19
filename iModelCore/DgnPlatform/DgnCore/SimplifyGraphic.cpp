@@ -1897,6 +1897,22 @@ void SimplifyGraphic::_AddMosaic(int numX, int numY, uintptr_t const* tileIds, D
 
     _AddShape(5, shapePoints, true, NULL);
     }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  2/2016
+//----------------------------------------------------------------------------------------
+void SimplifyGraphic::_AddTile(Render::TextureCR tile, DPoint3dCP corners)
+    {
+    // NEEDS_WORK_CONTINUOUS_RENDER 
+    DPoint3d    shapePoints[5];
+
+    shapePoints[0] = shapePoints[4] = corners[0];
+    shapePoints[1] = corners[1];
+    shapePoints[2] = corners[2];
+    shapePoints[3] = corners[3];
+
+    _AddShape(5, shapePoints, true, NULL);
+    }
  
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15

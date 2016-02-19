@@ -383,6 +383,7 @@ public:
     void _SetActiveVolume(ClipPrimitiveCR volume) override {m_volume=&volume;}
     Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return m_target.CreateGraphic(params);}
     void _SavePartGraphic(DgnGeometryPartId partId, Render::GraphicR graphic, ElementAlignedBox3dCR localRange) override;
+    Render::TargetR GetTargetR() {return m_target;}
 };
 
 //=======================================================================================

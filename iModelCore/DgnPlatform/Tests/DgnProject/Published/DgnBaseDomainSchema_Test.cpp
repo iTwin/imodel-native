@@ -73,10 +73,38 @@ TEST_F(DgnBaseDomainSchemaTests, ValidateDomainSchemaDDL)
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([CategoryId]) REFERENCES [dgn_Element] ([Id]) ON DELETE RESTRICT")); 
         }
 
-    // Validate Indices
+    // Validate unique indices
+        {
+        Statement statement(*m_db, "SELECT sql FROM sqlite_master WHERE type='index' AND sql LIKE 'CREATE UNIQUE INDEX%'");
+        bvector<Utf8String> expectedSqlList;
+        expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_Model)   "] ([Code_AuthorityId],[Code_Namespace],[Code_Value])");
+        expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_Element) "] ([Code_AuthorityId],[Code_Namespace],[Code_Value])");
+
+        for (Utf8String expectedSql : expectedSqlList)
+            {
+            bool found = false;
+
+            while (BE_SQLITE_ROW == statement.Step())
+                {
+                Utf8String sql = statement.GetValueText(0);
+                if (sql.EndsWith(expectedSql))
+                    {
+                    found = true;
+                    break;
+                    }
+                }
+
+            ASSERT_TRUE(found);
+            statement.Reset();
+            }
+        }
+
+    // Validate indices
         {
         Statement statement(*m_db, "SELECT sql FROM sqlite_master WHERE type='index' AND sql LIKE 'CREATE INDEX%'");
         bvector<Utf8String> expectedSqlList;
+        expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_Authority)          "] ([ECClassId])");
+        expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_Model)              "] ([ECClassId])");
         expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_Element)            "] ([ECClassId])");
         expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_Element)            "] ([ParentId]) WHERE ([ParentId] IS NOT NULL)");
         expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_Element)            "] ([ModelId])");
@@ -91,7 +119,7 @@ TEST_F(DgnBaseDomainSchemaTests, ValidateDomainSchemaDDL)
             while (BE_SQLITE_ROW == statement.Step())
                 {
                 Utf8String sql = statement.GetValueText(0);
-                if (sql.Contains(expectedSql))
+                if (sql.EndsWith(expectedSql))
                     {
                     found = true;
                     break;

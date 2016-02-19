@@ -6,6 +6,10 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
+#include <Logging/bentleylogging.h>
+
+#define LOG (*NativeLogging::LoggingManager::GetLogger (L"DgnECDb"))
+
 USING_NAMESPACE_BENTLEY_DPTEST
 
 //---------------------------------------------------------------------------------------
@@ -13,8 +17,80 @@ USING_NAMESPACE_BENTLEY_DPTEST
 //+---------------+---------------+---------------+---------------+---------------+------
 struct ECInstanceSelectTests : public DgnDbTestFixture
 {
-
+protected:
+    void VerifyInstanceCounts(WCharCP fileName, bmap<Utf8String, int>& benchMark, bvector<Utf8String>& schemasToCheck);
 };
+
+void ECInstanceSelectTests::VerifyInstanceCounts(WCharCP fileName, bmap<Utf8String, int>& benchMark, bvector<Utf8String>& schemasToCheck)
+    {
+    WCharCP testProjFile = L"InstanceCountVerification.idgndb";
+    BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::Readonly;
+
+    BeFileName outFileName;
+    ASSERT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(outFileName, fileName, testProjFile, __FILE__));
+
+    OpenDb(m_db, outFileName, mode);
+    ECSchemaList schemaList;
+    ECSqlStatement stmt;
+
+    bmap<Utf8String, int> classList;
+    ASSERT_EQ(BentleyStatus::SUCCESS, m_db->Schemas().GetECSchemas(schemaList));
+
+    for (auto i = schemaList.begin(); i != schemaList.end(); ++i)
+        {
+        ECN::ECSchemaCP schema = *i;
+        Utf8StringCR schemaName = schema->GetName();
+        bvector<Utf8String>::const_iterator iter = std::find(schemasToCheck.begin(), schemasToCheck.end(), schemaName);
+
+        if (schemasToCheck.end() != iter)
+            {
+            Utf8StringCR schemaPrefix = schema->GetNamespacePrefix();
+            for (ECN::ECClassCP const& ecClass : schema->GetClasses())
+                {
+                if (ecClass->IsEntityClass() == false)
+                    continue;
+                Utf8String ClassName = ecClass->GetName().c_str();
+                Utf8String query = "SELECT COUNT(*) FROM ONLY ";
+                query.append(schemaPrefix);
+                query.append(".[");
+                query.append(ClassName);
+                query.append("]");
+
+                ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db, query.c_str())) << "Statement prepare failed for " << query.c_str();
+                ASSERT_EQ(stmt.Step(), DbResult::BE_SQLITE_ROW);
+                int count = stmt.GetValueInt(0);
+                if (0 != count)
+                    classList[ClassName] = stmt.GetValueInt(0);
+                stmt.Finalize();
+                query.clear();
+                }
+            }
+        }
+    if (classList.size() != benchMark.size())
+        {
+        for (bmap<Utf8String, int>::const_iterator iter = classList.begin(); iter != classList.end(); iter++)
+            LOG.errorv("%s:%d", iter->first.c_str(), iter->second);
+        }
+    ASSERT_TRUE(classList.size() == benchMark.size()) << "Size of the maps doesn't match.";
+
+    bmap<Utf8String, int>::iterator i, j;
+    i = classList.begin();
+    j = benchMark.begin();
+
+    while (i != classList.end() && j != benchMark.end())
+        {
+        Utf8String actualClassName = i->first;
+        Utf8String expectedClassName = j->first;
+        int actualInstanceCount = i->second;
+        int expectedInstanceCount = j->second;
+
+        ASSERT_STREQ(expectedClassName.c_str(), actualClassName.c_str()) << "Class names mismatch at index " << i.position;
+        ASSERT_EQ(expectedInstanceCount, actualInstanceCount) << "Instance count mismatch for class '" << i->first << "'";
+        ++i;
+        ++j;
+        }
+    CloseDb();
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Maha Nasir                         10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -186,7 +262,7 @@ TEST_F (ECInstanceSelectTests, SelectQueriesOnDbGeneratedDuringBuild_79Main)
     stmt.Finalize ();
 
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (*m_db, "Select EQP_NO From ams.EQUIP_MEQP where ELEMENT_ID>5000 ORDER BY EQP_NO ASC"));
-    Utf8String ExpectedStringValue = "102-104-104-104-";
+    Utf8String ExpectedStringValue = "104-104-104-";
     Utf8String ActualStringValue = "";
 
     while (stmt.Step () != DbResult::BE_SQLITE_DONE)
@@ -277,86 +353,178 @@ TEST_F (ECInstanceSelectTests, ImportSchema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECInstanceSelectTests, VerifyInstanceCountFor04Plant)
     {
-    SetupProject (L"04_Plant.i.idgndb", L"InstanceCountVerification04Plant.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
-    ECSchemaList schemaList;
-    ECSqlStatement stmt;
+    bmap<Utf8String, int> benchMark;
 
-    bmap<Utf8String, int> ClassList;
-    bmap<Utf8String, int> BenchMark;
+    benchMark["ArcPlates"] = 9;
+    benchMark["ArcShapes"] = 40;
+    //benchMark["Component"] = 787;
+    benchMark["Equipment"] = 14;
+    benchMark["Equipment_Part"] = 15;
+    benchMark["NonComponent"] = 21;
+    benchMark["Nozzle"] = 55;
+    //benchMark["Object"] = 503;
+    benchMark["Pipeline"] = 61;
+    benchMark["PipingComponent"] = 703;
+    benchMark["Plates"] = 1;
+    benchMark["Shapes"] = 433;
+    benchMark["VolBodies"] = 20;
+    //benchMark["Volume"] = 503;
 
-    BenchMark["ArcPlates"] = 9;
-    BenchMark["ArcShapes"] = 40;
-    BenchMark["Area"] = 0;
-    BenchMark["Assemblies"] = 0;
-    BenchMark["BendPlates"] = 0;
-    BenchMark["BendShapes"] = 0;
-    BenchMark["Bolts"] = 0;
-    BenchMark["Component"] = 787;
-    BenchMark["Equipment"] = 29;
-    BenchMark["Equipment_Part"] = 15;
-    BenchMark["Groups"] = 0;
-    BenchMark["MiscAttachment"] = 0;
-    BenchMark["NonComponent"] = 21;
-    BenchMark["Nozzle"] = 55;
-    BenchMark["Object"] = 503;
-    BenchMark["Pipeline"] = 61;
-    BenchMark["PipingComponent"] = 703;
-    BenchMark["Plates"] = 1;
-    BenchMark["Port"] = 0;
-    BenchMark["Service"] = 0;
-    BenchMark["Shapes"] = 433;
-    BenchMark["SubGroups"] = 0;
-    BenchMark["Unit"] = 0;
-    BenchMark["VolBodies"] = 20;
-    BenchMark["Volume"] = 503;
-
-    ASSERT_EQ (BentleyStatus::SUCCESS, m_db->Schemas ().GetECSchemas (schemaList));
-
-    for (auto i = schemaList.begin (); i != schemaList.end (); ++i)
-        {
-        ECN::ECSchemaCP schema = *i;
-        Utf8StringCR schemaName = schema->GetName ();
-
-        if (schemaName == "AutoPlantPDWPersistenceStrategySchema" || schemaName == "AutoPlantPDW_CustomAttributes" || schemaName == "ProStructures")
-            {
-            Utf8StringCR schemaPrefix = schema->GetNamespacePrefix ();
-            for (ECN::ECClassCP const& ecClass : schema->GetClasses ())
-                {
-                if (ecClass->IsEntityClass () == false)
-                    continue;
-                Utf8String ClassName = ecClass->GetName ().c_str ();
-                Utf8String query = "SELECT COUNT(*) FROM ";
-                query.append (schemaPrefix);
-                query.append (".[");
-                query.append (ClassName);
-                query.append ("]");
-
-                ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (*m_db, query.c_str ())) << "Statement prepare failed for " << query.c_str ();
-                ASSERT_EQ (stmt.Step (), DbResult::BE_SQLITE_ROW);
-                ClassList[ClassName] = stmt.GetValueInt (0);
-                stmt.Finalize ();
-                query.clear ();
-                }
-            }
-        }
-
-    ASSERT_TRUE (ClassList.size () == BenchMark.size ()) << "Size of the maps does'nt match.";
-
-    bmap<Utf8String, int>::iterator i, j;
-    i = ClassList.begin ();
-    j = BenchMark.begin ();
-
-    while (i != ClassList.end () && j != BenchMark.end ())
-        {
-        Utf8String actualClassName = i->first;
-        Utf8String expectedClassName = j->first;
-        int actualInstanceCount = i->second;
-        int expectedInstanceCount = j->second;
-
-        ASSERT_STREQ (expectedClassName.c_str (), actualClassName.c_str ()) << "Class names mismatch at index " << i.position;
-        ASSERT_EQ (expectedInstanceCount, actualInstanceCount) << "Instance count mismatch for class '" << i->first << "'";
-        ++i;
-        ++j;
-        }
+    bvector<Utf8String> schemasToCheck;
+    schemasToCheck.push_back("AutoPlantPDWPersistenceStrategySchema");
+    schemasToCheck.push_back("AutoPlantPDW_CustomAttributes");
+    schemasToCheck.push_back("ProStructures");
+    VerifyInstanceCounts(L"04_Plant.i.idgndb", benchMark, schemasToCheck);
     }
+
+TEST_F(ECInstanceSelectTests, VerifyInstanceCountFor79Main)
+    {
+    bmap<Utf8String, int> benchMark;
+
+    benchMark["TriformaCommon"] = 91;
+    benchMark["EQUIP_MEQP"] = 16;
+    benchMark["EQUIP_PNOZ"] = 58;
+    benchMark["ILPIP_ILPP"] = 30;
+    benchMark["PIPE_OPLT"] = 5;
+    benchMark["PIPE_PBRN"] = 28;
+    benchMark["PIPE_PCAP"] = 3;
+    benchMark["PIPE_PCRD"] = 25;
+    benchMark["PIPE_PELB"] = 148;
+    benchMark["PIPE_PERD"] = 11;
+    benchMark["PIPE_PFLG"] = 128;
+    benchMark["PIPE_PFLR"] = 5;
+    benchMark["PIPE_PGKT"] = 131;
+    benchMark["PIPE_PIPE"] = 177;
+    benchMark["PIPE_PNOT"] = 2;
+    benchMark["PIPE_PNPL"] = 4;
+    benchMark["PIPE_PVLV"] = 45;
+
+    bvector<Utf8String> schemasToCheck;
+    schemasToCheck.push_back("BuildingDataGroup");
+    schemasToCheck.push_back("ams");
+    VerifyInstanceCounts(L"79_Main.i.idgndb", benchMark, schemasToCheck);
+    }
+
+TEST_F(ECInstanceSelectTests, VerifyInstanceCountForBGRSubset)
+    {
+    bmap<Utf8String, int> benchMark;
+
+    benchMark["GroupingComponent"] = 405;
+    benchMark["Organizer"] = 11;
+    benchMark["PartComponent"] = 1410;
+    benchMark["Root"] = 1;
+    benchMark["SystemComponent"] = 1424;
+    benchMark["VisualizationRuleSet"] = 5;
+
+    bvector<Utf8String> schemasToCheck;
+    schemasToCheck.push_back("CSimProductData");
+    schemasToCheck.push_back("ReviewVisualization");
+    VerifyInstanceCounts(L"BGRSubset.i.idgndb", benchMark, schemasToCheck);
+    }
+
+TEST_F(ECInstanceSelectTests, VerifyinstanceCountsForfacilities_secondary)
+    {
+    bmap<Utf8String, int> benchMark;
+
+    benchMark["Coms__x0020__Outlet"] = 52;
+    benchMark["Deduction__x0020__Area"] = 5;
+    benchMark["Electr__x0020__Outlet"] = 45;
+    benchMark["Employee"] = 18;
+    benchMark["Floor"] = 1;
+    benchMark["Office__x0020__Furniture"] = 141;
+    benchMark["PC"] = 20;
+    benchMark["Room"] = 25;
+    benchMark["Zone"] = 3;
+    benchMark["Secondary__x0020__ECInstanceElementAspect"] = 1;
+
+    bvector<Utf8String> schemasToCheck;
+    schemasToCheck.push_back("Bentley_Facilities_ExpImp_Schema_becert__x003a__Marlow");
+    schemasToCheck.push_back("DgnCustomItemTypes_Custom__x0020__Item__x0020__Types");
+    VerifyInstanceCounts(L"facilities_secondaryinstances.idgndb", benchMark, schemasToCheck);
+    }
+
+TEST_F(ECInstanceSelectTests, VerifyInstanceCountsForMain)
+    {
+    bmap<Utf8String, int> benchMark;
+
+    benchMark["TriformaCommon"] = 91;
+    benchMark["EQUIP_PNOZ"] = 46;
+    benchMark["ILPIP_ILPP"] = 30;
+    benchMark["PIPE_OPLT"] = 5;
+    benchMark["PIPE_PBRN"] = 28;
+    benchMark["PIPE_PCAP"] = 3;
+    benchMark["PIPE_PCRD"] = 25;
+    benchMark["PIPE_PELB"] = 148;
+    benchMark["PIPE_PERD"] = 11;
+    benchMark["PIPE_PFLG"] = 128;
+    benchMark["PIPE_PFLR"] = 5;
+    benchMark["PIPE_PGKT"] = 131;
+    benchMark["PIPE_PIPE"] = 177;
+    benchMark["PIPE_PNOT"] = 2;
+    benchMark["PIPE_PNPL"] = 4;
+    benchMark["PIPE_PVLV"] = 45;
+
+    bvector<Utf8String> schemasToCheck;
+    schemasToCheck.push_back("BuildingDataGroup");
+    schemasToCheck.push_back("ams");
+    VerifyInstanceCounts(L"Main.idgndb", benchMark, schemasToCheck);
+    }
+
+TEST_F(ECInstanceSelectTests, VerifyInstanceCountsForMobileDgn_test)
+    {
+    bmap<Utf8String, int> benchMark;
+
+    benchMark["Class"] = 2;
+    bvector<Utf8String> schemasToCheck;
+    schemasToCheck.push_back("Test");
+    VerifyInstanceCounts(L"MobileDgn_test1.i.idgndb", benchMark, schemasToCheck);
+    }
+
+TEST_F(ECInstanceSelectTests, VerifyInstanceCountsForMobile_file)
+    {
+    bmap<Utf8String, int> benchMark;
+
+    benchMark["Area"] = 1;
+    benchMark["DOCUMENT"] = 1;
+    benchMark["Equipment"] = 2;
+    benchMark["Pipeline"] = 1;
+    benchMark["PipingComponent"] = 5;
+    bvector<Utf8String> schemasToCheck;
+    schemasToCheck.push_back("AutoPlantPDWPersistenceStrategySchema");
+    VerifyInstanceCounts(L"Mobile_file.i.idgndb", benchMark, schemasToCheck);
+    }
+
+TEST_F(ECInstanceSelectTests, VerifyInstanceCountsForrxmrlw1f)
+    {
+    bmap<Utf8String, int> benchMark;
+
+    benchMark["Coms__x0020__Outlet"] = 52;
+    benchMark["Deduction__x0020__Area"] = 5;
+    benchMark["EXP_IMP_SETTINGS_CLASS"] = 9;
+    benchMark["Electr__x0020__Outlet"] = 46;
+    benchMark["Employee"] = 18;
+    benchMark["Floor"] = 1;
+    benchMark["Office__x0020__Furniture"] = 141;
+    benchMark["PC"] = 20;
+    benchMark["Room"] = 10;
+    benchMark["Zone"] = 3;
+
+    bvector<Utf8String> schemasToCheck;
+    schemasToCheck.push_back("Bentley_Facilities_ExpImp_Schema_becert__x003a__Marlow");
+    VerifyInstanceCounts(L"rxmrlw1f.idgndb", benchMark, schemasToCheck);
+    }
+
+TEST_F(ECInstanceSelectTests, VerifyInstanceCountsForsecondary)
+    {
+    bmap<Utf8String, int> benchMark;
+
+    benchMark["PrimInstance"] = 3;
+    benchMark["SecInstanceElementAspect"] = 1;
+    benchMark["SecInstanceBaseElementAspect"] = 1;
+
+    bvector<Utf8String> schemasToCheck;
+    schemasToCheck.push_back("secinstances");
+    VerifyInstanceCounts(L"secondaryinstances.idgndb", benchMark, schemasToCheck);
+    }
+

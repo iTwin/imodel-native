@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: PublicAPI/DgnPlatform/AnnotationTable.h $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 #pragma once
 
@@ -14,7 +14,7 @@
 
 DGNPLATFORM_TYPEDEFS (AnnotationTableCellIndex);
 DGNPLATFORM_TYPEDEFS (AnnotationTableSymbologyValues);
-DGNPLATFORM_TYPEDEFS (AnnotationTableElement);
+DGNPLATFORM_TYPEDEFS (AnnotationTable);
 DGNPLATFORM_TYPEDEFS (AnnotationTableAspect);
 DGNPLATFORM_TYPEDEFS (AnnotationTableCell);
 DGNPLATFORM_TYPEDEFS (AnnotationTableRow);
@@ -34,9 +34,9 @@ DGNPLATFORM_TYPEDEFS (FillRuns);
 DGNPLATFORM_TYPEDEFS (TextBlockHolder);
 //__PUBLISH_SECTION_START__
 
-DGNPLATFORM_REF_COUNTED_PTR(AnnotationTableElement);
+DGNPLATFORM_REF_COUNTED_PTR(AnnotationTable);
 
-#define DGN_CLASSNAME_AnnotationTableElement    "AnnotationTableElement"
+#define DGN_CLASSNAME_AnnotationTable           "AnnotationTable"
 #define DGN_CLASSNAME_AnnotationTableHeader     "AnnotationTableHeader"
 #define DGN_CLASSNAME_AnnotationTableRow        "AnnotationTableRow"
 #define DGN_CLASSNAME_AnnotationTableColumn     "AnnotationTableColumn"
@@ -330,7 +330,7 @@ enum class SizeLockAction
 struct          AnnotationTableSerializer
     {
 private:
-    AnnotationTableElementR             m_table;
+    AnnotationTableR             m_table;
     bset<uint32_t>                      m_usedSymbologyKeys;
 #if defined (NEEDSWORK)
     bset<uint32_t>                      m_usedFillKeys;
@@ -347,9 +347,9 @@ private:
     BentleyStatus   ScheduleDeferredInstances ();
 #endif
 public:
-    AnnotationTableSerializer (AnnotationTableElementR table/*, bool isDynamics, bool updateRange*/) : m_table(table) {};
+    AnnotationTableSerializer (AnnotationTableR table/*, bool isDynamics, bool updateRange*/) : m_table(table) {};
 
-    AnnotationTableElementR  GetElement () { return m_table; }
+    AnnotationTableR  GetElement () { return m_table; }
 
     DgnDbStatus       SerializeTableToDb ();
     };
@@ -471,13 +471,13 @@ struct AnnotationTableAspect
 private:
     bool                        m_hasChanges;
     TableUInt64Value            m_aspectId;
-    AnnotationTableElementR     m_table;
+    AnnotationTableR     m_table;
 
     static AspectTypeData const& GetAspectTypeData(AnnotationTableAspectType);
     void                CopyDataFrom (AnnotationTableAspectCR, bool isNew);
 
 protected:
-    /*ctor*/                AnnotationTableAspect (AnnotationTableElementR t) : m_table (t), m_hasChanges(false) {}
+    /*ctor*/                AnnotationTableAspect (AnnotationTableR t) : m_table (t), m_hasChanges(false) {}
     /*ctor*/                AnnotationTableAspect (AnnotationTableAspectCR rhs, bool isNew);
 
     AnnotationTableAspectR  operator= (AnnotationTableAspectCR rhs);
@@ -504,9 +504,9 @@ public:
     void                AssignProperties (BeSQLite::EC::ECSqlStatement const& statement);
     void                SetAspectId (uint64_t id) { m_aspectId = id; }
 
-    static BentleyStatus   DeleteAspectFromDb (AnnotationTableAspectType, uint64_t aspectId, AnnotationTableElementR table);
-    static BeSQLite::EC::CachedECSqlStatementPtr  GetPreparedSelectStatement (AnnotationTableAspectType, AnnotationTableElementCR);
-    static bool  DbContainsDuplicateRows (AnnotationTableAspectType, AnnotationTableElementCR);
+    static BentleyStatus   DeleteAspectFromDb (AnnotationTableAspectType, uint64_t aspectId, AnnotationTableR table);
+    static BeSQLite::EC::CachedECSqlStatementPtr  GetPreparedSelectStatement (AnnotationTableAspectType, AnnotationTableCR);
+    static bool  DbContainsDuplicateRows (AnnotationTableAspectType, AnnotationTableCR);
 
     BentleyStatus       InsertInDb();
     BentleyStatus       UpdateInDb();
@@ -525,8 +525,8 @@ public:
     virtual void                        _FlushChangesToProperties() {}                      //!< @private
     virtual void                        _DiscloseSymbologyKeys (bset<uint32_t>&) {}         //!< @private
 
-    AnnotationTableElementR     GetTable ()       { return m_table; }
-    AnnotationTableElementCR    GetTable () const { return m_table; }
+    AnnotationTableR     GetTable ()       { return m_table; }
+    AnnotationTableCR    GetTable () const { return m_table; }
 
 };
 
@@ -563,7 +563,7 @@ public:
     Utf8String                      ToString() const;
 
 public:
-    /*ctor*/                        MergeEntry (AnnotationTableElementR, AnnotationTableCellIndex rootCell);
+    /*ctor*/                        MergeEntry (AnnotationTableR, AnnotationTableCellIndex rootCell);
     /*ctor*/                        MergeEntry (MergeEntryCR);
 
     MergeEntryR                     operator= (MergeEntryCR rhs);
@@ -593,7 +593,7 @@ public:
 
     MergeEntryCP                    GetMerge (AnnotationTableCellIndexCR) const;
     MergeEntryP                     GetMerge (AnnotationTableCellIndexCR);
-    BentleyStatus                   DeleteMerge (AnnotationTableCellIndexCR, AnnotationTableElementR table);
+    BentleyStatus                   DeleteMerge (AnnotationTableCellIndexCR, AnnotationTableR table);
     BentleyStatus                   AddMerge (MergeEntryCR);
 
     void                            AdjustMergesAfterIndex (uint32_t rowIndex, bool isRow, bool increment);
@@ -620,11 +620,11 @@ public:
     AnnotationTableFillRunR operator= (AnnotationTableFillRunCR other);
 
     void            From (AnnotationTableFillRunCR other);
-    void            Initialize (AnnotationTableElementCR table, uint32_t hostIndex);
+    void            Initialize (AnnotationTableCR table, uint32_t hostIndex);
     void            Initialize (AnnotationTableFillRunCR other, bool unused);
 
     bool            CanMergeWith (AnnotationTableFillRunCR other) const;
-    void            OnRemoved (AnnotationTableElementR) {}
+    void            OnRemoved (AnnotationTableR) {}
 
     uint32_t        GetHostIndex    ()   const;
     uint32_t        GetStartIndex   ()   const;
@@ -658,7 +658,7 @@ FillRuns::iterator  CreateGap (FillRunsP removedRuns, uint32_t gapStartIndex, ui
 
 void                InsertSpan (uint32_t startIndex, uint32_t span, IFillRunInitializer const&);
 
-void                MergeRedundantRuns (AnnotationTableElementP);
+void                MergeRedundantRuns (AnnotationTableP);
 void                ApplyRun (uint32_t fillKey, uint32_t verticalSpan, uint32_t startIndex, uint32_t span);
 };
 
@@ -703,7 +703,7 @@ public:
     Utf8String                      ToString() const;
 
 public:
-    /*ctor*/                        SymbologyEntry (AnnotationTableElementR, uint32_t key);
+    /*ctor*/                        SymbologyEntry (AnnotationTableR, uint32_t key);
     /*ctor*/                        SymbologyEntry (SymbologyEntryCR other);
     /*ctor*/                        SymbologyEntry (SymbologyEntryCR other, bool isNew);
 
@@ -805,17 +805,17 @@ public:
     void                            SetKey (uint32_t);
     Utf8String                      ToString() const;
 
-    EdgeRunsP                       GetHostEdgeRuns (AnnotationTableElementR) const;
-    uint32_t                        GetHostMaxIndex (AnnotationTableElementCR table) const;
+    EdgeRunsP                       GetHostEdgeRuns (AnnotationTableR) const;
+    uint32_t                        GetHostMaxIndex (AnnotationTableCR table) const;
 
     bool                            CanMergeWith (AnnotationTableEdgeRunCR other) const;
-    void                            OnRemoved (AnnotationTableElementR table);
+    void                            OnRemoved (AnnotationTableR table);
 
     void                            CopyDataFrom (AnnotationTableEdgeRunCR);
 
 //__PUBLISH_SECTION_START__
 public:
-    /*ctor*/                        AnnotationTableEdgeRun (AnnotationTableElementR);
+    /*ctor*/                        AnnotationTableEdgeRun (AnnotationTableR);
     /*ctor*/                        AnnotationTableEdgeRun (AnnotationTableEdgeRunCR other);
     /*ctor*/                        AnnotationTableEdgeRun (AnnotationTableEdgeRunCR other, bool isNew);
     void                            Initialize (EdgeRunHostType, uint32_t hostIndex);
@@ -857,15 +857,15 @@ struct EdgeRuns : bvector<AnnotationTableEdgeRun>
 {
 DGNPLATFORM_EXPORT Utf8String   ToString() const;
 
-void                            CopyFrom (EdgeRunsCR source, AnnotationTableElementR element);
+void                            CopyFrom (EdgeRunsCR source, AnnotationTableR element);
 
 DGNPLATFORM_EXPORT iterator     CreateGap (EdgeRunsP removedRuns, uint32_t startIndex, uint32_t span);
 DGNPLATFORM_EXPORT void         CloseSpan (EdgeRunsP removedRuns, uint32_t startIndex, uint32_t span);
 DGNPLATFORM_EXPORT void         Insert (AnnotationTableEdgeRunCR newEdgeRun);
 DGNPLATFORM_EXPORT void         InsertSpan (uint32_t startIndex, uint32_t span, IEdgeRunInitializer const&);
-DGNPLATFORM_EXPORT void         DeleteSpan (AnnotationTableElementR, uint32_t startIndex, uint32_t span);
+DGNPLATFORM_EXPORT void         DeleteSpan (AnnotationTableR, uint32_t startIndex, uint32_t span);
 DGNPLATFORM_EXPORT void         FillGap (uint32_t startIndex, uint32_t span);
-DGNPLATFORM_EXPORT void         MergeRedundantRuns (AnnotationTableElementP);
+DGNPLATFORM_EXPORT void         MergeRedundantRuns (AnnotationTableP);
 
 bool                            IsGapEnd   (uint32_t index) const;
 bool                            IsGapStart (uint32_t index, uint32_t maxIndex) const;
@@ -970,7 +970,7 @@ static  double          ComputeDescenderAdjustment (AnnotationTextBlockLayoutCR)
 //=======================================================================================
 struct AnnotationTableCell : AnnotationTableAspect
 {
-friend AnnotationTableElement;
+friend AnnotationTable;
 
 private:
     AnnotationTableCellIndex    m_index;
@@ -1081,7 +1081,7 @@ public:
 //__PUBLISH_SECTION_START__
 
 public:
-    /*ctor*/        AnnotationTableCell (AnnotationTableElementR, AnnotationTableCellIndex index);
+    /*ctor*/        AnnotationTableCell (AnnotationTableR, AnnotationTableCellIndex index);
     /*ctor*/        AnnotationTableCell (AnnotationTableCellCR);
 
     AnnotationTableCellR operator= (AnnotationTableCellCR rhs);
@@ -1152,7 +1152,7 @@ DGNPLATFORM_EXPORT  void                        Unmerge ();
 //=======================================================================================
 struct AnnotationTableRow : AnnotationTableAspect
 {
-friend AnnotationTableElement;
+friend AnnotationTable;
 
 private:
     uint32_t                        m_index;
@@ -1212,7 +1212,7 @@ public:
 //__PUBLISH_SECTION_START__
 
 public:
-    /*ctor*/        AnnotationTableRow (AnnotationTableElementR, int index);
+    /*ctor*/        AnnotationTableRow (AnnotationTableR, int index);
     /*ctor*/        AnnotationTableRow (AnnotationTableRowCR);
 
     AnnotationTableRowR operator= (AnnotationTableRowCR rhs);
@@ -1253,7 +1253,7 @@ DGNPLATFORM_EXPORT  BentleyStatus               SetHeaderFooterType (TableHeader
 //=======================================================================================
 struct AnnotationTableColumn : AnnotationTableAspect
 {
-friend AnnotationTableElement;
+friend AnnotationTable;
 
 private:
     uint32_t                m_index;
@@ -1309,7 +1309,7 @@ public:
 //__PUBLISH_SECTION_START__
 
 public:
-    /*ctor*/        AnnotationTableColumn (AnnotationTableElementR, int index);
+    /*ctor*/        AnnotationTableColumn (AnnotationTableR, int index);
     /*ctor*/        AnnotationTableColumn (AnnotationTableColumnCR);
 
     AnnotationTableColumnR operator= (AnnotationTableColumnCR rhs);
@@ -1353,7 +1353,7 @@ DGNPLATFORM_EXPORT  BentleyStatus               SetHeaderFooterType (TableHeader
 //! @private
 struct TableHeaderAspect : AnnotationTableAspect
 {
-friend AnnotationTableElement;
+friend AnnotationTable;
 
 private:
     TableUIntValue          m_rowCount;
@@ -1438,7 +1438,7 @@ private:
         DefaultTextSymbKey      = 37,
         };
 
-    TableHeaderAspect (AnnotationTableElementR);
+    TableHeaderAspect (AnnotationTableR);
     void        CopyDataFrom (TableHeaderAspect const& rhs);
 
     void        Invalidate ();
@@ -1481,7 +1481,7 @@ struct AnnotationTableCellCollection;
 
 /*=================================================================================**//**
 * An iterator that can step through the set of cells in a table.
-* See AnnotationTableElement::GetCellCollection
+* See AnnotationTable::GetCellCollection
 +===============+===============+===============+===============+===============+======*/
 struct      AnnotationTableCellIterator : RefCountedBase, std::iterator<std::forward_iterator_tag, AnnotationTableCell>
 {
@@ -1508,12 +1508,12 @@ public:
 struct      AnnotationTableCellCollection
 {
 private:
-    friend struct   AnnotationTableElement;
+    friend struct   AnnotationTable;
     friend struct   AnnotationTableCellIterator;
 
-    AnnotationTableElementPtr    m_table;
+    AnnotationTablePtr    m_table;
 
-    AnnotationTableCellCollection (AnnotationTableElementCR table);
+    AnnotationTableCellCollection (AnnotationTableCR table);
 
 public:
     typedef ECN::VirtualCollectionIterator<AnnotationTableCellIterator> const_iterator;
@@ -1527,7 +1527,7 @@ public:
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE AnnotationTableElement : AnnotationElement
+struct EXPORT_VTABLE_ATTRIBUTE AnnotationTable : AnnotationElement2d
 {
 //__PUBLISH_SECTION_END__
 friend struct AnnotationTableSerializer;
@@ -1536,7 +1536,7 @@ friend struct V8TextTableToDgnDbConverter;
 //__PUBLISH_SECTION_START__
 
 private:
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationTableElement, AnnotationElement) 
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationTable, AnnotationElement2d) 
 
     TableHeaderAspect                       m_tableHeader;
     SymbologyDictionary                     m_symbologyDictionary;
@@ -1648,16 +1648,16 @@ public:
     double                          GetDefaultBreakGap () const;
 //__PUBLISH_SECTION_START__
 public:
-                    explicit                        AnnotationTableElement(CreateParams const& params);
-DGNPLATFORM_EXPORT  static AnnotationTableElementPtr Create(CreateParams const& params);
+                    explicit                        AnnotationTable(CreateParams const& params);
+DGNPLATFORM_EXPORT  static AnnotationTablePtr       Create(CreateParams const& params);
 
-                    static DgnClassId               QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationTableElement)); }
+                    static DgnClassId               QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationTable)); }
 
-                    static AnnotationTableElementCPtr Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<AnnotationTableElement>(id); }
-                    static AnnotationTableElementPtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<AnnotationTableElement>(id); }
-                    AnnotationTableElementCPtr      Insert() { return GetDgnDb().Elements().Insert<AnnotationTableElement>(*this); }
-                    AnnotationTableElementCPtr      Update() { return GetDgnDb().Elements().Update<AnnotationTableElement>(*this); }
-                    DgnDbStatus                     Delete() { return GetDgnDb().Elements().Delete(*this); }
+                    static AnnotationTableCPtr      Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<AnnotationTable>(id); }
+                    static AnnotationTablePtr       GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<AnnotationTable>(id); }
+                    AnnotationTableCPtr             Insert() { return GetDgnDb().Elements().Insert<AnnotationTable>(*this); }
+                    AnnotationTableCPtr             Update() { return GetDgnDb().Elements().Update<AnnotationTable>(*this); }
+                    DgnDbStatus                     Delete() const { return GetDgnDb().Elements().Delete(*this); }
 
                     bool                            IsValid () const;
 
@@ -1789,18 +1789,18 @@ DGNPLATFORM_EXPORT  void                            SetHeight (double val);
 //! @param textStyleId      IN  The default TextStyle.
 //! @param backupTextHeight IN  Used when textStyleId refers to a style with zero text height.
 //! @param params           IN  General element parameters
-DGNPLATFORM_EXPORT  static  AnnotationTableElementPtr            Create(uint32_t rowCount, uint32_t columnCount, DgnElementId textStyleId, double backupTextHeight, CreateParams const& params);
+DGNPLATFORM_EXPORT  static  AnnotationTablePtr            Create(uint32_t rowCount, uint32_t columnCount, DgnElementId textStyleId, double backupTextHeight, CreateParams const& params);
 
 };
 
 namespace dgn_ElementHandler
 {
     //=======================================================================================
-    //! The ElementHandler for AnnotationTableElement
+    //! The ElementHandler for AnnotationTable
     //=======================================================================================
-    struct AnnotationTableHandler : Annotation
+    struct AnnotationTableHandler : Annotation2d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationTableElement, AnnotationTableElement, AnnotationTableHandler, Annotation, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationTable, AnnotationTable, AnnotationTableHandler, Annotation2d, DGNPLATFORM_EXPORT);
     };
 };
 
@@ -1879,15 +1879,15 @@ public:
 struct      TablePositionedCells
 {
 private:
-    //friend struct   AnnotationTable;
+    //friend struct   AnnotationTableElement;
     friend struct   TablePositionedCellIterator;
 
     bool                        m_ownSubTables;
     SubTablesCP                 m_subTables;
-    AnnotationTableElementPtr   m_table;
+    AnnotationTablePtr   m_table;
 
 public:
-    DGNPLATFORM_EXPORT TablePositionedCells (AnnotationTableElementCR, SubTablesCP, bool ownSubTables);
+    DGNPLATFORM_EXPORT TablePositionedCells (AnnotationTableCR, SubTablesCP, bool ownSubTables);
     DGNPLATFORM_EXPORT ~TablePositionedCells ();
 
     typedef VirtualCollectionIterator<TablePositionedCellIterator> const_iterator;
@@ -1963,7 +1963,7 @@ private:
 
     TableFillBoxes (AnnotationTableStroker const&, SubTablesCR);
 
-    AnnotationTableElementCR    GetTable() const;
+    AnnotationTableCR    GetTable() const;
     FillRunsCR                  GetFillRuns(uint32_t rowIndex) const;
 
 public:
@@ -2048,10 +2048,10 @@ private:
     friend struct   TableEdgeStrokeIterator;
 
     bool                        m_horizontal;
-    AnnotationTableElementPtr   m_table;
+    AnnotationTablePtr   m_table;
     SubTablesCR                 m_subTables;
 
-    TableEdgeStrokes (AnnotationTableElementCR, bool horizontal, SubTablesCR subTables);
+    TableEdgeStrokes (AnnotationTableCR, bool horizontal, SubTablesCR subTables);
 
 public:
     typedef VirtualCollectionIterator<TableEdgeStrokeIterator> const_iterator;
@@ -2068,9 +2068,9 @@ public:
 struct          AnnotationTableStroker
 {
 private:
-    AnnotationTableElementCR    m_table;
-    GeometryBuilderR     m_geomBuilder;
-    bvector<FillRuns>           m_allFillRuns;
+    AnnotationTableCR       m_table;
+    GeometryBuilderR        m_geomBuilder;
+    bvector<FillRuns>       m_allFillRuns;
 
     bool                    m_addFills;
     bool                    m_addTextBlocks;
@@ -2094,9 +2094,9 @@ private:
 #endif
 
 public:
-    AnnotationTableStroker (AnnotationTableElementCR table, GeometryBuilderR builder);
+    AnnotationTableStroker (AnnotationTableCR table, GeometryBuilderR builder);
 
-    AnnotationTableElementCR    GetTable () const { return m_table; }
+    AnnotationTableCR    GetTable () const { return m_table; }
     FillRunsCR                  GetFillRuns (uint32_t rowIndex) const { return m_allFillRuns[rowIndex]; }
 
     void            WantAddTextBlocks          (bool v) { m_addTextBlocks = v; }
