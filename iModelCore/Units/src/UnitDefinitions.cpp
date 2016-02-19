@@ -55,7 +55,7 @@ void AddLengths(UnitRegistry& reg)
     reg.AddUnit(LENGTH, ASTRONOMY, "LIGHT_MIN", "[C]*MIN");// ); //, BISQSecUom);
     reg.AddUnit(LENGTH, ASTRONOMY, "LIGHT_HOUR", "[C]*HR");// ); //, BISQSecUom);
     reg.AddUnit(LENGTH, ASTRONOMY, "LIGHT_YEAR", "[C]*YR");// ); //, BISQSecUom);
-    reg.AddUnit(LENGTH, ASTRONOMY, "AU", "M", 1.495978707, 11.0);// ); //, BISQNoDescript); //, BISQSecUom);
+    reg.AddUnit(LENGTH, ASTRONOMY, "AU", "M", 1.495978707e11);// ); //, BISQNoDescript); //, BISQSecUom);
     }
 
 void AddMass(UnitRegistry& reg)
@@ -137,6 +137,7 @@ void AddCapita(UnitRegistry& reg)
     {
     reg.AddUnit(CAPITA, STATISTICS, "CAPITA", "PERSON"); //, BISQSecUom);
     reg.AddUnit(CAPITA, STATISTICS, "CUSTOMER", "PERSON"); //, BISQSecUom);
+    reg.AddUnit(CAPITA, STATISTICS, "PASSENGER", "PERSON");// , BISQSecUom);
     reg.AddUnit(CAPITA, STATISTICS, "EMPLOYEE", "PERSON"); //, BISQSecUom);
     reg.AddUnit(CAPITA, STATISTICS, "STUDENT", "PERSON"); //, BISQSecUom);
     reg.AddUnit(CAPITA, STATISTICS, "GUEST", "PERSON"); //, BISQSecUom);
@@ -269,6 +270,11 @@ void AddElectricCurrent(UnitRegistry& reg)
     reg.AddUnit(CURRENT, SI, "MICROAMPERE", "[MICRO]*A"); //, BISQSecUom);
     }
 
+void AddElectricCharge(UnitRegistry& reg)
+    {
+    reg.AddUnit(ELECTRIC_CHARGE, SI, "COULOMB", "A*S");
+    }
+
 void AddEnergy(UnitRegistry& reg)
     {
     UnitCP unit = reg.AddUnit(WORK, SI, "J", "N*M");
@@ -280,7 +286,7 @@ void AddEnergy(UnitRegistry& reg)
     unit = reg.AddUnit(WORK, SI, "GJ", "[GIGA]*N*M");
     reg.AddSynonym(unit, "GIGAJOULE");
     reg.AddUnit(WORK, USCUSTOM, "FOOT_POUNDAL", "POUNDAL*FT"); //, BISQSecUom);
-    unit = reg.AddUnit(WORK, INTERNATIONAL, "BTU", "J", 1.055056, 3.0);
+    unit = reg.AddUnit(WORK, INTERNATIONAL, "BTU", "J", 1.055056e3);
     reg.AddSynonym(unit, "BRITISH_THERMAL_UNIT");
     reg.AddUnit(WORK, USCUSTOM, "KILOBTU", "[KILO]*BTU"); //, BISQSecUom);
 
@@ -305,20 +311,25 @@ void AddEnergy(UnitRegistry& reg)
 // TODO: Check these phenomena, Energy Density?
 void AddEnergyDensity(UnitRegistry& reg)
     {
-    UnitCP unit = reg.AddUnit(HEATING_VALUE, SI, "J/CUB.M", "J*M(-3)");
+    UnitCP unit = reg.AddUnit(HEATING_VALUE_VOLUMETRIC, SI, "J/CUB.M", "J*M(-3)");
     reg.AddSynonym(unit, "JOULE_PER_METRE_CUBED");
-    unit = reg.AddUnit(HEATING_VALUE, SI, "KJ/CUB.M", "KJ*M(-3)");
+    unit = reg.AddUnit(HEATING_VALUE_VOLUMETRIC, SI, "KJ/CUB.M", "KJ*M(-3)");
     reg.AddSynonym(unit, "KILOJOULE_PER_METRE_CUBED");
+    unit = reg.AddUnit(HEATING_VALUE_VOLUMETRIC, SI, "KWH/CUB.M", "KWH*M(-3)");
+    reg.AddSynonym(unit, "KILOWATT_HOUR_PER_METRE_CUBED");
+    unit = reg.AddUnit(HEATING_VALUE_VOLUMETRIC, USCUSTOM, "KWH/CUB.FT", "KWH*FT(-3)");
+    reg.AddSynonym(unit, "KILOWATT_HOUR_PER_FOOT_CUBED");
+    unit = reg.AddUnit(HEATING_VALUE_VOLUMETRIC, USCUSTOM, "KILOWATT_HOUR_PER_MILLION_GALLON", "KWH*GALLON(-1)", 1.0e-6);
     }
 
 void AddHeatingValue(UnitRegistry& reg)
     {
-    UnitCP unit = reg.AddUnit(HEATING_VALUE, SI, "J/KG", "J*KG(-1)");  // NOTE: Changed from J*M(-3)
-    unit = reg.AddUnit(HEATING_VALUE, SI, "KJ/KG", "KJ*KG(-1)");
+    UnitCP unit = reg.AddUnit(HEATING_VALUE_MASS, SI, "J/KG", "J*KG(-1)");  // NOTE: Changed from J*M(-3)
+    unit = reg.AddUnit(HEATING_VALUE_MASS, SI, "KJ/KG", "KJ*KG(-1)");
     reg.AddSynonym(unit, "KILOJOULE_PER_KILOGRAM");
-    unit = reg.AddUnit(HEATING_VALUE, USCUSTOM, "BTU/LBM", "BTU*LBM(-1)");
+    unit = reg.AddUnit(HEATING_VALUE_MASS, USCUSTOM, "BTU/LBM", "BTU*LBM(-1)");
     reg.AddSynonym(unit, "BTU_PER_POUND_MASS");
-    //unit = reg.AddUnit(HEATING_VALUE, USCUSTOM, "BTU_PER_POUND_MOLE", "M_L2_PER_T2_MOL"); // TODO: Make expression and check dimension, add KILOJOULE_PER_KILOMOLE
+    //unit = reg.AddUnit(HEATING_VALUE_VOLUMETRIC, USCUSTOM, "BTU_PER_POUND_MOLE", "M_L2_PER_T2_MOL"); // TODO: Make expression and check dimension, add KILOJOULE_PER_KILOMOLE
     
     }
 
@@ -413,6 +424,12 @@ void AddSurfaceFlowRate(UnitRegistry& reg)
     reg.AddSynonym(unit, "GALLON_PER_MILE_SQUARED_PER_MINUTE");
     unit = reg.AddUnit(SURFACE_FLOW_RATE, USCUSTOM, "GALLON/(DAY*SQ.MILE)", "GALLON*DAY(-1)*MILE(-2)");
     reg.AddSynonym(unit, "GALLON_PER_MILE_SQUARED_PER_DAY");
+    }
+
+void AddMassRatio(UnitRegistry& reg)
+    {
+    reg.AddUnit(MASS_RATIO, SI, "KILOGRAM_PER_KILOGRAM", "KG*KG(-1)");
+    reg.AddUnit(MASS_RATIO, USCUSTOM, "GRAIN_MASS_PER_POUND_MASS", "GRAIN*LBM(-1)");
     }
 
 void AddMassFlowRate(UnitRegistry& reg)
@@ -553,6 +570,7 @@ void AddMolarConcentration(UnitRegistry& reg)
     reg.AddSynonym(unit, "MOLE_PER_FOOT_CUBED");
     }
 
+// TODO: Check Area moment?
 void AddMomentOfInertia(UnitRegistry& reg)
     {
     UnitCP unit = reg.AddUnit(MOMENTINERTIA, USCUSTOM, "M^4", "M(4)");

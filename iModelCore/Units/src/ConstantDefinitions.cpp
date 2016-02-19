@@ -27,6 +27,7 @@ void UnitRegistry::AddDefaultConstants ()
     reg.AddConstant(ANGLE, "360DEG", "ARC_DEG", 360); //, "Full Circle");
     reg.AddConstant(RATIO, "E", "ONE", E); //, "Base of the natural logarithm");
     reg.AddConstant(GRAVCONSTANT, "G0", "M(3)*KG(-1)*S(-2)", 6.67408e-11); //, "Gravitational constant");
+    reg.AddConstant(GRAVCONSTANT, "Q0", "A*S", 1.6021766208e-19);// , "Elementary Charge");
     reg.AddConstant(ACCELERATION, "STD_G", "M*S(-2)", 9.80665); //, "Standard Gravity");
     reg.AddConstant(RATIO, "H", "J*S", 6.62607004e-34); //, "Planck constant");
     reg.AddConstant(RATIO, "A0", "MOL(-1)", 6.022140857e23); //, "Avogadro Number");

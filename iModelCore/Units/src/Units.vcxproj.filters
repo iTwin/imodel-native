@@ -50,9 +50,6 @@
     <ClInclude Include="..\PublicAPI\Units\UnitTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\PrivateAPI\Parser.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="UnitsPCH.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -60,6 +57,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="StandardNames.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Parser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

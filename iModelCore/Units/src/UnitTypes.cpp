@@ -7,29 +7,25 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "UnitsPCH.h"
+#include <queue>
 
 USING_NAMESPACE_BENTLEY_UNITS
-
-Unit::Unit (Utf8Vector& numerator, Utf8Vector& denominator) : SymbolicFraction(numerator, denominator),
-    m_name(""), m_system (""), m_dimensionSymbol('\n'), m_factor(1.0), m_offset(0.0)
-    {
-
-    }
-
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Unit::Unit(Utf8CP system, Utf8CP phenomena, Utf8CP name, Utf8CP definition, Utf8Char dimensonSymbol, double factor, double offset) : SymbolicFraction(definition),
-    m_name(name), m_system (system), m_factor(factor), m_offset(offset), m_dimensionSymbol(dimensonSymbol)
+Unit::Unit(Utf8CP system, Utf8CP phenomena, Utf8CP name, Utf8CP definition, Utf8Char dimensonSymbol, double factor, double offset, bool isConstant) :
+    m_name(name), m_system(system), m_phenomenon(phenomena), m_definition(definition), m_factor(factor), m_offset(offset), m_dimensionSymbol(dimensonSymbol),
+    m_isConstant(isConstant), m_evaluated(false)
     {
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitP Unit::Create (Utf8CP sysName, Utf8CP phenomName, Utf8CP unitName, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset)
+UnitP Unit::Create (Utf8CP sysName, Utf8CP phenomName, Utf8CP unitName, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant)
     {
-    return new Unit (sysName, phenomName, unitName, definition, dimensionSymbol, factor, offset);
+    LOG.debugv("Creating unit %s  Factor: %lf  Offset: %d", unitName, factor, offset);
+    return new Unit (sysName, phenomName, unitName, definition, dimensionSymbol, factor, offset, isConstant);
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -37,10 +33,62 @@ UnitP Unit::Create (Utf8CP sysName, Utf8CP phenomName, Utf8CP unitName, Utf8CP d
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Unit::IsRegistered() const
     {
-    // TODO: Should this be lookup by name?
-    auto newUnit = UnitRegistry::Instance().LookupUnitBySubTypes(Numerator(), Denominator());
+    return UnitRegistry::Instance().HasUnit(GetName());
+    }
+
+void PrintForumula(UnitCP unit, bvector<UnitFactorExponent*> expression)
+    {
+    LOG.debugv("Formula for: %s", unit->GetName());
+    Utf8String output;
+    for (auto const& uWE : expression)
+        {
+        Utf8PrintfString uWEString("Unit: %s   UnitFactor: %lf   UnitExponent: %d", uWE->m_unit->GetName(), uWE->m_unit->GetFactor(), uWE->m_exponent);
+        output.append(uWEString.c_str());
+        }
+    LOG.debug(output.c_str());
+    }
+
+double Unit::GetConversionTo(UnitCP unit) const
+    {
+    if (!m_evaluated)
+        Evaluate();
+    if (!unit->m_evaluated)
+        unit->Evaluate();
     
-    return newUnit != nullptr;
+    if (LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_DEBUG))
+        {
+        PrintForumula(this, m_unitFormula);
+        PrintForumula(unit, unit->m_unitFormula);
+        }
+
+    // TODO: Minify forumlas
+    // TODO: Check that formulas are compatible
+    
+    double fromFactor = m_factor;
+    LOG.debugv("Starting from factor for %s: %lf", GetName(), fromFactor);
+    for (auto const& uWE : m_unitFormula)
+        {
+        fromFactor *= pow(uWE->m_unit->GetFactor(), uWE->m_exponent);
+        }
+    LOG.debugv("Final From factor for %s: %lf", GetName(), fromFactor);
+    double toFactor = unit->m_factor;
+    LOG.debugv("Starting to factor for %s: %lf", unit->GetName(), toFactor);
+    for (auto const& uWE : unit->m_unitFormula)
+        {
+        toFactor *= pow(uWE->m_unit->GetFactor(), uWE->m_exponent);
+        }
+    LOG.debugv("Final To factor for %s: %lf", unit->GetName(), toFactor);
+    return fromFactor / toFactor;
+    }
+
+bvector<UnitFactorExponent*>& Unit::Evaluate() const
+    {
+    if (!m_evaluated)
+        {
+        ParseDefinition(m_definition.c_str(), m_unitFormula, 1);
+        m_evaluated = true;
+        }
+    return m_unitFormula;
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -48,7 +96,7 @@ bool Unit::IsRegistered() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Unit::operator== (UnitCR rhs) const
     {
-    return T_Super::operator==(rhs);
+    return false;//TODO: Replace with comparison of unit formula T_Super::operator==(rhs);
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -64,7 +112,7 @@ bool Unit::operator!= (UnitCR rhs) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 UnitCR Unit::operator* (UnitCR rhs) const
     {
-    auto result = T_Super::operator/(rhs);
+    auto result = SymbolicFraction(m_definition.c_str());//T_Super::operator/(rhs);
 
     UnitCP unit = UnitRegistry::Instance().LookupUnitBySubTypes(result.Numerator(), result.Denominator());
     if (nullptr != unit)
@@ -76,7 +124,7 @@ UnitCR Unit::operator* (UnitCR rhs) const
     Utf8Vector d = Utf8Vector();
     copy (result.Denominator().begin(), result.Denominator().end(), d.begin());
 
-    return move(Unit(n, d));
+    return rhs;// move(Unit(n, d));
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -84,7 +132,7 @@ UnitCR Unit::operator* (UnitCR rhs) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 UnitCR Unit::operator/ (UnitCR rhs) const
     {
-    auto result = T_Super::operator/(rhs);
+    auto result = SymbolicFraction(m_definition.c_str());//T_Super::operator/(rhs);
 
     UnitCP unit = UnitRegistry::Instance().LookupUnitBySubTypes(result.Numerator(), result.Denominator());
     if (nullptr != unit)
@@ -96,44 +144,18 @@ UnitCR Unit::operator/ (UnitCR rhs) const
     Utf8Vector d = Utf8Vector();
     copy (result.Denominator().begin(), result.Denominator().end(), d.begin());
 
-    return move(Unit(n, d));
+    return rhs; // move(Unit(n, d));
     }
-
-// TODO: error handling
-//double Unit::GenerateConversion(UnitCR from, UnitCR to)
-//    {
-//    bvector<UnitCP> fromNumerator;
-//    if (!WalkUnitNameVactor(from.Numerator(), fromNumerator))
-//        return 0.0;
-//    
-//    bvector<UnitCP> fromDenominator;
-//    if (!WalkUnitNameVactor(from.Denominator(), fromDenominator))
-//        return 0.0;
-//
-//
-//    }
-//
-//bool WalkUnitNameVactor(const Utf8Vector& unitNameVector, bvector<UnitCP>& unitVector)
-//    {
-//    for (auto const& unitName : unitNameVector)
-//        {
-//        auto unit = UnitRegistry::Instance().LookupUnit(unitName.c_str());
-//        if (nullptr == unit)
-//            {
-//            LOG.errorv("Could not generate conversion factor because sub unit %s could not be found", unitName);
-//            return false;
-//            }
-//
-//        unitVector.push_back(unit);
-//        }
-//    return true;
-//    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SymbolicFraction::SimplifySubTypes(Utf8Vector &n, Utf8Vector &d)
     {
+    // No intersection if one vector is empty
+    if (n.size() == 0 || d.size() == 0)
+        return;
+    
     auto temp = Utf8Vector();
     
     // Remove the intersection between the two vectors.
@@ -142,14 +164,18 @@ void SymbolicFraction::SimplifySubTypes(Utf8Vector &n, Utf8Vector &d)
     move(temp.begin(), temp.end(), n.begin());
     temp.erase(temp.begin(), temp.end());
 
-    set_difference (d.begin(), d.end(), n.begin(), n.end(), temp.begin());
+    // We can stop if either one is empty
+    if (n.size() == 0 || d.size() == 0)
+        return;
+
+    set_difference(d.begin(), d.end(), n.begin(), n.end(), temp.begin());
     d.erase(d.begin(), d.end());
     move(temp.begin(), temp.end(), d.begin());
     }
 
 SymbolicFraction::SymbolicFraction(Utf8CP definition)
     {
-    ParseDefinition(definition, m_numerator, m_denominator);
+    //ParseDefinition(definition, m_numerator, m_denominator);
     }
 SymbolicFraction::SymbolicFraction(Utf8Vector& numerator, Utf8Vector& denominator)
     {

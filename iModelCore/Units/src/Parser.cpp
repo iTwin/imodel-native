@@ -23,9 +23,15 @@ void UnitToken::AddToNumeratorOrDenominator(Utf8Vector& numerator, Utf8Vector& d
 void UnitToken::AddToVector(Utf8Vector& ator)
     {
     for (int i = 0; i < abs(m_exponent); ++i)
-        ator.push_back(Utf8String(m_tolken.c_str()));
+        ator.push_back(Utf8String(m_token.c_str()));
 
-    m_tolken.clear();
+    m_token.clear();
+    m_exponent = 1;
+    }
+
+void UnitToken::Clear()
+    {
+    m_token.clear();
     m_exponent = 1;
     }
 
@@ -40,18 +46,84 @@ int Exponent::GetExponent()
     return value;
     }
 
+void Unit::MergeExpressions(bvector<UnitFactorExponent*>& targetExpression, bvector<UnitFactorExponent*>& sourceExpression, int startingExponent)
+    {
+    for (const auto& uWE : sourceExpression)
+        {
+        int     mergedExponent = uWE->m_exponent * startingExponent;
+
+        auto it = find_if(targetExpression.begin(), targetExpression.end(), [&] (UnitFactorExponent* a) { return strcmp(uWE->m_unit->GetName(), a->m_unit->GetName()) == 0; });
+        if (it != targetExpression.end())
+            {
+            LOG.debugv("Merging existing UFE for %s.  With Exponent: %d", (*it)->m_unit->GetName(), mergedExponent);
+            (*it)->m_exponent += mergedExponent;
+            }
+        else
+            {
+            LOG.debugv("Adding UFE for %s   With Exponent: %d", uWE->m_unit->GetName(), mergedExponent);
+            UnitFactorExponent* copy = new UnitFactorExponent(uWE->m_unit, mergedExponent);
+            targetExpression.push_back(copy);
+            }
+        }
+    }
+
+BentleyStatus Unit::AddUFEToExpression(bvector<UnitFactorExponent*>& unitExpression, Utf8CP definition, Utf8CP token, int mergedExponent)
+    {
+    auto it = find_if(unitExpression.begin(), unitExpression.end(), [&] (UnitFactorExponent* a) { return strcmp(token, a->m_unit->GetName()) == 0; });
+    if (it != unitExpression.end())
+        {
+        (*it)->m_exponent += mergedExponent;
+        }
+    else
+        {
+        UnitCP unit = UnitRegistry::Instance().LookupUnit(token);
+        if (nullptr == unit)
+            {
+            LOG.errorv("Failed to parse %s because the unit %s could not be found", definition, token);
+            return BentleyStatus::ERROR;
+            }
+        if (!unit->IsBaseUnit())
+            {
+            UnitFactorExponent* uWE = new UnitFactorExponent(unit, mergedExponent);
+            unitExpression.push_back(uWE);
+            if (!unit->IsConstant())
+                {
+                LOG.debugv("Mergin sub expression for %s", unit->GetName());
+                bvector<UnitFactorExponent*> subExpression = unit->Evaluate();
+                MergeExpressions(unitExpression, subExpression, mergedExponent);
+                }
+            }
+        }
+    return BentleyStatus::SUCCESS;
+    }
+
+BentleyStatus Unit::HandleToken(bvector<UnitFactorExponent*>& unitExpression, Utf8CP definition, Utf8CP constToken, Utf8CP token, int tokenExponent, int startingExponent)
+    {
+    LOG.debugv("Handle Token: %s  ConstToken: %s  TokenExp: %d  StartExp: %d", token, Utf8String::IsNullOrEmpty(constToken)? "None": constToken, tokenExponent, startingExponent);
+    int mergedExponent = tokenExponent * startingExponent;
+    if (!Utf8String::IsNullOrEmpty(constToken))
+        {
+        AddUFEToExpression(unitExpression, definition, constToken, mergedExponent);
+        LOG.debugv("%s - Merged Exponent: %d", definition, mergedExponent);
+        }
+
+    return AddUFEToExpression(unitExpression, definition, token, mergedExponent);
+    }
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Colin.Kerr         02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SymbolicFraction::ParseDefinition(Utf8CP definition, Utf8Vector& numerator, Utf8Vector& denominator)
+BentleyStatus Unit::ParseDefinition(Utf8CP definition, bvector<UnitFactorExponent*>& unitExpression, int startingExponent)
     {
     if (Utf8String::IsNullOrEmpty(definition))
         return BentleyStatus::ERROR;
  
     Utf8String definitionString = definition;
-    UnitToken currentTolken;
+    UnitToken currentToken;
+    UnitToken currentConst;
     Exponent currentExponent;
     bool inExponent = false;
+    bool inConstant = false;
     for (auto const& character : definitionString)
         {
         if (Utf8String::IsAsciiWhiteSpace(character))
@@ -59,11 +131,24 @@ BentleyStatus SymbolicFraction::ParseDefinition(Utf8CP definition, Utf8Vector& n
  
         if (Multiply == character)
             {
-            if (!currentTolken.IsValid())
+            if (inConstant && !currentConst.IsValid())
+                {
+                LOG.errorv("Failed to parse %s because found invalid constant", definition);
                 return BentleyStatus::ERROR;
- 
-            currentTolken.AddToNumeratorOrDenominator(numerator, denominator);
- 
+                }
+            if (!inConstant && !currentToken.IsValid())
+                {
+                LOG.errorv("Failed to parse %s because found invalid token", definition);
+                return BentleyStatus::ERROR;
+                }
+
+            if (!inConstant)
+                {
+                HandleToken(unitExpression, definition, currentConst.GetToken(), currentToken.GetToken(), currentToken.GetExponent(), startingExponent);
+                currentToken.Clear();
+                currentConst.Clear();
+                }
+            inConstant = false;
             continue;
             }
  
@@ -78,22 +163,36 @@ BentleyStatus SymbolicFraction::ParseDefinition(Utf8CP definition, Utf8Vector& n
             inExponent = false;
             if (!currentExponent.IsValid())
                 return BentleyStatus::ERROR;
-            currentTolken.SetExponent(currentExponent.GetExponent());
+            currentToken.SetExponent(currentExponent.GetExponent());
             continue;
             }
  
+        if (OpenBracket == character)
+            {
+            inConstant = true;
+            continue;
+            }
+        if (CloseBracket == character)
+            {
+            continue;
+            }
  
         if (inExponent)
             currentExponent.AddChar(character);
+        else if (inConstant)
+            currentConst.AddChar(character);
         else
-            currentTolken.AddChar(character);
+            currentToken.AddChar(character);
         }
  
-    if (currentTolken.IsValid())
-        currentTolken.AddToNumeratorOrDenominator(numerator, denominator);
- 
-    sort(numerator.begin(), numerator.end());
-    sort(denominator.begin(), denominator.end());
+    if (currentToken.IsValid())
+        {
+        HandleToken(unitExpression, definition, currentConst.GetToken(), currentToken.GetToken(), currentToken.GetExponent(), startingExponent);
+        }
 
-    return numerator.size() > 0 || denominator.size() > 0 ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;
+    remove_if(unitExpression.begin(), unitExpression.end(), [&] (UnitFactorExponent* a) { return a->m_exponent == 0; });
+    sort(unitExpression.begin(), unitExpression.end(), [&] (UnitFactorExponent* a, UnitFactorExponent* b) { return strcmp(a->m_unit->GetPhenomenon(), b->m_unit->GetPhenomenon()); });
+
+    return unitExpression.size() > 0 ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;
     }
+

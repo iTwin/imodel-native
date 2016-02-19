@@ -31,6 +31,7 @@ void UnitRegistry::AddDefaultPhenomena ()
 
     AddPhenomena(AREA, "LENGTH(2)");
     AddPhenomena(VOLUME, "LENGTH(3)");
+    AddPhenomena(VELOCITY, "LENGTH*TIME(-1)");
     //AddPhenomena(MOMENTUM, )
     AddPhenomena(ANGVELOCITY, "SOLIDANGLE*TIME(-1)");
     AddPhenomena(ACCELERATION, "LENGTH*TIME(-2)");
@@ -41,11 +42,13 @@ void UnitRegistry::AddDefaultPhenomena ()
     AddPhenomena(PRESSURE_GRADIENT, "PRESSURE*LENGTH(-1)");
     AddPhenomena(TORQUE, "FORCE*LENGTH*ANGLE"); // TODO: Double Check
     AddPhenomena(MOMENTINERTIA, "ANGVELOCITY*MOMENTUM"); //TODO: Needs work
+    AddPhenomena(AREA_MOMENT, "MASS(4)"); // TODO: Needs work
+    AddPhenomena(MASS_RATIO, "MASS*MASS(-1)");
     AddPhenomena(DENSITY, "MASS*VOLUME(-1)");
     AddPhenomena(SPECVOLUME, "VOLUME*MASS(-1)");
     AddPhenomena(LINEARDENSITY, "MASS*LENGTH(-1)");
     AddPhenomena(SURFACEDENSITY, "MASS*AREA(-1)");
-    AddPhenomena(WORK, "FORCE*LENGTH"); // TODO: Multiple phenomemon equations: PRESSURE*VOLUME, POWER*TIME, ELECTRIC_CURRENT*TIME*VOLTAGE
+    AddPhenomena(WORK, "FORCE*LENGTH"); // TODO: Multiple phenomemon equations: PRESSURE*VOLUME, POWER*TIME, ELECTRIC_CURRENT*TIME*ELECTRIC_POTENTIAL
     AddPhenomena(POWER, "WORK*TIME");
     AddPhenomena(FLOW, "VOLUME*TIME(-1)");
     AddPhenomena(SURFACE_FLOW_RATE, "VOLUME*TIME(-1)*AREQ(-1)");
@@ -54,7 +57,7 @@ void UnitRegistry::AddDefaultPhenomena ()
     AddPhenomena(DYNVISCOSITY, "KINVISCOSITY*DENSITY"); // TODO: Check
     AddPhenomena(KINVISCOSITY, "DYNVISCOSITY*DENSITY(-1)"); // TODO: Check
     //AddPhenomena(ELECTRIC_CHARGE, )
-    //AddPhenomena(VOLTAGE)
+    //AddPhenomena(ELECTRIC_POTENTIAL)
     //AddPhenomena(ELRESISTANCE)
     //AddPhenomena(CAPACITANCE)
     //AddPhenomena(MAGNETICFLUX)
@@ -81,7 +84,9 @@ void UnitRegistry::AddDefaultPhenomena ()
     AddPhenomena(FREQUENCY, "TIME(-1)"); // TODO: Make sense?
     AddPhenomena(LINEAR_LOAD, "FORCE*LENGTH(-1)");
     //AddPhenomena(AREA_LOAD, );
-    AddPhenomena(HEATING_VALUE, "WORK*MASS(-1)");
+    AddPhenomena(HEATING_VALUE_VOLUMETRIC, "WORK*VOLUME(-1)"); // TODO: Check
+    AddPhenomena(HEATING_VALUE_MASS, "WORK*MASS(-1)");
+    AddPhenomena(HEATING_VALUE_MOLE, "WORK*MOLE(-1)");
     }
 
 

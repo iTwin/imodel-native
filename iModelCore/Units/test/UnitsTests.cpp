@@ -80,8 +80,14 @@ void UnitsTests::TestUnitConversion (double fromVal, Utf8CP fromUnitName, double
     {
     //if either units are not in the library conversion is not possible
     //UnitsMapping test checks if all units are there and fails when a unit is not found
-    if (nullptr == LocateUOM(fromUnitName) || nullptr == LocateUOM(targetUnitName))
+    UnitCP fromUnit = LocateUOM(fromUnitName);
+    UnitCP targetUnit = LocateUOM(targetUnitName);
+    if (nullptr == fromUnit || nullptr == targetUnit)
         return;
+
+    PERFORMANCELOG.debugv("About to try to convert from %s to %s", fromUnit->GetName(), targetUnit->GetName());
+    double conversionFactor = fromUnit->GetConversionTo(targetUnit);
+    double convertedVal = conversionFactor * fromVal;
 
     //QuantityP q = SimpleQuantity(fromVal, fromUnitName);
     //if (nullptr == q)
@@ -92,12 +98,14 @@ void UnitsTests::TestUnitConversion (double fromVal, Utf8CP fromUnitName, double
     //    }
 
     //double convertedVal = q->Value(targetUnitName);
-    //if (fabs(convertedVal - expectedVal) > tolerance)
-    //    {
-    //    Utf8PrintfString formattedText("Conversion from %s to %s. Input: %lf Output: %lf Expected: %lf Tolerance: %.9f", fromUnitName, targetUnitName, fromVal, convertedVal, expectedVal, tolerance);
-    //    conversionErrors.push_back(formattedText);
-    //    }
-    //EXPECT_NEAR(expectedVal, convertedVal, tolerance)<<  "Conversion from "<< fromUnitName << " to " << targetUnitName <<". Input : " << fromVal << ", Output : " << convertedVal << ", ExpectedOutput : " << expectedVal << "Tolerance : " << tolerance<< "\n";
+    PERFORMANCELOG.debugv("Converted %s to %s.  Expected: %lf  Actual: %lf", fromUnit->GetName(), targetUnit->GetName(), expectedVal, convertedVal);
+    if (fabs(convertedVal - expectedVal) > tolerance)
+        {
+        Utf8PrintfString formattedText("Conversion from %s to %s. Input: %lf Output: %lf Expected: %lf Tolerance: %.9f", fromUnitName, targetUnitName, fromVal, convertedVal, expectedVal, tolerance);
+        conversionErrors.push_back(formattedText);
+        }
+    ASSERT_FALSE(std::isnan(convertedVal) || !std::isfinite(convertedVal)) << "Conversion from " << fromUnitName << " to " << targetUnitName << " resulted in an invalid number";
+    EXPECT_NEAR(expectedVal, convertedVal, tolerance)<<  "Conversion from "<< fromUnitName << " to " << targetUnitName <<". Input : " << fromVal << ", Output : " << convertedVal << ", ExpectedOutput : " << expectedVal << "Tolerance : " << tolerance<< "\n";
     }
     
 TEST_F (UnitsTests, UnitsMapping)
@@ -118,27 +126,50 @@ TEST_F (UnitsTests, UnitsMapping)
     EXPECT_EQ (0, notMapped.size() ) << guess;
     }
 
+TEST_F(UnitsTests, TestBasiConversion)
+    {
+    bvector<Utf8String> loadErrors;
+    bvector<Utf8String> conversionErrors;
+    TestUnitConversion(10, "FT", 3048, "MM", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1, "GALLON", 3.785411784, "LITRE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(100000, "FOOT_SQUARED", 100, "THOUSAND_FOOT_SQUARED", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(836127.36, "MILLIMETRE_SQUARED", 1.0, "YARD_SQUARED", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(3.17097919837647e-7, "YEAR", 10000.0, "MILLISECOND", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1000000.0, "POUND", 1000000.0, "POUND", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(2204622621.84878, "POUND", 1000000.0, "MEGAGRAM", 1.0e-5, loadErrors, conversionErrors);
+    TestUnitConversion(1.66666666666667e-02, "DEGREE", 1.0, "ANGLE_MINUTE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.852e11, "CENTIMETRE_PER_HOUR", 1.0e6, "KNOT_INTERNATIONAL", 1.0e-4, loadErrors, conversionErrors);
+    TestUnitConversion(1.65409011373578e-3, "FOOT_CUBED_PER_ACRE_PER_SECOND", 1.0e6, "LITRE_PER_KILOMETRE_SQUARED_PER_DAY", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(2.816538995808e13, "GALLON_PER_DAY_PER_PERSON", 1234e6, "LITRE_PER_SECOND_PER_PERSON", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(4.4482216152605e5, "DYNE", 1.0, "POUND_FORCE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(2.8316846592e3, "KILONEWTON_PER_FOOT_CUBED", 1.0e8, "NEWTON_PER_METRE_CUBED", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e9, "NEWTON_PER_METRE", 1.0e6, "NEWTON_PER_MILLIMETRE", 1.0e-6, loadErrors, conversionErrors);
+    TestUnitConversion(3.43774677078493e9, "DEGREE_PER_HOUR", 1.0e6, "RADIAN_PER_MINUTE", 1.0e-5, loadErrors, conversionErrors);
+    }
+
 TEST_F(UnitsTests, UnitsConversion)
     {
     bvector<Utf8String> loadErrors;
     bvector<Utf8String> conversionErrors;
 
-    auto lineProcessor = [&loadErrors, &conversionErrors](bvector<Utf8String>& tokens)
+    int numberAttempted = 0;
+    auto lineProcessor = [&loadErrors, &conversionErrors, &numberAttempted](bvector<Utf8String>& tokens)
         {
+        ++numberAttempted;
         //passing 1.0e-6 to tolerance instead of the csv value
         TestUnitConversion(GetDouble(tokens[0]), tokens[1].c_str(), GetDouble(tokens[2]), tokens[3].c_str(), 1.0e-6, loadErrors, conversionErrors);
         };
 
     ReadConversionCsvFile(L"unitcomparisondata.csv", lineProcessor);
 
-    Utf8String loadErrorString = "Error loading :\n";
+    Utf8PrintfString loadErrorString ("Attempted to load %d, error loading :\n", numberAttempted);
 
     for (auto const& val : loadErrors)
         loadErrorString.append(val + "\n");
 
     EXPECT_EQ(0, loadErrors.size()) << loadErrorString;
 
-    Utf8String conversionErrorString = "Error Converting :\n";
+    Utf8PrintfString conversionErrorString("Attempted to convert %d, error Converting :\n", numberAttempted);
 
     for (auto const& val : conversionErrors)
         conversionErrorString.append(val + "\n");
@@ -175,18 +206,18 @@ void GetAllUnits(UnitRegistry& hub, bvector<UnitCP>& allUnits)
         allUnits.push_back(unit);
         }
     }
-
-TEST_F(UnitsTests, UnitExpressions)
-    {
-    bvector<UnitCP> allUnits;
-    GetAllUnits(UnitRegistry::Instance(), allUnits);
-    for (auto const& unit : allUnits)
-        {
-        PERFORMANCELOG.error(unit->GetName());
-        PERFORMANCELOG.errorv("Numerator:   %s", BeStringUtilities::Join(unit->Numerator(), "*").c_str());
-        PERFORMANCELOG.errorv("Denominator: %s", BeStringUtilities::Join(unit->Denominator(), "*").c_str());
-        }
-    }
+//
+//TEST_F(UnitsTests, UnitExpressions)
+//    {
+//    bvector<UnitCP> allUnits;
+//    GetAllUnits(UnitRegistry::Instance(), allUnits);
+//    for (auto const& unit : allUnits)
+//        {
+//        PERFORMANCELOG.error(unit->GetName());
+//        PERFORMANCELOG.errorv("Numerator:   %s", BeStringUtilities::Join(unit->Numerator(), "*").c_str());
+//        PERFORMANCELOG.errorv("Denominator: %s", BeStringUtilities::Join(unit->Denominator(), "*").c_str());
+//        }
+//    }
 
 void TestUnitAndConstantsExist(const bvector<Utf8String>& unitNames, Utf8CP unitName, Utf8CP atorName)
     {
@@ -207,17 +238,17 @@ void TestUnitAndConstantsExist(const bvector<Utf8String>& unitNames, Utf8CP unit
         }
     }
 
-TEST_F(UnitsTests, EveryUnitIsMadeUpOfRegisteredUnits)
-    {
-    UnitRegistry& reg = UnitRegistry::Instance();
-    bvector<UnitCP> allUnits;
-    GetAllUnits(reg, allUnits);
-    for (auto const& unit : allUnits)
-        {
-        TestUnitAndConstantsExist(unit->Numerator(), unit->GetName(), "numerator");
-        TestUnitAndConstantsExist(unit->Denominator(), unit->GetName(), "denominator");
-        }
-    }
+//TEST_F(UnitsTests, EveryUnitIsMadeUpOfRegisteredUnits)
+//    {
+//    UnitRegistry& reg = UnitRegistry::Instance();
+//    bvector<UnitCP> allUnits;
+//    GetAllUnits(reg, allUnits);
+//    for (auto const& unit : allUnits)
+//        {
+//        TestUnitAndConstantsExist(unit->Numerator(), unit->GetName(), "numerator");
+//        TestUnitAndConstantsExist(unit->Denominator(), unit->GetName(), "denominator");
+//        }
+//    }
 
 struct UnitsPerformanceTests : UnitsTests {};
 
@@ -264,26 +295,41 @@ TEST_F(UnitsPerformanceTests, GetEveryUnitByName)
 
 TEST_F(UnitsPerformanceTests, GenerateEveryConversionValue)
     {
-    //StopWatch timer("Evaluate every unit", false);
-    //UnitRegistry::Clear();
-    //UnitRegistry& hub = UnitRegistry::Instance();
-    //bvector<UnitP> allUnits;
-    //for (auto const& phenomenon : hub->PhenomList())
-    //    {
-    //    for (auto const& unit : phenomenon->Units())
-    //        {
-    //        allUnits.push_back(unit);
-    //        }
-    //    }
-
-    //timer.Start();
-    //for (auto const& unit : allUnits)
-    //    {
-    //    ASSERT_FALSE(unit->IsEvaled()) << "Unit already evaluated: " << unit->GetName();
-    //    unit->Evaluate();
-    //    }
-    //timer.Stop();
-    //PERFORMANCELOG.errorv("Time to evaluate %lu units: %lf", allUnits.size(), timer.GetElapsedSeconds());
+    StopWatch timer("Evaluate every unit", false);
+    UnitRegistry::Clear();
+    UnitRegistry& hub = UnitRegistry::Instance();
+    bvector<UnitCP> allUnits;
+    GetAllUnits(hub, allUnits);
+    bmap<Utf8CP, bvector<UnitCP>*> unitsByPhenomenon;
+    for (auto const& unit : allUnits)
+        {
+        bvector<UnitCP>* unitsInPhenomon;
+        auto it = unitsByPhenomenon.find(unit->GetPhenomenon());
+        if (it == unitsByPhenomenon.end())
+            {
+            unitsInPhenomon = new bvector<UnitCP>();
+            unitsByPhenomenon.insert(bpair<Utf8CP, bvector<UnitCP>*> (unit->GetPhenomenon(), unitsInPhenomon));
+            unitsInPhenomon->push_back(unit);
+            }
+        else
+            {
+            (*it).second->push_back(unit);
+            }
+        }
+    int numConversions = 0;
+    timer.Start();
+    for (auto const& phenomenon : unitsByPhenomenon)
+        {
+        UnitCP firstUnit = *phenomenon.second->begin();
+        for (auto const& unit : *phenomenon.second)
+            {
+            double conversion = firstUnit->GetConversionTo(unit);
+            ASSERT_FALSE(std::isnan(conversion)) << "Generated conversion factor is invalid from " << firstUnit->GetName() << " to " << unit->GetName();
+            ++numConversions;
+            }
+        }
+    timer.Stop();
+    PERFORMANCELOG.errorv("Time to Generate %d conversion factors: %lf", numConversions, timer.GetElapsedSeconds());
     }
 
 END_UNITS_UNITTESTS_NAMESPACE

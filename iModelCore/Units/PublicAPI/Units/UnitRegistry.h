@@ -25,7 +25,6 @@ private:
     Utf8Vector m_systems;
     bmap<Utf8String, PhenomenonCP> m_phenomena;
     bmap<Utf8String, UnitCP> m_units;
-    bmap<Utf8String, UnitCP> m_constants;
     bmap<bpair<Utf8String, Utf8String>, double> m_conversions;
 
     UnitRegistry();
@@ -62,6 +61,7 @@ public:
     // Lookup methods
     UNITS_EXPORT UnitCP LookupUnit(Utf8CP name) const;
     UNITS_EXPORT UnitCP LookupConstant(Utf8CP name) const;
+    UNITS_EXPORT PhenomenonCP LookupPhenomenon(Utf8CP name) const;
         
     // bool Exists methods.
     UNITS_EXPORT bool HasSystem (Utf8CP systemName) const;

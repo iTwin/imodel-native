@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PrivateAPI/Parser.h $
+|     $Source: src/Parser.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -25,17 +25,20 @@ static const Utf8Char CloseBracket = ']';
 struct UnitToken
     {
 private:
-    Utf8String  m_tolken;
+    Utf8String  m_token;
     int         m_exponent = 1;
 
 public:
-    bool IsValid() { return !Utf8String::IsNullOrEmpty(m_tolken.c_str()) && abs(m_exponent) >= 1; }
-    void AddChar(Utf8Char character) { m_tolken.append(1, character); }
+    bool IsValid() { return !Utf8String::IsNullOrEmpty(m_token.c_str()) && abs(m_exponent) >= 1; }
+    void AddChar(Utf8Char character) { m_token.append(1, character); }
     void SetExponent(int exponent) { m_exponent = exponent; }
     bool IsNumerator() { return m_exponent > 0; }
+    Utf8CP GetToken() { return m_token.c_str(); }
+    int     GetExponent() { return m_exponent; }
     
     void AddToNumeratorOrDenominator(Utf8Vector& numerator, Utf8Vector& denominator);
     void AddToVector(Utf8Vector& ator);
+    void Clear();
     };
 
 //=======================================================================================

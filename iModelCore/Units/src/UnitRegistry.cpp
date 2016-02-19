@@ -196,7 +196,7 @@ UnitCP UnitRegistry::AddSIBaseUnit(Utf8CP unitName, Utf8Char dimensionSymbol)
         return nullptr;
         }
 
-    auto unit = Unit::Create(SI, phenomenonName, unitName, unitName, dimensionSymbol, 1, 0);
+    auto unit = Unit::Create(SI, phenomenonName, unitName, unitName, dimensionSymbol, 1, 0, false);
     if (nullptr == unit)
         {
         LOG.errorv("Failed to create base unit '%s'", unitName);
@@ -219,19 +219,28 @@ UnitCP UnitRegistry::AddUnit (Utf8CP phenomName, Utf8CP systemName, Utf8CP unitN
         return nullptr;
         }
 
+    // TODO: Add back in checks for system name and phenomenon
+
     if (NameConflicts(unitName))
         {
         LOG.errorv("Could not create unit '%s' because that name is already in use", unitName);
         return nullptr;
         }
 
-    auto unit = Unit::Create (systemName, phenomName, unitName, definition, ' ', factor, offset);
+    auto unit = Unit::Create (systemName, phenomName, unitName, definition, ' ', factor, offset, false);
     if (nullptr == unit)
         return nullptr;
 
     m_units.insert (bpair<Utf8String, UnitCP>(unitName, unit));
 
-    // TODO: Add conversions.  Do we really do this here or when we are asked to convert between units?
+    PhenomenonCP phenomenon = LookupPhenomenon(unit->GetPhenomenon());
+    if (nullptr == phenomenon)
+        {
+        LOG.errorv("Could not find phenomenon '%s'", unit->GetPhenomenon());
+        return nullptr;
+        }
+    if (phenomenon->IsBasePhenomena())
+        m_conversions.insert(bpair<bpair<Utf8String,Utf8String>, double> (bpair<Utf8String, Utf8String>(unit->GetName(), unit->GetDefinition()), unit->GetFactor()));
 
     return unit;
     }
@@ -269,11 +278,11 @@ BentleyStatus UnitRegistry::AddConstant(Utf8CP phenomName, Utf8CP constantName, 
         return BentleyStatus::ERROR;
         }
 
-    auto constant = Unit::Create(CONSTANT, phenomName, constantName, definition, ' ', factor, 0);
+    auto constant = Unit::Create(CONSTANT, phenomName, constantName, definition, ' ', factor, 0, true);
     if (nullptr == constant)
         return BentleyStatus::ERROR;
 
-    m_constants.insert(bpair<Utf8String, UnitCP>(constantName, constant));
+    m_units.insert(bpair<Utf8String, UnitCP>(constantName, constant));
 
     return BentleyStatus::SUCCESS;
     }
@@ -318,8 +327,17 @@ UnitCP UnitRegistry::LookupUnit (Utf8CP name) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 UnitCP UnitRegistry::LookupConstant (Utf8CP name) const
     {
-    auto val_iter = m_constants.find(name);
-    if (val_iter == m_constants.end())
+    auto val_iter = m_units.find(name);
+    if (val_iter == m_units.end())
+        return nullptr;
+
+    return (*val_iter).second;
+    }
+
+PhenomenonCP UnitRegistry::LookupPhenomenon(Utf8CP name) const
+    {
+    auto val_iter = m_phenomena.find(name);
+    if (val_iter == m_phenomena.end())
         return nullptr;
 
     return (*val_iter).second;
@@ -367,39 +385,40 @@ bool UnitRegistry::HasConstant (Utf8CP constantName) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 UnitCP UnitRegistry::LookupUnitBySubTypes (const Utf8Vector &numerator, const Utf8Vector &denominator) const
     {
-    auto n = Utf8Vector(numerator), d = Utf8Vector(denominator);
-    
-    sort(n.begin(), n.end());
-    sort(d.begin(), d.end());
+    //auto n = Utf8Vector(numerator), d = Utf8Vector(denominator);
+    //
+    //sort(n.begin(), n.end());
+    //sort(d.begin(), d.end());
 
-    auto comparison = [&](bpair<Utf8String, UnitCP> pair)
-        {
-        auto unit = pair.second;
+    //auto comparison = [&](bpair<Utf8String, UnitCP> pair)
+    //    {
+    //    auto unit = pair.second;
 
-        if (n.size() != unit->Numerator().size())
-            return false;
+    //    if (n.size() != unit->Numerator().size())
+    //        return false;
 
-        if (d.size() != unit->Denominator().size())
-            return false;
+    //    if (d.size() != unit->Denominator().size())
+    //        return false;
 
-        // TODO: Is this necessary?  We sort when creating the unit
-        //sort (unit->GetNumerator().begin(), unit->GetNumerator().end());
-        //sort (unit->GetDenominator().begin(), unit->GetDenominator().end());
+    //    // TODO: Is this necessary?  We sort when creating the unit
+    //    //sort (unit->GetNumerator().begin(), unit->GetNumerator().end());
+    //    //sort (unit->GetDenominator().begin(), unit->GetDenominator().end());
 
-        auto nmatch = mismatch (n.begin(), n.end(), unit->Numerator().begin());
-        if (nmatch.first != n.end())
-            return false;
+    //    auto nmatch = mismatch (n.begin(), n.end(), unit->Numerator().begin());
+    //    if (nmatch.first != n.end())
+    //        return false;
 
-        auto dmatch = mismatch (d.begin(), d.end(), unit->Denominator().begin());
-        if (dmatch.first != d.end())
-            return false;
+    //    auto dmatch = mismatch (d.begin(), d.end(), unit->Denominator().begin());
+    //    if (dmatch.first != d.end())
+    //        return false;
 
-        return true;
-        };
+    //    return true;
+    //    };
 
-    auto iter = find_if (m_units.begin(), m_units.end(), comparison);
-    if (iter != m_units.end())
-        return nullptr;
+    //auto iter = find_if (m_units.begin(), m_units.end(), comparison);
+    //if (iter != m_units.end())
+    //    return nullptr;
 
-    return ((*iter).second);
+    //return ((*iter).second);
+    return nullptr;
     }
