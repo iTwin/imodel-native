@@ -60,7 +60,6 @@ protected:
     virtual MapStatus _EvaluateMapStrategy();
 
     static void LogClassNotMapped (NativeLogging::SEVERITY severity, ECN::ECClassCR ecClass, Utf8CP explanation);
-
 public:
     ClassMapInfo(ECN::ECClassCR, ECDbMapCR);
     virtual ~ClassMapInfo() {}
@@ -139,6 +138,8 @@ private:
     virtual MapStatus _EvaluateMapStrategy();
     void DetermineCardinality(ECN::ECRelationshipConstraintCR source, ECN::ECRelationshipConstraintCR target);
     BentleyStatus ResolveEndTables(EndTablesOptimizationOptions source, EndTablesOptimizationOptions target);
+    MapStatus Validate(ECDbMapStrategy::Strategy strategy, RelationshipMapInfo::Cardinality cardinality);
+
 public:
     RelationshipMapInfo(ECN::ECRelationshipClassCR relationshipClass, ECDbMapCR ecdbMap) : ClassMapInfo(relationshipClass, ecdbMap), m_sourceColumnsMappingIsNull(true), m_targetColumnsMappingIsNull(true),
         m_customMapType(CustomMapType::None), m_allowDuplicateRelationships(false), 

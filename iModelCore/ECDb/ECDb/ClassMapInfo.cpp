@@ -633,6 +633,57 @@ BentleyStatus RelationshipMapInfo::ResolveEndTables(EndTablesOptimizationOptions
     return m_sourceTables.empty() || m_targetTables.empty() ? ERROR : SUCCESS;
     }
 
+
+MapStatus RelationshipMapInfo::Validate(ECDbMapStrategy::Strategy strategy, RelationshipMapInfo::Cardinality cardinality)
+    {
+    ECRelationshipClassCR rel = *GetECClass().GetRelationshipClassCP();
+    if (rel.GetStrength() != StrengthType::Embedding)
+        return MapStatus::Success;
+
+    if (strategy == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable)
+        {
+        if (cardinality == RelationshipMapInfo::Cardinality::OneToOne)
+            {
+            if (rel.GetStrengthDirection() == ECRelatedInstanceDirection::Backward)
+                return MapStatus::Success;
+
+            m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "For embedding type relationship '%s' StengthDirection (Forward) does not match resolved MapStrategy (ForeignKeyRelationshipInSourceTable). StrengthDirection should be inverted to fix this issue.", rel.GetFullName());            
+            return MapStatus::Error;
+            }
+
+        if (cardinality == RelationshipMapInfo::Cardinality::ManyToOne)
+            {
+            if (rel.GetStrengthDirection() == ECRelatedInstanceDirection::Backward)
+                return MapStatus::Success;
+
+            m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "For embedding type relationship '%s' StengthDirection (Forward) does not match resolved MapStrategy (ForeignKeyRelationshipInSourceTable). StrengthDirection should be inverted to fix this issue.", rel.GetFullName());
+            return MapStatus::Error;
+            }
+        }
+    else if (strategy == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable)
+        {
+        if (cardinality == RelationshipMapInfo::Cardinality::OneToOne)
+            {
+            if (rel.GetStrengthDirection() == ECRelatedInstanceDirection::Forward)
+                return MapStatus::Success;
+
+            m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "For embedding type relationship '%s' StengthDirection (Backward) does not match resolved MapStrategy (ForeignKeyRelationshipInTargetTable). StrengthDirection should be inverted to fix this issue.", rel.GetFullName());
+            return MapStatus::Error;
+            }
+
+        if (cardinality == RelationshipMapInfo::Cardinality::OneToMany)
+            {
+            if (rel.GetStrengthDirection() == ECRelatedInstanceDirection::Forward)
+                return MapStatus::Success;
+
+            m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "For embedding type relationship '%s' StengthDirection (Backward) does not match resolved MapStrategy (ForeignKeyRelationshipInTargetTable). StrengthDirection should be inverted to fix this issue.", rel.GetFullName());
+            return MapStatus::Error;
+            }
+        }
+
+    BeAssert(false && "Unexpected map strategy");
+    return MapStatus::Error;
+    }
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Ramanujam.Raman                07 / 2012
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -813,6 +864,9 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
         ResolveEndTables(EndTablesOptimizationOptions::ReferencedEnd, EndTablesOptimizationOptions::Skip);
     else
         ResolveEndTables(EndTablesOptimizationOptions::ReferencedEnd, EndTablesOptimizationOptions::ReferencedEnd);
+
+    if (Validate(resolvedStrategy, m_cardinality) != MapStatus::Success)
+        return MapStatus::Error;
 
     return m_resolvedStrategy.Assign(resolvedStrategy, false) == SUCCESS ? MapStatus::Success : MapStatus::Error;
 
