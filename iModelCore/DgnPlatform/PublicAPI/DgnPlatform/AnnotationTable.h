@@ -1649,15 +1649,15 @@ public:
 //__PUBLISH_SECTION_START__
 public:
                     explicit                        AnnotationTable(CreateParams const& params);
-DGNPLATFORM_EXPORT  static AnnotationTablePtr Create(CreateParams const& params);
+DGNPLATFORM_EXPORT  static AnnotationTablePtr       Create(CreateParams const& params);
 
                     static DgnClassId               QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationTable)); }
 
-                    static AnnotationTableCPtr Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<AnnotationTable>(id); }
-                    static AnnotationTablePtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<AnnotationTable>(id); }
-                    AnnotationTableCPtr      Insert() { return GetDgnDb().Elements().Insert<AnnotationTable>(*this); }
-                    AnnotationTableCPtr      Update() { return GetDgnDb().Elements().Update<AnnotationTable>(*this); }
-                    DgnDbStatus                     Delete() { return GetDgnDb().Elements().Delete(*this); }
+                    static AnnotationTableCPtr      Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<AnnotationTable>(id); }
+                    static AnnotationTablePtr       GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<AnnotationTable>(id); }
+                    AnnotationTableCPtr             Insert() { return GetDgnDb().Elements().Insert<AnnotationTable>(*this); }
+                    AnnotationTableCPtr             Update() { return GetDgnDb().Elements().Update<AnnotationTable>(*this); }
+                    DgnDbStatus                     Delete() const { return GetDgnDb().Elements().Delete(*this); }
 
                     bool                            IsValid () const;
 
@@ -1879,7 +1879,7 @@ public:
 struct      TablePositionedCells
 {
 private:
-    //friend struct   AnnotationTable;
+    //friend struct   AnnotationTableElement;
     friend struct   TablePositionedCellIterator;
 
     bool                        m_ownSubTables;
@@ -2068,9 +2068,9 @@ public:
 struct          AnnotationTableStroker
 {
 private:
-    AnnotationTableCR    m_table;
-    GeometryBuilderR     m_geomBuilder;
-    bvector<FillRuns>           m_allFillRuns;
+    AnnotationTableCR       m_table;
+    GeometryBuilderR        m_geomBuilder;
+    bvector<FillRuns>       m_allFillRuns;
 
     bool                    m_addFills;
     bool                    m_addTextBlocks;
