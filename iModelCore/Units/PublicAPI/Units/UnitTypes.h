@@ -48,17 +48,9 @@ public:
     bool operator!= (const SymbolicFraction& rhs) const;
 };
 
-// TODO: Move and rename, should not be public in any way and no longer holds a factor
-struct UnitFactorExponent
-    {
-    friend struct Unit;
-    //private:
-        UnitCP  m_unit;
-        int     m_exponent;
-        UnitFactorExponent(UnitCP unit, int exponent):m_exponent(exponent) { m_unit = unit; }
-    };
 
 struct UnitRegistry;
+
 //=======================================================================================
 //! A base class for all units.
 // @bsiclass                                                    Chris.Tartamella   02/16
@@ -66,6 +58,14 @@ struct UnitRegistry;
 struct Unit
     {
 friend struct UnitRegistry;
+
+    struct UnitExponent
+        {
+        UnitCP  m_unit;
+        int     m_exponent;
+
+        UnitExponent(UnitCP unit, int exponent) : m_exponent(exponent) { m_unit = unit; }
+        };
 
 private:
     Utf8String  m_system;
@@ -77,15 +77,15 @@ private:
     double      m_offset;
     bool        m_isConstant;
 
-    mutable bvector<UnitFactorExponent*>    m_unitFormula;
-    mutable bool                            m_evaluated;
+    mutable bvector<UnitExponent*>   m_unitFormula;
+    mutable bool                     m_evaluated;
 
     static UnitP Create (Utf8CP sysName, Utf8CP phenomName, Utf8CP unitName, Utf8CP definition, Utf8Char baseDimensionSymbol, double factor, double offset, bool isConstant);
 
-    static BentleyStatus ParseDefinition(Utf8CP definition, bvector<UnitFactorExponent*>& unitFormula, int startingExponent);
-    static void MergeExpressions(bvector<UnitFactorExponent*>& targetExpression, bvector<UnitFactorExponent*>& sourceExpression, int startingExponent);
-    static BentleyStatus AddUFEToExpression(bvector<UnitFactorExponent*>& unitExpression, Utf8CP definition, Utf8CP token, int mergedExponent);
-    static BentleyStatus HandleToken(bvector<UnitFactorExponent*>& unitExpression, Utf8CP definition, Utf8CP constToken, Utf8CP token, int tokenExponent, int startingExponent);
+    static BentleyStatus ParseDefinition(Utf8CP definition, bvector<UnitExponent*>& unitFormula, int startingExponent);
+    static void MergeExpressions(bvector<UnitExponent*>& targetExpression, bvector<UnitExponent*>& sourceExpression, int startingExponent);
+    static BentleyStatus AddUFEToExpression(bvector<UnitExponent*>& unitExpression, Utf8CP definition, Utf8CP token, int mergedExponent);
+    static BentleyStatus HandleToken(bvector<UnitExponent*>& unitExpression, Utf8CP definition, Utf8CP constToken, Utf8CP token, int tokenExponent, int startingExponent);
 
     // TODO: Create a better definition of an "unknown" unit
     Unit (Utf8Vector& numerator, Utf8Vector& denominator);
@@ -95,8 +95,8 @@ private:
     Unit (UnitCR unit) = delete;
     UnitR operator=(UnitCR unit) = delete;
 
-    bvector<UnitFactorExponent*>& Evaluate() const;
-
+    bvector<Unit::UnitExponent*>& Evaluate() const;
+    void PrintForumula(UnitCP unit, const bvector<UnitExponent*> expression) const;
 
 protected:
     virtual Utf8CP _GetName() const { return m_name.c_str(); }
