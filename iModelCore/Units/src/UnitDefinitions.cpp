@@ -24,7 +24,7 @@ void AddLengths(UnitRegistry& reg)
     unit = reg.AddUnit(LENGTH, SI, "MU", "[MICRO]*M");
     reg.AddSynonym(unit, "MICRON");
     reg.AddSynonym(unit, "MICROMETRE");
-    reg.AddUnit(LENGTH, SI, "ANGSTROM", "M");// BISQFactOne, -10.0); //, BISQNoDescript); //, BISQSecUom);
+    reg.AddUnit(LENGTH, SI, "ANGSTROM", "M", 1e-10);// BISQFactOne, -10.0); //, BISQNoDescript); //, BISQSecUom);
     unit = reg.AddUnit(LENGTH, SI, "FERMI", "[FEMTO]*M");
     reg.AddSynonym(unit, "FEMTOMETRE");
     unit = reg.AddUnit(LENGTH, IMPERIAL, "IN", "MM", 25.4);
@@ -796,11 +796,11 @@ void AddAngularVelocity(UnitRegistry& reg)
     unit = reg.AddUnit(ANGVELOCITY, SI, "RAD/HR", "RAD*HR(-1)");
     reg.AddSynonym(unit, "RADIAN/HOUR");
     reg.AddSynonym(unit, "RADIAN_PER_HOUR");
-    unit = reg.AddUnit(ANGVELOCITY, SI, "RPS", "[PI]*RAD*S(-1)", 1.0);
+    unit = reg.AddUnit(ANGVELOCITY, SI, "RPS", "[PI]*RAD*S(-1)", 2.0);
     reg.AddSynonym(unit, "CYCLE_PER_SECOND");
-    unit = reg.AddUnit(ANGVELOCITY, SI, "RPM", "[PI]*RAD*MIN(-1)", 1.0);
+    unit = reg.AddUnit(ANGVELOCITY, SI, "RPM", "[PI]*RAD*MIN(-1)", 2.0);
     reg.AddSynonym(unit, "CYCLE_PER_MINUTE");
-    unit = reg.AddUnit(ANGVELOCITY, SI, "RPH", "[PI]*RAD*HOUR(-1)", 1.0);
+    unit = reg.AddUnit(ANGVELOCITY, SI, "RPH", "[PI]*RAD*HOUR(-1)", 2.0);
     reg.AddSynonym(unit, "CYCLE_PER_HOUR");
     unit = reg.AddUnit(ANGVELOCITY, SI, "DEG/S", "ARC_DEG*S(-1)", 1.0);
     reg.AddSynonym(unit, "ARC_DEG/S");

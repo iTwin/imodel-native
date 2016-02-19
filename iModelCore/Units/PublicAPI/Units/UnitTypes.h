@@ -83,9 +83,9 @@ private:
     static UnitP Create (Utf8CP sysName, Utf8CP phenomName, Utf8CP unitName, Utf8CP definition, Utf8Char baseDimensionSymbol, double factor, double offset, bool isConstant);
 
     static BentleyStatus ParseDefinition(Utf8CP definition, bvector<UnitExponent*>& unitFormula, int startingExponent);
-    static void MergeExpressions(bvector<UnitExponent*>& targetExpression, bvector<UnitExponent*>& sourceExpression, int startingExponent);
+    static void MergeExpressions(Utf8CP definition, bvector<UnitExponent*>& targetExpression, UnitCP sourceUnit, int startingExponent);
     static BentleyStatus AddUFEToExpression(bvector<UnitExponent*>& unitExpression, Utf8CP definition, Utf8CP token, int mergedExponent);
-    static BentleyStatus HandleToken(bvector<UnitExponent*>& unitExpression, Utf8CP definition, Utf8CP constToken, Utf8CP token, int tokenExponent, int startingExponent);
+    static BentleyStatus HandleToken(bvector<UnitExponent*>& unitExpression, Utf8CP definition, Utf8CP token, int tokenExponent, int startingExponent);
 
     // TODO: Create a better definition of an "unknown" unit
     Unit (Utf8Vector& numerator, Utf8Vector& denominator);

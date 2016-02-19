@@ -47,21 +47,24 @@ int Exponent::GetExponent()
     }
 
 // TODO: These static methods probably belong in some other class besides unit.  Was lazy and this was quickest place to plop
-void Unit::MergeExpressions(bvector<UnitExponent*>& targetExpression, bvector<UnitExponent*>& sourceExpression, int startingExponent)
+void Unit::MergeExpressions(Utf8CP targetDefinition, bvector<UnitExponent*>& targetExpression, UnitCP sourceUnit, int startingExponent)
     {
+    LOG.debugv("Evaluating %s", sourceUnit->GetName());
+    bvector<UnitExponent*> sourceExpression = sourceUnit->Evaluate();
+    LOG.debugv("Merging sub expression %s --> %s", sourceUnit->GetDefinition(), targetDefinition);
     for (const auto& uWE : sourceExpression)
         {
         int     mergedExponent = uWE->m_exponent * startingExponent;
 
-        auto it = find_if(targetExpression.begin(), targetExpression.end(), [&] (UnitExponent* a) { return strcmp(uWE->m_unit->GetName(), a->m_unit->GetName()) == 0; });
+        auto it = find_if(targetExpression.begin(), targetExpression.end(), [&uWE] (UnitExponent* a) { return strcmp(uWE->m_unit->GetName(), a->m_unit->GetName()) == 0; });
         if (it != targetExpression.end())
             {
-            LOG.debugv("Merging existing UFE for %s.  With Exponent: %d", (*it)->m_unit->GetName(), mergedExponent);
+            LOG.debugv("%s --> %s - Merging existing Unit %s. with Exponent: %d", sourceUnit->GetDefinition(), targetDefinition, (*it)->m_unit->GetName(), mergedExponent);
             (*it)->m_exponent += mergedExponent;
             }
         else
             {
-            LOG.debugv("Adding UFE for %s   With Exponent: %d", uWE->m_unit->GetName(), mergedExponent);
+            LOG.debugv("%s --> %s - Adding Unit for %s with Exponent: %d", sourceUnit->GetDefinition(), targetDefinition, uWE->m_unit->GetName(), mergedExponent);
             UnitExponent* copy = new UnitExponent(uWE->m_unit, mergedExponent);
             targetExpression.push_back(copy);
             }
@@ -70,43 +73,43 @@ void Unit::MergeExpressions(bvector<UnitExponent*>& targetExpression, bvector<Un
 
 BentleyStatus Unit::AddUFEToExpression(bvector<UnitExponent*>& unitExpression, Utf8CP definition, Utf8CP token, int mergedExponent)
     {
-    auto it = find_if(unitExpression.begin(), unitExpression.end(), [&] (UnitExponent* a) { return strcmp(token, a->m_unit->GetName()) == 0; });
+    UnitCP unit = nullptr;
+    auto it = find_if(unitExpression.begin(), unitExpression.end(), [&token] (UnitExponent* a) { return strcmp(token, a->m_unit->GetName()) == 0; });
     if (it != unitExpression.end())
         {
+        LOG.debugv("%s - Merging existing Unit %s with Exponent: %d", definition, (*it)->m_unit->GetName(), mergedExponent);
         (*it)->m_exponent += mergedExponent;
+        unit = (*it)->m_unit;
         }
     else
         {
-        UnitCP unit = UnitRegistry::Instance().LookupUnit(token);
-        if (nullptr == unit)
+        LOG.debugv("%s - Adding Unit %s with Exponent: %d", definition, token, mergedExponent);
+        unit = UnitRegistry::Instance().LookupUnit(token);
+        if (nullptr != unit)
             {
-            LOG.errorv("Failed to parse %s because the unit %s could not be found", definition, token);
-            return BentleyStatus::ERROR;
-            }
-        if (!unit->IsBaseUnit())
-            {
+            // Could probably skip this block if is base unit ... would result in smaller expression but would not fully expand dimension
             UnitExponent* uWE = new UnitExponent(unit, mergedExponent);
             unitExpression.push_back(uWE);
-            if (!unit->IsConstant())
-                {
-                LOG.debugv("Mergin sub expression for %s", unit->GetName());
-                bvector<UnitExponent*> subExpression = unit->Evaluate();
-                MergeExpressions(unitExpression, subExpression, mergedExponent);
-                }
             }
+        }
+    
+    if (nullptr == unit)
+        {
+        LOG.errorv("Failed to parse %s because the unit %s could not be found", definition, token);
+        return BentleyStatus::ERROR;
+        }
+    
+    if (!(unit->IsConstant() || unit->IsBaseUnit()))
+        {
+        MergeExpressions(definition, unitExpression, unit, mergedExponent);
         }
     return BentleyStatus::SUCCESS;
     }
 
-BentleyStatus Unit::HandleToken(bvector<UnitExponent*>& unitExpression, Utf8CP definition, Utf8CP constToken, Utf8CP token, int tokenExponent, int startingExponent)
+BentleyStatus Unit::HandleToken(bvector<UnitExponent*>& unitExpression, Utf8CP definition, Utf8CP token, int tokenExponent, int startingExponent)
     {
-    LOG.debugv("Handle Token: %s  ConstToken: %s  TokenExp: %d  StartExp: %d", token, Utf8String::IsNullOrEmpty(constToken)? "None": constToken, tokenExponent, startingExponent);
+    LOG.debugv("%s - Handle Token: %s  TokenExp: %d  StartExp: %d", definition, token, tokenExponent, startingExponent);
     int mergedExponent = tokenExponent * startingExponent;
-    if (!Utf8String::IsNullOrEmpty(constToken))
-        {
-        AddUFEToExpression(unitExpression, definition, constToken, mergedExponent);
-        LOG.debugv("%s - Merged Exponent: %d", definition, mergedExponent);
-        }
 
     return AddUFEToExpression(unitExpression, definition, token, mergedExponent);
     }
@@ -121,10 +124,8 @@ BentleyStatus Unit::ParseDefinition(Utf8CP definition, bvector<UnitExponent*>& u
  
     Utf8String definitionString = definition;
     UnitToken currentToken;
-    UnitToken currentConst;
     Exponent currentExponent;
     bool inExponent = false;
-    bool inConstant = false;
     for (auto const& character : definitionString)
         {
         if (Utf8String::IsAsciiWhiteSpace(character))
@@ -132,24 +133,14 @@ BentleyStatus Unit::ParseDefinition(Utf8CP definition, bvector<UnitExponent*>& u
  
         if (Multiply == character)
             {
-            if (inConstant && !currentConst.IsValid())
-                {
-                LOG.errorv("Failed to parse %s because found invalid constant", definition);
-                return BentleyStatus::ERROR;
-                }
-            if (!inConstant && !currentToken.IsValid())
+            if (!currentToken.IsValid())
                 {
                 LOG.errorv("Failed to parse %s because found invalid token", definition);
                 return BentleyStatus::ERROR;
                 }
 
-            if (!inConstant)
-                {
-                HandleToken(unitExpression, definition, currentConst.GetToken(), currentToken.GetToken(), currentToken.GetExponent(), startingExponent);
-                currentToken.Clear();
-                currentConst.Clear();
-                }
-            inConstant = false;
+            HandleToken(unitExpression, definition, currentToken.GetToken(), currentToken.GetExponent(), startingExponent);
+            currentToken.Clear();
             continue;
             }
  
@@ -170,7 +161,6 @@ BentleyStatus Unit::ParseDefinition(Utf8CP definition, bvector<UnitExponent*>& u
  
         if (OpenBracket == character)
             {
-            inConstant = true;
             continue;
             }
         if (CloseBracket == character)
@@ -180,19 +170,18 @@ BentleyStatus Unit::ParseDefinition(Utf8CP definition, bvector<UnitExponent*>& u
  
         if (inExponent)
             currentExponent.AddChar(character);
-        else if (inConstant)
-            currentConst.AddChar(character);
         else
             currentToken.AddChar(character);
         }
  
     if (currentToken.IsValid())
         {
-        HandleToken(unitExpression, definition, currentConst.GetToken(), currentToken.GetToken(), currentToken.GetExponent(), startingExponent);
+        HandleToken(unitExpression, definition, currentToken.GetToken(), currentToken.GetExponent(), startingExponent);
         }
 
     remove_if(unitExpression.begin(), unitExpression.end(), [&] (UnitExponent* a) { return a->m_exponent == 0; });
-    sort(unitExpression.begin(), unitExpression.end(), [&] (UnitExponent* a, UnitExponent* b) { return strcmp(a->m_unit->GetPhenomenon(), b->m_unit->GetPhenomenon()); });
+
+    LOG.debugv("%s - DONE", definition);
 
     return unitExpression.size() > 0 ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;
     }
