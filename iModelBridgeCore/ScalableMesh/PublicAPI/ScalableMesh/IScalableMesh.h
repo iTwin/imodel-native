@@ -101,6 +101,12 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         virtual int                                 _LoadAllNodeHeaders(size_t& nbLoadedNodes) const = 0; 
 #endif
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) = 0;
+
+        virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) = 0;
+
+        virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) = 0;;
+
+        virtual bool                               _RemoveClip(uint64_t clipID) = 0;
     /*__PUBLISH_SECTION_START__*/
     public:
         //! Gets the number of points of the DTM.
@@ -167,6 +173,12 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         BENTLEYSTM_EXPORT Count                  GetCountInRange (const DRange2d& range, const CountType& type, const unsigned __int64& maxNumberCountedPoints) const;
 
         BENTLEYSTM_EXPORT uint64_t               AddClip(const DPoint3d* pts, size_t ptsSize);
+
+        BENTLEYSTM_EXPORT bool                   AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID);
+
+        BENTLEYSTM_EXPORT bool                   ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID);
+
+        BENTLEYSTM_EXPORT bool                   RemoveClip(uint64_t clipID);
 
     
         BENTLEYSTM_EXPORT static IScalableMeshPtr        GetFor                 (const WChar*          filePath,

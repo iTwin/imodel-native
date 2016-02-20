@@ -267,6 +267,22 @@ uint64_t IScalableMesh::AddClip(const DPoint3d* pts, size_t ptsSize)
     return _AddClip(pts, ptsSize);
     }
 
+bool IScalableMesh::AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID)
+    {
+    return _AddClip(pts, ptsSize, clipID);
+    }
+
+bool IScalableMesh::ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID)
+    {
+    return _ModifyClip(pts, ptsSize, clipID);
+    }
+
+bool IScalableMesh::RemoveClip(uint64_t clipID)
+    {
+    return _RemoveClip(clipID);
+    }
+
+
 #ifdef SCALABLE_MESH_ATP
 int IScalableMesh::LoadAllNodeHeaders(size_t& nbLoadedNodes) const
     {
@@ -1340,6 +1356,74 @@ template <class POINT> uint64_t ScalableMesh<POINT>::_AddClip(const DPoint3d* pt
     return m_scmIndexPtr->GetClipRegistry()->AddClip(pts, ptsSize)+1;
     }
 
+/*----------------------------------------------------------------------------+
+|ScalableMesh::_AddClip
++----------------------------------------------------------------------------*/
+template <class POINT> bool ScalableMesh<POINT>::_AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID)
+    {
+    if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
+    DRange3d extent = DRange3d::From(pts, (int)ptsSize);
+    m_scmIndexPtr->GetClipRegistry()->ModifyClip(clipID, pts, ptsSize);
+    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, clipID, extent);
+    return true;
+    /*if (bsiGeom_getXYPolygonArea(pts, (int)ptsSize) < 0) //need to flip polygon so it's counterclockwise
+        {
+        uint64_t clipId = 0;
+        DPoint3d* flippedPts = new DPoint3d[ptsSize];
+        for (size_t pt = 0; pt < ptsSize; ++pt) flippedPts[pt] = pts[ptsSize - 1 - pt];
+        clipId = m_scmIndexPtr->GetClipRegistry()->AddClip(flippedPts, ptsSize) + 1;
+        delete[] flippedPts;
+        return clipId;
+        }
+    return m_scmIndexPtr->GetClipRegistry()->AddClip(pts, ptsSize) + 1;*/
+    }
+
+/*----------------------------------------------------------------------------+
+|ScalableMesh::_ModifyClip
++----------------------------------------------------------------------------*/
+template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID)
+    {
+    if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
+    DRange3d extent = DRange3d::From(pts, (int)ptsSize);
+    m_scmIndexPtr->GetClipRegistry()->ModifyClip(clipID, pts, ptsSize);
+    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, extent);
+    return true;
+    /*if (bsiGeom_getXYPolygonArea(pts, (int)ptsSize) < 0) //need to flip polygon so it's counterclockwise
+        {
+        uint64_t clipId = 0;
+        DPoint3d* flippedPts = new DPoint3d[ptsSize];
+        for (size_t pt = 0; pt < ptsSize; ++pt) flippedPts[pt] = pts[ptsSize - 1 - pt];
+        clipId = m_scmIndexPtr->GetClipRegistry()->AddClip(flippedPts, ptsSize) + 1;
+        delete[] flippedPts;
+        return clipId;
+        }
+    return m_scmIndexPtr->GetClipRegistry()->AddClip(pts, ptsSize) + 1;*/
+    }
+
+/*----------------------------------------------------------------------------+
+|ScalableMesh::_RemoveClip
++----------------------------------------------------------------------------*/
+template <class POINT> bool ScalableMesh<POINT>::_RemoveClip(uint64_t clipID)
+    {
+    if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
+    bvector<DPoint3d> clipData;
+    m_scmIndexPtr->GetClipRegistry()->GetClip(clipID, clipData);
+    DRange3d extent = DRange3d::From(&clipData[0], (int)clipData.size());
+    m_scmIndexPtr->GetClipRegistry()->DeleteClip(clipID);
+    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_DELETE, clipID, extent);
+    return true;
+    /*if (bsiGeom_getXYPolygonArea(pts, (int)ptsSize) < 0) //need to flip polygon so it's counterclockwise
+        {
+        uint64_t clipId = 0;
+        DPoint3d* flippedPts = new DPoint3d[ptsSize];
+        for (size_t pt = 0; pt < ptsSize; ++pt) flippedPts[pt] = pts[ptsSize - 1 - pt];
+        clipId = m_scmIndexPtr->GetClipRegistry()->AddClip(flippedPts, ptsSize) + 1;
+        delete[] flippedPts;
+        return clipId;
+        }
+    return m_scmIndexPtr->GetClipRegistry()->AddClip(pts, ptsSize) + 1;*/
+    }
+
 
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_GetState
@@ -1635,6 +1719,25 @@ template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_
     assert(0);
     return false;
     }
+
+
+
+template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID)
+    {
+    return false;
+    }
+
+template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID)
+    {
+    return false;
+    }
+
+template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_RemoveClip(uint64_t clipID)
+    {
+    return false;
+    }
+
+
 
 template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_IsReadOnly() const
     {    
