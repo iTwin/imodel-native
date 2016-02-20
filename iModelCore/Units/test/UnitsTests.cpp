@@ -163,7 +163,7 @@ TEST_F(UnitsTests, TestBasiConversion)
     TestUnitConversion(2.816538995808e13, "GALLON_PER_DAY_PER_PERSON", 1234e6, "LITRE_PER_SECOND_PER_PERSON", 1.0e-8, loadErrors, conversionErrors);
     TestUnitConversion(4.4482216152605e5, "DYNE", 1.0, "POUND_FORCE", 1.0e-8, loadErrors, conversionErrors);
     TestUnitConversion(2.8316846592e3, "KILONEWTON_PER_FOOT_CUBED", 1.0e8, "NEWTON_PER_METRE_CUBED", 1.0e-8, loadErrors, conversionErrors);
-    TestUnitConversion(1.0e9, "NEWTON_PER_METRE", 1.0e6, "NEWTON_PER_MILLIMETRE", 1.0e-6, loadErrors, conversionErrors, true);
+    TestUnitConversion(1.0e9, "NEWTON_PER_METRE", 1.0e6, "NEWTON_PER_MILLIMETRE", 1.0e-6, loadErrors, conversionErrors);
     TestUnitConversion(3.43774677078493e9, "DEGREE_PER_HOUR", 1.0e6, "RADIAN_PER_MINUTE", 1.0e-5, loadErrors, conversionErrors);
     TestUnitConversion(2.65258238486492e3, "CYCLE_PER_SECOND", 1.0e6, "RADIAN_PER_MINUTE", 1.0e-8, loadErrors, conversionErrors);
     TestUnitConversion(8.92179121619709e5, "POUND_PER_ACRE", 1.0e6, "KILOGRAM_PER_HECTARE", 1.0e-8, loadErrors, conversionErrors);

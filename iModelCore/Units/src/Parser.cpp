@@ -181,7 +181,8 @@ BentleyStatus Unit::ParseDefinition(Utf8CP definition, bvector<UnitExponent>& un
         HandleToken(unitExpression, definition, currentToken.GetToken(), currentToken.GetExponent(), startingExponent);
         }
 
-    remove_if(unitExpression.begin(), unitExpression.end(), [](UnitExponent& a) { return a.m_exponent == 0; });
+    auto new_iter = remove_if(unitExpression.begin(), unitExpression.end(), [](UnitExponent& a) { return a.m_exponent == 0; });
+    unitExpression.erase(new_iter, unitExpression.end());
 
     LOG.debugv("%s - DONE", definition);
 

@@ -9,7 +9,6 @@
 #pragma once
 
 #include <Units/Units.h>
-//#include <Units/UnitRegistry.h>
 
 UNITS_TYPEDEFS(Unit);
 UNITS_TYPEDEFS(Phenomenon);
@@ -47,7 +46,6 @@ public:
     bool operator== (const SymbolicFraction& rhs) const;
     bool operator!= (const SymbolicFraction& rhs) const;
 };
-
 
 struct UnitRegistry;
 
