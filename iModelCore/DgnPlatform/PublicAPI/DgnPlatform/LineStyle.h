@@ -20,9 +20,6 @@
 #include <DgnPlatform/ECSqlStatementIterator.h>
 #include <DgnPlatform/Tools/KeyTree.h>
 
-//  These are both used to try different configurations while testing.  They must both be eliminated
-#define LINESTYLES_ENABLED 0
-
 #define LSID_DEFAULT        0
 #define LSID_HARDWARE       0x80000000
 #define LSID_HWMASK         0x0000000f

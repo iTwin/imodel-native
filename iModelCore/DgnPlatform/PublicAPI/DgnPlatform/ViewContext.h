@@ -142,10 +142,7 @@ protected:
     DGNPLATFORM_EXPORT virtual bool _WantAreaPatterns();
     DGNPLATFORM_EXPORT virtual void _DrawAreaPattern(ClipStencil& boundary);
     DGNPLATFORM_EXPORT virtual void _DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed = false);
-    DGNPLATFORM_EXPORT virtual void _DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP range, bool closed = false);
     DGNPLATFORM_EXPORT virtual void _DrawStyledArc2d(DEllipse3dCR, bool isEllipse, double zDepth, DPoint2dCP range);
-    DGNPLATFORM_EXPORT virtual void _DrawStyledArc3d(DEllipse3dCR, bool isEllipse, DPoint3dCP range);
-    DGNPLATFORM_EXPORT virtual void _DrawStyledBSplineCurve3d(MSBsplineCurveCR);
     DGNPLATFORM_EXPORT virtual void _DrawStyledBSplineCurve2d(MSBsplineCurveCR, double zDepth);
     DGNPLATFORM_EXPORT virtual void _AddTextString(TextStringCR);
     DGNPLATFORM_EXPORT virtual StatusInt _InitContextForView();
@@ -339,14 +336,6 @@ public:
     //! @param[in]      closed      Do point represent a shape or linestring.
     void DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed=false){_DrawStyledLineString2d(nPts, pts, zDepth, range, closed);}
 
-    //! Draw a 3D linestring using the current Linestyle, if any. If there is no current Linestyle, draw a solid linestring.
-    //! @param[in]      nPts        Number of vertices in \c pts.
-    //! @param[in]      pts         Array of points in linestring
-    //! @param[in]      range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-    //!                                 optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
-    //! @param[in]      closed      Do point represent a shape or linestring.
-    void DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP range, bool closed=false){_DrawStyledLineString3d(nPts, pts, range, closed);}
-
     //! Draw a 2D elliptical arc using the current Linestyle. If there is no current Linestyle, draw a solid arc.
     //! @param[in]      ellipse     The arc data.
     //! @param[in]      isEllipse   Treat full sweep as ellipse not arc.
@@ -355,25 +344,10 @@ public:
     //!                               optional and is only used to speed processing. If you do not already have the range, pass nullptr.
     void DrawStyledArc2d(DEllipse3dCR ellipse, bool isEllipse, double zDepth, DPoint2dCP range) {_DrawStyledArc2d(ellipse, isEllipse, zDepth, range);}
 
-    //! Draw a 3D elliptical arc using the current Linestyle. If there is no current Linestyle, draw a solid arc.
-    //! @param[in]      ellipse     The arc data.
-    //! @param[in]      isEllipse   Treat full sweep as ellipse not arc.
-    //! @param[in]      range       Array of 2 points with the range (min followed by max) of the arc. This argument is
-    //!                               optional and is only used to speed processing. If you do not already have the range, pass nullptr.
-    void DrawStyledArc3d(DEllipse3dCR ellipse, bool isEllipse, DPoint3dCP range) {_DrawStyledArc3d(ellipse, isEllipse, range);}
-
     //! Draw a 2d BSpline curve using the current Linestyle. If there is no current Linestyle, draw a solid BSpline.
     //! @param        curve       bspline curve parameters
     //! @param[in]    zDepth      Z depth value.
     void DrawStyledBSplineCurve2d(MSBsplineCurveCR curve, double zDepth) {_DrawStyledBSplineCurve2d(curve, zDepth);}
-
-    //! Draw a BSpline curve using the current Linestyle. If there is no current Linestyle, draw a solid BSpline.
-    //! @param        curve       bspline curve parameters
-    void DrawStyledBSplineCurve3d(MSBsplineCurveCR curve) {_DrawStyledBSplineCurve3d(curve);}
-
-    //! Draw a curve vector using the current Linestyle. If there is no current Linestyle, draw a solid curve vector.
-    //! @param        curve       curve geometry
-    DGNPLATFORM_EXPORT void DrawStyledCurveVector3d(CurveVectorCR curve);
 
     //! Draw a 2d curve vector using the current Linestyle. If there is no current Linestyle, draw a solid curve vector.
     //! @param        curve       curve geometry

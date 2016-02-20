@@ -248,6 +248,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         */
         Transform(transform: TransformP): cxx_int32_t;
 
+        /** The element's geometry (read-only) */
+        Geometry: GeometryCollectionP;
+
         /**
          * Create a new PhysicalElement
          * @param model The model that is to contain the new element
@@ -380,13 +383,225 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type ComponentDefP = cxx_pointer<ComponentDef>;
 
+    class ColorDef implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor 
+    {
+        /*** NATIVE_TYPE_NAME = JsColorDef ***/ 
+
+        /** 
+         * Construct a new ColorDef
+         * @param red   The red value. 0-255.
+         * @param green   The green value. 0-255.
+         * @param blue   The blue value. 0-255.
+         * @param alpha   The alpha value. 0-255.
+         */
+        constructor(red: cxx_uint8_t, green: cxx_uint8_t, blue: cxx_uint8_t, alpha: cxx_uint8_t);
+
+        /** The red value */
+        Red: cxx_uint8_t;
+        /** The green value */
+        Green: cxx_uint8_t;
+        /** The blue value */
+        Blue: cxx_uint8_t;
+        /** The alpha value */
+        Alpha: cxx_uint8_t;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type ColorDefP = cxx_pointer<ColorDef>;
+
+    enum RenderFillDisplay { }
+    enum RenderDgnGeometryClass { }
+
+    class RenderGeometryParams implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor 
+    {
+        /*** NATIVE_TYPE_NAME = JsRenderGeometryParams ***/ 
+
+        /** Construct a new empty RenderGeometryParams */
+        constructor();
+
+        /** The geometry's Category */
+        CategoryId: DgnObjectIdP;
+        /** The geometry's SubCategory */
+        SubCategoryId: DgnObjectIdP;
+        /** The geometry's weight. Must be an integer between 0 and ... */
+        Weight: cxx_uint32_t;
+        /** The geometry's line color. */
+        LineColor: ColorDefP;
+        /** Specify if or when the geometry should be filled. */
+        FillDisplay: cxx_enum_class_uint32_t<RenderFillDisplay>;
+        /** The geometry's fill color. */
+        FillColor: ColorDefP;
+        /** Set the geometry's fill color to match the view background. */
+        SetFillColorToViewBackground(): void;
+        /** The geometry class */
+        GeometryClass: cxx_enum_class_uint32_t<RenderDgnGeometryClass>;
+        /** The geometry's transparency. Must be a floating point number between ... */
+        Transparency: cxx_double;
+        /** The geometry's fill transparency. Must be a floating point number between ... */
+        FillTransparency: cxx_double;
+        /** The geometry's display priority. Must be an integer between ... */
+        DisplayPriority: cxx_int32_t;
+        /** The geometry's material. */
+        MaterialId: DgnObjectIdP;
+
+        /* *** TBD:  PatternParams, Gradient, LineStyle */
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type RenderGeometryParamsP = cxx_pointer<RenderGeometryParams>;
+
+    class TextString implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
+    {
+        /*** NATIVE_TYPE_NAME = JsTextString ***/
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type TextStringP = cxx_pointer<TextString>;
+
+    class GeometricPrimitive implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
+    {
+        /*** NATIVE_TYPE_NAME = JsGeometricPrimitive ***/
+
+        /** If the primitive is pure geometry, then this property returns its geometry */
+        Geometry: GeometryP;
+        /** If the primitive is a text string, then this property returns its text string */
+        TextString: TextStringP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type GeometricPrimitiveP = cxx_pointer<GeometricPrimitive>;
+
+    class DgnGeometryPart implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
+    {
+        /*** NATIVE_TYPE_NAME = JsDgnGeometryPart ***/
+
+        // *** TBD
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type DgnGeometryPartP = cxx_pointer<DgnGeometryPart>;
+
+    class GeometryCollectionIterator implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
+    {
+        /*** NATIVE_TYPE_NAME = JsGeometryCollectionIterator ***/
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type GeometryCollectionIteratorP = cxx_pointer<GeometryCollectionIterator>;
+
+    class GeometryCollection implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
+    {
+        /*** NATIVE_TYPE_NAME = JsGeometryCollection ***/
+
+        /**
+         * Get an interator that points to the first item in this collection 
+         */
+        Begin(): GeometryCollectionIteratorP;
+
+        /**
+         * Test if this iterator is not at the end of the collection
+         * @param iter  The iterator
+         * @return true if the iterator is not at the end of the collection
+         */
+        IsValid(iter: GeometryCollectionIteratorP): cxx_bool;
+
+        /**
+         * Move to the next item in this collection.
+         * @param iter  The iterator
+         * @return true if the new position of the iterator is not at the end of the collection
+         */
+        ToNext(iter: GeometryCollectionIteratorP): cxx_bool;
+
+        /**
+         * Get the GeometricPrimitive at the specified position in this collection.
+         * @param iter  The iterator
+         * @return a GeometricPrimiive or null if the current item is not a primitive.
+         * @see GetGeometryPart
+         * @see GetGeometryToWorld
+         */
+        GetGeometry(iter: GeometryCollectionIteratorP): GeometricPrimitiveP;
+
+        /**
+         * Get the DgnGeometryPart at the specified position in this collection.
+         * @param iter  The iterator
+         * @return a DgnGeometryPart or null if the current item is not a GeomPart reference.
+         * @see GetGeometry
+         * @see GetGeometryToWorld
+         */
+        GetGeometryPart(iter: GeometryCollectionIteratorP): DgnGeometryPartP;
+
+        /**
+         * Get the transform that relates the GeometricPrimitive at the specified position in this collection to the world coordinate system. 
+         * @param iter  The iterator
+         * @return The transform
+         */
+        GetGeometryToWorld(iter: GeometryCollectionIteratorP): TransformP;
+
+        /**
+         * Get the RenderGeometryParams that apply to geometry at the specified position in this collection.
+         * @param iter  The iterator
+         */
+        GetGeometryParams(iter: GeometryCollectionIteratorP): RenderGeometryParamsP;
+
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type GeometryCollectionP = cxx_pointer<GeometryCollection>;
+
     class GeometryBuilder implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsGeometryBuilder ***/ 
+
+        /**
+         * Construct a new GeometryBuilder
+         * @param el    The element to which this geometry will be attached
+         * @param o     The placement origin
+         * @param angles The placement angles
+         * @see SetGeometryStreamAndPlacement for how to attach the geometry in this builder to an element.
+        */
         constructor(el: DgnElementP, o: DPoint3dP, angles: YawPitchRollAnglesP);
-        Append(geometry: GeometryP): void;
-        AppendSolidPrimitive(geometry: SolidPrimitiveP): void;
-        SetGeometryStreamAndPlacement(element: DgnElementP): cxx_double;
+        /**
+         * Append RenderGeometryParams to the builder. 
+         * @param params The parameters to apply to subsequent geometry
+         */
+        AppendRenderGeometryParams(params: RenderGeometryParamsP): void;
+
+        /** The RenderGeometryParams that will be applied to geometry appended to the builder. */
+        GeometryParams: RenderGeometryParamsP;
+
+        /**
+         * Append a SubCategoryId to the builder. 
+         * @param subcategoryId The SubCategoryId to apply to subsequent geometry.
+         */
+        AppendSubCategoryId(subcategoryId: DgnObjectIdP): void;
+
+        /**
+         * Append a geometry of some kind
+         * @param geometry  The geometry
+         */
+        AppendGeometry(geometry: GeometryP): void;
+
+        /**
+         * Attach the geometry in this builder to an element.
+         * @param element   The elment
+         * @return non-zero error status if \a element is invalid or if this geometry stream is invalid
+         */
+        SetGeometryStreamAndPlacement(element: DgnElementP): cxx_int32_t;
+
         OnDispose(): void;
         Dispose(): void;
     }
