@@ -68,13 +68,20 @@ void AddMass(UnitRegistry& reg)
     reg.AddSynonym(unit, "MICROGRAM");
     unit = reg.AddUnit(MASS, SI, "NG", "[NANO]*G");
     reg.AddSynonym(unit, "NANOGRAM");
-    reg.AddUnit(MASS, SI, "TON", "[KILO]*KG"); //, BISQSecUom);
+    reg.AddUnit(MASS, SI, "MEGAGRAM", "[MEGA]*G");
+    //reg.AddUnit(MASS, SI, "TON", "[KILO]*KG");  // NOTE: REMOVED because TON is abigious, using TONNE, SHORT_TON and LONG_TON
+    reg.AddUnit(MASS, SI, "TONNE", "[KILO]*KG"); // Also known as a metric ton http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
+
     unit = reg.AddUnit(MASS, IMPERIAL, "LBM", "KG", 0.45359237);
     reg.AddSynonym(unit, "POUND_MASS");
     reg.AddSynonym(unit, "POUND");
     unit = reg.AddUnit(MASS, IMPERIAL, "SLUG", "LBF*S(2)*FT(-1)");
     reg.AddSynonym(unit, "GEEPOUND");
-    reg.AddUnit(MASS, USCUSTOM, "GRAIN", "LBM", 1.0 / 7000.0); //, BISQSecUom);
+    reg.AddUnit(MASS, USCUSTOM, "GRAIN", "LBM", 1.0 / 7000.0);
+
+    reg.AddUnit(MASS, USCUSTOM, "SHORT_TON", "LBM", 2000); // Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
+    reg.AddUnit(MASS, USCUSTOM, "LONG_TON", "LBM", 2240); // Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
+    reg.AddUnit(MASS, USCUSTOM, "KIP", "LBM", 1000); // Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
     }
 
 void AddTime(UnitRegistry& reg)
@@ -86,8 +93,10 @@ void AddTime(UnitRegistry& reg)
     reg.AddUnit(TIME, SI, "DAY", "HR", 24.0); //, BISQSecUom);
     reg.AddUnit(TIME, SI, "WEEK", "DAY", 7.0); //, BISQSecUom);
     reg.AddUnit(TIME, SI, "MONTH", "DAY", 30.0); //, BISQSecUom);
-    unit = reg.AddUnit(TIME, SI, "YR", "DAY", 365.25);
+    unit = reg.AddUnit(TIME, SI, "YR", "DAY", 365);  //  http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B. Year is 3.1536 E+07 seconds
     reg.AddSynonym(unit, "YEAR");
+    reg.AddUnit(TIME, SI, "YEAR_SIDEREAL", "S", 3.155815e7); //  http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
+    reg.AddUnit(TIME, SI, "YEAR_TROPICAL", "S", 3.155693e7); //  http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
     unit = reg.AddUnit(TIME, SI, "MS", "[MILLI]*S");
     reg.AddSynonym(unit, "MILLISECOND");
     unit = reg.AddUnit(TIME, SI, "MKS", "[MICRO]*S");
@@ -129,7 +138,7 @@ void AddMole(UnitRegistry& reg)
     {
     UnitCP unit = reg.AddUnit(MOLE, SI, "KMOL", "[KILO]*MOL");
     reg.AddSynonym(unit, "KILOMOLE");
-    unit = reg.AddUnit(MOLE, SI, "LB-MOLE", "MOL", 453.59237);
+    unit = reg.AddUnit(MOLE, SI, "LB-MOLE", "MOL", 453.59237); // ASTM SI 10 standard SI1-.phhc8328.pdf page 29, 35 and http://en.wikipedia.org/wiki/Mole_%28unit%29
     reg.AddSynonym(unit, "POUND_MOLE");
     }
 
@@ -143,6 +152,7 @@ void AddCapita(UnitRegistry& reg)
     reg.AddUnit(CAPITA, STATISTICS, "GUEST", "PERSON"); //, BISQSecUom);
     reg.AddUnit(CAPITA, STATISTICS, "RESIDENT", "PERSON"); //, BISQSecUom);
     reg.AddUnit(CAPITA, STATISTICS, "HUNDRED_CAPITA", "PERSON", 100.0); //, BISQSecUom);
+    reg.AddUnit(CAPITA, STATISTICS, "THOUSAND_CAPITA", "[KILO]*PERSON");
     }
 
 void AddFinance(UnitRegistry& reg)
@@ -168,11 +178,11 @@ void AddPlaneAngle(UnitRegistry& reg)
     reg.AddSynonym(unit, "ANGLE_MINUTE");
     unit = reg.AddUnit(ANGLE, SI, "ARC_SECOND", "ARC_DEG", 1.0 / 3600.0);
     reg.AddSynonym(unit, "ANGLE_SECOND");
-    unit = reg.AddUnit(ANGLE, SI, "ARC_QUADRANT", "[PI]*RAD", 0.5);
+    unit = reg.AddUnit(ANGLE, SI, "ARC_QUADRANT", "[PI/2]*RAD");
     reg.AddSynonym(unit, "ANGLE_QUADRANT");
     unit = reg.AddUnit(ANGLE, SI, "GRAD", "[PI]*RAD", 1.0 / 200.0);
     reg.AddSynonym(unit, "GRADIAN");
-    reg.AddUnit(ANGLE, SI, "REVOLUTION", "[PI2]"); //, BISQSecUom);
+    reg.AddUnit(ANGLE, SI, "REVOLUTION", "[PI2]*RAD"); //, BISQSecUom);
     }
 
 void AddSolidAngle(UnitRegistry& reg)
@@ -198,6 +208,7 @@ void AddArea(UnitRegistry& reg)
     reg.AddSynonym(unit, "INCH_SQUARED");
     unit = reg.AddUnit(AREA, IMPERIAL, "SQ.FT", "FT(2)");
     reg.AddSynonym(unit, "FOOT_SQUARED");
+    reg.AddUnit(AREA, IMPERIAL, "THOUSAND_FOOT_SQUARED", "[KILO]*FT(2)"); // TODO: Make consistant name.
     unit = reg.AddUnit(AREA, IMPERIAL, "SQ.YRD", "YRD(2)");
     reg.AddSynonym(unit, "YARD_SQUARED");
     unit = reg.AddUnit(AREA, IMPERIAL, "SQ.MILE", "MILE(2)");
@@ -214,6 +225,9 @@ void AddDensity(UnitRegistry& reg)
     unit = reg.AddUnit(DENSITY, SI, "KG/LITRE", "KG*DM(-3)");
     reg.AddSynonym(unit, "KILOGRAM_PER_DECIMETRE_CUBED");
     reg.AddSynonym(unit, "KILOGRAM_PER_LITRE");
+
+    unit = reg.AddUnit(DENSITY, SI, "G/CUB.CM", "G*CM(-3)");
+    reg.AddSynonym(unit, "GRAM_PER_CENTIMETRE_CUBED");
 
     unit = reg.AddUnit(DENSITY, SI, "MKG/LITRE", "MKG*DM(-3)");
     reg.AddSynonym(unit, "MICROGRAM_PER_LITRE");
@@ -233,6 +247,9 @@ void AddDensity(UnitRegistry& reg)
 
     unit = reg.AddUnit(DENSITY, USCUSTOM, "SLUG/CUB.FT", "SLUG*FT(-3)");
     reg.AddSynonym(unit, "SLUG_PER_FOOT_CUBED");
+
+    unit = reg.AddUnit(DENSITY, USCUSTOM, "KIP/CUB.FT", "KIP*FT(-3)");
+    reg.AddSynonym(unit, "KIP_PER_FOOT_CUBED");
     }
 
 void AddForceDensity(UnitRegistry& reg)
@@ -327,6 +344,9 @@ void AddHeatingValue(UnitRegistry& reg)
     UnitCP unit = reg.AddUnit(HEATING_VALUE_MASS, SI, "J/KG", "J*KG(-1)");  // NOTE: Changed from J*M(-3)
     unit = reg.AddUnit(HEATING_VALUE_MASS, SI, "KJ/KG", "KJ*KG(-1)");
     reg.AddSynonym(unit, "KILOJOULE_PER_KILOGRAM");
+    unit = reg.AddUnit(HEATING_VALUE_MASS, SI, "MEGAJ/KG", "MJ*KG(-1)");
+    reg.AddSynonym(unit, "MEGAJOULE_PER_KILOGRAM");
+
     unit = reg.AddUnit(HEATING_VALUE_MASS, USCUSTOM, "BTU/LBM", "BTU*LBM(-1)");
     reg.AddSynonym(unit, "BTU_PER_POUND_MASS");
     //unit = reg.AddUnit(HEATING_VALUE_VOLUMETRIC, USCUSTOM, "BTU_PER_POUND_MOLE", "M_L2_PER_T2_MOL"); // TODO: Make expression and check dimension, add KILOJOULE_PER_KILOMOLE
@@ -336,6 +356,11 @@ void AddHeatingValue(UnitRegistry& reg)
 void AddEnergySpecificCapacity(UnitRegistry& reg)
     {
     // TODO
+    }
+
+void AddVolumeFlowRateByArea(UnitRegistry& reg)
+    {
+
     }
 
 void AddVolumeFlowRate(UnitRegistry& reg)
@@ -424,6 +449,8 @@ void AddSurfaceFlowRate(UnitRegistry& reg)
     reg.AddSynonym(unit, "GALLON_PER_MILE_SQUARED_PER_MINUTE");
     unit = reg.AddUnit(SURFACE_FLOW_RATE, USCUSTOM, "GALLON/(DAY*SQ.MILE)", "GALLON*DAY(-1)*MILE(-2)");
     reg.AddSynonym(unit, "GALLON_PER_MILE_SQUARED_PER_DAY");
+    unit = reg.AddUnit(SURFACE_FLOW_RATE, USCUSTOM, "CUB.FT/(ACRE*SEC)", "FT(3)*ACRE(-1)*S(-1)");
+    reg.AddSynonym(unit, "FOOT_CUBED_PER_ACRE_PER_SECOND");
     }
 
 void AddMassRatio(UnitRegistry& reg)
@@ -445,7 +472,7 @@ void AddMassFlowRate(UnitRegistry& reg)
 
     unit = reg.AddUnit(MASS_FLOW, SI, "G/S", "GRAM*S(-1)");
     reg.AddSynonym(unit, "GRAM_PER_SECOND");
-    unit = reg.AddUnit(MASS_FLOW, SI, "G/MIN", "GRAM*M(-1)");
+    unit = reg.AddUnit(MASS_FLOW, SI, "G/MIN", "GRAM*MIN(-1)");
     reg.AddSynonym(unit, "GRAM_PER_MINUTE");
     unit = reg.AddUnit(MASS_FLOW, SI, "G/HR", "GRAM*HR(-1)");
     reg.AddSynonym(unit, "GRAM_PER_HOUR");
@@ -473,6 +500,11 @@ void AddMassFlowRate(UnitRegistry& reg)
     reg.AddSynonym(unit, "POUND_PER_HOUR");
     unit = reg.AddUnit(MASS_FLOW, SI, "LB/DAY", "LBM*DAY(-1)");
     reg.AddSynonym(unit, "POUND_PER_DAY");
+    unit = reg.AddUnit(MASS_FLOW, SI, "TONNE/HR", "TONNE*HR(-1)");
+    reg.AddSynonym(unit, "TONNE_PER_HOUR");
+
+    unit = reg.AddUnit(MASS_FLOW, USCUSTOM, "SHORT_TON/HR", "SHORT_TON*HR(-1)");
+    reg.AddSynonym(unit, "SHORT_TON_PER_HOUR");
     }
 
 void AddParticleFlowRate(UnitRegistry& reg)
@@ -530,6 +562,8 @@ void AddLinearLoad(UnitRegistry& reg)
     reg.AddSynonym(unit, "NEWTON_PER_METRE");
     unit = reg.AddUnit(LINEAR_LOAD, SI, "N/MM", "N*MM(-1)");
     reg.AddSynonym(unit, "NEWTON_PER_MILLIMETRE");
+    unit = reg.AddUnit(LINEAR_LOAD, SI, "LBF/IN", "LBF*IN(-1)");
+    reg.AddSynonym(unit, "POUND_FORCE_PER_INCH");
     }
 
 void AddTorque(UnitRegistry& reg)
@@ -544,9 +578,9 @@ void AddMolarVolume(UnitRegistry& reg)
     {
     UnitCP unit = reg.AddUnit(MOLAR_VOLUME, CHEMISTRY, "CUB.M/MOLE", "CUB.M*MOLE(-1)");
     reg.AddSynonym(unit, "METRE_CUBED_PER_MOLE");
-    unit = reg.AddUnit(MOLAR_VOLUME, CHEMISTRY, "CUB.M/KMOL", "CUB.M*MOLE(-1)", 1.0, -3.0);
+    unit = reg.AddUnit(MOLAR_VOLUME, CHEMISTRY, "CUB.M/KMOL", "CUB.M*[KILO]*MOLE(-1)");
     reg.AddSynonym(unit, "METRE_CUBED_PER_KILOMOLE");
-    unit = reg.AddUnit(MOLAR_VOLUME, CHEMISTRY, "CUB.FT/MOLE", "CUB.FT*MOLE(-1)");
+    unit = reg.AddUnit(MOLAR_VOLUME, CHEMISTRY, "CUB.FT/LB-MOLE", "CUB.FT*LB-MOLE(-1)");
     reg.AddSynonym(unit, "FOOT_CUBED_PER_POUND_MOLE");
     }
 
@@ -581,6 +615,8 @@ void AddMomentOfInertia(UnitRegistry& reg)
     reg.AddSynonym(unit, "INCH_TO_THE_FOURTH");
     unit = reg.AddUnit(MOMENTINERTIA, INDUSTRIAL, "FT^4", "FT(4)");
     reg.AddSynonym(unit, "FOOT_TO_THE_FOURTH");
+    unit = reg.AddUnit(MOMENTINERTIA, SI, "MM^4", "MM(4)");
+    reg.AddSynonym(unit, "MILLIMETRE_TO_THE_FOURTH");
     }
 
 void AddPower(UnitRegistry& reg)
@@ -714,12 +750,17 @@ void AddThreadPitch(UnitRegistry& reg)
     reg.AddSynonym(unit, "CENTIMETRE_PER_REVOLUTION");
     unit = reg.AddUnit(THREAD_PITCH, SI, "MM/REVOLUTION", "MM*REVOLUTION(-1)");
     reg.AddSynonym(unit, "MILLIMETRE_PER_REVOLUTION");
+    unit = reg.AddUnit(THREAD_PITCH, SI, "M/RAD", "M*RAD(-1)");
+    reg.AddSynonym(unit, "METRE_PER_RADIAN");
+    unit = reg.AddUnit(THREAD_PITCH, SI, "M/DEGREE", "M*ARC_DEG(-1)");
+    reg.AddSynonym(unit, "METRE_PER_DEGREE");
+    unit = reg.AddUnit(THREAD_PITCH, SI, "MM/RAD", "MM*RAD(-1)");
+    reg.AddSynonym(unit, "MILLIMETRE_PER_RADIAN");
+
     unit = reg.AddUnit(THREAD_PITCH, USCUSTOM, "IN/REVOLUTION", "IN*REVOLUTION(-1)");
     reg.AddSynonym(unit, "INCH_PER_REVOLUTION");
     unit = reg.AddUnit(THREAD_PITCH, USCUSTOM, "FT/REVOLUTION", "FT*REVOLUTION(-1)");
     reg.AddSynonym(unit, "FOOT_PER_REVOLUTION");
-    unit = reg.AddUnit(THREAD_PITCH, USCUSTOM, "MM/RAD", "MM*RAD(-1)");
-    reg.AddSynonym(unit, "MILLIMETRE_PER_RADIAN");
     unit = reg.AddUnit(THREAD_PITCH, USCUSTOM, "INCH/DEGREE", "IN*ARC_DEG(-1)");
     reg.AddSynonym(unit, "INCH_PER_DEGREE");
     unit = reg.AddUnit(THREAD_PITCH, USCUSTOM, "INCH/RAD", "IN*RAD(-1)");
@@ -816,7 +857,7 @@ void AddAngularVelocity(UnitRegistry& reg)
 void AddDynamicViscosity(UnitRegistry& reg)
     {
     UnitCP unit = reg.AddUnit(DYNVISCOSITY, SI, "PA-S", "PA*S");
-    reg.AddSynonym(unit, "PASCAL-SECOND");
+    reg.AddSynonym(unit, "PASCAL_SECOND");
     reg.AddUnit(DYNVISCOSITY, SI, "POISE", "PA-S", 0.1); //, BISQSecUom);
     reg.AddUnit(DYNVISCOSITY, SI, "CENTIPOISE", "[CENTI]*POISE"); //, BISQSecUom);
     unit = reg.AddUnit(DYNVISCOSITY, SI, "LB/FT*S", "LBF*FT(-1)*S(-1)");
@@ -903,7 +944,7 @@ void UnitRegistry::AddDefaultUnits ()
     reg.AddSynonym(unit, "DEGREE_KELVIN");
     unit = reg.AddSIBaseUnit("A", BasePhenomena::ElectricCurrent); //, BISQPrimUom);
     reg.AddSynonym(unit, "AMPERE");
-    unit = reg.AddSIBaseUnit("MOL", BasePhenomena::Mole);
+    unit = reg.AddSIBaseUnit("MOL", BasePhenomena::Mole); // Where mol is the SI gram mol or gmol.
     reg.AddSynonym(unit, "MOLE");
     unit = reg.AddSIBaseUnit("CD", BasePhenomena::Luminosity);
     reg.AddSynonym(unit, "CANDELA");
@@ -931,6 +972,7 @@ void UnitRegistry::AddDefaultUnits ()
     AddSolidAngle(reg);
     AddArea(reg);
     AddDensity(reg);
+    AddForceDensity(reg);
     AddPopulationDensity(reg);
     AddElectricCurrent(reg);
     AddEnergy(reg);

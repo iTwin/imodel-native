@@ -88,4 +88,5 @@ void UnitRegistry::AddDefaultConstants ()
     reg.AddConstant(RATIO, "EXA", "ONE", 1.0e18); //, "EXA-prefix");
     reg.AddConstant(RATIO, "ZETTA", "ONE", 1.0e21); //, "ZETTA-prefix");
     reg.AddConstant(RATIO, "YOTTA", "ONE", 1.0e24); //, "YOTTA-prefix");
+
     }
