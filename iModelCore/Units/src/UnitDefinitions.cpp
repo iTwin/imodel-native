@@ -582,9 +582,9 @@ void AddLinearLoad(UnitRegistry& reg)
 
 void AddTorque(UnitRegistry& reg)
     {
-    UnitCP unit = reg.AddUnit(TORQUE, SI, "N_M", "N*M");
+    UnitCP unit = reg.AddUnit(TORQUE, SI, "N_M", "N*M*RAD");
     reg.AddSynonym(unit, "NEWTON_METRE");
-    unit = reg.AddUnit(TORQUE, SI, "N_CM", "N*CM");
+    unit = reg.AddUnit(TORQUE, SI, "N_CM", "N*CM*RAD");
     reg.AddSynonym(unit, "NEWTON_CENTIMETRE");
     }
 
@@ -649,7 +649,7 @@ void AddPower(UnitRegistry& reg)
     reg.AddSynonym(unit, "BTU_PER_HOUR");
     unit = reg.AddUnit(POWER, USCUSTOM, "KILOBTU/HOUR", "[KILO]*BTU*HOUR(-1)");
     reg.AddSynonym(unit, "KILOBTU_PER_HOUR");
-    unit = reg.AddUnit(POWER, USCUSTOM, "HP", "LBF*FT", 550.0);
+    unit = reg.AddUnit(POWER, USCUSTOM, "HP", "LBF*FT*S(-1)", 550.0);
     reg.AddSynonym(unit, "HORSEPOWER");
 
     unit = reg.AddUnit(POWER, SI, "GJ/MONTH", "GJ*MONTH(-1)"); // TODO: Correct phen?

@@ -100,7 +100,7 @@ BentleyStatus Unit::HandleToken(bvector<UnitExponent*>& unitExpression, Utf8CP d
         return BentleyStatus::ERROR;
         }
 
-    if (!(unit->IsConstant() || unit->IsBaseUnit()))
+    if (!unit->IsBaseUnit())
         {
         LOG.debugv("Evaluating %s", unit->GetName());
         bvector<UnitExponent*> sourceExpression = unit->Evaluate();
@@ -176,6 +176,9 @@ BentleyStatus Unit::ParseDefinition(Utf8CP definition, bvector<UnitExponent*>& u
 
     auto new_iter = remove_if(unitExpression.begin(), unitExpression.end(), [](UnitExponent* a) { return a->m_exponent == 0; });
     unitExpression.erase(new_iter, unitExpression.end());
+
+    // TODO: Decide if we want to sort or keep in generated order.
+    //sort(unitExpression.begin(), unitExpression.end(), [&] (UnitExponent* a, UnitExponent* b) { return strcmp(a->m_unit->GetPhenomenon(), b->m_unit->GetPhenomenon()); });
 
     LOG.debugv("%s - DONE", definition);
 

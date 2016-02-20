@@ -64,6 +64,15 @@ friend struct UnitRegistry;
 
         UnitExponent(UnitCP unit, int exponent) : m_exponent(exponent) { m_unit = unit; }
         UnitExponent(const UnitExponent& copy) : m_exponent(copy.m_exponent) { m_unit = copy.m_unit; }
+
+        static void AddCopiesTo(bvector<UnitExponent*>& copy, bvector<UnitExponent*> const& source)
+            {
+            for (auto const& unitExp : source)
+                {
+                UnitExponent* unitExpCopy = new UnitExponent(*unitExp);
+                copy.push_back(unitExpCopy);
+                }
+            }
         };
 
 private:

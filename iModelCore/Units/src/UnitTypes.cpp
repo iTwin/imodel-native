@@ -38,19 +38,49 @@ bool Unit::IsRegistered() const
 
 void Unit::PrintForumula(Utf8CP unitName, const bvector<UnitExponent*>& expression) const
     {
-    LOG.debugv("Formula for: %s", unitName);
+    LOG.errorv("Formula for: %s\n", unitName);
     Utf8String output;
     for (auto const& uWE : expression)
         {
-        Utf8PrintfString uWEString("Unit: %s   UnitFactor: %lf   UnitExponent: %d \n", uWE->m_unit->GetName(), uWE->m_unit->GetFactor(), uWE->m_exponent);
+        Utf8PrintfString uWEString("%lf%s^%d *", uWE->m_unit->GetFactor(), uWE->m_unit->GetName(), uWE->m_exponent);
         output.append(uWEString.c_str());
         }
-    LOG.debug(output.c_str());
+    LOG.errorv(output.c_str());
     }
 
-// TODO: Implement
-bool Unit::DimensionallyCompatible(bvector<UnitExponent*>& unitExpA, bvector<UnitExponent*>& unitExpB) const
+// TODO: Consider how this could be combined with the merge step so we don't have to make two copies of the from expression
+bool Unit::DimensionallyCompatible(bvector<UnitExponent*>& fromExpression, bvector<UnitExponent*>& toExpression) const
     {
+    bvector<UnitExponent*> fromBaseUnits;
+    for (auto const& unitExp : fromExpression)
+        {
+        // TODO: Improve the way we check all of these things to improve efficiency
+        if (!unitExp->m_unit->IsConstant() && unitExp->m_unit->IsBaseUnit() && strcmp(unitExp->m_unit->m_definition.c_str(), "ONE") != 0)
+            {
+            UnitExponent* copy = new UnitExponent(*unitExp);
+            fromBaseUnits.push_back(copy);
+            }
+        }
+    bvector<UnitExponent*> toBaseUnits;
+    for (auto const& unitExp : toExpression)
+        {
+        if (!unitExp->m_unit->IsConstant() && unitExp->m_unit->IsBaseUnit() && strcmp(unitExp->m_unit->m_definition.c_str(), "ONE") != 0)
+            toBaseUnits.push_back(unitExp);
+        }
+    MergeExpressions("", fromBaseUnits, "", toBaseUnits, -1);
+    for (auto const& unitExp : fromBaseUnits)
+        {
+        if (unitExp->m_exponent == 0)
+            continue;
+        else if (unitExp->m_exponent > 0)
+            LOG.errorv("Cannot convert - from Unit has component of '%s' not in the to unit", unitExp->m_unit->GetName());
+        else
+            LOG.errorv("Cannot convert - to Unit has component of '%s' not in the from Unit", unitExp->m_unit->GetName());
+        
+        PrintForumula("From", fromExpression);
+        PrintForumula("To", toExpression);
+        return false;
+        }
     return true;
     }
 
@@ -73,17 +103,14 @@ double Unit::GetConversionTo(UnitCP unit) const
 
     if (!DimensionallyCompatible(fromExpression, toExpression))
         {
-        LOG.errorv("Cannot convert from %s(%s) to %s(%s) because they two units are not dimensionaly compatible.  Returning a conversion factor of 0.0", 
+        LOG.errorv("Cannot convert from %s: (%s) to %s: (%s) because they two units are not dimensionally compatible.  Returning a conversion factor of 0.0", 
                    this->GetName(), this->GetDefinition(), unit->GetName(), unit->GetDefinition());
         return 0.0;
         }
 
     bvector<UnitExponent*> combinedExpression;
-    for (auto const& unitExp : fromExpression)
-        {
-        UnitExponent* unitExpCopy = new UnitExponent(*unitExp);
-        combinedExpression.push_back(unitExpCopy);
-        }
+    UnitExponent::AddCopiesTo(combinedExpression, fromExpression);
+
     MergeExpressions(GetDefinition(), combinedExpression, unit->GetDefinition(), toExpression, -1);
     if (LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_DEBUG))
         {
@@ -93,7 +120,8 @@ double Unit::GetConversionTo(UnitCP unit) const
     double factor = m_factor / unit->m_factor;
     for (auto const& unitExp : combinedExpression)
         {
-        if (unitExp->m_exponent == 1 && unitExp->m_unit->GetFactor() == 1.0)
+        // TODO: Decide if this is really necessary ...  if exponent is zero then the factor is 1 so the question is it better to pow and multiply by 1 or have a branch ... suspect pow and mult
+        if (unitExp->m_exponent == 0 || unitExp->m_unit->GetFactor() == 1.0)
             continue;
         
         factor *= pow(unitExp->m_unit->GetFactor(), unitExp->m_exponent);
