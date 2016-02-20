@@ -83,7 +83,6 @@ private:
 
     static BentleyStatus ParseDefinition(Utf8CP definition, bvector<UnitExponent*>& unitFormula, int startingExponent);
     static void MergeExpressions(Utf8CP targetDefinition, bvector<UnitExponent*>& targetExpression, Utf8CP sourceDefinition, bvector<UnitExponent*>& sourceExpression, int startingExponent);
-    static BentleyStatus AddUFEToExpression(bvector<UnitExponent*>& unitExpression, Utf8CP definition, Utf8CP token, int mergedExponent);
     static BentleyStatus HandleToken(bvector<UnitExponent*>& unitExpression, Utf8CP definition, Utf8CP token, int tokenExponent, int startingExponent);
 
     // TODO: Create a better definition of an "unknown" unit

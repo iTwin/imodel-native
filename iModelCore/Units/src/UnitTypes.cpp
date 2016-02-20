@@ -95,6 +95,7 @@ double Unit::GetConversionTo(UnitCP unit) const
         {
         if (unitExp->m_exponent == 1 && unitExp->m_unit->GetFactor() == 1.0)
             continue;
+        
         factor *= pow(unitExp->m_unit->GetFactor(), unitExp->m_exponent);
         }
 

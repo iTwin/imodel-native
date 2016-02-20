@@ -174,6 +174,7 @@ TEST_F(UnitsTests, TestBasiConversion)
     TestUnitConversion(42, "CUB.M/SEC", 2.562997252e6, "CUB.IN/SEC", 1e-8, loadErrors, conversionErrors);
     TestUnitConversion(2.326e6, "KILOJOULE_PER_KILOGRAM", 1.0e6, "BTU_PER_POUND_MASS", 1.0e-8, loadErrors, conversionErrors);
     TestUnitConversion(60, "GRAM_PER_MINUTE", 1.0, "GRAM_PER_SECOND", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(3.53146667214886e1, "KILONEWTON_PER_METRE_CUBED", 1.0, "KILONEWTON_PER_FOOT_CUBED", 1.0e-8, loadErrors, conversionErrors);
     }
 
 TEST_F(UnitsTests, UnitsConversion)

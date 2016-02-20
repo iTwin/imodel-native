@@ -69,7 +69,7 @@ void UnitRegistry::AddDefaultPhenomena ()
     //AddPhenomena(RADEXPOSURE)
     AddPhenomena(RADABSORBDOSE, "WORK*MASS(-1)");
     AddPhenomena(RADEQUDOSE, "WORK*MASS(-1)");
-    //AddPhenomena(SIZELENRATE) // TODO: ?
+    AddPhenomena(SIZE_LENGTH_RATE, "LENGTH*LENGTH"); // TODO: ?
     AddPhenomena(THERMOCONDUCT, "POWER*LENGTH(-1)*TEMPERATURE(-1)");
     AddPhenomena(MOLAR_VOLUME, "VOLUME*MOLE(-1)");
     AddPhenomena(MOLAR_CONCENTRATION, "MOLE*VOLUME(-1)");

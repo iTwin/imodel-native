@@ -178,11 +178,11 @@ void AddPlaneAngle(UnitRegistry& reg)
     reg.AddSynonym(unit, "ANGLE_MINUTE");
     unit = reg.AddUnit(ANGLE, SI, "ARC_SECOND", "ARC_DEG", 1.0 / 3600.0);
     reg.AddSynonym(unit, "ANGLE_SECOND");
-    unit = reg.AddUnit(ANGLE, SI, "ARC_QUADRANT", "[PI/2]*RAD");
+    unit = reg.AddUnit(ANGLE, SI, "ARC_QUADRANT", "[PI]*RAD", 0.5);
     reg.AddSynonym(unit, "ANGLE_QUADRANT");
     unit = reg.AddUnit(ANGLE, SI, "GRAD", "[PI]*RAD", 1.0 / 200.0);
     reg.AddSynonym(unit, "GRADIAN");
-    reg.AddUnit(ANGLE, SI, "REVOLUTION", "[PI2]*RAD"); //, BISQSecUom);
+    reg.AddUnit(ANGLE, SI, "REVOLUTION", "[PI]*RAD", 2.0); //, BISQSecUom);
     }
 
 void AddSolidAngle(UnitRegistry& reg)
@@ -214,6 +214,20 @@ void AddArea(UnitRegistry& reg)
     unit = reg.AddUnit(AREA, IMPERIAL, "SQ.MILE", "MILE(2)");
     reg.AddSynonym(unit, "MILE_SQUARED");
     reg.AddUnit(AREA, IMPERIAL, "ACRE", "CHAIN(2)", 10.0); //, BISQSecUom);
+    }
+
+void AddSizeLengthRate(UnitRegistry& reg)
+    {
+    reg.AddUnit(SIZE_LENGTH_RATE, INDUSTRIAL, "INCH_MILE", "IN*MILE");
+    reg.AddUnit(SIZE_LENGTH_RATE, INDUSTRIAL, "FOOT_MILE", "FT*MILE");
+    reg.AddUnit(SIZE_LENGTH_RATE, INDUSTRIAL, "FOOT_FOOT", "FT*FT");
+    reg.AddUnit(SIZE_LENGTH_RATE, INDUSTRIAL, "INCH_FOOT", "IN*FT");
+    reg.AddUnit(SIZE_LENGTH_RATE, INDUSTRIAL, "INCH_METRE", "IN*M");
+    reg.AddUnit(SIZE_LENGTH_RATE, INDUSTRIAL, "MILLIMETRE_KILOMETRE", "MM*KM");
+    reg.AddUnit(SIZE_LENGTH_RATE, INDUSTRIAL, "MILLIMETRE_METRE", "MM*M");
+    reg.AddUnit(SIZE_LENGTH_RATE, INDUSTRIAL, "MILLIMETRE_MILE", "MM*MILE");
+    reg.AddUnit(SIZE_LENGTH_RATE, INDUSTRIAL, "METRE_KILOMETRE", "M*KM");
+    reg.AddUnit(SIZE_LENGTH_RATE, INDUSTRIAL, "METRE_METRE", "M*M");
     }
 
 void AddDensity(UnitRegistry& reg)
@@ -254,13 +268,13 @@ void AddDensity(UnitRegistry& reg)
 
 void AddForceDensity(UnitRegistry& reg)
     {
-    UnitCP unit = reg.AddUnit(FORCE_DENSITY, SI, "N/CUB.M", "N/M(-3)");
+    UnitCP unit = reg.AddUnit(FORCE_DENSITY, SI, "N/CUB.M", "N*M(-3)");
     reg.AddSynonym(unit, "NEWTON_PER_METRE_CUBED");
-    unit = reg.AddUnit(FORCE_DENSITY, SI, "KN/CUB.M", "[KILO]*N/M(-3)");
+    unit = reg.AddUnit(FORCE_DENSITY, SI, "KN/CUB.M", "[KILO]*N*M(-3)");
     reg.AddSynonym(unit, "KILONEWTON_PER_METRE_CUBED");
-    unit = reg.AddUnit(FORCE_DENSITY, USCUSTOM, "N/CUB.FT", "N/FT(-3)");
+    unit = reg.AddUnit(FORCE_DENSITY, USCUSTOM, "N/CUB.FT", "N*FT(-3)");
     reg.AddSynonym(unit, "NEWTON_PER_FOOT_CUBED");
-    unit = reg.AddUnit(FORCE_DENSITY, USCUSTOM, "KN/CUB.FT", "[KILO]*N/FT(-3)");
+    unit = reg.AddUnit(FORCE_DENSITY, USCUSTOM, "KN/CUB.FT", "[KILO]*N*FT(-3)");
     reg.AddSynonym(unit, "KILONEWTON_PER_FOOT_CUBED");
     }
 
@@ -578,7 +592,7 @@ void AddMolarVolume(UnitRegistry& reg)
     {
     UnitCP unit = reg.AddUnit(MOLAR_VOLUME, CHEMISTRY, "CUB.M/MOLE", "CUB.M*MOLE(-1)");
     reg.AddSynonym(unit, "METRE_CUBED_PER_MOLE");
-    unit = reg.AddUnit(MOLAR_VOLUME, CHEMISTRY, "CUB.M/KMOL", "CUB.M*[KILO]*MOLE(-1)");
+    unit = reg.AddUnit(MOLAR_VOLUME, CHEMISTRY, "CUB.M/KMOL", "CUB.M*MOLE(-1)", 1.0e-3);
     reg.AddSynonym(unit, "METRE_CUBED_PER_KILOMOLE");
     unit = reg.AddUnit(MOLAR_VOLUME, CHEMISTRY, "CUB.FT/LB-MOLE", "CUB.FT*LB-MOLE(-1)");
     reg.AddSynonym(unit, "FOOT_CUBED_PER_POUND_MOLE");
@@ -661,9 +675,9 @@ void AddPressure(UnitRegistry& reg)
     reg.AddSynonym(unit, "KILOGRAM_FORCE_PER_CENTIMETRE_SQUARED");
     unit = reg.AddUnit(PRESSURE, INTERNATIONAL, "KGF/SQ.M", "KGF*M(-2)");
     reg.AddSynonym(unit, "KILOGRAM_FORCE_PER_METRE_SQUARED");
-    unit = reg.AddUnit(PRESSURE, SI, "ATM", "PA", 1.01325, 5.0);
+    unit = reg.AddUnit(PRESSURE, SI, "ATM", "PA", 1.01325e5);
     reg.AddSynonym(unit, "STANDARD_ATMOSPHERE");
-    reg.AddUnit(PRESSURE, SI, "BAR", "PA", 1.0, 5.0); //, BISQNoDescript); //, BISQSecUom);
+    reg.AddUnit(PRESSURE, SI, "BAR", "PA", 1.0e5); //, BISQNoDescript); //, BISQSecUom);
     unit = reg.AddUnit(PRESSURE, SI, "MBAR", "[MILLI]*BAR");
     reg.AddSynonym(unit, "MILLIBAR");
     reg.AddUnit(PRESSURE, CGS, "BARYE", "PA", 0.1); //, BISQSecUom);   // 1.0 dyn/sq.cm
@@ -971,6 +985,7 @@ void UnitRegistry::AddDefaultUnits ()
     AddPlaneAngle(reg);
     AddSolidAngle(reg);
     AddArea(reg);
+    AddSizeLengthRate(reg);
     AddDensity(reg);
     AddForceDensity(reg);
     AddPopulationDensity(reg);

@@ -54,8 +54,7 @@ void Unit::MergeExpressions(Utf8CP targetDefinition, bvector<UnitExponent*>& tar
         {
         int     mergedExponent = uWE->m_exponent * startingExponent;
 
-        auto it = find_if(targetExpression.begin(), targetExpression.end(), [&uWE] (UnitExponent* a) 
-            { return strcmp(uWE->m_unit->GetName(), a->m_unit->GetName()) == 0; });
+        auto it = find_if(targetExpression.begin(), targetExpression.end(), [&uWE] (UnitExponent* a) { return strcmp(uWE->m_unit->GetName(), a->m_unit->GetName()) == 0; });
         if (it != targetExpression.end())
             {
             LOG.debugv("%s --> %s - Merging existing Unit %s. with Exponent: %d", sourceDefinition, targetDefinition, (*it)->m_unit->GetName(), mergedExponent);
@@ -70,11 +69,13 @@ void Unit::MergeExpressions(Utf8CP targetDefinition, bvector<UnitExponent*>& tar
         }
     }
 
-BentleyStatus Unit::AddUFEToExpression(bvector<UnitExponent*>& unitExpression, Utf8CP definition, Utf8CP token, int mergedExponent)
+BentleyStatus Unit::HandleToken(bvector<UnitExponent*>& unitExpression, Utf8CP definition, Utf8CP token, int tokenExponent, int startingExponent)
     {
+    LOG.debugv("%s - Handle Token: %s  TokenExp: %d  StartExp: %d", definition, token, tokenExponent, startingExponent);
+    int mergedExponent = tokenExponent * startingExponent;
+
     UnitCP unit = nullptr;
-    auto it = find_if(unitExpression.begin(), unitExpression.end(), [&token] (UnitExponent* a) 
-        { return strcmp(token, a->m_unit->GetName()) == 0; });
+    auto it = find_if(unitExpression.begin(), unitExpression.end(), [&token] (UnitExponent* a) { return strcmp(token, a->m_unit->GetName()) == 0; });
     if (it != unitExpression.end())
         {
         LOG.debugv("%s - Merging existing Unit %s with Exponent: %d", definition, (*it)->m_unit->GetName(), mergedExponent);
@@ -92,13 +93,13 @@ BentleyStatus Unit::AddUFEToExpression(bvector<UnitExponent*>& unitExpression, U
             unitExpression.push_back(uWE);
             }
         }
-    
+
     if (nullptr == unit)
         {
         LOG.errorv("Failed to parse %s because the unit %s could not be found", definition, token);
         return BentleyStatus::ERROR;
         }
-    
+
     if (!(unit->IsConstant() || unit->IsBaseUnit()))
         {
         LOG.debugv("Evaluating %s", unit->GetName());
@@ -106,14 +107,6 @@ BentleyStatus Unit::AddUFEToExpression(bvector<UnitExponent*>& unitExpression, U
         MergeExpressions(definition, unitExpression, unit->GetDefinition(), sourceExpression, mergedExponent);
         }
     return BentleyStatus::SUCCESS;
-    }
-
-BentleyStatus Unit::HandleToken(bvector<UnitExponent*>& unitExpression, Utf8CP definition, Utf8CP token, int tokenExponent, int startingExponent)
-    {
-    LOG.debugv("%s - Handle Token: %s  TokenExp: %d  StartExp: %d", definition, token, tokenExponent, startingExponent);
-    int mergedExponent = tokenExponent * startingExponent;
-
-    return AddUFEToExpression(unitExpression, definition, token, mergedExponent);
     }
 
 /*--------------------------------------------------------------------------------**//**
