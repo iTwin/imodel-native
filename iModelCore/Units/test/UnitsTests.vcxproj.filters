@@ -34,6 +34,12 @@
     <None Include="BuildTests.mke" />
     <None Include="Prewire.mke" />
     <None Include="ConversionData.prewire.mke" />
+    <None Include="ConversionData\complex.csv">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="ConversionData\unitcomparisondata.csv">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ignore_list.txt" />
