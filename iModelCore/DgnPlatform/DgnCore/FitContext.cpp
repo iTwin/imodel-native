@@ -115,8 +115,9 @@ struct FitQuery : DgnQueryView::SpatialQuery
     virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
 
 public:
-    FitQuery(DgnQueryView::SpecialElements const* special, FitContextR context) : DgnQueryView::SpatialQuery(special), m_context(context) 
+    FitQuery(DgnQueryView::SpecialElements const* special, FitContextR context, ClipPrimitiveCP volume) : DgnQueryView::SpatialQuery(special), m_context(context)
         {
+        m_activeVolume = volume;
         if (context.m_params.m_limitByVolume)
             SetFrustum(context.GetFrustum());
         }
@@ -130,6 +131,8 @@ END_UNNAMED_NAMESPACE
 int FitQuery::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
     {
     RTree3dValCP testRange = (RTree3dValCP) info.m_coords;
+    
+    info.m_within = RTreeMatchFunction::Within::Outside;
 
     // if we're limiting the elements we test by the view's range (to find the range of the currently visible elements vs. find all elements)
     // then we compare against the Frustum volume and potentially reject elements that are outside the view volume or active volume.
@@ -138,21 +141,21 @@ int FitQuery::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
         Frustum box(*testRange);
         auto rangeTest = TestVolume(box, testRange);
         if (RTreeMatchFunction::Within::Outside == rangeTest)
-            {
-            info.m_within = RTreeMatchFunction::Within::Outside;
             return  BE_SQLITE_OK;
-            }
+        }
+    else if (m_activeVolume.IsValid())
+        {
+        Frustum box(*testRange);
+        if (ClipPlaneContainment_StronglyOutside == m_activeVolume->ClassifyPointContainment(box.m_pts, 8))
+            return  BE_SQLITE_OK;
         }
 
     DRange3d thisRange = testRange->ToRange();
     if (m_context.IsRangeContained(thisRange))
-        info.m_within = RTreeMatchFunction::Within::Outside; // If range is entirely contained, there's no reason to continue with it (or its children, if this is a node)
-    else
-        {
-        info.m_within = RTreeMatchFunction::Within::Partly; 
-        info.m_score  = info.m_level; // to get depth-first traversal
-        }
+        return BE_SQLITE_OK; // If range is entirely contained, there's no reason to continue with it (or its children, if this is a node)
 
+    info.m_within = RTreeMatchFunction::Within::Partly; 
+    info.m_score  = info.m_level; // to get depth-first traversal
     return  BE_SQLITE_OK;
     }
 
@@ -170,7 +173,7 @@ ViewController::FitComplete ViewController::_ComputeFitRange(FitContextR context
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewController::FitComplete DgnQueryView::_ComputeFitRange(FitContextR context)
     {
-    FitQuery filter(&m_special, context);
+    FitQuery filter(&m_special, context, m_activeVolume.get());
     filter.Start(*this);
 
     DgnElementId thisId;

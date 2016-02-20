@@ -24,7 +24,7 @@ bool ScanCriteria::UseRangeTree(DgnRangeTree& rangeTree)
     if (nullptr != m_appRangeNodeCheck)
         return  true;
 
-    DRange3dCP modelRange = rangeTree.GetFullRange();
+    DRange3dCP modelRange = rangeTree.GetExtents();
     return (nullptr != modelRange);
     }
 

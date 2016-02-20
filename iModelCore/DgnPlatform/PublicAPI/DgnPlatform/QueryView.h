@@ -55,7 +55,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
         BeSQLite::RTree3dVal m_boundingRange;    // only return entries whose range intersects this cube.
         BeSQLite::RTree3dVal m_backFace;
         Render::FrustumPlanes m_planes;
-        ClipPrimitivePtr m_activeVolume;
+        ClipPrimitiveCPtr m_activeVolume;
         Frustum m_frustum;
         DMatrix4d m_localToNpc;
         DVec3d m_viewVec;  // vector from front face to back face, for SkewScan
@@ -178,6 +178,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _OnCategoryChange(bool singleEnabled) override;
     DGNPLATFORM_EXPORT virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff) override;
     DGNPLATFORM_EXPORT virtual FitComplete _ComputeFitRange(struct FitContext&) override;
+    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _GetViewedExtents() const;
 
 public:
     //! @param dgndb  The DgnDb for the view
