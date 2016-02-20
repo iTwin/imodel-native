@@ -172,37 +172,39 @@ TEST_F(UnitsTests, TestBasiConversion)
     TestUnitConversion(2.37303604042319e7, "FOOT_POUNDAL", 1.0, "MEGAJOULE", 1e-7, loadErrors, conversionErrors);
     TestUnitConversion(42, "KG/S", 42000.0, "G/S", 1e-8, loadErrors, conversionErrors);
     TestUnitConversion(42, "CUB.M/SEC", 2.562997252e6, "CUB.IN/SEC", 1e-8, loadErrors, conversionErrors);
+    TestUnitConversion(2.326e6, "KILOJOULE_PER_KILOGRAM", 1.0e6, "BTU_PER_POUND_MASS", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(60, "GRAM_PER_MINUTE", 1.0, "GRAM_PER_SECOND", 1.0e-8, loadErrors, conversionErrors);
     }
 
-//TEST_F(UnitsTests, UnitsConversion)
-//    {
-//    bvector<Utf8String> loadErrors;
-//    bvector<Utf8String> conversionErrors;
-//
-//    int numberAttempted = 0;
-//    auto lineProcessor = [&loadErrors, &conversionErrors, &numberAttempted](bvector<Utf8String>& tokens)
-//        {
-//        ++numberAttempted;
-//        //passing 1.0e-6 to tolerance instead of the csv value
-//        TestUnitConversion(GetDouble(tokens[0]), tokens[1].c_str(), GetDouble(tokens[2]), tokens[3].c_str(), 1.0e-6, loadErrors, conversionErrors);
-//        };
-//
-//    ReadConversionCsvFile(L"unitcomparisondata.csv", lineProcessor);
-//
-//    Utf8PrintfString loadErrorString ("Attempted to load %d, error loading :\n", numberAttempted);
-//
-//    for (auto const& val : loadErrors)
-//        loadErrorString.append(val + "\n");
-//
-//    EXPECT_EQ(0, loadErrors.size()) << loadErrorString;
-//
-//    Utf8PrintfString conversionErrorString("Attempted to convert %d, %d failed, %d skipped because of missing units, error Converting :\n", numberAttempted - loadErrors.size(), conversionErrors.size(), loadErrors.size());
-//
-//    for (auto const& val : conversionErrors)
-//        conversionErrorString.append(val + "\n");
-//
-//    EXPECT_EQ(0, conversionErrors.size()) << conversionErrorString;
-//    }
+TEST_F(UnitsTests, UnitsConversion)
+    {
+    bvector<Utf8String> loadErrors;
+    bvector<Utf8String> conversionErrors;
+
+    int numberAttempted = 0;
+    auto lineProcessor = [&loadErrors, &conversionErrors, &numberAttempted](bvector<Utf8String>& tokens)
+        {
+        ++numberAttempted;
+        //passing 1.0e-6 to tolerance instead of the csv value
+        TestUnitConversion(GetDouble(tokens[0]), tokens[1].c_str(), GetDouble(tokens[2]), tokens[3].c_str(), 1.0e-6, loadErrors, conversionErrors);
+        };
+
+    ReadConversionCsvFile(L"unitcomparisondata.csv", lineProcessor);
+
+    Utf8PrintfString loadErrorString ("Attempted to load %d, error loading :\n", numberAttempted);
+
+    for (auto const& val : loadErrors)
+        loadErrorString.append(val + "\n");
+
+    EXPECT_EQ(0, loadErrors.size()) << loadErrorString;
+
+    Utf8PrintfString conversionErrorString("Attempted to convert %d, %d failed, %d skipped because of missing units, error Converting :\n", numberAttempted - loadErrors.size(), conversionErrors.size(), loadErrors.size());
+
+    for (auto const& val : conversionErrors)
+        conversionErrorString.append(val + "\n");
+
+    EXPECT_EQ(0, conversionErrors.size()) << conversionErrorString;
+    }
 
 void GetAllUnitNames(UnitRegistry& hub, bvector<Utf8CP>& allUnitNames, bool includeSynonyms)
     {

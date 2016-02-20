@@ -63,6 +63,7 @@ friend struct UnitRegistry;
         int     m_exponent;
 
         UnitExponent(UnitCP unit, int exponent) : m_exponent(exponent) { m_unit = unit; }
+        UnitExponent(const UnitExponent& copy) : m_exponent(copy.m_exponent) { m_unit = copy.m_unit; }
         };
 
 private:
@@ -75,15 +76,15 @@ private:
     double      m_offset;
     bool        m_isConstant;
 
-    mutable bvector<UnitExponent>   m_unitFormula;
+    mutable bvector<UnitExponent*>   m_unitFormula;
     mutable bool                     m_evaluated;
 
     static UnitP Create (Utf8CP sysName, Utf8CP phenomName, Utf8CP unitName, Utf8CP definition, Utf8Char baseDimensionSymbol, double factor, double offset, bool isConstant);
 
-    static BentleyStatus ParseDefinition(Utf8CP definition, bvector<UnitExponent>& unitFormula, int startingExponent);
-    static void MergeExpressions(Utf8CP definition, bvector<UnitExponent>& targetExpression, UnitCP sourceUnit, int startingExponent);
-    static BentleyStatus AddUFEToExpression(bvector<UnitExponent>& unitExpression, Utf8CP definition, Utf8CP token, int mergedExponent);
-    static BentleyStatus HandleToken(bvector<UnitExponent>& unitExpression, Utf8CP definition, Utf8CP token, int tokenExponent, int startingExponent);
+    static BentleyStatus ParseDefinition(Utf8CP definition, bvector<UnitExponent*>& unitFormula, int startingExponent);
+    static void MergeExpressions(Utf8CP targetDefinition, bvector<UnitExponent*>& targetExpression, Utf8CP sourceDefinition, bvector<UnitExponent*>& sourceExpression, int startingExponent);
+    static BentleyStatus AddUFEToExpression(bvector<UnitExponent*>& unitExpression, Utf8CP definition, Utf8CP token, int mergedExponent);
+    static BentleyStatus HandleToken(bvector<UnitExponent*>& unitExpression, Utf8CP definition, Utf8CP token, int tokenExponent, int startingExponent);
 
     // TODO: Create a better definition of an "unknown" unit
     Unit (Utf8Vector& numerator, Utf8Vector& denominator);
@@ -93,8 +94,9 @@ private:
     Unit (UnitCR unit) = delete;
     UnitR operator=(UnitCR unit) = delete;
 
-    bvector<Unit::UnitExponent>& Evaluate() const;
-    void PrintForumula(UnitCP unit, const bvector<UnitExponent>& expression) const;
+    bvector<Unit::UnitExponent*>& Evaluate() const;
+    void PrintForumula(Utf8CP unitName, const bvector<UnitExponent*>& expression) const;
+    bool DimensionallyCompatible(bvector<UnitExponent*>& unitExpA, bvector<UnitExponent*>& unitExpB) const;
 
 protected:
     virtual Utf8CP _GetName() const { return m_name.c_str(); }

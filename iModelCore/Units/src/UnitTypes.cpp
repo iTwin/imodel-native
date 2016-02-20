@@ -36,52 +36,92 @@ bool Unit::IsRegistered() const
     return UnitRegistry::Instance().HasUnit(GetName());
     }
 
-void Unit::PrintForumula(UnitCP unit, const bvector<UnitExponent>& expression) const
+void Unit::PrintForumula(Utf8CP unitName, const bvector<UnitExponent*>& expression) const
     {
-    LOG.debugv("Formula for: %s", unit->GetName());
+    LOG.debugv("Formula for: %s", unitName);
     Utf8String output;
     for (auto const& uWE : expression)
         {
-        Utf8PrintfString uWEString("Unit: %s   UnitFactor: %lf   UnitExponent: %d \n", uWE.m_unit->GetName(), uWE.m_unit->GetFactor(), uWE.m_exponent);
+        Utf8PrintfString uWEString("Unit: %s   UnitFactor: %lf   UnitExponent: %d \n", uWE->m_unit->GetName(), uWE->m_unit->GetFactor(), uWE->m_exponent);
         output.append(uWEString.c_str());
         }
     LOG.debug(output.c_str());
     }
 
+// TODO: Implement
+bool Unit::DimensionallyCompatible(bvector<UnitExponent*>& unitExpA, bvector<UnitExponent*>& unitExpB) const
+    {
+    return true;
+    }
+
 double Unit::GetConversionTo(UnitCP unit) const
     {
-    if (!m_evaluated)
-        Evaluate();
-    if (!unit->m_evaluated)
-        unit->Evaluate();
+    if (nullptr == unit)
+        {
+        LOG.errorv("Cannot convert from %s to a null unit, returning a conversion factor of 0.0", this->GetName());
+        return 0.0;
+        }
+
+    bvector<UnitExponent*> fromExpression = Evaluate();
+    bvector<UnitExponent*> toExpression = unit->Evaluate();
     
     if (LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_DEBUG))
         {
-        PrintForumula(this, m_unitFormula);
-        PrintForumula(unit, unit->m_unitFormula);
+        PrintForumula(this->GetName(), fromExpression);
+        PrintForumula(unit->GetName(), toExpression);
         }
 
-    // TODO: Minify forumlas
-    // TODO: Check that formulas are compatible
-    
-    double fromFactor = m_factor;
-    LOG.debugv("Starting from factor for %s: %lf", GetName(), fromFactor);
-    for (auto const& uWE : m_unitFormula)
+    if (!DimensionallyCompatible(fromExpression, toExpression))
         {
-        fromFactor *= pow(uWE.m_unit->GetFactor(), uWE.m_exponent);
+        LOG.errorv("Cannot convert from %s(%s) to %s(%s) because they two units are not dimensionaly compatible.  Returning a conversion factor of 0.0", 
+                   this->GetName(), this->GetDefinition(), unit->GetName(), unit->GetDefinition());
+        return 0.0;
         }
-    LOG.debugv("Final From factor for %s: %lf", GetName(), fromFactor);
-    double toFactor = unit->m_factor;
-    LOG.debugv("Starting to factor for %s: %lf", unit->GetName(), toFactor);
-    for (auto const& uWE : unit->m_unitFormula)
+
+    bvector<UnitExponent*> combinedExpression;
+    for (auto const& unitExp : fromExpression)
         {
-        toFactor *= pow(uWE.m_unit->GetFactor(), uWE.m_exponent);
+        UnitExponent* unitExpCopy = new UnitExponent(*unitExp);
+        combinedExpression.push_back(unitExpCopy);
         }
-    LOG.debugv("Final To factor for %s: %lf", unit->GetName(), toFactor);
-    return fromFactor / toFactor;
+    MergeExpressions(GetDefinition(), combinedExpression, unit->GetDefinition(), toExpression, -1);
+    if (LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_DEBUG))
+        {
+        Utf8PrintfString combinedName("%s/%s", this->GetName(), unit->GetName());
+        PrintForumula(combinedName.c_str(), combinedExpression);
+        }
+    double factor = m_factor / unit->m_factor;
+    for (auto const& unitExp : combinedExpression)
+        {
+        if (unitExp->m_exponent == 1 && unitExp->m_unit->GetFactor() == 1.0)
+            continue;
+        factor *= pow(unitExp->m_unit->GetFactor(), unitExp->m_exponent);
+        }
+
+    for (auto const& unitExp : combinedExpression)
+        delete unitExp;
+
+    return factor;
+
+    //double fromFactor = m_factor;
+    //LOG.debugv("Starting from factor for %s: %lf", GetName(), fromFactor);
+    //for (auto const& uWE : m_unitFormula)
+    //    {
+    //    fromFactor *= pow(uWE.m_unit->GetFactor(), uWE.m_exponent);
+    //    }
+    //LOG.debugv("Final From factor for %s: %lf", GetName(), fromFactor);
+    //
+    //double toFactor = unit->m_factor;
+    //LOG.debugv("Starting to factor for %s: %lf", unit->GetName(), toFactor);
+    //for (auto const& uWE : unit->m_unitFormula)
+    //    {
+    //    toFactor *= pow(uWE.m_unit->GetFactor(), uWE.m_exponent);
+    //    }
+    //LOG.debugv("Final To factor for %s: %lf", unit->GetName(), toFactor);
+    //return fromFactor / toFactor;
     }
 
-bvector<Unit::UnitExponent>& Unit::Evaluate() const
+bvector<Unit::UnitExponent*>& Unit::Evaluate() const
     {
     if (!m_evaluated)
         {
