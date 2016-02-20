@@ -1,0 +1,73 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Make Files">
+      <UniqueIdentifier>{0dcc0a62-195a-4957-8092-ff397c6d5d43}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include=".\src\ConstantDefinitions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\src\Parser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\src\PhenomenonDefinitions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\src\Quantity.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\src\UnitDefinitions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\src\UnitRegistry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\src\UnitTypes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".\mki\Units.mki">
+      <Filter>Make Files</Filter>
+    </None>
+    <None Include=".\mki\UnitsCompileOpts.mki">
+      <Filter>Make Files</Filter>
+    </None>
+    <None Include=".\Units.mke">
+      <Filter>Make Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include=".\src\Parser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\PublicAPI\Units\Quantity.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\src\StandardNames.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\PublicAPI\Units\UnitRegistry.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\PublicAPI\Units\Units.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\src\UnitsNativeLogging.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\PublicAPI\Units\UnitTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
