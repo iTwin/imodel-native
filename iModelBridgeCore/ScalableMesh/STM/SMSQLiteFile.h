@@ -87,9 +87,9 @@ public:
     ~SMSQLiteFile();
 
     bool Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOnly = true);
-    bool Open(BENTLEY_NAMESPACE_NAME::WString filename, bool openReadOnly = true);
+    bool Open(BENTLEY_NAMESPACE_NAME::WString& filename, bool openReadOnly = true);
     bool Create(BENTLEY_NAMESPACE_NAME::Utf8CP filename);
-    bool Create(BENTLEY_NAMESPACE_NAME::WString filename);
+    bool Create(BENTLEY_NAMESPACE_NAME::WString& filename);
     bool Close();
     bool IsOpen() { return m_database->IsDbOpen(); }
 

@@ -53,11 +53,11 @@ class SMSQLiteDiffsetTileStore : public IHPMPermanentStore<DifferenceSet, Byte, 
         void Open()
             {
             StatusInt status;
-            m_smSQLiteFile = SMSQLiteFile::Open(m_path.c_str(), false, status);
+            m_smSQLiteFile = SMSQLiteFile::Open(m_path, false, status);
             if (m_needsCreate || !status || !m_smSQLiteFile->IsOpen())
                 {
                 m_needsCreate = true;
-                m_smSQLiteFile->Create(m_path.c_str());
+                m_smSQLiteFile->Create(m_path);
                 }
             }
 
