@@ -81,7 +81,7 @@ DbResult DgnDb::CreateDgnDbTables()
     CreateTable(DGN_TABLE_Handler,  "[ClassId] INTEGER PRIMARY KEY,"
                                     "[Domain] TEXT NOT NULL COLLATE NoCase REFERENCES " DGN_TABLE_Domain "([Name]),"
                                     "[Name] TEXT NOT NULL COLLATE NoCase,"
-                                    "[Permissions] INT,"
+                                    "[Permissions] INTEGER,"
                                     "CONSTRAINT names UNIQUE([Domain],[Name])");
 
     CreateTable(DGN_TABLE_Txns, "[Id] INTEGER PRIMARY KEY NOT NULL," 
