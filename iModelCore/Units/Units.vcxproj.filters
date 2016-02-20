@@ -35,6 +35,9 @@
     <ClCompile Include=".\src\UnitTypes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\UnitsPCH.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include=".\mki\Units.mki">
@@ -67,6 +70,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include=".\PublicAPI\Units\UnitTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\UnitsPCH.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
