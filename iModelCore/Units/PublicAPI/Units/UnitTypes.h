@@ -59,5 +59,7 @@ friend struct UnitRegistry;
 private:
     Phenomenon(Utf8CP name, Utf8CP definition, Utf8Char dimensionSymbol, int id) : Symbol(name, definition, dimensionSymbol, id, 0.0, 0) {}
 
+public:
+    UNITS_EXPORT Utf8String GetPhenomenonDimension() const;
 };
 END_BENTLEY_UNITS_NAMESPACE

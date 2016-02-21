@@ -89,3 +89,10 @@ SymbolicExpression& Symbol::Evaluate(std::function<SymbolCP(Utf8CP)> getSymbolBy
     return m_symbolExpression;
     }
 
+Utf8String Phenomenon::GetPhenomenonDimension() const
+    {
+    SymbolicExpression phenomenonExpression = Evaluate([] (Utf8CP phenomenonName) { return UnitRegistry::Instance().LookupPhenomenon(phenomenonName); });
+    SymbolicExpression baseExpression;
+    SymbolicExpression::CreateExpressionWithOnlyBaseSymbols(phenomenonExpression, baseExpression, false);
+    return baseExpression.ToString();
+    }

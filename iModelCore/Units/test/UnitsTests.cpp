@@ -185,6 +185,15 @@ TEST_F(UnitsTests, TestBasiConversion)
     TestUnitConversion(3.53146667214886e1, "KILONEWTON_PER_METRE_CUBED", 1.0, "KILONEWTON_PER_FOOT_CUBED", 1.0e-8, loadErrors, conversionErrors);
     }
 
+//TEST_F(UnitsTests, CheckDimensionForEveryPhenomenon)
+//    {
+//    bmap<Utf8String, PhenomenonCP> allPhenomenon = UnitRegistry::Instance().AllPhenomenon();
+//    for (auto const& phenomenon : allPhenomenon)
+//        {
+//        PERFORMANCELOG.errorv("Dimension string for %s: %s", phenomenon.first.c_str(), phenomenon.second->GetPhenomenonDimension().c_str());
+//        }
+//    }
+
 TEST_F(UnitsTests, UnitsConversion)
     {
     bvector<Utf8String> loadErrors;
@@ -219,6 +228,8 @@ void GetAllUnitNames(UnitRegistry& hub, bvector<Utf8CP>& allUnitNames, bool incl
     {
     for (auto const& unitNameValue : hub.AllUnits())
         {
+        if (!includeSynonyms && !unitNameValue.first.Equals(unitNameValue.second->GetName()))
+            continue;
         allUnitNames.push_back(unitNameValue.first.c_str());
         }
     }
@@ -340,12 +351,14 @@ TEST_F(UnitsPerformanceTests, GenerateEveryConversionValue)
     bmap<Utf8CP, bvector<UnitCP>*> unitsByPhenomenon;
     for (auto const& unit : allUnits)
         {
+        if (unit->IsConstant())
+            continue;
         bvector<UnitCP>* unitsInPhenomon;
-        auto it = unitsByPhenomenon.find(unit->GetPhenomenon());
+        auto it = unitsByPhenomenon.find(unit->GetPhenomenon()->GetName());
         if (it == unitsByPhenomenon.end())
             {
             unitsInPhenomon = new bvector<UnitCP>();
-            unitsByPhenomenon.insert(bpair<Utf8CP, bvector<UnitCP>*> (unit->GetPhenomenon(), unitsInPhenomon));
+            unitsByPhenomenon.insert(bpair<Utf8CP, bvector<UnitCP>*> (unit->GetPhenomenon()->GetName(), unitsInPhenomon));
             unitsInPhenomon->push_back(unit);
             }
         else

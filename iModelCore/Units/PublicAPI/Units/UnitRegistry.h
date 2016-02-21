@@ -54,6 +54,7 @@ public:
 
     // TODO: Wrap the return to be cleaner?
     bmap<Utf8String, UnitCP> const & AllUnits() const { return m_units; }
+    bmap<Utf8String, PhenomenonCP> const& AllPhenomenon() const { return m_phenomena; }
     
     // Register methods.
     UNITS_EXPORT UnitCP AddUnit(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double factor = 1, double offset = 0);

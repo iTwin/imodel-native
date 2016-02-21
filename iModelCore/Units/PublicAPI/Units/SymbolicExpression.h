@@ -49,6 +49,7 @@ struct SymbolicExpression
     {
 friend struct Symbol;
 friend struct Unit;
+friend struct Phenomenon;
 private:
     bvector<SymbolWithExponentP> m_symbolExpression;
 
@@ -66,11 +67,13 @@ private:
     static void Copy(SymbolicExpressionR source, SymbolicExpressionR target);
 
     void LogExpression(NativeLogging::SEVERITY loggingLevel, Utf8CP name) const;
+    Utf8String ToString() const;
 
     static BentleyStatus ParseDefinition(Utf8CP definition, SymbolicExpressionR expression, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName);
     static BentleyStatus HandleToken(SymbolicExpressionR expression, Utf8CP definition, TokenCR token, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName);
     static void MergeExpressions(Utf8CP targetDefinition, SymbolicExpressionR targetExpression, Utf8CP sourceDefinition, SymbolicExpressionR sourceExpression, int startingExponent);
     static bool DimensionallyCompatible(SymbolicExpressionR expressionA, SymbolicExpressionR expressionB);
+    static void CreateExpressionWithOnlyBaseSymbols(SymbolicExpressionR source, SymbolicExpressionR target, bool copySymbols);
     };
 
 struct Symbol
@@ -88,7 +91,6 @@ private:
     bool        m_dimensionless;
     mutable bool m_evaluated;
     mutable SymbolicExpression m_symbolExpression;
-
 
     SymbolicExpression& Evaluate(std::function<SymbolCP(Utf8CP)> getSymbolByName) const;
 

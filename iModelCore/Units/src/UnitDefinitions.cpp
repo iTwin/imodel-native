@@ -874,7 +874,7 @@ void AddDynamicViscosity(UnitRegistry& reg)
     reg.AddSynonym(unit, "PASCAL_SECOND");
     reg.AddUnit(DYNVISCOSITY, SI, "POISE", "PA-S", 0.1); //, BISQSecUom);
     reg.AddUnit(DYNVISCOSITY, SI, "CENTIPOISE", "[CENTI]*POISE"); //, BISQSecUom);
-    unit = reg.AddUnit(DYNVISCOSITY, SI, "LB/FT*S", "LBF*FT(-1)*S(-1)");
+    unit = reg.AddUnit(DYNVISCOSITY, SI, "LB/FT*S", "LBM*FT(-1)*S(-1)"); // TODO: Confirm that this is really pound mass
     reg.AddSynonym(unit, "POUND_PER_FOOT_SECOND");
     }
 

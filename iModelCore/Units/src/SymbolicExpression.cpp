@@ -34,12 +34,17 @@ void SymbolicExpression::LogExpression(NativeLogging::SEVERITY loggingLevel, Utf
         return;
 
     LOG.messagev(loggingLevel, "Expression for: %s", name);
+    LOG.message(loggingLevel, ToString().c_str());
+    }
+
+Utf8String SymbolicExpression::ToString() const
+    {
     Utf8String output;
     for (auto const& sWE : m_symbolExpression)
         {
         if (sWE->GetSymbol()->GetFactor() == 0.0)
             {
-            Utf8PrintfString sWEString ("%s^$d",sWE->GetName(), sWE->GetExponent());
+            Utf8PrintfString sWEString("%s^%d * ", sWE->GetName(), sWE->GetExponent());
             output.append(sWEString.c_str());
             }
         else
@@ -48,26 +53,31 @@ void SymbolicExpression::LogExpression(NativeLogging::SEVERITY loggingLevel, Utf
             output.append(sWEString.c_str());
             }
         }
-    LOG.message(loggingLevel, output.c_str());
+    return output;
+    }
+
+void SymbolicExpression::CreateExpressionWithOnlyBaseSymbols(SymbolicExpressionR source, SymbolicExpressionR target, bool copySymbols)
+    {
+    for (auto const& symbolExp : source)
+        {
+        if (symbolExp->GetSymbol()->IsBaseSymbol() && !symbolExp->GetSymbol()->IsDimensionless())
+            {
+            if (copySymbols)
+                target.AddCopy(*symbolExp);
+            else
+                target.Add(*symbolExp);
+            }
+        }
     }
 
 // TODO: Consider how this could be combined with the merge step so we don't have to make two copies of the from expression
 bool SymbolicExpression::DimensionallyCompatible(SymbolicExpressionR fromExpression, SymbolicExpressionR toExpression)
     {
     SymbolicExpression fromBaseSymbols;
-    for (auto const& symbolExp : fromExpression)
-        {
-        if (symbolExp->GetSymbol()->IsBaseSymbol() && !symbolExp->GetSymbol()->IsDimensionless())
-            {
-            fromBaseSymbols.AddCopy(*symbolExp);
-            }
-        }
+    CreateExpressionWithOnlyBaseSymbols(fromExpression, fromBaseSymbols, true);
     SymbolicExpression toBaseSymbols;
-    for (auto const& symbolExp : toExpression)
-        {
-        if (symbolExp->GetSymbol()->IsBaseSymbol() && !symbolExp->GetSymbol()->IsDimensionless())
-            toBaseSymbols.Add(*symbolExp);
-        }
+    CreateExpressionWithOnlyBaseSymbols(toExpression, toBaseSymbols, false);
+
     MergeExpressions("", fromBaseSymbols, "", toBaseSymbols, -1);
     for (auto const& unitExp : fromBaseSymbols)
         {
