@@ -41,6 +41,9 @@ DGNCLIENTFX_TRANSLATABLE_STRINGS_START(ConnectL10N, Connect)
     L10N_STRING(FIELDAPPS_EulaHeader)                    // =="End-user license agreement"==
     L10N_STRING(FIELDAPPS_EulaChecking)                  // =="Checking EULA..."==
     L10N_STRING(FIELDAPPS_EulaAccepting)                 // =="Accepting EULA..."==
+    L10N_STRING(FIELDAPPS_SignInConnecting)              // =="Connecting to sign-in page..."==
+    L10N_STRING(FIELDAPPS_SigningOut)                    // =="Signing out..."==
+    L10N_STRING(FIELDAPPS_TokenExpired)                  // =="Session expired. Please sign in again."==
 DGNCLIENTFX_TRANSLATABLE_STRINGS_END
 
 #define ConnectLocalizedString(K) ConnectL10N::GetString(ConnectL10N::K())
