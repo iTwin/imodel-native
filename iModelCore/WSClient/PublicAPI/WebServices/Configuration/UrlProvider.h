@@ -105,6 +105,7 @@ struct UrlProvider
             WSCLIENT_EXPORT static const UrlDescriptor ImsFederatedAuth;
             WSCLIENT_EXPORT static const UrlDescriptor Passport;
             WSCLIENT_EXPORT static const UrlDescriptor UsageTracking;
+            WSCLIENT_EXPORT static const UrlDescriptor ConnectXmpp;
             };
     };
 
