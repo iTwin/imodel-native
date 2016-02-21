@@ -19,7 +19,7 @@ HANDLER_DEFINE_MEMBERS(PointCloudModelHandler)
 //----------------------------------------------------------------------------------------
 DgnModelId PointCloudModelHandler::CreatePointCloudModel(DgnDbR db, Utf8StringCR fileId)
     {
-    DgnClassId classId(db.Schemas().GetECClassId(BENTLEY_POINTCLOUD_SCHEMA_NAME, "PointCloudModel"));
+    DgnClassId classId(db.Schemas().GetECClassId(POINTCLOUD_SCHEMA_NAME, "PointCloudModel"));
     BeAssert(classId.IsValid());
 
     // Find resolved file name for the point cloud

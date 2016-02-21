@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RasterSchema/RasterSchemaApi.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,8 +20,8 @@
 //-----------------------------------------------------------------------------------------
 // ECSchema macros
 //-----------------------------------------------------------------------------------------
-#define BENTLEY_RASTER_SCHEMA_NAME                          "BentleyRaster"
-#define BENTLEY_RASTER_SCHEMA_PATH                          L"ECSchemas/Domain/BentleyRaster.01.00.ecschema.xml"
-#define RASTER_SCHEMA(className)                            BENTLEY_RASTER_SCHEMA_NAME "." className
+#define RASTER_SCHEMA_NAME                                  "Raster"
+#define RASTER_SCHEMA_PATH                                  L"ECSchemas/Domain/Raster.01.00.ecschema.xml"
+#define RASTER_SCHEMA(className)                            RASTER_SCHEMA_NAME "." className
 
 
