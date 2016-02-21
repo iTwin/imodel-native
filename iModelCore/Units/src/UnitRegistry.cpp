@@ -227,9 +227,11 @@ UnitCP UnitRegistry::AddUnit (Utf8CP phenomName, Utf8CP systemName, Utf8CP unitN
         return nullptr;
         }
 
-    auto unit = Unit::Create (systemName, phenomName, unitName, definition, ' ', factor, offset, false);
+    auto unit = Unit::Create (systemName, phenomName, unitName, m_nextId, definition, ' ', factor, offset, false);
     if (nullptr == unit)
         return nullptr;
+
+    ++m_nextId;
 
     m_units.insert (bpair<Utf8String, UnitCP>(unitName, unit));
 

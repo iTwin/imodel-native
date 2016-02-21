@@ -30,9 +30,11 @@ using namespace std;
 #include <Bentley/RefCounted.h>
 #include <Bentley/bvector.h>
 #include <Bentley/bmap.h>
+#include <Logging/bentleylogging.h>
 
 //USING_NAMESPACE_BENTLEY
 
 #include <Units/UnitTypes.h>
 #include <Units/Quantity.h>
 #include <Units/UnitRegistry.h>
+#include <Parser.h>

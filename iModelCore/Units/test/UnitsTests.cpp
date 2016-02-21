@@ -146,6 +146,11 @@ TEST_F (UnitsTests, UnitsMapping)
     EXPECT_EQ (0, notMapped.size() ) << guess;
     }
 
+TEST_F(UnitsTests, TestConversionsThatShouldFail)
+    {
+    TestUnitConversion(1.0, "JOULE", 1.0, "NEWTON_METRE", 1.0e-8, loadErrors, conversionErrors);
+    }
+
 TEST_F(UnitsTests, TestBasiConversion)
     {
     bvector<Utf8String> loadErrors;
@@ -175,8 +180,6 @@ TEST_F(UnitsTests, TestBasiConversion)
     TestUnitConversion(2.326e6, "KILOJOULE_PER_KILOGRAM", 1.0e6, "BTU_PER_POUND_MASS", 1.0e-8, loadErrors, conversionErrors);
     TestUnitConversion(60, "GRAM_PER_MINUTE", 1.0, "GRAM_PER_SECOND", 1.0e-8, loadErrors, conversionErrors);
     TestUnitConversion(3.53146667214886e1, "KILONEWTON_PER_METRE_CUBED", 1.0, "KILONEWTON_PER_FOOT_CUBED", 1.0e-8, loadErrors, conversionErrors);
-    // TODO: Move this to a new test which tests conversions which are supposed to fail
-    //TestUnitConversion(1.0, "JOULE", 1.0, "NEWTON_METRE", 1.0e-8, loadErrors, conversionErrors);
     }
 
 TEST_F(UnitsTests, UnitsConversion)

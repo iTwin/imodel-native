@@ -10,141 +10,95 @@
 
 #include <Units/Units.h>
 
-UNITS_TYPEDEFS(Unit);
-UNITS_TYPEDEFS(Phenomenon);
-UNITS_TYPEDEFS(SymbolicFraction);
+UNITS_TYPEDEFS(Unit)
+UNITS_TYPEDEFS(Phenomenon)
+UNITS_TYPEDEFS(Symbol)
 
 BEGIN_BENTLEY_UNITS_NAMESPACE
 
 typedef bvector<Utf8String> Utf8Vector;
 
-// TODO: Still needed?
-struct SymbolicFraction
+struct UnitRegistry;
+
+struct Symbol
     {
+friend struct SymbolicExpression;
 friend struct Unit;
 friend struct Phenomenon;
 private:
-    Utf8Vector m_numerator;
-    Utf8Vector m_denominator;
-    
-    SymbolicFraction(Utf8CP definition);
-    SymbolicFraction(Utf8Vector& numerator, Utf8Vector& denominator);
+    Utf8String  m_name;
+    Utf8String  m_definition;
+    int         m_id;
+    Utf8Char    m_dimensionSymbol;
+    double      m_factor;
+    double      m_offset;
+    bool        m_dimensionless;
+    mutable bool m_evaluated;
+    mutable SymbolicExpression m_symbolExpression;
+
+
+    SymbolicExpression& Evaluate(std::function<SymbolCP(Utf8CP)> getSymbolByName) const;
 
 protected:
-    static void SimplifySubTypes(Utf8Vector &n, Utf8Vector &d);
-    
-    Utf8Vector& GetNumerator() { return m_numerator; }
-    Utf8Vector& GetDenominator() { return m_denominator; }
+    Symbol(Utf8CP name, Utf8CP definition, Utf8Char dimensionSymbol, int id, double factor, double offset) : 
+        m_name(name), m_definition(definition), m_dimensionSymbol(dimensionSymbol), m_id(id), m_factor(factor), m_offset(offset), m_evaluated(false)
+        {
+        m_dimensionless = strcmp("ONE", m_definition.c_str()) == 0;
+        }
 
 public:
-    SymbolicFraction operator*(SymbolicFractionCR rhs) const;
-    SymbolicFraction operator/(SymbolicFractionCR rhs) const;
-    
-    Utf8Vector const& Numerator() const { return m_numerator; }
-    Utf8Vector const& Denominator() const { return m_denominator; }
+    Utf8CP GetName() const { return m_name.c_str(); }
+    int     GetId() const { return m_id; }
+    Utf8CP GetDefinition() const { return m_definition.c_str(); }
+    double GetFactor() const { return m_factor; }
+    bool IsBaseSymbol() const { return ' ' != m_dimensionSymbol; }
+    bool IsDimensionless() const { return m_dimensionless; }
 
-    bool operator== (const SymbolicFraction& rhs) const;
-    bool operator!= (const SymbolicFraction& rhs) const;
-};
+    // Binary comparison operators.
+    bool operator== (SymbolCR rhs) const { return m_id == rhs.m_id; }
+    bool operator!= (SymbolCR rhs) const { return m_id != rhs.m_id; }
+    };
 
-struct UnitRegistry;
 
 //=======================================================================================
 //! A base class for all units.
 // @bsiclass                                                    Chris.Tartamella   02/16
 //=======================================================================================
-struct Unit
+struct Unit : Symbol
     {
+DEFINE_T_SUPER(Symbol)
 friend struct UnitRegistry;
-
-    struct UnitExponent
-        {
-        UnitCP  m_unit;
-        int     m_exponent;
-
-        UnitExponent(UnitCP unit, int exponent) : m_exponent(exponent) { m_unit = unit; }
-        UnitExponent(const UnitExponent& copy) : m_exponent(copy.m_exponent) { m_unit = copy.m_unit; }
-
-        static void AddCopiesTo(bvector<UnitExponent*>& copy, bvector<UnitExponent*> const& source)
-            {
-            for (auto const& unitExp : source)
-                {
-                UnitExponent* unitExpCopy = new UnitExponent(*unitExp);
-                copy.push_back(unitExpCopy);
-                }
-            }
-        };
 
 private:
     Utf8String  m_system;
     Utf8String  m_phenomenon;
-    Utf8String  m_name;
-    Utf8String  m_definition;
-    Utf8Char    m_dimensionSymbol;
-    double      m_factor;
-    double      m_offset;
     bool        m_isConstant;
 
-    mutable bvector<UnitExponent*>   m_unitFormula;
-    mutable bool                     m_evaluated;
+    static UnitP Create (Utf8CP sysName, Utf8CP phenomName, Utf8CP unitName, int id, Utf8CP definition, Utf8Char baseDimensionSymbol, double factor, double offset, bool isConstant);
 
-    static UnitP Create (Utf8CP sysName, Utf8CP phenomName, Utf8CP unitName, Utf8CP definition, Utf8Char baseDimensionSymbol, double factor, double offset, bool isConstant);
-
-    static BentleyStatus ParseDefinition(Utf8CP definition, bvector<UnitExponent*>& unitFormula, int startingExponent);
-    static void MergeExpressions(Utf8CP targetDefinition, bvector<UnitExponent*>& targetExpression, Utf8CP sourceDefinition, bvector<UnitExponent*>& sourceExpression, int startingExponent);
-    static BentleyStatus HandleToken(bvector<UnitExponent*>& unitExpression, Utf8CP definition, Utf8CP token, int tokenExponent, int startingExponent);
-
-    // TODO: Create a better definition of an "unknown" unit
-    Unit (Utf8Vector& numerator, Utf8Vector& denominator);
-    Unit (Utf8CP system, Utf8CP phenomena, Utf8CP name, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant);
+    Unit (Utf8CP system, Utf8CP phenomena, Utf8CP name, int id, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant);
 
     // Lifecycle is managed by the UnitRegistry so we don't allow copies or assignments.
     Unit (UnitCR unit) = delete;
     UnitR operator=(UnitCR unit) = delete;
 
-    bvector<Unit::UnitExponent*>& Evaluate() const;
-    void PrintForumula(Utf8CP unitName, const bvector<UnitExponent*>& expression) const;
-    bool DimensionallyCompatible(bvector<UnitExponent*>& unitExpA, bvector<UnitExponent*>& unitExpB) const;
-
-protected:
-    virtual Utf8CP _GetName() const { return m_name.c_str(); }
-    
 public:
     virtual ~Unit() { }
 
     UNITS_EXPORT double GetConversionTo(UnitCP unit) const;
 
     bool   IsRegistered()    const;
-    Utf8CP GetName()         const { return _GetName(); }
     Utf8CP GetPhenomenon()   const { return m_phenomenon.c_str(); }
-    Utf8CP GetDefinition()   const { return m_definition.c_str(); }
-    double GetFactor()       const { return m_factor; }
-    //Utf8CP GetDisplayLabel() const { return _GetDisplayLabel(); }
-
-    bool IsBaseUnit() const { return ' ' != m_dimensionSymbol; }
     bool IsConstant() const { return m_isConstant; }
 
-    // Binary comparison operators.
-    bool operator== (UnitCR rhs) const;
-    bool operator!= (UnitCR rhs) const;
-
-    // Arithmetic operators.
-    UnitCR operator*(UnitCR rhs) const;
-    UnitCR operator/(UnitCR rhs) const;
 };
 
-
-struct Phenomenon : SymbolicFraction
+struct Phenomenon : Symbol
 {
+DEFINE_T_SUPER(Symbol)
 friend struct UnitRegistry;
 private:
-    Utf8String  m_name;
-    Utf8String  m_definition;
-    Utf8Char    m_dimensionSymbol;
+    Phenomenon(Utf8CP name, Utf8CP definition, Utf8Char dimensionSymbol, int id) : Symbol(name, definition, dimensionSymbol, id, 0.0, 0) {}
 
-    Phenomenon(Utf8CP name, Utf8CP definition, Utf8Char dimensionalSymbol) : SymbolicFraction(definition), m_name(name) {}
-
-public:
-    bool IsBasePhenomena() const { return ' ' != m_dimensionSymbol; }
 };
 END_BENTLEY_UNITS_NAMESPACE

@@ -25,6 +25,8 @@ private:
     Utf8Vector m_systems;
     bmap<Utf8String, PhenomenonCP> m_phenomena;
     bmap<Utf8String, UnitCP> m_units;
+    int m_nextId = 0;
+
     bmap<bpair<Utf8String, Utf8String>, double> m_conversions;
 
     UnitRegistry();
