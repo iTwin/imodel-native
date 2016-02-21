@@ -8,7 +8,6 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "UnitsPCH.h"
-#include "Parser.h"
 
 USING_NAMESPACE_BENTLEY_UNITS
 
@@ -40,12 +39,12 @@ void SymbolicExpression::LogExpression(NativeLogging::SEVERITY loggingLevel, Utf
         {
         if (sWE->GetSymbol()->GetFactor() == 0.0)
             {
-            Utf8PrintfString sWEString ("%s^$d",sWE->GetSymbol()->GetName(), sWE->GetExponent());
+            Utf8PrintfString sWEString ("%s^$d",sWE->GetName(), sWE->GetExponent());
             output.append(sWEString.c_str());
             }
         else
             {
-            Utf8PrintfString sWEString("%lf%s^%d * ", sWE->GetSymbol()->GetFactor(), sWE->GetSymbol()->GetName(), sWE->GetExponent());
+            Utf8PrintfString sWEString("%lf%s^%d * ", sWE->GetSymbol()->GetFactor(), sWE->GetName(), sWE->GetExponent());
             output.append(sWEString.c_str());
             }
         }
@@ -55,32 +54,32 @@ void SymbolicExpression::LogExpression(NativeLogging::SEVERITY loggingLevel, Utf
 // TODO: Consider how this could be combined with the merge step so we don't have to make two copies of the from expression
 bool SymbolicExpression::DimensionallyCompatible(SymbolicExpressionR fromExpression, SymbolicExpressionR toExpression)
     {
-    SymbolicExpression fromBaseUnits;
+    SymbolicExpression fromBaseSymbols;
     for (auto const& symbolExp : fromExpression)
         {
-        if (symbolExp->GetSymbol()->IsBaseSymbol() && symbolExp->GetSymbol()->IsDimensionless())
+        if (symbolExp->GetSymbol()->IsBaseSymbol() && !symbolExp->GetSymbol()->IsDimensionless())
             {
-            fromBaseUnits.AddCopy(*symbolExp);
+            fromBaseSymbols.AddCopy(*symbolExp);
             }
         }
-    SymbolicExpression toBaseUnits;
+    SymbolicExpression toBaseSymbols;
     for (auto const& symbolExp : toExpression)
         {
-        if (symbolExp->GetSymbol()->IsBaseSymbol() && symbolExp->GetSymbol()->IsDimensionless())
-            toBaseUnits.Add(*symbolExp);
+        if (symbolExp->GetSymbol()->IsBaseSymbol() && !symbolExp->GetSymbol()->IsDimensionless())
+            toBaseSymbols.Add(*symbolExp);
         }
-    MergeExpressions("", fromBaseUnits, "", toBaseUnits, -1);
-    for (auto const& unitExp : fromBaseUnits)
+    MergeExpressions("", fromBaseSymbols, "", toBaseSymbols, -1);
+    for (auto const& unitExp : fromBaseSymbols)
         {
         if (unitExp->GetExponent() == 0)
             continue;
         else if (unitExp->GetExponent() > 0)
-            LOG.errorv("Cannot convert - from Unit has component of '%s' not in the to unit", unitExp->m_unit->GetName());
+            LOG.errorv("Cannot convert - from Expression has component of '%s' not in the to unit", unitExp->GetName());
         else
-            LOG.errorv("Cannot convert - to Unit has component of '%s' not in the from Unit", unitExp->m_unit->GetName());
+            LOG.errorv("Cannot convert - to Expression has component of '%s' not in the from Unit", unitExp->GetName());
 
-        PrintForumula("From", fromExpression);
-        PrintForumula("To", toExpression);
+        fromExpression.LogExpression(NativeLogging::LOG_ERROR, "From");
+        toExpression.LogExpression(NativeLogging::LOG_ERROR, "To");
         return false;
         }
     return true;
@@ -93,7 +92,7 @@ void SymbolicExpression::MergeExpressions(Utf8CP targetDefinition, SymbolicExpre
         {
         int     mergedExponent = uWE->GetExponent() * startingExponent;
 
-        auto it = find_if(targetExpression.begin(), targetExpression.end(), [&uWE] (SymbolWithExponent* a) { return uWE->GetSymbol()->GetId() == a->GetSymbol()->GetId(); });
+        auto it = find_if(targetExpression.begin(), targetExpression.end(), [&uWE] (SymbolWithExponentCP a) { return uWE->GetSymbol()->GetId() == a->GetSymbol()->GetId(); });
         if (it != targetExpression.end())
             {
             LOG.debugv("%s --> %s - Merging existing Unit %s. with Exponent: %d", sourceDefinition, targetDefinition, (*it)->GetName(), mergedExponent);
@@ -102,7 +101,7 @@ void SymbolicExpression::MergeExpressions(Utf8CP targetDefinition, SymbolicExpre
         else
             {
             LOG.debugv("%s --> %s - Adding Unit for %s with Exponent: %d", sourceDefinition, targetDefinition, uWE->GetName(), mergedExponent);
-            targetExpression.AddCopy(*uWE);
+            targetExpression.Add(uWE->GetSymbol(), mergedExponent);
             }
         }
     }
@@ -113,7 +112,7 @@ BentleyStatus SymbolicExpression::HandleToken(SymbolicExpressionR expression, Ut
     int mergedExponent = token.GetExponent() * startingExponent;
 
     SymbolCP symbol = nullptr;
-    auto it = find_if(expression.begin(), expression.end(), [&token] (SymbolCP a) { return strcmp(token.GetName(), a->GetName()) == 0; });
+    auto it = find_if(expression.begin(), expression.end(), [&token] (SymbolWithExponentCP a) { return strcmp(token.GetName(), a->GetName()) == 0; });
     if (it != expression.end())
         {
         LOG.debugv("%s - Merging existing Unit %s with Exponent: %d", definition, (*it)->GetName(), mergedExponent);
@@ -222,19 +221,23 @@ BentleyStatus SymbolicExpression::ParseDefinition(Utf8CP definition, SymbolicExp
     return expression.size() > 0 ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;
     }
 
+void SymbolicExpression::AddCopy(SymbolWithExponentCR sWE) { m_symbolExpression.push_back(new SymbolWithExponent(sWE)); }
+
+void SymbolicExpression::Add(SymbolCP symbol, int exponent) { m_symbolExpression.push_back(new SymbolWithExponent(symbol, exponent)); }
+
 void SymbolicExpression::Copy(SymbolicExpressionR source, SymbolicExpressionR target)
     {
     for (auto const& sourceSymbol : source)
         target.AddCopy(*sourceSymbol);
     }
 
-SymbolicExpression::~SymbolicExpression()
-    {
-    for (auto const& sWE : m_symbolExpression)
-        {
-        delete sWE;
-        }
-    // TODO: Necessary to clear?
-    m_symbolExpression.clear();
-    }
+//SymbolicExpression::~SymbolicExpression()
+//    {
+//    for (auto const& sWE : m_symbolExpression)
+//        {
+//        delete sWE;
+//        }
+//    // TODO: Necessary to clear?
+//    m_symbolExpression.clear();
+//    }
 

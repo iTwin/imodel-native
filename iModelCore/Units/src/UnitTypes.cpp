@@ -43,8 +43,8 @@ double Unit::GetConversionTo(UnitCP unit) const
         return 0.0;
         }
 
-    SymbolicExpression fromExpression = Evaluate(UnitRegistry::Instance().LookupUnit);
-    SymbolicExpression toExpression = unit->Evaluate(UnitRegistry::Instance().LookupUnit);
+    SymbolicExpression fromExpression = Evaluate([] (Utf8CP unitName) { return UnitRegistry::Instance().LookupUnit(unitName); });
+    SymbolicExpression toExpression = unit->Evaluate([] (Utf8CP unitName) { return UnitRegistry::Instance().LookupUnit(unitName); });
     
     fromExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, this->GetName());
     toExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, unit->GetName());

@@ -115,7 +115,8 @@ void UnitRegistry::AddBasePhenomena(Utf8Char dimensionalSymbol)
         return;
         }
 
-    auto phenomena = new Phenomenon(phenomenaName, phenomenaName, dimensionalSymbol);
+    auto phenomena = new Phenomenon(phenomenaName, phenomenaName, dimensionalSymbol, m_nextId);
+    ++m_nextId;
 
     m_phenomena.insert(bpair<Utf8String, PhenomenonCP>(phenomenaName, phenomena));
     }
@@ -137,7 +138,8 @@ void UnitRegistry::AddPhenomena (Utf8CP phenomenaName, Utf8CP definition)
         return;
         }
 
-    auto phenomena = new Phenomenon(phenomenaName, definition, ' ');
+    auto phenomena = new Phenomenon(phenomenaName, definition, ' ', m_nextId);
+    ++m_nextId;
 
     m_phenomena.insert(bpair<Utf8String, PhenomenonCP>(phenomenaName, phenomena));
     }
@@ -196,12 +198,13 @@ UnitCP UnitRegistry::AddSIBaseUnit(Utf8CP unitName, Utf8Char dimensionSymbol)
         return nullptr;
         }
 
-    auto unit = Unit::Create(SI, phenomenonName, unitName, unitName, dimensionSymbol, 1, 0, false);
+    auto unit = Unit::Create(SI, phenomenonName, unitName, m_nextId, unitName, dimensionSymbol, 1, 0, false);
     if (nullptr == unit)
         {
         LOG.errorv("Failed to create base unit '%s'", unitName);
         return nullptr;
         }
+    ++m_nextId;
 
     m_units.insert(bpair<Utf8String, UnitCP>(unitName, unit));
 
@@ -231,18 +234,16 @@ UnitCP UnitRegistry::AddUnit (Utf8CP phenomName, Utf8CP systemName, Utf8CP unitN
     if (nullptr == unit)
         return nullptr;
 
-    ++m_nextId;
-
-    m_units.insert (bpair<Utf8String, UnitCP>(unitName, unit));
-
     PhenomenonCP phenomenon = LookupPhenomenon(unit->GetPhenomenon());
     if (nullptr == phenomenon)
         {
         LOG.errorv("Could not find phenomenon '%s'", unit->GetPhenomenon());
         return nullptr;
         }
-    if (phenomenon->IsBasePhenomena())
-        m_conversions.insert(bpair<bpair<Utf8String,Utf8String>, double> (bpair<Utf8String, Utf8String>(unit->GetName(), unit->GetDefinition()), unit->GetFactor()));
+
+    ++m_nextId;
+
+    m_units.insert (bpair<Utf8String, UnitCP>(unitName, unit));
 
     return unit;
     }
@@ -280,9 +281,11 @@ BentleyStatus UnitRegistry::AddConstant(Utf8CP phenomName, Utf8CP constantName, 
         return BentleyStatus::ERROR;
         }
 
-    auto constant = Unit::Create(CONSTANT, phenomName, constantName, definition, ' ', factor, 0, true);
+    auto constant = Unit::Create(CONSTANT, phenomName, constantName, m_nextId, definition, ' ', factor, 0, true);
     if (nullptr == constant)
         return BentleyStatus::ERROR;
+
+    ++m_nextId;
 
     m_units.insert(bpair<Utf8String, UnitCP>(constantName, constant));
 

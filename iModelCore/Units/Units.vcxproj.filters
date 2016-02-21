@@ -17,9 +17,6 @@
     <ClCompile Include=".\src\ConstantDefinitions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include=".\src\Parser.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include=".\src\PhenomenonDefinitions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -38,6 +35,9 @@
     <ClCompile Include="src\UnitsPCH.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\SymbolicExpression.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include=".\mki\Units.mki">
@@ -51,9 +51,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include=".\src\Parser.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include=".\PublicAPI\Units\Quantity.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -73,6 +70,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\UnitsPCH.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\Units\SymbolicExpression.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

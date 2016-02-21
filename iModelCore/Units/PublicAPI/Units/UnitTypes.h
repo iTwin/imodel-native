@@ -12,53 +12,12 @@
 
 UNITS_TYPEDEFS(Unit)
 UNITS_TYPEDEFS(Phenomenon)
-UNITS_TYPEDEFS(Symbol)
 
 BEGIN_BENTLEY_UNITS_NAMESPACE
 
 typedef bvector<Utf8String> Utf8Vector;
 
 struct UnitRegistry;
-
-struct Symbol
-    {
-friend struct SymbolicExpression;
-friend struct Unit;
-friend struct Phenomenon;
-private:
-    Utf8String  m_name;
-    Utf8String  m_definition;
-    int         m_id;
-    Utf8Char    m_dimensionSymbol;
-    double      m_factor;
-    double      m_offset;
-    bool        m_dimensionless;
-    mutable bool m_evaluated;
-    mutable SymbolicExpression m_symbolExpression;
-
-
-    SymbolicExpression& Evaluate(std::function<SymbolCP(Utf8CP)> getSymbolByName) const;
-
-protected:
-    Symbol(Utf8CP name, Utf8CP definition, Utf8Char dimensionSymbol, int id, double factor, double offset) : 
-        m_name(name), m_definition(definition), m_dimensionSymbol(dimensionSymbol), m_id(id), m_factor(factor), m_offset(offset), m_evaluated(false)
-        {
-        m_dimensionless = strcmp("ONE", m_definition.c_str()) == 0;
-        }
-
-public:
-    Utf8CP GetName() const { return m_name.c_str(); }
-    int     GetId() const { return m_id; }
-    Utf8CP GetDefinition() const { return m_definition.c_str(); }
-    double GetFactor() const { return m_factor; }
-    bool IsBaseSymbol() const { return ' ' != m_dimensionSymbol; }
-    bool IsDimensionless() const { return m_dimensionless; }
-
-    // Binary comparison operators.
-    bool operator== (SymbolCR rhs) const { return m_id == rhs.m_id; }
-    bool operator!= (SymbolCR rhs) const { return m_id != rhs.m_id; }
-    };
-
 
 //=======================================================================================
 //! A base class for all units.

@@ -8,12 +8,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include=".\src\ConstantDefinitions.cpp" />
-    <ClCompile Include=".\src\Parser.cpp" />
     <ClCompile Include=".\src\PhenomenonDefinitions.cpp" />
     <ClCompile Include=".\src\Quantity.cpp" />
     <ClCompile Include=".\src\UnitDefinitions.cpp" />
     <ClCompile Include=".\src\UnitRegistry.cpp" />
     <ClCompile Include=".\src\UnitTypes.cpp" />
+    <ClCompile Include="src\SymbolicExpression.cpp" />
     <ClCompile Include="src\UnitsPCH.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -26,9 +26,9 @@
     <ClInclude Include=".\PublicAPI\Units\UnitRegistry.h" />
     <ClInclude Include=".\PublicAPI\Units\Units.h" />
     <ClInclude Include=".\PublicAPI\Units\UnitTypes.h" />
-    <ClInclude Include=".\src\Parser.h" />
     <ClInclude Include=".\src\StandardNames.h" />
     <ClInclude Include=".\src\UnitsNativeLogging.h" />
+    <ClInclude Include="PublicAPI\Units\SymbolicExpression.h" />
     <ClInclude Include="src\UnitsPCH.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

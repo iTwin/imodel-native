@@ -53,7 +53,7 @@ $(o)UnitRegistry$(oext)      :  $(srcDir)UnitRegistry.cpp ${MultiCompileDepends}
 
 $(o)UnitTypes$(oext)         :  $(srcDir)UnitTypes.cpp ${MultiCompileDepends}
 
-$(o)Parser$(oext)            :  $(srcDir)Parser.cpp ${MultiCompileDepends}
+$(o)SymbolicExpression$(oext)            :  $(srcDir)SymbolicExpression.cpp ${MultiCompileDepends}
 
 $(o)UnitDefinitions$(oext)   :  $(srcDir)UnitDefinitions.cpp ${MultiCompileDepends}
 

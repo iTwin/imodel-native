@@ -80,16 +80,16 @@ QuantityBase QuantityBase::operator-(const QuantityBase& rhs) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 QuantityBase& QuantityBase::operator*=(const QuantityBase& rhs)
     {
-    m_magnitude *= rhs.m_magnitude;
-    UnitCR resultUnit = *m_unit * *rhs.m_unit;
-    if (!resultUnit.IsRegistered())
-        {
-        m_error = true;
-        m_errorMessage = Utf8PrintfString("Resulting unit is unregistered: %s", resultUnit.GetName());
-        return *this;
-        }
+    //m_magnitude *= rhs.m_magnitude;
+    //UnitCR resultUnit = *m_unit * *rhs.m_unit;
+    //if (!resultUnit.IsRegistered())
+    //    {
+    //    m_error = true;
+    //    m_errorMessage = Utf8PrintfString("Resulting unit is unregistered: %s", resultUnit.GetName());
+    //    return *this;
+    //    }
 
-    m_unit = &resultUnit;
+    //m_unit = &resultUnit;
 
     return *this;
     }
@@ -99,16 +99,16 @@ QuantityBase& QuantityBase::operator*=(const QuantityBase& rhs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 QuantityBase& QuantityBase::operator/=(const QuantityBase& rhs)
     {
-    m_magnitude /= rhs.m_magnitude;
-    UnitCR resultUnit = *m_unit / *rhs.m_unit;
-    if (!resultUnit.IsRegistered())
-        {
-        m_error = true;
-        m_errorMessage = Utf8PrintfString("Resulting unit is unregistered: %s", resultUnit.GetName());
-        return *this;
-        }
+    //m_magnitude /= rhs.m_magnitude;
+    //UnitCR resultUnit = *m_unit / *rhs.m_unit;
+    //if (!resultUnit.IsRegistered())
+    //    {
+    //    m_error = true;
+    //    m_errorMessage = Utf8PrintfString("Resulting unit is unregistered: %s", resultUnit.GetName());
+    //    return *this;
+    //    }
 
-    m_unit = &resultUnit;
+    //m_unit = &resultUnit;
 
     return *this;
     }
