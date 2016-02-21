@@ -10,6 +10,7 @@
 #include "ClassMap.h"
 #include "SchemaImportContext.h"
 #include "ECDbSql.h"
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct StorageDescription;
@@ -19,118 +20,116 @@ struct StorageDescription;
 +===============+===============+===============+===============+===============+======*/
 struct ECDbMap :NonCopyableClass
     {
-    typedef bmap<ECN::ECClassId, ClassMapPtr> ClassMapDictionary;
-    typedef bset<ClassMap*> ClassMapSet;
-    typedef bmap<ECDbSqlTable*, ClassMapSet> ClassMapByTable;
-    public:
-        struct LightweightCache : NonCopyableClass
-            {
-            public:
-                enum class RelationshipEnd : int
-                    {
-                    None = 0,
-                    Source = 1,
-                    Target = 2,
-                    Both = Source | Target
-                    };
-                enum class RelationshipType : int
-                    {
-                    Link = 0,
-                    Source = (int)ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable,
-                    Target = (int)ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable,
-                    };
+public:
+    typedef bmap<ECDbSqlTable*, bset<ClassMap*>> ClassMapsByTable;
+
+    struct LightweightCache : NonCopyableClass
+        {
+        public:
+            enum class RelationshipEnd : int
+                {
+                None = 0,
+                Source = 1,
+                Target = 2,
+                Both = Source | Target
+                };
+            enum class RelationshipType : int
+                {
+                Link = 0,
+                Source = (int)ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable,
+                Target = (int)ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable,
+                };
 
 
-                typedef bmap<ECN::ECClassId, RelationshipEnd> RelationshipClassIds;
-                typedef bmap<ECN::ECClassId, RelationshipEnd> ConstraintClassIds;
-                typedef bmap<ECN::ECClassId, RelationshipType> RelationshipTypeByClassId;
-                typedef bmap<ECDbSqlTable const*, std::vector<ECN::ECClassId>> ClassIdsPerTableMap;
-                typedef bmap<ECDbSqlTable const*, RelationshipTypeByClassId> RelationshipPerTable;
-            private:
-                mutable ClassIdsPerTableMap m_classIdsPerTable;
-                mutable bmap<ECN::ECClassId, ClassIdsPerTableMap> m_horizontalPartitions;
-                mutable bmap<ECN::ECClassId, RelationshipClassIds> m_relationshipEndsByClassIdRev;
-                mutable RelationshipClassIds m_anyClassRelationships;
-                mutable bmap<ECN::ECClassId, RelationshipClassIds> m_relationshipClassIdsPerConstraintClassIds;
-                mutable bmap<ECN::ECClassId, ConstraintClassIds> m_nonAnyClassConstraintClassIdsPerRelClassIds;
-                mutable std::vector<ECN::ECClassId> m_anyClassReplacements;
-                mutable ECN::ECClassId m_anyClassId;
-                mutable std::map<ECN::ECClassId, std::unique_ptr<StorageDescription>> m_storageDescriptions;
-                mutable RelationshipPerTable m_relationshipPerTable;
-                mutable bmap<ECN::ECClassId, bset<ECDbSqlTable const*>> m_tablesPerClassId;
-                mutable struct
-                    {
-                    bool m_horizontalPartitionsIsLoaded : 1;
-                    bool m_classIdsPerTableIsLoaded : 2;
-                    bool m_relationshipCacheIsLoaded : 3;
-                    bool m_anyClassRelationshipsIsLoaded : 4;
-                    bool m_anyClassReplacementsLoaded : 5;
-                    bool m_relationshipPerTableLoaded : 6;
-                    } m_loadedFlags;
+            typedef bmap<ECN::ECClassId, RelationshipEnd> RelationshipClassIds;
+            typedef bmap<ECN::ECClassId, RelationshipEnd> ConstraintClassIds;
+            typedef bmap<ECN::ECClassId, RelationshipType> RelationshipTypeByClassId;
+            typedef bmap<ECDbSqlTable const*, std::vector<ECN::ECClassId>> ClassIdsPerTableMap;
+            typedef bmap<ECDbSqlTable const*, RelationshipTypeByClassId> RelationshipPerTable;
+        private:
+            mutable ClassIdsPerTableMap m_classIdsPerTable;
+            mutable bmap<ECN::ECClassId, ClassIdsPerTableMap> m_horizontalPartitions;
+            mutable bmap<ECN::ECClassId, RelationshipClassIds> m_relationshipEndsByClassIdRev;
+            mutable RelationshipClassIds m_anyClassRelationships;
+            mutable bmap<ECN::ECClassId, RelationshipClassIds> m_relationshipClassIdsPerConstraintClassIds;
+            mutable bmap<ECN::ECClassId, ConstraintClassIds> m_nonAnyClassConstraintClassIdsPerRelClassIds;
+            mutable std::vector<ECN::ECClassId> m_anyClassReplacements;
+            mutable ECN::ECClassId m_anyClassId;
+            mutable std::map<ECN::ECClassId, std::unique_ptr<StorageDescription>> m_storageDescriptions;
+            mutable RelationshipPerTable m_relationshipPerTable;
+            mutable bmap<ECN::ECClassId, bset<ECDbSqlTable const*>> m_tablesPerClassId;
+            mutable struct
+                {
+                bool m_horizontalPartitionsIsLoaded : 1;
+                bool m_classIdsPerTableIsLoaded : 2;
+                bool m_relationshipCacheIsLoaded : 3;
+                bool m_anyClassRelationshipsIsLoaded : 4;
+                bool m_anyClassReplacementsLoaded : 5;
+                bool m_relationshipPerTableLoaded : 6;
+                } m_loadedFlags;
 
-                ECDbMapCR m_map;
-                void LoadRelationshipByTable () const;
-                void LoadHorizontalPartitions () const;
-                void LoadClassIdsPerTable () const;
-                void LoadAnyClassRelationships () const;
-                void LoadRelationshipCache () const;
-                void LoadAnyClassReplacements () const;
-            public:
-                explicit LightweightCache (ECDbMapCR map);
-                ~LightweightCache () {}
-                std::vector<ECN::ECClassId> const& GetClassesForTable (ECDbSqlTable const&) const;
-                RelationshipTypeByClassId GetRelationshipsMapToTable (ECDbSqlTable const& table) const;
-                RelationshipPerTable GetRelationshipsMapToTables () const;
-                bset<ECDbSqlTable const*> const& GetVerticalPartitionsForClass(ECN::ECClassId classId) const;
-                ClassIdsPerTableMap const& GetHorizontalPartitionsForClass (ECN::ECClassId) const;
-                RelationshipClassIds const& GetRelationships (ECN::ECClassId relationshipId) const;
-                RelationshipClassIds const& GetRelationshipsForConstraintClass (ECN::ECClassId constraintClassId) const;
-                //Gets all the constraint class ids plus the constraint end that make up the relationship with the given class id.
-                //@remarks: AnyClass constraints are ignored.
-                ConstraintClassIds const& GetConstraintClassesForRelationship (ECN::ECClassId relClassId) const;
-                RelationshipClassIds const& GetAnyClassRelationships () const;
-                ECN::ECClassId GetAnyClassId () const;
-                std::vector<ECN::ECClassId> const& GetAnyClassReplacements () const;
-                //bmap<ECN::ECClassId, bset<ECDbSqlTable const*> const& GetTablesPerClass()
-                //For a end table relationship class map, the storage description provides horizontal partitions
-                //For the end table's constraint classes - not for the relationship itself.
-                StorageDescription const& GetStorageDescription (IClassMap const&)  const;
+            ECDbMapCR m_map;
+            void LoadRelationshipByTable () const;
+            void LoadHorizontalPartitions () const;
+            void LoadClassIdsPerTable () const;
+            void LoadAnyClassRelationships () const;
+            void LoadRelationshipCache () const;
+            void LoadAnyClassReplacements () const;
+        public:
+            explicit LightweightCache (ECDbMapCR map);
+            ~LightweightCache () {}
+            std::vector<ECN::ECClassId> const& GetClassesForTable (ECDbSqlTable const&) const;
+            RelationshipTypeByClassId GetRelationshipsMapToTable (ECDbSqlTable const& table) const;
+            RelationshipPerTable GetRelationshipsMapToTables () const;
+            bset<ECDbSqlTable const*> const& GetVerticalPartitionsForClass(ECN::ECClassId classId) const;
+            ClassIdsPerTableMap const& GetHorizontalPartitionsForClass (ECN::ECClassId) const;
+            RelationshipClassIds const& GetRelationships (ECN::ECClassId relationshipId) const;
+            RelationshipClassIds const& GetRelationshipsForConstraintClass (ECN::ECClassId constraintClassId) const;
+            //Gets all the constraint class ids plus the constraint end that make up the relationship with the given class id.
+            //@remarks: AnyClass constraints are ignored.
+            ConstraintClassIds const& GetConstraintClassesForRelationship (ECN::ECClassId relClassId) const;
+            RelationshipClassIds const& GetAnyClassRelationships () const;
+            ECN::ECClassId GetAnyClassId () const;
+            std::vector<ECN::ECClassId> const& GetAnyClassReplacements () const;
+            //bmap<ECN::ECClassId, bset<ECDbSqlTable const*> const& GetTablesPerClass()
+            //For a end table relationship class map, the storage description provides horizontal partitions
+            //For the end table's constraint classes - not for the relationship itself.
+            StorageDescription const& GetStorageDescription (IClassMap const&)  const;
 
-                void Load (bool forceReload);
-                void Reset ();
-            };
+            void Load (bool forceReload);
+            void Reset ();
+        };
 
 
 private:
-    mutable BeMutex m_criticalSection;
+    mutable BeMutex m_mutex;
 
-    LightweightCache            m_lightweightCache;
-    ECDbR                       m_ecdb;
-    ECDbSQLManager              m_ecdbSqlManager;
-    mutable ClassMapDictionary  m_classMapDictionary;
-    mutable bvector<ECN::ECClassCP> m_classMapLoadTable;
-    mutable int                 m_classMapLoadAccessCounter;
-    SchemaImportContext*        m_schemaImportContext;
+    ECDbR m_ecdb;
+    ECDbSQLManager m_ecdbSqlManager;
+    mutable bmap<ECN::ECClassId, ClassMapPtr> m_classMapDictionary;
+    mutable LightweightCache m_lightweightCache;
+    SchemaImportContext* m_schemaImportContext;
 
-    bool                        TryGetClassMap(ClassMapPtr&, ClassMapLoadContext&, ECN::ECClassCR) const;
-    ClassMapPtr                 DoGetClassMap(ECN::ECClassCR) const;
+    bool TryGetClassMap(ClassMapPtr&, ClassMapLoadContext&, ECN::ECClassCR) const;
+    ClassMapPtr DoGetClassMap(ECN::ECClassCR) const;
 
-    ClassMapPtr                 LoadClassMap(ClassMapLoadContext& ctx, ECN::ECClassCR) const;
+    ClassMapPtr LoadClassMap(ClassMapLoadContext& ctx, ECN::ECClassCR) const;
 
-    MapStatus                   DoMapSchemas(bvector<ECN::ECSchemaCP> const& mapSchemas);
-    
-    MapStatus                   MapClass(ECN::ECClassCR);
-    MapStatus                   AddClassMap(ClassMapPtr&) const;
-    void                        RemoveClassMap(IClassMap const&);
-    BentleyStatus               FinishTableDefinition() const;
-    BentleyStatus               Save();
-    //! Create a table to persist ECInstances of the given ECClass in the Db
-    BentleyStatus               CreateOrUpdateRequiredTables() const;
-    BentleyStatus               CreateOrUpdateIndexesInDb() const;
+    MapStatus DoMapSchemas(bvector<ECN::ECSchemaCP> const&);
+    MapStatus MapClass(ECN::ECClassCR);
+    BentleyStatus FinishTableDefinition() const;
+    BentleyStatus SaveMappings() const;
+    BentleyStatus CreateOrUpdateRequiredTables() const;
+    BentleyStatus EvaluateColumnNotNullConstraints() const;
+    BentleyStatus CreateOrUpdateIndexesInDb() const;
 
-    ClassMapByTable             GetClassMapByTable() const;
-    void                        GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>&, ECN::ECClassCR) const;
-    DbResult                    UpdateHoldingView();
+    MapStatus AddClassMap(ClassMapPtr&) const;
+
+    DbResult UpdateHoldingView();
+
+    ClassMapsByTable GetClassMapsByTable() const;
+    BentleyStatus GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>&, ECN::ECClassCR, bool recursive) const;
+
 public:
     explicit ECDbMap(ECDbR ecdb);
     ~ECDbMap() {}

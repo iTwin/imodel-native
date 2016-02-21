@@ -20,18 +20,25 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
 ECSqlPreparedStatement::ECSqlPreparedStatement(ECSqlType type, ECDbCR ecdb)
-: m_type(type), m_ecdb(&ecdb), m_isNoopInSqlite(false), m_isNothingToUpdate(false) {}
+: m_type(type), m_ecdb(&ecdb), m_isNoopInSqlite(false), m_onlyExecuteStepTasks(false), m_parentOfJoinedTableECSqlStatement(nullptr) {}
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan        01/16
 //---------------------------------------------------------------------------------------
-JoinedTableECSqlStatement* ECSqlPreparedStatement::GetJoinedTableECSqlStatement(ECClassId joinedTableId)
+ParentOfJoinedTableECSqlStatement* ECSqlPreparedStatement::CreateParentOfJoinedTableECSqlStatement(ECClassId joinedTableClassId)
     {
-    if (m_joinedTableECSqlStatement == nullptr && joinedTableId != ECClass::UNSET_ECCLASSID)
-        m_joinedTableECSqlStatement = std::unique_ptr<JoinedTableECSqlStatement>(new JoinedTableECSqlStatement(joinedTableId));
+    BeAssert(m_parentOfJoinedTableECSqlStatement == nullptr && "CreateParentOfJoinedTableECSqlStatement expects the statement to not exist prior to this call.");
+    m_parentOfJoinedTableECSqlStatement = std::unique_ptr<ParentOfJoinedTableECSqlStatement>(new ParentOfJoinedTableECSqlStatement(joinedTableClassId));
+    return m_parentOfJoinedTableECSqlStatement.get();
+    }
 
-    return m_joinedTableECSqlStatement.get();
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Affan.Khan        01/16
+//---------------------------------------------------------------------------------------
+ParentOfJoinedTableECSqlStatement* ECSqlPreparedStatement::GetParentOfJoinedTableECSqlStatement() const
+    {
+    return m_parentOfJoinedTableECSqlStatement.get();
     }
 
 //---------------------------------------------------------------------------------------
@@ -39,6 +46,7 @@ JoinedTableECSqlStatement* ECSqlPreparedStatement::GetJoinedTableECSqlStatement(
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlPreparedStatement::Prepare(ECSqlPrepareContext& prepareContext, ECSqlParseTreeCR ecsqlParseTree, Utf8CP ecsql)
     {
+    BeAssert(m_nativeSql.empty());
     ECDbCR ecdb = GetECDb();
 
     if (GetType() != ECSqlType::Select && ecdb.IsReadonly())
@@ -52,19 +60,26 @@ ECSqlStatus ECSqlPreparedStatement::Prepare(ECSqlPrepareContext& prepareContext,
     if (!stat.IsSuccess())
         return stat;
 
-    if (ECSqlPrepareContext::JoinedTableInfo const* info = prepareContext.GetJoinedTableInfo())
+    ECSqlPrepareContext::JoinedTableInfo const* info = prepareContext.GetJoinedTableInfo();
+    if (info != nullptr)
         m_ecsql.assign(info->GetOrignalECSql());
     else
         m_ecsql.assign(ecsql);
 
     if (prepareContext.NativeStatementIsNoop())
+        {
         m_isNoopInSqlite = true;
-    else if (prepareContext.NativeNothingToUpdate())
-        m_isNothingToUpdate = true;
+        m_nativeSql = "n/a";
+        }
+    else if (prepareContext.OnlyExecuteStepTasks())
+        {
+        m_onlyExecuteStepTasks = true;
+        m_nativeSql = "n/a";
+        }
     else
         {
         //don't let BeSQLite log and assert on error (therefore use TryPrepare instead of Prepare)
-        const auto nativeSqlStat = GetSqliteStatementR().TryPrepare(ecdb, nativeSql.c_str());
+        DbResult nativeSqlStat = GetSqliteStatementR().TryPrepare(ecdb, nativeSql.c_str());
         if (nativeSqlStat != BE_SQLITE_OK)
             {
             Utf8String errorMessage;
@@ -74,6 +89,12 @@ ECSqlStatus ECSqlPreparedStatement::Prepare(ECSqlPrepareContext& prepareContext,
             //is a wrong ECSQL provided by the user.
             return ECSqlStatus::InvalidECSql;
             }
+
+        ParentOfJoinedTableECSqlStatement* parentOfJoinedTableECSqlStmt = GetParentOfJoinedTableECSqlStatement();
+        if (parentOfJoinedTableECSqlStmt != nullptr)
+            m_nativeSql.assign(parentOfJoinedTableECSqlStmt->GetNativeSql()).append(";");
+
+        m_nativeSql.append(nativeSql);
         }
 
     return ECSqlStatus::Success;
@@ -116,10 +137,8 @@ ECSqlStatus ECSqlPreparedStatement::ClearBindings()
     if (m_isNoopInSqlite)
         return ECSqlStatus::Success;
 
-    if (auto joinedTableStmt = GetJoinedTableECSqlStatement())
-        {
+    if (auto joinedTableStmt = GetParentOfJoinedTableECSqlStatement())
         joinedTableStmt->ClearBindings();
-        }
 
     const DbResult nativeSqlStat = GetSqliteStatementR ().ClearBindings();
     GetParameterMapR ().OnClearBindings();
@@ -156,10 +175,8 @@ DbResult ECSqlPreparedStatement::DoStep()
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlPreparedStatement::Reset()
     {
-    if (auto joinedTableStmt = GetJoinedTableECSqlStatement())
-        {
+    if (auto joinedTableStmt = GetParentOfJoinedTableECSqlStatement())
         joinedTableStmt->Reset();
-        }
 
     return _Reset();
     }
@@ -169,12 +186,9 @@ ECSqlStatus ECSqlPreparedStatement::Reset()
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlPreparedStatement::DoReset()
     {
-    DbResult nativeSqlStat = GetSqliteStatementR ().Reset();
+    const DbResult nativeSqlStat = GetSqliteStatementR ().Reset();
     if (nativeSqlStat != BE_SQLITE_OK)
-        {
-        GetIssueReporter().ReportSqliteIssue(ECDbIssueSeverity::Error, nativeSqlStat);
         return ECSqlStatus(nativeSqlStat);
-        }
 
     return ECSqlStatus::Success;
     }
@@ -185,12 +199,9 @@ ECSqlStatus ECSqlPreparedStatement::DoReset()
 Utf8CP ECSqlPreparedStatement::GetNativeSql() const
     {
     if (m_isNoopInSqlite)
-        {
         LOG.warning("ECSqlStatement::GetNativeSql> No native SQL available. ECSQL translates to a no-op in native SQL.");
-        return "n/a";
-        }
 
-    return GetSqliteStatementR ().GetSql();
+    return m_nativeSql.c_str();
     }
 
 //---------------------------------------------------------------------------------------
@@ -354,7 +365,7 @@ DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
 
     //reset the ecinstanceid from key info for the next execution (if it was bound, and is no literal)
     m_ecInstanceKeyInfo.ResetBoundECInstanceId();
-    if (auto joinedTableStmt = GetJoinedTableECSqlStatement())
+    if (auto joinedTableStmt = GetParentOfJoinedTableECSqlStatement())
         {      
         if (auto binder = joinedTableStmt->GetECInstanceIdBinder())
             {
@@ -433,26 +444,24 @@ void ECSqlInsertPreparedStatement::SetECInstanceKeyInfo(ECInstanceKeyInfo const&
 //---------------------------------------------------------------------------------------
 DbResult ECSqlUpdatePreparedStatement::Step()
     {
-    if (!IsNoopInSqlite())
+    if (IsNoopInSqlite())
+        return BE_SQLITE_DONE;
+
+    const DbResult status = GetStepTasks().ExecuteBeforeStepTaskList();
+    if (BE_SQLITE_OK != status)
+        return status;
+
+    if (OnlyExecuteStepTasks())
+        return BE_SQLITE_DONE;
+
+    if (auto parentOfJoinedTableStmt = GetParentOfJoinedTableECSqlStatement())
         {
-        DbResult status = GetStepTasks().ExecuteBeforeStepTaskList();
-        if (BE_SQLITE_OK != status)
+        const DbResult status = parentOfJoinedTableStmt->Step();
+        if (status != BE_SQLITE_DONE)
             return status;
-
-        if (!IsNothingToUpdate())
-            {
-            if (auto joinedTableStmt = GetJoinedTableECSqlStatement())
-                {
-                status = joinedTableStmt->Step();
-                if (status != BE_SQLITE_DONE)
-                    return status;
-                }
-
-            return DoStep();
-            }
         }
 
-    return BE_SQLITE_DONE;
+    return DoStep();
     }
 
 //---------------------------------------------------------------------------------------
@@ -475,16 +484,14 @@ ECSqlStatus ECSqlNonSelectPreparedStatement::_Reset()
 //---------------------------------------------------------------------------------------
 DbResult ECSqlDeletePreparedStatement::Step()
     {
-    if (!IsNoopInSqlite())
-        {
-        const DbResult status = GetStepTasks().ExecuteBeforeStepTaskList();
-        if (BE_SQLITE_OK != status)
-            return status;
+    if (IsNoopInSqlite())
+        return BE_SQLITE_DONE;
 
-        return DoStep();
-        }
+    const DbResult status = GetStepTasks().ExecuteBeforeStepTaskList();
+    if (BE_SQLITE_OK != status)
+        return status;
 
-    return BE_SQLITE_DONE;
+    return DoStep();
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

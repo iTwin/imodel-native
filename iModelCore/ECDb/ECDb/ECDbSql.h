@@ -27,17 +27,17 @@ typedef int64_t ECDbClassMapId;
 
 enum class ColumnKind
     {
-    Unknown = 0x0U, //! Not known to ECDb or user define columns
-    ECInstanceId = 0x1U, //! ECInstanceId system column also primary key of the table
-    ECClassId = 0x2U, //! ECClassId system column. Use if more then on classes is mapped to this table
-    ParentECInstanceId = 0x4U, //! ParentECInstanceId column used in struct array
-    ECPropertyPathId = 0x8U, //! ECPropertyPathId column used in struct array
-    ECArrayIndex = 0x10U, //! ECArrayIndex column used in struct array
-    SourceECInstanceId = 0x20U,
-    SourceECClassId = 0x40U,
-    TargetECInstanceId = 0x80U,
-    TargetECClassId = 0x100U,
-    DataColumn = 0x200U, //! Data column defined by none key column in ECClass
+    Unknown = 0, //! Not known to ECDb or user define columns
+    ECInstanceId = 1, //! ECInstanceId system column also primary key of the table
+    ECClassId = 2, //! ECClassId system column. Use if more then on classes is mapped to this table
+    ParentECInstanceId = 4, //! ParentECInstanceId column used in struct array
+    ECPropertyPathId = 8, //! ECPropertyPathId column used in struct array
+    ECArrayIndex = 16, //! ECArrayIndex column used in struct array
+    SourceECInstanceId = 32,
+    SourceECClassId = 64,
+    TargetECInstanceId = 128,
+    TargetECClassId = 256,
+    DataColumn = 512, //! Data column defined by none key column in ECClass
     //Following is helper group for search operation. There cannot be a column with OR'ed flags
     ConstraintECInstanceId = SourceECInstanceId | TargetECInstanceId,
     NonRelSystemColumn = ECInstanceId | ECClassId | ParentECInstanceId | ECPropertyPathId | ECArrayIndex
@@ -259,9 +259,9 @@ struct ECDbSqlColumn : NonCopyableClass
         Double = 4, 
         Integer = 5, 
         Long = 6, 
-        String = 7,
-        Json = 8
+        String = 7
         };
+
     struct Constraint : NonCopyableClass
         {
     public:
@@ -311,7 +311,7 @@ struct ECDbSqlColumn : NonCopyableClass
             : m_name(name), m_ownerTable(owner), m_type(type), m_persistenceType(persistenceType), m_kind(ColumnKind::DataColumn), m_id(id)
             {}
 
-        virtual ~ECDbSqlColumn() {}
+        ~ECDbSqlColumn() {}
 
         ECDbColumnId GetId() const { return m_id; }
         void SetId(ECDbColumnId id) { m_id = id; }
@@ -322,16 +322,18 @@ struct ECDbSqlColumn : NonCopyableClass
         ECDbSqlTable&  GetTableR() const { return m_ownerTable; }
         Constraint const& GetConstraint() const { return m_constraints; };
         Constraint& GetConstraintR() { return m_constraints; };
-        bool IsReusable() const { return m_type == Type::Any; }
-        static Type StringToType(Utf8CP typeName);
-        static Utf8CP TypeToString(Type type);
+
         ColumnKind GetKind() const { return m_kind; }
         BentleyStatus SetKind(ColumnKind);
         BentleyStatus AddKind(ColumnKind);
-        const Utf8String GetFullName() const;
+
+        bool IsReusable() const { return m_type == Type::Any; }
+        Utf8String GetFullName() const;
         std::weak_ptr<ECDbSqlColumn> GetWeakPtr() const;
 
-        static const Utf8String BuildFullName(Utf8CP table, Utf8CP column);
+        static Type PrimitiveTypeToColumnType(ECN::PrimitiveType type);
+        static bool IsCompatible(Type lhs, Type rhs);
+        static Utf8String BuildFullName(Utf8CP table, Utf8CP column);
         static Utf8CP KindToString(ColumnKind);
     };
 
@@ -605,21 +607,6 @@ public:
 
     static BentleyStatus AddColumns(ECDbR, ECDbSqlTable const&, std::vector<Utf8CP> const& newColumns);
     static BentleyStatus CopyRows(ECDbR, Utf8CP sourceTable, bvector<Utf8String>& sourceColumns, Utf8CP targetTable, bvector<Utf8String>& targetColumns);
-    };
-
-
-//======================================================================================
-// @bsiclass                                                 Affan.Khan         09/2014
-//======================================================================================
-struct ECDbSqlHelper
-    {
-private:
-    ECDbSqlHelper();
-    ~ECDbSqlHelper();
-
-public:
-    static ECDbSqlColumn::Type PrimitiveTypeToColumnType (ECN::PrimitiveType type);
-    static bool IsCompatible (ECDbSqlColumn::Type target, ECDbSqlColumn::Type source);
     };
 
 

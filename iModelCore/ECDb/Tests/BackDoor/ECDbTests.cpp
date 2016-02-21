@@ -118,13 +118,7 @@ ECSchemaPtr ECDbTestUtility::ReadECSchemaFromDisk(WCharCP ecSchemaFileName, WCha
 * @bsimethod                                 Ramanujam.Raman                04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 //static
-void ECDbTestUtility::ReadECSchemaFromDisk
-(
-    ECSchemaPtr& ecSchema,
-    ECSchemaReadContextPtr& ecSchemaContext,
-    WCharCP ecSchemaFileName,
-    WCharCP ecSchemaSearchPath
-    )
+void ECDbTestUtility::ReadECSchemaFromDisk(ECSchemaPtr& ecSchema, ECSchemaReadContextPtr& ecSchemaContext, WCharCP ecSchemaFileName, WCharCP ecSchemaSearchPath)
     {
     // Construct the path to the sample schema
     BeFileName ecSchemaPath;

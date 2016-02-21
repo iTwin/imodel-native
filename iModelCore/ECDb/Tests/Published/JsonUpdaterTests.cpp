@@ -52,7 +52,7 @@ struct JsonUpdaterTests : SchemaImportTestFixture
         BentleyStatus status = reader.ReadInstance (actualJsonValue, spatialInstanceKey.GetECInstanceId (), JsonECSqlSelectAdapter::FormatOptions (ECValueFormat::RawNativeValues));
         ASSERT_EQ (SUCCESS, status);
 
-        printf ("%s\r\n", actualJsonValue.toStyledString ().c_str ());
+        //printf ("%s\r\n", actualJsonValue.toStyledString ().c_str ());
         /*Utf8String expectedStrValue = Json::StyledWriter().write(expectedJsonValue);
         Utf8String actualStrValue = Json::StyledWriter().write(actualJsonValue);
         ASSERT_STREQ(expectedStrValue.c_str(), actualStrValue.c_str());*/
@@ -130,7 +130,7 @@ TEST_F (JsonUpdaterTests, UpdateRelationshipProperty)
     Json::Value relationshipJson;
     ASSERT_EQ (SUCCESS, reader.ReadInstance (relationshipJson, relInstanceId, JsonECSqlSelectAdapter::FormatOptions (ECValueFormat::RawNativeValues)));
     ASSERT_STREQ ("good morning", relationshipJson["Name"].asCString ());
-    printf ("%s\r\n", relationshipJson.toStyledString ().c_str ());
+    //printf ("%s\r\n", relationshipJson.toStyledString ().c_str ());
 
     // Update relationship properties
     JsonUpdater updater (db, *relClass);
@@ -140,7 +140,7 @@ TEST_F (JsonUpdaterTests, UpdateRelationshipProperty)
     */
     Utf8CP expectedVal = "good afternoon";
     relationshipJson["Name"] = expectedVal;
-    printf ("%s\r\n", relationshipJson.toStyledString ().c_str ());
+    //printf ("%s\r\n", relationshipJson.toStyledString ().c_str ());
     ASSERT_EQ (SUCCESS, updater.Update (relInstanceId, relationshipJson, sourceKey, targetKey));
 
     ECSqlStatement checkStmt;
@@ -204,7 +204,7 @@ TEST_F (JsonUpdaterTests, UpdateProperties)
     ASSERT_EQ (100, ecClassJson["P1"].asInt());
     ASSERT_STREQ ("JsonTest", ecClassJson["P2"].asCString ());
     ASSERT_EQ (1000.10, ecClassJson["P3"].asDouble ());
-    printf ("%s\r\n", ecClassJson.toStyledString ().c_str ());
+    //printf ("%s\r\n", ecClassJson.toStyledString ().c_str ());
 
     // Update ecClass properties
     JsonUpdater updater (ecdb, *ecClass);
@@ -216,7 +216,7 @@ TEST_F (JsonUpdaterTests, UpdateProperties)
     ecClassJson["P1"] = 200;
     ecClassJson["P2"] = expectedVal;
     ecClassJson["P3"] = 2000.20;
-    printf ("%s\r\n", ecClassJson.toStyledString ().c_str ());
+    //printf ("%s\r\n", ecClassJson.toStyledString ().c_str ());
     ASSERT_EQ (SUCCESS, updater.Update (key.GetECInstanceId (), ecClassJson));
 
     ECSqlStatement checkStmt;
@@ -278,7 +278,7 @@ TEST_F (JsonUpdaterTests, CommonGeometryJsonSerialization)
 
     Json::Value expectedJsonCppValue;
     ECDbTestUtility::ReadJsonInputFromFile (expectedJsonCppValue, pathname);
-    printf ("%s\r\n", expectedJsonCppValue.toStyledString ().c_str ());
+    //printf ("%s\r\n", expectedJsonCppValue.toStyledString ().c_str ());
 
     rapidjson::Document expectedRapidJsonValue;
     bool parseSuccessful = !expectedRapidJsonValue.Parse<0> (Json::FastWriter ().write (expectedJsonCppValue).c_str ()).HasParseError ();

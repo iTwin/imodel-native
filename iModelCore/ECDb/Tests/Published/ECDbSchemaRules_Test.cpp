@@ -1305,6 +1305,7 @@ void AssertRelationship(ECDbCR ecdb, ECDbTestFixture::SchemaItem const& schemaIt
     if (expectedReadonly)
         {
         ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, ecsql.c_str())) << schemaItem.m_name.c_str() << ": Readonly ECRelationship cannot be modified. ECSQL: " << ecsql.c_str();
+        return; // we did not insert anything we cannot execute rest of queries.
         }
     else
         {
@@ -1312,7 +1313,8 @@ void AssertRelationship(ECDbCR ecdb, ECDbTestFixture::SchemaItem const& schemaIt
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << schemaItem.m_name.c_str() << ": ECSQL: " << ecsql.c_str();
         }
     stmt.Finalize();
-
+   
+    const_cast<ECDbR>(ecdb).SaveChanges();
     //select
     ecsql.Sprintf("SELECT SourceECInstanceId, SourceECClassId FROM %s.%s WHERE TargetECInstanceId=%lld",
                   schemaName, relationshipClassName, targetKey.GetECInstanceId().GetValue());
@@ -1639,12 +1641,12 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_SupportedCases)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.ChildA(ChildAProp,ChildProp) VALUES(2,2)"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(childKey));
     }
-
+    ecdb.SaveChanges();
     //WIP_REL: Fails because ECSQL DELETE is incorrectly prepared (exp: 126=129)
     //ECSQL: DELETE FROM TestSchema.ParentHasChildren WHERE SourceECInstanceId=1 AND SourceECClassId=129 AND TargetECInstanceId=2 AND TargetECClassId=127
     //->SQL: UPDATE [ts_Child] SET [ForeignECInstanceId_ParentHasChildren] = NULL
     //       WHERE [ts_Child].[ForeignECInstanceId_ParentHasChildren] = 1 AND 126 = 129 AND [ts_Child].[ECInstanceId] = 2 AND [ts_Child].[ECClassId] = 127
-    //AssertRelationship(ecdb, testSchema, "TestSchema", "ParentHasChildren", false, parentKey, childKey);
+    AssertRelationship(ecdb, testSchema, "TestSchema", "ParentHasChildren", false, parentKey, childKey);
     }
 
     {
@@ -1706,7 +1708,7 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_SupportedCases)
     //ECSQL: DELETE FROM TestSchema.ParentHasChildren WHERE SourceECInstanceId=1 AND SourceECClassId=128 AND TargetECInstanceId=2 AND TargetECClassId=126
     //->SQL: UPDATE [ts_Child] SET [ForeignECInstanceId_ParentHasChildren] = NULL WHERE [ts_Child].[ForeignECInstanceId_ParentHasChildren] = 1 AND [ts_Parent].[ECClassId] = 128 AND [ts_Child].[ECInstanceId] = 2 AND 126 = 126
     //failed to prepare with error code BE_SQLITE_ERROR : no such column : ts_Parent.ECClassId(BE_SQLITE_ERROR)    
-    //AssertRelationship(ecdb, testSchema, "TestSchema", "ParentHasChildren", false, parentKey, childKey);
+    AssertRelationship(ecdb, testSchema, "TestSchema", "ParentHasChildren", false, parentKey, childKey);
     }
 
     {
@@ -1774,7 +1776,7 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_SupportedCases)
     //ECSQL: DELETE FROM TestSchema.ParentHasChildren WHERE SourceECInstanceId=1 AND SourceECClassId=127 AND TargetECInstanceId=2 AND TargetECClassId=126.
     //->SQL: UPDATE [ts_Child] SET [ForeignECInstanceId_ParentHasChildren] = NULL WHERE [ts_Child].[ForeignECInstanceId_ParentHasChildren] = 1 AND [ts_Parent].[ECClassId] = 127 AND [ts_Child].[ECInstanceId] = 2 AND 126 = 126
     //failed to prepare with error code BE_SQLITE_ERROR: no such column: ts_Parent.ECClassId (BE_SQLITE_ERROR)
-    //AssertRelationship(ecdb, testSchema, "TestSchema", "ParentHasChildren", false, parentKey, childKey);
+    AssertRelationship(ecdb, testSchema, "TestSchema", "ParentHasChildren", false, parentKey, childKey);
     }
 
     {
@@ -1834,7 +1836,7 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_SupportedCases)
 
     //WIP_REL: Fails because ECSQL DELETE is incorrectly prepared (exp: 126=129)
     //ECSQL: DELETE FROM TestSchema.ParentHasChildren WHERE SourceECInstanceId=1 AND SourceECClassId=129 AND TargetECInstanceId=2 AND TargetECClassId=127
-    //AssertRelationship(ecdb, testSchema, "TestSchema", "ParentHasChildren", false, parentKey, childKey);
+    AssertRelationship(ecdb, testSchema, "TestSchema", "ParentHasChildren", false, parentKey, childKey);
     }
 
     }
@@ -1889,11 +1891,12 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_ReadonlyCases)
             ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(childKey));
             }
 
+            ecdb.SaveChanges();
             //WIP_REL: Fails because ECSQL SELECT fails with assertion
             //ECSQL: SELECT SourceECInstanceId, SourceECClassId FROM TestSchema.ParentHasChildren WHERE TargetECInstanceId=2
             //->SQL: SELECT [ParentHasChildren].[SourceECInstanceId], [ParentHasChildren].[SourceECClassId] FROM (SELECT [ts_Child].[ECInstanceId], 130 ECClassId, [ts_Child].ForeignECInstanceId_ParentHasChildren SourceECInstanceId, 129 [SourceECClassId], [ts_Child].ECInstanceId TargetECInstanceId,  FROM [ts_Child] WHERE [SourceECInstanceId] IS NOT NULL) [ParentHasChildren]  WHERE [ParentHasChildren].[TargetECInstanceId] = 2
             //failed to prepare with error code BE_SQLITE_ERROR : near "FROM" : syntax error(BE_SQLITE_ERROR)
-            //AssertRelationship(ecdb, testSchema, "TestSchema", "ParentHasChildren", true, parentKey, childKey);
+            AssertRelationship(ecdb, testSchema, "TestSchema", "ParentHasChildren", true, parentKey, childKey);
             }
 
             {
@@ -1923,7 +1926,7 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_ReadonlyCases)
                                   "     <BaseClass>Child</BaseClass>"
                                   "    <ECProperty propertyName='GrandchildBProp' typeName='int' />"
                                   "  </ECEntityClass>"
-                                  "  <ECRelationshipClass typeName='ParentHasGrandchildren' strength='embedding'>"
+                                  "  <ECRelationshipClass typeName='ParentHasGrandchildren' strength='referencing'>"
                                   "     <Source cardinality='(0,1)' polymorphic='True'>"
                                   "         <Class class='Parent' />"
                                   "     </Source>"
@@ -1937,7 +1940,7 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_ReadonlyCases)
             bool asserted = false;
             AssertSchemaImport(ecdb, asserted, testSchema, "ecdbrelationshipmappingrules_childreninseparatejoinedtables_fkinjoinedtable.ecdb");
             ASSERT_FALSE(asserted);
-
+            
             ECInstanceKey parentKey;
             {
             ECSqlStatement stmt;
@@ -1952,9 +1955,11 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_ReadonlyCases)
             ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(childKey));
             }
 
+            ecdb.SaveChanges();
+
             //WIP_REL DELETE is fails
             //ECSQL: DELETE FROM TestSchema.ParentHasGrandchildren WHERE SourceECInstanceId=1 AND SourceECClassId=129 AND TargetECInstanceId=2 AND TargetECClassId=127
-            //AssertRelationship(ecdb, testSchema, "TestSchema", "ParentHasGrandchildren", false, parentKey, childKey);
+            AssertRelationship(ecdb, testSchema, "TestSchema", "ParentHasGrandchildren", true, parentKey, childKey);
             }
 
     }

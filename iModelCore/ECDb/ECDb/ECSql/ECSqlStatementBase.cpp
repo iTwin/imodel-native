@@ -61,9 +61,9 @@ ECSqlStatus ECSqlStatementBase::_Prepare (ECDbCR ecdb, Utf8CP ecsql)
     if (joinedTableInfo != nullptr)
         {
         if (joinedTableInfo->HasJoinedTableECSql()) //in case joinTable update it is possible that current could be null
-            ecsql = joinedTableInfo->GetJoinedTableECSql();    //INSERT INTO Boo(B1, ECInstanceId)
+            ecsql = joinedTableInfo->GetJoinedTableECSql();
         else
-            ecsql = joinedTableInfo->GetParentOfJoinedTableECSql();//INSERT INTO Foo(ECInstanceId)
+            ecsql = joinedTableInfo->GetParentOfJoinedTableECSql();
 
         ecsqlParseTree = nullptr; //delete existing parse tree
         if (SUCCESS != parser.Parse(ecsqlParseTree, ecdb, ecsql, prepareContext.GetClassMapViewMode()))

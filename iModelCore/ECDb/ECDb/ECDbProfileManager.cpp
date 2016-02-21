@@ -16,7 +16,7 @@ Utf8CP const ECDbProfileManager::PROFILENAME = "ECDb";
 //static
 const PropertySpec ECDbProfileManager::PROFILEVERSION_PROPSPEC = PropertySpec("SchemaVersion", "ec_Db");
 //static
-const SchemaVersion ECDbProfileManager::MINIMUM_SUPPORTED_VERSION = SchemaVersion(2, 8, 0, 0);
+const SchemaVersion ECDbProfileManager::MINIMUM_SUPPORTED_VERSION = SchemaVersion(3, 0, 0, 0);
 
 //static
 std::vector<std::unique_ptr<ECDbProfileUpgrader>> ECDbProfileManager::s_upgraderSequence;
@@ -307,9 +307,9 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
                                     "DisplayLabel TEXT,"
                                     "Description TEXT,"
                                     "NamespacePrefix TEXT,"
-                                    "VersionMajor INTEGER NOT NULL,"
-                                    "VersionMiddle INTEGER NOT NULL,"
-                                    "VersionMinor INTEGER NOT NULL)");
+                                    "VersionDigit1 INTEGER NOT NULL,"
+                                    "VersionDigit2 INTEGER NOT NULL,"
+                                    "VersionDigit3 INTEGER NOT NULL)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -376,8 +376,8 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
                            "DisplayLabel TEXT,"
                            "Description TEXT,"
                            "UnderlyingPrimitiveType INTEGER NOT NULL,"
-                           "IsStrict BOOL NOT NULL CHECK(IsStrict IN (0,1)),"
-                           "EnumValues JSON NOT NULL)");
+                           "IsStrict BOOLEAN NOT NULL CHECK(IsStrict IN (0,1)),"
+                           "EnumValues TEXT NOT NULL)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -392,7 +392,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
                            "Name TEXT NOT NULL,"
                            "DisplayLabel TEXT,"
                            "Description TEXT,"
-                           "IsReadonly BOOL NOT NULL CHECK (IsReadonly IN (0, 1)),"
+                           "IsReadonly BOOLEAN NOT NULL CHECK (IsReadonly IN (0, 1)),"
                            "Kind INTEGER NOT NULL,"
                            "Ordinal INTEGER,"
                            "PrimitiveType INTEGER,"
@@ -433,7 +433,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
                            "MultiplicityLowerLimit INTEGER,"
                            "MultiplicityUpperLimit INTEGER,"
                            "RoleLabel TEXT,"
-                           "IsPolymorphic BOOL NOT NULL CHECK (IsPolymorphic IN (0, 1)),"
+                           "IsPolymorphic BOOLEAN NOT NULL CHECK (IsPolymorphic IN (0, 1)),"
                            "PRIMARY KEY (RelationshipClassId, RelationshipEnd))");
     if (BE_SQLITE_OK != stat)
         return stat;
@@ -443,7 +443,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
                            "RelationshipClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
                            "RelationshipEnd INTEGER NOT NULL,"
                            "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
-                           "KeyProperties JSON,"
+                           "KeyProperties TEXT,"
                            "PRIMARY KEY (RelationshipClassId, RelationshipEnd, ClassId),"
                            "FOREIGN KEY (RelationshipClassId, RelationshipEnd) REFERENCES ec_RelationshipConstraint(RelationshipClassId, RelationshipEnd) ON DELETE CASCADE)");
     if (BE_SQLITE_OK != stat)
@@ -469,7 +469,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
                            //resolved map strategy:
                            "MapStrategy INTEGER NOT NULL,"
                            "MapStrategyOptions INTEGER,"
-                           "MapStrategyAppliesToSubclasses BOOL NOT NULL CHECK (MapStrategyAppliesToSubclasses IN (0, 1)))");
+                           "MapStrategyAppliesToSubclasses BOOLEAN NOT NULL CHECK (MapStrategyAppliesToSubclasses IN (0, 1)))");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -492,7 +492,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
                            "BaseTableId INTEGER REFERENCES ec_Table(Id) ON DELETE CASCADE,"
                            "Name TEXT NOT NULL COLLATE NOCASE,"
                            "Type INTEGER NOT NULL,"
-                           "IsVirtual BOOL NOT NULL CHECK (IsVirtual IN (0, 1)))");
+                           "IsVirtual BOOLEAN NOT NULL CHECK (IsVirtual IN (0, 1)))");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -502,7 +502,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
                            "TableId INTEGER NOT NULL REFERENCES ec_Table(Id) ON DELETE CASCADE,"
                            "Name TEXT NOT NULL COLLATE NOCASE,"
                            "Type INTEGER NOT NULL,"
-                           "IsVirtual BOOL NOT NULL CHECK (IsVirtual IN (0, 1)),"
+                           "IsVirtual BOOLEAN NOT NULL CHECK (IsVirtual IN (0, 1)),"
                            "Ordinal INTEGER NOT NULL,"
                            "NotNullConstraint BOOLEAN,"
                            "UniqueConstraint BOOLEAN,"
@@ -523,11 +523,11 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
                            "Id INTEGER PRIMARY KEY,"
                            "Name TEXT NOT NULL COLLATE NOCASE,"
                            "TableId INTEGER NOT NULL REFERENCES ec_Table(Id) ON DELETE CASCADE,"
-                           "IsUnique BOOL NOT NULL CHECK (IsUnique IN (0,1)),"
-                           "PrimaryWhereClause TEXT, "
-                           "IsAutoGenerated BOOL NOT NULL CHECK (IsAutoGenerated IN (0,1)),"
+                           "IsUnique BOOLEAN NOT NULL CHECK (IsUnique IN (0,1)),"
+                           "AddNotNullWhereExp BOOLEAN NOT NULL CHECK (AddNotNullWhereExp IN (0,1)), "
+                           "IsAutoGenerated BOOLEAN NOT NULL CHECK (IsAutoGenerated IN (0,1)),"
                            "ClassId INTEGER REFERENCES ec_Class(Id) ON DELETE CASCADE,"
-                           "AppliesToSubclassesIfPartial BOOL NOT NULL CHECK (AppliesToSubclassesIfPartial IN (0,1)))");
+                           "AppliesToSubclassesIfPartial BOOLEAN NOT NULL CHECK (AppliesToSubclassesIfPartial IN (0,1)))");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -567,7 +567,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
     stat = ecdb.ExecuteSql (
         "CREATE TABLE ec_TriggerLog("
         "EventId INTEGER PRIMARY KEY AUTOINCREMENT,"
-        "EventTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,"
+        "EventTime DOUBLE DEFAULT CURRENT_TIMESTAMP,"
         "TriggerId TEXT,"
         "AffectedECInstanceId INTEGER,"
         "AffectedECClassId INTEGER,"

@@ -750,10 +750,9 @@
         <ECStructProperty propertyName="Address" typeName="Location" readOnly="false"/>
         <ECProperty propertyName="EmployeeRecordKey" typeName="dateTime" displayLabel="Record Key" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="EmployeeCompany" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="EmployeeCompany" modifier="None" strength="referencing" strengthDirection="backward">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <End>Source</End>
                 <ForeignKeyColumn>Company__trg_11_id</ForeignKeyColumn>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>

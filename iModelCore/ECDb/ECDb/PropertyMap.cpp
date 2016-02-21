@@ -1287,17 +1287,6 @@ bool NavigationPropertyMap::IsSupportedInECSql(bool logIfNotSupported, ECDbCP ec
         return false;
         }
 
-
-    PropertyMapRelationshipConstraintClassId const* classIdPropMap = GetConstraintMap(NavigationEnd::To).GetECClassIdPropMap();
-    if (!classIdPropMap->IsVirtual() && classIdPropMap->IsMappedToClassMapTables())
-        {
-        if (logIfNotSupported)
-            ecdb->GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "NavigationECProperty '%s.%s' cannot be used in ECSQL because the mapping requires an ECClassId column for the related instances.",
-                                                           m_navigationProperty->GetClass().GetFullName(), m_navigationProperty->GetName().c_str());
-        return false;
-
-        }
-
     return true;
     }
 
@@ -1307,9 +1296,6 @@ bool NavigationPropertyMap::IsSupportedInECSql(bool logIfNotSupported, ECDbCP ec
 void NavigationPropertyMap::_GetColumns(std::vector<ECDbSqlColumn const*>& columns) const
     {
     BeAssert(IsSupportedInECSql() && "NavProperty which is not supported in ECSQL");
-
-    //RelationshipConstraintMap const& constraintMap = GetConstraintMap(NavigationEnd::To);
-    //constraintMap.GetECInstanceIdPropMap()->GetColumns(columns);
     columns = m_columns;
     }
 

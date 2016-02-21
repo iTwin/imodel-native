@@ -25,7 +25,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! post-prepare operations
 // @bsiclass                                                Krischan.Eberle      12/2013
 //+===============+===============+===============+===============+===============+======
-struct JoinedTableECSqlStatement;
+struct ParentOfJoinedTableECSqlStatement;
+
 struct ECSqlPreparedStatement : NonCopyableClass
     {
     private:
@@ -33,11 +34,12 @@ struct ECSqlPreparedStatement : NonCopyableClass
 
         ECDbCP m_ecdb;
         Utf8String m_ecsql;
+        Utf8String m_nativeSql;
         mutable BeSQLite::Statement m_sqliteStatement;
         bool m_isNoopInSqlite;
-        bool m_isNothingToUpdate;
+        bool m_onlyExecuteStepTasks;
         ECSqlParameterMap m_parameterMap;
-        std::unique_ptr<JoinedTableECSqlStatement> m_joinedTableECSqlStatement;
+        std::unique_ptr<ParentOfJoinedTableECSqlStatement> m_parentOfJoinedTableECSqlStatement;
         std::vector<ECN::ECSchemaPtr> m_keepAliveSchemas; //Hold on to dependent ECSchema just in case some process flush original ECSchema
 
         virtual ECSqlStatus _Reset() = 0;
@@ -49,9 +51,8 @@ struct ECSqlPreparedStatement : NonCopyableClass
         ECSqlStatus DoReset();
 
         ECSqlParameterMap const& GetParameterMap() const { return m_parameterMap; }
-
         bool IsNoopInSqlite() const { return m_isNoopInSqlite; }
-        bool IsNothingToUpdate() const { return m_isNothingToUpdate; }
+        bool OnlyExecuteStepTasks() const { return m_onlyExecuteStepTasks; }
 
         IssueReporter const& GetIssueReporter() const { return m_ecdb->GetECDbImplR().GetIssueReporter(); }
 
@@ -69,7 +70,8 @@ struct ECSqlPreparedStatement : NonCopyableClass
         Utf8CP GetECSql() const { return m_ecsql.c_str(); }
         Utf8CP GetNativeSql() const;
 
-        JoinedTableECSqlStatement* GetJoinedTableECSqlStatement(ECN::ECClassId joinedTableId = ECN::ECClass::UNSET_ECCLASSID);
+        ParentOfJoinedTableECSqlStatement* CreateParentOfJoinedTableECSqlStatement(ECN::ECClassId joinedTableClassId);
+        ParentOfJoinedTableECSqlStatement* GetParentOfJoinedTableECSqlStatement() const;
 
         ECDbCR GetECDb() const { return *m_ecdb; }
         BeSQLite::Statement& GetSqliteStatementR() const { return m_sqliteStatement; }
@@ -206,13 +208,10 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct ECSqlUpdatePreparedStatement : public ECSqlNonSelectPreparedStatement
     {
-private:
-
 public:
-    explicit ECSqlUpdatePreparedStatement (ECDbCR ecdb) : ECSqlNonSelectPreparedStatement(ECSqlType::Update, ecdb) {}
-    ~ECSqlUpdatePreparedStatement () {}
-
-    DbResult Step ();
+    explicit ECSqlUpdatePreparedStatement(ECDbCR ecdb) : ECSqlNonSelectPreparedStatement(ECSqlType::Update, ecdb) {}
+    ~ECSqlUpdatePreparedStatement() {}
+    DbResult Step();
     };
 
 
@@ -224,10 +223,9 @@ public:
 struct ECSqlDeletePreparedStatement : public ECSqlNonSelectPreparedStatement
     {
 public:
-    explicit ECSqlDeletePreparedStatement (ECDbCR ecdb) : ECSqlNonSelectPreparedStatement(ECSqlType::Delete, ecdb) {}
-    ~ECSqlDeletePreparedStatement () {}
-
-    DbResult Step ();
+    explicit ECSqlDeletePreparedStatement(ECDbCR ecdb) : ECSqlNonSelectPreparedStatement(ECSqlType::Delete, ecdb) {}
+    ~ECSqlDeletePreparedStatement() {}
+    DbResult Step();
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

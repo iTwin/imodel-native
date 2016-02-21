@@ -37,12 +37,12 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         {
         if (info->HasParentOfJoinedTableECSql() && info->HasJoinedTableECSql())
             {
-            JoinedTableECSqlStatement* joinedTableStmt = ctx.GetECSqlStatementR().GetPreparedStatementP()->GetJoinedTableECSqlStatement(classMap.GetClass().GetId());
-            ECSqlStatus status = joinedTableStmt->Prepare(ctx.GetECDb(), info->GetParentOfJoinedTableECSql());
+            ParentOfJoinedTableECSqlStatement* parentOfJoinedTableStmt = ctx.GetECSqlStatementR().GetPreparedStatementP()->CreateParentOfJoinedTableECSqlStatement(classMap.GetClass().GetId());
+            ECSqlStatus status = parentOfJoinedTableStmt->Prepare(ctx.GetECDb(), info->GetParentOfJoinedTableECSql());
             if (status != ECSqlStatus::Success)
                 {
-                BeAssert("JoinedTableECSqlStatement shouldn't fail to prepare");
-                return status;
+                ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Preparing the ECSQL '%s' failed. Preparing the primary table ECSQL '%s' failed", exp.ToECSql().c_str(), info->GetParentOfJoinedTableECSql());
+                return ECSqlStatus::InvalidECSql;
                 }
             }
         }
@@ -77,7 +77,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
     auto assignmentListSnippets = NativeSqlBuilder::FlattenJaggedList(assignmentListSnippetLists, emptyIndexSkipList);
     nativeSqlBuilder.Append(" SET ").Append(assignmentListSnippets);
     if (assignmentListSnippets.size() == 0)
-        ctx.SetNativeNothingToUpdate(true);
+        ctx.SetOnlyExecuteStepTasks();
 
     //WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] WHERE (%s))
     NativeSqlBuilder topLevelWhereClause;
