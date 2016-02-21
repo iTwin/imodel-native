@@ -1,7 +1,7 @@
 
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/Parser.cpp $
+|     $Source: src/SymbolicExpression.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
