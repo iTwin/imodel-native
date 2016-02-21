@@ -793,49 +793,12 @@ ECDbForeignKeyRelationshipMap::ECDbForeignKeyRelationshipMap(ECRelationshipClass
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECDbForeignKeyRelationshipMap::TryGetEnd(ECRelationshipEnd& foreignKeyEnd) const
-    {
-    if (m_ca == nullptr)
-        return ECObjectsStatus::Error;
-
-    Utf8String foreignKeyEndStr;
-    ECObjectsStatus stat = CustomAttributeReader::TryGetTrimmedValue(foreignKeyEndStr, *m_ca, "End");
-    if (ECObjectsStatus::Success != stat)
-        return stat;
-
-    if (foreignKeyEndStr.empty())
-        return ECObjectsStatus::Success;
-
-    if (foreignKeyEndStr.EqualsI("source"))
-        foreignKeyEnd = ECRelationshipEnd_Source;
-    else if (foreignKeyEndStr.EqualsI("target"))
-        foreignKeyEnd = ECRelationshipEnd_Target;
-    else
-        return ECObjectsStatus::Error;
-
-    return ECObjectsStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   06 / 2015
-//+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus ECDbForeignKeyRelationshipMap::TryGetForeignKeyColumn(Utf8StringR foreignKeyColumnName) const
     {
     if (m_ca == nullptr)
         return ECObjectsStatus::Error;
 
     return CustomAttributeReader::TryGetTrimmedValue(foreignKeyColumnName, *m_ca, "ForeignKeyColumn");
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   06 / 2015
-//+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECDbForeignKeyRelationshipMap::TryGetForeignKeyClassIdColumn(Utf8StringR foreignKeyClassIdColumnName) const
-    {
-    if (m_ca == nullptr)
-        return ECObjectsStatus::Error;
-
-    return CustomAttributeReader::TryGetTrimmedValue(foreignKeyClassIdColumnName, *m_ca, "ForeignKeyClassIdColumn");
     }
 
 //---------------------------------------------------------------------------------------
