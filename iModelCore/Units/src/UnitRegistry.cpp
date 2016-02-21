@@ -177,7 +177,47 @@ void UnitRegistry::AddDefaultSystems ()
     AddSystem (CONSTANT);
     }
 
-UnitCP UnitRegistry::AddSIBaseUnit(Utf8CP unitName, Utf8Char dimensionSymbol)
+//---------------------------------------------------------------------------------------//
+// @bsimethod                                              Colin.Kerr           02/16
+//+---------------+---------------+---------------+---------------+---------------+------//
+UnitCP UnitRegistry::AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant)
+    {
+    if (Utf8String::IsNullOrEmpty(unitName))
+        {
+        LOG.errorv("Cannot create base unit because the input name is null");
+        return nullptr;
+        }
+
+    // TODO: Add back in checks for system name
+
+    if (NameConflicts(unitName))
+        {
+        LOG.errorv("Could not create unit '%s' because that name is already in use", unitName);
+        return nullptr;
+        }
+
+    PhenomenonCP phenomenon = LookupPhenomenon(phenomName);
+    if (nullptr == phenomenon)
+        {
+        LOG.errorv("Could not find phenomenon '%s'", phenomName);
+        return nullptr;
+        }
+
+    auto unit = Unit::Create(systemName, *phenomenon, unitName, m_nextId, definition, dimensionSymbol, factor, offset, isConstant);
+    if (nullptr == unit)
+        return nullptr;
+
+    ++m_nextId;
+
+    m_units.insert(bpair<Utf8String, UnitCP>(unitName, unit));
+
+    return unit;
+    }
+
+//---------------------------------------------------------------------------------------//
+// @bsimethod                                              Colin.Kerr           02/16
+//+---------------+---------------+---------------+---------------+---------------+------//
+UnitCP UnitRegistry::AddDimensionBaseUnit(Utf8CP unitName, Utf8Char dimensionSymbol)
     {
     if (Utf8String::IsNullOrEmpty(unitName))
         {
@@ -192,23 +232,7 @@ UnitCP UnitRegistry::AddSIBaseUnit(Utf8CP unitName, Utf8Char dimensionSymbol)
         return nullptr;
         }
     
-    if (NameConflicts(unitName))
-        {
-        LOG.errorv("Cannot create base unit '%s' because the name is already taken", unitName);
-        return nullptr;
-        }
-
-    auto unit = Unit::Create(SI, phenomenonName, unitName, m_nextId, unitName, dimensionSymbol, 1, 0, false);
-    if (nullptr == unit)
-        {
-        LOG.errorv("Failed to create base unit '%s'", unitName);
-        return nullptr;
-        }
-    ++m_nextId;
-
-    m_units.insert(bpair<Utf8String, UnitCP>(unitName, unit));
-
-    return unit;
+    return AddUnitInternal(phenomenonName, SI, unitName, unitName, dimensionSymbol, 1, 0, false);
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -221,33 +245,12 @@ UnitCP UnitRegistry::AddUnit (Utf8CP phenomName, Utf8CP systemName, Utf8CP unitN
         LOG.errorv("Could not create unit because unit name is null");
         return nullptr;
         }
-
-    // TODO: Add back in checks for system name and phenomenon
-
-    if (NameConflicts(unitName))
-        {
-        LOG.errorv("Could not create unit '%s' because that name is already in use", unitName);
-        return nullptr;
-        }
-
-    auto unit = Unit::Create (systemName, phenomName, unitName, m_nextId, definition, ' ', factor, offset, false);
-    if (nullptr == unit)
-        return nullptr;
-
-    PhenomenonCP phenomenon = LookupPhenomenon(unit->GetPhenomenon());
-    if (nullptr == phenomenon)
-        {
-        LOG.errorv("Could not find phenomenon '%s'", unit->GetPhenomenon());
-        return nullptr;
-        }
-
-    ++m_nextId;
-
-    m_units.insert (bpair<Utf8String, UnitCP>(unitName, unit));
-
-    return unit;
+    return AddUnitInternal(phenomName, systemName, unitName, definition, ' ', factor, offset, false);
     }
 
+//---------------------------------------------------------------------------------------//
+// @bsimethod                                              Colin.Kerr           02/16
+//+---------------+---------------+---------------+---------------+---------------+------//
 bool UnitRegistry::NameConflicts(Utf8CP name)
     {
     if (HasConstant(name))
@@ -267,31 +270,20 @@ bool UnitRegistry::NameConflicts(Utf8CP name)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UnitRegistry::AddConstant(Utf8CP phenomName, Utf8CP constantName, Utf8CP definition, double factor)
+UnitCP UnitRegistry::AddConstant(Utf8CP phenomName, Utf8CP constantName, Utf8CP definition, double factor)
     {
     if (Utf8String::IsNullOrEmpty(constantName))
         {
         LOG.error("Could not create constant because name is null or empty");
-        return BentleyStatus::ERROR;
+        return nullptr;
         }
 
-    if (NameConflicts(constantName))
-        {
-        LOG.errorv("Could not create constant with name '%s' because the name conflicts with an existing name", constantName);
-        return BentleyStatus::ERROR;
-        }
-
-    auto constant = Unit::Create(CONSTANT, phenomName, constantName, m_nextId, definition, ' ', factor, 0, true);
-    if (nullptr == constant)
-        return BentleyStatus::ERROR;
-
-    ++m_nextId;
-
-    m_units.insert(bpair<Utf8String, UnitCP>(constantName, constant));
-
-    return BentleyStatus::SUCCESS;
+    return AddUnitInternal(phenomName, CONSTANT, constantName, definition, ' ', factor, 0, true);
     }
 
+//---------------------------------------------------------------------------------------//
+// @bsimethod                                              Colin.Kerr           02/16
+//+---------------+---------------+---------------+---------------+---------------+------//
 BentleyStatus UnitRegistry::AddSynonym(UnitCP unit, Utf8CP synonymName)
     {
     if (Utf8String::IsNullOrEmpty(synonymName))
@@ -385,45 +377,3 @@ bool UnitRegistry::HasConstant (Utf8CP constantName) const
     return nullptr != constant;
     }
 
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-UnitCP UnitRegistry::LookupUnitBySubTypes (const Utf8Vector &numerator, const Utf8Vector &denominator) const
-    {
-    //auto n = Utf8Vector(numerator), d = Utf8Vector(denominator);
-    //
-    //sort(n.begin(), n.end());
-    //sort(d.begin(), d.end());
-
-    //auto comparison = [&](bpair<Utf8String, UnitCP> pair)
-    //    {
-    //    auto unit = pair.second;
-
-    //    if (n.size() != unit->Numerator().size())
-    //        return false;
-
-    //    if (d.size() != unit->Denominator().size())
-    //        return false;
-
-    //    // TODO: Is this necessary?  We sort when creating the unit
-    //    //sort (unit->GetNumerator().begin(), unit->GetNumerator().end());
-    //    //sort (unit->GetDenominator().begin(), unit->GetDenominator().end());
-
-    //    auto nmatch = mismatch (n.begin(), n.end(), unit->Numerator().begin());
-    //    if (nmatch.first != n.end())
-    //        return false;
-
-    //    auto dmatch = mismatch (d.begin(), d.end(), unit->Denominator().begin());
-    //    if (dmatch.first != d.end())
-    //        return false;
-
-    //    return true;
-    //    };
-
-    //auto iter = find_if (m_units.begin(), m_units.end(), comparison);
-    //if (iter != m_units.end())
-    //    return nullptr;
-
-    //return ((*iter).second);
-    return nullptr;
-    }

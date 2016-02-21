@@ -42,7 +42,9 @@ private:
     void AddSystem(Utf8CP systemName);
     void AddPhenomena(Utf8CP phenomenaName, Utf8CP definition);
     void AddBasePhenomena(Utf8Char dimensionalSymbol);
-    UnitCP AddSIBaseUnit(Utf8CP unitName, Utf8Char dimensionSymbol);
+    UnitCP AddDimensionBaseUnit(Utf8CP unitName, Utf8Char dimensionSymbol);
+
+    UnitCP AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant);
 
     bool NameConflicts(Utf8CP name);
 
@@ -50,13 +52,12 @@ public:
     UNITS_EXPORT static UnitRegistry & Instance();
     UNITS_EXPORT static void Clear();
 
-    UnitCP LookupUnitBySubTypes (const Utf8Vector &numerator, const Utf8Vector &denominator) const;
     // TODO: Wrap the return to be cleaner?
     bmap<Utf8String, UnitCP> const & AllUnits() const { return m_units; }
     
     // Register methods.
     UNITS_EXPORT UnitCP AddUnit(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double factor = 1, double offset = 0);
-    UNITS_EXPORT BentleyStatus AddConstant(Utf8CP phenomName, Utf8CP constantName, Utf8CP definition, double factor);
+    UNITS_EXPORT UnitCP AddConstant(Utf8CP phenomName, Utf8CP constantName, Utf8CP definition, double factor);
     
     UNITS_EXPORT BentleyStatus AddSynonym(UnitCP unit, Utf8CP synonymName);
 

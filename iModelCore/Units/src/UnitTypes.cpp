@@ -12,19 +12,20 @@ USING_NAMESPACE_BENTLEY_UNITS
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Unit::Unit(Utf8CP system, Utf8CP phenomena, Utf8CP name, int id, Utf8CP definition, Utf8Char dimensonSymbol, double factor, double offset, bool isConstant) :
+Unit::Unit(Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, int id, Utf8CP definition, Utf8Char dimensonSymbol, double factor, double offset, bool isConstant) :
     Symbol(name, definition, dimensonSymbol, id, factor, offset),
-    m_system(system), m_phenomenon(phenomena), m_isConstant(isConstant)
+    m_system(system), m_isConstant(isConstant)
     {
+    m_phenomenon = &phenomenon;
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitP Unit::Create (Utf8CP sysName, Utf8CP phenomName, Utf8CP unitName, int id, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant)
+UnitP Unit::Create (Utf8CP sysName, PhenomenonCR phenomenon, Utf8CP unitName, int id, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant)
     {
     LOG.debugv("Creating unit %s  Factor: %lf  Offset: %d", unitName, factor, offset);
-    return new Unit (sysName, phenomName, unitName, id, definition, dimensionSymbol, factor, offset, isConstant);
+    return new Unit (sysName, phenomenon, unitName, id, definition, dimensionSymbol, factor, offset, isConstant);
     }
 
 /*--------------------------------------------------------------------------------**//**

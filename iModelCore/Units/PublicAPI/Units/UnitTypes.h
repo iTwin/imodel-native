@@ -29,13 +29,13 @@ DEFINE_T_SUPER(Symbol)
 friend struct UnitRegistry;
 
 private:
-    Utf8String  m_system;
-    Utf8String  m_phenomenon;
-    bool        m_isConstant;
+    Utf8String      m_system;
+    PhenomenonCP    m_phenomenon;
+    bool            m_isConstant;
 
-    static UnitP Create (Utf8CP sysName, Utf8CP phenomName, Utf8CP unitName, int id, Utf8CP definition, Utf8Char baseDimensionSymbol, double factor, double offset, bool isConstant);
+    static UnitP Create (Utf8CP sysName, PhenomenonCR phenomenon, Utf8CP unitName, int id, Utf8CP definition, Utf8Char baseDimensionSymbol, double factor, double offset, bool isConstant);
 
-    Unit (Utf8CP system, Utf8CP phenomena, Utf8CP name, int id, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant);
+    Unit (Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, int id, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant);
 
     // Lifecycle is managed by the UnitRegistry so we don't allow copies or assignments.
     Unit (UnitCR unit) = delete;
@@ -46,10 +46,10 @@ public:
 
     UNITS_EXPORT double GetConversionTo(UnitCP unit) const;
 
-    bool   IsRegistered()    const;
-    Utf8CP GetPhenomenon()   const { return m_phenomenon.c_str(); }
+    bool IsRegistered()    const;
     bool IsConstant() const { return m_isConstant; }
 
+    PhenomenonCP GetPhenomenon()   const { return m_phenomenon; }
 };
 
 struct Phenomenon : Symbol

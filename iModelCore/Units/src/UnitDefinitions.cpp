@@ -947,29 +947,29 @@ void AddWarpingConstant(UnitRegistry& reg)
 void UnitRegistry::AddDefaultUnits ()
     {
     UnitRegistry& reg = UnitRegistry::Instance();
-    UnitCP unit = reg.AddSIBaseUnit("M", BasePhenomena::Length);
+    UnitCP unit = reg.AddDimensionBaseUnit("M", BasePhenomena::Length);
     reg.AddSynonym(unit, "METRE");
-    unit = reg.AddSIBaseUnit("KG", BasePhenomena::Mass);
+    unit = reg.AddDimensionBaseUnit("KG", BasePhenomena::Mass);
     reg.AddSynonym(unit, "KILOGRAM");
-    unit = reg.AddSIBaseUnit("S", BasePhenomena::Time);
+    unit = reg.AddDimensionBaseUnit("S", BasePhenomena::Time);
     reg.AddSynonym(unit, "SECOND");
-    unit = reg.AddSIBaseUnit("K", BasePhenomena::Temperature);
+    unit = reg.AddDimensionBaseUnit("K", BasePhenomena::Temperature);
     reg.AddSynonym(unit, "KELVIN");
     reg.AddSynonym(unit, "DEGREE_KELVIN");
-    unit = reg.AddSIBaseUnit("A", BasePhenomena::ElectricCurrent); //, BISQPrimUom);
+    unit = reg.AddDimensionBaseUnit("A", BasePhenomena::ElectricCurrent); //, BISQPrimUom);
     reg.AddSynonym(unit, "AMPERE");
-    unit = reg.AddSIBaseUnit("MOL", BasePhenomena::Mole); // Where mol is the SI gram mol or gmol.
+    unit = reg.AddDimensionBaseUnit("MOL", BasePhenomena::Mole); // Where mol is the SI gram mol or gmol.
     reg.AddSynonym(unit, "MOLE");
-    unit = reg.AddSIBaseUnit("CD", BasePhenomena::Luminosity);
+    unit = reg.AddDimensionBaseUnit("CD", BasePhenomena::Luminosity);
     reg.AddSynonym(unit, "CANDELA");
-    unit = reg.AddSIBaseUnit("RAD", BasePhenomena::PlaneAngle);
+    unit = reg.AddDimensionBaseUnit("RAD", BasePhenomena::PlaneAngle);
     reg.AddSynonym(unit, "RADIAN");
-    unit = reg.AddSIBaseUnit("STERAD", BasePhenomena::SolidAngle);
+    unit = reg.AddDimensionBaseUnit("STERAD", BasePhenomena::SolidAngle);
     reg.AddSynonym(unit, "STERADIAN");
-    unit = reg.AddSIBaseUnit("US$", BasePhenomena::Finance);
+    unit = reg.AddDimensionBaseUnit("US$", BasePhenomena::Finance);
     reg.AddSynonym(unit, "US_DOLLAR");
-    reg.AddSIBaseUnit("PERSON", BasePhenomena::Capita); //, BISQPrimUom);
-    reg.AddSIBaseUnit("ONE", BasePhenomena::Ratio); //, BISQPrimUom);
+    reg.AddDimensionBaseUnit("PERSON", BasePhenomena::Capita); //, BISQPrimUom);
+    reg.AddDimensionBaseUnit("ONE", BasePhenomena::Ratio); //, BISQPrimUom);
 
 
     AddLengths(reg);
