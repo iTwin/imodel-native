@@ -36,7 +36,7 @@ void DgnViewport::DestroyViewport()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::InvalidateScene() const
     {
-    m_sync.m_scene = true;
+    m_sync.InvalidateScene();
 
     if (m_viewController.IsValid())
         m_viewController->_InvalidateScene();
@@ -543,7 +543,7 @@ ViewportStatus DgnViewport::SetupFromViewController()
     DMap4d npcToView = CalcNpcToView();
     m_rootToView.InitProduct(npcToView, m_rootToNpc);
 
-    m_sync.m_controller = false;
+    m_sync.SetValidController();
 
     return ViewportStatus::Success;
     }

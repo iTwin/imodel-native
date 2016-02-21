@@ -84,11 +84,33 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
 
     struct SyncFlags
     {
-        bool m_controller = true;
-        bool m_scene = true;
-        bool m_screen = true;
-        bool m_renderPlan = true;
-        bool m_targetCenter = true;
+    private:
+        bool m_decorations = false;
+        bool m_query = false;
+        bool m_scene = false;
+        bool m_renderPlan = false;
+        bool m_controller = false;
+        bool m_rotatePoint = false;
+
+    public:
+        void InvalidateDecorations() {m_decorations=false;}
+        void InvalidateQuery() {m_query=false;}
+        void InvalidateScene() {m_scene=false; InvalidateQuery(); InvalidateDecorations();}
+        void InvalidateController() {m_controller=false; InvalidateScene();}
+        void InvalidateRenderPlan() {m_renderPlan=false; InvalidateScene();}
+        void InvalidateRotatePoint() {m_rotatePoint=false;}
+        void SetValidDecorations() {m_decorations=true;}
+        void SetValidQuery() {m_query=true;}
+        void SetValidScene() {m_scene=true;}
+        void SetValidController() {m_controller=true;}
+        void SetValidRenderPlan() {m_renderPlan=true;}
+        void SetValidRotatePoint() {m_rotatePoint=true;}
+        bool IsValidDecorations() const {return m_decorations;}
+        bool IsValidQuery() const {return m_query;}
+        bool IsValidScene() const {return m_scene;}
+        bool IsValidRenderPlan() const {return m_renderPlan;}
+        bool IsValidController() const {return m_controller;}
+        bool IsValidRotatePoint() const {return m_rotatePoint;}
     };
 
 protected:
@@ -170,8 +192,8 @@ public:
     void Destroy() {_Destroy();}
     DGNPLATFORM_EXPORT StatusInt ComputeVisibleDepthRange (double& minDepth, double& maxDepth, bool ignoreViewExtent = false);
     DGNPLATFORM_EXPORT StatusInt ComputeViewRange(DRange3dR, FitViewParams& params) ;
-    void SetNeedsRefresh() const {m_sync.m_screen=true;}
-    void SetNeedsHeal() const {m_sync.m_scene=true; SetNeedsRefresh();}
+    void SetNeedsRefresh() const {m_sync.InvalidateDecorations();}
+    void SetNeedsHeal() const {m_sync.InvalidateScene();}
     DGNPLATFORM_EXPORT bool UseClipVolume(DgnModelCP) const;
     DGNPLATFORM_EXPORT static int GetDefaultIndexedLineWidth(int index);
     DGNPLATFORM_EXPORT static void OutputFrustumErrorMessage(ViewportStatus errorStatus);
@@ -179,12 +201,12 @@ public:
     bool Allow3dManipulations() const {return m_viewController->Allow3dManipulations();}
     void DrawToolGraphics(ViewContextR context, bool isPreUpdate);
     void SetViewCmdTargetCenter(DPoint3dCP newCenter);
-    DPoint3dCP GetViewCmdTargetCenter() {return !m_sync.m_targetCenter ? &m_viewCmdTargetCenter : nullptr;}
+    DPoint3dCP GetViewCmdTargetCenter() {return !m_sync.IsValidRotatePoint() ? &m_viewCmdTargetCenter : nullptr;}
     Point2d GetScreenOrigin() const {return m_renderTarget->GetScreenOrigin();}
     DGNVIEW_EXPORT double PixelsFromInches(double inches) const;
     DGNVIEW_EXPORT void ForceHeal();
     StatusInt HealViewport(UpdatePlan const&);
-    bool GetNeedsHeal() {return m_sync.m_scene;}
+    bool GetNeedsHeal() {return m_sync.IsValidScene();}
     DGNVIEW_EXPORT void ForceHealImmediate(uint32_t timeout=500); // default 1/2 second
     DGNVIEW_EXPORT void SuspendForBackground();
     DGNVIEW_EXPORT void ResumeFromBackground(Render::Target* target);
