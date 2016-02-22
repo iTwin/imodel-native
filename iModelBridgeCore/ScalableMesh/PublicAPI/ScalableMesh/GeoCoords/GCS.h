@@ -244,11 +244,8 @@ public:
     GEOCOORDS_DLLE GCS&                     operator=                          (const GCS&                  rhs);
 
     GEOCOORDS_DLLE bool                     IsNull                             () const;
-
-    GEOCOORDS_DLLE bool                     HasGeospatialReference             () const;
+    
     GEOCOORDS_DLLE bool                     HasGeoRef                          () const;
-    GEOCOORDS_DLLE const GeospatialReference&                     
-                                            GetGeospatialReference             () const;
     GEOCOORDS_DLLE const GeoRef&            GetGeoRef                          () const;
 
     // TDORAY: Add geo spatial reference Edit accessors here. These may trigger object copy if shared.

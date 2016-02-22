@@ -420,7 +420,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     WString featureFilePath = name.append(L"_feature"); //temporary file, deleted after generation
     //IDTMFile::File::Ptr featureFilePtr = IDTMFile::File::Create(featureFilePath.c_str());
     SMSQLiteFilePtr sqliteFeatureFile = new SMSQLiteFile();
-    sqliteFeatureFile->Create(featureFilePath.c_str());
+    sqliteFeatureFile->Create(featureFilePath);
     HFCPtr<GenericTileStoreType>  pFeatureTileStore = new SMSQLiteFeatureTileStore<PointIndexExtentType>(sqliteFeatureFile);//new TileStoreType(featureFilePtr, (SCM_COMPRESSION_DEFLATE == m_compressionType));
     //pFeatureTileStore->StoreMasterHeader(NULL, 0);
     pDataIndex->SetFeatureStore(pFeatureTileStore);
@@ -773,8 +773,8 @@ int IScalableMeshSourceCreator::Impl::ImportRasterSourcesTo(HFCPtr<IndexType>& p
     HIMMosaic::RasterList rasterList;
     for (auto& source : filteredSources)
         {
-        const ILocalFileMoniker* moniker(dynamic_cast<const ILocalFileMoniker*>(&source->GetMoniker()));
-        WString path = WString(L"file://")+moniker->GetURL().GetPath();
+        //const ILocalFileMoniker* moniker(dynamic_cast<const ILocalFileMoniker*>(&source->GetPath()));
+        WString path = WString(L"file://") + source->GetPath();
         HFCPtr<HGF2DCoordSys>  pLogicalCoordSys;
         HFCPtr<HRSObjectStore> pObjectStore;
         HFCPtr<HRFRasterFile>  pRasterFile;

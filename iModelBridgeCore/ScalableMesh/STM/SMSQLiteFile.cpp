@@ -45,22 +45,24 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
     return result == BE_SQLITE_OK;
 }
 
-bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::WString filename, bool openReadOnly)
-{
-    char* tmpCharP = new char[filename.GetMaxLocaleCharBytes()];
-    filename.ConvertToLocaleChars(tmpCharP, filename.GetMaxLocaleCharBytes());
-    return Open(tmpCharP, openReadOnly);
-}
+bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::WString& filename, bool openReadOnly)
+    {
+    Utf8String utf8FileName(filename);        
+    return Open(utf8FileName.c_str(), openReadOnly);
+    }
 
 SMSQLiteFilePtr SMSQLiteFile::Open(const WString& filename, bool openReadOnly, StatusInt& status)
-{
+    {
     bool result;
     SMSQLiteFilePtr smSQLiteFile = new SMSQLiteFile();
-    result = smSQLiteFile->Open(filename, openReadOnly);
+
+    Utf8String utf8File(filename);
+
+    result = smSQLiteFile->Open(utf8File.c_str(), openReadOnly);
     // need to check version file ?
     status = result ? 1 : 0;
     return smSQLiteFile;
-}
+    }
 
 bool SMSQLiteFile::Create(BENTLEY_NAMESPACE_NAME::Utf8CP filename)
 {
@@ -201,12 +203,11 @@ assert(result == BE_SQLITE_OK);
     return result == BE_SQLITE_OK;
 }
 
-bool SMSQLiteFile::Create(BENTLEY_NAMESPACE_NAME::WString filename)
-{
-    char* tmpCharP = new char[filename.GetMaxLocaleCharBytes()];
-    filename.ConvertToLocaleChars(tmpCharP, filename.GetMaxLocaleCharBytes());
-    return Create(tmpCharP);
-}
+bool SMSQLiteFile::Create(BENTLEY_NAMESPACE_NAME::WString& filename)
+    {
+    Utf8String utf8FileName(filename);            
+    return Create(utf8FileName.c_str());
+    }
 
 bool SMSQLiteFile::SetMasterHeader(const SQLiteIndexHeader& newHeader)
     {

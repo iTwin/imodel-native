@@ -493,8 +493,8 @@ static ISMPointIndexFilter<POINT, EXTENT>* scm_createFilterFromType (ScalableMes
             return new ScalableMeshQuadTreeBCLIBProgressiveFilter1<POINT, EXTENT>();        
         case SCM_FILTER_DUMB_MESH:
             return new ScalableMeshQuadTreeBCLIBMeshFilter1<POINT, EXTENT>();        
-/*        case SCM_FILTER_CGAL_SIMPLIFIER:
-            return new ScalableMeshQuadTreeBCLIB_CGALMeshFilter<POINT, EXTENT>();*/
+        case SCM_FILTER_CGAL_SIMPLIFIER:
+            return new ScalableMeshQuadTreeBCLIB_CGALMeshFilter<POINT, EXTENT>();
         default :
             assert(!"Not supposed to be here");
         }
@@ -899,9 +899,9 @@ SMSQLiteFilePtr IScalableMeshCreator::Impl::GetFile(bool fileExists)
             assert(!m_scmFileName.empty());
             m_smSQLitePtr = new SMSQLiteFile();
             if (!fileExists)
-                success = m_smSQLitePtr->Create(m_scmFileName.c_str());
+                success = m_smSQLitePtr->Create(m_scmFileName);
             else
-                success = m_smSQLitePtr->Open(m_scmFileName.c_str(), false); // open in read/write
+                success = m_smSQLitePtr->Open(m_scmFileName, false); // open in read/write
         }
         else
            m_smSQLitePtr = dynamic_cast<const ScalableMeshBase&>(*m_scmPtr).GetDbFile();

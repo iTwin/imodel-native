@@ -13,10 +13,13 @@ baseDir         = $(_MakeFilePath)
 %include $(baseDir)ScalableMesh.mki
 
 #this means we can use CGAL with the modules that were licensed to us
-#%include $(BuildContext)SubParts/Files/LicensedComponents.mki
+%include $(BuildContext)SubParts/Files/LicensedComponents.mki
 
-#dirToSearch=$(BuildContext)VendorAPI/CGAL
-#%include cincapnd.mki
+dirToSearch=$(BuildContext)VendorAPI/CGAL
+%include cincapnd.mki
+
+dirToSearch=$(BuildContext)VendorAPI/Boost_1_5_7_0
+%include cincapnd.mki
 
 #----------------------------------------------------------------------
 #       Create output directories
@@ -31,7 +34,7 @@ always:
 always:
    @CreateSymLinks.py -d"$(BuildContext)PublicAPI/ScalableMesh=$(SCMPublicAPISrc)/ScalableMesh"
 
-CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB
+CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED
 
 #For legal reasons, not compiling these libraries or code depending on them right now.
 %if !defined (3DMesh)
@@ -193,7 +196,7 @@ $(o)ScalableMeshMesher$(oext) : $(stmDir)ScalableMeshMesher.cpp $(PCHHeaderDepen
 
 $(o)SMMeshIndex$(oext) : $(stmDir)SMMeshIndex.cpp $(stmDir)SMMeshIndex.hpp $(stmDir)SMMeshIndex.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
-#$(o)CGALEdgeCollapse$(oext) : $(stmDir)CGALEdgeCollapse.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)CGALEdgeCollapse$(oext) : $(stmDir)CGALEdgeCollapse.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)ScalableMeshCreator$(oext) : $(stmDir)ScalableMeshCreator.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
@@ -309,7 +312,7 @@ $(o)XYZAsciiFileImporter$(oext) : $(importerPluginsDir)XYZAsciiFileImporter.cpp 
 
 
 #   Importer from DcStmCore
-#$(o)DEMRasterImporter$(oext) : $(importerPluginsDir)DEMRasterImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)DEMRasterImporter$(oext) : $(importerPluginsDir)DEMRasterImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 #$(o)DGNLevelImporter$(oext) : $(importerPluginsDir)DGNLevelImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
@@ -400,12 +403,12 @@ LINKER_LIBRARIES_DELAYLOADED  = \
 #    $(ContextSubpartsLibs)RasterCore.lib \
 #    $(ContextSubpartsLibs)libboost_system-vc120-mt-1_57$(libext) \
 #    $(ContextSubpartsLibs)libboost_thread-vc120-mt-1_57$(libext) \
-#    $(ContextSubpartsLibs)CGAL.lib
 LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)Imagepp.lib \
     $(ContextSubpartsLibs)$(BeJsonCppLib) \
     $(ContextSubpartsLibs)$(BentleyGeomLib) \
-    $(ContextSubpartsLibs)DgnPlatform.lib
+    $(ContextSubpartsLibs)DgnPlatform.lib \
+    $(ContextSubpartsLibs)CGAL.lib
 
 %include $(sharedMki)LinkLibrary.mki
 

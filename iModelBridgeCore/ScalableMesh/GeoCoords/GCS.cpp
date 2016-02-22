@@ -621,19 +621,6 @@ bool GCS::IsNull () const
     return !m_implP->m_hasUnit; 
     }
 
-
-
-
-
-/*---------------------------------------------------------------------------------**//**
-* @description  
-* @bsimethod                                                  Raymond.Gauthier   09/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool GCS::HasGeospatialReference () const
-    {
-    return !m_implP->m_geoRef.IsNull();
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   09/2011
@@ -641,16 +628,6 @@ bool GCS::HasGeospatialReference () const
 bool GCS::HasGeoRef () const
     {
     return !m_implP->m_geoRef.IsNull();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @description  
-* @bsimethod                                                  Raymond.Gauthier   10/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-const GeospatialReference& GCS::GetGeospatialReference () const
-    {
-    assert(!m_implP->m_geoRef.IsNull());
-    return m_implP->m_geoRef;
     }
 
 /*---------------------------------------------------------------------------------**//**
