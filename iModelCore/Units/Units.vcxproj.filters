@@ -72,7 +72,7 @@
     <ClInclude Include="src\UnitsPCH.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\Units\SymbolicExpression.h">
+    <ClInclude Include="src\SymbolicExpression.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
