@@ -91,6 +91,7 @@ void RasterFileProperties::FromJson(Json::Value const& v)
 //----------------------------------------------------------------------------------------
 RasterFileModelPtr RasterFileModelHandler::CreateRasterFileModel(RasterFileModel::CreateParams const& params)
     {
+    DgnClassId classId(params.m_dgndb.Schemas().GetECClassId(RASTER_SCHEMA_NAME, RASTER_CLASSNAME_RasterFileModel));
     // Find resolved file name for the raster
     BeFileName fileName;
     BentleyStatus status = T_HOST.GetRasterAttachmentAdmin()._ResolveFileName(fileName, params.m_fileId, params.m_dgndb);
