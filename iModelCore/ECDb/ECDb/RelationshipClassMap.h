@@ -11,13 +11,6 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-enum class DataIntegrityEnforcementMethod
-    {
-    None,
-    ForeignKey,
-    Trigger
-    };
-
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      07/2014
 //+===============+===============+===============+===============+===============+======
@@ -52,7 +45,6 @@ struct RelationshipConstraintMap : NonCopyableClass
         bool TryGetSingleClassIdFromConstraint(ECN::ECClassId& classId) const;
         ECN::ECRelationshipConstraintCR GetRelationshipConstraint()const;
         bool IsSingleAbstractClass() const { return m_constraint.GetClasses().size() == 1 && m_constraint.GetClasses().front()->GetClassModifier() == ECN::ECClassModifier::Abstract; }
-
     };
 
 /*=================================================================================**//**
@@ -60,6 +52,14 @@ struct RelationshipConstraintMap : NonCopyableClass
 +===============+===============+===============+===============+===============+======*/
 struct RelationshipClassMap : ClassMap
 {
+public:
+    enum class ReferentialIntegrityMethod
+        {
+        None,
+        ForeignKey,
+        Trigger
+        };
+
 protected:
     static Utf8CP const DEFAULT_SOURCEECINSTANCEID_COLUMNNAME;
     static Utf8CP const DEFAULT_SOURCEECCLASSID_COLUMNNAME;
@@ -83,9 +83,7 @@ public:
     virtual ~RelationshipClassMap () {}
 
     ECN::ECRelationshipClassCR GetRelationshipClass () const { return *(GetClass ().GetRelationshipClassCP ()); }
-
     RelationshipConstraintMap const& GetConstraintMap (ECN::ECRelationshipEnd constraintEnd) const;
-
     PropertyMapCP GetConstraintECInstanceIdPropMap (ECN::ECRelationshipEnd constraintEnd) const;
     PropertyMapRelationshipConstraintClassId const* GetConstraintECClassIdPropMap (ECN::ECRelationshipEnd constraintEnd) const;
 
@@ -93,21 +91,10 @@ public:
     PropertyMapRelationshipConstraintClassId const* GetSourceECClassIdPropMap () const { return m_sourceConstraintMap.GetECClassIdPropMap (); }
     PropertyMapCP GetTargetECInstanceIdPropMap () const { return m_targetConstraintMap.GetECInstanceIdPropMap (); }
     PropertyMapRelationshipConstraintClassId const* GetTargetECClassIdPropMap () const { return m_targetConstraintMap.GetECClassIdPropMap (); }
-    virtual DataIntegrityEnforcementMethod GetDataIntegrityEnforcementMethod() const =0;
-    virtual bool RequiresJoin(ECN::ECRelationshipEnd endPoint) const
-        {
-        auto referencedEndClassIdPropertyMap = endPoint == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? GetSourceECClassIdPropMap() : GetTargetECClassIdPropMap();
-        if (!referencedEndClassIdPropertyMap->IsVirtual() && !referencedEndClassIdPropertyMap->IsMappedToClassMapTables())
-            return true;
-
-        return false;
-        }
-    bool IsReadonly() const
-        {
-        size_t sourceCount = GetECDbMap().GetTableCountOnRelationshipEnd(GetConstraintMap(ECN::ECRelationshipEnd::ECRelationshipEnd_Source).GetRelationshipConstraint());
-        size_t targetCount = GetECDbMap().GetTableCountOnRelationshipEnd(GetConstraintMap(ECN::ECRelationshipEnd::ECRelationshipEnd_Target).GetRelationshipConstraint());
-        return sourceCount > 1 || targetCount > 1;
-        }
+    
+    virtual ReferentialIntegrityMethod _GetDataIntegrityEnforcementMethod() const = 0;
+    virtual bool _RequiresJoin(ECN::ECRelationshipEnd) const;
+    virtual bool _IsReadonly() const { return false; }
     };
 
 /*=================================================================================**//**
@@ -152,31 +139,9 @@ public:
     PropertyMapRelationshipConstraintClassId const* GetReferencedEndECClassIdPropMap () const;
 
     static ClassMapPtr Create (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) { return new RelationshipClassEndTableMap (ecRelClass, ecDbMap, mapStrategy, setIsDirty); }
-    virtual DataIntegrityEnforcementMethod GetDataIntegrityEnforcementMethod() const override;
-    bool RequiresJoin(ECN::ECRelationshipEnd endPoint) const override
-        {
-        //We need to join if ECClassId is both SourceECClassId and TargetECClassId. This case of selfJoin where we must join.
-        if (endPoint == GetForeignEnd())
-            return false;
-
-        auto referencedEndClassIdPropertyMap = endPoint == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? GetSourceECClassIdPropMap() : GetTargetECClassIdPropMap();
-        if (!referencedEndClassIdPropertyMap->IsVirtual() && !referencedEndClassIdPropertyMap->IsMappedToClassMapTables())
-            return true;
-
-        std::vector<ECDbSqlColumn const*> sourceColumns, targetColumns;
-        GetSourceECClassIdPropMap()->GetColumns(sourceColumns);
-        GetTargetECClassIdPropMap()->GetColumns(targetColumns);
-
-        //SELF JOIN case
-        if (sourceColumns.size() == 1 && targetColumns.size() == 1)
-            {
-            return  sourceColumns.front() == targetColumns.front()
-                && sourceColumns.front()->GetPersistenceType() == PersistenceType::Persisted 
-                && targetColumns.front()->GetPersistenceType() == PersistenceType::Persisted;
-            }
-
-        return false;
-        }
+    virtual ReferentialIntegrityMethod _GetDataIntegrityEnforcementMethod() const override;
+    virtual bool _RequiresJoin(ECN::ECRelationshipEnd) const override;
+    virtual bool _IsReadonly() const override  { return !IsMappedToSingleTable(); }
     };
 
 /*==========================================================================
@@ -194,28 +159,28 @@ private:
 
 private:
     RelationshipClassLinkTableMap (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
-    virtual Type  _GetClassMapType () const override { return Type::RelationshipLinkTable; };
+    virtual Type _GetClassMapType () const override { return Type::RelationshipLinkTable; };
 
-    virtual MapStatus   _MapPart1 (SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
-    virtual MapStatus   _MapPart2 (SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
+    virtual MapStatus _MapPart1 (SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
+    virtual MapStatus _MapPart2 (SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
 
-    MapStatus           CreateConstraintPropMaps (RelationshipMapInfo const&, bool addSourceECClassIdColumnToTable, ECN::ECClassId defaultSourceECClassid, bool addTargetECClassIdColumnToTable, ECN::ECClassId defaultTargetECClassId);
+    MapStatus CreateConstraintPropMaps (RelationshipMapInfo const&, bool addSourceECClassIdColumnToTable, ECN::ECClassId defaultSourceECClassid, bool addTargetECClassIdColumnToTable, ECN::ECClassId defaultTargetECClassId);
 
-    void                AddIndices (SchemaImportContext&, ClassMapInfo const&);
-    void                AddIndex(SchemaImportContext&, RelationshipIndexSpec, bool addUniqueIndex);
-    static void         GenerateIndexColumnList(std::vector<ECDbSqlColumn const*>&, ECDbSqlColumn const* col1, ECDbSqlColumn const* col2, ECDbSqlColumn const* col3, ECDbSqlColumn const* col4);
+    void AddIndices (SchemaImportContext&, ClassMapInfo const&);
+    void AddIndex(SchemaImportContext&, RelationshipIndexSpec, bool addUniqueIndex);
 
-    bool                GetConstraintECInstanceIdColumnName (Utf8StringR columnName, ECN::ECRelationshipEnd relationshipEnd, ECDbSqlTable const& table) const;
+    bool GetConstraintECInstanceIdColumnName (Utf8StringR columnName, ECN::ECRelationshipEnd relationshipEnd, ECDbSqlTable const& table) const;
     virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ClassMapLoadContext&, ECDbClassMapInfo const&, IClassMap const* parentClassMap) override;
-    ECDbSqlColumn*      ConfigureForeignECClassIdKey(RelationshipMapInfo const&, ECN::ECRelationshipEnd relationshipEnd);
+    ECDbSqlColumn* ConfigureForeignECClassIdKey(RelationshipMapInfo const&, ECN::ECRelationshipEnd relationshipEnd);
 
+    static void GenerateIndexColumnList(std::vector<ECDbSqlColumn const*>&, ECDbSqlColumn const* col1, ECDbSqlColumn const* col2, ECDbSqlColumn const* col3, ECDbSqlColumn const* col4);
     static bool HasKeyProperties(ECN::ECRelationshipConstraint const&);
 public:
     ~RelationshipClassLinkTableMap () {}
-    static ClassMapPtr  Create (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) { return new RelationshipClassLinkTableMap (ecRelClass, ecDbMap, mapStrategy, setIsDirty); }
+    static ClassMapPtr Create (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) { return new RelationshipClassLinkTableMap (ecRelClass, ecDbMap, mapStrategy, setIsDirty); }
 
-    bool                GetConstraintECClassIdColumnName (Utf8StringR columnName, ECN::ECRelationshipEnd relationshipEnd, ECDbSqlTable const& table) const;
-    virtual DataIntegrityEnforcementMethod GetDataIntegrityEnforcementMethod() const override;
+    bool GetConstraintECClassIdColumnName (Utf8StringR columnName, ECN::ECRelationshipEnd relationshipEnd, ECDbSqlTable const& table) const;
+    virtual ReferentialIntegrityMethod _GetDataIntegrityEnforcementMethod() const override;
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

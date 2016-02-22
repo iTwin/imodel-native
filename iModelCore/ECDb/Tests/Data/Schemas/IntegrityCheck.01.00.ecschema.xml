@@ -40,7 +40,6 @@
                 <OnDeleteAction>Cascade</OnDeleteAction>
                 <OnUpdateAction>NoAction</OnUpdateAction>
                 <ForeignKeyColumn>SourceECInstanceId</ForeignKeyColumn>
-                <ForeignKeyClassIdColumn>SourceEClassId</ForeignKeyClassIdColumn>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(1,1)" polymorphic="true">

@@ -168,7 +168,7 @@ ECDbPolicy ECDbPolicyManager::DoGetClassPolicy(IClassMap const& classMap, IsVali
             if (classMap.IsRelationshipClassMap())
                 {
                 RelationshipClassMapCP relClassMap = static_cast<RelationshipClassMapCP> (&classMap);
-                if (relClassMap->IsReadonly())
+                if (relClassMap->_IsReadonly())
                     {
                     Utf8String notSupportedMessage;
                     notSupportedMessage.Sprintf("ECRelationshipClass '%s' is mapped to more than one table on its Foreign Key end. Therefore only ECSQL SELECT statements can be used against the relationship class.",

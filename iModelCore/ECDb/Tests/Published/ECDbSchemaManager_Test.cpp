@@ -1038,4 +1038,33 @@ TEST_F(ECDbSchemaManagerTests, IGeometryTypes)
     ASSERT_TRUE(stmt.GetValueGeometry(2)->IsSameStructureAndGeometry(*g3));
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                     Muhammad.Hassane                 02/16
+//+---------------+---------------+---------------+---------------+---------------+-----
+TEST_F (ECDbSchemaManagerTests, EnforceECEnumeration)
+    {
+    ECDbR ecdb = SetupECDb ("propertywithEnumerationType.ecdb",
+        SchemaItem ("<?xml version='1.0' encoding='utf-8' ?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            " <ECEnumeration typeName='FileType' backingTypeName='int' isStrict='False'>"
+            "   <ECEnumerator value = '0' displayLabel = 'txt' />"
+            "   <ECEnumerator value = '1' displayLabel = 'bat' />"
+            " </ECEnumeration>"
+            "  <ECEntityClass typeName='Foo' >"
+            "    <ECProperty propertyName='Type' typeName='FileType' description='Discrete set of file types as defined by the application.' />"
+            "  </ECEntityClass>"
+            "</ECSchema>"));
+    ASSERT_TRUE (ecdb.IsDbOpen ());
+
+    ECSqlStatement statement;
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "INSERT INTO ts.Foo VALUES(?)"));
+    ASSERT_EQ (ECSqlStatus::Success, statement.BindInt (1, 0));
+    ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
+    statement.Reset ();
+    statement.ClearBindings ();
+
+    ASSERT_EQ (ECSqlStatus::Success, statement.BindInt (1, 2));
+    ASSERT_NE (DbResult::BE_SQLITE_DONE, statement.Step ());
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECSqlStatementTestsSchemaHelper.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -28,8 +28,25 @@ struct ECSqlStatementTestsSchemaHelper
 
         static void setProductsValues (StandaloneECInstancePtr instance, int ProductId, Utf8CP productName, double unitPrice, bool productAvailable);
 
+        //Helper Methods to populate NestedStructArray Db
+        static bvector<IECInstancePtr> CreateECInstanceWithOutStructArrayProperty (BeSQLite::EC::ECDbR ecdb, int n, Utf8CP className);
+
+        static void InsertRelationshipInstance (BeSQLite::EC::ECDbR ecdb, IECInstancePtr sourceInstance, IECInstancePtr targetInstance, ECRelationshipClassCP relClass);
+
+        static bvector<IECInstancePtr> CreateECInstance_S4 (BeSQLite::EC::ECDbR ecdb, int n, Utf8CP className);
+
+        static bvector<IECInstancePtr> CreateECInstance_S3 (BeSQLite::EC::ECDbR ecdb, int n, Utf8CP className);
+
+        static bvector<IECInstancePtr> CreateECInstance_S2 (BeSQLite::EC::ECDbR ecdb, int n, Utf8CP className);
+
+        static bvector<IECInstancePtr> CreateECInstance_S1 (BeSQLite::EC::ECDbR ecdb, int n, Utf8CP className);
+
     public:
 
-        static void Populate (BeSQLite::EC::ECDbR ecdb);
+        static void PopulateECSqlStatementTestsDb (BeSQLite::EC::ECDbR ecdb);
 
+        //Populate NestedStructArray Db
+        static Utf8CP const s_testSchemaXml;
+        static bvector<IECInstancePtr> CreateECInstance (BeSQLite::EC::ECDbR ecdb, int n, Utf8CP className);
+        static void PopulateNestedStructArrayDb (BeSQLite::EC::ECDbR ecdb, bool insertRelationships);
     };

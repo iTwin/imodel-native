@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/SchemaImportTestFixture.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "SchemaImportTestFixture.h"
@@ -154,10 +154,10 @@ std::vector<SchemaImportTestFixture::IndexInfo> SchemaImportTestFixture::Retriev
 void SchemaImportTestFixture::AssertForeignKey(bool expectedToHaveForeignKey, ECDbCR ecdb, Utf8CP tableName, Utf8CP foreignKeyColumnName)
     {
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT sql FROM sqlite_master WHERE name=?"));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT sql FROM sqlite_master WHERE name=? COLLATE NOCASE"));
 
     stmt.BindText(1, tableName, Statement::MakeCopy::No);
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Did not find table " << tableName;
 
     Utf8String ddl(stmt.GetValueText(0));
 
@@ -168,9 +168,9 @@ void SchemaImportTestFixture::AssertForeignKey(bool expectedToHaveForeignKey, EC
     if (Utf8String::IsNullOrEmpty(foreignKeyColumnName))
         fkSearchString = "FOREIGN KEY (";
     else
-        fkSearchString.Sprintf("FOREIGN KEY ([%s", foreignKeyColumnName);
+        fkSearchString.Sprintf("FOREIGN KEY ([%s]", foreignKeyColumnName);
 
-    ASSERT_EQ(expectedToHaveForeignKey, ddl.find(fkSearchString) != ddl.npos);
+    ASSERT_EQ(expectedToHaveForeignKey, ddl.find(fkSearchString) != ddl.npos) << "Table: " << tableName << " FK column name: " << foreignKeyColumnName;
     }
 
 

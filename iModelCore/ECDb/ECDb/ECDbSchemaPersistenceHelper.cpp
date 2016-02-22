@@ -29,7 +29,7 @@ bool ECDbSchemaPersistenceHelper::ContainsECClass(ECDbCR db, ECClassCR ecClass)
 bool ECDbSchemaPersistenceHelper::TryGetECSchemaKey(SchemaKey& key, ECDbCR ecdb, ECSchemaId schemaId)
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != ecdb.GetCachedStatement(stmt, "SELECT Name, VersionMajor, VersionMiddle, VersionMinor FROM ec_Schema WHERE Id=?"))
+    if (BE_SQLITE_OK != ecdb.GetCachedStatement(stmt, "SELECT Name, VersionDigit1, VersionDigit2, VersionDigit3 FROM ec_Schema WHERE Id=?"))
         return false;
 
     if (BE_SQLITE_OK != stmt->BindInt64(1, schemaId))
@@ -50,7 +50,7 @@ BentleyStatus ECDbSchemaPersistenceHelper::GetECSchemaKeys(ECSchemaKeys& keys, E
     {
     keys.clear();
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT Id, Name, VersionMajor, VersionMiddle, VersionMinor, DisplayLabel FROM ec_Schema ORDER BY Name"))
+    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT Id, Name, VersionDigit1, VersionDigit2, VersionDigit3, DisplayLabel FROM ec_Schema ORDER BY Name"))
         return ERROR;
 
     while (stmt->Step() == BE_SQLITE_ROW)

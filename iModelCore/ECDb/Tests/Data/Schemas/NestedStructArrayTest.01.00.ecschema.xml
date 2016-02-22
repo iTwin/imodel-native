@@ -9,7 +9,7 @@
         </SchemaChangeTrackingState>
     </ECCustomAttributes>
     <ECEntityClass typeName="ClassA" modifier="None">
-        <ECCustomAttributes>
+		<ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Strategy>SharedTable</Strategy>
@@ -45,6 +45,7 @@
     </ECStructClass>
     <ECEntityClass typeName="DerivedA" modifier="None">
         <BaseClass>ClassA</BaseClass>
+		<ECProperty propertyName="PropDerivedA" typeName="int" readOnly="false"/>
         <ECStructArrayProperty propertyName="S1ARRAY" typeName="S1" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="BaseHasDerivedA" modifier="None" strength="referencing" strengthDirection="forward">
@@ -65,15 +66,18 @@
     </ECEntityClass>
     <ECEntityClass typeName="DerivedB" modifier="None">
         <BaseClass>ClassA</BaseClass>
+		<ECProperty propertyName="PropDerivedB" typeName="int" readOnly="false"/>
     </ECEntityClass>
     <ECEntityClass typeName="DoubleDerivedB" modifier="None">
         <BaseClass>DerivedB</BaseClass>
+		<ECProperty propertyName="PropDoubleDerivedB" typeName="int" readOnly="false"/>
     </ECEntityClass>
     <ECEntityClass typeName="DoubleDerivedA" modifier="None">
         <BaseClass>DerivedB</BaseClass>
+		<ECProperty propertyName="PropDoubleDerivedA" typeName="int" readOnly="false"/>
         <ECStructArrayProperty propertyName="S1ARRAY" typeName="S1" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="DerivedBOwnsChilds" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="DerivedBHasChildren" modifier="None" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
             <LinkTableRelationshipMap xmlns="ECDbMap.01.00"/>
         </ECCustomAttributes>
@@ -81,11 +85,12 @@
             <Class class="DerivedB"/>
         </Source>
         <Target cardinality="(0,N)" polymorphic="true">
-            <Class class="DoubleDerivedB"/>
             <Class class="DoubleDerivedA"/>
+			<Class class="DoubleDerivedB"/>
         </Target>
     </ECRelationshipClass>
     <ECEntityClass typeName="DoubleDerivedC" modifier="None">
         <BaseClass>DerivedA</BaseClass>
+		<ECProperty propertyName="PropDoubleDerivedC" typeName="int" readOnly="false"/>
     </ECEntityClass>
 </ECSchema>

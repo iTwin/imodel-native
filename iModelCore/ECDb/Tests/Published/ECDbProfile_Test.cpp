@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECDbProfile_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -13,7 +13,7 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-static const SchemaVersion EXPECTED_PROFILEVERSION (2, 8, 0, 0);
+static const SchemaVersion EXPECTED_PROFILEVERSION (3, 0, 0, 0);
 
 static const PropertySpec PROFILEVERSION_PROPSPEC ("SchemaVersion", "ec_Db");
 

@@ -110,6 +110,39 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
             }
         }
 
+    if (currentScopeECSqlType == ECSqlType::Delete || currentScopeECSqlType == ECSqlType::Update)
+        {
+        if (auto typeIdPM = dynamic_cast<PropertyMapRelationshipConstraintClassId const*>(propertyMap))
+            {
+            if (!typeIdPM->IsMappedToClassMapTables() && !typeIdPM->IsVirtual())
+                {
+                if (exp->GetClassRefExp()->GetType() != Exp::Type::ClassName)
+                    {
+                    BeAssert(exp->GetClassRefExp()->GetType() == Exp::Type::ClassName);
+                    return ECSqlStatus::InvalidECSql;
+                    }
+
+                if (auto endTableMap = dynamic_cast<RelationshipClassEndTableMap const*>(&static_cast<ClassNameExp const*>(exp->GetClassRefExp())->GetInfo().GetMap()))
+                    {
+                    auto classIdPropMap = endTableMap->GetConstraintMap(endTableMap->GetReferencedEnd()).GetECClassIdPropMap();
+                    auto ecInstanceidPropMap = endTableMap->GetConstraintMap(endTableMap->GetReferencedEnd()).GetECInstanceIdPropMap();
+                    if (classIdPropMap == typeIdPM)
+                        {
+                        auto classIdColumn = classIdPropMap->GetSingleColumn();
+                        NativeSqlBuilder str;
+                        str.AppendFormatted("(SELECT [%s] FROM [%s] WHERE [%s] = [%s] LIMIT 1)",
+                            classIdColumn->GetName().c_str(),
+                            classIdColumn->GetTable().GetName().c_str(),
+                            classIdColumn->GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId)->GetName().c_str(),
+                            ecInstanceidPropMap->GetSingleColumn()->GetName().c_str());
+
+                        nativeSqlSnippets.push_back(str);
+                        return ECSqlStatus::Success;
+                        }
+                    }
+                }
+            }
+        }
     NativeSqlBuilder::List propNameNativeSqlSnippets = propertyMap->ToNativeSql((classIdentifier.empty()? nullptr : classIdentifier.c_str()), currentScopeECSqlType, exp->HasParentheses());
     nativeSqlSnippets.insert(nativeSqlSnippets.end(), propNameNativeSqlSnippets.begin(), propNameNativeSqlSnippets.end());
 

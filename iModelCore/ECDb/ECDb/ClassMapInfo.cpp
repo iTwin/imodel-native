@@ -201,22 +201,18 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
         else if (Enum::Intersects(parentStrategy.GetOptions(), ECDbMapStrategy::Options::JoinedTable | ECDbMapStrategy::Options::ParentOfJoinedTable))
             {
             //! Find out if there is any primitive property that need mapping. Simply looking at local property count does not work with multi inheritence
-            bool requireTable = false;
+            bool requiresJoinedTable = false;
             for (ECPropertyCP property : GetECClass().GetProperties(true))
                 {
-                //only consider properties that are directly mapped to the table of the class
-                if (property->GetIsStructArray() || property->GetIsNavigation())
-                    continue;
-
                 if (parentClassMap->GetPropertyMap(property->GetName().c_str()) == nullptr)
                     {
-                    requireTable = true; //There is at least one property local or inherited that require mapping.
+                    requiresJoinedTable = true; //There is at least one property local or inherited that require mapping.
                     break;
                     }
                 }
 
             const bool parentIsParentOfJoinedTable = Enum::Contains(parentStrategy.GetOptions(), ECDbMapStrategy::Options::ParentOfJoinedTable);
-            if (parentIsParentOfJoinedTable && !requireTable)
+            if (parentIsParentOfJoinedTable && !requiresJoinedTable)
                 options = options | ECDbMapStrategy::Options::ParentOfJoinedTable;
             else
                 {
@@ -522,9 +518,7 @@ BentleyStatus RelationshipMapInfo::_InitializeFromSchema()
 
     if (hasForeignKeyRelMap)
         {
-        ECRelationshipEnd foreignKeyEnd = ECRelationshipEnd_Target;
-        if (ECObjectsStatus::Success != foreignKeyRelMap.TryGetEnd(foreignKeyEnd))
-            return ERROR;
+        ECRelationshipEnd foreignKeyEnd = relClass->GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? ECRelationshipEnd_Target : ECRelationshipEnd_Source;
 
         RelationshipEndColumns* foreignKeyColumnsMapping = nullptr;
         ECRelationshipConstraintCP foreignKeyConstraint = nullptr;
@@ -564,10 +558,7 @@ BentleyStatus RelationshipMapInfo::_InitializeFromSchema()
                 }
             }
 
-        if (ECObjectsStatus::Success != foreignKeyRelMap.TryGetForeignKeyClassIdColumn(foreignKeyClassIdColName))
-            return ERROR;
-
-        *foreignKeyColumnsMapping = RelationshipEndColumns(foreignKeyColName.c_str(), foreignKeyClassIdColName.c_str());
+        *foreignKeyColumnsMapping = RelationshipEndColumns(foreignKeyColName.c_str());
 
         Utf8String onDeleteActionStr;
         if (ECObjectsStatus::Success != foreignKeyRelMap.TryGetOnDeleteAction(onDeleteActionStr))
@@ -642,6 +633,57 @@ BentleyStatus RelationshipMapInfo::ResolveEndTables(EndTablesOptimizationOptions
     return m_sourceTables.empty() || m_targetTables.empty() ? ERROR : SUCCESS;
     }
 
+
+MapStatus RelationshipMapInfo::Validate(ECDbMapStrategy::Strategy strategy, RelationshipMapInfo::Cardinality cardinality)
+    {
+    ECRelationshipClassCR rel = *GetECClass().GetRelationshipClassCP();
+    if (rel.GetStrength() != StrengthType::Embedding)
+        return MapStatus::Success;
+
+    if (strategy == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable)
+        {
+        if (cardinality == RelationshipMapInfo::Cardinality::OneToOne)
+            {
+            if (rel.GetStrengthDirection() == ECRelatedInstanceDirection::Backward)
+                return MapStatus::Success;
+
+            m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "For embedding type relationship '%s' StengthDirection (Forward) does not match resolved MapStrategy (ForeignKeyRelationshipInSourceTable). StrengthDirection should be inverted to fix this issue.", rel.GetFullName());            
+            return MapStatus::Error;
+            }
+
+        if (cardinality == RelationshipMapInfo::Cardinality::ManyToOne)
+            {
+            if (rel.GetStrengthDirection() == ECRelatedInstanceDirection::Backward)
+                return MapStatus::Success;
+
+            m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "For embedding type relationship '%s' StengthDirection (Forward) does not match resolved MapStrategy (ForeignKeyRelationshipInSourceTable). StrengthDirection should be inverted to fix this issue.", rel.GetFullName());
+            return MapStatus::Error;
+            }
+        }
+    else if (strategy == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable)
+        {
+        if (cardinality == RelationshipMapInfo::Cardinality::OneToOne)
+            {
+            if (rel.GetStrengthDirection() == ECRelatedInstanceDirection::Forward)
+                return MapStatus::Success;
+
+            m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "For embedding type relationship '%s' StengthDirection (Backward) does not match resolved MapStrategy (ForeignKeyRelationshipInTargetTable). StrengthDirection should be inverted to fix this issue.", rel.GetFullName());
+            return MapStatus::Error;
+            }
+
+        if (cardinality == RelationshipMapInfo::Cardinality::OneToMany)
+            {
+            if (rel.GetStrengthDirection() == ECRelatedInstanceDirection::Forward)
+                return MapStatus::Success;
+
+            m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "For embedding type relationship '%s' StengthDirection (Backward) does not match resolved MapStrategy (ForeignKeyRelationshipInTargetTable). StrengthDirection should be inverted to fix this issue.", rel.GetFullName());
+            return MapStatus::Error;
+            }
+        }
+
+    BeAssert(false && "Unexpected map strategy");
+    return MapStatus::Error;
+    }
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Ramanujam.Raman                07 / 2012
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -689,7 +731,7 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
         if (userStrategyIsForeignKeyMapping)
             {
             m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                "Failed to map ECRelationshipClass %s. It implies a link table relationship with because of its cardinality or because it has ECProperties. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
+                "Failed to map ECRelationshipClass %s. It implies a link table relationship because of its cardinality or because it has ECProperties. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
                 GetECClass().GetFullName());
             return MapStatus::Error;
             }
@@ -712,8 +754,7 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
         return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::OwnTable, false) == SUCCESS ? MapStatus::Success : MapStatus::Error;
         }
 
-   
-
+    //FK type relationship mapping
     if (ResolveEndTables(EndTablesOptimizationOptions::ForeignEnd, EndTablesOptimizationOptions::ForeignEnd) == ERROR)
         {
         LogClassNotMapped(NativeLogging::LOG_WARNING, *relationshipClass, "Source or target constraints don't include any concrete classes or its classes are not mapped to tables.");
@@ -749,11 +790,21 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
                         }
 
                     resolvedStrategy = ECDbMapStrategy::Strategy::OwnTable;
+                    break;
                     }
-                else if (m_customMapType == CustomMapType::ForeignKeyOnSource)
+
+                if (m_customMapType == CustomMapType::ForeignKeyOnSource)
                     resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable;
-                else
+                else if (m_customMapType == CustomMapType::ForeignKeyOnTarget)
                     resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable;
+                else
+                    {
+                    BeAssert(m_customMapType == CustomMapType::None);
+                    if (relationshipClass->GetStrengthDirection() == ECRelatedInstanceDirection::Backward)
+                        resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable;
+                    else
+                        resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable;
+                    }
 
                 break;
                 }
@@ -814,6 +865,9 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
     else
         ResolveEndTables(EndTablesOptimizationOptions::ReferencedEnd, EndTablesOptimizationOptions::ReferencedEnd);
 
+    if (Validate(resolvedStrategy, m_cardinality) != MapStatus::Success)
+        return MapStatus::Error;
+
     return m_resolvedStrategy.Assign(resolvedStrategy, false) == SUCCESS ? MapStatus::Success : MapStatus::Error;
 
     }
@@ -864,14 +918,14 @@ std::vector<std::pair<Utf8String, Utf8String>> ClassIndexInfo::s_idSpecCustomAtt
 //static
 ClassIndexInfoPtr ClassIndexInfo::Create(ECDbCR ecdb, ECN::ECDbClassMap::DbIndex const& dbIndex)
     {
-    WhereConstraint whereConstraint = WhereConstraint::None;
+    bool addPropsAreNotNullWhereExp = false;
 
     Utf8CP whereClause = dbIndex.GetWhereClause();
     if (!Utf8String::IsNullOrEmpty(whereClause))
         {
         if (BeStringUtilities::Stricmp(whereClause, "IndexedColumnsAreNotNull") == 0 ||
             BeStringUtilities::Stricmp(whereClause, "ECDB_NOTNULL") == 0) //legacy support
-            whereConstraint = WhereConstraint::NotNull;
+            addPropsAreNotNullWhereExp = true;
         else
             {
             ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid where clause in ClassMap::DbIndex: %s. Only 'IndexedColumnsAreNotNull' is supported by ECDb.", dbIndex.GetWhereClause());
@@ -879,7 +933,7 @@ ClassIndexInfoPtr ClassIndexInfo::Create(ECDbCR ecdb, ECN::ECDbClassMap::DbIndex
             }
         }
 
-    return new ClassIndexInfo(dbIndex.GetName(), dbIndex.IsUnique(), dbIndex.GetProperties(), whereConstraint);
+    return new ClassIndexInfo(dbIndex.GetName(), dbIndex.IsUnique(), dbIndex.GetProperties(), addPropsAreNotNullWhereExp);
     }
 
 //---------------------------------------------------------------------------------
@@ -888,7 +942,7 @@ ClassIndexInfoPtr ClassIndexInfo::Create(ECDbCR ecdb, ECN::ECDbClassMap::DbIndex
 //static
 ClassIndexInfoPtr ClassIndexInfo::Clone(ClassIndexInfoCR rhs, Utf8CP newIndexName)
     {
-    return new ClassIndexInfo(newIndexName, rhs.GetIsUnique(), rhs.GetProperties(), rhs.GetWhere());
+    return new ClassIndexInfo(newIndexName, rhs.GetIsUnique(), rhs.GetProperties(), rhs.IsAddPropsAreNotNullWhereExp());
     }
 
 
@@ -955,7 +1009,7 @@ BentleyStatus ClassIndexInfo::CreateFromIdSpecificationCAs(bvector<ClassIndexInf
 
         bvector<Utf8String> indexPropNameVector;
         indexPropNameVector.push_back(idPropName);
-        ClassIndexInfoPtr indexInfo = new ClassIndexInfo(indexName.c_str(), false, indexPropNameVector, WhereConstraint::None);
+        ClassIndexInfoPtr indexInfo = new ClassIndexInfo(indexName.c_str(), false, indexPropNameVector, false);
         indexInfos.push_back(indexInfo);
         }
 

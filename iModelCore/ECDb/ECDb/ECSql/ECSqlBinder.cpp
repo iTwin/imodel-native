@@ -227,7 +227,7 @@ ECSqlStatus ECSqlParameterMap::RemapForJoinTable(ECSqlPrepareContext& ctx)
     if (joinInfo == nullptr)
         return st;
 
-    auto joinedTableStmt = ctx.GetECSqlStatementR().GetPreparedStatementP()->GetJoinedTableECSqlStatement();
+    auto joinedTableStmt = ctx.GetECSqlStatementR().GetPreparedStatementP()->GetParentOfJoinedTableECSqlStatement();
     if (joinedTableStmt == nullptr)
         return st;
 

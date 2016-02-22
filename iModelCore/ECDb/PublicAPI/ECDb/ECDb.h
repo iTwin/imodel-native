@@ -84,6 +84,8 @@ public:
 private:
     Impl* m_pimpl;
 
+    void Destroy();
+
 #if !defined (DOCUMENTATION_GENERATOR)
 protected:
     ECDB_EXPORT virtual DbResult _OnDbOpened() override;

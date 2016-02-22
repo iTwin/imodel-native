@@ -2460,19 +2460,31 @@ TEST_F (JoinedTableECDbMapStrategyTests, PolymorphicRelationshipWithStandAloneCl
     }
 
 //---------------------------------------------------------------------------------------
-// @bsiMethod                                      Muhammad Hassan                  12/15
+// @bsimethod                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
-void ApplyCustomAttributeAndImportSchema (ECDbR ecdb, ECSchemaPtr ecSchema)
+struct JoinedTableECSqlStatementsTests : ECDbMappingTestFixture
+    {
+    void ImportSchemaWithCA (ECSchemaPtr& ecSchema, Utf8CP className);
+
+    void SetUpECSqlStatementTestsDb ();
+
+    void SetUpNestedStructArrayDb ();
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  02/16
+//+---------------+---------------+---------------+---------------+---------------+------
+void JoinedTableECSqlStatementsTests::ImportSchemaWithCA (ECSchemaPtr& ecSchema, Utf8CP className)
     {
     ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext ();
-    readContext->AddSchemaLocater (ecdb.GetSchemaLocater ());
+    readContext->AddSchemaLocater (GetECDb ().GetSchemaLocater ());
     SchemaKey ecdbmapKey = SchemaKey ("ECDbMap", 1, 0);
     ECSchemaPtr ecdbmapSchema = readContext->LocateSchema (ecdbmapKey, SchemaMatchType::LatestCompatible);
     ASSERT_TRUE (ecdbmapSchema.IsValid ());
     readContext->AddSchema (*ecSchema);
     ecSchema->AddReferencedSchema (*ecdbmapSchema);
 
-    ECClassP personClass = ecSchema->GetClassP ("Person");
+    ECClassP personClass = ecSchema->GetClassP (className);
     ASSERT_TRUE (personClass != nullptr);
 
     ECClassCP ca = ecdbmapSchema->GetClassCP ("ClassMap");
@@ -2484,40 +2496,351 @@ void ApplyCustomAttributeAndImportSchema (ECDbR ecdb, ECSchemaPtr ecSchema)
     ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.AppliesToSubclasses", ECValue (true)) == ECObjectsStatus::Success);
     ASSERT_TRUE (personClass->SetCustomAttribute (*customAttribute) == ECObjectsStatus::Success);
 
-    ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (readContext->GetCache ()));
+    ASSERT_EQ (SUCCESS, GetECDb ().Schemas ().ImportECSchemas (readContext->GetCache ()));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  02/16
+//+---------------+---------------+---------------+---------------+---------------+------
+void JoinedTableECSqlStatementsTests::SetUpECSqlStatementTestsDb ()
+    {
+    SetupECDb ("JoinedTableECSqlStatementTests.ecdb");
+
+    ECSchemaPtr schemaPtr = ECDbTestUtility::ReadECSchemaFromDisk (L"ECSqlStatementTests.01.00.ecschema.xml", nullptr);
+    ASSERT_TRUE (schemaPtr != NULL);
+
+    ImportSchemaWithCA (schemaPtr, "Person");
+
+    ECSqlStatementTestsSchemaHelper::PopulateECSqlStatementTestsDb (GetECDb ());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  02/16
+//+---------------+---------------+---------------+---------------+---------------+------
+void JoinedTableECSqlStatementsTests::SetUpNestedStructArrayDb ()
+    {
+    SetupECDb ("JoinedTableECSqlStatementTests.ecdb");
+
+    ECSchemaPtr schemaPtr = ECDbTestUtility::ReadECSchemaFromDisk (L"NestedStructArrayTest.01.00.ecschema.xml", nullptr);
+    ASSERT_TRUE (schemaPtr != NULL);
+
+    ImportSchemaWithCA (schemaPtr, "ClassA");
+
+    ECSqlStatementTestsSchemaHelper::PopulateNestedStructArrayDb (GetECDb (), true);
+    }
+
+struct PowSqlFunction : ScalarFunction
+    {
+    private:
+
+        virtual void _ComputeScalar (Context& ctx, int nArgs, DbValue* args) override
+            {
+            if (args[0].IsNull () || args[1].IsNull ())
+                {
+                ctx.SetResultError ("Arguments to POW must not be NULL", -1);
+                return;
+                }
+
+            double base = args[0].GetValueDouble ();
+            double exp = args[1].GetValueDouble ();
+
+            double res = std::pow (base, exp);
+            ctx.SetResultDouble (res);
+            }
+
+    public:
+        PowSqlFunction () : ScalarFunction ("POW", 2, DbValueType::FloatVal) {}
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  12/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (JoinedTableECSqlStatementsTests, PopulateECSql_TestDbWithTestData)
+    {
+    SetUpECSqlStatementTestsDb ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  02/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (JoinedTableECSqlStatementsTests, PopulateECSql_NestedStructArrayDb)
+    {
+    SetUpNestedStructArrayDb ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  02/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (JoinedTableECSqlStatementsTests, UpdateForAbstractBaseClass)
+    {
+    SetUpECSqlStatementTestsDb ();
+
+    //update Instance
+    ECSqlStatement statement;
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (GetECDb (), "UPDATE ECST.Customer Set Phone=10000, PersonName.FirstName='Jones' WHERE PersonName.FirstName='Charles' AND PersonName.LastName='Baron'"));
+    ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
+    statement.Finalize ();
+
+    //verify Updated Instance
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (GetECDb (), "SELECT Phone FROM ECST.Person WHERE PersonName.FirstName='Jones' AND PersonName.LastName='Baron'"));
+    ASSERT_EQ (DbResult::BE_SQLITE_ROW, statement.Step ());
+    ASSERT_EQ (10000, statement.GetValueInt (0));
+    statement.Finalize ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  02/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (JoinedTableECSqlStatementsTests, DeleteForAbstractBaseClass)
+    {
+    SetUpECSqlStatementTestsDb ();
+
+    //Delete Instance
+    ECSqlStatement statement;
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (GetECDb (), "DELETE FROM ECST.Person WHERE PersonName.FirstName='Charles' AND PersonName.LastName='Baron'"));
+    ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
+    statement.Finalize ();
+
+    //Verify Delete
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (GetECDb (), "SELECT * FROM ECST.Person WHERE PersonName.FirstName='Charles' AND PersonName.LastName='Baron'"));
+    ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (JoinedTableECDbMapStrategyTests, PopulateECSql_TestDbWithTestData)
+TEST_F (JoinedTableECSqlStatementsTests, PersistSqlForQueryOnAbstractBaseClass)
     {
-    ECDbR ecdb = SetupECDb ("JoinedTableECSqlStatementTests.ecdb");
+    SetUpECSqlStatementTestsDb ();
 
-    ECSchemaPtr schemaPtr = ECDbTestUtility::ReadECSchemaFromDisk (L"ECSqlStatementTests.01.00.ecschema.xml", nullptr);
-    ASSERT_TRUE (schemaPtr != NULL);
-    
-    ApplyCustomAttributeAndImportSchema (ecdb, schemaPtr);
-
-    ECSqlStatementTestsSchemaHelper::Populate (ecdb);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsiMethod                                      Muhammad Hassan                  12/15
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (JoinedTableECDbMapStrategyTests, VerifyECSqlOnAbstractBaseClass)
-    {
-    ECDbR ecdb = SetupECDb ("JoinedTableECSqlStatementTests.ecdb");
-
-    ECSchemaPtr schemaPtr = ECDbTestUtility::ReadECSchemaFromDisk (L"ECSqlStatementTests.01.00.ecschema.xml", nullptr);
-    ASSERT_TRUE (schemaPtr != NULL);
-
-    ApplyCustomAttributeAndImportSchema (ecdb, schemaPtr);
     Utf8CP expectedGeneratedECSql = "SELECT [Person].[ECInstanceId] FROM (SELECT [ECST_Person].ECClassId, [ECST_Person].[ECInstanceId] FROM [ECST_Person]) [Person]";
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ECInstanceId FROM ECST.Person"));
-    ASSERT_EQ (DbResult::BE_SQLITE_DONE, stmt.Step ());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare (GetECDb (), "SELECT ECInstanceId FROM ECST.Person"));
+    ASSERT_EQ (DbResult::BE_SQLITE_ROW, stmt.Step ());
     ASSERT_STREQ (expectedGeneratedECSql, stmt.GetNativeSql ());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  02/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (JoinedTableECSqlStatementsTests, UnionTests)
+    {
+    SetUpECSqlStatementTestsDb ();
+
+    int rowCount;
+    ECSqlStatement stmt;
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (GetECDb (), "SELECT COUNT(*) FROM (SELECT CompanyName FROM ECST.Supplier UNION ALL SELECT CompanyName FROM ECST.Shipper)"));
+    ASSERT_EQ (stmt.Step (), BE_SQLITE_ROW);
+    int count = stmt.GetValueInt (0);
+    EXPECT_EQ (6, count);
+    stmt.Finalize ();
+
+    //Select Statement containing Union All Clause and also Order By clause
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (GetECDb (), "SELECT CompanyName, Phone FROM ECST.Supplier UNION ALL SELECT CompanyName, Phone FROM ECST.Shipper ORDER BY Phone"));
+    rowCount = 0;
+    Utf8CP expectedContactNames = "ABCD-Rio Grand-GHIJ-Rio Grand-Rue Perisnon-Salguero-";
+    Utf8String actualContactNames;
+    while (stmt.Step () != BE_SQLITE_DONE)
+        {
+        actualContactNames.append (stmt.GetValueText (0));
+        actualContactNames.append ("-");
+        rowCount++;
+        }
+    ASSERT_STREQ (expectedContactNames, actualContactNames.c_str ()) << stmt.GetECSql ();
+    ASSERT_EQ (6, rowCount);
+    stmt.Finalize ();
+
+    //Select Statement using UNION Clause, so we should get only distinct results
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (GetECDb (), "SELECT City FROM ECST.Supplier UNION SELECT City FROM ECST.Customer ORDER BY City"));
+    rowCount = 0;
+    Utf8CP expectedCityNames = "ALASKA-AUSTIN-CA-MD-NC-SAN JOSE-";
+    Utf8String actualCityNames;
+    while (stmt.Step () != BE_SQLITE_DONE)
+        {
+        actualCityNames.append (stmt.GetValueText (0));
+        actualCityNames.append ("-");
+        rowCount++;
+        }
+    ASSERT_STREQ (expectedCityNames, actualCityNames.c_str ()) << stmt.GetECSql ();
+    ASSERT_EQ (6, rowCount);
+    stmt.Finalize ();
+
+    //Select Statement Using UNION ALL Clause so we should get even Duplicate Results
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (GetECDb (), "SELECT City FROM ECST.Supplier UNION ALL SELECT City FROM ECST.Customer ORDER BY City"));
+    rowCount = 0;
+    expectedCityNames = "ALASKA-AUSTIN-CA-MD-NC-SAN JOSE-SAN JOSE-";
+    actualCityNames.clear ();
+    while (stmt.Step () != BE_SQLITE_DONE)
+        {
+        actualCityNames.append (stmt.GetValueText (0));
+        actualCityNames.append ("-");
+        rowCount++;
+        }
+    ASSERT_STREQ (expectedCityNames, actualCityNames.c_str ()) << stmt.GetECSql ();
+    ASSERT_EQ (7, rowCount);
+    stmt.Finalize ();
+
+    //use Custom Scaler function in union query
+    PowSqlFunction func;
+    ASSERT_EQ (0, GetECDb ().AddFunction (func));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (GetECDb (), "Select POW(ECInstanceId, 2), GetECClassId() ECClassId, ECInstanceId From ECST.Supplier UNION ALL Select POW(ECInstanceId, 2), GetECClassId() ECClassId, ECInstanceId From ECST.Customer ORDER BY ECInstanceId"));
+    rowCount = 0;
+    while (stmt.Step () != BE_SQLITE_DONE)
+        {
+        int base = stmt.GetValueInt (2);
+        ASSERT_EQ (std::pow (base, 2), stmt.GetValueInt (0));
+        rowCount++;
+        }
+    ASSERT_EQ (7, rowCount);
+    stmt.Finalize ();
+
+    //use aggregate function in Union Query
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (GetECDb (), "SELECT Count(*), AVG(Phone) FROM (SELECT Phone FROM ECST.Supplier UNION ALL SELECT Phone FROM ECST.Customer)"));
+    ASSERT_EQ (stmt.Step (), BE_SQLITE_ROW);
+    ASSERT_EQ (7, stmt.GetValueInt (0));
+    ASSERT_EQ (1400, stmt.GetValueInt (1));
+    stmt.Finalize ();
+
+    //Use GROUP BY clause in Union Query
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (GetECDb (), "SELECT COUNT(*), Phone FROM (SELECT GetECClassId() ECClassId, Phone FROM ECST.Supplier UNION ALL SELECT GetECClassId() ECClassId, Phone FROM ECST.Customer) GROUP BY ECClassId ORDER BY Phone"));
+
+    //Get Row one
+    ASSERT_TRUE (stmt.Step () == BE_SQLITE_ROW);
+    ASSERT_EQ (3, stmt.GetValueInt (0));
+    ASSERT_EQ (1300, stmt.GetValueDouble (1));
+
+    //Get Row two
+    ASSERT_TRUE (stmt.Step () == BE_SQLITE_ROW);
+    ASSERT_EQ (4, stmt.GetValueInt (0));
+    ASSERT_EQ (1700, stmt.GetValueDouble (1));
+
+    ASSERT_TRUE (stmt.Step () == BE_SQLITE_DONE);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  02/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (JoinedTableECSqlStatementsTests, PolymorphicUpdate)
+    {
+    // Create and populate a sample project
+    SetUpNestedStructArrayDb ();
+
+    //Updates the instances of ClassA all the Derived Classes Properties values should also be changed. 
+    ECSqlStatement stmt;
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (GetECDb (), "UPDATE nsat.ClassA SET T='UpdatedValue', I=2"));
+    ASSERT_EQ (BE_SQLITE_DONE, stmt.Step ());
+    stmt.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (GetECDb (), "SELECT ECInstanceId, GetECClassId(), I,T FROM nsat.ClassA"));
+    while (stmt.Step () != BE_SQLITE_DONE)
+        {
+        EXPECT_EQ (2, stmt.GetValueInt (2)) << "Int Value don't match for instance " << stmt.GetValueInt64 (0) << " with class id: " << stmt.GetValueInt64 (1);
+        EXPECT_STREQ ("UpdatedValue", stmt.GetValueText (3)) << "String value don't match for instance " << stmt.GetValueInt64 (0) << " with class id: " << stmt.GetValueInt64 (1);
+        }
+    stmt.Finalize ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  02/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (JoinedTableECSqlStatementsTests, PolymorphicDelete)
+    {
+    SetUpNestedStructArrayDb ();
+
+    ASSERT_TRUE (GetECDb ().TableExists ("nsat_DerivedA"));
+    ASSERT_TRUE (GetECDb ().TableExists ("nsat_DerivedB"));
+    ASSERT_FALSE (GetECDb ().TableExists ("nsat_DoubleDerivedA"));
+    ASSERT_FALSE (GetECDb ().TableExists ("nsat_DoubleDerivedC"));
+
+    //Delete all Instances of the base class, all the structArrays and relationships should also be deleted.
+    ECSqlStatement statement;
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (GetECDb (), "DELETE FROM nsat.ClassA"));
+    ASSERT_EQ (BE_SQLITE_DONE, statement.Step ());
+    statement.Finalize ();
+    GetECDb ().SaveChanges ();
+
+    bvector<Utf8String> tableNames = { "ClassA", "DerivedA", "DerivedB", "S1", "S2", "S3", "S4", "BaseHasDerivedA", "DerivedBHasChildren" };
+
+    for (Utf8StringCR tableName : tableNames)
+        {
+        Utf8String selectSql = "SELECT count(*) FROM nsat_";
+        selectSql.append (tableName);
+        Statement stmt;
+        ASSERT_EQ (BE_SQLITE_OK, stmt.Prepare (GetECDb (), selectSql.c_str ())) << "Prepare failed for " << selectSql.c_str ();
+        ASSERT_EQ (BE_SQLITE_ROW, stmt.Step ()) << "Step failed for " << selectSql.c_str ();
+        ASSERT_EQ (0, stmt.GetValueInt (0)) << "Table " << tableName.c_str () << " is expected to be empty after DELETE FROM nsat.ClassA";
+        stmt.Finalize ();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  02/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (JoinedTableECSqlStatementsTests, ExceptTests)
+    {
+    SetUpECSqlStatementTestsDb ();
+
+    ECSqlStatement stmt;
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (GetECDb (), "SELECT CompanyName FROM ECST.Supplier EXCEPT SELECT CompanyName FROM ECST.Shipper"));
+    int rowCount = 0;
+    Utf8CP expectedContactNames = "ABCD-GHIJ-";
+    Utf8String actualContactNames;
+    while (stmt.Step () != BE_SQLITE_DONE)
+        {
+        actualContactNames.append (stmt.GetValueText (0));
+        actualContactNames.append ("-");
+        rowCount++;
+        }
+    ASSERT_STREQ (expectedContactNames, actualContactNames.c_str()) << stmt.GetECSql ();
+    ASSERT_EQ (2, rowCount);
+    stmt.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (GetECDb (), "SELECT ContactTitle FROM ECST.Customer EXCEPT SELECT ContactTitle FROM ECST.Supplier"));
+    rowCount = 0;
+    expectedContactNames = "AM-Adm-SPIELMANN-";
+    actualContactNames.clear ();
+    while (stmt.Step () != BE_SQLITE_DONE)
+        {
+        actualContactNames.append (stmt.GetValueText (0));
+        actualContactNames.append ("-");
+        rowCount++;
+        }
+    ASSERT_STREQ (expectedContactNames, actualContactNames.c_str ()) << stmt.GetECSql ();
+    ASSERT_EQ (3, rowCount);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  02/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (JoinedTableECSqlStatementsTests, IntersectTests)
+    {
+    SetUpECSqlStatementTestsDb ();
+
+    ECSqlStatement stmt;
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (GetECDb(), "SELECT CompanyName FROM ECST.Supplier INTERSECT SELECT CompanyName FROM ECST.Shipper ORDER BY CompanyName"));
+    int rowCount = 0;
+    Utf8CP expectedContactNames = "Rio Grand";
+    Utf8String actualContactNames;
+    while (stmt.Step () != BE_SQLITE_DONE)
+        {
+        actualContactNames.append (stmt.GetValueText (0));
+        rowCount++;
+        }
+    ASSERT_STREQ (expectedContactNames, actualContactNames.c_str());
+    ASSERT_EQ (1, rowCount);
+    stmt.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (GetECDb(), "SELECT ContactTitle FROM ECST.Supplier INTERSECT SELECT ContactTitle FROM ECST.Customer ORDER BY ContactTitle"));
+    rowCount = 0;
+    expectedContactNames = "Brathion";
+    actualContactNames.clear ();
+    while (stmt.Step () != BE_SQLITE_DONE)
+        {
+        actualContactNames.append (stmt.GetValueText (0));
+        rowCount++;
+        }
+    ASSERT_STREQ (expectedContactNames, actualContactNames.c_str ());
+    ASSERT_EQ (1, rowCount);
     }
 
 //---------------------------------------------------------------------------------------

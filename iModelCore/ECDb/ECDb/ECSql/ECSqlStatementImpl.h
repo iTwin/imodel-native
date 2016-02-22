@@ -41,7 +41,6 @@ private:
     virtual ECSqlStatus _Prepare (ECDbCR ecdb, Utf8CP ecsql) override;
     virtual ECSqlPrepareContext _InitializePrepare (ECDbCR ecdb, Utf8CP ecsql) override;
 
-    void DoFinalize(bool removeFromRegistry);
     virtual void _Finalize() override;
 
     void UnregisterFromRegistry(ECDbCR);
@@ -53,6 +52,7 @@ public:
     ~Impl();
 
     ECSqlStatus Reprepare();
+    void DoFinalize(bool removeFromRegistry);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
