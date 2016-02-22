@@ -233,6 +233,10 @@ public:
     //! @param[in]  inWChar     Input string; this must be NULL-terminated
     BENTLEYDLL_EXPORT static BentleyStatus WCharToCurrentLocaleChar (AStringR localeStr, WCharCP inWChar);
 
+    //! Converts a WChar string to a pointer. The Microsoft swcanf method does not support the "%p" format specifier, so this method is needed to return the correct size pointer in 32- and 64- bit environments.
+    //! @param[in]  inWChar     Input string; this must be NULL-terminated. It must be of the form produced by using "0x%p" as the format specifier in an swprintf or similar statement (something like 0x1dab0310 in 32-bit or 0x000000014dab4008 in a 64-bit environment)
+    BENTLEYDLL_EXPORT static void* WCharToPointer (WCharCP inWChar);
+
     //! Converts a locale-encoded string to a WChar string.
     //! @note Up to count characters will be converted; less may be converted if a NULL is encountered earlier. If count is BeStringUtilities::AsManyAsPossible, the input is assumed to be NULL-terminated.
     //! @note The result is always cleared first, even if the input is NULL or empty. Further, if an error is encountered, the result will not contain partial results.
@@ -574,6 +578,12 @@ public:
     //! @remarks This overload is convenient when the caller wants to discover a fixed maximum number of arguments.
     //! @return Returns the number of output arguments filled.
     BENTLEYDLL_EXPORT static uint32_t ParseArguments (WCharCP inString, uint32_t numSubStrings, ...);
+
+    //! Default logic for parsing a string into substrings, where strings containing the delimiters treating quotes as user supplied argument list.  Tokenizes based on whitespace and does not tokenize within double-quoted substrings.
+    //! @param[out]     subStrings   The resulting sub strings will be added to this collection
+    //! @param[in]      inString     The string to tokenize; cannot be NULL or empty
+    //! @param[in]      delimiters (optional) Each character in the string is used as a delimiters. If omitted, the space and tab characters are used..
+    BENTLEYDLL_EXPORT static void ParseDelimitedString (bvector<WString>& subStrings, WCharCP inString, WCharCP delimiters);
 
     //! Formats an unsigned 64-bit integer using the same options supported by printf's "%x" and "%X" specifiers.
     //! @param[out]     dest                The buffer which will hold the string representation of the integer. Must not be NULL.

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/ReleaseMarshaller.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #pragma once
@@ -15,6 +15,9 @@
 #include <windows.h>
 
 BEGIN_BENTLEY_NAMESPACE
+
+//! @addtogroup BentleyLibrary
+//! @beginGroup
 
 //  The ReleaseMarshaller is used when implementing .net wrappers classes for native classes.
 //  Our wrapper classes often contain a pointer to a IRefCounted class. When that is the
@@ -48,7 +51,7 @@ BEGIN_BENTLEY_NAMESPACE
 //  mechanism, all the queued up instances are released, in the thread where they
 //  were created (rather than the Finalizer thread).
 
-typedef bvector<BentleyApi::IRefCounted*>   ReleaseMarshallerQueue_T;
+typedef bvector<IRefCounted*>      ReleaseMarshallerQueue_T;
 typedef ReleaseMarshallerQueue_T::iterator  ReleaseMarshallerQueueIterator_T;
 
 class ReleaseMarshaller
@@ -70,10 +73,14 @@ public:
     BENTLEYDLL_EXPORT static void UninitializeForThread();
     BENTLEYDLL_EXPORT static void Shutdown ();
 
+    BENTLEYDLL_EXPORT static void ReleaseThreadObjects ();
+
     BENTLEYDLL_EXPORT static ReleaseMarshaller* GetMarshaller();
 
     BENTLEYDLL_EXPORT void QueueEntry (IRefCounted*entry);
 };
+
+//! @endGroup
 
 END_BENTLEY_NAMESPACE
 

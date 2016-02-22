@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/ReleaseMarshaller.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)
@@ -56,6 +56,14 @@ ReleaseMarshaller* ReleaseMarshaller::GetMarshaller()
         marshaller->ReleaseAll ();
 
     return marshaller;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Dan.East                        02/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+void ReleaseMarshaller::ReleaseThreadObjects ()
+    {
+    GetMarshaller();    // Calls ReleaseAll()
     }
 
 /*---------------------------------------------------------------------------------**//**

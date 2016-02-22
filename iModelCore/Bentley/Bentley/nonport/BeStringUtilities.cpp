@@ -1380,7 +1380,7 @@ WChar        **argv,            // <=> where to build argv array; NULL means don
 WCharP         args,            // <=> where to place argument text; NULL means don't store text
 uint32_t      *numargs,         // <=  returns number of argv entries created
 uint32_t      *numchars,        // <=  number of characters used in args buffer
-WCharCP        auxDelimiters    // => other characters than can be used as separators/delimiters
+WCharCP        allDelimiters    // =>  the characters that can be used as separators/delimiters
 )
     {
     WCharCP p;
@@ -1468,7 +1468,15 @@ WCharCP        auxDelimiters    // => other characters than can be used as separ
             if (0 == *p)
                 break;
 
-            if ((!inquote && (L' ' == *p || L'\t' == *p || ((NULL != auxDelimiters) && (NULL != wcschr(auxDelimiters, *p))))))
+            if (nullptr != allDelimiters)
+                {
+                if (!inquote && (nullptr != wcschr(allDelimiters, *p)))
+                    {
+                    ++p;
+                    break;
+                    }
+                }
+            else if (!inquote && (L' ' == *p || L'\t' == *p))
                 {
                 ++p;
                 break;
@@ -1505,8 +1513,18 @@ void            BeStringUtilities::ParseArguments(bvector<WString>& subStrings, 
     argv       = (WChar**)_alloca((argc+1) * sizeof(WChar *) );
     argStrings = (WChar*)_alloca((numchars+1) * sizeof(WChar) );
 
+    // if there are auxDelimiters, add them to the usual space and tab.
+    WCharCP allDelimiters = nullptr;
+    WString allDelimiterString;
+    if (nullptr != auxDelimiters)
+        {
+        allDelimiterString.assign (L" \t");
+        allDelimiterString.append (auxDelimiters);
+        allDelimiters = allDelimiterString.c_str();
+        }
+
     // Actually split up the arguments
-    parseIntoArgcArgv(inString, argv, argStrings, &argc, &numchars, auxDelimiters);
+    parseIntoArgcArgv(inString, argv, argStrings, &argc, &numchars, allDelimiters);
 
     for (uint32_t iArg = 0; iArg < argc; iArg++)
         subStrings.push_back(argv[iArg]);
@@ -1551,6 +1569,27 @@ uint32_t        BeStringUtilities::ParseArguments(WCharCP inString, uint32_t num
         }
 
     return numParsed;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Barry.Bentley   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void            BeStringUtilities::ParseDelimitedString (bvector<WString>& subStrings, WCharCP inString, WCharCP delimiters)
+    {
+    uint32_t argc, numchars;
+    WChar   **argv, *argStrings;
+
+    // Determine the space needed for argc/argv
+    parseIntoArgcArgv(inString, NULL, NULL, &argc, &numchars, delimiters);
+    argv       = (WChar**)_alloca((argc+1) * sizeof(WChar *) );
+    argStrings = (WChar*)_alloca((numchars+1) * sizeof(WChar) );
+
+    // Actually split up the arguments
+    parseIntoArgcArgv(inString, argv, argStrings, &argc, &numchars, delimiters);
+
+    for (uint32_t iArg = 0; iArg < argc; iArg++)
+        subStrings.push_back(argv[iArg]);
+
     }
 
 
@@ -2244,6 +2283,28 @@ char* BeStringUtilities::Strncpy(char *strDest, size_t destLen, const char *strS
     }
 
 #endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   08/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void*   BeStringUtilities::WCharToPointer (WCharCP inWChar)
+    {
+    if ( (nullptr == inWChar) || (0 == *inWChar) )
+        return NULL;
+
+    void*   output = nullptr;
+    if (8 == sizeof (void*))
+        swscanf (inWChar, L"%I64x", &output);
+    else if (4 == sizeof (void*))
+        swscanf (inWChar, L"%x", &output);
+    else
+        {
+        // unexpected pointer size!
+        BeAssert (false);
+        }
+
+    return output;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
