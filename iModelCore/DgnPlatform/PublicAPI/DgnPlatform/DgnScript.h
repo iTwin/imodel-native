@@ -75,7 +75,8 @@ struct DgnScript
     //! Make sure that the script referenced by \a tsFunctionSpec is loaded.
     //! @param db   The DgnDb that is in use. The script does not have to be stored in the db.
     //! @param tsFunctionSpec Specifies a script in the library, optionally followed by the name of a function, separated with '.'  
-    DGNPLATFORM_EXPORT static DgnDbStatus LoadScript(DgnDbR db, Utf8CP tsFunctionSpec);
+    //! @param forceReload If true, the script is read and re-executed even if this name was seen and loaded before.
+    DGNPLATFORM_EXPORT static DgnDbStatus LoadScript(DgnDbR db, Utf8CP tsFunctionSpec, bool forceReload);
 }; 
 
 END_BENTLEY_DGN_NAMESPACE

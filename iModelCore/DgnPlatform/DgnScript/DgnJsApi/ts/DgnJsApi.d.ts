@@ -80,15 +80,16 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
          * Make sure that the specified script is loaded.
          * @param db         The name of the DgnDb to check for a local script library
          * @param scriptName The name which was used to register the script in the script librray
+         * @param forceReload  If true, the script's contents will be re-evaluated even if this script was previously loaded. Otherwise, the script is loaded and evaluated only once per session.
          * @return 0 (SUCCESS) if the script was loaded; otherwise, a non-zero error code.
          */
-        static LoadScript(db: DgnDbP, scriptName: Bentley_Utf8String): cxx_int32_t;
+        static LoadScript(db: DgnDbP, scriptName: Bentley_Utf8String, forceReload: cxx_bool): cxx_int32_t;
 
         /**
-         * Make sure that the specified library is loaded
-         * @param libName The name of the library that is to be loaded
-         * @note This function differs from LoadScript in that ImportLibrary is used to activate libraries that are provided by the app or the domain,
-         * where LoadScript is used to load scripts that are found in the script library.
+         * Make sure that the specified builtin script library is loaded.
+         * @param libName Identifies the library that is to be loaded
+         * @note This function differs from LoadScript in that ImportLibrary is used to activate builtin libraries that are provided by apps or domains,
+         * where LoadScript is used to load external scripts that are found in the script library or are loaded from a URL.
          */
         static ImportLibrary(libName: Bentley_Utf8String): void;
 

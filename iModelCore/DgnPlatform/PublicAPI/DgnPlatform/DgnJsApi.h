@@ -153,14 +153,10 @@ struct Logging : RefCountedBaseWithCreate // ***  NEEDS WORK: It should not be n
 //=======================================================================================
 struct Script : RefCountedBaseWithCreate // ***  NEEDS WORK: It should not be necessary to derive from RefCountedBase, since I suppress my constructor. This is a bug in BeJavaScript that should be fixed.
 {
-	static int32_t LoadScript(JsDgnDbP, Utf8StringCR scriptName);
+	static int32_t LoadScript(JsDgnDbP db, Utf8StringCR scriptName, bool forceReload);
 
-    //! Make sure the that specified library is loaded
-    //! @param libName  The name of the library that is to be loaded
     static void ImportLibrary (Utf8StringCR libName);
 
-    //! Report an error. An error is more than a message. The platform is will treat it as an error. For example, the platform may terminate the current command.
-    //! @param description  A description of the error
     static void ReportError(Utf8StringCR description);
 };
 

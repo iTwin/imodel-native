@@ -339,11 +339,11 @@ JsECInstanceP JsECClass::MakeInstance()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
-int32_t Script::LoadScript(JsDgnDbP db, Utf8StringCR scriptName)
+int32_t Script::LoadScript(JsDgnDbP db, Utf8StringCR scriptName, bool forceReload)
     {
     if (!db || !db->m_db.IsValid())
         return -1;
-    return (int32_t) DgnScript::LoadScript(*db->m_db, scriptName.c_str());
+    return (int32_t) DgnScript::LoadScript(*db->m_db, scriptName.c_str(), forceReload);
     }
 
 //---------------------------------------------------------------------------------------
