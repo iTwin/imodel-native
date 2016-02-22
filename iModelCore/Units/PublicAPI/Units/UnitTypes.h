@@ -19,12 +19,12 @@ BEGIN_BENTLEY_UNITS_NAMESPACE
 typedef bvector<Utf8String> Utf8Vector;
 
 struct UnitRegistry;
-struct SymbolicExpression;
+struct Expression;
 
 struct Symbol
     {
-    friend struct SymbolWithExponent;
-    friend struct SymbolicExpression;
+    friend struct ExpressionSymbol;
+    friend struct Expression;
 private:
     Utf8String  m_name;
     Utf8String  m_definition;
@@ -35,19 +35,17 @@ private:
     bool        m_dimensionless;
     
     mutable bool        m_evaluated;
-    SymbolicExpression * m_symbolExpression;   
+    Expression * m_symbolExpression;   
 
 protected:
     Symbol(Utf8CP name, Utf8CP definition, Utf8Char dimensionSymbol, int id, double factor, double offset);
     
-    SymbolicExpression& Evaluate(int depth, std::function<SymbolCP(Utf8CP)> getSymbolByName) const;
+    Expression& Evaluate(int depth, std::function<SymbolCP(Utf8CP)> getSymbolByName) const;
 protected:
     virtual ~Symbol();
     
-    // TODO: Do GetName, GetId, GetDefinition, IsBaseSymbol and IsDimensionless need to be virtual?  They are common between Unit and Phenomenon
-    
-    //virtual bool _IsCompatibleWith(SymbolCR rhs) const { return SymbolicExpression::DimensionallyCompatible(*this, rhs); }
-
+   // TODO: Do GetName, GetId, GetDefinition, IsBaseSymbol and IsDimensionless need to be virtual?  They are common between Unit and Phenomenon
+  
 public:
     UNITS_EXPORT Utf8CP GetName() const;
     UNITS_EXPORT int    GetId()   const;
@@ -55,6 +53,8 @@ public:
     UNITS_EXPORT double GetFactor() const;
     UNITS_EXPORT bool IsBaseSymbol() const;
     UNITS_EXPORT bool IsDimensionless() const;
+
+    bool IsCompatibleWith(SymbolCR rhs) const;
 
     // Binary comparison operators.
     bool operator== (SymbolCR rhs) const { return m_id == rhs.m_id; }

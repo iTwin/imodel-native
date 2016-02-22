@@ -13,7 +13,7 @@ USING_NAMESPACE_BENTLEY_UNITS
 
 Symbol::Symbol(Utf8CP name, Utf8CP definition, Utf8Char dimensionSymbol, int id, double factor, double offset) : 
     m_name(name), m_definition(definition), m_dimensionSymbol(dimensionSymbol), m_id(id), m_factor(factor), m_offset(offset), m_evaluated(false), 
-    m_symbolExpression(new SymbolicExpression())
+    m_symbolExpression(new Expression())
     {
     m_dimensionless = strcmp("ONE", m_definition.c_str()) == 0;
     }
@@ -54,14 +54,19 @@ bool Symbol::IsDimensionless() const
     return m_dimensionless; 
     }    
 
-SymbolicExpression& Symbol::Evaluate(int depth, std::function<SymbolCP(Utf8CP)> getSymbolByName) const
+Expression& Symbol::Evaluate(int depth, std::function<SymbolCP(Utf8CP)> getSymbolByName) const
     {
     if (!m_evaluated)
         {
-        SymbolicExpression::ParseDefinition(depth, m_definition.c_str(), *m_symbolExpression, 1, getSymbolByName);
+        Expression::ParseDefinition(depth, m_definition.c_str(), *m_symbolExpression, 1, getSymbolByName);
         m_evaluated = true;
         }
     return *m_symbolExpression;
+    }
+
+bool Symbol::IsCompatibleWith(SymbolCR rhs) const
+    {
+    return Expression::DimensionallyCompatible(*(this->m_symbolExpression), *(rhs.m_symbolExpression));
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -100,23 +105,23 @@ double Unit::GetConversionTo(UnitCP unit) const
         }
 
     // TODO: USING A MAX RECRUSION DEPTH TO CATCH CYCLES IS SUPER HACKY AND MAKES CHRIS T. MAD.  Replace with something that actually detects cycles.
-    SymbolicExpression fromExpression = Evaluate(0, [] (Utf8CP unitName) { return UnitRegistry::Instance().LookupUnit(unitName); });
-    SymbolicExpression toExpression = unit->Evaluate(0, [] (Utf8CP unitName) { return UnitRegistry::Instance().LookupUnit(unitName); });
+    Expression fromExpression = Evaluate(0, [] (Utf8CP unitName) { return UnitRegistry::Instance().LookupUnit(unitName); });
+    Expression toExpression = unit->Evaluate(0, [] (Utf8CP unitName) { return UnitRegistry::Instance().LookupUnit(unitName); });
     
     fromExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, this->GetName());
     toExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, unit->GetName());
 
-    if (!SymbolicExpression::DimensionallyCompatible(fromExpression, toExpression))
+    if (!Expression::DimensionallyCompatible(fromExpression, toExpression))
         {
         LOG.errorv("Cannot convert from %s: (%s) to %s: (%s) because they two units are not dimensionally compatible.  Returning a conversion factor of 0.0", 
                    this->GetName(), this->GetDefinition(), unit->GetName(), unit->GetDefinition());
         return 0.0;
         }
 
-    SymbolicExpression combinedExpression;
-    SymbolicExpression::Copy(fromExpression, combinedExpression);
+    Expression combinedExpression;
+    Expression::Copy(fromExpression, combinedExpression);
 
-    SymbolicExpression::MergeExpressions(GetDefinition(), combinedExpression, unit->GetDefinition(), toExpression, -1);
+    Expression::MergeExpressions(GetDefinition(), combinedExpression, unit->GetDefinition(), toExpression, -1);
     if (LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_DEBUG))
         {
         Utf8PrintfString combinedName("%s/%s", this->GetName(), unit->GetName());
@@ -126,7 +131,7 @@ double Unit::GetConversionTo(UnitCP unit) const
     for (auto const& unitExp : combinedExpression)
         {
        // TODO: Consider always doing positive exponents and dividing if exponent is negative
-       factor *= pow(unitExp->GetFactor(), unitExp->GetExponent());
+       factor *= pow(unitExp->GetSymbolFactor(), unitExp->GetExponent());
         }
 
     return factor;
@@ -134,9 +139,9 @@ double Unit::GetConversionTo(UnitCP unit) const
 
 Utf8String Phenomenon::GetPhenomenonDimension() const
     {
-    SymbolicExpression phenomenonExpression = Evaluate(0, [] (Utf8CP phenomenonName) { return UnitRegistry::Instance().LookupPhenomenon(phenomenonName); });
-    SymbolicExpression baseExpression;
-    SymbolicExpression::CreateExpressionWithOnlyBaseSymbols(phenomenonExpression, baseExpression, false);
+    Expression phenomenonExpression = Evaluate(0, [] (Utf8CP phenomenonName) { return UnitRegistry::Instance().LookupPhenomenon(phenomenonName); });
+    Expression baseExpression;
+    Expression::CreateExpressionWithOnlyBaseSymbols(phenomenonExpression, baseExpression, false);
     return baseExpression.ToString();
     }
 
