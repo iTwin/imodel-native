@@ -59,7 +59,7 @@ struct ScalableMeshDisplayCacheManager : public IScalableMeshDisplayCacheManager
 
         virtual BentleyStatus _DestroyCachedTexture(SmCachedDisplayTexture* cachedDisplayTexture) override;
 
-        ScalableMeshDisplayCacheManager(ViewContextR context);
+        ScalableMeshDisplayCacheManager(DgnDbCR dgbDb);
 
         ~ScalableMeshDisplayCacheManager();
 

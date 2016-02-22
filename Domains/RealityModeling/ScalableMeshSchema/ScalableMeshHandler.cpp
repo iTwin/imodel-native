@@ -12,6 +12,9 @@
 #include <ScalableMeshSchema\ScalableMeshHandler.h>
 #include "ScalableMeshDisplayCacheManager.h"
 
+#include <ScalableMesh\GeoCoords\GCS.h>
+
+
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_SCHEMA
@@ -109,14 +112,299 @@ bool ScalableMeshModel::_UnregisterTilesChangedEventListener(ITerrainTileChanged
 //----------------------------------------------------------------------------------------
 #define QUERY_ID 0 
 
-static double s_minScreenPixelsPerPoint 50;
+static double s_minScreenPixelsPerPoint = 50;
+
+bool IsWireframeRendering(ViewContextCR viewContext)
+    {    
+    // Check context render mode
+    switch (viewContext.GetViewFlags()->GetRenderMode())
+        {
+        case DgnRenderMode::ConstantShade:
+        case DgnRenderMode::SmoothShade:
+        case DgnRenderMode::Phong:
+        case DgnRenderMode::RayTrace:
+        case DgnRenderMode::Radiosity:
+        case DgnRenderMode::ParticleTrace:
+        case DgnRenderMode::RenderLuxology:
+            return false;
+                       
+        case DgnRenderMode::Wireframe:
+        case DgnRenderMode::CrossSection:
+        case DgnRenderMode::Wiremesh:
+        case DgnRenderMode::HiddenLine:
+        case DgnRenderMode::SolidFill:
+        case DgnRenderMode::RenderWireframe:
+            return true;
+        }
+        BeAssert(!"Unknown render mode");
+        return true;
+    }
+
+
+struct SmCachedGraphics : TransientCachedGraphics
+    {
+    explicit SmCachedGraphics (DgnDbR dgnDb, QvElem* qvElem) : TransientCachedGraphics (dgnDb) 
+        {
+        m_qvElem = qvElem;
+        }
+
+
+    virtual void _StrokeForCache(BentleyG06::Dgn::ViewContextR, double) override
+        {
+        }
+
+    void UnlinkQvElem()
+        {
+        m_qvElem = 0;
+        }
+
+    /*
+    virtual void _Draw (ViewContextR context, TransformCP transform)
+        {
+        if (nullptr != transform)
+            context.PushTransform (*transform);
+        
+            context.DrawCached (*this);
+        
+            if (nullptr != transform)
+                context.PopTransformClip ();
+        }
+        */
+    //bool IsCacheCreated() const {return nullptr != m_qvElem;}
+    };
+
+
+
+void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes,
+                              bvector<IScalableMeshCachedDisplayNodePtr>& overviewMeshNodes,                                                                                          
+                              ViewContextR                                context, 
+                              const DMatrix4d&                            storageToUors)
+    {    
+    static size_t s_callCount = 0;
+    
+    bool isOutputQuickVision = context.GetIViewDraw ().IsOutputQuickVision();
+
+
+    ElemMatSymbP matSymbP = context.GetElemMatSymb ();
+
+    matSymbP->Init ();
+    matSymbP->SetLineColor (ColorDef(0,0x77,0));
+    matSymbP->SetFillColor (ColorDef(0,0x77,0));    
+    
+    context.ResetContextOverrides(); // If not reset, last drawn override is applyed to dtm (Selected/Hide preview)
+    context.GetIDrawGeom ().ActivateMatSymb (matSymbP);
+
+                    
+    /*
+    if (hasViewChanged)
+        {
+        s_smLoader.ClearLoadedNodes();
+        s_smLoader.ClearRequestedNodes();
+        }
+        */
+
+    Transform storageToUorsTransform;
+    storageToUorsTransform.InitFrom(storageToUors);
+    context.PushTransform(storageToUorsTransform);
+
+
+    bvector<IScalableMeshCachedDisplayNodePtr> requestedNodes;
+    bvector<IScalableMeshCachedDisplayNodePtr> nodesWithoutQvElem;
+
+    if (overviewMeshNodes.size() > 0)
+        {
+        //NEEDS_WORK_SM : If kept needs clean up
+        for (size_t nodeInd = 0; nodeInd < overviewMeshNodes.size(); nodeInd++)
+            {                      
+            if (context.CheckStop())
+                break;            
+            
+            //NEEDS_WORK_SM_PROGRESSIVE : IsMeshLoaded trigger load header.
+            //assert(overviewMeshNodes[nodeInd]->IsHeaderLoaded() && overviewMeshNodes[nodeInd]->IsMeshLoaded());
+            /*
+            if (!meshNodes[nodeInd]->IsHeaderLoaded() || !meshNodes[nodeInd]->IsMeshLoaded())
+                requestedNodes.push_back(meshNodes[nodeInd]);
+            else
+            */            
+
+            for (size_t meshInd = 0; meshInd < overviewMeshNodes[nodeInd]->GetNbMeshes(); meshInd++)
+                {
+                SmCachedDisplayMesh* cachedMesh = 0;
+                QvElem* qvElem = 0;                
+                bool isEmptyMesh = false;
+
+                if (isOutputQuickVision && (SUCCESS == overviewMeshNodes[nodeInd]->GetCachedMesh(cachedMesh, meshInd)))
+                    {
+                    if (cachedMesh != 0)
+                        {                        
+                        qvElem = cachedMesh->m_qvElem;                    
+                        assert(qvElem != 0);
+                        }
+                    else
+                        {
+                        qvElem = 0;
+                        isEmptyMesh = true;
+                        }                                        
+                    }
+                else
+                    {                    
+                    /*NEEDS_WORK_SM : Not support yet.
+                    __int64 meshId = GetMeshId(overviewMeshNodes[nodeInd]->GetNodeId(), meshInd);
+
+                    qvElem = QvCachedNodeManager::GetManager().FindQvElem(meshId, dtmDataRef.get());                            
+                    */
+                    }                
+        
+                if (qvElem != 0)
+                    {   
+                    if (cachedMesh == 0)
+                        {
+                        //NEEDS_WORK_SM : Not support yet.
+                        //ActivateMaterial(overviewMeshNodes[nodeInd], meshInd, context);
+                        }
+                    
+                    SmCachedGraphics smCached(context.GetDgnDb(), qvElem);
+                    context.DrawCached(smCached);
+                    smCached.UnlinkQvElem();
+                    
+                    //context.DrawQvElem (qvElem, &storageToUorsTransform, 0, false, false, true);                                       
+                    }
+                else
+                if (!isEmptyMesh)
+                    {                                           
+                    //nodesWithoutQvElem.push_back(overviewMeshNodes[nodeInd]);                
+                    //NEEDS_WORK_SM_PROGRESSIVE : Getclip passed to progressive display engine
+                    /*
+                    bvector<bool> clips;
+                    dtmDataRef->GetVisibleClips(clips);
+                    IScalableMeshMeshPtr mrdtmMeshPtr(overviewMeshNodes[nodeInd]->GetMeshByParts(clips, meshInd));
+
+                    if (mrdtmMeshPtr != 0)
+                        {           
+                        ActivateMaterial(overviewMeshNodes[nodeInd], meshInd, context);
+
+                        __int64 meshId = GetMeshId(overviewMeshNodes[nodeInd]->GetNodeId(), meshInd);
+                        CreateQvElemForMesh(mrdtmMeshPtr, dtmDataRef, element, context, meshId, drawingInfo);                                                       
+                        }
+                        */
+                    }
+                }        
+            }   
+        }
+
+
+     if (meshNodes.size() > 0)
+        {
+        //NEEDS_WORK_SM : If kept needs clean up
+        for (size_t nodeInd = 0; nodeInd < meshNodes.size(); nodeInd++)
+            {                      
+            if (context.CheckStop())
+                break;            
+            
+            //NEEDS_WORK_SM_PROGRESSIVE : IsMeshLoaded trigger load header.
+            //assert(meshNodes[nodeInd]->IsHeaderLoaded() && meshNodes[nodeInd]->IsMeshLoaded());
+            /*
+            if (!meshNodes[nodeInd]->IsHeaderLoaded() || !meshNodes[nodeInd]->IsMeshLoaded())
+                requestedNodes.push_back(meshNodes[nodeInd]);
+            else
+            */
+            for (size_t meshInd = 0; meshInd < meshNodes[nodeInd]->GetNbMeshes(); meshInd++)                
+                {
+                SmCachedDisplayMesh* cachedMesh = 0;
+                QvElem* qvElem = 0;                
+                bool isEmptyNode = false;
+
+                if (isOutputQuickVision && (SUCCESS == meshNodes[nodeInd]->GetCachedMesh(cachedMesh, meshInd)))
+                    {
+                    if (cachedMesh != 0)
+                        {
+                        qvElem = cachedMesh->m_qvElem;                    
+                        assert(qvElem != 0);
+                        }
+                    else
+                        {
+                        qvElem = 0;
+                        isEmptyNode = true;
+                        }                    
+                    }
+                else
+                    {
+                    /*NEEDS_WORK_SM : Not support yet.
+                    __int64 meshId = GetMeshId(meshNodes[nodeInd]->GetNodeId(), meshInd);
+                    qvElem = QvCachedNodeManager::GetManager().FindQvElem(meshId, dtmDataRef.get());                            
+                    */
+                    }
+                        
+                if (qvElem != 0)
+                    {       
+                    if (cachedMesh == 0)
+                        {
+                        //NEEDS_WORK_SM : Not support yet.
+                        //ActivateMaterial(meshNodes[nodeInd], meshInd, context);
+                        }
+
+                    SmCachedGraphics smCached(context.GetDgnDb(), qvElem);
+                    context.DrawCached(smCached);
+                    smCached.UnlinkQvElem();
+                    }
+                else
+                if (!isEmptyNode)
+                    {                                           
+                    nodesWithoutQvElem.push_back(meshNodes[nodeInd]);                
+                    }
+                }        
+            }
+    
+        for (auto& node : nodesWithoutQvElem)
+            {
+            if (context.CheckStop())
+                break;     
+
+            bvector<bool> clips;
+            //NEEDS_WORK_SM : Not supported yet
+            //dtmDataRef->GetVisibleClips(clips);
+
+
+
+            for (size_t meshInd = 0; meshInd < node->GetNbMeshes(); meshInd++)
+                {
+                IScalableMeshMeshPtr mrdtmMeshPtr(node->GetMeshByParts(clips, meshInd));
+
+                if (mrdtmMeshPtr != 0)
+                    {         
+                    /*NEEDS_WORK_SM : Not supported yet
+                    ActivateMaterial(node, meshInd, context);
+
+                    __int64 meshId = GetMeshId(node->GetNodeId(), meshInd);
+                    CreateQvElemForMesh(mrdtmMeshPtr, dtmDataRef, element, context, meshId, drawingInfo);                                                   
+                    */
+                    }
+                }
+            }
+        }
+
+
+    if ((DrawPurpose::Update == context.GetDrawPurpose() || DrawPurpose::UpdateHealing == context.GetDrawPurpose()) && 
+        overviewMeshNodes.size() > 0)
+        {                   
+        //StartProgressiveDisplay(context);                
+        }
+    else
+        {        
+        if (overviewMeshNodes.size() == 0)
+            {
+            //s_smProgressiveDisplayHandler.EndProgressive();            
+            }        
+        }     
+    }
+
 
 void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     {
     if (context.GetViewport() == 0)
         return;
          
-    ScalableMeshDrawingInfoPtr nextDrawingInfoPtr(new ScalableMeshDrawingInfo(context));
+    ScalableMeshDrawingInfoPtr nextDrawingInfoPtr(new ScalableMeshDrawingInfo(&context));
 
     if ((m_currentDrawingInfoPtr != nullptr) &&
         (m_currentDrawingInfoPtr->GetDrawPurpose() != DrawPurpose::UpdateDynamic))
@@ -139,26 +427,31 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
                     m_currentDrawingInfoPtr->m_overviewNodes.clear();
 
                     assert(status == SUCCESS);
-                    return;
+                    //return;
                     }
                 else
                     {                                                
-                    m_meshNodes.clear();
-                    StatusInt status = scalableMeshProgressiveQueryEnginePtr->GetQueriedNodes(m_meshNodes, queryId);
+                    m_currentDrawingInfoPtr->m_meshNodes.clear();
+                    StatusInt status = m_progressiveQueryEngine->GetQueriedNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
                     assert(status == SUCCESS);                       
-                    return;
+                   // return;
                     }
                 }
+            /*
             else
                 {                    
                 return;
                 }
+                */
+
+            ProgressiveDrawMeshNode2(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_storageToUorsTransfo);                              
+            return;
             }                        
         }        
     
     BentleyStatus status;
 
-    status = m_currentDrawingInfoPtr->StopQuery(nextDrawingInfoPtr->GetViewNumber()); 
+    status = m_progressiveQueryEngine->StopQuery(nextDrawingInfoPtr->GetViewNumber()); 
     assert(status == SUCCESS);
                                    
     m_currentDrawingInfoPtr = nextDrawingInfoPtr;
@@ -178,14 +471,14 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
                                    
     bsiDMatrix4d_multiply(&localToView, &localToView, &m_storageToUorsTransfo);              
 
-    DPoint3d viewBox[8];
+    //DPoint3d viewBox[8];
 
     //NEEDS_WORK_SM : Remove from query
     //GetViewBoxFromContext(viewBox, _countof(viewBox), context, drawingInfo);        
     DMatrix4d rootToStorage;
 
     //Convert the view box in storage.
-    bool inverted = bsiDMatrix4d_invertQR(&rootToStorage, &scaleMatrix);
+    bool inverted = bsiDMatrix4d_invertQR(&rootToStorage, &m_storageToUorsTransfo);
 
     BeAssert(inverted != 0);
 
@@ -224,7 +517,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     
     viewDependentQueryParams->SetViewClipVector(clipVectorCopy);
                           
-    m_overviewNodes.clear();
+    m_currentDrawingInfoPtr->m_overviewNodes.clear();
     int queryId = nextDrawingInfoPtr->GetViewNumber();                 
     
     bvector<bool> clips;
@@ -232,32 +525,34 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     m_DTMDataRef->GetVisibleClips(clips);
     */
 
-    BentleyStatus status = scalableMeshProgressiveQueryEnginePtr->StartQuery(queryId, 
-                                                                             viewDependentQueryParams, 
-                                                                             m_currentDrawingInfoPtr->m_meshNodes, 
-                                                                             !IsWireframeRendering(*context), 
-                                                                             clips,
-                                                                             &m_currentDrawingInfoPtr->GetLocalToViewTransform(), 
-                                                                             &nextDrawingInfoPtr->GetLocalToViewTransform()); 
+    status = m_progressiveQueryEngine->StartQuery(queryId, 
+                                                  viewDependentQueryParams, 
+                                                  m_currentDrawingInfoPtr->m_meshNodes, 
+                                                  !IsWireframeRendering(context), 
+                                                  clips,
+                                                  &m_currentDrawingInfoPtr->GetLocalToViewTransform(), 
+                                                  &nextDrawingInfoPtr->GetLocalToViewTransform()); 
 
     assert(status == SUCCESS);
     
-    if (scalableMeshProgressiveQueryEnginePtr->IsQueryComplete(queryId))
+    if (m_progressiveQueryEngine->IsQueryComplete(queryId))
         {
         m_currentDrawingInfoPtr->m_meshNodes.clear();
-        status = scalableMeshProgressiveQueryEnginePtr->GetQueriedNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
+        status = m_progressiveQueryEngine->GetQueriedNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
         m_currentDrawingInfoPtr->m_overviewNodes.clear();
 
         assert(status == SUCCESS);
         }
     else
         {
-        status = scalableMeshProgressiveQueryEnginePtr->GetOverviewNodes(m_currentDrawingInfoPtr->m_overviewNodes, queryId);
+        status = m_progressiveQueryEngine->GetOverviewNodes(m_currentDrawingInfoPtr->m_overviewNodes, queryId);
         m_currentDrawingInfoPtr->m_overviewNodes.insert(m_currentDrawingInfoPtr->m_overviewNodes.end(), m_currentDrawingInfoPtr->m_meshNodes.begin(), m_currentDrawingInfoPtr->m_meshNodes.end());
         m_currentDrawingInfoPtr->m_meshNodes.clear();
         assert(m_currentDrawingInfoPtr->m_overviewNodes.size() > 0);
         assert(status == SUCCESS);
-        }                                                                    
+        }                         
+
+    ProgressiveDrawMeshNode2(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_storageToUorsTransfo);                              
     }                 
 
 //NEEDS_WORK_SM : Should be at application level
@@ -281,7 +576,10 @@ ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams con
     tmFileName.AppendToPath(params.m_dgndb.GetFileName().GetFileNameWithoutExtension().c_str());
     tmFileName.AppendString(L"\\terrain.stm");
 
-    OpenFile(tmFileName)    
+    if (BeFileName::DoesPathExist(tmFileName.c_str()))
+        {
+        OpenFile(tmFileName, GetDgnDb());    
+        }
     }
 
 //----------------------------------------------------------------------------------------
@@ -305,30 +603,27 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
 
     if (m_progressiveQueryEngine == nullptr)
         {
-        m_displayNodesCache = new ScalableMeshDisplayCacheManager(context);
+        m_displayNodesCache = new ScalableMeshDisplayCacheManager(dgnProject);
         m_progressiveQueryEngine = IScalableMeshProgressiveQueryEngine::Create(m_smPtr, m_displayNodesCache);
         }
 
-    const GeoCoords::GCS& gcs(m_smPtr->GetGCS()
-
-    double storageToUorsFactor;    
-    DgnGCSPtr dgnGcsPtr;
-
-    if (gcs.HasGeospatialReference())
-        {
-        dgnGcsPtr = DgnGCS::CreateGCS(gcs.GetGeospatialReference()->GetBasePtr().get(), dgnProject);       
-        }
-    else
-        {        
-        dgnGcsPtr = DgnGCS::CreateGCS(dgnProject);                      
-        }
+    const GeoCoords::GCS& gcs(m_smPtr->GetGCS());
 
     DPoint3d scale;
     scale.x = 1;
     scale.y = 1;
     scale.z = 1;
-    dgnGcsPtr->UorsFromCartesian(scale, scale);
     
+    if (gcs.HasGeoRef())
+        {
+        DgnGCSPtr dgnGcsPtr(DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), dgnProject));        
+        dgnGcsPtr->UorsFromCartesian(scale, scale);
+        }
+    else
+        {                
+        dgnProject.Units().GetDgnGCS()->UorsFromCartesian(scale, scale);
+        }
+           
     DPoint3d translation = {0,0,0};
     
     m_storageToUorsTransfo = DMatrix4d::FromScaleAndTranslation(scale, translation);                
@@ -460,7 +755,7 @@ IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDbR db, Utf8S
          
     RefCountedPtr<ScalableMeshModel> model(new ScalableMeshModel(DgnModel::CreateParams(db, classId, DgnModel::CreateModelCode(modelName))));
 
-    model->OpenFile(smFilename);
+    model->OpenFile(smFilename, db);
 
     //After Insert model pointer is handled by DgnModels.
     model->Insert();

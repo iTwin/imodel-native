@@ -14,6 +14,7 @@
 #include <ScalableMeshSchema/IMeshSpatialModel.h>
 #include <TerrainModel/TerrainModel.h>
 #include <ScalableMesh\IScalableMeshProgressiveQuery.h>
+#include <ScalableMesh\IScalableMeshQuery.h>
 
 
 SCALABLEMESH_SCHEMA_TYPEDEFS(ScalableMeshModel)
@@ -37,23 +38,24 @@ private :
     DPoint3d    m_low;
     DPoint3d    m_high;
 
-    bvector<Bentley::ScalableMesh::IScalableMeshCachedDisplayNodePtr> m_meshNodes;
-    bvector<Bentley::ScalableMesh::IScalableMeshCachedDisplayNodePtr> m_overviewNodes;
-            
+public : 
+
+    bvector<BentleyG06::ScalableMesh::IScalableMeshCachedDisplayNodePtr> m_meshNodes;
+    bvector<BentleyG06::ScalableMesh::IScalableMeshCachedDisplayNodePtr> m_overviewNodes;
+
 public : 
         
-    ScalableMeshDrawingInfo(ViewContextP viewContext)
-        : 
+    ScalableMeshDrawingInfo(ViewContextP viewContext)        
         {
         m_drawPurpose = viewContext->GetDrawPurpose();   
         const DMatrix4d localToView(viewContext->GetLocalToView());     
         memcpy(&m_localToViewTransformation, &localToView, sizeof(DMatrix4d));                
-        viewContext->GetViewCorners(m_low, m_high);
+        viewContext->GetViewport()->GetViewCorners(m_low, m_high);
         }
 
     ~ScalableMeshDrawingInfo()
         {
-        }
+        }    
 
     DrawPurpose GetDrawPurpose()
         {
@@ -62,7 +64,8 @@ public :
         
     int GetViewNumber()
         {
-        return m_viewInfo->GetViewNumber();
+        //NEEDS_WORK_SM : Default to 0
+        return 0;
         }    
     
     bool HasAppearanceChanged(const ScalableMeshDrawingInfoPtr& smDrawingInfoPtr)
@@ -71,7 +74,8 @@ public :
                (0 != memcmp(&smDrawingInfoPtr->m_low, &m_low, sizeof(DPoint3d))) ||
                (0 != memcmp(&smDrawingInfoPtr->m_high, &m_high, sizeof(DPoint3d)));        
         }
-    
+
+    const DMatrix4d& GetLocalToViewTransform() {return m_localToViewTransformation;}   
     };
 
 //=======================================================================================
@@ -117,8 +121,8 @@ struct ScalableMeshModel : IMeshSpatialModel
         virtual ~ScalableMeshModel();
 
         SCALABLEMESH_SCHEMA_EXPORT static ScalableMeshModelP CreateModel(BentleyApi::Dgn::DgnDbR dgnDb);
-        
-        void OpenFile(BeFileNameCR smFilename);
+                
+        void OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject);
 
         //! A DgnDb can have only one terrain. 
         SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP GetTerrainModelP(BentleyApi::Dgn::DgnDbCR dgnDb);

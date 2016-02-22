@@ -79,9 +79,9 @@ BentleyStatus ScalableMeshDisplayCacheManager::_DestroyCachedTexture(SmCachedDis
     return SUCCESS;
     }
 
-ScalableMeshDisplayCacheManager::ScalableMeshDisplayCacheManager(ViewContextR context)
+ScalableMeshDisplayCacheManager::ScalableMeshDisplayCacheManager(DgnDbCR dgbDb)
     {
-    m_qvCache = context.GetDgnDb().Models().GetQvCache();
+    m_qvCache = dgbDb.Models().GetQvCache();
     }
 
 ScalableMeshDisplayCacheManager::~ScalableMeshDisplayCacheManager()

@@ -5,18 +5,7 @@
 
     <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
     <!-- ////////////////////////////   ScalableMesh       /////////////////////////////////// -->
-    <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
-    
-    <Part Name="ScalableMeshHandler" BMakeFile="ScalableMeshHandler/handler.mke">
-        <SubPart PartName="ScalableMesh" PartFile="ScalableMesh" Repository="ScalableMesh" />
-        <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform" />
-        <Bindings>
-            <Libs>delivery/$(shlibprefix)ScalableMeshHandler$(libext)</Libs>
-            <Assemblies ProductDirectoryName="RealityAssemblies">delivery/$(shlibprefix)ScalableMeshHandler$(shlibext)</Assemblies> 
-            <PublicAPI Domain="ScalableMeshHandler" />
-        </Bindings>
-    </Part>
-    
+    <!-- ///////////////////////////////////////////////////////////////////////////////////// -->            
     <Part Name="ScalableMeshSchemaPublicAPI" BentleyBuildMakeFile="ScalableMeshSchema/ScalableMeshSchema.prewire.mke">
         <Bindings>
             <PublicAPI Domain="ScalableMeshSchema"/>
@@ -30,7 +19,7 @@
         <SubPart PartName="ScalableMeshSchemaPublicAPI"/>
         <SubPart PartName="ImagePP"         PartFile="ImagePP"      Repository="ImagePP" />
         <SubPart PartName="qvision"         PartFile="QuickVision"      Repository="QuickVision" />
-      <SubPart PartName="Core"         PartFile="TerrainModel"      Repository="TerrainModel" />
+        <SubPart PartName="Core"         PartFile="TerrainModel"      Repository="TerrainModel" />
         <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
         <SubPart PartName="ScalableMesh"           PartFile="ScalableMesh"          Repository="ScalableMesh" />
         <Bindings>
