@@ -48,8 +48,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT,EXTENT>::SMMeshIndexN
     m_isGraphLoaded = false;
     m_graphVec.SetDirty(false);
     m_graphVec.SetDiscarded(true);
-    m_isPtsIndiceLoaded = false;
-    
+    m_isPtsIndiceLoaded = false;            
     m_isUVLoaded = false;
     m_isUVsIndicesLoaded = false;
     m_ptsIndiceVec[0].SetDirty(false);
@@ -68,6 +67,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT,EXTENT>::SMMeshIndexN
     m_nodeHeader.m_textureID.resize(1);
     m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
 
+    m_nbClips = 0;
     m_differenceSets.SetDirty(false);
 #ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
@@ -89,16 +89,18 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_SMIndex = pi_rpParentNode->m_SMIndex;
     m_mesher2_5d = pi_rpParentNode->GetMesher2_5d();
     m_mesher3d = pi_rpParentNode->GetMesher3d();
-    m_isGraphLoaded = false;
+    m_isGraphLoaded = false;    
     m_graphVec.SetDirty(false);
     m_graphVec.SetDiscarded(true);
     m_isPtsIndiceLoaded = false;
     m_isUVLoaded = false;
-    m_isUVsIndicesLoaded = false;
+    m_isUVsIndicesLoaded = false;    
     m_ptsIndiceVec[0].SetDirty(false);
     m_uvVec.SetDirty(false);
     m_uvsIndicesVec[0].SetDirty(false);
     m_textureVec[0].SetDirty(false);
+
+    m_nbClips = 0;
     m_differenceSets.SetDirty(false);
     m_differenceSets.SetStore(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore());
     m_differenceSets.SetPool(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipPool());
@@ -144,6 +146,8 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_uvVec.SetDirty(false);
     m_uvsIndicesVec[0].SetDirty(false);
     m_textureVec[0].SetDirty(false);
+
+    m_nbClips = 0;
     m_differenceSets.SetDirty(false);
     m_differenceSets.SetStore(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore());
     m_differenceSets.SetPool(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipPool());
@@ -311,6 +315,8 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_isUVsIndicesLoaded = false;
     m_uvsIndicesVec[0].SetDirty(false);
     m_textureVec[0].SetDirty(false);
+
+    m_nbClips = 0;
     m_differenceSets.SetDirty(false);
     m_differenceSets.SetStore(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore());
     m_differenceSets.SetPool(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipPool());
@@ -363,8 +369,9 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_ptsIndiceVec[0].SetDirty(false);
     m_textureVec[0].SetDirty(false);
     m_uvsIndicesVec[0].SetDirty(false);
-
     m_uvVec.SetDirty(false);
+
+    m_nbClips = 0;
     m_differenceSets.SetDirty(false);
     m_differenceSets.SetStore(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore());
     m_differenceSets.SetPool(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipPool());
@@ -416,6 +423,8 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_nodeHeader.m_uvsIndicesID[0] = IDTMFile::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
     m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
+
+    m_nbClips = 0;
     m_differenceSets.SetDirty(false);
 #ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
@@ -460,6 +469,8 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_nodeHeader.m_uvID/*[0]*/ = IDTMFile::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
     m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
+
+    m_nbClips = 0;
     m_differenceSets.SetDirty(false);
 #ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
@@ -494,6 +505,8 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_uvVec.SetDirty(false);
     m_uvsIndicesVec[0].SetDirty(false);
     m_textureVec[0].SetDirty(false);
+
+    m_nbClips = 0;
     m_differenceSets.SetDirty(false);
     m_differenceSets.SetStore(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore());
     m_differenceSets.SetPool(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipPool());
