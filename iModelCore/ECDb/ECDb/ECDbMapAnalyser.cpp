@@ -1647,7 +1647,7 @@ void ECDbMapAnalyser::HandleLinkTable (Storage* fromStorage, std::map<ECDbMapAna
         std::set<ECDbSqlColumn const*> forignKeys;
         for (auto relationship : relationships)
             {
-            if (relationship->GetRelationshipClassMap().GetDataIntegrityEnforcementMethod() == DataIntegrityEnforcementMethod::Trigger)
+            if (relationship->GetRelationshipClassMap()._GetDataIntegrityEnforcementMethod() == RelationshipClassMap::ReferentialIntegrityMethod::Trigger)
                 {
                 if (isFrom)
                     forignKeys.insert(relationship->From().GetInstanceId()->GetSingleColumn());
@@ -1751,19 +1751,16 @@ void ECDbMapAnalyser::ProcessEndTableRelationships ()
         if (relationship->IsMarkedForCascadeDelete ())
             continue;
 
-        if (relationship->GetRelationshipClassMap().GetDataIntegrityEnforcementMethod() == DataIntegrityEnforcementMethod::ForeignKey)
+        if (relationship->GetRelationshipClassMap()._GetDataIntegrityEnforcementMethod() == RelationshipClassMap::ReferentialIntegrityMethod::ForeignKey)
             continue;
 
         bool isSelfRelationship = false;
         auto const lhsStorages = relationship->From ().GetStorages ();
         auto const rhsStorages = relationship->To ().GetStorages ();
         if (lhsStorages.size () == 1 && rhsStorages.size () == 1)
-            {
             isSelfRelationship = *lhsStorages.begin () == *rhsStorages.begin ();
-            }
 
         bool persistedInFrom = &relationship->From () == &relationship->ForeignEnd ();
-
         if (persistedInFrom)
             {
             for (auto toStorage : relationship->To ().GetStorages ())

@@ -24,16 +24,16 @@ ECSqlStatus ECSqlInsertPreparer::Prepare(ECSqlPrepareContext& ctx, InsertStateme
     auto const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
     if (auto info = ctx.GetJoinedTableInfo())
         {
-        auto joinedTableStmt = ctx.GetECSqlStatementR().GetPreparedStatementP()->GetJoinedTableECSqlStatement(classMap.GetClass().GetId());
-        auto status = joinedTableStmt->Prepare(ctx.GetECDb(), info->GetParentOfJoinedTableECSql());
+        ParentOfJoinedTableECSqlStatement* parentOfJoinedTableStmt = ctx.GetECSqlStatementR().GetPreparedStatementP()->CreateParentOfJoinedTableECSqlStatement(classMap.GetClass().GetId());
+        ECSqlStatus status = parentOfJoinedTableStmt->Prepare(ctx.GetECDb(), info->GetParentOfJoinedTableECSql());
         if (status != ECSqlStatus::Success)
             {
-            BeAssert("Base statement is generated statement should fail at prepare");
-            return status;
+            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Preparing the ECSQL '%s' failed. Preparing the primary table ECSQL '%s' failed", exp.ToECSql().c_str(), info->GetParentOfJoinedTableECSql());
+            return ECSqlStatus::InvalidECSql;
             }
 
         if (info->GetPrimaryECinstanceIdParameterIndex() > 0)
-            joinedTableStmt->SetECInstanceIdBinder(static_cast<int>(info->GetPrimaryECinstanceIdParameterIndex()));
+            parentOfJoinedTableStmt->SetECInstanceIdBinder(static_cast<int>(info->GetPrimaryECinstanceIdParameterIndex()));
         }
   
     NativeSqlSnippets insertNativeSqlSnippets;
@@ -547,7 +547,7 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
         nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(move(classIdNameSqliteSnippets));
 
         NativeSqlBuilder::List classIdSqliteSnippets {NativeSqlBuilder()};
-        if (auto joinedTableStatement = dynamic_cast<JoinedTableECSqlStatement const*>(&ctx.GetECSqlStatementR()))
+        if (auto joinedTableStatement = dynamic_cast<ParentOfJoinedTableECSqlStatement const*>(&ctx.GetECSqlStatementR()))
             {
             classIdSqliteSnippets[0].Append(joinedTableStatement->GetClassId());
             }
@@ -811,7 +811,7 @@ ECSqlInsertPreparer::ECInstanceIdMode ECSqlInsertPreparer::ValidateUserProvidedE
 
     ECClassId classId = classMap.GetClass().GetId();
     //override ECClassId in case of join table with secondary class id 
-    if (auto joinedTableStatement = dynamic_cast<JoinedTableECSqlStatement const*>(&ctx.GetECSqlStatementR()))
+    if (auto joinedTableStatement = dynamic_cast<ParentOfJoinedTableECSqlStatement const*>(&ctx.GetECSqlStatementR()))
         {
         classId = joinedTableStatement->GetClassId(); 
         }

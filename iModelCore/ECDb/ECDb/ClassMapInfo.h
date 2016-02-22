@@ -60,7 +60,6 @@ protected:
     virtual MapStatus _EvaluateMapStrategy();
 
     static void LogClassNotMapped (NativeLogging::SEVERITY severity, ECN::ECClassCR ecClass, Utf8CP explanation);
-
 public:
     ClassMapInfo(ECN::ECClassCR, ECDbMapCR);
     virtual ~ClassMapInfo() {}
@@ -92,7 +91,7 @@ private:
 
 public:
     RelationshipEndColumns() {}
-    RelationshipEndColumns(Utf8CP ecInstanceIdColumnName, Utf8CP ecClassIdColumnName) : m_ecInstanceIdColumnName(ecInstanceIdColumnName), m_ecClassIdColumnName(ecClassIdColumnName) {}
+    RelationshipEndColumns(Utf8CP ecInstanceIdColumnName, Utf8CP ecClassIdColumnName = nullptr) : m_ecInstanceIdColumnName(ecInstanceIdColumnName), m_ecClassIdColumnName(ecClassIdColumnName) {}
     Utf8CP GetECInstanceIdColumnName() const { return m_ecInstanceIdColumnName.c_str(); }
     Utf8CP GetECClassIdColumnName() const { return m_ecClassIdColumnName.c_str(); }
     };
@@ -139,6 +138,8 @@ private:
     virtual MapStatus _EvaluateMapStrategy();
     void DetermineCardinality(ECN::ECRelationshipConstraintCR source, ECN::ECRelationshipConstraintCR target);
     BentleyStatus ResolveEndTables(EndTablesOptimizationOptions source, EndTablesOptimizationOptions target);
+    MapStatus Validate(ECDbMapStrategy::Strategy strategy, RelationshipMapInfo::Cardinality cardinality);
+
 public:
     RelationshipMapInfo(ECN::ECRelationshipClassCR relationshipClass, ECDbMapCR ecdbMap) : ClassMapInfo(relationshipClass, ecdbMap), m_sourceColumnsMappingIsNull(true), m_targetColumnsMappingIsNull(true),
         m_customMapType(CustomMapType::None), m_allowDuplicateRelationships(false), 
@@ -166,22 +167,15 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct ClassIndexInfo : RefCountedBase
     {
-public:
-    enum class WhereConstraint
-        {
-        None,
-        NotNull
-        };
-
 private:
     Utf8String m_name;
     bool m_isUnique;
     bvector<Utf8String> m_properties;
-    WhereConstraint m_where;
+    bool m_addPropsAreNotNullWhereExp;
     static std::vector<std::pair<Utf8String, Utf8String>> s_idSpecCustomAttributeNames;
 
-    ClassIndexInfo(Utf8CP name, bool isUnique, bvector<Utf8String> const& properties, WhereConstraint whereConstraint)
-        : m_name(name), m_isUnique(isUnique), m_properties(properties), m_where(whereConstraint)
+    ClassIndexInfo(Utf8CP name, bool isUnique, bvector<Utf8String> const& properties, bool addPropsAreNotNullWhereExp)
+        : m_name(name), m_isUnique(isUnique), m_properties(properties), m_addPropsAreNotNullWhereExp(addPropsAreNotNullWhereExp)
         {}
 
     static BentleyStatus CreateFromIdSpecificationCAs(bvector<ClassIndexInfoPtr>& indexInfos, ECDbCR, ECN::ECClassCR);
@@ -198,7 +192,7 @@ public:
     Utf8CP GetName() const { return m_name.c_str();}
     bool GetIsUnique() const { return m_isUnique;}
     bvector<Utf8String> const& GetProperties() const{ return m_properties;}
-    WhereConstraint GetWhere() const { return m_where; }
+    bool IsAddPropsAreNotNullWhereExp() const { return m_addPropsAreNotNullWhereExp; }
     };
 
 //======================================================================================

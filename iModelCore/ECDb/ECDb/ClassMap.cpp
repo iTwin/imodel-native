@@ -716,7 +716,9 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                 return ERROR;
                 }
 
-            if (!propertyMap->GetProperty().GetIsPrimitive())
+            ECPropertyCR prop = propertyMap->GetProperty();
+            NavigationECPropertyCP navProp = prop.GetAsNavigationProperty();
+            if (!prop.GetIsPrimitive() && (navProp == nullptr || navProp->IsMultiple()))
                 {
                 issues.Report(ECDbIssueSeverity::Error,
                               "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid: "
@@ -770,33 +772,12 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
 
                 involvedTables.insert(&table);
                 totalColumns.push_back(column);
-                switch (indexInfo->GetWhere())
-                    {
-                        case EC::ClassIndexInfo::WhereConstraint::NotNull:
-                        {
-                        //if column is not nullable, no need to add IS NOT NULL expression to where clause of index
-                        if (column->GetConstraint().IsNotNull())
-                            break;
-
-                        if (!whereExpression.IsEmpty())
-                            whereExpression.AppendSpace().Append(BooleanSqlOperator::And, true);
-
-                        whereExpression.AppendEscaped(column->GetName().c_str()).AppendSpace();
-                        whereExpression.Append(BooleanSqlOperator::IsNot).Append("NULL");
-
-                        break;
-                        }
-
-                        default:
-                            break;
-                    }
                 }
             }
 
         ECDbSqlTable* involvedTable =  const_cast<ECDbSqlTable*>(*involvedTables.begin());
         if (nullptr == schemaImportContext.GetECDbMapDb().CreateIndex(m_ecDbMap.GetECDbR(), *involvedTable, indexInfo->GetName(), indexInfo->GetIsUnique(),
-                                                                      totalColumns, whereExpression.ToString(),
-                                                                      false, GetClass().GetId()))
+                                                                      totalColumns, indexInfo->IsAddPropsAreNotNullWhereExp(), false, GetClass().GetId()))
             {
             return ERROR;
             }
@@ -863,7 +844,7 @@ ECDbSqlColumn* ClassMap::FindOrCreateColumnForProperty(ClassMapCR classMap,Class
     {
     ColumnFactory::Specification::Strategy strategy = ColumnFactory::Specification::Strategy::CreateOrReuse;
     ColumnFactory::Specification::GenerateColumnNameOptions generateColumnNameOpts = ColumnFactory::Specification::GenerateColumnNameOptions::NameBasedOnClassIdAndCaseSaveAccessString;
-    ECDbSqlColumn::Type requestedColumnType = ECDbSqlHelper::PrimitiveTypeToColumnType(columnType);
+    ECDbSqlColumn::Type requestedColumnType = ECDbSqlColumn::PrimitiveTypeToColumnType(columnType);
  
     if (Enum::Contains(classMap.GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::SharedColumns))
         {
@@ -1354,10 +1335,10 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateStrategy(ColumnFactory::Specification c
 //-----------------------------------------------------------------------------------------
 ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseStrategy(Specification const& specifications, ECDbSqlTable& targetTable, ECClassId propertyLocalToClassId)
     {
-    auto existingColumn = specifications.GetColumnName().empty() ? nullptr : targetTable.FindColumnP (specifications.GetColumnName().c_str());
+    ECDbSqlColumn* existingColumn = specifications.GetColumnName().empty() ? nullptr : targetTable.FindColumnP (specifications.GetColumnName().c_str());
     if (existingColumn != nullptr && !IsColumnInUse(*existingColumn))
         {
-        if (ECDbSqlHelper::IsCompatible(existingColumn->GetType(), specifications.GetColumnType()))
+        if (ECDbSqlColumn::IsCompatible(existingColumn->GetType(), specifications.GetColumnType()))
             {
             if (GetTable().IsOwnedByECDb())
                 {

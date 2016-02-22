@@ -27,17 +27,17 @@ typedef int64_t ECDbClassMapId;
 
 enum class ColumnKind
     {
-    Unknown = 0x0U, //! Not known to ECDb or user define columns
-    ECInstanceId = 0x1U, //! ECInstanceId system column also primary key of the table
-    ECClassId = 0x2U, //! ECClassId system column. Use if more then on classes is mapped to this table
-    ParentECInstanceId = 0x4U, //! ParentECInstanceId column used in struct array
-    ECPropertyPathId = 0x8U, //! ECPropertyPathId column used in struct array
-    ECArrayIndex = 0x10U, //! ECArrayIndex column used in struct array
-    SourceECInstanceId = 0x20U,
-    SourceECClassId = 0x40U,
-    TargetECInstanceId = 0x80U,
-    TargetECClassId = 0x100U,
-    DataColumn = 0x200U, //! Data column defined by none key column in ECClass
+    Unknown = 0, //! Not known to ECDb or user define columns
+    ECInstanceId = 1, //! ECInstanceId system column also primary key of the table
+    ECClassId = 2, //! ECClassId system column. Use if more then on classes is mapped to this table
+    ParentECInstanceId = 4, //! ParentECInstanceId column used in struct array
+    ECPropertyPathId = 8, //! ECPropertyPathId column used in struct array
+    ECArrayIndex = 16, //! ECArrayIndex column used in struct array
+    SourceECInstanceId = 32,
+    SourceECClassId = 64,
+    TargetECInstanceId = 128,
+    TargetECClassId = 256,
+    DataColumn = 512, //! Data column defined by none key column in ECClass
     //Following is helper group for search operation. There cannot be a column with OR'ed flags
     ConstraintECInstanceId = SourceECInstanceId | TargetECInstanceId,
     NonRelSystemColumn = ECInstanceId | ECClassId | ParentECInstanceId | ECPropertyPathId | ECArrayIndex
@@ -259,9 +259,9 @@ struct ECDbSqlColumn : NonCopyableClass
         Double = 4, 
         Integer = 5, 
         Long = 6, 
-        String = 7,
-        Json = 8
+        String = 7
         };
+
     struct Constraint : NonCopyableClass
         {
     public:
@@ -311,7 +311,7 @@ struct ECDbSqlColumn : NonCopyableClass
             : m_name(name), m_ownerTable(owner), m_type(type), m_persistenceType(persistenceType), m_kind(ColumnKind::DataColumn), m_id(id)
             {}
 
-        virtual ~ECDbSqlColumn() {}
+        ~ECDbSqlColumn() {}
 
         ECDbColumnId GetId() const { return m_id; }
         void SetId(ECDbColumnId id) { m_id = id; }
@@ -322,16 +322,18 @@ struct ECDbSqlColumn : NonCopyableClass
         ECDbSqlTable&  GetTableR() const { return m_ownerTable; }
         Constraint const& GetConstraint() const { return m_constraints; };
         Constraint& GetConstraintR() { return m_constraints; };
-        bool IsReusable() const { return m_type == Type::Any; }
-        static Type StringToType(Utf8CP typeName);
-        static Utf8CP TypeToString(Type type);
+
         ColumnKind GetKind() const { return m_kind; }
         BentleyStatus SetKind(ColumnKind);
         BentleyStatus AddKind(ColumnKind);
-        const Utf8String GetFullName() const;
+
+        bool IsReusable() const { return m_type == Type::Any; }
+        Utf8String GetFullName() const;
         std::weak_ptr<ECDbSqlColumn> GetWeakPtr() const;
 
-        static const Utf8String BuildFullName(Utf8CP table, Utf8CP column);
+        static Type PrimitiveTypeToColumnType(ECN::PrimitiveType type);
+        static bool IsCompatible(Type lhs, Type rhs);
+        static Utf8String BuildFullName(Utf8CP table, Utf8CP column);
         static Utf8CP KindToString(ColumnKind);
     };
 
@@ -611,21 +613,6 @@ public:
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
-struct ECDbSqlHelper
-    {
-private:
-    ECDbSqlHelper();
-    ~ECDbSqlHelper();
-
-public:
-    static ECDbSqlColumn::Type PrimitiveTypeToColumnType (ECN::PrimitiveType type);
-    static bool IsCompatible (ECDbSqlColumn::Type target, ECDbSqlColumn::Type source);
-    };
-
-
-//======================================================================================
-// @bsiclass                                                 Affan.Khan         09/2014
-//======================================================================================
 struct ECDbPropertyPath : NonCopyableClass
     {
     private:
@@ -750,7 +737,7 @@ struct ECDbMapStorage
     private:
 
         const Utf8CP Sql_InsertPropertyPath = "INSERT OR REPLACE INTO ec_PropertyPath (Id, RootPropertyId, AccessString) VALUES (?,?,?)";
-        const Utf8CP Sql_InsertClassMap = "INSERT OR REPLACE INTO ec_ClassMap(Id, ParentId, ClassId, MapStrategy, MapStrategyOptions, MapStrategyAppliesToSubclasses) VALUES (?,?,?,?,?,?)";
+        const Utf8CP Sql_InsertClassMap = "INSERT INTO ec_ClassMap(Id, ParentId, ClassId, MapStrategy, MapStrategyOptions, MapStrategyAppliesToSubclasses) VALUES (?,?,?,?,?,?)";
         const Utf8CP Sql_DeleteClassMap = "DELETE FROM ec_ClassMap WHERE Id = ?";
 
         const Utf8CP Sql_InsertPropertyMap = "INSERT OR REPLACE INTO ec_PropertyMap (ClassMapId, PropertyPathId, ColumnId) VALUES (?,?,?)";
@@ -777,37 +764,31 @@ struct ECDbMapStorage
 
         ECDbSQLManager& m_manager;
     private:
-        ECDbPropertyPath* Set (std::unique_ptr<ECDbPropertyPath> propertyPath) const;
-        ECDbClassMapInfo* Set (std::unique_ptr<ECDbClassMapInfo> classMap) const;
-        CachedStatementPtr GetStatement (StatementType type) const;
-        DbResult InsertOrReplace () const;
-        DbResult InsertPropertyMap (ECDbPropertyMapInfo const& o) const;
-        DbResult InsertClassMap (ECDbClassMapInfo const& o) const;
-        DbResult InsertPropertyPath (ECDbPropertyPath const& o) const;
-        DbResult Read () const;
-        DbResult ReadPropertyMap (ECDbClassMapInfo&) const;
-        DbResult ReadClassMaps () const;
-        DbResult ReadPropertyPaths () const;
+        ECDbPropertyPath* Set(std::unique_ptr<ECDbPropertyPath> propertyPath) const;
+        ECDbClassMapInfo* Set(std::unique_ptr<ECDbClassMapInfo> classMap) const;
+        CachedStatementPtr GetStatement(StatementType type) const;
+        DbResult InsertOrReplace() const;
+        DbResult InsertPropertyMap(ECDbPropertyMapInfo const& o) const;
+        DbResult InsertClassMap(ECDbClassMapInfo const& o) const;
+        DbResult InsertPropertyPath(ECDbPropertyPath const& o) const;
+        DbResult Read() const;
+        DbResult ReadPropertyMap(ECDbClassMapInfo&) const;
+        DbResult ReadClassMaps() const;
+        DbResult ReadPropertyPaths() const;
 
     public:
-        ECDbMapStorage (ECDbSQLManager& manager) :m_manager (manager) {}
-        ECDbPropertyPath const * FindPropertyPath (ECN::ECPropertyId rootPropertyId, Utf8CP accessString) const;
-        ECDbPropertyPath const* FindPropertyPath (ECDbPropertyPathId propertyPathId) const;
-        ECDbClassMapInfo const* FindClassMap (ECDbClassMapId id) const;
-        std::vector<ECDbClassMapInfo const*> const* FindClassMapsByClassId (ECN::ECClassId id) const;
+        explicit ECDbMapStorage(ECDbSQLManager& manager) :m_manager(manager) {}
+        ECDbPropertyPath const * FindPropertyPath(ECN::ECPropertyId rootPropertyId, Utf8CP accessString) const;
+        ECDbPropertyPath const* FindPropertyPath(ECDbPropertyPathId propertyPathId) const;
+        ECDbClassMapInfo const* FindClassMap(ECDbClassMapId id) const;
+        std::vector<ECDbClassMapInfo const*> const* FindClassMapsByClassId(ECN::ECClassId id) const;
 
-        ECDbPropertyPath* CreatePropertyPath (ECN::ECPropertyId rootPropertyId, Utf8CP accessString) const;
-        ECDbClassMapInfo* CreateClassMap (ECN::ECClassId classId, ECDbMapStrategy const& mapStrategy, ECDbClassMapId baseClassMapId = 0LL) const;
+        ECDbPropertyPath* CreatePropertyPath(ECN::ECPropertyId rootPropertyId, Utf8CP accessString) const;
+        ECDbClassMapInfo* CreateClassMap(ECN::ECClassId classId, ECDbMapStrategy const& mapStrategy, ECDbClassMapId baseClassMapId = 0LL) const;
 
-        BentleyStatus Load () const { return Read () != BE_SQLITE_OK ? ERROR : SUCCESS; }
-        BentleyStatus Save () const { return InsertOrReplace () != BE_SQLITE_OK ? ERROR : SUCCESS; }
-        void Reset () const
-            {
-            m_propertyPaths.clear ();
-            m_propertyPathByPropertyId.clear ();
-            m_classMaps.clear ();
-            m_classMapByClassId.clear ();
-            }
+        BentleyStatus Load() const { return Read() != BE_SQLITE_OK ? ERROR : SUCCESS; }
+        BentleyStatus Save() const { return InsertOrReplace() != BE_SQLITE_OK ? ERROR : SUCCESS; }
+        void Reset() const;
     };
 
 //======================================================================================

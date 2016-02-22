@@ -497,7 +497,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationshipClassEndTableMap (NativeSq
 //+---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus ViewGenerator::BuildRelationshipJoinIfAny (NativeSqlBuilder& sqlBuilder, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint, ECDbSqlTable const& contextTable)
     {
-    if (classMap.RequiresJoin(endPoint))
+    if (classMap._RequiresJoin(endPoint))
         {
         ECDbMapCR ecdbMap = classMap.GetECDbMap();
         PropertyMapRelationshipConstraintClassId const* ecclassIdPropertyMap = endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECClassIdPropMap() : classMap.GetTargetECClassIdPropMap();
@@ -731,7 +731,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps (NativeSqlBuilder& viewSql, EC
     PropertyMapRelationshipConstraintClassId const* classIdPropMap = relationMap.GetSourceECClassIdPropMap();
     if (!classIdPropMap->IsVirtual())
         {
-        if (relationMap.RequiresJoin(ECRelationshipEnd::ECRelationshipEnd_Source))
+        if (relationMap._RequiresJoin(ECRelationshipEnd::ECRelationshipEnd_Source))
             viewSql.AppendEscaped(GetECClassIdPrimaryTableAlias(ECRelationshipEnd::ECRelationshipEnd_Source)).AppendDot();
         else
             viewSql.AppendEscaped(classIdPropMap->GetSingleColumn()->GetTable().GetName().c_str()).AppendDot();
@@ -754,7 +754,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps (NativeSqlBuilder& viewSql, EC
     classIdPropMap = relationMap.GetTargetECClassIdPropMap ();
     if (!classIdPropMap->IsVirtual ())
         {
-        if (relationMap.RequiresJoin(ECRelationshipEnd::ECRelationshipEnd_Target))
+        if (relationMap._RequiresJoin(ECRelationshipEnd::ECRelationshipEnd_Target))
             viewSql.AppendEscaped (GetECClassIdPrimaryTableAlias (ECRelationshipEnd::ECRelationshipEnd_Target)).AppendDot ();
         else
             viewSql.AppendEscaped (classIdPropMap->GetSingleColumn ()->GetTable ().GetName ().c_str ()).AppendDot ();
