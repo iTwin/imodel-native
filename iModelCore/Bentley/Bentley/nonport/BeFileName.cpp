@@ -1429,7 +1429,7 @@ BeFileNameStatus BeFileName::BeDeleteFile (WCharCP fileNameP)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameStatus BeFileName::EmptyAndRemoveDirectory(WCharCP inPath)
+BeFileNameStatus BeFileName::EmptyDirectory(WCharCP inPath)
     {
     WString path2;
     BeFileNameStatus stat = FixPathName (path2, inPath, false);
@@ -1458,6 +1458,22 @@ BeFileNameStatus BeFileName::EmptyAndRemoveDirectory(WCharCP inPath)
                 return  stat;
             }
         }
+
+    return BeFileNameStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/11
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileNameStatus BeFileName::EmptyAndRemoveDirectory(WCharCP inPath)
+    {
+    BeFileNameStatus status = EmptyDirectory(inPath);
+    if (BeFileNameStatus::Success != status)
+        return status;
+
+    WString path2;
+    FixPathName (path2, inPath, false);
+    BeFileName path (path2.c_str());
 
 #if defined (BENTLEY_WIN32)||defined(BENTLEY_WINRT)
 

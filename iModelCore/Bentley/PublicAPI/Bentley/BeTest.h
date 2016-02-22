@@ -207,6 +207,46 @@ BENTLEYDLL_EXPORT static void SetBeAssertListener (T_BeAssertListener*);
 
 ///@}
 
+///@name Information about the currently running test 
+///@{
+
+//! Get name of currently running test. 
+//! @return the name of a test or "" if no test is running
+static Utf8CP GetNameOfCurrentTest()
+    {
+#if defined (USE_GTEST)
+    ::testing::TestInfo const* tinfo = ::testing::UnitTest::GetInstance()->current_test_info();
+    if (nullptr == tinfo)
+        return "";
+    return tinfo->name();
+#else
+    return GetNameOfCurrentTestInternal();
+#endif
+    }
+
+//! Get name of the "test case" of the currently running test. 
+//! @return the name of a test case or "" if no test is running
+static Utf8CP GetNameOfCurrentTestCase()
+    {
+#if defined (USE_GTEST)
+    ::testing::TestInfo const* tinfo = ::testing::UnitTest::GetInstance()->current_test_info();
+    if (nullptr == tinfo)
+        return "";
+    return tinfo->test_case_name();
+#else
+    return GetNameOfCurrentTestCaseInternal();
+#endif
+    }
+
+
+BENTLEYDLL_EXPORT static Utf8CP GetNameOfCurrentTestInternal();
+BENTLEYDLL_EXPORT static Utf8CP GetNameOfCurrentTestCaseInternal();
+
+
+//! Get name of currently running test case
+
+///@}
+
 ///@name Ignore list parsing utilities
 ///@{
 
@@ -291,6 +331,7 @@ BENTLEYDLL_EXPORT static void Log (Utf8CP category, LogPriority priority, Utf8CP
     #define ASSERT_NEAR(val1, val2, tol) BE_TEST_EXPECTED_RESULT_NEAR(val1, val2, tol,true)
     #define EXPECT_NEAR(val1, val2, tol) BE_TEST_EXPECTED_RESULT_NEAR(val1, val2, tol,false)
     #define EXPECT_DOUBLE_EQ(v1,v2)      BE_TEST_EXPECTED_RESULT_NEAR_(v1,v2,false)
+    #define ASSERT_DOUBLE_EQ(v1,v2)      BE_TEST_EXPECTED_RESULT_NEAR_(v1,v2,true)
     #define FAIL()                       BE_TEST_EXPECTED_RESULT_FAIL()
     #define SUCCEED()
 
@@ -409,15 +450,9 @@ BENTLEYDLL_EXPORT static void Log (Utf8CP category, LogPriority priority, Utf8CP
 
 #define PERFORMANCELOG (*NativeLogging::LoggingManager::GetLogger (L"Performance"))
 #define LOGTODB PerformanceResultRecorder::writeResults
-#if defined (USE_GTEST)
-    #define TEST_FIXTURE_NAME ::testing::UnitTest::GetInstance()->current_test_info()->test_case_name()
-    #define TEST_NAME ::testing::UnitTest::GetInstance()->current_test_info()->name()
-    #define TEST_DETAILS TEST_FIXTURE_NAME, TEST_NAME
-#else
-    #define TEST_FIXTURE_NAME GetTestCaseNameA()
-    #define TEST_NAME GetTestNameA()
-    #define TEST_DETAILS TEST_FIXTURE_NAME, TEST_NAME
-#endif
+#define TEST_FIXTURE_NAME BeTest::GetNameOfCurrentTestCase()
+#define TEST_NAME BeTest::GetNameOfCurrentTest()
+#define TEST_DETAILS TEST_FIXTURE_NAME, TEST_NAME
 
 
 //=======================================================================================

@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeThread.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
@@ -361,7 +361,7 @@ void BeThreadUtilities::SetThreadStartHandler(T_ThreadStartHandler handler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeThreadUtilities::StartNewThread(int stackSize, T_ThreadStart startAddr, void* arg)
+BentleyStatus BeThreadUtilities::StartNewThread(int stackSize, T_ThreadStart startAddr, void* arg)
     {
 #if defined (__unix__)
     pthread_attr_t  threadAttr;
@@ -373,17 +373,23 @@ void BeThreadUtilities::StartNewThread(int stackSize, T_ThreadStart startAddr, v
     if (0 == retval)
         pthread_detach(threadHandle);
     pthread_attr_destroy(&threadAttr);
+    return (0 == retval) ? SUCCESS : ERROR;
 #elif defined (BENTLEY_WIN32)
-    _beginthreadex(nullptr, (unsigned) stackSize, startAddr, arg, 0, nullptr);
+    uintptr_t handle = _beginthreadex(nullptr, (unsigned) stackSize, startAddr, arg, 0, nullptr);
+    if (0 == handle)
+        return ERROR;
+    CloseHandle((HANDLE)handle);
+    return SUCCESS;
 #elif defined (BENTLEY_WINRT)
     if (nullptr == s_threadStartHandler)
         {
         BeAssert(false);
-        return ;
+        return ERROR;
         }
-    s_threadStartHandler(startAddr, arg);
+    return (0 != s_threadStartHandler(startAddr, arg)) ? SUCCESS : ERROR;
 #else
     #error unknown platform
+    return ERROR;
 #endif
     }
 
@@ -425,5 +431,9 @@ void BeThread::RunThread(void* arg)
 void BeThread::Start()
     {
     AddRef();
-    BeThreadUtilities::StartNewThread(1024 * 1024, RunPlatformThread, this);
+    if (SUCCESS != BeThreadUtilities::StartNewThread(1024 * 1024, RunPlatformThread, this))
+        {
+        BeAssert(false);
+        Release();
+        }
     }
