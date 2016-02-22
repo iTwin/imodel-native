@@ -10,22 +10,21 @@
 
 #include "DgnDbTables.h"
 #include "DgnModel.h"
-#include "DgnDomain.h"
 #include "MemoryManager.h"
-#include "LocksManager.h"
-#include "DgnCodesManager.h"
+#include "RepositoryManager.h"
+#include "UpdatePlan.h"
 #include <Bentley/BeFileName.h>
 
 /** @addtogroup DgnDbGroup
 
 Classes for creating and opening a DgnDb.
 
-A DgnDb is a BeSQLite::Db that holds graphic and non-graphic data. A DgnDb object is used to access the database.
+A DgnDb is a BeSQLite::Db that holds data based on the Dgn schema. A DgnDb object is used to access the database.
 
 @ref PAGE_DgnPlatform
 */
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   05/13
@@ -55,7 +54,6 @@ public:
     BeFileName      m_seedDb;
     BeSQLite::BeGuid m_guid;
 
-    //! ctor for CreateDgnDbParams.
     //! @param[in] guid The BeSQLite::BeGuid to store in the newly created DgnDb. If not supplied, a new BeSQLite::BeGuid is created.
     //! @note The new BeSQLite::BeGuid can be obtained via GetGuid.
     CreateDgnDbParams(BeSQLite::BeGuid guid=BeSQLite::BeGuid()) : BeSQLite::Db::CreateParams(), m_guid(guid) {if (!m_guid.IsValid()) m_guid.Create(); }
@@ -156,18 +154,16 @@ protected:
     DgnFonts        m_fonts;
     DgnStyles       m_styles;
     DgnUnits        m_units;
-    DgnGeometryParts    m_geomParts;
+    DgnGeometryParts m_geomParts;
     DgnLinks        m_links;
     DgnAuthorities  m_authorities;
     TxnManagerPtr   m_txnManager;
     MemoryManager   m_memoryManager;
-    ILocksManagerPtr    m_locksManager;
-    IDgnCodesManagerPtr m_codesManager;
+    IBriefcaseManagerPtr m_briefcaseManager;
     DgnSearchableText   m_searchableText;
     mutable RevisionManagerP m_revisionManager;
     BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
-    mutable bmap<DgnMaterialId, uintptr_t> m_qvMaterialIds;
-    mutable bmap<DgnTextureId, uintptr_t> m_qvTextureIds;
+    DgnQueryQueue m_queryQueue;
     LocalStateDb    m_localStateDb;
 
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _VerifySchemaVersion(BeSQLite::Db::OpenParams const& params) override;
@@ -222,13 +218,13 @@ public:
     DgnFonts& Fonts() const {return const_cast<DgnFonts&>(m_fonts); }                    //!< The fonts for this DgnDb
     DgnLinks& Links() const{return const_cast<DgnLinks&>(m_links);}                      //!< The DgnLinks for this DgnDb
     DgnDomains& Domains() const {return const_cast<DgnDomains&>(m_domains);}             //!< The DgnDomains associated with this DgnDb.
-    DgnAuthorities& Authorities() const { return const_cast<DgnAuthorities&>(m_authorities); }   //!< The authorities associated with this DgnDb
+    DgnAuthorities& Authorities() const {return const_cast<DgnAuthorities&>(m_authorities);} //!< The authorities associated with this DgnDb
     DgnSearchableText& SearchableText() const { return const_cast<DgnSearchableText&>(m_searchableText); } //!< The searchable text table for this DgnDb
     DGNPLATFORM_EXPORT TxnManagerR Txns();                    //!< The Txns for this DgnDb.
     DGNPLATFORM_EXPORT RevisionManagerR Revisions() const; //!< The Revisions for this DgnDb.
     MemoryManager& Memory() const { return const_cast<MemoryManager&>(m_memoryManager);} //!< Manages memory associated with this DgnDb.
-    DGNPLATFORM_EXPORT ILocksManager& Locks(); //!< Manages this DgnDb's locks.
-    DGNPLATFORM_EXPORT IDgnCodesManager& Codes(); //!< Manages this DgnDb's reserved authority-issued codes.
+    DGNPLATFORM_EXPORT IBriefcaseManager& BriefcaseManager(); //!< Manages this briefcase's held locks and codes
+    DgnQueryQueue& GetQueryQueue() const {return const_cast<DgnQueryQueue&>(m_queryQueue);}
     LocalStateDb& GetLocalStateDb(); //!< @private
 
     //! Gets a cached and prepared ECSqlStatement.
@@ -243,14 +239,19 @@ public:
     //! Determine whether this DgnDb is a briefcase.
     bool IsBriefcase() const {return !IsMasterCopy();}
 
-    DGNPLATFORM_EXPORT uintptr_t GetQvMaterialId(DgnMaterialId materialId) const; //!< Return nonzero QuickVision material ID for QVision for supplied material ID.
-    DGNPLATFORM_EXPORT uintptr_t AddQvMaterialId(DgnMaterialId materialId) const; //!< set QuickVision material ID for supplied material Id.
-
-    DGNPLATFORM_EXPORT uintptr_t GetQvTextureId(DgnTextureId TextureId) const; //!< Return nonzero QuickVision material ID for QVision for supplied material ID.
-    DGNPLATFORM_EXPORT uintptr_t AddQvTextureId(DgnTextureId TextureId) const; //!< set QuickVision material ID for supplied material Id.
-
     DGNPLATFORM_EXPORT DictionaryModelR GetDictionaryModel(); //!< Return the dictionary model for this DgnDb.
+
+    //! Ids for DgnPlatform threads
+    enum class ThreadId {Unknown=0, Client=100, Render=101, Query=102,};
+
+    DGNPLATFORM_EXPORT static ThreadId GetThreadId();        //!< Get the ThreadId for the current thread
+    DGNPLATFORM_EXPORT static WCharCP GetThreadIdName();     //!< For debugging purposes, get the current ThreadId as a string
+    static void SetThreadId(ThreadId);    //!< Set the ThreadId for the current thread
+    static void VerifyThread(ThreadId id) {BeAssert(id==GetThreadId());}   //!< assert that this is a specific thread
+    static void VerifyClientThread() {VerifyThread(ThreadId::Client);}     //!< assert that this is the Client thread
+    static void VerifyRenderThread() {VerifyThread(ThreadId::Render);}     //!< assert that this is the Render thread
+    static void VerifyQueryThread()  {VerifyThread(ThreadId::Query);}      //!< assert that this is the Query thread
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 

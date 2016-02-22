@@ -10,7 +10,7 @@
 
 DGNPLATFORM_REF_COUNTED_PTR(VolumeElement)
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 using BentleyApi::BeSQLite::EC::ECInstanceKey;
 using BentleyApi::BeSQLite::EC::ECSqlStatement;
@@ -65,8 +65,8 @@ private:
     mutable ClipPlaneSet* m_clipPlaneSet = nullptr;
 
     ClipVectorPtr CreateClipVector() const;
-    std::unique_ptr<FenceParams> CreateFence (DgnViewportP viewport, bool allowPartialOverlaps) const;
-    static std::unique_ptr<DgnViewport> CreateNonVisibleViewport (DgnDbR dgnDb);
+    FenceParams CreateFence (DgnViewportP viewport, bool allowPartialOverlaps) const;
+    static DgnViewportPtr CreateNonVisibleViewport (DgnDbR dgnDb);
 
     BentleyStatus GetRange(DRange3d& range) const; // Gets the range of the volume, described from the Project Coordinate System in storage units 
     
@@ -186,4 +186,4 @@ namespace dgn_ElementHandler
     };
 }
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

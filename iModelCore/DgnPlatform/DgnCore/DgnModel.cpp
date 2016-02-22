@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnDbTables.h>
 
 #define MODEL_PROP_ECInstanceId "ECInstanceId"
 #define MODEL_PROP_Code "Code"
@@ -101,7 +100,7 @@ void DgnModels::DropLoadedModel(DgnModelR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModels::ClearLoaded()
+void DgnModels::Empty()
     {
     for (auto iter : m_models)
         {
@@ -526,14 +525,8 @@ DgnDbStatus DgnModel::_OnUpdate()
             return stat;
         }
 
-    if (LockStatus::Success != GetDgnDb().Locks().LockModel(*this, LockLevel::Exclusive))
-        return DgnDbStatus::LockNotHeld;
-
-    // Ensure this briefcase has reserved the model's code
-    if (CodeStatus::Success != GetDgnDb().Codes().ReserveCode(GetCode()))
-        return DgnDbStatus::CodeNotReserved;
-
-    return DgnDbStatus::Success;
+    // Ensure code is reserved and lock acquired
+    return GetDgnDb().BriefcaseManager().OnModelUpdate(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -645,10 +638,11 @@ DgnDbStatus DgnModel::_OnInsertElement(DgnElementR element)
     {
     if (m_dgndb.IsReadonly())
         return DgnDbStatus::ReadOnly;
-    else if (GetModelHandler()._IsRestrictedAction(RestrictedAction::InsertElement))
+
+    if (GetModelHandler()._IsRestrictedAction(RestrictedAction::InsertElement))
         return DgnDbStatus::MissingHandler;
-    else
-        return DgnDbStatus::Success;
+
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -674,10 +668,8 @@ DgnDbStatus DgnModel::_OnDeleteElement(DgnElementCR element)
     {
     if (m_dgndb.IsReadonly())
         return DgnDbStatus::ReadOnly;
-    else if (GetModelHandler()._IsRestrictedAction(RestrictedAction::DeleteElement))
-        return DgnDbStatus::MissingHandler;
-    else
-        return DgnDbStatus::Success;
+
+    return GetModelHandler()._IsRestrictedAction(RestrictedAction::DeleteElement) ? DgnDbStatus::MissingHandler : DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -723,10 +715,8 @@ DgnDbStatus DgnModel::_OnUpdateElement(DgnElementCR modified, DgnElementCR origi
     {
     if (m_dgndb.IsReadonly())
         return DgnDbStatus::ReadOnly;
-    else if (GetModelHandler()._IsRestrictedAction(RestrictedAction::UpdateElement))
-        return DgnDbStatus::MissingHandler;
-    else
-        return DgnDbStatus::Success;
+
+    return GetModelHandler()._IsRestrictedAction(RestrictedAction::UpdateElement) ? DgnDbStatus::MissingHandler : DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -766,20 +756,6 @@ DgnElementCP DgnModel::FindElementById(DgnElementId id)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   05/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnModels::FreeQvCache()
-    {
-    if (nullptr == m_qvCache)
-        return  false;
-
-    // if there is a QvCache associated with this DgnFile, delete it too.
-    T_HOST.GetGraphicsAdmin()._DeleteQvCache(m_qvCache);
-    m_qvCache = nullptr;
-    return  true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_OnDelete()
@@ -787,8 +763,9 @@ DgnDbStatus DgnModel::_OnDelete()
     if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Delete))
         return DgnDbStatus::MissingHandler;
 
-    if (LockStatus::Success != GetDgnDb().Locks().LockModel(*this, LockLevel::Exclusive))
-        return DgnDbStatus::LockNotHeld;
+    DgnDbStatus stat = GetDgnDb().BriefcaseManager().OnModelDelete(*this);
+    if (DgnDbStatus::Success != stat)
+        return stat;
 
     for (auto appdata : m_appData)
         appdata.second->_OnDelete(*this);
@@ -814,7 +791,7 @@ DgnDbStatus DgnModel::_OnDelete()
         }
 
     // delete all views which use this model as their base model
-    DgnDbStatus stat = DeleteAllViews();
+    stat = DeleteAllViews();
     if (DgnDbStatus::Success != stat)
         return stat;
 
@@ -867,15 +844,8 @@ DgnDbStatus DgnModel::_OnInsert()
     if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Insert))
         return DgnDbStatus::MissingHandler;
 
-    // If db is exclusively locked, cannot create models in it
-    if (LockStatus::Success != GetDgnDb().Locks().LockDb(LockLevel::Shared))
-        return DgnDbStatus::LockNotHeld;
-
-    // Ensure this briefcase has reserved the model's code
-    if (CodeStatus::Success != GetDgnDb().Codes().ReserveCode(GetCode()))
-        return DgnDbStatus::CodeNotReserved;
-
-    return DgnDbStatus::Success;
+    // Ensure db is not exclusively locked and code reserved
+    return GetDgnDb().BriefcaseManager().OnModelInsert(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -948,7 +918,7 @@ DgnDbStatus DgnModel::Insert()
         
     // NB: We do this here rather than in _OnInserted() because Update() is going to request a lock too, and the server doesn't need to be
     // involved in locks for models created locally.
-    GetDgnDb().Locks().OnModelInserted(GetModelId());
+    GetDgnDb().BriefcaseManager().OnModelInserted(GetModelId());
     status = Update();
     BeAssert(status == DgnDbStatus::Success);
 
@@ -1091,14 +1061,6 @@ DgnModelId DgnModels::QueryFirstModelId() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  05/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-QvCache* DgnModels::GetQvCache(bool createIfNecessary)
-    {
-    if (nullptr != m_qvCache || !createIfNecessary)
-        return m_qvCache;
-
-    return (m_qvCache = T_HOST.GetGraphicsAdmin()._CreateQvCache());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1300,10 +1262,9 @@ DgnDbStatus SheetModel::_ReadSelectParams(ECSqlStatement& statement, ECSqlClassP
         return status;
 
     m_size = statement.GetValuePoint2D(params.GetSelectIndex(SHEET_MODEL_PROP_SheetSize));
-
     return DgnDbStatus::Success;
     }
-	
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                 Ramanujam.Raman   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1617,8 +1578,10 @@ uint64_t DgnModel::RestrictedAction::Parse(Utf8CP name)
         };
 
     for (auto const& pair : s_pairs)
+        {
         if (0 == BeStringUtilities::Stricmp(pair.name, name))
             return pair.value;
+        }
 
     return T_Super::Parse(name);
     }

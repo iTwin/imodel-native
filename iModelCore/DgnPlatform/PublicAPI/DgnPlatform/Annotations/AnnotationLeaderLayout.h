@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: PublicAPI/DgnPlatform/Annotations/AnnotationLeaderLayout.h $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 #pragma once
 
@@ -12,7 +12,7 @@
 DGNPLATFORM_TYPEDEFS(AnnotationLeaderLayout);
 DGNPLATFORM_REF_COUNTED_PTR(AnnotationLeaderLayout);
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //! @addtogroup Annotations
 //! @beginGroup
@@ -62,4 +62,4 @@ public:
 
 //! @endGroup
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

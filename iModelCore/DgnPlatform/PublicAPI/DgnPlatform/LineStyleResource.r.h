@@ -80,22 +80,8 @@ Multiline modifiers
 |   Resource structures                                                 |
 |                                                                       |
 +======================================================================*/
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
-struct LineStyleParamsResource
-    {
-    uint32_t    modifiers;      /* see STYLEMOD_... above              */
-    uint32_t    reserved;
-    double      scale;          /* Applied to all length values        */
-    double      dashScale;      /* Applied to adjustable dash strokes  */
-    double      gapScale;       /* Applied to adjustable gap strokes   */
-    double      startWidth;     /* Taper start width                   */
-    double      endWidth;       /* Taper end width                     */
-    double      distPhase;      /* Phase shift by distance             */
-    double      fractPhase;     /* Phase shift by fraction             */
-    DPoint3d    normal;
-    RotMatrix   rMatrix;
-    };
+BEGIN_BENTLEY_DGN_NAMESPACE
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 /** @endcond */

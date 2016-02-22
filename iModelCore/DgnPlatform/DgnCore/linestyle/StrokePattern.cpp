@@ -1574,6 +1574,7 @@ bool            StrokeGenerator::IncrementSegment ()
     return false;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * extend first and last point by half of the widths
 * @bsimethod                                                    Keith.Bentley   02/03
@@ -1675,7 +1676,7 @@ static void    createTristrip (DPoint3dP tristrip, int nPts, DPoint3dCP centerLi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     outputCapArc (IDrawGeom* output, DPoint3dCP pt1, DPoint3dCP pt2, DPoint3dCP pt3, bool doFill)
+static void outputCapArc (Graphic* output, DPoint3dCP pt1, DPoint3dCP pt2, DPoint3dCP pt3, bool doFill)
     {
     DVec3d      xDir, yDir, zDir;
 
@@ -1696,25 +1697,13 @@ static void     outputCapArc (IDrawGeom* output, DPoint3dCP pt1, DPoint3dCP pt2,
     DEllipse3d  ellipse;
 
     ellipse.InitFromDGNFields3d (origin, xDir, yDir, radius, radius, 0.0, msGeomConst_pi);
-    output->DrawArc3d (ellipse, false, doFill, NULL);
+    output->AddArc (ellipse, false, doFill, NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void    outputPolygon
-(
-IDrawGeom*     output,
-int            nPts,
-DPoint3dCP     pts,
-double const*  widths,
-int            widthMode,
-int            capMode,
-DPoint3dCP     normal,
-DPoint3dCP     startTangent,
-DPoint3dCP     endTangent,
-bool           polyLengthNotDiscernible
-)
+static void outputPolygon (Graphic* output, int nPts, DPoint3dCP pts, double const* widths, int widthMode, int capMode, DPoint3dCP normal, DPoint3dCP startTangent, DPoint3dCP endTangent, bool polyLengthNotDiscernible)
     {
     ScopedArray<LineJoint, 50>  scopedJoints(nPts);
     LineJoint*  joints = scopedJoints.GetData();
@@ -1726,8 +1715,8 @@ bool           polyLengthNotDiscernible
     if (capMode == CAP_Open)
         {
         createPolygon (outsidePts, nPts, pts, widths, joints, widthMode);
-        output->DrawLineString3d (nPts, outsidePts, NULL);
-        output->DrawLineString3d (nPts, outsidePts+nPts, NULL);
+        output->AddLineString (nPts, outsidePts, NULL);
+        output->AddLineString (nPts, outsidePts+nPts, NULL);
         }
     else
         {
@@ -1736,7 +1725,7 @@ bool           polyLengthNotDiscernible
         if (polyLengthNotDiscernible)
             {
             createPolygon (outsidePts, nPts, pts, widths, joints, widthMode);
-            output->DrawLineString3d (2, outsidePts+1, NULL);
+            output->AddLineString (2, outsidePts+1, NULL);
 
             if (capMode > 2)
                 {
@@ -1748,7 +1737,7 @@ bool           polyLengthNotDiscernible
         else
             {
             createTristrip (outsidePts, nPts, pts, widths, joints, widthMode);
-            output->DrawTriStrip3d (nPts*2, outsidePts, 1,NULL);
+            output->AddTriStrip (nPts*2, outsidePts, 1,NULL);
 
             if (capMode > 2)
                 {
@@ -1759,6 +1748,7 @@ bool           polyLengthNotDiscernible
             }
         }
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   07/04
@@ -1786,7 +1776,11 @@ bool            segmentNotDiscernible (ViewContextP context, int numPoints, DPoi
         return false;
 
     DPoint3d    viewPts[2];
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context->LocalToView (viewPts, points, 2);
+#else
+    context->WorldToView (viewPts, points, 2);
+#endif
 
     double      size = xySize (viewPts, viewPts+1);
     return (size < MIN_LOD);
@@ -1825,11 +1819,12 @@ void            Centerline::AddPoint (DPoint3dCP pt, double width, double length
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            Centerline::Output (ViewContextP context, LsStrokeP pStroke, DPoint3dCP normal, DPoint3dCP startTangent, DPoint3dCP endTangent)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     int nPts = GetCount();
     if (nPts <= 0)
         return;
 
-    IDrawGeomR    output = context->GetIDrawGeom();
+    GraphicR output = context->GetCurrentGraphicR();
 
     int     widthMode = pStroke->GetWidthMode() & 0x3;
 
@@ -1841,9 +1836,9 @@ void            Centerline::Output (ViewContextP context, LsStrokeP pStroke, DPo
         // NEEDSWORK: According to Karin, it would be much more efficient to pass all the points in the centerline as a single array.  
         //    Need to restructure Centerline to do store them separately.
         if (1 == nPts || (2 == nPts && points->IsEqual (points[1])))
-            output.DrawPointString3d (1, points, NULL);
+            output.AddPointString (1, points, NULL);
         else
-            output.DrawLineString3d (nPts, points, NULL);
+            output.AddLineString (nPts, points, NULL);
         return;
         }
 
@@ -1881,6 +1876,7 @@ void            Centerline::Output (ViewContextP context, LsStrokeP pStroke, DPo
 
     bool    polyLengthNotDiscernible = (nPts > 2 ? false : segmentNotDiscernible (context, nPts, m_pts+start));
     outputPolygon (&output, nPts-start, m_pts+start, m_widths+start, widthMode, capMode, normal, startTangent, endTangent, polyLengthNotDiscernible);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

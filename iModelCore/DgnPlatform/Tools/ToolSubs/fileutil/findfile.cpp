@@ -18,7 +18,7 @@
 #include <DgnPlatform/Tools/stringop.h>
 #include <Bentley/BeFileListIterator.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 #define UF_INTERNALUSE_RELATIVEPATH 0x40
 #define DOUBLEQUOTE                 0x22

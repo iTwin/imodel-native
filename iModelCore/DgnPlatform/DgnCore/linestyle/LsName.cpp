@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/LsName.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -10,24 +10,29 @@
 static DgnHost::Key s_allMapsKey;
 static DgnHost::Key s_systemLsFileInfoKey;
 
+#if defined (NEEDSWORK_RENDER_GRAPHIC)
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct LineStyleRangeCollector : IElementGraphicsProcessor
+struct LineStyleRangeCollector : IGeometryProcessor
 {
 private:
-
-IStrokeForCache&    m_stroker;
-DRange3d            m_range;
-ViewContextP        m_context;
-Transform           m_currentTransform;
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    GeometrySourceCR    m_stroker;
+#endif
+    DRange3d            m_range;
+    ViewContextP        m_context;
+    Transform           m_currentTransform;
 
 protected:
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-explicit LineStyleRangeCollector(IStrokeForCache& stroker) : m_stroker(stroker)
+explicit LineStyleRangeCollector(GeometrySourceCR stroker) 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+: m_stroker(stroker) 
+#endif
     {
     m_range.Init();
     m_currentTransform.InitIdentity();
@@ -59,7 +64,9 @@ virtual BentleyStatus _ProcessCurveVector(CurveVectorCR curves, bool isFilled) o
 //---------------------------------------------------------------------------------------
 virtual void _OutputGraphics(ViewContext& context) override
     {
-    m_stroker._StrokeForCache(context);
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    m_stroker.Stroke(context);
+#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -75,24 +82,24 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-static void Process(DRange3dR range, IStrokeForCache& stroker)
+static void Process(DRange3dR range, GeometrySourceCR stroker)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     LineStyleRangeCollector  processor(stroker);
 
-    ElementGraphicsOutput::Process(processor, stroker._GetDgnDb());
+    GeometryProcessor::Process(processor, stroker._GetDgnDb());
 
     processor.GetRange(range);
+#endif
     }
 
 }; // LineStyleRangeCollector
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            LsDefinition::SetName
-(
-Utf8CP          name
-)
+void LsDefinition::SetName (Utf8CP name)
     {
     if (m_name.m_key)
         FREE_AND_CLEAR (m_name.m_key);
@@ -108,6 +115,7 @@ Utf8CP          name
 +---------------+---------------+---------------+---------------+---------------+------*/
 void LsDefinition::SetHWStyle (LsComponentId componentIDIn)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     uint32_t componentID = componentIDIn.GetValue();
     m_hardwareLineCode = -1;
     if (LsComponentType::Internal == componentIDIn.GetType())
@@ -118,6 +126,7 @@ void LsDefinition::SetHWStyle (LsComponentId componentIDIn)
         else
             m_hardwareLineCode = 0;
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -140,7 +149,7 @@ void LsDefinition::Init(Utf8CP name, Json::Value& lsDefinition, DgnStyleId style
     SetName (name);
 
     m_textureInitialized = false;
-    m_textureHandle = 0;
+    m_texture = nullptr;
     m_hasTextureWidth = false;
     }
 
@@ -168,8 +177,6 @@ LsDefinition::LsDefinition (Utf8CP name, DgnDbR project, Json::Value& lsDefiniti
 LsDefinition::~LsDefinition()
     {
     SetName (NULL);
-    if (m_textureInitialized)
-        T_HOST.GetGraphicsAdmin()._DeleteTexture (m_textureHandle);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -197,6 +204,7 @@ Utf8String         LsDefinition::GetStyleName () const
 #define NUMBER_ITERATIONS_ComponentStroker   (1)
 #define MAX_XRANGE_RATIO (256 * NUMBER_ITERATIONS_ComponentStroker)
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //=======================================================================================
 //! Base class for StrokeComponentForRange and ComponentToTextureStroker
 // @bsiclass                                                    John.Gooding    10/2015
@@ -254,27 +262,19 @@ StrokeComponentForRange(DgnDbR dgndb, LsComponentR component) : ComponentStroker
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-void _StrokeForCache(ViewContextR context, double pixelSize = 0.0) override
+/* static */  void CreateGeometryMapMaterial(ViewContextR context, Stroker& stroker, intptr_t textureId)
     {
-    LineStyleSymb defaultLsSymb;
-    defaultLsSymb.Init(nullptr);
-    m_component->_StrokeLineString(&context, &defaultLsSymb, m_points, 2, false);
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    context.GetIViewDraw ().DefineQVGeometryMap (textureId, stroker, nullptr, false, context, false);
+#endif
+    return;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    09/2015
-//---------------------------------------------------------------------------------------
-void ComputeRange(DRange3dR range)
-    {
-    LineStyleRangeCollector::Process(range, *this);
-    }
-};
 
 //=======================================================================================
 //! Used to generate a texture based on a line style.
 // @bsiclass                                                    John.Gooding    08/2015
 //=======================================================================================
-struct          ComponentToTextureStroker : ComponentStroker
+struct ComponentToTextureStroker : Stroker
 {
 private:
     double              m_scaleFactor;
@@ -305,9 +305,9 @@ ComponentToTextureStroker(DgnDbR dgndb, double scaleFactor, ColorDef lineColor, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-void _StrokeForCache(ViewContextR context, double pixelSize = 0.0) override
+void _Stroke(ViewContextR context) const override
     {
-    ElemMatSymb         elemMatSymb;
+    GraphicParams         elemMatSymb;
 
     elemMatSymb.Init();
     //  Generally the line style will be drawn with the color of the element. We accomplish that
@@ -325,7 +325,7 @@ void _StrokeForCache(ViewContextR context, double pixelSize = 0.0) override
     lineStyleSymb.Init(nullptr);
     lineStyleSymb.SetScale(m_scaleFactor);
 
-    context.GetIDrawGeom().ActivateMatSymb(&elemMatSymb);
+    context.GetCurrentGraphicR().ActivateGraphicParams(&elemMatSymb);
 
     context.PushTransform(m_transformForTexture);
     m_component->_StrokeLineString(&context, &lineStyleSymb, m_points, 2, false);
@@ -395,12 +395,14 @@ static DRange2d getAdjustedRange(uint32_t& scaleFactor, DRange3dCR lsRange, doub
 
     return range2d;
     }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-intptr_t  LsDefinition::GenerateTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb)
+Render::TexturePtr LsDefinition::GenerateTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     //  Assume the caller already knows this is something that must be converted but does not know it can be converted.
     BeAssert(m_lsComp->GetComponentType() != LsComponentType::RasterImage);
     m_lsComp->_StartTextureGeneration();
@@ -440,22 +442,19 @@ intptr_t  LsDefinition::GenerateTexture(ViewContextR viewContext, LineStyleSymbR
     ComponentToTextureStroker   stroker(viewContext.GetDgnDb(), scaleFactor, lineColor, fillColor, lineWeight, *comp);
 
     viewContext.GetIViewDraw ().DefineQVGeometryMap (intptr_t(this), stroker, range2d, isColorBySymbol, viewContext, false);
-
     m_hasTextureWidth = true;
     m_textureWidth = scaleFactor * (range2d.high.y - range2d.low.y);
-    return intptr_t(this);
+#endif
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t     LsDefinition::GetTextureHandle (ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceTexture, double scale) 
+Texture* LsDefinition::GetTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceTexture, double scale) 
     {
     if (!m_lsComp.IsValid())
-        {
-        BeAssert(0 == m_textureHandle);
-        return m_textureHandle;
-        }
+        return nullptr;
 
     if (!m_textureInitialized)
         {
@@ -478,11 +477,15 @@ uintptr_t     LsDefinition::GetTextureHandle (ViewContextR viewContext, LineStyl
                     for (size_t outIndex=0; outIndex < imageBytes; inIndex +=4, outIndex++)
                         alpha[outIndex] = invert ? (255 - image[inIndex]) : image[inIndex];
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
                     DgnPlatformLib::GetHost().GetGraphicsAdmin()._DefineTextureId (m_textureHandle = reinterpret_cast <uintptr_t> (this), imageSize, true, 5, &alpha.front());
+#endif
                     }
                 else
                     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
                     DgnPlatformLib::GetHost().GetGraphicsAdmin()._DefineTextureId (m_textureHandle = reinterpret_cast <uintptr_t> (this), imageSize, true, 0, image);
+#endif
                     }
                 }
             m_hasTextureWidth = m_lsComp->_GetTextureWidth(m_textureWidth) == BSISUCCESS;
@@ -491,15 +494,14 @@ uintptr_t     LsDefinition::GetTextureHandle (ViewContextR viewContext, LineStyl
             {
             m_textureInitialized = true;
             //  Convert this type to texture on the fly if possible
-            m_textureHandle = GenerateTexture(viewContext, lineStyleSymb);
+            m_texture = GenerateTexture(viewContext, lineStyleSymb);
             }
         }
-    
 
-    if (0 != m_textureHandle && m_lsComp.IsValid() && m_hasTextureWidth)
+    if (m_texture.IsValid() && m_lsComp.IsValid() && m_hasTextureWidth)
         lineStyleSymb.SetWidth (m_textureWidth * scale);
     
-    return m_textureHandle;
+    return m_texture.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -622,7 +624,6 @@ BentleyStatus       LsCache::Load ()
         return SUCCESS;
 
     //  Signal that this should abort a query and should not trigger an assertion failure in GraphicsAndQuerySequencer::CheckSQLiteOperationAllowed
-    wt_OperationForGraphics  opForGraphics;
     TreeLoaded ();
 
     for (auto const& ls : LineStyleElement::MakeIterator(m_dgnDb))

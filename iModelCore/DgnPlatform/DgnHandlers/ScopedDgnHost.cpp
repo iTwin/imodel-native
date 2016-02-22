@@ -93,28 +93,20 @@ struct TestingDgnScriptingAdmin : Dgn::DgnPlatformLib::Host::ScriptAdmin
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ProxyServerAdmin : Dgn::DgnPlatformLib::Host::ServerAdmin
+struct ProxyRepositoryAdmin : Dgn::DgnPlatformLib::Host::RepositoryAdmin
 {
-    DEFINE_T_SUPER(ServerAdmin);
+    DEFINE_T_SUPER(RepositoryAdmin);
 
-    ServerAdmin* m_impl;
+    RepositoryAdmin* m_impl;
 
-    ProxyServerAdmin() : m_impl(nullptr) { }
-    virtual ILocksManagerPtr _CreateLocksManager(DgnDbR db) const override
+    ProxyRepositoryAdmin() : m_impl(nullptr) { }
+    virtual IBriefcaseManagerPtr _CreateBriefcaseManager(DgnDbR db) const override
         {
-        return nullptr != m_impl ? m_impl->_CreateLocksManager(db) : T_Super::_CreateLocksManager(db);
+        return nullptr != m_impl ? m_impl->_CreateBriefcaseManager(db) : T_Super::_CreateBriefcaseManager(db);
         }
-    virtual ILocksServerP _GetLocksServer(DgnDbR db) const override
+    virtual IRepositoryManagerP _GetRepositoryManager(DgnDbR db) const override
         {
-        return nullptr != m_impl ? m_impl->_GetLocksServer(db) : T_Super::_GetLocksServer(db);
-        }
-    virtual IDgnCodesManagerPtr _CreateCodesManager(DgnDbR db) const override
-        {
-        return nullptr != m_impl ? m_impl->_CreateCodesManager(db) : T_Super::_CreateCodesManager(db);
-        }
-    virtual IDgnCodesServerP _GetCodesServer(DgnDbR db) const override
-        {
-        return nullptr != m_impl ? m_impl->_GetCodesServer(db) : T_Super::_GetCodesServer(db);
+        return nullptr != m_impl ? m_impl->_GetRepositoryManager(db) : T_Super::_GetRepositoryManager(db);
         }
 };
 
@@ -124,7 +116,7 @@ struct ProxyServerAdmin : Dgn::DgnPlatformLib::Host::ServerAdmin
 * directories delivered with the unit test framework.
 * @bsiclass                                     Sam.Wilson                      01/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 struct ScopedDgnHostImpl : DgnPlatformLib::Host
 {
     bool        m_isInitialized;
@@ -135,14 +127,14 @@ struct ScopedDgnHostImpl : DgnPlatformLib::Host
     NotificationAdmin& _SupplyNotificationAdmin () override;
     IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override;
     ScriptAdmin& _SupplyScriptingAdmin() override {return *new TestingDgnScriptingAdmin();}
-    ServerAdmin& _SupplyServerAdmin() override {return *new ProxyServerAdmin();}
+    RepositoryAdmin& _SupplyRepositoryAdmin() override {return *new ProxyRepositoryAdmin();}
     void _SupplyProductName(Utf8StringR s) override {s="BeTest";}
     L10N::SqlangFiles _SupplySqlangFiles() override {return L10N::SqlangFiles(BeFileName());} // users must have already initialized L10N to use ScopedDgnHost
 
     void SetFetchScriptCallback(ScopedDgnHost::FetchScriptCallback* cb) {((TestingDgnScriptingAdmin*)m_scriptingAdmin)->m_callback = cb;}
-    void SetServerAdmin(DgnPlatformLib::Host::ServerAdmin* admin) {((ProxyServerAdmin*)m_serverAdmin)->m_impl = admin;}
+    void SetRepositoryAdmin(DgnPlatformLib::Host::RepositoryAdmin* admin) {((ProxyRepositoryAdmin*)m_repositoryAdmin)->m_impl = admin;}
 };
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
@@ -171,9 +163,9 @@ void ScopedDgnHost::SetFetchScriptCallback(FetchScriptCallback* cb)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ScopedDgnHost::SetServerAdmin(DgnPlatformLib::Host::ServerAdmin* admin)
+void ScopedDgnHost::SetRepositoryAdmin(DgnPlatformLib::Host::RepositoryAdmin* admin)
     {
-    m_pimpl->SetServerAdmin(admin);
+    m_pimpl->SetRepositoryAdmin(admin);
     }
 
 /*---------------------------------------------------------------------------------**//**

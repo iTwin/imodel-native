@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: PublicAPI/DgnPlatform/Annotations/AnnotationLeader.h $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 #pragma once
 
@@ -12,7 +12,7 @@
 DGNPLATFORM_TYPEDEFS(AnnotationLeader);
 DGNPLATFORM_REF_COUNTED_PTR(AnnotationLeader);
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //! @addtogroup Annotations
 //! @beginGroup
@@ -66,14 +66,14 @@ private:
 
     DgnDbP m_dgndb;
     
-    DgnElementId m_styleID;
+    AnnotationLeaderStyleId m_styleID;
     AnnotationLeaderStylePropertyBag m_styleOverrides;
 
     AnnotationLeaderSourceAttachmentType m_sourceAttachmentType;
-    std::unique_ptr<uint32_t> m_sourceAttachmentDataForId;
+    uint32_t m_sourceAttachmentDataForId;
     
     AnnotationLeaderTargetAttachmentType m_targetAttachmentType;
-    std::unique_ptr<DPoint3d> m_targetAttachmentDataForPhysicalPoint;
+    DPoint3d m_targetAttachmentDataForPhysicalPoint;
 
     DGNPLATFORM_EXPORT void CopyFrom(AnnotationLeaderCR);
     void Reset();
@@ -83,25 +83,25 @@ public:
     AnnotationLeader(AnnotationLeaderCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
     AnnotationLeaderR operator=(AnnotationLeaderCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
     static AnnotationLeaderPtr Create(DgnDbR project) { return new AnnotationLeader(project); }
-    DGNPLATFORM_EXPORT static AnnotationLeaderPtr Create(DgnDbR, DgnElementId);
+    DGNPLATFORM_EXPORT static AnnotationLeaderPtr Create(DgnDbR, AnnotationLeaderStyleId);
     AnnotationLeaderPtr Clone() const { return new AnnotationLeader(*this); }
 
     DgnDbR GetDbR() const { return *m_dgndb; }
-    DgnElementId GetStyleId() const { return m_styleID; }
-    DGNPLATFORM_EXPORT void SetStyleId(DgnElementId, SetAnnotationLeaderStyleOptions);
+    AnnotationLeaderStyleId GetStyleId() const { return m_styleID; }
+    DGNPLATFORM_EXPORT void SetStyleId(AnnotationLeaderStyleId, SetAnnotationLeaderStyleOptions);
     AnnotationLeaderStylePtr CreateEffectiveStyle() const { return AnnotationLeaderStyle::Get(*m_dgndb, m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
     AnnotationLeaderStylePropertyBagCR GetStyleOverrides() const { return m_styleOverrides; }
     AnnotationLeaderStylePropertyBagR GetStyleOverridesR() { return m_styleOverrides; }
     AnnotationLeaderSourceAttachmentType GetSourceAttachmentType() const { return m_sourceAttachmentType; }
     void SetSourceAttachmentType(AnnotationLeaderSourceAttachmentType value) { m_sourceAttachmentType = value; }
-    uint32_t const* GetSourceAttachmentDataForId() const { return m_sourceAttachmentDataForId.get(); }
-    void SetSourceAttachmentDataForId(uint32_t const* value) { m_sourceAttachmentDataForId.reset(value ? new uint32_t(*value) : NULL); }
+    uint32_t GetSourceAttachmentDataForId() const { return m_sourceAttachmentDataForId; }
+    void SetSourceAttachmentDataForId(uint32_t value) { m_sourceAttachmentDataForId = value; }
     AnnotationLeaderTargetAttachmentType GetTargetAttachmentType() const { return m_targetAttachmentType; }
     void SetTargetAttachmentType(AnnotationLeaderTargetAttachmentType value) { m_targetAttachmentType = value; }
-    DPoint3dCP GetTargetAttachmentDataForPhysicalPoint() const { return m_targetAttachmentDataForPhysicalPoint.get(); }
-    void SetTargetAttachmentDataForPhysicalPoint(DPoint3dCP value) { m_targetAttachmentDataForPhysicalPoint.reset(value ? new DPoint3d(*value) : NULL); }
+    DPoint3dCR GetTargetAttachmentDataForPhysicalPoint() const { return m_targetAttachmentDataForPhysicalPoint; }
+    void SetTargetAttachmentDataForPhysicalPoint(DPoint3dCR value) { m_targetAttachmentDataForPhysicalPoint = value; }
 };
 
 //! @endGroup
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

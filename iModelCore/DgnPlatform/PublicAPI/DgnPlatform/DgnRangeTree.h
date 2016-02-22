@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnRangeTree.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,7 +10,7 @@
 
 DGNPLATFORM_TYPEDEFS (DgnRangeTree)
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/10
@@ -150,7 +150,7 @@ private:
 
 public:
     void LoadTree(DgnModelCR);
-    DRange3dCP GetFullRange() {return  m_root ? &m_root->GetRange() : nullptr;}
+    DRange3dCP GetExtents() {return  m_root ? &m_root->GetRange() : nullptr;}
     DgnRangeTree(bool is3d, size_t leafSize);
     Node* GetRoot(){return m_root;}
     size_t GetInternalNodeSize() {return m_internalNodeSize;}
@@ -161,8 +161,6 @@ public:
     void AddElement(Entry const&);
     void AddGeomElement(GeometrySourceCR geom){AddElement(Entry(geom.CalculateRange3d(), geom));}
     StatusInt RemoveElement(Entry const&);
-
-    DGNPLATFORM_EXPORT void ProcessOcclusionSorted(ViewContextR, DgnModelP, ProgressMonitor* monitor, bool doFrustumCull, uint32_t* timeOut);
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

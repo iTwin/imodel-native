@@ -157,12 +157,11 @@ ViewControllerPtr ViewDefinition::LoadViewController(bool allowOverrides, FillMo
     if (controller.IsNull())
         controller = _SupplyController();
 
-    if (controller.IsValid())
-        {
-        controller->Load();
-        if (FillModels::Yes == fillModels)
-            controller->_FillModels();
-        }
+    if (!controller.IsValid() || BE_SQLITE_OK != controller->Load())
+        return nullptr;
+
+    if (FillModels::Yes == fillModels)
+        controller->_FillModels();
 
     return controller;
     }
@@ -172,7 +171,7 @@ ViewControllerPtr ViewDefinition::LoadViewController(bool allowOverrides, FillMo
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewControllerPtr SpatialViewDefinition::_SupplyController() const
     {
-    return new QueryViewController(GetDgnDb(), GetViewId());
+    return new DgnQueryView(GetDgnDb(), GetViewId());
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -2,7 +2,7 @@
 |
 |  $Source: PublicAPI/DgnPlatform/Annotations/AnnotationFrame.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,12 +10,13 @@
 //__PUBLISH_SECTION_START__
 
 #include <Bentley/RefCounted.h>
+#include <DgnPlatform/DgnDb.h>
 #include "AnnotationFrameStyle.h"
 
 DGNPLATFORM_TYPEDEFS(AnnotationFrame);
 DGNPLATFORM_REF_COUNTED_PTR(AnnotationFrame);
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //! @addtogroup Annotations
 //! @beginGroup
@@ -45,7 +46,7 @@ private:
     
     DgnDbP m_dgndb;
     
-    DgnElementId m_styleID;
+    AnnotationFrameStyleId m_styleID;
     AnnotationFrameStylePropertyBag m_styleOverrides;
 
     DGNPLATFORM_EXPORT void CopyFrom(AnnotationFrameCR);
@@ -56,12 +57,12 @@ public:
     AnnotationFrame(AnnotationFrameCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
     AnnotationFrameR operator=(AnnotationFrameCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
     static AnnotationFramePtr Create(DgnDbR project) { return new AnnotationFrame(project); }
-    DGNPLATFORM_EXPORT static AnnotationFramePtr Create(DgnDbR, DgnElementId);
+    DGNPLATFORM_EXPORT static AnnotationFramePtr Create(DgnDbR, AnnotationFrameStyleId);
     AnnotationFramePtr Clone() const { return new AnnotationFrame(*this); }
 
     DgnDbR GetDbR() const { return *m_dgndb; }
-    DgnElementId GetStyleId() const { return m_styleID; }
-    DGNPLATFORM_EXPORT void SetStyleId(DgnElementId, SetAnnotationFrameStyleOptions);
+    AnnotationFrameStyleId GetStyleId() const { return m_styleID; }
+    DGNPLATFORM_EXPORT void SetStyleId(AnnotationFrameStyleId, SetAnnotationFrameStyleOptions);
     AnnotationFrameStylePtr CreateEffectiveStyle() const { return AnnotationFrameStyle::Get(*m_dgndb, m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
     AnnotationFrameStylePropertyBagCR GetStyleOverrides() const { return m_styleOverrides; }
     AnnotationFrameStylePropertyBagR GetStyleOverridesR() { return m_styleOverrides; }
@@ -69,4 +70,4 @@ public:
 
 //! @endGroup
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

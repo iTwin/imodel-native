@@ -19,7 +19,7 @@ DGNPLATFORM_REF_COUNTED_PTR(AnnotationTextStylePropertyBag);
 DGNPLATFORM_TYPEDEFS(AnnotationTextStyle);
 DGNPLATFORM_REF_COUNTED_PTR(AnnotationTextStyle);
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //! @addtogroup Annotations
 //! @beginGroup
@@ -94,6 +94,9 @@ public:
     T_Real GetRealProperty(AnnotationTextStyleProperty key) const { return T_Super::GetRealProperty((T_Key)key); }
     void SetRealProperty(AnnotationTextStyleProperty key, T_Real value) { T_Super::SetRealProperty((T_Key)key, value); }
 };
+
+//! As an element, AnnotationTextStyle IDs are inherently DgnElementId, but create a typedef so that argument types are more obvious/natural.
+typedef DgnElementId AnnotationTextStyleId;
 
 //=======================================================================================
 //! This is used to provide style properties when creating an AnnotationTextBlock.
@@ -223,4 +226,4 @@ namespace dgn_ElementHandler
 
 //! @endGroup
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

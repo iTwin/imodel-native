@@ -24,9 +24,9 @@ module ComponentModelTest
         var boxSize = new be.DVector3d (xsize, ysize, zsize);
         var box = be.DgnBox.CreateCenteredBox (new be.DPoint3d(0,0,0), boxSize, true); // NB: the *geometry* is always defined in an LCS w/ origin 0,0,0. The placement below puts where we want it.
 
-        var builder = new be.ElementGeometryBuilder(element, origin, angles);
-        builder.AppendSolidPrimitive (box);
-        builder.SetGeomStreamAndPlacement(element);
+        var builder = new be.GeometryBuilder(element, origin, angles);
+        builder.AppendGeometry (box);
+        builder.SetGeometryStreamAndPlacement(element);
     }
 
     //  Utility function that creates a new (non-persistent) PhysicalElement object in memory and assigns it to the correct category 
@@ -90,10 +90,10 @@ module ComponentModelTest
 
             var element3 = makeElement(componentModel, cdef);
 
-            var builder = new be.ElementGeometryBuilder(element, new be.DPoint3d(0,0,0), angles);
+            var builder = new be.GeometryBuilder(element, new be.DPoint3d(0,0,0), angles);
 
-            builder.Append(new be.LineSegment (new be.DPoint3d (0,0,0), new be.DPoint3d(1,0,0)));
-            builder.SetGeomStreamAndPlacement(element3);
+            builder.AppendGeometry(new be.LineSegment (new be.DPoint3d (0,0,0), new be.DPoint3d(1,0,0)));
+            builder.SetGeometryStreamAndPlacement(element3);
             element3.Update ();
 
             return 0;

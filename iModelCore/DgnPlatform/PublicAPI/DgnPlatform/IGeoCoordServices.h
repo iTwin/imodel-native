@@ -8,7 +8,7 @@
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //! Status values returned by IGeoCoordinateServices methods.
 enum GeoReferenceStatus
@@ -78,4 +78,4 @@ DgnGCS&                 gcs
 ) = 0;
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

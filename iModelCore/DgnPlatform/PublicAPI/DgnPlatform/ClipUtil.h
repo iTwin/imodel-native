@@ -2,29 +2,28 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ClipUtil.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
-
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
 struct ClipUtil
 {
-    DGNPLATFORM_EXPORT static double    ComputeFrustumOverlap (DgnViewportR viewport, DPoint3dCP  testFrustumRootPoints);
-    DGNPLATFORM_EXPORT static bool      IntersectClipPlaneSets (DRange3dP intersectRange, ClipPlaneCP planeSet1, size_t nPlanes1, ClipPlaneCP planeSet2, size_t nPlanes2);
+    DGNPLATFORM_EXPORT static double ComputeFrustumOverlap(DgnViewportR viewport, FrustumCR testFrustumRootPoints);
+    DGNPLATFORM_EXPORT static bool IntersectClipPlaneSets(DRange3dP intersectRange, ClipPlaneCP planeSet1, size_t nPlanes1, ClipPlaneCP planeSet2, size_t nPlanes2);
 
-    DGNPLATFORM_EXPORT static bool RangeInClipPlanes (bool* overlap, DRange3dCR range, bool is3d, ClipPlaneCP, int nPlanes, TransformCP localTransform = NULL);
-    DGNPLATFORM_EXPORT static bool PointInsideClipPlanes (DPoint3dCR point, ClipPlaneCP pPlane, int nPlanes);
-    DGNPLATFORM_EXPORT static bool RayIntersectClipPlanes (DPoint3dCR origin, DVec3dCR direction, ClipPlaneCP, int nPlanes);
-    DGNPLATFORM_EXPORT static int  RangePlanesFromPolyhedra (ClipPlaneP, DPoint3dCP pPolyhedra, bool clipFront, bool clipBack, double expandPlaneDistance);
+    DGNPLATFORM_EXPORT static bool RangeInClipPlanes(bool* overlap, DRange3dCR range, bool is3d, ClipPlaneCP, int nPlanes, TransformCP localTransform = NULL);
+    DGNPLATFORM_EXPORT static bool PointInsideClipPlanes(DPoint3dCR point, ClipPlaneCP pPlane, int nPlanes);
+    DGNPLATFORM_EXPORT static bool RayIntersectClipPlanes(DPoint3dCR origin, DVec3dCR direction, ClipPlaneCP, int nPlanes);
+    DGNPLATFORM_EXPORT static int  RangePlanesFromFrustum(ClipPlaneP, FrustumCR, bool clipFront, bool clipBack, double expandPlaneDistance);
 
-    DGNPLATFORM_EXPORT static void      GetBoundaryLoops
+    DGNPLATFORM_EXPORT static void GetBoundaryLoops
                                         (
                                         int             *nLoops,            //!< [out] Number of loops 
                                         int             nLoopPoints[],      //!< [out] Number of points in each loop 
@@ -33,7 +32,7 @@ struct ClipUtil
                                         size_t           nPoints          //!< Number of input points
                                         );
 
-    DGNPLATFORM_EXPORT void             ExtractBoundaryLoops
+    DGNPLATFORM_EXPORT void        ExtractBoundaryLoops
                                         (
                                         int             *nLoops,            //!< [out] Number of loops 
                                         int             nLoopPoints[],      //!< [out] Number of points in each loop 
@@ -45,8 +44,6 @@ struct ClipUtil
                                         DPoint2dP       pointBuffer,        //!< [in] points buffer
                                         size_t          nPoints             //!< [in] size of point buffer
                                         ) const;
-
-
 };  // ClipUtil
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

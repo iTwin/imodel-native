@@ -11,7 +11,7 @@
 #include <DgnPlatform/DgnElement.h>
 #include <DgnPlatform/DgnModel.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 //! Enables JavaScript programs to access the DgnPlatform API.
@@ -78,4 +78,4 @@ struct DgnScript
     DGNPLATFORM_EXPORT static DgnDbStatus LoadScript(DgnDbR db, Utf8CP tsFunctionSpec);
 }; 
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

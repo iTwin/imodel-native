@@ -8,7 +8,7 @@
 
 #include "../TestFixture/DgnDbTestFixtures.h"
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
@@ -40,12 +40,12 @@ TEST_F(ElementGeomPartTests, CRUD)
 
     DgnGeometryParts& geomPartTable = m_db->GeometryParts();
     //Create a GeometryPart
-    ElementGeometryPtr elGPtr = ElementGeometry::Create(*GeomHelper::computeShape());
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateGeometryPart(*m_db, true);
+    GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
+    GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(*m_db, true);
     builder->Append(*elGPtr);
     DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, s_geomPartCode);
     EXPECT_TRUE(geomPartPtr != NULL);
-    EXPECT_EQ(SUCCESS, builder->SetGeomStream(*geomPartPtr));
+    EXPECT_EQ(SUCCESS, builder->SetGeometryStream(*geomPartPtr));
     
     // Test the range
     ElementAlignedBox3d partBox = geomPartPtr->GetBoundingBox();
@@ -61,10 +61,10 @@ TEST_F(ElementGeomPartTests, CRUD)
     // Query
     EXPECT_TRUE(partId == geomPartTable.QueryGeometryPartId(s_geomPartCode));
     DgnGeometryPartPtr toFind = geomPartTable.LoadGeometryPart(partId);
-    GeomStream stream = toFind->GetGeomStream();
+    GeometryStream stream = toFind->GetGeometryStream();
     EXPECT_TRUE(stream.HasGeometry());
     uint32_t size  = stream.GetSize();
-    EXPECT_TRUE(geomPartPtr->GetGeomStream().GetSize() == size);
+    EXPECT_TRUE(geomPartPtr->GetGeometryStream().GetSize() == size);
     ExpectEqualRange(geomPartPtr->GetBoundingBox(), partBox);
     
     // Query range
@@ -74,13 +74,13 @@ TEST_F(ElementGeomPartTests, CRUD)
 
     // Update
     builder->Append(*elGPtr);
-    builder->SetGeomStream(*geomPartPtr);
+    builder->SetGeometryStream(*geomPartPtr);
     ASSERT_TRUE(partId == geomPartPtr->GetId());
-    EXPECT_TRUE(geomPartPtr->GetGeomStream().GetSize() > size);
+    EXPECT_TRUE(geomPartPtr->GetGeometryStream().GetSize() > size);
     ASSERT_TRUE(geomPartPtr->GetId().IsValid());
     ASSERT_EQ(SUCCESS  , geomPartTable.UpdateGeometryPart(*geomPartPtr));
     
-    EXPECT_GT(geomPartTable.LoadGeometryPart(partId)->GetGeomStream().GetSize() , size);
+    EXPECT_GT(geomPartTable.LoadGeometryPart(partId)->GetGeometryStream().GetSize() , size);
 
     // Delete
     EXPECT_TRUE(SUCCESS == geomPartTable.DeleteGeometryPart(partId) );
@@ -95,12 +95,12 @@ TEST_F(ElementGeomPartTests, CreateElements)
     SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeometryPart
-    ElementGeometryPtr elGPtr = ElementGeometry::Create(*GeomHelper::computeShape());
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateGeometryPart(*m_db, true);
+    GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
+    GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(*m_db, true);
     builder->Append(*elGPtr);
     DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, s_geomPartCode);
     EXPECT_TRUE(geomPartPtr != NULL);
-    EXPECT_EQ(SUCCESS, builder->SetGeomStream(*geomPartPtr));
+    EXPECT_EQ(SUCCESS, builder->SetGeometryStream(*geomPartPtr));
 
     EXPECT_EQ(SUCCESS, m_db->GeometryParts().InsertGeometryPart(*geomPartPtr));
 
@@ -124,12 +124,12 @@ TEST_F(ElementGeomPartTests, GeomPartWithoutCode)
     SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeometryPart
-    ElementGeometryPtr elGPtr = ElementGeometry::Create(*GeomHelper::computeShape());
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateGeometryPart(*m_db, true);
+    GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
+    GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(*m_db, true);
     builder->Append(*elGPtr);
     DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db);
     EXPECT_TRUE(geomPartPtr != NULL);
-    EXPECT_EQ(SUCCESS, builder->SetGeomStream(*geomPartPtr));
+    EXPECT_EQ(SUCCESS, builder->SetGeometryStream(*geomPartPtr));
 
     EXPECT_EQ(SUCCESS, m_db->GeometryParts().InsertGeometryPart(*geomPartPtr));
     EXPECT_TRUE(geomPartPtr->GetCode().IsValid());
@@ -156,12 +156,12 @@ TEST_F(ElementGeomPartTests, ElementGeomUsesParts)
     SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeometryPart
-    ElementGeometryPtr elGPtr = ElementGeometry::Create(*GeomHelper::computeShape());
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateGeometryPart(*m_db, true);
+    GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
+    GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(*m_db, true);
     builder->Append(*elGPtr);
     DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, s_geomPartCode);
     EXPECT_TRUE(geomPartPtr != NULL);
-    EXPECT_EQ(SUCCESS, builder->SetGeomStream(*geomPartPtr));
+    EXPECT_EQ(SUCCESS, builder->SetGeometryStream(*geomPartPtr));
 
     EXPECT_EQ(SUCCESS, m_db->GeometryParts().InsertGeometryPart(*geomPartPtr));
 
@@ -190,12 +190,12 @@ TEST_F(ElementGeomPartTests, ElementGeomUsesParts_DeleteGeomPart)
     SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeometryPart
-    ElementGeometryPtr elGPtr = ElementGeometry::Create(*GeomHelper::computeShape());
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateGeometryPart(*m_db, true);
+    GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
+    GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(*m_db, true);
     builder->Append(*elGPtr);
     DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, s_geomPartCode);
     EXPECT_TRUE(geomPartPtr != NULL);
-    EXPECT_EQ(SUCCESS, builder->SetGeomStream(*geomPartPtr));
+    EXPECT_EQ(SUCCESS, builder->SetGeometryStream(*geomPartPtr));
 
     EXPECT_EQ(SUCCESS, m_db->GeometryParts().InsertGeometryPart(*geomPartPtr));
 
@@ -223,12 +223,12 @@ TEST_F(ElementGeomPartTests, ElementGeomUsesParts_DeleteElement)
     SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeometryPart
-    ElementGeometryPtr elGPtr = ElementGeometry::Create(*GeomHelper::computeShape());
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateGeometryPart(*m_db, true);
+    GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
+    GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(*m_db, true);
     builder->Append(*elGPtr);
     DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, s_geomPartCode);
     EXPECT_TRUE(geomPartPtr != NULL);
-    EXPECT_EQ(SUCCESS, builder->SetGeomStream(*geomPartPtr));
+    EXPECT_EQ(SUCCESS, builder->SetGeometryStream(*geomPartPtr));
 
     EXPECT_EQ(SUCCESS, m_db->GeometryParts().InsertGeometryPart(*geomPartPtr));
 
@@ -258,12 +258,12 @@ TEST_F(ElementGeomPartTests, CreateElementsAndDeleteGemPart)
     SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeometryPart
-    ElementGeometryPtr elGPtr = ElementGeometry::Create(*GeomHelper::computeShape());
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateGeometryPart(*m_db, true);
+    GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
+    GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(*m_db, true);
     builder->Append(*elGPtr);
     DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, s_geomPartCode);
     EXPECT_TRUE(geomPartPtr != NULL);
-    EXPECT_EQ(SUCCESS, builder->SetGeomStream(*geomPartPtr));
+    EXPECT_EQ(SUCCESS, builder->SetGeometryStream(*geomPartPtr));
 
     EXPECT_EQ(SUCCESS, m_db->GeometryParts().InsertGeometryPart(*geomPartPtr));
 
@@ -297,12 +297,12 @@ TEST_F(ElementGeomPartTests, GeomPart2d)
     SetupProject(L"2dMetricGeneral.idgndb", L"GeomParts2d.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeometryPart
-    ElementGeometryPtr elGPtr = ElementGeometry::Create(*GeomHelper::computeShape2d());
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateGeometryPart(*m_db, false);
+    GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape2d());
+    GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(*m_db, false);
     builder->Append(*elGPtr);
     DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, s_geomPartCode);
     EXPECT_TRUE(geomPartPtr != NULL);
-    EXPECT_EQ(SUCCESS, builder->SetGeomStream(*geomPartPtr));
+    EXPECT_EQ(SUCCESS, builder->SetGeometryStream(*geomPartPtr));
 
     EXPECT_EQ(SUCCESS, m_db->GeometryParts().InsertGeometryPart(*geomPartPtr));
      

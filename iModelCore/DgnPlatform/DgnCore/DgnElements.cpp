@@ -9,7 +9,7 @@
 
 typedef DgnElementCP* DgnElementH;
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 /*=================================================================================**//**
 * @bsiclass                                                     KeithBentley    01/01
 +===============+===============+===============+===============+===============+======*/
@@ -48,6 +48,7 @@ typedef ElemIdRangeNode const * ElemIdRangeNodeCP;
 typedef ElemIdRangeNodeP*       ElemIdRangeNodeH;
 typedef ElemIdRangeNodeP const* ElemIdRangeNodeCH;
 typedef bool(*T_NodeSortFunc)(ElemIdRangeNodeP, ElemIdRangeNodeP);
+typedef std::function<void(DgnElementCR)> T_VisitElemFunc;
 
 /*=================================================================================**//**
 * a node in the tree that has children
@@ -85,6 +86,7 @@ public:
     virtual ElemPurge _Purge(int64_t memTarget) = 0;
     virtual ElemPurge _Drop(uint64_t key) = 0;
     virtual void _Empty() = 0;
+    virtual void _Visit(T_VisitElemFunc) const = 0;
 
     bool ContainsKey(uint64_t key) const {CheckSloppy(); return m_range.Contains(key);}
     void SetParent(ElemIdParent* newParent) {m_parent = newParent;}
@@ -95,7 +97,7 @@ public:
     int GetCount() const {return m_nEntries;}
     void InitRange(uint64_t min, uint64_t max) const {m_range.Init(min, max); m_isSloppy = false;}
     void InitRange() const {InitRange(ULLONG_MAX, 0);}
-    void GetExactNodeRange(ElemIdRange& range) const {CheckSloppy(); range = m_range;}
+    ElemIdRange const& GetExactNodeRange() const {CheckSloppy(); return m_range;}
     void SetNodeRange(ElemIdRange const& range) const { m_range = range; m_isSloppy = false; }
     void SetLastUnReferenced(uint64_t val) {m_lastUnreferenced=val; m_allReferenced=false;}
     uint64_t GetLastUnReferenced() const {return m_lastUnreferenced;}
@@ -121,6 +123,7 @@ private:
     virtual ElemPurge _Purge(int64_t) override;
     virtual ElemPurge _Drop(uint64_t key) override;
     virtual void _Empty() override;
+    virtual void _Visit(T_VisitElemFunc) const override;
 
 public:
     DgnElementCP GetEntry(int index) const {return m_elems[index];}
@@ -149,6 +152,7 @@ protected:
     virtual ElemPurge _Purge(int64_t) override;
     virtual ElemPurge _Drop(uint64_t key) override;
     virtual void _Empty() override;
+    virtual void _Visit(T_VisitElemFunc) const override;
     void SortInto(ElemIdRangeNodeP* into, ElemIdRangeNodeP* from, T_NodeSortFunc sortFunc);
 
 public:
@@ -187,7 +191,7 @@ inline DgnElementCP ElemIdRangeNode::Find(uint64_t key, bool setFreeEntryFlag) c
 // recently released elements.
 // @bsiclass                                                    Keith.Bentley   09/12
 //=======================================================================================
-struct ElemIdTree : public ElemIdParent
+struct ElemIdTree : ElemIdParent
 {
     FixedSizePool1     m_leafPool;          // pool for allocating leaf nodes
     FixedSizePool1     m_internalPool;      // pool for allocating internal nodes
@@ -230,8 +234,9 @@ public:
     void RemoveElement(DgnElementCR element);
     void Purge(int64_t memTarget);
     void Destroy();
+    void VisitElements(T_VisitElemFunc func) const { if (nullptr != m_root) m_root->_Visit(func); }
 };
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/14
@@ -281,7 +286,7 @@ ElemPurge ElemIdLeafNode::_Purge(int64_t memTarget)
 
     for (;curr < end; ++curr)
         {
-        if (0 ==(*curr)->GetRefCount()) // is the element garbage?
+        if (0 == (*curr)->GetRefCount()) // is the element garbage?
             {
             //  Do not kill the element here.  If the element's app data holds a reference to another
             //  element -- possibly a symbol element -- killing the element here may cause the reference
@@ -298,7 +303,7 @@ ElemPurge ElemIdLeafNode::_Purge(int64_t memTarget)
     m_allReferenced = true;      // since we know we've eliminated any garbage entries, mark this node as "all referenced"
     m_nEntries =(int)(used - m_elems);
 
-    // this call deletes the element data, and all its AppData (e.g. XAttributes). It also keeps the total element/bytes count up to date.
+    // this call deletes the element data, and all its AppData. It also keeps the total element/bytes count up to date.
     for (unsigned i = 0; i < killedIndex; i++)
         m_treeRoot.KillElement(*killed[i]);
 
@@ -329,8 +334,7 @@ ElemPurge ElemIdInternalNode::_Drop(uint64_t key)
     for (unsigned index = 0; index <(unsigned)m_nEntries; ++index)
         {
         ElemIdRangeNodeP node = m_children[index];
-        ElemIdRange  currRange;
-        node->GetExactNodeRange(currRange);
+        ElemIdRange const& currRange = node->GetExactNodeRange();
 
         if (key >= currRange.m_low && key <= currRange.m_high)
             {
@@ -564,8 +568,7 @@ ElemIdRangeNodeP ElemIdInternalNode::ChooseBestNode(uint64_t key)
 
     for (ElemIdRangeNodeH curr = FirstEntry(), last = LastEntry(); curr <= last ; ++curr)
         {
-        ElemIdRange  thisRange;
-        (*curr)->GetExactNodeRange(thisRange);
+        ElemIdRange const& thisRange = (*curr)->GetExactNodeRange();
 
         if (key >= thisRange.m_low)
             {
@@ -597,8 +600,7 @@ DgnElementCP ElemIdInternalNode::FindInternal(uint64_t key, bool setFreeEntryFla
         {
         int index = begin +(end - begin - 1)/2;
 
-        ElemIdRange  thisRange;
-        m_children[index]->GetExactNodeRange(thisRange);
+        ElemIdRange const& thisRange = m_children[index]->GetExactNodeRange();
 
         if (key < thisRange.m_low)
             end = index;
@@ -636,15 +638,13 @@ void ElemIdInternalNode::_AddChildNode(ElemIdRangeNodeP newNode)
 
     newNode->SetParent(this);
 
-    ElemIdRange   range;
-    newNode->GetExactNodeRange(range);
+    ElemIdRange const& range = newNode->GetExactNodeRange();
     m_range.Extend(range);
 
     int index = 0;
     for (; index <m_nEntries; index++)
         {
-        ElemIdRange   thisRange;
-        m_children[index]->GetExactNodeRange(thisRange);
+        ElemIdRange const& thisRange = m_children[index]->GetExactNodeRange();
 
         if (range.m_high <= thisRange.m_low)
             {
@@ -706,10 +706,9 @@ void ElemIdInternalNode::_CalculateNodeRange() const
     {
     InitRange();
 
-    ElemIdRange currRange;
     for (ElemIdRangeNodeCH curr = FirstEntryC(), last = LastEntryC(); curr <= last ; ++curr)
         {
-        (*curr)->GetExactNodeRange(currRange);
+        ElemIdRange const& currRange = (*curr)->GetExactNodeRange();
         m_range.Extend(currRange);
         }
     }
@@ -801,15 +800,13 @@ void ElemIdTree::FreeNode(ElemIdRangeNodeP child, bool leaf)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElemIdTree::_AddChildNode(ElemIdRangeNodeP newNode)
     {
-    ElemIdRange          range;
     ElemIdRangeNodeP     currentRoot = m_root;
     ElemIdInternalNode*  newRoot;
 
     newRoot = new((ElemIdInternalNode*) m_internalPool.malloc()) ElemIdInternalNode(*this, this);
     newRoot->_AddChildNode(newNode);
 
-    newNode->GetExactNodeRange(range);
-    newRoot->SetNodeRange(range);
+    newNode->GetExactNodeRange();
 
     if (nullptr != currentRoot)
         newRoot->_AddChildNode(currentRoot);
@@ -831,6 +828,16 @@ void ElemIdLeafNode::_Empty()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElemIdLeafNode::_Visit(T_VisitElemFunc func) const
+    {
+    DgnElementCP const* end = m_elems + m_nEntries;
+    for (DgnElementCP const* curr = m_elems; curr < end; ++curr)
+        func(**curr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElemIdInternalNode::_Empty()
@@ -841,6 +848,16 @@ void ElemIdInternalNode::_Empty()
         (*curr)->_Empty();
 
     m_nEntries = 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElemIdInternalNode::_Visit(T_VisitElemFunc func) const
+    {
+    ElemIdRangeNodeP const* end = m_children + m_nEntries;
+    for (ElemIdRangeNodeP const* curr = m_children; curr < end; ++curr)
+        (*curr)->_Visit(func);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1000,7 +1017,7 @@ DgnElement::~DgnElement()
     --GetDgnDb().Elements().m_tree->m_totals.m_extant;
     }
 
-DgnElements::Totals DgnElements::GetTotals() const {return m_tree->m_totals;}
+DgnElements::Totals const& DgnElements::GetTotals() const {return m_tree->m_totals;}
 DgnElements::Statistics DgnElements::GetStatistics() const {return m_tree->m_stats;}
 void DgnElements::ResetStatistics() {m_tree->m_stats.Reset();}
 
@@ -1255,6 +1272,8 @@ void DgnElements::FinishUpdate(DgnElementCR replacement, DgnElementCR original)
     uint32_t oldSize = original._GetMemSize(); // save current size
     (*const_cast<DgnElementP>(&original))._CopyFrom(replacement);    // copy new data into original element
     ChangeMemoryUsed(original._GetMemSize() - oldSize); // report size change
+
+    original._OnUpdateFinished(); // this gives geometric elements a chance to clear their graphics
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1492,4 +1511,17 @@ ECSqlClassParams const& dgn_ElementHandler::Element::GetECSqlClassParams()
     return m_classParams;
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElements::DropGraphicsForViewport(DgnViewportCR viewport)
+    {
+    viewport.GetPartGraphics().clear();
+    
+    m_tree->VisitElements([&viewport](DgnElementCR el)
+        {
+        auto geom = el.ToGeometrySource();
+        if (nullptr != geom)
+            geom->Graphics().DropFor(viewport);
+        });
+    }

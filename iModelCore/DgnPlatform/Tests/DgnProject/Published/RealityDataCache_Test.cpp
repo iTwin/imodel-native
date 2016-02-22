@@ -14,7 +14,7 @@
 #include <functional>
 #include <memory>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 USING_DGNDB_UNIT_TESTS_NAMESPACE
 
 //=======================================================================================
@@ -611,15 +611,15 @@ struct TestFileSourceData : RefCounted<FileRealityDataSource::Data>
             static RefCountedPtr<RequestOptions> Create() {return new RequestOptions();}
         };
 
-    std::function<BentleyStatus(Utf8CP, bvector<Byte> const&, FileRealityDataSource::RequestOptions const&)> m_initFromHandler;
+    std::function<BentleyStatus(Utf8CP, ByteStream const&, FileRealityDataSource::RequestOptions const&)> m_initFromHandler;
 
     TestFileSourceData() : m_initFromHandler(nullptr) {}
     static RefCountedPtr<TestFileSourceData> Create() {return new TestFileSourceData();}
-    void SetInitFromHandler(std::function<BentleyStatus(Utf8CP, bvector<Byte> const&, FileRealityDataSource::RequestOptions const&)> const& handler) {m_initFromHandler = handler;}
+    void SetInitFromHandler(std::function<BentleyStatus(Utf8CP, ByteStream const&, FileRealityDataSource::RequestOptions const&)> const& handler) {m_initFromHandler = handler;}
     
     virtual Utf8CP _GetId() const override {return nullptr;}
     virtual bool _IsExpired() const override {return false;}
-    virtual BentleyStatus _InitFrom(Utf8CP id, bvector<Byte> const& data, FileRealityDataSource::RequestOptions const& options) override {return (nullptr != m_initFromHandler ? m_initFromHandler(id, data, options) : SUCCESS);}
+    virtual BentleyStatus _InitFrom(Utf8CP id, ByteStream const& data, FileRealityDataSource::RequestOptions const& options) override {return (nullptr != m_initFromHandler ? m_initFromHandler(id, data, options) : SUCCESS);}
     virtual BentleyStatus _InitFrom(IRealityDataBase const& self, RealityDataCacheOptions const&) override {return ERROR;}
     };
 
@@ -690,11 +690,11 @@ TEST_F (FileRealityDataSourceTests, Request)
     BeAtomic<bool> didInitialize(false);
     RefCountedPtr<TestFileSourceData::RequestOptions> options = TestFileSourceData::RequestOptions::Create();
     RefCountedPtr<TestFileSourceData> data = TestFileSourceData::Create();
-    data->SetInitFromHandler([&didInitialize, &filePath, &options, &fileContent](Utf8CP id, bvector<Byte> const& string, FileRealityDataSource::RequestOptions const& opts)
+    data->SetInitFromHandler([&didInitialize, &filePath, &options, &fileContent](Utf8CP id, ByteStream const& string, FileRealityDataSource::RequestOptions const& opts)
         {
         BeAssert(filePath.Equals(id));
         BeAssert(options.get() == &opts);
-        BeAssert(fileContent.Equals((Utf8CP)string.data()));
+        BeAssert(fileContent.Equals((Utf8CP)string.GetData()));
         didInitialize = true;
         return SUCCESS;
         });
@@ -738,12 +738,12 @@ TEST_F (FileRealityDataSourceTests, Request_WithDataOutOfScope)
 
         {
         RefCountedPtr<TestFileSourceData> data = TestFileSourceData::Create();
-        data->SetInitFromHandler([&didInitialize, &filePath, &options, &fileContent, &block](Utf8CP id, bvector<Byte> const& string, FileRealityDataSource::RequestOptions const& opts)
+        data->SetInitFromHandler([&didInitialize, &filePath, &options, &fileContent, &block](Utf8CP id, ByteStream const& string, FileRealityDataSource::RequestOptions const& opts)
             {
             while(block);
             BeAssert(filePath.Equals(id));
             BeAssert(options.get() == &opts);
-            BeAssert(fileContent.Equals((Utf8CP)string.data()));
+            BeAssert(fileContent.Equals((Utf8CP)string.GetData()));
             didInitialize = true;
             return SUCCESS;
             });
@@ -775,7 +775,7 @@ struct TestPredicate : IConditionVariablePredicate
 TEST_F (FileRealityDataSourceTests, SynchronousRequestReturnsDataSynchronouslyAfterQueueing)
     {
     BeAtomic<bool> block(true);
-    auto initHandler = [&block](Utf8CP id, bvector<Byte> const& string, FileRealityDataSource::RequestOptions const& opts)
+    auto initHandler = [&block](Utf8CP id, ByteStream const& string, FileRealityDataSource::RequestOptions const& opts)
         {
         while (block)
             ;

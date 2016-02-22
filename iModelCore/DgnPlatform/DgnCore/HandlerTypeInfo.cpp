@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/HandlerTypeInfo.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -137,6 +137,10 @@ void GeometrySource::_GetInfoString(HitDetailCR hit, Utf8StringR descr, Utf8CP d
     modelStr.assign(DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Model()).c_str()).append(el->GetModel()->GetCode().GetValue());
 
     descr = el->GetCode().GetValue();
+
+    if (el->HasLabel())
+        descr.append(delimiter).append(el->GetLabel());
+
     descr.append(delimiter).append(modelStr.c_str());
     descr.append(delimiter).append(categoryStr.c_str());
     }

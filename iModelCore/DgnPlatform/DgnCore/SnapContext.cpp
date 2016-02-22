@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/SnapContext.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -308,98 +308,35 @@ Byte*           customKeypointData
     snap->SetSnapMode (snapMode);
     snap->SetSprite (sprite);
 
-    SetSnapPoint (snapPoint, forceHot);
+    snap->SetSnapPoint (snapPoint, forceHot, m_snapAperture);
     snap->SetAllowAssociations (!isAdjusted);
 
     if (nBytes && customKeypointData)
         snap->SetCustomKeypoint (nBytes, customKeypointData);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    05/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-static double   distSquaredXY (DPoint4dCR pVec1, DPoint4dCR pVec2)
-    {
-    DPoint3d    v1, v2;
-
-    pVec1.GetProjectedXYZ (v1);
-    pVec2.GetProjectedXYZ (v2);
-
-    double dx = v1.x - v2.x;
-    double dy = v1.y - v2.y;
-
-    return dx * dx + dy * dy;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    SamWilson       06/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-static double   getDistanceFromSnap (SnapDetailCR hit, ViewContextP context)
-    {
-    DPoint3d    pts[2];
-    DPoint4d    scrPts[2];
-
-    pts[0] = hit.GetGeomDetail().GetClosestPoint();
-    pts[1] = hit.GetSnapPoint();
-
-    // NOTE: Use viewport to get active-to-view...
-    context->GetViewport()->GetWorldToViewMap()->M0.Multiply (scrPts, pts, NULL, 2);
-
-    return sqrt (distSquaredXY (scrPts[0], scrPts[1]));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* save the snap point into the snap path currently being generated.
-* @bsimethod                                                    KeithBentley    05/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            SnapContext::SetSnapPoint (DPoint3dCR snapPt, bool forceHot)
-    {
-    DPoint4d    viewPt;
-
-    m_viewport->GetWorldToViewMap()->M0.Multiply (&viewPt, &snapPt, NULL, 1);
-
-    viewPt.NormalizeWeightInPlace ();
-
-    Point2d     screenPt;
-    screenPt.x = (long) viewPt.x;
-    screenPt.y = (long) viewPt.y;
-
-    m_snapPath->SetScreenPoint (screenPt);
-    m_snapPath->SetHitPoint (snapPt);
-
-    double  screenDist = getDistanceFromSnap (*m_snapPath, this);
-    m_snapPath->GetGeomDetailW ().SetScreenDist (screenDist);
-
-    bool    withinAperture = (screenDist <= m_snapAperture);
-    m_snapPath->SetHeat (withinAperture ? SNAP_HEAT_InRange : (forceHot ? SNAP_HEAT_NotInRange : SNAP_HEAT_None));
-    }
-
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct SnapGraphicsProcessor : IElementGraphicsProcessor
+struct SnapGraphicsProcessor : IGeometryProcessor
 {
 private:
 
 SnapContextR        m_snapContext;
 CurveLocationDetail m_location;
 bool                m_isVisible;
-ViewContextP        m_context;
-Transform           m_currentTransform;
+bool                m_testPolyEdges;
 
 protected:
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   11/13
+* @bsimethod                                                    Brien.Bastings  02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _ProcessAsBody (bool isCurved) const override {return false;}
-virtual bool _ProcessAsFacets (bool isPolyface) const override {return isPolyface;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   11/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _AnnounceContext (ViewContextR context) override {m_context = &context;}
-virtual void _AnnounceTransform (TransformCP trans) override {if (trans) m_currentTransform = *trans; else m_currentTransform.InitIdentity ();}
+virtual IGeometryProcessor::UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR) const override {return IGeometryProcessor::UnhandledPreference::Curve;}
+virtual IGeometryProcessor::UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR) const override {return IGeometryProcessor::UnhandledPreference::Curve;}
+virtual IGeometryProcessor::UnhandledPreference _GetUnhandledPreference(PolyfaceQueryCR) const {return IGeometryProcessor::UnhandledPreference::Curve;}
+virtual IGeometryProcessor::UnhandledPreference _GetUnhandledPreference(ISolidKernelEntityCR) const override {return IGeometryProcessor::UnhandledPreference::Curve;}
+virtual IGeometryProcessor::UnhandledPreference _GetUnhandledPreference(TextStringCR) const override {return IGeometryProcessor::UnhandledPreference::Box;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/13
@@ -431,12 +368,12 @@ bool IsEdgePointVisible (DPoint3dCR edgePointWorld, SnapDetailCR snap)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TestCurveLocation (CurveVectorCR curvesLocal)
+bool TestCurveLocation (CurveVectorCR curvesLocal, TransformCR localToWorld)
     {
     DPoint3d    spacePointLocal;
     Transform   worldToLocal;
 
-    worldToLocal.InverseOf(m_currentTransform);
+    worldToLocal.InverseOf(localToWorld);
     worldToLocal.Multiply(&spacePointLocal, &m_snapContext.GetSnapDetail()->GetGeomDetail().GetClosestPoint(), 1);
 
     CurveLocationDetail location;
@@ -446,7 +383,7 @@ bool TestCurveLocation (CurveVectorCR curvesLocal)
 
     DPoint3d    locatePointWorld;
 
-    m_currentTransform.Multiply(&locatePointWorld, &location.point, 1);
+    localToWorld.Multiply(&locatePointWorld, &location.point, 1);
 
     // NOTE: Point visible check is problematic for curved surfaces as edge point is far away from surface normal location...
     bool isVisible = IsEdgePointVisible (locatePointWorld, *m_snapContext.GetSnapDetail());
@@ -458,7 +395,7 @@ bool TestCurveLocation (CurveVectorCR curvesLocal)
         return false;
 
     m_isVisible = isVisible;
-    m_snapContext.GetSnapDetail()->GetGeomDetailW().SetCurvePrimitive(m_location.curve, m_currentTransform.IsIdentity() ? nullptr : &m_currentTransform, HitGeomType::Surface);
+    m_snapContext.GetSnapDetail()->GetGeomDetailW().SetCurvePrimitive(m_location.curve, &localToWorld, HitGeomType::Surface);
 
     return true;
     }
@@ -466,51 +403,64 @@ bool TestCurveLocation (CurveVectorCR curvesLocal)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus _ProcessCurveVector (CurveVectorCR curves, bool isFilled) override
+virtual bool _ProcessCurveVector(CurveVectorCR curves, bool isFilled, SimplifyGraphic& graphic) override
     {
-    // Quick exclude of geometry that didn't generate the hit...
-    if (m_snapContext.GetSnapDetail()->GetGeomDetail().GetGeomStreamEntryId() != m_context->GetGeomStreamEntryId())
-        return SUCCESS;
+    TestCurveLocation(curves, graphic.GetLocalToWorldTransform());
 
-    TestCurveLocation(curves);
-
-    return SUCCESS;
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus _ProcessFacets (PolyfaceQueryCR meshData, bool isFilled) override
+virtual bool _ProcessPolyface(PolyfaceQueryCR meshData, bool isFilled, SimplifyGraphic& graphic) override
     {
-    // Quick exclude of geometry that didn't generate the hit...
-    if (m_snapContext.GetSnapDetail()->GetGeomDetail().GetGeomStreamEntryId() != m_context->GetGeomStreamEntryId())
-        return SUCCESS;
+    if (m_testPolyEdges)
+        return false; // Process according to UnhandledPreference...
 
     PolyfaceVisitorPtr  visitor = PolyfaceVisitor::Attach(meshData);
-    double              tolerance = 1e37; /*fc_hugeVal*/
+    double              tolerance = 1.0e-5;
 
     visitor->SetNumWrap(1);
 
     DPoint3d    spacePointLocal;
     Transform   worldToLocal;
 
-    worldToLocal.InverseOf(m_currentTransform);
+    worldToLocal.InverseOf(graphic.GetLocalToWorldTransform());
     worldToLocal.Multiply(&spacePointLocal, &m_snapContext.GetSnapDetail()->GetGeomDetail().GetClosestPoint(), 1);
 
-    for (; visitor->AdvanceToNextFace(); )
+    for (; visitor->AdvanceToNextFace();)
         {
-        DPoint3d    thisFacePoint;
+        DPoint3d thisFacePoint;
 
         if (!visitor->TryFindCloseFacetPoint(spacePointLocal, tolerance, thisFacePoint))
             continue;
 
-        CurveVectorPtr  curves = CurveVector::CreateLinear(visitor->Point());
+        // Get a "face" containing this facet, a single facet when there are hidden edges isn't what someone would consider a face...
+        bvector<ptrdiff_t> seedReadIndices;
+        bvector<ptrdiff_t> allFaceBlocks;
+        bvector<ptrdiff_t> activeReadIndexBlocks;
+    
+        PolyfaceHeaderPtr mesh = meshData.Clone(); // NEEDSWORK_EARLIN - Should be able to call PartitionByConnectivity on PolyfaceQuery...
 
-        TestCurveLocation(*curves);
-        tolerance = thisFacePoint.Distance(spacePointLocal); // Refine tolerance...
+        mesh->PartitionByConnectivity(2, allFaceBlocks);
+        seedReadIndices.push_back(visitor->GetReadIndex());
+        mesh->SelectBlockedIndices(allFaceBlocks, seedReadIndices, true, activeReadIndexBlocks);
+
+        bvector<PolyfaceHeaderPtr> perFacePolyfaces;
+
+        mesh->CopyPartitions(activeReadIndexBlocks, perFacePolyfaces);
+
+        if (0 != perFacePolyfaces.size())
+            {
+            AutoRestore<bool> savePolyEdges(&m_testPolyEdges, true);
+            graphic.AddPolyface(*perFacePolyfaces.front());
+            }
+
+        break;
         }
 
-    return SUCCESS;
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -519,18 +469,73 @@ virtual BentleyStatus _ProcessFacets (PolyfaceQueryCR meshData, bool isFilled) o
 virtual void _OutputGraphics (ViewContextR context) override
     {
     SnapDetailP      snap = m_snapContext.GetSnapDetail();
-    IElemTopologyCP  elemTopo = snap->GetElemTopology();
-    GeometrySourceCP geom = (nullptr != elemTopo ? elemTopo->_ToGeometrySource() : nullptr);
+    DgnElementCPtr   element = snap->GetElement();
+    GeometrySourceCP source = (element.IsValid() ? element->ToGeometrySource() : nullptr);
 
-    if (nullptr == geom)
-        return;
+    if (nullptr == source)
+        {
+        IElemTopologyCP elemTopo = snap->GetElemTopology();
+        if (nullptr == (source = (nullptr != elemTopo ? elemTopo->_ToGeometrySource() : nullptr)))
+            return;
+        }
 
-    geom->DrawHit(*snap, m_snapContext);
+    // Get the GeometryParams for this hit from the GeometryStream...
+    GeometryCollection collection(*source);
+    Render::GraphicPtr graphic;
+
+    collection.SetBRepOutput(GeometryCollection::BRepOutput::Edges | GeometryCollection::BRepOutput::FaceIso); // Want exact edges only...
+
+    for (auto iter : collection)
+        {
+        // Quick exclude of geometry that didn't generate the hit...
+        if (snap->GetGeomDetail().GetGeometryStreamEntryId() != iter.GetGeometryStreamEntryId())
+            continue;
+
+        GeometricPrimitivePtr geom = iter.GetGeometryPtr();
+
+        if (geom.IsValid())
+            {
+            if (!graphic.IsValid())
+                graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), iter.GetGeometryToWorld()));
+
+            geom->AddToGraphic(*graphic);
+            break; // Keep going, want to draw all matching geometry (ex. multi-symb BRep is Polyface per-symbology)...
+            }
+
+        DgnGeometryPartPtr geomPart = iter.GetGeometryPartPtr();
+
+        if (!geomPart.IsValid())
+            return; // Shouldn't happen...
+
+        GeometryCollection partCollection(geomPart->GetGeometryStream(), context.GetDgnDb());
+
+        partCollection.SetNestedIteratorContext(iter); // Iterate part GeomStream in context of parent...
+
+        for (auto partIter : partCollection)
+            {
+            // Quick exclude of part geometry that didn't generate the hit...pass true to compare part geometry index...
+            if (snap->GetGeomDetail().GetGeometryStreamEntryId(true) != partIter.GetGeometryStreamEntryId())
+                continue;
+
+            GeometricPrimitivePtr partGeom = partIter.GetGeometryPtr();
+
+            if (!partGeom.IsValid())
+                continue;
+
+            if (!graphic.IsValid())
+                graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), partIter.GetGeometryToWorld()));
+
+            partGeom->AddToGraphic(*graphic);
+            continue; // Keep going, want to draw all matching geometry (ex. multi-symb BRep is Polyface per-symbology)...
+            }
+
+        break; // Done with part...
+        }
     }
 
 public:
 
-SnapGraphicsProcessor (SnapContextR snapContext) : m_snapContext(snapContext) {m_isVisible = false;}
+SnapGraphicsProcessor (SnapContextR snapContext) : m_snapContext(snapContext) {m_isVisible = false; m_testPolyEdges = false;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   08/15
@@ -539,22 +544,7 @@ static bool DoSnapUsingClosestCurve (SnapContextR snapContext)
     {
     SnapGraphicsProcessor processor(snapContext);
 
-    ElementGraphicsOutput::Process(processor, snapContext.GetDgnDb());
-
-    if (nullptr == snapContext.GetSnapDetail()->GetGeomDetail().GetCurvePrimitive())
-        return false; // No edge found...
-
-    return (SnapStatus::Success == snapContext.DoSnapUsingCurve(snapContext.GetSnapMode()) ? true : false);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   11/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool DoSnapUsingClosestCurve (GeometrySourceCR source, SnapContextR snapContext)
-    {
-    SnapGraphicsProcessor processor(snapContext);
-
-    ElementGraphicsOutput::Process(processor, source);
+    GeometryProcessor::Process(processor, snapContext.GetDgnDb());
 
     if (nullptr == snapContext.GetSnapDetail()->GetGeomDetail().GetCurvePrimitive())
         return false; // No edge found...
@@ -567,7 +557,7 @@ static bool DoSnapUsingClosestCurve (GeometrySourceCR source, SnapContextR snapC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-SnapStatus      SnapContext::DoDefaultDisplayableSnap ()
+SnapStatus      SnapContext::DoDefaultDisplayableSnap()
     {
     SnapDetailP     snap = GetSnapDetail();
     SnapMode        snapMode = GetSnapMode();
@@ -578,32 +568,35 @@ SnapStatus      SnapContext::DoDefaultDisplayableSnap ()
         {
         DPoint3d    hitPoint = snap->GetHitPoint();
 
-        SetSnapInfo (snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
+        SetSnapInfo(snapMode, GetSnapSprite(snapMode), hitPoint, false, false);
 
         return SnapStatus::Success;
         }
 
-    if (nullptr == detail.GetCurvePrimitive ())
+    if (nullptr == detail.GetCurvePrimitive())
         {
         // Surface w/o curve is interior hit...only nearest should "track" surface...
-        if (HitGeomType::Surface == detail.GetGeomType ())
+        if (HitGeomType::Surface == detail.GetGeomType())
             {
             DgnElementCPtr   element = snap->GetElement();
             GeometrySourceCP source = (element.IsValid() ? element->ToGeometrySource() : nullptr);
 
             if (nullptr == source)
+                {
+                // NOTE: Don't assume placement origin is meaningful for non-element hits (it's probably 0), use geometry origin...
                 return SnapGraphicsProcessor::DoSnapUsingClosestCurve(*this) ? SnapStatus::Success : SnapStatus::NotSnappable;
-
-            if (SnapMode::Origin != snapMode)
+                }
+            else if (SnapMode::Origin != snapMode)
                 {
                 // NOTE: This is a fairly expensive proposition...but snap to center of range is really useless, so...
-                if (SnapGraphicsProcessor::DoSnapUsingClosestCurve (*source, *this))
+                if (SnapGraphicsProcessor::DoSnapUsingClosestCurve(*this))
                     return SnapStatus::Success;
                 }
 
-            DPoint3d hitPoint = (nullptr != source->ToGeometrySource3d() ? source->ToGeometrySource3d()->GetPlacement().GetOrigin() : DPoint3d::From(source->ToGeometrySource2d()->GetPlacement().GetOrigin()));
+            DPoint3d hitPoint;
 
-            SetSnapInfo (snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
+            source->GetPlacementTransform().GetTranslation(hitPoint);
+            SetSnapInfo(snapMode, GetSnapSprite(snapMode), hitPoint, false, false);
 
             return SnapStatus::Success;
             }
@@ -611,7 +604,7 @@ SnapStatus      SnapContext::DoDefaultDisplayableSnap ()
         return SnapStatus::NotSnappable;
         }
 
-    return DoSnapUsingCurve (snapMode);
+    return DoSnapUsingCurve(snapMode);
     }
 
 /*---------------------------------------------------------------------------------**//**

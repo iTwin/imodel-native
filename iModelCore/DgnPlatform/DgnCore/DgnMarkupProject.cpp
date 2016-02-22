@@ -152,6 +152,7 @@ void SpatialRedlineViewController::SynchWithSubjectViewController()
     m_viewFlags.grid = true;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -160,6 +161,7 @@ IAuxCoordSysP SpatialRedlineViewController::_GetAuxCoordinateSystem() const
     // Redline views have their own ACS
     return T_Super::_GetAuxCoordinateSystem();
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
@@ -167,7 +169,7 @@ IAuxCoordSysP SpatialRedlineViewController::_GetAuxCoordinateSystem() const
 ColorDef SpatialRedlineViewController::_GetBackgroundColor() const
     {
     // There can only be one background color
-    return m_subjectView.ResolveBGColor();
+    return m_subjectView._GetBackgroundColor();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -255,41 +257,14 @@ void SpatialRedlineViewController::_SaveToSettings(JsonValueR jsonObj) const
 bool SpatialRedlineViewController::_IsInSet (int nVal, BeSQLite::DbValue const* vals) const {return m_subjectView._IsInSet(nVal,vals);}
 
 bool SpatialRedlineViewController::_WantElementLoadStart (ViewportR viewport, double currentTime, double lastQueryTime, uint32_t maxElementsDrawnInDynamicUpdate, Frustum const& queryFrustum) {return m_subjectView._WantElementLoadStart(viewport,currentTime,lastQueryTime,maxElementsDrawnInDynamicUpdate,queryFrustum);}
-uint32_t SpatialRedlineViewController::_GetMaxElementsToLoad () {return m_subjectView._GetMaxElementsToLoad();}
 Utf8String SpatialRedlineViewController::_GetRTreeMatchSql (ViewportR viewport) {return m_subjectView._GetRTreeMatchSql(viewport);}
 int32_t SpatialRedlineViewController::_GetMaxElementFactor() {return m_subjectView._GetMaxElementFactor();}
 double SpatialRedlineViewController::_GetMinimumSizePixels (DrawPurpose updateType) {return m_subjectView._GetMinimumSizePixels (updateType);}
 uint64_t SpatialRedlineViewController::_GetMaxElementMemory () {return m_subjectView._GetMaxElementMemory();}
 #endif
 
-ViewController::FitComplete SpatialRedlineViewController::_ComputeFitRange (DRange3dR range, DgnViewportR viewport, FitViewParamsR params) {return m_subjectView._ComputeFitRange(range,viewport,params);}
+ViewController::FitComplete SpatialRedlineViewController::_ComputeFitRange (FitContextR context) {return m_subjectView._ComputeFitRange(context);}
 
-bool SpatialRedlineViewController::_DrawOverlayDecorations(IndexedViewportR viewport) { return m_subjectView._DrawOverlayDecorations(viewport) || T_Super::_DrawOverlayDecorations(viewport); }
-bool SpatialRedlineViewController::_DrawZBufferedDecorations(IndexedViewportR viewport) { return m_subjectView._DrawZBufferedDecorations(viewport) || T_Super::_DrawZBufferedDecorations(viewport); }
-void SpatialRedlineViewController::_DrawBackgroundGraphics(ViewContextR context) { m_subjectView._DrawBackgroundGraphics(context); }
-void SpatialRedlineViewController::_DrawZBufferedGraphics(ViewContextR context) { m_subjectView._DrawZBufferedGraphics(context); }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    09/2014
-//---------------------------------------------------------------------------------------
-void SpatialRedlineViewController::_DrawElement(ViewContextR context, GeometrySourceCR element)
-    {
-    if (m_targetModelIsInSubjectView)
-        m_subjectView._DrawElement(context, element);
-    else
-        T_Super::_DrawElement(context, element);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    09/2014
-//---------------------------------------------------------------------------------------
-void SpatialRedlineViewController::_DrawElementFiltered(ViewContextR context, GeometrySourceCR element, DPoint3dCP pts, double size)
-    {
-    if (m_targetModelIsInSubjectView)
-        m_subjectView._DrawElementFiltered(context, element, pts, size);
-    else
-        T_Super::_DrawElementFiltered(context, element, pts, size);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
@@ -297,14 +272,6 @@ void SpatialRedlineViewController::_DrawElementFiltered(ViewContextR context, Ge
 GeometricModelP SpatialRedlineViewController::_GetTargetModel() const
     {
     return m_targetModelIsInSubjectView? m_subjectView.GetTargetModel(): T_Super::_GetTargetModel();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbR SpatialRedlineViewController::_GetDgnDb() const
-    {
-    return m_targetModelIsInSubjectView? m_subjectView.GetDgnDb(): T_Super::_GetDgnDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -340,33 +307,6 @@ void SpatialRedlineViewController::_OnAttachedToViewport(DgnViewportR vp)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2014
 //---------------------------------------------------------------------------------------
-void SpatialRedlineViewController::_OnHealUpdate(DgnViewportR viewport, ViewContextR context, bool fullHeal)
-    {
-    T_Super::_OnHealUpdate(viewport, context, fullHeal);
-    m_subjectView._OnHealUpdate(viewport, context, fullHeal);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    08/2014
-//---------------------------------------------------------------------------------------
-void SpatialRedlineViewController::_OnFullUpdate(DgnViewportR viewport, ViewContextR context, FullUpdateInfo& info)
-    {
-    T_Super::_OnFullUpdate(viewport, context, info);
-    m_subjectView._OnFullUpdate(viewport, context, info);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    08/2014
-//---------------------------------------------------------------------------------------
-void SpatialRedlineViewController::_OnDynamicUpdate(DgnViewportR viewport, ViewContextR context, DynamicUpdateInfo& info)
-    {
-    T_Super::_OnDynamicUpdate(viewport, context, info);
-    m_subjectView._OnDynamicUpdate(viewport, context, info);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    08/2014
-//---------------------------------------------------------------------------------------
 void SpatialRedlineViewController::_OnCategoryChange(bool singleEnabled)
     {
     T_Super::_OnCategoryChange(singleEnabled);
@@ -389,7 +329,6 @@ void SpatialRedlineViewController::_DrawView(ViewContextR context)
     //  Draw subject model
         {
         //  set up to draw subject model 
-        ViewContext::ContextMark mark(&context);
         m_targetModelIsInSubjectView = true;   // causes GetTargetModel to return subject view's target model
         BeAssert(GetTargetModel() == m_subjectView.GetTargetModel());
 
@@ -1029,10 +968,11 @@ SpatialRedlineModelPtr SpatialRedlineModel::Create(DgnMarkupProjectR markupProje
     return rdlModel;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RedlineModel::StoreImageData(bvector<uint8_t> const& imageData, IViewOutput::CapturedImageInfo const& imageInfo, bool fitToX, bool compressImageProperty)
+void RedlineModel::StoreImageData(ByteStream const& imageData, Target::CapturedImageInfo const& imageInfo, bool fitToX, bool compressImageProperty)
     {
     //  Grab possibly updated image definition data
     if (imageInfo.hasAlpha)
@@ -1102,14 +1042,15 @@ BeAssert(def1x1.GetSizeofPixelInBytes() == 3);
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RedlineModel::StoreImageDataFromJPEG (uint8_t const* jpegData, size_t jpegDataSize, IViewOutput::CapturedImageInfo const& imageInfoIn, bool fitToX)
+void RedlineModel::StoreImageDataFromJPEG (uint8_t const* jpegData, size_t jpegDataSize, Target::CapturedImageInfo const& imageInfoIn, bool fitToX)
     {
-    IViewOutput::CapturedImageInfo imageInfo;
-    bvector<uint8_t> rgbData;
+    Target::CapturedImageInfo imageInfo;
+    ByteStream rgbData;
     if (ImageUtilities::ReadImageFromJpgBuffer(rgbData, imageInfo, jpegData, jpegDataSize, imageInfoIn) != BSISUCCESS)
         return;
     StoreImageData(rgbData, imageInfo, fitToX, /*compresssImageProperty*/false);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
@@ -1298,6 +1239,7 @@ void RedlineModel::DefineImageTextures(ImageDef const& imageDef, bvector<uint8_t
     for (auto const& corner : uvPts)
         m_tileOrigins.push_back(corner);
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     auto pitch = (uint32_t)imageDef.GetPitch();
     auto tileid = GetBackDropTextureId();
     Point2d tileDims;
@@ -1307,6 +1249,7 @@ void RedlineModel::DefineImageTextures(ImageDef const& imageDef, bvector<uint8_t
     T_HOST.GetGraphicsAdmin()._DefineTile(tileid, nullptr, tileDims, false, imageDef.m_format, pitch, imageData.data());
     m_tileIds.push_back(tileid);
     m_tilesX = 1;
+#endif
 
 #endif
     }
@@ -1316,8 +1259,11 @@ void RedlineModel::DefineImageTextures(ImageDef const& imageDef, bvector<uint8_t
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RedlineModel::LoadImageDataAndDefineTexture()
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (T_HOST.GetGraphicsAdmin()._IsTextureIdDefined(GetBackDropTextureId()))
         return;
+#endif
+
     bvector<uint8_t> imageData;
     LoadImageData(m_imageDef, imageData);
     DefineImageTextures(m_imageDef, imageData);
@@ -1336,7 +1282,9 @@ void RedlineViewController::OnOpen(RedlineModel& targetModel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RedlineViewController::OnClose(RedlineModel& targetModel)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     T_HOST.GetGraphicsAdmin()._DeleteTexture(targetModel.GetBackDropTextureId());
+#endif
     }
 
 void RedlineViewController::SetDrawBorder(bool allow) {m_drawBorder=allow;}
@@ -1347,13 +1295,15 @@ bool RedlineViewController::GetDrawBorder() const {return m_drawBorder;}
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RedlineModel::DrawImage(ViewContextR context, DPoint3dCR viewOrg, DVec3dCR viewDelta, bool drawBorder)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // Make sure texture is defined. (I think it could get deleted when we run low on memory, so we might have to re-create it on the fly.)
     LoadImageDataAndDefineTexture();
 
     uintptr_t const& x = m_tileIds.front();
     int tilesY = (int)m_tileIds.size() / m_tilesX;
 
-    context.GetIViewDraw().DrawMosaic((int)m_tilesX, tilesY, &x, &m_tileOrigins[0]);
+    context.GetCurrentGraphicR().AddMosaic((int)m_tilesX, tilesY, &x, &m_tileOrigins[0]);
+#endif
 
     return BSISUCCESS;
     }

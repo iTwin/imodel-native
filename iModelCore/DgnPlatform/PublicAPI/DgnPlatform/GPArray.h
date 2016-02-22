@@ -151,7 +151,9 @@ public:
     DGNPLATFORM_EXPORT void Add (double x, double y, double z, double w, double a, int mask, int userData);
     DGNPLATFORM_EXPORT BentleyStatus ToBCurve (MSBsplineCurveP curve) const;
 
-    DGNPLATFORM_EXPORT void Draw (Dgn::IDrawGeomR drawGeom, bool closed, bool filled) const;
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    DGNPLATFORM_EXPORT void Draw (Render::DrawGeomR drawGeom, bool closed, bool filled) const;
+#endif
 
     DGNPLATFORM_EXPORT bool GetDPoint3dArray (DPoint3dP point, int* nGot, int i0, int nreq) const;
     DGNPLATFORM_EXPORT BentleyStatus GetEllipse (int* index, DEllipse3dP elllipse, bool flatten) const;

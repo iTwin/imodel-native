@@ -2,123 +2,90 @@
 |
 |     $Source: PublicAPI/DgnPlatform/NullContext.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
+//__PUBLISH_SECTION_START__
 
 #include "ViewContext.h"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
-
+BEGIN_BENTLEY_DGN_NAMESPACE
 /*=================================================================================**//**
-  Output that doesn't do anything.
-  @bsiclass                                                     Brien.Bastings  09/12
-+===============+===============+===============+===============+===============+======*/
-struct NullOutput : IViewDraw
-{
-// IDrawGeom methods
-virtual ViewFlagsCP _GetDrawViewFlags () override {return NULL;}
-virtual void        _SetDrawViewFlags (ViewFlagsCP)  override {}
-virtual void        _ActivateMatSymb (ElemMatSymbCP matSymb) override {}
-virtual void        _ActivateOverrideMatSymb (OvrMatSymbCP ovrMatSymb) override {}
-
-virtual void        _DrawLineString3d (int numPoints, DPoint3dCP points, DPoint3dCP range) override {}
-virtual void        _DrawLineString2d (int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) override {}
-virtual void        _DrawPointString3d (int numPoints, DPoint3dCP points, DPoint3dCP range) override {}
-virtual void        _DrawPointString2d (int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) override {}
-virtual void        _DrawShape3d (int numPoints, DPoint3dCP points, bool filled, DPoint3dCP range) override {}
-virtual void        _DrawShape2d (int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range) override {}
-virtual void        _DrawTriStrip3d (int numPoints, DPoint3dCP points, int32_t usageFlags, DPoint3dCP range) override {}
-virtual void        _DrawTriStrip2d (int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth, DPoint2dCP range) override {}
-virtual void        _DrawArc3d (DEllipse3dCR ellipse, bool isEllipse, bool filled, DPoint3dCP range) override {}
-virtual void        _DrawArc2d (DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth, DPoint2dCP range) override {}
-virtual void        _DrawBSplineCurve (MSBsplineCurveCR curve, bool filled) override {}
-virtual void        _DrawBSplineCurve2d (MSBsplineCurveCR curve, bool filled, double zDepth) override {}
-virtual void        _DrawCurveVector (CurveVectorCR curves, bool isFilled) override {}
-virtual void        _DrawCurveVector2d (CurveVectorCR curves, bool isFilled, double zDepth) override {}
-virtual void        _DrawSolidPrimitive (ISolidPrimitiveCR primitive) override {}
-virtual void        _DrawBSplineSurface (MSBsplineSurfaceCR surface) override {}
-virtual void        _DrawPolyface (PolyfaceQueryCR meshData, bool filled = false) override {}
-virtual StatusInt   _DrawBody (ISolidKernelEntityCR, double pixelSize = 0.0) override {return ERROR;}
-virtual void        _DrawTextString (TextStringCR text, double* zDepth = NULL) override {}
-virtual void        _DrawRaster2d (DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2d const *range) override {}
-virtual void        _DrawRaster (DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) override {}
-virtual void        _DrawDgnOle (IDgnOleDraw*) override {}
-virtual void        _DrawPointCloud (IPointCloudDrawParams* drawParams) override {}
-virtual void        _DrawMosaic (int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) override {}
-
-virtual void        _PushTransClip (TransformCP trans, ClipPlaneSetCP clip = NULL) override {}
-virtual void        _PopTransClip () override {}
-
-virtual void        _PushClipStencil (QvElem* qvElem) override {}
-virtual void        _PopClipStencil () override {}
-
-virtual RangeResult _PushBoundingRange3d (DPoint3dCP range) override {return RangeResult::Outside;}
-virtual RangeResult _PushBoundingRange2d (DPoint2dCP range, double zDepth) override {return RangeResult::Outside;}
-virtual void        _PopBoundingRange () override {}
-
-// IViewDraw methods
-virtual void        _SetToViewCoords (bool yesNo) override {}
-virtual void        _SetSymbology (ColorDef lineColor, ColorDef fillColor, int lineWidth, uint32_t linePattern) override {}
-virtual void        _DrawGrid (bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVector, DVec3dCR yVector, uint32_t gridsPerRef, Point2dCR repetitions) override {}
-virtual bool        _DrawSprite (ISprite* sprite, DPoint3dCP location, DPoint3dCP xVec, int transparency) override {return false;}
-virtual void        _DrawTiledRaster (ITiledRaster* tiledRaster) override {}
-virtual void        _DrawQvElem (QvElem* qvElem, int subElemIndex) override {}
-virtual void        _ClearZ () override {}
-virtual bool        _IsOutputQuickVision () const override {return false;}
-virtual bool        _ApplyMonochromeOverrides (ViewFlagsCR) const override {return false;}
-virtual StatusInt   _TestOcclusion (int numVolumes, DPoint3dP verts, int* results) override {return ERROR;}
-}; // NullOutput
-
-/*=================================================================================**//**
-  Context that doesn't draw anything. NOTE: Every context must setup an output!
-  
-  A sub-class of NullContext can set a specific output:
-  \code
-  struct MyNullContext : NullContext
-    {
-    NullOutput  m_output;
-
-    virtual void _SetupOutputs () override {SetIViewDraw (m_output);}
-    };
-  \endCode
-
-  Non-subclass users of NullContext must explicitly supply an IViewDrawP: (Failing to do so will trigger an assert)
-  \code
-  NullOutput    output;
-  NullContext   context (&output);
-
-  if (SUCCESS == context.Attach (viewport, DrawPurpose::NotSpecified))
-    {
-    // Do something.
-    context.Detach ();
-    }
-  \endCode
+  Context that doesn't draw anything. NOTE: Every context must set up an output!
   @bsiclass                                                     KeithBentley    01/02
 +===============+===============+===============+===============+===============+======*/
 struct NullContext : ViewContext
 {
-DEFINE_T_SUPER(ViewContext)
+    DEFINE_T_SUPER(ViewContext)
+
+    /*=================================================================================**//**
+      @bsiclass                                                     Brien.Bastings  09/12
+    +===============+===============+===============+===============+===============+======*/
+    struct NullGraphic : Render::Graphic
+    {
+        virtual void _ActivateGraphicParams(Render::GraphicParamsCR, Render::GeometryParamsCP) override {}
+        virtual void _AddLineString(int numPoints, DPoint3dCP points, DPoint3dCP range) override {}
+        virtual void _AddLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) override {}
+        virtual void _AddPointString(int numPoints, DPoint3dCP points, DPoint3dCP range) override {}
+        virtual void _AddPointString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) override {}
+        virtual void _AddShape(int numPoints, DPoint3dCP points, bool filled, DPoint3dCP range) override {}
+        virtual void _AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range) override {}
+        virtual void _AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags, DPoint3dCP range) override {}
+        virtual void _AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth, DPoint2dCP range) override {}
+        virtual void _AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled, DPoint3dCP range) override {}
+        virtual void _AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth, DPoint2dCP range) override {}
+        virtual void _AddBSplineCurve(MSBsplineCurveCR curve, bool filled) override {}
+        virtual void _AddBSplineCurve2d(MSBsplineCurveCR curve, bool filled, double zDepth) override {}
+        virtual void _AddCurveVector(CurveVectorCR curves, bool isFilled) override {}
+        virtual void _AddCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth) override {}
+        virtual void _AddSolidPrimitive(ISolidPrimitiveCR primitive) override {}
+        virtual void _AddBSplineSurface(MSBsplineSurfaceCR surface) override {}
+        virtual void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) override {}
+        virtual void _AddBody(ISolidKernelEntityCR, double pixelSize = 0.0) override {}
+        virtual void _AddTextString(TextStringCR text) override {}
+        virtual void _AddTextString2d(TextStringCR text, double zDepth) override {}
+        virtual void _AddMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) override {}
+        virtual void _AddTile(Render::TextureCR tile, DPoint3dCP corners) override {}
+        virtual void _AddRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) override {}
+        virtual void _AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2d const *range) override {}
+        virtual void _AddDgnOle(Render::DgnOleDraw*) override {}
+        virtual void _AddPointCloud(Render::PointCloudDraw* drawParams) override {}
+        virtual void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR) override {}
+        virtual Render::GraphicPtr _CreateSubGraphic(TransformCR) const override {return new NullGraphic();}
+    };
 
 protected:
-
-bool    m_setupScan;
-
-DGNPLATFORM_EXPORT virtual void _AllocateScanCriteria () override;
-DGNPLATFORM_EXPORT virtual QvElem* _DrawCached (IStrokeForCache&) override;
-
-virtual void _DrawSymbol (IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP clip) override {}
-virtual void _DeleteSymbol (IDisplaySymbol*) override {}
-virtual bool _FilterRangeIntersection (GeometrySourceCR source) override {if (m_setupScan) return T_Super::_FilterRangeIntersection(source); return false;}
-virtual void _CookDisplayParams (ElemDisplayParamsR, ElemMatSymbR) override {}
-virtual void _SetupOutputs () override {BeAssert (NULL != m_IViewDraw); SetIViewDraw (*m_IViewDraw);} // Output CAN NOT be NULL!
+    virtual Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return new NullGraphic();}
 
 public:
+    NullContext() {m_ignoreViewRange = true;}
+};
 
-NullContext (IViewDrawP viewDraw = NULL, bool setupScan = false) {m_IViewDraw = viewDraw; m_setupScan = setupScan; m_IDrawGeom = viewDraw; m_ignoreViewRange = true; }
+//=======================================================================================
+// Caclulate the view-aligned range of all elements either within a view or from the view's non-range criteria.
+// @bsiclass                                                    Keith.Bentley   02/16
+//=======================================================================================
+struct FitContext : NullContext
+{
+protected:
+    DEFINE_T_SUPER(NullContext)
+    FitViewParams   m_params;
+    Transform       m_trans;        // usually view transform 
+    DRange3d        m_fitRange;     // union of all view-aligned element ranges
+    DRange3d        m_lastRange;    // last view-aligned range tested
 
-}; // NullContext
+    void AcceptRangeElement(DgnElementId id);
+    bool IsRangeContained(DRange3dCR range);
+    virtual StatusInt _InitContextForView() override;
+    virtual StatusInt _VisitGeometry(GeometrySourceCR source) override;
+    virtual bool _ScanRangeFromPolyhedron() override;
+    virtual ScanCriteria::Result _CheckNodeRange(ScanCriteriaCR criteria, DRange3dCR range, bool is3d) override;
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+public:
+    void ExtendFitRange(ElementAlignedBox3dCR box, TransformCR placement);
+    FitContext(FitViewParams const& params) : m_params(params) {m_fitRange.Init();}
+};
+
+
+END_BENTLEY_DGN_NAMESPACE

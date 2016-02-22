@@ -101,7 +101,7 @@ TEST(TextAnnotation2dTest, BasicCrud)
         DrawingViewController viewController(*db, view.GetViewId());
         viewController.SetStandardViewRotation(StandardView::Top);
         viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
-        viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::Wireframe);
+        viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);
         viewController.ChangeCategoryDisplay(categoryId, true);
         viewController.ChangeModelDisplay(modelId, true);
 
@@ -279,7 +279,7 @@ TEST(TextAnnotation3dTest, BasicCrud)
         SpatialViewController viewController(*db, view.GetViewId());
         viewController.SetStandardViewRotation(StandardView::Top);
         viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
-        viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::Wireframe);
+        viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);
         viewController.ChangeCategoryDisplay(categoryId, true);
         viewController.ChangeModelDisplay(modelId, true);
 

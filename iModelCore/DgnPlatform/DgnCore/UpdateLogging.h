@@ -29,7 +29,7 @@
     DGNPLATFORM_EXPORT void ResumeVTune();
 #endif
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct UpdateLogging
     {
@@ -52,4 +52,4 @@ struct UpdateLogging
 #endif
     };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

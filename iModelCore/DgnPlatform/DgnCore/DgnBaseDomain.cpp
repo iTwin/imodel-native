@@ -11,7 +11,7 @@
 #include <DgnPlatform/AnnotationTable.h>
 #include <DgnPlatform/VolumeElement.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace dgn_TableHandler
 {
@@ -66,7 +66,7 @@ HANDLER_DEFINE_MEMBERS(Category)
 HANDLER_DEFINE_MEMBERS(GeometryPart)
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 HANDLER_EXTENSION_DEFINE_MEMBERS(IEditManipulatorExtension)
 

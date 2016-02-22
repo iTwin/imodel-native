@@ -19,9 +19,18 @@
 #include <DgnPlatform/GeomJsApi.h>
 #include <Logging/bentleylogging.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 #define STUB_OUT_SET_METHOD(PROPNAME,PROPTYPE)  void Set ## PROPNAME (PROPTYPE) {BeAssert(false);}
+
+#define VALUE_TYPE_GET(TYPE,NAME) TYPE Get##NAME () {return m_value.Get##NAME();}
+#define VALUE_TYPE_SET(TYPE,NAME) void Set##NAME (TYPE v) {m_value.Set##NAME(v);}
+
+#define VALUE_TYPE_GET_SET(TYPE,NAME) VALUE_TYPE_GET(TYPE,NAME) VALUE_TYPE_SET(TYPE,NAME)
+
+#define VALUE_TYPE_GET_CAST(JSTYPE,NAME) JSTYPE Get##NAME () {return (JSTYPE)m_value.Get##NAME();}
+#define VALUE_TYPE_SET_CAST(JSTYPE,CPPTYPE,NAME) void Set##NAME (JSTYPE v) {m_value.Set##NAME((CPPTYPE)(v));}
+#define VALUE_TYPE_GET_SET_CAST(JSTYPE,CPPTYPE,NAME) VALUE_TYPE_GET_CAST(JSTYPE,NAME) VALUE_TYPE_SET_CAST(JSTYPE,CPPTYPE,NAME)
 
 struct JsDgnDb;
 typedef JsDgnDb* JsDgnDbP;
@@ -59,6 +68,9 @@ typedef JsPlacement3d* JsPlacement3dP;
 struct JsPhysicalElement;
 typedef JsPhysicalElement* JsPhysicalElementP;
 
+struct JsGeometryCollection;
+typedef JsGeometryCollection* JsGeometryCollectionP;
+
 #define JS_ITERATOR_IMPL(JSITCLASS,CPPCOLL) typedef CPPCOLL T_CppColl;\
     T_CppColl::const_iterator m_iter;\
     JSITCLASS(CPPCOLL::const_iterator it) : m_iter(it) {;}
@@ -73,14 +85,8 @@ typedef JsPhysicalElement* JsPhysicalElementP;
 // Needed by generated callbacks to construct instances of wrapper classes.
 // @bsiclass                                                    Sam/Steve.Wilson    7/15
 //=======================================================================================
-struct RefCountedBaseWithCreate : public RefCounted <IRefCounted>
+struct RefCountedBaseWithCreate : BeProjectedRefCounted
 {
-    template <typename T, typename... Arguments>
-    static RefCountedPtr<T> Create (Arguments&&... arguments)
-        {
-        return new T (std::forward<Arguments> (arguments)...);
-        };
-
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 };
 
@@ -242,8 +248,8 @@ struct JsDgnElement : RefCountedBaseWithCreate
     JsAuthorityIssuedCodeP GetCode() const {return new JsAuthorityIssuedCode(m_el->GetCode());}
     JsDgnModelP GetModel();
     JsECClassP GetElementClass();
-    int32_t Insert() {return m_el.IsValid()? m_el->Insert().IsValid()? 0: -1: -2;}
-    int32_t Update() {return m_el.IsValid()? m_el->Update().IsValid()? 0: -1: -2;}
+    int32_t Insert();
+    int32_t Update();
     void SetParent(JsDgnElement* parent) {if (m_el.IsValid() && (nullptr != parent)) m_el->SetParentId(parent->m_el->GetElementId());}
 
     STUB_OUT_SET_METHOD(Model, JsDgnModelP)
@@ -263,9 +269,17 @@ struct JsPhysicalElement : JsDgnElement
 
     JsPlacement3dP GetPlacement() const;
 
+    int32_t Transform(JsTransformP transform);
+
+    JsGeometryCollectionP GetGeometry() const;
+
+    JsDgnObjectIdP GetCategoryId() const {return m_el.IsValid()? new JsDgnObjectId(m_el->ToGeometrySource()->GetCategoryId().GetValue()): nullptr;}
+
     static JsPhysicalElement* Create(JsDgnModelP model, JsDgnObjectIdP categoryId, Utf8StringCR elementClassName);
 
     STUB_OUT_SET_METHOD(Placement, JsPlacement3dP)
+    STUB_OUT_SET_METHOD(Geometry, JsGeometryCollectionP)
+    STUB_OUT_SET_METHOD(CategoryId, JsDgnObjectIdP)
 };
 
 //=======================================================================================
@@ -392,19 +406,197 @@ struct JsDgnModels : RefCountedBaseWithCreate
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
-struct JsElementGeometryBuilder : RefCountedBaseWithCreate
+struct JsColorDef : RefCountedBaseWithCreate
 {
-    ElementGeometryBuilderPtr m_builder;
+    ColorDef m_value;
 
-    JsElementGeometryBuilder(JsDgnElementP el, JsDPoint3dP o, JsYawPitchRollAnglesP angles);
-    ~JsElementGeometryBuilder() {}
+    JsColorDef(ColorDef const& v) : m_value(v) {}
+    JsColorDef(uint8_t red, uint8_t green, uint8_t blue, uint8_t alpha) : m_value(red, green, blue, alpha) {}
+
+    VALUE_TYPE_GET_SET(uint8_t, Red)
+    VALUE_TYPE_GET_SET(uint8_t, Green)
+    VALUE_TYPE_GET_SET(uint8_t, Blue)
+    VALUE_TYPE_GET_SET(uint8_t, Alpha)
+};
+
+typedef JsColorDef* JsColorDefP;
+
+#ifdef WIP_DGNJSAPI // *** -- need a way to specify both the TS namespace and the C++ namespace
+#endif
+#ifdef WIP_DGNJSAPI // *** Keep this consistent with Render.h
+#endif
+// Define a PLACEHOLDER enum in this namespace that just represents the real enum in another C++ namespace. 
+BEJAVASCRIPT_EXPORT_CLASS (Bentley.Dgn)
+enum class RenderFillDisplay : uint32_t 
+{
+    Never    = 0, //!< don't fill, even if fill attribute is on for the viewport
+    ByView   = 1, //!< fill if the fill attribute is on for the viewport
+    Always   = 2, //!< always fill, even if the fill attribute is off for the viewport
+    Blanking = 3, //!< always fill, fill will always be behind subsequent geometry
+};
+
+// Define a PLACEHOLDER enum in this namespace that just represents the real enum in another C++ namespace. 
+BEJAVASCRIPT_EXPORT_CLASS (Bentley.Dgn)
+enum class RenderDgnGeometryClass : uint32_t 
+{
+    Primary      = 0,
+    Construction = 1,
+    Dimension    = 2,
+    Pattern      = 3,
+};
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
+struct JsRenderGeometryParams : RefCountedBaseWithCreate
+{
+    Render::GeometryParams m_value;
+
+    JsRenderGeometryParams() {;}
+    JsRenderGeometryParams(Render::GeometryParams const& v) : m_value(v) {;}
+
+    JsDgnObjectIdP GetCategoryId() {if (!m_value.GetCategoryId().IsValid()) return nullptr; return new JsDgnObjectId(m_value.GetCategoryId().GetValue());}
+    STUB_OUT_SET_METHOD(CategoryId,JsDgnObjectIdP)
+    JsDgnObjectIdP GetSubCategoryId() {if (!m_value.GetSubCategoryId().IsValid()) return nullptr; return new JsDgnObjectId(m_value.GetSubCategoryId().GetValue());}
+    void SetSubCategoryId(JsDgnObjectIdP v) {m_value.SetSubCategoryId(DgnSubCategoryId(v->m_id));}
+    JsColorDefP GetLineColor() {return new JsColorDef(m_value.GetLineColor());}
+    void SetLineColor(JsColorDefP v) {m_value.SetLineColor(v->m_value);}
+    JsColorDefP GetFillColor() {return new JsColorDef(m_value.GetFillColor());}
+    void SetFillColor(JsColorDefP v) {m_value.SetFillColor(v->m_value);}
+    void SetFillColorToViewBackground() {m_value.SetFillColorToViewBackground();}
+    VALUE_TYPE_GET_SET_CAST(RenderFillDisplay, Render::FillDisplay, FillDisplay)
+    VALUE_TYPE_GET_SET_CAST(RenderDgnGeometryClass, Render::DgnGeometryClass, GeometryClass)
+    VALUE_TYPE_GET_SET(uint32_t, Weight)
+    VALUE_TYPE_GET_SET(double, Transparency)
+    VALUE_TYPE_GET_SET(double, FillTransparency)
+    VALUE_TYPE_GET_SET(int32_t, DisplayPriority)
+    JsDgnObjectIdP GetMaterialId() {if (!m_value.GetMaterialId().IsValid()) return nullptr; return new JsDgnObjectId(m_value.GetMaterialId().GetValue());}
+    void SetMaterialId(JsDgnObjectIdP v) {m_value.SetMaterialId(DgnMaterialId(v->m_id));}
+};
+
+typedef JsRenderGeometryParams* JsRenderGeometryParamsP;
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      02/16
+//=======================================================================================
+struct JsTextString : RefCountedBaseWithCreate
+{
+    TextStringPtr m_value;
+
+    // *** TBD
+};
+
+typedef JsTextString* JsTextStringP;
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      02/16
+//=======================================================================================
+struct JsGeometricPrimitive : RefCountedBaseWithCreate
+{
+    GeometricPrimitivePtr m_value;
+
+    JsGeometricPrimitive(GeometricPrimitive& v) : m_value(&v) {;}
+    JsGeometryP GetGeometry() const;
+    JsTextStringP GetTextString() const;
+
+    STUB_OUT_SET_METHOD(TextString, JsTextStringP)
+    STUB_OUT_SET_METHOD(Geometry, JsGeometryP)
+};
+
+typedef JsGeometricPrimitive* JsGeometricPrimitiveP;
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      02/16
+//=======================================================================================
+struct JsDgnGeometryPart : RefCountedBaseWithCreate
+{
+    DgnGeometryPartPtr m_value;
+    JsDgnGeometryPart(DgnGeometryPart& v) : m_value(&v) {;}
+};
+
+typedef JsDgnGeometryPart* JsDgnGeometryPartP;
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      02/16
+//=======================================================================================
+struct JsGeometryCollectionIterator : RefCountedBaseWithCreate
+    {
+    typedef GeometryCollection T_CppColl;
+    T_CppColl::Iterator m_iter;
+
+    JsGeometryCollectionIterator(T_CppColl::Iterator it) : m_iter(it) {}
+    };
+
+typedef JsGeometryCollectionIterator* JsGeometryCollectionIteratorP;
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      02/16
+//=======================================================================================
+struct JsGeometryCollection : RefCountedBaseWithCreate
+{
+    JS_COLLECTION_IMPL(JsGeometryCollection,JsGeometryCollectionIterator)
+
+    JsGeometryCollection(GeometrySourceCR el) : m_collection(el) {}
+    JsGeometryCollection(JsPhysicalElementP el) : m_collection(*el->m_el->ToPhysicalElementP()) {}
+
+    JsGeometricPrimitiveP GetGeometry(JsGeometryCollectionIteratorP iter)
+        {
+        auto g = iter->m_iter.GetGeometryPtr();
+        return g.IsValid()? new JsGeometricPrimitive(*g): nullptr;
+        }
+    JsDgnGeometryPartP GetGeometryPart(JsGeometryCollectionIteratorP iter)
+        {
+        auto g = iter->m_iter.GetGeometryPartPtr();
+        return g.IsValid()? new JsDgnGeometryPart(*g): nullptr;
+        }
+    JsTransformP GetGeometryToWorld(JsGeometryCollectionIteratorP iter)
+        {
+        return new JsTransform(iter->m_iter.GetGeometryToWorld());
+        }
+    JsRenderGeometryParamsP GetGeometryParams(JsGeometryCollectionIteratorP iter)
+        {
+        return new JsRenderGeometryParams(iter->m_iter.GetGeometryParams());
+        }
+
+};
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
+struct JsGeometryBuilder : RefCountedBaseWithCreate
+{
+    GeometryBuilderPtr m_builder;
+
+    JsGeometryBuilder(JsDgnElementP el, JsDPoint3dP o, JsYawPitchRollAnglesP angles);
+    ~JsGeometryBuilder() {}
+
+    JsRenderGeometryParamsP GetGeometryParams() const 
+        {
+        return new JsRenderGeometryParams(m_builder->GetGeometryParams());
+        }
+
+    void AppendRenderGeometryParams(JsRenderGeometryParamsP params)
+        {
+        if (params)
+            m_builder->Append(params->m_value);
+        }
 
 
-    void AppendSolidPrimitive(JsSolidPrimitiveP solid) {if (solid && solid->GetISolidPrimitivePtr().IsValid()) m_builder->Append(*solid->GetISolidPrimitivePtr());}
-    void Append(JsCurvePrimitiveP curve) {if (curve && curve->GetICurvePrimitivePtr().IsValid()) m_builder->Append(*curve->GetICurvePrimitivePtr());}
-    void Append(JsCurveVectorP curve) {if (curve && curve->GetCurveVectorPtr().IsValid()) m_builder->Append(*curve->GetCurveVectorPtr());}
+    void AppendSubCategoryId(JsDgnObjectIdP subcategoryId) 
+        {
+        if (subcategoryId)
+            m_builder->Append(DgnSubCategoryId(subcategoryId->m_id));
+        }
 
-    void Append(JsGeometryP geometry)
+    /*
+    void AppendSolidPrimitive(JsSolidPrimitiveP solid) 
+        {
+        if (solid && solid->GetISolidPrimitivePtr().IsValid())
+            m_builder->Append(*solid->GetISolidPrimitivePtr());
+        }
+    */
+    
+    void AppendGeometry(JsGeometryP geometry)
         {
         if (!geometry)
             {}
@@ -416,9 +608,11 @@ struct JsElementGeometryBuilder : RefCountedBaseWithCreate
             m_builder->Append(*geometry->GetISolidPrimitivePtr());
         }
 
-    BentleyStatus SetGeomStreamAndPlacement (JsDgnElementP el) {return m_builder->SetGeomStreamAndPlacement(*el->m_el->ToGeometrySourceP());}
+    BentleyStatus SetGeometryStreamAndPlacement (JsDgnElementP el) {return m_builder->SetGeometryStreamAndPlacement(*el->m_el->ToGeometrySourceP());}
+
+    STUB_OUT_SET_METHOD(GeometryParams, JsRenderGeometryParamsP)
 };
-typedef JsElementGeometryBuilder* JsElementGeometryBuilderP;
+typedef JsGeometryBuilder* JsGeometryBuilderP;
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
@@ -688,7 +882,7 @@ struct DgnJsApi : DgnPlatformLib::Host::ScriptAdmin::ScriptLibraryImporter
     void _ImportScriptLibrary(BeJsContextR, Utf8CP) override;
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 #endif//ndef _DGN_JS_API_H_
 

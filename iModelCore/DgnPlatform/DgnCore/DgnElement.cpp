@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/QvElemSet.h>
 #include <DgnPlatform/DgnScript.h>
 
 #define DGN_ELEMENT_PROPNAME_ECInstanceId "ECInstanceId"
@@ -148,15 +147,6 @@ DgnDbStatus DgnElement::_DeleteInDb() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-void QvKey32::DeleteQvElem(QvElem* qvElem)
-    {
-    if (qvElem && qvElem != INVALID_QvElem)
-        T_HOST.GetGraphicsAdmin()._DeleteQvElem(qvElem);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCP DgnElement::GetElementClass() const
@@ -220,13 +210,10 @@ DgnDbStatus DgnElement::_OnInsert()
             return stat;
         }
 
-    // If model is exclusively locked we cannot insert elements into it
-    if (LockStatus::Success != GetDgnDb().Locks().LockModel(*GetModel(), LockLevel::Shared))
-        return DgnDbStatus::LockNotHeld;
-
-    // Ensure this briefcase has reserved the element's code
-    if (CodeStatus::Success != GetDgnDb().Codes().ReserveCode(GetCode()))
-        return DgnDbStatus::CodeNotReserved;
+    // Ensure model not exclusively locked, and code reserved
+    DgnDbStatus stat = GetDgnDb().BriefcaseManager().OnElementInsert(*this);
+    if (DgnDbStatus::Success != stat)
+        return stat;
 
     return GetModel()->_OnInsertElement(*this);
     }
@@ -257,7 +244,7 @@ void DgnElement::_OnInserted(DgnElementP copiedFrom) const
         copiedFrom->CallAppData(OnInsertedCaller(*this));
 
     GetModel()->_OnInsertedElement(*this);
-    GetDgnDb().Locks().OnElementInserted(GetElementId());
+    GetDgnDb().BriefcaseManager().OnElementInserted(GetElementId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -267,6 +254,7 @@ void DgnElement::_OnReversedDelete() const
     {
     GetModel()->_OnReversedDeleteElement(*this);
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -275,7 +263,8 @@ DgnDbStatus DgnElement::_SetParentId(DgnElementId parentId)
     // Check for direct cycle...will check indirect cycles on update.
     if (parentId.IsValid() && parentId == GetElementId())
         return DgnDbStatus::InvalidParent;
-    else if (GetElementHandler()._IsRestrictedAction(RestrictedAction::SetParent))
+
+    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::SetParent))
         return DgnDbStatus::MissingHandler;
 
     m_parentId = parentId;
@@ -290,7 +279,8 @@ static bool parentCycleExists(DgnElementId parentId, DgnElementId elemId, DgnDbR
     // simple checks first...
     if (!parentId.IsValid() || !elemId.IsValid())
         return false;
-    else if (parentId == elemId)
+
+    if (parentId == elemId)
         return true;
 
     CachedStatementPtr stmt = db.Elements().GetStatement("SELECT ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
@@ -318,7 +308,8 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
     {
     if (m_classId != original.m_classId)
         return DgnDbStatus::WrongClass;
-    else if (GetElementHandler()._IsRestrictedAction(RestrictedAction::Update))
+
+    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::Update))
         return DgnDbStatus::MissingHandler;
 
     auto parentId = GetParentId();
@@ -332,12 +323,10 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
             return stat;
         }
 
-    if (LockStatus::Success != GetDgnDb().Locks().LockElement(*this, LockLevel::Exclusive, original.GetModelId()))
-        return DgnDbStatus::LockNotHeld;
-
-    // Ensure this briefcase has reserved the element's code
-    if (CodeStatus::Success != GetDgnDb().Codes().ReserveCode(GetCode()))
-        return DgnDbStatus::CodeNotReserved;
+    // Ensure lock acquired and code reserved
+    DgnDbStatus stat = GetDgnDb().BriefcaseManager().OnElementUpdate(*this, original.GetModelId());
+    if (DgnDbStatus::Success != stat)
+        return stat;
 
     return GetModel()->_OnUpdateElement(*this, original);
     }
@@ -399,8 +388,10 @@ DgnDbStatus DgnElement::_OnDelete() const
             return stat;
         }
 
-    if (LockStatus::Success != GetDgnDb().Locks().LockElement(*this, LockLevel::Exclusive))
-        return DgnDbStatus::LockNotHeld;
+    // Ensure lock acquired
+    DgnDbStatus stat = GetDgnDb().BriefcaseManager().OnElementDelete(*this);
+    if (DgnDbStatus::Success != stat)
+        return stat;
 
     return GetModel()->_OnDeleteElement(*this);
     }
@@ -561,10 +552,11 @@ DgnDbStatus DgnElement::_LoadFromDb()
     DgnElements::ElementSelectStatement select = GetDgnDb().Elements().GetPreparedSelectStatement(*this);
     if (select.m_statement.IsNull())
         return DgnDbStatus::Success;
-    else if (BE_SQLITE_ROW != select.m_statement->Step())
+    
+    if (BE_SQLITE_ROW != select.m_statement->Step())
         return DgnDbStatus::ReadError;
-    else
-        return _ReadSelectParams(*select.m_statement, select.m_params);
+    
+    return _ReadSelectParams(*select.m_statement, select.m_params);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -591,7 +583,7 @@ struct GeomBlobHeader
 
     uint32_t m_signature;    // write this so we can detect errors on read
     uint32_t m_size;
-    GeomBlobHeader(GeomStream const& geom) {m_signature = Signature; m_size=geom.GetSize();}
+    GeomBlobHeader(GeometryStream const& geom) {m_signature = Signature; m_size=geom.GetSize();}
     GeomBlobHeader(SnappyReader& in) {uint32_t actuallyRead; in._Read((Byte*) this, sizeof(*this), actuallyRead);}
 };
 
@@ -601,8 +593,7 @@ struct GeomBlobHeader
 GeometrySource2dCP DgnElement::ToGeometrySource2d() const
     {
     GeometrySourceCP source = _ToGeometrySource();
-    
-    return (nullptr == source ? nullptr : source->ToGeometrySource2d());
+    return nullptr == source ? nullptr : source->ToGeometrySource2d();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -611,17 +602,14 @@ GeometrySource2dCP DgnElement::ToGeometrySource2d() const
 GeometrySource3dCP DgnElement::ToGeometrySource3d() const
     {
     GeometrySourceCP source = _ToGeometrySource();
-    
-    return (nullptr == source ? nullptr : source->ToGeometrySource3d());
+    return nullptr == source ? nullptr : source->ToGeometrySource3d();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeomStream::WriteGeomStreamAndStep(DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId, Statement& stmt, int stmtcolidx) const
+DgnDbStatus GeometryStream::WriteGeometryStreamAndStep(SnappyToBlob& snappy, DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId, Statement& stmt, int stmtcolidx) const
     {
-    SnappyToBlob& snappy = dgnDb.Elements().GetSnappyTo();
-
     snappy.Init();
     if (0 < GetSize())
         {
@@ -652,12 +640,11 @@ DgnDbStatus GeomStream::WriteGeomStreamAndStep(DgnDbR dgnDb, Utf8CP table, Utf8C
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeomStream::ReadGeomStream(DgnDbR dgnDb, void const* blob, int blobSize)
+DgnDbStatus GeometryStream::ReadGeometryStream(SnappyFromMemory& snappy, DgnDbR dgnDb, void const* blob, int blobSize)
     {
     if (0 == blobSize && nullptr == blob)
         return DgnDbStatus::Success;
 
-    SnappyFromMemory& snappy = dgnDb.Elements().GetSnappyFrom();
     snappy.Init(const_cast<void*>(blob), static_cast<uint32_t>(blobSize));
     GeomBlobHeader header(snappy);
     if ((GeomBlobHeader::Signature != header.m_signature) || 0 == header.m_size)
@@ -666,10 +653,10 @@ DgnDbStatus GeomStream::ReadGeomStream(DgnDbR dgnDb, void const* blob, int blobS
         return DgnDbStatus::ReadError;
         }
 
-    ReserveMemory(header.m_size);
+    Resize(header.m_size);
 
     uint32_t actuallyRead;
-    auto readStatus = snappy._Read(GetDataR(), GetSize(), actuallyRead);
+    auto readStatus = snappy._Read(GetDataP(), GetSize(), actuallyRead);
 
     if (ZIP_SUCCESS != readStatus || actuallyRead != GetSize())
         {
@@ -685,7 +672,8 @@ DgnDbStatus GeomStream::ReadGeomStream(DgnDbR dgnDb, void const* blob, int blobS
 +---------------+---------------+---------------+---------------+---------------+------*/
 Transform GeometrySource::GetPlacementTransform() const
     {
-    return (nullptr != _ToGeometrySource3d() ? _ToGeometrySource3d()->GetPlacement().GetTransform() : _ToGeometrySource2d()->GetPlacement().GetTransform());
+    GeometrySource3dCP source3d = _ToGeometrySource3d();
+    return nullptr != source3d ? source3d->GetPlacement().GetTransform() : _ToGeometrySource2d()->GetPlacement().GetTransform();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -704,7 +692,7 @@ void GeometrySource::SetUndisplayed(bool yesNo) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometrySource::SetHilited(DgnElement::Hilited newState) const
+void GeometrySource::_SetHilited(DgnElement::Hilited newState) const
     {
     DgnElementP el = const_cast<DgnElementP>(_ToElement());
 
@@ -1023,7 +1011,7 @@ void GeometricElement2d::_CopyFrom(DgnElementCR el)
         {
         m_placement = src->GetPlacement();
         m_categoryId = src->GetCategoryId();
-        m_geom = src->GetGeomStream();
+        m_geom = src->GetGeometryStream();
         }
     }
 
@@ -1038,7 +1026,7 @@ void GeometricElement3d::_CopyFrom(DgnElementCR el)
         {
         m_placement = src->GetPlacement();
         m_categoryId = src->GetCategoryId();
-        m_geom = src->GetGeomStream();
+        m_geom = src->GetGeometryStream();
         }
     }
 
@@ -1049,7 +1037,7 @@ void GeometricElement::_RemapIds(DgnImportContext& importer)
     {
     T_Super::_RemapIds(importer);
     m_categoryId = importer.RemapCategory(m_categoryId);
-    importer.RemapGeomStreamIds(m_geom);
+    importer.RemapGeometryStreamIds(m_geom);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1074,61 +1062,10 @@ DgnElementPtr DgnElement::CopyForEdit() const
     return newEl;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeomStream::GeomStream(GeomStream const& other)
-    {
-    m_size = m_allocSize = 0;
-    m_data = nullptr;
-    SaveData(other.m_data, other.m_size);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeomStream::ReserveMemory(uint32_t size)
-    {
-    m_size = size;
-    if (size<=m_allocSize)
-        return;
-
-    m_data = (uint8_t*) realloc(m_data, size);
-    m_allocSize = size;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeomStream::~GeomStream()
-    {
-    FREE_AND_CLEAR(m_data);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeomStream& GeomStream::operator= (GeomStream const& other)
-    {
-    if (this != &other)
-        SaveData(other.m_data, other.m_size);
-
-    return *this;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeomStream::SaveData(uint8_t const* data, uint32_t size)
-    {
-    ReserveMemory(size);
-    if (data)
-        memcpy(m_data, data, size);
-    }
-
-
-static const double s_smallVal = .0005;
-inline static void fixRange(double& low, double& high) {if (low==high) {low-=s_smallVal; high+=s_smallVal;}}
+BEGIN_UNNAMED_NAMESPACE
+static const double halfMillimeter() {return .5 * DgnUnits::OneMillimeter();}
+static void fixRange(double& low, double& high) {if (low==high) {low-=halfMillimeter(); high+=halfMillimeter();}}
+END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
@@ -1163,8 +1100,8 @@ AxisAlignedBox3d Placement2d::CalculateRange() const
     // low and high are not allowed to be equal
     fixRange(range.low.x, range.high.x);
     fixRange(range.low.y, range.high.y);
-    range.low.z = -s_smallVal;
-    range.high.z = s_smallVal;
+    range.low.z = -halfMillimeter();
+    range.high.z = halfMillimeter();
 
     return range;
     }
@@ -1413,7 +1350,7 @@ RefCountedPtr<DgnElement::Aspect> DgnElement::Aspect::_CloneForImport(DgnElement
 /*=================================================================================**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +===============+===============+===============+===============+===============+======*/
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 struct MultiAspectMux : DgnElement::AppData
 {
     ECClassCR m_ecclass;
@@ -1430,7 +1367,7 @@ struct MultiAspectMux : DgnElement::AppData
     DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original) override;
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
@@ -2177,7 +2114,7 @@ DgnDbStatus GeometricElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
 
     int blobSize;
     void const* blob = stmt.GetValueBinary(geomIndex, &blobSize);
-    return m_geom.ReadGeomStream(GetDgnDb(), blob, blobSize);
+    return m_geom.ReadGeometryStream(GetDgnDb().Elements().GetSnappyFrom(), GetDgnDb(), blob, blobSize);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2473,7 +2410,7 @@ DgnDbStatus GeometricElement::InsertGeomStream() const
     // Insert ElementUsesGeometryParts relationships for any GeometryPartIds in the GeomStream
     DgnDbR db = GetDgnDb();
     IdSet<DgnGeometryPartId> parts;
-    ElementGeomIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeometryPartIds(parts, db);
+    GeometryStreamIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeometryPartIds(parts, db);
     for (DgnGeometryPartId const& partId : parts)
         {
         if (BentleyStatus::SUCCESS != db.GeometryParts().InsertElementGeomUsesParts(GetElementId(), partId))
@@ -2482,7 +2419,7 @@ DgnDbStatus GeometricElement::InsertGeomStream() const
 
     return status;
     }
-
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2503,7 +2440,7 @@ DgnDbStatus GeometricElement::UpdateGeomStream() const
         partsOld.insert(stmt->GetValueId<DgnGeometryPartId>(0));
 
     IdSet<DgnGeometryPartId> partsNew;
-    ElementGeomIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeometryPartIds(partsNew, db);
+    GeometryStreamIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeometryPartIds(partsNew, db);
 
     if (partsOld.empty() && partsNew.empty())
         return status;

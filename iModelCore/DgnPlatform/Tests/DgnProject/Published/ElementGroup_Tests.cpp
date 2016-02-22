@@ -23,13 +23,13 @@ struct ElementGroupTests : public DgnDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 PhysicalElementPtr ElementGroupTests::CreateAndInsertElement(DgnModelP model)
     {
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
     GenericPhysicalObjectPtr testElement = GenericPhysicalObject::Create(*(model->ToSpatialModelP()), m_defaultCategoryId);
 
     DEllipse3d ellipseData = DEllipse3d::From(1, 2, 3,/**/  0, 0, 2, /**/ 0, 3, 0, /**/ 0.0, Angle::TwoPi());
     ICurvePrimitivePtr curvePrimitive = ICurvePrimitive::CreateArc(ellipseData);
     builder->Append(*curvePrimitive);
-    BentleyStatus status = builder->SetGeomStreamAndPlacement(*testElement);
+    BentleyStatus status = builder->SetGeometryStreamAndPlacement(*testElement);
     if (SUCCESS != status)
         return NULL;
 

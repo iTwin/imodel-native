@@ -897,7 +897,7 @@ public:
     virtual double                  _GetFullyExpandedHeight () const = 0;   // Natural height of the content
     virtual double                  _GetFullyCompressedWidth () const = 0;  // Minimum width supported by the content
     virtual double                  _GetFullyExpandedWidth () const = 0;    // Natural width of the content
-    virtual void                    _AppendGeometry (DPoint2dCR origin, DVec2dCR, TableCellAlignment, ElementGeometryBuilderR) const {}
+    virtual void                    _AppendGeometry (DPoint2dCR origin, DVec2dCR, TableCellAlignment, GeometryBuilderR) const {}
 
     virtual void                    _SetAlignment (TableCellAlignment) {};
     virtual void                    _SetOrientation (TableCellOrientation) {};
@@ -950,7 +950,7 @@ public:
     virtual double                  _GetFullyExpandedWidth () const override;
     virtual double                  _GetFullyCompressedHeight () const override;
     virtual double                  _GetFullyExpandedHeight () const override;
-    virtual void                    _AppendGeometry (DPoint2dCR origin, DVec2dCR, TableCellAlignment, ElementGeometryBuilderR) const;
+    virtual void                    _AppendGeometry (DPoint2dCR origin, DVec2dCR, TableCellAlignment, GeometryBuilderR) const;
 
     virtual void                    _SetAlignment (TableCellAlignment) override;
     virtual void                    _SetOrientation (TableCellOrientation) override;
@@ -1022,7 +1022,7 @@ public:
     DVec2d                              GetContentDirection () const;
     DPoint2d                            GetContentOrigin (DPoint2dCR cellOrigin, DVec2dCR xVec, DVec2dCR yVec) const;
     DVec2d                              GetContentSize () const;
-    void                                AppendContentsGeometry (DPoint2dCR origin, DVec2dCR xVec, DVec2dCR yVec, ElementGeometryBuilderR builder) const;
+    void                                AppendContentsGeometry (DPoint2dCR origin, DVec2dCR xVec, DVec2dCR yVec, GeometryBuilderR builder) const;
     double                              GetFullyCompressedContentHeight () const;
     double                              GetFullyExpandedContentHeight () const;
     double                              GetFullyCompressedContentWidth () const;
@@ -1649,15 +1649,15 @@ public:
 //__PUBLISH_SECTION_START__
 public:
                     explicit                        AnnotationTable(CreateParams const& params);
-DGNPLATFORM_EXPORT  static AnnotationTablePtr Create(CreateParams const& params);
+DGNPLATFORM_EXPORT  static AnnotationTablePtr       Create(CreateParams const& params);
 
                     static DgnClassId               QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationTable)); }
 
-                    static AnnotationTableCPtr Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<AnnotationTable>(id); }
-                    static AnnotationTablePtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<AnnotationTable>(id); }
-                    AnnotationTableCPtr      Insert() { return GetDgnDb().Elements().Insert<AnnotationTable>(*this); }
-                    AnnotationTableCPtr      Update() { return GetDgnDb().Elements().Update<AnnotationTable>(*this); }
-                    DgnDbStatus                     Delete() { return GetDgnDb().Elements().Delete(*this); }
+                    static AnnotationTableCPtr      Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<AnnotationTable>(id); }
+                    static AnnotationTablePtr       GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<AnnotationTable>(id); }
+                    AnnotationTableCPtr             Insert() { return GetDgnDb().Elements().Insert<AnnotationTable>(*this); }
+                    AnnotationTableCPtr             Update() { return GetDgnDb().Elements().Update<AnnotationTable>(*this); }
+                    DgnDbStatus                     Delete() const { return GetDgnDb().Elements().Delete(*this); }
 
                     bool                            IsValid () const;
 
@@ -1879,7 +1879,7 @@ public:
 struct      TablePositionedCells
 {
 private:
-    //friend struct   AnnotationTable;
+    //friend struct   AnnotationTableElement;
     friend struct   TablePositionedCellIterator;
 
     bool                        m_ownSubTables;
@@ -2068,9 +2068,9 @@ public:
 struct          AnnotationTableStroker
 {
 private:
-    AnnotationTableCR    m_table;
-    ElementGeometryBuilderR     m_geomBuilder;
-    bvector<FillRuns>           m_allFillRuns;
+    AnnotationTableCR       m_table;
+    GeometryBuilderR        m_geomBuilder;
+    bvector<FillRuns>       m_allFillRuns;
 
     bool                    m_addFills;
     bool                    m_addTextBlocks;
@@ -2094,7 +2094,7 @@ private:
 #endif
 
 public:
-    AnnotationTableStroker (AnnotationTableCR table, ElementGeometryBuilderR builder);
+    AnnotationTableStroker (AnnotationTableCR table, GeometryBuilderR builder);
 
     AnnotationTableCR    GetTable () const { return m_table; }
     FillRunsCR                  GetFillRuns (uint32_t rowIndex) const { return m_allFillRuns[rowIndex]; }

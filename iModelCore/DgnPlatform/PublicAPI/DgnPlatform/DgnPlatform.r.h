@@ -8,12 +8,26 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include "DgnPlatformBaseType.r.h"
-#if !defined (mdl_resource_compiler) && !defined (mdl_type_resource_generator)
-  #include <BeJsonCpp/BeJsonUtilities.h>
+#include <Geom/GeomApi.h>
+#include "ExportMacros.h"
+#include <BeJsonCpp/BeJsonUtilities.h>
+
+#define BEGIN_BENTLEY_DGN_NAMESPACE BEGIN_BENTLEY_NAMESPACE namespace Dgn {
+#define END_BENTLEY_DGN_NAMESPACE   } END_BENTLEY_NAMESPACE
+
+#define BEGIN_BENTLEY_RENDER_NAMESPACE BEGIN_BENTLEY_DGN_NAMESPACE namespace Render {
+#define END_BENTLEY_RENDER_NAMESPACE   } END_BENTLEY_DGN_NAMESPACE
+
+#define BEGIN_BENTLEY_DISPLAY_NAMESPACE BEGIN_BENTLEY_DGN_NAMESPACE namespace Display {
+#define END_BENTLEY_DISPLAY_NAMESPACE   } END_BENTLEY_DGN_NAMESPACE
+
+// for backwards compatibility, do not use
+#ifndef BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+#define BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE BEGIN_BENTLEY_DGN_NAMESPACE 
+#define END_BENTLEY_DGNPLATFORM_NAMESPACE   END_BENTLEY_DGN_NAMESPACE
 #endif
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //! Identifies the coordinate space of a geometric model
 enum class CoordinateSpace
@@ -22,87 +36,6 @@ enum class CoordinateSpace
     World   = 1,    // the model is in the physical (world) coordinate system.
     };
 
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   12/14
-//=======================================================================================
-enum class StandardView
-    {
-    NotStandard = -1,
-    Top         = 1,
-    Bottom      = 2,
-    Left        = 3,
-    Right       = 4,
-    Front       = 5,
-    Back        = 6,
-    Iso         = 7,
-    RightIso    = 8,
-    };
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   12/14
-//=======================================================================================
-#if !defined (mdl_resource_compiler) && !defined (mdl_type_resource_generator)
-enum class DgnRenderMode : uint8_t
-    {
-    Wireframe           = 0,
-    CrossSection        = 1,
-    Wiremesh            = 2,
-    HiddenLine          = 3,
-    SolidFill           = 4,
-    ConstantShade       = 5,
-    SmoothShade         = 6,
-    Phong               = 7,
-    RayTrace            = 8,
-    RenderWireframe     = 9,
-    Radiosity           = 10,
-    ParticleTrace       = 11,
-    RenderLuxology      = 12,
-    Invalid             = 15,
-    };
-
-/*=================================================================================**//**
-*  The flags that control view information.
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct ViewFlags
-    {
-private:
-    DgnRenderMode m_renderMode;
-
-public:
-    uint32_t    constructions:1;    //!< Shows or hides construction class geometry.
-    uint32_t    text:1;             //!< Shows or hides text.
-    uint32_t    dimensions:1;       //!< Shows or hides dimensions.
-    uint32_t    patterns:1;         //!< Shows or hides pattern geometry.
-    uint32_t    weights:1;          //!< Controls whether non-zero line weights are used or display using weight 0.
-    uint32_t    styles:1;           //!< Controls whether custom line styles are used (e.g. control whether elements with custom line styles draw normally, or as solid lines).
-    uint32_t    transparency:1;     //!< Controls whether element transparency is used (e.g. control whether elements with transparency draw normally, or as opaque).
-    uint32_t    fill:1;             //!< Controls whether the fills on filled elements are displayed.
-    uint32_t    grid:1;             //!< Shows or hides the grid. The grid settings are a design file setting.
-    uint32_t    acs:1;              //!< Shows or hides the ACS triad.
-    uint32_t    bgImage:1;          //!< Shows or hides the background image. The image is a design file setting, and may be undefined.
-
-    uint32_t    textures:1;         //!< Controls whether to display texture maps for material assignments. When off only material color is used for display.
-    uint32_t    materials:1;        //!< Controls whether materials are used (e.g. control whether geometry with materials draw normally, or as if it has no material).
-    uint32_t    sceneLights:1;      //!< Controls whether the custom scene lights or the default lighting scheme are used. Note the inversion.
-    uint32_t    visibleEdges:1;     //!< Shows or hides visible edges in the shaded render mode. This is typically controlled through a display style.
-    uint32_t    hiddenEdges:1;      //!< Shows or hides hidden edges in the shaded render mode. This is typically controlled through a display style.
-    uint32_t    shadows:1;          //!< Shows or hides shadows. This is typically controlled through a display style.
-    uint32_t    noFrontClip:1;      //!< Controls whether the front clipping plane is used. Note the inversion. Elements beyond will not be displayed.
-    uint32_t    noBackClip:1;       //!< Controls whether the back clipping plane is used. Note the inversion. Elements beyond will not be displayed.
-    uint32_t    noClipVolume:1;     //!< Controls whether the clip volume is applied. Note the inversion. Elements beyond will not be displayed.
-    uint32_t    ignoreLighting:1;   //!< Controls whether lights are used.
-
-    void SetRenderMode (DgnRenderMode value) {m_renderMode = value;}
-    DgnRenderMode GetRenderMode() const {return m_renderMode;}
-
-    DGNPLATFORM_EXPORT void InitDefaults();
-    DGNPLATFORM_EXPORT void ToBaseJson(JsonValueR) const;
-    DGNPLATFORM_EXPORT void FromBaseJson(JsonValueCR);
-    DGNPLATFORM_EXPORT void To3dJson(JsonValueR) const;
-    DGNPLATFORM_EXPORT void From3dJson(JsonValueCR);
-    };
-#endif
 
 enum class GradientMode
     {
@@ -138,41 +71,6 @@ struct DirFormat
     double          baseDir;
     };
 
-struct Autodim1
-    {
-    struct
-        {
-        uint16_t  adres2:8;
-        uint16_t  ref_mastersub:2;
-        uint16_t  ref_decfract:1;
-        uint16_t  accuracyFlags:2;  /* 0- use ref_decfract; 1- scientific accuracy; 2- fractional zero */
-        uint16_t  reserved:3;
-        } format;
-    };
-
-/** @cond BENTLEY_SDK_Internal */
-struct DegreeOfFreedom
-    {
-    int32_t             locked;
-    T_Adouble           value;
-    };
-
-/** @endcond */
-
-/*=================================================================================**//**
-*  The unit information
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct UnitFlags
-    {
-    /** Flags for the unit base. */
-    uint32_t        base:3;                     /* UNIT_BASE_xxx */
-    /** Flags for the unit system. */
-    uint32_t        system:3;                   /* UNIT_SYSTEM_xxx */
-    /** Flags for future use. */
-    uint32_t        reserved:26;
-    };
-
 enum class SelectionMode
     {
     New         = 0,
@@ -185,16 +83,16 @@ enum class SelectionMode
 
 enum class LocateSurfacesPref
     {
-    Never           = 0, //!< Don't locate interiors of regions, surfaces, and solids even if filled or rendered.
-    ByView          = 1, //!< Locate interiors according to view attributes for fill display and render mode. (Default)
-    Always          = 2, //!< Locate interiors of regions, surfaces, and solids even in wireframe and even with fill display off.
+    Never   = 0, //!< Don't locate interiors of regions, surfaces, and solids even if filled or rendered.
+    ByView  = 1, //!< Locate interiors according to view attributes for fill display and render mode. (Default)
+    Always  = 2, //!< Locate interiors of regions, surfaces, and solids even in wireframe and even with fill display off.
     };
 
 enum class UnitBase
     {
-    None            = 0,
-    Meter           = 1,
-    Degree          = 2,
+    None    = 0,
+    Meter   = 1,
+    Degree  = 2,
     };
 
 /*=================================================================================**//**
@@ -316,14 +214,12 @@ enum class DgnUnitFormat
 //!     - In Bearing mode, a direction is formatted as an angle measure from either
 //!                        North or South and oriented to either East or West.
 //=======================================================================================
-#if !defined (mdl_resource_compiler) && !defined (mdl_type_resource_generator)
-enum class DirectionMode : uint16_t
+enum class DirectionMode
     {
     Invalid                         = 0,    //!< Uninitialized value. Do not use.
     Azimuth                         = 1,    //!< Ex: 30^
     Bearing                         = 2,    //!< Ex: N60^E
     };
-#endif
 
 //=======================================================================================
 //! Used by DateTimeFormatter to specify the sequence in which various elements of
@@ -627,18 +523,16 @@ enum class SnapMode
     Multi1                  = 1 << 14,
     Multi2                  = 1 << 15,      // For compilation with VS2010, we can't use the | construct. Put back when we compile everything with VS2012 or later.
     MultiSnaps              = (Multi1 | Multi2 | Multi3),
-//__PUBLISH_SECTION_END__
     AllOrdinary             = (Nearest | NearestKeypoint | MidPoint | Center | Origin | Bisector | Intersection | MultiSnaps),
     AllConstraint           = (Tangency | TangentPoint | Perpendicular | PerpendicularPoint | Parallel | PointOn),
     IntersectionCandidate   = (Intersection | Nearest),
-//__PUBLISH_SECTION_START__
     };
 
 ENUM_IS_FLAGS (SnapMode)
 
 /** @endcond */
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 //__PUBLISH_SECTION_END__
 // ///////////////////////////////////////////////////////////////////////////////////////////////////

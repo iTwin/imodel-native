@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/LsCache.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -654,38 +654,38 @@ StatusInt       LsInternalComponent::_DoStroke (ViewContextP context, DPoint3dCP
 
     int32_t style = GetHardwareStyle ();
 
-    ElemMatSymb saveMatSymb;
-    saveMatSymb = *context->GetElemMatSymb (); // Copy current ElemMatSymb
+    GraphicParams saveMatSymb;
+    saveMatSymb = *context->GetGraphicParams (); // Copy current GraphicParams
 
 #if defined (NEEDS_WORK_DGNITEM)
-    // Keep ElemDisplayParams and ElemMatSymb in synch...operations like drop lstyle use ElemDisplayParams not ElemMatSymb.
-    ElemDisplayParamsStateSaver saveState (*context->GetCurrentDisplayParams (), false, false, false, true, false);
+    // Keep GeometryParams and GraphicParams in synch...operations like drop lstyle use GeometryParams not GraphicParams.
+    GeometryParamsStateSaver saveState (*context->GetCurrentGeometryParams (), false, false, false, true, false);
 #endif
 
-    // It's important to set the style via ElemDisplayParams, not ElemMatSymb, for printing to work correctly.
-    context->GetCurrentDisplayParams ()->SetLineStyle (style);
-    context->CookDisplayParams ();
-    context->GetIDrawGeom ().ActivateMatSymb (context->GetElemMatSymb ()); // Activate the new matsymb
+    // It's important to set the style via GeometryParams, not GraphicParams, for printing to work correctly.
+    context->GetCurrentGeometryParams ()->SetLineStyle (style);
+    context->CookGeometryParams ();
+    context->GetIDrawGeom ().ActivateGraphicParams (context->GetGraphicParams ()); // Activate the new matsymb
 
     // Style override that caused this linestyle to be used needs to be cleared in order to use the correct raster pattern for the strokes. 
-    OvrMatSymbP ovrMatSymb = context->GetOverrideMatSymb ();
+    OvrGraphicParamsP ovrMatSymb = context->GetOverrideGraphicParams ();
     uint32_t    saveFlags = ovrMatSymb->GetFlags ();
 
     if (0 != (saveFlags & MATSYMB_OVERRIDE_Style))
         {
         ovrMatSymb->SetFlags (saveFlags & ~MATSYMB_OVERRIDE_Style);
-        context->GetIDrawGeom ().ActivateOverrideMatSymb (ovrMatSymb);
+        context->GetIDrawGeom ().ActivateOverrideGraphicParams (ovrMatSymb);
         }
 
-    context->GetIDrawGeom ().DrawLineString3d (nPoints, inPoints, NULL); // Draw the linestring
+    context->GetIDrawGeom ().AddLineString (nPoints, inPoints, NULL); // Draw the linestring
 
-    // Restore ElemMatSymb to previous state, ElemDisplayParams will be restored in ElemDisplayParamsStateSaver destructor...
-    context->GetIDrawGeom ().ActivateMatSymb (&saveMatSymb);
+    // Restore GraphicParams to previous state, GeometryParams will be restored in GeometryParamsStateSaver destructor...
+    context->GetIDrawGeom ().ActivateGraphicParams (&saveMatSymb);
 
     if (0 != (saveFlags & MATSYMB_OVERRIDE_Style))
         {
         ovrMatSymb->SetFlags (saveFlags);
-        context->GetIDrawGeom ().ActivateOverrideMatSymb (ovrMatSymb);
+        context->GetIDrawGeom ().ActivateOverrideGraphicParams (ovrMatSymb);
         }
 
     return SUCCESS;
@@ -989,8 +989,6 @@ BentleyStatus       LsComponentReader::_LoadDefinition ()
     {
     if (m_jsonSource.size() > 0)
         return SUCCESS;
-
-    wt_OperationForGraphics highPriority; // see comments in BeSQLite.h
 
     BeSQLite::PropertySpec spec = LineStyleProperty::Compound();
 

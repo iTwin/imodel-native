@@ -19,8 +19,8 @@
 #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
 #include <Bentley/BeTest.h>
 
-#define BEGIN_DGNDB_UNIT_TESTS_NAMESPACE BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE namespace DgnDbUnitTests {
-#define END_DGNDB_UNIT_TESTS_NAMESPACE   } END_BENTLEY_DGNPLATFORM_NAMESPACE
+#define BEGIN_DGNDB_UNIT_TESTS_NAMESPACE BEGIN_BENTLEY_DGN_NAMESPACE namespace DgnDbUnitTests {
+#define END_DGNDB_UNIT_TESTS_NAMESPACE   } END_BENTLEY_DGN_NAMESPACE
 #define USING_DGNDB_UNIT_TESTS_NAMESPACE using namespace BentleyApi::Dgn::DgnDbUnitTests;
 
 BEGIN_DGNDB_UNIT_TESTS_NAMESPACE
@@ -133,18 +133,7 @@ namespace BackDoor
     /*---------------------------------------------------------------------------------**//**
     * @bsinamespace
     +---------------+---------------+---------------+---------------+---------------+------*/
-    namespace ILocksManager
-    {
-        /*---------------------------------------------------------------------------------**//**
-        * @bsimethod                                                    Paul.Connelly   11/15
-        +---------------+---------------+---------------+---------------+---------------+------*/
-        void SetLockingEnabled(bool enabled);
-    };
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsinamespace
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    namespace IDgnCodesManager
+    namespace IBriefcaseManager
     {
         /*---------------------------------------------------------------------------------**//**
         * @bsimethod                                                    Paul.Connelly   11/15

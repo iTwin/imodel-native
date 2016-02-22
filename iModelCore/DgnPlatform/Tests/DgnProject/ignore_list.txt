@@ -1,8 +1,6 @@
 #----------------------------------------------------------------------------------------
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
-DimensionHandler.CreateAngularTypes                     # Josh -- We'll need this for markups in Graphite04 -- On non-Windows - Problem setting range of dimension text
-DimensionHandler.CreateLabelLineDimension               # Josh -- We'll need this for markups in Graphite04 -- On non-Windows - Problem setting range of dimension text
 
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
@@ -16,8 +14,6 @@ JsonTests.JsonValueStructure                            # Fails after geomlibs/e
 DgnLineStyleTest.*                                      # WIP DgnLineStyles
 DgnECNavigatorTest.Ifc_WithLatestDgnDb                  # WIP DgnItem
 
-ECInstanceSelectTests.ImportSchema                      # Notified Krischan
-
 ElementDisplayProperties.SetDisplayPattern              # informed Jeff
 
 UnitManagerTest.GetStandardUnitByName                   # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
@@ -25,7 +21,7 @@ UnitManagerTest.GetStandardLabel                        # fails randomonly on 06
 UnitManagerTest.GetStandardName                         # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
 UnitIterator.GetName                                    # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
 
-ElementGeometryBuilderTests.CreateElement2d     # UmarH -- WIP Domain imlementation merge and test clean up
+GeometryBuilderTests.CreateElement2d            # UmarH -- WIP Domain imlementation merge and test clean up
 ElementGeomPartTests.GeomPart2d                 # UmarH -- WIP Domain imlementation merge and test clean up
 
 ChangeSummaryTestFixture.* # Too fragile due to various schema changes - temporarily commenting the tests out. 
@@ -33,17 +29,18 @@ ConfigurationManager_Test.*                             # UmarH -- Tests are por
 
 ComponentModelBasicTest.QueryComponentDefs              
 ComponentModelBasicTest.Variations                                  #  Delete -- WIP_COMPONENT: detect if variation is in use
-ComponentModelBasicTest.MakeVariationInstance                       # fails firebug; notified Umar
+ComponentModelBasicTest.MakeVariationInstance           # UmarH Failing Only on 0601Dev Firebug ( not locally), need to investigate
 ComponentModelTest.SimulateDeveloperAndClient                       # Broken with removal of dgn_ElementHandler::Physical, notified Sam
 ComponentModelTest.SimulateDeveloperAndClientWithNestingSingleton   # Broken with removal of dgn_ElementHandler::Physical, notified Sam
 ComponentModelTest.SimulateDeveloperAndClientWithNesting            # Broken with removal of dgn_ElementHandler::Physical, notified Sam
 
 DgnProjectPackageTest.VerifyViewsForDgndbFilesConvertedDuringBuild   #Affan #TFS353039
 
-ECInstanceSelectTests.SelectQueriesOnDbGeneratedDuringBuild_04Plant # Notified Maha
-ECInstanceSelectTests.SelectQueriesOnDbGeneratedDuringBuild_79Main # Notified Maha
-
 ImportTest.ImportElementsWithDependencies # Seemingly utterly unrelated schema changes induce this
+
+# WIP fixing after 0601 branch created
+ViewAttachmentTest.Geom                                 # NonVisibleViewport
+VolumeElementTestFixture.QueryTest                      # FenceParams::AcceptElement
 
 #Uses the eb ECschema which has to be refactored for EC3 and ECDb06. Notified Raman
 JsonTests.FieldEngineerStructArray

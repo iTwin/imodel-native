@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnGeoCoord.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -416,6 +416,26 @@ DgnDbR            dgnProject
 //);
 /*__PUBLISH_SECTION_START__*/
 
+/*---------------------------------------------------------------------------------**//**
+* Gets the Paper Scale for this GCS. The Paper scale affects the Cartesian coordinates and
+*  makes measurements unreliable. Its use is not recommended.
+* @bsimethod                                                    Barry.Bentley   03/13
++---------------+---------------+---------------+---------------+---------------+------*/
+DGNPLATFORM_EXPORT double                 GetPaperScale () const;
+
+/*---------------------------------------------------------------------------------**//**
+* Sets the Paper Scale for this GCS. The Paper Scale affects the Cartesian coordinates and
+*  makes measurements unreliable. Its use is not recommended. The default and recommended
+*  value is 1.0.
+* @param    paperScale      IN      The new Paper Scale value.
+* @param    project         IN      The project that this GCS came from.
+* @bsimethod                                                    Barry.Bentley   03/13
++---------------+---------------+---------------+---------------+---------------+------*/
+DGNPLATFORM_EXPORT StatusInt              SetPaperScale 
+(
+double paperScale, 
+DgnDbR project
+);
 /*__PUBLISH_SECTION_END__*/
 private:
 

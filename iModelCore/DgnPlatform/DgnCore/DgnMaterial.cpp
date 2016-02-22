@@ -142,17 +142,14 @@ DgnMaterialId DgnMaterial::QueryMaterialId(DgnCode const& code, DgnDbR db)
 BentleyStatus DgnMaterial::GetAsset(JsonValueR value, Utf8CP keyWord) const
     {
     Json::Value root;
-
     if (!Json::Reader::Parse(GetValue(), root))
         return ERROR;
 
-    JsonValueCR     constValue =  root[keyWord];
-    
+    JsonValueCR  constValue =  root[keyWord];
     if (constValue.isNull())
         return ERROR;
 
     value = constValue;
-
     return SUCCESS;
     }
 
@@ -261,6 +258,7 @@ DgnMaterialId DgnMaterial::ImportMaterial(DgnMaterialId srcMaterialId, DgnImport
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnMaterial::_RemapIds(DgnImportContext& importer)
     {
+#ifdef MERGE_CONFLICT
     T_Super::_RemapIds(importer);
     if (!importer.IsBetweenDbs())
         return;
@@ -274,6 +272,7 @@ void DgnMaterial::_RemapIds(DgnImportContext& importer)
         if (nullptr != jsonRenderMaterial && BSISUCCESS == jsonRenderMaterial->RelocateToDestination(importer))
            SetRenderingAsset (jsonRenderMaterial->GetValue());
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

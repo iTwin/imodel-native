@@ -53,61 +53,12 @@ DG_INLINE size_t IViewClipObject::GetPrimaryCutPlaneCount() const {return _GetPr
 DG_INLINE StatusInt IViewClipObject::ApplyTransform(TransformCR t) {return _ApplyTransform(t);}
 DG_INLINE void IViewClipObject::Draw(ViewContextR c) {return _Draw(c);}
 
-DG_INLINE bool DgnViewport::Is3dView() const {return m_is3dView;}
-DG_INLINE bool DgnViewport::IsActive() const {return NULL != m_output;}
-DG_INLINE bool DgnViewport::IsCameraOn() const {return m_isCameraOn;}
-DG_INLINE ViewFlagsCP DgnViewport::GetViewFlags() const {return &m_rootViewFlags;}
-DG_INLINE CameraInfo const& DgnViewport::GetCamera() const {return m_camera;}
-DG_INLINE void DgnViewport::SetMinimumLOD(double minLOD) {m_minLOD = minLOD;}
-DG_INLINE RotMatrixCR DgnViewport::GetRotMatrix() const {return m_rotMatrix;}
-DG_INLINE DMap4dCP DgnViewport::GetWorldToViewMap() const {return &m_rootToView;}
-DG_INLINE DMap4dCP DgnViewport::GetWorldToNpcMap() const {return &m_rootToNpc;}
-DG_INLINE bool DgnViewport::IsGridOn() const {return _IsGridOn();}
-DG_INLINE bool DgnViewport::IsSheetView() const {return _IsSheetView();}
-DG_INLINE ViewControllerCR DgnViewport::GetViewController() const {return *m_viewController;}
-DG_INLINE ViewControllerR DgnViewport::GetViewControllerR() const {return *m_viewController;}
-DG_INLINE DPoint3dCP DgnViewport::GetViewOrigin() const {return _GetViewOrigin();}
-DG_INLINE DPoint3dCP DgnViewport::GetViewDelta() const {return _GetViewDelta();}
-DG_INLINE void DgnViewport::Destroy() {_Destroy();}
-DG_INLINE ColorDef DgnViewport::GetBackgroundColor() const {return m_backgroundColor;}
-DG_INLINE void DgnViewport::GetViewCorners(DPoint3dR low, DPoint3dR high) const {_GetViewCorners(low,high);}
-DG_INLINE int DgnViewport::GetIndexedLineWidth(int index) const {return _GetIndexedLineWidth(index);}
-DG_INLINE uint32_t        DgnViewport::GetIndexedLinePattern(int index) const {return _GetIndexedLinePattern(index);}
-DG_INLINE void DgnViewport::SetFrustumFromRootCorners(DPoint3dCP rootBox, double compressionFraction) {_SetFrustumFromRootCorners(rootBox, compressionFraction);}
-DG_INLINE IViewOutputP DgnViewport::GetIViewOutput() {return _GetIViewOutput();}
-DG_INLINE ICachedDrawP DgnViewport::GetICachedDraw() {return _GetICachedDraw();}
-DG_INLINE void DgnViewport::SetNeedsRefresh() {_SetNeedsRefresh();}
-DG_INLINE void DgnViewport::SetNeedsHeal() {_SetNeedsHeal();}
-DG_INLINE double DgnViewport::GetMinimumLOD() const {return _GetMinimumLOD();}
-DG_INLINE BSIRect DgnViewport::GetClientRect() const {return _GetClientRect();}
-DG_INLINE Point2d DgnViewport::GetScreenOrigin() const {return _GetScreenOrigin();}
-DG_INLINE DVec2d DgnViewport::GetDpiScale() const    {return _GetDpiScale();}
-DG_INLINE ColorDef DgnViewport::GetWindowBgColor() const {return _GetWindowBgColor();}
-DG_INLINE ColorDef DgnViewport::GetHiliteColor() const {return _GetHiliteColor();}
-DG_INLINE StatusInt DgnViewport::RefreshViewport(bool always, bool synchHealingFromBs, bool& stopFlag) {return _RefreshViewport(always, synchHealingFromBs, stopFlag);}
-DG_INLINE void DgnViewport::DrawStandardGrid(DPoint3dR origin, RotMatrixR rMatrix, DPoint2d spacing, uint32_t gridsPerRef, bool isoGrid, Point2dCP fixedRepetitions) {_DrawStandardGrid(origin, rMatrix, spacing, gridsPerRef, isoGrid, fixedRepetitions);}
-
-DG_INLINE void ViewController::SetBackgroundColor(ColorDef color) {m_backgroundColor = color;}
-DG_INLINE bool ViewController::IsLoaded() const { return m_baseModelId.IsValid();}
-DG_INLINE void ViewController::ChangeModelDisplay(DgnModelId modelId, bool onOff) {_ChangeModelDisplay(modelId, onOff);}
-DG_INLINE bool ViewController::Allow3dManipulations() const {return _Allow3dManipulations();}
-DG_INLINE GeometricModelP ViewController::GetTargetModel() const {return _GetTargetModel();}
-DG_INLINE bool ViewController::OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) {return _OnGeoLocationEvent(status, point);}
-DG_INLINE void ViewController::OnViewOpened(DgnViewportR vp) {_OnViewOpened(vp);}
-
-DG_INLINE ClipVectorPtr SpatialViewController::GetClipVector() const {return _GetClipVector();}
-DG_INLINE void CameraViewController::SetClipVector(ClipVectorR c) {m_clipVector = &c;}
-DG_INLINE void CameraViewController::ClearClipVector() {m_clipVector=NULL;}
-DG_INLINE ClipVectorPtr CameraViewController::_GetClipVector() const {return m_clipVector;}
-DG_INLINE IAuxCoordSysP SpatialViewController::GetAuxCoordinateSystem() const {return _GetAuxCoordinateSystem();}
-
 DG_INLINE IACSManagerR IACSManager::GetManager() {return T_HOST.GetAcsManager();}
-
-DG_INLINE void IAuxCoordSys::DisplayInView(DgnViewportP vp, ACSDisplayOptions options, bool drawName) const {return _DisplayInView(vp, options, drawName);}
-DG_INLINE WString IAuxCoordSys::GetName() const {return _GetName();}
-DG_INLINE WString IAuxCoordSys::GetDescription() const {return _GetDescription();}
+DG_INLINE void IAuxCoordSys::DisplayInView(DecorateContextR context, ACSDisplayOptions options, bool drawName) const {return _DisplayInView(context, options, drawName);}
+DG_INLINE Utf8String IAuxCoordSys::GetName() const {return _GetName();}
+DG_INLINE Utf8String IAuxCoordSys::GetDescription() const {return _GetDescription();}
 DG_INLINE ACSType IAuxCoordSys::GetType() const {return _GetType();}
-DG_INLINE WString IAuxCoordSys::GetTypeName() const {return _GetTypeName();}
+DG_INLINE Utf8String IAuxCoordSys::GetTypeName() const {return _GetTypeName();}
 DG_INLINE uint32_t IAuxCoordSys::GetExtenderId() const {return _GetExtenderId();}
 DG_INLINE uint32_t IAuxCoordSys::GetSerializedSize() const {return _GetSerializedSize();}
 DG_INLINE StatusInt IAuxCoordSys::Serialize(void *buffer, uint32_t maxSize) const {return _Serialize(buffer, maxSize);}
@@ -117,8 +68,8 @@ DG_INLINE bool IAuxCoordSys::GetIsReadOnly() const {return _GetIsReadOnly();}
 DG_INLINE RotMatrixR IAuxCoordSys::GetRotation(RotMatrixR pRot) const {return _GetRotation(pRot);}
 DG_INLINE RotMatrixR IAuxCoordSys::GetRotation(RotMatrixR pRot, DPoint3dR pPosition) const {return _GetRotation(pRot, pPosition);}
 DG_INLINE ACSFlags IAuxCoordSys::GetFlags() const {return _GetFlags();}
-DG_INLINE StatusInt IAuxCoordSys::SetName(WCharCP name) {return _SetName(name);}
-DG_INLINE StatusInt IAuxCoordSys::SetDescription(WCharCP descr) {return _SetDescription(descr);}
+DG_INLINE StatusInt IAuxCoordSys::SetName(Utf8CP name) {return _SetName(name);}
+DG_INLINE StatusInt IAuxCoordSys::SetDescription(Utf8CP descr) {return _SetDescription(descr);}
 DG_INLINE StatusInt IAuxCoordSys::SetType(ACSType type) {return _SetType(type);}
 DG_INLINE StatusInt IAuxCoordSys::SetScale(double scale) {return _SetScale(scale);}
 DG_INLINE StatusInt IAuxCoordSys::SetOrigin(DPoint3dCR pOrigin) {return _SetOrigin(pOrigin);}
@@ -127,8 +78,8 @@ DG_INLINE StatusInt IAuxCoordSys::PointFromString(DPoint3dR outPoint, WStringR e
 DG_INLINE StatusInt IAuxCoordSys::StringFromPoint(WStringR outString, WStringR errorMsg, DPoint3dCR inPoint, bool delta, DPoint3dCP deltaOrigin, DgnModelR modelRef, DistanceFormatterR distanceFormatter, DirectionFormatterR directionFormatter)
                                                         { return _StringFromPoint(outString, errorMsg, inPoint, delta, deltaOrigin, modelRef, distanceFormatter, directionFormatter); }
 DG_INLINE StatusInt IAuxCoordSys::SetFlags(ACSFlags flags) {return _SetFlags(flags);}
-DG_INLINE void IAuxCoordSys::DrawGrid(DgnViewportP viewport) const {return _DrawGrid(viewport);}
-DG_INLINE void IAuxCoordSys::PointToGrid(DgnViewportP viewport, DPoint3dR point) const {_PointToGrid(viewport, point);}
+DG_INLINE void IAuxCoordSys::DrawGrid(DecorateContextR context) const {return _DrawGrid(context);}
+DG_INLINE void IAuxCoordSys::PointToGrid(DgnViewportR viewport, DPoint3dR point) const {_PointToGrid(viewport, point);}
 DG_INLINE StatusInt IAuxCoordSys::CompleteSetupFromViewController(SpatialViewControllerCP info) {return _CompleteSetupFromViewController(info);}
 DG_INLINE bool IAuxCoordSys::Equals(IAuxCoordSysCP other) const {return _Equals(other);}
 DG_INLINE IAuxCoordSysPtr IAuxCoordSys::Clone() const {return _Clone();}
@@ -136,216 +87,7 @@ DG_INLINE IAuxCoordSysPtr IAuxCoordSys::Clone() const {return _Clone();}
 DG_INLINE StatusInt IAuxCoordSys::GetStandardGridParams(Point2dR gridReps, Point2dR gridOffset, double& uorPerGrid, double& gridRatio, uint32_t& gridPerRef) const {return _GetStandardGridParams(gridReps, gridOffset, uorPerGrid, gridRatio, gridPerRef);}
 DG_INLINE StatusInt IAuxCoordSys::SetStandardGridParams(Point2dCR gridReps, Point2dCR gridOffset, double uorPerGrid, double gridRatio, uint32_t gridPerRef) {return _SetStandardGridParams(gridReps, gridOffset, uorPerGrid, gridRatio, gridPerRef);}
 
-DG_INLINE DgnDbR ViewContext::GetDgnDb() const {BeAssert(nullptr != m_dgnDb); return *m_dgnDb;}
-DG_INLINE void ViewContext::SetDgnDb(DgnDbR dgnDb) {return _SetDgnDb(dgnDb);}
-DG_INLINE GeometrySourceCP ViewContext::GetCurrentElement() const {return (m_currentElement.IsValid() ? m_currentElement->ToGeometrySource() : nullptr);}
-DG_INLINE void ViewContext::SetCurrentElement(GeometrySourceCP element) {_SetCurrentElement(element);}
-
-DG_INLINE DrawPurpose ViewContext::GetDrawPurpose() const {return m_purpose;}
-DG_INLINE bool ViewContext::IsCameraOn() const {return m_isCameraOn;}
-DG_INLINE bool ViewContext::Is3dView() const {return m_is3dView;}
-
-DG_INLINE ElemMatSymbP ViewContext::GetElemMatSymb() {return &m_elemMatSymb;}
-DG_INLINE OvrMatSymb* ViewContext::GetOverrideMatSymb() {return &m_ovrMatSymb;}
-DG_INLINE IViewDrawR ViewContext::GetIViewDraw() {BeAssert(NULL != m_IViewDraw); return *m_IViewDraw;}
-DG_INLINE IDrawGeomR ViewContext::GetIDrawGeom() {BeAssert(NULL != m_IDrawGeom); return *m_IDrawGeom;}
-DG_INLINE ICachedDrawP ViewContext::GetICachedDraw() {return m_ICachedDraw;}
-DG_INLINE bool ViewContext::CheckICachedDraw() {return m_creatingCacheElem;}
-DG_INLINE Byte& ViewContext::GetFilterLODFlag() {return m_filterLOD;}
-DG_INLINE void ViewContext::SetFilterLODFlag(FilterLODFlags flags) { m_filterLOD =(Byte) flags; }
-DG_INLINE bool ViewContext::GetIgnoreScaleForDimensions() {return m_ignoreScaleForDimensions;}
-DG_INLINE bool ViewContext::GetIgnoreScaleForMultilines() {return m_ignoreScaleForMultilines;}
-DG_INLINE bool ViewContext::GetApplyRotationToDimView() {return m_applyRotationToDimView;}
-DG_INLINE void ViewContext::SetIgnoreScaleForDimensions(bool ignore) {m_ignoreScaleForDimensions = ignore;}
-DG_INLINE void ViewContext::SetIgnoreScaleForMultilines(bool ignore) {m_ignoreScaleForMultilines = ignore;}
-DG_INLINE void ViewContext::SetApplyRotationToDimView(bool rotateDimView) {m_applyRotationToDimView = rotateDimView;}
-DG_INLINE size_t ViewContext::GetTransClipDepth() {return m_transformClipStack.GetSize(); }
-DG_INLINE size_t ViewContext::GetRefTransClipDepth() {return m_refTransClipDepth;}
-DG_INLINE RangeResult ViewContext::GetCurrParentRangeResult() {return m_parentRangeResult; }
-DG_INLINE void ViewContext::SetCurrParentRangeResult(RangeResult val) {m_parentRangeResult = val;}
-DG_INLINE bool& ViewContext::GetUseCachedGraphics() {return m_useCachedGraphics;}
-DG_INLINE DgnViewportP ViewContext::GetViewport() const {return m_viewport;}
-DG_INLINE double ViewContext::GetArcTolerance() const {return m_arcTolerance;}
-DG_INLINE double ViewContext::GetMinLOD() const {return m_minLOD;}
-DG_INLINE void ViewContext::SetMinLOD(double lod) { m_minLOD = lod; }
-DG_INLINE ScanCriteriaCP ViewContext::GetScanCriteria() const {return m_scanCriteria;}
-DG_INLINE ViewFlagsCP ViewContext::GetViewFlags() const {return m_IDrawGeom ? m_IDrawGeom->GetDrawViewFlags() : NULL;}
-DG_INLINE void ViewContext::SetViewFlags(ViewFlagsCP flags) {if (NULL != m_IDrawGeom) m_IDrawGeom->SetDrawViewFlags(flags);}
-DG_INLINE bool ViewContext::GetDisplayPriorityRange(int32_t& low, int32_t& high) const {if (NULL == m_viewport) return false; low = m_displayPriorityRange[0]; high = m_displayPriorityRange[1]; return true;}
-DG_INLINE void ViewContext::SetArcTolerance(double tol) {m_arcTolerance = tol;}
-DG_INLINE uint32_t ViewContext::GetRasterPlane() const {return m_rasterPlane;}
-DG_INLINE StatusInt ViewContext::Attach(DgnViewportP vp, DrawPurpose purpose) {return _Attach(vp,purpose);}
-DG_INLINE void ViewContext::Detach() {_Detach();}
-DG_INLINE bool ViewContext::CheckStop() {return _CheckStop();}
-DG_INLINE void ViewContext::PopTransformClip() {_PopTransformClip();}
-DG_INLINE void ViewContext::PushTransform(TransformCR trans) {_PushTransform(trans);}
-DG_INLINE void ViewContext::PushClip(ClipVectorCR clip) {_PushClip(clip);}
-DG_INLINE IPickGeomP ViewContext::GetIPickGeom() {return _GetIPickGeom();}
-DG_INLINE void ViewContext::DrawSymbol(IDisplaySymbol* symb, TransformCP trans, ClipPlaneSetP clip) {_DrawSymbol(symb, trans, clip);}
-DG_INLINE void ViewContext::InitScanRangeAndPolyhedron() {_InitScanRangeAndPolyhedron();}
-DG_INLINE void ViewContext::DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed){_DrawStyledLineString2d(nPts, pts, zDepth, range, closed);}
-DG_INLINE void ViewContext::DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP range, bool closed){_DrawStyledLineString3d(nPts, pts, range, closed);}
-DG_INLINE void ViewContext::DrawStyledArc2d(DEllipse3dCR ellipse, bool isEllipse, double zDepth, DPoint2dCP range) {_DrawStyledArc2d(ellipse, isEllipse, zDepth, range);}
-DG_INLINE void ViewContext::DrawStyledArc3d(DEllipse3dCR ellipse, bool isEllipse, DPoint3dCP range) {_DrawStyledArc3d(ellipse, isEllipse, range);}
-DG_INLINE void ViewContext::DrawStyledBSplineCurve2d(MSBsplineCurveCR curve, double zDepth) {_DrawStyledBSplineCurve2d(curve, zDepth);}
-DG_INLINE void ViewContext::DrawStyledBSplineCurve3d(MSBsplineCurveCR curve) {_DrawStyledBSplineCurve3d(curve);}
-DG_INLINE void ViewContext::PushViewIndependentOrigin(DPoint3dCP origin) {_PushViewIndependentOrigin(origin);}
-DG_INLINE StatusInt ViewContext::VisitElement(GeometrySourceCR elem) {return _VisitElement(elem);}
-DG_INLINE void ViewContext::AllocateScanCriteria(){_AllocateScanCriteria();}
-DG_INLINE void ViewContext::VisitDgnModel(DgnModelP modelRef) {_VisitDgnModel(modelRef);}
-DG_INLINE void ViewContext::SetScanReturn() {_SetScanReturn();}
-DG_INLINE QvElem* ViewContext::DrawCached(IStrokeForCache& stroker) {return _DrawCached(stroker);}
-DG_INLINE void ViewContext::VisitTransientGraphics(bool isPreUpdate) {_VisitTransientGraphics(isPreUpdate);}
-DG_INLINE void ViewContext::CookDisplayParams(ElemDisplayParamsR elParams, ElemMatSymbR elMatSymb) {_CookDisplayParams(elParams, elMatSymb);}
-DG_INLINE StatusInt ViewContext::InitContextForView() {return _InitContextForView();}
-DG_INLINE bool ViewContext::VisitAllModelElements(bool includeTransients) { return _VisitAllModelElements(includeTransients); }
-DG_INLINE void ViewContext::ClearZ() { _ClearZ(); }
-DG_INLINE void ViewContext::DeleteSymbol(IDisplaySymbol* symbol) {_DeleteSymbol(symbol);}
-DG_INLINE bool ViewContext::_WantSaveQvElem(DrawExpense expense) {return T_HOST.GetGraphicsAdmin()._WantSaveQvElem(static_cast<int>(expense));}
-DG_INLINE BentleyStatus ViewContext::GetCurrLocalToWorldTrans(TransformR trans) const { return m_transformClipStack.GetTransform(trans); }
-DG_INLINE BentleyStatus ViewContext::GetCurrWorldToLocalTrans(TransformR trans) const { return m_transformClipStack.GetInverseTransform(trans); }
-DG_INLINE TransformCP ViewContext::GetCurrLocalToWorldTransformCP() const { return m_transformClipStack.GetTransformCP(); }
-DG_INLINE void ViewContext::DrawTextString(TextStringCR textString) {_DrawTextString(textString);}
-DG_INLINE BentleyStatus ViewContext::GetLocalToWorldTrans(TransformR trans, size_t index) const { return m_transformClipStack.GetTransformFromIndex(trans, index); }
-DG_INLINE bool ViewContext::IsViewIndependent() { return m_transformClipStack.IsViewIndependent(); }
-DG_INLINE bool ViewContext::WantUndisplayedClips() { return _WantUndisplayedClips(); }
-
-DG_INLINE double ViewContext::GetCurrentLevelOfDetail() const { return m_levelOfDetail; }
-DG_INLINE void ViewContext::SetCurrentLevelOfDetail(double levelOfDetail) { m_levelOfDetail = levelOfDetail; }
-DG_INLINE ViewContext::ContextMark::~ContextMark() {Pop();}
-
-DG_INLINE IElemTopologyCP   ViewContext::GetElemTopology() const {return(m_currElemTopo.IsValid() ? m_currElemTopo.get() : nullptr);}
-DG_INLINE void              ViewContext::SetElemTopology(IElemTopologyCP topo) {m_currElemTopo = topo;}
-DG_INLINE GeomStreamEntryId ViewContext::GetGeomStreamEntryId() const {return m_currGeomStreamEntryId;}
-DG_INLINE void              ViewContext::SetGeomStreamEntryId(GeomStreamEntryId geomId) {m_currGeomStreamEntryId = geomId;}
-
-DG_INLINE IDrawGeom::IDrawGeom() { }
-
-DG_INLINE ViewFlagsCP IDrawGeom::GetDrawViewFlags() {return _GetDrawViewFlags();}
-DG_INLINE void IDrawGeom::SetDrawViewFlags(ViewFlagsCP flags) {_SetDrawViewFlags(flags);}
-DG_INLINE void IDrawGeom::ActivateMatSymb(ElemMatSymbCP matSymb){_ActivateMatSymb(matSymb);}
-DG_INLINE void IDrawGeom::ActivateOverrideMatSymb(OvrMatSymbCP ovrMatSymb){_ActivateOverrideMatSymb(ovrMatSymb);}
-
-DG_INLINE void IDrawGeom::DrawLineString3d(int numPoints, DPoint3dCP points, DPoint3dCP range) {_DrawLineString3d(numPoints, points, range);}
-DG_INLINE void IDrawGeom::DrawLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) {_DrawLineString2d(numPoints, points, zDepth, range);}
-DG_INLINE void IDrawGeom::DrawPointString3d(int numPoints, DPoint3dCP points, DPoint3dCP range) {_DrawPointString3d(numPoints, points, range);}
-DG_INLINE void IDrawGeom::DrawPointString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) {_DrawPointString2d(numPoints, points, zDepth, range);}
-DG_INLINE void IDrawGeom::DrawShape3d(int numPoints, DPoint3dCP points, bool filled, DPoint3dCP range) {_DrawShape3d(numPoints, points, filled, range);}
-DG_INLINE void IDrawGeom::DrawShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range) {_DrawShape2d(numPoints, points, filled, zDepth, range);}
-DG_INLINE void IDrawGeom::DrawTriStrip3d(int numPoints, DPoint3dCP points, int32_t usageFlags, DPoint3dCP range) {_DrawTriStrip3d(numPoints, points, usageFlags, range);}
-DG_INLINE void IDrawGeom::DrawTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth, DPoint2dCP range) {_DrawTriStrip2d(numPoints, points, usageFlags, zDepth, range);}
-DG_INLINE void IDrawGeom::DrawArc3d(DEllipse3dCR ellipse, bool isEllipse, bool filled, DPoint3dCP range) {_DrawArc3d(ellipse, isEllipse, filled, range);}
-DG_INLINE void IDrawGeom::DrawArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth, DPoint2dCP range) {_DrawArc2d(ellipse, isEllipse, filled, zDepth, range);}
-DG_INLINE void IDrawGeom::DrawBSplineCurve(MSBsplineCurveCR curve, bool filled) {_DrawBSplineCurve(curve, filled);}
-DG_INLINE void IDrawGeom::DrawBSplineCurve2d(MSBsplineCurveCR curve, bool filled, double zDepth) { _DrawBSplineCurve2d(curve, filled, zDepth); }
-DG_INLINE void IDrawGeom::DrawCurveVector(CurveVectorCR curves, bool isFilled) {_DrawCurveVector(curves, isFilled);}
-DG_INLINE void IDrawGeom::DrawCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth) {_DrawCurveVector2d(curves, isFilled, zDepth);}
-DG_INLINE void IDrawGeom::DrawSolidPrimitive(ISolidPrimitiveCR primitive) {_DrawSolidPrimitive(primitive);}
-DG_INLINE void IDrawGeom::DrawBSplineSurface(MSBsplineSurfaceCR surface) {_DrawBSplineSurface(surface);}
-DG_INLINE void IDrawGeom::DrawPolyface(PolyfaceQueryCR meshData, bool filled) { _DrawPolyface(meshData, filled); }
-DG_INLINE StatusInt IDrawGeom::DrawBody(ISolidKernelEntityCR entity, double pixelSize) { return _DrawBody(entity, pixelSize); }
-DG_INLINE void IDrawGeom::DrawTextString(TextStringCR text, double* zDepth) {_DrawTextString(text, zDepth);}
-DG_INLINE void IDrawGeom::DrawMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) {_DrawMosaic(numX,numY,tileIds,verts);}
- DG_INLINE RangeResult IDrawGeom::PushBoundingRange3d(DPoint3dCP range){return _PushBoundingRange3d(range);}
-DG_INLINE RangeResult IDrawGeom::PushBoundingRange2d(DPoint2dCP range, double zDepth){return _PushBoundingRange2d(range, zDepth);}
-DG_INLINE void IDrawGeom::PopBoundingRange(){_PopBoundingRange();}
-DG_INLINE void IDrawGeom::DrawTorus(DPoint3dCR center, DVec3dCR vectorX, DVec3dCR vectorY, double majorRadius, double minorRadius, double sweepAngle, bool capped) { DrawSolidPrimitive(*ISolidPrimitive::CreateDgnTorusPipe(DgnTorusPipeDetail(center, vectorX, vectorY, majorRadius, minorRadius, sweepAngle, capped))); }
-DG_INLINE void IDrawGeom::DrawBox(DVec3dCR primary, DVec3dCR secondary, DPoint3dCR basePoint, DPoint3dCR topPoint, double baseWidth, double baseLength, double topWidth, double topLength, bool capped) { DrawSolidPrimitive(*ISolidPrimitive::CreateDgnBox(DgnBoxDetail::InitFromCenters(basePoint, topPoint, primary, secondary, baseWidth, baseLength, topWidth, topLength, capped))); }
-DG_INLINE size_t IDrawGeom::GetMethodIndex() { return _GetMethodIndex(); }
-DG_INLINE void IDrawGeom::PushMethodState() { _PushMethodState(); }
-DG_INLINE void IDrawGeom::PopMethodState() { _PopMethodState(); }
- DG_INLINE bool IViewDraw::IsOutputQuickVision() const { return _IsOutputQuickVision(); }
-DG_INLINE bool IViewDraw::ApplyMonochromeOverrides(ViewFlagsCR flags) const { return _ApplyMonochromeOverrides(flags); }
-
-DG_INLINE void IViewDraw::SetToViewCoords(bool yesNo){_SetToViewCoords(yesNo);}
-DG_INLINE void IViewDraw::SetSymbology(ColorDef lineColor, ColorDef fillColor, int lineWidth, uint32_t linePattern) {_SetSymbology(lineColor, fillColor, lineWidth, linePattern);}
-DG_INLINE void IViewDraw::DrawGrid(bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVector, DVec3dCR yVector,uint32_t gridsPerRef, Point2dCR repetitions){_DrawGrid(doIsoGrid, drawDots, gridOrigin, xVector, yVector, gridsPerRef, repetitions);}
-DG_INLINE bool IViewDraw::DrawSprite(ISprite* sprite, DPoint3dCP location, DPoint3dCP xVec, int transparency){return _DrawSprite(sprite, location, xVec, transparency);}
-DG_INLINE void IViewDraw::DrawTiledRaster(ITiledRaster* tiledRaster){_DrawTiledRaster(tiledRaster);}
-DG_INLINE void IViewDraw::DrawRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2dCP range) { _DrawRaster2d(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, zDepth, range); }
-DG_INLINE void IViewDraw::DrawRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) { _DrawRaster(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, range); }
-DG_INLINE void IViewDraw::DrawDgnOle(IDgnOleDraw* ole) {_DrawDgnOle(ole);}
-DG_INLINE void IViewDraw::DrawPointCloud(IPointCloudDrawParams* drawParams) {_DrawPointCloud(drawParams);}
-DG_INLINE void IViewDraw::DrawQvElem(QvElem* qvElem, int subElemIndex){_DrawQvElem(qvElem, subElemIndex);}
-DG_INLINE void IViewDraw::ClearZ() {_ClearZ(); }
-DG_INLINE StatusInt IViewDraw::TestOcclusion(int numVolumes, DPoint3dP verts, int* results){return _TestOcclusion(numVolumes, verts, results);}
-DG_INLINE uintptr_t IViewDraw::DefineQVTexture(WCharCP textureName, DgnDbP dgnFile) {return _DefineQVTexture(textureName, dgnFile);}
-DG_INLINE void IViewDraw::DefineQVGeometryMap(uintptr_t textureId, IStrokeForCache& stroker, DRange2dCR range, bool useGeometryColors, ViewContextR seedContext, bool forAreaPattern) {return _DefineQVGeometryMap(textureId, stroker, range, useGeometryColors, seedContext, forAreaPattern);}
-DG_INLINE void IViewDraw::PushClipStencil(QvElem* qvElem) {_PushClipStencil(qvElem);}
-DG_INLINE void IViewDraw::PopClipStencil() {_PopClipStencil(); }
-
-DG_INLINE void ICachedDraw::BeginCacheElement(QvCache* qvCache){_BeginCacheElement(qvCache);}
-DG_INLINE QvElem* ICachedDraw::EndCacheElement() {return _EndCacheElement();}
-DG_INLINE void ICachedDraw::AssignElementToView(QvView* qvView, QvElem* qvElem, int viewMode) {_AssignElementToView(qvView, qvElem, viewMode);}
-DG_INLINE QvElem* ICachedDraw::GetCacheElement() { return _GetCacheElement(); }
-DG_INLINE void ICachedDraw::SetCacheElement(QvElem* qvElem) { _SetCacheElement(qvElem); }
-DG_INLINE void ICachedDraw::PushTransform(TransformCR trans) {_PushTransClip(&trans);}
-DG_INLINE void ICachedDraw::PopTransform() {_PopTransClip();}
-
-DG_INLINE void IViewOutput::AdjustBrightness(bool useFixedAdaptation, double brightness) {_AdjustBrightness(useFixedAdaptation, brightness);}
-DG_INLINE uint64_t IViewOutput::GetLightStamp() {return _GetLightStamp();}
-DG_INLINE void IViewOutput::SetViewAttributes(ViewFlags viewFlags, ColorDef bgColor, bool usebgTexture, AntiAliasPref aaLines, AntiAliasPref aaText) {_SetViewAttributes(viewFlags, bgColor, usebgTexture, aaLines, aaText);}
-DG_INLINE void IViewOutput::SetRenderMode (ViewFlags viewFlags) {_SetRenderMode (viewFlags); }
-DG_INLINE DgnDisplayCoreTypes::DeviceContextP      IViewOutput::GetScreenDC() const {return _GetScreenDC();}
-DG_INLINE StatusInt IViewOutput::AssignDC(DgnDisplayCoreTypes::DeviceContextP dc){return _AssignDC(dc);}
-DG_INLINE void IViewOutput::AddLights(bool threeDview, const RotMatrix* rotMatrixP, DgnModelP model){_AddLights(threeDview, rotMatrixP, model);}
-DG_INLINE void IViewOutput::DefineFrustum(DPoint3dCR frustPts, double fraction, bool is2d){_DefineFrustum(frustPts, fraction, is2d);}
-DG_INLINE void IViewOutput::SetDrawBuffer(DgnDrawBuffer drawBuffer, BSIRectCP subRect){_SetDrawBuffer(drawBuffer, subRect);}
-DG_INLINE DgnDrawBuffer IViewOutput::GetDrawBuffer() const{return _GetDrawBuffer();}
-DG_INLINE void IViewOutput::SetEraseMode(bool newMode){_SetEraseMode(newMode);}
-DG_INLINE void IViewOutput::SetFlashMode(bool newMode){_SetFlashMode(newMode);}
-DG_INLINE StatusInt IViewOutput::SynchDrawingFromBackingStore(){return _SynchDrawingFromBackingStore();}
-DG_INLINE void IViewOutput::SynchDrawingFromBackingStoreAsynch(){_SynchDrawingFromBackingStoreAsynch();}
-DG_INLINE StatusInt IViewOutput::SynchScreenFromDrawing(){return _SynchScreenFromDrawing();}
-DG_INLINE void IViewOutput::SynchScreenFromDrawingAsynch(){_SynchScreenFromDrawingAsynch();}
-DG_INLINE bool IViewOutput::IsScreenDirty(BSIRectP rect){return _IsScreenDirty(rect);}
-DG_INLINE void IViewOutput::ShowProgress(){_ShowProgress();}
-DG_INLINE bool IViewOutput::IsBackingStoreValid() const{return _IsBackingStoreValid();}
-DG_INLINE bool IViewOutput::IsAccelerated() const{return _IsAccelerated();}
-DG_INLINE void IViewOutput::ScreenDirtied(BSIRectCP rect){_ScreenDirtied(rect);}
-DG_INLINE bool IViewOutput::EnableZTesting(bool yesNo){return _EnableZTesting(yesNo);}
-DG_INLINE bool IViewOutput::EnableZWriting(bool yesNo){return _EnableZWriting(yesNo);}
-DG_INLINE void IViewOutput::SetProjectDepth(double depth){_SetProjectDepth(depth);}
-DG_INLINE StatusInt IViewOutput::BeginDraw(bool eraseBefore){return _BeginDraw(eraseBefore);}
-DG_INLINE void IViewOutput::EndDraw(QvPaintOptions const& opts){_EndDraw(opts);}
-DG_INLINE StatusInt IViewOutput::BeginDrawCapture(){return _BeginDrawCapture();}
-DG_INLINE StatusInt IViewOutput::EndDrawCapture(){return _EndDrawCapture();}
-DG_INLINE bool IViewOutput::HaveCapture() const {return _HaveCapture();}
-DG_INLINE void IViewOutput::ResetCapture(){_ResetCapture();}
-DG_INLINE StatusInt IViewOutput::DisplayCaptured(ViewFlags flags, DPoint2dCP origin, DPoint2dCP extent, int(*stopProc)()){ return _DisplayCaptured(flags, origin, extent, stopProc); }
-DG_INLINE bool IViewOutput::IsDrawActive(){return _IsDrawActive();}
-DG_INLINE void IViewOutput::ShowTransparent(){_ShowTransparent();}
-DG_INLINE void IViewOutput::AccumulateDirtyRegion(bool val){_AccumulateDirtyRegion(val);}
-DG_INLINE void IViewOutput::ClearHealRegion(){_ClearHealRegion();}
-DG_INLINE void IViewOutput::SetNeedsHeal(BSIRectCP dirty){_SetNeedsHeal(dirty);}
-DG_INLINE void IViewOutput::HealComplete(bool aborted){_HealComplete(aborted);}
-DG_INLINE bool IViewOutput::CheckNeedsHeal(BSIRectP rect){return _CheckNeedsHeal(rect);}
-DG_INLINE void IViewOutput::BeginDecorating(BSIRectCP rect){_BeginDecorating(rect);}
-DG_INLINE void IViewOutput::BeginOverlayMode(){_BeginOverlayMode();}
-DG_INLINE bool IViewOutput::LocateQvElem(QvElem* qvElem, DPoint2dCR borePt, double radius, DPoint3dR hitPt, DVec3dP hitNormal, int(*stopProc)(CallbackArgP), CallbackArgP arg) {return _LocateQvElem(qvElem, borePt, radius, hitPt, hitNormal, stopProc, arg);}
-DG_INLINE void IViewOutput::AbortOutstandingOperations(){_AbortOutstandingOperations();}
-DG_INLINE void IViewOutput::SetIdleCallback(bool(*callback)(CallbackArgP), CallbackArgP userData){_SetIdleCallback(callback, userData);}
-DG_INLINE QvView* IViewOutput::GetQvView() const{return _GetQvView();}
-DG_INLINE void IViewOutput::PushTransClip(TransformCP trans, ClipPlaneSetCP clip) {_PushTransClip(trans, clip);}
-DG_INLINE void IViewOutput::PopTransClip() {_PopTransClip();}
-DG_INLINE BentleyStatus IViewOutput::FillImageCaptureBuffer(bvector<unsigned char>& buffer, CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) {return _FillImageCaptureBuffer(buffer, info, screenBufferRange, outputImageSize, topDown);}
-DG_INLINE int IViewOutput::GetVisibleTiles(QvMRImageP mri, size_t bufSize, int* lrc) { return _GetVisibleTiles(mri, bufSize, lrc); }
-DG_INLINE void ITiledRaster::DrawRaster(IViewOutputR viewOutput) { return _DrawRaster(viewOutput); }
-DG_INLINE void ITiledRaster::PrintRaster(IViewOutputR viewOutput) { return _DrawRaster(viewOutput); }
-
 DG_INLINE GradientSymb::GradientSymb() {memset(&m_mode, 0, offsetof(GradientSymb, m_values) + sizeof(m_values) - offsetof(GradientSymb, m_mode));}
-DG_INLINE int GradientSymb::GetNKeys() const {return m_nKeys;}
-DG_INLINE GradientMode GradientSymb::GetMode() const {return m_mode;}
-DG_INLINE uint16_t GradientSymb::GetFlags() const {return m_flags;}
-DG_INLINE double GradientSymb::GetShift() const {return m_shift;}
-DG_INLINE double GradientSymb::GetTint() const {return m_tint;}
-DG_INLINE double GradientSymb::GetAngle() const {return m_angle;}
-DG_INLINE void GradientSymb::GetKey(ColorDef& color, double& value, int index) const {color = m_colors[index], value = m_values[index];}
-DG_INLINE void GradientSymb::SetMode(GradientMode mode) {m_mode = mode;}
-DG_INLINE void GradientSymb::SetFlags(uint16_t flags) {m_flags = flags;}
-DG_INLINE void GradientSymb::SetAngle(double angle) {m_angle = angle;}
-DG_INLINE void GradientSymb::SetTint(double tint) {m_tint = tint;}
-DG_INLINE void GradientSymb::SetShift(double shift) {m_shift = shift;}
 
 DG_INLINE void PatternParams::SetModifiers(PatternParamsModifierFlags value) {modifiers = value;}
 DG_INLINE void PatternParams::SetOrientation(RotMatrixCR value) {rMatrix = value; modifiers = modifiers |PatternParamsModifierFlags::RotMatrix;}
@@ -387,31 +129,7 @@ DG_INLINE DwgHatchDefCR PatternParams::GetDwgHatchDef() const {return dwgHatchDe
 DG_INLINE DPoint3dCR PatternParams::GetOrigin() const {return origin;}
 DG_INLINE double PatternParams::GetAnnotationScale() const {return annotationscale;}
 
-DG_INLINE void ElemMatSymb::SetIndexedRasterPattern(int32_t index, uint32_t rasterPat) {m_elementStyle = IS_LINECODE(index) ? index : 0; m_rasterPat = rasterPat; m_extSymbID = 0;}
-
-DG_INLINE bool PlotInfo::IsScreeningSet() const {return m_hasScreening;}
-DG_INLINE double PlotInfo::GetScreening() const {return m_screening;}
-DG_INLINE void PlotInfo::SetScreening(double screen, bool set) {if (set) m_screening = screen; m_hasScreening = set;};
-DG_INLINE bool PlotInfo::IsLineJoinSet() const {return m_hasLineJoin;}
-DG_INLINE LineJoin PlotInfo::GetLineJoin() const {return m_lineJoin;}
-DG_INLINE void PlotInfo::SetLineJoin(LineJoin join, bool set) {if (set) m_lineJoin = join; m_hasLineJoin = set;};
-DG_INLINE bool PlotInfo::IsLineCapSet() const {return m_hasLineCap;}
-DG_INLINE LineCap PlotInfo::GetLineCap() const {return m_lineCap;}
-DG_INLINE void PlotInfo::SetLineCap(LineCap cap, bool set) {if (set) m_lineCap = cap; m_hasLineCap = set;};
-DG_INLINE bool PlotInfo::IsLineWeightMMSet() const {return m_hasLineWeightMM;}
-DG_INLINE double PlotInfo::GetLineWeightMM() const {return m_widthMM;}
-DG_INLINE void PlotInfo::SetLineWeightMM(double mm, bool set) {if (set) m_widthMM = mm; m_hasLineWeightMM = set;};
-
 DG_INLINE void LineStyleParams::SetScale(double inScale) { modifiers |= STYLEMOD_SCALE; scale = inScale; }
-
-DG_INLINE StatusInt     ViewController::VisitHit(HitDetailCR hit, ViewContextR context) const{return _VisitHit(hit, context);}
-DG_INLINE void ViewController::DrawView(ViewContextR context) {return _DrawView(context);}
-DG_INLINE void ViewController::VisitElements(ViewContextR context) {return _VisitElements(context);}
-
-DG_INLINE SnapDetailP     SnapContext::GetSnapDetail() {return m_snapPath;}
-DG_INLINE SnapMode      SnapContext::GetSnapMode() {return m_snapMode;}
-DG_INLINE int           SnapContext::GetSnapDivisor() {return m_snapDivisor;}
-
 DG_INLINE DgnPlatformLib::Host& DgnPlatformLib::GetHost() {return *static_cast<DgnPlatformLib::Host*>(g_hostForThread.GetValueAsPointer());}
 
 DG_INLINE WChar AngleFormatter::GetDecimalSeparator() const { return m_decimalSeparator; }

@@ -96,7 +96,7 @@
 #include "ECSqlStatementIterator.h"
 #include <Bentley/HeapZone.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace dgn_ElementHandler {struct Physical;};
 namespace dgn_TxnTable {struct Element; struct Model;};
@@ -187,6 +187,9 @@ public:
     };
 
     static Iterator MakeIterator(DgnDbR db) { return Iterator(db); }
+
+    DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
+    DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
 };
 
 typedef bset<DgnCode> DgnCodeSet;
@@ -238,14 +241,11 @@ private:
     typedef bmap<DgnClassId, ECSqlClassInfo> T_ClassInfoMap;
 
     T_DgnModelMap   m_models;
-    QvCache*        m_qvCache;
     bmap<DgnModelId,uint64_t> m_modelDependencyIndices;
     T_ClassInfoMap  m_classInfos;
 
-    void ClearLoaded();
     DgnModelPtr LoadDgnModel(DgnModelId modelId);
-    bool FreeQvCache();
-    void Empty() {ClearLoaded(); FreeQvCache();}
+    void Empty();
     void AddLoadedModel(DgnModelR);
     void DropLoadedModel(DgnModelR);
 
@@ -254,7 +254,7 @@ private:
     BeSQLite::EC::CachedECSqlStatementPtr GetInsertStmt(DgnModelR model);
     BeSQLite::EC::CachedECSqlStatementPtr GetUpdateStmt(DgnModelR model);
 
-    DgnModels(DgnDbR db) : DgnDbTable(db) {m_qvCache= nullptr;}
+    DgnModels(DgnDbR db) : DgnDbTable(db) {}
     ~DgnModels() {} // don't call empty on destructor, Elements() has already been deleted.
 
 public:
@@ -332,9 +332,6 @@ public:
 
 public:
     static DgnCode GetModelCode(Iterator::Entry const& entry); //!< @private
-    DGNPLATFORM_EXPORT QvCache* GetQvCache(bool createIfNecessary=true);
-    void SetQvCache(QvCache* qvCache) {m_qvCache = qvCache;}
-
     //! Determine the Id of the first non-dictionary model in this DgnDb.
     DGNPLATFORM_EXPORT DgnModelId QueryFirstModelId() const;
 
@@ -391,15 +388,19 @@ public:
 //=======================================================================================
 //! Each GeometryPart has a row in the DgnGeometryParts table
 //! @see DgnDb::GeometryParts
-//! @ingroup ElementGeometryGroup
+//! @ingroup GeometricPrimitiveGroup
 //=======================================================================================
 struct DgnGeometryParts : DgnDbTable
 {
     friend struct DgnDb;
 
 private:
-    explicit DgnGeometryParts(DgnDbR db) : DgnDbTable(db) {}
+    explicit DgnGeometryParts(DgnDbR db) : DgnDbTable(db), m_snappyFrom(m_snappyFromBuffer, _countof(m_snappyFromBuffer)) {}
     DgnGeometryPartId m_highestGeometryPartId; // 0 means not yet valid. Highest DgnGeometryPartId (for current briefcaseId)
+
+    Byte m_snappyFromBuffer[BeSQLite::SnappyReader::SNAPPY_UNCOMPRESSED_BUFFER_SIZE];
+    BeSQLite::SnappyFromMemory m_snappyFrom;
+    BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;}
 
 public:
     DgnGeometryPartId MakeNewGeometryPartId();
@@ -608,6 +609,7 @@ private:
 
     DgnAuthorityPtr LoadAuthority(DgnAuthorityId authorityId, DgnDbStatus* status = nullptr);
 public:
+
     //! Look up the ID of the authority with the specified name.
     DGNPLATFORM_EXPORT DgnAuthorityId QueryAuthorityId(Utf8CP name) const;
 
@@ -1058,4 +1060,4 @@ public:
 //__PUBLISH_SECTION_START__
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

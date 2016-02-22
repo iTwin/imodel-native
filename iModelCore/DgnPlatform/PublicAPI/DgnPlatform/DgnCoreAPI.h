@@ -5,8 +5,8 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-//__PUBLISH_SECTION_START__
 #pragma once
+//__PUBLISH_SECTION_START__
 
 #if !defined (DOCUMENTATION_GENERATOR)
 
@@ -17,26 +17,20 @@
 #include "ClipVector.h"
 #include "ColorUtil.h"
 #include "ElementHandler.h"
-#include "DgnCategory.h"
 #include "ElementGeometry.h"
-#include "ElementGraphics.h"
 #include "FenceParams.h"
 #include "GPArray.h"
 #include "HitDetail.h"
 #include "IAuxCoordSys.h"
-#include "IPickGeom.h"
 #include "TxnManager.h"
 #include "RevisionManager.h"
-#include "IViewDraw.h"
-#include "IViewOutput.h"
-#include "IViewTransients.h"
+#include "Render.h"
 #include "LineStyle.h"
 #include "DgnElementDependency.h"
 #include "DgnDb.h"
 #include "DgnAuthority.h"
 #include "NotificationManager.h"
 #include "ScanCriteria.h"
-#include "SolidKernel.h"
 #include "TextString.h"
 #include "ValueFormat.h"
 #include "ValueParse.h"
@@ -47,6 +41,7 @@
 #include "Annotations/TextAnnotation.h"
 #include "DgnFont.h"
 #include "RenderMaterial.h"
+#include "DgnViewport.h"
 #include "DgnView.h"
 #include "ECSqlClassParams.h"
 
@@ -55,7 +50,6 @@
 #include "SnapContext.h"
 #include "LineStyleApi.h"
 #include "NullContext.h"
-#include "QvViewport.h"
 #include "Sprites.h"
 
 //__PUBLISH_SECTION_START__

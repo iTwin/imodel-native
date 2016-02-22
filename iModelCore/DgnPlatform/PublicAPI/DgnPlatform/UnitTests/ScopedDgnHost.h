@@ -17,7 +17,7 @@
 // This header file is snuck in through a back door. This header file can only include and use published API header files 
 // (or the few headers that are brought in through the back door).
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct ScopedDgnHostImpl;
 
@@ -35,7 +35,7 @@ struct ScopedDgnHost
     DGNPLATFORM_EXPORT ~ScopedDgnHost();
 
     DGNPLATFORM_EXPORT void SetFetchScriptCallback(FetchScriptCallback* cb);
-    DGNPLATFORM_EXPORT void SetServerAdmin(DgnPlatformLib::Host::ServerAdmin* admin);
+    DGNPLATFORM_EXPORT void SetRepositoryAdmin(DgnPlatformLib::Host::RepositoryAdmin* admin);
 };
 
 struct TestDataManager
@@ -69,5 +69,5 @@ enum DgnInitializeMode {DGNINITIALIZEMODE_None, DGNINITIALIZEMODE_FillModel}; //
 TestDgnManager (WCharCP fullFileName, BeSQLite::Db::OpenMode mode, bool needBriefcase, DgnInitializeMode imode=DGNINITIALIZEMODE_FillModel) : TestDataManager(fullFileName,mode,needBriefcase,(DGNINITIALIZEMODE_FillModel==imode)) {}
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 

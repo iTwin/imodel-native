@@ -206,7 +206,7 @@ DgnDbStatus ComponentGeometryHarvester::HarvestModel(bvector<bpair<DgnSubCategor
     DgnCategoryId harvestableGeometryCategoryId = m_cdef.QueryCategoryId();
 
     //  Gather geometry by SubCategory
-    bmap<DgnSubCategoryId, ElementGeometryBuilderPtr> builders;     
+    bmap<DgnSubCategoryId, GeometryBuilderPtr> builders;     
     auto cm = m_cdef.GetModel();
     cm.FillModel();
     for (auto const& mapEntry : cm)
@@ -226,22 +226,25 @@ DgnDbStatus ComponentGeometryHarvester::HarvestModel(bvector<bpair<DgnSubCategor
         if (componentElement->GetCategoryId() != harvestableGeometryCategoryId)
             continue;
 
-        ElementGeometryCollection gcollection(*componentElement);
-        for (ElementGeometryPtr const& geom : gcollection)
+        GeometryCollection gcollection(*componentElement);
+        for (auto iter : gcollection)
             {
+            GeometricPrimitivePtr xgeom = iter.GetGeometryPtr();
+            if (!xgeom.IsValid()) // what to do about GeometryParts?? - BB
+                continue;
+
             //  Look up the subcategory ... IN THE CLIENT DB
-            ElemDisplayParamsCR dparams = gcollection.GetElemDisplayParams();
+            GeometryParamsCR dparams = iter.GetGeometryParams();
             DgnSubCategoryId clientsubcatid = dparams.GetSubCategoryId();
 
-            ElementGeometryBuilderPtr& builder = builders [clientsubcatid];
+            GeometryBuilderPtr& builder = builders [clientsubcatid];
             if (!builder.IsValid())
-                builder = ElementGeometryBuilder::CreateGeometryPart(db, true);
+                builder = GeometryBuilder::CreateGeometryPart(db, true);
 
             // Since each little piece of geometry can have its own transform, we must
             // build the transforms back into them in order to assemble them into a single geomstream.
             // It's all relative to 0,0,0 in the component model, so it's fine to do this.
-            ElementGeometryPtr xgeom = geom->Clone();
-            Transform trans = gcollection.GetGeometryToWorld(); // A component model is in its own local coordinate system, so "World" just means relative to local 0,0,0
+            Transform trans = iter.GetGeometryToWorld(); // A component model is in its own local coordinate system, so "World" just means relative to local 0,0,0
             xgeom->TransformInPlace(trans);
 
             builder->Append(*xgeom);
@@ -260,13 +263,13 @@ DgnDbStatus ComponentGeometryHarvester::HarvestModel(bvector<bpair<DgnSubCategor
     for (auto const& entry : builders)
         {
         DgnSubCategoryId clientsubcatid = entry.first;
-        ElementGeometryBuilderPtr builder = entry.second;
+        GeometryBuilderPtr builder = entry.second;
 
         // *** WIP_COMPONENT_MODEL How can we look up and re-use GeometryParts that are based on the same component and parameters?
         // Note: Don't assign a Code. If we did that, then we would have trouble with change-merging.
         DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(db);
         builder->CreateGeometryPart(db, true);
-        builder->SetGeomStream(*geomPart);
+        builder->SetGeometryStream(*geomPart);
         if (BSISUCCESS != db.GeometryParts().InsertGeometryPart(*geomPart))
             {
             BeAssert(false && "cannot create geompart for solution geometry -- what could have gone wrong?");
@@ -297,7 +300,7 @@ DgnElementPtr ComponentGeometryHarvester::CreateInstance(DgnDbStatus& status, Dg
 
     geom->SetCategoryId(m_cdef.QueryCategoryId());
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*geom);
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*geom);
     for (bpair<DgnSubCategoryId, DgnGeometryPartId> const& subcatAndGeom : geomBySubcategory)
         {
         Transform noTransform = Transform::FromIdentity();
@@ -305,7 +308,7 @@ DgnElementPtr ComponentGeometryHarvester::CreateInstance(DgnDbStatus& status, Dg
         builder->Append(subcatAndGeom.second, noTransform);
         }
 
-    builder->SetGeomStreamAndPlacement(*geom);
+    builder->SetGeometryStreamAndPlacement(*geom);
 
     // *** TBD: Other Aspects??
 

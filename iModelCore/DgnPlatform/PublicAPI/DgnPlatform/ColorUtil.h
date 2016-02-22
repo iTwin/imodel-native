@@ -10,7 +10,7 @@
 
 #include <DgnPlatform/DgnPlatform.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/15
@@ -42,4 +42,4 @@ DGNPLATFORM_EXPORT static void          Interpolate(ColorDefP interpolatedColors
 
 }; // ColorUtil
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

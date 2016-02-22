@@ -25,7 +25,7 @@ DGNPLATFORM_REF_COUNTED_PTR(TextAnnotation3d);
 #define DGN_CLASSNAME_TextAnnotation2d "TextAnnotation2d"
 #define DGN_CLASSNAME_TextAnnotation3d "TextAnnotation3d"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //__PUBLISH_SECTION_END__
 // So we can friend ConvertV8TextToDgnDbExtension within TextAnnotationData.
@@ -66,7 +66,7 @@ public:
     TextAnnotationData() : m_isGeometrySuppressed(false) {}
     TextAnnotationCP GetAnnotation() const { return m_annotation.get(); }
     void SetAnnotation(TextAnnotationCP value) { m_annotation = value ? value->Clone() : nullptr; }
-    DGNPLATFORM_EXPORT void GenerateElementGeometry(GeometrySourceR, GenerateReason) const;
+    DGNPLATFORM_EXPORT void GenerateGeometricPrimitive(GeometrySourceR, GenerateReason) const;
     DGNPLATFORM_EXPORT void RemapIds(DgnImportContext&);
 };
 
@@ -90,7 +90,7 @@ struct EXPORT_VTABLE_ATTRIBUTE TextAnnotation2d : AnnotationElement2d
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotation2d, AnnotationElement2d);
 
 protected:
-    virtual bool _DrawHit(HitDetailCR, ViewContextR) const override { return false; } // Don't flash text box...
+    virtual Render::GraphicPtr _StrokeHit(ViewContextR, HitDetailCR) const {return nullptr;} // Don't flash text box...
     virtual SnapStatus _OnSnap(SnapContextR context) const override { return context.DoTextSnap(); } // Default snap using text box...
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR originalElment) override;
@@ -134,7 +134,7 @@ struct EXPORT_VTABLE_ATTRIBUTE TextAnnotation3d : GraphicalElement3d
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotation3d, GraphicalElement3d);
 
 protected:
-    virtual bool _DrawHit(HitDetailCR, ViewContextR) const override { return false; } // Don't flash text box...
+    virtual Render::GraphicPtr _StrokeHit(ViewContextR, HitDetailCR) const {return nullptr;} // Don't flash text box...
     virtual SnapStatus _OnSnap(SnapContextR context) const override { return context.DoTextSnap(); } // Default snap using text box...
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR originalElment) override;
@@ -172,4 +172,4 @@ namespace dgn_ElementHandler
 
 //! @endGroup
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

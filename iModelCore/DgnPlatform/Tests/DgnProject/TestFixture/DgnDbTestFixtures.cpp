@@ -30,7 +30,7 @@ DgnElementCPtr DgnDbTestFixture::InsertElement(DgnModelId mid, DgnCategoryId cat
 * Inserts TestElement with Display Properties
 * @bsimethod                                     Majd.Uddin                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr DgnDbTestFixture::InsertElement(ElemDisplayParamsCR ep, DgnModelId mid, DgnCategoryId categoryId, DgnCode elementCode)
+DgnElementCPtr DgnDbTestFixture::InsertElement(Render::GeometryParamsCR ep, DgnModelId mid, DgnCategoryId categoryId, DgnCode elementCode)
 {
     if (!mid.IsValid())
         mid = m_defaultModelId;
@@ -179,7 +179,7 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeometryPart2d(DgnCodeCR gpCode
     DgnModelP model = m_db->Models().GetModel(mid).get();
     GeometrySourceP geomElem = el->ToGeometrySourceP();
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, categoryId, DPoint2d::From(0.0, 0.0));
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*model, categoryId, DPoint2d::From(0.0, 0.0));
 
     DgnGeometryPartId existingPartId = m_db->GeometryParts().QueryGeometryPartId(gpCode);
     EXPECT_TRUE(existingPartId.IsValid());
@@ -187,7 +187,7 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeometryPart2d(DgnCodeCR gpCode
     if (!(builder->Append(existingPartId, Transform::From(0.0, 0.0, 0.0))))
         return DgnElementId();
 
-    if (SUCCESS != builder->SetGeomStreamAndPlacement(*geomElem))
+    if (SUCCESS != builder->SetGeometryStreamAndPlacement(*geomElem))
         return DgnElementId();
 
     return m_db->Elements().Insert(*el)->GetElementId();
@@ -209,7 +209,7 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeometryPart(DgnCodeCR gpCode, 
     DgnModelP model = m_db->Models().GetModel(mid).get();
     GeometrySourceP geomElem = el->ToGeometrySourceP();
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, categoryId, DPoint3d::From(0.0, 0.0,0.0));
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*model, categoryId, DPoint3d::From(0.0, 0.0,0.0));
 
     DgnGeometryPartId existingPartId = m_db->GeometryParts().QueryGeometryPartId(gpCode);
     EXPECT_TRUE(existingPartId.IsValid());
@@ -217,7 +217,7 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeometryPart(DgnCodeCR gpCode, 
     if (!(builder->Append(existingPartId, Transform::From(0.0, 0.0, 0.0))))
         return DgnElementId();
 
-    if (SUCCESS != builder->SetGeomStreamAndPlacement(*geomElem))
+    if (SUCCESS != builder->SetGeometryStreamAndPlacement(*geomElem))
         return DgnElementId();
 
     return m_db->Elements().Insert(*el)->GetElementId();
@@ -238,12 +238,12 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeometryPart(DgnGeometryPartId 
     DgnModelP model = m_db->Models().GetModel(mid).get();
     GeometrySourceP geomElem = el->ToGeometrySourceP();
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, categoryId, DPoint3d::From(0.0, 0.0,0.0));
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*model, categoryId, DPoint3d::From(0.0, 0.0,0.0));
 
     if (!(builder->Append(gpId, Transform::From(0.0, 0.0, 0.0))))
         return DgnElementId();
 
-    if (SUCCESS != builder->SetGeomStreamAndPlacement(*geomElem))
+    if (SUCCESS != builder->SetGeometryStreamAndPlacement(*geomElem))
         return DgnElementId();
 
     return m_db->Elements().Insert(*el)->GetElementId();
@@ -262,7 +262,7 @@ void DgnDbTestFixture::SetUpSpatialView(DgnDbR dgnDb, DgnModelR model, ElementAl
     SpatialViewController viewController (dgnDb, view.GetViewId());
     viewController.SetStandardViewRotation(StandardView::Iso);
     viewController.LookAtVolume(elementBox, nullptr, &viewMargin);
-    viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::SmoothShade);
+    viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::SmoothShade);
     viewController.ChangeCategoryDisplay(categoryId, true);
     viewController.ChangeModelDisplay(model.GetModelId(), true);
 

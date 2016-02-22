@@ -224,7 +224,7 @@ void SetUp () override
     viewController.SetStandardViewRotation(StandardView::Top);
     viewController.LookAtVolume(madeUpRange, nullptr, &viewMargin);
     //viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
-    viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::Wireframe);
+    viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);
     viewController.ChangeCategoryDisplay(m_categoryId, true);
     viewController.ChangeModelDisplay(m_modelId, true);
 
@@ -3868,3 +3868,264 @@ TEST_F (AnnotationTableActionTest, Modify_ClearDefaultFill)
     DoModifyTableTest (testAction);
     }
 
+#if defined (PERFORMANCE_TEST)
+
+#include <random>
+/*-------------------------------------------------------------------------------------*
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+static uint32_t   getRandomNumber (uint32_t mean, double sigma, uint32_t min, uint32_t max)
+    {
+    static std::default_random_engine s_generator;
+
+    std::normal_distribution<double> distribution(mean, sigma);
+
+    while (true)
+        {
+        double number = distribution(s_generator);
+
+        //printf ("Generated %f\t with args <%d, %d, %d, %d>\n", number, mean, sigma, min, max);
+
+        if ((number>min)&&(number<max))
+            return (uint32_t) number;
+
+        //printf ("Missed one. %f is outside of <%d, %d> with mean %d and sigma %d\n", number, min, max, mean, sigma);
+        }
+    }
+
+/*-------------------------------------------------------------------------------------*
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String  getRandomLengthString ()
+    {
+    Utf8CP          seedString = "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+    Utf8CP          lastCharP  = seedString + strlen (seedString);
+    uint32_t        firstWord = getRandomNumber(12, 4.0, 0, 24);
+    uint32_t        wordCount = getRandomNumber(4, 0.5, 0, 12);
+
+    uint32_t        iWord = 0;
+    Utf8CP          currCharP = seedString;
+    Utf8CP          firstInsertCharP = seedString;
+
+    while (firstInsertCharP < lastCharP && iWord < firstWord)
+        {
+        if (isspace (*currCharP))
+            ++iWord;
+
+        currCharP++;
+
+        if (isalpha (*currCharP))
+            firstInsertCharP = currCharP;
+        }
+
+    iWord = 0;
+    currCharP = firstInsertCharP;
+
+    Utf8CP          lastInsertCharP  = currCharP;
+
+    while (currCharP < lastCharP && iWord < wordCount)
+        {
+        if (isspace (*currCharP))
+            ++iWord;
+
+        currCharP++;
+
+        if (isalpha (*currCharP))
+            lastInsertCharP = currCharP - 1;
+        }
+
+    Utf8String  outStr;
+    outStr.assign (firstInsertCharP, lastInsertCharP - firstInsertCharP);
+
+    return outStr;
+    }
+
+#include <Bentley\BeTimeUtilities.h>
+/*=================================================================================**//**
+* @bsistruct
++===============+===============+===============+===============+===============+======*/
+struct AnnotationTablePerformanceTest : public AnnotationTableTest
+{
+ private:
+    typedef AnnotationTableTest T_Super;
+
+    uint32_t        m_numRows = 100;
+    uint32_t        m_numCols = 100;
+    DgnElementId    m_tableElementId;
+
+public:
+    AnnotationTablePerformanceTest ()
+        {
+        }
+
+    void Reset () { m_tableElementId.Invalidate(); }
+
+    void SetUp () override
+        {
+        T_Super::SetUp();
+
+        Reset();
+        }
+
+    void TearDown () override
+        {
+        T_Super::TearDown();
+        }
+
+    AnnotationTableElementPtr CreateLargeTable (double& time)
+        {
+        StopWatch timer;
+        timer.Start();
+
+        DgnDbR          db          = GetDgnDb();
+        DgnModelId      modelId     = GetModelId();
+        DgnCategoryId   categoryId  = GetCategoryId();
+
+        AnnotationTableElement::CreateParams    createParams (db, modelId, AnnotationTableElement::QueryClassId(db), categoryId);
+        AnnotationTableElementPtr               tableElement = AnnotationTableElement::Create( m_numRows, m_numCols, GetTextStyleId(), 0, createParams);
+
+        time = 1000.0 * timer.GetCurrentSeconds();
+
+        EXPECT_TRUE (tableElement.IsValid());
+        EXPECT_EQ (m_numRows, tableElement->GetRowCount ());
+        EXPECT_EQ (m_numCols, tableElement->GetColumnCount ());
+
+        return tableElement;
+        }
+
+    void FillTableWithText (double& time, AnnotationTableElementR table)
+        {
+        StopWatch timer;
+        timer.Start();
+
+        for (AnnotationTableCellR cell : table.GetCellCollection ())
+            cell.SetTextString (getRandomLengthString().c_str());
+
+        time = 1000.0 * timer.GetCurrentSeconds();
+        }
+
+    void ReadTable (double& time, AnnotationTableElementCPtr& table)
+        {
+        ASSERT_TRUE (m_tableElementId.IsValid());
+
+        StopWatch timer;
+        timer.Start();
+        table = AnnotationTableElement::Get(GetDgnDb(), m_tableElementId);
+        time = 1000.0 * timer.GetCurrentSeconds();
+
+        EXPECT_TRUE (table.IsValid());
+
+        EXPECT_EQ (m_numRows, table->GetRowCount ());
+        EXPECT_EQ (m_numCols, table->GetColumnCount ());
+        }
+
+    void ReadEditableTable (double& time, AnnotationTableElementPtr& table)
+        {
+        ASSERT_TRUE (m_tableElementId.IsValid());
+
+        StopWatch timer;
+        timer.Start();
+        table = AnnotationTableElement::GetForEdit(GetDgnDb(), m_tableElementId);
+        time = 1000.0 * timer.GetCurrentSeconds();
+
+        EXPECT_TRUE (table.IsValid());
+
+        EXPECT_EQ (m_numRows, table->GetRowCount ());
+        EXPECT_EQ (m_numCols, table->GetColumnCount ());
+        }
+
+    void AddTableToDb (double& time, AnnotationTableElementR table)
+        {
+        ASSERT_TRUE ( ! m_tableElementId.IsValid());
+        AnnotationTableElementCPtr  insertedElement;
+
+        StopWatch timer;
+        timer.Start();
+        insertedElement = table.Insert();
+        time = 1000.0 * timer.GetCurrentSeconds();
+
+        EXPECT_TRUE(insertedElement.IsValid());
+
+        m_tableElementId = insertedElement->GetElementId();
+        ASSERT_TRUE (m_tableElementId.IsValid());
+        }
+
+    void DeleteTableFromModel (double& time, AnnotationTableElementCR table)
+        {
+        StopWatch timer;
+        timer.Start();
+        EXPECT_EQ (DgnDbStatus::Success, table.Delete());
+        time = 1000.0 * timer.GetCurrentSeconds();
+        }
+
+    void DoCRUDTiming(uint32_t iter)
+        {
+        double  createTime, fillTime, addTime, readTime, deleteTime;
+
+        AnnotationTableElementPtr createTable  = CreateLargeTable(createTime);
+
+        FillTableWithText (fillTime, *createTable);
+
+        AddTableToDb (addTime, *createTable);
+
+        createTable = nullptr;
+
+#if defined (FOR_DEBUGGING)
+        // Put a break point on Reopen in order to open the file in an viewing application
+        CloseTestFile();
+        ReopenTestFile();
+#endif
+        // Purge the cache so that we don't get a cached element.
+        GetDgnDb().Elements().Purge(0);
+
+        AnnotationTableElementCPtr   foundTable;
+        ReadTable (readTime, foundTable);
+
+        DeleteTableFromModel (deleteTime, *foundTable);
+
+        foundTable = nullptr;
+
+#if defined (FOR_DEBUGGING)
+        // Put a break point on Reopen in order to open the file in an viewing application
+        CloseTestFile();
+        ReopenTestFile();
+#endif
+
+        Reset();
+
+        printf ("%d: create: %fms, fill: %fms, add: %fms, read: %fms, delete: %fms\n", iter, createTime, fillTime, addTime, readTime, deleteTime);
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTablePerformanceTest, CreateWriteReadLargeTable)
+    {
+    // The first call to Create is a lot slower than the rest.  Just make one
+    // here and disregard the time it takes.
+    //AnnotationTableElementPtr table = AnnotationTable::Create (5, 3, GetTextStyleId(), 1000.0, *GetDgnModelP());
+    //table = nullptr;
+
+    // Prepopulate the file with lots of tables.
+    //uint32_t initialCount = 100;
+    //
+    //for (uint32_t iIter = 0; iIter < initialCount; ++iIter)
+    //    {
+    //    double  createTime, fillTime, addTime;
+    //
+    //    AnnotationTableElementPtr createTable  = CreateLargeTable(createTime);
+    //    FillTableWithText (fillTime, *createTable);
+    //    AddTableToDb (addTime, *createTable);
+    //    Reset();
+    //
+    //    printf ("%d: create: %fms, fill: %fms, add: %fms\n", iIter, createTime, fillTime, addTime);
+    //    }
+
+    uint32_t numIters = 5;
+
+    for (uint32_t iIter = 0; iIter < numIters; ++iIter)
+        DoCRUDTiming(iIter);
+    }
+
+#endif //PERFORMANCE_TEST

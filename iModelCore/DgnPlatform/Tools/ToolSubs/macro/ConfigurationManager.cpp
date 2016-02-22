@@ -129,13 +129,6 @@ virtual void    _RemoveMonitor (WCharCP cfgVarName, IVariableMonitorR monitor) o
     // not monitoring.
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   06/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual void    _OnUnloadMdlDescr (MdlDescP mdlDesc) override
-    {
-    // do nothing, we didn't save anything.
-    }
 
 }; // EnvAdmin
 
@@ -169,15 +162,6 @@ void            ConfigurationManager::SetGetAdminFunc (T_GetAdminFunc f)
     {
     if (nullptr == s_getAdminFunc)
         s_getAdminFunc = f;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   06/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            ConfigurationManager::OnUnloadMdlDescr (MdlDescP mdlDesc)
-    {
-    IConfigurationAdmin& ca = GetAdmin();
-    return ca._OnUnloadMdlDescr (mdlDesc);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -2,13 +2,13 @@
 |
 |     $Source: DgnCore/Annotations/AnnotationLeaderDraw.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h> 
 #include <DgnPlatform/Annotations/Annotations.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
@@ -30,48 +30,42 @@ void AnnotationLeaderDraw::CopyFrom(AnnotationLeaderDrawCR rhs)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-static void setStrokeSymbology(ViewContextR context, AnnotationColorType colorType, ColorDef colorValue, uint32_t weight)
+static void setStrokeSymbology(Render::GraphicR graphic, ViewContextR context, GeometryParamsR geomParams, AnnotationColorType colorType, ColorDef colorValue, uint32_t weight)
     {
-    ElemDisplayParamsR displayParams = context.GetCurrentDisplayParams();
-
-    displayParams.ResetAppearance();
-    
-    displayParams.SetWeight(weight);
-    displayParams.SetFillDisplay(FillDisplay::Never);
-    displayParams.SetTransparency(0.0);
+    geomParams.ResetAppearance();
+    geomParams.SetWeight(weight);
+    geomParams.SetFillDisplay(FillDisplay::Never);
+    geomParams.SetTransparency(0.0);
     
     switch (colorType)
         {
         case AnnotationColorType::ByCategory: /* don't override */break;
-        case AnnotationColorType::RGBA: displayParams.SetLineColor(colorValue); break;
+        case AnnotationColorType::RGBA: geomParams.SetLineColor(colorValue); break;
         case AnnotationColorType::ViewBackground: BeAssert(false) /* unsupported */; break;
         default: BeAssert(false) /* unknown */; break;
         }
 
-    context.CookDisplayParams();
+    context.CookGeometryParams(geomParams, graphic);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-static void setFillSymbology(ViewContextR context, AnnotationColorType colorType, ColorDef colorValue, double transparency)
+static void setFillSymbology(Render::GraphicR graphic, ViewContextR context, GeometryParamsR geomParams, AnnotationColorType colorType, ColorDef colorValue, double transparency)
     {
-    ElemDisplayParamsR displayParams = context.GetCurrentDisplayParams();
-
-    displayParams.ResetAppearance();
-
-    displayParams.SetTransparency(transparency);
-    displayParams.SetFillDisplay(FillDisplay::Always);
+    geomParams.ResetAppearance();
+    geomParams.SetTransparency(transparency);
+    geomParams.SetFillDisplay(FillDisplay::Always);
 
     switch (colorType)
         {
         case AnnotationColorType::ByCategory: /* don't override */break;
-        case AnnotationColorType::RGBA: displayParams.SetFillColor(colorValue); break;
-        case AnnotationColorType::ViewBackground: displayParams.SetFillColorToViewBackground(); break;
+        case AnnotationColorType::RGBA: geomParams.SetFillColor(colorValue); break;
+        case AnnotationColorType::ViewBackground: geomParams.SetFillColorToViewBackground(); break;
         default: BeAssert(false) /* unknown */; break;
         }
 
-    context.CookDisplayParams();
+    context.CookGeometryParams(geomParams, graphic);
     }
 
 //---------------------------------------------------------------------------------------
@@ -194,14 +188,12 @@ static CurveVectorPtr createEffectiveLineGeometry(CurveVectorCR originalLineGeom
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus AnnotationLeaderDraw::Draw(ViewContextR context) const
+BentleyStatus AnnotationLeaderDraw::Draw(Render::GraphicR graphic, ViewContextR context, GeometryParamsR geomParams) const
     {
     AnnotationLeaderStylePtr leaderStyle = m_leaderLayout->GetLeader().CreateEffectiveStyle();
     if ((AnnotationLeaderLineType::None == leaderStyle->GetLineType()) && (AnnotationLeaderTerminatorType::None == leaderStyle->GetTerminatorType()))
         return SUCCESS;
     
-    IDrawGeomR output = context.GetIDrawGeom();
-
     if (AnnotationLeaderLineType::None != leaderStyle->GetLineType())
         {
         CurveVectorPtr transformedTerminatorGeometry;
@@ -214,29 +206,27 @@ BentleyStatus AnnotationLeaderDraw::Draw(ViewContextR context) const
         CurveVectorPtr effectiveLineGeometry = createEffectiveLineGeometry(m_leaderLayout->GetLineGeometry(), transformedTerminatorGeometry.get());
         if (effectiveLineGeometry.IsValid())
             {
-            setStrokeSymbology(context, leaderStyle->GetLineColorType(), leaderStyle->GetLineColorValue(), leaderStyle->GetLineWeight());
-            output.DrawCurveVector(*effectiveLineGeometry, false);
+            setStrokeSymbology(graphic, context, geomParams, leaderStyle->GetLineColorType(), leaderStyle->GetLineColorValue(), leaderStyle->GetLineWeight());
+            graphic.AddCurveVector(*effectiveLineGeometry, false);
             }
         }
-    
+
     if (AnnotationLeaderTerminatorType::None != leaderStyle->GetTerminatorType())
         {
-        CurveVectorCR terminatorGeometry = m_leaderLayout->GetTerminatorGeometry();
-        
-        context.PushTransform(m_leaderLayout->GetTerminatorTransform());
+        CurveVectorPtr terminatorGeometry = m_leaderLayout->GetTerminatorGeometry().Clone();
 
-        if (CurveVector::BOUNDARY_TYPE_Open == terminatorGeometry.GetBoundaryType())
+        terminatorGeometry->TransformInPlace(m_leaderLayout->GetTerminatorTransform());
+
+        if (CurveVector::BOUNDARY_TYPE_Open == terminatorGeometry->GetBoundaryType())
             {
-            setStrokeSymbology(context, leaderStyle->GetTerminatorColorType(), leaderStyle->GetTerminatorColorValue(), leaderStyle->GetTerminatorWeight());
-            output.DrawCurveVector(terminatorGeometry, false);
+            setStrokeSymbology(graphic, context, geomParams, leaderStyle->GetTerminatorColorType(), leaderStyle->GetTerminatorColorValue(), leaderStyle->GetTerminatorWeight());
+            graphic.AddCurveVector(*terminatorGeometry, false);
             }
         else
             {
-            setFillSymbology(context, leaderStyle->GetTerminatorColorType(), leaderStyle->GetTerminatorColorValue(), 0.0);
-            output.DrawCurveVector(terminatorGeometry, true);
+            setFillSymbology(graphic, context, geomParams, leaderStyle->GetTerminatorColorType(), leaderStyle->GetTerminatorColorValue(), 0.0);
+            graphic.AddCurveVector(*terminatorGeometry, true);
             }
-        
-        context.PopTransformClip(); // terminator transform
         }
 
     return SUCCESS;

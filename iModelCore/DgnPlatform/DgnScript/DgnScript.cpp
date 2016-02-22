@@ -448,7 +448,7 @@ void/*Json::Value*/ DgnPlatformLib::Host::ScriptAdmin::EvaluateScript(Utf8CP scr
     {
     BeJsContext::EvaluateStatus evstatus;
     BeJsContext::EvaluateException evexception;
-    /*auto res = */GetDgnScriptContext().EvaluateScript(script, "file:///DgnScriptContex", &evstatus, &evexception);
+    /*auto res = */GetDgnScriptContext().EvaluateScript(script, "file:///DgnScriptContext.js", &evstatus, &evexception);
     //m_jsContext->
     if (BeJsContext::EvaluateStatus::Success != evstatus)
         {

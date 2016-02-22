@@ -19,7 +19,7 @@ DGNPLATFORM_REF_COUNTED_PTR(AnnotationLeaderStylePropertyBag);
 DGNPLATFORM_TYPEDEFS(AnnotationLeaderStyle);
 DGNPLATFORM_REF_COUNTED_PTR(AnnotationLeaderStyle);
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //! @addtogroup Annotations
 //! @beginGroup
@@ -94,6 +94,9 @@ public:
     T_Real GetRealProperty(AnnotationLeaderStyleProperty key) const { return T_Super::GetRealProperty((T_Key)key); }
     void SetRealProperty(AnnotationLeaderStyleProperty key, T_Real value) { T_Super::SetRealProperty((T_Key)key, value); }
 };
+
+//! As an element, AnnotationLeaderStyle IDs are inherently DgnElementId, but create a typedef so that argument types are more obvious/natural.
+typedef DgnElementId AnnotationLeaderStyleId;
 
 //=======================================================================================
 //! This is used to provide style properties when creating an AnnotationLeader.
@@ -207,4 +210,4 @@ namespace dgn_ElementHandler
 
 //! @endGroup
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

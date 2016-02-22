@@ -12,7 +12,7 @@
 #include <DgnPlatform/DgnPlatform.h>
 #include "ConfigurationManager.h"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 
 struct          IMacroDebugOutput
@@ -76,7 +76,6 @@ private:
     DGNPLATFORM_EXPORT    virtual BentleyStatus     _IterateThroughVariables (IConfigVariableIteratorDelegate *delegate) override;
     DGNPLATFORM_EXPORT    virtual BentleyStatus     _MonitorVariable (WCharCP cfgVarName, IVariableMonitorR monitor) override;
     DGNPLATFORM_EXPORT    virtual void              _RemoveMonitor (WCharCP cfgVarName, IVariableMonitorR monitor) override;
-    DGNPLATFORM_EXPORT    virtual void              _OnUnloadMdlDescr (MdlDescP mdlDesc) override;
 
                         MacroEntry const*           GetMacroDefinition (WCharCP macroName);
                         bool                        ContainsExpression (WCharCP expression);
@@ -237,4 +236,4 @@ struct      ExpandOperator
     virtual ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) = 0;
     };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

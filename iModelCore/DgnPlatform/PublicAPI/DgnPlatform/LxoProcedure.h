@@ -61,7 +61,7 @@ DGNPLATFORM_TYPEDEFS (LxoBentleyWoodProcedure)
 DGNPLATFORM_TYPEDEFS (LxoAdvancedWoodProcedure)
 DGNPLATFORM_TYPEDEFS (LxoOcclusionProcedure)
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 // __PUBLISH_SECTION_END__
 //=======================================================================================
@@ -2409,7 +2409,7 @@ public:
 
     };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 // __PUBLISH_SECTION_END__
 #endif //!defined (resource) && !defined (type_resource_generator)
 // __PUBLISH_SECTION_START__

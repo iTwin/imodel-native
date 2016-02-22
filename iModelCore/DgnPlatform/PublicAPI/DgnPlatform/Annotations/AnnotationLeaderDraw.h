@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: PublicAPI/DgnPlatform/Annotations/AnnotationLeaderDraw.h $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 #pragma once
 
@@ -11,7 +11,7 @@
 DGNPLATFORM_TYPEDEFS(AnnotationLeaderDraw);
 DGNPLATFORM_REF_COUNTED_PTR(AnnotationLeaderDraw);
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //! @addtogroup Annotations
 //! @beginGroup
@@ -38,9 +38,9 @@ public:
 
     AnnotationLeaderLayoutCR GetLeaderLayout() const { return *m_leaderLayout; }
 
-    DGNPLATFORM_EXPORT BentleyStatus Draw(ViewContextR) const;
+    DGNPLATFORM_EXPORT BentleyStatus Draw(Render::GraphicR, ViewContextR, Render::GeometryParamsR) const;
 };
 
 //! @endGroup
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

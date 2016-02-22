@@ -13,23 +13,39 @@
 Classes for working with %DgnElements in memory.
 @ref PAGE_ElementOverview
 */
-
 BENTLEY_NAMESPACE_TYPEDEFS(HeapZone);
-
 #include <Bentley/BeAssert.h>
 #include "DgnAuthority.h"
 #include "MemoryManager.h"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_RENDER_NAMESPACE
+struct Graphic;
+DEFINE_REF_COUNTED_PTR(Graphic)
+
+//=======================================================================================
+// Cached set of Render::Graphics for a GeometrySource
+// @bsiclass                                                    Keith.Bentley   09/15
+//=======================================================================================
+struct GraphicSet
+{
+    struct PtrCompare{bool operator()(Render::GraphicPtr first, Render::GraphicPtr second) const {return first.get()<second.get();}};
+    mutable bset<Render::GraphicPtr, PtrCompare, 8> m_graphics;
+    DGNPLATFORM_EXPORT Render::Graphic* Find(DgnViewportCR, double metersPerPixel) const;
+    DGNPLATFORM_EXPORT void Drop(Render::Graphic&);
+    DGNPLATFORM_EXPORT void DropFor(DgnViewportCR viewport);
+    void Save(Render::Graphic& graphic) {m_graphics.insert(&graphic);}
+    void Clear() {m_graphics.clear();}
+};
+END_BENTLEY_RENDER_NAMESPACE
+
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometric3d; struct Physical; struct Annotation2d; struct DrawingGraphic; struct Group;};
 namespace dgn_TxnTable {struct Element; struct Model;};
 
-DEFINE_REF_COUNTED_PTR(ElementGeometry)
-
 //=======================================================================================
 //! Holds ID remapping tables
-//=======================================================================================
+//==========================================================================    =============
 struct DgnRemapTables
 {
 protected:
@@ -43,6 +59,7 @@ protected:
 
     template<typename T> T Find(bmap<T,T> const& table, T sourceId) const {auto i = table.find(sourceId); return (i == table.end())? T(): i->second;}
     template<typename T> T FindElement(T sourceId) const {return T(Find<DgnElementId>(m_elementId, sourceId).GetValueUnchecked());}
+
 public:
     DgnRemapTables& Get(DgnDbR);
     DgnAuthorityId Find(DgnAuthorityId sourceId) const {return Find<DgnAuthorityId>(m_authorityId, sourceId);}
@@ -63,10 +80,8 @@ public:
     DgnStyleId Add(DgnStyleId sourceId, DgnStyleId targetId) {return DgnStyleId((m_elementId [sourceId] = targetId).GetValueUnchecked()); }
     DgnFontId Find(DgnFontId sourceId) const { return Find<DgnFontId>(m_fontId, sourceId); }
     DgnFontId Add(DgnFontId sourceId, DgnFontId targetId) { return m_fontId[sourceId] = targetId; }
-
     DgnSubCategoryId Find(DgnSubCategoryId sourceId) const {return FindElement<DgnSubCategoryId>(sourceId);}
     DgnSubCategoryId Add(DgnSubCategoryId sourceId, DgnSubCategoryId targetId) {return DgnSubCategoryId((m_elementId[sourceId] = targetId).GetValueUnchecked());}
-
     DgnClassId Find(DgnClassId sourceId) const {return Find<DgnClassId>(m_classId, sourceId);}
     DgnClassId Add(DgnClassId sourceId, DgnClassId targetId) {return m_classId[sourceId] = targetId;}
 };
@@ -82,7 +97,6 @@ protected:
 public:
     //! Construct a DgnCloneContext object.
     DGNPLATFORM_EXPORT DgnCloneContext();
-
     //! Look up a copy of an element
     DgnElementId FindElementId(DgnElementId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of an element
@@ -164,8 +178,8 @@ public:
     //! Register a copy of a LineStyle component
     void AddLineStyleComponentId(LsComponentId sourceId, LsComponentId targetId);
     //! Look up a copy of a Material
-    //! Make sure that any ids referenced by the supplied GeomStream have been imported
-    DGNPLATFORM_EXPORT DgnDbStatus RemapGeomStreamIds(GeomStreamR geom);
+    //! Make sure that any ids referenced by the supplied GeometryStream have been imported
+    DGNPLATFORM_EXPORT DgnDbStatus RemapGeometryStreamIds(GeometryStreamR geom);
     //! Remap a font between databases. If it exists by-type and -name, the ID is simply remapped; if not, a deep copy is made. If a deep copy is made and the source database contained the font data, the font data is also deep copied.
     DGNPLATFORM_EXPORT DgnFontId RemapFont(DgnFontId);
     //! @}
@@ -217,24 +231,6 @@ public:
     DGNPLATFORM_EXPORT DgnElementCPtr ImportElement(DgnDbStatus* stat, DgnModelR destModel, DgnElementCR sourceElement);
 };
 
-template <class _QvKey> struct QvElemSet;
-
-//=======================================================================================
-// @bsiclass
-//=======================================================================================
-struct QvKey32
-{
-private:
-    uint32_t m_key;
-
-public:
-    inline bool LessThan(QvKey32 const& other) const {return m_key < other.m_key;}
-    inline bool Equal(QvKey32 const& other) const    {return m_key == other.m_key;}
-    void DeleteQvElem(QvElem* qvElem);
-    QvKey32(uint32_t key) {m_key = key;} // allow non-explicit!
-};
-
-typedef QvElemSet<QvKey32> T_QvElemSet;
 
 #define DGNELEMENT_DECLARE_MEMBERS(__ECClassName__,__superclass__) \
     private: typedef __superclass__ T_Super;\
@@ -502,7 +498,7 @@ public:
         DGNPLATFORM_EXPORT DgnDbStatus _InsertInstance(DgnElementCR el) override final;
 
     public:
-        //! The reason why GenerateElementGeometry is being called
+        //! The reason why GenerateGeometricPrimitive is being called
         enum class GenerateReason
         {
             Insert,         //!< The Element is being inserted into the Db
@@ -603,7 +599,7 @@ protected:
     virtual Utf8CP _GetSuperECClassName() const {return nullptr;}
 
     void SetPersistent(bool val) const {m_flags.m_persistent = val;} //!< @private
-    void InvalidateElementId() { m_elementId = DgnElementId(); } //!< @private
+    void InvalidateElementId() {m_elementId = DgnElementId();} //!< @private
     void InvalidateCode() { m_code = DgnCode(); } //!< @private
     
     //! Invokes _CopyFrom() in the context of _Clone() or _CloneForImport(), preserving this element's code as specified by the CreateParams supplied to those methods.
@@ -648,10 +644,10 @@ protected:
     DGNPLATFORM_EXPORT virtual void _OnInserted(DgnElementP copiedFrom) const;
 
     //! Called after a DgnElement was successfully imported into the database.
-    virtual void _OnImported(DgnElementCR original, DgnImportContext& importer) const { }
+    virtual void _OnImported(DgnElementCR original, DgnImportContext& importer) const {}
     
     //! Called after a DgnElement that was previously deleted has been reinstated by an undo.
-    //! @note If you override this method, you @em must call T_Super::_OnInserted.
+    //! @note If you override this method, you @em must call T_Super::_OnReversedDelete.
     DGNPLATFORM_EXPORT virtual void _OnReversedDelete() const;
 
     //! Called when this element is about to be replace an original element in the DgnDb.
@@ -675,9 +671,15 @@ protected:
     //! a relationship.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb();
 
-    //! Called after a DgnElement was successfully updated. The element will be in its post-updated state.
+    //! Called on the replacement element, after a DgnElement was successfully updated, but before the data is 
+    //! copied into the original element and before its parent is notified.
+    //! The replacement element will be in its post-updated state and the original element is supplied.
     //! @note If you override this method, you @em must call T_Super::_OnUpdated.
     DGNPLATFORM_EXPORT virtual void _OnUpdated(DgnElementCR original) const;
+
+    //! Called after a DgnElement was successfully updated from a replacment element and it now holds the data from the replacement.
+    //! @note If you override this method, you @em must call T_Super::_OnUpdateFinished.
+    virtual void _OnUpdateFinished() const {}
 
     //! Called after an update to this DgnElement was reversed by undo. The element will be in its original (pre-change, post-undo) state.
     //! @note If you override this method, you @em must call T_Super::_OnReversedUpdate.
@@ -698,7 +700,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _OnDeleted() const;
 
     //! Called after a DgnElement that was previously added has been removed by undo.
-    //! @note If you override this method, you @em must call T_Super::_OnInserted.
+    //! @note If you override this method, you @em must call T_Super::_OnReversedAdd.
     DGNPLATFORM_EXPORT virtual void _OnReversedAdd() const;
 
     //! Called when a new element is to be inserted into a DgnDb with this element as its parent.
@@ -747,13 +749,13 @@ protected:
     //! @param[in] child The original element which is being imported
     //! @param[in] destModel The model into which the child is being imported
     //! @param[in] importer Enables the element to copy the resources that it needs (if copying between DgnDbs) and to remap any references that it holds to things outside itself to the copies of those things.
-    virtual DgnDbStatus _OnChildImport(DgnElementCR child, DgnModelR destModel, DgnImportContext& importer) const { return DgnDbStatus::Success; }
+    virtual DgnDbStatus _OnChildImport(DgnElementCR child, DgnModelR destModel, DgnImportContext& importer) const {return DgnDbStatus::Success;}
 
     //! Called after an element, with this element as its parent, was successfully imported
     //! @param[in] original The original element which was cloned for import, which is @em not necessarily a child of this element.
     //! @param[in] imported The clone which was imported, which is a child of this element.
     //! @param[in] importer Enables the element to copy the resources that it needs (if copying between DgnDbs) and to remap any references that it holds to things outside itself to the copies of those things.
-    virtual void _OnChildImported(DgnElementCR original, DgnElementCR imported, DgnImportContext& importer) const { }
+    virtual void _OnChildImported(DgnElementCR original, DgnElementCR imported, DgnImportContext& importer) const {}
 
     //! Get the size, in bytes, used by this DgnElement. This is used by the element memory management routines to gauge the "weight" of
     //! each element, so it is not necessary for the value to be 100% accurate.
@@ -956,6 +958,7 @@ public:
     DGNPLATFORM_EXPORT AppData* FindAppData(AppData::Key const& key) const;
     //! @}
 
+    //! Get the DgnModelId of this DgnElement.
     DgnModelId GetModelId() const {return m_modelId;}
 
     //! Get the DgnModel of this DgnElement.
@@ -1010,45 +1013,17 @@ public:
 };
 
 //=======================================================================================
-//! A stream of geometry, stored on a DgnElement, created by an ElementGeometryBuilder.
-//! @ingroup ElementGeometryGroup
+//! A stream of geometry, stored on a DgnElement, created by an GeometryBuilder.
+//! @ingroup GeometricPrimitiveGroup
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================
-struct GeomStream
+struct GeometryStream : ByteStream
 {
-private:
-    uint32_t m_size;
-    uint32_t m_allocSize;
-    uint8_t* m_data;
-    void swap(GeomStream& rhs) {std::swap(m_size,rhs.m_size); std::swap(m_allocSize,rhs.m_allocSize); std::swap(m_data,rhs.m_data);}
-
 public:
-    GeomStream() {m_size=m_allocSize=0; m_data=nullptr;}
-    DGNPLATFORM_EXPORT GeomStream(GeomStream const&);
-    DGNPLATFORM_EXPORT ~GeomStream();
-    GeomStream(GeomStream&& rhs) : m_size(rhs.m_size), m_allocSize(rhs.m_allocSize), m_data(rhs.m_data) {rhs.m_size=rhs.m_allocSize=0; rhs.m_data=nullptr;}
-    DGNPLATFORM_EXPORT GeomStream& operator=(GeomStream const&);
-    GeomStream& operator=(GeomStream&& rhs) {GeomStream(std::move(rhs)).swap(*this); return *this;}
+    bool HasGeometry() const {return HasData();}  //!< return false if this GeometryStream is empty.
 
-    //! Get the size, in bytes, of the memory allocated for this GeomStream.
-    //! @note The allocated size may be larger than the currently used size returned by GetSize.
-    uint32_t GetAllocSize() const {return m_allocSize;}
-    uint32_t GetSize() const {return m_size;}   //!< Get the size in bytes of the current data in this GeomStream.
-    uint8_t const* GetData() const {return m_data;} //!< Get a const pointer to the GeomStream.
-    uint8_t* GetDataR() const {return m_data;}      //!< Get a writable pointer to the GeomStream.
-    bool HasGeometry() const {return 0 != m_size;}  //!< return false if this GeomStream is empty.
-    void Clear() {FREE_AND_CLEAR(m_data); m_size = m_allocSize = 0;} //!< Return this object to an empty/uninitialized state.
-
-    //! Reserve memory for this GeomStream.
-    //! @param[in] size the number of bytes to reserve
-    DGNPLATFORM_EXPORT void ReserveMemory(uint32_t size);
-    //! Save a stream of geometry into this GeomStream.
-    //! @param[in] data the data to save
-    //! @param[in] size number of bytes in data
-    DGNPLATFORM_EXPORT void SaveData(uint8_t const* data, uint32_t size);
-
-    DgnDbStatus WriteGeomStreamAndStep(DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId, BeSQLite::Statement& stmt, int stmtcolidx) const;
-    DgnDbStatus ReadGeomStream(DgnDbR dgnDb, void const* blob, int blobSize);
+    DgnDbStatus WriteGeometryStreamAndStep(BeSQLite::SnappyToBlob& snappy, DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId, BeSQLite::Statement& stmt, int stmtcolidx) const;
+    DgnDbStatus ReadGeometryStream(BeSQLite::SnappyFromMemory& snappy, DgnDbR dgnDb, void const* blob, int blobSize);
 };
 
 //=======================================================================================
@@ -1151,65 +1126,54 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GeometrySource
 {
-//__PUBLISH_SECTION_END__
-    friend struct ElementGeometryBuilder;
+    friend struct GeometryBuilder;
 
-//__PUBLISH_SECTION_START__
 protected:
-
-virtual DgnDbR _GetSourceDgnDb() const = 0;
-virtual DgnElementCP _ToElement() const = 0;
-virtual GeometrySource2dCP _ToGeometrySource2d() const = 0; // Either this method or _ToGeometrySource3d must return non-null.
-virtual GeometrySource3dCP _ToGeometrySource3d() const = 0; // Either this method or _ToGeometrySource2d must return non-null.
-
-virtual DgnCategoryId _GetCategoryId() const = 0;
-virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) = 0;
-virtual GeomStreamCR _GetGeomStream() const = 0;
-virtual bool _HasGeometry() const {return _GetGeomStream().HasGeometry();}
-virtual AxisAlignedBox3d _CalculateRange3d() const = 0;
-
-DGNPLATFORM_EXPORT virtual void _Draw(ViewContextR) const;
-DGNPLATFORM_EXPORT virtual bool _DrawHit(HitDetailCR, ViewContextR) const;
-DGNPLATFORM_EXPORT virtual void _GetInfoString(HitDetailCR, Utf8StringR descr, Utf8CP delimiter) const;
-DGNPLATFORM_EXPORT virtual SnapStatus _OnSnap(SnapContextR) const;
-
-GeomStreamR GetGeomStreamR() {return const_cast<GeomStreamR>(_GetGeomStream());} // Only ElementGeometryBuilder should have write access to the GeomStream...
+    virtual Render::GraphicSet& _Graphics() const = 0;
+    virtual DgnDbR _GetSourceDgnDb() const = 0;
+    virtual DgnElementCP _ToElement() const = 0;
+    virtual GeometrySource2dCP _ToGeometrySource2d() const = 0; // Either this method or _ToGeometrySource3d must return non-null.
+    virtual GeometrySource3dCP _ToGeometrySource3d() const = 0; // Either this method or _ToGeometrySource2d must return non-null.
+    virtual DgnCategoryId _GetCategoryId() const = 0;
+    virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) = 0;
+    virtual GeometryStreamCR _GetGeometryStream() const = 0;
+    virtual AxisAlignedBox3d _CalculateRange3d() const = 0;
+    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _Stroke(ViewContextR, double pixelSize) const;
+    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeHit(ViewContextR, HitDetailCR) const;
+    DGNPLATFORM_EXPORT virtual void _GetInfoString(HitDetailCR, Utf8StringR descr, Utf8CP delimiter) const;
+    DGNPLATFORM_EXPORT virtual SnapStatus _OnSnap(SnapContextR) const;
+    GeometryStreamR GetGeometryStreamR() {return const_cast<GeometryStreamR>(_GetGeometryStream());} // Only GeometryBuilder should have write access to the GeometryStream...
+    virtual DgnElement::Hilited _IsHilited() const {if (nullptr == ToElement()) return DgnElement::Hilited::None; return (DgnElement::Hilited) ToElement()->m_flags.m_hilited;} //!< Get the current Hilited state of this element
+    DGNPLATFORM_EXPORT virtual void _SetHilited(DgnElement::Hilited newState) const; //!< Change the current Hilited state of this element
 
 public:
+    bool HasGeometry() const {return _GetGeometryStream().HasGeometry();} //!< return false if this geometry source currently has no geometry (is empty).
+    DgnDbR GetSourceDgnDb() const {return _GetSourceDgnDb();}
+    DgnElementCP ToElement() const {return _ToElement();} //! Caller must be prepared to this to return nullptr.
+    DgnElementP ToElementP() {return const_cast<DgnElementP>(_ToElement());} //! Caller must be prepared to this to return nullptr.
+    GeometrySource2dCP ToGeometrySource2d() const {return _ToGeometrySource2d();}
+    GeometrySource2dP ToGeometrySource2dP() {return const_cast<GeometrySource2dP>(_ToGeometrySource2d());}
+    GeometrySource3dCP ToGeometrySource3d() const {return _ToGeometrySource3d();}
+    GeometrySource3dP ToGeometrySource3dP() {return const_cast<GeometrySource3dP>(_ToGeometrySource3d());}
+    DgnCategoryId GetCategoryId() const {return _GetCategoryId();}
+    DgnDbStatus SetCategoryId(DgnCategoryId categoryId) {return _SetCategoryId(categoryId);}
+    GeometryStreamCR GetGeometryStream() const {return _GetGeometryStream();}
+    AxisAlignedBox3d CalculateRange3d() const {return _CalculateRange3d();}
+    DGNPLATFORM_EXPORT Transform GetPlacementTransform() const;
 
-DgnDbR GetSourceDgnDb() const {return _GetSourceDgnDb();}
-DgnElementCP ToElement() const {return _ToElement();} //! Caller must be prepared to this to return nullptr.
-DgnElementP ToElementP() {return const_cast<DgnElementP>(_ToElement());} //! Caller must be prepared to this to return nullptr.
+    DgnElement::Hilited IsHilited() const {return _IsHilited();}
+    bool IsInSelectionSet() const {if (nullptr == ToElement()) return false; return ToElement()->m_flags.m_inSelectionSet;}
+    bool IsUndisplayed() const {if (nullptr == ToElement()) return false; return ToElement()->m_flags.m_undisplayed;} //!< @private
+    void SetHilited(DgnElement::Hilited newState) const {_SetHilited(newState);} //!< Change the current Hilited state of this element
+    DGNPLATFORM_EXPORT void SetInSelectionSet(bool yesNo) const; //!< @private
+    DGNPLATFORM_EXPORT void SetUndisplayed(bool yesNo) const; //!< @private
 
-GeometrySource2dCP ToGeometrySource2d() const {return _ToGeometrySource2d();}
-GeometrySource2dP ToGeometrySource2dP() {return const_cast<GeometrySource2dP>(_ToGeometrySource2d());}
-
-GeometrySource3dCP ToGeometrySource3d() const {return _ToGeometrySource3d();}
-GeometrySource3dP ToGeometrySource3dP() {return const_cast<GeometrySource3dP>(_ToGeometrySource3d());}
-
-DgnCategoryId GetCategoryId() const {return _GetCategoryId();}
-DgnDbStatus SetCategoryId(DgnCategoryId categoryId) {return _SetCategoryId(categoryId);}
-
-GeomStreamCR GetGeomStream() const {return _GetGeomStream();}
-bool HasGeometry() const {return _HasGeometry();} //!< return false if this geometry source currently has no geometry (is empty).
-AxisAlignedBox3d CalculateRange3d() const {return _CalculateRange3d();}
-DGNPLATFORM_EXPORT Transform GetPlacementTransform() const;
-
-// NOT_NOW_GEOMETRY_SOURCE - Make hilite/undisplayed virtual so transients can use them...
-bool IsUndisplayed() const {if (nullptr == ToElement()) return false; return ToElement()->m_flags.m_undisplayed;}
-DgnElement::Hilited IsHilited() const {if (nullptr == ToElement()) return DgnElement::Hilited::None; return (DgnElement::Hilited) ToElement()->m_flags.m_hilited;} //!< Get the current Hilited state of this element
-bool IsInSelectionSet() const {if (nullptr == ToElement()) return false; return ToElement()->m_flags.m_inSelectionSet;}
-
-DGNPLATFORM_EXPORT void SetUndisplayed(bool yesNo) const;
-DGNPLATFORM_EXPORT void SetHilited(DgnElement::Hilited newState) const; //!< Change the current Hilited state of this element
-DGNPLATFORM_EXPORT void SetInSelectionSet(bool yesNo) const; //!< @private
-
-void Draw(ViewContextR context) const {_Draw(context);}
-bool DrawHit(HitDetailCR hit, ViewContextR context) const {return _DrawHit(hit, context);}
-void GetInfoString(HitDetailCR hit, Utf8StringR descr, Utf8CP delimiter) const {_GetInfoString(hit, descr, delimiter);}
-SnapStatus OnSnap(SnapContextR context) const {return _OnSnap(context);}
-
-}; // GeometrySource
+    Render::GraphicSet& Graphics() const {return _Graphics();}
+    Render::GraphicPtr Stroke(ViewContextR context, double pixelSize) const {return _Stroke(context, pixelSize);}
+    Render::GraphicPtr StrokeHit(ViewContextR context, HitDetailCR hit) const {return _StrokeHit(context, hit);}
+    void GetInfoString(HitDetailCR hit, Utf8StringR descr, Utf8CP delimiter) const {_GetInfoString(hit, descr, delimiter);}
+    SnapStatus OnSnap(SnapContextR context) const {return _OnSnap(context);}
+};
 
 //=======================================================================================
 // @bsiclass                                                    Brien.Bastings  11/15
@@ -1217,18 +1181,14 @@ SnapStatus OnSnap(SnapContextR context) const {return _OnSnap(context);}
 struct EXPORT_VTABLE_ATTRIBUTE GeometrySource3d : GeometrySource
 {
 protected:
-
-virtual GeometrySource2dCP _ToGeometrySource2d() const override final {return nullptr;}
-virtual AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
-virtual Placement3dCR _GetPlacement() const = 0;
-virtual DgnDbStatus _SetPlacement(Placement3dCR placement) = 0;
-
+    virtual GeometrySource2dCP _ToGeometrySource2d() const override final {return nullptr;}
+    virtual AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
+    virtual Placement3dCR _GetPlacement() const = 0;
+    virtual DgnDbStatus _SetPlacement(Placement3dCR placement) = 0;
 public:
-
-Placement3dCR GetPlacement() const {return _GetPlacement();} //!< Get the Placement3d of this element
-DgnDbStatus SetPlacement(Placement3dCR placement) {return _SetPlacement(placement);} //!< Change the Placement3d for this element
-
-}; // GeometrySource3d
+    Placement3dCR GetPlacement() const {return _GetPlacement();} //!< Get the Placement3d of this element
+    DgnDbStatus SetPlacement(Placement3dCR placement) {return _SetPlacement(placement);} //!< Change the Placement3d for this element
+};
 
 //=======================================================================================
 // @bsiclass                                                    Brien.Bastings  11/15
@@ -1236,18 +1196,15 @@ DgnDbStatus SetPlacement(Placement3dCR placement) {return _SetPlacement(placemen
 struct EXPORT_VTABLE_ATTRIBUTE GeometrySource2d : GeometrySource
 {
 protected:
-
-virtual GeometrySource3dCP _ToGeometrySource3d() const override final {return nullptr;}
-virtual AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
-virtual Placement2dCR _GetPlacement() const = 0;
-virtual DgnDbStatus _SetPlacement(Placement2dCR placement) = 0;
+    virtual GeometrySource3dCP _ToGeometrySource3d() const override final {return nullptr;}
+    virtual AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
+    virtual Placement2dCR _GetPlacement() const = 0;
+    virtual DgnDbStatus _SetPlacement(Placement2dCR placement) = 0;
 
 public:
-
-Placement2dCR GetPlacement() const {return _GetPlacement();} //!< Get the Placement2d of this element
-DgnDbStatus SetPlacement(Placement2dCR placement) {return _SetPlacement(placement);} //!< Change the Placement2d for this element
-
-}; // GeometrySource2d
+    Placement2dCR GetPlacement() const {return _GetPlacement();} //!< Get the Placement2d of this element
+    DgnDbStatus SetPlacement(Placement2dCR placement) {return _SetPlacement(placement);} //!< Change the Placement2d for this element
+};
 
 //=======================================================================================
 //! Base class for elements with geometry.
@@ -1258,20 +1215,35 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
 {
     DEFINE_T_SUPER(DgnElement);
 
+    //! Parameters used to construct a GeometricElement
     struct CreateParams : T_Super::CreateParams
     {
         DEFINE_T_SUPER(GeometricElement::T_Super::CreateParams);
 
-        DgnCategoryId   m_category;
+        DgnCategoryId   m_category; //!< The category to which the element belongs
 
+        //! Construct from the supplied parameters
+        //! @param[in]      db       The DgnDb in which the element is to reside
+        //! @param[in]      modelId  The ID of the model in which the element is to reside
+        //! @param[in]      classId  The ID of the element's ECClass
+        //! @param[in]      category The category to which the element belongs
+        //! @param[in]      code     The element's code
+        //! @param[in]      label    (Optional) element label
+        //! @param[in]      parent   (Optional) ID of this element's parent element
         CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, DgnCodeCR code=DgnCode(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId())
             : T_Super(db, modelId, classId, code, label, parent), m_category(category) { }
+
+        //! Constructor from base params. Chiefly for internal use.
+        //! @param[in]      params   The base element parameters
+        //! @param[in]      category The category to which the element belongs
+        //! @return 
         explicit CreateParams(DgnElement::CreateParams const& params, DgnCategoryId category=DgnCategoryId()) : T_Super(params), m_category(category) { }
     };
 protected:
-    DgnCategoryId   m_categoryId;
-    GeomStream      m_geom;
-    mutable bool    m_multiChunkGeomStream;
+    DgnCategoryId               m_categoryId;
+    GeometryStream              m_geom;
+    mutable Render::GraphicSet  m_graphics;
+    mutable bool                m_multiChunkGeomStream;
 
     explicit GeometricElement(CreateParams const& params) : T_Super(params), m_categoryId(params.m_category), m_multiChunkGeomStream(false) { }
 
@@ -1292,6 +1264,7 @@ protected:
 
     static void AddBaseClassParams(ECSqlClassParams& params);
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
+    GeometryStreamCR GetGeometryStream() const {return m_geom;}
     DgnDbStatus InsertGeomStream() const;
     DgnDbStatus UpdateGeomStream() const;
     DgnDbStatus WriteGeomStream() const;
@@ -1311,15 +1284,31 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement3d : GeometricElement, GeometrySo
     friend struct dgn_ElementHandler::Geometric3d;
 
 public:
+    //! Parameters for constructing a 3d geometric element
     struct CreateParams : T_Super::CreateParams
     {
         DEFINE_T_SUPER(GeometricElement3d::T_Super::CreateParams);
 
-        Placement3d m_placement;
+        Placement3d m_placement; //!< The element's placement in 3d space
 
+        //! Construct from supplied parameters
+        //! @param[in]      db        The DgnDb in which the element is to reside
+        //! @param[in]      modelId   The ID of the model in which the element is to reside
+        //! @param[in]      classId   The ID of the element's ECClass
+        //! @param[in]      category  The category to which the element belongs
+        //! @param[in]      placement The element's placement in 3d space
+        //! @param[in]      code      The element's code
+        //! @param[in]      label     (Optional) element label
+        //! @param[in]      parent    (Optional) ID of this element's parent element
         CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(),
                 DgnCodeCR code=DgnCode(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId())
             : T_Super(db, modelId, classId, category, code, label, parent), m_placement(placement) { }
+
+        //! Construct from base parameters. Chiefly for internal use
+        //! @param[in]      params    The base element parameters
+        //! @param[in]      category  The category to which the element belongs
+        //! @param[in]      placement The element's placement in 3d space
+        //! @return 
         explicit CreateParams(DgnElement::CreateParams const& params, DgnCategoryId category=DgnCategoryId(), Placement3dCR placement=Placement3d())
             : T_Super(params, category), m_placement(placement) { }
     };
@@ -1329,7 +1318,7 @@ protected:
     explicit GeometricElement3d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) { }
 
     virtual bool _IsPlacementValid() const override final { return m_placement.IsValid(); }
-
+    virtual Render::GraphicSet& _Graphics() const override final {return m_graphics;}
     virtual DgnDbR _GetSourceDgnDb() const override final { return GetDgnDb(); }
     virtual DgnElementCP _ToElement() const override final { return this; }
     virtual GeometrySourceCP _ToGeometrySource() const override final { return this; }
@@ -1337,7 +1326,7 @@ protected:
     virtual Utf8CP _GetGeometryColumnTableName() const override final { return DGN_TABLE(DGN_CLASSNAME_GeometricElement3d); }
     virtual DgnCategoryId _GetCategoryId() const override final { return m_categoryId; }
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { return DoSetCategoryId(categoryId); }
-    virtual GeomStreamCR _GetGeomStream() const override final { return m_geom; }
+    virtual GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
     virtual Placement3dCR _GetPlacement() const override final { return m_placement; }
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPlacement(Placement3dCR placement) override;
 
@@ -1349,6 +1338,7 @@ protected:
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement&);
 public:
+    virtual void _OnUpdateFinished() const override {T_Super::_OnUpdateFinished(); m_graphics.Clear();}
     DGNPLATFORM_EXPORT static void AddClassParams(ECSqlClassParams& params);
 };
 
@@ -1363,15 +1353,31 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement2d : GeometricElement, GeometrySo
     friend struct dgn_ElementHandler::Geometric2d;
 
 public:
+    //! Parameters for constructing a 2d geometric element
     struct CreateParams : T_Super::CreateParams
     {
         DEFINE_T_SUPER(GeometricElement2d::T_Super::CreateParams);
 
-        Placement2d m_placement;
+        Placement2d m_placement; //!< The element's placement in 2d space
 
+        //! Construct from supplied parameters
+        //! @param[in]      db        The DgnDb in which the element is to reside
+        //! @param[in]      modelId   The ID of the model in which the element is to reside
+        //! @param[in]      classId   The ID of the element's ECClass
+        //! @param[in]      category  The ID of the category to which the element belongs
+        //! @param[in]      placement The element's placement in 2d space
+        //! @param[in]      code      The element's code
+        //! @param[in]      label     (Optional) element label
+        //! @param[in]      parent    (Optional) ID of this element's parent element
         CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(),
                 DgnCodeCR code=DgnCode(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId())
             : T_Super(db, modelId, classId, category, code, label, parent), m_placement(placement) { }
+
+        //! Construct from base parameters. Chiefly for internal use.
+        //! @param[in]      params    The base element parameters
+        //! @param[in]      category  The ID of the category to which the element belongs
+        //! @param[in]      placement The element's placement in 2d space
+        //! @return 
         explicit CreateParams(DgnElement::CreateParams const& params, DgnCategoryId category=DgnCategoryId(), Placement2dCR placement=Placement2d())
             : T_Super(params, category), m_placement(placement) { }
     };
@@ -1389,9 +1395,10 @@ protected:
     virtual Utf8CP _GetGeometryColumnTableName() const override final { return DGN_TABLE(DGN_CLASSNAME_GeometricElement2d); }
     virtual DgnCategoryId _GetCategoryId() const override final { return m_categoryId; }
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { return DoSetCategoryId(categoryId); }
-    virtual GeomStreamCR _GetGeomStream() const override final { return m_geom; }
+    virtual GeometryStreamCR _GetGeometryStream() const override final { return m_geom; }
     virtual Placement2dCR _GetPlacement() const override final { return m_placement; }
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPlacement(Placement2dCR placement) override;
+    virtual Render::GraphicSet& _Graphics() const override final {return m_graphics;}
 
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
     DGNPLATFORM_EXPORT virtual void _AdjustPlacementForImport(DgnImportContext const&) override;
@@ -1401,6 +1408,7 @@ protected:
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement&);
 public:
+    virtual void _OnUpdateFinished() const override {T_Super::_OnUpdateFinished(); m_graphics.Clear();}
     DGNPLATFORM_EXPORT static void AddClassParams(ECSqlClassParams& params);
 };
 
@@ -1507,6 +1515,7 @@ protected:
     virtual DrawingGraphicCP _ToDrawingGraphic() const override final {return this;}
 
     explicit DrawingGraphic(CreateParams const& params) : T_Super(params) { }
+
 }; // DrawingGraphic
 
 //=======================================================================================
@@ -1674,17 +1683,17 @@ public:
         DGNPLATFORM_EXPORT CreateParams(DgnDbR db, DgnClassId classId, DgnCode const& code, Utf8CP label=nullptr, DgnElementId parentId=DgnElementId());
 
         //! Constructor from base class. Primarily for internal use.
-        explicit CreateParams(DgnElement::CreateParams const& params) : T_Super(params) { }
+        explicit CreateParams(DgnElement::CreateParams const& params) : T_Super(params) {}
 
         //! Constructs parameters for a dictionary element with the specified values. Chiefly for internal use.
         CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCode code, Utf8CP label=nullptr, DgnElementId parent=DgnElementId())
-            : T_Super(db, modelId, classId, code, label, parent) { }
+            : T_Super(db, modelId, classId, code, label, parent) {}
     };
 protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     virtual DictionaryElementCP _ToDictionaryElement() const override final { return this; }
 
-    explicit DictionaryElement(CreateParams const& params) : T_Super(params) { }
+    explicit DictionaryElement(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
@@ -1706,6 +1715,7 @@ struct DgnElements : DgnDbTable, IMemoryConsumer
     friend struct TxnManager;
     friend struct ProgressiveViewFilter;
     friend struct dgn_TxnTable::Element;
+    friend struct GeometricElement;
 
     //! The totals for persistent DgnElements in this DgnDb. These values reflect the current state of the loaded elements.
     struct Totals
@@ -1757,7 +1767,6 @@ private:
     void OnUnreferenced(DgnElementCR);
     void Destroy();
     void AddToPool(DgnElementCR) const;
-    void DropFromPool(DgnElementCR) const;
     void SendOnLoadedEvent(DgnElementR elRef) const;
     void FinishUpdate(DgnElementCR replacement, DgnElementCR original);
     DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, bool makePersistent) const;
@@ -1776,13 +1785,16 @@ private:
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedInsertStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedUpdateStatement(DgnElementR el) const;
 
-    virtual int64_t _CalculateBytesConsumed() const override { return GetTotalAllocated(); }
+    virtual int64_t _CalculateBytesConsumed() const override {return GetTotalAllocated();}
     virtual int64_t _Purge(int64_t memTarget) override;
-public:
+
     BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;} // NB: Not to be used during loading of a geometric element!
     BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;} // NB: Not to be used during insert or update of a geometric element!
+
+public:
     DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const;
     DGNPLATFORM_EXPORT void ChangeMemoryUsed(int32_t delta) const;
+    DGNPLATFORM_EXPORT void DropFromPool(DgnElementCR) const;
 
     //! Look up an element in the pool of loaded elements for this DgnDb.
     //! @return A pointer to the element, or nullptr if the is not in the pool.
@@ -1803,7 +1815,7 @@ public:
     DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(Utf8CP codeAuthorityName, Utf8StringCR codeValue, Utf8StringCR nameSpace="") const;
 
     //! Get the total counts for the current state of the pool.
-    DGNPLATFORM_EXPORT Totals GetTotals() const;
+    DGNPLATFORM_EXPORT Totals const& GetTotals() const;
 
     //! Shortcut to get the Totals.m_allocatedBytes member
     int64_t GetTotalAllocated() const {return GetTotals().m_allocedBytes;}
@@ -1857,12 +1869,13 @@ public:
 
     DgnElementIdSet const& GetSelectionSet() const {return m_selectionSet;}
     DgnElementIdSet& GetSelectionSetR() {return m_selectionSet;}
-};
 
-#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
-// *** WIP_ELEMENT_ITEM - move this back into ComponentSolution after making ElementItem a top-level class
-DgnDbStatus ExecuteComponentSolutionEGA(DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, ECN::IECInstanceCR itemInstance, Utf8StringCR cmName, Utf8StringCR paramNames, DgnElement::Item& item);
-#endif
+    //! For all loaded elements, drops any cached graphics associated with the specified viewport.
+    //! This is typically invoked by applications when a viewport is closed or its attributes modified such that the cached graphics
+    //! no longer reflect its state.
+    //! @param[in]      viewport The viewport for which to drop graphics
+    DGNPLATFORM_EXPORT void DropGraphicsForViewport(DgnViewportCR viewport);
+};
 
 //=======================================================================================
 //! The basic element copier. Makes a persistent copy of elements and their children.
@@ -2002,4 +2015,4 @@ struct DgnElementTransformer
         }
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

@@ -40,7 +40,8 @@ void DgnDbTable::ReplaceInvalidCharacters(Utf8StringR str, Utf8CP invalidChars, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_domains(*this), m_styles(*this),
                  m_geomParts(*this), m_units(*this), m_models(*this), m_elements(*this), 
-                 m_links(*this), m_authorities(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_revisionManager(nullptr)
+                 m_links(*this), m_authorities(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_revisionManager(nullptr),
+                 m_queryQueue(*this)
     {
     //
     }
@@ -50,6 +51,7 @@ DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_dom
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDb::Destroy()
     {
+    m_queryQueue.Terminate();
     m_models.Empty();
     m_txnManager = nullptr; // RefCountedPtr, deletes TxnManager
     if (nullptr != m_revisionManager)
@@ -58,8 +60,7 @@ void DgnDb::Destroy()
         m_revisionManager = nullptr;
         }
     m_ecsqlCache.Empty();
-    m_locksManager = nullptr;
-    m_codesManager = nullptr;
+    m_briefcaseManager = nullptr;
     m_localStateDb.Destroy();
     }
 
@@ -87,23 +88,50 @@ void DgnDb::_OnDbClose()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static DbResult checkIsConvertibleVersion(Db& db)
+    {
+    Utf8String versionString;
+    DbResult rc = db.QueryProperty(versionString, DgnProjectProperty::SchemaVersion());
+    if (BE_SQLITE_ROW != rc)
+        return BE_SQLITE_ERROR_InvalidProfileVersion;
+
+    SchemaVersion sver(0,0,0,0);
+    sver.FromJson(versionString.c_str());
+    if (sver.GetMajor() < DGNDB_CURRENT_VERSION_Major)
+        return BE_SQLITE_ERROR_ProfileTooOld;
+
+    return BE_SQLITE_OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::_OnDbOpened()
     {
-    DbResult rc = T_Super::_OnDbOpened();
+    DbResult rc = checkIsConvertibleVersion(*this);
     if (BE_SQLITE_OK != rc)
+        {
+        // Short-circuit this function if the Db is too old or new such that we cannot continue;
+        //  The caller does the version check/upgrade after this _OnDbOpened logic finishes. 
+        //  If we have missing tables and columns, however, then we cannot even execute this _OnDbOpened logic.
+        //  *** NEEDS WORK: Do we need some kind of "pre" version upgrade?
+        //  In any case, we don't intend to upgrade from 05 to 06, so it's a moot point for now.
+        return rc;
+        }
+
+    if (BE_SQLITE_OK != (rc = T_Super::_OnDbOpened()))
         return rc;
 
-    Fonts().Update(); // ensure the font ID cache is loaded; if you wait for on-demand, it may need to query during an update, which we'd like to avoid
-
-    m_units.Load();
-    
     if (BE_SQLITE_OK != (rc = Domains().OnDbOpened()))
         return rc;
 
     if (BE_SQLITE_OK != (rc = Txns().InitializeTableHandlers())) // make sure txnmanager is allocated and that all txn-related temp tables are created. 
         return rc;                                               // NB: InitializeTableHandlers calls SaveChanges!
+
+    Fonts().Update(); // ensure the font ID cache is loaded; if you wait for on-demand, it may need to query during an update, which we'd like to avoid
+    m_units.Load();
 
     return BE_SQLITE_OK;
     }
@@ -122,31 +150,17 @@ TxnManagerR DgnDb::Txns()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ILocksManagerR DgnDb::Locks()
+IBriefcaseManagerR DgnDb::BriefcaseManager()
     {
-    // This is here rather than in the constructor because _CreateLocksManager() requires briefcase ID, which is obtained from m_dbFile,
+    // This is here rather than in the constructor because _CreateBriefcaseManager() requires briefcase ID, which is obtained from m_dbFile,
     // which is not initialized in constructor.
-    if (m_locksManager.IsNull())
+    if (m_briefcaseManager.IsNull())
         {
-        m_locksManager = T_HOST.GetServerAdmin()._CreateLocksManager(*this);
-        BeAssert(m_locksManager.IsValid());
+        m_briefcaseManager = T_HOST.GetRepositoryAdmin()._CreateBriefcaseManager(*this);
+        BeAssert(m_briefcaseManager.IsValid());
         }
 
-    return *m_locksManager;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-IDgnCodesManagerR DgnDb::Codes()
-    {
-    if (m_codesManager.IsNull())
-        {
-        m_codesManager = T_HOST.GetServerAdmin()._CreateCodesManager(*this);
-        BeAssert(m_codesManager.IsValid());
-        }
-
-    return *m_codesManager;
+    return *m_briefcaseManager;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -475,36 +489,6 @@ DgnCloneContext::DgnCloneContext()
 DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : DgnCloneContext(), m_sourceDb(source), m_destDb(dest)
     {
     ComputeGcsAdjustment();
-    }
-
-static uintptr_t  s_nextQvMaterialId;
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ray.Bentley                   08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t DgnDb::AddQvMaterialId(DgnMaterialId materialId) const { return (m_qvMaterialIds[materialId] = ++s_nextQvMaterialId); }
-uintptr_t DgnDb::GetQvMaterialId(DgnMaterialId materialId) const
-    {
-    auto const&   found = m_qvMaterialIds.find(materialId);
-
-    return (found == m_qvMaterialIds.end()) ? 0 : found->second; 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ray.Bentley                   08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t DgnDb::AddQvTextureId(DgnTextureId TextureId) const 
-    { 
-    static uintptr_t s_nextQvTextureId;
-    return (m_qvTextureIds[TextureId] = ++s_nextQvTextureId); 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ray.Bentley                   08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t DgnDb::GetQvTextureId(DgnTextureId TextureId) const
-    {
-    auto const& found = m_qvTextureIds.find(TextureId);
-    return (found == m_qvTextureIds.end()) ? 0 : found->second; 
     }
 
 /*---------------------------------------------------------------------------------**//**

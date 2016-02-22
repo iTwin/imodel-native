@@ -60,10 +60,10 @@ DgnDbStatus LightDefinition::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassP
     {
     auto status = T_Super::_ReadSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
-    BeSQLite::wt_OperationForGraphics wt_OperationForGraphics;
         {
         Utf8String descr = stmt.GetValueText(params.GetSelectIndex(PROPNAME_Descr)),
-                   value = stmt.GetValueText(params.GetSelectIndex(PROPNAME_Value));
+               value = stmt.GetValueText(params.GetSelectIndex(PROPNAME_Value));
+
         m_data.Init(value, descr);
         }
 

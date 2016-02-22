@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/TransformClipStack.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -219,8 +219,10 @@ bool    TestPoint (DPoint3dCR point) const
 +---------------+---------------+--------------+---------------+---------------+------*/
 void Pop (ViewContextR context)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     for (size_t i=0; i < m_drawGeomPopCount; i++)
-        ViewContext::DirectPopTransClipOutput (context.GetIDrawGeom ());
+        context.GetCurrentGraphicR().PopTransClip();
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -287,7 +289,7 @@ void    TransformClipStack::PushClip (ClipVectorCR clip)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    TransformClipStack::PushClipPlaneSets (ClipPlaneSetCR planeSet)
     {
-    PushClip (*ClipVector::CreateFromPrimitive (ClipPrimitive::CreateFromClipPlanes (planeSet)));
+    PushClip (*new ClipVector(ClipPrimitive::CreateFromClipPlanes(planeSet).get()));
     }
 
 /*---------------------------------------------------------------------------------**//**

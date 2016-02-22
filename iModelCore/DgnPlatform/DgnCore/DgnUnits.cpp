@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
+#include <BeSQLite/RTreeMatch.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/13
@@ -100,17 +101,40 @@ DbResult DgnUnits::SaveProjectExtents(AxisAlignedBox3dCR newExtents)
     return m_dgndb.SavePropertyString(DgnProjectProperty::Extents(), Json::FastWriter::ToString(jsonObj));
     }
 
+BEGIN_UNNAMED_NAMESPACE
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   12/11
+//=======================================================================================
+struct SpatialBounds : DgnQueryView::SpatialQuery
+{
+    BeSQLite::RTree3dVal  m_bounds;
+    SpatialBounds() : DgnQueryView::SpatialQuery(nullptr) {m_bounds.Invalidate();}
+    int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const& info) override
+        {
+        BeAssert(6 == info.m_nCoord);
+        info.m_within = BeSQLite::RTreeMatchFunction::Within::Outside; // we only want the top level nodes
+        RTree3dValCP pt = (RTree3dValCP) info.m_coords;
+         if (!m_bounds.IsValid())
+            m_bounds = *pt;
+        else
+            m_bounds.Union(*pt);
+        return  BeSQLite::BE_SQLITE_OK;
+        }
+};
+END_UNNAMED_NAMESPACE
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d DgnUnits::ComputeProjectExtents()
     {
-    RTree3dBoundsTest bounds(m_dgndb);
-    Statement stmt(m_dgndb, "SELECT 1 FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId MATCH rTreeMatch(1)");
-    bounds.m_bounds.Invalidate();
-    auto rc=bounds.StepRTree(stmt);
+    Statement stmt(m_dgndb, "SELECT 1 FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId MATCH DGN_rtree(?)");
+    SpatialBounds bounds;
+    stmt.BindInt64(1, (int64_t) &bounds);
+
+    auto rc=stmt.Step();
     BeAssert(rc==BE_SQLITE_DONE);
-    bounds.m_bounds.ToRange(m_extent);
+    bounds.m_bounds.ToRangeR(m_extent);
     return m_extent;
     }
 

@@ -27,7 +27,6 @@ DgnDb defines types and built-in functions that you can use in SQL statements.
 //! @see DGN_point_value, DGN_point_distance, DGN_point_min_distance_to_bbox
 struct DGN_point
 {
-protected:
     double x;   //!< The x-coordinate
     double y;   //!< The y-coordinate
     double z;   //!< The z-coordinate
@@ -37,7 +36,6 @@ protected:
 //! @see DGN_angles_value, DGN_angles_maxdiff
 struct DGN_angles
 {
-protected:
     double yaw;  //!< The Yaw angle in degrees
     double pitch;//!< The Yaw angle in degrees
     double roll; //!< The Yaw angle in degrees
@@ -50,7 +48,6 @@ protected:
 //! @see DGN_bbox_value, DGN_bbox_width, DGN_bbox_height, DGN_bbox_depth, DGN_bbox_volume, DGN_bbox_areaxy, DGN_bbox_overlaps, DGN_bbox_contains, DGN_bbox_union, DGN_point_min_distance_to_bbox
 struct DGN_bbox
 {
-protected:
     double XLow;  //!< The low X coordinate of the bounding box
     double YLow;  //!< The low Y coordinate of the bounding box
     double Zlow;  //!< The low Z coordinate of the bounding box
@@ -64,7 +61,6 @@ protected:
 //! @see DGN_placement_origin, DGN_placement_angles, DGN_placement_eabb, DGN_placement_aabb
 struct DGN_placement
 {
-protected:
     DGN_point origin;   //!< Origin
     DGN_angles angles;  //!< Angles
     DGN_bbox bbox;      //!< Element-aligned bounding box
@@ -855,6 +851,19 @@ struct DGN_spatial_overlap_aabb : RTreeMatchFunction
     DGN_spatial_overlap_aabb() : RTreeMatchFunction("DGN_spatial_overlap_aabb", 1) {}
 };
 
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   01/16
+//=======================================================================================
+struct DGN_rtree : RTreeMatchFunction
+{
+    int _TestRange(QueryInfo const& info) override
+        {
+        auto matcher = (DgnQueryView::SpatialQuery*) info.m_args[0].GetValueInt64();
+        return matcher->_TestRTree(info);
+        }
+    DGN_rtree() : RTreeMatchFunction("DGN_rtree", 1) {}
+};
+
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -892,6 +901,7 @@ void DgnBaseDomain::_OnDgnDbOpened(DgnDbR db) const
 
     static RTreeMatchFunction* s_matchFuncs[] = 
                          {
+                         new DGN_rtree,
                          new DGN_spatial_overlap_aabb
                          };
 

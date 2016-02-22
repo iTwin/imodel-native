@@ -2,7 +2,7 @@
 |
 |   $Source: DgnGeoCoord/AuxCoordSysProcessor.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include    <Geom\msgeomstructs.hpp>
@@ -111,7 +111,7 @@ virtual WString         _GetDescription () const override
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual ACSType         _GetType () const override
     {
-    return ACS_TYPE_Extended;
+    return ACSType::Extended;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -119,8 +119,8 @@ virtual ACSType         _GetType () const override
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual WString         _GetTypeName () const override
     {
-    WChar buffer[1024];
-    return WString (BaseGeoCoordResource::GetLocalizedStringW (buffer, BentleyApi::GeoCoordinates::DGNGEOCOORD_Msg_GeoCoordACSType, _countof (buffer)));
+    WString buffer;
+    return WString (BaseGeoCoordResource::GetLocalizedString (buffer, Bentley::GeoCoordinates::DGNGEOCOORD_Msg_GeoCoordACSType));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -179,7 +179,7 @@ virtual bool            _GetIsReadOnly () const override
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual ACSFlags        _GetFlags () const override
     {
-    return ACS_FLAG_Default;
+    return ACSFlags::Default;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -220,88 +220,38 @@ uint32_t    length
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   12/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ParseAngle (double& angle, const char* string)
-    {
-#if defined (BEIJING_DGNPLATFORM_WIP_GEOCOORD)
-    // here's what it was:
-    mdlString_toAngle (&angle, string);
-#else
-    angle = 0;
-    return ERROR;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   12/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ParseDistance (double& distance, const char* string, DgnModelRefP modelRef)
-    {
-#if defined (BEIJING_DGNPLATFORM_WIP_GEOCOORD)
-    // here's what it was:
-    mdlString_toUors2 (&distance, string, modelRef, true);
-#else
-    distance = 0;
-    return ERROR;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Copied here until the rest of this can be updated.
-*
-*     returns pointer to character just after  
-*     the first occurrance of specified char.  
-*     Zeros character found character.         
-*     Returns pointer to NULL if char not found
-+---------------+---------------+---------------+---------------+---------------+------*/
-static char  *strnxtchr (char *str, int chr)  // NEEDSWORK_UNICODE
-    {
-    char    *p;
-
-    if ((p = strchr (str, chr)) == NULL)
-        return (str + strlen(str));
-
-    *p = 0;
-    return (p+1);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BarryBentley    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt       _PointFromString (DPoint3dR outPoint, WStringR errorMsg, WCharCP inString, bool relative, DPoint3dCP lastPoint, DgnModelRefP modelRef) override
+virtual StatusInt       _PointFromString (DPoint3dR outPoint, WStringR errorMsg, WCharCP inString, bool relative, DPoint3dCP lastPoint, DgnModelRefR modelRef) override
     {
     // from inPoint, get Latitude/Longitude.
-    WChar     errBuffer[1024];
     DgnGCSP     dgnGCS;
 
     bool relativeFirstAngle     = relative;
     bool relativeSecondAngle    = relative;
     bool relativeElevation      = relative;
 
-    if (NULL == (dgnGCS = DgnGCS::FromModel (modelRef, true)))
+    if (NULL == (dgnGCS = DgnGCS::FromModel (&modelRef, true)))
         {
-        errorMsg.assign (BaseGeoCoordResource::GetLocalizedStringW (errBuffer, DGNGEOCOORD_Msg_NoGeoCoordinateSystem, _countof(errBuffer)));
+        BaseGeoCoordResource::GetLocalizedString (errorMsg, DGNGEOCOORD_Msg_NoGeoCoordinateSystem);
         return ERROR;
         }
 
     // make a local copy of the input string that we can modify.
-    char        string[1024];
-    WString(inString).ConvertToLocaleChars (string, _countof(string));
+    bvector<WString> subStrings;
+    BeStringUtilities::Split(inString, L",", NULL, subStrings);
 
-    char*       secondAngleStringP;
-    char*       elevationStringP;
-    char*       firstAngleStringP;
-
-    firstAngleStringP   = string;
-    secondAngleStringP  = strnxtchr (string, ','); // NEEDSWORK_UNICODE - should use BeStringUtilites::Split or the new parsers in DgnPlatform
-    elevationStringP    = strnxtchr (secondAngleStringP, ',');
-
-    if (!relative && ( (0 == string[0]) || (NULL == secondAngleStringP) || (0 == *secondAngleStringP) ) )
+    if (!relative && ( (subStrings.size() < 2) || subStrings[0].empty() || subStrings[1].empty()))
         {
-        errorMsg.assign (BaseGeoCoordResource::GetLocalizedStringW (errBuffer, DGNGEOCOORD_Msg_PointFromStringRequiresBoth, _countof(errBuffer)));
+        BaseGeoCoordResource::GetLocalizedString (errorMsg, DGNGEOCOORD_Msg_PointFromStringRequiresBoth);
         return MDLERR_BADFORMAT;
         }
+
+    WCharCP firstAngleStringP   = (subStrings.size() > 0) ? subStrings[0].c_str() : L"";
+    WCharCP secondAngleStringP  = (subStrings.size() > 1) ? subStrings[1].c_str() : L"";
+    WCharCP elevationStringP    = (subStrings.size() > 2) ? subStrings[2].c_str() : L"";
+
+    AngleParserPtr  angleParser = AngleParser::Create ();
 
     double  firstAngle = 0.0;
     if ('#' == *firstAngleStringP)
@@ -309,10 +259,10 @@ virtual StatusInt       _PointFromString (DPoint3dR outPoint, WStringR errorMsg,
         relativeFirstAngle = true;
         firstAngleStringP++;
         }
-    if (SUCCESS != ParseAngle (firstAngle, firstAngleStringP))
+    if (SUCCESS != angleParser->ToValue (firstAngle, firstAngleStringP))
         {
-        errorMsg.assign (BaseGeoCoordResource::GetLocalizedStringW (errBuffer, DGNGEOCOORD_Msg_UnparseableInputAngle, _countof(errBuffer)));
-        errorMsg.AppendA (firstAngleStringP);
+        BaseGeoCoordResource::GetLocalizedString (errorMsg, DGNGEOCOORD_Msg_UnparseableInputAngle);
+        errorMsg.append (firstAngleStringP);
         return MDLERR_BADFORMAT;
         }
     double  secondAngle = 0.0;
@@ -321,10 +271,10 @@ virtual StatusInt       _PointFromString (DPoint3dR outPoint, WStringR errorMsg,
         relativeSecondAngle = true;
         secondAngleStringP++;
         }
-    if (SUCCESS != ParseAngle (secondAngle, secondAngleStringP))
+    if (SUCCESS != angleParser->ToValue (secondAngle, secondAngleStringP))
         {
-        errorMsg.assign (BaseGeoCoordResource::GetLocalizedStringW (errBuffer, DGNGEOCOORD_Msg_UnparseableInputAngle, _countof(errBuffer)));
-        errorMsg.AppendA (secondAngleStringP);
+        BaseGeoCoordResource::GetLocalizedString (errorMsg, DGNGEOCOORD_Msg_UnparseableInputAngle);
+        errorMsg.append (secondAngleStringP);
         return MDLERR_BADFORMAT;
         }
     double  elevation = 0.0;
@@ -333,10 +283,13 @@ virtual StatusInt       _PointFromString (DPoint3dR outPoint, WStringR errorMsg,
         relativeElevation = true;
         elevationStringP++;
         }
-    if (SUCCESS != ParseDistance (elevation, elevationStringP, modelRef))
+
+    DgnModelP           modelP = modelRef.GetDgnModelP();
+    DistanceParserPtr   distanceParser = (NULL == modelP) ? DistanceParser::Create () : DistanceParser::Create (*modelP);
+    if (SUCCESS != distanceParser->ToValue (elevation, elevationStringP))
         {
-        errorMsg.assign (BaseGeoCoordResource::GetLocalizedStringW (errBuffer, DGNGEOCOORD_Msg_UnparseableInputElevation, _countof(errBuffer)));
-        errorMsg.AppendA (elevationStringP);
+        BaseGeoCoordResource::GetLocalizedString (errorMsg, DGNGEOCOORD_Msg_UnparseableInputElevation);
+        errorMsg.append (elevationStringP);
         return MDLERR_BADFORMAT;
         }
 
@@ -391,40 +344,16 @@ virtual StatusInt       _PointFromString (DPoint3dR outPoint, WStringR errorMsg,
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   12/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            FormatAngle (WCharP angleString, double value, AngleMode angleFormat, AnglePrecision anglePrecision)
-    {
-#if defined (BEIJING_DGNPLATFORM_WIP_GEOCOORD)
-    mdlString_wideFromAngle (angleString, value, ANGLE_FORMAT_Active, false, ANGLE_PRECISION_Active, false, true, true);
-#else
-    *angleString = 0;
-#endif    
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   12/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            FormatDistance (WCharP elevationString, double value, DgnModelRefP modelRef, DgnUnitFormat linearFormat, int linearPrecision, bool fractions)
-    {
-#if defined (BEIJING_DGNPLATFORM_WIP_GEOCOORD)
-    mdlString_fromUors2Ext (elevationString, value, modelRef, false, true);
-#else
-    *elevationString = 0;
-#endif
-    }
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BarryBentley    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt       _StringFromPoint (WStringR outString, WStringR errorMsg, DPoint3dCR inPoint, bool delta, DPoint3dCP deltaOrigin, DgnModelRefP modelRef,
-                                        DgnUnitFormat linearFormat, int linearPrecision, bool fractions, bool scientific, AngleMode angleFormat, AnglePrecision anglePrecision) override
+virtual StatusInt       _StringFromPoint (WStringR outString, WStringR errorMsg, DPoint3dCR inPoint, bool delta, DPoint3dCP deltaOrigin, DgnModelRefR modelRef,
+                                        DistanceFormatterR distanceFormatter, DirectionFormatterR directionFormatter) override
     {
     // format input into Latitude/Longitude/Elevation
-    WChar     errBuffer[1024];
     DgnGCSP     dgnGCS;
-    if (NULL == (dgnGCS = DgnGCS::FromModel (modelRef, true)))
+    if (NULL == (dgnGCS = DgnGCS::FromModel (&modelRef, true)))
         {
-        errorMsg.assign (BaseGeoCoordResource::GetLocalizedStringW (errBuffer, DGNGEOCOORD_Msg_NoGeoCoordinateSystem, _countof(errBuffer)));
+        BaseGeoCoordResource::GetLocalizedString (errorMsg, DGNGEOCOORD_Msg_NoGeoCoordinateSystem);
         return ERROR;
         }
     StatusInt   status;
@@ -449,17 +378,16 @@ virtual StatusInt       _StringFromPoint (WStringR outString, WStringR errorMsg,
         }
 
     // format the lat/long
-    WChar     angleString[1024];
-    FormatAngle (angleString, latLong.longitude, angleFormat, anglePrecision);
-    outString.assign (angleString);
+    AngleFormatterR angleFormatter = directionFormatter.GetAngleFormatter();
+    angleFormatter.SetAllowNegative (true);
+    outString = angleFormatter.ToString (latLong.longitude);
     outString.append (L", ");
-    FormatAngle (angleString, latLong.latitude, angleFormat, anglePrecision);
+    WString angleString = angleFormatter.ToString (latLong.latitude);
     outString.append (angleString);
-    if (modelRef->Is3d())
+    if (modelRef.Is3d())
         {
-        WChar    elevationString[512];
         outString.append (L", ");
-        FormatDistance (elevationString, inPoint.z - ( (delta && (NULL != deltaOrigin)) ? deltaOrigin->z : 0.0), modelRef, linearFormat, linearPrecision, fractions);
+        WString elevationString = distanceFormatter.ToString (inPoint.z - ( (delta && (NULL != deltaOrigin)) ? deltaOrigin->z : 0.0));
         outString.append (elevationString);
         }
     return SUCCESS;
@@ -534,7 +462,7 @@ DgnModelRefP            modelRef
     GeoAuxCoordSys *gcsAuxSysP = new GeoAuxCoordSys (dgnGCS);
     IAuxCoordSysPtr acsPtr (gcsAuxSysP);
 
-    return (traverser._HandleACSTraversal (acsPtr));
+    return (traverser._HandleACSTraversal (*acsPtr));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -661,7 +589,6 @@ virtual bool            _Equals (IAuxCoordSysCP other) const override
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual WString         _GetName () const override 
     {
-    WChar             buffer[1024];
     DgnGeoCoordStrings  nameKey;
 
     if (m_useBessel)
@@ -673,7 +600,8 @@ virtual WString         _GetName () const override
     else
         nameKey = DGNGEOCOORD_Msg_USNationalGridName;
 
-    return WString (BaseGeoCoordResource::GetLocalizedStringW (buffer, nameKey, _countof (buffer)));
+    WString buffer;
+    return WString (BaseGeoCoordResource::GetLocalizedString (buffer, nameKey));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -681,7 +609,6 @@ virtual WString         _GetName () const override
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual WString         _GetDescription () const override
     {
-    WChar             buffer[1024];
     DgnGeoCoordStrings  descrKey;
 
     if (m_useBessel)
@@ -693,7 +620,8 @@ virtual WString         _GetDescription () const override
     else
         descrKey = DGNGEOCOORD_Msg_USNationalGridDescription;
 
-    return WString (BaseGeoCoordResource::GetLocalizedStringW (buffer, descrKey, _countof (buffer)));
+    WString buffer;
+    return WString (BaseGeoCoordResource::GetLocalizedString (buffer, descrKey));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -701,7 +629,7 @@ virtual WString         _GetDescription () const override
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual ACSType         _GetType () const override
     {
-    return ACS_TYPE_Extended;
+    return ACSType::Extended;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -709,8 +637,8 @@ virtual ACSType         _GetType () const override
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual WString         _GetTypeName () const override
     {
-    WChar buffer[1024];
-    return WString (BaseGeoCoordResource::GetLocalizedStringW (buffer, DGNGEOCOORD_Msg_MilitaryGridACSType, _countof (buffer)));
+    WString buffer;
+    return WString (BaseGeoCoordResource::GetLocalizedString (buffer, DGNGEOCOORD_Msg_MilitaryGridACSType));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -769,7 +697,7 @@ virtual bool            _GetIsReadOnly () const override
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual ACSFlags        _GetFlags () const override
     {
-    return ACS_FLAG_Default;
+    return ACSFlags::Default;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -812,22 +740,21 @@ uint32_t    length
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BarryBentley    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt       _PointFromString (DPoint3dR outPoint, WStringR errorMsg, WCharCP inString, bool relative, DPoint3dCP lastPoint, DgnModelRefP modelRef) override
+virtual StatusInt       _PointFromString (DPoint3dR outPoint, WStringR errorMsg, WCharCP inString, bool relative, DPoint3dCP lastPoint, DgnModelRefR modelRef) override
     {
     // The input string should be in military grid, which is UTM zone (1 or 2chars); the 8degree latitude zone (1 char, C-X); 100km zone identifier (2chars), easting (up to 5 chars) and northing (up to 5 chars), e.g. 14UNK21345413
 
     // can't be relative
-    WChar     errBuffer[1024];
     if (relative)
         {
-        errorMsg.assign (BaseGeoCoordResource::GetLocalizedStringW (errBuffer, DGNGEOCOORD_Msg_MilitaryGridNotRelative, _countof (errBuffer)));
+        BaseGeoCoordResource::GetLocalizedString (errorMsg, DGNGEOCOORD_Msg_MilitaryGridNotRelative);
         return ERROR;
         }
 
     DgnGCSP      dgnGCS;
-    if (NULL == (dgnGCS = DgnGCS::FromModel (modelRef, true)))
+    if (NULL == (dgnGCS = DgnGCS::FromModel (&modelRef, true)))
         {
-        errorMsg.assign (BaseGeoCoordResource::GetLocalizedStringW (errBuffer, DGNGEOCOORD_Msg_NoGeoCoordinateSystem, _countof(errBuffer)));
+        BaseGeoCoordResource::GetLocalizedString (errorMsg, DGNGEOCOORD_Msg_NoGeoCoordinateSystem);
         return ERROR;
         }
 
@@ -839,7 +766,7 @@ virtual StatusInt       _PointFromString (DPoint3dR outPoint, WStringR errorMsg,
     if (SUCCESS != m_mgrsConverterPtr->LatLongFromMilitaryGrid (latLong2d, localString.c_str()))
         {
         // fill in error message.
-        errorMsg.assign (BaseGeoCoordResource::GetLocalizedStringW (errBuffer, DGNGEOCOORD_Msg_CantConvertFromMilitaryGrid, _countof (errBuffer)));
+        BaseGeoCoordResource::GetLocalizedString (errorMsg, DGNGEOCOORD_Msg_CantConvertFromMilitaryGrid);
         return ERROR;
         }
 
@@ -857,22 +784,21 @@ virtual StatusInt       _PointFromString (DPoint3dR outPoint, WStringR errorMsg,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BarryBentley    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt       _StringFromPoint (WStringR outString, WStringR errorMsg, DPoint3dCR inPoint, bool delta, DPoint3dCP deltaOrigin, DgnModelRefP modelRef, 
-                                            DgnUnitFormat linearFormat, int linearPrecision, bool fractions, bool scientific, AngleMode angleFormat, AnglePrecision anglePrecision) override
+virtual StatusInt       _StringFromPoint (WStringR outString, WStringR errorMsg, DPoint3dCR inPoint, bool delta, DPoint3dCP deltaOrigin, DgnModelRefR modelRef,
+                                        DistanceFormatterR distanceFormatter, DirectionFormatterR directionFormatter) override
     {
     // can't be relative
-    WChar     errBuffer[1024];
     if (delta)
         {
-        errorMsg.assign (BaseGeoCoordResource::GetLocalizedStringW (errBuffer, DGNGEOCOORD_Msg_MilitaryGridNotDelta, _countof (errBuffer)));
+        BaseGeoCoordResource::GetLocalizedString (errorMsg, DGNGEOCOORD_Msg_MilitaryGridNotDelta);
         return ERROR;
         }
 
     // format input UORs into Military Grid.
     DgnGCSP     dgnGCS;
-    if (NULL == (dgnGCS = DgnGCS::FromModel (modelRef, true)))
+    if (NULL == (dgnGCS = DgnGCS::FromModel (&modelRef, true)))
         {
-        errorMsg.assign (BaseGeoCoordResource::GetLocalizedStringW (errBuffer, DGNGEOCOORD_Msg_NoGeoCoordinateSystem, _countof(errBuffer)));
+        BaseGeoCoordResource::GetLocalizedString (errorMsg, DGNGEOCOORD_Msg_NoGeoCoordinateSystem);
         return ERROR;
         }
     StatusInt   status;
@@ -889,6 +815,7 @@ virtual StatusInt       _StringFromPoint (WStringR outString, WStringR errorMsg,
     // Each degree on the earth is about 6,378,137 * 2 * PI / 360 = 111318 meters.
     // Therefore, each minute is about 111318/60 = 1855 meters
     // Therefore, each second is about 1855/60 = 30.9 meters.
+    AnglePrecision  anglePrecision = directionFormatter.GetAngleFormatter().GetAnglePrecision();
     double      meters = 1000;
     double      desiredMeterPrecision = meters;
     for (int iPower=0; iPower < (int) anglePrecision; iPower++)
@@ -914,7 +841,7 @@ virtual StatusInt       _StringFromPoint (WStringR outString, WStringR errorMsg,
     WString     mgString;
     if (SUCCESS != m_mgrsConverterPtr->MilitaryGridFromLatLong (mgString, latLong2d, mgPrecision))
         {
-        errorMsg.assign (BaseGeoCoordResource::GetLocalizedStringW (errBuffer, DGNGEOCOORD_Msg_CantConvertToMilitaryGrid, _countof (errBuffer)));
+        BaseGeoCoordResource::GetLocalizedString (errorMsg, DGNGEOCOORD_Msg_CantConvertToMilitaryGrid);
         return ERROR;
         }
     // the string as it comes back, it is all crushed together. We change it to the more readable format of something like 18T VK 4230.
@@ -1187,7 +1114,7 @@ DgnModelRefP            modelRef
         if (NULL != (mgrsAuxSysP = MilitaryGridAuxCoordSys::Create (dgnGCS, true, false, false)))
             {
             IAuxCoordSysPtr acsPtr (mgrsAuxSysP);
-            if (traverser._HandleACSTraversal (acsPtr))
+            if (traverser._HandleACSTraversal (*acsPtr))
                 return true;
             }
         }
@@ -1197,7 +1124,7 @@ DgnModelRefP            modelRef
         if (NULL != (mgrsAuxSysP = MilitaryGridAuxCoordSys::Create (dgnGCS, false, false, false)))
             {
             IAuxCoordSysPtr acsPtr (mgrsAuxSysP);
-            if (traverser._HandleACSTraversal (acsPtr))
+            if (traverser._HandleACSTraversal (*acsPtr))
                 return true;
             }
         }
@@ -1206,7 +1133,7 @@ DgnModelRefP            modelRef
     if (NULL != (mgrsAuxSysP = MilitaryGridAuxCoordSys::Create (dgnGCS, false, true, inUSA)))
         {
         IAuxCoordSysPtr acsPtr (mgrsAuxSysP);
-        return (traverser._HandleACSTraversal (acsPtr));
+        return (traverser._HandleACSTraversal (*acsPtr));
         }
 
     return false;

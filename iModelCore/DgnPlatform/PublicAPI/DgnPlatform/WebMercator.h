@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/WebMercator.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,10 +11,11 @@
 #include <DgnPlatform/RealityDataCache.h>
 #include <DgnPlatform/DgnViewport.h>
 #include <DgnPlatform/DgnDbTables.h>
+#include <DgnPlatform/ImageUtilities.h>
 
 //#define WEBMERCATOR_DEBUG_TILES
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct WebMercatorUorConverter;
 struct WebMercatorModel;
@@ -130,7 +131,7 @@ struct TiledRaster : IRealityData<TiledRaster, BeSQLiteRealityDataStorage, HttpR
 
 private:
     Utf8String      m_url;
-    bvector<Byte>   m_data;
+    ByteStream      m_data;
     DateTime        m_creationDate;
     Utf8String      m_contentType;
     ImageUtilities::RgbImageInfo m_rasterInfo;
@@ -152,7 +153,7 @@ protected:
 
 public:
     static RefCountedPtr<TiledRaster> Create();    
-    bvector<Byte> const& GetData() const;
+    ByteStream const& GetData() const;
     DateTime GetCreationDate() const;
     ImageUtilities::RgbImageInfo const& GetImageInfo() const;
     Utf8String GetContentType() const;
@@ -166,7 +167,7 @@ struct WebMercatorTileDisplayHelper
     {
 //protected:
     WebMercatorUorConverter m_converter;
-    bvector<Byte> m_rgbBuffer;
+    ByteStream m_rgbBuffer;
     bool m_drawingSubstituteTiles;
 public:
 
@@ -181,28 +182,28 @@ public:
     //! @return a unique ID to identify the texture
     //! @param[in] rgbData  The raw image data
     //! @param[in] imageInfo Defines the format, size, and orientation of the raw image data
-    static uintptr_t DefineTexture (bvector<Byte> const& rgbData, ImageUtilities::RgbImageInfo const& imageInfo);
+    static Render::TexturePtr DefineTexture (ByteStream const& rgbData, ImageUtilities::RgbImageInfo const& imageInfo, SceneContextR context);
 
     //! Add texture to temporary cache, or if a texture is already cached for this url, then replace it.
     //! @note Do not delete the texture. The cache will delete it if and when it is removed by trim or by replacement.
     //! @param[in] url  The key
     //! @param[in] textureId Identifies the texture
     //! @param[in] imageInfo Additional info about the image stored in the texture
-    static void CacheTexture (Utf8StringCR url, uintptr_t textureId, ImageUtilities::RgbImageInfo const& imageInfo);
+    static void CacheTexture (Utf8StringCR url, Render::TextureR textureId, ImageUtilities::RgbImageInfo const& imageInfo);
 
     //! Get an existing texture from the cache.
-    static BentleyStatus GetCachedTexture (uintptr_t& cachedTextureId, ImageUtilities::RgbImageInfo& cachedImageInfo, Utf8StringCR url);
+    static BentleyStatus GetCachedTexture (Render::TextureP cachedTextureId, ImageUtilities::RgbImageInfo& cachedImageInfo, Utf8StringCR url);
 
     //! Draw the specified tile
     //! @param[in] context      The viewcontext
     //! @param[in] tileid       The tile id
     //! @param[in] imageInfo    Information about the image
     //! @param[in] textureId    The texture id to use
-    void DrawTile (ViewContextR context, WebMercatorTilingSystem::TileId const& tileid, ImageUtilities::RgbImageInfo const& imageInfo, uintptr_t textureId);
+    void DrawTile (ViewContextR context, WebMercatorTilingSystem::TileId const& tileid, ImageUtilities::RgbImageInfo const& imageInfo, Render::TextureR textureId);
 
     void DrawMissingTile (ViewContextR context, WebMercatorTilingSystem::TileId const& tileid);
 
-    void DrawAndCacheTile (ViewContextR context, WebMercatorTilingSystem::TileId const& tileid, Utf8StringCR url, TiledRaster& realityData);
+    void DrawAndCacheTile (SceneContextR context, WebMercatorTilingSystem::TileId const& tileid, Utf8StringCR url, TiledRaster& realityData);
 
     #ifdef WEBMERCATOR_DEBUG_TILES
     void DrawTileDebugInfo (ViewContextR context, WebMercatorTilingSystem::TileId const& tileid);
@@ -214,10 +215,8 @@ public:
 // Dislays tiles of a street map as they become available over time.
 // @bsiclass                                                    Sam.Wilson      10/2014
 //=======================================================================================
-struct WebMercatorDisplay : IProgressiveDisplay, CopyrightSupplier, NonCopyableClass
+struct WebMercatorDisplay : ProgressiveTask, CopyrightSupplier
 {
-    DEFINE_BENTLEY_REF_COUNTED_MEMBERS
-
     friend struct WebMercatorModel;
 
 protected:
@@ -242,7 +241,7 @@ protected:
         {
         WebMercatorTilingSystem::TileId tileid;
         ImageUtilities::RgbImageInfo imageInfo;
-        uintptr_t textureId;
+        Render::TexturePtr textureId;
         };
 
     BentleyStatus GetCachedTiles (bvector<TileDisplayImageData>& tilesAndUrls, bool& allFoundInTextureCache, uint8_t zoomLevel, ViewContextR context);
@@ -261,10 +260,7 @@ protected:
     //! This function returns Finished if m_missingTiles becomes empty.
     //! This function stops whenever view.CheckStop is true.
     //! OUTPUT: This function removes 0 or more items from m_missingTiles.
-    DGNPLATFORM_EXPORT virtual Completion _Process(ViewContextR) override;
-
-    // set limit and returns true to cause caller to call EnableStopAfterTimout
-    DGNPLATFORM_EXPORT virtual bool _WantTimeoutSet(uint32_t& limit) override {return false;}
+    DGNPLATFORM_EXPORT virtual Completion _DoProgressive(SceneContext& context, WantShow&) override;
 
     DGNPLATFORM_EXPORT void DrawView (ViewContextR);
 
@@ -312,7 +308,7 @@ public:
     //! Create a new WebMercatorModel object, in preparation for loading it from the DgnDb.
     WebMercatorModel(CreateParams const& params) : T_Super(params) {}
 
-    DGNPLATFORM_EXPORT void _AddGraphicsToScene(ViewContextR) override;
+    DGNPLATFORM_EXPORT void _AddGraphicsToScene(SceneContextR) override;
     DGNPLATFORM_EXPORT void _WriteJsonProperties(Json::Value&) const override;
     DGNPLATFORM_EXPORT void _ReadJsonProperties(Json::Value const&) override;
     AxisAlignedBox3d _QueryModelRange() const override {return m_mercator.m_range;}
@@ -424,4 +420,4 @@ protected:
 
 //! @endGroup
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

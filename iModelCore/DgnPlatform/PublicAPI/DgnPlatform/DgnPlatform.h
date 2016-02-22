@@ -15,19 +15,22 @@
 #include <Bentley/Bentley.h>
 #include <Bentley/RefCounted.h>
 #include <Bentley/BeFileName.h>
+#include <Bentley/ByteStream.h>
 #include "ExportMacros.h"
 #include <Geom/GeomApi.h>
 #include <Bentley/NonCopyableClass.h>
 #include <Bentley/bvector.h>
 #include "DgnPlatform.r.h"
-#include "DgnPlatformErrors.r.h"
+#include "DgnPlatformErrors.h"
 #include "DgnHost.h"
 #include <BeSQLite/BeSQLite.h>
 #include <BeSQLite/ChangeSet.h>
+#include <BeSQLite/RTreeMatch.h>
 #include <ECDb/ECDbApi.h>
 
-#define USING_NAMESPACE_BENTLEY_DGNPLATFORM using namespace BentleyApi::Dgn;
-
+#define USING_NAMESPACE_BENTLEY_DGNPLATFORM using namespace BentleyApi::Dgn; // for backwards compatibility, do not use
+#define USING_NAMESPACE_BENTLEY_DGN         using namespace BentleyApi::Dgn;
+#define USING_NAMESPACE_BENTLEY_RENDER      using namespace BentleyApi::Dgn::Render;
 #define GLOBAL_TYPEDEF1(_sName_,_name_,structunion) \
     structunion _sName_; \
     namespace BENTLEY_NAMESPACE_NAME {\
@@ -38,262 +41,247 @@
 #define GLOBAL_TYPEDEF(_sName_,_name_) GLOBAL_TYPEDEF1(_sName_,_name_,struct)
 
 #define DGNPLATFORM_TYPEDEFS(_name_) \
-    BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_DGNPLATFORM_NAMESPACE
+    BEGIN_BENTLEY_DGN_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_DGN_NAMESPACE
 
 #define DGNPLATFORM_REF_COUNTED_PTR(_sname_) \
-    BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE struct _sname_; DEFINE_REF_COUNTED_PTR(_sname_) END_BENTLEY_DGNPLATFORM_NAMESPACE
+    BEGIN_BENTLEY_DGN_NAMESPACE struct _sname_; DEFINE_REF_COUNTED_PTR(_sname_) END_BENTLEY_DGN_NAMESPACE
 
 #define GEOCOORD_TYPEDEFS(_name_) \
     BEGIN_BENTLEY_NAMESPACE namespace GeoCoordinates { DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) } END_BENTLEY_NAMESPACE
 
-GLOBAL_TYPEDEF (QvElem,QvElem)
-GLOBAL_TYPEDEF (QvCache,QvCache)
-GLOBAL_TYPEDEF (QvView,QvView)
-GLOBAL_TYPEDEF (QvMRImage,QvMRImage)
+#define TO_BOOL(x) (0 != (x))
 
-BENTLEY_NAMESPACE_TYPEDEFS (BitMask)
-BENTLEY_NAMESPACE_TYPEDEFS (DataExternalizer)
-BENTLEY_NAMESPACE_TYPEDEFS (GPArray)
-BENTLEY_NAMESPACE_TYPEDEFS (GraphicsPointArray)
-BENTLEY_NAMESPACE_TYPEDEFS (IRefCounted)
-BENTLEY_NAMESPACE_TYPEDEFS (BeJsContext)
-BENTLEY_NAMESPACE_TYPEDEFS (BeJsEnvironment)
+BENTLEY_NAMESPACE_TYPEDEFS(BitMask)
+BENTLEY_NAMESPACE_TYPEDEFS(GPArray)
+BENTLEY_NAMESPACE_TYPEDEFS(GraphicsPointArray)
+BENTLEY_NAMESPACE_TYPEDEFS(BeJsContext)
+BENTLEY_NAMESPACE_TYPEDEFS(BeJsEnvironment)
 
-DGNPLATFORM_TYPEDEFS (ColorDef)
-DGNPLATFORM_TYPEDEFS (BoundingBox2d)
-DGNPLATFORM_TYPEDEFS (BoundingBox3d)
-DGNPLATFORM_TYPEDEFS (DefinitionElement)
-DGNPLATFORM_TYPEDEFS (DictionaryElement)
-DGNPLATFORM_TYPEDEFS (DgnDb)
-DGNPLATFORM_TYPEDEFS (DgnElement)
-DGNPLATFORM_TYPEDEFS (DgnFont)
-DGNPLATFORM_TYPEDEFS (DgnGeometryPart)
-DGNPLATFORM_TYPEDEFS (DgnGlyph)
-DGNPLATFORM_TYPEDEFS (DgnGlyphLayoutContext)
-DGNPLATFORM_TYPEDEFS (DgnGlyphLayoutResult)
-DGNPLATFORM_TYPEDEFS (DgnMarkupProject)
-DGNPLATFORM_TYPEDEFS (DgnModel)
-DGNPLATFORM_TYPEDEFS (DgnImportContext)
-DGNPLATFORM_TYPEDEFS (DgnAuthority)
-DGNPLATFORM_TYPEDEFS (DgnResourceURI)
-DGNPLATFORM_TYPEDEFS (DgnGlyph)
-DGNPLATFORM_TYPEDEFS (DgnGlyphLayoutContext)
-DGNPLATFORM_TYPEDEFS (DgnGlyphLayoutResult)
-DGNPLATFORM_TYPEDEFS (DgnRevision)
-DGNPLATFORM_TYPEDEFS (DgnRscFont)
-DGNPLATFORM_TYPEDEFS (DgnShxFont)
-DGNPLATFORM_TYPEDEFS (DgnTrueTypeFont)
-DGNPLATFORM_TYPEDEFS (DgnViewport)
-DGNPLATFORM_TYPEDEFS (DisplayStyle)
-DGNPLATFORM_TYPEDEFS (DisplayStyleFlags)
+DGNPLATFORM_TYPEDEFS(AnnotationElement)
+DGNPLATFORM_TYPEDEFS(AxisAlignedBox2d)
+DGNPLATFORM_TYPEDEFS(AxisAlignedBox3d)
+DGNPLATFORM_TYPEDEFS(BoundingBox2d)
+DGNPLATFORM_TYPEDEFS(BoundingBox3d)
+DGNPLATFORM_TYPEDEFS(Caret)
+DGNPLATFORM_TYPEDEFS(ChangeAnnotationScale)
+DGNPLATFORM_TYPEDEFS(ClipPrimitive)
+DGNPLATFORM_TYPEDEFS(ClipVector)
+DGNPLATFORM_TYPEDEFS(ColorDef)
+DGNPLATFORM_TYPEDEFS(ComponentDef)
+DGNPLATFORM_TYPEDEFS(ComponentModel)
+DGNPLATFORM_TYPEDEFS(DecorateContext)
+DGNPLATFORM_TYPEDEFS(DefinitionElement)
+DGNPLATFORM_TYPEDEFS(Dgn3DInputEvent)
+DGNPLATFORM_TYPEDEFS(DgnAuthority)
+DGNPLATFORM_TYPEDEFS(DgnButtonEvent)
+DGNPLATFORM_TYPEDEFS(DgnCode)
+DGNPLATFORM_TYPEDEFS(DgnColorMap)
+DGNPLATFORM_TYPEDEFS(DgnDb)
+DGNPLATFORM_TYPEDEFS(DgnDbExpressionContext);
+DGNPLATFORM_TYPEDEFS(DgnDimStyle)
+DGNPLATFORM_TYPEDEFS(DgnDomain)
+DGNPLATFORM_TYPEDEFS(DgnElement)
+DGNPLATFORM_TYPEDEFS(DgnElementExpressionContext);
+DGNPLATFORM_TYPEDEFS(DgnFont)
+DGNPLATFORM_TYPEDEFS(DgnGCS)
+DGNPLATFORM_TYPEDEFS(DgnGeometryPart)
+DGNPLATFORM_TYPEDEFS(DgnGestureEvent)
+DGNPLATFORM_TYPEDEFS(DgnGlyph)
+DGNPLATFORM_TYPEDEFS(DgnGlyphLayoutContext)
+DGNPLATFORM_TYPEDEFS(DgnGlyphLayoutResult)
+DGNPLATFORM_TYPEDEFS(DgnHost)
+DGNPLATFORM_TYPEDEFS(DgnImportContext)
+DGNPLATFORM_TYPEDEFS(DgnMarkupProject)
+DGNPLATFORM_TYPEDEFS(DgnModel)
+DGNPLATFORM_TYPEDEFS(DgnMouseWheelEvent)
+DGNPLATFORM_TYPEDEFS(DgnProgressMeter)
+DGNPLATFORM_TYPEDEFS(DgnRevision)
+DGNPLATFORM_TYPEDEFS(DgnRscFont)
+DGNPLATFORM_TYPEDEFS(DgnScript)
+DGNPLATFORM_TYPEDEFS(DgnShxFont)
+DGNPLATFORM_TYPEDEFS(DgnTrueTypeFont)
+DGNPLATFORM_TYPEDEFS(DgnViewport)
+DGNPLATFORM_TYPEDEFS(DictionaryElement)
+DGNPLATFORM_TYPEDEFS(DisplayStyle)
+DGNPLATFORM_TYPEDEFS(DisplayStyleFlags)
 DGNPLATFORM_TYPEDEFS (AnnotationElement2d)
 DGNPLATFORM_TYPEDEFS (DrawingGraphic)
-DGNPLATFORM_TYPEDEFS (GeomStream)
-DGNPLATFORM_TYPEDEFS (GeometrySource)
-DGNPLATFORM_TYPEDEFS (GeometrySource2d)
-DGNPLATFORM_TYPEDEFS (GeometrySource3d)
-DGNPLATFORM_TYPEDEFS (GradientSymb)
-DGNPLATFORM_TYPEDEFS (IDgnFontData)
-DGNPLATFORM_TYPEDEFS (IDrawGeom)
-DGNPLATFORM_TYPEDEFS (IElementGroup)
-DGNPLATFORM_TYPEDEFS (IElemTopology)
-DGNPLATFORM_TYPEDEFS (ILocksServer)
-DGNPLATFORM_TYPEDEFS (ILocksManager)
-DGNPLATFORM_TYPEDEFS (IDgnCodesManager)
-DGNPLATFORM_TYPEDEFS (IDgnCodesServer)
-DGNPLATFORM_TYPEDEFS (IRedrawOperation)
-DGNPLATFORM_TYPEDEFS (IRedrawAbort)
-DGNPLATFORM_TYPEDEFS (ITransientGeometryHandler)
-DGNPLATFORM_TYPEDEFS (IViewDraw)
-DGNPLATFORM_TYPEDEFS (IViewOutput)
-DGNPLATFORM_TYPEDEFS (LineStyleInfo)
-DGNPLATFORM_TYPEDEFS (LineStyleSymb)
-DGNPLATFORM_TYPEDEFS (PhysicalElement)
-DGNPLATFORM_TYPEDEFS (SpatialRedlineModel)
-DGNPLATFORM_TYPEDEFS (PlotInfo)
-DGNPLATFORM_TYPEDEFS (RedlineModel)
-DGNPLATFORM_TYPEDEFS (SpatialElement)
-DGNPLATFORM_TYPEDEFS (ViewContext)
-DGNPLATFORM_TYPEDEFS (ViewController)
-DGNPLATFORM_TYPEDEFS (ViewFlags)
-DGNPLATFORM_TYPEDEFS (DgnDbExpressionContext);
-DGNPLATFORM_TYPEDEFS (DgnElementExpressionContext);
-
-/** @cond BENTLEY_SDK_Internal */
-DGNPLATFORM_REF_COUNTED_PTR (TextString)
-DGNPLATFORM_REF_COUNTED_PTR (TextStringStyle)
-
-DGNPLATFORM_TYPEDEFS (AxisAlignedBox2d)
-DGNPLATFORM_TYPEDEFS (AxisAlignedBox3d)
-DGNPLATFORM_TYPEDEFS (Caret)
-DGNPLATFORM_TYPEDEFS (ChangeAnnotationScale)
-DGNPLATFORM_TYPEDEFS (ClipPrimitive)
-DGNPLATFORM_TYPEDEFS (ClipVector)
-DGNPLATFORM_TYPEDEFS (ClipVolumeOverrides)
-DGNPLATFORM_TYPEDEFS (ComponentDef)
-DGNPLATFORM_TYPEDEFS (ComponentModel)
-DGNPLATFORM_TYPEDEFS (CutGraphicsCachedKey)
-DGNPLATFORM_TYPEDEFS (Dgn3DInputEvent)
-DGNPLATFORM_TYPEDEFS (DgnButtonEvent)
-DGNPLATFORM_TYPEDEFS (DgnCode)
-DGNPLATFORM_TYPEDEFS (DgnColorMap)
-DGNPLATFORM_TYPEDEFS (DgnDimStyle)
-DGNPLATFORM_TYPEDEFS (DgnDomain)
-DGNPLATFORM_TYPEDEFS (DgnGestureEvent)
-DGNPLATFORM_TYPEDEFS (DgnHost)
-DGNPLATFORM_TYPEDEFS (DgnMouseWheelEvent)
-DGNPLATFORM_TYPEDEFS (DgnProgressMeter)
-DGNPLATFORM_TYPEDEFS (DgnScript)
-DGNPLATFORM_TYPEDEFS (DrawContext)
-DGNPLATFORM_TYPEDEFS (DrawingModel)
-DGNPLATFORM_TYPEDEFS (DropGeometry)
-DGNPLATFORM_TYPEDEFS (DropGraphics)
-DGNPLATFORM_TYPEDEFS (DwgHatchDef)
-DGNPLATFORM_TYPEDEFS (DwgHatchDefLine)
-DGNPLATFORM_TYPEDEFS (ElemDisplayParams)
-DGNPLATFORM_TYPEDEFS (ElemMatSymb)
-DGNPLATFORM_TYPEDEFS (ElementAlignedBox2d)
-DGNPLATFORM_TYPEDEFS (ElementAlignedBox3d)
-DGNPLATFORM_TYPEDEFS (ElementGeometry)
-DGNPLATFORM_TYPEDEFS (ElementGeometryBuilder)
-DGNPLATFORM_TYPEDEFS (ElementLocateManager)
-DGNPLATFORM_TYPEDEFS (FenceManager)
-DGNPLATFORM_TYPEDEFS (FenceParams)
-DGNPLATFORM_TYPEDEFS (Frustum)
-DGNPLATFORM_TYPEDEFS (GeomDetail)
-DGNPLATFORM_TYPEDEFS (GeomStreamEntryId)
-DGNPLATFORM_TYPEDEFS (HatchLinkage)
-DGNPLATFORM_TYPEDEFS (HitList)
-DGNPLATFORM_TYPEDEFS (HitDetail)
-DGNPLATFORM_TYPEDEFS (IACSManager)
-DGNPLATFORM_TYPEDEFS (IAuxCoordSys)
-DGNPLATFORM_TYPEDEFS (ICachedDraw)
-DGNPLATFORM_TYPEDEFS (IDisplaySymbol)
-DGNPLATFORM_TYPEDEFS (IEditAction)
-DGNPLATFORM_TYPEDEFS (IEditActionArray)
-DGNPLATFORM_TYPEDEFS (IEditActionSource)
-DGNPLATFORM_TYPEDEFS (IEditManipulator)
-DGNPLATFORM_TYPEDEFS (IElementGraphicsProcessor)
-DGNPLATFORM_TYPEDEFS (IElementState)
-DGNPLATFORM_TYPEDEFS (IFaceMaterialAttachments)
-DGNPLATFORM_TYPEDEFS (ILineStyle)
-DGNPLATFORM_TYPEDEFS (ILineStyleComponent)
-DGNPLATFORM_TYPEDEFS (IMRImageTileEventHandler)
-DGNPLATFORM_TYPEDEFS (IPickGeom)
-DGNPLATFORM_TYPEDEFS (ISolidKernelEntity)
-DGNPLATFORM_TYPEDEFS (ISprite)
-DGNPLATFORM_TYPEDEFS (ISubEntity)
-DGNPLATFORM_TYPEDEFS (ITiledRaster)
-DGNPLATFORM_TYPEDEFS (ITransactionHandler)
-DGNPLATFORM_TYPEDEFS (IVariableMonitor)
-DGNPLATFORM_TYPEDEFS (TxnManager)
-DGNPLATFORM_TYPEDEFS (IViewHandlerHitInfo)
-DGNPLATFORM_TYPEDEFS (IViewTransients)
-DGNPLATFORM_TYPEDEFS (IndexedViewSet)
-DGNPLATFORM_TYPEDEFS (IndexedViewport)
-DGNPLATFORM_TYPEDEFS (LineStyleInfo)
-DGNPLATFORM_TYPEDEFS (LineStyleParams)
-DGNPLATFORM_TYPEDEFS (Material)
-DGNPLATFORM_TYPEDEFS (MaterialAssignment)
-DGNPLATFORM_TYPEDEFS (NotificationManager)
-DGNPLATFORM_TYPEDEFS (OvrMatSymb)
-DGNPLATFORM_TYPEDEFS (ParagraphProperties)
-DGNPLATFORM_TYPEDEFS (PatternParams)
-DGNPLATFORM_TYPEDEFS (PermanentTopologicalId)
-DGNPLATFORM_TYPEDEFS (PersistentElementPath)
-DGNPLATFORM_TYPEDEFS (PersistentSnapDetail)
-DGNPLATFORM_TYPEDEFS (SpatialModel)
-DGNPLATFORM_TYPEDEFS (SpatialRedlineViewController)
-DGNPLATFORM_TYPEDEFS (SpatialViewController)
-DGNPLATFORM_TYPEDEFS (Placement2d)
-DGNPLATFORM_TYPEDEFS (Placement3d)
-DGNPLATFORM_TYPEDEFS (PropertyContext)
-DGNPLATFORM_TYPEDEFS (QVAliasMaterialId)
-DGNPLATFORM_TYPEDEFS (QvOutput)
-DGNPLATFORM_TYPEDEFS (QueryModel)
-DGNPLATFORM_TYPEDEFS (QueryViewController)
-DGNPLATFORM_TYPEDEFS (QvUnsizedKey)
-DGNPLATFORM_TYPEDEFS (QvViewport)
-DGNPLATFORM_TYPEDEFS (RedlineViewController)
-DGNPLATFORM_TYPEDEFS (RegionGraphicsContext)
-DGNPLATFORM_TYPEDEFS (RevisionManager)
+DGNPLATFORM_TYPEDEFS(DrawingModel)
+DGNPLATFORM_TYPEDEFS(DrawingViewDefinition)
+DGNPLATFORM_TYPEDEFS(DropGeometry)
+DGNPLATFORM_TYPEDEFS(DropGraphics)
+DGNPLATFORM_TYPEDEFS(DwgHatchDef)
+DGNPLATFORM_TYPEDEFS(DwgHatchDefLine)
+DGNPLATFORM_TYPEDEFS(DynamicsContext)
+DGNPLATFORM_TYPEDEFS(ECSqlClassParams)
+DGNPLATFORM_TYPEDEFS(ElementAlignedBox2d)
+DGNPLATFORM_TYPEDEFS(ElementAlignedBox3d)
+DGNPLATFORM_TYPEDEFS(ElementLocateManager)
+DGNPLATFORM_TYPEDEFS(FenceManager)
+DGNPLATFORM_TYPEDEFS(FenceParams)
+DGNPLATFORM_TYPEDEFS(FitContext)
+DGNPLATFORM_TYPEDEFS(Frustum)
+DGNPLATFORM_TYPEDEFS(GeomDetail)
+DGNPLATFORM_TYPEDEFS(GeometricPrimitive)
+DGNPLATFORM_TYPEDEFS(GeometryBuilder)
+DGNPLATFORM_TYPEDEFS(GeometrySource)
+DGNPLATFORM_TYPEDEFS(GeometrySource2d)
+DGNPLATFORM_TYPEDEFS(GeometrySource3d)
+DGNPLATFORM_TYPEDEFS(GeometryStream)
+DGNPLATFORM_TYPEDEFS(GeometryStreamEntryId)
+DGNPLATFORM_TYPEDEFS(HatchLinkage)
+DGNPLATFORM_TYPEDEFS(HitDetail)
+DGNPLATFORM_TYPEDEFS(HitList)
+DGNPLATFORM_TYPEDEFS(IACSManager)
+DGNPLATFORM_TYPEDEFS(IAuxCoordSys)
+DGNPLATFORM_TYPEDEFS(IBriefcaseManager)
+DGNPLATFORM_TYPEDEFS(IDgnFontData)
+DGNPLATFORM_TYPEDEFS(IEditAction)
+DGNPLATFORM_TYPEDEFS(IEditActionArray)
+DGNPLATFORM_TYPEDEFS(IEditActionSource)
+DGNPLATFORM_TYPEDEFS(IEditManipulator)
+DGNPLATFORM_TYPEDEFS(IElemTopology)
+DGNPLATFORM_TYPEDEFS(IElementGroup)
+DGNPLATFORM_TYPEDEFS(IElementState)
+DGNPLATFORM_TYPEDEFS(IFaceMaterialAttachments)
+DGNPLATFORM_TYPEDEFS(IGeoCoordinateServices)
+DGNPLATFORM_TYPEDEFS(IGeometryProcessor)
+DGNPLATFORM_TYPEDEFS(ILineStyle)
+DGNPLATFORM_TYPEDEFS(ILineStyleComponent)
+DGNPLATFORM_TYPEDEFS(IPickGeom)
+DGNPLATFORM_TYPEDEFS(IRedrawAbort)
+DGNPLATFORM_TYPEDEFS(IRedrawOperation)
+DGNPLATFORM_TYPEDEFS(IRepositoryManager)
+DGNPLATFORM_TYPEDEFS(ISolidKernelEntity)
+DGNPLATFORM_TYPEDEFS(ISubEntity)
+DGNPLATFORM_TYPEDEFS(IVariableMonitor)
+DGNPLATFORM_TYPEDEFS(NotificationManager)
+DGNPLATFORM_TYPEDEFS(ParagraphProperties)
+DGNPLATFORM_TYPEDEFS(PatternParams)
+DGNPLATFORM_TYPEDEFS(PermanentTopologicalId)
+DGNPLATFORM_TYPEDEFS(PhysicalElement)
+DGNPLATFORM_TYPEDEFS(PhysicalViewDefinition)
+DGNPLATFORM_TYPEDEFS(Placement2d)
+DGNPLATFORM_TYPEDEFS(Placement3d)
+DGNPLATFORM_TYPEDEFS(PropertyContext)
+DGNPLATFORM_TYPEDEFS(DgnQueryView)
+DGNPLATFORM_TYPEDEFS(RedlineModel)
+DGNPLATFORM_TYPEDEFS(RedlineViewController)
+DGNPLATFORM_TYPEDEFS(RegionGraphicsContext)
+DGNPLATFORM_TYPEDEFS(RevisionManager)
 DGNPLATFORM_TYPEDEFS(ScanCriteria)
+DGNPLATFORM_TYPEDEFS(SceneContext)
 DGNPLATFORM_TYPEDEFS(SelectionSetManager)
+DGNPLATFORM_TYPEDEFS(SheetElement)
 DGNPLATFORM_TYPEDEFS(SheetViewController)
+DGNPLATFORM_TYPEDEFS(SheetViewDefinition)
 DGNPLATFORM_TYPEDEFS(SnapContext)
 DGNPLATFORM_TYPEDEFS(SnapDetail)
-DGNPLATFORM_TYPEDEFS(StampQvElemMap)
+DGNPLATFORM_TYPEDEFS(SpatialElement)
+DGNPLATFORM_TYPEDEFS(SpatialGroupElement)
+DGNPLATFORM_TYPEDEFS(SpatialModel)
+DGNPLATFORM_TYPEDEFS(SpatialRedlineModel)
+DGNPLATFORM_TYPEDEFS(SpatialRedlineViewController)
+DGNPLATFORM_TYPEDEFS(SpatialViewController)
+DGNPLATFORM_TYPEDEFS(SpatialViewDefinition)
+DGNPLATFORM_TYPEDEFS(SystemElement)
 DGNPLATFORM_TYPEDEFS(TextString)
 DGNPLATFORM_TYPEDEFS(TextStringStyle)
 DGNPLATFORM_TYPEDEFS(TransformClipStack)
 DGNPLATFORM_TYPEDEFS(TransformInfo)
-DGNPLATFORM_TYPEDEFS(UpdateContext)
-DGNPLATFORM_TYPEDEFS(ViewHandler)
-DGNPLATFORM_TYPEDEFS(ViewManager)
-DGNPLATFORM_TYPEDEFS(VisibleEdgeCache)
-DGNPLATFORM_TYPEDEFS(RenderMaterial)
-DGNPLATFORM_TYPEDEFS(RenderMaterialMap)
+DGNPLATFORM_TYPEDEFS(TxnManager)
+DGNPLATFORM_TYPEDEFS(ViewContext)
+DGNPLATFORM_TYPEDEFS(ViewController)
 DGNPLATFORM_TYPEDEFS(ViewDefinition)
-DGNPLATFORM_TYPEDEFS(SpatialViewDefinition)
-DGNPLATFORM_TYPEDEFS(DrawingViewDefinition)
-DGNPLATFORM_TYPEDEFS(SheetViewDefinition)
-DGNPLATFORM_TYPEDEFS(ImageBuffer)
-DGNPLATFORM_TYPEDEFS(ECSqlClassParams)
+DGNPLATFORM_TYPEDEFS(ViewManager)
 
-/** @endcond */
-DGNPLATFORM_TYPEDEFS (DgnGCS)
-DGNPLATFORM_TYPEDEFS (IGeoCoordinateServices)
-
-DGNPLATFORM_REF_COUNTED_PTR (DefinitionElement)
-DGNPLATFORM_REF_COUNTED_PTR (DictionaryElement)
-DGNPLATFORM_REF_COUNTED_PTR (DgnDb)
-DGNPLATFORM_REF_COUNTED_PTR (DgnDbExpressionContext)
-DGNPLATFORM_REF_COUNTED_PTR (DgnElement)
-DGNPLATFORM_REF_COUNTED_PTR (DgnElementExpressionContext)
-DGNPLATFORM_REF_COUNTED_PTR (DgnFont)
-DGNPLATFORM_REF_COUNTED_PTR (DgnGCS)
-DGNPLATFORM_REF_COUNTED_PTR (DgnGeometryPart)
-DGNPLATFORM_REF_COUNTED_PTR (DgnMarkupProject)
-DGNPLATFORM_REF_COUNTED_PTR (DgnModel)
-DGNPLATFORM_REF_COUNTED_PTR (DgnRevision)
-DGNPLATFORM_REF_COUNTED_PTR (AnnotationElement2d)
+DGNPLATFORM_REF_COUNTED_PTR(AnnotationElement)
+DGNPLATFORM_REF_COUNTED_PTR(ClipPrimitive)
+DGNPLATFORM_REF_COUNTED_PTR(ClipVector)
+DGNPLATFORM_REF_COUNTED_PTR(ComponentDef)
+DGNPLATFORM_REF_COUNTED_PTR(ComponentModel)
+DGNPLATFORM_REF_COUNTED_PTR(DefinitionElement)
+DGNPLATFORM_REF_COUNTED_PTR(DgnAuthority)
+DGNPLATFORM_REF_COUNTED_PTR(DgnDb)
+DGNPLATFORM_REF_COUNTED_PTR(DgnDbExpressionContext)
+DGNPLATFORM_REF_COUNTED_PTR(DgnElement)
+DGNPLATFORM_REF_COUNTED_PTR(DgnElementExpressionContext)
+DGNPLATFORM_REF_COUNTED_PTR(DgnFont)
+DGNPLATFORM_REF_COUNTED_PTR(DgnGCS)
+DGNPLATFORM_REF_COUNTED_PTR(DgnGeometryPart)
+DGNPLATFORM_REF_COUNTED_PTR(DgnMarkupProject)
+DGNPLATFORM_REF_COUNTED_PTR(DgnModel)
+DGNPLATFORM_REF_COUNTED_PTR(DgnRevision)
+DGNPLATFORM_REF_COUNTED_PTR(DgnViewport)
+DGNPLATFORM_REF_COUNTED_PTR(DictionaryElement)
+DGNPLATFORM_REF_COUNTED_PTR(AnnotationElement2d)
+DGNPLATFORM_REF_COUNTED_PTR(DisplayStyleHandlerSettings)
 DGNPLATFORM_REF_COUNTED_PTR (DrawingGraphic)
-DGNPLATFORM_REF_COUNTED_PTR (SpatialElement)
-DGNPLATFORM_REF_COUNTED_PTR (ILocksManager)
-DGNPLATFORM_REF_COUNTED_PTR (IDgnCodesManager)
-DGNPLATFORM_REF_COUNTED_PTR (PatternParams)
-DGNPLATFORM_REF_COUNTED_PTR (PhysicalElement)
-DGNPLATFORM_REF_COUNTED_PTR (ComponentDef)
-DGNPLATFORM_REF_COUNTED_PTR (ComponentModel)
-DGNPLATFORM_REF_COUNTED_PTR (SpatialModel)
-DGNPLATFORM_REF_COUNTED_PTR (SpatialRedlineViewController)
-DGNPLATFORM_REF_COUNTED_PTR (QueryViewController)
-DGNPLATFORM_REF_COUNTED_PTR (RedlineViewController)
-DGNPLATFORM_REF_COUNTED_PTR (SheetViewController)
-DGNPLATFORM_REF_COUNTED_PTR (TxnManager)
-DGNPLATFORM_REF_COUNTED_PTR (DgnAuthority)
-DGNPLATFORM_REF_COUNTED_PTR (RenderMaterial)
-DGNPLATFORM_REF_COUNTED_PTR (RenderMaterialMap)
-DGNPLATFORM_REF_COUNTED_PTR (ImageBuffer)
-DGNPLATFORM_REF_COUNTED_PTR (ViewDefinition)
-DGNPLATFORM_REF_COUNTED_PTR (SpatialViewDefinition)
-DGNPLATFORM_REF_COUNTED_PTR (DrawingViewDefinition)
-DGNPLATFORM_REF_COUNTED_PTR (SheetViewDefinition)
+DGNPLATFORM_REF_COUNTED_PTR(DrawingViewDefinition)
+DGNPLATFORM_REF_COUNTED_PTR(IBriefcaseManager)
+DGNPLATFORM_REF_COUNTED_PTR(IElemTopology)
+DGNPLATFORM_REF_COUNTED_PTR(PatternParams)
+DGNPLATFORM_REF_COUNTED_PTR(PhysicalElement)
+DGNPLATFORM_REF_COUNTED_PTR(ProgressiveTask)
+DGNPLATFORM_REF_COUNTED_PTR(DgnQueryView)
+DGNPLATFORM_REF_COUNTED_PTR(RedlineViewController)
+DGNPLATFORM_REF_COUNTED_PTR(SheetElement)
+DGNPLATFORM_REF_COUNTED_PTR(SheetViewController)
+DGNPLATFORM_REF_COUNTED_PTR(SheetViewDefinition)
+DGNPLATFORM_REF_COUNTED_PTR(SpatialElement)
+DGNPLATFORM_REF_COUNTED_PTR(SpatialGroupElement)
+DGNPLATFORM_REF_COUNTED_PTR(SpatialModel)
+DGNPLATFORM_REF_COUNTED_PTR(SpatialRedlineViewController)
+DGNPLATFORM_REF_COUNTED_PTR(SpatialViewDefinition)
+DGNPLATFORM_REF_COUNTED_PTR(TextString)
+DGNPLATFORM_REF_COUNTED_PTR(TextStringStyle)
+DGNPLATFORM_REF_COUNTED_PTR(TxnManager)
+DGNPLATFORM_REF_COUNTED_PTR(ViewController)
+DGNPLATFORM_REF_COUNTED_PTR(ViewDefinition)
 
-/** @cond BENTLEY_SDK_Internal */
-DGNPLATFORM_REF_COUNTED_PTR (ClipPrimitive)
-DGNPLATFORM_REF_COUNTED_PTR (ClipVector)
-DGNPLATFORM_REF_COUNTED_PTR (PatternParams)
-DGNPLATFORM_REF_COUNTED_PTR (DisplayStyleHandlerSettings)
-DGNPLATFORM_REF_COUNTED_PTR (IElemTopology)
-DGNPLATFORM_REF_COUNTED_PTR (IProgressiveDisplay)
-DGNPLATFORM_REF_COUNTED_PTR (ViewController)
-/** @endcond */
+BEGIN_BENTLEY_DISPLAY_NAMESPACE
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Device)
+    DEFINE_REF_COUNTED_PTR(Device)
+END_BENTLEY_DISPLAY_NAMESPACE
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_RENDER_NAMESPACE
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryParams)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(GradientSymb)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Graphic)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(GraphicList)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(GraphicParams)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(ISprite)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(ITiledRaster)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Image)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleInfo)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleParams)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleSymb)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(LineTexture)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Material)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(MultiResImage)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(OvrGraphicParams)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Plan)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Target)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Task)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Texture)
+
+    DEFINE_REF_COUNTED_PTR(GradientSymb)
+    DEFINE_REF_COUNTED_PTR(Graphic)
+    DEFINE_REF_COUNTED_PTR(GraphicList)
+    DEFINE_REF_COUNTED_PTR(Image)
+    DEFINE_REF_COUNTED_PTR(LineStyleInfo)
+    DEFINE_REF_COUNTED_PTR(LineTexture)
+    DEFINE_REF_COUNTED_PTR(Material)
+    DEFINE_REF_COUNTED_PTR(MultiResImage)
+    DEFINE_REF_COUNTED_PTR(Target)
+    DEFINE_REF_COUNTED_PTR(Task)
+    DEFINE_REF_COUNTED_PTR(Texture)
+END_BENTLEY_RENDER_NAMESPACE
+
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 BEBRIEFCASEBASED_ID_CLASS(DgnElementId)       //!< An Id that is assigned to an Element. @ingroup DgnElementGroup
-BEBRIEFCASEBASED_ID_CLASS(DgnGeometryPartId)  //!< An Id that is assigned to a DgnGeometryPart.
+BEBRIEFCASEBASED_ID_CLASS(DgnGeometryPartId)      //!< An Id that is assigned to a DgnGeometryPart.
 BEBRIEFCASEBASED_ID_CLASS(DgnModelId)         //!< An Id that is assigned to a DgnModel.  A DgnModel is a container for DgnElements. @ingroup DgnModelGroup
 BEBRIEFCASEBASED_ID_CLASS(DgnLinkId)          //!< An Id that is assigned to a DGN link. See DgnLinkTable.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnMaterialId, DgnElementId) //!< An element Id that refers to a material.
@@ -307,7 +295,6 @@ BEBRIEFCASEBASED_ID_SUBCLASS(DgnViewId, DgnElementId) //!< An element Id that re
 
 BESERVER_ISSUED_ID_CLASS(DgnAuthorityId)
 BESERVER_ISSUED_ID_CLASS(DgnFontId)
-BESERVER_ISSUED_ID_CLASS(DgnSessionId)       //!< An Id that is assigned to a session. See DgnDb#Sessions.
 
 namespace dgn_ElementHandler{struct Element;};
 namespace dgn_ModelHandler  {struct Model;};
@@ -384,6 +371,35 @@ struct DgnClassId : BeSQLite::BeInt64Id
     DgnClassId(DgnClassId&& rhs) : BeInt64Id(std::move(rhs)) {}
     DgnClassId(DgnClassId const& rhs) : BeInt64Id(rhs) {}
     DgnClassId& operator=(DgnClassId const& rhs) {m_id = rhs.m_id; return *this;}
+};
+
+//=======================================================================================
+//! The GeometryStreamEntryId class identifies a geometric primitive in a GeometryStream.
+//=======================================================================================
+struct GeometryStreamEntryId
+{
+private:
+    DgnGeometryPartId   m_partId;       // Valid when m_index refers to a part
+    uint16_t            m_index;        // Index into top-level GeometryStream
+    uint16_t            m_partIndex;    // Index into part GeometryStream
+
+public:
+    GeometryStreamEntryId() {Init();}
+    GeometryStreamEntryId(GeometryStreamEntryIdCR rhs) {m_partId = rhs.m_partId; m_index = rhs.m_index; m_partIndex = rhs.m_partIndex;}
+
+    bool operator==(GeometryStreamEntryIdCR rhs) const {if (this == &rhs) return true; return (m_partId == rhs.m_partId && m_index == rhs.m_index && m_partIndex == rhs.m_partIndex);}
+    bool operator!=(GeometryStreamEntryIdCR rhs) const {return !(*this == rhs);}
+    GeometryStreamEntryIdR operator=(GeometryStreamEntryIdCR rhs) {m_partId = rhs.m_partId; m_index = rhs.m_index; m_partIndex = rhs.m_partIndex; return *this;}
+
+    void Init() {m_index = 0; m_partIndex = 0; m_partId = DgnGeometryPartId();}
+    void SetGeometryPartId(DgnGeometryPartId partId) {m_partId = partId; m_partIndex = 0;}
+    void SetIndex(uint16_t index) {m_index = index;}
+    void SetPartIndex(uint16_t partIndex) {m_partIndex = partIndex;}
+
+    DgnGeometryPartId GetGeometryPartId() const {return m_partId;}
+    uint16_t GetIndex() const {return m_index;}
+    uint16_t GetPartIndex() const {return m_partIndex;}
+    bool IsValid() const {return 0 != m_index;}
 };
 
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
@@ -546,10 +562,15 @@ struct Frustum
     void Multiply(TransformCR trans) {trans.Multiply(m_pts, m_pts, 8);}
     void Translate(DVec3dCR offset) {for (auto& pt : m_pts) pt.Add(offset);}
     Frustum TransformBy(TransformCR trans) {Frustum out; trans.Multiply(out.m_pts, m_pts, 8); return out;}
+    void ToRangeR(DRange3dR range) const {range.InitFrom(m_pts, 8);}
     DRange3d ToRange() const {DRange3d range; range.InitFrom(m_pts, 8); return range;}
+    DGNPLATFORM_EXPORT void ScaleAboutCenter(double scale);
     void Invalidate() {memset(this, 0, sizeof(*this));}
     bool operator==(Frustum const& rhs) const {return 0==memcmp(m_pts, rhs.m_pts, sizeof(*this));}
     bool operator!=(Frustum const& rhs) const {return !(*this == rhs);}
+    Frustum() {} // uninitialized!
+    DGNPLATFORM_EXPORT explicit Frustum(DRange3dCR);
+    explicit Frustum(BeSQLite::RTree3dValCR);
 };
 
 //=======================================================================================
@@ -585,24 +606,6 @@ struct DgnElementCPtrVec : bvector<DgnElementCPtr>
         }
 };
 
-//! Types used to interface with native DgnDisplayKernel
-//! @private
-struct DgnDisplayCoreTypes
-{
-    //! Platform-specific view window
-    struct Window {};
-    typedef Window* WindowP;
-    //! Platform-specific system context required by QV
-    struct QvSystemContext {};
-    typedef QvSystemContext* QvSystemContextP;
-    //! Platform-specific device context
-    struct DeviceContext {};
-    typedef DeviceContext* DeviceContextP;
-    //! Platform-specific handle to bitmap
-    struct Bitmap {};
-    typedef Bitmap* BitmapP;
-};
-
 //! @private
 enum class ConfigurationVariableLevel
     {
@@ -617,6 +620,7 @@ enum class ConfigurationVariableLevel
     User          = 6,         //!< user defined
     };
 
+
 //! @private
 enum DgnPlatformConstants
 {
@@ -628,10 +632,10 @@ enum DgnPlatformConstants
 enum class DgnScriptType{JavaScript=0, TypeScript=1};
 
 //! @private
-enum class DgnFontType { TrueType = 1, Rsc = 2, Shx = 3, };
+enum class DgnFontType {TrueType = 1, Rsc = 2, Shx = 3,};
 
 //! @private
-enum class DgnFontStyle { Regular, Bold, Italic, BoldItalic, };
+enum class DgnFontStyle {Regular, Bold, Italic, BoldItalic,};
 
 //! Enumeration of possible coordinate system types
 enum class DgnCoordSystem
@@ -741,7 +745,7 @@ enum class OutputMessagePriority
     Fatal          = 17,
 };
 
-/* Values for mdlOutput_messageCenter openAlertBox argument */
+/* Values for NotificationManager::OutputMessage */
 enum class OutputMessageAlert
 {
     None     = 0,
@@ -822,57 +826,23 @@ enum class ClipVolumePass
     Maximum
 };
 
-
-//  QvUInt32 is a temporary solution to a difference in D3D QV and OpenGL QV.  Both used unsigned long
-//  types in a few places where it is important that the type be a 32-bit integer.  Once we encountered
-//  a platform where unsigned long is a 64-bit integer we had to change the OpenGL QV but did not
-//  want to change D3D QV. Code that uses QvUInt32 will compile correctly for either case.
-#if defined (BENTLEYCONFIG_GRAPHICS_OPENGLES) || defined (BENTLEYCONFIG_GRAPHICS_OPENGL)
-    typedef int32_t QvInt32;
-    typedef uint32_t QvUInt32;
-    typedef short QvInt16;
-    typedef unsigned short QvUInt16;
-#else
-    #if !defined (BENTLEYCONFIG_GRAPHICS_DIRECTX)
-        #error Expect BENTLEYCONFIG_GRAPHICS_DIRECTX when BENTLEYCONFIG_GRAPHICS_OPENGLES is not defined
-    #endif
-
-    typedef long QvInt32;
-    typedef unsigned long QvUInt32;
-    typedef short QvInt16;
-    typedef unsigned short QvUInt16;
-#endif
-
 enum class DrawPurpose
 {
-    NotSpecified               = 0,
-    Update                     = 1,
-    UpdateDynamic              = 2,
-    UpdateHealing              = 3,
-    UpdateProgressive          = 4,
-    Hilite                     = 5,
-    Unhilite                   = 6,
-    ChangedPre                 = 9,
-    ChangedPost                = 10,
-    RestoredPre                = 11,
-    RestoredPost               = 12,
-    Dynamics                   = 15,
-    Plot                       = 21,
-    Pick                       = 22,
-    Flash                      = 23,
-    TransientChanged           = 25,
-    CaptureGeometry            = 26,
-    GenerateThumbnail          = 27,
-    ForceRedraw                = 29,
-    FenceAccept                = 30,
-    RegionFlood                = 31, //!< Collect graphics to find closed regions/flood...
-    FitView                    = 32,
-    ExportVisibleEdges         = 36,
-    InterferenceDetection      = 37,
-    ModelFacet                 = 39,
-    Measure                    = 40,
-    VisibilityCalculation      = 41,
-    ProxyHashExtraction        = 42,
+    NotSpecified = 0,
+    CreateScene,
+    Plot,
+    Pick,
+    CaptureGeometry,
+    Decorate,
+    FenceAccept,
+    RegionFlood,                 //!< Collect graphics to find closed regions/flood...
+    FitView,
+    ExportVisibleEdges,
+    ClashDetection,
+    ModelFacet,
+    Measure,
+    VisibilityCalculation,
+    Dynamics,
 };
 
 //! Used to communicate the result of handling an event from a GPS.
@@ -912,6 +882,23 @@ typedef T_DoubleVector const&  T_DoubleVectorCR;
 #define   IMAXI8      INT64_MAX
 #define   IMINI8      INT64_MIN
 #define   IMAXUI8     UINT64_MAX
+
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   12/14
+//=======================================================================================
+enum class StandardView
+    {
+    NotStandard = -1,
+    Top         = 1,
+    Bottom      = 2,
+    Left        = 3,
+    Right       = 4,
+    Front       = 5,
+    Back        = 6,
+    Iso         = 7,
+    RightIso    = 8,
+    };
 
 //=======================================================================================
 //! RGBA values for a color
@@ -993,8 +980,7 @@ struct CopyrightSupplier
     virtual Utf8String _GetCopyrightMessage(DgnViewportR vp) = 0;
     };
 
-#define TO_BOOL(x) (0 != (x))
 
 /** @endcond */
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

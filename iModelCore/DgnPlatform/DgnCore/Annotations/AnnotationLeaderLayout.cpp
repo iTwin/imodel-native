@@ -1,12 +1,12 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: DgnCore/Annotations/AnnotationLeaderLayout.cpp $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include <DgnPlatformInternal.h> 
 #include <DgnPlatform/Annotations/Annotations.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
@@ -163,7 +163,7 @@ void AnnotationLeaderLayout::Update()
     switch (m_leader->GetSourceAttachmentType())
         {
         case AnnotationLeaderSourceAttachmentType::Id:
-            m_frameLayout->ComputePhysicalPointForAttachmentId(m_sourcePhysicalPoint, m_sourceTangent, *m_leader->GetSourceAttachmentDataForId());
+            m_frameLayout->ComputePhysicalPointForAttachmentId(m_sourcePhysicalPoint, m_sourceTangent, m_leader->GetSourceAttachmentDataForId());
             m_frameTransform.Multiply(m_sourcePhysicalPoint);
             break;
 
@@ -175,7 +175,8 @@ void AnnotationLeaderLayout::Update()
     switch (m_leader->GetTargetAttachmentType())
         {
         case AnnotationLeaderTargetAttachmentType::PhysicalPoint:
-            m_targetPhysicalPoint = *m_leader->GetTargetAttachmentDataForPhysicalPoint();
+            // NEEDSWORK: Need target relative to placement (which is different from frame transform!)
+            m_targetPhysicalPoint = m_leader->GetTargetAttachmentDataForPhysicalPoint();
             break;
 
         default:

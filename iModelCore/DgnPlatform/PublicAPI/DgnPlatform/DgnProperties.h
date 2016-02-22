@@ -25,7 +25,7 @@
 #define PROPERTY_APPNAME_DgnMarkupProject "dgnMarkup_Proj"
 #define PROPERTY_APPNAME_RedlineModel "dgnMarkup_RedlineModel"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 typedef BeSQLite::PropertySpec DbPropSpec;
 typedef DbPropSpec::Mode DbPropTxnMode;
@@ -159,6 +159,6 @@ struct LineStyleProperty
     static ComponentProperty RasterComponent()  {return ComponentProperty("RasterComponentV1");}
     static ComponentProperty RasterImage()      {return ComponentProperty("RasterImageV1");}
 };
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 /** @endcond */

@@ -10,7 +10,7 @@
 #include <DgnPlatform/DgnECSymbolProvider.h>
 #include <DgnPlatform/Dimension.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/09
@@ -26,12 +26,11 @@ void DgnPlatformLib::Host::InitializeDgnHandlers()
     BeAssert (NULL == m_lineStyleAdmin);        m_lineStyleAdmin        = &_SupplyLineStyleAdmin();
     BeAssert (NULL == m_rasterAttachmentAdmin); m_rasterAttachmentAdmin = &_SupplyRasterAttachmentAdmin();
     BeAssert (NULL == m_pointCloudAdmin);       m_pointCloudAdmin       = &_SupplyPointCloudAdmin();
-    BeAssert (NULL == m_graphicsAdmin);         m_graphicsAdmin         = &_SupplyGraphicsAdmin();
     BeAssert (NULL == m_materialAdmin);         m_materialAdmin         = &_SupplyMaterialAdmin();
     BeAssert (NULL == m_solidsKernelAdmin);     m_solidsKernelAdmin     = &_SupplySolidsKernelAdmin();
     BeAssert (NULL == m_formatterAdmin);        m_formatterAdmin        = &_SupplyFormatterAdmin ();
     BeAssert (NULL == m_scriptingAdmin);        m_scriptingAdmin        = &_SupplyScriptingAdmin ();
-    BeAssert (NULL == m_serverAdmin);           m_serverAdmin           = &_SupplyServerAdmin ();
+    BeAssert (NULL == m_repositoryAdmin);       m_repositoryAdmin       = &_SupplyRepositoryAdmin ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -52,13 +51,12 @@ void DgnPlatformLib::Host::Terminate (bool onProgramExit)
     TERMINATE_HOST_OBJECT(m_lineStyleAdmin, onProgramExit);
     TERMINATE_HOST_OBJECT(m_rasterAttachmentAdmin, onProgramExit);
     TERMINATE_HOST_OBJECT(m_pointCloudAdmin, onProgramExit);
-    TERMINATE_HOST_OBJECT(m_graphicsAdmin, onProgramExit);
     TERMINATE_HOST_OBJECT(m_materialAdmin, onProgramExit);
     TERMINATE_HOST_OBJECT(m_solidsKernelAdmin, onProgramExit);
     TERMINATE_HOST_OBJECT(m_geoCoordAdmin, onProgramExit);
     TERMINATE_HOST_OBJECT(m_formatterAdmin, onProgramExit);
     TERMINATE_HOST_OBJECT(m_scriptingAdmin, onProgramExit);
-    TERMINATE_HOST_OBJECT(m_serverAdmin, onProgramExit);
+    TERMINATE_HOST_OBJECT(m_repositoryAdmin, onProgramExit);
 
     // UnRegister Symbol Provider for ECExpressions
     IECSymbolProvider::UnRegisterExternalSymbolPublisher ();

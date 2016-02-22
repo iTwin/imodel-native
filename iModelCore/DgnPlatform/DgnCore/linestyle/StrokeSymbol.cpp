@@ -34,7 +34,9 @@ static double getGeometryPartMaxOffset (LsSymbolComponentCR symbol, double angle
     transform.InitFromPrincipleAxisRotations(Transform::FromIdentity(), 0.0, 0.0, angle);
     DRange3d        range;
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     symbol._GetRange(range);
+#endif
     transform.Multiply(range.low);
     transform.Multiply(range.high);
 
@@ -171,12 +173,15 @@ StatusInt LsSymbolReference::Output (ViewContextP context, LineStyleSymbCP modif
             addClipPlane (convexClip, clipEnd, dir);
         }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     ClipPlaneSet clips (convexClip);
     context->DrawSymbol (m_symbol.get (), &transform, &clips);
+#endif
 
     return  SUCCESS;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    08/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -186,8 +191,8 @@ void LsSymbolComponent::_Draw (ViewContextR context)
     if (!geomPart.IsValid())
         return;
 
-    ElementGeomIO::Collection collection(geomPart->GetGeomStream().GetData(), geomPart->GetGeomStream().GetSize());
-    collection.Draw(context, context.GetCurrentDisplayParams().GetCategoryId(), *context.GetViewFlags()); 
+    GeometryStreamIO::Collection collection(geomPart->GetGeometryStream().GetData(), geomPart->GetGeometryStream().GetSize());
+    collection.Draw(context, context.GetCurrentGeometryParams().GetCategoryId(), context.GetViewFlags()); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -203,6 +208,7 @@ StatusInt LsSymbolComponent::_GetRange (DRange3dR range) const
 
     return BSISUCCESS;
     }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
@@ -222,7 +228,6 @@ LsSymbolComponent::LsSymbolComponent(LsSymbolComponentCR src) : LsComponent(&src
     m_lineColorByLevel = src.m_lineColorByLevel;
     m_postProcessed = false;
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -321,7 +326,9 @@ void                LsSymbolComponent::SetIsNoScale (bool value) { m_symFlags = 
 bool                LsSymbolComponent::Is3d ()   const { return (m_symFlags & LSSYM_3D) != 0; }
 void                LsSymbolComponent::GetRange (DRange3dR range) const 
     { 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     _GetRange (range);
+#endif
     }
 
 //---------------------------------------------------------------------------------------

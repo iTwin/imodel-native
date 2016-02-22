@@ -191,9 +191,9 @@ TEST_F(DgnElementTests, DgnElementTransformer)
         for (auto el : all)
             {
             ASSERT_TRUE(el->ToGeometrySource3d()->GetPlacement().GetOrigin().IsEqual(DPoint3d::From(0,0,0)));
-            ASSERT_EQ(45, el->ToGeometrySource3d()->GetPlacement().GetAngles().GetYaw().Degrees());
-            ASSERT_EQ(0, el->ToGeometrySource3d()->GetPlacement().GetAngles().GetPitch().Degrees()) << "pitch should be unaffected";
-            ASSERT_EQ(0, el->ToGeometrySource3d()->GetPlacement().GetAngles().GetRoll().Degrees()) << "roll should be unaffected";
+            EXPECT_DOUBLE_EQ(45, el->ToGeometrySource3d()->GetPlacement().GetAngles().GetYaw().Degrees());
+            EXPECT_DOUBLE_EQ(0, el->ToGeometrySource3d()->GetPlacement().GetAngles().GetPitch().Degrees()) << "pitch should be unaffected";
+            EXPECT_DOUBLE_EQ(0, el->ToGeometrySource3d()->GetPlacement().GetAngles().GetRoll().Degrees()) << "roll should be unaffected";
             }
         }
 
@@ -591,7 +591,7 @@ TEST_F(DgnElementTests, GenericDomainElements)
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ElementGeomAndPlacementTests : DgnElementTests
 {
-    ElementGeometryBuilderPtr CreateGeom();
+    GeometryBuilderPtr CreateGeom();
     RefCountedPtr<PhysicalElement> CreateElement(bool wantPlacement, bool wantGeom);
     static bool AreEqualPlacements(Placement3dCR a, Placement3dCR b);
     void TestLoadElem(DgnElementId id, Placement3d const* placement, bool hasGeometry);
@@ -600,10 +600,10 @@ struct ElementGeomAndPlacementTests : DgnElementTests
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementGeometryBuilderPtr ElementGeomAndPlacementTests::CreateGeom()
+GeometryBuilderPtr ElementGeomAndPlacementTests::CreateGeom()
     {
     DgnModelPtr model = m_db->Models().GetModel(m_defaultModelId);
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
     CurveVectorPtr curveVector = GeomHelper::computeShape();
     builder->Append(*curveVector);
     double dz = 3.0, radius = 1.5;
@@ -618,7 +618,7 @@ ElementGeometryBuilderPtr ElementGeomAndPlacementTests::CreateGeom()
     ICurvePrimitivePtr ellipse = ICurvePrimitive::CreateArc(ellipseData);
     builder->Append(*ellipse);
 
-    ElemDisplayParams elemDisplayParams;
+    Render::GeometryParams elemDisplayParams;
     elemDisplayParams.SetCategoryId(m_defaultCategoryId);
     elemDisplayParams.SetWeight(2);
     builder->Append(elemDisplayParams);
@@ -678,7 +678,7 @@ TEST_F(ElementGeomAndPlacementTests, ValidateOnInsert)
         // Non-null placement + non-null geom
         el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnCode());
         auto geom = CreateGeom();
-        EXPECT_EQ(SUCCESS, geom->SetGeomStreamAndPlacement(*el));
+        EXPECT_EQ(SUCCESS, geom->SetGeometryStreamAndPlacement(*el));
         placement = el->GetPlacement();
         EXPECT_TRUE(placement.IsValid());
         EXPECT_TRUE(m_db->Elements().Insert(*el).IsValid());
@@ -692,7 +692,7 @@ TEST_F(ElementGeomAndPlacementTests, ValidateOnInsert)
 
         // Null placement + non-null geom
         el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnCode());
-        EXPECT_EQ(SUCCESS, geom->SetGeomStreamAndPlacement(*el));
+        EXPECT_EQ(SUCCESS, geom->SetGeometryStreamAndPlacement(*el));
         el->SetPlacement(Placement3d());
         DgnDbStatus status;
         EXPECT_FALSE(m_db->Elements().Insert(*el, &status).IsValid());

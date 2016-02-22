@@ -154,9 +154,9 @@ DgnElementId ChangeTestFixture::InsertPhysicalElement(SpatialModelR model, DgnCa
     BeAssert(testGeomPtr.IsValid());
 
     DPoint3d centerOfBlock = DPoint3d::From(x, y, z);
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(model, categoryId, centerOfBlock, YawPitchRollAngles());
+    GeometryBuilderPtr builder = GeometryBuilder::Create(model, categoryId, centerOfBlock, YawPitchRollAngles());
     builder->Append(*testGeomPtr);
-    BentleyStatus status = builder->SetGeomStreamAndPlacement(*testElement);
+    BentleyStatus status = builder->SetGeometryStreamAndPlacement(*testElement);
     BeAssert(status == SUCCESS);
 
     DgnElementId elementId = m_testDb->Elements().Insert(*testElement)->GetElementId();
@@ -173,7 +173,7 @@ void ChangeTestFixture::CreateDefaultView(DgnModelId defaultModelId)
 
     SpatialViewController viewController(*m_testDb, viewRow.GetViewId());
     viewController.SetStandardViewRotation(StandardView::Iso);
-    viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::SmoothShade);
+    viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::SmoothShade);
 
     for (auto const& catId : DgnCategory::QueryCategories(*m_testDb))
         viewController.ChangeCategoryDisplay(catId, true);

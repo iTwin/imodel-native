@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ViewController.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -37,7 +37,6 @@ static Utf8CP VIEWFLAG_fill                      = "fill";
 static Utf8CP VIEWFLAG_grid                      = "grid";
 static Utf8CP VIEWFLAG_acs                       = "acs";
 static Utf8CP VIEWFLAG_useBgImage                = "noBgImage";
-
 static Utf8CP VIEWFLAG_noTexture                 = "noTexture";
 static Utf8CP VIEWFLAG_noMaterial                = "noMaterial";
 static Utf8CP VIEWFLAG_noSceneLight              = "noSceneLight";
@@ -86,7 +85,13 @@ void ViewFlags::From3dJson(JsonValueCR val)
     noClipVolume = val[VIEWFLAG_noClipVolume].asBool();
     ignoreLighting = val[VIEWFLAG_ignoreLighting].asBool();
 
-    m_renderMode = DgnRenderMode(val[VIEWFLAG_renderMode].asUInt());
+    m_renderMode = RenderMode(val[VIEWFLAG_renderMode].asUInt());
+
+#if defined (TEST_FORCE_VIEW_SMOOTH_SHADE)
+    static bool s_forceSmooth=true;
+    if (s_forceSmooth)
+        m_renderMode = RenderMode::SmoothShade;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -106,6 +111,7 @@ void ViewFlags::ToBaseJson(JsonValueR val) const
     if (acs) val[VIEWFLAG_acs] = true;
     if (bgImage) val[VIEWFLAG_useBgImage] = true;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -195,7 +201,7 @@ void ViewController::LoadCategories(JsonValueCR settings)
 
     // load all SubCategories (even for categories not currently on)
     for (auto const& id : DgnSubCategory::QuerySubCategories(m_dgndb))
-        {
+        {           
         DgnSubCategory::Appearance appearance;
         DgnSubCategoryCPtr subCat = DgnSubCategory::QuerySubCategory(id, m_dgndb);
         if (subCat.IsValid())
@@ -252,10 +258,13 @@ DbResult ViewController::Load()
     m_viewedModels.insert(m_baseModelId);
 
     Utf8String settingsStr;
-    //  The QueryModel calls GetModel in the QueryModel thread.  produces a thread race condition if it calls QueryModelById and
     DbResult rc = entry->QuerySettings(settingsStr);
     if (BE_SQLITE_ROW != rc)
-        return rc;
+        {
+        Json::Value json;
+        _RestoreFromSettings(json);
+        return BE_SQLITE_OK;
+        }
 
     Json::Value json;
     Json::Reader::Parse(settingsStr, json);
@@ -263,7 +272,7 @@ DbResult ViewController::Load()
 
     //  The QueryModel calls GetModel in the QueryModel thread.  produces a thread race condition if it calls QueryModelById and
     //  the model is not already loaded.
-    for (auto&id : GetViewedModels())
+    for (auto& id : GetViewedModels())
         m_dgndb.Models().GetModel(id);
 
     return BE_SQLITE_OK;
@@ -343,27 +352,32 @@ DbResult ViewController::SaveTo(Utf8CP newName, DgnViewId& newId)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      08/13
+* return the extents of the target model, if there is one.
+* @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d ViewController::_GetViewedExtents() const
     {
-    return m_dgndb.Units().GetProjectExtents();
+    GeometricModelP target = GetTargetModel();
+    if (target && target->GetRangeIndexP(false))
+        return AxisAlignedBox3d(*target->GetRangeIndexP(false)->GetExtents());
+
+    return AxisAlignedBox3d();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      11/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_DrawElement(ViewContextR context, GeometrySourceCR element)
+Render::GraphicPtr ViewController::_StrokeGeometry(ViewContextR context, GeometrySourceCR source, double pixelSize)
     {
-    element.Draw(context);
+    return source.Stroke(context, pixelSize);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/13
+* @bsimethod                                                    RayBentley  10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_DrawElementFiltered(ViewContextR context, GeometrySourceCR element, DPoint3dCP pts, double size)
+Render::GraphicPtr ViewController::_StrokeHit(ViewContextR context, GeometrySourceCR source, HitDetailCR hit)
     {
-    // Display nothing...
+    return source.StrokeHit(context, hit);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -419,12 +433,6 @@ bool ViewController::_IsPointAdjustmentRequired(DgnViewportR vp) const {return v
 bool ViewController::_IsSnapAdjustmentRequired(DgnViewportR vp, bool snapLockEnabled) const {return snapLockEnabled && vp.Is3dView();}
 bool ViewController::_IsContextRotationRequired(DgnViewportR vp, bool contextLockEnabled) const {return contextLockEnabled;}
 
-/////////////////////////////////////////////////////////////////////////////////////
-///
-/// Standard Views
-///
-/////////////////////////////////////////////////////////////////////////////////////
-
 static bool equalOne(double r1) {return BeNumerical::Compare(r1, 1.0) == 0;}
 static bool equalMinusOne(double r1) {return BeNumerical::Compare(r1, -1.0) == 0;}
 
@@ -463,13 +471,13 @@ StandardView ViewController::IsStandardViewRotation(RotMatrixCR rMatrix, bool ch
             RotMatrix  isoMatrix;
             bsiRotMatrix_getStandardRotation(&isoMatrix, static_cast<int>(StandardView::Iso));
 
-            if (equalOne(((DVec3d*)isoMatrix.form3d[0])->DotProduct (*((DVec3d*)rMatrix.form3d[0]))) &&
-                equalOne(((DVec3d*)isoMatrix.form3d[1])->DotProduct (*((DVec3d*)rMatrix.form3d[1]))))
+            if (equalOne(((DVec3d*)isoMatrix.form3d[0])->DotProduct(*((DVec3d*)rMatrix.form3d[0]))) &&
+                equalOne(((DVec3d*)isoMatrix.form3d[1])->DotProduct(*((DVec3d*)rMatrix.form3d[1]))))
                 return StandardView::Iso;
 
             bsiRotMatrix_getStandardRotation(&isoMatrix, static_cast<int>(StandardView::RightIso));
-            if (equalOne(((DVec3d*)isoMatrix.form3d[0])->DotProduct (*((DVec3d*)rMatrix.form3d[0]))) &&
-                equalOne(((DVec3d*)isoMatrix.form3d[1])->DotProduct (*((DVec3d*)rMatrix.form3d[1]))))
+            if (equalOne(((DVec3d*)isoMatrix.form3d[0])->DotProduct(*((DVec3d*)rMatrix.form3d[0]))) &&
+                equalOne(((DVec3d*)isoMatrix.form3d[1])->DotProduct(*((DVec3d*)rMatrix.form3d[1]))))
                 return StandardView::RightIso;
             }
         }
@@ -622,7 +630,7 @@ ViewportStatus ViewController::_SetupFromFrustum(Frustum const& frustum)
     DVec3d viewDelta;
     viewRot.Multiply(viewDelta, viewDiagRoot);
 
-    ViewportStatus validSize = DgnViewport::ValidateWindowSize(viewDelta, false);
+    ViewportStatus validSize = DgnViewport::ValidateViewDelta(viewDelta, false);
     if (validSize != ViewportStatus::Success)
         return validSize;
 
@@ -635,7 +643,7 @@ ViewportStatus ViewController::_SetupFromFrustum(Frustum const& frustum)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewportStatus CameraViewController::_SetupFromFrustum(Frustum const& frustum)
+ViewportStatus  CameraViewController::_SetupFromFrustum(Frustum const& frustum)
     {
     auto stat = T_Super::_SetupFromFrustum(frustum);
     if (ViewportStatus::Success != stat)
@@ -720,7 +728,7 @@ void ViewController::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
         newDelta.z = minimumDepth;
         }
 
-    SpatialViewControllerP physView =(SpatialViewControllerP) _ToSpatialView();
+    SpatialViewControllerP physView = (SpatialViewControllerP) _ToSpatialView();
     CameraViewControllerP cameraView =(CameraViewControllerP) _ToCameraView();
     DPoint3d origNewDelta = newDelta;
 
@@ -766,7 +774,7 @@ void ViewController::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
             newDelta.z = diag;
         }
 
-    DgnViewport::ValidateWindowSize(newDelta, true);
+    DgnViewport::ValidateViewDelta(newDelta, true);
 
     SetDelta(newDelta);
     if (aspect)
@@ -828,6 +836,7 @@ SpatialViewController::SpatialViewController(DgnDbR dgndb, DgnViewId viewId) : V
     m_origin.Zero();
     m_delta.Zero();
     m_rotation.InitIdentity();
+    m_auxCoordSys = IACSManager::GetManager().CreateACS(); // Should always have an ACS...
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -867,9 +876,9 @@ void SpatialViewController::TransformBy(TransformCR trans)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SpatialViewController::SetTargetModel(GeometricModelP target)
+BentleyStatus SpatialViewController::_SetTargetModel(GeometricModelP target)
     {
-    if (!m_viewedModels.Contains(target->GetModelId()))
+    if (nullptr == target || !m_viewedModels.Contains(target->GetModelId()))
         return  ERROR;
 
     m_targetModelId = target->GetModelId();
@@ -881,7 +890,7 @@ BentleyStatus SpatialViewController::SetTargetModel(GeometricModelP target)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SectioningViewControllerPtr SectionDrawingViewController::GetSectioningViewController() const
     {
-#if defined(NEEDS_WORK_DRAWINGS)
+#if defined (NEEDS_WORK_DRAWINGS)
     if (m_sectionView.IsValid())
         return m_sectionView;
 
@@ -903,7 +912,7 @@ ClipVectorPtr SectionDrawingViewController::GetProjectClipVector() const
     {
     auto sectionView = GetSectioningViewController();
     if (!sectionView.IsValid())
-        return ClipVector::Create();
+        return new ClipVector();
     return sectionView->GetInsideForwardClipVector();
     }
 
@@ -917,48 +926,6 @@ bool SectionDrawingViewController::GetSectionHasDogLeg() const
         return false;
 
     return sectionView->HasDogLeg();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt SectionDrawingViewController::_VisitHit(HitDetailCR hit, ViewContextR context) const
-    {
-#if defined(NEEDS_WORK_ELEMENTS_API)
-    context.PushTransform(GetFlatteningMatrixIf2D(context));
-#endif
-    StatusInt status = T_Super::_VisitHit(hit, context);
-    context.PopTransformClip();
-    return status;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson  03/14
-//--------------+------------------------------------------------------------------------
-void SectionDrawingViewController::_DrawView(ViewContextR context)
-    {
-#if defined(NEEDS_WORK_ELEMENTS_API)
-    context.PushTransform(GetFlatteningMatrixIf2D(context));
-#endif
-    T_Super::_DrawView(context);
-    context.PopTransformClip();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      03/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SectionDrawingViewController::_DrawElement(ViewContextR context, GeometrySourceCR element)
-    {
-#if defined(NEEDS_WORK_VIEW_CONTROLLER)
-    if (context.GetViewport() != nullptr)
-        {
-        auto hyper = context.GetViewport()->GetViewControllerP()->ToHypermodelingViewController();
-        if (hyper != nullptr && !hyper->ShouldDrawAnnotations() && !ProxyDisplayHandlerUtils::IsProxyDisplayHandler(elIter.GetHandler()))
-            return;
-        }
-#endif
-
-    T_Super::_DrawElement(context, element);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1035,7 +1002,7 @@ double SpatialViewController::CalculateMaxDepth(DVec3dCR delta, DVec3dCR zVec)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     12/13
 //---------------------------------------------------------------------------------------
-static bool convertToWorldPointWithStatus(DPoint3dR worldPoint, GeoLocationEventStatus& status, DgnUnits const& units, GeoPointCR location)
+static bool convertToWorldPoint(DPoint3dR worldPoint, GeoLocationEventStatus& status, DgnUnits const& units, GeoPointCR location)
     {
     if (SUCCESS != units.XyzFromLatLong(worldPoint, location))
         {
@@ -1057,7 +1024,7 @@ bool CameraViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, G
         return T_Super::_OnGeoLocationEvent(status, location);
 
     DPoint3d worldPoint;
-    if (!convertToWorldPointWithStatus(worldPoint, status, m_dgndb.Units(), location))
+    if (!convertToWorldPoint(worldPoint, status, m_dgndb.Units(), location))
         return false;
 
     worldPoint.z = GetEyePoint().z;
@@ -1078,7 +1045,7 @@ bool CameraViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, G
 bool SpatialViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR location)
     {
     DPoint3d worldPoint;
-    if (!convertToWorldPointWithStatus(worldPoint, status, m_dgndb.Units(), location))
+    if (!convertToWorldPoint(worldPoint, status, m_dgndb.Units(), location))
         return false;
 
     // If there's no perspective, just center the current location in the view.
@@ -1110,7 +1077,7 @@ static UiOrientation s_lastUi;
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     11/13
 //---------------------------------------------------------------------------------------
-bool ViewController::OnOrientationEvent (RotMatrixCR matrix, OrientationMode mode, UiOrientation ui, uint32_t nEventsSinceEnabled)
+bool ViewController::OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui, uint32_t nEventsSinceEnabled)
     {
     if (!m_defaultDeviceOrientationValid || s_lastUi != ui)
         {
@@ -1174,7 +1141,7 @@ DVec3dR up1             //!< [out] model coordinates up vector for gyro1
             );
     else
         {
-        BeAssert (ui == UiOrientation::PortraitUpsideDown);
+        BeAssert(ui == UiOrientation::PortraitUpsideDown);
         gyroToBSIColumnShuffler = RotMatrix::FromRowValues
             (
             -1,0,0,
@@ -1184,22 +1151,22 @@ DVec3dR up1             //!< [out] model coordinates up vector for gyro1
         }
 
     RotMatrix H0, H1;
-    H0.InitProduct (gyro0, gyroToBSIColumnShuffler);
-    H1.InitProduct (gyro1, gyroToBSIColumnShuffler);
+    H0.InitProduct(gyro0, gyroToBSIColumnShuffler);
+    H1.InitProduct(gyro1, gyroToBSIColumnShuffler);
     RotMatrix H1T;
-    H1T.TransposeOf (H1);
+    H1T.TransposeOf(H1);
     RotMatrix screenToScreenMotion;
-    screenToScreenMotion.InitProduct (H1T, H0);
-    DVec3d right0 = DVec3d::FromCrossProduct (up0, forward0);
-    RotMatrix screenToModel = RotMatrix::FromColumnVectors (right0, up0, forward0);
+    screenToScreenMotion.InitProduct(H1T, H0);
+    DVec3d right0 = DVec3d::FromCrossProduct(up0, forward0);
+    RotMatrix screenToModel = RotMatrix::FromColumnVectors(right0, up0, forward0);
     RotMatrix modelToScreen;
-    modelToScreen.TransposeOf (screenToModel);
+    modelToScreen.TransposeOf(screenToModel);
     RotMatrix modelToModel;
 
-    screenToScreenMotion.Transpose ();
-    modelToModel.InitProduct (screenToModel, screenToScreenMotion, modelToScreen);
-    modelToModel.Multiply (forward1, forward0);
-    modelToModel.Multiply (up1, up0);
+    screenToScreenMotion.Transpose();
+    modelToModel.InitProduct(screenToModel, screenToScreenMotion, modelToScreen);
+    modelToModel.Multiply(forward1, forward0);
+    modelToModel.Multiply(up1, up0);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1211,7 +1178,7 @@ bool SpatialViewController::ViewVectorsFromOrientation(DVec3dR forward, DVec3dR 
     DVec3d currForward = GetZVector();
 
     orientation.GetColumn(forward, 2);
-    switch(mode)
+    switch (mode)
         {
         case OrientationMode::CompassHeading:
             {
@@ -1229,7 +1196,7 @@ bool SpatialViewController::ViewVectorsFromOrientation(DVec3dR forward, DVec3dR 
             {
             //  orientation is arranged in columns.  The axis from the home button to other end of tablet is Y.  Z is out of the screen.  X is Y cross Z.
             //  Therefore, when the UiOrientation is Portrait, orientation Y is up and orientation X points to the right.
-            ApplyGyroChangeToViewingVectors (ui, m_defaultDeviceOrientation, orientation, s_defaultForward, s_defaultUp, forward, up);
+            ApplyGyroChangeToViewingVectors(ui, m_defaultDeviceOrientation, orientation, s_defaultForward, s_defaultUp, forward, up);
             break;
             }
         }
@@ -1319,7 +1286,7 @@ bool CameraViewController::_OnOrientationEvent(RotMatrixCR orientation, Orientat
 bool DrawingViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR location)
     {
     DPoint3d worldPoint;
-    if (!convertToWorldPointWithStatus(worldPoint, status, m_dgndb.Units(), location))
+    if (!convertToWorldPoint(worldPoint, status, m_dgndb.Units(), location))
         return false;
 
     RotMatrix viewInverse;
@@ -1408,7 +1375,7 @@ ViewportStatus CameraViewController::LookAt(DPoint3dCR eyePoint, DPoint3dCR targ
     delta.z =(backDist - frontDist);
 
     DVec3d frontDelta = DVec3d::FromScale(delta, frontDist/focusDist);
-    ViewportStatus stat = DgnViewport::ValidateWindowSize(frontDelta, false); // validate window size on front (smallest) plane
+    ViewportStatus stat = DgnViewport::ValidateViewDelta(frontDelta, false); // validate window size on front (smallest) plane
     if (ViewportStatus::Success != stat)
         return  stat;
 
@@ -1557,7 +1524,6 @@ DPoint3d CameraViewController::_GetTargetPoint() const
     return  target;
     }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      03/14
 //---------------------------------------------------------------------------------------
@@ -1572,23 +1538,6 @@ void CameraViewController::_RestoreFromSettings(JsonValueCR jsonObj)
     DPoint3d eyePt;
     JsonUtils::DPoint3dFromJson(eyePt, jsonObj[VIEW_SETTING_CameraPosition]);
     m_camera.SetEyePoint(eyePt);
-
-#ifdef WIP_PERSISTENT_CLIP_VECTOR // need to change the clip tool to recognize and use saved clip vector
-    if (jsonObj.isMember(VIEW_SETTING_ClipVector))
-        {
-        m_clipVector = ClipVector::Create();
-        JsonUtils::ClipVectorFromJson(*m_clipVector, jsonObj[VIEW_SETTING_ClipVector]);
-        }
-    else
-        {
-        m_clipVector = nullptr;
-        }
-#endif
-
-    //  Anything is better than garbage
-    if (m_delta.x <= DBL_EPSILON) m_delta.x = (m_delta.y + m_delta.z)/2;
-    if (m_delta.y <= DBL_EPSILON) m_delta.y = (m_delta.x + m_delta.z)/2;
-    if (m_delta.z <= DBL_EPSILON) m_delta.z = (m_delta.x + m_delta.y)/2;
 
     VerifyFocusPlane();
     }
@@ -1608,6 +1557,11 @@ void SpatialViewController::_RestoreFromSettings(JsonValueCR jsonObj)
     JsonUtils::DPoint3dFromJson(m_origin, jsonObj[VIEW_SETTING_Origin]);
     JsonUtils::DPoint3dFromJson(m_delta, jsonObj[VIEW_SETTING_Delta]);
     JsonUtils::RotMatrixFromJson(m_rotation, jsonObj[VIEW_SETTING_Rotation]);
+
+    if (!m_rotation.SquareAndNormalizeColumns(m_rotation, 0, 1))   
+        m_rotation.InitIdentity();
+
+    DgnViewport::ValidateViewDelta(m_delta, false);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1621,11 +1575,6 @@ void CameraViewController::_SaveToSettings(JsonValueR jsonObj) const
     jsonObj[VIEW_SETTING_CameraAngle] = m_camera.GetLensAngle();
     JsonUtils::DPoint3dToJson(jsonObj[VIEW_SETTING_CameraPosition], m_camera.GetEyePoint());
     jsonObj[VIEW_SETTING_CameraFocalLength] = m_camera.GetFocusDistance();
-
-#ifdef WIP_PERSISTENT_CLIP_VECTOR // need to change the clip tool to recognize and use saved clip vector
-    if (m_clipVector.IsValid())
-        JsonUtils::ClipVectorToJson(jsonObj[VIEW_SETTING_ClipVector], *m_clipVector);
-#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -1644,35 +1593,6 @@ void SpatialViewController::_SaveToSettings(JsonValueR jsonObj) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Brien.Bastings                  11/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-IAuxCoordSysP SpatialViewController::_GetAuxCoordinateSystem() const
-    {
-#ifdef DGNV10FORMAT_CHANGES_WIP
-    // if we don't have an ACS when this is called, try to get one.
-    if (!m_auxCoordSys.IsValid())
-        IACSManager::GetManager().ReadSettings(const_cast <ViewControllerP>(this), GetDgnElement(), GetRootModelP(false));
-
-    IAuxCoordSysP   acs = m_auxCoordSys.get();
-
-     if (nullptr != acs && SUCCESS == acs->CompleteSetupFromViewController(this))
-        return acs;
-#endif
-
-    return m_auxCoordSys.get();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Brien.Bastings                  11/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewController::SetAuxCoordinateSystem(IAuxCoordSysP acs)
-    {
-    // if no change, return.
-    if (m_auxCoordSys.get() != acs)
-        m_auxCoordSys = acs;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Josh.Schifter   08/00
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewFlags::InitDefaults()
@@ -1686,7 +1606,6 @@ void ViewFlags::InitDefaults()
     styles = true;
     transparency = true;
     fill = true;
-
     textures = true;
     materials = true;
     sceneLights = true;
@@ -1859,8 +1778,9 @@ void ViewController2d::_SaveToSettings(JsonValueR settings) const
 * Show the surface normal for geometry under the cursor when snapping.
 * @bsimethod                                                    Brien.Bastings  07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void drawLocateHitDetail(DgnViewportR vp, double aperture, HitDetailCR hit)
+static void drawLocateHitDetail(DecorateContextR context, double aperture, HitDetailCR hit)
     {
+    DgnViewportR vp = *context.GetViewport();
     if (!vp.Is3dView())
         return; // Not valuable in 2d...
 
@@ -1870,7 +1790,6 @@ static void drawLocateHitDetail(DgnViewportR vp, double aperture, HitDetailCR hi
     if (!hit.GetGeomDetail().IsValidSurfaceHit())
         return; // AccuSnap will flash edge/segment geometry...
 
-    IViewDrawP  output = vp.GetIViewDraw();
     ColorDef    color = ColorDef(~vp.GetHiliteColor().GetValue());// Invert hilite color for good contrast...
     DPoint3d    pt = hit.GetHitPoint();
     double      radius = (2.0 * aperture) * vp.GetPixelSizeAtPoint(&pt);
@@ -1878,10 +1797,12 @@ static void drawLocateHitDetail(DgnViewportR vp, double aperture, HitDetailCR hi
     RotMatrix   rMatrix = RotMatrix::From1Vector(normal, 2, true);
     DEllipse3d  ellipse = DEllipse3d::FromScaledRotMatrix(pt, rMatrix, radius, radius, 0.0, Angle::TwoPi());
 
+    GraphicPtr graphic = context.CreateGraphic();
+
     color.SetAlpha(200);
-    output->SetSymbology(color, color, 1, 0);
-    output->DrawArc3d(ellipse, true, true, nullptr);
-    output->DrawArc3d(ellipse, false, false, nullptr);
+    graphic->SetSymbology(color, color, 1);
+    graphic->AddArc(ellipse, true, true, nullptr);
+    graphic->AddArc(ellipse, false, false, nullptr);
 
     double      length = (0.6 * radius);
     DSegment3d  segment;
@@ -1889,95 +1810,373 @@ static void drawLocateHitDetail(DgnViewportR vp, double aperture, HitDetailCR hi
     normal.Normalize(ellipse.vector0);
     segment.point[0].SumOf(pt, normal, length);
     segment.point[1].SumOf(pt, normal, -length);
-    output->DrawLineString3d(2, segment.point, nullptr);
+    graphic->AddLineString(2, segment.point, nullptr);
 
     normal.Normalize(ellipse.vector90);
     segment.point[0].SumOf(pt, normal, length);
     segment.point[1].SumOf(pt, normal, -length);
-    output->DrawLineString3d(2, segment.point, nullptr);
+    graphic->AddLineString(2, segment.point, nullptr);
+    context.AddWorldOverlay(*graphic);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * draw a filled and outlined circle to represent the size of the location tolerance in the current view.
 * @bsimethod                                                    Keith.Bentley   03/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void drawLocateCircle(DgnViewportR vp, double aperture, DPoint3dCR pt)
+static void drawLocateCircle(DecorateContextR context, double aperture, DPoint3dCR pt)
     {
-    IViewDrawP  output = vp.GetIViewDraw();
-
-    output->SetToViewCoords(true);
-
     double      radius = (aperture / 2.0) + .5;
     DPoint3d    center;
     DEllipse3d  ellipse, ellipse2;
 
-    vp.WorldToView(&center, &pt, 1);
+    context.GetViewport()->WorldToView(&center, &pt, 1);
     ellipse.InitFromDGNFields2d((DPoint2dCR) center, 0.0, radius, radius, 0.0, msGeomConst_2pi, 0.0);
     ellipse2.InitFromDGNFields2d((DPoint2dCR) center, 0.0, radius+1, radius+1, 0.0, msGeomConst_2pi, 0.0);
 
+    GraphicPtr graphic = context.CreateGraphic();
     ColorDef    white = ColorDef::White();
     ColorDef    black = ColorDef::Black();
 
     white.SetAlpha(165);
-    output->SetSymbology(white, white, 1, 0);
-    output->DrawArc2d(ellipse, true, true, 0.0, NULL);
+    graphic->SetSymbology(white, white, 1);
+    graphic->AddArc2d(ellipse, true, true, 0.0, NULL);
 
     black.SetAlpha(100);
-    output->SetSymbology(black, black, 1, 0);
-    output->DrawArc2d(ellipse2, false, false, 0.0, NULL);
+    graphic->SetSymbology(black, black, 1);
+    graphic->AddArc2d(ellipse2, false, false, 0.0, NULL);
 
     white.SetAlpha(20);
-    output->SetSymbology(white, white, 1, 0);
-    output->DrawArc2d(ellipse, false, false, 0.0, NULL);
-
-    output->SetToViewCoords(false);
+    graphic->SetSymbology(white, white, 1);
+    graphic->AddArc2d(ellipse, false, false, 0.0, NULL);
+    context.AddViewOverlay(*graphic);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley  10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_DrawLocateCursor(DgnViewportR vp, DPoint3dCR pt, double aperture, bool isLocateCircleOn, HitDetailCP hit)
+void ViewController::_DrawLocateCursor(DecorateContextR context, DPoint3dCR pt, double aperture, bool isLocateCircleOn, HitDetailCP hit)
     {
     if (nullptr != hit)
-        drawLocateHitDetail(vp, aperture, *hit);
+        drawLocateHitDetail(context, aperture, *hit);
 
     if (isLocateCircleOn)
-        drawLocateCircle(vp, aperture, pt);
+        drawLocateCircle(context, aperture, pt);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    kab             06/86
++---------------+---------------+---------------+---------------+---------------+------*/
+static void roundGrid(double& num, double units)
+    {
+    double sign = ((num * units) < 0.0) ? -1.0 : 1.0;
+
+    num = (num * sign) / units + 0.5;
+    num = units * sign * floor(num);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static void getGridOrientation(DgnViewportR vp, DPoint3dR origin, RotMatrixR rMatrix, GridOrientationType orientation)
+    {
+    SpatialModelCP model = vp.GetViewController().GetTargetModel()->ToSpatialModel();
+
+    // start with global origin (in world coords) and identity matrix
+    rMatrix.InitIdentity();
+    origin = (nullptr != model ? model->GetDgnDb().Units().GetGlobalOrigin() : DPoint3d::FromZero());
+
+    DVec3d xVec, yVec, zVec;
+
+    switch (orientation)
+        {
+        case GridOrientationType::View:
+            {
+            DPoint3d    viewOrigin;
+            DPoint3d    centerWorld = vp.NpcToWorld(DPoint3d::From(0.5,0.5,0.5));
+
+            rMatrix = vp.GetRotMatrix();
+            rMatrix.Multiply(viewOrigin, *(vp.GetViewOrigin()));
+            rMatrix.Multiply(origin);
+            origin.z = viewOrigin.z + centerWorld.z;
+            rMatrix.MultiplyTranspose(origin, origin);
+            break;
+            }
+
+        case GridOrientationType::WorldXY:
+            {
+            break;
+            }
+
+        case GridOrientationType::WorldYZ:
+            {
+            rMatrix.GetRows(xVec, yVec, zVec);
+            rMatrix.InitFromRowVectors(yVec, zVec, xVec);
+            break;
+            }
+
+        case GridOrientationType::WorldXZ:
+            {
+            rMatrix.GetRows(xVec, yVec, zVec);
+            rMatrix.InitFromRowVectors(xVec, zVec, yVec);
+            break;
+            }
+        }
+
+#ifdef DGNV10FORMAT_CHANGES_WIP
+    double      angle = 0.0;
+    dgnModel_getGridParams(model, NULL, NULL, NULL, NULL, &angle);
+
+    if (0.0 != angle)
+        rMatrix->InitFromPrincipleAxisRotations(*rMatrix, 0.0, 0.0, -angle);
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   11/07
++---------------+---------------+---------------+---------------+---------------+------*/
+static void gridFix(DgnViewportR vp, DPoint3dR point, RotMatrixCR rMatrix, DPoint3dCR origin, DPoint2dCR roundingDistance, bool isoGrid)
+    {
+    DVec3d planeNormal, eyeVec;
+
+    rMatrix.GetRow(planeNormal, 2);
+
+    if (vp.IsCameraOn())
+        eyeVec.NormalizedDifference(point, vp.GetCamera().GetEyePoint());
+    else
+        vp.GetRotMatrix().GetRow(eyeVec, 2);
+
+    LegacyMath::Vec::LinePlaneIntersect(&point, &point, &eyeVec, &origin, &planeNormal, false);
+
+    // get origin and point in view coordinate system
+    DPoint3d pointView, originView;
+
+    rMatrix.Multiply(pointView, point);
+    rMatrix.Multiply(originView, origin);
+
+    // see whether we need to adjust the origin for iso-grid
+    if (isoGrid)
+        {
+        long ltmp = (long) (pointView.y / roundingDistance.y);
+
+        if (ltmp & 0x0001)
+            originView.x += (roundingDistance.x / 2.0);
+        }
+
+    // subtract off the origin
+    pointView.y -= originView.y;
+    pointView.x -= originView.x;
+
+    // round off the remainder to the grid distances
+    roundGrid(pointView.y, roundingDistance.y);
+    roundGrid(pointView.x, roundingDistance.x);
+
+    // add the origin back in
+    pointView.x += originView.x;
+    pointView.y += originView.y;
+
+    // go back to root coordinate system
+    rMatrix.MultiplyTranspose(point, pointView);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Keith.Bentley   07/04
++---------------+---------------+---------------+---------------+---------------+------*/
+double ViewController::_GetGridScaleFactor(DgnViewportR vp) const
+    {
+    double  scaleFactor = 1.0;
+
+    // Apply ACS scale to grid if ACS Context Lock active...
+#ifdef DGNV10FORMAT_CHANGES_WIP
+    if (TO_BOOL(m_rootModel->GetModelFlag(MODELFLAG_ACS_LOCK)))
+#else
+    if (false)
+#endif
+        {
+        IAuxCoordSysP acs = IACSManager::GetManager().GetActive(vp);
+
+        if (nullptr != acs)
+            scaleFactor *= acs->GetScale();
+        }
+
+    return scaleFactor;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController::_GetGridSpacing(DgnViewportR vp, DPoint2dR spacing, uint32_t& gridsPerRef) const
+    {
+#if defined DGNV10FORMAT_CHANGES_WIP
+    DgnModelRefP targetModelRef = GetTargetModel();
+
+    if (NULL == targetModelRef)
+        return ERROR;
+
+    double      uorPerGrid, gridRatio;
+    double      scaleFactor = GetGridScaleFactor();
+
+    if (SUCCESS != dgnModel_getGridParams(targetModelRef->GetDgnModelP (), &uorPerGrid, &gridsPerRef, &gridRatio, NULL, NULL) || 0.0 >= uorPerGrid)
+        return ERROR;
+
+    uorPerGrid *= scaleFactor;
+
+    spacing.x = uorPerGrid;
+    spacing.y = spacing.x * gridRatio;
+
+    double      refScale = (0 == gridsPerRef) ? 1.0 : (double) gridsPerRef;
+
+    spacing.scale(&spacing, refScale);
+#else
+    gridsPerRef = 10;
+    spacing.x = spacing.y = 10.0;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   11/07
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController::_GetGridRoundingDistance(DgnViewportR vp, DPoint2dR roundingDistance) const
+    {
+#ifdef DGNV10FORMAT_CHANGES_WIP
+    ModelInfoCR modelInfo = m_rootModel->GetModelInfo();
+
+    double uorPerGrid     = modelInfo.GetUorPerGrid();
+    double gridRatio      = modelInfo.GetGridRatio();
+    double roundUnit      = modelInfo.GetRoundoffUnit();
+    double roundUnitRatio = modelInfo.GetRoundoffRatio();
+
+    if (TO_BOOL(m_rootModel->GetModelFlag(MODELFLAG_GRID_LOCK)))
+        roundingDistance.x = uorPerGrid;
+    else
+        roundingDistance.x = roundUnit;
+
+    if (TO_BOOL(m_rootModel->GetModelFlag(MODELFLAG_UNIT_LOCK)))
+        {
+        if (roundUnit > roundingDistance.x)
+            roundingDistance.x = roundUnit;
+
+        if (0.0 != roundUnitRatio)
+            gridRatio = roundUnitRatio;
+        }
+
+    roundingDistance.y = roundingDistance.x * gridRatio;
+    roundingDistance.Scale(roundingDistance, _GetGridScaleFactor());
+#else
+    roundingDistance.Init(1.0, 1.0);
+    roundingDistance.Scale(roundingDistance, _GetGridScaleFactor(vp));
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley  10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ViewController::_VisitHit (HitDetailCR hit, ViewContextR context) const
+void ViewController::PointToStandardGrid(DgnViewportR vp, DPoint3dR point, DPoint3dCR gridOrigin, RotMatrixCR gridOrientation) const
     {
-    DgnElementCPtr   element = hit.GetElement();
-    GeometrySourceCP geom = (element.IsValid() ? element->ToGeometrySource() : nullptr);
+#if defined DGNV10FORMAT_CHANGES_WIP
+    bool     isoGrid = TO_BOOL(m_rootModel->GetModelFlag(MODELFLAG_ISO_GRID));
+#else
+    bool     isoGrid = false;
+#endif
+    DPoint2d roundingDistance;
 
-    if (nullptr == geom)
-        {
-        IElemTopologyCP elemTopo = hit.GetElemTopology();
-
-        if (nullptr == (geom = (nullptr != elemTopo ? elemTopo->_ToGeometrySource() : nullptr)))
-            return ERROR;
-        }
-
-    if (&GetDgnDb() != &geom->GetSourceDgnDb())
-        return ERROR;
-
-    if (element.IsValid() && !IsModelViewed(element->GetModelId()))
-        return ERROR;
-
-    ViewContext::ContextMark mark(&context);
-
-    // Allow sub-class involvement for flashing sub-entities...
-    if (geom->DrawHit(hit, context))
-        return SUCCESS;
-
-    return context.VisitElement(*geom);
+    _GetGridRoundingDistance(vp, roundingDistance);
+    gridFix(vp, point, gridOrientation, gridOrigin, roundingDistance, isoGrid);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley  10/06
+* @bsimethod                                                    Brien.Bastings  01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController::PointToGrid(DgnViewportR vp, DPoint3dR point) const
+    {
+    GridOrientationType orientation = _GetGridOrientationType();
+
+    if (GridOrientationType::ACS == orientation)
+        {
+        IAuxCoordSysP acs = IACSManager::GetManager().GetActive(vp);
+
+        if (NULL != acs)
+            acs->PointToGrid(vp, point);
+
+        return;
+        }
+
+    DPoint3d    origin;
+    RotMatrix   rMatrix;
+
+    getGridOrientation(vp, origin, rMatrix, orientation);
+    PointToStandardGrid(vp, point, origin, rMatrix);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController::_DrawGrid(DecorateContextR context)
+    {
+    DgnViewportR vp = *context.GetViewport();
+
+    if (!vp.IsGridOn())
+        return;
+
+    GridOrientationType orientation = _GetGridOrientationType();
+
+    if (GridOrientationType::ACS == orientation)
+        {
+        IAuxCoordSysP   acs;
+
+        if (NULL != (acs = IACSManager::GetManager().GetActive(vp)))
+            acs->DrawGrid(context);
+        }
+    else
+        {
+        // if grid units disabled or not set up, give up
+#if defined DGNV10FORMAT_CHANGES_WIP
+        bool     isoGrid = TO_BOOL(m_rootModel->GetModelFlag(MODELFLAG_ISO_GRID));
+#else
+        bool     isoGrid = false;
+#endif
+        uint32_t gridsPerRef;
+        DPoint2d spacing;
+
+        _GetGridSpacing(vp, spacing, gridsPerRef);
+
+        DPoint3d    origin;
+        RotMatrix   rMatrix;
+
+        getGridOrientation(vp, origin, rMatrix, orientation);
+        context.DrawStandardGrid(origin, rMatrix, spacing, gridsPerRef, isoGrid, nullptr);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewController::CloseMe ViewController::_OnModelsDeleted(bset<DgnModelId> const& deletedIds, DgnDbR db)
+    {
+    if (&m_dgndb != &db)
+        return CloseMe::No;
+
+    // Remove deleted models from viewed models list
+    for (auto const& deletedId : deletedIds)
+        m_viewedModels.erase(deletedId);
+
+    // Ensure we still have a target model - choose a new one arbitrarily if previous was deleted
+    RefCountedPtr<GeometricModel> targetModel = GetTargetModel();
+    if (targetModel.IsNull())
+        {
+        for (auto const& viewedId : m_viewedModels)
+            if ((targetModel = m_dgndb.Models().Get<GeometricModel>(viewedId)).IsValid())
+                break;
+
+        if (targetModel.IsValid())
+            SetTargetModel(targetModel.get());  // NB: ViewController can reject target model...
+        }
+
+    // If no target model, no choice but to close the view
+    return (nullptr == GetTargetModel()) ? CloseMe::Yes : CloseMe::No;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::_DrawView(ViewContextR context) 
     {
@@ -1985,10 +2184,3 @@ void ViewController::_DrawView(ViewContextR context)
         context.VisitDgnModel(m_dgndb.Models().GetModel(modelId).get());
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley  10/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_VisitElements(ViewContextR context)
-    {
-    _DrawView(context);
-    }

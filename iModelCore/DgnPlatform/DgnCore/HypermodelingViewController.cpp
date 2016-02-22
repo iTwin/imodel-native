@@ -2,13 +2,15 @@
 |
 |     $Source: DgnCore/HypermodelingViewController.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <Geom/eigensys3d.fdf>
 
-static int s_flatten = 2; // 0 = don't flatten, 1 = flatten and draw on natural plane, 2 = flatten and draw on foremost section plane
+#if defined(NEEDS_WORK_CONTINUOUS_RENDER)
+    static int s_flatten = 2; // 0 = don't flatten, 1 = flatten and draw on natural plane, 2 = flatten and draw on foremost section plane
+#endif
 
 #if defined (NEEDS_WORK_ELEMENTS_API)
 //---------------------------------------------------------------------------------------
@@ -35,6 +37,7 @@ double static getSizeofPixelInDrawing (ViewContextR context, DrawingViewControll
     }
 #endif
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  03/14
 //--------------+------------------------------------------------------------------------
@@ -87,12 +90,14 @@ void HypermodelingViewController::PopClipsForSpatialView (ViewContextR context) 
     for (auto drawing : m_drawings)
         context.PopTransformClip ();
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HypermodelingViewController::PushClipsForInContextViewPass (ViewContextR context, SectionDrawingViewControllerCR drawing) const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     BeAssert (PASS_Hatch != m_pass && "The Hatch pass is drawing with just the toWorld transform -- do it yourself");
 
     //  3. Finally, translate section graphics to the foremost cut plane
@@ -120,6 +125,7 @@ void HypermodelingViewController::PushClipsForInContextViewPass (ViewContextR co
         context.PushTransform (drawing.GetFlatteningMatrix (pixelOffset));
         }
 #endif
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -127,6 +133,7 @@ void HypermodelingViewController::PushClipsForInContextViewPass (ViewContextR co
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HypermodelingViewController::PopClipsForInContextViewPass (ViewContextR context, SectionDrawingViewControllerCR drawing) const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     BeAssert (PASS_Hatch != m_pass && "The Hatch pass is drawing with just the toWorld transform -- do it yourself");
 
     //  3. Finally, translate section graphics to the foremost cut plane
@@ -139,13 +146,15 @@ void HypermodelingViewController::PopClipsForInContextViewPass (ViewContextR con
     //  1. First, smash the section graphics onto a plane. (Yes, we store z-coordinates in the drawing model.)
     if (s_flatten)
         context.PopTransformClip();
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt HypermodelingViewController::_VisitHit(HitDetailCR hit, ViewContextR context) const
+Render::GraphicPtr HypermodelingViewController::_StrokeHit(ViewContextR context, GeometrySourceCR source, HitDetailCR hit)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     //  If the hit is in the drawing view, draw that view
     for (auto drawing : m_drawings)
         {
@@ -153,18 +162,21 @@ StatusInt HypermodelingViewController::_VisitHit(HitDetailCR hit, ViewContextR c
             {
             m_pass = PASS_ForPicking;
             PushClipsForInContextViewPass (context, *drawing);
-            StatusInt status = drawing->VisitHit (hit, context);
+            Render::GraphicPtr graphic = drawing->_StrokeHit (context, source, hit);
             PopClipsForInContextViewPass (context, *drawing);
             m_pass = PASS_None;
-            return status;
+            return graphic;
             }
         }
 
     //  The hit must be in the physical view
     PushClipsForSpatialView (context);
-    StatusInt status = m_currentViewController->VisitHit (hit, context);
+    Render::GraphicPtr graphic = m_currentViewController->_StrokeHit(context, source, hit);
     PopClipsForSpatialView (context);
-    return status;
+    return graphic;
+#endif
+
+    return T_Super::_StrokeHit(context, source, hit);
     }
 
 //---------------------------------------------------------------------------------------
@@ -208,14 +220,16 @@ DRange3d HypermodelingViewController::GetDrawingRange (DrawingViewControllerR dr
 //--------------+------------------------------------------------------------------------
 void HypermodelingViewController::DrawFakeSheetBorder (ViewContextR context, DrawingViewControllerR drawing) const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     ViewContext::ContextMark mark (&context);
     auto range3d = GetDrawingRange (drawing);
     auto range = DRange2d::From (DPoint2d::From(range3d.low.x,range3d.low.y), DPoint2d::From(range3d.high.x,range3d.high.y));
     DPoint2d box[4];
     range.Get4Corners (box);
     std::swap (box[2], box[3]);
-    //SetOverrideMatSymb (context);
-    context.GetIDrawGeom().DrawShape2d (_countof(box), box, /*filled*/true, 0, &range.low);
+    //SetOverrideGraphicParams (context);
+    context.GetCurrentGraphicR().AddShape2d (_countof(box), box, /*filled*/true, 0, &range.low);
+#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -223,6 +237,7 @@ void HypermodelingViewController::DrawFakeSheetBorder (ViewContextR context, Dra
 //--------------+------------------------------------------------------------------------
 void HypermodelingViewController::_DrawView (ViewContextR context) 
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     m_passesToDraw = (Pass)(PASS_Cut|PASS_Annotation|PASS_Hatch); // *** TEST TEST TEST
 
     //  Draw the embedded drawings
@@ -245,7 +260,7 @@ void HypermodelingViewController::_DrawView (ViewContextR context)
 #endif
             ViewContext::ContextMark mark (&context);
             m_pass = PASS_Hatch;
-            SetOverrideMatSymb (context);
+            SetOverrideGraphicParams (context);
             drawing.DrawView (context);
             context.PopTransformClip();
             if (context.WasAborted())
@@ -255,7 +270,7 @@ void HypermodelingViewController::_DrawView (ViewContextR context)
         if (ShouldDraw (PASS_DrawingBackground))
             {
             m_pass = PASS_DrawingBackground;
-            SetOverrideMatSymb (context);
+            SetOverrideGraphicParams (context);
             PushClipsForInContextViewPass (context, drawing);
             DrawFakeSheetBorder (context, drawing);
             PopClipsForInContextViewPass (context, drawing);
@@ -267,7 +282,7 @@ void HypermodelingViewController::_DrawView (ViewContextR context)
             {
             m_pass = PASS_Forward;
             ViewContext::ContextMark mark (&context);
-            SetOverrideMatSymb (context);
+            SetOverrideGraphicParams (context);
             PushClipsForInContextViewPass (context, drawing); 
             drawing.DrawView (context);
             PopClipsForInContextViewPass (context, drawing);
@@ -280,10 +295,12 @@ void HypermodelingViewController::_DrawView (ViewContextR context)
             {
             m_pass = (Pass)(PASS_CutOrAnnotation & m_passesToDraw);
             ViewContext::ContextMark mark (&context);
-            SetOverrideMatSymb (context);
-            ViewFlags flags = *context.GetViewFlags();
+            SetOverrideGraphicParams (context);
+            ViewFlags flags = context.GetViewFlags();
             flags.hiddenEdges = flags.visibleEdges = true;
-            context.SetViewFlags (&flags);
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+            context.SetViewFlags(flags);
+#endif
             PushClipsForInContextViewPass (context, drawing); 
             drawing.DrawView (context);
             PopClipsForInContextViewPass (context, drawing);
@@ -297,7 +314,7 @@ void HypermodelingViewController::_DrawView (ViewContextR context)
         }
 
     m_pass = PASS_None;
-    SetOverrideMatSymb (context);
+    SetOverrideGraphicParams (context);
     m_currentViewController = m_physical.get();
 
     //  Draw the clipped physical view
@@ -305,19 +322,20 @@ void HypermodelingViewController::_DrawView (ViewContextR context)
     PushClipsForSpatialView (context);
     m_currentViewController->DrawView (context);
     PopClipsForSpatialView (context);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HypermodelingViewController::_DrawElement(ViewContextR context, GeometrySourceCR element)
+Render::GraphicPtr HypermodelingViewController::_StrokeGeometry(ViewContextR context, GeometrySourceCR source, double pixelSize)
     {
 #if defined (NEEDS_WORK_DGNITEM)
     if (m_pass != PASS_None && !ShouldDrawAnnotations() && !ProxyDisplayHandlerUtils::IsProxyDisplayHandler (elIter.GetHandler()))
-/*<==*/ return;
+/*<==*/ return nullptr;
 #endif
 
-    T_Super::_DrawElement (context, element);
+    return T_Super::_StrokeGeometry(context, source, pixelSize);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -386,6 +404,7 @@ BentleyStatus HypermodelingViewController::RemoveDrawing (DgnViewId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpatialViewControllerR HypermodelingViewController::GetSpatialView() const {return *m_physical;}
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -410,6 +429,7 @@ ColorDef HypermodelingViewController::_GetBackgroundColor () const
     {
     return m_currentViewController->ResolveBGColor(); // TRICKY Must call ResolveBGColor, not GetBackgroundColor. 
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
@@ -503,11 +523,12 @@ AxisAlignedBox3d HypermodelingViewController::_GetViewedExtents() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HypermodelingViewController::SetOverrideMatSymb (ViewContextR context) const
+void HypermodelingViewController::SetOverrideGraphicParams (ViewContextR context) const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (m_pass == PASS_Hatch)
         {
-        OvrMatSymbP overrideMatSymb = context.GetOverrideMatSymb();
+        OvrGraphicParamsP overrideMatSymb = context.GetOverrideGraphicParams();
         overrideMatSymb->SetLineColor (m_symbology.hatchColor);
         overrideMatSymb->SetFillColor (m_symbology.hatchColor);
         overrideMatSymb->SetFillTransparency (m_symbology.hatchColor.GetAlpha());
@@ -519,23 +540,24 @@ void HypermodelingViewController::SetOverrideMatSymb (ViewContextR context) cons
         //pattern->SetPrimarySpacing (GetDrawingRange(*m_drawings.front()).XLength()/100);
         //pattern->SetPrimaryAngle (msGeomConst_piOver4);
         //overrideMatSymb->SetPatternParams (pattern);
-        context.GetIDrawGeom ().ActivateOverrideMatSymb (overrideMatSymb);
+        context.GetCurrentGraphicR ().ActivateOverrideGraphicParams (overrideMatSymb);
         }
     else if (m_pass == PASS_DrawingBackground)
         {
-        OvrMatSymbP overrideMatSymb = context.GetOverrideMatSymb();
+        OvrGraphicParamsP overrideMatSymb = context.GetOverrideGraphicParams();
         overrideMatSymb->SetLineColor (m_symbology.drawingBackgroundColor);
         overrideMatSymb->SetFillColor (m_symbology.drawingBackgroundColor);
         overrideMatSymb->SetFlags (overrideMatSymb->GetFlags() | MATSYMB_OVERRIDE_FillColorTransparency);
         overrideMatSymb->SetWidth (0);
-        context.GetIDrawGeom ().ActivateOverrideMatSymb (overrideMatSymb);
         }
+        context.GetCurrentGraphicR ().ActivateOverrideGraphicParams (overrideMatSymb);
     else
         {
-        OvrMatSymbP overrideMatSymb = context.GetOverrideMatSymb();
+        OvrGraphicParamsP overrideMatSymb = context.GetOverrideGraphicParams();
         overrideMatSymb->SetFlags (MATSYMB_OVERRIDE_None);
-        context.GetIDrawGeom ().ActivateOverrideMatSymb (overrideMatSymb);
+        context.GetCurrentGraphicR ().ActivateOverrideGraphicParams (overrideMatSymb);
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

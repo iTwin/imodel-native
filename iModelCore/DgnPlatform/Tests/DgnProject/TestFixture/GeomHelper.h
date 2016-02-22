@@ -10,7 +10,7 @@
 #include "../NonPublished/DgnHandlersTests.h"
 #include <DgnPlatform/DgnPlatformLib.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 struct GeomHelper{
 

@@ -2,41 +2,36 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ViewController.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
 #include "DgnPlatform.h"
-
-DGNPLATFORM_TYPEDEFS(SpatialViewController)
-DGNPLATFORM_TYPEDEFS(CameraViewController)
-DGNPLATFORM_TYPEDEFS(HypermodelingViewController)
-DGNPLATFORM_TYPEDEFS(DrawingViewController)
-DGNPLATFORM_TYPEDEFS(SectionDrawingViewController)
-DGNPLATFORM_TYPEDEFS(SheetViewController)
-DGNPLATFORM_TYPEDEFS(FitViewParams)
-DGNPLATFORM_TYPEDEFS(CameraInfo)
-DGNPLATFORM_TYPEDEFS(SectioningViewController)
-
-DGNPLATFORM_REF_COUNTED_PTR(DrawingViewController)
-DGNPLATFORM_REF_COUNTED_PTR(SectionDrawingViewController)
-DGNPLATFORM_REF_COUNTED_PTR(SheetViewController)
-DGNPLATFORM_REF_COUNTED_PTR(SpatialViewController)
-DGNPLATFORM_REF_COUNTED_PTR(CameraViewController)
-DGNPLATFORM_REF_COUNTED_PTR(SectioningViewController)
-DGNPLATFORM_REF_COUNTED_PTR(HypermodelingViewController)
-
 #include "IAuxCoordSys.h"
 #include "ViewContext.h"
-#include "DgnPlatformErrors.r.h"
 #include "SectionClip.h"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+DGNPLATFORM_TYPEDEFS(CameraInfo)
+DGNPLATFORM_TYPEDEFS(CameraViewController)
+DGNPLATFORM_TYPEDEFS(DrawingViewController)
+DGNPLATFORM_TYPEDEFS(FitViewParams)
+DGNPLATFORM_TYPEDEFS(HypermodelingViewController)
+DGNPLATFORM_TYPEDEFS(SectionDrawingViewController)
+DGNPLATFORM_TYPEDEFS(SectioningViewController)
+DGNPLATFORM_TYPEDEFS(SheetViewController)
+DGNPLATFORM_TYPEDEFS(SpatialViewController)
 
-struct FullUpdateInfo;
-struct DynamicUpdateInfo;
+DGNPLATFORM_REF_COUNTED_PTR(CameraViewController)
+DGNPLATFORM_REF_COUNTED_PTR(DrawingViewController)
+DGNPLATFORM_REF_COUNTED_PTR(HypermodelingViewController)
+DGNPLATFORM_REF_COUNTED_PTR(SectionDrawingViewController)
+DGNPLATFORM_REF_COUNTED_PTR(SectioningViewController)
+DGNPLATFORM_REF_COUNTED_PTR(SheetViewController)
+DGNPLATFORM_REF_COUNTED_PTR(SpatialViewController)
+
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 enum class OrientationMode
 {
@@ -97,69 +92,26 @@ public:
      - draw "decorations" on top of the normal graphics
      - etc.
 
-<h3>View Controller types and sub-types</h3>
-A ViewController belongs to one of only a few different "categories" of views, indicating in broad terms what kind of view it is.
-There are many specific types of ViewController within each view type category. ViewController defines a number of convenience methods
-to dynamic_cast a controller to a subclass. See ViewController::ToSpatialViewController, ViewController::ToCameraViewController,
-ViewController::ToDrawingViewController.
-
-@verbatim
-    ViewControllerR viewController = ...
-
-    SpatialViewControllerP physicalView = viewController.ToSpatialViewControllerP();
-    if (physicalView != NULL)
-        {
-        physicalView->somefunction ();
-        }
-
-@endverbatim
-
-<h3>Inserting a new view in the database</h3>
-
-To create a new view, you must insert a ViewDefinition element and store type-specific settings for it. To define and store
-type-specific view data, you must create and save an instance of a subclass of ViewController.
-
-<h3>Loading data for an existing view from the database</h3>
-
-To read the settings stored in the database for a particular view, you must create an instance of the ViewController sub-class
-that corresponds to the view and then load it. The simplest way to create the correct type of controller for a view is to call
-the ViewDefinition::LoadViewController method, like this:
-@verbatim
-    auto viewController = ViewDefinition::LoadViewController(viewId, project);
-    if (!viewController.IsValid())
-        return BSIERROR;
-
-    SpatialViewControllerP physicalView = viewController->ToSpatialViewControllerP();
-    if (physicalView != NULL)
-        {
-        physicalView->somefunction ();
-        }
-
-@endverbatim
 
 <h3>Defining a subclass of ViewController</h3>
-
-To create a subclass of ViewController, create a subclass of ViewDefinition and implement _SupplyController.
+To create a subclass of ViewController, create a ViewHandler and implement _SupplyController.
 
 */
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ViewController : RefCountedBase
 {
 protected:
-    friend struct  ViewContext;
-    friend struct  DisplayHandler;
-    friend struct  UpdateContext;
-    friend struct  HealContext;
-    friend struct  DgnViewport;
-    friend struct  ViewManager;
-    friend struct  IndexedViewport;
-    friend struct  SpatialRedlineViewController;
-    friend struct  IACSManager;
-    friend struct  ToolAdmin;
-    friend struct  ViewDefinition;
+    friend struct ViewContext;
+    friend struct DgnViewport;
+    friend struct ViewManager;
+    friend struct SpatialRedlineViewController;
+    friend struct IACSManager;
+    friend struct IAuxCoordSys;
+    friend struct ToolAdmin;
+    friend struct ViewDefinition;
 
     DgnDbR         m_dgndb;
-    ViewFlags      m_viewFlags;
+    Render::ViewFlags m_viewFlags;
     DgnViewId      m_viewId;
     DgnClassId     m_classId;
     DgnModelId     m_baseModelId;
@@ -170,9 +122,7 @@ protected:
     RotMatrix      m_defaultDeviceOrientation;
     bool           m_defaultDeviceOrientationValid;
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Appearance> m_subCategories;
-    bmap<DgnSubCategoryId,DgnSubCategory::Override> m_subCategoryOverrides;
-
-public:
+    mutable bmap<DgnSubCategoryId,DgnSubCategory::Override> m_subCategoryOverrides;
 
 protected:
     DGNPLATFORM_EXPORT ViewController(DgnDbR, DgnViewId viewId);
@@ -189,10 +139,9 @@ protected:
     virtual void _SetDelta(DVec3dCR viewDelta) = 0;
     virtual void _SetRotation(RotMatrixCR viewRot) = 0;
     enum class FitComplete {No=0, Yes=1};
-    virtual FitComplete _ComputeFitRange(DRange3dR range, DgnViewportR, FitViewParamsR) {return FitComplete::No;}
+    DGNPLATFORM_EXPORT virtual FitComplete _ComputeFitRange(FitContextR);
     virtual void _OnViewOpened(DgnViewportR) {}
     virtual bool _Allow3dManipulations() const {return false;}
-    virtual void _OnDynamicUpdateComplete(DgnViewportR vp, ViewContextR context, bool completedSuccessfully) {}
     virtual void _OnAttachedToViewport(DgnViewportR) {}
     virtual ColorDef _GetBackgroundColor() const {return m_backgroundColor;}
     virtual double _GetAspectRatioSkew() const {return 1.0;}
@@ -221,30 +170,22 @@ protected:
     DGNPLATFORM_EXPORT virtual void _RestoreFromSettings(JsonValueCR);
 
     //! Display locate circle and information about the current AccuSnap/auto-locate HitDetail.
-    DGNPLATFORM_EXPORT virtual void _DrawLocateCursor(DgnViewportR, DPoint3dCR, double aperture, bool isLocateCircleOn, HitDetailCP hit=nullptr);
+    DGNPLATFORM_EXPORT virtual void _DrawLocateCursor(DecorateContextR, DPoint3dCR, double aperture, bool isLocateCircleOn, HitDetailCP hit=nullptr);
 
-    //! Decorators are not stored in the backing store and must therefore be drawn every frame. Overlay decorators are drawn with the z-buffer
-    //! disabled and therefore always appear on top of elements in the view. Note that graphics drawn from this method are always drawn in a
-    //! shaded render mode with a constant level of lighting, regardless of the view flags and lighting of the viewport.
-    //! @param[in] viewport The DgnViewport into which the decorations should be drawn.
-    virtual bool _DrawOverlayDecorations(IndexedViewportR viewport) {return false;}
+    //! Grid display and point adjustment.
+    virtual GridOrientationType _GetGridOrientationType() const {return GridOrientationType::View;}
+    DGNPLATFORM_EXPORT virtual double _GetGridScaleFactor(DgnViewportR) const;
+    DGNPLATFORM_EXPORT virtual void _GetGridSpacing(DgnViewportR, DPoint2dR, uint32_t& gridsPerRef) const;
+    DGNPLATFORM_EXPORT virtual void _GetGridRoundingDistance(DgnViewportR, DPoint2dR roundingDistance) const;
 
-    //! Decorators are not stored in the backing store and must therefore be drawn every frame. This method is called with the z-buffer enabled,
-    //! so it can be used to draw decorators that are inter-mixed with elements in the view. Note that graphics drawn from this method use the
-    //! active view flags and lighting for the viewport.
-    //! @param[in] viewport The DgnViewport into which the decorations should be drawn.
-    virtual bool _DrawZBufferedDecorations(IndexedViewportR viewport) {return false;}
+    //! Display grid for this view.
+    DGNPLATFORM_EXPORT virtual void _DrawGrid(DecorateContextR);
 
-    //! Background graphics are drawn whenever a view is "updated". Background graphics are drawn with the z-buffer turned off, so they will always
-    //! appear "behind" any other graphics that are drawn to the view.
-    //! @param[in] context the ViewContext being used to display the view. Test DrawPurpose to tell the purpose of the call.
-    virtual void _DrawBackgroundGraphics(ViewContextR context) {}
+    //! Display view controller specific view decorations.
+    virtual void _DrawDecorations(DecorateContextR) {}
 
-    //! ZBuffered graphics are drawn whenever a view is "updated". They are drawn with the z-buffer enabled, so they intersperse with the persistent
-    //! elements in the view.
-    //! @param[in] context the ViewContext being used to display the view. Test DrawPurpose to tell the purpose of the call.
-    //! @note ZBuffered graphics are sometimes referred to as "transient" graphics.
-    virtual void _DrawZBufferedGraphics(ViewContextR context) {}
+    //! Locate/snap to view controller decorations.
+    virtual void _PickDecorations(ViewContextR) {}
 
     //! Called when the display of a category is turned on or off.
     //! @param[in] singleEnable true if just turned on one category; false if
@@ -254,25 +195,31 @@ protected:
     //! Turn the display of a category on or off.
     DGNPLATFORM_EXPORT virtual void _ChangeCategoryDisplay(DgnCategoryId, bool onOff);
 
-    //! Turn the display of a model on or off.
-    DGNPLATFORM_EXPORT virtual void _ChangeModelDisplay(DgnModelId, bool onOff);
+    //! Called when the display of a model is changed on or off
+    //! @param modelId  The model to turn on or off.
+    //! @param onOff    If true, elements in the model displayed
+    DGNPLATFORM_EXPORT virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff);
 
-    //! Draws the contents of the view.
-    //! @remarks It is very rare that an applications needs to call this or to override it.
+    //! Draw the contents of the view.
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR);
 
-    //! Invokes the _VisitElement on \a context for <em>each element</em> that is in the view.
+    virtual void _CreateScene(SceneContextR context) {_DrawView(context);}
+    virtual bool _IsSceneReady() const {return false;}
+    virtual void _InvalidateScene() {}
+
+    virtual void _OverrideGraphicParams(Render::OvrGraphicParamsR, GeometrySourceCP) {}
+
+    //! Invokes the _VisitGeometry on \a context for <em>each element</em> that is in the view.
     //! For normal views, this does the same thing as _DrawView.
-    DGNPLATFORM_EXPORT virtual void _VisitElements(ViewContextR& context);
+    virtual void _VisitAllElements(ViewContextR& context) {_DrawView(context);}
 
-    //! Draw a single element through a ViewContext.
-    //! An application can override _DrawElement to change the symbology of elements.
-    //! @remarks For elements that only occupy a few pixels on the screen, DgnPlatform calls \ref _DrawElementFiltered instead of _DrawElement.
-    DGNPLATFORM_EXPORT virtual void _DrawElement(ViewContextR, GeometrySourceCR);
+    //! Stroke a single GeometrySource through a ViewContext.
+    //! An application can override _StrokeGeometry to change the symbology of a GeometrySource.
+    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeGeometry(ViewContextR, GeometrySourceCR, double pixelSize);
 
-    //! DgnPlatform calls _DrawElementFiltered instead of _DrawElement when it needs to draw an element but decides that the
-    //! representation in the view is small enough that it can be simplified.
-    DGNPLATFORM_EXPORT virtual void _DrawElementFiltered(ViewContextR, GeometrySourceCR, DPoint3dCP pts, double size);
+    //! Stroke a single HitDetail through a ViewContext.
+    //! An application can override _StrokeHit to change how elements are flashed for auto-locate.
+    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeHit(ViewContextR, GeometrySourceCR, HitDetailCR);
 
     //! Invoked just before the locate tooltip is displayed to retrieve the info text. Allows the ViewController to override the default description.
     //! @param[in]  hit The locate HitDetail whose info is needed.
@@ -281,25 +228,8 @@ protected:
     //! @return true if the info string was set or false to use the default implementation.
     virtual bool _GetInfoString(HitDetailCR hit, Utf8StringR descr, Utf8CP delimiter) const {return false;}
 
-#if !defined (DOCUMENTATION_GENERATOR)
-    DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitDetailCR hit, ViewContextR context) const;
-
-    //! Used to notify derived classes when an update completes.
-    //! <p>See QueryViewController::_OnUpdateComplete
-    virtual void _OnUpdateComplete(DrawPurpose updateType) const {}
-
-    //! Used to notify derived classes when a heal update begins.
-    //! <p>See QueryViewController::_OnHealUpdate
-    virtual void _OnHealUpdate(DgnViewportR vp, ViewContextR context, bool fullHeal) {}
-
-    //! Used to notify derived classes when a dynamic update begins.
-    //! <p>See QueryViewController::_OnDynamicUpdate
-    virtual void _OnDynamicUpdate(DgnViewportR vp, ViewContextR context, DynamicUpdateInfo& info) {}
-
-    //! Used to notify derived classes when a full update begins.
-    //! <p>See QueryViewController::_OnFullUpdate
-    virtual void _OnFullUpdate(DgnViewportR vp, ViewContextR context, FullUpdateInfo&) {}
-#endif
+    //! Used to notify derived classes when an update begins.
+    virtual void _OnUpdate(DgnViewportR vp, UpdatePlan const&) {}
 
     //! Used to notify derived classes of an attempt to locate the viewport around the specified
     //! WGS84 location. Override to change how these points are interpreted.
@@ -318,14 +248,21 @@ protected:
     //! A subclass can override this function to get the target model some other way.
     DGNPLATFORM_EXPORT virtual GeometricModelP _GetTargetModel() const;
 
-    //! Returns the project that is being viewed
-    virtual DgnDbR _GetDgnDb() const {return m_dgndb;}
+    //! Used to change the writable model in which new elements are to be placed.
+    virtual BentleyStatus _SetTargetModel(GeometricModelP model) {return GetTargetModel()==model ? SUCCESS : ERROR;}
 
-    //! Get the union of the range (axis-aligned bounding box) of all physical elements in project
+    //! Get the extent of the model(s) viewed by this view
     DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _GetViewedExtents() const;
 
-    DGNPLATFORM_EXPORT BeSQLite::DbResult QueryViewsPropertyAsJson(JsonValueR, DgnViewProperty::Spec const&) const;
-    DGNPLATFORM_EXPORT BentleyStatus CheckViewSubType() const;
+    enum class CloseMe {No=0, Yes=1};
+    //! called when one or more models are deleted
+    //! Default implementation does:
+    //! - Removes deleted models from viewed model list
+    //! - Chooses a new target model arbitrarily from viewed model list if target model deleted
+    //! - Closes viewport if no viewed models remain
+    //! Override this method to change this behavior
+    //! @return true to close this viewport
+    DGNPLATFORM_EXPORT virtual CloseMe _OnModelsDeleted(bset<Dgn::DgnModelId> const&, Dgn::DgnDbR db);
 
 public:
     /*=================================================================================**//**
@@ -359,12 +296,10 @@ public:
         double Bottom() const {return m_bottom;}
     };
 
-    DGNPLATFORM_EXPORT StatusInt VisitHit (HitDetailCR, ViewContextR) const;
-    DGNPLATFORM_EXPORT void DrawView(ViewContextR);
-    DGNPLATFORM_EXPORT void VisitElements(ViewContextR);
-    DGNPLATFORM_EXPORT void ChangeModelDisplay(DgnModelId, bool onOff);
-    DGNPLATFORM_EXPORT StatusInt GetRangeForFit(DRange3dR range);
-    DGNPLATFORM_EXPORT void OnViewOpened(DgnViewportR);
+    void DrawView(ViewContextR context) {return _DrawView(context);}
+    void VisitAllElements(ViewContextR context) {return _VisitAllElements(context);}
+    void ChangeModelDisplay(DgnModelId modelId, bool onOff) {_ChangeModelDisplay(modelId, onOff);}
+    void OnViewOpened(DgnViewportR vp) {_OnViewOpened(vp);}
     void SetBaseModelId(DgnModelId id) {m_baseModelId = id;}
     DgnModelId GetBaseModelId() const {return m_baseModelId;}
     bool IsCategoryViewed(DgnCategoryId categoryId) const {return m_viewedCategories.Contains(categoryId);}
@@ -372,12 +307,13 @@ public:
     DGNPLATFORM_EXPORT void LookAtViewAlignedVolume(DRange3dCR volume, double const* aspectRatio=nullptr, MarginPercent const* margin=nullptr, bool expandClippingPlanes=true);
     void SaveToSettings(JsonValueR val) const {_SaveToSettings(val);}
     void RestoreFromSettings(JsonValueCR val) {_RestoreFromSettings(val);}
+    void OnUpdate(DgnViewportR vp, UpdatePlan const& plan) {_OnUpdate(vp, plan);}
 
-public:
+
     DgnClassId GetClassId() const {return m_classId;}
 
     //! Get the DgnDb of this view.
-    DgnDbR GetDgnDb() const {return _GetDgnDb();}
+    DgnDbR GetDgnDb() const {return m_dgndb;}
 
     //! Get the union of the range (axis-aligned bounding box) of all physical elements in project
     AxisAlignedBox3d GetViewedExtents() const {return _GetViewedExtents();}
@@ -422,6 +358,11 @@ public:
     virtual SheetViewControllerCP _ToSheetView() const {return nullptr;}
     SheetViewControllerP  ToSheetViewP() {return const_cast<SheetViewControllerP>(_ToSheetView());}
 
+    //! perform the equivalent of a dynamic_cast to a DgnQueryView.
+    //! @return a valid DgnQueryViewCP, or nullptr if this is not a query view
+    virtual DgnQueryViewCP _ToQueryView() const {return nullptr;}
+    DgnQueryViewP ToQueryViewP() {return const_cast<DgnQueryViewP>(_ToQueryView());}
+
     //! determine whether this is a physical view
     bool IsSpatialView() const {return nullptr != _ToSpatialView();}
 
@@ -434,14 +375,14 @@ public:
     //! determine whether this is a sheet view
     bool IsSheetView() const {return nullptr != _ToSheetView();}
 
-    //! determine whether this view has been loaded from the database.
-    DGNPLATFORM_EXPORT bool IsLoaded() const;
+    //! determine whether this is a query view
+    bool IsQueryView() const {return nullptr != _ToQueryView();}
 
-    //! Gets a const reference to the ViewFlags.
-    ViewFlagsCR GetViewFlags() const {return m_viewFlags;}
+    //! Get the ViewFlags.
+    Render::ViewFlags GetViewFlags() const {return m_viewFlags;}
 
     //! Gets a reference to the ViewFlags.
-    ViewFlagsR GetViewFlagsR() {return m_viewFlags;}
+    Render::ViewFlags& GetViewFlagsR() {return m_viewFlags;}
 
     //! Gets the DgnViewId of this view.
     DgnViewId GetViewId() const {return m_viewId;}
@@ -490,15 +431,14 @@ public:
 
     double GetAspectRatioSkew() const {return _GetAspectRatioSkew();}
 
-//__PUBLISH_SECTION_END__
-    DGNPLATFORM_EXPORT ColorDef ResolveBGColor() const;
     DGNPLATFORM_EXPORT bool IsViewChanged(Utf8StringCR base) const;
-    DGNPLATFORM_EXPORT bool OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point);
-    DGNPLATFORM_EXPORT bool OnOrientationEvent (RotMatrixCR matrix, OrientationMode mode, UiOrientation ui, uint32_t nEventsSinceEnabled);
+    bool OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) {return _OnGeoLocationEvent(status, point);}
+    DGNPLATFORM_EXPORT bool OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui, uint32_t nEventsSinceEnabled);
     DGNPLATFORM_EXPORT void ResetDeviceOrientation();
     DGNPLATFORM_EXPORT void OverrideSubCategory(DgnSubCategoryId, DgnSubCategory::Override const&);
     DGNPLATFORM_EXPORT void DropSubCategoryOverride(DgnSubCategoryId);
-//__PUBLISH_SECTION_START__
+    DGNPLATFORM_EXPORT void PointToStandardGrid(DgnViewportR, DPoint3dR point, DPoint3dCR gridOrigin, RotMatrixCR gridOrientation) const;
+    DGNPLATFORM_EXPORT void PointToGrid(DgnViewportR, DPoint3dR point) const;
 
     //! Get the set of currently displayed DgnModels for this ViewController
     DgnModelIdSet const& GetViewedModels() const {return m_viewedModels;}
@@ -515,13 +455,16 @@ public:
 
     //! Change the background color of the view.
     //! @param[in] color The new background color
-    DGNPLATFORM_EXPORT void SetBackgroundColor(ColorDef color);
+    void SetBackgroundColor(ColorDef color) {m_backgroundColor = color;}
 
-    //! Initialize this ViewController .
+    //! Initialize this ViewController.
     DGNPLATFORM_EXPORT void Init();
 
     //! Gets the DgnModel that will be the target of tools that add new elements.
-    DGNPLATFORM_EXPORT GeometricModelP GetTargetModel() const;
+    GeometricModelP GetTargetModel() const {return _GetTargetModel();}
+
+    //! Sets the DgnModel that will be the target of tools that add new elements.
+    BentleyStatus SetTargetModel(GeometricModelP model) {return _SetTargetModel(model);}
 
     //! Tests whether a rotation matrix corresponds to one of the StandardView orientations.
     //! @param[in] rotation  The matrix to test.
@@ -531,7 +474,7 @@ public:
 
     //! Gets the name of a StandardView.
     //! @param[in]  standardView The StandardView of interest
-    //! @return the ViewName. 
+    //! @return the ViewName.
     DGNPLATFORM_EXPORT static Utf8String GetStandardViewName(StandardView standardView);
 
     //! Get the RotMatrix for a standard view by name.
@@ -548,7 +491,7 @@ public:
 
     //! @return true if this view supports 3d viewing operations. Otherwise the z-axis of the view must remain aligned with the world z axis, even
     //! if the view is a physical view.
-    DGNPLATFORM_EXPORT bool Allow3dManipulations() const;
+    bool Allow3dManipulations() const {return _Allow3dManipulations();}
 
     //! Establish the view parameters from an 8-point frustum.
     //! @param[in] frustum The 8-point frustum from which to establish the parameters of this ViewController
@@ -595,12 +538,9 @@ protected:
     DVec3d          m_delta;            //!< The extent of the view frustum.
     RotMatrix       m_rotation;         //!< Rotation of the view frustum.
     DgnStyleId      m_displayStyleId;   //!< The display style id of the view
-
-    //  Non-persistent data
-    IAuxCoordSysPtr     m_auxCoordSys;      //!< The auxiliary coordinate system in use.
+    IAuxCoordSysPtr m_auxCoordSys;      //!< The auxiliary coordinate system in use.
 
     virtual SpatialViewControllerCP _ToSpatialView() const override {return this;}
-    virtual ClipVectorPtr _GetClipVector() const {return nullptr;}
 
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(double, bool expandView) override;
     virtual DPoint3d _GetOrigin() const override {return m_origin;}
@@ -610,12 +550,13 @@ protected:
     virtual void _SetDelta(DVec3dCR delta) override {m_delta = delta;}
     virtual void _SetRotation(RotMatrixCR rot) override {m_rotation = rot;}
     virtual bool _Allow3dManipulations() const override {return true;}
-    DGNPLATFORM_EXPORT virtual IAuxCoordSysP _GetAuxCoordinateSystem() const;
+    virtual GridOrientationType _GetGridOrientationType() const override {return GridOrientationType::ACS;}
     DGNPLATFORM_EXPORT virtual bool _OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) override;
     DGNPLATFORM_EXPORT virtual bool _OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui) override;
     DGNPLATFORM_EXPORT virtual void _OnTransform(TransformCR);
     DGNPLATFORM_EXPORT virtual void _SaveToSettings(JsonValueR) const override;
     DGNPLATFORM_EXPORT virtual void _RestoreFromSettings(JsonValueCR) override;
+    DGNPLATFORM_EXPORT virtual BentleyStatus _SetTargetModel(GeometricModelP target) override;
 
 public:
     DGNPLATFORM_EXPORT bool ViewVectorsFromOrientation(DVec3dR forward, DVec3dR up, RotMatrixCR orientation, OrientationMode mode, UiOrientation ui);
@@ -625,48 +566,35 @@ public:
     //! @param[in] viewId the id of the view in the project.
     DGNPLATFORM_EXPORT SpatialViewController(DgnDbR project, DgnViewId viewId);
 
-    DGNPLATFORM_EXPORT ClipVectorPtr GetClipVector() const;
     DGNPLATFORM_EXPORT void TransformBy(TransformCR);
 
-//__PUBLISH_SECTION_END__
     DGNPLATFORM_EXPORT static double CalculateMaxDepth(DVec3dCR delta, DVec3dCR zVec);
 
-//__PUBLISH_SECTION_START__
-
-    //! Sets the display style by-index. This display style must thus be in the file.
-    //! @note You can override this display style with a display style object at the DgnViewport level if desired.
-    //! @see SpecialDisplayStyleIndex for special indices (e.g. to remove a display style).
-    DGNPLATFORM_EXPORT void SetDisplayStyle(DgnStyleId);
-
     //! Gets the Auxiliary Coordinate System for this view.
-    DGNPLATFORM_EXPORT IAuxCoordSysP GetAuxCoordinateSystem() const;
+    IAuxCoordSysP GetAuxCoordinateSystem() const {return m_auxCoordSys.get();}
 
     //! Sets the Auxiliary Coordinate System to use for this view.
     //! @param[in] acs The new Auxiliary Coordinate System.
-    DGNPLATFORM_EXPORT void SetAuxCoordinateSystem(IAuxCoordSysP acs);
-
-    //! Sets the Target DgnModel for this SpatialViewController.
-    //! @param[in] target The model to which new elements are added by modification tools.
-    DGNPLATFORM_EXPORT BentleyStatus SetTargetModel(GeometricModelP target);
+    void SetAuxCoordinateSystem(IAuxCoordSysP acs) {m_auxCoordSys = acs;}
 };
 
 /** @addtogroup DgnViewGroup
 <h4>%SpatialViewController Camera</h4>
 
- This is what the parameters to the camera methods, and the values stored by CameraViewController mean.
+This is what the parameters to the camera methods, and the values stored by CameraViewController mean.
 @verbatim
                v-- {origin}
           -----+-------------------------------------- -   [back plane]
           ^\   .                                    /  ^
           | \  .                                   /   |        p
         d |  \ .                                  /    |        o
-        e |   \.         {targetPoint}           /     |        i
-        l |    |---------------+----------------|      |        t    [focus plane]
-        t |     \  ^delta.x    ^               /     b |        i
-        a |      \             |              /      a |        v
-        . |       \            |             /       c |        e
-        z |        \           | f          /        k |        Z
-          |         \          | o         /         D |        |
+        e |   \.         {targetPoint}           /     |        s
+        l |    |---------------+----------------|      |        i    [focus plane]
+        t |     \  ^delta.x    ^               /     b |        t
+        a |      \             |              /      a |        i
+        . |       \            |             /       c |        v
+        z |        \           | f          /        k |        e
+          |         \          | o         /         D |        Z
           |          \         | c        /          i |        |
           |           \        | u       /           s |        v
           v            \       | s      /            t |
@@ -718,9 +646,8 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraViewController : SpatialViewController
 {
     DEFINE_T_SUPER(SpatialViewController);
 
-    bool            m_isCameraOn;       //!< if true, m_camera is valid.
-    CameraInfo      m_camera;           //!< Information about the camera lens used for the view.
-    ClipVectorPtr   m_clipVector;       //!< The clip currently applied to this view
+    bool       m_isCameraOn;       //!< if true, m_camera is valid.
+    CameraInfo m_camera;           //!< Information about the camera lens used for the view.
 
 protected:
     //! Calculate and save the lens angle formed by the current delta and focus distance
@@ -731,7 +658,6 @@ protected:
     DGNPLATFORM_EXPORT virtual DPoint3d _GetTargetPoint() const override;
     DGNPLATFORM_EXPORT virtual bool _OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) override;
     DGNPLATFORM_EXPORT virtual bool _OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui) override;
-    DGNPLATFORM_EXPORT virtual ClipVectorPtr _GetClipVector() const override;
     DGNPLATFORM_EXPORT virtual ViewportStatus _SetupFromFrustum(Frustum const&) override;
     DGNPLATFORM_EXPORT virtual void _SaveToSettings(JsonValueR) const override;
     DGNPLATFORM_EXPORT virtual void _RestoreFromSettings(JsonValueCR) override;
@@ -872,11 +798,6 @@ public:
     void SetEyePoint(DPoint3dCR pt) {m_camera.SetEyePoint(pt);}
 /** @} */
 
-/** @name ClipVector */
-/** @{ */
-    DGNPLATFORM_EXPORT void SetClipVector(ClipVectorR);
-    DGNPLATFORM_EXPORT void ClearClipVector();
-/** @} */
 };
 
 //=======================================================================================
@@ -896,14 +817,12 @@ protected:
     mutable DPlane3d m_foremostCutPlane;
     ClipVolumePass m_pass;
 
-    DGNPLATFORM_EXPORT virtual ClipVectorPtr _GetClipVector() const override;
-
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR) override;
-    DGNPLATFORM_EXPORT virtual void _DrawElement(ViewContextR, GeometrySourceCR) override;
+    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeGeometry(ViewContextR, GeometrySourceCR, double) override;
     DGNPLATFORM_EXPORT virtual void _SaveToSettings(JsonValueR) const override;
     DGNPLATFORM_EXPORT virtual void _RestoreFromSettings(JsonValueCR) override;
 
-    void SetOverrideMatSymb(ViewContextR) const;
+    void SetOverrideGraphicParams(ViewContextR) const;
     void DrawViewInternal(ViewContextR);
     ClipVectorPtr GetClipVectorInternal(ClipVolumePass) const;
 
@@ -937,9 +856,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController2d : ViewController
     DEFINE_T_SUPER(ViewController);
 
 protected:
-    DPoint2d    m_origin;       //!< The lower left front corner of the view frustum.
-    DVec2d      m_delta;        //!< The extent of the view frustum.
-    double      m_rotAngle;     //!< Rotation of the view frustum.
+    DPoint2d m_origin;       //!< The lower left front corner of the view frustum.
+    DVec2d   m_delta;        //!< The extent of the view frustum.
+    double   m_rotAngle;     //!< Rotation of the view frustum.
 
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(double, bool expandView) override;
     DGNPLATFORM_EXPORT virtual DPoint3d _GetOrigin() const override;
@@ -959,7 +878,7 @@ public:
     };
 
 //=======================================================================================
-//! A DrawingViewController is used to control views of DrawingModel's
+//! A DrawingViewController is used to control views of DrawingModels
 //! @ingroup DgnViewGroup
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
@@ -980,15 +899,11 @@ public:
 //! @ingroup DgnViewGroup
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingViewController : DrawingViewController
+struct SectionDrawingViewController : DrawingViewController
 {
     DEFINE_T_SUPER(DrawingViewController);
 
 protected:
-    DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR) override;
-    DGNPLATFORM_EXPORT virtual void _DrawElement(ViewContextR, GeometrySourceCR) override;
-    DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitDetailCR hit, ViewContextR context) const override;
-
     mutable SectioningViewControllerPtr m_sectionView;  // transient
 
 public:
@@ -1044,15 +959,14 @@ private:
     SpatialViewControllerPtr m_physical;
     bvector<SectionDrawingViewControllerPtr> m_drawings;
     ViewControllerP m_currentViewController;
-    bvector<DRange3d> m_unused_unused_unused_unused_unused_unused_unused;
     mutable Pass m_pass;
     int m_nearestCutPlane;
     DrawingSymbology m_symbology;
     Pass m_passesToDraw;
 
     virtual void _DrawView(ViewContextR) override;
-    virtual void _DrawElement(ViewContextR, GeometrySourceCR) override;
-    virtual StatusInt _VisitHit(HitDetailCR hit, ViewContextR context) const override;
+    virtual Render::GraphicPtr _StrokeGeometry(ViewContextR, GeometrySourceCR, double) override;
+    virtual Render::GraphicPtr _StrokeHit(ViewContextR, GeometrySourceCR, HitDetailCR) override;
     virtual DPoint3d _GetOrigin() const override;
     virtual DVec3d _GetDelta() const override;
     virtual RotMatrix _GetRotation() const override;
@@ -1064,9 +978,6 @@ private:
     virtual DPoint3d _GetTargetPoint() const override;
     virtual bool _Allow3dManipulations() const override;
     virtual AxisAlignedBox3d _GetViewedExtents() const override;
-    virtual IAuxCoordSysP _GetAuxCoordinateSystem() const override;
-    virtual ColorDef _GetBackgroundColor() const override;
-    virtual ClipVectorPtr _GetClipVector() const override;
 
     void PushClipsForSpatialView(ViewContextR) const;
     void PopClipsForSpatialView(ViewContextR) const;
@@ -1082,7 +993,7 @@ public:
     DGNPLATFORM_EXPORT HypermodelingViewController(DgnViewId, SpatialViewControllerR, bvector<SectionDrawingViewControllerPtr> const&);
     bool ShouldDrawProxyGraphics(ClipVolumePass proxyGraphicsType, int planeIndex) const;
     bool ShouldDrawAnnotations() const;
-    DGNPLATFORM_EXPORT void SetOverrideMatSymb(ViewContextR) const;
+    DGNPLATFORM_EXPORT void SetOverrideGraphicParams(ViewContextR) const;
 
     DGNPLATFORM_EXPORT bvector<SectionDrawingViewControllerPtr> GetSectionDrawingViews() const;
     DGNPLATFORM_EXPORT SectionDrawingViewControllerPtr FindSectionDrawingViewById(DgnViewId) const;
@@ -1111,4 +1022,4 @@ public:
     SheetViewController(DgnDbR project, DgnViewId viewId) : ViewController2d(project, viewId) {}
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

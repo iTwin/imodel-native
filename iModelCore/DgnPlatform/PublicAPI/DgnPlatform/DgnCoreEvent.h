@@ -8,7 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 // @bsiclass                                                     KeithBentley    10/02
@@ -85,7 +85,6 @@ template <class CALLER> void CallAllHandlers (CALLER& caller)
     {
     if (m_entries.empty())
         return;
-
 
     m_locked = true;
     try
@@ -247,4 +246,4 @@ void            AddPrioritized (ITYPE* handlerToAdd)
     }
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

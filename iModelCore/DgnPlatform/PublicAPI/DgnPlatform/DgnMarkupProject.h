@@ -46,7 +46,7 @@ DGNPLATFORM_REF_COUNTED_PTR(SpatialRedlineModel)
 DGNPLATFORM_REF_COUNTED_PTR(RedlineViewController)
 DGNPLATFORM_REF_COUNTED_PTR(SpatialRedlineViewController)
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct RedlineModelHandler;
 struct SpatialRedlineModelHandler;
@@ -208,7 +208,7 @@ public:
     //! @param fitToX           If true, the image is stretched to fit the width of the sheet, and the image height is computed from it so as to preserve its original aspect ratio. 
     //!                         If false, the image is stretched to fit the height of the sheet, and the image width is computed.
     //! @param compressImageProperty If true, the image data is compressed before being stored in the database. 
-    DGNPLATFORM_EXPORT void StoreImageData(bvector<uint8_t> const& imageData, ImageUtilities::RgbImageInfo const& imageInfo, bool fitToX, bool compressImageProperty=true);
+    DGNPLATFORM_EXPORT void StoreImageData(ByteStream const& imageData, ImageUtilities::RgbImageInfo const& imageInfo, bool fitToX, bool compressImageProperty=true);
 
     //! Save an image as the backdrop for this redline model.
     //! @param jpegData         The image data in JPEG format.
@@ -328,49 +328,34 @@ protected:
     virtual void _SetDelta(DVec3dCR delta) override;
     virtual void _SetRotation(RotMatrixCR rot) override;
     virtual GeometricModelP _GetTargetModel() const override;
-    virtual DgnDbR _GetDgnDb() const override;
     virtual void _AdjustAspectRatio(double , bool expandView) override;
     virtual DPoint3d _GetTargetPoint() const override;
     virtual bool _Allow3dManipulations() const override;
     virtual AxisAlignedBox3d _GetViewedExtents() const override;
-    virtual IAuxCoordSysP _GetAuxCoordinateSystem() const override;
     virtual ColorDef _GetBackgroundColor() const override;
-    virtual ClipVectorPtr _GetClipVector() const override {return NULL;}
     virtual bool _IsSnapAdjustmentRequired(DgnViewportR vp, bool snapLockEnabled) const override {return true;} // Always project snap to ACS plane...
     virtual bool _IsContextRotationRequired(DgnViewportR vp, bool contextLockEnabled) const override {return true;} // Always orient AccuDraw to ACS plane...
     virtual void _OnViewOpened(DgnViewportR vp) override;
 
     //  Override and forward the methods that trigger a query.
-    virtual void _OnHealUpdate(DgnViewportR viewport, ViewContextR context, bool fullHeal) override;
-    virtual void _OnFullUpdate(DgnViewportR viewport, ViewContextR context, FullUpdateInfo& info) override;
-    virtual void _OnDynamicUpdate(DgnViewportR viewport, ViewContextR context, DynamicUpdateInfo& info) override;
     virtual void _OnCategoryChange(bool singleEnabled) override;
     virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff) override;
 
-    virtual bool _DrawOverlayDecorations(IndexedViewportR viewport) override;
-    virtual bool _DrawZBufferedDecorations(IndexedViewportR viewport) override;
-    virtual void _DrawBackgroundGraphics(ViewContextR context) override;
-    virtual void _DrawZBufferedGraphics(ViewContextR context) override;
-
-    virtual void _DrawElement(ViewContextR, GeometrySourceCR) override;
-    virtual void _DrawElementFiltered(ViewContextR, GeometrySourceCR, DPoint3dCP pts, double size)  override;
-
     //virtual ScanRange _ShowTxnSummary(TxnSummaryCR summary) override; -- we don't need to override this, because the subject view will never have changed elements that must be displayed
     virtual void _OnAttachedToViewport(DgnViewportR) override;
-    virtual FitComplete _ComputeFitRange (DRange3dR range, DgnViewportR viewport, FitViewParamsR params) override;
+    virtual FitComplete _ComputeFitRange(FitContextR) override;
 
 #ifdef WIP_SpatialRedlineViewController
-    // QueryViewController
+    // QueryView
     virtual bool _IsInSet (int nVal, BeSQLite::DbValue const*) const override;
     virtual bool _WantElementLoadStart (ViewportR viewport, double currentTime, double lastQueryTime, uint32_t maxElementsDrawnInDynamicUpdate, Frustum const& queryFrustum) override;
-    virtual uint32_t _GetMaxElementsToLoad () override;
     virtual Utf8String _GetRTreeMatchSql (ViewportR viewport) override;
     virtual int32_t _GetMaxElementFactor() override;
     virtual double _GetMinimumSizePixels (DrawPurpose updateType) override;
     virtual uint64_t _GetMaxElementMemory () override;
-    // END QueryViewController
+    // END QueryView
 #endif
-    // END QueryViewController
+    // END QueryView
 
     void SynchWithSubjectViewController();
 #endif // DOCUMENTATION_GENERATOR
@@ -604,4 +589,4 @@ namespace dgn_ModelHandler
     };
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

@@ -8,12 +8,13 @@
 //__PUBLISH_EXTRACT_START__ View_Includes.sampleCode
 // Primary header file for the DgnPlatform API 
 #include <DgnPlatform/DgnPlatformApi.h>
+#include <DgnPlatform/DgnView.h>
 
 // helper macro for using the BeSQLite namespace
 USING_NAMESPACE_BENTLEY_SQLITE
 
 // helper macro for using the DgnPlatform namespace
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 //__PUBLISH_EXTRACT_END__
 
 //__PUBLISH_EXTRACT_START__ View_CreateAndInsert.sampleCode
@@ -30,7 +31,7 @@ DgnViewId createAndInsertView(DgnDbR db, Utf8CP name, DgnModelId baseModelId, Dg
         SpatialViewController viewController(db, viewId);
         viewController.SetStandardViewRotation(StandardView::Iso);
         viewController.LookAtVolume(viewExtents);
-        viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::SmoothShade);
+        viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::SmoothShade);
 
         for (DgnCategoryId category : categories)
             viewController.ChangeCategoryDisplay(category, true);

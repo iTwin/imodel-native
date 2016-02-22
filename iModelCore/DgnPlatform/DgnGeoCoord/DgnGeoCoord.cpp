@@ -2,7 +2,7 @@
 |
 |   $Source: DgnGeoCoord/DgnGeoCoord.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -37,7 +37,6 @@ using namespace BentleyApi::GeoCoordinates;
 #define GEOCOORD_MGRS_EXTENDERID    0x03271957
 
 BEGIN_UNNAMED_NAMESPACE
-
 
 
 /*=================================================================================**//**
@@ -236,18 +235,8 @@ const short         *type66AppData
     if (extracted.version > GCOORD_08119_VERSION)
         return GeoCoordError_BadType66Version;
 
-    // The ProjectionParams union was also set up correctly to allow a simple memcpy for every type of projection EXCEPT the Sys34 projection.
-    if ( (COORDSYS_SYS34 == extracted.projType) || (COORDSYS_S3499 == extracted.projType) || (COORDSYS_S3401 == extracted.projType) )
-        {
-        // Sys34 , Sys34-1999, and Sys34-2001
-        Byte*   inputData   = (Byte*) &type66AppData[429];
-        memcpy(&projectionParams.sys34.zoneNo, inputData, 4);
-        memcpy(&projectionParams.sys34.x_off,  inputData+4, 176);
-        }
-    else
-        {
-        memcpy(&projectionParams, &type66AppData[429], sizeof (projectionParams));
-        }
+    // The ProjectionParams union was also set up correctly to allow a simple memcpy for every type of projection.
+    memcpy (&projectionParams, &type66AppData[429], sizeof (projectionParams));
 
 #if defined (NOTNOW)
     if (IsKeyNameCoordinateSystem(extracted.coordsys))
@@ -2100,8 +2089,6 @@ ProjectionParams    &projectionParams
     }
 
 
-
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3819,7 +3806,7 @@ void                FormatType66Struct
 GeoCoordType66      &type66,
 CSParameters        &csParams,
 int32_t             coordSysId,
-DgnDbR            cache,
+DgnDbR              cache,
 bool                datumOrEllipsoidFromUserLib,
 VertDatumCode       verticalDatum,
 LocalTransformerP   localTransformer
@@ -3865,10 +3852,10 @@ LocalTransformerP   localTransformer
     WChar subUnitLabel[MAX_StandardUnit::NAME_LENGTH];
     dgnModel_GetMasterUnitsLabel(cache, masterUnitLabel);
     dgnModel_GetSubUnitsLabel(cache, subUnitLabel);
-    type66.deprec_mastname[0] = (char) masterUnitLabel[0];
-    type66.deprec_mastname[1] = (char) masterUnitLabel[1];
-    type66.deprec_subname[0]  = (char) subUnitLabel[0];
-    type66.deprec_subname[1]  = (char) subUnitLabel[1];
+    type66.deprec_mastname[0] = (char) (masterUnitLabel[0] && 0xFF);
+    type66.deprec_mastname[1] = (char) (masterUnitLabel[1] && 0xFF);
+    type66.deprec_subname[0]  = (char) (subUnitLabel[0] && 0xFF);
+    type66.deprec_subname[1]  = (char) (subUnitLabel[1] && 0xFF);
     type66.deprec_dgnUnitNm[UNTSZ];
 #else
     type66.deprec_mastname[0] = 'm';
@@ -4170,7 +4157,7 @@ DgnGCS::DgnGCS
 CSParameters&   csParameters,
 double          paperScale,
 int32_t         coordSysId,
-DgnDbR        cache,
+DgnDbR          cache,
 bool            datumOrEllipsoidFromUserLibrary
 ) : BaseGCS (csParameters, coordSysId, NULL)
     {
@@ -4750,7 +4737,7 @@ DgnGCSCR                destMstnGCS         // => destination coordinate system
 DgnGCSP         DgnGCS::FromGeoCoordType66AppData
 (
 short const*    type66AppData,
-DgnDbR     cache
+DgnDbR          cache
 )
     {
     // extract the parameters from the type 66.
@@ -4960,8 +4947,8 @@ DgnGCSP         DgnGCS::FromProject(DgnDbR project)
 StatusInt       DgnGCS::CreateGeoCoordType66
 (
 short*              type66AppData,      // <= filled in with data. Must be at least 2000 words.
-uint32_t&             type66AppDataBytes, // <= set to sizeof of type66AppData in bytes
-DgnDbR         cache,
+uint32_t&           type66AppDataBytes, // <= set to sizeof of type66AppData in bytes
+DgnDbR              cache,
 bool                primary
 ) const
     {
@@ -5164,6 +5151,28 @@ DgnDbR     cache
 +---------------+---------------+---------------+---------------+---------------+------*/
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   03/13
++---------------+---------------+---------------+---------------+---------------+------*/
+double          DgnGCS::GetPaperScale () const
+    {
+    return m_paperScaleFromType66;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   03/13
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       DgnGCS::SetPaperScale (double paperScale, DgnDbR project)
+    {
+    if (0.0 == paperScale)
+        return ERROR;
+
+    InitCacheParameters (project, paperScale);
+    return SUCCESS;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnGeoCoordinationAdmin*  DgnGeoCoordinationAdmin::Create(BeFileNameCR dataDirectory/*, IACSManagerR mgr*/)
@@ -5179,6 +5188,7 @@ void DgnGeoCoordinationAdmin::CompleteInitialization() const
     RUNONCE_CHECK (m_initializationComplete)
 
     BentleyApi::GeoCoordinates::BaseGCS::Initialize(m_dataDirectory.c_str());
+
     }
 
 /*---------------------------------------------------------------------------------**//**

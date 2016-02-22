@@ -769,6 +769,7 @@ void    AnnotationTableCellIndex::BindCellIndex(ECSqlStatement& statement, Utf8C
     :
     AnnotationTableAspect (table), m_index (index)
     {
+    InitializeInternalCollections();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -776,6 +777,8 @@ void    AnnotationTableCellIndex::BindCellIndex(ECSqlStatement& statement, Utf8C
 +---------------+---------------+---------------+---------------+---------------+------*/
 /*ctor*/  AnnotationTableRow::AnnotationTableRow (AnnotationTableRowCR rhs) : AnnotationTableAspect (rhs, false)
     {
+    m_index = rhs.m_index;
+    InitializeInternalCollections();
     CopyDataFrom (rhs);
     }
 
@@ -798,7 +801,9 @@ void    AnnotationTableRow::CopyDataFrom (AnnotationTableRowCR rhs)
     m_index             = rhs.m_index;
     m_heightLock        = rhs.m_heightLock;
     m_height            = rhs.m_height;
-    m_cells             = rhs.m_cells;
+
+    for (AnnotationTableCellCR rhsCell : rhs.m_cells)
+        m_cells[rhsCell.GetIndex().col] = rhsCell;
 
     m_edgeRuns.CopyFrom (rhs.m_edgeRuns, GetTable());
     }
@@ -1873,7 +1878,7 @@ void    resolveTextSymb (ColorDef& color, uint32_t& weight, SymbologyDictionary 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    09/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TextBlockHolder::_AppendGeometry (DPoint2dCR origin, DVec2dCR direction, TableCellAlignment alignment, ElementGeometryBuilderR builder) const
+void TextBlockHolder::_AppendGeometry (DPoint2dCR origin, DVec2dCR direction, TableCellAlignment alignment, GeometryBuilderR builder) const
     {
     AnnotationTextBlockLayoutCP textBlock = GetTextBlockLayout();
 
@@ -1922,8 +1927,9 @@ void TextBlockHolder::_AppendGeometry (DPoint2dCR origin, DVec2dCR direction, Ta
 
     TextAnnotation textAnnotation (textBlock->GetDocument().GetDbR());
     textAnnotation.SetText (&textBlock->GetDocument());
+    textAnnotation.SetDocumentTransform(transform);
 
-    builder.Append (textAnnotation, transform);
+    builder.Append (textAnnotation);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2791,7 +2797,7 @@ DPoint3d        AnnotationTableCell::ComputeOrigin () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    09/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    AnnotationTableCell::AppendContentsGeometry (DPoint2dCR origin, DVec2dCR xVec, DVec2dCR yVec, ElementGeometryBuilderR builder) const
+void    AnnotationTableCell::AppendContentsGeometry (DPoint2dCR origin, DVec2dCR xVec, DVec2dCR yVec, GeometryBuilderR builder) const
     {
     if (UNEXPECTED_CONDITION (nullptr == m_contentHolder))
         return;
@@ -2952,16 +2958,19 @@ void            AnnotationTableCell::SetTextBlock (AnnotationTextBlockCR textBlo
     SetSizeFromContents (&oldContentSize);
     }
 
-#if defined (NEEDSWORK)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            AnnotationTableCell::SetTextString (WCharCP newString)
+void            AnnotationTableCell::SetTextString (Utf8CP newString)
     {
-    TextBlockPtr    textBlock   = CreateEmptyTextBlock();
+    AnnotationTextBlockPtr    textBlock   = CreateEmptyTextBlock();
 
-    if (NULL != newString && L'\0' != *newString)
-        textBlock->AppendText (newString);
+    if (nullptr != newString && '\0' != *newString)
+        {
+        DgnElementId styleId = GetTable().GetTextStyleId (GetTableRegion());
+        AnnotationTextRunPtr newRun = AnnotationTextRun::Create (textBlock->GetDbR(), styleId, newString);
+        textBlock->AppendRun (*newRun);
+        }
 
     SetTextBlock (*textBlock);
     }
@@ -2971,9 +2980,8 @@ void            AnnotationTableCell::SetTextString (WCharCP newString)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    AnnotationTableCell::ClearContents ()
     {
-    SetTextString (L"");
+    SetTextString ("");
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    08/13
@@ -6624,8 +6632,6 @@ void    AnnotationTable::Initialize (bool isNewTable)
         {
         AnnotationTableRow row (*this, rowIndex);
         m_rows.push_back (row);
-
-        m_rows[rowIndex].InitializeInternalCollections();
         }
 
     AnnotationTableEdgeRun topEdgeRun (*this);
@@ -6953,10 +6959,8 @@ BentleyStatus   AnnotationTable::InsertRow (uint32_t indexOfSeedRow, TableInsert
 
     // Insert the Row and create its vector of cells
     AnnotationTableRow newRow (*this, indexOfNewRow);
-
     bvector<AnnotationTableRow>::iterator insertPos = m_rows.begin() + indexOfNewRow;
     m_rows.insert (insertPos, newRow);
-    m_rows[indexOfNewRow].InitializeInternalCollections();
 
     // Adjust all the subsequent rows, this will also adjust all the cells in the row
     uint32_t  adjustedIndex = indexOfNewRow+1;
@@ -8631,11 +8635,11 @@ void AnnotationTable::UpdateGeometryRepresentation()
     if (! IsValid())
         return;
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*GetModel(), GetCategoryId(), GetPlacement().GetOrigin(), GetPlacement().GetAngle());
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*GetModel(), GetCategoryId(), GetPlacement().GetOrigin(), GetPlacement().GetAngle());
     AnnotationTableStroker stroker (*this, *builder);
     stroker.AppendTableGeometry();
 
-    builder->SetGeomStreamAndPlacement(*this);
+    builder->SetGeometryStreamAndPlacement(*this);
     }
 
 //---------------------------------------------------------------------------------------
@@ -8662,6 +8666,90 @@ DgnDbStatus AnnotationTable::_OnUpdate(DgnElementCR original)
 
     UpdateGeometryRepresentation();
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* If the cell has a TextBlock, return an empty clone of it (preserving style etc).
+* Otherwise create one with default style etc.
+* @bsimethod                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+AnnotationTextBlockPtr    AnnotationTableCell::CreateEmptyTextBlock() const
+    {
+    DgnElementId styleId = GetTable().GetTextStyleId (GetTableRegion());
+    AnnotationTextBlockPtr emptyTextBlock = AnnotationTextBlock::Create (GetTable().GetDgnDb(), styleId);
+    return emptyTextBlock;
+
+#if defined (NEEDSWORK)
+    AnnotationTextBlockCP  textBlock = GetTextBlock();
+    AnnotationTextBlockPtr emptyTextBlock;
+    if (nullptr != textBlock)
+        {
+        emptyTextBlock = textBlock->Clone();
+        if ( ! emptyTextBlock->IsEmpty())
+            {
+            // preserve properties of first existing run.
+            RunPropertiesCP runProps = emptyTextBlock->GetRunProperties (0);
+            RunPropertiesPtr clonedProps = runProps->Clone();   // NEEDSWORK why no non-const access to RunProperties?
+            emptyTextBlock->Remove (emptyTextBlock->Begin(), emptyTextBlock->End());
+            emptyTextBlock->SetRunPropertiesForAdd (*clonedProps);
+            }
+        }
+    else
+        {
+        AnnotationTableRegion region    = GetTableRegion();
+        DgnTextStylePtr textStyle       = m_table->GetTextStyle (region)->Copy();
+
+        if (m_table->HasAnnotationScale())
+            doScaleTextStyle (*textStyle, 1.0 / m_table->GetAnnotationScale());
+
+        emptyTextBlock = AnnotationTextBlock::Create (*textStyle, *m_table->GetModel());
+
+        AnnotationTextBlockPropertiesPtr  props = emptyTextBlock->GetProperties().Clone();
+
+        props->SetIsVertical (TableCellOrientation::Vertical == GetOrientation());
+
+        if (m_table->HasAnnotationScale())
+            props->SetAnnotationScale (m_table->GetAnnotationScale());
+        else
+            props->ClearAnnotationScale ();
+
+        emptyTextBlock->SetProperties (*props);
+
+        TextElementJustification textJust = ToTextElementJustification (GetAlignment());
+        if (TextElementJustification::Invalid != textJust)
+            emptyTextBlock->GetParagraphPropertiesForAddR().SetJustification (textJust);
+
+        RunPropertiesR  runProps = emptyTextBlock->GetRunPropertiesForAddR();
+        if ( ! runProps.HasColor())
+            {
+            SymbologyDictionary const&  dictionary = m_table->GetSymbologyDictionary();
+            UInt32                      symbKey    = m_table->GetDefaultTextSymbology();
+            SymbologyEntryCP            tableSymb  = dictionary.GetSymbology (symbKey);
+
+            runProps.SetColorDirect (tableSymb->GetColor());
+            }
+        }
+
+    switch (GetOrientation())
+        {
+        case TableCellOrientation::Rotate90:
+        case TableCellOrientation::Rotate270:
+        case TableCellOrientation::Vertical:
+            {
+            if (m_table->GetRow (m_index.row)->GetHeightLock())
+                setWordWrapLength (*emptyTextBlock, GetAvailableContentSize().y, *m_table);
+            break;
+            }
+        default:
+            {
+            if (m_table->GetColumn (m_index.col)->GetWidthLock())
+                setWordWrapLength (*emptyTextBlock, GetAvailableContentSize().x, *m_table);
+            break;
+            }
+        }
+
+    return emptyTextBlock;
+#endif
     }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

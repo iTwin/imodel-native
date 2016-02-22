@@ -180,7 +180,7 @@ public:
     //! Delete this view's settings
     BeSQLite::DbResult DeleteSettings() const { return DeleteSettings(GetViewId(), GetDgnDb()); }
 
-    DGNVIEW_EXPORT BeSQLite::DbResult RenderAndSaveThumbnail(int resolution, DgnRenderMode renderModeOverride) const;
+    DGNVIEW_EXPORT BeSQLite::DbResult RenderAndSaveThumbnail(int resolution, Render::RenderMode renderModeOverride) const;
 
     //! An entry in an iterator over the views in a DgnDb
     struct Entry : ECSqlStatementEntry
@@ -420,7 +420,7 @@ protected:
     virtual SheetViewDefinitionCP _ToSheetView() const { return this; }
 public:
     //! Construct a SheetViewDefinition from the supplied params
-    explicit SheetViewDefinition(CreateParams const& params) : T_Super(params) { }
+    explicit SheetViewDefinition(CreateParams const& params) : T_Super(params) {}
 
     //! Look up the ECClass ID used for SheetViewDefinitions in the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SheetViewDefinition)); }

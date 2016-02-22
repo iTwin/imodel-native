@@ -1,12 +1,12 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: DgnCore/Annotations/TextAnnotationDraw.cpp $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include <DgnPlatformInternal.h> 
 #include <DgnPlatform/Annotations/Annotations.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
@@ -15,7 +15,6 @@ TextAnnotationDraw::TextAnnotationDraw(TextAnnotationCR annotation) :
     T_Super()
     {
     m_annotation = &annotation;
-    m_documentTransform.InitIdentity();
     }
 
 //---------------------------------------------------------------------------------------
@@ -24,72 +23,44 @@ TextAnnotationDraw::TextAnnotationDraw(TextAnnotationCR annotation) :
 void TextAnnotationDraw::CopyFrom(TextAnnotationDrawCR rhs)
     {
     m_annotation = rhs.m_annotation;
-    m_documentTransform = rhs.m_documentTransform;
     }
-
-//=======================================================================================
-// @bsiclass                                                    Jeff.Marker     07/2014
-//=======================================================================================
-struct PopTransformClipOnDestruct
-{
-private:
-    bool m_isCancelled;
-    ViewContextR m_context;
-
-    void Pop() { if (!m_isCancelled) { m_context.PopTransformClip(); } }
-
-public:
-    explicit PopTransformClipOnDestruct(ViewContextR context) : m_isCancelled(false), m_context(context) {}
-    ~PopTransformClipOnDestruct() { Pop(); }
-    void CallThenCancel() { Pop(); Cancel(); }
-    void Cancel() { m_isCancelled = true; }
-};
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus TextAnnotationDraw::Draw(ViewContextR context) const
+BentleyStatus TextAnnotationDraw::Draw(Render::GraphicR graphic, ViewContextR context, GeometryParamsR geomParams) const
     {
-    BentleyStatus status = SUCCESS;
-    
     //.............................................................................................
-    if (NULL == m_annotation->GetTextCP())
-        return status;
-
-    context.PushTransform(m_documentTransform);
-    PopTransformClipOnDestruct autoPopDocumentTransform(context);
+    if (nullptr == m_annotation->GetTextCP())
+        return SUCCESS;
 
     AnnotationTextBlockLayout textLayout(*m_annotation->GetTextCP());
     AnnotationTextBlockDraw textDraw(textLayout);
 
-    if (SUCCESS != textDraw.Draw(context))
-        status = ERROR;
+    textDraw.SetDocumentTransform(m_annotation->GetDocumentTransform());
+    BentleyStatus status = textDraw.Draw(graphic, context, geomParams);
 
     //.............................................................................................
-    if (NULL == m_annotation->GetFrameCP())
+    if (nullptr == m_annotation->GetFrameCP())
         return status;
-        
+
     AnnotationFrameLayout frameLayout(*m_annotation->GetFrameCP(), textLayout);
     AnnotationFrameDraw frameDraw(frameLayout);
     
-    if (SUCCESS != frameDraw.Draw(context))
-        status = ERROR;
-    
+    frameDraw.SetDocumentTransform(m_annotation->GetDocumentTransform());
+    status = frameDraw.Draw(graphic, context, geomParams);
+
     //.............................................................................................
     if (m_annotation->GetLeaders().empty())
         return status;
-    
-    autoPopDocumentTransform.CallThenCancel();
 
     for (auto const& leader : m_annotation->GetLeaders())
         {
         AnnotationLeaderLayout leaderLayout(*leader, frameLayout);
-        leaderLayout.SetFrameTransform(m_documentTransform);
+        leaderLayout.SetFrameTransform(m_annotation->GetDocumentTransform());
 
         AnnotationLeaderDraw leaderDraw(leaderLayout);
-        
-        if (SUCCESS != leaderDraw.Draw(context))
-            status = ERROR;
+        status = leaderDraw.Draw(graphic, context, geomParams);
         }
 
     return status;

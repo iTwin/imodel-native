@@ -20,7 +20,7 @@
 #include    <DgnPlatform/DesktopTools/fileutil.h>
 #include    <DgnPlatform/DesktopTools/msfilutl.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                    Dan.East                        12/09

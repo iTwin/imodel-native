@@ -592,7 +592,7 @@ TEST_F (CategoryTests, QueryByElementId)
 
     DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, categoryId, DgnCode());
     GeometrySourceP geomElem = el->ToGeometrySourceP();
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*m_defaultModelP, categoryId, DPoint3d::From(0.0, 0.0, 0.0));
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*m_defaultModelP, categoryId, DPoint3d::From(0.0, 0.0, 0.0));
     DEllipse3d ellipseData = DEllipse3d::From(1, 2, 3,
         0, 0, 2,
         0, 3, 0,
@@ -600,7 +600,7 @@ TEST_F (CategoryTests, QueryByElementId)
     ICurvePrimitivePtr ellipse = ICurvePrimitive::CreateArc(ellipseData);
     EXPECT_TRUE(builder->Append(*ellipse));
 
-    EXPECT_EQ(SUCCESS, builder->SetGeomStreamAndPlacement(*geomElem));
+    EXPECT_EQ(SUCCESS, builder->SetGeometryStreamAndPlacement(*geomElem));
     auto elem = m_db->Elements().Insert(*el);
     EXPECT_TRUE(elem.IsValid());
     }

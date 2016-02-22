@@ -12,7 +12,29 @@
 #include <DgnPlatform/DgnGeoCoord.h>
 
 BeThreadLocalStorage g_hostForThread;
+BeThreadLocalStorage g_threadId;
+
 double const fc_hugeVal = 1e37;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDb::ThreadId DgnDb::GetThreadId() {return (ThreadId) g_threadId.GetValueAsInteger();}
+void DgnDb::SetThreadId(ThreadId id) {g_threadId.SetValueAsInteger((int) id);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP DgnDb::GetThreadIdName()
+    {
+    switch (GetThreadId())
+        {
+        case ThreadId::Client:      return L"ClientThread";
+        case ThreadId::Render:      return L"RenderThread";
+        case ThreadId::Query:       return L"QueryThread";
+        default:                    return L"UnknownThread";
+        }
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/14
@@ -270,6 +292,7 @@ NotificationManager::MessageBoxValue NotificationManager::OpenMessageBox(Message
 void DgnPlatformLib::AdoptHost(DgnPlatformLib::Host& host)
     {
     g_hostForThread.SetValueAsPointer(&host);
+    DgnDb::SetThreadId(DgnDb::ThreadId::Client);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -365,7 +388,6 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
     BeAssert(NULL == m_rasterAttachmentAdmin);
     BeAssert(NULL == m_pointCloudAdmin);
     BeAssert(NULL == m_notificationAdmin);
-    BeAssert(NULL == m_graphicsAdmin);
     BeAssert(NULL == m_materialAdmin);
     BeAssert(NULL == m_solidsKernelAdmin);
     BeAssert(NULL == m_geoCoordAdmin);
@@ -376,7 +398,7 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
     BeAssert(NULL == m_realityDataAdmin);
     BeAssert(NULL == m_exceptionHandler);
     BeAssert(NULL == m_knownLocationsAdmin);
-    BeAssert(NULL == m_serverAdmin);
+    BeAssert(NULL == m_repositoryAdmin);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -414,7 +436,6 @@ bool DgnPlatformLib::Host::LineStyleAdmin::_GetLocalLineStylePaths(WStringR path
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnPlatformLib::Host::GraphicsAdmin&         DgnPlatformLib::Host::_SupplyGraphicsAdmin()         {return *new GraphicsAdmin();}
 DgnPlatformLib::Host::SolidsKernelAdmin&     DgnPlatformLib::Host::_SupplySolidsKernelAdmin()     {return *new SolidsKernelAdmin();}
 DgnPlatformLib::Host::MaterialAdmin&         DgnPlatformLib::Host::_SupplyMaterialAdmin()         {return *new MaterialAdmin();}
 DgnPlatformLib::Host::FontAdmin&             DgnPlatformLib::Host::_SupplyFontAdmin()             {return *new FontAdmin();}
@@ -424,7 +445,7 @@ DgnPlatformLib::Host::TxnAdmin& DgnPlatformLib::Host::_SupplyTxnAdmin() {return 
 DgnPlatformLib::Host::FormatterAdmin&        DgnPlatformLib::Host::_SupplyFormatterAdmin()        {return *new FormatterAdmin();}
 DgnPlatformLib::Host::RealityDataAdmin&      DgnPlatformLib::Host::_SupplyRealityDataAdmin()      {return *new RealityDataAdmin();}
 DgnPlatformLib::Host::ScriptAdmin&           DgnPlatformLib::Host::_SupplyScriptingAdmin()        {return *new ScriptAdmin();}
-DgnPlatformLib::Host::ServerAdmin&           DgnPlatformLib::Host::_SupplyServerAdmin()           {return *new ServerAdmin();}
+DgnPlatformLib::Host::RepositoryAdmin&       DgnPlatformLib::Host::_SupplyRepositoryAdmin()       {return *new RepositoryAdmin();}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      10/2014
@@ -442,8 +463,7 @@ void DgnPlatformLib::ForwardAssertionFailures(BeAssertFunctions::T_BeAssertHandl
     {
     BeAssertFunctions::SetBeAssertHandler(h);
     }
-// @bsimethod                                                   Jeff.Marker     11/2012
-//---------------------------------------------------------------------------------------
+
 void DgnProgressMeter::AddTasks(uint32_t numTasksToAdd) {_AddTasks(numTasksToAdd);}
 void DgnProgressMeter::AddSteps(uint32_t numSteps) {_AddSteps(numSteps);}
 void DgnProgressMeter::SetCurrentStepName(Utf8CP newName) {_SetCurrentStepName(newName);}
@@ -452,3 +472,4 @@ DgnProgressMeter::Abort DgnProgressMeter::ShowProgress() {return _ShowProgress()
 void DgnProgressMeter::Hide() {_Hide();}
 
 DEFINE_KEY_METHOD(DgnMarkupProject)
+
