@@ -54,6 +54,49 @@ JsGeometryBuilder::JsGeometryBuilder(JsDgnElementP e, JsDPoint3dP o, JsYawPitchR
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      06/15
+//---------------------------------------------------------------------------------------
+void JsGeometryBuilder::AppendCopyOfGeometry(JsGeometryBuilderP jsbuilder, JsPlacement3dP jsrelativePlacement)
+    {
+    if (nullptr == jsbuilder || !jsbuilder->m_builder.IsValid())
+        return;
+    GeometryBuilderR otherbuilder = *jsbuilder->m_builder;
+    GeometryStream otherStream;
+    otherbuilder.GetGeometryStream(otherStream);
+    GeometryCollection otherGeomCollection(otherStream, m_builder->GetDgnDb());
+    Transform t;
+    if (nullptr != jsrelativePlacement)
+        t = jsrelativePlacement->m_placement.GetTransform();
+    else
+        t.InitIdentity();
+    for (auto otherItem: otherGeomCollection)
+        {
+        GeometryParams sourceParams (otherItem.GetGeometryParams());
+        sourceParams.SetCategoryId(m_builder->GetGeometryParams().GetCategoryId());
+        m_builder->Append(sourceParams);
+
+        auto geomprim = otherItem.GetGeometryPtr();
+        if (geomprim.IsValid())
+            {
+            GeometricPrimitivePtr cc = geomprim->Clone();
+            cc->TransformInPlace(t);
+            m_builder->Append(*cc);
+            }
+        else
+            {
+                /* *** TBD: embedded geompart instances
+            DgnGeometryPartCPtr gp = otherItem.GetGeometryPartPtr();
+            if (gp.IsValid())
+                {
+                Transform t = otherItem.GetGeometryToSource();
+                }
+                */
+            BeAssert(false && "AppendCopyOfBuilder - geompart instances not supported");
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      02/16
 //---------------------------------------------------------------------------------------
 JsGeometryCollectionP JsPhysicalElement::GetGeometry() const {return new JsGeometryCollection(*m_el->ToGeometrySource());}

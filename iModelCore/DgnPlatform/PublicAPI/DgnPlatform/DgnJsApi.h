@@ -71,6 +71,9 @@ typedef JsPhysicalElement* JsPhysicalElementP;
 struct JsGeometryCollection;
 typedef JsGeometryCollection* JsGeometryCollectionP;
 
+struct JsGeometryBuilder;
+typedef JsGeometryBuilder* JsGeometryBuilderP;
+
 #define JS_ITERATOR_IMPL(JSITCLASS,CPPCOLL) typedef CPPCOLL T_CppColl;\
     T_CppColl::const_iterator m_iter;\
     JSITCLASS(CPPCOLL::const_iterator it) : m_iter(it) {;}
@@ -508,6 +511,9 @@ struct JsDgnGeometryPart : RefCountedBaseWithCreate
 {
     DgnGeometryPartPtr m_value;
     JsDgnGeometryPart(DgnGeometryPart& v) : m_value(&v) {;}
+
+    static JsDgnGeometryPart* Create(JsDgnDbP db) {return new JsDgnGeometryPart(*DgnGeometryPart::Create(*db->m_db));}
+    BentleyStatus Insert() {return m_value->GetDgnDb().GeometryParts().InsertGeometryPart(*m_value);}
 };
 
 typedef JsDgnGeometryPart* JsDgnGeometryPartP;
@@ -563,8 +569,14 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
 {
     GeometryBuilderPtr m_builder;
 
+    JsGeometryBuilder(GeometryBuilderR gb) : m_builder(&gb) {}
     JsGeometryBuilder(JsDgnElementP el, JsDPoint3dP o, JsYawPitchRollAnglesP angles);
     ~JsGeometryBuilder() {}
+
+    static JsGeometryBuilderP CreateGeometryPart(JsDgnDbP db, bool is3d)
+        {
+        return new JsGeometryBuilder(*GeometryBuilder::CreateGeometryPart(*db->m_db, is3d));
+        }
 
     JsRenderGeometryParamsP GetGeometryParams() const 
         {
@@ -605,10 +617,12 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
         }
 
     BentleyStatus SetGeometryStreamAndPlacement (JsDgnElementP el) {return m_builder->SetGeometryStreamAndPlacement(*el->m_el->ToGeometrySourceP());}
+    BentleyStatus SetGeometryStream (JsDgnGeometryPartP part) {return m_builder->SetGeometryStream(*part->m_value);}
+
+    void AppendCopyOfGeometry(JsGeometryBuilderP builder, JsPlacement3dP relativePlacement);
 
     STUB_OUT_SET_METHOD(GeometryParams, JsRenderGeometryParamsP)
 };
-typedef JsGeometryBuilder* JsGeometryBuilderP;
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
