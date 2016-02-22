@@ -46,6 +46,16 @@ ConnectSignInManagerPtr ConnectSignInManager::Create()
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectSignInManager::Configure(Configuration config)
+    {
+    BeCriticalSectionHolder lock(m_cs);
+    m_config = config;
+    m_tokenProviders.clear();
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                           Vytautas.Barkauskas    12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithToken(SamlTokenPtr token)
@@ -70,7 +80,9 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithToken(SamlTokenPtr to
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithCredentials(CredentialsCR credentials)
     {
-    return Connect::Login(credentials)->Then<SignInResult>([=] (SamlTokenResult result)
+    BeCriticalSectionHolder lock(m_cs);
+    return Connect::Login(credentials, nullptr, nullptr, m_config.identityTokenLifetime)
+        ->Then<SignInResult>([=] (SamlTokenResult result)
         {
         if (!result.IsSuccess())
             {
@@ -196,7 +208,10 @@ IConnectTokenProviderPtr ConnectSignInManager::GetTokenProvider(Utf8StringCR rpU
         return it->second;
 
     auto baseProvider = std::make_shared<ConnectTokenProvider>(m_persistence, IsTokenBasedAuthentication(), m_tokenExpiredHandler);
+    baseProvider->Configure(m_config.identityTokenLifetime, m_config.identityTokenRefreshRate);
+
     auto delegationProvider = std::make_shared<DelegationTokenProvider>(rpUri, baseProvider);
+    delegationProvider->Configure(m_config.delegationTokenLifetime);
 
     m_tokenProviders[rpUri] = delegationProvider;
     return delegationProvider;

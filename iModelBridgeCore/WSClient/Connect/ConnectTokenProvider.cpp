@@ -14,21 +14,33 @@
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
-#define RENEW_TOKEN_AFTER_MS (60*60*1000)
+#define TOKEN_LIFETIME (7*24*60)
+#define TOKEN_REFRESH_RATE 60
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConnectTokenProvider::ConnectTokenProvider
 (
-std::shared_ptr<IConnectAuthenticationPersistence> customPersistence,
+IConnectAuthenticationPersistencePtr customPersistence,
 bool isTokenBasedAuthentication,
 std::function<void()> tokenExpiredHandler
 ) :
 m_persistence(customPersistence ? customPersistence : ConnectAuthenticationPersistence::GetShared()),
 m_isTokenBasedAuthentication(isTokenBasedAuthentication),
-m_tokenExpiredHandler(tokenExpiredHandler)
+m_tokenExpiredHandler(tokenExpiredHandler),
+m_tokenLifetime(TOKEN_LIFETIME),
+m_tokenRefreshRate(TOKEN_REFRESH_RATE)
     {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectTokenProvider::Configure(uint64_t tokenLifetime, uint64_t tokenRefreshRate)
+    {
+    m_tokenLifetime = tokenLifetime;
+    m_tokenRefreshRate = tokenRefreshRate;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2014
@@ -49,7 +61,7 @@ SamlTokenPtr ConnectTokenProvider::UpdateToken()
     if (!creds.IsValid())
         return nullptr;
 
-    auto result = Connect::Login(creds)->GetResult();
+    auto result = Connect::Login(creds, nullptr, nullptr, m_tokenLifetime)->GetResult();
     if (!result.IsSuccess())
         return nullptr;
 
@@ -69,13 +81,13 @@ SamlTokenPtr ConnectTokenProvider::GetToken()
         // TODO: Launch token renewal asynchronously and just return current token
         // Check if token was issued more than 1 hour ago. If so, renew it.
         DateTime tokenSetTime = m_persistence->GetTokenSetTime();
-        if (tokenSetTime.IsValid() && ShouldRenewToken(tokenSetTime, RENEW_TOKEN_AFTER_MS))
+        if (tokenSetTime.IsValid() && ShouldRenewToken(tokenSetTime))
             {
             auto oldToken = m_persistence->GetToken();
             if (nullptr == oldToken)
                 return nullptr;
 
-            auto tokenResult = Connect::RenewToken(*oldToken)->GetResult();
+            auto tokenResult = Connect::RenewToken(*oldToken, nullptr, nullptr, m_tokenLifetime)->GetResult();
             if (!tokenResult.IsSuccess())
                 return nullptr;
 
@@ -88,15 +100,17 @@ SamlTokenPtr ConnectTokenProvider::GetToken()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Vytautas.Barkauskas    01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ConnectTokenProvider::ShouldRenewToken(DateTime tokenSetTime, int64_t renewTokenAfter)
+bool ConnectTokenProvider::ShouldRenewToken(DateTimeCR tokenSetTime)
     {
+    auto renewTokenAfterMs = m_tokenRefreshRate * 60 * 1000;
+
     int64_t unixMilliseconds;
     if (SUCCESS != tokenSetTime.ToUnixMilliseconds(unixMilliseconds))
         {
         BeAssert(false);
         return true;
         }
-    unixMilliseconds += renewTokenAfter;
+    unixMilliseconds += renewTokenAfterMs;
     DateTime offsetedDateTime;
     if (SUCCESS != DateTime::FromUnixMilliseconds(offsetedDateTime, unixMilliseconds))
         {

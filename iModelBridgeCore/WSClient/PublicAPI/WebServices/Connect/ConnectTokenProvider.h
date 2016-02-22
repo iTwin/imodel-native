@@ -19,22 +19,26 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 struct ConnectTokenProvider : public IConnectTokenProvider
     {
     private:
+        IConnectAuthenticationPersistencePtr m_persistence;
+        bool m_isTokenBasedAuthentication;
         std::function<void()> m_tokenExpiredHandler;
 
-    public:
-        std::shared_ptr<IConnectAuthenticationPersistence> m_persistence;
-        bool m_isTokenBasedAuthentication;
+        uint64_t m_tokenLifetime;
+        uint64_t m_tokenRefreshRate;
 
     private:
-        bool ShouldRenewToken(DateTime tokenSetTime, int64_t renewTokenAfter);
+        bool ShouldRenewToken(DateTimeCR tokenSetTime);
 
     public:
         WSCLIENT_EXPORT ConnectTokenProvider
             (
-            std::shared_ptr<IConnectAuthenticationPersistence> customPersistence = nullptr,
+            IConnectAuthenticationPersistencePtr customPersistence = nullptr,
             bool isTokenBasedAuthentication = false,
             std::function<void()> tokenExpiredHandler = nullptr
             );
+
+        //! Set new token lifetime and refresh rate in minutes
+        WSCLIENT_EXPORT void Configure(uint64_t tokenLifetime, uint64_t tokenRefreshRate);
 
         WSCLIENT_EXPORT SamlTokenPtr UpdateToken() override;
         WSCLIENT_EXPORT SamlTokenPtr GetToken() override;

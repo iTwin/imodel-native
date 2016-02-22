@@ -34,9 +34,20 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
             Utf8String userId;
             };
 
+        struct Configuration
+            {
+            //! Identity token lifetime to be requested in minutes 
+            uint64_t identityTokenLifetime = 7 * 24 * 60;
+            //! Identity token lifetime refresh rate in minutes 
+            uint64_t identityTokenRefreshRate = 60;
+            //! Delegation token lifetime to be requested in minutes
+            uint64_t delegationTokenLifetime = 60;
+            };
+
     private:
         mutable BeCriticalSection m_cs;
-        std::shared_ptr<IConnectAuthenticationPersistence> m_persistence;
+        Configuration m_config;
+        IConnectAuthenticationPersistencePtr m_persistence;
         bmap<Utf8String, IConnectTokenProviderPtr> m_tokenProviders;
         std::function<void()> m_tokenExpiredHandler;
 
@@ -51,6 +62,9 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         WSCLIENT_EXPORT static ConnectSignInManagerPtr Create();
 
         WSCLIENT_EXPORT virtual ~ConnectSignInManager();
+
+        //! Change default configuration with new one. Best called before any other calls are done.
+        WSCLIENT_EXPORT void Configure(Configuration config);
 
         WSCLIENT_EXPORT AsyncTaskPtr<SignInResult> SignInWithToken(SamlTokenPtr token);
         WSCLIENT_EXPORT AsyncTaskPtr<SignInResult> SignInWithCredentials(CredentialsCR credentials);
@@ -69,4 +83,5 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         //! @param httpHandler optional custom HTTP handler to send all requests trough
         WSCLIENT_EXPORT AuthenticationHandlerPtr GetAuthenticationHandler(Utf8StringCR rpUrl, IHttpHandlerPtr httpHandler = nullptr) override;
     };
+
 END_BENTLEY_WEBSERVICES_NAMESPACE
