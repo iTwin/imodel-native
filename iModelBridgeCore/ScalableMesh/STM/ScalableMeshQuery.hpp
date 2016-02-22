@@ -1963,12 +1963,15 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMeshes(boo
                             toLoadFaceIndexes[ind] = faceIndexes[ind] - 1;
                             }                        
                         
-                        toLoadUv = new FloatXY[nbUvs];
-
-                        for (size_t ind = 0; ind < nbUvs; ind++)
+                        if (nbUvs > 0)
                             {
-                            toLoadUv[ind].x = uvPtr[ind].x;
-                            toLoadUv[ind].y = uvPtr[ind].y; 
+                            toLoadUv = new FloatXY[nbUvs];
+
+                            for (size_t ind = 0; ind < nbUvs; ind++)
+                                {
+                                toLoadUv[ind].x = uvPtr[ind].x;
+                                toLoadUv[ind].y = uvPtr[ind].y; 
+                                }
                             }
                         
                         toLoadUvIndex = uvIndicesP;

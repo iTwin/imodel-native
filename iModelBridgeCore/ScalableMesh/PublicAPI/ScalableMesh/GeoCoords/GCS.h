@@ -233,7 +233,6 @@ private:
     typedef SharedPtrTypeTrait<Impl>::type  ImplPtr;
     ImplPtr                                 m_implP;
 
-    explicit                                GCS                                (Impl*                       implP);
    
 public:
     GEOCOORDS_DLLE static const GCS&        GetNull                            ();
@@ -255,6 +254,7 @@ public:
 
     // Synonymous to GetHorizontalUnit when non-uniform vertical/horizontal units
     GEOCOORDS_DLLE const Unit&              GetUnit                            () const; 
+    explicit                                GCS                                (Impl*                       implP);
 
     GEOCOORDS_DLLE const Unit&              GetHorizontalUnit                  () const;
     GEOCOORDS_DLLE const Unit&              GetVerticalUnit                    () const;

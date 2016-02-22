@@ -443,9 +443,10 @@ template <class POINT, class EXTENT> struct ProcessingQuery : public RefCountedB
         m_foundMeshNodeMutexes = new std::mutex[nbWorkingThreads];
         m_nodeQueryProcessors.resize(nbWorkingThreads);
         m_nodeQueryProcessorMutexes = new std::mutex[nbWorkingThreads];
-
+                
         m_queryObjectP = queryObjectP;
         m_isCancel = false;
+        m_isConsumingNode = false;
         m_loadTexture = loadTexture;        
         }
 
@@ -786,7 +787,9 @@ public:
 
     QueryProcessor()
         {
-        m_numWorkingThreads = std::thread::hardware_concurrency() - 1;
+        //m_numWorkingThreads = std::thread::hardware_concurrency() - 1;
+        m_numWorkingThreads = 1;
+
         m_workingThreads = new std::thread[m_numWorkingThreads];
         m_run = false;
         m_processingQueryIndexes.resize(m_numWorkingThreads);
@@ -1224,6 +1227,8 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
             }
 
         CachedDisplayNodeManager::GetManager().ReleaseNodeListLock();
+
+        assert(lowerResOverviewNodes.size() > 0 || (nodesToSearch.GetNodes().size() - currentInd) == 0);
         
         newQuery.m_overviewMeshNodes.insert(newQuery.m_overviewMeshNodes.end(), lowerResOverviewNodes.begin(), lowerResOverviewNodes.end());        
 
