@@ -18,6 +18,7 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
+typedef std::shared_ptr<struct IConnectAuthenticationPersistence> IConnectAuthenticationPersistencePtr;
 struct EXPORT_VTABLE_ATTRIBUTE IConnectAuthenticationPersistence
     {
     public:

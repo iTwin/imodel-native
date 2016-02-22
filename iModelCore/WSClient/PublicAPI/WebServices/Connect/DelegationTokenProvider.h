@@ -26,6 +26,7 @@ struct DelegationTokenProvider : public IConnectTokenProvider
         IConnectTokenProviderPtr m_baseTokenProvider;
         SamlTokenPtr m_token;
         UniqueTaskHolder<SamlTokenResult> m_tokenRetriever;
+        uint64_t m_tokenLifetime;
 
     private:
         AsyncTaskPtr<SamlTokenResult> RetrieveNewToken();
@@ -35,6 +36,9 @@ struct DelegationTokenProvider : public IConnectTokenProvider
         //! @param rpUri Relying Party URI for token
         //! @param baseTokenProvider token provider for base/identity token to be used to delegate new token
         WSCLIENT_EXPORT DelegationTokenProvider(Utf8String rpUri, IConnectTokenProviderPtr baseTokenProvider);
+
+        //! Set new token lifetime
+        WSCLIENT_EXPORT void Configure(uint64_t tokenLifetime);
 
         WSCLIENT_EXPORT SamlTokenPtr UpdateToken() override;
         WSCLIENT_EXPORT SamlTokenPtr GetToken() override;

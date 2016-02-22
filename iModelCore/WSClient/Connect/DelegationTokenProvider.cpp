@@ -14,13 +14,24 @@
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
+#define TOKEN_LIFETIME 60
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 DelegationTokenProvider::DelegationTokenProvider(Utf8String rpUri, IConnectTokenProviderPtr baseTokenProvider) :
 m_rpUri(rpUri),
-m_baseTokenProvider(baseTokenProvider)
+m_baseTokenProvider(baseTokenProvider),
+m_tokenLifetime(TOKEN_LIFETIME)
     {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void DelegationTokenProvider::Configure(uint64_t tokenLifetime)
+    {
+    m_tokenLifetime = tokenLifetime;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2016
@@ -58,7 +69,8 @@ AsyncTaskPtr<SamlTokenResult> DelegationTokenProvider::RetrieveNewToken()
     if (nullptr == baseToken)
         return CreateCompletedAsyncTask(SamlTokenResult::Error({}));
 
-    return Connect::RenewToken(*baseToken, m_rpUri.c_str())->Then<SamlTokenResult>([=] (SamlTokenResult result)
+    return Connect::RenewToken(*baseToken, m_rpUri.c_str(), nullptr, m_tokenLifetime)
+    ->Then<SamlTokenResult>([=] (SamlTokenResult result)
         {
         if (!result.IsSuccess() && result.GetError().GetHttpStatus() == HttpStatus::Unauthorized)
             {

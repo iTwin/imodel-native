@@ -26,10 +26,12 @@ static bool s_tokenBasedAuthentication = false;
 // Authentication related stuff
 
 #ifdef DEBUG
-#define CONNECT_TOKEN_LIFETIME 30
+#define TOKEN_LIFETIME 30
 #else // DEBUG
-#define CONNECT_TOKEN_LIFETIME 1440
+#define TOKEN_LIFETIME (24*60)
 #endif // !DEBUG
+
+const uint64_t Connect::DefaultTokenLifetime = TOKEN_LIFETIME;
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Travis.Cobbs    04/2013
@@ -60,7 +62,7 @@ void Connect::Uninintialize()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<SamlTokenResult> Connect::GetStsToken(CredentialsCR creds, Utf8CP appliesToUrlString, Utf8CP stsUrl)
+AsyncTaskPtr<SamlTokenResult> Connect::GetStsToken(CredentialsCR creds, Utf8CP appliesToUrlString, Utf8CP stsUrl, uint64_t tokenLifetime)
     {
     Json::Value issueExParams;
     issueExParams["ActAs"] = "";
@@ -68,13 +70,13 @@ AsyncTaskPtr<SamlTokenResult> Connect::GetStsToken(CredentialsCR creds, Utf8CP a
     Utf8PrintfString credsPair("%s:%s", creds.GetUsername().c_str(), creds.GetPassword().c_str());
     Utf8PrintfString authorization("Basic %s", Base64Utilities::Encode(credsPair).c_str());
 
-    return GetStsToken(authorization, issueExParams, appliesToUrlString, stsUrl);
+    return GetStsToken(authorization, issueExParams, appliesToUrlString, stsUrl, tokenLifetime);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<SamlTokenResult> Connect::GetStsToken(SamlTokenCR parentToken, Utf8CP appliesToUrlString, Utf8CP stsUrl)
+AsyncTaskPtr<SamlTokenResult> Connect::GetStsToken(SamlTokenCR parentToken, Utf8CP appliesToUrlString, Utf8CP stsUrl, uint64_t tokenLifetime)
     {
     Json::Value issueExParams;
 
@@ -90,13 +92,13 @@ AsyncTaskPtr<SamlTokenResult> Connect::GetStsToken(SamlTokenCR parentToken, Utf8
 
     Utf8PrintfString authorization("X509 access_token=%s", cert.c_str());
 
-    return GetStsToken(authorization, issueExParams, appliesToUrlString, stsUrl);
+    return GetStsToken(authorization, issueExParams, appliesToUrlString, stsUrl, tokenLifetime);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Travis.Cobbs    07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<SamlTokenResult> Connect::GetStsToken(Utf8StringCR authorization, JsonValueCR issueExParams, Utf8CP appliesToUrlString, Utf8CP stsUrl)
+AsyncTaskPtr<SamlTokenResult> Connect::GetStsToken(Utf8StringCR authorization, JsonValueCR issueExParams, Utf8CP appliesToUrlString, Utf8CP stsUrl, uint64_t tokenLifetime)
     {
     BeAssert(s_connectInitialized);
 
@@ -107,7 +109,7 @@ AsyncTaskPtr<SamlTokenResult> Connect::GetStsToken(Utf8StringCR authorization, J
     issueExParamsValue["KeyType"] = "";
     issueExParamsValue["AppliesTo"] = appliesToUrlString;
     issueExParamsValue["Claims"] = "";
-    issueExParamsValue["Lifetime"] = Utf8PrintfString("%d", CONNECT_TOKEN_LIFETIME);
+    issueExParamsValue["Lifetime"] = Utf8PrintfString("%llu", tokenLifetime);
     issueExParamsValue["OnBehalfOf"] = "";
     issueExParamsValue["Properties"] = "";
     issueExParamsValue["DeviceId"] = s_clientInfo->GetDeviceId();
@@ -148,7 +150,7 @@ AsyncTaskPtr<SamlTokenResult> Connect::GetStsToken(Utf8StringCR authorization, J
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Bentley Systems 04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<SamlTokenResult> Connect::Login(CredentialsCR creds, Utf8CP appliesToUrl, Utf8CP stsUrl)
+AsyncTaskPtr<SamlTokenResult> Connect::Login(CredentialsCR creds, Utf8CP appliesToUrl, Utf8CP stsUrl, uint64_t tokenLifetime)
     {
     Utf8String appliesToUrlString;
     if (appliesToUrl != nullptr)
@@ -170,7 +172,7 @@ AsyncTaskPtr<SamlTokenResult> Connect::Login(CredentialsCR creds, Utf8CP applies
         stsUrlString = UrlProvider::Urls::ImsStsAuth.Get();
         }
 
-    return GetStsToken(creds, appliesToUrlString.c_str(), stsUrlString.c_str());
+    return GetStsToken(creds, appliesToUrlString.c_str(), stsUrlString.c_str(), tokenLifetime);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -265,7 +267,7 @@ Utf8String Connect::GetClientRelyingPartyUriForWtrealm()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Vytautas.Barkauskas     11/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<SamlTokenResult> Connect::RenewToken(SamlTokenCR parentToken, Utf8CP appliesToUrl, Utf8CP stsUrl)
+AsyncTaskPtr<SamlTokenResult> Connect::RenewToken(SamlTokenCR parentToken, Utf8CP appliesToUrl, Utf8CP stsUrl, uint64_t tokenLifetime)
     {
     Utf8String appliesToUrlString;
     if (appliesToUrl != nullptr)
@@ -287,5 +289,5 @@ AsyncTaskPtr<SamlTokenResult> Connect::RenewToken(SamlTokenCR parentToken, Utf8C
         stsUrlString = UrlProvider::Urls::ImsActiveStsDelegationService.Get() + "/json/IssueEx";
         }
 
-    return GetStsToken(parentToken, appliesToUrlString.c_str(), stsUrlString.c_str());
+    return GetStsToken(parentToken, appliesToUrlString.c_str(), stsUrlString.c_str(), tokenLifetime);
     }
