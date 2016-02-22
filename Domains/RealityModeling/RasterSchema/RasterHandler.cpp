@@ -46,6 +46,7 @@ RasterQuadTreeP RasterModel::GetTree()
 //----------------------------------------------------------------------------------------
 void RasterModel::_AddGraphicsToScene(SceneContextR context)
     {
+    //Note that this call occurs on the client thread and that is must be fast.
     RasterQuadTreeP pTree = GetTree();
     if(NULL != pTree)
         pTree->Draw(context);

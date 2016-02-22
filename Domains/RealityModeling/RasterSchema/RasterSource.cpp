@@ -178,21 +178,9 @@ Bitmap::Bitmap(uint32_t width, uint32_t height, PixelType pixelType, bool isTopD
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-DisplayTilePtr DisplayTile::Create(uint32_t width, uint32_t height, DisplayTile::PixelType pixelType, bool alphaBlend, Byte const* pData, size_t pitch)
+DisplayTilePtr DisplayTile::Create(Render::TextureR tile)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    BeAssert(pitch < UINT32_MAX);
-
-    DisplayTilePtr pTile = new DisplayTile();
-
-    Point2d size = { (int32_t)width, (int32_t)height };
-
-    pTile->m_haveTexture = true;
-    T_HOST.GetGraphicsAdmin()._DefineTile(pTile->GetTextureId(), NULL, size, alphaBlend, static_cast<uint32_t>(pixelType), (uint32_t)pitch, pData);
-    return pTile;
-#else
-    return nullptr;
-#endif
+    return new DisplayTile(tile);
     }
 
 //----------------------------------------------------------------------------------------
@@ -200,12 +188,7 @@ DisplayTilePtr DisplayTile::Create(uint32_t width, uint32_t height, DisplayTile:
 //----------------------------------------------------------------------------------------
 DisplayTile::~DisplayTile()
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    if(m_haveTexture)
-        T_HOST.GetGraphicsAdmin()._DeleteTexture (GetTextureId());
-
-    m_haveTexture = false;
-#endif
+    m_pTile = nullptr;
     }
 
 //----------------------------------------------------------------------------------------
@@ -215,7 +198,7 @@ DisplayTile::~DisplayTile()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-DisplayTilePtr RasterSource::QueryTile(TileId const& id, bool request) {return _QueryTile(id, request);}
+Render::ImagePtr RasterSource::QueryTile(TileId const& id, bool request) {return _QueryTile(id, request);}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  5/2015

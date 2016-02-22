@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/RasterFileSource.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -23,6 +23,7 @@ private:
     RasterFilePtr           m_rasterFilePtr;
     Point2d                 m_tileSize;
     HFCPtr<HCDPacket>       m_packetPtr;
+    std::mutex              m_imageppLock;      //&&MM temp. imagepp is not thread safe. what about gcoord? where to put that lock?
 
 private:
             RasterFileSource(Utf8StringCR resolvedName);
@@ -31,7 +32,7 @@ private:
 
 
 protected:
-    virtual DisplayTilePtr _QueryTile(TileId const& id, bool request) override;
+    virtual Render::ImagePtr _QueryTile(TileId const& id, bool request) override;
 
 public:
     static  RasterSourcePtr Create(Utf8StringCR resolvedName);

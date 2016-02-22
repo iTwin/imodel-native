@@ -9,6 +9,22 @@
 #include <DgnPlatform/ImageUtilities.h>
 #include "RasterQuadTree.h"
 
+//&&MM eval if we need to lock a res. Res 3 might be too aggressive when multiple rasters are involved.
+// static const uint32_t LOCKED_RESOLUTION_DIFF = 3;
+// static const uint32_t DRAW_CHILDREN_DELTA = 2;
+// static const uint32_t DRAW_COARSER_DELTA = 6;
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  2/2016
+//----------------------------------------------------------------------------------------
+static RasterTileCache& GetTileCache()
+    {
+    static RasterTileCache* s_instance = NULL;
+    if (NULL == s_instance)
+        s_instance = new RasterTileCache;
+    return *s_instance;
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  5/2015
 //----------------------------------------------------------------------------------------
@@ -20,98 +36,189 @@ static ReprojectStatus s_FilterGeocoordWarning(ReprojectStatus status)
     return status;   
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  4/2015
-//----------------------------------------------------------------------------------------
-struct DisplayTileCache
+//=======================================================================================
+// @bsiclass                                                    BentleySystems
+//=======================================================================================
+struct TileQuery : public RefCountedBase        // &&MM RasterTile and TileQuery is confusing.  Maybe TileNode instead of RasterTile.
     {
-    typedef DisplayTilePtr ItemPtr;
-    typedef uintptr_t ItemId;
-    typedef std::list<std::pair<ItemPtr, ItemId>> ItemList;
-
-    typedef std::unordered_map<ItemId, ItemList::iterator>  CachedItems;
-    
-    //----------------------------------------------------------------------------------------
-    // @bsimethod                                                   Mathieu.Marchand  7/2015
-    //----------------------------------------------------------------------------------------
-    static DisplayTileCache& Instance()
+    TileQuery(RasterTileR tileNode, Render::TargetR target)
+        :m_tileNode(tileNode), m_target(target), m_isFinished(false)
         {
-        static DisplayTileCache* s_instance=NULL; 
-        if (NULL==s_instance) 
-            s_instance = new DisplayTileCache; 
-        return *s_instance;
         }
 
-    //----------------------------------------------------------------------------------------
-    // @bsimethod                                                   Mathieu.Marchand  7/2015
-    //----------------------------------------------------------------------------------------
-    void AddItem(ItemId const& id, ItemPtr& item)
-        {
-        BeAssert(!IsCached(id));
+    void Run(); // Execute in a thread
 
-        Prune();    // if required unload item.
+    // Thread safe methods.
+    bool IsCanceled() const { return GetRefCount() == 1; }    // if the pool is the only owner that means no one is interested on the result.
+    bool IsFinished() const { return m_isFinished; }
 
-        m_lru.push_back(std::make_pair(item, id));
-        m_map.insert(CachedItems::value_type(id, --m_lru.end()));
-        }
+    RasterTileR GetTileNodeR() {return m_tileNode;}
 
-    //----------------------------------------------------------------------------------------
-    // @bsimethod                                                   Mathieu.Marchand  7/2015
-    //----------------------------------------------------------------------------------------
-    ItemPtr GetItem(ItemId const& id)
-        {
-        auto mapItr = m_map.find(id);
-        if(mapItr == m_map.end())
-            return nullptr;
-        
-        m_lru.splice(m_lru.end(),m_lru, mapItr->second);
+    Render::TextureP GetTileP() {return m_pTile.get();} // might be null is query failed.
 
-        return mapItr->second->first;
-        }
-
-    //----------------------------------------------------------------------------------------
-    // @bsimethod                                                   Mathieu.Marchand  7/2015
-    //----------------------------------------------------------------------------------------
-    bool IsCached(ItemId const& id)
-        {
-        return m_map.find(id) != m_map.end();
-        }
-
-    //----------------------------------------------------------------------------------------
-    // @bsimethod                                                   Mathieu.Marchand  7/2015
-    //----------------------------------------------------------------------------------------
-    void RemoveItem(ItemId const& id)
-        {
-        auto mapItr = m_map.find(id);
-        if(mapItr != m_map.end())
-            {
-            RemoveItem(mapItr->second);
-            }
-        }
-
-    //----------------------------------------------------------------------------------------
-    // @bsimethod                                                   Mathieu.Marchand  7/2015
-    //----------------------------------------------------------------------------------------
-    void RemoveItem(ItemList::const_iterator itr)
-        {
-        m_map.erase(itr->second);
-        m_lru.erase(itr);
-        }
-
-    //----------------------------------------------------------------------------------------
-    // @bsimethod                                                   Mathieu.Marchand  7/2015
-    //----------------------------------------------------------------------------------------
-    void Prune()
-        {
-        // Qv tile are stored in RGBA with mipmap. So a tile is: width*height*4*1.33 bytes.
-        // For now, we have have tiles of 256x256 so 340K per tile. We limit to 200 tiles ~60 MB for all rasters.
-        if(m_lru.size() > 200) 
-            RemoveItem(m_lru.begin());
-        }
-
-    CachedItems m_map;
-    ItemList m_lru;    
+    private:
+        std::atomic<bool>  m_isFinished;
+        Render::TexturePtr m_pTile;
+        Render::TargetR    m_target;
+        RasterTileR        m_tileNode;
     };
+typedef RefCountedPtr<TileQuery> TileQueryPtr;
+
+class ThreadPool;
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  9/2015
+//----------------------------------------------------------------------------------------
+class Worker
+    {
+    public:
+        Worker(ThreadPool &s) : m_pool(s) {}
+        void operator()();
+    private:
+        ThreadPool &m_pool;
+    };
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  9/2015
+//----------------------------------------------------------------------------------------
+class ThreadPool
+    {
+    public:
+        ThreadPool(size_t);
+        ~ThreadPool();
+
+        void Enqueue(TileQuery& task);
+
+        static ThreadPool& GetInstance()
+            {
+            // At least 2 make sense since we have a mix of io and cpu/memory operations.
+            size_t hardwareThreads = std::thread::hardware_concurrency();
+            static ThreadPool s_pool(MAX(2, hardwareThreads));
+            return s_pool;
+            }
+    private:
+        friend class Worker;
+
+        // need to keep track of threads so we can join them
+        std::vector< std::thread > m_workers;
+
+        // the task queue
+        std::deque<TileQueryPtr> m_tasks;
+
+        // synchronization
+        std::mutex m_queue_mutex;
+        std::condition_variable m_condition;
+        std::atomic<bool> m_stop;
+    };
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  9/2015
+//----------------------------------------------------------------------------------------
+void Worker::operator()()
+    {
+    BeThreadUtilities::SetCurrentThreadName("QueryTile worker");
+
+    while (true)
+        {
+        TileQueryPtr taskP;
+
+        {   // acquire lock
+        std::unique_lock<std::mutex> lock(m_pool.m_queue_mutex);
+        while (taskP.IsNull())
+            {
+            // look for a work item
+            while (!m_pool.m_stop && m_pool.m_tasks.empty())
+                {
+                // if there are none wait for notification
+                m_pool.m_condition.wait(lock);
+                }
+
+            if (m_pool.m_stop) // exit if the pool is stopped
+                return;
+
+            // get the task from the queue
+            taskP = m_pool.m_tasks.front();
+            m_pool.m_tasks.pop_front();
+
+            if (taskP->IsCanceled())
+                taskP = nullptr;
+            }
+
+        }   // release lock
+
+        // execute the task
+        taskP->Run();
+
+        // Query executed, release it. We do not want to hold into it because we might end up being the last owner of the material and that could mean 
+        // deleting a qv texture in the worker thread. This is not allowed.
+        taskP = nullptr;
+        }
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  9/2015
+//----------------------------------------------------------------------------------------
+ThreadPool::ThreadPool(size_t threads)
+    :m_stop(false)
+    {
+    for (size_t i = 0; i < threads; ++i)
+        m_workers.push_back(std::thread(Worker(*this)));
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  9/2015
+//----------------------------------------------------------------------------------------
+ThreadPool::~ThreadPool()
+    {
+    // stop all threads
+    m_stop = true;
+    m_condition.notify_all();
+
+    // join them
+    for (size_t i = 0; i < m_workers.size(); ++i)
+        m_workers[i].join();
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  9/2015
+//----------------------------------------------------------------------------------------
+void ThreadPool::Enqueue(TileQuery& task)
+    {
+        { // acquire lock
+        std::unique_lock<std::mutex> lock(m_queue_mutex);
+
+        // add the task and increment ref count.
+        m_tasks.push_back(&task);
+        } // release lock
+
+        // wake up one thread
+        m_condition.notify_one();
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  9/2015
+//----------------------------------------------------------------------------------------
+void TileQuery::Run()
+    {
+    //&&MM WMS will return nullptr. so we can check back later. we do not want that anymore. review.
+    Render::ImagePtr pImage = m_tileNode.GetTreeR().GetSource().QueryTile(m_tileNode.GetId(), true/*request*/);
+
+#ifndef NDEBUG  // debug build only.
+    static bool s_missingTilesInRed = false;
+    if (s_missingTilesInRed && !pImage.IsValid())
+        {
+        ByteStream data(256 * 256 * 3);
+        Byte red[3] = {255,0,0};
+        for (uint32_t pixel = 0; pixel < 256 * 256; ++pixel)
+            memcpy(data.GetDataP() + pixel * 3, red, 3);
+
+        pImage = new Render::Image(256, 256, Render::Image::Format::Rgb, std::move(data));
+        }
+#endif         
+    if (pImage.IsValid())
+        m_pTile = m_target.CreateTileSection(*pImage, false/*&&MM todo*/);
+        
+    m_isFinished = true;
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
@@ -119,14 +226,11 @@ struct DisplayTileCache
 struct RasterProgressiveDisplay : Dgn::ProgressiveTask
 {
 protected:
-    RasterQuadTreeR m_raster;
+    std::vector<RasterTilePtr>  m_visiblesTiles;    // all the tiles to display.    
+    std::list<TileQueryPtr>     m_queriedTiles;       //&&MM need to think how we could reuse the tiles that arrived but that we did not have time to create graphics for.
 
-    bvector<RasterTilePtr>      m_visiblesTiles;    // all the tiles to display. 
-    std::list<RasterTilePtr>    m_missingTiles;     // Tiles that need to be requested.
-    std::list<RasterTilePtr>    m_pendingTiles;     // Tiles that were requested and we are waiting for them to arrive.     
-    
-    uint64_t m_nextRetryTime;                             //!< When to re-try m_pendingTiles. unix millis UTC
-    uint64_t m_waitTime;                                  //!< How long to wait before re-trying m_pendingTiles. millis 
+    RasterQuadTreeR m_raster;
+    DgnViewportR    m_viewport;         // the viewport we are scheduled on.   
 
     struct SortByResolution
         {
@@ -143,7 +247,7 @@ protected:
         };
     typedef bset<RasterTilePtr, SortByResolution> SortedTiles;
 
-    RasterProgressiveDisplay (RasterQuadTreeR raster, ViewContextR context);
+    RasterProgressiveDisplay (RasterQuadTreeR raster, SceneContextR context);
     virtual ~RasterProgressiveDisplay();
 
     //! Displays tiled rasters and schedules downloads. 
@@ -151,14 +255,14 @@ protected:
 
     bool ShouldDrawInConvext (ViewContextR context) const;
 
-    void FindBackgroudTiles(SortedTiles& backgroundTiles, bvector<RasterTilePtr> const& visibleTiles, uint32_t resolutionDelta);
+    void FindBackgroudTiles(SortedTiles& backgroundTiles, std::vector<RasterTilePtr> const& visibleTiles, uint32_t resolutionDelta, DgnViewportCR viewport);
     
-    void DrawLoadedChildren(RasterTileR tile, ViewContextR context, uint32_t resolutionDelta);
+    void DrawLoadedChildren(RasterTileR tile, uint32_t resolutionDelta, SceneContextR context);
 
 public:
     void Draw (SceneContextR context);
 
-    static RefCountedPtr<RasterProgressiveDisplay> Create(RasterQuadTreeR raster, ViewContextR context);
+    static RefCountedPtr<RasterProgressiveDisplay> Create(RasterQuadTreeR raster, SceneContextR context);
 };
 
 //----------------------------------------------------------------------------------------
@@ -211,7 +315,13 @@ RasterTile::RasterTile(TileId const& id, RasterTileP parent, RasterQuadTreeR tre
 //----------------------------------------------------------------------------------------
 RasterTile::~RasterTile()
     {
-    DisplayTileCache::Instance().RemoveItem((uintptr_t)this);
+    for (std::list < GraphicCacheEntry >::iterator itr(m_cachedGraphics.begin()); itr != m_cachedGraphics.end(); )
+        {
+        RasterTileCache::ItemId itemToRemove = itr->m_cacheId;
+        // Remove from m_cachedGraphics prior to remove from cache because OnItemRemoveFromCache() would do it and invalidate our iterator.
+        itr = m_cachedGraphics.erase(itr);
+        GetTileCache().RemoveItem(itemToRemove);
+        }
     }
 
 //----------------------------------------------------------------------------------------
@@ -263,8 +373,9 @@ ReprojectStatus RasterTile::ReprojectCorners(DPoint3dP outUors, DPoint3dCP srcCa
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-bool RasterTile::Draw(ViewContextR context)
+bool RasterTile::Draw(SceneContextR context)
     {
+    //&&MM make sure corners have the same origin than UOR. if not, abstract qv organization and make the switch in QV Render impl.
     // Corners are in this order:
     //  [0]  [1]
     //  [2]  [3]
@@ -274,26 +385,25 @@ bool RasterTile::Draw(ViewContextR context)
     // Make sure the map displays beneath element graphics. Note that this policy is appropriate for the background map, which is always
     // "on the ground". It is not appropriate for other kinds of reality data, even some images display. It is up to the individual reality
     // data handler to use the "surface" that is appprpriate to the reality data.
-    if (!context.GetViewport()->GetViewController().GetTargetModel()->Is3d())
-        {
-        for (auto& pt : uvPts)
-            pt.z = -DgnViewport::GetDisplayPriorityFrontPlane();  // lowest possibly priority
-        }
-    else
-        {
-        //NEEDS_WORK_CONTINUOUS_RENDER BeSQLite::wt_OperationForGraphics highPriority;
-        auto extents = context.GetViewport()->GetViewController().GetViewedExtents();
-        for (auto& pt : uvPts)
-            pt.z = extents.low.z - 1;
-        }
+//&&MM todo raster display priority.
+//     if (!context.GetViewport()->GetViewController().GetTargetModel()->Is3d())
+//         {
+//         for (auto& pt : uvPts)
+//             pt.z = -DgnViewport::GetDisplayPriorityFrontPlane();  // lowest possibly priority
+//         }
+//     else
+//         {
+//         //NEEDS_WORK_CONTINUOUS_RENDER BeSQLite::wt_OperationForGraphics highPriority;
+//         auto extents = context.GetViewport()->GetViewController().GetViewedExtents();
+//         for (auto& pt : uvPts)
+//             pt.z = extents.low.z - 1;
+//         }
 
-    DisplayTilePtr pDisplayTile = GetDisplayTileP(false/*request*/);
-
-//#ifndef NDEBUG  // debug build only.
-    static bool s_DrawTileShape = true;
-    if(pDisplayTile.IsNull() && s_DrawTileShape)
+#ifndef NDEBUG  // debug build only.
+    static bool s_DrawTileShape = false;
+    if(s_DrawTileShape)
         {
-        Render::GraphicPtr pTileGraphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport()));
+        Render::GraphicPtr pTileInfoGraphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport()));
 
         // TODO ActivateGraphicParams
 //         ElemMatSymb elemMatSymb;
@@ -309,7 +419,7 @@ bool RasterTile::Draw(ViewContextR context)
         box[2] = uvPts[3];
         box[3] = uvPts[2];
         box[4] = box[0];
-        pTileGraphic->AddLineString(_countof(box), box);
+        pTileInfoGraphic->AddLineString(_countof(box), box);
 
         DPoint3d centerPt = DPoint3d::FromInterpolate(uvPts[0], 0.5, uvPts[3]);
         double pixelSize = context.GetPixelSizeAtPoint(&centerPt);
@@ -328,52 +438,25 @@ bool RasterTile::Draw(ViewContextR context)
 //         colorIdx = ColorDef(222, 0, 222, 128);
 //         elemMatSymb.SetLineColor (colorIdx);
 //         context.GetIDrawGeom().ActivateMatSymb (&elemMatSymb);
-        pTileGraphic->AddTextString (*textStr);
+        pTileInfoGraphic->AddTextString (*textStr);
 
-        //context.OutputGraphic(*pTileGraphic, nullptr);
+        context.OutputGraphic(*pTileInfoGraphic, nullptr);
         }
-//#endif
-#if NEEDS_WORK_CONTINUOUS_RENDER
-    if(!pDisplayTile.IsValid())
-        return false;
-
-    uintptr_t textureId = pDisplayTile->GetTextureId();
-    context.GetIViewDraw().DrawMosaic (1,1, &textureId, uvPts); 
 #endif
+
+    Dgn::Render::GraphicP pTileGraphic = GetCachedGraphic(context.GetViewportR());
+    if(pTileGraphic == nullptr)
+        return false;
+    
+    context.OutputGraphic(*pTileGraphic, nullptr);
     
     return true;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  4/2015
-//----------------------------------------------------------------------------------------
-DisplayTilePtr RasterTile::GetDisplayTileP(bool request) 
-    {
-    DisplayTilePtr pDisplayTile = DisplayTileCache::Instance().GetItem((uintptr_t)this);
-    if(!pDisplayTile.IsValid())
-        {
-        // request=false : Load only if locally available. 
-        // If not and request is turned on a request is made to the cache and NULL is returned. We will need to check back at a later time.
-        pDisplayTile = m_tree.GetSource().QueryTile(m_tileId, request);        
-        if(pDisplayTile.IsValid())
-            DisplayTileCache::Instance().AddItem((uintptr_t)this, pDisplayTile);
-        }
-
-    return pDisplayTile;
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  5/2015
 //----------------------------------------------------------------------------------------
 RasterSource::Resolution const& RasterTile::GetResolution() const {return m_tree.GetSource().GetResolution(m_tileId.resolution);}
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  7/2015
-//----------------------------------------------------------------------------------------
-bool RasterTile::IsLoaded() const 
-    {
-    return DisplayTileCache::Instance().IsCached((uintptr_t)this);
-    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
@@ -415,7 +498,7 @@ void RasterTile::AllocateChildren()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-void RasterTile::QueryVisible(bvector<RasterTilePtr>& visibles, ViewContextR context)
+void RasterTile::QueryVisible(std::vector<RasterTilePtr>& visibles, ViewContextR context)
     { 
     double factor;
     if (IsVisible(context, factor))
@@ -518,6 +601,52 @@ bool RasterTile::IsVisible (ViewContextR viewContext, double& factor) const
     }
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  2/2016
+//----------------------------------------------------------------------------------------
+Render::GraphicP RasterTile::GetCachedGraphic(DgnViewportCR viewport, bool notifyAccess)
+    {
+    for (auto& cacheEntry : m_cachedGraphics)
+        {
+        if (cacheEntry.m_pViewport == &viewport)
+            {
+            if(notifyAccess)
+                GetTileCache().NotifyAccess(cacheEntry.m_cacheId);
+            return cacheEntry.m_graphic.get();
+            }
+        }
+
+    return nullptr;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  2/2016
+//----------------------------------------------------------------------------------------
+void RasterTile::SaveGraphic(DgnViewportCR viewport, Render::GraphicR graphic)
+    {
+    GraphicCacheEntry entry;
+    entry.m_cacheId = GetTileCache().AddItem(*this);
+    entry.m_pViewport = &viewport;
+    entry.m_graphic = &graphic;
+   
+    m_cachedGraphics.emplace_back(entry);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  2/2016
+//----------------------------------------------------------------------------------------
+void RasterTile::OnItemRemoveFromCache(RasterTileCache::ItemId const& id)
+    {
+    for (std::list < GraphicCacheEntry >::iterator itr(m_cachedGraphics.begin()); itr != m_cachedGraphics.end(); ++itr)
+        {
+        if (itr->m_cacheId == id)
+            {
+            m_cachedGraphics.erase(itr);
+            break;
+            }
+        }
+    }
+
+//----------------------------------------------------------------------------------------
 //-------------------------------  RasterQuadTree --------------------------------------------
 //----------------------------------------------------------------------------------------
 
@@ -545,7 +674,7 @@ RasterQuadTree::RasterQuadTree(RasterSourceR source, DgnDbR dgnDb)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-void RasterQuadTree::QueryVisible(bvector<RasterTilePtr>& visibles, ViewContextR context)
+void RasterQuadTree::QueryVisible(std::vector<RasterTilePtr>& visibles, ViewContextR context)
     {
     visibles.clear();
 
@@ -556,11 +685,10 @@ void RasterQuadTree::QueryVisible(bvector<RasterTilePtr>& visibles, ViewContextR
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-void RasterQuadTree::Draw(Dgn::SceneContextR context)
+void RasterQuadTree::Draw(SceneContextR context)
     {
-    //&&MM not now
-//     RefCountedPtr<RasterProgressiveDisplay> display = RasterProgressiveDisplay::Create(*this, context);
-//     display->Draw(context);
+    RefCountedPtr<RasterProgressiveDisplay> display = RasterProgressiveDisplay::Create(*this, context);
+    display->Draw(context);
     }
 
 //----------------------------------------------------------------------------------------
@@ -570,8 +698,9 @@ void RasterQuadTree::Draw(Dgn::SceneContextR context)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-RasterProgressiveDisplay::RasterProgressiveDisplay(RasterQuadTreeR raster, ViewContextR context)
-:m_raster(raster)
+RasterProgressiveDisplay::RasterProgressiveDisplay(RasterQuadTreeR raster, SceneContextR context)
+:m_raster(raster),
+m_viewport(context.GetViewportR())
     {
     }
 
@@ -585,7 +714,7 @@ RasterProgressiveDisplay::~RasterProgressiveDisplay()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-RefCountedPtr<RasterProgressiveDisplay> RasterProgressiveDisplay::Create(RasterQuadTreeR rasterTree, ViewContextR context)
+RefCountedPtr<RasterProgressiveDisplay> RasterProgressiveDisplay::Create(RasterQuadTreeR rasterTree, SceneContextR context)
     {
     return new RasterProgressiveDisplay(rasterTree, context);
     }
@@ -630,7 +759,7 @@ bool RasterProgressiveDisplay::ShouldDrawInConvext (ViewContextR context) const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  5/2015
 //----------------------------------------------------------------------------------------
-void RasterProgressiveDisplay::DrawLoadedChildren(RasterTileR tile, ViewContextR context, uint32_t resolutionDelta)
+void RasterProgressiveDisplay::DrawLoadedChildren(RasterTileR tile, uint32_t resolutionDelta, SceneContextR context)
     {
     if(0 == resolutionDelta)
         return;
@@ -641,29 +770,23 @@ void RasterProgressiveDisplay::DrawLoadedChildren(RasterTileR tile, ViewContextR
         if(NULL == pChild)
             continue;
 
-        if(pChild->IsLoaded())
-            {
-            pChild->Draw(context);
-            }
-        else
-            {
-            DrawLoadedChildren(*pChild, context, resolutionDelta-1);
-            }
+        if(!pChild->Draw(context))
+            DrawLoadedChildren(*pChild, resolutionDelta-1, context);
         }
     }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  5/2015
 //----------------------------------------------------------------------------------------
-void RasterProgressiveDisplay::FindBackgroudTiles(SortedTiles& backgroundTiles, bvector<RasterTilePtr> const& visibleTiles, uint32_t resolutionDelta)
+void RasterProgressiveDisplay::FindBackgroudTiles(SortedTiles& backgroundTiles, std::vector<RasterTilePtr> const& visibleTiles, uint32_t resolutionDelta, DgnViewportCR viewport)
     {
     for(auto const& pTile : visibleTiles)
         {
-        if(!pTile->IsLoaded())
+        if(!pTile->HasCachedGraphic(viewport))
             {
             uint32_t maxResolution = pTile->GetId().resolution + resolutionDelta;
             for(RasterTileP pParent = pTile->GetParentP(); NULL != pParent; pParent = pParent->GetParentP())
                 {
-                if(pParent->IsLoaded())
+                if(pParent->HasCachedGraphic(viewport))
                     {
                     backgroundTiles.insert(pParent);
                     break;
@@ -700,6 +823,7 @@ void RasterProgressiveDisplay::Draw (SceneContextR context)
     //   we try loading(from cache and qv tile) of what is locally available.
     // - What happen during a dynamic draw or multiple zoom in/out (wheel mouse)? show we scheduled?
 
+    BeAssert(nullptr != context.GetViewport()); // a scene always have a viewport.
 
     // First, determine if we can draw map tiles at all.
     if (!ShouldDrawInConvext (context) || NULL == context.GetViewport())
@@ -709,36 +833,31 @@ void RasterProgressiveDisplay::Draw (SceneContextR context)
 
     // Draw background tiles if any, that gives feedback when zooming in.
     // Background tiles need to be draw from coarser resolution to finer resolution to make sure coarser tiles are not hiding finer tiles.
+    //&&MM  this causes z-fighting. poss sol. use qv setDepth.
     SortedTiles backgroundTiles;
-    FindBackgroudTiles(backgroundTiles, m_visiblesTiles, 4/*maxResDelta*/);
+    FindBackgroudTiles(backgroundTiles, m_visiblesTiles, 4/*maxResDelta*/, context.GetViewportR());
     for(RasterTilePtr& pTile : backgroundTiles)
         {
-        BeAssert(pTile->IsLoaded());
+        BeAssert(pTile->HasCachedGraphic(context.GetViewportR()));
         pTile->Draw(context);
         }
 
     // Draw what we have.
     for(RasterTilePtr& pTile : m_visiblesTiles)
         {
-        if(pTile->IsLoaded())
-            {
-            pTile->Draw(context);
-            }
-        else
+        if(!pTile->Draw(context))
             {
             // Draw finer resolution.
-            DrawLoadedChildren(*pTile, context, 2/*resolutionDelta*/);
+            DrawLoadedChildren(*pTile, 2/*resolutionDelta*/, context);
 
-            m_missingTiles.push_back(pTile);
+            TileQueryPtr pQuery = new TileQuery(*pTile, context.GetTargetR());
+            ThreadPool::GetInstance().Enqueue(*pQuery);
+            m_queriedTiles.emplace_back(pQuery);
             }
         }
 
-    if(!m_missingTiles.empty())
-        {
-        context.GetViewport()->ScheduleProgressiveTask(*this);
-        m_waitTime = 50;
-        m_nextRetryTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis() + m_waitTime;
-        }
+    if(!m_queriedTiles.empty())
+        context.GetViewportR().ScheduleProgressiveTask(*this);
     }
 
 //----------------------------------------------------------------------------------------
@@ -746,54 +865,42 @@ void RasterProgressiveDisplay::Draw (SceneContextR context)
 //----------------------------------------------------------------------------------------
 ProgressiveTask::Completion RasterProgressiveDisplay::_DoProgressive(SceneContextR context, WantShow& wantShow)
     {
-    if (BeTimeUtilities::GetCurrentTimeAsUnixMillis() < m_nextRetryTime)
-        {
-       // LOG.tracev("Wait %lld until next retry", m_nextRetryTime - BeTimeUtilities::GetCurrentTimeAsUnixMillis());
-        return Completion::Aborted;
-        }
-
-    while(!m_missingTiles.empty())
-        {
-        auto pTile = m_missingTiles.back();
-        m_missingTiles.pop_back();
-
-        DisplayTilePtr pDisplayTile = pTile->GetDisplayTileP(true/*request*/);  // Read from cache or request it. Won't be requested twice by the reality data cache.
-        if(!pTile->Draw(context))
-            {
-            // Tile was not available and was requested. We'll check for it at a later time.
-            m_pendingTiles.push_back(pTile);
-            }
-
-        if (context.CheckStop())
-            return Completion::Aborted;
-        }
-
     Completion completion = Completion::Finished;
 
-    for (auto pTile = m_pendingTiles.begin(); pTile != m_pendingTiles.end();  /* incremented or erased in loop*/ )
+    //&&MM wantShow
+    for (auto pTileQueryItr = m_queriedTiles.begin(); pTileQueryItr != m_queriedTiles.end();  /* incremented or erased in loop*/ )
         {
-        if (context.CheckStop())
+        // &&MM review how often we should call checkstop.  make sense to test only when we draw something everything else is super fast
+        // and probably doesn't require a check stop.
+        if (context.CheckStop())    
             {
             completion = Completion::Aborted;
             break;
             }
+        TileQuery* pTileQuery = (*pTileQueryItr).get();
 
         // Will read from cache. Will not request again.
-        if((*pTile)->Draw(context))
+        if(pTileQuery->IsFinished ())
             {
-            pTile = m_pendingTiles.erase(pTile);
+            if (pTileQuery->GetTileP() != nullptr)
+                {
+                RasterTileR tileNode = pTileQuery->GetTileNodeR();
+
+                // &&MM all that create stuff should be done by the node?
+                Render::GraphicPtr pTileGraphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport()));
+                pTileGraphic->AddTile(*pTileQuery->GetTileP(), tileNode.m_corners);
+                tileNode.SaveGraphic(context.GetViewportR(), *pTileGraphic);
+
+                tileNode.Draw(context);
+                }          
+
+            pTileQueryItr = m_queriedTiles.erase(pTileQueryItr);
             }
         else
             {
-            ++pTile;    // Will retry later
+            ++pTileQueryItr;    // Will retry later
             completion = Completion::Aborted;   // at least one did not finish
             }        
-        }
-
-    if (completion != Completion::Finished)
-        {
-        m_waitTime = MIN(1000, (uint64_t)(m_waitTime * 1.1));
-        m_nextRetryTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis() + m_waitTime;  
         }
 
     return completion;    

@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/RasterSource.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -96,16 +96,15 @@ struct DisplayTile : RefCountedBase
     //! @param[in] alphaBlend   Blend transparent pixels. It is faster to turn it off if no transparency is present.
     //! @param[in] pData        The pixel buffer.
     //! @param[in] pitch        The size of a line in bytes or 0 if no line padding.
-    static DisplayTilePtr Create(uint32_t width, uint32_t height, DisplayTile::PixelType pixelType, bool alphaBlend, Byte const* pData, size_t pitch);
+    static DisplayTilePtr Create(Dgn::Render::TextureR tile);
 
-    uintptr_t GetTextureId() const {BeAssert(m_haveTexture); return (uintptr_t)this;} // We use our instance pointer value as a unique Id.
+    //uintptr_t GetTextureId() const {BeAssert(TexturePtr); return (uintptr_t)this;} // We use our instance pointer value as a unique Id.
 
+    Dgn::Render::TexturePtr m_pTile;
 private:
-    DisplayTile(){m_haveTexture=false;}
+    DisplayTile(Dgn::Render::TextureR tile) {m_pTile = &tile;}
 
     ~DisplayTile();
-
-    bool m_haveTexture; // Qv texture is allocated.
     };
 
 
@@ -148,7 +147,7 @@ struct RasterSource : RefCountedBase
 
     //! Query for tile data. Null might be returned if not yet available.  &&MM we need better error handling. (server error, time out, pending...)
     //! Border tiles are assumed to be clipped to the raster physical extent.
-    DisplayTilePtr QueryTile(TileId const& id, bool request);
+    Dgn::Render::ImagePtr QueryTile(TileId const& id, bool request);
 
     uint32_t GetResolutionCount() const {return (uint32_t)m_resolution.size();}
 
@@ -183,7 +182,7 @@ protected:
 
     void SetGcsP(GeoCoordinates::BaseGCSP pNewGcs) {m_pGcs = pNewGcs/*Hold a ref*/;} 
 
-    virtual DisplayTilePtr _QueryTile(TileId const& id, bool request) = 0;
+    virtual Dgn::Render::ImagePtr _QueryTile(TileId const& id, bool request) = 0;
 
     //! default empty constructor. Must call Initialize afterward.
     RasterSource(); 

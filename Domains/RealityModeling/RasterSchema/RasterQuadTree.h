@@ -12,6 +12,77 @@
 
 BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
 
+struct RasterTile;
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  4/2015
+//----------------------------------------------------------------------------------------
+template<typename Item_T, uint32_t ItemLimit_T>
+struct ItemCache_T
+    {
+    typedef Item_T& ItemR;
+    typedef Item_T* ItemP;
+    typedef std::list<ItemP> ItemList;
+    typedef typename ItemList::iterator ItemId;
+
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  7/2015
+    //----------------------------------------------------------------------------------------
+    ItemId AddItem(ItemR item)
+        {
+        BeAssert(std::find(m_lru.begin(), m_lru.end(), &item) == m_lru.end());
+
+        Prune();    // if required unload item.
+
+        m_lru.push_back(&item);
+        return --m_lru.end();
+        }
+
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  7/2015
+    //----------------------------------------------------------------------------------------
+    void NotifyAccess(ItemId& id)
+        {
+        if (!IsValidId(id))
+            return;
+
+        BeAssert(id != m_lru.end() && std::find(m_lru.begin(), m_lru.end(), *id) != m_lru.end());
+
+        m_lru.splice(m_lru.end(), m_lru, id);
+        }
+
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  7/2015
+    //----------------------------------------------------------------------------------------
+    void RemoveItem(ItemId id)
+        {
+        if (!IsValidId(id))
+            return;
+
+        BeAssert(std::find(m_lru.begin(), m_lru.end(), *id) != m_lru.end());
+
+        (*id)->OnItemRemoveFromCache(id);   // Notify owner of the item.
+        m_lru.erase(id);
+        }
+
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  7/2015
+    //----------------------------------------------------------------------------------------
+    void Prune()
+        {
+        while (m_lru.size() > ItemLimit_T)
+            RemoveItem(m_lru.begin());
+        }
+
+    bool IsValidId(ItemId const& id) const { return id != m_lru.end(); }
+    ItemId GetInvalidId() { return m_lru.end(); }
+
+    ItemList m_lru;
+    };
+
+#define TILE_CACHE_LIMIT 250     // The number of texture we keep in memory.
+typedef ItemCache_T<RasterTile, TILE_CACHE_LIMIT> RasterTileCache;
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
@@ -44,17 +115,14 @@ public:
     //! Create a root node(without a parent)
     static RasterTilePtr CreateRoot(RasterQuadTreeR tree);
 
-    //! return NULL if not available.
-    DisplayTilePtr GetDisplayTileP(bool request);
-
     // Raster 4 corners(UOR) in this order:
     //  [0]  [1]
     //  [2]  [3]
     DPoint3dCR GetCorners() const; 
 
     //! Draw this tile in the view. Tile might not be loaded, it will be loaded only if locally available. Return true if successful.
-    bool Draw(Dgn::ViewContextR context);    
-
+    bool Draw(Dgn::SceneContextR context);
+    
     TileId const& GetId() const {return m_tileId;}
 
     //! Direct access to coarser resolution. Might be NULL it its the root.
@@ -64,10 +132,16 @@ public:
     RasterTileP GetChildP(size_t index) {return m_pChilds[index].get();}
 
     //! Build the list of visibles tiles in this context. Nodes will be created as we walk the tree but pixels won't.
-    void QueryVisible(bvector<RasterTilePtr>& visibles, Dgn::ViewContextR context);
+    void QueryVisible(std::vector<RasterTilePtr>& visibles, Dgn::ViewContextR context);
 
-    //! Return true if the tiles pixels are loaded.
-    bool IsLoaded() const;
+    bool HasCachedGraphic(Dgn::DgnViewportCR viewport) const { return nullptr != const_cast<RasterTile*>(this)->GetCachedGraphic(viewport, false); }
+    Dgn::Render::GraphicP GetCachedGraphic(Dgn::DgnViewportCR, bool notifyAccess = true);
+    void SaveGraphic(Dgn::DgnViewportCR, Dgn::Render::GraphicR);
+    void OnItemRemoveFromCache(RasterTileCache::ItemId const& id);
+
+    RasterQuadTreeR GetTreeR() {return m_tree;}
+
+    DPoint3d m_corners[4];      // Corners in uor. //&&MM temp public.
 
 private:
     RasterTile(TileId const& id, RasterTileP parent, RasterQuadTreeR tree);
@@ -90,10 +164,17 @@ private:
     TileId m_tileId; 
     RasterQuadTreeR m_tree;          // Hold a ref only.
 
-    DPoint3d m_corners[4];      // Corners in uor.
-
     RasterTileP m_pParent;      // NULL for root node.
     RasterTilePtr m_pChilds[4];    
+
+    struct GraphicCacheEntry
+        {
+        RasterTileCache::ItemId m_cacheId;
+        Dgn::DgnViewportCP      m_pViewport;    // Graphic are created/saved per viewport(~target)
+        Dgn::Render::GraphicPtr m_graphic;        
+        };
+
+    std::list < GraphicCacheEntry > m_cachedGraphics;
 };
 
 
@@ -114,7 +195,7 @@ public:
     RasterSourceR GetSource() {return *m_pSource;}
 
     //! Build the list of visibles tiles in this context. Nodes will be created as we walk the tree but pixels won't.
-    void QueryVisible(bvector<RasterTilePtr>& visibles, Dgn::ViewContextR context);
+    void QueryVisible(std::vector<RasterTilePtr>& visibles, Dgn::ViewContextR context);
 
     Dgn::DgnDbR GetDgnDb() {return m_dgnDb;}
 

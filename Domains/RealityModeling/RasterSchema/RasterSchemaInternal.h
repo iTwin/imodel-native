@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/RasterSchemaInternal.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #ifndef __RASTERSCHEMAINTERNAL_H__
@@ -10,13 +10,13 @@
 
 #include <RasterSchema/RasterSchemaApi.h>
 #include <unordered_map>
+#include <thread>
+#include <mutex>
 
-#include <Bentley/Bentley.h>
 #include <DgnPlatform/DgnDomain.h>
 #include <DgnPlatform/ImageUtilities.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/image.h>
-#include <windows.h>
 #include <Imagepp/h/ImageppAPI.h>
 
 #ifdef GetCurrentTime

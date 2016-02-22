@@ -37,6 +37,13 @@ protected:
 
     RasterQuadTreeP GetTree();
 
+    //&&MM TODO 
+    virtual void _OnFitView(Dgn::FitContextR) {}
+
+    //&&MM TODO this how we make our raster pick-able
+    virtual void _DrawModel(Dgn::ViewContextR) {}
+
+
 public:
     //! Create a new RasterModel object, in preparation for loading it from the DgnDb.
     RasterModel(CreateParams const& params);
