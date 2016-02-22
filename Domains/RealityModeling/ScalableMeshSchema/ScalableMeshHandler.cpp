@@ -723,6 +723,15 @@ IMeshSpatialModelP ScalableMeshModel::GetTerrainModelP(BentleyApi::Dgn::DgnDbCR 
     {   
     return ScalableMeshTerrainModelAppData::Get(dgnDb)->GetModel(dgnDb);
     }
+
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Elenie.Godzaridis     2/2016
+//----------------------------------------------------------------------------------------
+IScalableMesh* ScalableMeshModel::GetScalableMesh()
+    {
+    return m_smPtr.get();
+    }
     
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
