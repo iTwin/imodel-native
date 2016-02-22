@@ -794,6 +794,7 @@ public:
         {
         if (!s_streamingSM)
             {
+			//m_numWorkingThreads = std::thread::hardware_concurrency() - 1;
             m_numWorkingThreads = 1;
             }
         else
