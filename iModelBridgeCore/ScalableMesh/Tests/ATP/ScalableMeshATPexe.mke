@@ -5,41 +5,77 @@
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
-baseDir         = $(_MakeFilePath)../../
-PolicyFile      = $(SrcRoot)TerrainModel/ScalableTerrainModel/mki/AssertScalableTerrainModelPolicy.mki
-SolutionPolicyMki=$(baseDir)ScalableTerrainModel.mki
+baseDir         = $(_MakeFilePath)
+
+%include  mdl.mki
+%include $(baseDir)ScalableMeshATPexePolicy.mki
+%include $(SrcRoot)scalablemesh/ScalableMesh.mki
+#SolutionPolicyMki=$(baseDir)ScalableMeshATPexe.mki
+
 consoleAppUnicode = 1
-%include mdl.mki
 
+#----------------------------------------------------------------------
+#   Build precompiled header
+#----------------------------------------------------------------------
 appName = ScalableMeshATPexe
-baseDir = $(_MakeFilePath)
-
+PchCompiland = $(baseDir)ScalableMeshATPPch.cpp
 o = $(OutputRootDir)Build/ScalableMesh/$(appName)/
 always:
     ~mkdir $(o)
+
+PchOutputDir = $(o)
+PchExtraOptions    = -Zm180 -D__BENTLEYSTM_BUILD__ -DNOMINMAX 
+CompileOptionsMki =  $(baseDir)ScalableMeshATPexePolicy.mki
+%include $(SharedMki)PreCompileHeader.mki
+
+# UsePrecompiledHeaderOptions is defined for us by PreCompileHeader.mki
+CCPchOpts = $(UsePrecompiledHeaderOptions)
+
+
+PCHHeaderDepends=$(o)ScalableMeshATPPch$(oext)
+MultiCompileDepends=$(_MakeFileSpec) 
+#DisableMultiCompile=1
+%include MultiCppCompileRule.mki
+
+#appName = ScalableMeshATPexe
+#baseDir = $(_MakeFilePath)
+
+
 
 ScalableMeshDir = $(SrcRoot)ScalableMesh/
 
 CCompOpts + -DUNICODE
 
-MultiCompileDepends = $(_MakeFileSpec)
-%include MultiCppCompileRule.mki
+#MultiCompileDepends = $(_MakeFileSpec)
+#%include MultiCppCompileRule.mki
 
 #NEEDS_WORK_SM : TEMP_SM_ATP For ATP purpose
 nameToDefine=SCALABLE_MESH_ATP
 %include cdefapnd.mki
 
-$(o)ATPFileFinder.obj: $(baseDir)Common/ATPFileFinder.cpp ${MultiCompileDepends}
+#$(o)MrDTMUtil.obj: $(baseDir)TiledTriangulation/MrDTMUtil.cpp $(baseDir)TiledTriangulation/MrDTMUtil.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
-$(o)ATPUtils.obj: $(baseDir)Common/ATPUtils.cpp ${MultiCompileDepends}
+#$(o)MrDTMFace.obj: $(baseDir)TiledTriangulation/MrDTMFace.cpp $(baseDir)TiledTriangulation/MrDTMFace.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
-$(o)ATPDefinitions.obj: $(baseDir)Common/ATPDefinitions.cpp ${MultiCompileDepends}
+#$(o)TiledTriangulatorValidator.obj: $(baseDir)TiledTriangulation/TiledTriangulatorValidator.cpp $(baseDir)TiledTriangulation/TiledTriangulatorValidator.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
-$(o)ATPGeneration.obj: $(baseDir)Common/ATPGeneration.cpp ${MultiCompileDepends}
+#$(o)TiledTriangulatorUtil.obj: $(baseDir)TiledTriangulation/TiledTriangulatorUtil.cpp $(baseDir)TiledTriangulation/TiledTriangulatorUtil.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
-$(o)Initialize.obj: $(baseDir)Initialize.cpp ${MultiCompileDepends}
+$(o)ATPFileFinder.obj: $(baseDir)Common/ATPFileFinder.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
-$(o)ScalableMeshATPexe.obj: $(baseDir)ScalableMeshATPexe.cpp ${MultiCompileDepends}
+#$(o)DrapeLineTool.obj: $(baseDir)Tool/DrapeLineTool.cpp $(baseDir)Tool/DrapeLineTool.h $(PCHHeaderDepends) ${MultiCompileDepends}
+
+#$(o)VolumeCalculationTool.obj: $(baseDir)Tool/VolumeCalculationTool.cpp $(baseDir)Tool/VolumeCalculationTool.h $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)ATPUtils.obj: $(baseDir)Common/ATPUtils.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)ATPDefinitions.obj: $(baseDir)Common/ATPDefinitions.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)ATPGeneration.obj: $(baseDir)Common/ATPGeneration.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)Initialize.obj: $(baseDir)Initialize.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)ScalableMeshATPexe.obj: $(baseDir)ScalableMeshATPexe.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
 
 
@@ -53,6 +89,8 @@ $(o)ScalableMeshATPexe.obj: $(baseDir)ScalableMeshATPexe.cpp ${MultiCompileDepen
 EXE_DEST     = $(o)
 EXE_NAME     = $(appname)
 EXE_OBJS     = $(MultiCompileObjectList)
+DLM_OBJECT_PCH      = $(o)ScalableMeshATPPch$(oext)
+DLM_OBJECT_FILES = $(MultiCompileObjectList) 
 LINKER_LIBRARIES  = $(ContextSubpartsLibs)BentleyAllocator.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)Bentley.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)ECObjects.lib
@@ -61,7 +99,7 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnPlatform.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BaseGeoCoord.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnView.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnGeoCoord.lib
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)ScalableTerrainModel.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)ScalableMesh.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)TerrainModelCore.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)IppGraLibs.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)IppUtlLibs.lib

@@ -49,7 +49,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
-    <CLRSupport>true</CLRSupport>
+    <CLRSupport>false</CLRSupport>
     <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -124,16 +124,16 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py  -p ScalableMeshATP -f TerrainModel -r TerrainModel b</NMakeBuildCommandLine>
-    <NMakeOutput>$(OutRoot)Winx64\build\ScalableTerrainModel\ScalableTerrainModel\ScalableMeshATP.exe</NMakeOutput>
+    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMeshATP -f ScalableMesh -r ScalableMesh b -x64</NMakeBuildCommandLine>
+    <NMakeOutput>$(OutRoot)Winx64\build\scalablemesh\ScalableMeshATP.exe</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshATP -f TerrainModel -r TerrainModel re ScalableMeshATPexe -x64 -c
-python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshATPexe -f TerrainModel -r TerrainModel re ScalableMeshATP -x64</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshATP -f TerrainModel -r TerrainModel re ScalableMeshATP -x64 -c
+    <NMakeReBuildCommandLine>BentleyBuild.py -p ScalableMeshATP -f ScalableMesh -r ScalableMesh re ScalableMeshATPexe -x64 -c
+BentleyBuild.py -p ScalableMeshATPexe -f ScalableMesh -r ScalableMesh re ScalableMeshATP -x64</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>BentleyBuild.py -p ScalableMeshATP -f ScalableMesh -r ScalableMesh re ScalableMeshATP -x64 -c
 </NMakeCleanCommandLine>
-    <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)STM;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel</NMakeIncludeSearchPath>
-    <NMakeForcedIncludes>$(ProjectDir)STM\ScalableTerrainModelPCH.h</NMakeForcedIncludes>
+    <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)STM;$(OutRoot)Winx64\BuildContexts\scalablemesh\PublicAPI;$(OutRoot)Winx64\BuildContexts\scalablemesh\PublicAPI\scalablemesh</NMakeIncludeSearchPath>
+    <NMakeForcedIncludes>$(ProjectDir)ScalableMeshATPPch.h</NMakeForcedIncludes>
     <NMakeForcedUsingAssemblies>
     </NMakeForcedUsingAssemblies>
     <AdditionalOptions>
@@ -141,7 +141,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshATPexe -f Terrain
     <NMakeAssemblySearchPath>
     </NMakeAssemblySearchPath>
     <SourcePath>$(SourcePath);D:\PointoolsVortexAPI</SourcePath>
-    <IncludePath>C:\dev\ScalableMesh-Topaz\out\debug\Winx64\BuildContexts\DgnPlatform\PublicAPI;C:\dev\ScalableMesh-Topaz\out\debug\Winx64\BuildContexts\TerrainModel\PublicAPI;C:\dev\ScalableMesh-Topaz\out\debug\Winx64\BuildContexts\ImagePP\PublicAPI;C:\dev\ScalableMesh-Topaz\out\debug\Winx64\BuildContexts\BeSQLite\PublicAPI;C:\dev\ScalableMesh-Topaz\src\Imagepp\PublicApi;$(IncludePath)</IncludePath>
+    <IncludePath>C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnPlatform\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\scalablemesh\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\ImagePP\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\BeSQLite\PublicAPI;C:\dev\ConceptStation\src\Imagepp\PublicApi;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\TerrainModel\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\Bentley\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\ConceptStation\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnDisplay\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnDisplay\PublicAPI\RasterCore;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -ax64 -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel   </NMakeBuildCommandLine>
@@ -285,6 +285,13 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClCompile Include="..\Common\ATPUtils.cpp" />
     <ClCompile Include="..\Initialize.cpp" />
     <ClCompile Include="..\ScalableMeshATPexe.cpp" />
+    <ClCompile Include="..\ScalableMeshATPPch.cpp" />
+    <ClCompile Include="..\TiledTriangulation\MrDTMFace.cpp" />
+    <ClCompile Include="..\TiledTriangulation\MrDTMUtil.cpp" />
+    <ClCompile Include="..\TiledTriangulation\TiledTriangulatorUtil.cpp" />
+    <ClCompile Include="..\TiledTriangulation\TiledTriangulatorValidator.cpp" />
+    <ClCompile Include="..\Tool\DrapeLineTool.cpp" />
+    <ClCompile Include="..\Tool\VolumeCalculationTool.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Common\ATPDefinitions.h" />
@@ -293,12 +300,21 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClInclude Include="..\Common\ATPUtils.h" />
     <ClInclude Include="..\Initialize.h" />
     <ClInclude Include="..\ScalableMeshATPexe.h" />
+    <ClInclude Include="..\ScalableMeshATPPch.h" />
+    <ClInclude Include="..\TiledTriangulation\ITiledTriangulatorValidator.h" />
+    <ClInclude Include="..\TiledTriangulation\MrDTMFace.h" />
+    <ClInclude Include="..\TiledTriangulation\MrDTMUtil.h" />
+    <ClInclude Include="..\TiledTriangulation\TiledTriangulatorUtil.h" />
+    <ClInclude Include="..\TiledTriangulation\TiledTriangulatorValidator.h" />
+    <ClInclude Include="..\Tool\DrapeLineTool.h" />
+    <ClInclude Include="..\Tool\VolumeCalculationTool.h" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="..\ScalableMesh.PartFile.xml" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\ScalableMeshATPexe.mke" />
+    <None Include="..\ScalableMeshATPexe.mki" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -25,7 +25,7 @@
 #include <ScalableMesh/GeoCoords/GCS.h>
 
 //NEEDS_WORK_SM_IMPORTER : Not sure want dependency on this.
-#include "HPUPacket.h"
+//#include "HPUPacket.h"
 
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE

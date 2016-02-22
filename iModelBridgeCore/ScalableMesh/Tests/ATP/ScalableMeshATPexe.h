@@ -8,17 +8,17 @@
 #include <ScalableMesh/ScalableMeshDefs.h>
 #include <ScalableMesh/IScalableMesh.h>
 #include <ImagePP\h\ImageppAPI.h>
-#include <ScalableMesh\IScalableMeshSourceImporter.h>
+//#include <ScalableMesh\IScalableMeshSourceImporter.h>
 #include <Bentley/BeFileListIterator.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnView/DgnViewLib.h>
-#include <DgnPlatform\IPointCloud.h>
-#include <DgnPlatform\PointCloudHandler.h>
-#include <DgnGeoCoord\DgnGeoCoord.h>
-#include <PointCloud\PointCloud.h>
-#include <PointCloud\PointCloudDisplayHandler.h>
-#include <RasterCore/RasterCoreLib.h>
-#include <DgnGeoCoord\DgnGeoCoord.h>
+//#include <DgnPlatform\IPointCloud.h>
+//#include <DgnPlatform\PointCloudHandler.h>
+//#include <DgnGeoCoord\DgnGeoCoord.h>
+//#include <PointCloud\PointCloud.h>
+//#include <PointCloud\PointCloudDisplayHandler.h>
+//#include <RasterCore/RasterCoreLib.h>
+//#include <DgnGeoCoord\DgnGeoCoord.h>
 #include <BeXml/BeXml.h>
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DGNPLATFORM

@@ -1,5 +1,6 @@
-#include "Initialize.h"
+#include <ScalableMeshATPPch.h>
 #include "ScalableMeshATPexe.h"
+#include "Initialize.h"
 #include "Common/ATPUtils.h"
 #include "Common/ATPFileFinder.h"
 

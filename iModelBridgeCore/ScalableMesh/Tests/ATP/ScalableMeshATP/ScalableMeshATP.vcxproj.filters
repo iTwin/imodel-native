@@ -19,6 +19,18 @@
     <Filter Include="Source Files\Common">
       <UniqueIdentifier>{905ab44b-4945-46e4-ad05-bca8eeda6e73}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\TiledTriangulation">
+      <UniqueIdentifier>{07b7cd3a-f464-484a-98c9-980bcdc477d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\TiledTriangulation">
+      <UniqueIdentifier>{611d28e7-04f3-451a-985d-3cfd1da3a1af}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Tool">
+      <UniqueIdentifier>{88929bde-59f6-46d7-8520-0f08dde1a108}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Tool">
+      <UniqueIdentifier>{46da52c2-26a9-434b-a599-63e667dd3ff4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Initialize.cpp">
@@ -38,6 +50,27 @@
     </ClCompile>
     <ClCompile Include="..\Common\ATPFileFinder.cpp">
       <Filter>Source Files\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\TiledTriangulation\MrDTMFace.cpp">
+      <Filter>Source Files\TiledTriangulation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\TiledTriangulation\TiledTriangulatorUtil.cpp">
+      <Filter>Source Files\TiledTriangulation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\TiledTriangulation\TiledTriangulatorValidator.cpp">
+      <Filter>Source Files\TiledTriangulation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\TiledTriangulation\MrDTMUtil.cpp">
+      <Filter>Source Files\TiledTriangulation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Tool\VolumeCalculationTool.cpp">
+      <Filter>Source Files\Tool</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Tool\DrapeLineTool.cpp">
+      <Filter>Source Files\Tool</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ScalableMeshATPPch.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -59,11 +92,36 @@
     <ClInclude Include="..\Common\ATPFileFinder.h">
       <Filter>Header Files\Common</Filter>
     </ClInclude>
+    <ClInclude Include="..\TiledTriangulation\MrDTMFace.h">
+      <Filter>Header Files\TiledTriangulation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\TiledTriangulation\ITiledTriangulatorValidator.h">
+      <Filter>Header Files\TiledTriangulation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\TiledTriangulation\TiledTriangulatorUtil.h">
+      <Filter>Header Files\TiledTriangulation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\TiledTriangulation\TiledTriangulatorValidator.h">
+      <Filter>Header Files\TiledTriangulation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\TiledTriangulation\MrDTMUtil.h">
+      <Filter>Header Files\TiledTriangulation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Tool\VolumeCalculationTool.h">
+      <Filter>Header Files\Tool</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ScalableMeshATPPch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Tool\DrapeLineTool.h">
+      <Filter>Header Files\Tool</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="..\ScalableMesh.PartFile.xml" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\ScalableMeshATPexe.mke" />
+    <None Include="..\ScalableMeshATPexe.mki" />
   </ItemGroup>
 </Project>

@@ -10,16 +10,15 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include <windows.h>
+#include <ScalableMeshATPPch.h>
 #include "ATPFileFinder.h"
-#include <ImagePP/h/HmrMacro.h>
 
 inline void AddMissingBackslashToFolderPath(WString* pio_pFolderPath)
     {
     HASSERT(0 != pio_pFolderPath);
 
     if (pio_pFolderPath->at(pio_pFolderPath->size() - 1) != '\\')
-        *pio_pFolderPath += TEXT("\\");
+        *pio_pFolderPath += TEXT(L"\\");
     }
 
 inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
@@ -27,7 +26,7 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
     HASSERT(0 != pio_pFolderPath);
 
     AddMissingBackslashToFolderPath(pio_pFolderPath);
-    *pio_pFolderPath += TEXT("*.*");
+    *pio_pFolderPath += TEXT(L"*.*");
     }
 
 /*---------------------------------------------------------------------------------**//**
