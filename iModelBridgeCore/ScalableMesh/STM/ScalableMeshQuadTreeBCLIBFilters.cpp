@@ -41,4 +41,4 @@ template class ScalableMeshQuadTreeBCLIBMeshFilter1<DPoint3d, DRange3d>;
 
 template class ScalableMeshQuadTreeBCLIBProgressiveFilter1<DPoint3d, DRange3d>;
 
-//template class ScalableMeshQuadTreeBCLIB_CGALMeshFilter<DPoint3d, DRange3d>;
+template class ScalableMeshQuadTreeBCLIB_CGALMeshFilter<DPoint3d, DRange3d>;
