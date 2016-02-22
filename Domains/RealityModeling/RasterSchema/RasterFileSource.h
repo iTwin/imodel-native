@@ -23,6 +23,7 @@ private:
     RasterFilePtr           m_rasterFilePtr;
     Point2d                 m_tileSize;
     HFCPtr<HCDPacket>       m_packetPtr;
+    std::mutex              m_imageppLock;      //&&MM temp. imagepp is not thread safe. what about gcoord? where to put that lock?
 
 private:
             RasterFileSource(Utf8StringCR resolvedName);

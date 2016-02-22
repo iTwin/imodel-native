@@ -73,6 +73,8 @@ Render::ImagePtr RasterFileSource::_QueryTile(TileId const& id, bool request)
     uint32_t scale = 1 << id.resolution;
     HGF2DStretch stretch(HGF2DDisplacement((id.x * m_tileSize.x) * scale, (id.y * m_tileSize.y) * scale), scale, scale);
 
+    std::unique_lock<std::mutex> __ippLock(m_imageppLock);
+
     HFCPtr<HRABitmap> pDisplayBitmap;
     uint32_t effectiveTileSizeX = GetTileSizeX(id);
     uint32_t effectiveTileSizeY = GetTileSizeY(id);
@@ -95,6 +97,8 @@ Render::ImagePtr RasterFileSource::_QueryTile(TileId const& id, bool request)
    // DisplayTile::PixelType pixelType = DisplayTile::PixelType::Rgba;
 
     //&&MM review buffer usage + tile alphaBlend
+
+    __ippLock.unlock();
 
     Render::ImagePtr pImage = new Render::Image(effectiveTileSizeX, effectiveTileSizeY, Render::Image::Format::Rgba, pbSrcRow, (uint32_t)pDisplayBitmap->GetPacket()->GetDataSize());
 
