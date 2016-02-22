@@ -1545,24 +1545,6 @@ static void DrawStyled(ViewContextR context, CurveVectorCR curves, bool is3d, do
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void DrawStyledCurveVector3d(ViewContextR context, CurveVectorCR curve)
-    {
-    if (NULL == context.GetCurrLineStyle(NULL))
-        {
-        if (context.GetIViewDraw().IsOutputQuickVision())
-            WireframeGeomUtil::DrawOutline(curve, context.GetCurrentGraphicR());
-        else
-            context.GetCurrentGraphicR().AddCurveVector(curve, false);
-            
-        return;
-        }
-
-    DrawStyled(context, curve, true, 0.0);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/13
-+---------------+---------------+---------------+---------------+---------------+------*/
 static void DrawStyledCurveVector2d(ViewContextR context, CurveVectorCR curve, double zDepth)
     {
     if (NULL == context.GetCurrLineStyle(NULL))
@@ -1643,17 +1625,6 @@ void ViewContext::_AddCurveVector(ElementHandleCR eh, CurveVectorCR curves, Geom
         }
     }
 #endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::DrawStyledCurveVector3d(CurveVectorCR curve)
-    {
-#if defined (WIP_NEEDSWORK_ELEMENT)
-    CurveVectorOutlineStroker::DrawStyledCurveVector3d(*this, curve);
-//    GetCurrentGraphicR().AddCurveVector(curve, false);
-#endif
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/13

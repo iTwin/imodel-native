@@ -413,7 +413,7 @@ StatusInt       LsComponent::_StrokeArc (ViewContextP context, LineStyleSymbP ls
 
     if (!hasStartTan || !hasEndTan)
         {
-        DPoint3d    startTang, endTang;
+        DVec3d    startTang, endTang;
 
         startTang.Init (r0 * sin (start), -r1 * cos (start), 0.0);
         endTang.Init (-r0 * sin (start + sweep), r1 * cos (start + sweep), 0.0);

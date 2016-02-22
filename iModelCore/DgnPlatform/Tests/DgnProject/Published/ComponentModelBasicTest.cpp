@@ -145,7 +145,7 @@ void ComponentModelBasicTest::AddScriptToLibrary(Utf8CP ProgramName, Utf8CP Prog
                     var element = model.CreateElement('dgn.PhysicalElement', options.Category);\
                     var origin = new Bentley.Dgn.DPoint3d(i,i,i);\
                     var builder = new Bentley.Dgn.ElementGeometryBuilder(element, origin, angles); \
-                    builder.Append(solid); \
+                    builder.AppendGeometry(solid); \
                     builder.SetGeomStreamAndPlacement(element); \
                     element.Insert(); \
                     }\

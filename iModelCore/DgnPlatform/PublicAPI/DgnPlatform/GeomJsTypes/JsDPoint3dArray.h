@@ -42,6 +42,8 @@ public:
     JsDPoint3dArrayP Clone (){ return new JsDPoint3dArray (m_data);}
     bvector<DPoint3d> & GetRef () {return m_data;}
     void Add (JsDPoint3dP in){m_data.push_back (in->Get ());}
+    void AddXY (double x, double y){m_data.push_back (DPoint3d::From (x,y,0.0));}
+    void AddXYZ (double x, double y, double z){m_data.push_back (DPoint3d::From (x,y,z));}
     void Clear (){m_data.clear ();}
     JsDPoint3dP At (double number)
         {
@@ -53,7 +55,10 @@ public:
         return nullptr;
         }
     double Size (){ return (double)m_data.size ();}
-
+    void TransformInPlace (JsTransformP transform)
+        {
+        transform->Get().Multiply (m_data, m_data);
+        }
     void Append (JsDPoint3dArrayP other)
         {
         for (DPoint3d &xyz : other->m_data)

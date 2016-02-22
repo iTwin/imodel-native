@@ -105,9 +105,9 @@ typedef TestElement const& TestElementCR;
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      06/15
 //=======================================================================================
-struct TestElementHandler : Dgn::dgn_ElementHandler::Physical
+struct TestElementHandler : Dgn::dgn_ElementHandler::Geometric3d
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT_CLASS_NAME, TestElement, TestElementHandler, Dgn::dgn_ElementHandler::Physical, )
+    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT_CLASS_NAME, TestElement, TestElementHandler, Dgn::dgn_ElementHandler::Geometric3d, )
 protected: 
     virtual void _GetClassParams(Dgn::ECSqlClassParams& params) override;
 };
@@ -165,9 +165,9 @@ typedef TestGroup const& TestGroupCR;
 //=======================================================================================
 // @bsiclass                                                     Shaun.Sewall    11/15
 //=======================================================================================
-struct TestGroupHandler : Dgn::dgn_ElementHandler::Physical
+struct TestGroupHandler : Dgn::dgn_ElementHandler::Geometric3d
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_GROUP_CLASS_NAME, TestGroup, TestGroupHandler, Dgn::dgn_ElementHandler::Physical, )
+    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_GROUP_CLASS_NAME, TestGroup, TestGroupHandler, Dgn::dgn_ElementHandler::Geometric3d, )
 };
 
 //=======================================================================================

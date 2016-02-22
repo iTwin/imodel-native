@@ -352,11 +352,16 @@ DbResult ViewController::SaveTo(Utf8CP newName, DgnViewId& newId)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      08/13
+* return the extents of the target model, if there is one.
+* @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d ViewController::_GetViewedExtents() const
     {
-    return m_dgndb.Units().GetProjectExtents();
+    GeometricModelP target = GetTargetModel();
+    if (target && target->GetRangeIndexP(false))
+        return AxisAlignedBox3d(*target->GetRangeIndexP(false)->GetExtents());
+
+    return AxisAlignedBox3d();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -997,7 +1002,7 @@ double SpatialViewController::CalculateMaxDepth(DVec3dCR delta, DVec3dCR zVec)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     12/13
 //---------------------------------------------------------------------------------------
-static bool convertToWorldPointWithStatus(DPoint3dR worldPoint, GeoLocationEventStatus& status, DgnUnits const& units, GeoPointCR location)
+static bool convertToWorldPoint(DPoint3dR worldPoint, GeoLocationEventStatus& status, DgnUnits const& units, GeoPointCR location)
     {
     if (SUCCESS != units.XyzFromLatLong(worldPoint, location))
         {
@@ -1019,7 +1024,7 @@ bool CameraViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, G
         return T_Super::_OnGeoLocationEvent(status, location);
 
     DPoint3d worldPoint;
-    if (!convertToWorldPointWithStatus(worldPoint, status, m_dgndb.Units(), location))
+    if (!convertToWorldPoint(worldPoint, status, m_dgndb.Units(), location))
         return false;
 
     worldPoint.z = GetEyePoint().z;
@@ -1040,7 +1045,7 @@ bool CameraViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, G
 bool SpatialViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR location)
     {
     DPoint3d worldPoint;
-    if (!convertToWorldPointWithStatus(worldPoint, status, m_dgndb.Units(), location))
+    if (!convertToWorldPoint(worldPoint, status, m_dgndb.Units(), location))
         return false;
 
     // If there's no perspective, just center the current location in the view.
@@ -1281,7 +1286,7 @@ bool CameraViewController::_OnOrientationEvent(RotMatrixCR orientation, Orientat
 bool DrawingViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR location)
     {
     DPoint3d worldPoint;
-    if (!convertToWorldPointWithStatus(worldPoint, status, m_dgndb.Units(), location))
+    if (!convertToWorldPoint(worldPoint, status, m_dgndb.Units(), location))
         return false;
 
     RotMatrix viewInverse;

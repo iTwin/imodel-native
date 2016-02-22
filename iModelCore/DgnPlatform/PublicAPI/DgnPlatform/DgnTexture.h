@@ -103,6 +103,11 @@ protected:
     virtual DgnCode _GenerateDefaultCode() const override { return DgnCode::CreateEmpty(); }
     virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override { return ResourceAuthority::IsResourceAuthority(auth); }
 public:
+
+//__PUBLISH_SECTION_END__
+    static DgnTextureId ImportTexture(DgnImportContext& context, DgnTextureId source);
+//__PUBLISH_SECTION_START__
+
     //! Construct a new DgnTexture with the specified parameters
     explicit DgnTexture(CreateParams const& params) : T_Super(params), m_data(params.m_data), m_descr(params.m_descr) {}
 

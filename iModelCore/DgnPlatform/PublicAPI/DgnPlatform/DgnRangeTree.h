@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnRangeTree.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -150,7 +150,7 @@ private:
 
 public:
     void LoadTree(DgnModelCR);
-    DRange3dCP GetFullRange() {return  m_root ? &m_root->GetRange() : nullptr;}
+    DRange3dCP GetExtents() {return  m_root ? &m_root->GetRange() : nullptr;}
     DgnRangeTree(bool is3d, size_t leafSize);
     Node* GetRoot(){return m_root;}
     size_t GetInternalNodeSize() {return m_internalNodeSize;}

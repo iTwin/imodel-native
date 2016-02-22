@@ -32,9 +32,9 @@ module DgnScriptTests {
 
     function test3(): void {
         var arrayA = new Bentley.Dgn.DPoint3dArray();
-        arrayA.Add(new Bentley.Dgn.DPoint3d(1, 2, 3));
-        arrayA.Add(new Bentley.Dgn.DPoint3d(2, 3, 4));
-        arrayA.Add(new Bentley.Dgn.DPoint3d(4, 3, 4));
+        arrayA.AddXYZ (1, 2, 3);
+        arrayA.AddXYZ (2, 3, 4);
+        arrayA.AddXYZ(4, 3, 4);
         checker.NearDouble(3, arrayA.Size(), true);
         var cpLineStringA = new Bentley.Dgn.LineString (arrayA);
         var pointB = cpLineStringA.PointAtFraction(0.5);
@@ -311,7 +311,21 @@ module DgnScriptTests {
         ExerciseMesh(mesh, 2);
         }
 
+    function t_spiral ()
+        {
+        var spiral = Bentley.Dgn.SpiralCurve.CreateSpiralBearingRadiusLengthRadius
+                (10, Bentley.Dgn.Angle.CreateDegrees (0), 0.0, 2.0, 10.0, Bentley.Dgn.Transform.CreateIdentity (), 0.0, 1.0);
+        var df = 1.0 / 8.0;
+        var f = 0.0;
+        for (; f <= 1.0; f += df);
+            {
+            //WIP: workaround for build error: Property 'FractionPoint' does not exist on type 'SpiralCurve'
+            //var xyz = spiral.FractionToPoint (f);
+            }
+
+        }
     t_polyfaceMeshA ();  
+    t_spiral ();
 
     logMessage('Test1 Z');
 }

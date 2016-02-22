@@ -214,7 +214,7 @@ void ComponentModelPerfTest::Developer_CreateCMs()
 //---------------------------------------------------------------------------------------
 static void insertBoxesElement(DgnElementId& eid, SpatialModelR physicalTestModel, DgnCategoryId testCategoryId, DPoint3dCR placementOrigin, DPoint3dCR sizeOfBlock, bvector<DPoint3d> const& originsOfBlocks)
     {
-    PhysicalElementPtr testElement = PhysicalElement::Create(physicalTestModel, testCategoryId);
+    GenericPhysicalObjectPtr testElement = GenericPhysicalObject::Create(physicalTestModel, testCategoryId);
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(physicalTestModel, testCategoryId, placementOrigin, YawPitchRollAngles());
     for (auto const& originOfBlock : originsOfBlocks)
