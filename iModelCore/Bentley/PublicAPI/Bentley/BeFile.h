@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeFile.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,6 +11,7 @@
 #include "Bentley.h"
 #include "BeAssert.h"
 #include "BeFileName.h"
+#include "ByteStream.h"
 #include "bvector.h"
 #include <stdio.h>
 
@@ -141,6 +142,7 @@ public:
     BENTLEYDLL_EXPORT BeFileStatus GetPointer(uint64_t& position);
 
     BENTLEYDLL_EXPORT BeFileStatus ReadEntireFile(bvector<Byte>& buffer);
+    BENTLEYDLL_EXPORT BeFileStatus ReadEntireFile(ByteStream& bytestream);
 
     //! Reads bytes from the file at the current position. The file position is advanced by the number of bytes read.
     //! @param[out] buffer      Data is copied from the file into this buffer.

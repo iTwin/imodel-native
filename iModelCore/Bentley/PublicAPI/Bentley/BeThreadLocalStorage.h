@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeThreadLocalStorage.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -57,26 +57,26 @@ private:
 
 public:
     //! Allocate a slot for thread local storage
-    BENTLEYDLL_EXPORT BeThreadLocalStorage ();
+    BENTLEYDLL_EXPORT BeThreadLocalStorage();
 
     //! Delete a slot for thread local storage.
     //! @remarks It is your responsibility to free the stored value, if that is required, before calling this function.
-    BENTLEYDLL_EXPORT ~BeThreadLocalStorage ();
+    BENTLEYDLL_EXPORT ~BeThreadLocalStorage();
 
     //! Store a pointer value.
     //! @remarks It is your responsibility to free the current stored value, if that is required, before calling this function.
-    BENTLEYDLL_EXPORT void SetValueAsPointer (void*);
+    BENTLEYDLL_EXPORT void SetValueAsPointer(void*);
 
     //! Store an integer value.
-    void SetValueAsInteger (intptr_t v) {SetValueAsPointer((void*)v);}
+    void SetValueAsInteger(intptr_t v) {SetValueAsPointer((void*)v);}
 
     //! Retrieve the stored value as a pointer.
     //! @return the value stored by SetValueAsPointer or NULL if no value was ever stored.
-    BENTLEYDLL_EXPORT void* GetValueAsPointer ();
+    BENTLEYDLL_EXPORT void* GetValueAsPointer();
 
     //! Retrieve a the stored value as an integer.
     //! @return the value stored by SetValue or 0 if no value was ever stored.
-    intptr_t GetValueAsInteger () {return (intptr_t)GetValueAsPointer();}
+    intptr_t GetValueAsInteger() {return (intptr_t)GetValueAsPointer();}
 
 }; // BeThreadLocalStorage
 

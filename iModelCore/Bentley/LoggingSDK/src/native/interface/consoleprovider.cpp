@@ -2,7 +2,7 @@
 |
 |     $Source: LoggingSDK/src/native/interface/consoleprovider.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (ANDROID)
@@ -517,4 +517,471 @@ SEVERITY                severity
     return m_severity.IsSeverityEnabled (pNs->c_str(),severity);
     }
 
+#if defined (BENTLEY_WIN32)
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+struct SplitConsoleProvider : ILogProvider
+{
+    typedef SHORT dim_t;
+
+    static const dim_t s_maxMessageLength = 0x300;
+
+    struct Coord : COORD
+    {
+        Coord(dim_t x, dim_t y) { X = x; Y = y; }
+        Coord() : Coord(0, 0) { }
+    };
+
+    struct Rect : SMALL_RECT
+    {
+        Rect(dim_t l, dim_t t, dim_t r, dim_t b)
+            {
+            Left = l;
+            Top = t;
+            Right = r;
+            Bottom = b;
+            }
+
+        dim_t GetWidth() const { return Right - Left + 1; }
+        dim_t GetHeight() const { return Bottom - Top + 1; }
+        Coord GetTopLeft() const { return Coord(Left, Top); }
+    };
+
+    struct Component
+    {
+        virtual void Log(WCharCP msg, SEVERITY sev, WCharCP nameSpace) = 0;
+    };
+
+    struct Pane : Component
+    {
+        WString                 m_name;
+        Rect                    m_rect; // writable area
+        SplitConsoleProvider*   m_provider;
+        CHAR_INFO               m_buffer[s_maxMessageLength];
+        bool                    m_isDefault = false;
+
+        Pane(WStringCR name, SplitConsoleProvider& provider) : m_name(name), m_rect(0,0,20,10), m_provider(&provider) { }
+        Pane() : m_rect(0,0,10,10), m_provider(nullptr) { }
+
+        virtual void Log(WCharCP msg, SEVERITY sev, WCharCP nameSpace) override;
+        dim_t PrepareMessage(WCharCP msg, SEVERITY sev, WCharCP nameSpace, WCharCP& nextSegment);
+        static WORD GetAttributesForSeverity(SEVERITY sev);
+    };
+
+    struct Title : Component
+    {
+        WString m_name;
+
+        Title() : m_name(getenv("BENTLEY_SPLIT_CONSOLE_TITLE"), BentleyCharEncoding::Utf8) { }
+
+        bool Matches(WCharCP name) const { return !m_name.empty() && nullptr != name && m_name.Equals(name); }
+
+        virtual void Log(WCharCP msg, SEVERITY, WCharCP) override
+            {
+            SetConsoleTitleW(msg);
+            }
+    };
+
+    struct CharInfo : CHAR_INFO
+    {
+        CharInfo(WChar ch, WORD attributes) { Char.UnicodeChar = ch; Attributes = attributes; }
+    };
+private:
+    static const dim_t s_charBufferSize = 500;
+
+    bvector<Pane>   m_panes;
+    SeverityMap     m_severity;
+    HANDLE          m_screenBuffer;
+    Pane*           m_defaultPane;
+    dim_t           m_screenBufferWidth;
+    dim_t           m_screenBufferHeight;
+    CHAR_INFO       m_charBuffer[s_charBufferSize];
+    Title           m_title;
+    BeAtomic<uint32_t>  m_sequenceId;
+    bool                m_wantSequenceId;
+    
+    static WCharCP GetNameSpace(ILogProviderContext* pContext)
+        {
+        auto pWString = reinterpret_cast<WString*>(pContext);
+        return nullptr != pWString ? pWString->c_str() : nullptr;
+        }
+
+    static bool GetMaxPaneWidth(dim_t& maxWidth)
+        {
+        int value;
+        WString envVar(getenv("BENTLEY_SPLIT_CONSOLE_MAX_WIDTH"), BentleyCharEncoding::Utf8);
+        if (!envVar.empty() && 1 == BE_STRING_UTILITIES_SWSCANF(envVar.c_str(), L"%d", &value) && value > 0 && value <= maxWidth)
+            {
+            maxWidth = static_cast<dim_t>(value);
+            return true;
+            }
+
+        return false;
+        }
+
+    Component* GetComponent(WCharCP name)
+        {
+        if (m_title.Matches(name))
+            return &m_title;
+
+        auto found = std::find_if(m_panes.begin(), m_panes.end(), [&](Pane const& arg) { return arg.m_name.Equals(name); });
+        return m_panes.end() != found ? &(*found) : m_defaultPane;
+        }
+
+    void InitPanes(bvector<WString> const& paneNames);
+
+    virtual int STDCALL_ATTRIBUTE Initialize () override;
+    virtual int STDCALL_ATTRIBUTE Uninitialize () override;
+    virtual int STDCALL_ATTRIBUTE CreateLogger ( WCharCP nameSpace, ILogProviderContext ** ppContext ) override;
+    virtual int STDCALL_ATTRIBUTE DestroyLogger ( ILogProviderContext * pContext ) override;
+    virtual int STDCALL_ATTRIBUTE SetOption ( WCharCP attribName, WCharCP attribValue ) override;
+    virtual int STDCALL_ATTRIBUTE GetOption ( WCharCP attribName, WCharP attribValue, uint32_t valueSize ) override;
+    virtual int STDCALL_ATTRIBUTE SetSeverity ( WCharCP _namespace, SEVERITY severity ) override;
+    virtual bool STDCALL_ATTRIBUTE IsSeverityEnabled ( ILogProviderContext * context, SEVERITY sev ) override;
+
+    virtual void STDCALL_ATTRIBUTE LogMessage ( ILogProviderContext * context, SEVERITY sev, WCharCP msg ) override;
+    virtual void STDCALL_ATTRIBUTE LogMessage ( ILogProviderContext * context, SEVERITY sev, Utf8CP msg ) override;       // we have an optimized version for Android and iOS
+public:
+    SplitConsoleProvider(bvector<WString> const& paneNames) : m_severity(LOG_TRACE), m_defaultPane(nullptr),
+        m_sequenceId(0), m_wantSequenceId(nullptr != getenv("BENTLEY_SPLIT_CONSOLE_SHOW_SEQUENCE"))
+        {
+        InitPanes(paneNames);
+        }
+
+    virtual ~SplitConsoleProvider(void) { }
+
+    HANDLE GetScreenBuffer() { return m_screenBuffer; }
+    dim_t GetBufferHeight() const { return m_screenBufferHeight; }
+    dim_t GetBufferWidth() const { return m_screenBufferWidth; }
+    uint32_t GetSequenceId() { return m_sequenceId++; }
+    bool WantSequenceId() const { return m_wantSequenceId; }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void SplitConsoleProvider::Pane::Log(WCharCP msg, SEVERITY sev, WCharCP nameSpace)
+    {
+    WCharCP nextSegment = msg;
+    dim_t nRows;
+    while (nullptr != msg && 0 < (nRows = PrepareMessage(msg, sev, nameSpace, nextSegment)))
+        {
+        // Scroll existing text to make room
+        static const CharInfo s_fillChar(' ', 0);
+        Rect scrollRect = m_rect;
+        scrollRect.Top += nRows;
+        ScrollConsoleScreenBuffer(m_provider->GetScreenBuffer(), &scrollRect, &m_rect, m_rect.GetTopLeft(), &s_fillChar);
+        
+        // Write new text at bottom
+        Rect writeRect = m_rect;
+        writeRect.Top = writeRect.Bottom - nRows;
+        WriteConsoleOutput(m_provider->GetScreenBuffer(), m_buffer, Coord(writeRect.GetWidth(), nRows), Coord(0,0), &writeRect);
+
+        // If the message included a new line...
+        msg = nextSegment;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+SplitConsoleProvider::dim_t SplitConsoleProvider::Pane::PrepareMessage(WCharCP rawMsg, SEVERITY sev, WCharCP, WCharCP& nextSegment)
+    {
+    nextSegment = nullptr;
+    WCharCP msg = rawMsg;
+    size_t nPrefixChars = 0;
+
+    WString formattedMsg;
+    if (m_provider->WantSequenceId() && nullptr != rawMsg)
+        {
+        formattedMsg.Sprintf(L"[%llu] %ls", m_provider->GetSequenceId(), rawMsg);
+        msg = formattedMsg.c_str();
+        }
+
+    WORD attributes = GetAttributesForSeverity(sev);
+    CHAR_INFO* pBuf = m_buffer;
+    CHAR_INFO* pEnd = m_buffer + _countof(m_buffer);
+
+    dim_t width = m_rect.GetWidth();
+    dim_t nRows = 0;
+    WCharCP pChar = msg;
+
+    dim_t nChars = 0;
+    bool done = false;
+    while (!done)
+        {
+        // If the last row contains more characters than we have room for in our buffer, caller needs to call us again to print the remainder
+        if ((pEnd - pBuf) < width)
+            {
+            done = true;
+            size_t dist = pChar - msg + nPrefixChars;
+            nextSegment = rawMsg + dist;
+            break;
+            }
+
+        // Fill the entire row, appending blanks if necessary
+        for (dim_t pos = 0; pos < width; pos++)
+            {
+            CHAR_INFO& buf = *pBuf++;
+            if (!done && '\n' == *pChar)
+                {
+                done = true;
+                size_t dist = pChar+1 - msg + nPrefixChars;
+                nextSegment = rawMsg + dist;
+                }
+                
+            buf.Char.UnicodeChar = done ? ' ' : *pChar++;
+            buf.Attributes = attributes;
+            done = done || '\0' == *pChar || (++nChars > s_maxMessageLength);
+            }
+
+        ++nRows;
+        }
+
+    return nRows;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+WORD SplitConsoleProvider::Pane::GetAttributesForSeverity(SEVERITY sev)
+    {
+    switch (sev)
+        {
+        case LOG_ERROR:
+        case LOG_FATAL:
+            return FOREGROUND_RED | FOREGROUND_INTENSITY;
+        case LOG_WARNING:
+            return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+        case LOG_INFO:
+        case LOG_DEBUG:
+            return FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+        default:
+            return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void SplitConsoleProvider::InitPanes(bvector<WString> const& paneNames)
+    {
+    m_panes.reserve(paneNames.size());
+    for (auto const& name : paneNames)
+        m_panes.push_back(Pane(name, *this));
+
+    // any messages without a dedicated pane go in the "Default" pane if one exists
+    auto defaultIter = std::find_if(m_panes.begin(), m_panes.end(), [&](Pane const& arg) { return arg.m_name.EqualsI(L"default"); });
+    if (m_panes.end() != defaultIter)
+        {
+        m_defaultPane = &(*defaultIter);
+        m_defaultPane->m_isDefault = true;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+int STDCALL_ATTRIBUTE SplitConsoleProvider::Initialize()
+    {
+    HWND console = GetConsoleWindow();
+    if (NULL == console && AllocConsole())
+        console = GetConsoleWindow();
+
+    if (NULL == console)
+        return ERROR;
+
+    m_screenBuffer = CreateFile("CONOUT$", GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (NULL == m_screenBuffer)
+        return ERROR;
+
+    // Set the size of the window
+    COORD maxWindowSize = GetLargestConsoleWindowSize(m_screenBuffer);
+    dim_t maxWindowWidth = maxWindowSize.X; // msdn documentation lies about the meaning of X and Y here...
+    m_screenBufferHeight = s_charBufferSize;    // so we can scroll window up to see history...
+    m_screenBufferWidth = maxWindowWidth;
+
+    if (!SetConsoleScreenBufferSize(m_screenBuffer, Coord(m_screenBufferWidth, m_screenBufferHeight)))
+        return ERROR;
+
+#ifdef SET_WINDOW_SIZE
+    CONSOLE_SCREEN_BUFFER_INFO screenBufferInfo;
+    if (!GetConsoleScreenBufferInfo(m_screenBuffer, &screenBufferInfo))
+        return ERROR;
+
+    screenBufferInfo.dwSize = maxWindowSize;
+    auto srWindow = screenBufferInfo.srWindow;
+    dim_t windowHeight = srWindow.Bottom - srWindow.Top;
+    screenBufferInfo.srWindow.Bottom = m_screenBufferHeight;
+    screenBufferInfo.srWindow.Top = m_screenBufferHeight - windowHeight;
+
+    if (!SetConsoleWindowInfo(m_screenBuffer, TRUE, &srWindow))
+        return ERROR;
+#else
+    // the above returns TRUE but has no effect. Setting the cursor pos instead has the desired result of focusing window on bottom of screen buffer.
+    if (!SetConsoleCursorPosition(m_screenBuffer, Coord(0, m_screenBufferHeight-1)))
+        return ERROR;
+#endif
+
+    // Set up the dimensions of each pane
+    dim_t nPanes = static_cast<dim_t>(m_panes.size());
+    dim_t nVerticalBars = nPanes - 1;   // vertical bar between each pane
+    dim_t paneWidthsTotal = m_screenBufferWidth - nVerticalBars;
+    dim_t minPaneWidth = paneWidthsTotal / nPanes;
+    bool limitWidths = GetMaxPaneWidth(minPaneWidth);
+    dim_t maxPaneWidth = limitWidths ? minPaneWidth : minPaneWidth + (paneWidthsTotal % nPanes); // right-most pane gets any extra space
+
+    for (dim_t i = 0; i < nPanes; i++)
+        {
+        dim_t left = i * (minPaneWidth + 1);    // + 1 = include vertical bars
+        dim_t width = (nPanes-1 == i) ? maxPaneWidth : minPaneWidth;
+        m_panes[i].m_rect = Rect(left, 0, left+width-1, GetBufferHeight()-2); // -1: bottom row reserved for pane names
+        }
+
+    // Draw the static content
+    // Vertical bar between panes
+    static const WORD BACKGROUND_WHITE = BACKGROUND_RED | BACKGROUND_BLUE | BACKGROUND_GREEN;
+    CharInfo barInfo(' ', BACKGROUND_WHITE);
+    for (dim_t i = 0; i < GetBufferHeight(); i++)
+        m_charBuffer[i] = barInfo;
+
+    dim_t bufHeight = GetBufferHeight();
+    for (dim_t i = 0; i < nPanes-1; i++)
+        {
+        Rect rect = m_panes[i].m_rect;
+        Rect barRect(rect.Right+1, 0, rect.Right+2, bufHeight-1);
+        WriteConsoleOutput(GetScreenBuffer(), m_charBuffer, Coord(1, bufHeight), Coord(0,0), &barRect);
+        }
+
+    // Name at bottom of pane
+    for (auto const& pane : m_panes)
+        {
+        dim_t nameLen = static_cast<dim_t>(pane.m_name.length());
+        for (dim_t i = 0; i < pane.m_rect.GetWidth(); i++)
+            m_charBuffer[i] = CharInfo(i < nameLen ? pane.m_name[i] : ' ', BACKGROUND_WHITE);
+
+        Rect rect(pane.m_rect.Left, bufHeight-1, pane.m_rect.Right, bufHeight);
+        WriteConsoleOutput(GetScreenBuffer(), m_charBuffer, Coord(rect.GetWidth(), 1), Coord(0,0), &rect);
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+int STDCALL_ATTRIBUTE SplitConsoleProvider::Uninitialize()
+    {
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+int STDCALL_ATTRIBUTE SplitConsoleProvider::CreateLogger(WCharCP nameSpace, ILogProviderContext** ppContext)
+    {
+    if (nullptr == ppContext || nullptr == nameSpace || nullptr == GetComponent(nameSpace))
+        return ERROR;
+
+    *ppContext = reinterpret_cast<ILogProviderContext*>(new WString(nameSpace));
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+int STDCALL_ATTRIBUTE SplitConsoleProvider::DestroyLogger(ILogProviderContext* pContext)
+    {
+    auto pStr = reinterpret_cast<WString*>(pContext);
+    if (nullptr == pStr)
+        return ERROR;
+
+    delete pStr;
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void STDCALL_ATTRIBUTE SplitConsoleProvider::LogMessage(ILogProviderContext* pContext, SEVERITY sev, WCharCP msg)
+    {
+    WCharCP nameSpace = GetNameSpace(pContext);
+    auto log = GetComponent(nameSpace);
+    if (nullptr != log)
+        log->Log(msg, sev, nameSpace);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void STDCALL_ATTRIBUTE SplitConsoleProvider::LogMessage(ILogProviderContext* pContext, SEVERITY sev, Utf8CP msg)
+    {
+    WString wMsg(msg, true);
+    LogMessage(pContext, sev, wMsg.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+int STDCALL_ATTRIBUTE SplitConsoleProvider::SetOption(WCharCP name, WCharCP value)
+    {
+    if (0 == wcscmp(name, CONFIG_OPTION_DEFAULT_SEVERITY) && nullptr != GetComponent(name))
+        {
+        m_severity.SetDefaultSeverity(GetSeverityFromText(value));
+        return SUCCESS;
+        }
+
+    return ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+int STDCALL_ATTRIBUTE SplitConsoleProvider::GetOption(WCharCP name, WCharP value, uint32_t size)
+    {
+    if (0 == wcscmp(name, CONFIG_OPTION_DEFAULT_SEVERITY) && nullptr != GetComponent(name))
+        {
+        BeStringUtilities::Wcsncpy(value, size, GetSeverityText(m_severity.GetDefaultSeverity()));
+        return SUCCESS;
+        }
+
+    return ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+int STDCALL_ATTRIBUTE SplitConsoleProvider::SetSeverity(WCharCP nameSpace, SEVERITY sev)
+    {
+    return nullptr != GetComponent(nameSpace) ? m_severity.SetSeverity(nameSpace, sev) : ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool STDCALL_ATTRIBUTE SplitConsoleProvider::IsSeverityEnabled(ILogProviderContext* pContext, SEVERITY sev)
+    {
+    auto nameSpace = GetNameSpace(pContext);
+    return nullptr != nameSpace && nullptr != GetComponent(nameSpace) && m_severity.IsSeverityEnabled(nameSpace, sev);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ILogProvider* createConsoleLogger()
+    {
+    WString envVar(getenv("BENTLEY_SPLIT_CONSOLE_LOG"), BentleyCharEncoding::Utf8);
+    bvector<WString> names;
+    if (!envVar.empty())
+        BeStringUtilities::Split(envVar.c_str(), L",", names);
+
+    if (names.size() > 0)
+        return new SplitConsoleProvider(names);
+    else
+        return new ConsoleProvider();
+    }
+
+#endif // BENTLEY_WIN32
 

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/CatchNonPortable.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -23,6 +23,7 @@
     int _strlwr                     (__this_function_is_not_portable__use_BeStringUtilities_instead&, ...); //!< Use BeStringUtilities::Strlwr
     int strupr                      (__this_function_is_not_portable__use_BeStringUtilities_instead&, ...); //!< Use BeStringUtilities::Strupr
     int _strupr                     (__this_function_is_not_portable__use_BeStringUtilities_instead&, ...); //!< Use BeStringUtilities::Strupr
+    int strcmpi                     (__this_function_is_not_portable__use_BeStringUtilities_instead&, ...); //!< Use BeStringUtilities::Stricmp
     int stricmp                     (__this_function_is_not_portable__use_BeStringUtilities_instead&, ...); //!< Use BeStringUtilities::Stricmp
     int _stricmp                    (__this_function_is_not_portable__use_BeStringUtilities_instead&, ...); //!< Use BeStringUtilities::Stricmp
     int strnicmp                    (__this_function_is_not_portable__use_BeStringUtilities_instead&, ...); //!< Use BeStringUtilities::Strnicmp

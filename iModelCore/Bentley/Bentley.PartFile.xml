@@ -51,7 +51,7 @@
         </Bindings>
     </Part>
     <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
-    <Part Name="BentleyDll" BentleyBuildMakeFile="Bentley.mke" ApiNumber="G" BMakeOptions="+dTMP_BUILD_STATIC">
+    <Part Name="BentleyDll" BentleyBuildMakeFile="Bentley.mke" ApiNumber="G06" BMakeOptions="+dTMP_BUILD_STATIC">
         <SubPart PartName="Base"/>
         <SubPart PartName="BeIcu4cLibrary" PartFile="BeIcu4cLibrary" Repository="Libsrc-Icu4c"/>
         <SubPart PartName="BentleyAllocator"/>
@@ -113,7 +113,7 @@
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=BentleyTest -dTEST_COLLECTION_PRODUCT=Bentley-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=BentleyTest -dTEST_COLLECTION_PRODUCT=Bentley-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*,Android*">
         <SubProduct ProductName="Bentley-Tests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>

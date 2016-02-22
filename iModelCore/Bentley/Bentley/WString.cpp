@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/WString.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
@@ -220,7 +220,7 @@ bool WString::Contains (WCharCP other) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool WString::ContainsI (WStringCR other) const
     {
-    return Contains (other.c_str());
+    return ContainsI(other.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -462,7 +462,7 @@ bool Utf8String::Contains(Utf8CP other) const
 //---------------------------------------------------------------------------------------
 bool Utf8String::ContainsI(Utf8StringCR other) const
     {
-    return Contains(other.c_str());
+    return ContainsI(other.c_str());
     }
 
 //---------------------------------------------------------------------------------------

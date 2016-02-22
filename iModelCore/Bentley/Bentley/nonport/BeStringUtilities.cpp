@@ -1741,7 +1741,7 @@ void BeStringUtilities::CopyUtf16(Utf16P outStr, size_t outStrCapacity, Utf16CP 
 #elif defined (__unix__)
     if (0 == outStrCapacity)
         return;
-    Utf16CP x = outStr+outStrCapacity-1;
+    Utf16CP x = ((BeStringUtilities::AsManyAsPossible == outStrCapacity) ? ((Utf16CP)-1) : (outStr + outStrCapacity - 1));
     while (*inStr && outStr < x)
         *outStr++ = *inStr++;
     *outStr = 0;
