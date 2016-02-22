@@ -1195,7 +1195,10 @@ protected:
     virtual void _OnResized() {}
     virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const = 0;
     virtual TexturePtr _GetTexture(DgnTextureId, DgnDbR) const = 0;
+
+    //N.B. CreateTileSection is called from multiple-threads implementer must ensure this is supported. If not non-shareable resource must be protected by locks.
     virtual TexturePtr _CreateTileSection(ImageR, bool enableAlpha) const = 0;
+
     virtual void* _ResolveOverrides(OvrGraphicParamsCR) = 0;
     virtual Point2d _GetScreenOrigin() const = 0;
     virtual BSIRect _GetViewRect() const = 0;
