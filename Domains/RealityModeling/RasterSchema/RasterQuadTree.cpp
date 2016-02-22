@@ -309,7 +309,7 @@ bool RasterTile::Draw(ViewContextR context)
         box[2] = uvPts[3];
         box[3] = uvPts[2];
         box[4] = box[0];
-        pTileGraphic->AddLineString(_countof(box), box, NULL);
+        pTileGraphic->AddLineString(_countof(box), box);
 
         DPoint3d centerPt = DPoint3d::FromInterpolate(uvPts[0], 0.5, uvPts[3]);
         double pixelSize = context.GetPixelSizeAtPoint(&centerPt);
