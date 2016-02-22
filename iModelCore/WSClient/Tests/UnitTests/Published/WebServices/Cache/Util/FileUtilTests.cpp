@@ -222,6 +222,66 @@ TEST_F(FileUtilTests, CopyFileContent_FilesExist_CopiesContent)
     EXPECT_EQ("A", SimpleReadFile(target));
     }
 
+TEST_F(FileUtilTests, CopyFileContent_ProgressCallbackExistAndFileExists_RecordsProgress)
+    {
+    auto size = 100;
+    auto source = StubFileWithSize(size);
+    auto target = StubFilePath();
+    int i = 0;
+    auto onProgress = [&] (double bytesTransfered, double bytesTotal)
+        {
+        if (i == 0)
+            {
+            //Initial callback to onProgress
+            EXPECT_EQ(bytesTotal, bytesTransfered);
+            EXPECT_EQ(0, bytesTransfered);
+            EXPECT_EQ(0, bytesTotal);
+            }
+        else
+            {
+            EXPECT_EQ(bytesTotal, bytesTransfered);
+            EXPECT_EQ(100, bytesTransfered);
+            EXPECT_EQ(100, bytesTotal);
+            }
+        i++;
+        };
+
+    ASSERT_EQ(SUCCESS, FileUtil::CopyFileContent(source, target, onProgress));
+    EXPECT_EQ(2, i);
+    }
+
+TEST_F(FileUtilTests, CopyFileContent_ProgressCallbackExistAnFilesDoNotExists_DoNotRecordProgress)
+    {
+    auto source = StubFilePath();
+    auto target = StubFilePath();
+    int i = 0;
+    auto onProgress = [&i] (double bytesTransfered, double bytesTotal)
+        {
+        i++;
+        };
+
+    ASSERT_EQ(ERROR, FileUtil::CopyFileContent(source, target, onProgress));
+    EXPECT_EQ(0, i);
+    }
+
+TEST_F(FileUtilTests, CopyFileContent_CancelationTokenExists_CopiesContent)
+    {
+    ICancellationTokenPtr ct = SimpleCancellationToken::Create();
+    auto source = StubFile();
+    auto target = StubFile();
+
+    ASSERT_EQ(SUCCESS, FileUtil::CopyFileContent(source, target, nullptr, ct));
+    }
+
+TEST_F(FileUtilTests, CopyFileContent_CanceledCancelationTokenExists_Error)
+    {
+    ICancellationTokenPtr ct = SimpleCancellationToken::Create(true);
+    auto source = StubFile();
+    auto target = StubFile();
+
+    ASSERT_EQ(ERROR, FileUtil::CopyFileContent(source, target, nullptr, (ICancellationTokenPtr) ct));
+    }
+
 TEST_F(FileUtilTests, CopyFileContent_TargetDoesNotExist_CopiesContent)
     {
     auto source = StubFile("A");

@@ -9,6 +9,7 @@
 #include <WebServices/Cache/Util/FileUtil.h>
 
 #include <Bentley/BeFile.h>
+#include <Bentley/BeTimeUtilities.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -186,12 +187,18 @@ Utf8String FileUtil::SanitizeFileName(Utf8StringCR fileName)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus FileUtil::CopyFileContent(BeFileNameCR source, BeFileNameCR target)
+BentleyStatus FileUtil::CopyFileContent
+(
+BeFileNameCR source, 
+BeFileNameCR target,
+ProgressCallback onProgress,
+ICancellationTokenPtr ct
+)
     {
     BeFile sourceFile;
     BeFile targetFile;
 
-    auto status = CopyFileContent(source, sourceFile, target, targetFile);
+    auto status = CopyFileContent(source, sourceFile, target, targetFile, onProgress, ct);
 
     sourceFile.Close();
     targetFile.Close();
@@ -202,7 +209,15 @@ BentleyStatus FileUtil::CopyFileContent(BeFileNameCR source, BeFileNameCR target
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus FileUtil::CopyFileContent(BeFileNameCR sourcePath, BeFile& source, BeFileNameCR targetPath, BeFile& target)
+BentleyStatus FileUtil::CopyFileContent
+(
+BeFileNameCR sourcePath, 
+BeFile& source, 
+BeFileNameCR targetPath, 
+BeFile& target,
+ProgressCallback onProgress,
+ICancellationTokenPtr ct
+)
     {
     if (BeFileStatus::Success != source.Open(sourcePath, BeFileAccess::Read))
         {
@@ -235,14 +250,45 @@ BentleyStatus FileUtil::CopyFileContent(BeFileNameCR sourcePath, BeFile& source,
     uint32_t bytesRead = 1;
     uint32_t bytesWritten = 0;
 
+    uint64_t sourceSize = 0;
+    uint64_t targetSize = 0;
+    source.GetSize(sourceSize);
+
+    uint64_t lastTimeReported = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+
+    if (onProgress)
+        onProgress(0, 0);
+
     while (bytesRead > 0)
         {
+        if (ct && ct->IsCanceled())
+            {
+            return ERROR;
+            }
+
         if (BeFileStatus::Success != source.Read(buffer.get(), &bytesRead, bufferSize) ||
             BeFileStatus::Success != target.Write(&bytesWritten, buffer.get(), bytesRead) ||
             bytesRead != bytesWritten)
             {
             return ERROR;
             }
+
+        if (onProgress)
+            {
+            targetSize += bytesRead;
+            uint64_t currentTimeMillis = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+
+            if (currentTimeMillis - lastTimeReported >= 250)
+                {
+                lastTimeReported = currentTimeMillis;
+                onProgress((double) targetSize, (double) sourceSize);
+                }
+            }
+        }
+
+    if (onProgress)
+        {
+        onProgress((double) targetSize, (double) sourceSize);
         }
 
     return SUCCESS;
