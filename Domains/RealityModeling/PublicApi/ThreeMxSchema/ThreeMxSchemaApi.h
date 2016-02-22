@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ThreeMxSchema/ThreeMxSchemaApi.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,8 +20,8 @@
 //-----------------------------------------------------------------------------------------
 // ECSchema macros
 //-----------------------------------------------------------------------------------------
-#define BENTLEY_THREEMX_SCHEMA_NAME                      "BentleyThreeMx"
-#define BENTLEY_THREEMX_SCHEMA_PATH                      L"ECSchemas/Domain/BentleyThreeMx.01.00.ecschema.xml"
+#define BENTLEY_THREEMX_SCHEMA_NAME                      "ThreeMx"
+#define BENTLEY_THREEMX_SCHEMA_PATH                      L"ECSchemas/Domain/ThreeMx.01.00.ecschema.xml"
 #define THREEMX_SCHEMA(className)                        BENTLEY_THREEMX_SCHEMA_NAME "." className
 
 //-----------------------------------------------------------------------------------------
