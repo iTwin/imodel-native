@@ -28,7 +28,7 @@
     <ClInclude Include=".\PublicAPI\Units\UnitTypes.h" />
     <ClInclude Include=".\src\StandardNames.h" />
     <ClInclude Include=".\src\UnitsNativeLogging.h" />
-    <ClInclude Include="PublicAPI\Units\SymbolicExpression.h" />
+    <ClInclude Include="src\SymbolicExpression.h" />
     <ClInclude Include="src\UnitsPCH.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
