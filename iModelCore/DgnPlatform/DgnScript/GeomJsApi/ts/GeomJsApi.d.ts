@@ -307,7 +307,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         constructor();
 
         Add(value: DPoint3dP): void;
-
+        AddXYZ (x: cxx_double, y: cxx_double, z: cxx_double): void;
+        AddXY(x: cxx_double, y: cxx_double): void;
+        TransformInPlace (transform: TransformP): void;
         Size(): cxx_double;
         Clear (): void;
         Append(other: DPoint3dArrayP): void;
