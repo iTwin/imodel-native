@@ -22,8 +22,8 @@ using namespace std;
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/DgnHost.h>
 #include <DgnView/DgnViewAPI.h>
-#include <ScalableMesh\ScalableTerrainModelAdmin.h>
-#include <ScalableMesh\ScalableTerrainModelLib.h>
+#include <ScalableMesh\ScalableMeshAdmin.h>
+#include <ScalableMesh\ScalableMeshLib.h>
 #include <RmgrTools/Tools/RscFileManager.h>
 #include <ScalableMesh/IScalableMeshMoniker.h>
 #include <ScalableMesh/IScalableMeshStream.h>
@@ -34,6 +34,8 @@ using namespace std;
 
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
+USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
+USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN
 //USING_NAMESPACE_BENTLEY_MRDTM
 using namespace BENTLEY_NAMESPACE_NAME::DgnPlatform;
 using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
@@ -222,7 +224,7 @@ NotificationManager::MessageBoxValue AppNotificationAdmin::_OpenMessageBox (Noti
 
 
 
-  struct ExeAdmin : BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableTerrainModelAdmin
+  struct ExeAdmin : BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshAdmin
         {
         DgnModelRef* s_activeDgnModelRefP;
         ExeAdmin() :s_activeDgnModelRefP(0){};
@@ -246,14 +248,14 @@ NotificationManager::MessageBoxValue AppNotificationAdmin::_OpenMessageBox (Noti
 
         };
 
-    struct ExeHost : BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableTerrainModelLib::Host
+    struct ExeHost : BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshLib::Host
         {
 
         ExeHost()
             {
-            BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableTerrainModelLib::Initialize(*this);
+            BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshLib::Initialize(*this);
             }
-    BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableTerrainModelAdmin& _SupplyScalableMeshAdmin()
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshAdmin& _SupplyScalableMeshAdmin()
         {
         return *new ExeAdmin();
         };
@@ -298,15 +300,14 @@ private:
         return BSISUCCESS == status;
         }
 
-    virtual StatusInt                   _Serialize                     (BENTLEY_NAMESPACE_NAME::ScalableMesh::BinaryOStream&                      stream,
-                                                                        const BENTLEY_NAMESPACE_NAME::ScalableMesh::DocumentEnv&                  env) const override
-        {
-        // TDORAY: Recreate the moniker using new env prior to serializing it in order so
-        // that relative path is correct on s_dgnFile moves...
+        virtual StatusInt                   _Serialize(Bentley::ScalableMesh::Import::SourceDataSQLite&                      sourceData,
+                                                       const Bentley::ScalableMesh::DocumentEnv&                  env) const override
+            {
+            // TDORAY: Recreate the moniker using new env prior to serializing it in order so
+            // that relative path is correct on s_dgnFile moves...
 
-        const WString& monikerString(m_mrdtmMonikerPtr->Externalize());
-        if (!WriteStringW(stream, monikerString.c_str()))
-            return BSIERROR;
+            const WString& monikerString(m_mrdtmMonikerPtr->Externalize());
+            sourceData.SetMonikerString(monikerString);
 
         return BSISUCCESS;
         }
@@ -357,50 +358,107 @@ private:
         }
     };
 
+/*---------------------------------------------------------------------------------**//**
+                                                                                      * @description
+                                                                                      * @bsiclass                                                  Raymond.Gauthier   08/2011
+                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+class GeoDtmMSDocumentMoniker : public ILocalFileMoniker
+    {
+    private:
+
+        DgnDocumentMonikerPtr m_mrdtmMonikerPtr;
+
+        virtual LocalFileURL                _GetURL(StatusInt&                          status) const override
+            {
+            WString fileName(m_mrdtmMonikerPtr->ResolveFileName(&status));
+
+            if (BSISUCCESS != status)
+                fileName = m_mrdtmMonikerPtr->GetPortableName(); // File not found. Return file name with configuration variable.
+
+            return LocalFileURL(fileName.c_str());
+            }
+
+
+
+
+        virtual DTMSourceMonikerType        _GetType() const override
+            {
+            return DTM_SOURCE_MONIKER_MSDOCUMENT;
+            }
+
+
+        virtual bool                        _IsTargetReachable() const override
+            {
+            StatusInt status;
+            m_mrdtmMonikerPtr->ResolveFileName(&status);
+            return BSISUCCESS == status;
+            }
+
+        virtual StatusInt                   _Serialize(Import::SourceDataSQLite&                      sourceData,
+                                                       const DocumentEnv&                  env) const override
+            {
+            // TDORAY: Recreate the moniker using new env prior to serializing it in order so
+            // that relative path is correct on file moves...
+
+            const WString& monikerString(m_mrdtmMonikerPtr->Externalize());
+            sourceData.SetMonikerString(monikerString);
+
+            return BSISUCCESS;
+            }
+
+        explicit                            GeoDtmMSDocumentMoniker(const DgnDocumentMonikerPtr&         monikerPtr)
+            : m_mrdtmMonikerPtr(monikerPtr)
+            {
+            assert(0 != m_mrdtmMonikerPtr.get());
+            }
+
+    public:
+
+        static ILocalFileMonikerPtr Create(const DgnDocumentMonikerPtr&         monikerPtr)
+            {
+            return new GeoDtmMSDocumentMoniker(monikerPtr);
+            }
+    };
+
 
 /*---------------------------------------------------------------------------------**//**
 * @description
 * @bsiclass                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct MonikerBinStreamCreator : public BENTLEY_NAMESPACE_NAME::ScalableMesh::IMonikerBinStreamCreator
+struct MonikerBinStreamCreator : public Bentley::ScalableMesh::IMonikerBinStreamCreator
     {
 private :
-    virtual BENTLEY_NAMESPACE_NAME::ScalableMesh::DTMSourceMonikerType        _GetSupportedType              () const override
+    virtual Bentley::ScalableMesh::DTMSourceMonikerType        _GetSupportedType              () const override
         {
-        return BENTLEY_NAMESPACE_NAME::ScalableMesh::DTM_SOURCE_MONIKER_MSDOCUMENT;
+        return Bentley::ScalableMesh::DTM_SOURCE_MONIKER_MSDOCUMENT;
         }
 
 
-    virtual BENTLEY_NAMESPACE_NAME::ScalableMesh::IMonikerPtr                 _Create                        (BENTLEY_NAMESPACE_NAME::ScalableMesh::BinaryIStream&                      stream,
-                                                                                               const BENTLEY_NAMESPACE_NAME::ScalableMesh::DocumentEnv&                  env,
-                                                                                               StatusInt&                          status) const override
-        {
-        WString monikerString;
-        if (!ReadStringW(stream, monikerString))
+    virtual Bentley::ScalableMesh::IMonikerPtr                 _Create(Import::SourceDataSQLite&                      sourceData,
+                                                                           const DocumentEnv&                  env,
+                                                                           StatusInt&                          status) const override
             {
-            status = BSIERROR;
-            return 0;
+            WString monikerString = sourceData.GetMonikerString();
+
+            const WChar* basePath = env.GetCurrentDirCStr();
+
+            DgnDocumentMonikerPtr documentMonikerPtr
+                (
+                    DgnDocumentMoniker::Create(monikerString.GetWCharCP(),
+                                               basePath,
+                                               false)
+                    );
+
+            if (documentMonikerPtr == 0)
+                {
+                status = BSIERROR;
+                return 0;
+                }
+
+            status = BSISUCCESS;
+
+            return GeoDtmMSDocumentMoniker::Create(documentMonikerPtr.get());
             }
-
-        const WChar* basePath = env.GetCurrentDirCStr();
-
-        BENTLEY_NAMESPACE_NAME::RefCountedPtr<DgnDocumentMoniker> documentMonikerPtr
-            (            
-            DgnDocumentMoniker::Create(monikerString.GetWCharCP(),
-                                       basePath,                                                                  
-                                       false)
-            );
-
-        if (documentMonikerPtr == 0)
-            {
-            status = BSIERROR;
-            return 0;
-            }
-
-        status = BSISUCCESS;
-        
-        return MyMSDocumentMoniker::Create(documentMonikerPtr.get());
-        }
     };
 
 
@@ -408,80 +466,17 @@ void InitScalableMeshMonikerFactories()
     {   
     static const struct MonikerBinStreamCreator s_MonikerBinStreamCreator;
     static const struct LocalFileMonikerCreator s_LocalFileMonikerCreator;
-    const BENTLEY_NAMESPACE_NAME::ScalableMesh::ILocalFileMonikerFactory::CreatorID localFileCreatorID
-        = BENTLEY_NAMESPACE_NAME::ScalableMesh::ILocalFileMonikerFactory::GetInstance().Register(s_LocalFileMonikerCreator);
+    const Bentley::ScalableMesh::ILocalFileMonikerFactory::CreatorID localFileCreatorID
+        = Bentley::ScalableMesh::ILocalFileMonikerFactory::GetInstance().Register(s_LocalFileMonikerCreator);
     assert(localFileCreatorID == &s_LocalFileMonikerCreator);
 
-    const BENTLEY_NAMESPACE_NAME::ScalableMesh::IMonikerFactory::BinStreamCreatorID binStreamCreator
-        = BENTLEY_NAMESPACE_NAME::ScalableMesh::IMonikerFactory::GetInstance().Register(s_MonikerBinStreamCreator);
+    const Bentley::ScalableMesh::IMonikerFactory::BinStreamCreatorID binStreamCreator
+        = Bentley::ScalableMesh::IMonikerFactory::GetInstance().Register(s_MonikerBinStreamCreator);
     assert(binStreamCreator == &s_MonikerBinStreamCreator);
     }
 
 
 namespace {
-
-/*---------------------------------------------------------------------------------**//**
-* @description
-* @bsiclass                                                  Raymond.Gauthier   08/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-class GeoDtmMSDocumentMoniker : public ILocalFileMoniker
-    {
-private:    
-
-    DgnDocumentMonikerPtr m_mrdtmMonikerPtr;
-
-    virtual LocalFileURL                _GetURL                        (StatusInt&                          status) const override
-        {
-        WString fileName(m_mrdtmMonikerPtr->ResolveFileName(&status));
-        
-        if (BSISUCCESS != status)
-            fileName = m_mrdtmMonikerPtr->GetPortableName(); // File not found. Return file name with configuration variable.
-
-        return LocalFileURL(fileName.c_str());
-        }
-
-
-
-
-    virtual DTMSourceMonikerType        _GetType                       () const override
-        {
-        return DTM_SOURCE_MONIKER_MSDOCUMENT;
-        }
-
-
-    virtual bool                        _IsTargetReachable             () const override
-        {
-        StatusInt status;
-        m_mrdtmMonikerPtr->ResolveFileName(&status);
-        return BSISUCCESS == status;
-        }
-
-    virtual StatusInt                   _Serialize                     (BinaryOStream&                      stream,
-                                                                        const DocumentEnv&                  env) const override
-        {
-        // TDORAY: Recreate the moniker using new env prior to serializing it in order so
-        // that relative path is correct on file moves...
-
-        const WString& monikerString(m_mrdtmMonikerPtr->Externalize());
-        if (!WriteStringW(stream, monikerString.c_str()))
-            return BSIERROR;
-
-        return BSISUCCESS;
-        }
-
-    explicit                            GeoDtmMSDocumentMoniker        (const DgnDocumentMonikerPtr&         monikerPtr)
-        :   m_mrdtmMonikerPtr(monikerPtr)
-        {
-        assert(0 != m_mrdtmMonikerPtr.get());
-        }
-
-public:
-    
-    static ILocalFileMonikerPtr Create(const DgnDocumentMonikerPtr&         monikerPtr)
-        {
-        return new GeoDtmMSDocumentMoniker(monikerPtr);
-        }
-    };
 
 /*---------------------------------------------------------------------------------**//**
 * @description
@@ -529,16 +524,11 @@ private :
         }
 
 
-    virtual IMonikerPtr                 _Create                        (BinaryIStream&                      stream,
-                                                                        const DocumentEnv&                  env,
-                                                                        StatusInt&                          status) const override
-        {
-        WString monikerString;
-        if (!ReadStringW(stream, monikerString))
+        virtual IMonikerPtr                 _Create(Import::SourceDataSQLite&                      sourceData,
+                                                    const DocumentEnv&                  env,
+                                                    StatusInt&                          status) const override
             {
-            status = BSIERROR;
-            return 0;
-            }
+            WString monikerString = sourceData.GetMonikerString();
 
         const WChar* basePath = env.GetCurrentDirCStr();
 
@@ -600,10 +590,10 @@ void InitializeATP(DgnPlatformLib::Host& host)
         RscFileManager::StaticInitialize(L"not-used");
         
         static ExeHost smHost;
-        ((ExeAdmin&)smHost.GetScalableTerrainModelAdmin()).SetActiveModelRef(model);
+        ((ExeAdmin&)smHost.GetScalableMeshAdmin()).SetActiveModelRef(model);
         
         //InitMonikerFactories();
-        InitScalableMeshMonikerFactories();
+        //InitScalableMeshMonikerFactories();
         BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreLib::Initialize(*new AppRasterCoreLibHost());
         BeAssert(BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreLib::IsInitialized()); 
         }

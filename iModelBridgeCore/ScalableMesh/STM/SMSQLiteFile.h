@@ -73,6 +73,7 @@ struct SQLiteIndexHeader
     size_t                  m_numberOfSubNodesOnSplit;      // Control value that hold either 4 or 8 to indicate if a quadtree or octtree is used.
     size_t                  m_depth;                        // Cached (maximum) number of levels in the tree.
     int              m_rootNodeBlockID;
+    size_t                  m_terrainDepth;                 //Maximum number of LODs for terrain(mesh) data, set at generation time
     };
 
 struct SQLiteSourcesData

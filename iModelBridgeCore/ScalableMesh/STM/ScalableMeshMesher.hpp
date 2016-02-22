@@ -1984,9 +1984,9 @@ return true;
         std::transform (node->begin (), node->end (), &points[0], PtToPtConverter ());
 
         IScalableMeshMeshPtr meshPtr;
-
+#ifndef NO_3D_MESH	
         Create3dDelaunayMesh(&points[0], (int)node->size(), &draw, &meshPtr, nullptr, m_tetGen);
-
+#endif
 
         ScalableMeshMesh* meshP ((ScalableMeshMesh*)meshPtr.get ());
 
@@ -2440,7 +2440,9 @@ template<class POINT, class EXTENT> bool ScalableMesh3DDelaunayMesher<POINT, EXT
     extentMin = DPoint3d::FromXYZ(ExtentOp<EXTENT>::GetXMin(node->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(node->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(node->m_nodeHeader.m_nodeExtent));
     extentMax = DPoint3d::FromXYZ(ExtentOp<EXTENT>::GetXMax(node->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(node->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(node->m_nodeHeader.m_nodeExtent));
     if (stitchedPoints.size() <= 3) return false;
+#ifndef NO_3D_MESH	
     Create3dDelaunayMesh (&stitchedPoints[0], (int)stitchedPoints.size (), &draw, &meshPtr, nullptr, m_tetGen);
+#endif
     ScalableMeshMesh* meshP((ScalableMeshMesh*)meshPtr.get());
     assert(meshP != 0);
     bvector<int> contourPointsId;
