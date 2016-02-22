@@ -8,6 +8,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "UnitsPCH.h"
+#include "SymbolicExpression.h"
 
 USING_NAMESPACE_BENTLEY_UNITS
 
@@ -42,14 +43,14 @@ Utf8String SymbolicExpression::ToString() const
     Utf8String output;
     for (auto const& sWE : m_symbolExpression)
         {
-        if (sWE->GetSymbol()->GetFactor() == 0.0)
+        if (sWE->GetSymbol()->_GetFactor() == 0.0)
             {
             Utf8PrintfString sWEString("%s^%d * ", sWE->GetName(), sWE->GetExponent());
             output.append(sWEString.c_str());
             }
         else
             {
-            Utf8PrintfString sWEString("%lf%s^%d * ", sWE->GetSymbol()->GetFactor(), sWE->GetName(), sWE->GetExponent());
+            Utf8PrintfString sWEString("%lf%s^%d * ", sWE->GetSymbol()->_GetFactor(), sWE->GetName(), sWE->GetExponent());
             output.append(sWEString.c_str());
             }
         }
@@ -58,9 +59,9 @@ Utf8String SymbolicExpression::ToString() const
 
 void SymbolicExpression::CreateExpressionWithOnlyBaseSymbols(SymbolicExpressionR source, SymbolicExpressionR target, bool copySymbols)
     {
-    for (auto const& symbolExp : source)
+    for (auto symbolExp : source)
         {
-        if (symbolExp->GetSymbol()->IsBaseSymbol() && !symbolExp->GetSymbol()->IsDimensionless())
+        if (symbolExp->GetSymbol()->_IsBaseSymbol() && !symbolExp->GetSymbol()->_IsDimensionless())
             {
             if (copySymbols)
                 target.AddCopy(*symbolExp);
@@ -102,7 +103,7 @@ void SymbolicExpression::MergeExpressions(Utf8CP targetDefinition, SymbolicExpre
         {
         int     mergedExponent = uWE->GetExponent() * startingExponent;
 
-        auto it = find_if(targetExpression.begin(), targetExpression.end(), [&uWE] (SymbolWithExponentCP a) { return uWE->GetSymbol()->GetId() == a->GetSymbol()->GetId(); });
+        auto it = find_if(targetExpression.begin(), targetExpression.end(), [&uWE] (SymbolWithExponentCP a) { return uWE->GetSymbol()->_GetId() == a->GetSymbol()->_GetId(); });
         if (it != targetExpression.end())
             {
             LOG.debugv("%s --> %s - Merging existing Unit %s. with Exponent: %d", sourceDefinition, targetDefinition, (*it)->GetName(), mergedExponent);
@@ -146,11 +147,11 @@ BentleyStatus SymbolicExpression::HandleToken(SymbolicExpressionR expression, Ut
         return BentleyStatus::ERROR;
         }
 
-    if (!symbol->IsBaseSymbol())
+    if (!symbol->_IsBaseSymbol())
         {
-        LOG.debugv("Evaluating %s", symbol->GetName());
+        LOG.debugv("Evaluating %s", symbol->_GetName());
         SymbolicExpression sourceExpression = symbol->Evaluate(getSymbolByName);
-        MergeExpressions(definition, expression, symbol->GetDefinition(), sourceExpression, mergedExponent);
+        MergeExpressions(definition, expression, symbol->_GetDefinition(), sourceExpression, mergedExponent);
         }
     return BentleyStatus::SUCCESS;
     }
