@@ -493,8 +493,8 @@ static ISMPointIndexFilter<POINT, EXTENT>* scm_createFilterFromType (ScalableMes
             return new ScalableMeshQuadTreeBCLIBProgressiveFilter1<POINT, EXTENT>();        
         case SCM_FILTER_DUMB_MESH:
             return new ScalableMeshQuadTreeBCLIBMeshFilter1<POINT, EXTENT>();        
-/*        case SCM_FILTER_CGAL_SIMPLIFIER:
-            return new ScalableMeshQuadTreeBCLIB_CGALMeshFilter<POINT, EXTENT>();*/
+        case SCM_FILTER_CGAL_SIMPLIFIER:
+            return new ScalableMeshQuadTreeBCLIB_CGALMeshFilter<POINT, EXTENT>();
         default :
             assert(!"Not supposed to be here");
         }

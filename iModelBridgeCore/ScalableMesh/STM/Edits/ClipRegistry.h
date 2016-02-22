@@ -81,7 +81,8 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
         //IDTMFile::File::Ptr filePtr = IDTMFile::File::Create(m_path.c_str());
         StatusInt status;
         SMSQLiteFilePtr filePtr = SMSQLiteFile::Open(m_path.c_str(), false, status);
-        if(status) filePtr->Create(m_path.c_str());
+        Utf8String utf8Path(m_path);
+        if (status) filePtr->Create(utf8Path.c_str());
         if (filePtr.get() != nullptr && filePtr->IsOpen()) m_clipStore = new SMSQLiteClipDefinitionsTileStore<YProtPtExtentType>(filePtr);//new SMPointTaggedTileStore<DPoint3d, YProtPtExtentType>(filePtr, false);
         }
 

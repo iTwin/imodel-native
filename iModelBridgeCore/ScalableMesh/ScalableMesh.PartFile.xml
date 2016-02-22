@@ -26,7 +26,7 @@
         <!--<SubPart PartName="PointCloud"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
         <SubPart PartName="wastorage"       PartFile="${SrcBsiCommon}CvsPartfiles/wastorage"    Repository="Bin-wastorage" />-->
         <SubPart PartName="BeCurl"          PartFile="BeCurl"                                   Repository="Libsrc-Curl"/>
-       <!--<SubPart PartName="CGAL" PartFile="CGAL" Repository="Libsrc-CGAL" />-->
+       <SubPart PartName="CGALHeaders" PartFile="CGAL" Repository="Libsrc-CGAL" />
        <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
         <!-- For Importer-->
         <!--<SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
