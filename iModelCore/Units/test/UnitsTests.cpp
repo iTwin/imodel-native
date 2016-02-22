@@ -185,14 +185,15 @@ TEST_F(UnitsTests, TestBasiConversion)
     TestUnitConversion(3.53146667214886e1, "KILONEWTON_PER_METRE_CUBED", 1.0, "KILONEWTON_PER_FOOT_CUBED", 1.0e-8, loadErrors, conversionErrors);
     }
 
-//TEST_F(UnitsTests, CheckDimensionForEveryPhenomenon)
-//    {
-//    bmap<Utf8String, PhenomenonCP> allPhenomenon = UnitRegistry::Instance().AllPhenomenon();
-//    for (auto const& phenomenon : allPhenomenon)
-//        {
-//        PERFORMANCELOG.errorv("Dimension string for %s: %s", phenomenon.first.c_str(), phenomenon.second->GetPhenomenonDimension().c_str());
-//        }
-//    }
+TEST_F(UnitsTests, CheckDimensionForEveryPhenomenon)
+    {
+    bvector<PhenomenonCP> allPhenomena;
+    UnitRegistry::Instance().AllPhenomena(allPhenomena);
+    for (auto const& phenomenon : allPhenomena)
+        {
+        PERFORMANCELOG.errorv("Dimension string for %s: %s", phenomenon->GetName(), phenomenon->GetPhenomenonDimension().c_str());
+        }
+    }
 
 TEST_F(UnitsTests, UnitsConversion)
     {

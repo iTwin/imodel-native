@@ -84,7 +84,7 @@ SymbolicExpression& Symbol::Evaluate(std::function<SymbolCP(Utf8CP)> getSymbolBy
     {
     if (!m_evaluated)
         {
-        SymbolicExpression::ParseDefinition(m_definition.c_str(), m_symbolExpression, 1, getSymbolByName);
+        SymbolicExpression::ParseDefinition(*this, m_definition.c_str(), m_symbolExpression, 1, getSymbolByName);
         m_evaluated = true;
         }
     return m_symbolExpression;

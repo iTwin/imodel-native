@@ -69,8 +69,8 @@ private:
     void LogExpression(NativeLogging::SEVERITY loggingLevel, Utf8CP name) const;
     Utf8String ToString() const;
 
-    static BentleyStatus ParseDefinition(Utf8CP definition, SymbolicExpressionR expression, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName);
-    static BentleyStatus HandleToken(SymbolicExpressionR expression, Utf8CP definition, TokenCR token, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName);
+    static BentleyStatus ParseDefinition(SymbolCR owner, Utf8CP definition, SymbolicExpressionR expression, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName);
+    static BentleyStatus HandleToken(SymbolCR owner, SymbolicExpressionR expression, Utf8CP definition, TokenCR token, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName);
     static void MergeExpressions(Utf8CP targetDefinition, SymbolicExpressionR targetExpression, Utf8CP sourceDefinition, SymbolicExpressionR sourceExpression, int startingExponent);
     static bool DimensionallyCompatible(SymbolicExpressionR expressionA, SymbolicExpressionR expressionB);
     static void CreateExpressionWithOnlyBaseSymbols(SymbolicExpressionR source, SymbolicExpressionR target, bool copySymbols);

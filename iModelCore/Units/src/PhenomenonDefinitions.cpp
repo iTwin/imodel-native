@@ -61,7 +61,7 @@ void UnitRegistry::AddDefaultPhenomena ()
     AddPhenomena(ELRESISTANCE, "ELECTRIC_POTENTIAL*CURRENT(-1)");
     AddPhenomena(CAPACITANCE, "ELECTRIC_CHARGE*ELECTRIC_POTENTIAL(-1)");
     AddPhenomena(MAGNETICFLUX, "ELECTRIC_POTENTIAL*TIME");
-    AddPhenomena(MAGFLUXDENSITY, "MAGFLUXDENSITY*LENGTH(-2)");
+    AddPhenomena(MAGNETIC_FLUX_DENSITY, "MAGNETICFLUX*LENGTH(-2)");
     AddPhenomena(INDUCTANCE, "MAGNETICFLUX*CURRENT(-1)");
     AddPhenomena(LUMINOUSFLUX, "LUMINOUSINTENSITY*SOLIDANGLE(-1)"); // TODO: Check
     AddPhenomena(ILLUMINANCE, "LUMINOUSFLUX*LENGTH(-2)");
@@ -86,6 +86,7 @@ void UnitRegistry::AddDefaultPhenomena ()
     AddPhenomena(HEATING_VALUE_VOLUMETRIC, "WORK*VOLUME(-1)"); // TODO: Check
     AddPhenomena(HEATING_VALUE_MASS, "WORK*MASS(-1)");
     AddPhenomena(HEATING_VALUE_MOLE, "WORK*MOLE(-1)");
+    //AddPhenomena(ACTION, "WORK*TIME");
     }
 
 

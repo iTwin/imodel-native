@@ -116,7 +116,7 @@ void SymbolicExpression::MergeExpressions(Utf8CP targetDefinition, SymbolicExpre
         }
     }
 
-BentleyStatus SymbolicExpression::HandleToken(SymbolicExpressionR expression, Utf8CP definition, TokenCR token, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName)
+BentleyStatus SymbolicExpression::HandleToken(SymbolCR owner, SymbolicExpressionR expression, Utf8CP definition, TokenCR token, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName)
     {
     LOG.debugv("%s - Handle Token: %s  TokenExp: %d  StartExp: %d", definition, token.GetName(), token.GetExponent(), startingExponent);
     int mergedExponent = token.GetExponent() * startingExponent;
@@ -148,6 +148,12 @@ BentleyStatus SymbolicExpression::HandleToken(SymbolicExpressionR expression, Ut
 
     if (!symbol->IsBaseSymbol())
         {
+        if (owner == *symbol)
+            {
+            LOG.errorv("Cannot parse %s because its defintion is self referencing", owner.GetName());
+            return BentleyStatus::ERROR;
+            }
+
         LOG.debugv("Evaluating %s", symbol->GetName());
         SymbolicExpression sourceExpression = symbol->Evaluate(getSymbolByName);
         MergeExpressions(definition, expression, symbol->GetDefinition(), sourceExpression, mergedExponent);
@@ -158,7 +164,7 @@ BentleyStatus SymbolicExpression::HandleToken(SymbolicExpressionR expression, Ut
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Colin.Kerr         02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SymbolicExpression::ParseDefinition(Utf8CP definition, SymbolicExpressionR expression, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName)
+BentleyStatus SymbolicExpression::ParseDefinition(SymbolCR owner, Utf8CP definition, SymbolicExpressionR expression, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName)
     {
     if (Utf8String::IsNullOrEmpty(definition))
         return BentleyStatus::ERROR;
@@ -180,7 +186,7 @@ BentleyStatus SymbolicExpression::ParseDefinition(Utf8CP definition, SymbolicExp
                 return BentleyStatus::ERROR;
                 }
 
-            HandleToken(expression, definition, currentToken, startingExponent, getSymbolByName);
+            HandleToken(owner, expression, definition, currentToken, startingExponent, getSymbolByName);
             currentToken.Clear();
             continue;
             }
@@ -217,7 +223,7 @@ BentleyStatus SymbolicExpression::ParseDefinition(Utf8CP definition, SymbolicExp
  
     if (currentToken.IsValid())
         {
-        HandleToken(expression, definition, currentToken, startingExponent, getSymbolByName);
+        HandleToken(owner, expression, definition, currentToken, startingExponent, getSymbolByName);
         }
 
     auto new_iter = remove_if(expression.begin(), expression.end(), [](SymbolWithExponent* a) { return a->GetExponent() == 0; });

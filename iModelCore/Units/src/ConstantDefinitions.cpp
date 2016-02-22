@@ -29,7 +29,7 @@ void UnitRegistry::AddDefaultConstants ()
     reg.AddConstant(GRAVCONSTANT, "G0", "M(3)*KG(-1)*S(-2)", 6.67408e-11); //, "Gravitational constant");
     reg.AddConstant(ELECTRIC_CHARGE, "Q0", "A*S", 1.6021766208e-19);// , "Elementary Charge");
     reg.AddConstant(ACCELERATION, "STD_G", "M*S(-2)", 9.80665); //, "Standard Gravity");
-    reg.AddConstant(RATIO, "H", "J*S", 6.62607004e-34); //, "Planck constant");
+    //reg.AddConstant(ACTION, "H", "J*S", 6.62607004e-34); //, "Planck constant");
     reg.AddConstant(RATIO, "A0", "MOL(-1)", 6.022140857e23); //, "Avogadro Number");
     // Densities of Water in KG/CUB.M
     reg.AddConstant(DENSITY, "H2O_0C", "KG*M(-3)", 0.99987e3); //, "Density of water at 0 degree Celsius");
