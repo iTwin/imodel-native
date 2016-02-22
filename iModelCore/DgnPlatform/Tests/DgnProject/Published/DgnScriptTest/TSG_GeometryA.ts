@@ -32,9 +32,9 @@ module DgnScriptTests {
 
     function test3(): void {
         var arrayA = new Bentley.Dgn.DPoint3dArray();
-        arrayA.Add(1, 2, 3);
-        arrayA.Add(2, 3, 4);
-        arrayA.Add(4, 3, 4);
+        arrayA.AddXYZ (1, 2, 3);
+        arrayA.AddXYZ (2, 3, 4);
+        arrayA.AddXYZ (4, 3, 4);
         checker.NearDouble(3, arrayA.Size(), true);
         var cpLineStringA = new Bentley.Dgn.LineString (arrayA);
         var pointB = cpLineStringA.PointAtFraction(0.5);
