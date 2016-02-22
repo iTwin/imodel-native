@@ -48,6 +48,7 @@ TEST_F(DgnBaseDomainSchemaTests, ValidateDomainSchemaDDL)
         expectedColumnNames.push_back("ModelId");
         expectedColumnNames.push_back("ParentId");
         expectedColumnNames.push_back("Label");
+        expectedColumnNames.push_back("UserProperties");
         expectedColumnNames.push_back("LastMod");
 
         while (BE_SQLITE_ROW == statement.Step())
