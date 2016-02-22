@@ -737,7 +737,7 @@ struct ECDbMapStorage
     private:
 
         const Utf8CP Sql_InsertPropertyPath = "INSERT OR REPLACE INTO ec_PropertyPath (Id, RootPropertyId, AccessString) VALUES (?,?,?)";
-        const Utf8CP Sql_InsertClassMap = "INSERT OR REPLACE INTO ec_ClassMap(Id, ParentId, ClassId, MapStrategy, MapStrategyOptions, MapStrategyAppliesToSubclasses) VALUES (?,?,?,?,?,?)";
+        const Utf8CP Sql_InsertClassMap = "INSERT INTO ec_ClassMap(Id, ParentId, ClassId, MapStrategy, MapStrategyOptions, MapStrategyAppliesToSubclasses) VALUES (?,?,?,?,?,?)";
         const Utf8CP Sql_DeleteClassMap = "DELETE FROM ec_ClassMap WHERE Id = ?";
 
         const Utf8CP Sql_InsertPropertyMap = "INSERT OR REPLACE INTO ec_PropertyMap (ClassMapId, PropertyPathId, ColumnId) VALUES (?,?,?)";
@@ -764,37 +764,31 @@ struct ECDbMapStorage
 
         ECDbSQLManager& m_manager;
     private:
-        ECDbPropertyPath* Set (std::unique_ptr<ECDbPropertyPath> propertyPath) const;
-        ECDbClassMapInfo* Set (std::unique_ptr<ECDbClassMapInfo> classMap) const;
-        CachedStatementPtr GetStatement (StatementType type) const;
-        DbResult InsertOrReplace () const;
-        DbResult InsertPropertyMap (ECDbPropertyMapInfo const& o) const;
-        DbResult InsertClassMap (ECDbClassMapInfo const& o) const;
-        DbResult InsertPropertyPath (ECDbPropertyPath const& o) const;
-        DbResult Read () const;
-        DbResult ReadPropertyMap (ECDbClassMapInfo&) const;
-        DbResult ReadClassMaps () const;
-        DbResult ReadPropertyPaths () const;
+        ECDbPropertyPath* Set(std::unique_ptr<ECDbPropertyPath> propertyPath) const;
+        ECDbClassMapInfo* Set(std::unique_ptr<ECDbClassMapInfo> classMap) const;
+        CachedStatementPtr GetStatement(StatementType type) const;
+        DbResult InsertOrReplace() const;
+        DbResult InsertPropertyMap(ECDbPropertyMapInfo const& o) const;
+        DbResult InsertClassMap(ECDbClassMapInfo const& o) const;
+        DbResult InsertPropertyPath(ECDbPropertyPath const& o) const;
+        DbResult Read() const;
+        DbResult ReadPropertyMap(ECDbClassMapInfo&) const;
+        DbResult ReadClassMaps() const;
+        DbResult ReadPropertyPaths() const;
 
     public:
-        ECDbMapStorage (ECDbSQLManager& manager) :m_manager (manager) {}
-        ECDbPropertyPath const * FindPropertyPath (ECN::ECPropertyId rootPropertyId, Utf8CP accessString) const;
-        ECDbPropertyPath const* FindPropertyPath (ECDbPropertyPathId propertyPathId) const;
-        ECDbClassMapInfo const* FindClassMap (ECDbClassMapId id) const;
-        std::vector<ECDbClassMapInfo const*> const* FindClassMapsByClassId (ECN::ECClassId id) const;
+        explicit ECDbMapStorage(ECDbSQLManager& manager) :m_manager(manager) {}
+        ECDbPropertyPath const * FindPropertyPath(ECN::ECPropertyId rootPropertyId, Utf8CP accessString) const;
+        ECDbPropertyPath const* FindPropertyPath(ECDbPropertyPathId propertyPathId) const;
+        ECDbClassMapInfo const* FindClassMap(ECDbClassMapId id) const;
+        std::vector<ECDbClassMapInfo const*> const* FindClassMapsByClassId(ECN::ECClassId id) const;
 
-        ECDbPropertyPath* CreatePropertyPath (ECN::ECPropertyId rootPropertyId, Utf8CP accessString) const;
-        ECDbClassMapInfo* CreateClassMap (ECN::ECClassId classId, ECDbMapStrategy const& mapStrategy, ECDbClassMapId baseClassMapId = 0LL) const;
+        ECDbPropertyPath* CreatePropertyPath(ECN::ECPropertyId rootPropertyId, Utf8CP accessString) const;
+        ECDbClassMapInfo* CreateClassMap(ECN::ECClassId classId, ECDbMapStrategy const& mapStrategy, ECDbClassMapId baseClassMapId = 0LL) const;
 
-        BentleyStatus Load () const { return Read () != BE_SQLITE_OK ? ERROR : SUCCESS; }
-        BentleyStatus Save () const { return InsertOrReplace () != BE_SQLITE_OK ? ERROR : SUCCESS; }
-        void Reset () const
-            {
-            m_propertyPaths.clear ();
-            m_propertyPathByPropertyId.clear ();
-            m_classMaps.clear ();
-            m_classMapByClassId.clear ();
-            }
+        BentleyStatus Load() const { return Read() != BE_SQLITE_OK ? ERROR : SUCCESS; }
+        BentleyStatus Save() const { return InsertOrReplace() != BE_SQLITE_OK ? ERROR : SUCCESS; }
+        void Reset() const;
     };
 
 //======================================================================================

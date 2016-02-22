@@ -2600,6 +2600,18 @@ CachedStatementPtr ECDbMapStorage::GetStatement(StatementType type) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
+void ECDbMapStorage::Reset() const
+    {
+    m_propertyPaths.clear();
+    m_propertyPathByPropertyId.clear();
+    m_classMaps.clear();
+    m_classMapByClassId.clear();
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        01/2015
+//---------------------------------------------------------------------------------------
 DbResult ECDbMapStorage::InsertOrReplace() const
     {
     for (auto& propertyPath : m_propertyPaths)
@@ -2673,11 +2685,10 @@ DbResult ECDbMapStorage::InsertPropertyMap(ECDbPropertyMapInfo const& o) const
 //---------------------------------------------------------------------------------------
 DbResult ECDbMapStorage::InsertClassMap(ECDbClassMapInfo const& o) const
     {
-    //TEMP fix for conceptstation
+    //Delete the entry first, as using SQLite's INSERT OR REPLACE is dangerous.
     CachedStatementPtr deleteSt = GetStatement(StatementType::SqlDeleteClassMap);
     deleteSt->BindInt64(1, o.GetId());
     deleteSt->Step();
-    //===============================
 
     CachedStatementPtr stmt = GetStatement(StatementType::SqlInsertClassMap);
     if (stmt == nullptr)

@@ -369,8 +369,10 @@ void ECDb::Impl::ECSqlStatementRegistry::FinalizeStatements() const
     for (ECSqlStatement::Impl* stmt : m_statements)
         {
         if (stmt != nullptr)
-            stmt->Finalize();
+            stmt->DoFinalize(false); //don't unregister, as we will simply clear the registry after all statements have been finalized
         }
+
+    m_statements.clear();
     }
 
 //******************************************
