@@ -46,7 +46,8 @@
 #include "HRFPngFile.h"
 #include "HRFTiffFile.h"
 #include "HRFGifFile.h"
-#include <ImagePP\IppImaging\HRFInternetImagingFile.h>
+// Disable image server for now. It requires windows headers and We are not using it on DgnDb
+//#include <ImagePP\IppImaging\HRFInternetImagingFile.h>
 #include "HRFcTiffFile.h"
 #include "HRFTgaFile.h"
 #include "HRFRawFile.h"
@@ -103,6 +104,8 @@
 #define HOST_REGISTER_MRSID_FILEFORMAT       
 #endif                                       
 
+// disable by defaut on DGNDB
+//HOST_REGISTER_FILEFORMAT(HRFInternetImagingFileCreator)
 
 #if !defined(BENTLEYACTIVEXPRO_FILE_FORMATS)     // Technical problem with the ActiveX and Gdal library
 
@@ -114,7 +117,6 @@
     HOST_REGISTER_FILEFORMAT(HRFNitfCreator)        \
     HOST_REGISTER_FILEFORMAT(HRFCalsCreator)        \
     HOST_REGISTER_FILEFORMAT(HRFLRDCreator)         \
-    HOST_REGISTER_FILEFORMAT(HRFInternetImagingFileCreator) \
     HOST_REGISTER_FILEFORMAT(HRFWMSCreator)         \
     HOST_REGISTER_FILEFORMAT(HRFxChCreator)         \
     HOST_REGISTER_FILEFORMAT(HRFBilCreator)         \

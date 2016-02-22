@@ -141,8 +141,9 @@
     <Part Name="IppImagingDll" BentleyBuildMakeFile="IppImaging/IppImaging.mke" ApiNumber="G06" OnlyPlatforms="x86,x64">
         <SubPart PartName="ImagePPDll" />       
         <Bindings>
-            <Libs>Delivery/$(shlibprefix)IppImaging$(libext)</Libs>
-            <Assemblies ProductDirectoryName="ImagePPAssemblies">Delivery/$(shlibprefix)IppImaging$(ApiNumber)$(shlibext)</Assemblies>
+            <!-- For now, we build imaging client but we do not implicitely deliver it. -->
+            <Libs ProductDirectoryName="IppImagingLibs" Required="false">Delivery/$(shlibprefix)IppImaging$(libext)</Libs>
+            <Assemblies ProductDirectoryName="IppImagingAssemblies" Required="false">Delivery/$(shlibprefix)IppImaging$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 

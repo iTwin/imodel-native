@@ -177,7 +177,7 @@ private:
 //----------------------------------------------------------------------------------------
 inline void WorkerPool::Worker::operator()()
     {
-    BeThreadUtilities::SetCurrentThreadName("WorkerPool worker");
+    BeThreadUtilities::SetCurrentThreadName("WorkerPool worker");   // &&MM we should get that name from constructor.
 
     while (true)
         {
