@@ -72,25 +72,5 @@ public:
     void SetUnit (UnitCP unit) { m_unit = unit; }
     };
 
-//struct Constant;
-//typedef RefCountedPtr<Constant> ConstantPtr;
-
-//////=======================================================================================
-//////! A class to represent a defined constant.
-////// @bsiclass                                                    Chris.Tartamella   02/16
-//////=======================================================================================
-////struct Constant : QuantityBase
-////    {
-////private:
-////    Utf8String m_name;
-////
-////    Constant(Utf8CP constantName, double quantity, UnitCP unit);
-////
-////public:
-////    static ConstantPtr Create (Utf8CP constantName, double magnitude, Utf8CP unitName);
-////
-////    Utf8CP GetConstantName() { return m_name.c_str(); }
-////    };
-
 END_BENTLEY_UNITS_NAMESPACE
 

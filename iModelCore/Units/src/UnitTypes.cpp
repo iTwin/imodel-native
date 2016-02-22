@@ -70,6 +70,7 @@ double Unit::GetConversionTo(UnitCP unit) const
     for (auto const& unitExp : combinedExpression)
         {
         // TODO: Decide if this is really necessary ...  if exponent is zero then the factor is 1 so the question is it better to pow and multiply by 1 or have a branch ... suspect pow and mult
+        // TODO: Consider always doing positive exponents and dividing if exponent is negative
         if (unitExp->GetExponent() == 0 || unitExp->GetSymbol()->GetFactor() == 1.0)
             continue;
         
@@ -95,4 +96,11 @@ Utf8String Phenomenon::GetPhenomenonDimension() const
     SymbolicExpression baseExpression;
     SymbolicExpression::CreateExpressionWithOnlyBaseSymbols(phenomenonExpression, baseExpression, false);
     return baseExpression.ToString();
+    }
+
+void Phenomenon::AddUnit(UnitCR unit)
+    {
+    auto it = find_if(m_units.begin(), m_units.end(), [&unit] (UnitCP existingUnit) { return existingUnit->GetId() == unit.GetId(); });
+    if (it == m_units.end())
+        m_units.push_back(&unit);
     }

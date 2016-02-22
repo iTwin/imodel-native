@@ -224,48 +224,29 @@ TEST_F(UnitsTests, UnitsConversion)
     EXPECT_EQ(0, conversionErrors.size()) << conversionErrorString;
     }
 
-void GetAllUnitNames(UnitRegistry& hub, bvector<Utf8CP>& allUnitNames, bool includeSynonyms)
-    {
-    for (auto const& unitNameValue : hub.AllUnits())
-        {
-        if (!includeSynonyms && !unitNameValue.first.Equals(unitNameValue.second->GetName()))
-            continue;
-        allUnitNames.push_back(unitNameValue.first.c_str());
-        }
-    }
-
-void GetUnitsByName(UnitRegistry& hub, bvector<Utf8CP>& unitNames)
+void GetUnitsByName(UnitRegistry& hub, bvector<Utf8String>& unitNames)
     {
     for (auto const& unitName : unitNames)
         {
-        auto unit = hub.LookupUnit(unitName);
+        auto unit = hub.LookupUnit(unitName.c_str());
         ASSERT_TRUE(unit != nullptr) << "Failed to get unit: " << unitName;
         }
     }
 
-void GetAllUnits(UnitRegistry& hub, bvector<UnitCP>& allUnits)
+TEST_F(UnitsTests, TestEveryUnitIsAddedToItsPhenomenon)
     {
-    bvector<Utf8CP> allUnitNames;
-    GetAllUnitNames(hub, allUnitNames, false);
-    for (auto const& unitName : allUnitNames)
+    UnitRegistry& hub = UnitRegistry::Instance();
+    bvector<UnitCP> allUnits;
+    hub.AllUnits(allUnits);
+    for (auto const& unit : allUnits)
         {
-        auto unit = hub.LookupUnit(unitName);
-        ASSERT_TRUE(unit != nullptr) << "Failed to get unit: " << unitName;
-        allUnits.push_back(unit);
+        PhenomenonCP unitPhenomenon = unit->GetPhenomenon();
+        ASSERT_NE(nullptr, unitPhenomenon) << "Unit " << unit->GetName() << " does not have phenomenon";
+        auto it = find_if(unitPhenomenon->GetUnits().begin(), unitPhenomenon->GetUnits().end(),
+                       [&unit] (UnitCP unitInPhenomenon) { return 0 == strcmp(unitInPhenomenon->GetName(), unit->GetName()); });
+        ASSERT_NE(unitPhenomenon->GetUnits().end(), it) << "Unit " << unit->GetName() << " is not registered with it's phenomenon";
         }
     }
-//
-//TEST_F(UnitsTests, UnitExpressions)
-//    {
-//    bvector<UnitCP> allUnits;
-//    GetAllUnits(UnitRegistry::Instance(), allUnits);
-//    for (auto const& unit : allUnits)
-//        {
-//        PERFORMANCELOG.error(unit->GetName());
-//        PERFORMANCELOG.errorv("Numerator:   %s", BeStringUtilities::Join(unit->Numerator(), "*").c_str());
-//        PERFORMANCELOG.errorv("Denominator: %s", BeStringUtilities::Join(unit->Denominator(), "*").c_str());
-//        }
-//    }
 
 void TestUnitAndConstantsExist(const bvector<Utf8String>& unitNames, Utf8CP unitName, Utf8CP atorName)
     {
@@ -286,18 +267,6 @@ void TestUnitAndConstantsExist(const bvector<Utf8String>& unitNames, Utf8CP unit
         }
     }
 
-//TEST_F(UnitsTests, EveryUnitIsMadeUpOfRegisteredUnits)
-//    {
-//    UnitRegistry& reg = UnitRegistry::Instance();
-//    bvector<UnitCP> allUnits;
-//    GetAllUnits(reg, allUnits);
-//    for (auto const& unit : allUnits)
-//        {
-//        TestUnitAndConstantsExist(unit->Numerator(), unit->GetName(), "numerator");
-//        TestUnitAndConstantsExist(unit->Denominator(), unit->GetName(), "denominator");
-//        }
-//    }
-
 struct UnitsPerformanceTests : UnitsTests {};
 
 TEST_F(UnitsPerformanceTests, InitUnitsHub)
@@ -307,8 +276,8 @@ TEST_F(UnitsPerformanceTests, InitUnitsHub)
     timer.Start();
     UnitRegistry& hub = UnitRegistry::Instance();
     timer.Stop();
-    bvector<Utf8CP> allUnitNames;
-    GetAllUnitNames(hub, allUnitNames, false);
+    bvector<Utf8String> allUnitNames;
+    hub.AllUnitNames(allUnitNames, false);
 
     PERFORMANCELOG.errorv("Time to load Units Hub with %lu units: %lf", allUnitNames.size(), timer.GetElapsedSeconds());
     }
@@ -317,9 +286,9 @@ TEST_F(UnitsPerformanceTests, GetEveryUnitByName)
     {
     StopWatch timer("Get every unit by name", false);
     UnitRegistry::Clear();
-    bvector<Utf8CP> allUnitNames;
+    bvector<Utf8String> allUnitNames;
     timer.Start();
-    GetAllUnitNames(UnitRegistry::Instance(), allUnitNames, false);
+    UnitRegistry::Instance().AllUnitNames(allUnitNames, false);
     timer.Stop();
     PERFORMANCELOG.errorv("Time to get all %lu primary unit names: %lf", allUnitNames.size(), timer.GetElapsedSeconds());
     
@@ -331,7 +300,7 @@ TEST_F(UnitsPerformanceTests, GetEveryUnitByName)
     UnitRegistry::Clear();
     allUnitNames.clear();
     timer.Start();
-    GetAllUnitNames(UnitRegistry::Instance(), allUnitNames, true);
+    UnitRegistry::Instance().AllUnitNames(allUnitNames, true);
     timer.Stop();
     PERFORMANCELOG.errorv("Time to get all %lu primary unit names and synonyms: %lf", allUnitNames.size(), timer.GetElapsedSeconds());
 
@@ -346,32 +315,18 @@ TEST_F(UnitsPerformanceTests, GenerateEveryConversionValue)
     StopWatch timer("Evaluate every unit", false);
     UnitRegistry::Clear();
     UnitRegistry& hub = UnitRegistry::Instance();
-    bvector<UnitCP> allUnits;
-    GetAllUnits(hub, allUnits);
-    bmap<Utf8CP, bvector<UnitCP>*> unitsByPhenomenon;
-    for (auto const& unit : allUnits)
-        {
-        if (unit->IsConstant())
-            continue;
-        bvector<UnitCP>* unitsInPhenomon;
-        auto it = unitsByPhenomenon.find(unit->GetPhenomenon()->GetName());
-        if (it == unitsByPhenomenon.end())
-            {
-            unitsInPhenomon = new bvector<UnitCP>();
-            unitsByPhenomenon.insert(bpair<Utf8CP, bvector<UnitCP>*> (unit->GetPhenomenon()->GetName(), unitsInPhenomon));
-            unitsInPhenomon->push_back(unit);
-            }
-        else
-            {
-            (*it).second->push_back(unit);
-            }
-        }
+    bvector<PhenomenonCP> allPhenomena;
+    hub.AllPhenomena(allPhenomena);
+
+
     int numConversions = 0;
     timer.Start();
-    for (auto const& phenomenon : unitsByPhenomenon)
+    for (auto const& phenomenon : allPhenomena)
         {
-        UnitCP firstUnit = *phenomenon.second->begin();
-        for (auto const& unit : *phenomenon.second)
+        if (!phenomenon->HasUnits())
+            continue;
+        UnitCP firstUnit = *phenomenon->GetUnits().begin();
+        for (auto const& unit : phenomenon->GetUnits())
             {
             double conversion = firstUnit->GetConversionTo(unit);
             ASSERT_FALSE(std::isnan(conversion)) << "Generated conversion factor is invalid from " << firstUnit->GetName() << " to " << unit->GetName();
