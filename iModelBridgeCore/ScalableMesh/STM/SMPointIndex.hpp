@@ -7811,6 +7811,7 @@ template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::SMPointIndex(HF
     m_indexHeader.m_balanced = false;
     m_needsBalancing = balanced;
     m_indexHeader.m_depth = (size_t)-1;
+    m_indexHeader.m_terrainDepth = (size_t)-1;
     m_isGenerating = true;
     // If a store is provided ...
     if (store != NULL)
@@ -8284,6 +8285,10 @@ template<class POINT, class EXTENT> bool SMPointIndex<POINT, EXTENT>::Store()
             {
             const_cast<SMPointIndex<POINT, EXTENT>*>(this)->m_indexHeader.m_depth = m_pRootNode->GetDepth();
             const_cast<SMPointIndex<POINT, EXTENT>*>(this)->m_indexHeaderDirty = true;
+            }
+        if (m_indexHeader.m_terrainDepth == (size_t)-1)
+            {
+            const_cast<SMPointIndex<POINT, EXTENT>*>(this)->m_indexHeader.m_terrainDepth = const_cast<SMPointIndex<POINT, EXTENT>*>(this)->m_indexHeader.m_depth;
             }
         m_pRootNode->Store();        
 
@@ -8891,7 +8896,7 @@ template<class POINT, class EXTENT>
 HFCPtr<SMPointIndexNode<POINT, EXTENT> >   SMPointIndex<POINT, EXTENT>::GetRootNode() const
     {
     //NEEDS_WORK_SM : Duplicate from SMPointIndex<POINT, EXTENT>::Query(ISMPointIndexQuery<POINT, EXTENT>* queryObject, HFCPtr<SMPointIndexNode<POINT, EXTENT>>& resultNode)    
-    if (m_indexHeader.m_rootNodeBlockID.IsValid() && m_pRootNode == nullptr)
+    if (m_pRootNode == nullptr && m_indexHeader.m_rootNodeBlockID.IsValid())
         {
         const_cast<SMPointIndex<POINT, EXTENT>*>(this)->m_pRootNode = const_cast<SMPointIndex<POINT, EXTENT>*>(this)->CreateNewNode(m_indexHeader.m_rootNodeBlockID);
         }
