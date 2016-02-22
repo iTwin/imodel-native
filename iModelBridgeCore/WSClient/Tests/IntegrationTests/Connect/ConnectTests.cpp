@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/Connect/ConnectTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -22,11 +22,12 @@ TEST_F(ConnectTests, GetStsToken_ProdUrls_RetrievesToken)
     Connect::Initialize(StubClientInfo(), proxy);
 
     Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
-    SamlToken token;
 
-    ASSERT_EQ(0, Connect::Login(credentials, token));
+    auto result = Connect::Login(credentials)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
 
-    auto tokenAuthStr = token.ToAuthorizationString();
+    SamlTokenPtr token = result.GetValue();
+    auto tokenAuthStr = token->ToAuthorizationString();
     BeDebugLog(tokenAuthStr.c_str());
     }
 
@@ -39,10 +40,11 @@ TEST_F(ConnectTests, Login_QaUrls_RetrievesToken)
     Connect::Initialize(StubClientInfo(), proxy);
 
     Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
-    SamlToken token;
 
-    ASSERT_EQ(0, Connect::Login(credentials, token));
+    auto result = Connect::Login(credentials)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
 
-    auto tokenAuthStr = token.ToAuthorizationString();
+    SamlTokenPtr token = result.GetValue();
+    auto tokenAuthStr = token->ToAuthorizationString();
     BeDebugLog(tokenAuthStr.c_str());
     }
