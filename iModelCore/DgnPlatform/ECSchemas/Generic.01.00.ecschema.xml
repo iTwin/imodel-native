@@ -4,7 +4,9 @@
     <ECSchemaReference name="dgn" version="02.00" prefix="dgn"/>
 
     <ECEntityClass typeName="PhysicalObject">
-        <!-- A generic PhysicalObject is used, for example, when a conversion process did not have enough information to choose anything better -->
+        <!-- A generic PhysicalObject is used by a conversion process when: -->
+        <!-- * It did not have enough information to pick another domain -->
+        <!-- * It determined the element represents a PhysicalObject -->
         <BaseClass>dgn:PhysicalElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
@@ -12,8 +14,18 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="SpatialLocation">
-        <!-- A generic SpatialLocation is used, for example, when a conversion process did not have enough information to choose anything better -->
+        <!-- A generic SpatialLocation is used by a conversion process when: -->
+        <!-- * It did not have enough information to pick another domain -->
+        <!-- * It determined the element represents a SpatialLocation -->
         <BaseClass>dgn:SpatialLocationElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="SpatialGroup">
+        <!-- A SpatialElement that groups other SpatialElements using the ElementGroupsMembers relationship -->
+        <BaseClass>dgn:SpatialElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>

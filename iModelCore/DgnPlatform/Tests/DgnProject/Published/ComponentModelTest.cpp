@@ -13,6 +13,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/BeNumerical.h>
 #include <Logging/bentleylogging.h>
+#include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -27,32 +28,9 @@ USING_NAMESPACE_BENTLEY_SQLITE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static BeFileName copyDb (WCharCP inputFileName, WCharCP outputFileName)
-    {
-    BeFileName fullInputFileName;
-    BeTest::GetHost().GetDocumentsRoot (fullInputFileName);
-    fullInputFileName.AppendToPath (inputFileName);
-
-    BeFileName fullOutputFileName;
-    BeTest::GetHost().GetOutputRoot(fullOutputFileName);
-    fullOutputFileName.AppendToPath(outputFileName);
-
-    if (BeFileNameStatus::Success != BeFileName::BeCopyFile (fullInputFileName, fullOutputFileName))
-        return BeFileName();
-
-    return fullOutputFileName;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 static void openDb (DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode)
     {
-    DbResult result = BE_SQLITE_OK;
-    db = DgnDb::OpenDgnDb(&result, name, DgnDb::OpenParams(mode));
-    ASSERT_TRUE( db.IsValid() ) << (WCharCP)WPrintfString(L"Failed to open %ls in mode %d => result=%x", name.c_str(), (int)mode, (int)result);
-    ASSERT_EQ( BE_SQLITE_OK , result );
-    TestDataManager::MustBeBriefcase(db, mode);
+    db = DgnDbTestUtils::OpenDgnDb(name, mode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -60,19 +38,8 @@ static void openDb (DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DgnDbStatus createSpatialModel(SpatialModelPtr& catalogModel, DgnDbR db, DgnCode const& code)
     {
-    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
-    catalogModel = new SpatialModel(DgnModel3d::CreateParams(db, mclassId, code));
-    catalogModel->SetInGuiList(false);
-    return catalogModel->Insert();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T>
-RefCountedPtr<T> getModelByName(DgnDbR db, Utf8StringCR cmname)
-    {
-    return db.Models().Get<T>(db.Models().QueryModelId(DgnModel::CreateModelCode(cmname)));
+    catalogModel = DgnDbTestUtils::InsertSpatialModel(db, code);
+    return catalogModel.IsValid()? DgnDbStatus::Success : DgnDbStatus::NotFound;
     }
 
 /*=================================================================================**//**
@@ -190,7 +157,6 @@ void VariationSpec::MakeVariation(DgnElementCPtr& variation, SpatialModelR destM
     variation = ComponentDef::MakeVariation(&status, destModel, *vspec, m_name);
     ASSERT_TRUE(variation.IsValid()) << Utf8PrintfString("MakeVariation failed with error %x", status);
     }
-
 
 /*=================================================================================**//**
 * @bsiclass                                                     Sam.Wilson     02/2012
@@ -404,10 +370,10 @@ void ComponentModelTest::Client_ImportComponentDef(Utf8CP componentName)
     //  ------------------------
     //  Copy in the variations
     //  ------------------------
-    SpatialModelPtr sourceCatalogModel = getModelByName<SpatialModel>(*m_componentDb, "Catalog");
+    SpatialModelPtr sourceCatalogModel = DgnDbTestUtils::GetModelByName<SpatialModel>(*m_componentDb, "Catalog");
     ASSERT_TRUE(sourceCatalogModel.IsValid());
 
-    SpatialModelPtr catalogModel = getModelByName<SpatialModel>(*m_clientDb, "Catalog");
+    SpatialModelPtr catalogModel = DgnDbTestUtils::GetModelByName<SpatialModel>(*m_clientDb, "Catalog");
     if (!catalogModel.IsValid())
         createSpatialModel(catalogModel, *m_clientDb, DgnModel::CreateModelCode("Catalog"));
 
@@ -443,7 +409,7 @@ void ComponentModelTest::Client_PlaceInstanceOfVariation(DgnElementId& ieid, Utf
     {
     ASSERT_TRUE(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
-    SpatialModelPtr targetModel = getModelByName<SpatialModel>(*m_clientDb, targetModelName);
+    SpatialModelPtr targetModel = DgnDbTestUtils::GetModelByName<SpatialModel>(*m_clientDb, targetModelName);
     ASSERT_TRUE( targetModel.IsValid() );
 
     DgnDbStatus status;
@@ -483,11 +449,10 @@ void ComponentModelTest::Client_PlaceInstance(DgnElementId& ieid, Utf8CP targetM
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ComponentModelTest::Client_InsertNonInstanceElement(Utf8CP modelName, Utf8CP code)
     {
-    SpatialModelPtr targetModel = getModelByName<SpatialModel>(*m_clientDb, modelName);
+    SpatialModelPtr targetModel = DgnDbTestUtils::GetModelByName<SpatialModel>(*m_clientDb, modelName);
     ASSERT_TRUE( targetModel.IsValid() );
-    DgnClassId classid = DgnClassId(m_clientDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
     DgnCategoryId catid = DgnCategory::QueryHighestCategoryId(*m_clientDb);
-    auto el = PhysicalElement::Create(PhysicalElement::CreateParams(*m_clientDb, targetModel->GetModelId(), classid, catid));
+    auto el = GenericPhysicalObject::Create(*targetModel, catid);
     ASSERT_TRUE( el.IsValid() );
     ASSERT_TRUE( el->Insert().IsValid() );
     }
@@ -648,7 +613,7 @@ void ComponentModelTest::SimulateClient()
             ASSERT_TRUE(std::find(componentClassIds.begin(), componentClassIds.end(), thingClassId)  != componentClassIds.end());
             }
 
-        SpatialModelPtr catalogModel = getModelByName<SpatialModel>(*m_clientDb, "Catalog");
+        SpatialModelPtr catalogModel = DgnDbTestUtils::GetModelByName<SpatialModel>(*m_clientDb, "Catalog");
         ASSERT_TRUE( catalogModel.IsValid() ) << "importing component should also import its catalog";
 
         // Now start placing instances of Widgets
@@ -693,7 +658,7 @@ void ComponentModelTest::SimulateClient()
     OpenClientDb(Db::OpenMode::ReadWrite);
         {
         AutoCloseClientDb closeClientDbAtEnd(*this);
-        SpatialModelPtr catalogModel = getModelByName<SpatialModel>(*m_clientDb, "Catalog");
+        SpatialModelPtr catalogModel = DgnDbTestUtils::GetModelByName<SpatialModel>(*m_clientDb, "Catalog");
 
         DgnElementId w4;
         Client_PlaceInstance(w4, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln4.m_name, true);
@@ -732,8 +697,14 @@ void ComponentModelTest::SimulateClient()
 TEST_F(ComponentModelTest, SimulateDeveloperAndClient)
     {
     // For the purposes of this test, we'll put the Component and Client models in different DgnDbs
-    m_componentDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_Component.idgndb");
-    m_clientDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_Client.idgndb");
+    DgnDbTestUtils::SeedDbInfo rootInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, false));
+
+    m_componentDbName.SetName(L"ComponentModelTest/SimulateDeveloperAndClient_Component.dgndb");
+    DgnDbTestUtils::OpenSeedDbCopy(rootInfo.fileName, m_componentDbName);
+    
+    m_clientDbName.SetName(L"ComponentModelTest/SimulateDeveloperAndClient_Client.dgndb");
+    DgnDbTestUtils::OpenSeedDbCopy(rootInfo.fileName, m_clientDbName)->GetFileName();
+    
     BeTest::GetHost().GetOutputRoot(m_componentSchemaFileName);
     m_componentSchemaFileName.AppendToPath(TEST_JS_NAMESPACE_W L"0.0.ECSchema.xml");
 
@@ -748,8 +719,14 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClient)
 TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNestingSingleton)
     {
     // For the purposes of this test, we'll put the Component and Client models in different DgnDbs
-    m_componentDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_Component.idgndb");
-    m_clientDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_ClientWithNestingSingleton.idgndb");
+    DgnDbTestUtils::SeedDbInfo rootInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, false));
+
+    m_componentDbName.SetName(L"ComponentModelTest/SimulateDeveloperAndClientWithNestingSingleton_Component.dgndb");
+    DgnDbTestUtils::OpenSeedDbCopy(rootInfo.fileName, m_componentDbName);
+    
+    m_clientDbName.SetName(L"ComponentModelTest/SimulateDeveloperAndClientWithNestingSingleton_Client.dgndb");
+    DgnDbTestUtils::OpenSeedDbCopy(rootInfo.fileName, m_clientDbName)->GetFileName();
+
     BeTest::GetHost().GetOutputRoot(m_componentSchemaFileName);
     m_componentSchemaFileName.AppendToPath(TEST_JS_NAMESPACE_W L"0.0.ECSchema.xml");
 
@@ -791,8 +768,14 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNestingSingleton)
 TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNesting)
     {
     // For the purposes of this test, we'll put the Component and Client models in different DgnDbs
-    m_componentDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_Component.idgndb");
-    m_clientDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_ClientWithNesting.idgndb");
+    DgnDbTestUtils::SeedDbInfo rootInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, false));
+
+    m_componentDbName.SetName(L"ComponentModelTest/SimulateDeveloperAndClientWithNesting_Component.dgndb");
+    DgnDbTestUtils::OpenSeedDbCopy(rootInfo.fileName, m_componentDbName);
+    
+    m_clientDbName.SetName(L"ComponentModelTest/SimulateDeveloperAndClientWithNesting_Client.dgndb");
+    DgnDbTestUtils::OpenSeedDbCopy(rootInfo.fileName, m_clientDbName)->GetFileName();
+
     BeTest::GetHost().GetOutputRoot(m_componentSchemaFileName);
     m_componentSchemaFileName.AppendToPath(TEST_JS_NAMESPACE_W L"0.0.ECSchema.xml");
 
@@ -855,9 +838,10 @@ TEST(SchemaImportTest, SelectAfterImport)
     {
     Dgn::ScopedDgnHost host;
 
-    BeFileName componentDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_ImportTwoInARow.dgndb");
-    DgnDbPtr db;
-    openDb(db, componentDbName, DgnDb::OpenMode::ReadWrite);
+    // For the purposes of this test, we'll put the Component and Client models in different DgnDbs
+    DgnDbTestUtils::SeedDbInfo rootInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, false));
+
+    DgnDbPtr db = DgnDbTestUtils::OpenSeedDbCopy(rootInfo.fileName, L"ComponentModelTest/SelectAfterImport.dgndb");
 
     if (true)
         {

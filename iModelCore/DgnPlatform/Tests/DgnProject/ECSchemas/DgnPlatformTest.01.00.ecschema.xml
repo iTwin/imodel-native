@@ -18,7 +18,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
-        <BaseClass>dgn:AnnotationElement</BaseClass>
+        <BaseClass>dgn:AnnotationElement2d</BaseClass>
         <ECProperty propertyName="TestElementProperty" typeName="string" />
     </ECClass>
 
@@ -83,14 +83,6 @@
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>dgn:PhysicalElement</BaseClass>
-    </ECClass>
-
-    <ECClass typeName="TestRequirement" isDomainClass="True">
-        <!-- Used to test the dgn:SystemElement abstract base class -->
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
-        </ECCustomAttributes>
-        <BaseClass>dgn:SystemElement</BaseClass>
     </ECClass>
 
     <ECClass typeName="Robot" isDomainClass="true">
@@ -178,7 +170,7 @@
         <ECProperty propertyName='Prop3_3' typeName='double' />
     </ECClass>
 
-    <ECClass typeName="TestStruct" isStruct="True" >
+    <ECClass typeName="TestStruct" isStruct="True" isDomainClass="False">
         <ECProperty propertyName="TestStructDoubleMember" typeName="double" />"
         <ECProperty propertyName="TestStructIntMember" typeName="int" />"
         <ECProperty propertyName="TestStructBoolMember" typeName="boolean" />"

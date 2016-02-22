@@ -58,7 +58,7 @@ static void openDb (DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode)
 static DgnDbStatus createSpatialModel(SpatialModelPtr& catalogModel, DgnDbR db, DgnCode const& code)
     {
     DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
-    catalogModel = new SpatialModel(DgnModel3d::CreateParams(db, mclassId, code));
+    catalogModel = new SpatialModel(SpatialModel::CreateParams(db, mclassId, code));
     catalogModel->SetInGuiList(false);
     return catalogModel->Insert();
     }
@@ -214,7 +214,7 @@ void ComponentModelPerfTest::Developer_CreateCMs()
 //---------------------------------------------------------------------------------------
 static void insertBoxesElement(DgnElementId& eid, SpatialModelR physicalTestModel, DgnCategoryId testCategoryId, DPoint3dCR placementOrigin, DPoint3dCR sizeOfBlock, bvector<DPoint3d> const& originsOfBlocks)
     {
-    PhysicalElementPtr testElement = PhysicalElement::Create(physicalTestModel, testCategoryId);
+    GenericPhysicalObjectPtr testElement = GenericPhysicalObject::Create(physicalTestModel, testCategoryId);
 
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(physicalTestModel, testCategoryId, placementOrigin, YawPitchRollAngles());
     for (auto const& originOfBlock : originsOfBlocks)

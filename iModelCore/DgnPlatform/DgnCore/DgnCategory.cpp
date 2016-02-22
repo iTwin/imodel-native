@@ -262,16 +262,6 @@ DgnCategoryId DgnCategory::QueryHighestCategoryId(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategoryId DgnCategory::QueryElementCategoryId(DgnElementId elemId, DgnDbR db)
-    {
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT CategoryId FROM " DGN_SCHEMA(DGN_CLASSNAME_GeometrySource) " WHERE ECInstanceId=? LIMIT 1");
-    stmt->BindId(1, elemId);
-    return BE_SQLITE_ROW == stmt->Step() ? stmt->GetValueId<DgnCategoryId>(0) : DgnCategoryId();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode DgnCategory::_GenerateDefaultCode() const
     {
     BeAssert(false && "Creator of a category must set its code");
@@ -543,7 +533,7 @@ void DgnSubCategory::Appearance::RelocateToDestinationDb(DgnImportContext& conte
 
     if (m_style.IsValid())
         {
-        BeAssert(false && "*** TBD: remap style id");
+        //BeAssert(false && "*** TBD: remap style id");
         }
 
     if (m_material.IsValid())

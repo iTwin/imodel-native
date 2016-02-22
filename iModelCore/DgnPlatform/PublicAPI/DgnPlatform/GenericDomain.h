@@ -10,19 +10,23 @@
 
 #include <DgnPlatform/DgnDomain.h>
 
-DGNPLATFORM_TYPEDEFS(GenericPhysicalObject)
+DGNPLATFORM_TYPEDEFS(GenericSpatialGroup)
 DGNPLATFORM_TYPEDEFS(GenericSpatialLocation)
+DGNPLATFORM_TYPEDEFS(GenericPhysicalObject)
 
-DGNPLATFORM_REF_COUNTED_PTR(GenericPhysicalObject)
+DGNPLATFORM_REF_COUNTED_PTR(GenericSpatialGroup)
 DGNPLATFORM_REF_COUNTED_PTR(GenericSpatialLocation)
+DGNPLATFORM_REF_COUNTED_PTR(GenericPhysicalObject)
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-#define GENERIC_DOMAIN_ECSCHEMA_PATH L"ECSchemas/Dgn/Generic.01.00.ecschema.xml"
-#define GENERIC_DOMAIN_NAME "Generic"
-#define GENERIC_CLASSNAME_PhysicalObject "PhysicalObject"
-#define GENERIC_CLASSNAME_SpatialLocation "SpatialLocation"
-#define GENERIC_SCHEMA(className) GENERIC_DOMAIN_NAME "." className
+#define GENERIC_DOMAIN_ECSCHEMA_PATH        L"ECSchemas/Dgn/Generic.01.00.ecschema.xml"
+#define GENERIC_DOMAIN_NAME                 "Generic"
+#define GENERIC_SCHEMA(className)           GENERIC_DOMAIN_NAME "." className
+
+#define GENERIC_CLASSNAME_PhysicalObject    "PhysicalObject"
+#define GENERIC_CLASSNAME_SpatialLocation   "SpatialLocation"
+#define GENERIC_CLASSNAME_SpatialGroup      "SpatialGroup"
 
 //=======================================================================================
 //! The Generic DgnDomain
@@ -41,7 +45,9 @@ public:
 };
 
 //=======================================================================================
-//! A GenericPhysicalObject is used when the conversion process did not have enough information to choose anything better
+//! A generic PhysicalObject is used by a conversion process when:
+//! - It did not have enough information to pick another domain
+//! - It determined the element represents a PhysicalObject
 // @bsiclass                                                    Shaun.Sewall    01/2016
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GenericPhysicalObject : PhysicalElement
@@ -49,11 +55,21 @@ struct EXPORT_VTABLE_ATTRIBUTE GenericPhysicalObject : PhysicalElement
     DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASSNAME_PhysicalObject, PhysicalElement);
 
 public:
-    explicit GenericPhysicalObject(CreateParams const& params) : T_Super(params) {} 
+    explicit GenericPhysicalObject(CreateParams const& params) : T_Super(params) {}
+
+    //! Create an instance of a GenericPhysicalObject from CreateParams.
+    static GenericPhysicalObjectPtr Create(CreateParams const& params) {return new GenericPhysicalObject(params);}
+
+    //! Create an instance of a GenericPhysicalObject from a model and DgnCategoryId, using the default values for all other parameters.
+    //! @param[in] model The SpatialModel for the new GenericPhysicalObject.
+    //! @param[in] categoryId The category for the new GenericPhysicalObject.
+    DGNPLATFORM_EXPORT static GenericPhysicalObjectPtr Create(SpatialModelR model, DgnCategoryId categoryId);
 };
 
 //=======================================================================================
-//! A GenericSpatialLocation is used when the conversion process did not have enough information to choose anything better
+//! A generic SpatialLocation is used by a conversion process when:
+//! - It did not have enough information to pick another domain
+//! - It determined the element represents a SpatialLocation
 // @bsiclass                                                    Shaun.Sewall    01/2016
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GenericSpatialLocation : SpatialLocationElement
@@ -65,6 +81,22 @@ public:
 };
 
 //=======================================================================================
+//! A SpatialElement that groups other SpatialElements using the ElementGroupsMembers relationship
+// @bsiclass                                                    Shaun.Sewall    12/15
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GenericSpatialGroup : SpatialElement, IElementGroupOf<SpatialElement>
+{
+    DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASSNAME_SpatialGroup, SpatialElement)
+
+protected:
+    Dgn::IElementGroupCP _ToIElementGroup() const override final {return this;}
+    virtual Dgn::DgnElementCP _ToGroupElement() const override final {return this;}
+
+public:
+    explicit GenericSpatialGroup(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
 //! The namespace that only contains ElementHandlers for the GenericDomain
 //! @private
 //=======================================================================================
@@ -72,16 +104,23 @@ namespace generic_ElementHandler
 {
     //! The ElementHandler for GenericPhysicalObject
     //! @private
-    struct EXPORT_VTABLE_ATTRIBUTE GenericPhysicalObjectHandler : dgn_ElementHandler::Physical
+    struct EXPORT_VTABLE_ATTRIBUTE GenericPhysicalObjectHandler : dgn_ElementHandler::Geometric3d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASSNAME_PhysicalObject, GenericPhysicalObject, GenericPhysicalObjectHandler, dgn_ElementHandler::Physical, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASSNAME_PhysicalObject, GenericPhysicalObject, GenericPhysicalObjectHandler, dgn_ElementHandler::Geometric3d, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for GenericSpatialLocation
     //! @private
-    struct EXPORT_VTABLE_ATTRIBUTE GenericSpatialLocationHandler : dgn_ElementHandler::Element
+    struct EXPORT_VTABLE_ATTRIBUTE GenericSpatialLocationHandler : dgn_ElementHandler::Geometric3d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASSNAME_SpatialLocation, GenericSpatialLocation, GenericSpatialLocationHandler, dgn_ElementHandler::Element, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASSNAME_SpatialLocation, GenericSpatialLocation, GenericSpatialLocationHandler, dgn_ElementHandler::Geometric3d, DGNPLATFORM_EXPORT)
+    };
+    
+    //! The ElementHandler for GenericSpatialGroup
+    //! @private
+    struct EXPORT_VTABLE_ATTRIBUTE GenericSpatialGroupHandler : dgn_ElementHandler::Geometric3d
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASSNAME_SpatialGroup, GenericSpatialGroup, GenericSpatialGroupHandler, dgn_ElementHandler::Geometric3d, DGNPLATFORM_EXPORT)
     };
 }
 

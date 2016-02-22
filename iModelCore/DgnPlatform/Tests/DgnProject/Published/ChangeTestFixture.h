@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: Tests/DgnProject/Published/ChangeTestFixture.h $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include "DgnHandlersTests.h"
@@ -16,25 +16,34 @@ private:
 protected:
     Dgn::ScopedDgnHost m_testHost;
     DgnDbPtr m_testDb;
-    DgnModelPtr m_testModel;
-    DgnCategoryId m_testCategoryId;
-    RefCountedPtr<NamespaceAuthority> m_testAuthority;
+    WString m_testFileName;
 
-    void CreateDgnDb(WCharCP testFileName);
-    void OpenDgnDb(WCharCP testFileName);
+    DgnModelId m_testModelId;
+    SpatialModelPtr m_testModel;
+
+    DgnCategoryId m_testCategoryId;
+
+    DgnAuthorityId m_testAuthorityId;
+    RefCountedCPtr<NamespaceAuthority> m_testAuthority;
+
+    virtual void _CreateDgnDb();
+
+    void CreateDgnDb() { _CreateDgnDb(); m_testDb->SaveChanges("Saving DgnDb at start of test"); }
+    void OpenDgnDb();
     void CloseDgnDb();
         
-    void InsertModel();
-    void InsertCategory();
-    void InsertAuthority();
-    DgnElementId InsertElement(int x, int y, int z);
+    DgnModelId InsertSpatialModel(Utf8CP modelName);
+    DgnCategoryId InsertCategory(Utf8CP categoryName);
+    DgnAuthorityId InsertNamespaceAuthority(Utf8CP authorityName);
+    DgnElementId InsertPhysicalElement(SpatialModelR model, DgnCategoryId categoryId, int x, int y, int z);
     
-    void CreateDefaultView();
+    void CreateDefaultView(DgnModelId defaultModelId);
     void UpdateDgnDbExtents();
 
-    int GetChangeSummaryInstanceCount(BeSQLite::EC::ChangeSummaryCR changeSummary, Utf8CP qualifiedClassName) const;
 public:
-    ChangeTestFixture() {}
+    ChangeTestFixture(WCharCP testFileName) : m_testFileName (testFileName) {}
     virtual ~ChangeTestFixture() {}
+    virtual void SetUp() override {}
+    virtual void TearDown() override { if (m_testDb.IsValid()) m_testDb->SaveChanges("Saving DgnDb at end of test"); }
 };
 

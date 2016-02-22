@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnUnits.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -106,7 +106,7 @@ DbResult DgnUnits::SaveProjectExtents(AxisAlignedBox3dCR newExtents)
 AxisAlignedBox3d DgnUnits::ComputeProjectExtents()
     {
     RTree3dBoundsTest bounds(m_dgndb);
-    Statement stmt(m_dgndb, "SELECT 1 FROM " DGN_VTABLE_RTree3d " WHERE ElementId MATCH rTreeMatch(1)");
+    Statement stmt(m_dgndb, "SELECT 1 FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId MATCH rTreeMatch(1)");
     bounds.m_bounds.Invalidate();
     auto rc=bounds.StepRTree(stmt);
     BeAssert(rc==BE_SQLITE_DONE);

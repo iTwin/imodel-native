@@ -23,7 +23,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 static RefCountedPtr<PhysicalElement> createPhysicalElement(DgnModelR model, Utf8CP ecSqlClassName, DgnCategoryId catid)//, RefCountedPtr<T> geom)
     {
     if (!ecSqlClassName || !*ecSqlClassName)
-        ecSqlClassName = DGN_SCHEMA(DGN_CLASSNAME_PhysicalElement);
+        ecSqlClassName = GENERIC_SCHEMA(GENERIC_CLASSNAME_PhysicalObject);
     Utf8CP dot = strchr(ecSqlClassName, '.');
     if (nullptr == dot)
         return nullptr;
@@ -31,9 +31,8 @@ static RefCountedPtr<PhysicalElement> createPhysicalElement(DgnModelR model, Utf
     Utf8String ecclass(dot+1);
     DgnDbR db = model.GetDgnDb();
     DgnClassId pclassId = DgnClassId(db.Schemas().GetECClassId(ecschema.c_str(), ecclass.c_str()));
-    PhysicalElementPtr el = PhysicalElement::Create(PhysicalElement::CreateParams(db, model.GetModelId(), pclassId, catid));
 
-    return el;
+    return new PhysicalElement(PhysicalElement::CreateParams(db, model.GetModelId(), pclassId, catid));
     }
 
 //---------------------------------------------------------------------------------------
@@ -53,6 +52,11 @@ JsElementGeometryBuilder::JsElementGeometryBuilder(JsDgnElementP e, JsDPoint3dP 
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+JsPlacement3dP JsPhysicalElement::GetPlacement() const { return m_el.IsValid() ? new JsPlacement3d(m_el->ToGeometrySource3d()->GetPlacement()) : nullptr; }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      06/15
 //---------------------------------------------------------------------------------------
 JsPhysicalElement* JsPhysicalElement::Create(JsDgnModelP model, JsDgnObjectIdP categoryId, Utf8StringCR ecSqlClassName)
@@ -67,6 +71,11 @@ JsPhysicalElement* JsPhysicalElement::Create(JsDgnModelP model, JsDgnObjectIdP c
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
 JsDgnModelP JsDgnElement::GetModel() {return new JsDgnModel(*m_el->GetModel());}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+JsECClassP JsDgnElement::GetElementClass() { return new JsECClass(*m_el->GetElementClass()); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15

@@ -2,12 +2,13 @@
 |
 |  $Source: Tests/DgnProject/Published/VolumeElement_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ChangeTestFixture.h"
 #include <DgnPlatform/DgnHandlersAPI.h>
 #include <DgnPlatform/VolumeElement.h>
+#include <DgnPlatform/GenericDomain.h>
 
 #define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"Dgn"))
 
@@ -22,27 +23,14 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 //=======================================================================================
 struct VolumeElementTestFixture : public ChangeTestFixture
 {
+DEFINE_T_SUPER(ChangeTestFixture)
 protected:
-    void CreateSample(WCharCP fileName);
     VolumeElementCPtr InsertVolume(DPoint3dCR origin, DPoint2d shapeArr[5], double height, Utf8CP label);
-    PhysicalElementCPtr InsertBlock(DPoint3dCR origin, double dimension);
+    GenericPhysicalObjectCPtr InsertBlock(DPoint3dCR origin, double dimension);
 
 public:
-    virtual void SetUp() override {}
-    virtual void TearDown() override { m_testDb->SaveChanges("Saving file at end of test"); }
+    VolumeElementTestFixture() : T_Super(L"VolumeElementTest.dgndb") {}
 };
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    11/2015
-//---------------------------------------------------------------------------------------
-void VolumeElementTestFixture::CreateSample(WCharCP fileName)
-    {
-    CreateDgnDb(fileName);
-    InsertModel();
-    InsertCategory();
-    InsertAuthority();
-    m_testDb->SaveChanges("Inserted sample");
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    11/2015
@@ -50,7 +38,6 @@ void VolumeElementTestFixture::CreateSample(WCharCP fileName)
 VolumeElementCPtr VolumeElementTestFixture::InsertVolume(DPoint3dCR origin, DPoint2d shapeArr[5], double height, Utf8CP label)
     {
     bvector<DPoint2d> shape(shapeArr, shapeArr + 5);
-
     VolumeElementPtr volume = VolumeElement::Create(*(m_testModel->ToSpatialModel()), origin, shape, height, label);
     return volume->Insert();
     }
@@ -58,9 +45,9 @@ VolumeElementCPtr VolumeElementTestFixture::InsertVolume(DPoint3dCR origin, DPoi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    11/2015
 //---------------------------------------------------------------------------------------
-PhysicalElementCPtr VolumeElementTestFixture::InsertBlock(DPoint3dCR center, double dimension)
+GenericPhysicalObjectCPtr VolumeElementTestFixture::InsertBlock(DPoint3dCR center, double dimension)
     {
-    PhysicalElementPtr physicalElementPtr = PhysicalElement::Create(*(m_testModel->ToSpatialModelP()), m_testCategoryId);
+    GenericPhysicalObjectPtr physicalElementPtr = GenericPhysicalObject::Create(*(m_testModel->ToSpatialModelP()), m_testCategoryId);
 
     DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(DPoint3d::FromZero(), DPoint3d::From(dimension, dimension, dimension), true);
     ISolidPrimitivePtr geomPtr = ISolidPrimitive::CreateDgnBox(blockDetail);
@@ -71,7 +58,7 @@ PhysicalElementCPtr VolumeElementTestFixture::InsertBlock(DPoint3dCR center, dou
     BentleyStatus status = builder->SetGeomStreamAndPlacement(*physicalElementPtr);
     BeAssert(status == SUCCESS);
 
-    PhysicalElementCPtr insertedElement = m_testDb->Elements().Insert<PhysicalElement>(*physicalElementPtr);
+    GenericPhysicalObjectCPtr insertedElement = m_testDb->Elements().Insert<GenericPhysicalObject>(*physicalElementPtr);
     BeAssert(insertedElement.IsValid());
 
     return insertedElement;
@@ -82,8 +69,7 @@ PhysicalElementCPtr VolumeElementTestFixture::InsertBlock(DPoint3dCR center, dou
 //+---------------+---------------+---------------+---------------+---------------+-----
 TEST_F(VolumeElementTestFixture, CrudTest)
     {
-    WCharCP fileName = L"VolumeElementCrudTest.dgndb";
-    CreateSample(fileName);
+    CreateDgnDb();
 
     DPoint3d origin = {0.0, 0.0, 0.0};
     DPoint2d shapePointsArr[5] = {{0.0, 0.0}, {100.0, 0.0}, {100.0, 100.0}, {0.0, 100.0}, {0.0, 0.0}};
@@ -152,18 +138,17 @@ TEST_F(VolumeElementTestFixture, CrudTest)
 //+---------------+---------------+---------------+---------------+---------------+-----
 TEST_F(VolumeElementTestFixture, QueryTest)
     {
-    WCharCP fileName = L"VolumeElementQueryTest.dgndb";
-    CreateSample(fileName);
+    CreateDgnDb();
 
     // Entirely inside
-    PhysicalElementCPtr insideEl = InsertBlock(DPoint3d::From(37.5, 37.5, 37.5), 25.0);
+    GenericPhysicalObjectCPtr insideEl = InsertBlock(DPoint3d::From(37.5, 37.5, 37.5), 25.0);
     InsertBlock(DPoint3d::From(-37.5, -37.5, -37.5), 25.0);
 
     // Partly overlaps
-    PhysicalElementCPtr overlapEl = InsertBlock(DPoint3d::From(100.0, 100.0, 100.0), 25.0);
+    GenericPhysicalObjectCPtr overlapEl = InsertBlock(DPoint3d::From(100.0, 100.0, 100.0), 25.0);
 
     // Entirely outside
-    PhysicalElementCPtr outsideEl = InsertBlock(DPoint3d::From(150.0, 150.0, 150.0), 25.0);
+    GenericPhysicalObjectCPtr outsideEl = InsertBlock(DPoint3d::From(150.0, 150.0, 150.0), 25.0);
     InsertBlock(DPoint3d::From(-150.0, -150.0, -150.0), 25.0);
     InsertBlock(DPoint3d::From(0.0, 0.0, 150.0), 25.0); 
     InsertBlock(DPoint3d::From(0.0, 0.0, -150.0), 25.0);
@@ -175,7 +160,7 @@ TEST_F(VolumeElementTestFixture, QueryTest)
     VolumeElementCPtr volume = InsertVolume(origin, shapePointsArr, height, "QueryTestVolume");
     ASSERT_TRUE(volume.IsValid());
 
-    CreateDefaultView();
+    CreateDefaultView(m_testModel->GetModelId());
     UpdateDgnDbExtents();
     m_testDb->SaveChanges("Finished inserts");
     

@@ -218,6 +218,8 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         Code: AuthorityIssuedCode;
         /** The Model that contains the Element */
         Model: DgnModelP;
+        /** The ECClass of this element */
+        ElementClass: ECClassP;
         /** Insert this Element into its Model in the DgnDb. @return non-zero if the insert failed. */
         Insert(): cxx_int32_t;
         /** Update this Element in its Model in the DgnDb. @return non-zero if the update failed. */
@@ -234,6 +236,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     class PhysicalElement extends DgnElement implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsPhysicalElement ***/
+
+        /** Get the placement of this element */
+        Placement : Placement3dP;
 
         /**
          * Create a new PhysicalElement
@@ -378,6 +383,29 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         Dispose(): void;
     }
 
+    /* ------------------------------------------ ScriptBasedTool -----------------------------------------------*/
+
+    class HitDetail implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+        /*** NATIVE_TYPE_NAME = JsHitDetail ***/ 
+
+        /** The element that was picked */
+        Element: PhysicalElementP;
+
+        /** The point at which the element was picked */
+        TestPoint: DPoint3dP;
+
+        /** The adjusted point on the element that was picked */
+        HitPoint: DPoint3dP;
+
+        /** The type of hit: 'hit', 'snap', 'intersection' */
+        HitType: Bentley_Utf8String;
+
+
+        // *** TBD: GeomDetail 
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
 
     /* ------------------------------------------ EC -----------------------------------------------*/
 

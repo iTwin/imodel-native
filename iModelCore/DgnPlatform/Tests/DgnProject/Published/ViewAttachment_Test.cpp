@@ -128,7 +128,7 @@ void ViewAttachmentTest::AddTextToDrawing(DgnModelId drawingId, Utf8CP text, dou
 
     TextAnnotation anno(db);
     anno.SetText(AnnotationTextBlock::Create(db, m_textStyleId, text).get());
-    TextAnnotationElementPtr annoElem = new TextAnnotationElement(TextAnnotationElement::CreateParams(db, drawingId, TextAnnotationElement::QueryDgnClassId(db), m_attachmentCatId));
+    TextAnnotation2dPtr annoElem = new TextAnnotation2d(TextAnnotation2d::CreateParams(db, drawingId, TextAnnotation2d::QueryDgnClassId(db), m_attachmentCatId));
     annoElem->SetAnnotation(&anno);
     EXPECT_TRUE(annoElem->Insert().IsValid());
 
@@ -152,7 +152,7 @@ void ViewAttachmentTest::AddBoxToDrawing(DgnModelId drawingId, double width, dou
     ICurvePrimitivePtr curve = ICurvePrimitive::CreateLineString(pts);
 
     auto& db = *GetDgnDb();
-    DgnClassId classId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement));
+    DgnClassId classId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement2d));
     DgnElementPtr el = dgn_ElementHandler::Element::FindHandler(db, classId)->Create(DgnElement::CreateParams(db, drawingId, classId, DgnCode()));
     ASSERT_TRUE(el.IsValid());
 

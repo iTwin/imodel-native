@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/TxnManager.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -223,6 +223,14 @@ dgn_TxnTable::ElementDep& TxnManager::ElementDependencies() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+dgn_TxnTable::Model& TxnManager::Models() const
+    {
+    return *(dgn_TxnTable::Model*) FindTxnTable(dgn_TxnTable::Model::MyTableName());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TxnManager::TxnId TxnManager::QueryPreviousTxnId(TxnId curr) const
@@ -319,8 +327,8 @@ BentleyStatus TxnManager::DoPropagateChanges(ChangeTracker& tracker)
 TxnManager::TrackChangesForTable TxnManager::_FilterTable(Utf8CP tableName)
     {
     // Skip the range tree tables - they hold redundant data that will be automatically updated when the changeset is applied.
-    // They all start with the string defined by DGN_VTABLE_RTree3d
-    if (0 == strncmp(DGN_VTABLE_RTree3d, tableName, sizeof(DGN_VTABLE_RTree3d)-1))
+    // They all start with the string defined by DGN_VTABLE_SpatialIndex
+    if (0 == strncmp(DGN_VTABLE_SpatialIndex, tableName, sizeof(DGN_VTABLE_SpatialIndex)-1))
         return  TrackChangesForTable::No;
 
     if (0 == strncmp(DGN_TABLE_Txns, tableName, sizeof(DGN_TABLE_Txns)-1))
@@ -401,6 +409,7 @@ void TxnManager::OnChangesetApplied(ChangeSet& changeset, TxnAction action)
                 BeAssert(false);
             }
         }
+
     m_action = TxnAction::None;
     }
 
@@ -684,13 +693,20 @@ void TxnManager::ReadChangeSet(ChangeSet& changeset, TxnId rowId, TxnAction acti
 void TxnManager::ApplyChanges(TxnId rowId, TxnAction action)
     {
     BeAssert(!HasChanges() && !IsInDynamics());
+    BeAssert(TxnAction::Reverse == action || TxnAction::Reinstate == action); // Do not call ApplyChanges() if you don't want undo/redo notifications sent to TxnMonitors...
 
     UndoChangeSet changeset;
     ReadChangeSet(changeset, rowId, action);
 
+    OnBeginApplyChanges();
     auto rc = ApplyChangeSet(changeset, action);
 
+    // Host/TxnMonitors may want to know current action...OnChangeSetApplied() will have reset it...
+    m_action = action;
     T_HOST.GetTxnAdmin()._OnReversedChanges(*this);
+
+    OnEndApplyChanges();
+    m_action = TxnAction::None;
 
     BeAssert(!HasChanges());
 
@@ -703,6 +719,24 @@ void TxnManager::ApplyChanges(TxnId rowId, TxnAction action)
     stmt->BindInt64(2, rowId.GetValue());
     rc = stmt->Step();
     BeAssert(rc==BE_SQLITE_DONE);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::OnBeginApplyChanges()
+    {
+    for (auto table : m_tables)
+        table->_OnReverse();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::OnEndApplyChanges()
+    {
+    for (auto table : m_tables)
+        table->_OnReversed();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1137,6 +1171,9 @@ void dgn_TxnTable::Model::AddChange(Changes::Change const& change, ChangeType ch
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_TxnTable::Model::_OnReversedAdd(BeSQLite::Changes::Change const& change)
     {
+    if (m_txnMgr.IsInUndoRedo())
+        AddChange(change, ChangeType::Delete);
+
     DgnModelId modelId = change.GetOldValue(0).GetValueId<DgnModelId>();
     DgnModelPtr model = m_txnMgr.GetDgnDb().Models().FindModel(modelId);
     if (!model.IsValid())
@@ -1150,6 +1187,9 @@ void dgn_TxnTable::Model::_OnReversedAdd(BeSQLite::Changes::Change const& change
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_TxnTable::Model::_OnReversedUpdate(BeSQLite::Changes::Change const& change)
     {
+    if (m_txnMgr.IsInUndoRedo())
+        AddChange(change, ChangeType::Update);
+
     DgnModelId modelId = change.GetOldValue(0).GetValueId<DgnModelId>();
     DgnModelPtr model = m_txnMgr.GetDgnDb().Models().FindModel(modelId);
     if (!model.IsValid())
@@ -1157,6 +1197,15 @@ void dgn_TxnTable::Model::_OnReversedUpdate(BeSQLite::Changes::Change const& cha
 
     model->Read(modelId);
     model->_OnUpdated();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::Model::_OnReversedDelete(BeSQLite::Changes::Change const& change)
+    {
+    if (m_txnMgr.IsInUndoRedo())
+        AddChange(change, ChangeType::Insert);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1561,4 +1610,23 @@ void TxnManager::CancelDynamics()
     while (IsInDynamics())
         EndDynamicOperation();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+dgn_TxnTable::Model::Iterator::Entry dgn_TxnTable::Model::Iterator::begin() const
+    {
+    if (!m_stmt.IsValid())
+        m_db->GetCachedStatement(m_stmt, "SELECT ModelId,ChangeType FROM " TEMP_TABLE(TXN_TABLE_Models));
+    else
+        m_stmt->Reset();
+
+    return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelId dgn_TxnTable::Model::Iterator::Entry::GetModelId() const {return m_sql->GetValueId<DgnModelId>(0);}
+TxnTable::ChangeType dgn_TxnTable::Model::Iterator::Entry::GetChangeType() const {return (TxnTable::ChangeType) m_sql->GetValueInt(1);}
 

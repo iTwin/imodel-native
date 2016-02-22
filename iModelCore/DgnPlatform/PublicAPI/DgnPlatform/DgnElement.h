@@ -22,7 +22,7 @@ BENTLEY_NAMESPACE_TYPEDEFS(HeapZone);
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-namespace dgn_ElementHandler {struct Element; struct Physical; struct Annotation; struct Drawing; struct Sheet; struct Group;};
+namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometric3d; struct Physical; struct Annotation2d; struct DrawingGraphic; struct Group;};
 namespace dgn_TxnTable {struct Element; struct Model;};
 
 DEFINE_REF_COUNTED_PTR(ElementGeometry)
@@ -35,7 +35,7 @@ struct DgnRemapTables
 protected:
     // *** NEEDS WORK: We may have to move these remappings into temp tables
     bmap<DgnModelId, DgnModelId> m_modelId;
-    bmap<DgnGeomPartId, DgnGeomPartId> m_geomPartId;
+    bmap<DgnGeometryPartId, DgnGeometryPartId> m_geomPartId;
     bmap<DgnElementId, DgnElementId> m_elementId;
     bmap<DgnClassId, DgnClassId> m_classId;
     bmap<DgnAuthorityId, DgnAuthorityId> m_authorityId;
@@ -51,8 +51,8 @@ public:
     DgnModelId Add(DgnModelId sourceId, DgnModelId targetId) {return m_modelId[sourceId] = targetId;}
     DgnElementId Find(DgnElementId sourceId) const {return Find<DgnElementId>(m_elementId, sourceId);}
     DgnElementId Add(DgnElementId sourceId, DgnElementId targetId) {return m_elementId[sourceId] = targetId;}
-    DgnGeomPartId Find(DgnGeomPartId sourceId) const {return Find<DgnGeomPartId>(m_geomPartId, sourceId);}
-    DgnGeomPartId Add(DgnGeomPartId sourceId, DgnGeomPartId targetId) {return m_geomPartId[sourceId] = targetId;}
+    DgnGeometryPartId Find(DgnGeometryPartId sourceId) const {return Find<DgnGeometryPartId>(m_geomPartId, sourceId);}
+    DgnGeometryPartId Add(DgnGeometryPartId sourceId, DgnGeometryPartId targetId) {return m_geomPartId[sourceId] = targetId;}
     DgnCategoryId Find(DgnCategoryId sourceId) const {return FindElement<DgnCategoryId>(sourceId);}
     DgnCategoryId Add(DgnCategoryId sourceId, DgnCategoryId targetId) {return DgnCategoryId((m_elementId[sourceId] = targetId).GetValueUnchecked());}
     DgnMaterialId Find(DgnMaterialId sourceId) const { return FindElement<DgnMaterialId>(sourceId); }
@@ -125,8 +125,8 @@ public:
     DgnModelId FindModelId(DgnModelId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of a model
     DgnModelId AddModelId(DgnModelId sourceId, DgnModelId targetId) {return m_remap.Add(sourceId, targetId);}
-    //! Make sure that a GeomPart has been imported
-    DGNPLATFORM_EXPORT DgnGeomPartId RemapGeomPartId(DgnGeomPartId sourceId);
+    //! Make sure that a GeometryPart has been imported
+    DGNPLATFORM_EXPORT DgnGeometryPartId RemapGeometryPartId(DgnGeometryPartId sourceId);
     //! Look up a copy of a Category
     DgnCategoryId FindCategory(DgnCategoryId sourceId) const { return m_remap.Find(sourceId); }
     //! Register a copy of a Category
@@ -255,7 +255,7 @@ typedef QvElemSet<QvKey32> T_QvElemSet;
 //! @ingroup DgnElementGroup
 // @bsiclass                                                     KeithBentley    10/13
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnElement : NonCopyableClass, ICodedObject
+struct EXPORT_VTABLE_ATTRIBUTE DgnElement : NonCopyableClass, ICodedEntity
 {
 public:
     friend struct DgnElements;
@@ -502,8 +502,6 @@ public:
         DGNPLATFORM_EXPORT DgnDbStatus _InsertInstance(DgnElementCR el) override final;
 
     public:
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-#endif
         //! The reason why GenerateElementGeometry is being called
         enum class GenerateReason
         {
@@ -545,127 +543,6 @@ public:
         template<typename T> static T const* Get(DgnElementCR el, ECN::ECClassCR cls) {return dynamic_cast<T const*>(GetAspect(el,cls));}
     };
 
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-    //! Represents a dgn.ElementItem.
-    //! dgn.ElementItem is-a dgn.ElementUniqueAspect. A dgn.Element can have 0 or 1 dgn.ElementItems, and the dgn.ElementItem always has the Id of its host dgn.Element.
-    //! Note that the item's actual class can vary, as long as it is a subclass of dgn.ElementItem.
-    //! ElementItems instances are always stored in the dgn.ElementItem table.
-    //! <p>
-    //! A dgn.ElementItem is normally used to capture the definition of the host element's geometry.
-    //! The ElementItem is also expected to supply the algorithm for generating the host element's geometry from its definition.
-    //! The platform enables the Item to keep the element's geometry up to date by calling the DgnElement::Item::_GenerateElementGeometry method when the element is inserted and whenever it is updated.
-    //! <p>
-    //! A subclass of Item must override the following methods:
-    //!     * _GetECSchemaName
-    //!     * _GetECClassName
-    //!     * _UpdateProperties
-    //!     * _LoadProperties
-    //!     * _GenerateElementGeometry
-    //! @note It will be common for a single ElementAspectHandler to be registered for a single ECClass and then used for \em multiple ECClasses, all of which are subclasses of the registered ECClass.
-    //! Therefore, the Item subclass should not assume that it knows the ECClass of the item at compile time; it must query the DgnDb or the ECInstance (if it holds one) in order to
-    //! determine the actual class of the item.
-    struct EXPORT_VTABLE_ATTRIBUTE Item : UniqueAspect
-    {
-        DEFINE_T_SUPER(UniqueAspect)
-
-        //! The reason why _GenerateElementGeometry is being called
-        enum class GenerateReason 
-            {
-            Insert,         //!< The Element is being inserted into the Db
-            Update,         //!< Some aspect of the Element's content has changed.
-            TempDraw,       //!< A tool wants to draw the Element temporarily (the Element may not be persistent)
-            BulkInsert,     //!< An application is creating a large number of Elements 
-            Other           //!< An unspecified reason
-            };
-
-    private:
-        static Key& GetKey();
-        static Item* Find(DgnElementCR);
-        static Item* Load(DgnElementCR);
-
-        DGNPLATFORM_EXPORT DgnDbStatus _DeleteInstance(DgnElementCR el) override final; // *** WIP_ECSQL Polymorphic delete
-        DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) override final;
-        DgnDbStatus _OnInsert(DgnElementR el) override final {return CallGenerateGeometry(el, GenerateReason::Insert);}
-        DgnDbStatus _OnUpdate(DgnElementR el, DgnElementCR original) override final {return CallGenerateGeometry(el, GenerateReason::Update);}
-        static void SetItem0(DgnElementCR el, Item& item);
-        DGNPLATFORM_EXPORT DgnDbStatus CallGenerateGeometry(DgnElementR, GenerateReason);
-
-    protected:
-        //! The subclass must implement this method to generate geometry and store it on \a el.
-        //! The platform invokes _GenerateElementGeometry just \em before an element is inserted and/or updated.
-        //! @param el   The element to be updated.
-        //! @param reason An indication of why the caller is requesting the element's geometry to be generated.
-        virtual DgnDbStatus _GenerateElementGeometry(GeometricElementR el, GenerateReason reason) = 0;
-
-        //! Utility method to return the ECSchema name of an ECInstance.
-        //! @param instance The instance currently assigned to this Item, or null if the Item has no in-memory instance.
-        //! @return the ECSchema name from the instance or the empty string if \a instance is nullptr.
-        //! @remarks For *Items* the _GetECSchemaName and _GetECClassName virtual are called *only* during an "on-updated" event. In that one case, the
-        //! caller wants to know if the current in-memory Item is an instance of a different ECClass than the stored instance.
-        //! Therefore the subclass of Item should implement _GetECSchemaName and _GetECClassName to return the class of its its
-        //! in-memory instance data, if it has in-memory instance data. If not, it can assert and/or return empty strings. This base
-        //! class cannot implement _GetECSchemaName and _GetECClassName to do that, since only the subclass knows its in-memory instance.
-        //! If the subclass holds an IECInstancePtr, then it can implement those methods by calling these utility methods.
-        DGNPLATFORM_EXPORT static Utf8CP GetECSchemaNameOfInstance(ECN::IECInstanceCP instance);
-
-        //! Utility method to return the ECClass name of an ECInstance.
-        //! @param instance The instance currently assigned to this Item, or null if the Item has no in-memory instance.
-        //! @return the ECClass name from the instance or the empty string if \a instance is nullptr.
-        //! @see GetECSchemaNameOfInstance
-        DGNPLATFORM_EXPORT static Utf8CP GetECClassNameOfInstance(ECN::IECInstanceCP instance);
-
-        //! Utility method to load an existing instance of an Item
-        //! A subclass may call this as part of its implementation of _LoadProperties
-        DGNPLATFORM_EXPORT DgnDbStatus LoadPropertiesIntoInstance(ECN::IECInstancePtr& instance, DgnElementCR el);
-
-    public:
-        //! Prepare to insert or update an Item for the specified element
-        //! @param el   The host element
-        //! @param item The new item to be adopted by the host.
-        //! @note \a el will add a reference to \a item and will hold onto it.
-        //! @note The item will not actually be inserted into the Db until you call DgnElements::Insert or DgnElements::Update on \a el
-        DGNPLATFORM_EXPORT static void SetItem(DgnElementR el, Item& item);
-
-        //! Get read-write access to the Item for the specified element
-        //! @param el   The host element
-        //! @return The currently cached Item object, or nullptr if the element has no item or if DeleteItem was called.
-        //! @note call this method \em only if you plan to \em modify the item
-        //! @see Get, GetItem for read-only access
-        //! @note The item will not actually be updated in the Db until you call DgnElements::Update on \a el
-        DGNPLATFORM_EXPORT static Item* GetItemP(DgnElementR el);
-
-        template<typename T> static T* GetP(DgnElementR el) {return dynamic_cast<T*>(GetItemP(el));}
-
-        //! Get read-only access to the Item for the specified element
-        //! @param el   The host element
-        //! @return The currently cached Item object, or nullptr if the element has no item or if DeleteItem was called.
-        //! @see GetP, GetItemP for read-write access
-        DGNPLATFORM_EXPORT static Item const* GetItem(DgnElementCR el);
-
-        template<typename T> static T const* Get(DgnElementCR el) {return dynamic_cast<T const*>(GetItem(el));}
-
-        //! Query the ECClass of item currently stored in the Db for the specified element
-        //! @param el   The host element
-        //! @return the DgnClassId of the existing item or an invalid ID if the element has no item
-        DGNPLATFORM_EXPORT static DgnClassId QueryExistingItemClass(DgnElementCR el);
-
-        //! Invoke the _GenerateElementGeometry method on the item
-        //! @param el   The host element
-        //! @param reason An indication of why the caller is requesting the element's geometry to be generated.
-        DGNPLATFORM_EXPORT static DgnDbStatus GenerateElementGeometry(GeometricElementR el, GenerateReason reason);
-
-        //! Execute the EGA that is specified for this Item.
-        //! @param el   The element to be updated
-        //! @param origin   The placement origin
-        //! @param angles   The placement angles
-        //! @param egaInstance The ECInstance that specifies the EGA and supplies any addition input parameters required by the implementation.
-        //! @return DgnDbStatus::Success if the EGA was executed and the element's geometry was generated;
-        //! DgnDbStatus::NotEnabled if the EGA is not available or cannot be executed; DgnDbStatus::BadArg if properties could not be marshalled from egaInstance; or DgnDbStatus::WriteError if the EGA executed but encountered an error.
-        //! @see BentleyApi::Dgn::DgnScript for an explanation of script-based EGAs.
-        DGNPLATFORM_EXPORT DgnDbStatus ExecuteEGA(Dgn::DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, ECN::IECInstanceCR egaInstance);
-    };
-#endif
-
     //! Allows a business key (unique identifier string) from an external system (identified by DgnAuthorityId) to be associated with a DgnElement via a persistent ElementAspect
     struct EXPORT_VTABLE_ATTRIBUTE ExternalKeyAspect : AppData
     {
@@ -692,30 +569,6 @@ public:
     };
 
     typedef RefCountedPtr<ExternalKeyAspect> ExternalKeyAspectPtr;
-
-    //! Allows a description to be associated with a DgnElement via a persistent ElementAspect
-    struct EXPORT_VTABLE_ATTRIBUTE DescriptionAspect : AppData
-    {
-    private:
-        Utf8String m_description;
-
-        explicit DescriptionAspect(Utf8CP description)
-            {
-            m_description.AssignOrClear(description);
-            }
-
-    protected:
-        DGNPLATFORM_EXPORT virtual DropMe _OnInserted(DgnElementCR) override;
-
-    public:
-        DGNPLATFORM_EXPORT static Key const& GetAppDataKey();
-        DGNPLATFORM_EXPORT static RefCountedPtr<DescriptionAspect> Create(Utf8CP description);
-        DGNPLATFORM_EXPORT static DgnDbStatus Query(Utf8StringR description, DgnElementCR);
-        DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR);
-        Utf8CP GetDescription() const {return m_description.c_str();}
-    };
-
-    typedef RefCountedPtr<DescriptionAspect> DescriptionAspectPtr;
 
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
@@ -964,13 +817,11 @@ protected:
     virtual GeometrySourceCP _ToGeometrySource() const {return nullptr;}
     virtual SpatialElementCP _ToSpatialElement() const {return nullptr;}
     virtual PhysicalElementCP _ToPhysicalElement() const {return nullptr;}
-    virtual AnnotationElementCP _ToAnnotationElement() const {return nullptr;}
-    virtual DrawingElementCP _ToDrawingElement() const {return nullptr;}
-    virtual SheetElementCP _ToSheetElement() const {return nullptr;}
+    virtual AnnotationElement2dCP _ToAnnotationElement2d() const {return nullptr;}
+    virtual DrawingGraphicCP _ToDrawingGraphic() const {return nullptr;}
     virtual DefinitionElementCP _ToDefinitionElement() const {return nullptr;}
     virtual DictionaryElementCP _ToDictionaryElement() const {return nullptr;}
     virtual IElementGroupCP _ToIElementGroup() const {return nullptr;}
-    virtual SystemElementCP _ToSystemElement() const {return nullptr;}
 
     //! Construct a DgnElement from its params
     DGNPLATFORM_EXPORT explicit DgnElement(CreateParams const& params);
@@ -1006,11 +857,9 @@ public:
     DictionaryElementCP ToDictionaryElement() const {return _ToDictionaryElement();}    //!< more efficient substitute for dynamic_cast<DictionaryElementCP>(el)
     SpatialElementCP ToSpatialElement() const {return _ToSpatialElement();}             //!< more efficient substitute for dynamic_cast<SpatialElementCP>(el)
     PhysicalElementCP ToPhysicalElement() const {return _ToPhysicalElement();}          //!< more efficient substitute for dynamic_cast<PhysicalElementCP>(el)
-    AnnotationElementCP ToAnnotationElement() const {return _ToAnnotationElement();}    //!< more efficient substitute for dynamic_cast<AnnotationElementCP>(el)
-    DrawingElementCP ToDrawingElement() const {return _ToDrawingElement();}             //!< more efficient substitute for dynamic_cast<DrawingElementCP>(el)
-    SheetElementCP ToSheetElement() const {return _ToSheetElement();}                   //!< more efficient substitute for dynamic_cast<SheetElementCP>(el)
+    AnnotationElement2dCP ToAnnotationElement2d() const {return _ToAnnotationElement2d();} //!< more efficient substitute for dynamic_cast<AnnotationElement2dCP>(el)
+    DrawingGraphicCP ToDrawingGraphic() const {return _ToDrawingGraphic();}             //!< more efficient substitute for dynamic_cast<DrawingGraphicCP>(el)
     IElementGroupCP ToIElementGroup() const {return _ToIElementGroup();}                //!< more efficient substitute for dynamic_cast<IElementGroup>(el)
-    SystemElementCP ToSystemElement() const {return _ToSystemElement();}                //!< more efficient substitute for dynamic_cast<SystemElementCP>(el)
     
     GeometrySourceP ToGeometrySourceP() {return const_cast<GeometrySourceP>(_ToGeometrySource());} //!< more efficient substitute for dynamic_cast<GeometrySourceP>(el)
     GeometrySource2dP ToGeometrySource2dP() {return const_cast<GeometrySource2dP>(ToGeometrySource2d());} //!< more efficient substitute for dynamic_cast<GeometrySource2dP>(el)
@@ -1020,10 +869,8 @@ public:
     DictionaryElementP ToDictionaryElementP() {return const_cast<DictionaryElementP>(_ToDictionaryElement());}  //!< more efficient substitute for dynamic_cast<DictionaryElementP>(el)
     SpatialElementP ToSpatialElementP() {return const_cast<SpatialElementP>(_ToSpatialElement());}              //!< more efficient substitute for dynamic_cast<PhysicalElementP>(el)
     PhysicalElementP ToPhysicalElementP() {return const_cast<PhysicalElementP>(_ToPhysicalElement());}          //!< more efficient substitute for dynamic_cast<PhysicalElementP>(el)
-    AnnotationElementP ToAnnotationElementP() {return const_cast<AnnotationElementP>(_ToAnnotationElement());}  //!< more efficient substitute for dynamic_cast<AnnotationElementP>(el)
-    DrawingElementP ToDrawingElementP() {return const_cast<DrawingElementP>(_ToDrawingElement());}              //!< more efficient substitute for dynamic_cast<DrawingElementP>(el)
-    SheetElementP ToSheetElementP() {return const_cast<SheetElementP>(_ToSheetElement());}                      //!< more efficient substitute for dynamic_cast<SheetElementP>(el)
-    SystemElementP ToSystemElementP() {return const_cast<SystemElementP>(_ToSystemElement());}                  //!< more efficient substitute for dynamic_cast<SystemElementP>(el)
+    AnnotationElement2dP ToAnnotationElement2dP() {return const_cast<AnnotationElement2dP>(_ToAnnotationElement2d());} //!< more efficient substitute for dynamic_cast<AnnotationElement2dP>(el)
+    DrawingGraphicP ToDrawingGraphicP() {return const_cast<DrawingGraphicP>(_ToDrawingGraphic());}              //!< more efficient substitute for dynamic_cast<DrawingGraphicP>(el)
     //! @}
 
     bool Is3d() const {return nullptr != ToGeometrySource3d();}                     //!< Determine whether this element is 3d or not
@@ -1031,10 +878,8 @@ public:
     bool IsGeometricElement() const {return nullptr != ToGeometrySource();}         //!< Determine whether this element is geometric or not
     bool IsDefinitionElement() const {return nullptr != ToDefinitionElement();}     //!< Determine whether this element is a definition or not
     bool IsDictionaryElement() const {return nullptr != ToDictionaryElement();}
-    bool IsSystemElement() const {return nullptr != ToSystemElement();}             //!< Determine whether this element is a SystemElement or not
-    bool IsAnnotationElement() const {return nullptr != ToAnnotationElement();}     //!< Determine whether this element is an AnnotationElement
-    bool IsDrawingElement() const {return nullptr != ToDrawingElement();}           //!< Determine whether this element is an DrawingElement
-    bool IsSheetElement() const {return nullptr != ToSheetElement();}               //!< Determine whether this element is an SheetElement
+    bool IsAnnotationElement2d() const {return nullptr != ToAnnotationElement2d();} //!< Determine whether this element is an AnnotationElement2d
+    bool IsDrawingGraphic() const {return nullptr != ToDrawingGraphic();}           //!< Determine whether this element is an DrawingGraphic
     bool IsSameType(DgnElementCR other) {return m_classId == other.m_classId;}      //!< Determine whether this element is the same type (has the same DgnClassId) as another element.
 
     //! Determine whether this is a copy of the "persistent state" (i.e. an exact copy of what is saved in the DgnDb) of a DgnElement.
@@ -1405,203 +1250,202 @@ DgnDbStatus SetPlacement(Placement2dCR placement) {return _SetPlacement(placemen
 }; // GeometrySource2d
 
 //=======================================================================================
-//! Data associated with a geometric element.
-//! @private
-// @bsiclass                                                    Paul.Connelly   12/15
+//! Base class for elements with geometry.
+//! @ingroup DgnElementGroup
+// @bsiclass                                                    Paul.Connelly   02/16
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ElementGeomData
+struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
 {
+    DEFINE_T_SUPER(DgnElement);
+
+    struct CreateParams : T_Super::CreateParams
+    {
+        DEFINE_T_SUPER(GeometricElement::T_Super::CreateParams);
+
+        DgnCategoryId   m_category;
+
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, DgnCodeCR code=DgnCode(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId())
+            : T_Super(db, modelId, classId, code, label, parent), m_category(category) { }
+        explicit CreateParams(DgnElement::CreateParams const& params, DgnCategoryId category=DgnCategoryId()) : T_Super(params), m_category(category) { }
+    };
 protected:
     DgnCategoryId   m_categoryId;
     GeomStream      m_geom;
     mutable bool    m_multiChunkGeomStream;
 
-    explicit ElementGeomData(DgnCategoryId category) : m_categoryId(category), m_multiChunkGeomStream(false) { }
+    explicit GeometricElement(CreateParams const& params) : T_Super(params), m_categoryId(params.m_category), m_multiChunkGeomStream(false) { }
 
     virtual bool _IsPlacementValid() const = 0;
+    virtual Utf8CP _GetGeometryColumnTableName() const = 0;
 
-    DgnDbStatus ReadFrom(BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params, DgnElementCR el);
-    DgnDbStatus BindTo(BeSQLite::EC::ECSqlStatement& stmt, DgnElementCR el);
-    DgnDbStatus WriteGeomStream(DgnElementCR el, Utf8CP tableName) const;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement&) override;
+
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertInDb() override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb() override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR) override;
+
+    DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext&) override;
+    virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + static_cast<uint32_t>(sizeof(m_categoryId) + sizeof(m_geom)) + m_geom.GetAllocSize(); }
+
     static void AddBaseClassParams(ECSqlClassParams& params);
-public:
-    DgnCategoryId GetCategoryId() const { return m_categoryId; }
-    GeomStreamCR GetGeomStream() const { return m_geom; }
-
-    DGNPLATFORM_EXPORT DgnDbStatus SetCategoryId(DgnCategoryId catId, DgnElementCR el);
-
-    DGNPLATFORM_EXPORT DgnDbStatus Validate() const;
-    DGNPLATFORM_EXPORT void RemapIds(DgnImportContext& importer);
-    DGNPLATFORM_EXPORT DgnDbStatus InsertGeomStream(DgnElementCR el, Utf8CP tableName) const;
-    DGNPLATFORM_EXPORT DgnDbStatus UpdateGeomStream(DgnElementCR el, Utf8CP tableName) const;
+    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
+    DgnDbStatus InsertGeomStream() const;
+    DgnDbStatus UpdateGeomStream() const;
+    DgnDbStatus WriteGeomStream() const;
+    DgnDbStatus Validate() const;
+    DGNPLATFORM_EXPORT DgnDbStatus DoSetCategoryId(DgnCategoryId catId);
 };
 
 //=======================================================================================
-//! Geometric data associated with a 3d geometric element.
-//! @private
-// @bsiclass                                                    Paul.Connelly   12/15
+//! Base class for elements with 3d geometry.
+//! GeometricElement3d elements are not inherently spatially located, but can be spatially located.
+//! @ingroup DgnElementGroup
+// @bsiclass                                                    Paul.Connelly   02/16
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ElementGeom3d : ElementGeomData
+struct EXPORT_VTABLE_ATTRIBUTE GeometricElement3d : GeometricElement, GeometrySource3d
 {
-    typedef Placement3d T_Placement;
-    typedef GeometrySource3d T_GeometrySource;
-private:
-    Placement3d     m_placement;
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_GeometricElement3d, GeometricElement)
+    friend struct dgn_ElementHandler::Geometric3d;
 
-    virtual bool _IsPlacementValid() const override { return m_placement.IsValid(); }
 public:
-    explicit ElementGeom3d(DgnCategoryId category=DgnCategoryId(), Placement3dCR placement=Placement3d()) : ElementGeomData(category), m_placement(placement) { }
+    struct CreateParams : T_Super::CreateParams
+    {
+        DEFINE_T_SUPER(GeometricElement3d::T_Super::CreateParams);
 
-    Placement3dCR GetPlacement() const { return m_placement; }
+        Placement3d m_placement;
 
-    DGNPLATFORM_EXPORT DgnDbStatus SetPlacement(Placement3dCR placement, DgnElementCR el);
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(),
+                DgnCodeCR code=DgnCode(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId())
+            : T_Super(db, modelId, classId, category, code, label, parent), m_placement(placement) { }
+        explicit CreateParams(DgnElement::CreateParams const& params, DgnCategoryId category=DgnCategoryId(), Placement3dCR placement=Placement3d())
+            : T_Super(params, category), m_placement(placement) { }
+    };
+protected:
+    Placement3d m_placement;
 
-    DGNPLATFORM_EXPORT void AdjustPlacementForImport(DgnImportContext const& importer);
-    DGNPLATFORM_EXPORT void CopyFrom(GeometrySource3dCP geomSource);
+    explicit GeometricElement3d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) { }
 
-    DGNPLATFORM_EXPORT DgnDbStatus Read(BeSQLite::EC::ECSqlStatement&, ECSqlClassParams const&, DgnElementCR el);
-    DGNPLATFORM_EXPORT DgnDbStatus Bind(BeSQLite::EC::ECSqlStatement&, DgnElementCR el);
+    virtual bool _IsPlacementValid() const override final { return m_placement.IsValid(); }
+
+    virtual DgnDbR _GetSourceDgnDb() const override final { return GetDgnDb(); }
+    virtual DgnElementCP _ToElement() const override final { return this; }
+    virtual GeometrySourceCP _ToGeometrySource() const override final { return this; }
+    virtual GeometrySource3dCP _ToGeometrySource3d() const override final { return this; }
+    virtual Utf8CP _GetGeometryColumnTableName() const override final { return DGN_TABLE(DGN_CLASSNAME_GeometricElement3d); }
+    virtual DgnCategoryId _GetCategoryId() const override final { return m_categoryId; }
+    virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { return DoSetCategoryId(categoryId); }
+    virtual GeomStreamCR _GetGeomStream() const override final { return m_geom; }
+    virtual Placement3dCR _GetPlacement() const override final { return m_placement; }
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPlacement(Placement3dCR placement) override;
+
+    DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
+    DGNPLATFORM_EXPORT virtual void _AdjustPlacementForImport(DgnImportContext const&) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement&) override;
+
+    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement&);
+public:
     DGNPLATFORM_EXPORT static void AddClassParams(ECSqlClassParams& params);
 };
 
 //=======================================================================================
-//! Parameterized base class for direct or indirect subclasses of DgnElement with
-//! 2D or 3D geometry.
-//! This template allows any subclass of DgnElement to introduce geometry regardless of
-//! its position within the class hierarchy.
-//! Specializations exist for 2d and 3d geometry (GeometricElement2d, GeometricElement3d).
+//! Base class for elements with 2d geometry
 //! @ingroup DgnElementGroup
-// @bsiclass                                                    Paul.Connelly   12/15
+// @bsiclass                                                    Paul.Connelly   02/16
 //=======================================================================================
-template<typename T_Base, typename T_Geom> struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : T_Base, T_Geom::T_GeometrySource
+struct EXPORT_VTABLE_ATTRIBUTE GeometricElement2d : GeometricElement, GeometrySource2d
 {
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_GeometricElement2d, GeometricElement)
+    friend struct dgn_ElementHandler::Geometric2d;
+
+public:
+    struct CreateParams : T_Super::CreateParams
+    {
+        DEFINE_T_SUPER(GeometricElement2d::T_Super::CreateParams);
+
+        Placement2d m_placement;
+
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(),
+                DgnCodeCR code=DgnCode(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId())
+            : T_Super(db, modelId, classId, category, code, label, parent), m_placement(placement) { }
+        explicit CreateParams(DgnElement::CreateParams const& params, DgnCategoryId category=DgnCategoryId(), Placement2dCR placement=Placement2d())
+            : T_Super(params, category), m_placement(placement) { }
+    };
 protected:
-    T_Geom m_geom;
+    Placement2d m_placement;
 
-    typedef typename T_Base::CreateParams CreateParams;
-    typedef typename T_Geom::T_Placement T_Placement;
+    explicit GeometricElement2d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) { }
 
-    explicit GeometricElement(CreateParams const& params, DgnCategoryId category=DgnCategoryId(), T_Placement const& placement=T_Placement())
-        : T_Base(params), m_geom(category, placement) { }
+    virtual bool _IsPlacementValid() const override final { return m_placement.IsValid(); }
 
-    // Sub-class must implement this to return the name of the SQL table which contains the Geometry property which holds the binary GeomStream data
-    virtual Utf8CP _GetGeometryColumnTableName() const = 0;
+    virtual DgnDbR _GetSourceDgnDb() const override final { return GetDgnDb(); }
+    virtual DgnElementCP _ToElement() const override final { return this; }
+    virtual GeometrySourceCP _ToGeometrySource() const override final { return this; }
+    virtual GeometrySource2dCP _ToGeometrySource2d() const override final { return this; }
+    virtual Utf8CP _GetGeometryColumnTableName() const override final { return DGN_TABLE(DGN_CLASSNAME_GeometricElement2d); }
+    virtual DgnCategoryId _GetCategoryId() const override final { return m_categoryId; }
+    virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { return DoSetCategoryId(categoryId); }
+    virtual GeomStreamCR _GetGeomStream() const override final { return m_geom; }
+    virtual Placement2dCR _GetPlacement() const override final { return m_placement; }
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPlacement(Placement2dCR placement) override;
 
-    virtual DgnDbR _GetSourceDgnDb() const override final {return this->GetDgnDb();}
-    virtual DgnElementCP _ToElement() const override final {return this;}
-    virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
+    DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
+    DGNPLATFORM_EXPORT virtual void _AdjustPlacementForImport(DgnImportContext const&) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement&) override;
 
-    virtual DgnCategoryId _GetCategoryId() const override final {return m_geom.GetCategoryId();}
-    virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { return m_geom.SetCategoryId(categoryId, *this); }
-    virtual GeomStreamCR _GetGeomStream() const override final {return m_geom.GetGeomStream();}
-
-    virtual T_Placement const& _GetPlacement() const override final {return m_geom.GetPlacement();}
-    virtual DgnDbStatus _SetPlacement(T_Placement const& placement) override { return m_geom.SetPlacement(placement, *this); }
-    virtual void _AdjustPlacementForImport(DgnImportContext const& importer) override { m_geom.AdjustPlacementForImport(importer); }
-
-    virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParamsCR params) override
-        { auto status = T_Base::_ReadSelectParams(stmt, params); return DgnDbStatus::Success == status ? m_geom.Read(stmt, params, *this) : status; }
-    virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override
-        { auto status = T_Base::_BindInsertParams(stmt); return DgnDbStatus::Success == status ? m_geom.Bind(stmt, *this) : status; }
-    virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override
-        { auto status = T_Base::_BindUpdateParams(stmt); return DgnDbStatus::Success == status ? m_geom.Bind(stmt, *this) : status; }
-
-    virtual DgnDbStatus _InsertInDb() override
-        { auto status = T_Base::_InsertInDb(); return DgnDbStatus::Success == status ? m_geom.InsertGeomStream(*this, _GetGeometryColumnTableName()) : status; }
-    virtual DgnDbStatus _UpdateInDb() override
-        { auto status = T_Base::_UpdateInDb(); return DgnDbStatus::Success == status ? m_geom.UpdateGeomStream(*this, _GetGeometryColumnTableName()) : status; }
-
-    virtual DgnDbStatus _OnInsert() override { auto status = m_geom.Validate(); return DgnDbStatus::Success == status ? T_Base::_OnInsert() : status; }
-    virtual DgnDbStatus _OnUpdate(DgnElementCR original) override { auto status = m_geom.Validate(); return DgnDbStatus::Success == status ? T_Base::_OnUpdate(original) : status; }
-
-    virtual void _RemapIds(DgnImportContext& importer) override { T_Base::_RemapIds(importer); m_geom.RemapIds(importer); }
-    virtual uint32_t _GetMemSize() const override {return T_Base::_GetMemSize() + static_cast<uint32_t>(sizeof(m_geom));}
+    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement&);
+public:
+    DGNPLATFORM_EXPORT static void AddClassParams(ECSqlClassParams& params);
 };
 
 //=======================================================================================
-//! Parameterized base class for direct or indirect subclasses of DgnElement with
-//! 3D geometry.
+//! A 3-dimensional geometric element that is used to convey information in 3-dimensional graphical presentations.
+//! It is common for the GeometryStream of a GraphicalElement3d to contain display-oriented metadata such as symbology overrides, styles, etc.
 //! @ingroup DgnElementGroup
-// @bsiclass                                                    Paul.Connelly   12/15
+// @bsiclass                                                    Shaun.Sewall    02/16
 //=======================================================================================
-template<typename T_Base> struct EXPORT_VTABLE_ATTRIBUTE GeometricElement3d : GeometricElement<T_Base, ElementGeom3d>
+struct EXPORT_VTABLE_ATTRIBUTE GraphicalElement3d : GeometricElement3d
 {
-protected:
-    typedef typename T_Base::CreateParams CreateParams;
-
-    explicit GeometricElement3d(CreateParams const& params, DgnCategoryId category=DgnCategoryId(), Placement3dCR placement=Placement3d())
-        : GeometricElement<T_Base, ElementGeom3d>(params, category, placement) { }
-
-    virtual GeometrySource3dCP _ToGeometrySource3d() const override final {return this;}
-    virtual void _CopyFrom(DgnElementCR rhs) override { T_Base::_CopyFrom(rhs); this->m_geom.CopyFrom(rhs.ToGeometrySource3d()); }
+    DEFINE_T_SUPER(GeometricElement3d);
+public:
+    explicit GraphicalElement3d(CreateParams const& params) : T_Super(params) {}
 };
-
-//=======================================================================================
-//! CreateParams used for constructing geometric elements
-//! @ingroup DgnElementGroup
-// @bsiclass                                                    Paul.Connelly   12/15
-//=======================================================================================
-template<typename T_Placement> struct GeometricElementCreateParams : DgnElement::CreateParams
-{
-    DEFINE_T_SUPER(DgnElement::CreateParams);
-
-    DgnCategoryId m_categoryId;
-    T_Placement const& m_placement;
-
-    GeometricElementCreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, T_Placement const& placement=T_Placement(), DgnCode const& code=DgnCode(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId()) :
-        T_Super(db, modelId, classId, code, label, parent), m_categoryId(category), m_placement(placement) {}
-
-    explicit GeometricElementCreateParams(T_Super const& params, DgnCategoryId category=DgnCategoryId(), T_Placement const& placement=T_Placement()) : T_Super(params), m_categoryId(category), m_placement(placement) {}
-    GeometricElementCreateParams(GeometricElementCreateParams const& params) : T_Super(params), m_categoryId(params.m_categoryId), m_placement(params.m_placement) {}
-};
-
-//! CreateParams used for constructing direct subclasses of GeometricElement2d<DgnElement>
-typedef GeometricElementCreateParams<Placement2d> ElementCreateParams2d;
-
-//! CreateParams used for constructing direct subclasses of GeometricElement3d<DgnElement>
-typedef GeometricElementCreateParams<Placement3d> ElementCreateParams3d;
 
 //=======================================================================================
 //! An abstract base class for elements that occupy real world 3-dimensional space
+//! It is uncommon for the GeometryStream of a SpatialElement to contain display-oriented metadata. 
+//! Instead, display-oriented settings should come from the SubCategories that classify the geometry in the GeometryStream.
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Shaun.Sewall    12/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SpatialElement : GeometricElement3d<DgnElement>
+struct EXPORT_VTABLE_ATTRIBUTE SpatialElement : GeometricElement3d
 {
-    DEFINE_T_SUPER(GeometricElement3d<DgnElement>);
-
+    DEFINE_T_SUPER(GeometricElement3d);
 protected:
     SpatialElementCP _ToSpatialElement() const override final {return this;}
-    virtual Utf8CP _GetGeometryColumnTableName() const override final { return DGN_TABLE(DGN_CLASSNAME_SpatialElement); }
 public:
-    typedef ElementCreateParams3d CreateParams;
-
-    explicit SpatialElement(CreateParams const& params) : T_Super(params, params.m_categoryId, params.m_placement) {}
+    explicit SpatialElement(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
 //! A PhysicalElement is a SpatialElement that has mass and can be physically "touched".
+//! Examples (which would be subclasses) include pumps, walls, and light posts.
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : SpatialElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalElement, SpatialElement)
-
+    DEFINE_T_SUPER(SpatialElement)
 protected:
     PhysicalElementCP _ToPhysicalElement() const override final {return this;}
-
 public:
     explicit PhysicalElement(CreateParams const& params) : T_Super(params) {}
-
-    //! Create an instance of a PhysicalElement from a CreateParams.
-    //! @note This is a static method that creates an instance of the PhysicalElement class. To create subclasses, use static methods on the appropriate class.
-    static PhysicalElementPtr Create(CreateParams const& params) {return new PhysicalElement(params);}
-
-    //! Create an instance of a PhysicalElement from a model and DgnCategoryId, using the default values for all other parameters.
-    //! @param[in] model The SpatialModel for the new PhysicalElement.
-    //! @param[in] categoryId The category for the new PhysicalElement.
-    DGNPLATFORM_EXPORT static PhysicalElementPtr Create(SpatialModelR model, DgnCategoryId categoryId);
 };
 
 //=======================================================================================
@@ -1613,55 +1457,20 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE SpatialLocationElement : SpatialElement
 {
     DEFINE_T_SUPER(SpatialElement);
-
 public:
     explicit SpatialLocationElement(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
-//! Geometric data associated with a 2d geometric element.
-//! @private
-// @bsiclass                                                    Paul.Connelly   12/15
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ElementGeom2d : ElementGeomData
-{
-    typedef Placement2d T_Placement;
-    typedef GeometrySource2d T_GeometrySource;
-private:
-    Placement2d     m_placement;
-
-    virtual bool _IsPlacementValid() const override { return m_placement.IsValid(); }
-public:
-    explicit ElementGeom2d(DgnCategoryId category=DgnCategoryId(), Placement2dCR placement=Placement2d()) : ElementGeomData(category), m_placement(placement) { }
-
-    Placement2dCR GetPlacement() const { return m_placement; }
-
-    DGNPLATFORM_EXPORT DgnDbStatus SetPlacement(Placement2dCR placement, DgnElementCR el);
-
-    DGNPLATFORM_EXPORT void AdjustPlacementForImport(DgnImportContext const& importer);
-    DGNPLATFORM_EXPORT void CopyFrom(GeometrySource2dCP geomSource);
-
-    DGNPLATFORM_EXPORT DgnDbStatus Read(BeSQLite::EC::ECSqlStatement&, ECSqlClassParams const&, DgnElementCR);
-    DGNPLATFORM_EXPORT DgnDbStatus Bind(BeSQLite::EC::ECSqlStatement&, DgnElementCR);
-    DGNPLATFORM_EXPORT static void AddClassParams(ECSqlClassParams& params);
-};
-
-//=======================================================================================
-//! Parameterized base class for direct or indirect subclasses of DgnElement with
-//! 2D geometry.
+//! A 2-dimensional geometric element that is used to convey information within graphical presentations (like drawings).
 //! @ingroup DgnElementGroup
-// @bsiclass                                                    Paul.Connelly   12/15
+// @bsiclass                                                    Shaun.Sewall    02/16
 //=======================================================================================
-template<typename T_Base> struct EXPORT_VTABLE_ATTRIBUTE GeometricElement2d : GeometricElement<T_Base, ElementGeom2d>
+struct EXPORT_VTABLE_ATTRIBUTE GraphicalElement2d : GeometricElement2d
 {
-protected:
-    typedef typename T_Base::CreateParams CreateParams;
-
-    explicit GeometricElement2d(CreateParams const& params, DgnCategoryId category=DgnCategoryId(), Placement2dCR placement=Placement2d())
-        : GeometricElement<T_Base, ElementGeom2d>(params, category, placement) { }
-
-    virtual GeometrySource2dCP _ToGeometrySource2d() const override final {return this;}
-    virtual void _CopyFrom(DgnElementCR rhs) override { T_Base::_CopyFrom(rhs); this->m_geom.CopyFrom(rhs.ToGeometrySource2d()); }
+    DEFINE_T_SUPER(GeometricElement2d);
+public:
+    explicit GraphicalElement2d(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
@@ -1669,78 +1478,36 @@ protected:
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Paul.Connelly   12/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE AnnotationElement : GeometricElement2d<DgnElement>
+struct EXPORT_VTABLE_ATTRIBUTE AnnotationElement2d : GraphicalElement2d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationElement, GeometricElement2d<DgnElement>)
-    friend struct dgn_ElementHandler::Annotation;
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationElement2d, GraphicalElement2d)
+    friend struct dgn_ElementHandler::Annotation2d;
 public:
-    typedef ElementCreateParams2d CreateParams;
-
-    //! Create a AnnotationElement from CreateParams.
-    static AnnotationElementPtr Create(CreateParams const& params) {return new AnnotationElement(params);}
+    //! Create a AnnotationElement2d from CreateParams.
+    static AnnotationElement2dPtr Create(CreateParams const& params) {return new AnnotationElement2d(params);}
 protected:
-    virtual AnnotationElementCP _ToAnnotationElement() const override final {return this;}
-    virtual Utf8CP _GetGeometryColumnTableName() const override final { return DGN_TABLE(DGN_CLASSNAME_AnnotationElement); }
+    virtual AnnotationElement2dCP _ToAnnotationElement2d() const override final {return this;}
 
-    explicit AnnotationElement(CreateParams const& params) : T_Super(params, params.m_categoryId, params.m_placement) { }
-}; // AnnotationElement
+    explicit AnnotationElement2d(CreateParams const& params) : T_Super(params) { }
+}; // AnnotationElement2d
 
 //=======================================================================================
 //! A 2-dimensional geometric element used in drawings
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Paul.Connelly   12/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DrawingElement : GeometricElement2d<DgnElement>
+struct EXPORT_VTABLE_ATTRIBUTE DrawingGraphic : GraphicalElement2d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, GeometricElement2d<DgnElement>)
-    friend struct dgn_ElementHandler::Drawing;
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingGraphic, GraphicalElement2d)
+    friend struct dgn_ElementHandler::DrawingGraphic;
 public:
-    typedef ElementCreateParams2d CreateParams;
-
-    //! Create a DrawingElement from CreateParams.
-    static DrawingElementPtr Create(CreateParams const& params) {return new DrawingElement(params);}
+    //! Create a DrawingGraphic from CreateParams.
+    static DrawingGraphicPtr Create(CreateParams const& params) {return new DrawingGraphic(params);}
 protected:
-    virtual DrawingElementCP _ToDrawingElement() const override final {return this;}
-    virtual Utf8CP _GetGeometryColumnTableName() const override final { return DGN_TABLE(DGN_CLASSNAME_DrawingElement); }
+    virtual DrawingGraphicCP _ToDrawingGraphic() const override final {return this;}
 
-    explicit DrawingElement(CreateParams const& params) : T_Super(params, params.m_categoryId, params.m_placement) { }
-}; // DrawingElement
-
-//=======================================================================================
-//! A 2-dimensional geometric element used in sheets
-//! @ingroup DgnElementGroup
-// @bsiclass                                                    Paul.Connelly   12/15
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SheetElement : GeometricElement2d<DgnElement>
-{
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_SheetElement, GeometricElement2d<DgnElement>)
-    friend struct dgn_ElementHandler::Sheet;
-public:
-    typedef ElementCreateParams2d CreateParams;
-
-    //! Create a SheetElement from CreateParams.
-    static SheetElementPtr Create(CreateParams const& params) {return new SheetElement(params);}
-protected:
-    virtual SheetElementCP _ToSheetElement() const override final {return this;}
-    virtual Utf8CP _GetGeometryColumnTableName() const override final { return DGN_TABLE(DGN_CLASSNAME_SheetElement); }
-
-    explicit SheetElement(CreateParams const& params) : T_Super(params, params.m_categoryId, params.m_placement) { }
-}; // SheetElement
-
-//=======================================================================================
-//! A SystemElement is used to model functional systems
-//! @see SystemModel
-//! @ingroup DgnElementGroup
-// @bsiclass                                                    Shaun.Sewall    12/25
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SystemElement : DgnElement
-{
-    DEFINE_T_SUPER(DgnElement);
-
-protected:
-    virtual SystemElementCP _ToSystemElement() const override final {return this;}
-    explicit SystemElement(CreateParams const& params) : T_Super(params) {}
-};
+    explicit DrawingGraphic(CreateParams const& params) : T_Super(params) { }
+}; // DrawingGraphic
 
 //=======================================================================================
 //! Helper class for maintaining and querying the ElementGroupsMembers relationship
@@ -1860,37 +1627,23 @@ public:
 };
 
 //=======================================================================================
-//! A SpatialElement that groups other SpatialElements using the ElementGroupsMembers relationship
-// @bsiclass                                                    Shaun.Sewall    12/15
+//! @ingroup DgnElementGroup
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SpatialGroupElement : SpatialElement, IElementGroupOf<SpatialElement>
+struct EXPORT_VTABLE_ATTRIBUTE InformationElement : DgnElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialGroupElement, SpatialElement)
+    DEFINE_T_SUPER(DgnElement);
 
 protected:
-    Dgn::IElementGroupCP _ToIElementGroup() const override final {return this;}
-    virtual Dgn::DgnElementCP _ToGroupElement() const override final {return this;}
-
-public:
-    //! @private
-    explicit SpatialGroupElement(CreateParams const& params) : T_Super(params) {}
-
-    //! Create a new SpatialGroupElement from a model and DgnCategoryId, using the default values for all other parameters.
-    //! @param[in] model The SpatialModel for the new SpatialGroupElement.
-    //! @param[in] categoryId The category for the new SpatialGroupElement.
-    DGNPLATFORM_EXPORT static SpatialGroupElementPtr Create(SpatialModelR model, DgnCategoryId categoryId);
-
-    //! Creates a new SpatialGroupElement
-    static SpatialGroupElementPtr Create(CreateParams const& params) {return new SpatialGroupElement(params);}
+    explicit InformationElement(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
 //! A DefinitionElement which resides in (and only in) a DefinitionModel.
 //! @ingroup DgnElementGroup
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DefinitionElement : DgnElement
+struct EXPORT_VTABLE_ATTRIBUTE DefinitionElement : InformationElement
 {
-    DEFINE_T_SUPER(DgnElement);
+    DEFINE_T_SUPER(InformationElement);
 
 protected:
     virtual DefinitionElementCP _ToDefinitionElement() const override final {return this;}
@@ -2105,29 +1858,6 @@ public:
     DgnElementIdSet const& GetSelectionSet() const {return m_selectionSet;}
     DgnElementIdSet& GetSelectionSetR() {return m_selectionSet;}
 };
-
-//=======================================================================================
-//! Can be used as the base class for an Item that uses an IECInstance to cache its properties in memory.
-//! @note There is no AspectHandler for InstanceBackedItem. A class that derives from InstanceBackedItem must
-//! register its own handler.
-// @bsiclass                                                BentleySystems
-//=======================================================================================
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-struct InstanceBackedItem : DgnElement::Item
-{
-    ECN::IECInstancePtr m_instance;
-
-    Utf8CP _GetECSchemaName() const override {return m_instance->GetClass().GetSchema().GetName().c_str();}
-    Utf8CP _GetECClassName() const override {return m_instance->GetClass().GetName().c_str();}
-    DGNPLATFORM_EXPORT DgnDbStatus _LoadProperties(DgnElementCR) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _UpdateProperties(DgnElementCR) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _GenerateElementGeometry(GeometricElementR el, GenerateReason) override;
-
-    InstanceBackedItem() {}
-
-    void SetInstanceId(BeSQLite::EC::ECInstanceId eid);
-};
-#endif
 
 #ifdef WIP_COMPONENT_MODEL // *** Pending redesign
 // *** WIP_ELEMENT_ITEM - move this back into ComponentSolution after making ElementItem a top-level class

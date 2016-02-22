@@ -156,7 +156,7 @@ protected:
     DgnFonts        m_fonts;
     DgnStyles       m_styles;
     DgnUnits        m_units;
-    DgnGeomParts    m_geomParts;
+    DgnGeometryParts    m_geomParts;
     DgnLinks        m_links;
     DgnAuthorities  m_authorities;
     TxnManagerPtr   m_txnManager;
@@ -218,7 +218,7 @@ public:
     DgnElements& Elements() const{return const_cast<DgnElements&>(m_elements);}          //!< The DgnElements of this DgnDb
     DgnUnits& Units() const {return const_cast<DgnUnits&>(m_units);}                     //!< The units for this DgnDb
     DgnStyles& Styles() const {return const_cast<DgnStyles&>(m_styles);}                 //!< The styles for this DgnDb
-    DgnGeomParts& GeomParts() const {return const_cast<DgnGeomParts&>(m_geomParts);}     //!< The the geometry parts for this DgnDb
+    DgnGeometryParts& GeometryParts() const {return const_cast<DgnGeometryParts&>(m_geomParts);}     //!< The the geometry parts for this DgnDb
     DgnFonts& Fonts() const {return const_cast<DgnFonts&>(m_fonts); }                    //!< The fonts for this DgnDb
     DgnLinks& Links() const{return const_cast<DgnLinks&>(m_links);}                      //!< The DgnLinks for this DgnDb
     DgnDomains& Domains() const {return const_cast<DgnDomains&>(m_domains);}             //!< The DgnDomains associated with this DgnDb.

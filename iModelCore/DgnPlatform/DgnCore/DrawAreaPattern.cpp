@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DrawAreaPattern.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -427,7 +427,7 @@ struct PatternSymbol : IDisplaySymbol
 {
 private:
 
-DgnGeomPartId       m_partId;
+DgnGeometryPartId   m_partId;
 mutable DRange3d    m_range;
 
 public:
@@ -458,7 +458,7 @@ virtual StatusInt _GetRange(DRange3dR range) const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-PatternSymbol(DgnGeomPartId partId, DgnDbR project)
+PatternSymbol(DgnGeometryPartId partId, DgnDbR project)
     {
 #if defined (NEEDSWORK_REVISIT_PATTERN_SYMBOLS_SCDEF)
     DgnElementPtr edP;
@@ -848,7 +848,7 @@ double          scale
         }
 
     // NOTE: Colors aren't stored in geometry map for point cells, setup active matsymb color from pattern if different than element color...
-    if (symbCell.IsPointCellSymbol() && PatternParamsModifierFlags::None != (params->modifiers & PatternParamsModifierFlags::Color) && context.GetCurrentDisplayParams()->GetLineColor() != params->color)
+    if (symbCell.IsPointCellSymbol () && PatternParamsModifierFlags::None != (params->modifiers & PatternParamsModifierFlags::Color) && context.GetCurrentDisplayParams ()->m_symbology.color != params->color)
         {
         // NOTE: Don't need to worry about overrides, context overrides CAN NOT look at m_currDisplayParams, so changing line color doesn't affect them...
         context.GetCurrentDisplayParams()->SetLineColor(params->color);
@@ -1321,7 +1321,6 @@ DPoint3dR       origin
 #else
     bool            useStencil = false;
 #endif
-    useStencil = false;
     GPArraySmartP   boundGpa(PatternHelper::GetBoundaryGPA (boundary, params->rMatrix, origin, useStencil));
 
     if (NULL == boundGpa || 0 == boundGpa->GetCount())

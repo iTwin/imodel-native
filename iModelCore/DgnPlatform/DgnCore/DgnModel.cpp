@@ -317,7 +317,7 @@ DgnModel::~DgnModel()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel2d::_OnInsertElement(DgnElementR element)
+DgnDbStatus GeometricModel2d::_OnInsertElement(DgnElementR element)
     {
     DgnDbStatus status = T_Super::_OnInsertElement(element);
     if (DgnDbStatus::Success != status)
@@ -330,22 +330,10 @@ DgnDbStatus DgnModel2d::_OnInsertElement(DgnElementR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus SheetModel::_OnInsertElement(DgnElementR el)
-    {
-    auto stat = T_Super::_OnInsertElement(el);
-    if (DgnDbStatus::Success == stat && el.IsGeometricElement() && !el.IsAnnotationElement() && !el.IsSheetElement())
-        stat = DgnDbStatus::WrongModel;
-
-    return stat;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus SectionDrawingModel::_OnInsertElement(DgnElementR el)
     {
     auto stat = T_Super::_OnInsertElement(el);
-    if (DgnDbStatus::Success == stat && el.IsGeometricElement() && !el.IsAnnotationElement() && !el.IsDrawingElement())
+    if (DgnDbStatus::Success == stat && el.IsGeometricElement() && !el.IsAnnotationElement2d() && !el.IsDrawingGraphic())
         stat = DgnDbStatus::WrongModel;
 
     return stat;
@@ -354,7 +342,7 @@ DgnDbStatus SectionDrawingModel::_OnInsertElement(DgnElementR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel3d::_OnInsertElement(DgnElementR element)
+DgnDbStatus GeometricModel3d::_OnInsertElement(DgnElementR element)
     {
     auto status = T_Super::_OnInsertElement(element);
     if (DgnDbStatus::Success == status && element.IsGeometricElement() && !element.Is3d())
@@ -1254,8 +1242,8 @@ AxisAlignedBox3d GeometricModel::_QueryModelRange() const
                     "DGN_bbox("
                         "g.BBoxLow_X,g.BBoxLow_Y,g.BBoxLow_Z,"
                         "g.BBoxHigh_X,g.BBoxHigh_Y,g.BBoxHigh_Z))))"
-        " FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e," DGN_TABLE(DGN_CLASSNAME_SpatialElement) " As g"
-        " WHERE e.ModelId=? AND e.Id=g.Id");
+        " FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e," DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) " As g"
+        " WHERE e.ModelId=? AND e.Id=g.ElementId");
 
     stmt.BindId(1, GetModelId());
     auto rc = stmt.Step();
@@ -1645,36 +1633,4 @@ DgnDbStatus DgnModel::_SetCode(DgnCode const& code)
 
     m_code = code;
     return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-SystemModelPtr SystemModel::Create(DgnDbR db, DgnCode const& code)
-    {
-    ModelHandlerR handler = dgn_ModelHandler::System::GetHandler();
-    DgnClassId classId = db.Domains().GetClassId(handler);
-    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, code));
-    
-    if (!model.IsValid())
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    return model->ToSystemModelP();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus SystemModel::_OnInsertElement(DgnElementR element)
-    {
-    if (!element.IsSystemElement())
-        {
-        BeAssert(false);
-        return DgnDbStatus::WrongModel;
-        }
-
-    return T_Super::_OnInsertElement(element);
     }

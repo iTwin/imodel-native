@@ -10,7 +10,7 @@
 
 #include "DgnDomain.h"
 
-DGNPLATFORM_TYPEDEFS(ICodedObject);
+DGNPLATFORM_TYPEDEFS(ICodedEntity);
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -19,7 +19,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //! or element.
 // @bsistruct                                                    Paul.Connelly   01/16
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ICodedObject
+struct EXPORT_VTABLE_ATTRIBUTE ICodedEntity
 {
 protected:
     virtual DgnDbR _GetDgnDb() const = 0;
@@ -29,7 +29,7 @@ protected:
     virtual DgnDbStatus _SetCode(DgnCode const& code) = 0; //!< Set the code directly if permitted. Do not perform any validation of the code itself.
     virtual DgnElementCP _ToDgnElement() const { return nullptr; }
     virtual DgnModelCP _ToDgnModel() const { return nullptr; }
-    virtual DgnGeomPartCP _ToGeomPart() const { return nullptr; }
+    virtual DgnGeometryPartCP _ToGeometryPart() const { return nullptr; }
 public:
     DgnDbR GetDgnDb() const { return _GetDgnDb(); }
     bool SupportsCodeAuthority(DgnAuthorityCR authority) const { return _SupportsCodeAuthority(authority); }
@@ -37,7 +37,7 @@ public:
     DgnCode const& GetCode() const { return _GetCode(); }
     DgnElementCP ToDgnElement() const { return _ToDgnElement(); }
     DgnModelCP ToDgnModel() const { return _ToDgnModel(); }
-    DgnGeomPartCP ToGeomPart() const { return _ToGeomPart(); }
+    DgnGeometryPartCP ToGeometryPart() const { return _ToGeometryPart(); }
 
     DGNPLATFORM_EXPORT DgnDbStatus SetCode(DgnCode const& newCode);
     DGNPLATFORM_EXPORT DgnDbStatus ValidateCode() const;
@@ -89,8 +89,8 @@ protected:
 
     DGNPLATFORM_EXPORT virtual DgnDbStatus _CloneCodeForImport(DgnCodeR clonedCode, DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const;
 
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _ValidateCode(ICodedObjectCR codedObject) const;
-    virtual DgnDbStatus _RegenerateCode(DgnCodeR regeneratedCode, ICodedObjectCR codedObject) const { regeneratedCode = codedObject.GetCode(); return DgnDbStatus::Success; }
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ValidateCode(ICodedEntityCR codedEntity) const;
+    virtual DgnDbStatus _RegenerateCode(DgnCodeR regeneratedCode, ICodedEntityCR codedEntity) const { regeneratedCode = codedEntity.GetCode(); return DgnDbStatus::Success; }
 
     static DgnCode CreateCode(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) { return DgnCode(authorityId, value, nameSpace); }
 
@@ -105,8 +105,8 @@ public:
 
     DGNPLATFORM_EXPORT DgnDbStatus Insert();
 
-    DGNPLATFORM_EXPORT DgnDbStatus ValidateCode(ICodedObjectCR obj) const;
-    DGNPLATFORM_EXPORT DgnDbStatus RegenerateCode(DgnCodeR newCode, ICodedObjectCR obj) const;
+    DGNPLATFORM_EXPORT DgnDbStatus ValidateCode(ICodedEntityCR entity) const;
+    DGNPLATFORM_EXPORT DgnDbStatus RegenerateCode(DgnCodeR newCode, ICodedEntityCR entity) const;
     DGNPLATFORM_EXPORT DgnDbStatus CloneCodeForImport(DgnCodeR newCode, DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const;
 
     DGNPLATFORM_EXPORT static DgnAuthorityPtr Import(DgnDbStatus* status, DgnAuthorityCR sourceAuthority, DgnImportContext& importer);
@@ -160,7 +160,7 @@ struct ModelAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority);
 protected:
-    virtual DgnDbStatus _ValidateCode(ICodedObjectCR obj) const override;
+    virtual DgnDbStatus _ValidateCode(ICodedEntityCR entity) const override;
 public:
     ModelAuthority(CreateParams const& params) : T_Super(params) { }
 
@@ -189,7 +189,7 @@ struct CategoryAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority);
 protected:
-    virtual DgnDbStatus _ValidateCode(ICodedObjectCR obj) const override;
+    virtual DgnDbStatus _ValidateCode(ICodedEntityCR entity) const override;
 public:
     CategoryAuthority(CreateParams const& params) : T_Super(params) { }
 
@@ -206,7 +206,7 @@ struct ResourceAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority);
 protected:
-    virtual DgnDbStatus _ValidateCode(ICodedObjectCR obj) const override;
+    virtual DgnDbStatus _ValidateCode(ICodedEntityCR entity) const override;
 public:
     ResourceAuthority(CreateParams const& params) : T_Super(params) { }
 
@@ -243,20 +243,20 @@ public:
 };
 
 //=======================================================================================
-//! The default code-issuing authority for DgnGeomParts.
+//! The default code-issuing authority for DgnGeometryParts.
 // @bsistruct                                                    Paul.Connelly   01/16
 //=======================================================================================
-struct GeomPartAuthority : DgnAuthority
+struct GeometryPartAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority);
 protected:
-    virtual DgnDbStatus _ValidateCode(ICodedObjectCR obj) const override;
+    virtual DgnDbStatus _ValidateCode(ICodedEntityCR entity) const override;
 public:
-    GeomPartAuthority(CreateParams const& params) : T_Super(params) { }
+    GeometryPartAuthority(CreateParams const& params) : T_Super(params) { }
 
-    DGNPLATFORM_EXPORT static DgnCode CreateGeomPartCode(Utf8StringCR nameSpace, Utf8StringCR name);
-    static DgnCode CreateEmptyCode() { return CreateGeomPartCode("", ""); }
-    DGNPLATFORM_EXPORT static DgnAuthorityId GetGeomPartAuthorityId();
+    DGNPLATFORM_EXPORT static DgnCode CreateGeometryPartCode(Utf8StringCR nameSpace, Utf8StringCR name);
+    static DgnCode CreateEmptyCode() { return CreateGeometryPartCode("", ""); }
+    DGNPLATFORM_EXPORT static DgnAuthorityId GetGeometryPartAuthorityId();
 };
 
 #define AUTHORITYHANDLER_DECLARE_MEMBERS(__ECClassName__,__classname__,_handlerclass__,_handlersuperclass__,__exporter__) \
@@ -299,9 +299,9 @@ namespace dgn_AuthorityHandler
         AUTHORITYHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_ComponentAuthority, ComponentAuthority, Component, Authority, DGNPLATFORM_EXPORT)
     };
 
-    struct EXPORT_VTABLE_ATTRIBUTE GeomPart : Authority
+    struct EXPORT_VTABLE_ATTRIBUTE GeometryPart : Authority
     {
-        AUTHORITYHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_GeomPartAuthority, GeomPartAuthority, GeomPart, Authority, DGNPLATFORM_EXPORT)
+        AUTHORITYHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_GeometryPartAuthority, GeometryPartAuthority, GeometryPart, Authority, DGNPLATFORM_EXPORT)
     };
 
     struct EXPORT_VTABLE_ATTRIBUTE Model : Authority

@@ -16,7 +16,7 @@
 DGNPLATFORM_TYPEDEFS(ViewAttachment);
 DGNPLATFORM_REF_COUNTED_PTR(ViewAttachment);
 
-#define DGN_CLASSNAME_ViewAttachment "ViewAttachmentElement"
+#define DGN_CLASSNAME_ViewAttachment "ViewAttachment"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -33,9 +33,9 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //! @ingroup DgnViewGroup
 // @bsiclass                                                      Paul.Connelly   10/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ViewAttachment : SheetElement
+struct EXPORT_VTABLE_ATTRIBUTE ViewAttachment : GraphicalElement2d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_ViewAttachment, SheetElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_ViewAttachment, GraphicalElement2d);
 public:
     //! Holds the data which describes a ViewAttachment
     struct Data
@@ -136,9 +136,9 @@ public:
 namespace dgn_ElementHandler
 {
     //! The handler for ViewAttachment elements
-    struct ViewAttachmentHandler : Sheet
+    struct ViewAttachmentHandler : Geometric2d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ViewAttachment, ViewAttachment, ViewAttachmentHandler, Sheet, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ViewAttachment, ViewAttachment, ViewAttachmentHandler, Geometric2d, DGNPLATFORM_EXPORT);
     protected:
         DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams& params) override;
     };

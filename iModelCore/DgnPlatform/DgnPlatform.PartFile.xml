@@ -22,9 +22,6 @@
         <Bindings>
             <PublicAPI Domain="DgnPlatform" />
             <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/Dgn" SubPartDirectory="ECSchemas/Dgn">
-                ECSchemas/Bentley_Markup.01.00.ecschema.xml
-                ECSchemas/Bentley_MarkupExtension.01.01.ecschema.xml
-                ECSchemas/DgnMarkupSchema.01.00.ecschema.xml
                 ECSchemas/dgn.02.00.ecschema.xml
                 ECSchemas/Generic.01.00.ecschema.xml
             </Files>
@@ -101,6 +98,7 @@
         <SubPart PartName="DgnPlatformDLL"      PartFile="DgnPlatform"  Repository="DgnPlatform" />
         <Bindings>
             <Files Required="false" SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/ScopedDgnHost.h</Files>
+            <Files Required="false" SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/DgnDbTestUtils.h</Files>
         </Bindings>
     </Part>
 
@@ -144,8 +142,16 @@
     <Part Name="DgnDbUnitTestsData" OnlyPlatforms="x64,x86">
         <RequiredRepository>DgnDbUnitTestsData</RequiredRepository>
     </Part>
-    
+
+    <Part Name="DgnDbTestUtils" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=DgnDbTestUtils">
+        <SubPart PartName="PrewireForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/DgnDbTestUtils" SourceName="Delivery/UnitTests/Objects/DgnDbTestUtils"/>
+        </Bindings>
+    </Part>
+
     <Part Name="BackdoorForUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=BackDoor">
+        <SubPart PartName="DgnDbTestUtils" />
         <SubPart PartName="PrewireForUnitTests" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/BackDoor" SourceName="Delivery/UnitTests/Objects/BackDoor"/>
@@ -194,9 +200,9 @@
     <!-- ////////////////////////////////// Products ///////////////////////////////////////// -->
     <ProductDirectoryList ListName="DgnPlatform">
         <ProductDirectory Name="PublicAPI"           Deliver="false"/>
-        <ProductDirectory Name="PublicAPI"           Deliver="false" LibType="static"/>
+        <ProductDirectory Name="PublicAPI"           Deliver="false" LibType="Static"/>
         <ProductDirectory Name="VendorAPI"           Deliver="false" />
-        <ProductDirectory Name="VendorAPI"           Deliver="false" LibType="static"/>
+        <ProductDirectory Name="VendorAPI"           Deliver="false" LibType="Static"/>
         <ProductDirectory Name="MergeModules"        Deliver="false" />
         <ProductDirectory Name="RunWaitExes"         Deliver="false" />
         <ProductDirectory Name="WorkSpaceSystemData" Deliver="false"/>
@@ -206,25 +212,25 @@
         <ProductDirectory Name="LoggingWorkspaceData"               Deliver="false" />
         <ProductDirectory Name="DgnDbImportConfiguration" Deliver="false" />
         <ProductDirectory Name="Libs"            Path="Libs"/>
-        <ProductDirectory Name="Libs"            Path="StaticLibs" LibType="static"/>
+        <ProductDirectory Name="Libs"            Path="StaticLibs" LibType="Static"/>
         <ProductDirectory Name="BentleyLibs"     Path="Libs"/>
         <ProductDirectory Name="ECObjectsLibs"   Path="Libs"/>
         <ProductDirectory Name="BentleyNativeAssemblies" Path="Dlls"/>
-        <ProductDirectory Name="BentleyNativeAssemblies" Path="StaticLibs" LibType="static"/>
+        <ProductDirectory Name="BentleyNativeAssemblies" Path="StaticLibs" LibType="Static"/>
         <ProductDirectory Name="GeomNativeAssemblies" Path="Dlls"/>
-        <ProductDirectory Name="GeomNativeAssemblies" Path="Dlls" LibType="static"/>
+        <ProductDirectory Name="GeomNativeAssemblies" Path="Dlls" LibType="Static"/>
         <ProductDirectory Name="DgnPlatformNativeAssemblies" Path="Dlls"/>
-        <ProductDirectory Name="DgnPlatformNativeAssemblies" Path="Dlls" LibType="static"/>
+        <ProductDirectory Name="DgnPlatformNativeAssemblies" Path="Dlls" LibType="Static"/>
         <ProductDirectory Name="DgnPlatformLastResortFonts" RelativeTo="DgnPlatformFont" Path="LastResortFonts"/>
-        <ProductDirectory Name="DgnPlatformLastResortFonts" RelativeTo="DgnPlatformFont" Path="LastResortFonts" LibType="static"/>
+        <ProductDirectory Name="DgnPlatformLastResortFonts" RelativeTo="DgnPlatformFont" Path="LastResortFonts" LibType="Static"/>
         <ProductDirectory Name="LoggingNativeAssemblies" Path="Dlls"/>
         <ProductDirectory Name="ecobjectsnativeassemblies" Path="Dlls"/>
-        <ProductDirectory Name="ecobjectsnativeassemblies" Path="Dlls" LibType="static"/>
+        <ProductDirectory Name="ecobjectsnativeassemblies" Path="Dlls" LibType="Static"/>
         <ProductDirectory Name="PPNativeAssemblies" Deliver="false"/>
         <ProductDirectory Name="ECSchemas" Path="" RelativeTo="ecobjectsnativeassemblies" />
-        <ProductDirectory Name="ECSchemas" Path="" RelativeTo="ecobjectsnativeassemblies" LibType="static"/>
+        <ProductDirectory Name="ECSchemas" Path="" RelativeTo="ecobjectsnativeassemblies" LibType="Static"/>
         <ProductDirectory Name="RmgrToolsNativeAssemblies" Path="Dlls"/>
-        <ProductDirectory Name="RmgrToolsNativeAssemblies" Path="StaticLibs" LibType="static"/>
+        <ProductDirectory Name="RmgrToolsNativeAssemblies" Path="StaticLibs" LibType="Static"/>
         <ProductDirectory Name="DgnPlatform_PublishedAPI_Scope1" Path="Include"/>
         <ProductDirectory Name="DgnPlatform_PublishedAPI_Scope1_Doc" Path="Docs"/>
         <ProductDirectory Name="DgnPlatform_PublishedAPI_Scope1_XML" Path="Docs"/>
@@ -240,7 +246,7 @@
         <ProductDirectory Name="DgnPlatformDemoDgn"  Path="Dgn" RelativeTo="DgnPlatformDemoRoot"/>
         <ProductDirectory Name="DgnPlatformLineStyleRsc"  Path="Symb" RelativeTo="DgnPlatformData"/>
         <ProductDirectory Name="VendorNotices" Path="Notices"/>
-        <ProductDirectory Name="VendorNotices" Path="Notices" LibType="static"/>
+        <ProductDirectory Name="VendorNotices" Path="Notices" LibType="Static"/>
 
         <ProductDirectory Name="PdfLibInitNativeAssemblies" Deliver="false"/>
         <ProductDirectory Name="ImagePPAssemblies"          Deliver="false"/>
@@ -506,7 +512,7 @@
     </Part>
 
     <Part Name="TestCollection-NoView-Static" ExcludePlatforms="x86,x64,Linux*,MacOS*,WinRT*">
-        <SubPart PartName="TestCollection-NoView" LibType="static" />
+        <SubPart PartName="TestCollection-NoView" LibType="Static" />
     </Part>
 
     <!--                *************** -->
@@ -543,7 +549,7 @@
     </Part>
 
     <Product Name="AndroidJUnit-DgnPlatform-TestCollection-NoView" >
-        <SubPart PartName="AndroidJUnit-TestCollection-NoView" LibType="static"/>
+        <SubPart PartName="AndroidJUnit-TestCollection-NoView" LibType="Static"/>
         <Directories DirectoryListName="AndroidJUnitProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
@@ -559,7 +565,7 @@
     </Part>
 
     <Product Name="iOSXCTest-DgnPlatform-TestCollection-NoView" >
-        <SubPart PartName="iOSXCTest-TestCollection-NoView" LibType="static"/>
+        <SubPart PartName="iOSXCTest-TestCollection-NoView" LibType="Static"/>
         <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
@@ -575,7 +581,7 @@
     </Part>
 
     <Product Name="WinRTCppUnitTest-DgnPlatform-TestCollection-NoView" >
-        <SubPart PartName="WinRTCppUnitTest-TestCollection-NoView" LibType="static"/>
+        <SubPart PartName="WinRTCppUnitTest-TestCollection-NoView" LibType="Static"/>
         <Directories DirectoryListName="WinRTCppUnitTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
@@ -608,7 +614,7 @@
     </Part>
 
     <Part Name="TestCollection-Performance-Static" ExcludePlatforms="x86,x64,Linux*,MacOS*,WinRT*">
-        <SubPart PartName="TestCollection-Performance" LibType="static" />
+        <SubPart PartName="TestCollection-Performance" LibType="Static" />
     </Part>
 
     <Product Name="DgnPlatform-TestCollection-Performance">
@@ -656,7 +662,7 @@
     </Part>
 
     <Product Name="AndroidJUnit-DgnPlatform-TestCollection-Performance" >
-        <SubPart PartName="AndroidJUnit-TestCollection-Performance" LibType="static"/>
+        <SubPart PartName="AndroidJUnit-TestCollection-Performance" LibType="Static"/>
         <Directories DirectoryListName="AndroidJUnitProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
@@ -672,7 +678,7 @@
     </Part>
 
     <Product Name="iOSXCTest-DgnPlatform-TestCollection-Performance" >
-        <SubPart PartName="iOSXCTest-TestCollection-Performance" LibType="static"/>
+        <SubPart PartName="iOSXCTest-TestCollection-Performance" LibType="Static"/>
         <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
@@ -688,7 +694,7 @@
     </Part>
 
     <Product Name="WinRTCppUnitTest-DgnPlatform-TestCollection-Performance" >
-        <SubPart PartName="WinRTCppUnitTest-TestCollection-Performance" LibType="static"/>
+        <SubPart PartName="WinRTCppUnitTest-TestCollection-Performance" LibType="Static"/>
         <Directories DirectoryListName="WinRTCppUnitTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 

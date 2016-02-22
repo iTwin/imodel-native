@@ -12,8 +12,9 @@
 #define _GEOM_Js_API_H_
 
 #include <BeJavaScript/BeJavaScript.h>
-#include <DgnPlatform/DgnPlatform.h>
-#include <DgnPlatform/DgnPlatformLib.h>
+//#include <DgnPlatform/DgnPlatform.h>
+//#include <DgnPlatform/DgnPlatformLib.h>
+//#include <Geom/GeomApi.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -66,13 +67,15 @@ JsSTRUCT(JsGeometry)
         JsSTRUCT(JsEllipticArc)
         JsSTRUCT(JsBsplineCurve)
         JsSTRUCT(JsCatenaryCurve)
+        JsSTRUCT(JsSpiralCurve)
 
     JsSTRUCT(JsCurveVector)
         JsSTRUCT(JsUnstructuredCurveVector)
         JsSTRUCT(JsPath)
-        JsSTRUCT(JsLoop)
-        JsSTRUCT(JsParityRegion)
-        JsSTRUCT(JsUnionRegion)
+        JsSTRUCT(JsPlanarRegion)
+            JsSTRUCT(JsLoop)
+            JsSTRUCT(JsParityRegion)
+            JsSTRUCT(JsUnionRegion)
 
     JsSTRUCT(JsBsplineSurface)
 
@@ -185,9 +188,9 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 #include <DgnPlatform/GeomJsTypes/JsYawPitchRollAngles.h>
 #include <DgnPlatform/GeomJsTypes/JsDRay3d.h>
-#include <DgnPlatform/GeomJsTypes/JsDPoint3dDVector3dDVector3d.h>
 #include <DgnPlatform/GeomJsTypes/JsRotMatrix.h>
 #include <DgnPlatform/GeomJsTypes/JsTransform.h>
+#include <DgnPlatform/GeomJsTypes/JsDPoint3dDVector3dDVector3d.h>
 
 
 #include <DgnPlatform/GeomJsTypes/JsDPoint3dArray.h>
