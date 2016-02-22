@@ -76,14 +76,14 @@ private:
     Unit (Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, int id, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant);
 
     // Lifecycle is managed by the UnitRegistry so we don't allow copies or assignments.
+    Unit() = delete;
     Unit (UnitCR unit) = delete;
     UnitR operator=(UnitCR unit) = delete;
 
 public:
-    virtual ~Unit() { }
-
     UNITS_EXPORT double GetConversionTo(UnitCP unit) const;
 
+    UNITS_EXPORT int    GetId() const { return _GetId(); }
     UNITS_EXPORT Utf8CP GetName() const { return _GetName(); }
     UNITS_EXPORT Utf8CP GetDefinition() const { return _GetDefinition(); }
     UNITS_EXPORT double GetFactor() const { return _GetFactor(); }
@@ -98,18 +98,21 @@ struct Phenomenon : Symbol
     {
 DEFINE_T_SUPER(Symbol)
 friend struct UnitRegistry;
-
 private:
+    bvector<UnitCP> m_units;
+
+    void AddUnit(UnitCR unit);
+
     Phenomenon(Utf8CP name, Utf8CP definition, Utf8Char dimensionSymbol, int id) : Symbol(name, definition, dimensionSymbol, id, 0.0, 0) {}
 
+    Phenomenon() = delete;
+    Phenomenon(PhenomenonCR phenomenon) = delete;
+    PhenomenonR operator=(PhenomenonCR phenomenon) = delete;
+
 public:
-    virtual ~Phenomenon() { };
-
     UNITS_EXPORT Utf8String GetPhenomenonDimension() const;
-
-    UNITS_EXPORT Utf8CP GetName() const { return _GetName(); }
-    UNITS_EXPORT Utf8CP GetDefinition() const { return _GetDefinition(); }
-    UNITS_EXPORT double GetFactor() const { return _GetFactor(); }
-    };
-
+    
+    bool HasUnits() const { return m_units.size() > 0; }
+    bvector<UnitCP> const GetUnits() const { return m_units; }
+};
 END_BENTLEY_UNITS_NAMESPACE

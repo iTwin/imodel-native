@@ -23,7 +23,7 @@ private:
     static UnitRegistry * s_instance;
 
     Utf8Vector m_systems;
-    bmap<Utf8String, PhenomenonCP> m_phenomena;
+    bmap<Utf8String, PhenomenonP> m_phenomena;
     bmap<Utf8String, UnitCP> m_units;
     int m_nextId = 0;
 
@@ -46,26 +46,27 @@ private:
 
     UnitCP AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant);
 
+    PhenomenonP LookupPhenomenonP(Utf8CP name) const;
+
     bool NameConflicts(Utf8CP name);
 
 public:
     UNITS_EXPORT static UnitRegistry & Instance();
     UNITS_EXPORT static void Clear();
 
-    // TODO: Wrap the return to be cleaner?
-    bmap<Utf8String, UnitCP> const & AllUnits() const { return m_units; }
-    bmap<Utf8String, PhenomenonCP> const& AllPhenomenon() const { return m_phenomena; }
+    UNITS_EXPORT void AllUnits(bvector<UnitCP>& allUnits) const;
+    UNITS_EXPORT void AllUnitNames(bvector<Utf8String>& allUnitNames, bool includeSynonyms) const;
+    UNITS_EXPORT void AllPhenomena(bvector<PhenomenonCP>& allPhenomena) const;
     
     // Register methods.
     UNITS_EXPORT UnitCP AddUnit(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double factor = 1, double offset = 0);
     UNITS_EXPORT UnitCP AddConstant(Utf8CP phenomName, Utf8CP constantName, Utf8CP definition, double factor);
-    
     UNITS_EXPORT BentleyStatus AddSynonym(UnitCP unit, Utf8CP synonymName);
-
+    
     // Lookup methods
     UNITS_EXPORT UnitCP LookupUnit(Utf8CP name) const;
     UNITS_EXPORT UnitCP LookupConstant(Utf8CP name) const;
-    UNITS_EXPORT PhenomenonCP LookupPhenomenon(Utf8CP name) const;
+    UNITS_EXPORT PhenomenonCP LookupPhenomenon(Utf8CP name) const { return LookupPhenomenonP(name); }
         
     // bool Exists methods.
     UNITS_EXPORT bool HasSystem (Utf8CP systemName) const;

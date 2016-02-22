@@ -118,7 +118,7 @@ void UnitRegistry::AddBasePhenomena(Utf8Char dimensionalSymbol)
     auto phenomena = new Phenomenon(phenomenaName, phenomenaName, dimensionalSymbol, m_nextId);
     ++m_nextId;
 
-    m_phenomena.insert(bpair<Utf8String, PhenomenonCP>(phenomenaName, phenomena));
+    m_phenomena.insert(bpair<Utf8String, PhenomenonP>(phenomenaName, phenomena));
     }
 
 //-------------------------------------------------------------------------------------//
@@ -141,7 +141,7 @@ void UnitRegistry::AddPhenomena (Utf8CP phenomenaName, Utf8CP definition)
     auto phenomena = new Phenomenon(phenomenaName, definition, ' ', m_nextId);
     ++m_nextId;
 
-    m_phenomena.insert(bpair<Utf8String, PhenomenonCP>(phenomenaName, phenomena));
+    m_phenomena.insert(bpair<Utf8String, PhenomenonP>(phenomenaName, phenomena));
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -188,7 +188,7 @@ UnitCP UnitRegistry::AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8C
         return nullptr;
         }
 
-    // TODO: Add back in checks for system name
+    // TODO: Add back in check for system name
 
     if (NameConflicts(unitName))
         {
@@ -196,7 +196,7 @@ UnitCP UnitRegistry::AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8C
         return nullptr;
         }
 
-    PhenomenonCP phenomenon = LookupPhenomenon(phenomName);
+    PhenomenonP phenomenon = LookupPhenomenonP(phenomName);
     if (nullptr == phenomenon)
         {
         LOG.errorv("Could not find phenomenon '%s'", phenomName);
@@ -206,6 +206,8 @@ UnitCP UnitRegistry::AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8C
     auto unit = Unit::Create(systemName, *phenomenon, unitName, m_nextId, definition, dimensionSymbol, factor, offset, isConstant);
     if (nullptr == unit)
         return nullptr;
+
+    phenomenon->AddUnit(*unit);
 
     ++m_nextId;
 
@@ -331,7 +333,7 @@ UnitCP UnitRegistry::LookupConstant (Utf8CP name) const
     return (*val_iter).second;
     }
 
-PhenomenonCP UnitRegistry::LookupPhenomenon(Utf8CP name) const
+PhenomenonP UnitRegistry::LookupPhenomenonP(Utf8CP name) const
     {
     auto val_iter = m_phenomena.find(name);
     if (val_iter == m_phenomena.end())
@@ -339,6 +341,31 @@ PhenomenonCP UnitRegistry::LookupPhenomenon(Utf8CP name) const
 
     return (*val_iter).second;
     }
+
+void UnitRegistry::AllUnitNames(bvector<Utf8String>& allUnitNames, bool includeSynonyms) const
+    {
+    for (auto const& unitAndName : m_units)
+        {
+        if (includeSynonyms || unitAndName.first.Equals(unitAndName.second->GetName()))
+            allUnitNames.push_back(unitAndName.first);
+        }
+    }
+
+void UnitRegistry::AllUnits(bvector<UnitCP>& allUnits) const
+    {
+    for (auto const& unitAndName : m_units)
+        {
+        if (unitAndName.first.Equals(unitAndName.second->GetName()))
+            allUnits.push_back(unitAndName.second);
+        }
+    }
+
+void UnitRegistry::AllPhenomena(bvector<PhenomenonCP>& allPhenomena) const
+    {
+    for (auto const& phenomenonAndName : m_phenomena)
+        allPhenomena.push_back(phenomenonAndName.second);
+    }
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16

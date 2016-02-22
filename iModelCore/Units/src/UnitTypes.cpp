@@ -124,7 +124,8 @@ double Unit::GetConversionTo(UnitCP unit) const
     double factor = GetFactor() / unit->GetFactor();
     for (auto const& unitExp : combinedExpression)
         {
-        factor *= pow(unitExp->GetFactor(), unitExp->GetExponent());
+       // TODO: Consider always doing positive exponents and dividing if exponent is negative
+       factor *= pow(unitExp->GetFactor(), unitExp->GetExponent());
         }
 
     return factor;
@@ -136,4 +137,11 @@ Utf8String Phenomenon::GetPhenomenonDimension() const
     SymbolicExpression baseExpression;
     SymbolicExpression::CreateExpressionWithOnlyBaseSymbols(phenomenonExpression, baseExpression, false);
     return baseExpression.ToString();
+    }
+
+void Phenomenon::AddUnit(UnitCR unit)
+    {
+    auto it = find_if(m_units.begin(), m_units.end(), [&unit] (UnitCP existingUnit) { return existingUnit->GetId() == unit.GetId(); });
+    if (it == m_units.end())
+        m_units.push_back(&unit);
     }
