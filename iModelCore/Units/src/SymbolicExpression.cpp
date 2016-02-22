@@ -43,14 +43,14 @@ Utf8String SymbolicExpression::ToString() const
     Utf8String output;
     for (auto const& sWE : m_symbolExpression)
         {
-        if (sWE->GetSymbol()->_GetFactor() == 0.0)
+        if (sWE->GetSymbol()->GetFactor() == 0.0)
             {
             Utf8PrintfString sWEString("%s^%d * ", sWE->GetName(), sWE->GetExponent());
             output.append(sWEString.c_str());
             }
         else
             {
-            Utf8PrintfString sWEString("%lf%s^%d * ", sWE->GetSymbol()->_GetFactor(), sWE->GetName(), sWE->GetExponent());
+            Utf8PrintfString sWEString("%lf%s^%d * ", sWE->GetSymbol()->GetFactor(), sWE->GetName(), sWE->GetExponent());
             output.append(sWEString.c_str());
             }
         }
@@ -61,7 +61,7 @@ void SymbolicExpression::CreateExpressionWithOnlyBaseSymbols(SymbolicExpressionR
     {
     for (auto symbolExp : source)
         {
-        if (symbolExp->GetSymbol()->_IsBaseSymbol() && !symbolExp->GetSymbol()->_IsDimensionless())
+        if (symbolExp->GetSymbol()->IsBaseSymbol() && !symbolExp->GetSymbol()->IsDimensionless())
             {
             if (copySymbols)
                 target.AddCopy(*symbolExp);
@@ -103,7 +103,7 @@ void SymbolicExpression::MergeExpressions(Utf8CP targetDefinition, SymbolicExpre
         {
         int     mergedExponent = uWE->GetExponent() * startingExponent;
 
-        auto it = find_if(targetExpression.begin(), targetExpression.end(), [&uWE] (SymbolWithExponentCP a) { return uWE->GetSymbol()->_GetId() == a->GetSymbol()->_GetId(); });
+        auto it = find_if(targetExpression.begin(), targetExpression.end(), [&uWE] (SymbolWithExponentCP a) { return uWE->GetSymbol()->GetId() == a->GetSymbol()->GetId(); });
         if (it != targetExpression.end())
             {
             LOG.debugv("%s --> %s - Merging existing Unit %s. with Exponent: %d", sourceDefinition, targetDefinition, (*it)->GetName(), mergedExponent);
@@ -149,7 +149,7 @@ BentleyStatus SymbolicExpression::HandleToken(int& depth, SymbolicExpressionR ex
         return BentleyStatus::ERROR;
         }
 
-    if (!symbol->_IsBaseSymbol())
+    if (!symbol->IsBaseSymbol())
         {
         if (depth > maxRecursionDepth)
             {
@@ -157,9 +157,9 @@ BentleyStatus SymbolicExpression::HandleToken(int& depth, SymbolicExpressionR ex
             return BentleyStatus::ERROR;
             }
 
-        LOG.debugv("Evaluating %s", symbol->_GetName());
+        LOG.debugv("Evaluating %s", symbol->GetName());
         SymbolicExpression sourceExpression = symbol->Evaluate(depth, getSymbolByName);
-        MergeExpressions(definition, expression, symbol->_GetDefinition(), sourceExpression, mergedExponent);
+        MergeExpressions(definition, expression, symbol->GetDefinition(), sourceExpression, mergedExponent);
         }
     return BentleyStatus::SUCCESS;
     }

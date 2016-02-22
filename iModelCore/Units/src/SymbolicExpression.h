@@ -79,9 +79,9 @@ public:
     SymbolWithExponent(SymbolCP symbol, int exponent) : m_exponent(exponent) { m_symbol = symbol; }
     SymbolWithExponent(SymbolWithExponent const& swE) : SymbolWithExponent(swE.m_symbol, swE.m_exponent) {};
 
-    Utf8CP GetName() const { return m_symbol->_GetName(); }
+    Utf8CP GetName() const { return m_symbol->GetName(); }
     SymbolCP GetSymbol() const { return m_symbol; }
-    double GetFactor() const { return m_symbol->_GetFactor(); }
+    double GetFactor() const { return m_symbol->GetFactor(); }
     
     int GetExponent() { return m_exponent; }
     void AddToExponent(int toAdd) { m_exponent += toAdd; }

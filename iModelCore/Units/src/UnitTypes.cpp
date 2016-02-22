@@ -24,32 +24,32 @@ Symbol::~Symbol()
         delete m_symbolExpression;
     }
 
-Utf8CP Symbol::_GetName() const
+Utf8CP Symbol::GetName() const
     {
     return m_name.c_str(); 
     }
 
-int Symbol::_GetId()   const
+int Symbol::GetId()   const
     {
     return m_id; 
     }
 
-Utf8CP Symbol::_GetDefinition() const
+Utf8CP Symbol::GetDefinition() const
     {
     return m_definition.c_str(); 
     }
 
-double Symbol::_GetFactor() const
+double Symbol::GetFactor() const
     {
     return m_factor; 
     }
 
-bool Symbol::_IsBaseSymbol() const
+bool Symbol::IsBaseSymbol() const
     {
     return ' ' != m_dimensionSymbol; 
     }
 
-bool Symbol::_IsDimensionless() const
+bool Symbol::IsDimensionless() const
     {
     return m_dimensionless; 
     }    
