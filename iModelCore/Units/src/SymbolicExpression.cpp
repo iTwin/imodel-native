@@ -8,6 +8,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "UnitsPCH.h"
+#include "SymbolicExpression.h"
 
 USING_NAMESPACE_BENTLEY_UNITS
 
@@ -42,14 +43,14 @@ Utf8String SymbolicExpression::ToString() const
     Utf8String output;
     for (auto const& sWE : m_symbolExpression)
         {
-        if (sWE->GetSymbol()->GetFactor() == 0.0)
+        if (sWE->GetSymbol()->_GetFactor() == 0.0)
             {
             Utf8PrintfString sWEString("%s^%d * ", sWE->GetName(), sWE->GetExponent());
             output.append(sWEString.c_str());
             }
         else
             {
-            Utf8PrintfString sWEString("%lf%s^%d * ", sWE->GetSymbol()->GetFactor(), sWE->GetName(), sWE->GetExponent());
+            Utf8PrintfString sWEString("%lf%s^%d * ", sWE->GetSymbol()->_GetFactor(), sWE->GetName(), sWE->GetExponent());
             output.append(sWEString.c_str());
             }
         }
@@ -58,9 +59,9 @@ Utf8String SymbolicExpression::ToString() const
 
 void SymbolicExpression::CreateExpressionWithOnlyBaseSymbols(SymbolicExpressionR source, SymbolicExpressionR target, bool copySymbols)
     {
-    for (auto const& symbolExp : source)
+    for (auto symbolExp : source)
         {
-        if (symbolExp->GetSymbol()->IsBaseSymbol() && !symbolExp->GetSymbol()->IsDimensionless())
+        if (symbolExp->GetSymbol()->_IsBaseSymbol() && !symbolExp->GetSymbol()->_IsDimensionless())
             {
             if (copySymbols)
                 target.AddCopy(*symbolExp);
@@ -102,7 +103,7 @@ void SymbolicExpression::MergeExpressions(Utf8CP targetDefinition, SymbolicExpre
         {
         int     mergedExponent = uWE->GetExponent() * startingExponent;
 
-        auto it = find_if(targetExpression.begin(), targetExpression.end(), [&uWE] (SymbolWithExponentCP a) { return uWE->GetSymbol()->GetId() == a->GetSymbol()->GetId(); });
+        auto it = find_if(targetExpression.begin(), targetExpression.end(), [&uWE] (SymbolWithExponentCP a) { return uWE->GetSymbol()->_GetId() == a->GetSymbol()->_GetId(); });
         if (it != targetExpression.end())
             {
             LOG.debugv("%s --> %s - Merging existing Unit %s. with Exponent: %d", sourceDefinition, targetDefinition, (*it)->GetName(), mergedExponent);
@@ -116,7 +117,9 @@ void SymbolicExpression::MergeExpressions(Utf8CP targetDefinition, SymbolicExpre
         }
     }
 
-BentleyStatus SymbolicExpression::HandleToken(SymbolCR owner, SymbolicExpressionR expression, Utf8CP definition, TokenCR token, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName)
+int maxRecursionDepth = 42;
+
+BentleyStatus SymbolicExpression::HandleToken(int& depth, SymbolicExpressionR expression, Utf8CP definition, TokenCR token, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName)
     {
     LOG.debugv("%s - Handle Token: %s  TokenExp: %d  StartExp: %d", definition, token.GetName(), token.GetExponent(), startingExponent);
     int mergedExponent = token.GetExponent() * startingExponent;
@@ -146,17 +149,17 @@ BentleyStatus SymbolicExpression::HandleToken(SymbolCR owner, SymbolicExpression
         return BentleyStatus::ERROR;
         }
 
-    if (!symbol->IsBaseSymbol())
+    if (!symbol->_IsBaseSymbol())
         {
-        if (owner == *symbol)
+        if (depth > maxRecursionDepth)
             {
-            LOG.errorv("Cannot parse %s because its defintion is self referencing", owner.GetName());
+            LOG.errorv("Stopping parse, hit Max RecursionDepth.  Equation at this point is: %s", expression.ToString().c_str());
             return BentleyStatus::ERROR;
             }
 
-        LOG.debugv("Evaluating %s", symbol->GetName());
-        SymbolicExpression sourceExpression = symbol->Evaluate(getSymbolByName);
-        MergeExpressions(definition, expression, symbol->GetDefinition(), sourceExpression, mergedExponent);
+        LOG.debugv("Evaluating %s", symbol->_GetName());
+        SymbolicExpression sourceExpression = symbol->Evaluate(depth, getSymbolByName);
+        MergeExpressions(definition, expression, symbol->_GetDefinition(), sourceExpression, mergedExponent);
         }
     return BentleyStatus::SUCCESS;
     }
@@ -164,8 +167,9 @@ BentleyStatus SymbolicExpression::HandleToken(SymbolCR owner, SymbolicExpression
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Colin.Kerr         02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SymbolicExpression::ParseDefinition(SymbolCR owner, Utf8CP definition, SymbolicExpressionR expression, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName)
+BentleyStatus SymbolicExpression::ParseDefinition(int& depth, Utf8CP definition, SymbolicExpressionR expression, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName)
     {
+    ++depth;
     if (Utf8String::IsNullOrEmpty(definition))
         return BentleyStatus::ERROR;
  
@@ -186,7 +190,7 @@ BentleyStatus SymbolicExpression::ParseDefinition(SymbolCR owner, Utf8CP definit
                 return BentleyStatus::ERROR;
                 }
 
-            HandleToken(owner, expression, definition, currentToken, startingExponent, getSymbolByName);
+            HandleToken(depth, expression, definition, currentToken, startingExponent, getSymbolByName);
             currentToken.Clear();
             continue;
             }
@@ -223,7 +227,7 @@ BentleyStatus SymbolicExpression::ParseDefinition(SymbolCR owner, Utf8CP definit
  
     if (currentToken.IsValid())
         {
-        HandleToken(owner, expression, definition, currentToken, startingExponent, getSymbolByName);
+        HandleToken(depth, expression, definition, currentToken, startingExponent, getSymbolByName);
         }
 
     auto new_iter = remove_if(expression.begin(), expression.end(), [](SymbolWithExponent* a) { return a->GetExponent() == 0; });

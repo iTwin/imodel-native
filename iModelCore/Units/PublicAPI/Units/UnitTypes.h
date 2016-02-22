@@ -10,6 +10,7 @@
 
 #include <Units/Units.h>
 
+UNITS_TYPEDEFS(Symbol)
 UNITS_TYPEDEFS(Unit)
 UNITS_TYPEDEFS(Phenomenon)
 
@@ -18,6 +19,44 @@ BEGIN_BENTLEY_UNITS_NAMESPACE
 typedef bvector<Utf8String> Utf8Vector;
 
 struct UnitRegistry;
+struct SymbolicExpression;
+
+struct Symbol
+    {
+    friend struct SymbolWithExponent;
+    friend struct SymbolicExpression;
+private:
+    Utf8String  m_name;
+    Utf8String  m_definition;
+    int         m_id;
+    Utf8Char    m_dimensionSymbol;
+    double      m_factor;
+    double      m_offset;
+    bool        m_dimensionless;
+    
+    mutable bool        m_evaluated;
+    SymbolicExpression * m_symbolExpression;   
+
+protected:
+    Symbol(Utf8CP name, Utf8CP definition, Utf8Char dimensionSymbol, int id, double factor, double offset);
+    
+    SymbolicExpression& Evaluate(int depth, std::function<SymbolCP(Utf8CP)> getSymbolByName) const;
+protected:
+    virtual ~Symbol();
+    
+    // TODO: Do GetName, GetId, GetDefinition, IsBaseSymbol and IsDimensionless need to be virtual?  They are common between Unit and Phenomenon
+    virtual Utf8CP _GetName() const;
+    virtual int    _GetId()   const;
+    virtual Utf8CP _GetDefinition() const;
+    virtual double _GetFactor() const;
+    virtual bool _IsBaseSymbol() const;
+    virtual bool _IsDimensionless() const;
+    //virtual bool _IsCompatibleWith(SymbolCR rhs) const { return SymbolicExpression::DimensionallyCompatible(*this, rhs); }
+
+    // Binary comparison operators.
+    bool operator== (SymbolCR rhs) const { return m_id == rhs.m_id; }
+    bool operator!= (SymbolCR rhs) const { return m_id != rhs.m_id; }
+    };
 
 //=======================================================================================
 //! A base class for all units.
@@ -45,14 +84,21 @@ private:
 public:
     UNITS_EXPORT double GetConversionTo(UnitCP unit) const;
 
-    bool IsRegistered() const;
+    // TODO: Should GetId be private?  Should probably only be used internally because id is not gaurantteed to be consistent between runs (though it is because units are added in our code)
+
+    UNITS_EXPORT int    GetId() const { return _GetId(); }
+    UNITS_EXPORT Utf8CP GetName() const { return _GetName(); }
+    UNITS_EXPORT Utf8CP GetDefinition() const { return _GetDefinition(); }
+    UNITS_EXPORT double GetFactor() const { return _GetFactor(); }
+
+    bool IsRegistered()    const;
     bool IsConstant() const { return m_isConstant; }
 
     PhenomenonCP GetPhenomenon()   const { return m_phenomenon; }
 };
 
 struct Phenomenon : Symbol
-{
+    {
 DEFINE_T_SUPER(Symbol)
 friend struct UnitRegistry;
 private:
@@ -68,7 +114,9 @@ private:
 
 public:
     UNITS_EXPORT Utf8String GetPhenomenonDimension() const;
-    
+    UNITS_EXPORT Utf8CP GetName() const { return _GetName(); }
+    UNITS_EXPORT Utf8CP GetDefinition() const { return _GetDefinition(); }
+
     bool HasUnits() const { return m_units.size() > 0; }
     bvector<UnitCP> const GetUnits() const { return m_units; }
 };

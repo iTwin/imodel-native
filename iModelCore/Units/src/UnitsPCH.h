@@ -10,6 +10,7 @@
 
 #include <Units/Units.h>
 
+#include "SymbolicExpression.h"
 #include "StandardNames.h"
 #include "UnitsNativeLogging.h"
 

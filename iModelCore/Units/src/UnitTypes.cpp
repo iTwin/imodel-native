@@ -7,8 +7,63 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "UnitsPCH.h"
+#include "SymbolicExpression.h"
 
 USING_NAMESPACE_BENTLEY_UNITS
+
+Symbol::Symbol(Utf8CP name, Utf8CP definition, Utf8Char dimensionSymbol, int id, double factor, double offset) : 
+    m_name(name), m_definition(definition), m_dimensionSymbol(dimensionSymbol), m_id(id), m_factor(factor), m_offset(offset), m_evaluated(false), 
+    m_symbolExpression(new SymbolicExpression())
+    {
+    m_dimensionless = strcmp("ONE", m_definition.c_str()) == 0;
+    }
+
+Symbol::~Symbol()
+    {
+    if (nullptr != m_symbolExpression)
+        delete m_symbolExpression;
+    }
+
+Utf8CP Symbol::_GetName() const
+    {
+    return m_name.c_str(); 
+    }
+
+int Symbol::_GetId()   const
+    {
+    return m_id; 
+    }
+
+Utf8CP Symbol::_GetDefinition() const
+    {
+    return m_definition.c_str(); 
+    }
+
+double Symbol::_GetFactor() const
+    {
+    return m_factor; 
+    }
+
+bool Symbol::_IsBaseSymbol() const
+    {
+    return ' ' != m_dimensionSymbol; 
+    }
+
+bool Symbol::_IsDimensionless() const
+    {
+    return m_dimensionless; 
+    }    
+
+SymbolicExpression& Symbol::Evaluate(int depth, std::function<SymbolCP(Utf8CP)> getSymbolByName) const
+    {
+    if (!m_evaluated)
+        {
+        SymbolicExpression::ParseDefinition(depth, m_definition.c_str(), *m_symbolExpression, 1, getSymbolByName);
+        m_evaluated = true;
+        }
+    return *m_symbolExpression;
+    }
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -44,8 +99,9 @@ double Unit::GetConversionTo(UnitCP unit) const
         return 0.0;
         }
 
-    SymbolicExpression fromExpression = Evaluate([] (Utf8CP unitName) { return UnitRegistry::Instance().LookupUnit(unitName); });
-    SymbolicExpression toExpression = unit->Evaluate([] (Utf8CP unitName) { return UnitRegistry::Instance().LookupUnit(unitName); });
+    // TODO: USING A MAX RECRUSION DEPTH TO CATCH CYCLES IS SUPER HACKY AND MAKES CHRIS T. MAD.  Replace with something that actually detects cycles.
+    SymbolicExpression fromExpression = Evaluate(0, [] (Utf8CP unitName) { return UnitRegistry::Instance().LookupUnit(unitName); });
+    SymbolicExpression toExpression = unit->Evaluate(0, [] (Utf8CP unitName) { return UnitRegistry::Instance().LookupUnit(unitName); });
     
     fromExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, this->GetName());
     toExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, unit->GetName());
@@ -66,33 +122,19 @@ double Unit::GetConversionTo(UnitCP unit) const
         Utf8PrintfString combinedName("%s/%s", this->GetName(), unit->GetName());
         combinedExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, combinedName.c_str());
         }
-    double factor = m_factor / unit->m_factor;
+    double factor = GetFactor() / unit->GetFactor();
     for (auto const& unitExp : combinedExpression)
         {
-        // TODO: Decide if this is really necessary ...  if exponent is zero then the factor is 1 so the question is it better to pow and multiply by 1 or have a branch ... suspect pow and mult
-        // TODO: Consider always doing positive exponents and dividing if exponent is negative
-        if (unitExp->GetExponent() == 0 || unitExp->GetSymbol()->GetFactor() == 1.0)
-            continue;
-        
-        factor *= pow(unitExp->GetSymbol()->GetFactor(), unitExp->GetExponent());
+       // TODO: Consider always doing positive exponents and dividing if exponent is negative
+       factor *= pow(unitExp->GetFactor(), unitExp->GetExponent());
         }
 
     return factor;
     }
 
-SymbolicExpression& Symbol::Evaluate(std::function<SymbolCP(Utf8CP)> getSymbolByName) const
-    {
-    if (!m_evaluated)
-        {
-        SymbolicExpression::ParseDefinition(*this, m_definition.c_str(), m_symbolExpression, 1, getSymbolByName);
-        m_evaluated = true;
-        }
-    return m_symbolExpression;
-    }
-
 Utf8String Phenomenon::GetPhenomenonDimension() const
     {
-    SymbolicExpression phenomenonExpression = Evaluate([] (Utf8CP phenomenonName) { return UnitRegistry::Instance().LookupPhenomenon(phenomenonName); });
+    SymbolicExpression phenomenonExpression = Evaluate(0, [] (Utf8CP phenomenonName) { return UnitRegistry::Instance().LookupPhenomenon(phenomenonName); });
     SymbolicExpression baseExpression;
     SymbolicExpression::CreateExpressionWithOnlyBaseSymbols(phenomenonExpression, baseExpression, false);
     return baseExpression.ToString();
