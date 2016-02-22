@@ -566,7 +566,9 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMesh -f ScalableMesh 
     <ClInclude Include="STM\Threading\ScalableMeshScheduler.h" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="ScalableMesh.PartFile.xml" />
+    <Xml Include="ScalableMesh.PartFile.xml">
+      <SubType>Designer</SubType>
+    </Xml>
     <Xml Include="transkit\transkit.xml" />
   </ItemGroup>
   <ItemGroup>
