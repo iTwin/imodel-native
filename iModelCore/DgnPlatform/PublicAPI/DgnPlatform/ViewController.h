@@ -251,7 +251,7 @@ protected:
     //! Used to change the writable model in which new elements are to be placed.
     virtual BentleyStatus _SetTargetModel(GeometricModelP model) {return GetTargetModel()==model ? SUCCESS : ERROR;}
 
-    //! Get the union of the range (axis-aligned bounding box) of all physical elements in project
+    //! Get the extent of the model(s) viewed by this view
     DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _GetViewedExtents() const;
 
     enum class CloseMe {No=0, Yes=1};

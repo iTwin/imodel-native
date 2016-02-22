@@ -127,6 +127,7 @@ protected:
     ScanCriteria            m_scanCriteria;
     Render::FrustumPlanes   m_frustumPlanes;
     DgnViewportP            m_viewport = nullptr;
+    ClipPrimitiveCPtr       m_volume;
     IElemTopologyCPtr       m_currElemTopo;
     GeometryStreamEntryId   m_currGeometryStreamEntryId;
 
@@ -136,7 +137,6 @@ protected:
     virtual Render::GraphicP _GetCachedPartGraphic(DgnGeometryPartId, double pixelSize, ElementAlignedBox3dR) {return nullptr;}
     virtual void _SavePartGraphic(DgnGeometryPartId, Render::GraphicR, ElementAlignedBox3dCR) {}
     virtual void _OutputGraphic(Render::GraphicR, GeometrySourceCP) {}
-    virtual void _SetActiveVolume(ClipPrimitiveCR) {}
     virtual Render::GraphicP _GetCachedGraphic(GeometrySourceCR, double pixelSize) {return nullptr;}
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize);
     DGNPLATFORM_EXPORT virtual bool _WantAreaPatterns();
@@ -188,7 +188,8 @@ public:
     StatusInt VisitDgnModel(DgnModelP model){return _VisitDgnModel(model);}
     void SetScanReturn() {_SetScanReturn();}
     void OutputGraphic(Render::GraphicR graphic, GeometrySourceCP source) {_OutputGraphic(graphic, source);}
-    void SetActiveVolume(ClipPrimitiveCR volume) {_SetActiveVolume(volume);}
+    void SetActiveVolume(ClipPrimitiveCR volume) {m_volume=&volume;}
+    ClipPrimitiveCPtr GetActiveVolume() const {return m_volume;}
     void EnableStopAfterTimout(uint32_t timeout) {m_endTime = BeTimeUtilities::QueryMillisecondsCounter()+timeout; m_stopAfterTimeout=true;}
 
     Render::GraphicPtr CreateGraphic(Render::Graphic::CreateParams const& params=Render::Graphic::CreateParams()) {return _CreateGraphic(params);}
@@ -370,7 +371,6 @@ struct RenderContext : ViewContext
 protected:
     Render::OvrGraphicParams m_ovrParams;
     Render::TargetR m_target;
-    ClipPrimitiveCPtr m_volume;
 
 public:
     Render::OvrGraphicParams& GetOvrGraphicParams() {return m_ovrParams;}
@@ -380,7 +380,6 @@ public:
     Render::GraphicP _GetCachedGraphic(GeometrySourceCR source, double pixelSize) override {return source.Graphics().Find(*m_viewport, pixelSize);}
     DGNVIEW_EXPORT Render::GraphicP _GetCachedPartGraphic(DgnGeometryPartId, double pixelSize, ElementAlignedBox3dR) override;
     DGNVIEW_EXPORT Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize) override;
-    void _SetActiveVolume(ClipPrimitiveCR volume) override {m_volume=&volume;}
     Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return m_target.CreateGraphic(params);}
     void _SavePartGraphic(DgnGeometryPartId partId, Render::GraphicR graphic, ElementAlignedBox3dCR localRange) override;
     Render::TargetR GetTargetR() {return m_target;}

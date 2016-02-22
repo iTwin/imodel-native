@@ -71,7 +71,6 @@ static double s_minLatitude  =  -85.05112878;
 static double s_maxLatitude  =   85.05112878;
 static double s_minLongitude = -180.0;
 static double s_maxLongitude =  180.0;
-//static double s_equatorialCircumference = 6372.7982;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/2014
@@ -1725,7 +1724,7 @@ struct TiledRasterPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::Databas
         uint64_t overHead = (uint64_t)(rasterSize * percentage) / 100;
     
         CachedStatementPtr selectStatement;
-        if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(selectStatement, "select RasterSize, Created from " TABLE_NAME_TiledRaster " ORDER BY Created ASC"))
+        if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(selectStatement, "select RasterSize,Created from " TABLE_NAME_TiledRaster " ORDER BY Created ASC"))
             return ERROR;
     
         uint64_t runningSum = 0;
@@ -1805,7 +1804,7 @@ BentleyStatus TiledRaster::_InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key, 
     BeMutexHolder lock(cs);
 
     CachedStatementPtr stmt;
-    if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT Raster, RasterSize, RasterInfo, Created, Expires, ETag, ContentType from " TABLE_NAME_TiledRaster " WHERE Url=?"))
+    if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT Raster,RasterSize,RasterInfo,Created,Expires,ETag, ContentType from " TABLE_NAME_TiledRaster " WHERE Url=?"))
         return ERROR;
 
     stmt->ClearBindings();
@@ -1859,7 +1858,7 @@ BentleyStatus TiledRaster::_Persist(BeSQLite::Db& db, BeMutex& cs) const
         {
         // update
         CachedStatementPtr stmt;
-        if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TiledRaster " SET Expires=?, ETag=? WHERE Url=?"))
+        if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TiledRaster " SET Expires=?,ETag=? WHERE Url=?"))
             return ERROR;
 
         stmt->ClearBindings();
@@ -1873,7 +1872,7 @@ BentleyStatus TiledRaster::_Persist(BeSQLite::Db& db, BeMutex& cs) const
         {
         // insert
         CachedStatementPtr stmt;
-        if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(stmt, "INSERT INTO " TABLE_NAME_TiledRaster "(Url, Raster, RasterSize, RasterInfo, Created, Expires, ETag, ContentType) VALUES(?,?,?,?,?,?,?,?)"))
+        if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(stmt, "INSERT INTO " TABLE_NAME_TiledRaster "(Url,Raster,RasterSize,RasterInfo,Created,Expires,ETag, ContentType) VALUES(?,?,?,?,?,?,?,?)"))
             return ERROR;
 
         stmt->ClearBindings();

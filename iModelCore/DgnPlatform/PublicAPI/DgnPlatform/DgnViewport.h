@@ -21,7 +21,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
  <p>A ViewController provides persistence and behavior to a type of view.
  <p>A DgnViewport has a reference-counted-pointer to a ViewController that controls it.
  <p>A ViewContext holds the state of an operation performed on one or more elements in a DgnViewport.
- <p>A QueryModel is used to query and display graphics from SpatialModels. 
+ <p>A DgnQueryView is used to query and display elements from SpatialModels. 
 
   <h2>%DgnViewport Coordinates</h2>
   Coordinate information can be exchanged with Viewports using the various coordinate systems defined in DgnCoordSystem.
@@ -63,8 +63,7 @@ enum class ViewportResizeMode
  A DgnViewport maps a set of DgnModels to an output device through a camera (a view frustum) and filters (e.g. categories, view flags, etc). 
  <p>
  Viewports are usually mapped to a window on a screen. But, they 
- can also be mapped to other types of output devices such as plot drivers, dialog boxes, bitmaps, etc. All output to a
- DgnViewport is through methods on its IViewDraw interface, which may be retrieved by calling GetIViewDraw.
+ can also be mapped to other types of output devices such as plot drivers, dialog boxes, bitmaps, etc.
  <p>
  When active, a DgnViewport is connected to ViewController, that determines the behavior of the view. ViewControllers supply the methods
  that control which elements are visible, and the rules for determining elements' symbology. ViewControllers may also add additional graphics
@@ -83,16 +82,43 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
     typedef bmap<DgnGeometryPartId, GraphicSetRangePair> PartGraphicMap;        //!< @private
     typedef std::deque<Utf8String> ViewStateStack;
 
+    struct SyncFlags
+    {
+    private:
+        bool m_decorations = false;
+        bool m_query = false;
+        bool m_scene = false;
+        bool m_renderPlan = false;
+        bool m_controller = false;
+        bool m_rotatePoint = false;
+
+    public:
+        void InvalidateDecorations() {m_decorations=false;}
+        void InvalidateQuery() {m_query=false;}
+        void InvalidateScene() {m_scene=false; InvalidateQuery(); InvalidateDecorations();}
+        void InvalidateController() {m_controller=false; InvalidateScene();}
+        void InvalidateRenderPlan() {m_renderPlan=false; InvalidateScene();}
+        void InvalidateRotatePoint() {m_rotatePoint=false;}
+        void SetValidDecorations() {m_decorations=true;}
+        void SetValidQuery() {m_query=true;}
+        void SetValidScene() {m_scene=true;}
+        void SetValidController() {m_controller=true;}
+        void SetValidRenderPlan() {m_renderPlan=true;}
+        void SetValidRotatePoint() {m_rotatePoint=true;}
+        bool IsValidDecorations() const {return m_decorations;}
+        bool IsValidQuery() const {return m_query;}
+        bool IsValidScene() const {return m_scene;}
+        bool IsValidRenderPlan() const {return m_renderPlan;}
+        bool IsValidController() const {return m_controller;}
+        bool IsValidRotatePoint() const {return m_rotatePoint;}
+    };
+
 protected:
+
+    mutable SyncFlags m_sync;
     bool            m_zClipAdjusted = false;    // were the view z clip planes adjusted due to front/back clipping off?
     bool            m_is3dView = false;         // view is of a 3d model
     bool            m_isCameraOn = false;       // view is 3d and the camera is turned on.
-    bool            m_frustumValid = false;
-    bool            m_needSynchWithViewController = true;
-    mutable bool    m_sceneValid = false;    // the scene remains valid, even if the view volume changes. It becomes invalid if the database changes or view parameters change.
-    mutable bool    m_needsHeal = true;
-    mutable bool    m_needsRefresh = true;
-    bool            m_targetCenterValid = false;
     bool            m_undoActive = false;
     Byte            m_dynamicsTransparency = 64;
     Byte            m_flashingTransparency = 100;
@@ -133,6 +159,7 @@ protected:
     void QueueDrawFrame();
     void CalcTargetNumElements(UpdatePlan const& plan, bool isForProgressive);
     StatusInt CreateScene(UpdatePlan const& plan);
+    DGNPLATFORM_EXPORT void SaveViewUndo();
 
 public:
     DgnViewport(Render::TargetP target) : m_renderTarget(target) {}
@@ -152,6 +179,7 @@ public:
     void AlignWithRootZ();
     ProgressiveTask::Completion DoProgressiveTasks();
     void ClearProgressiveTasks() {m_progressiveTasks.clear();}
+    DGNPLATFORM_EXPORT void InvalidateScene() const;
     DGNPLATFORM_EXPORT void ScheduleProgressiveTask(ProgressiveTask& pd);
     DGNPLATFORM_EXPORT double GetFocusPlaneNpc();
     DGNPLATFORM_EXPORT StatusInt RootToNpcFromViewDef(DMap4d&, double&, CameraInfo const*, DPoint3dCR, DPoint3dCR, RotMatrixCR) const;
@@ -164,8 +192,8 @@ public:
     void Destroy() {_Destroy();}
     DGNPLATFORM_EXPORT StatusInt ComputeVisibleDepthRange (double& minDepth, double& maxDepth, bool ignoreViewExtent = false);
     DGNPLATFORM_EXPORT StatusInt ComputeViewRange(DRange3dR, FitViewParams& params) ;
-    void SetNeedsRefresh() const {m_needsRefresh=true;}
-    void SetNeedsHeal() const {m_needsHeal = true; SetNeedsRefresh();}
+    void SetNeedsRefresh() const {m_sync.InvalidateDecorations();}
+    void SetNeedsHeal() const {m_sync.InvalidateScene();}
     DGNPLATFORM_EXPORT bool UseClipVolume(DgnModelCP) const;
     DGNPLATFORM_EXPORT static int GetDefaultIndexedLineWidth(int index);
     DGNPLATFORM_EXPORT static void OutputFrustumErrorMessage(ViewportStatus errorStatus);
@@ -173,18 +201,17 @@ public:
     bool Allow3dManipulations() const {return m_viewController->Allow3dManipulations();}
     void DrawToolGraphics(ViewContextR context, bool isPreUpdate);
     void SetViewCmdTargetCenter(DPoint3dCP newCenter);
-    DPoint3dCP GetViewCmdTargetCenter() {return m_targetCenterValid ? &m_viewCmdTargetCenter : nullptr;}
+    DPoint3dCP GetViewCmdTargetCenter() {return !m_sync.IsValidRotatePoint() ? &m_viewCmdTargetCenter : nullptr;}
     Point2d GetScreenOrigin() const {return m_renderTarget->GetScreenOrigin();}
     DGNVIEW_EXPORT double PixelsFromInches(double inches) const;
-    DGNPLATFORM_EXPORT void InvalidateScene() const;
     DGNVIEW_EXPORT void ForceHeal();
     StatusInt HealViewport(UpdatePlan const&);
-    bool GetNeedsHeal() {return m_needsHeal;}
+    bool GetNeedsHeal() {return m_sync.IsValidScene();}
     DGNVIEW_EXPORT void ForceHealImmediate(uint32_t timeout=500); // default 1/2 second
     DGNVIEW_EXPORT void SuspendForBackground();
     DGNVIEW_EXPORT void ResumeFromBackground(Render::Target* target);
 
-    void SetUndoActive(bool val, int numsteps=20) {m_undoActive=val; m_maxUndoSteps=numsteps; CheckForChanges();}
+    void SetUndoActive(bool val, int numsteps=20) {m_undoActive=val; m_maxUndoSteps=numsteps; SaveViewUndo();}
     bool IsUndoActive() {return m_undoActive;}
     void ClearUndo();
     void ChangeDynamics(Render::GraphicListP list);
@@ -193,7 +220,6 @@ public:
     void Refresh();
     DGNVIEW_EXPORT void ApplyNext(int animationTime);
     DGNVIEW_EXPORT void ApplyPrevious(int animationTime);
-    DGNPLATFORM_EXPORT void CheckForChanges();
     DGNPLATFORM_EXPORT void Initialize(ViewControllerR);
     DGNPLATFORM_EXPORT static Render::Queue& RenderQueue();
 
@@ -225,8 +251,8 @@ public:
 
 /** @name Color Controls */
 /** @{ */
-    //! Get the RGB color of the background for this DgnViewport.
-    //! @return background RGB color
+    //! Get the background color for this DgnViewport.
+    //! @return background color
     DGNPLATFORM_EXPORT ColorDef GetBackgroundColor() const;
 
     //! @return either white or black, whichever has more contrast to the background color of this DgnViewport.
@@ -242,13 +268,13 @@ public:
     //! @return  the adjusted, contrasting color
     DGNPLATFORM_EXPORT ColorDef AdjustColorForContrast(ColorDef thisColor, ColorDef againstColor) const;
 
-    //! Adjust the transparency value of a TRGB color, leaving the Red, Blue, and Green components unchanged.
-    //! @param[in] color               Original color
-    //! @param[in] transparency        New transparency (0=opaque, 255=fully transparent)
+    //! Adjust the transparency of a color, leaving the Red, Blue, and Green components unchanged.
+    //! @param[in] color Original color
+    //! @param[in] transparency New transparency (0=opaque, 255=fully transparent)
     //! @return color with transparency adjusted.
     DGNPLATFORM_EXPORT static ColorDef MakeColorTransparency(ColorDef color, int transparency);
 
-    //! Adjust the transparency value of a TRGB color, leaving the Red, Blue, and Green components unchanged, but ONLY IF
+    //! Adjust the transparency of a color, leaving the Red, Blue, and Green components unchanged, but ONLY IF
     //! the current transparency value of the color is opaque. If the color already has a transparency value, this method
     //! returns the original value of color.
     //! @param[in] color Original color
@@ -256,7 +282,7 @@ public:
     //! @return color with transparency adjusted.
     DGNPLATFORM_EXPORT static ColorDef MakeTransparentIfOpaque(ColorDef color, int transparency);
 
-    //! Get the current TBGR color value of the user-selected hilite color for this DgnViewport.
+    //! Get the current hilite color for this DgnViewport.
     //! @return the current TBGR hilite color.
     ColorDef GetHiliteColor() const {return m_hiliteColor;}
 
