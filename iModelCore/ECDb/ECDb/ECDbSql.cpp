@@ -680,24 +680,23 @@ ECDbSqlTable* ECDbMapDb::CreateTableForExistingTableMapStrategy(ECDbCR ecdb, Utf
         ECDbSqlColumn::Type ecType = ECDbSqlColumn::Type::Any;
         if (type.rfind("int64") != Utf8String::npos ||
             type.rfind("long") != Utf8String::npos ||
-            type.rfind("int") != Utf8String::npos ||
-            type.rfind("integer") != Utf8String::npos)
-            ecType = ECDbSqlColumn::Type::Long;
+            type.rfind("int") != Utf8String::npos)
+            ecType = ECDbSqlColumn::Type::Integer;
         else if (type.rfind("char") != Utf8String::npos ||
                  type.rfind("clob") != Utf8String::npos ||
                  type.rfind("json") != Utf8String::npos ||
                  type.rfind("text") != Utf8String::npos)
-            ecType = ECDbSqlColumn::Type::String;
+            ecType = ECDbSqlColumn::Type::Text;
         else if (type.rfind("blob") != Utf8String::npos ||
                  type.rfind("binary") != Utf8String::npos)
-            ecType = ECDbSqlColumn::Type::Binary;
+            ecType = ECDbSqlColumn::Type::Blob;
         else if (type.rfind("real") != Utf8String::npos ||
                  type.rfind("floa") != Utf8String::npos ||
                  type.rfind("doub") != Utf8String::npos)
-            ecType = ECDbSqlColumn::Type::Double;
+            ecType = ECDbSqlColumn::Type::Real;
         else if (type.rfind("date") != Utf8String::npos ||
                  type.rfind("timestamp") != Utf8String::npos)
-            ecType = ECDbSqlColumn::Type::DateTime;
+            ecType = ECDbSqlColumn::Type::TimeStamp;
         else if (type.rfind("bool") != Utf8String::npos)
             ecType = ECDbSqlColumn::Type::Boolean;
 
@@ -1444,19 +1443,17 @@ Utf8String DDLGenerator::GetColumnDDL(ECDbSqlColumn const& o)
     switch (o.GetType())
         {
             case ECDbSqlColumn::Type::Any:
-                break;
-            case ECDbSqlColumn::Type::Binary:
+            case ECDbSqlColumn::Type::Blob:
                 sql.append(" BLOB"); break;
             case ECDbSqlColumn::Type::Boolean:
                 sql.append(" BOOLEAN"); break;
-            case ECDbSqlColumn::Type::DateTime:
+            case ECDbSqlColumn::Type::TimeStamp:
                 sql.append(" TIMESTAMP"); break;
-            case ECDbSqlColumn::Type::Double:
-                sql.append(" DOUBLE"); break;
+            case ECDbSqlColumn::Type::Real:
+                sql.append(" REAL"); break;
             case ECDbSqlColumn::Type::Integer:
-            case ECDbSqlColumn::Type::Long:
                 sql.append(" INTEGER"); break;
-            case ECDbSqlColumn::Type::String:
+            case ECDbSqlColumn::Type::Text:
                 sql.append(" TEXT"); break;
         }
 
@@ -1537,14 +1534,22 @@ ECDbSqlColumn::Type ECDbSqlColumn::PrimitiveTypeToColumnType(ECN::PrimitiveType 
     {
     switch (type)
         {
-            case ECN::PrimitiveType::PRIMITIVETYPE_Binary: return ECDbSqlColumn::Type::Binary;
-            case ECN::PrimitiveType::PRIMITIVETYPE_Boolean: return ECDbSqlColumn::Type::Boolean;
-            case ECN::PrimitiveType::PRIMITIVETYPE_DateTime: return ECDbSqlColumn::Type::DateTime;
-            case ECN::PrimitiveType::PRIMITIVETYPE_Double: return ECDbSqlColumn::Type::Double;
-            case ECN::PrimitiveType::PRIMITIVETYPE_IGeometry: return ECDbSqlColumn::Type::Binary;
-            case ECN::PrimitiveType::PRIMITIVETYPE_Integer: return ECDbSqlColumn::Type::Integer;
-            case ECN::PrimitiveType::PRIMITIVETYPE_Long: return ECDbSqlColumn::Type::Long;
-            case ECN::PrimitiveType::PRIMITIVETYPE_String: return ECDbSqlColumn::Type::String;
+            case ECN::PrimitiveType::PRIMITIVETYPE_Binary: 
+            case ECN::PrimitiveType::PRIMITIVETYPE_IGeometry:;
+                return ECDbSqlColumn::Type::Blob;
+            case ECN::PrimitiveType::PRIMITIVETYPE_Boolean: 
+                return ECDbSqlColumn::Type::Boolean;
+            case ECN::PrimitiveType::PRIMITIVETYPE_DateTime: 
+                return ECDbSqlColumn::Type::TimeStamp;
+            case ECN::PrimitiveType::PRIMITIVETYPE_Double: 
+                return ECDbSqlColumn::Type::Real;
+
+            case ECN::PrimitiveType::PRIMITIVETYPE_Integer: 
+            case ECN::PrimitiveType::PRIMITIVETYPE_Long: 
+                return ECDbSqlColumn::Type::Integer;
+
+            case ECN::PrimitiveType::PRIMITIVETYPE_String: 
+                return ECDbSqlColumn::Type::Text;
         }
 
     BeAssert(false && "Type not supported");
@@ -1566,11 +1571,11 @@ bool ECDbSqlColumn::IsCompatible(ECDbSqlColumn::Type target, ECDbSqlColumn::Type
                             return true;
                     }
                 break;
-            case ECDbSqlColumn::Type::Binary:
+            case ECDbSqlColumn::Type::Blob:
                 switch (target)
                     {
                         case ECDbSqlColumn::Type::Any:
-                        case ECDbSqlColumn::Type::Binary:
+                        case ECDbSqlColumn::Type::Blob:
                             return true;
                     }
                 break;
@@ -1582,19 +1587,19 @@ bool ECDbSqlColumn::IsCompatible(ECDbSqlColumn::Type target, ECDbSqlColumn::Type
                             return true;
                     }
                 break;
-            case ECDbSqlColumn::Type::DateTime:
+            case ECDbSqlColumn::Type::TimeStamp:
                 switch (target)
                     {
                         case ECDbSqlColumn::Type::Any:
-                        case ECDbSqlColumn::Type::DateTime:
+                        case ECDbSqlColumn::Type::TimeStamp:
                             return true;
                     }
                 break;
-            case ECDbSqlColumn::Type::Double:
+            case ECDbSqlColumn::Type::Real:
                 switch (target)
                     {
                         case ECDbSqlColumn::Type::Any:
-                        case ECDbSqlColumn::Type::Double:
+                        case ECDbSqlColumn::Type::Real:
                             return true;
                     }
                 break;
@@ -1602,25 +1607,15 @@ bool ECDbSqlColumn::IsCompatible(ECDbSqlColumn::Type target, ECDbSqlColumn::Type
                 switch (target)
                     {
                         case ECDbSqlColumn::Type::Any:
-                        case ECDbSqlColumn::Type::Long:
                         case ECDbSqlColumn::Type::Integer:
                             return true;
                     }
                 break;
-            case ECDbSqlColumn::Type::Long:
+            case ECDbSqlColumn::Type::Text:
                 switch (target)
                     {
                         case ECDbSqlColumn::Type::Any:
-                        case ECDbSqlColumn::Type::Long:
-                        case ECDbSqlColumn::Type::Integer:
-                            return true;
-                    }
-                break;
-            case ECDbSqlColumn::Type::String:
-                switch (target)
-                    {
-                        case ECDbSqlColumn::Type::Any:
-                        case ECDbSqlColumn::Type::String:
+                        case ECDbSqlColumn::Type::Text:
                             return true;
                     }
                 break;

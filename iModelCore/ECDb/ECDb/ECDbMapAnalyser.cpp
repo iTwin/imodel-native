@@ -2360,7 +2360,46 @@ BentleyStatus ECClassViewGenerator::BuildPrimitivePropertyExpression(NativeSqlBu
         return ERROR;
         }
 
-    if (BuildColumnExpression(fragments, columns[0]->GetTable().GetName().c_str(), columns[0]->GetName().c_str(), propertyMap.GetPropertyAccessString(), addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
+    ECDbSqlColumn const* col = columns[0];
+
+   /* Utf8String colExp(col->GetName());
+    if (col->GetType() == ECDbSqlColumn::Type::Any)
+        {
+        if (!propertyMap.GetProperty().GetIsPrimitive())
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        PrimitiveType primType = propertyMap.GetProperty().GetAsPrimitiveProperty()->GetType();
+        switch (primType)
+            {
+                case PRIMITIVETYPE_Binary:
+                    return "BLOB";
+                case PRIMITIVETYPE_Boolean:
+                    return "BOOLEAN";
+                case PRIMITIVETYPE_DateTime:
+                    return "TIMESTAMP";
+                case PRIMITIVETYPE_Double:
+                    return "REAL";
+                case PRIMITIVETYPE_IGeometry:
+                    return "BLOB";
+                case PRIMITIVETYPE_Integer:
+                case PRIMITIVETYPE_Long:
+                    return "INTEGER";
+                case PRIMITIVETYPE_String:
+                    return "TEXT";
+
+                default:
+                    BeAssert(false && "Unhandled case");
+                    return nullptr;
+            }
+
+        if (primType != PRIMITIVETYPE_Binary && primType != PRIMITIVETYPE_IGeometry)
+            colExp.Sprintf("CAST(%s AS %s)", col->GetName().c_str(), ExpHelper::ToSqlType(primType));
+        }*/
+
+    if (BuildColumnExpression(fragments, col->GetTable().GetName().c_str(), col->GetName().c_str(), propertyMap.GetPropertyAccessString(), addECPropertyPathAlias, nullValue) != SUCCESS)
         return ERROR;
 
     viewSql.Append(fragments.front());
