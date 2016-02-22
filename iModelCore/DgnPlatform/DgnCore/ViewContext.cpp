@@ -364,13 +364,13 @@ StatusInt ViewContext::_OutputGeometry(GeometrySourceCR source)
         tmpPts[8] = p[0];
 
         // Draw a "saddle" shape to accumulate correct dirty region, simple lines can be clipped out when zoomed in...
-        rangeGraphic->AddLineString(9, tmpPts, nullptr);
+        rangeGraphic->AddLineString(9, tmpPts);
 
         // Draw missing connecting lines to complete box...
-        rangeGraphic->AddLineString(2, DSegment3d::From(p[0], p[3]).point, nullptr);
-        rangeGraphic->AddLineString(2, DSegment3d::From(p[4], p[5]).point, nullptr);
-        rangeGraphic->AddLineString(2, DSegment3d::From(p[1], p[7]).point, nullptr);
-        rangeGraphic->AddLineString(2, DSegment3d::From(p[2], p[6]).point, nullptr);
+        rangeGraphic->AddLineString(2, DSegment3d::From(p[0], p[3]).point);
+        rangeGraphic->AddLineString(2, DSegment3d::From(p[4], p[5]).point);
+        rangeGraphic->AddLineString(2, DSegment3d::From(p[1], p[7]).point);
+        rangeGraphic->AddLineString(2, DSegment3d::From(p[2], p[6]).point);
         }
     else
         {
@@ -380,7 +380,7 @@ StatusInt ViewContext::_OutputGeometry(GeometrySourceCR source)
         tmpPts[3] = p[3];
         tmpPts[4] = p[0];
 
-        rangeGraphic->AddLineString(5, tmpPts, nullptr);
+        rangeGraphic->AddLineString(5, tmpPts);
         }
 
     _OutputGraphic(*rangeGraphic, &source);
@@ -1467,7 +1467,7 @@ static void drawGridRefs(Render::GraphicR graphic, DPoint3dCR org, DVec3dCR rowV
 
         linePoints[0].SumOf(org,rowVec, d);
         linePoints[1].SumOf(gridEnd,rowVec, d);
-        graphic.AddLineString(2, linePoints, nullptr);
+        graphic.AddLineString(2, linePoints);
         }
     }
 
@@ -1582,7 +1582,7 @@ static void drawGridDots(Render::GraphicR graphic, bool doIsoGrid, DPoint3dCR or
                 }
 
             if (0 != nToDisplay)
-                graphic.AddPointString(nToDisplay, points, nullptr);
+                graphic.AddPointString(nToDisplay, points);
             }
         }
     }
@@ -1608,7 +1608,7 @@ static void drawGridPlane(Render::GraphicR graphic, DPoint3dCR gridOrigin, DVec3
     shapePoints[2].SumOf(gridOrigin,xVec, repetitions.x, yVec, repetitions.y);
     shapePoints[3].SumOf(gridOrigin,yVec, repetitions.y);
 
-    graphic.AddShape(5, shapePoints, true, nullptr);
+    graphic.AddShape(5, shapePoints, true);
     }
 
 /*---------------------------------------------------------------------------------**//**

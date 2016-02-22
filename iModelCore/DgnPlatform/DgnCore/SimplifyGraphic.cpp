@@ -1544,7 +1544,7 @@ static void copy2dTo3d(int numPoints, DPoint3dP pts3d, DPoint2dCP pts2d, double 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddLineString(int numPoints, DPoint3dCP points, DPoint3dCP range)
+void SimplifyGraphic::_AddLineString(int numPoints, DPoint3dCP points)
     {
     CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateLineString(points, numPoints));
     
@@ -1554,18 +1554,18 @@ void SimplifyGraphic::_AddLineString(int numPoints, DPoint3dCP points, DPoint3dC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range)
+void SimplifyGraphic::_AddLineString2d(int numPoints, DPoint2dCP points, double zDepth)
     {
     std::valarray<DPoint3d> localPointsBuf3d(numPoints);
 
     copy2dTo3d(numPoints, &localPointsBuf3d[0], points, 0.0);
-    _AddLineString(numPoints, &localPointsBuf3d[0], NULL);
+    _AddLineString(numPoints, &localPointsBuf3d[0]);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddPointString(int numPoints, DPoint3dCP points, DPoint3dCP range)
+void SimplifyGraphic::_AddPointString(int numPoints, DPoint3dCP points)
     {
     CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None, ICurvePrimitive::CreatePointString(points, numPoints));
 
@@ -1575,18 +1575,18 @@ void SimplifyGraphic::_AddPointString(int numPoints, DPoint3dCP points, DPoint3d
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddPointString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range)
+void SimplifyGraphic::_AddPointString2d(int numPoints, DPoint2dCP points, double zDepth)
     {
     std::valarray<DPoint3d> localPointsBuf3d(numPoints);
 
     copy2dTo3d(numPoints, &localPointsBuf3d[0], points, 0.0);
-    _AddPointString(numPoints, &localPointsBuf3d[0], NULL);
+    _AddPointString(numPoints, &localPointsBuf3d[0]);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddShape(int numPoints, DPoint3dCP points, bool filled, DPoint3dCP range)
+void SimplifyGraphic::_AddShape(int numPoints, DPoint3dCP points, bool filled)
     {
     CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(points, numPoints));
 
@@ -1596,18 +1596,18 @@ void SimplifyGraphic::_AddShape(int numPoints, DPoint3dCP points, bool filled, D
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range)
+void SimplifyGraphic::_AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth)
     {
     std::valarray<DPoint3d> localPointsBuf3d(numPoints);
 
     copy2dTo3d(numPoints, &localPointsBuf3d[0], points, 0.0);
-    _AddShape(numPoints, &localPointsBuf3d[0], filled, NULL);
+    _AddShape(numPoints, &localPointsBuf3d[0], filled);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags, DPoint3dCP range)
+void SimplifyGraphic::_AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags)
     {
     if (1 == usageFlags) // represents thickened line...
         {
@@ -1622,30 +1622,30 @@ void SimplifyGraphic::_AddTriStrip(int numPoints, DPoint3dCP points, int32_t usa
 
         tmpPtsP[nPt] = tmpPtsP[0]; // Add closure point...simplifies drop of extrude thickness...
 
-        _AddShape(numPoints+1, tmpPtsP, true, NULL);
+        _AddShape(numPoints+1, tmpPtsP, true);
         return;
         }
 
     // spew triangles
     for (int iPt=0; iPt < numPoints-2; iPt++)
-        _AddShape(3, &points[iPt], true, NULL);
+        _AddShape(3, &points[iPt], true);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth, DPoint2dCP range)
+void SimplifyGraphic::_AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth)
     {
     std::valarray<DPoint3d> localPointsBuf3d(numPoints);
 
     copy2dTo3d(numPoints, &localPointsBuf3d[0], points, 0.0);
-    _AddTriStrip(numPoints, &localPointsBuf3d[0], usageFlags, NULL);
+    _AddTriStrip(numPoints, &localPointsBuf3d[0], usageFlags);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled, DPoint3dCP range)
+void SimplifyGraphic::_AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled)
     {
     // NOTE: QVis closes arc ends and displays them filled (see outputCapArc for linestyle strokes)...
     CurveVectorPtr curve = CurveVector::Create((isEllipse || filled) ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateArc(ellipse));
@@ -1667,9 +1667,9 @@ void SimplifyGraphic::_AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth, DPoint2dCP range)
+void SimplifyGraphic::_AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth)
     {
-    _AddArc(ellipse, isEllipse, filled, NULL);
+    _AddArc(ellipse, isEllipse, filled);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1776,7 +1776,7 @@ void SimplifyGraphic::_AddTextString2d(TextStringCR text, double zDepth)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddRaster (DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range)
+void SimplifyGraphic::_AddRaster (DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels)
     {
     // NEEDSWORK...Provide option to handle/ignore...
     DPoint3d    shapePoints[5];
@@ -1786,18 +1786,18 @@ void SimplifyGraphic::_AddRaster (DPoint3d const points[4], int pitch, int numTe
     shapePoints[2] = points[2];
     shapePoints[3] = points[3];
 
-    _AddShape(5, shapePoints, true, nullptr);
+    _AddShape(5, shapePoints, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddRaster2d (DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2dCP range)
+void SimplifyGraphic::_AddRaster2d (DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth)
     {
     std::valarray<DPoint3d> localPointsBuf3d(4);
 
     copy2dTo3d(4, &localPointsBuf3d[0], points, 0.0);
-    _AddRaster(&localPointsBuf3d[0], pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, NULL);
+    _AddRaster(&localPointsBuf3d[0], pitch, numTexelsX, numTexelsY, enableAlpha, format, texels);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1841,7 +1841,7 @@ void SimplifyGraphic::_AddPointCloud(PointCloudDraw* drawParams)
             
             uint32_t pointsThisIter = numPoints > MAX_POINTS_PER_BATCH ? MAX_POINTS_PER_BATCH: numPoints;
 
-            _AddPointString(pointsThisIter, dPoints, NULL);
+            _AddPointString(pointsThisIter, dPoints);
             numPoints -= pointsThisIter;
             dPoints   += pointsThisIter;
             }
@@ -1875,7 +1875,7 @@ void SimplifyGraphic::_AddPointCloud(PointCloudDraw* drawParams)
             curr->z = currIn->z + offsets.z;
             }
 
-        _AddPointString(pointsThisIter, pointBuffer, NULL);
+        _AddPointString(pointsThisIter, pointBuffer);
         numPoints -= pointsThisIter;
         }
     }
@@ -1895,7 +1895,7 @@ void SimplifyGraphic::_AddMosaic(int numX, int numY, uintptr_t const* tileIds, D
     shapePoints[2] = points[2];
     shapePoints[3] = points[3];
 
-    _AddShape(5, shapePoints, true, NULL);
+    _AddShape(5, shapePoints, true);
     }
 
 //----------------------------------------------------------------------------------------
@@ -1911,7 +1911,7 @@ void SimplifyGraphic::_AddTile(Render::TextureCR tile, DPoint3dCP corners)
     shapePoints[2] = corners[2];
     shapePoints[3] = corners[3];
 
-    _AddShape(5, shapePoints, true, NULL);
+    _AddShape(5, shapePoints, true);
     }
  
 /*---------------------------------------------------------------------------------**//**
