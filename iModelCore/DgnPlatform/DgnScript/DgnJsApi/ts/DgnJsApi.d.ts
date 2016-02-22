@@ -248,6 +248,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         */
         Transform(transform: TransformP): cxx_int32_t;
 
+        /** Get the element's DgnCategoryId */
+        CategoryId: DgnObjectIdP;
+    
         /** The element's geometry (read-only) */
         Geometry: GeometryCollectionP;
 
