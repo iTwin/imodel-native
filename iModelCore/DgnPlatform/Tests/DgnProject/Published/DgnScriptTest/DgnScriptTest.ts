@@ -128,7 +128,8 @@ module DgnScriptTests {
             points.Add (new be.DPoint3d (0,0.4,zz));
             points.Add (new be.DPoint3d (0.5,0.7,zz));
         var linestring = new be.LineString (points);
-        Shift (linestring, shiftCount, 0);
+
+        Shift(linestring, shiftCount, 0);
         shiftCount++;
         builder.AppendGeometry (linestring);
         var catenary = be.CatenaryCurve.CreateFromCoefficientAndXLimits (
