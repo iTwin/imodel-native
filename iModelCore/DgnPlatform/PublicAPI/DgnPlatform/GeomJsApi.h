@@ -12,8 +12,9 @@
 #define _GEOM_Js_API_H_
 
 #include <BeJavaScript/BeJavaScript.h>
-#include <DgnPlatform/DgnPlatform.h>
-#include <DgnPlatform/DgnPlatformLib.h>
+//#include <DgnPlatform/DgnPlatform.h>
+//#include <DgnPlatform/DgnPlatformLib.h>
+//#include <Geom/GeomApi.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -66,6 +67,7 @@ JsSTRUCT(JsGeometry)
         JsSTRUCT(JsEllipticArc)
         JsSTRUCT(JsBsplineCurve)
         JsSTRUCT(JsCatenaryCurve)
+        JsSTRUCT(JsSpiralCurve)
 
     JsSTRUCT(JsCurveVector)
         JsSTRUCT(JsUnstructuredCurveVector)
