@@ -39,7 +39,7 @@
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="Props" typeName="string" description="Json string containing properties like URI"/>
+        <ECProperty propertyName="Properties" typeName="string" description="Json string containing properties like URI"/>
     </ECEntityClass>
     <ECEntityClass typeName="LocalAuthority">
         <ECCustomAttributes>
@@ -200,6 +200,7 @@
                 </MapStrategy>
                 <Indexes>
                     <DbIndex>
+                        <Name>ix_dgn_Model_Code</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
                             <string>Code.AuthorityId</string>
@@ -333,6 +334,7 @@
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <Indexes>
                     <DbIndex>
+                        <Name>ix_dgn_Element_Code</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
                             <string>Code.AuthorityId</string>
@@ -341,6 +343,7 @@
                         </Properties>
                     </DbIndex>
                     <DbIndex>
+                        <Name>ix_dgn_Element_Label</Name>
                         <IsUnique>False</IsUnique>
                         <Properties>
                             <string>Label</string>
@@ -366,6 +369,9 @@
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
+        <ECProperty propertyName="UserProperties" typeName="string" extendedTypeName="AdHocJson">
+            <!-- WIP: placeholder in 06, will be implemented/used in 0601 -->
+        </ECProperty>
         <ECProperty propertyName="LastMod" typeName="dateTime">
             <ECCustomAttributes>
                 <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
@@ -387,7 +393,6 @@
     </ECEntityClass>
     <ECEntityClass typeName="DefinitionElement" modifier="Abstract">
         <BaseClass>InformationElement</BaseClass>
-        <!-- WIP: Causes ConstructionSchema unit tests to fail
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
@@ -395,7 +400,6 @@
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
-        -->
     </ECEntityClass>
     <ECEntityClass typeName="DictionaryElement" modifier="Abstract">
         <BaseClass>DefinitionElement</BaseClass>
@@ -593,6 +597,18 @@
         <ECProperty propertyName="FooterColumnTextHeight" typeName="double"/>
         <ECProperty propertyName="TextSymbKey" typeName="int"/>
     </ECEntityClass>
+    <ECRelationshipClass typeName="AnnotationTableOwnsHeader" strength="embedding">
+        <Source cardinality="(1,1)" polymorphic="false">
+            <Class class="AnnotationTable"/>
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="false">
+            <Class class="AnnotationTableHeader">
+                <Key>
+                    <Property name="ECInstanceId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="AnnotationTableRow">
         <!-- The aspect that holds properties of a row of an AnnotationTable -->
@@ -606,6 +622,18 @@
         <ECProperty propertyName="HeightLock" typeName="boolean"/>
         <ECProperty propertyName="Height" typeName="double"/>
     </ECEntityClass>
+    <ECRelationshipClass typeName="AnnotationTableOwnsRow" strength="embedding">
+        <Source cardinality="(1,1)" polymorphic="false">
+            <Class class="AnnotationTable"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="false">
+            <Class class="AnnotationTableRow">
+                <Key>
+                    <Property name="ElementId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="AnnotationTableColumn">
         <!-- The aspect that holds properties of a column of an AnnotationTable -->
@@ -619,6 +647,18 @@
         <ECProperty propertyName="WidthLock" typeName="boolean"/>
         <ECProperty propertyName="Width" typeName="double"/>
     </ECEntityClass>
+    <ECRelationshipClass typeName="AnnotationTableOwnsColumn" strength="embedding">
+        <Source cardinality="(1,1)" polymorphic="false">
+            <Class class="AnnotationTable"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="false">
+            <Class class="AnnotationTableColumn">
+                <Key>
+                    <Property name="ElementId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
 
     <ECStructClass typeName="AnnotationTableCellIndex">
         <ECProperty propertyName="RowIndex" typeName="int"/>
@@ -631,6 +671,15 @@
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+                <Indexes>
+                    <DbIndex>
+                        <Name>ix_dgn_AnnotationTableCell_ElementId</Name>
+                        <IsUnique>False</IsUnique>
+                        <Properties>
+                            <string>ElementId</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
             </ClassMap>
         </ECCustomAttributes>
         <ECStructProperty propertyName="CellIndex" typeName="AnnotationTableCellIndex"/>
@@ -643,6 +692,18 @@
         <ECProperty propertyName="MarginLeft" typeName="double"/>
         <ECProperty propertyName="MarginRight" typeName="double"/>
     </ECEntityClass>
+    <ECRelationshipClass typeName="AnnotationTableOwnsCell" strength="embedding">
+        <Source cardinality="(1,1)" polymorphic="false">
+            <Class class="AnnotationTable"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="false">
+            <Class class="AnnotationTableCell">
+                <Key>
+                    <Property name="ElementId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="AnnotationTableMerge">
         <!-- The aspect that holds properties describing merging of cells in an AnnotationTable -->
@@ -656,6 +717,18 @@
         <ECProperty propertyName="RowSpan" typeName="int"/>
         <ECProperty propertyName="ColumnSpan" typeName="int"/>
     </ECEntityClass>
+    <ECRelationshipClass typeName="AnnotationTableOwnsMerge" strength="embedding">
+        <Source cardinality="(1,1)" polymorphic="false">
+            <Class class="AnnotationTable"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="false">
+            <Class class="AnnotationTableMerge">
+                <Key>
+                    <Property name="ElementId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="AnnotationTableSymbology">
         <!-- The aspect that holds properties describing symbology in an AnnotationTable -->
@@ -673,6 +746,18 @@
         <ECProperty propertyName="LineStyleScale" typeName="double"/>
         <ECProperty propertyName="FillColor" typeName="int"/>
     </ECEntityClass>
+    <ECRelationshipClass typeName="AnnotationTableOwnsSymbology" strength="embedding">
+        <Source cardinality="(1,1)" polymorphic="false">
+            <Class class="AnnotationTable"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="false">
+            <Class class="AnnotationTableSymbology">
+                <Key>
+                    <Property name="ElementId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="AnnotationTableEdgeRun">
         <!-- The aspect that holds properties describing edges in an AnnotationTable -->
@@ -688,6 +773,18 @@
         <ECProperty propertyName="Span" typeName="int"/>
         <ECProperty propertyName="SymbologyKey" typeName="int"/>
     </ECEntityClass>
+    <ECRelationshipClass typeName="AnnotationTableOwnsEdgeRun" strength="embedding">
+        <Source cardinality="(1,1)" polymorphic="false">
+            <Class class="AnnotationTable"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="false">
+            <Class class="AnnotationTableEdgeRun">
+                <Key>
+                    <Property name="ElementId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="ViewAttachment">
         <!-- A reference to a ViewDefinition, placed onto a sheet -->
@@ -708,8 +805,7 @@
                 <OnUpdateAction>Restrict</OnUpdateAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
-        <Source cardinality="(0,1)" roleLabel="is referenced by" polymorphic="true">
-            <!-- WIP: Source cardinality should be (1,1) -->
+        <Source cardinality="(1,1)" roleLabel="is referenced by" polymorphic="true">
             <Class class="ViewDefinition"/>
         </Source>
         <Target cardinality="(0,N)" roleLabel="references" polymorphic="true">
@@ -718,6 +814,12 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <!-- OnDelete=Restrict to allow ElementHandlers to decide if delete is legal. If legal, the Element API will perform the equivalent of OnDelete=Cascade. -->
+                <OnDeleteAction>Restrict</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
         <Source cardinality="(0,1)" roleLabel="is on 1 element" polymorphic="true">
             <Class class="Element"/>
         </Source>
@@ -813,6 +915,7 @@
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <Indexes>
                     <DbIndex>
+                        <Name>ix_dgn_ElementExternalKey_ElementId_AuthorityId</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
                             <!-- Only one ExternalKey per Authority per Element -->
@@ -823,6 +926,7 @@
                     <DbIndex>
                         <!-- Index for looking up Element by ExternalKey -->
                         <!-- IsUnique=False to support ExternalKeys for types (multiple Elements have same ExternalKey) -->
+                        <Name>ix_dgn_ElementExternalKey_AuthorityId_ExternalKey</Name>
                         <IsUnique>False</IsUnique>
                         <Properties>
                             <string>AuthorityId</string>
@@ -902,13 +1006,12 @@
         </ECCustomAttributes>
         <BaseClass>DictionaryElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
-        <ECProperty propertyName="Props" typeName="string"/>
+        <ECProperty propertyName="Properties" typeName="string"/>
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="GeometricElement2dIsInCategory" description="Element is in Category" strength="referencing">
+    <ECRelationshipClass typeName="GeometricElement2dIsInCategory" description="Element is in Category" strength="referencing" strengthDirection="Backward">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <End>Source</End>
                 <!-- Cannot delete a Category or update its CategoryId if there is an element in that Category -->
                 <OnDeleteAction>Restrict</OnDeleteAction>
                 <OnUpdateAction>Restrict</OnUpdateAction>
@@ -921,10 +1024,9 @@
             <Class class="Category"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="GeometricElement3dIsInCategory" description="Element is in Category" strength="referencing">
+    <ECRelationshipClass typeName="GeometricElement3dIsInCategory" description="Element is in Category" strength="referencing" strengthDirection="Backward">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <End>Source</End>
                 <!-- Cannot delete a Category or update its CategoryId if there is an element in that Category -->
                 <OnDeleteAction>Restrict</OnDeleteAction>
                 <OnUpdateAction>Restrict</OnUpdateAction>
@@ -1066,8 +1168,7 @@
                 <OnUpdateAction>Restrict</OnUpdateAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
-        <Source cardinality="(0,1)" roleLabel="is base model for view" polymorphic="true">
-            <!-- WIP: Source cardinality should be (1,1) -->
+        <Source cardinality="(1,1)" roleLabel="is base model for view" polymorphic="true">
             <Class class="Model"/>
         </Source>
         <Target cardinality="(0,N)" roleLabel="is used by N views" polymorphic="true">
@@ -1180,6 +1281,7 @@
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <Indexes>
                     <DbIndex>
+                        <Name>ix_dgn_GeometryPart_Code</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
                             <string>Code.AuthorityId</string>

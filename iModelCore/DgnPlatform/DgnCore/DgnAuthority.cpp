@@ -147,7 +147,7 @@ DgnDbStatus DgnAuthorities::Insert(DgnAuthorityR auth)
 
     Utf8String propsStr = auth.SerializeProperties();
 
-    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Authority) " (Id,Name,Props,ECClassId) VALUES(?,?,?,?)");
+    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Authority) " (Id,Name,Properties,ECClassId) VALUES(?,?,?,?)");
     stmt.BindId(1, newId);
     stmt.BindText(2, auth.GetName(), Statement::MakeCopy::No);
     stmt.BindText(3, propsStr, Statement::MakeCopy::No);
@@ -178,7 +178,7 @@ DgnAuthorityPtr DgnAuthorities::LoadAuthority(DgnAuthorityId id, DgnDbStatus* ou
         }
 
     CachedStatementPtr stmt;
-    m_dgndb.GetCachedStatement(stmt, "SELECT Name,Props,ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_Authority) " WHERE Id=?");
+    m_dgndb.GetCachedStatement(stmt, "SELECT Name,Properties,ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_Authority) " WHERE Id=?");
     stmt->BindId(1, id);
 
     if (BE_SQLITE_ROW != stmt->Step())
@@ -393,7 +393,7 @@ DbResult DgnDb::CreateAuthorities()
     Json::Value authorityProps(Json::objectValue);
     Utf8String authorityJson; // no base properties...
 
-    Statement statement(*this, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Authority) " (Id,Name,ECClassId,Props) VALUES (?,?,?,?)");
+    Statement statement(*this, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Authority) " (Id,Name,ECClassId,Properties) VALUES (?,?,?,?)");
     statement.BindText(4, authorityJson, Statement::MakeCopy::No);
 
     SystemAuthority::Info infos[] =
