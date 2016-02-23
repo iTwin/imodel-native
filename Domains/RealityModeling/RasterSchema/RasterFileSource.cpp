@@ -35,21 +35,11 @@ RasterFileSource::RasterFileSource(Utf8StringCR resolvedName)
 
     Point2d sizePixels;
     m_rasterFilePtr->GetSize(&sizePixels);
-
-    // Tile size. We always use 256.
-    m_tileSize.x = 256;
-    m_tileSize.y = 256;
-    
-    // Allocate packet. We always use same pixel type.
-    HFCPtr<HRPPixelType> pixelTypePtr = new HRPPixelTypeV32R8G8B8A8();
-    size_t bufferSize;
-    Byte* pBuffer = CreateWorkingBuffer(bufferSize, *pixelTypePtr, m_tileSize.x, m_tileSize.y);
-    m_packetPtr = new HCDPacket(pBuffer, bufferSize, bufferSize);
-
+   
     // Raster width and height come from the raster file.
     // And resolution definition should come from the raster resolution descriptor.
     bvector<Resolution> resolution;
-    RasterSource::GenerateResolution(resolution, sizePixels.x, sizePixels.y, m_tileSize.x, m_tileSize.y);
+    RasterSource::GenerateResolution(resolution, sizePixels.x, sizePixels.y, 256, 256);     // Tile size. We always use 256.
 
     // Get the raster transform.
     DMatrix4d geoTransform;
@@ -59,67 +49,71 @@ RasterFileSource::RasterFileSource(Utf8StringCR resolvedName)
     }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     6/2015
+// @bsimethod                                                   Mathieu.Marchand  2/2016
 //----------------------------------------------------------------------------------------
-Render::ImagePtr RasterFileSource::_QueryTile(TileId const& id, bool request)
+static HFCPtr<HRPPixelType> s_GetTileQueryPixelType(HRARaster const& raster, Render::Image::Format& format)
     {
-    //&&ep need to take the 'request' param into account... When we will have a copyfrom thread.
+    BeAssertOnce(raster.GetPixelType()->CountIndexBits() != 1);       //TODO binary support.
 
-    if (m_rasterFilePtr == nullptr)
-        // RasterFile could not be initialized
-        return nullptr;
+    // if source holds alpha use Rgba
+    if (raster.GetPixelType()->GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0) != HRPChannelType::FREE)
+        {
+        format = Render::Image::Format::Rgba;
+        return new HRPPixelTypeV32R8G8B8A8();
+        }
 
-    // Use integer type to avoid floating-points precision errors during origin multiplication.
-    uint32_t scale = 1 << id.resolution;
-    HGF2DStretch stretch(HGF2DDisplacement((id.x * m_tileSize.x) * scale, (id.y * m_tileSize.y) * scale), scale, scale);
+    if (raster.GetPixelType()->IsCompatibleWith(HRPPixelTypeV8Gray8::CLASS_ID))
+        {
+        format = Render::Image::Format::Gray;
+        return new HRPPixelTypeV8Gray8();
+        }
 
-    std::unique_lock<std::mutex> __ippLock(m_imageppLock);
-
-    HFCPtr<HRABitmap> pDisplayBitmap;
-    uint32_t effectiveTileSizeX = GetTileSizeX(id);
-    uint32_t effectiveTileSizeY = GetTileSizeY(id);
-    pDisplayBitmap = HRABitmap::Create(effectiveTileSizeX, effectiveTileSizeY, &stretch, m_rasterFilePtr->GetPhysicalCoordSys(), new HRPPixelTypeV32R8G8B8A8());
-
-    HRACopyFromOptions opts;
-    opts.SetResamplingMode(HGSResampling::BILINEAR);
-
-    // Buffer size of m_packetPtr is supposed to be large enough 
-    BeAssert((((m_tileSize.x * pDisplayBitmap->GetPixelType()->CountPixelRawDataBits()) + 7) / 8) * m_tileSize.y <= m_packetPtr->GetBufferSize());
-
-    // The packet is kept as a member, which avoids to allocate a buffer each time we pass here.
-    pDisplayBitmap->SetPacket(m_packetPtr);
-
-	pDisplayBitmap->CopyFrom(*m_rasterFilePtr->GetRasterP(), opts); //&&MM &&ep validate status and init we something red?  We have a Kodak somewhere in HRFWMS or virtual earth.
-    Byte* pbSrcRow = pDisplayBitmap->GetPacket()->GetBufferAddress();
-
-    //bool alphaBlend = m_rasterFilePtr->GetRasterP()->GetPixelType()->GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0) != HRPChannelType::FREE;
-
-   // DisplayTile::PixelType pixelType = DisplayTile::PixelType::Rgba;
-
-    //&&MM review buffer usage + tile alphaBlend
-
-    __ippLock.unlock();
-
-    Render::ImagePtr pImage = new Render::Image(effectiveTileSizeX, effectiveTileSizeY, Render::Image::Format::Rgba, pbSrcRow, (uint32_t)pDisplayBitmap->GetPacket()->GetDataSize());
-
-    //DisplayTilePtr pDisplayTile = DisplayTile::Create(effectiveTileSizeX, effectiveTileSizeY, pixelType, alphaBlend, pbSrcRow, 0/*notPadded*/, context);
-    return pImage;
+    format = Render::Image::Format::Rgb;
+    return new HRPPixelTypeV24R8G8B8();
     }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     7/2015
+// @bsimethod                                                       Eric.Paquet     6/2015
 //----------------------------------------------------------------------------------------
-Byte* RasterFileSource::CreateWorkingBuffer(size_t& bufferSize, const HRPPixelType& pi_rPixelType, uint32_t pi_Width, uint32_t pi_Height) const
-{
-	size_t BytesPerLine;
+Render::ImagePtr RasterFileSource::_QueryTile(TileId const& id, bool& alphaBlend)
+    {
+    // Imagepp CopyFrom is not thread safe. sequentialize the queries.
+    static std::mutex s_ippMutex;
+    std::unique_lock<std::mutex> __ippLock(s_ippMutex);
 
-	// In 1 bit RLE, allocate worst case
-	if (pi_rPixelType.IsCompatibleWith(HRPPixelTypeI1R8G8B8A8RLE::CLASS_ID) ||
-		pi_rPixelType.IsCompatibleWith(HRPPixelTypeI1R8G8B8RLE::CLASS_ID))
-		BytesPerLine = (pi_Width * 2 + 2) * sizeof(unsigned short);
-	else
-		BytesPerLine = ((pi_Width * pi_rPixelType.CountPixelRawDataBits()) + 7) / 8;
+    // Must be done within lock because GetRasterP might load the raster.
+    if (m_rasterFilePtr == nullptr || m_rasterFilePtr->GetRasterP() == nullptr)
+        return nullptr;            
 
-    bufferSize = BytesPerLine * pi_Height;
-	return new Byte[bufferSize];
-}
+    Render::Image::Format imageFormat = Render::Image::Format::Rgb;
+    HFCPtr<HRPPixelType> pPixelType = s_GetTileQueryPixelType(*m_rasterFilePtr->GetRasterP(), imageFormat);
+
+    uint32_t effectiveTileSizeX = GetTileSizeX(id);
+    uint32_t effectiveTileSizeY = GetTileSizeY(id);
+
+    Resolution const& resInfo = GetResolution(0);
+
+    // Use integer type to avoid floating-points precision errors during origin multiplication.
+    uint32_t scale = 1 << id.resolution;
+    HGF2DStretch stretch(HGF2DDisplacement((id.x * resInfo.GetTileSizeX()) * scale, (id.y * resInfo.GetTileSizeY()) * scale), scale, scale);
+
+    HFCPtr<HRABitmap> pTileBitmap;
+    pTileBitmap = HRABitmap::Create(effectiveTileSizeX, effectiveTileSizeY, &stretch, m_rasterFilePtr->GetPhysicalCoordSys(), pPixelType);
+
+    ByteStream dataStream((uint32_t)(effectiveTileSizeY*pTileBitmap->ComputeBytesPerWidth()));    
+
+    HFCPtr<HCDPacket> pPacket(new HCDPacket(dataStream.GetDataP(), dataStream.GetSize(), dataStream.GetSize()));
+    pTileBitmap->SetPacket(pPacket);
+
+    HRACopyFromOptions opts;
+    opts.SetResamplingMode(HGSResampling::BILINEAR);
+    if (ImagePPStatus::IMAGEPP_STATUS_Success != pTileBitmap->CopyFrom(*m_rasterFilePtr->GetRasterP(), opts))
+        return nullptr;
+        
+    __ippLock.unlock(); // done with imagepp...
+
+    alphaBlend = (Render::Image::Format::Rgba == imageFormat || Render::Image::Format::Bgra == imageFormat);
+    Render::ImagePtr pImage = new Render::Image(effectiveTileSizeX, effectiveTileSizeY, imageFormat, std::move(dataStream));
+
+    return pImage;
+    }

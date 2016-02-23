@@ -145,9 +145,9 @@ struct RasterSource : RefCountedBase
             uint32_t m_tileSizeY;
         };
 
-    //! Query for tile data. Null might be returned if not yet available.  &&MM we need better error handling. (server error, time out, pending...)
+    //! Query for tile data. Null might be returned if an error occurs.
     //! Border tiles are assumed to be clipped to the raster physical extent.
-    Dgn::Render::ImagePtr QueryTile(TileId const& id, bool request);
+    Dgn::Render::ImagePtr QueryTile(TileId const& id, bool& alphaBlend);
 
     uint32_t GetResolutionCount() const {return (uint32_t)m_resolution.size();}
 
@@ -165,7 +165,7 @@ struct RasterSource : RefCountedBase
     uint32_t GetTileSizeX(TileId const& id) const {return MIN(GetResolution(id.resolution).GetTileSizeX(), GetResolution(id.resolution).GetWidth() - GetResolution(id.resolution).GetTileSizeX()*id.x);}
     uint32_t GetTileSizeY(TileId const& id) const {return MIN(GetResolution(id.resolution).GetTileSizeY(), GetResolution(id.resolution).GetHeight() - GetResolution(id.resolution).GetTileSizeY()*id.y);}
     
-    //! Compute tiles corners in Cartesian with a lower-left origin. //&&MM review doc of corners.
+    //! Compute tiles corners in Cartesian with a lower-left origin.
     //! [0] [1]
     //! [2] [3]
     void ComputeTileCorners(DPoint3dP pCorners, TileId const& id) const;
@@ -182,7 +182,7 @@ protected:
 
     void SetGcsP(GeoCoordinates::BaseGCSP pNewGcs) {m_pGcs = pNewGcs/*Hold a ref*/;} 
 
-    virtual Dgn::Render::ImagePtr _QueryTile(TileId const& id, bool request) = 0;
+    virtual Dgn::Render::ImagePtr _QueryTile(TileId const& id, bool& alphaBlend) = 0;
 
     //! default empty constructor. Must call Initialize afterward.
     RasterSource(); 
