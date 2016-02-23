@@ -546,7 +546,7 @@ RevisionStatus RevisionManager::MergeRevisions(bvector<DgnRevisionPtr> const& me
         return RevisionStatus::TransactionHasUnsavedChanges;
         }
 
-    if (txnMgr.IsInDynamics())
+    if (txnMgr.InDynamicTxn())
         {
         BeAssert(false && "Cannot merge revisions if in the middle of a dynamic transaction");
         return RevisionStatus::InDynamicTransaction;
@@ -674,7 +674,7 @@ DgnRevisionPtr RevisionManager::StartCreateRevision(RevisionStatus* outStatus /*
         return nullptr;
         }
 
-    if (txnMgr.IsInDynamics())
+    if (txnMgr.InDynamicTxn())
         {
         BeAssert(false && "Cannot create a revision if in the middle of a dynamic transaction");
         status = RevisionStatus::InDynamicTransaction;
