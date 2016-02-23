@@ -518,7 +518,7 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
  * Merge changes from a changeStream that originated in an external repository
  * @bsimethod                                Ramanujam.Raman                    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TxnManager::MergeChanges(ChangeStream& changeStream)
+RevisionStatus TxnManager::MergeRevisionChanges(ChangeStream& changeStream, Utf8StringCR newParentRevisionId)
     {
     BeAssert(!InDynamicTxn());
 
@@ -527,16 +527,18 @@ BentleyStatus TxnManager::MergeChanges(ChangeStream& changeStream)
     if (result != BE_SQLITE_OK)
         {
         BeAssert(false);
-        return ERROR;
+        return RevisionStatus::MergeError;
         }
     m_dgndb.Txns().EnableTracking(true);
-        
+
     OnBeginValidate();
 
     Changes changes(changeStream);
     AddChanges(changes);
 
-    BentleyStatus status = PropagateChanges();   // Propagate to generate indirect changes
+    RevisionStatus status = RevisionStatus::Success;
+    if (SUCCESS != PropagateChanges())
+        status = RevisionStatus::MergePropagationError;
 
     UndoChangeSet indirectChanges;
     if (HasChanges())
@@ -544,24 +546,71 @@ BentleyStatus TxnManager::MergeChanges(ChangeStream& changeStream)
         indirectChanges.FromChangeTrack(*this);
         Restart();
 
-        if (SUCCESS == status)
+        if (status == RevisionStatus::Success)
             {
-            // At this point, all of the changes to all tables have been applied. Tell TxnMonitors
-            T_HOST.GetTxnAdmin()._OnCommit(*this);
+            T_HOST.GetTxnAdmin()._OnCommit(*this); // At this point, all of the changes to all tables have been applied. Tell TxnMonitors
 
             Utf8String mergeComment = DgnCoreL10N::GetString(DgnCoreL10N::REVISION_Merge());
-
             DbResult result = SaveCurrentChange(indirectChanges, mergeComment.c_str());
             if (BE_SQLITE_DONE != result)
-                status = ERROR;
+                {
+                BeAssert(false);
+                status = RevisionStatus::SQLiteError;
+                }
+            }
+        }
+
+    if (status == RevisionStatus::Success)
+        {
+        status = m_dgndb.Revisions().SetParentRevisionId(newParentRevisionId);
+
+        if (status == RevisionStatus::Success)
+            {
+            DbResult result = m_dgndb.SaveChanges(""); 
+            // Note: All that the above operation does is to COMMIT the current Txn and BEGIN a new one. 
+            // The user should NOT be able to revert the revision id by a call to AbandonChanges() anymore, since
+            // the merged changes are lost after this routine and cannot be used for change propagation anymore. 
+            if (BE_SQLITE_DONE != result)
+                {
+                BeAssert(false);
+                status = RevisionStatus::SQLiteError;
+                }
+            }
+        }
+        
+    if (status != RevisionStatus::Success)
+        {
+        // Ensure the entire transaction is rolled back to before the merge, and the txn tables are notified to
+        // appropriately revert their in-memory state.
+        LOG.errorv("Could not propagate changes after merge due to validation errors.");
+
+        OnEndValidate();
+
+        // Note: CancelChanges() requires an iterator over the inverse of the changes notified through AddChanges(). 
+        // The change stream can be inverted only by holding the inverse either in memory, or as a new file on disk. 
+        // Since this is an unlikely error condition, we just hold the changes in memory and not worry about the 
+        // memory overhead. We can always revisit if this proves to be too expensive. 
+        ChangeGroup undoChangeGroup;
+        changeStream.ToChangeGroup(undoChangeGroup);
+        if (indirectChanges.IsValid())
+            {
+            DbResult locResult = undoChangeGroup.AddChanges(indirectChanges.GetSize(), indirectChanges.GetData());
+            BeAssert(locResult == BE_SQLITE_OK);
+            UNUSED_VARIABLE(locResult);
             }
 
-        if (SUCCESS != status)
-            CancelChanges(indirectChanges);
+        UndoChangeSet undoChangeSet;
+        undoChangeSet.FromChangeGroup(undoChangeGroup);
+        ChangeTracker::OnCommitStatus cancelStatus = CancelChanges(undoChangeSet); // roll back entire txn
+        BeAssert(cancelStatus == ChangeTracker::OnCommitStatus::Completed);
+        UNUSED_VARIABLE(cancelStatus);
+
+        return status;
         }
-    
+
     OnEndValidate();
-    return status;
+
+    return RevisionStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

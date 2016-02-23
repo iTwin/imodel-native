@@ -19,6 +19,8 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 struct DgnRevision : RefCountedBase
 {
+    friend struct TxnManager;
+
     //! Options for additional information to include in a DgnRevision
     enum class Include
     {
