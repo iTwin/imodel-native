@@ -38,7 +38,7 @@ void ConnectSignInManagerTests::StubUrlProviderEnvironment(UrlProvider::Environm
 TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderProduction_SetsValidateCertificateForAllRequests)
     {
     StubUrlProviderEnvironment(UrlProvider::Environment::Release);
-    auto authHandler = ConnectSignInManager().GetAuthenticationHandler("https://foo.com", GetHandlerPtr());
+    auto authHandler = ConnectSignInManager::Create()->GetAuthenticationHandler("https://foo.com", GetHandlerPtr());
 
     GetHandler().ExpectOneRequest().ForFirstRequest([=] (HttpRequestCR request)
         {
@@ -52,7 +52,7 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderProduction
 TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderQa_DoesNotSetSetValidateCertificateForRequests)
     {
     StubUrlProviderEnvironment(UrlProvider::Environment::Qa);
-    auto authHandler = ConnectSignInManager().GetAuthenticationHandler("https://foo.com", GetHandlerPtr());
+    auto authHandler = ConnectSignInManager::Create()->GetAuthenticationHandler("https://foo.com", GetHandlerPtr());
 
     GetHandler().ExpectOneRequest().ForFirstRequest([=] (HttpRequestCR request)
         {
@@ -66,7 +66,7 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderQa_DoesNot
 TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderDev_DoesNotSetSetValidateCertificateForRequests)
     {
     StubUrlProviderEnvironment(UrlProvider::Environment::Dev);
-     auto authHandler = ConnectSignInManager().GetAuthenticationHandler("https://foo.com", GetHandlerPtr());
+    auto authHandler = ConnectSignInManager::Create()->GetAuthenticationHandler("https://foo.com", GetHandlerPtr());
 
     GetHandler().ExpectOneRequest().ForFirstRequest([=] (HttpRequestCR request)
         {
@@ -80,9 +80,9 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderDev_DoesNo
 TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TwoRequestsSentUsingDifferentAuthHandlersWithSameServer_TokenReusedForSecondRequest)
     {
     ConnectAuthenticationPersistence::GetShared()->SetToken(StubSamlToken());
-    ConnectSignInManager manager;
-    auto authHandler1 = manager.GetAuthenticationHandler("https://foo.com", GetHandlerPtr());
-    auto authHandler2 = manager.GetAuthenticationHandler("https://foo.com", GetHandlerPtr());
+    auto manager = ConnectSignInManager::Create();
+    auto authHandler1 = manager->GetAuthenticationHandler("https://foo.com", GetHandlerPtr());
+    auto authHandler2 = manager->GetAuthenticationHandler("https://foo.com", GetHandlerPtr());
 
     int tokenRequestCount = 0;
     GetHandler().ForAnyRequest([&] (HttpRequestCR request)
@@ -103,7 +103,7 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TwoRequestsSentUsingD
 TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent)
     {
     ConnectAuthenticationPersistence::GetShared()->SetToken(StubSamlToken());
-    auto authHandler = ConnectSignInManager().GetAuthenticationHandler("https://foo.com", GetHandlerPtr());
+    auto authHandler = ConnectSignInManager::Create()->GetAuthenticationHandler("https://foo.com", GetHandlerPtr());
 
     AsyncTestCheckpoint checkpoint;
 
