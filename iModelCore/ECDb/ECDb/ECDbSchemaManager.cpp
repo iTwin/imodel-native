@@ -207,14 +207,12 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext const&
                 return ERROR;
                 }
 
-            if (schema->GetVersionMajor() > existingSchemaKey.GetVersionMajor() ||
-                (schema->GetVersionMajor() == existingSchemaKey.GetVersionMajor() &&
-                 schema->GetVersionMinor() > existingSchemaKey.GetVersionMinor()))
+            if (schema->GetSchemaKey().CompareByVersion(existingSchemaKey) > 0)
                 {
                 m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
                                                                 "Failed to import the ECSchema '%s'. The ECSchema already exists in the ECDb file with an older version '%s'. ECDb does not support to update ECSchemas on import.",
                                                                 schema->GetFullSchemaName().c_str(),
-                                                                ECSchema::FormatSchemaVersion(existingSchemaKey.GetVersionMajor(), existingSchemaKey.GetVersionMinor()).c_str());
+                                                                ECSchema::FormatSchemaVersion(existingSchemaKey.GetVersionMajor(), existingSchemaKey.GetVersionWrite(), existingSchemaKey.GetVersionMinor()).c_str());
                 return ERROR;
                 }
             }
@@ -421,10 +419,9 @@ ECDbCR ECDbSchemaManager::GetECDb () const { return m_ecdb; }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      01/2013
 //---------------------------------------------------------------------------------------
-ECSchemaPtr ECDbSchemaManager::_LocateSchema (SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext)
+ECSchemaPtr ECDbSchemaManager::_LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext)
     {
-    Utf8String schemaName(key.m_schemaName);
-    const ECSchemaId schemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(GetECDb (), schemaName.c_str()); //WIP_FNV: could be more efficient if it first looked through those already cached in memory...
+    const ECSchemaId schemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(GetECDb(), key.GetName().c_str());
     if (0 == schemaId)
         return nullptr;
 
@@ -432,10 +429,10 @@ ECSchemaPtr ECDbSchemaManager::_LocateSchema (SchemaKeyR key, SchemaMatchType ma
     if (schema == nullptr)
         return nullptr;
 
-    if (schema->GetSchemaKey ().Matches (key, matchType))
+    if (schema->GetSchemaKey().Matches(key, matchType))
         {
         ECSchemaP schemaP = const_cast<ECSchemaP> (schema);
-        schemaContext.GetCache ().AddSchema (*schemaP);
+        schemaContext.GetCache().AddSchema(*schemaP);
         return schemaP;
         }
 
