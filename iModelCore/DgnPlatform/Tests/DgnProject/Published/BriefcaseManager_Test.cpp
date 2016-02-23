@@ -1079,9 +1079,8 @@ struct LocksManagerTest : RepositoryManagerTest
     DgnElementPtr Create3dElement(DgnModelR model)
         {
         DgnDbR db = model.GetDgnDb();
-        DgnClassId classId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
         DgnCategoryId catId = DgnCategory::QueryHighestCategoryId(db);
-        return GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(db, model.GetModelId(), classId, catId, Placement3d()));
+        return GenericPhysicalObject::Create(*model.ToSpatialModelP(), catId);
         }
 
     DgnElementPtr Create2dElement(DgnModelR model)
