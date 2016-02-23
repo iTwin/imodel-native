@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRABitmap.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -95,7 +95,7 @@ public:
 
     uint32_t GetBitsAlignment() const;
 
-    size_t ComputeBytesPerWidth() const;
+    IMAGEPP_EXPORT size_t ComputeBytesPerWidth() const;
 
     virtual HRABitmap*   _AsHRABitmapP() override;
 

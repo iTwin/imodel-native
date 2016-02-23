@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/h/ImagePPErrors.r.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -59,7 +59,7 @@ enum ImageErrorCategories
     COPYFROM_ERROR_BASE         = 0x12000,
     };
 
-enum ImagePPStatus
+enum ImagePPStatus      //&&MM should be enum class.
     {
     IMAGEPP_STATUS_Success              = SUCCESS,
     IMAGEPP_STATUS_UnknownError         = ERROR,

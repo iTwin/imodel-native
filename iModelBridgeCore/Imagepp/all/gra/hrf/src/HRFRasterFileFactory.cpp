@@ -204,8 +204,9 @@ HFCPtr<HRFRasterFile> HRFRasterFileFactory::OpenFileAs(const HFCPtr<HFCURL>&    
 // Search with the URL, AccessMode and offset the appropriate creator
 //-----------------------------------------------------------------------------
 const HRFRasterFileCreator* HRFRasterFileFactory::FindCreator(const HFCPtr<HFCURL>& pi_rpURL,
-                                                              HFCAccessMode            pi_AccessMode,
-                                                              uint64_t             pi_Offset) const
+                                                              HFCAccessMode         pi_AccessMode,
+                                                              uint64_t              pi_Offset, 
+                                                              bool                  pi_ScanCreatorIfNotFound) const
     {
     HPRECONDITION(pi_rpURL != 0);
     HRFRasterFileCreator* pCreator = 0;
@@ -251,7 +252,7 @@ const HRFRasterFileCreator* HRFRasterFileFactory::FindCreator(const HFCPtr<HFCUR
             CreatorIterator++;
         }
 
-    if (pCreator == 0 && !pi_AccessMode.m_HasCreateAccess && m_FactoryScanOnOpen)
+    if (pCreator == 0 && !pi_AccessMode.m_HasCreateAccess && pi_ScanCreatorIfNotFound)
         {
         // If the research by registry failed
         // We try to find with the is kind of file
@@ -450,8 +451,7 @@ HRFRasterFileFactory::GetCreatorsMap(HFCAccessMode pi_AccessMode) const
 // Protected
 //-----------------------------------------------------------------------------
 HRFRasterFileFactory::HRFRasterFileFactory ()
-    : m_FactoryScanOnOpen(true),
-      m_pPWHandler(0)
+    : m_pPWHandler(0)
     {
     }
 
@@ -519,16 +519,6 @@ void HRFRasterFileFactory::RegisterPWHandler(IHRFPWFileHandler* pi_pHandler)
 IHRFPWFileHandler* HRFRasterFileFactory::GetPWHandler() const
     {
     return m_pPWHandler;
-    }
-
-void HRFRasterFileFactory::SetFactoryScanOnOpen(bool pi_FactoryScanOnOpen)
-    {
-    m_FactoryScanOnOpen = pi_FactoryScanOnOpen;
-    }
-
-bool HRFRasterFileFactory::GetFactoryScanOnOpen() const
-    {
-    return m_FactoryScanOnOpen;
     }
 
 //-----------------------------------------------------------------------------

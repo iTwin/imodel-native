@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFRasterFileFactory.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFRasterFileFactory
@@ -68,13 +68,10 @@ public:
     IMAGEPP_EXPORT void                   SetRasterDllDirectory(HCLASS_ID         pi_ClassID,
                                                   const WString&    pi_rDir);
 
-    // Search with the URL, AccessMode and offset the appropriate creator
-    IMAGEPP_EXPORT void                          SetFactoryScanOnOpen(bool pi_FactoryScanOnOpen);
-    IMAGEPP_EXPORT bool                         GetFactoryScanOnOpen() const;
-
-    IMAGEPP_EXPORT const HRFRasterFileCreator*   FindCreator(const HFCPtr<HFCURL>& pi_rpURL,
-                                                     HFCAccessMode            pi_AccessMode = HFC_READ_WRITE,
-                                                     uint64_t             pi_Offset = 0) const;
+    IMAGEPP_EXPORT const HRFRasterFileCreator*   FindCreator(const HFCPtr<HFCURL>&  pi_rpURL,
+                                                             HFCAccessMode          pi_AccessMode = HFC_READ_WRITE,
+                                                             uint64_t               pi_Offset = 0,
+                                                             bool                   pi_ScanCreatorIfNotFound = false) const;
 
     // Obtains the creators list - logic const function
     // HFC_READ_ONLY  : obtains the formats that can read data
@@ -115,8 +112,6 @@ private:
     CreatorsMap m_ReadCreatorsMap;
     CreatorsMap m_WriteCreatorsMap;
     CreatorsMap m_CreateCreatorsMap;
-
-    bool       m_FactoryScanOnOpen;
 
     typedef map<HCLASS_ID, WString> DllDirMap;
     DllDirMap   m_DllDir;
