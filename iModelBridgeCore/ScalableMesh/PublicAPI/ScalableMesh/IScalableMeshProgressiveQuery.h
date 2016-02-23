@@ -66,6 +66,8 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
 
         virtual BentleyStatus _ClearCaching(const bvector<DRange2d>* clearRanges, const IScalableMeshPtr& scalableMeshPtr) = 0;
 
+        virtual BentleyStatus _ClearCaching(const bvector<uint64_t>& clipIds, const IScalableMeshPtr& scalableMeshPtr) = 0;
+
         virtual BentleyStatus _StartQuery(int                                                                      queryId, 
                                           IScalableMeshViewDependentMeshQueryParamsPtr                             queryParam, 
                                           const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes, 
@@ -88,6 +90,8 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
     public:
 
         BENTLEYSTM_EXPORT BentleyStatus ClearCaching(const bvector<DRange2d>* clearRanges, const IScalableMeshPtr& scalableMeshPtr);
+
+        BENTLEYSTM_EXPORT BentleyStatus ClearCaching(const bvector<uint64_t>& clipIds, const IScalableMeshPtr& scalableMeshPtr);
                                 
         BENTLEYSTM_EXPORT BentleyStatus StartQuery(int                                                                      queryId, 
                                                    IScalableMeshViewDependentMeshQueryParamsPtr                             queryParam, 

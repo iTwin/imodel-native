@@ -89,6 +89,11 @@ BentleyStatus IScalableMeshProgressiveQueryEngine::ClearCaching(const bvector<DR
     return _ClearCaching(clearRanges, scalableMeshPtr);
     }
 
+BentleyStatus IScalableMeshProgressiveQueryEngine::ClearCaching(const bvector<uint64_t>& clipIds, const IScalableMeshPtr& scalableMeshPtr)
+    {
+    return _ClearCaching(clipIds, scalableMeshPtr);
+    }
+
 BentleyStatus IScalableMeshProgressiveQueryEngine::StartQuery(int                                                                      queryId,
                                                               IScalableMeshViewDependentMeshQueryParamsPtr                             queryParam,
                                                               const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes,
@@ -241,6 +246,51 @@ public:
         m_nodeListMutex.unlock();
         }
 
+    void ClearCachedNodes(const bvector<uint64_t>& clipIds, IScalableMeshPtr& scalableMeshPtr)
+        {
+        m_nodeListMutex.lock();
+
+        auto cachedNodeIter(m_cachedNodes.begin());
+        auto cachedNodeIterEnd(m_cachedNodes.end());
+
+        //NEEDS_WORK_SM : Maybe should try making it parallel?        
+        while (cachedNodeIter != cachedNodeIterEnd)
+            {
+            if (cachedNodeIter->m_scalableMeshPtr == scalableMeshPtr)
+                {
+                if (clipIds.size() > 0)
+                    {
+
+                    bool isCleared = false;
+
+                    for (auto& id : clipIds)
+                        {
+                        if (cachedNodeIter->m_displayNodePtr->HasClip(id))
+                            {
+                            cachedNodeIter = m_cachedNodes.erase(cachedNodeIter);
+                            isCleared = true;
+                            break;
+                            }
+                        }
+
+                    if (!isCleared)
+                        cachedNodeIter++;
+
+                    }
+                else
+                    {
+                    cachedNodeIter = m_cachedNodes.erase(cachedNodeIter);
+                    }
+                }
+            else
+                {
+                cachedNodeIter++;
+                }
+            }
+
+        m_nodeListMutex.unlock();
+        }
+
         void GetNodeListLock()
             {
             m_nodeListMutex.lock();
@@ -293,7 +343,7 @@ public:
                 ScalableMeshCachedDisplayNode<POINT>* meshNode(ScalableMeshCachedDisplayNode<POINT>::Create(node));               
                 meshNode->ApplyAllExistingClips();
                 
-                meshNode->LoadMeshes(false, clipVisibilities, s_displayCacheManagerPtr, loadTexture);
+                meshNode->LoadMeshes(false, clipVisibilities, s_displayCacheManagerPtr, loadTexture, true);
                 foundNodePtr = meshNode;                
                 AddCachedNode(s_scalableMeshPtr, foundNodePtr);
                 }   
@@ -1357,6 +1407,13 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
 BentleyStatus ScalableMeshProgressiveQueryEngine::_ClearCaching(const bvector<DRange2d>* clearRanges, const IScalableMeshPtr& scalableMeshPtr)
     {
     CachedDisplayNodeManager::GetManager().ClearCachedNodes(clearRanges, s_scalableMeshPtr);
+
+    return SUCCESS;
+    }
+
+BentleyStatus ScalableMeshProgressiveQueryEngine::_ClearCaching(const bvector<uint64_t>& clipIds, const IScalableMeshPtr& scalableMeshPtr)
+    {
+    CachedDisplayNodeManager::GetManager().ClearCachedNodes(clipIds, s_scalableMeshPtr);
 
     return SUCCESS;
     }

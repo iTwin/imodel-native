@@ -822,6 +822,11 @@ void SMSQLiteFile::StoreClipPolygon(int64_t& clipID, const bvector<uint8_t>& cli
     {
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
+    CachedStatementPtr stmt3;
+    m_database->GetCachedStatement(stmt3, "SELECT COUNT(PolygonId) FROM SMClipDefinitions WHERE PolygonId=?");
+    stmt3->BindInt64(1, clipID);
+    stmt3->Step();
+    size_t nRows = stmt3->GetValueInt64(0);
     if (clipID == SQLiteNodeHeader::NO_NODEID)
         {
         Savepoint insertTransaction(*m_database, "insert");
@@ -835,6 +840,19 @@ void SMSQLiteFile::StoreClipPolygon(int64_t& clipID, const bvector<uint8_t>& cli
         m_database->GetCachedStatement(stmt2, "SELECT last_insert_rowid()");
         status = stmt2->Step();
         clipID = stmt2->GetValueInt64(0);
+        m_database->SaveChanges();
+        }
+    else if (nRows == 0)
+        {
+        Savepoint insertTransaction(*m_database, "insert");
+        m_database->GetCachedStatement(stmt, "INSERT INTO SMClipDefinitions (PolygonId, PolygonData,Size) VALUES(?, ?,?)");
+        stmt->BindInt64(1, clipID);
+        stmt->BindBlob(2, &clipData[0], (int)clipData.size(), MAKE_COPY_NO);
+        stmt->BindInt64(3, uncompressedSize);
+        DbResult status = stmt->Step();
+        assert(status == BE_SQLITE_DONE);
+        stmt->ClearBindings();
+        m_database->SaveChanges();
         }
     else
         {
@@ -845,6 +863,7 @@ void SMSQLiteFile::StoreClipPolygon(int64_t& clipID, const bvector<uint8_t>& cli
         DbResult status = stmt->Step();
         assert(status == BE_SQLITE_DONE);
         stmt->ClearBindings();
+        m_database->SaveChanges();
         }
     }
 

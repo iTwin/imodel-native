@@ -55,6 +55,9 @@ CCompOpts + $(PublicApiIncludes)
 
 #disable warning: "'argument': conversion from 'int64_t' to 'uint32_t', possible loss of data". NEEDS_WORK_SM: switch all node ID types to uint64_t once and for all, then change this.
 CCompOpts + -wd4244
+
+#release builds: error in boost (named_function_params.hpp)
+CCompOpts + -wd4172
 #----------------------------------------------------------------------
 #   Build precompiled header
 #----------------------------------------------------------------------

@@ -303,6 +303,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         return dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipRegistry();
         }
 
+    bool HasClip(uint64_t clipId);
+
     //If necessary, update clips so as to merge them with other clips on the node.
     void  ComputeMergedClips();
     //Adds a new set of differences matching the desired clip (synchronously).

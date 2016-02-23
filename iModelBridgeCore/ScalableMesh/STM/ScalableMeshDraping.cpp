@@ -3,7 +3,7 @@
 #include "ScalableMeshDraping.h"
 #include <queue>
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
-bool s_civilDraping = false;
+bool s_civilDraping = true;
 struct SMDrapedLine;
 struct SMDrapedPoint : RefCounted<IDTMDrapedLinePoint>
     {
@@ -525,8 +525,45 @@ bool MeshTraversalQueue::SetStartPoint(DPoint3d pt)
 
 bool ScalableMeshDraping::_ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint)
     {
-    assert(!"notImplemented");
-    return false;
+    DPoint3d startPt = testPoint;
+    DPoint3d endPt;
+    DPoint3d pt;
+    DMatrix4d invW2vMap;
+
+
+    invW2vMap.QrInverseOf(w2vMap);
+    w2vMap.MultiplyAndRenormalize(&pt, &testPoint, 1);
+    pt.z -= 100;
+    invW2vMap.MultiplyAndRenormalize(&endPt, &pt, 1);
+    if (startPt.DistanceSquaredXY(endPt) < 1e-4)
+        {
+        double elevation = 0.0;
+        if (DTM_SUCCESS != DrapePoint(&elevation, NULL, NULL, NULL, NULL, startPt))
+            {
+            return false;
+            }
+        pointOnDTM = startPt;
+        pointOnDTM.z = elevation;
+        return true;
+        }
+    else
+        {
+        DVec3d vecDirection;
+        vecDirection.DifferenceOf(endPt, startPt);
+        IScalableMeshNodeQueryParamsPtr params = IScalableMeshNodeQueryParams::CreateParams();
+        IScalableMeshNodeRayQueryPtr query = m_scmPtr->GetNodeQueryInterface();
+        bvector<IScalableMeshNodePtr> nodes;
+        params->SetDirection(vecDirection);
+        if (query->Query(nodes, &startPt, NULL, 0, params) != SUCCESS)
+            return false;
+        bvector<bool> clips;
+        for (auto& node : nodes)
+            {
+            BcDTMPtr dtmP = node->GetBcDTM();
+            if (dtmP->GetDTMDraping()->ProjectPoint(pointOnDTM,w2vMap,testPoint)) return true;
+            }
+        return false;
+        }
     }
 
 bool ScalableMeshDraping::_DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector)
@@ -542,8 +579,7 @@ bool ScalableMeshDraping::_DrapeAlongVector(DPoint3d* endPt, double *slope, doub
     bvector<bool> clips;
     for (auto& node : nodes)
         {
-        BcDTMPtr dtmP;
-        node->GetMesh(false, clips)->GetAsBcDTM(dtmP);
+        BcDTMPtr dtmP = node->GetBcDTM();
         if (dtmP->GetDTMDraping()->DrapeAlongVector(endPt, slope, aspect, triangle, drapedType, point, directionOfVector, slopeOfVector)) return true;
         }
     return false;
@@ -556,10 +592,7 @@ DTMStatusInt ScalableMeshDraping::_DrapePoint(double* elevationP, double* slopeP
     IScalableMeshNodePtr node;
     if (query->Query(node, &point, NULL, 0, params) != SUCCESS)
         return DTM_ERROR;
-    bvector<bool> clips;
-    IScalableMeshMeshPtr meshP = node->GetMesh(false,clips);
-    BcDTMPtr bcdtm;
-    meshP->GetAsBcDTM(bcdtm);
+    BcDTMPtr bcdtm = node->GetBcDTM();
     return bcdtm->GetDTMDraping()->DrapePoint(elevationP, slopeP, aspectP, triangle, drapedTypeP, point);
     }
 

@@ -2564,6 +2564,18 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Refres
     }
 
 //=======================================================================================
+// @bsimethod                                                   Elenie.Godzaridis 02/16
+//=======================================================================================
+template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::HasClip(uint64_t clipId)
+    {
+    for (auto& diffSet : m_differenceSets)
+        {
+        if (diffSet.clientID == clipId && (!diffSet.upToDate || !diffSet.IsEmpty())) return true;
+        }
+    return false;
+    }
+
+//=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 10/15
 //=======================================================================================
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ComputeMergedClips()
@@ -2620,12 +2632,12 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
     bvector<uint64_t> clipIds;
     for (auto& diffSet : m_differenceSets)
         {
-        uint64_t upperId = (diffSet.clientID >> 32);
-        if (upperId == 0 && diffSet.clientID != 0)
+        //uint64_t upperId = (diffSet.clientID >> 32);
+        if (diffSet.clientID < ((uint64_t)-1) && diffSet.clientID != 0)
             {
             clipIds.push_back(diffSet.clientID);
             polys.push_back(bvector<DPoint3d>());
-            GetClipRegistry()->GetClip(diffSet.clientID - 1, polys.back());
+            GetClipRegistry()->GetClip(diffSet.clientID, polys.back());
             }
         }
     m_differenceSets.clear();
@@ -2729,7 +2741,8 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::AddCli
             d.clientID = clipId;
             d.firstIndex = (int32_t)size() + 1;
             m_differenceSets.push_back(d);
-            (m_differenceSets.begin() + (m_differenceSets.size() - 1))->upToDate = true;
+            m_nbClips++;
+            (m_differenceSets.begin() + (m_differenceSets.size() - 1))->upToDate = false;
             for (auto& other : m_differenceSets)
                 {
                 if (other.clientID == ((uint64_t)-1)) other.upToDate = false;
@@ -3491,6 +3504,7 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::SetClipSt
     {
     m_clipStore = clipStore;
     if (!m_clipStore->LoadMasterHeader(NULL, 1)) m_clipStore->StoreMasterHeader(NULL, 0);
+    if (m_pRootNode != nullptr)dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(m_pRootNode.GetPtr())->m_differenceSets.SetStore(m_clipStore);
     }
 
 
@@ -3502,4 +3516,5 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::SetClipRe
 template<class POINT, class EXTENT>  void SMMeshIndex<POINT, EXTENT>::SetClipPool(HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>>& clipPool)
     {
     m_clipPool = clipPool;
+    if (m_pRootNode != nullptr)dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(m_pRootNode.GetPtr())->m_differenceSets.SetPool(m_clipPool);
     }
