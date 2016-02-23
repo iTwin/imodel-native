@@ -32,13 +32,24 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 * @bsimethod                                           Vytautas.Barkauskas    12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConnectSignInManager::ConnectSignInManager()
-    {}
+    {
+    if (ConnectAuthenticationPersistence::GetShared()->GetToken() != nullptr)
+        m_persistence = ConnectAuthenticationPersistence::GetShared();
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                           Vytautas.Barkauskas    12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConnectSignInManager::~ConnectSignInManager()
     {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                           Vytautas.Barkauskas    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ConnectSignInManagerPtr ConnectSignInManager::Create()
+    {
+    return std::shared_ptr<ConnectSignInManager>(new ConnectSignInManager());
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                           Vytautas.Barkauskas    12/2015
@@ -105,9 +116,7 @@ void ConnectSignInManager::SignOut()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConnectSignInManager::IsSignedIn() const
     {
-    // TODO: allow session sign in to be valid
-    //return nullptr != m_persistence && m_persistence->GetToken() != nullptr;
-    return ConnectAuthenticationPersistence::GetShared()->GetToken() != nullptr;
+    return nullptr != m_persistence && m_persistence->GetToken() != nullptr;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -138,7 +147,7 @@ ConnectSignInManager::UserInfo ConnectSignInManager::GetUserInfo() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<AuthenticationHandler> ConnectSignInManager::GetAuthenticationHandler(Utf8StringCR serverUrl, IHttpHandlerPtr customHandler)
     {
-    auto provider = std::make_shared<ConnectTokenProvider>(m_persistence, IsTokenBasedAuthentication());
+    auto provider = std::make_shared<ConnectTokenProvider>(m_persistence, IsTokenBasedAuthentication(), m_tokenExpiredHandler);
     auto handler = UrlProvider::GetSecurityConfigurator(customHandler);
     return std::make_shared<ConnectAuthenticationHandler>(serverUrl, provider, handler);
     }
@@ -152,4 +161,12 @@ bool ConnectSignInManager::IsTokenBasedAuthentication()
         m_persistence != nullptr &&
         m_persistence->GetToken() != nullptr &&
         m_persistence->GetCredentials().IsEmpty();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                           Vytautas.Barkauskas    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectSignInManager::SetTokenExpiredHandler(std::function<void()> handler)
+    {
+    m_tokenExpiredHandler = handler;
     }

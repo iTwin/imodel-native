@@ -22,6 +22,7 @@ typedef AsyncResult<void, AsyncError> SignInResult;
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
+typedef std::shared_ptr<struct ConnectSignInManager> ConnectSignInManagerPtr;
 struct ConnectSignInManager : IConnectAuthenticationProvider
     {
     public:
@@ -35,12 +36,16 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
 
     private:
         std::shared_ptr<IConnectAuthenticationPersistence> m_persistence;
+        std::function<void()> m_tokenExpiredHandler;
 
     private:
+        ConnectSignInManager();
         bool IsTokenBasedAuthentication();
 
     public:
-        WSCLIENT_EXPORT ConnectSignInManager();
+        //! Must be created after mobileDgn is initialized
+        WSCLIENT_EXPORT static ConnectSignInManagerPtr Create();
+
         WSCLIENT_EXPORT virtual ~ConnectSignInManager();
 
         WSCLIENT_EXPORT AsyncTaskPtr<SignInResult> SignInWithToken(SamlTokenPtr token);
@@ -50,6 +55,9 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         WSCLIENT_EXPORT void SignOut();
         WSCLIENT_EXPORT bool IsSignedIn() const;
         WSCLIENT_EXPORT UserInfo GetUserInfo() const;
+
+        //! Will be called when token expiration is detected
+        WSCLIENT_EXPORT void SetTokenExpiredHandler(std::function<void()> handler);
 
         WSCLIENT_EXPORT std::shared_ptr<AuthenticationHandler> GetAuthenticationHandler
             (
