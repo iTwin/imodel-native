@@ -448,13 +448,15 @@ WmsSource::WmsSource(WmsMap const& mapInfo)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-Render::ImagePtr WmsSource::_QueryTile(TileId const& id, bool request)
+Render::ImagePtr WmsSource::_QueryTile(TileId const& id, bool& alphaBlend)
     {
+    //&&MM WMS will return nullptr. so we can check back later. we do not want that anymore. review.
+
     Utf8String tileUrl = BuildTileUrl(id);
 
     //      We are using tiledRaster but it should be extended to support more pixeltype and compression or have a new type?
     //      Maybe we should create a better Image object than RgbImageInfo and use that.
-    RefCountedPtr<WmsTileData::RequestOptions> pOptions = WmsTileData::RequestOptions::Create(true, request);
+    RefCountedPtr<WmsTileData::RequestOptions> pOptions = WmsTileData::RequestOptions::Create(true, true/*request*/);
         
     //&&MM for WMS it looks like I will need another kind of tiledRaster to handle exception response from the server.
     //     for example, a badly formated request generate an XML response. This is badly interpreted as a valid response(HttpRealityDataSourceRequest::_Handle) and 
@@ -512,7 +514,7 @@ Render::ImagePtr WmsSource::_QueryTile(TileId const& id, bool request)
     //&&MM how to tell if we need to enable alpha?
     //     We cannot reuse buffer anymore review...
     Render::ImagePtr pImage = new Render::Image(actualImageInfo.width, actualImageInfo.height, pixelType, std::move(m_decompressBuffer));
-    //DisplayTilePtr pDisplayTile = DisplayTile::Create(actualImageInfo.width, actualImageInfo.height, pixelType, m_mapInfo.m_transparent && actualImageInfo.hasAlpha, m_decompressBuffer.GetData(), 0/*notPadded*/);
+    alphaBlend = m_mapInfo.m_transparent && actualImageInfo.hasAlpha;
 
     return pImage;
     }

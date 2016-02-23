@@ -37,6 +37,7 @@
 #include <Imagepp/all/h/HPMPool.h>
 #include <Imagepp/all/h/HGF2DStretch.h>
 #include <Imagepp/all/h/HGF2DIdentity.h>
+#include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
 #include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
 #include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
 #include <Imagepp/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>

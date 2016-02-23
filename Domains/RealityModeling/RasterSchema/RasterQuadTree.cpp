@@ -9,10 +9,8 @@
 #include <DgnPlatform/ImageUtilities.h>
 #include "RasterQuadTree.h"
 
-//&&MM eval if we need to lock a res. Res 3 might be too aggressive when multiple rasters are involved.
-// static const uint32_t LOCKED_RESOLUTION_DIFF = 3;
-// static const uint32_t DRAW_CHILDREN_DELTA = 2;
-// static const uint32_t DRAW_COARSER_DELTA = 6;
+static const uint32_t DRAW_CHILDREN_DELTA = 2;
+static const uint32_t DRAW_COARSER_DELTA = 5;
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  2/2016
@@ -39,9 +37,9 @@ static ReprojectStatus s_FilterGeocoordWarning(ReprojectStatus status)
 //=======================================================================================
 // @bsiclass                                                    BentleySystems
 //=======================================================================================
-struct TileQuery : public RefCountedBase        // &&MM RasterTile and TileQuery is confusing.  Maybe TileNode instead of RasterTile.
+struct TileDataQuery : public RefCountedBase
     {
-    TileQuery(RasterTileR tileNode, Render::TargetR target)
+    TileDataQuery(RasterTileR tileNode, Render::TargetR target)
         :m_tileNode(tileNode), m_target(target), m_isFinished(false)
         {
         }
@@ -62,7 +60,7 @@ struct TileQuery : public RefCountedBase        // &&MM RasterTile and TileQuery
         Render::TargetR    m_target;
         RasterTileR        m_tileNode;
     };
-typedef RefCountedPtr<TileQuery> TileQueryPtr;
+typedef RefCountedPtr<TileDataQuery> TileDataQueryPtr;
 
 class ThreadPool;
 //----------------------------------------------------------------------------------------
@@ -86,7 +84,7 @@ class ThreadPool
         ThreadPool(size_t);
         ~ThreadPool();
 
-        void Enqueue(TileQuery& task);
+        void Enqueue(TileDataQuery& task);
 
         static ThreadPool& GetInstance()
             {
@@ -102,7 +100,7 @@ class ThreadPool
         std::vector< std::thread > m_workers;
 
         // the task queue
-        std::deque<TileQueryPtr> m_tasks;
+        std::deque<TileDataQueryPtr> m_tasks;
 
         // synchronization
         std::mutex m_queue_mutex;
@@ -119,7 +117,7 @@ void Worker::operator()()
 
     while (true)
         {
-        TileQueryPtr taskP;
+        TileDataQueryPtr taskP;
 
         {   // acquire lock
         std::unique_lock<std::mutex> lock(m_pool.m_queue_mutex);
@@ -181,7 +179,7 @@ ThreadPool::~ThreadPool()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2015
 //----------------------------------------------------------------------------------------
-void ThreadPool::Enqueue(TileQuery& task)
+void ThreadPool::Enqueue(TileDataQuery& task)
     {
         { // acquire lock
         std::unique_lock<std::mutex> lock(m_queue_mutex);
@@ -197,10 +195,10 @@ void ThreadPool::Enqueue(TileQuery& task)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2015
 //----------------------------------------------------------------------------------------
-void TileQuery::Run()
+void TileDataQuery::Run()
     {
-    //&&MM WMS will return nullptr. so we can check back later. we do not want that anymore. review.
-    Render::ImagePtr pImage = m_tileNode.GetTreeR().GetSource().QueryTile(m_tileNode.GetId(), true/*request*/);
+    bool enableAlphaBlend = false;
+    Render::ImagePtr pImage = m_tileNode.GetTreeR().GetSource().QueryTile(m_tileNode.GetId(), enableAlphaBlend);
 
 #ifndef NDEBUG  // debug build only.
     static bool s_missingTilesInRed = false;
@@ -212,10 +210,11 @@ void TileQuery::Run()
             memcpy(data.GetDataP() + pixel * 3, red, 3);
 
         pImage = new Render::Image(256, 256, Render::Image::Format::Rgb, std::move(data));
+        enableAlphaBlend = false;
         }
 #endif         
     if (pImage.IsValid())
-        m_pTile = m_target.CreateTileSection(*pImage, false/*&&MM todo*/);
+        m_pTile = m_target.CreateTileSection(*pImage, enableAlphaBlend);
         
     m_isFinished = true;
     }
@@ -226,8 +225,8 @@ void TileQuery::Run()
 struct RasterProgressiveDisplay : Dgn::ProgressiveTask
 {
 protected:
-    std::vector<RasterTilePtr>  m_visiblesTiles;    // all the tiles to display.    
-    std::list<TileQueryPtr>     m_queriedTiles;       //&&MM need to think how we could reuse the tiles that arrived but that we did not have time to create graphics for.
+    std::vector<RasterTilePtr>      m_visiblesTiles;    // all the tiles to display.    
+    std::list<TileDataQueryPtr>     m_queriedTiles;
 
     RasterQuadTreeR m_raster;
     DgnViewportR    m_viewport;         // the viewport we are scheduled on.   
@@ -253,13 +252,13 @@ protected:
     //! Displays tiled rasters and schedules downloads. 
     virtual Completion _DoProgressive(SceneContextR context, WantShow&) override;
 
-    bool ShouldDrawInConvext (ViewContextR context) const;
-
     void FindBackgroudTiles(SortedTiles& backgroundTiles, std::vector<RasterTilePtr> const& visibleTiles, uint32_t resolutionDelta, DgnViewportCR viewport);
     
     void DrawLoadedChildren(RasterTileR tile, uint32_t resolutionDelta, SceneContextR context);
 
 public:
+    static bool ShouldDrawInConvext(SceneContextR context);
+
     void Draw (SceneContextR context);
 
     static RefCountedPtr<RasterProgressiveDisplay> Create(RasterQuadTreeR raster, SceneContextR context);
@@ -375,43 +374,23 @@ ReprojectStatus RasterTile::ReprojectCorners(DPoint3dP outUors, DPoint3dCP srcCa
 //----------------------------------------------------------------------------------------
 bool RasterTile::Draw(SceneContextR context)
     {
-    //&&MM make sure corners have the same origin than UOR. if not, abstract qv organization and make the switch in QV Render impl.
     // Corners are in this order:
     //  [0]  [1]
     //  [2]  [3]
     DPoint3d uvPts[4];
     memcpy(uvPts, m_corners, sizeof(uvPts));
     
-    // Make sure the map displays beneath element graphics. Note that this policy is appropriate for the background map, which is always
-    // "on the ground". It is not appropriate for other kinds of reality data, even some images display. It is up to the individual reality
-    // data handler to use the "surface" that is appprpriate to the reality data.
-//&&MM todo raster display priority.
-//     if (!context.GetViewport()->GetViewController().GetTargetModel()->Is3d())
-//         {
-//         for (auto& pt : uvPts)
-//             pt.z = -DgnViewport::GetDisplayPriorityFrontPlane();  // lowest possibly priority
-//         }
-//     else
-//         {
-//         //NEEDS_WORK_CONTINUOUS_RENDER BeSQLite::wt_OperationForGraphics highPriority;
-//         auto extents = context.GetViewport()->GetViewController().GetViewedExtents();
-//         for (auto& pt : uvPts)
-//             pt.z = extents.low.z - 1;
-//         }
-
 #ifndef NDEBUG  // debug build only.
     static bool s_DrawTileShape = false;
     if(s_DrawTileShape)
         {
         Render::GraphicPtr pTileInfoGraphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport()));
 
-        // TODO ActivateGraphicParams
-//         ElemMatSymb elemMatSymb;
-//         auto colorIdx = ColorDef(222, 0, 0, 128);
-//         elemMatSymb.SetLineColor (colorIdx);
-//         elemMatSymb.SetWidth (2);
-//         elemMatSymb.SetIsFilled(false);
-//         context.GetIDrawGeom().ActivateMatSymb (&elemMatSymb);
+        Render::GraphicParams graphicParams;
+        graphicParams.SetLineColor(ColorDef(222, 0, 0, 128));
+        graphicParams.SetIsFilled(false);
+        graphicParams.SetWidth(2);
+        pTileInfoGraphic->ActivateGraphicParams(graphicParams);
 
         DPoint3d box[5];
         box[0] = uvPts[0];
@@ -433,11 +412,10 @@ bool RasterTile::Draw(SceneContextR context)
         textStr->GetStyleR().SetSize(pixelSize*10);
         textStr->SetOriginFromJustificationOrigin(centerPt, TextString::HorizontalJustification::Center, TextString::VerticalJustification::Middle);
 
-        // TODO ActivateGraphicParams
-//         elemMatSymb.SetWidth (0);
-//         colorIdx = ColorDef(222, 0, 222, 128);
-//         elemMatSymb.SetLineColor (colorIdx);
-//         context.GetIDrawGeom().ActivateMatSymb (&elemMatSymb);
+        graphicParams.SetLineColor(ColorDef(222, 0, 222, 128));
+        graphicParams.SetIsFilled(false);
+        graphicParams.SetWidth(2);
+        pTileInfoGraphic->ActivateGraphicParams(graphicParams);
         pTileInfoGraphic->AddTextString (*textStr);
 
         context.OutputGraphic(*pTileInfoGraphic, nullptr);
@@ -537,10 +515,8 @@ bool RasterTile::IsVisible (ViewContextR viewContext, double& factor) const
     {
     DPoint3d npcCorners[4];
     DPoint3d frustCorners[4];
-    
-    //&&MM What happened to localToWolrd?
-    //viewContext.LocalToWorld(frustCorners, m_corners, 4);
     memcpy(frustCorners, m_corners, sizeof(frustCorners));
+
     viewContext.GetWorldToNpc().M0.MultiplyAndRenormalize(npcCorners, frustCorners, 4);
 
     DPoint3d npcOrigin;
@@ -687,6 +663,10 @@ void RasterQuadTree::QueryVisible(std::vector<RasterTilePtr>& visibles, ViewCont
 //----------------------------------------------------------------------------------------
 void RasterQuadTree::Draw(SceneContextR context)
     {
+    // First, determine if we should draw tiles at all.
+    if (!RasterProgressiveDisplay::ShouldDrawInConvext(context) || NULL == context.GetViewport())
+        return;
+
     RefCountedPtr<RasterProgressiveDisplay> display = RasterProgressiveDisplay::Create(*this, context);
     display->Draw(context);
     }
@@ -700,7 +680,7 @@ void RasterQuadTree::Draw(SceneContextR context)
 //----------------------------------------------------------------------------------------
 RasterProgressiveDisplay::RasterProgressiveDisplay(RasterQuadTreeR raster, SceneContextR context)
 :m_raster(raster),
-m_viewport(context.GetViewportR())
+ m_viewport(context.GetViewportR())
     {
     }
 
@@ -722,7 +702,7 @@ RefCountedPtr<RasterProgressiveDisplay> RasterProgressiveDisplay::Create(RasterQ
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-bool RasterProgressiveDisplay::ShouldDrawInConvext (ViewContextR context) const
+bool RasterProgressiveDisplay::ShouldDrawInConvext (SceneContextR context)
     {
     switch (context.GetDrawPurpose())
         {
@@ -732,29 +712,13 @@ bool RasterProgressiveDisplay::ShouldDrawInConvext (ViewContextR context) const
         case DrawPurpose::RegionFlood:
         case DrawPurpose::FitView:
         case DrawPurpose::ExportVisibleEdges:
+        case DrawPurpose::ClashDetection:
         case DrawPurpose::ModelFacet:
             return false;
         }
-//NEEDS_WORK_CONTINUOUS_RENDER review the list  
-//         NotSpecified = 0,
-//         CreateScene,
-//         Plot,
-//         Pick,
-//         CaptureGeometry,
-//         Decorate,
-//         FenceAccept,
-//         RegionFlood,                 //!< Collect graphics to find closed regions/flood...
-//         FitView,
-//         ExportVisibleEdges,
-//         ClashDetection,
-//         ModelFacet,
-//         Measure,
-//         VisibilityCalculation,
-//         Dynamics,
 
     return true;
     }
-
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  5/2015
@@ -774,6 +738,7 @@ void RasterProgressiveDisplay::DrawLoadedChildren(RasterTileR tile, uint32_t res
             DrawLoadedChildren(*pChild, resolutionDelta-1, context);
         }
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  5/2015
 //----------------------------------------------------------------------------------------
@@ -804,53 +769,31 @@ void RasterProgressiveDisplay::FindBackgroudTiles(SortedTiles& backgroundTiles, 
 //----------------------------------------------------------------------------------------
 void RasterProgressiveDisplay::Draw (SceneContextR context)
     {
-    // **********************************
-    // *** NB: This method must be fast. 
-    // **********************************
-    // Do not try to read from SQLite or allocate huge amounts of memory in here. 
-    // Defer time-consuming tasks to progressive display
-    //&&MM review how we draw. Right now, we only draw here when we have the qv tile.
-    //     everything else including download, read from cache, qv tile creation is done in the _Process callback.
-    // - Can we cancel what we scheduled from the previous draw? 
-    //      **** We really need that functionality because when zooming in/out we will request all intermediate levels and that can 
-    //           take some time and bandwidth before we finally receive what we need.
-    //  
-    // - Can we request missing tiles here so it starts background work right away?
-    // - Need a timer in _process to give time to tile to arrive but I would prefer to have an async call from the DataCache when data as arrived. 
-    //   Instead of querying every missing tiles again and again in hopes that they are now available.
-    //   We could also decompress in the worker thread instead of the progressive display thread. N.B. we cannot call Qv or host stuff in the worker thread. 
-    // - Downloading from the web is the slowest operation. We should be able to query the datacache for existence(without read) and schedule missing data before
-    //   we try loading(from cache and qv tile) of what is locally available.
-    // - What happen during a dynamic draw or multiple zoom in/out (wheel mouse)? show we scheduled?
-
-    BeAssert(nullptr != context.GetViewport()); // a scene always have a viewport.
-
-    // First, determine if we can draw map tiles at all.
-    if (!ShouldDrawInConvext (context) || NULL == context.GetViewport())
-        return;
+    BeAssert(nullptr != context.GetViewport()); // a scene should always have a viewport.
 
     m_raster.QueryVisible(m_visiblesTiles, context);
 
     // Draw background tiles if any, that gives feedback when zooming in.
     // Background tiles need to be draw from coarser resolution to finer resolution to make sure coarser tiles are not hiding finer tiles.
-    //&&MM  this causes z-fighting. poss sol. use qv setDepth.
+    //&&MM  - this causes z-fighting. poss sol. use qv setDepth.
+    //      - will also cause problems with transparent(or translucent?) raster.
     SortedTiles backgroundTiles;
-    FindBackgroudTiles(backgroundTiles, m_visiblesTiles, 4/*maxResDelta*/, context.GetViewportR());
+    FindBackgroudTiles(backgroundTiles, m_visiblesTiles, DRAW_COARSER_DELTA, context.GetViewportR());
     for(RasterTilePtr& pTile : backgroundTiles)
         {
         BeAssert(pTile->HasCachedGraphic(context.GetViewportR()));
         pTile->Draw(context);
         }
 
-    // Draw what we have.
+    // Draw what we have, everything else will be generated in the background.
     for(RasterTilePtr& pTile : m_visiblesTiles)
         {
         if(!pTile->Draw(context))
             {
             // Draw finer resolution.
-            DrawLoadedChildren(*pTile, 2/*resolutionDelta*/, context);
+            DrawLoadedChildren(*pTile, DRAW_CHILDREN_DELTA, context);
 
-            TileQueryPtr pQuery = new TileQuery(*pTile, context.GetTargetR());
+            TileDataQueryPtr pQuery = new TileDataQuery(*pTile, context.GetTargetR());
             ThreadPool::GetInstance().Enqueue(*pQuery);
             m_queriedTiles.emplace_back(pQuery);
             }
@@ -865,43 +808,48 @@ void RasterProgressiveDisplay::Draw (SceneContextR context)
 //----------------------------------------------------------------------------------------
 ProgressiveTask::Completion RasterProgressiveDisplay::_DoProgressive(SceneContextR context, WantShow& wantShow)
     {
-    Completion completion = Completion::Finished;
-
-    //&&MM wantShow
     for (auto pTileQueryItr = m_queriedTiles.begin(); pTileQueryItr != m_queriedTiles.end();  /* incremented or erased in loop*/ )
         {
-        // &&MM review how often we should call checkstop.  make sense to test only when we draw something everything else is super fast
-        // and probably doesn't require a check stop.
-        if (context.CheckStop())    
+        TileDataQueryPtr pTileQuery = (*pTileQueryItr).get();
+
+        if (!pTileQuery->IsFinished())
             {
-            completion = Completion::Aborted;
-            break;
+            ++pTileQueryItr;    // Will check back later
+            continue;
             }
-        TileQuery* pTileQuery = (*pTileQueryItr).get();
 
-        // Will read from cache. Will not request again.
-        if(pTileQuery->IsFinished ())
+        pTileQueryItr = m_queriedTiles.erase(pTileQueryItr);
+
+        if (pTileQuery->GetTileP() != nullptr)
             {
-            if (pTileQuery->GetTileP() != nullptr)
-                {
-                RasterTileR tileNode = pTileQuery->GetTileNodeR();
+            RasterTileR tileNode = pTileQuery->GetTileNodeR();
 
-                // &&MM all that create stuff should be done by the node?
-                Render::GraphicPtr pTileGraphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport()));
-                pTileGraphic->AddTile(*pTileQuery->GetTileP(), tileNode.m_corners);
-                tileNode.SaveGraphic(context.GetViewportR(), *pTileGraphic);
+            Render::GraphicPtr pTileGraphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport()));
 
-                tileNode.Draw(context);
-                }          
+            Render::GraphicParams graphicParams;
+            graphicParams.SetLineColor(ColorDef::White());
+            graphicParams.SetFillColor(ColorDef::White());
+            graphicParams.SetWidth(1);
+            pTileGraphic->ActivateGraphicParams(graphicParams);
+            pTileGraphic->AddTile(*pTileQuery->GetTileP(), tileNode.GetCorners());
+            
+            tileNode.SaveGraphic(context.GetViewportR(), *pTileGraphic);
 
-            pTileQueryItr = m_queriedTiles.erase(pTileQueryItr);
+            //&&MM not sure if we should redraw here.  this is immediate mode! 
+            //  only create graphics and ask for a redraw? not good if the pool is full!
+            tileNode.Draw(context);
+
+            // CheckStop only if we drawn something.
+            if (context.CheckStop())
+                break;
             }
-        else
-            {
-            ++pTileQueryItr;    // Will retry later
-            completion = Completion::Aborted;   // at least one did not finish
-            }        
         }
 
-    return completion;    
+    if (m_queriedTiles.empty())
+        {
+        wantShow = WantShow::Yes;
+        return Completion::Finished;
+        }        
+
+    return Completion::Aborted;
     }

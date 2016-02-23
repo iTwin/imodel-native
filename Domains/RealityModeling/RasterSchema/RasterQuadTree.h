@@ -118,7 +118,7 @@ public:
     // Raster 4 corners(UOR) in this order:
     //  [0]  [1]
     //  [2]  [3]
-    DPoint3dCR GetCorners() const; 
+    DPoint3dCP GetCorners() const { return m_corners; }
 
     //! Draw this tile in the view. Tile might not be loaded, it will be loaded only if locally available. Return true if successful.
     bool Draw(Dgn::SceneContextR context);
@@ -127,7 +127,7 @@ public:
 
     //! Direct access to coarser resolution. Might be NULL it its the root.
     RasterTileP GetParentP() {return m_pParent;}
-
+    
     //! Return allocated child only. May be NULL.
     RasterTileP GetChildP(size_t index) {return m_pChilds[index].get();}
 
@@ -140,8 +140,6 @@ public:
     void OnItemRemoveFromCache(RasterTileCache::ItemId const& id);
 
     RasterQuadTreeR GetTreeR() {return m_tree;}
-
-    DPoint3d m_corners[4];      // Corners in uor. //&&MM temp public.
 
 private:
     RasterTile(TileId const& id, RasterTileP parent, RasterQuadTreeR tree);
@@ -162,7 +160,11 @@ private:
     static ReprojectStatus ReprojectCorners(DPoint3dP outUors, DPoint3dCP srcCartesian, RasterQuadTreeR tree);
 
     TileId m_tileId; 
-    RasterQuadTreeR m_tree;          // Hold a ref only.
+    DPoint3d m_corners[4];      // Corners in uor.  [0] [1]
+                                //                  [2] [3]
+
+    RasterQuadTreeR m_tree;     // Hold a ref only.
+
 
     RasterTileP m_pParent;      // NULL for root node.
     RasterTilePtr m_pChilds[4];    

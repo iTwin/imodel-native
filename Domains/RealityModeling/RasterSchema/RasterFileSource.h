@@ -19,20 +19,14 @@ struct RasterFileSource : public RasterSource
 {
 private:
     RasterFileProperties    m_properties;
-    bvector<Byte>           m_tileBuffer;
     RasterFilePtr           m_rasterFilePtr;
-    Point2d                 m_tileSize;
-    HFCPtr<HCDPacket>       m_packetPtr;
-    std::mutex              m_imageppLock;      //&&MM temp. imagepp is not thread safe. what about gcoord? where to put that lock?
 
 private:
             RasterFileSource(Utf8StringCR resolvedName);
     virtual ~RasterFileSource(){};
-			Byte*			CreateWorkingBuffer(size_t& bufferSize, const HRPPixelType& pi_rPixelType, uint32_t pi_Width, uint32_t pi_Height) const;
-
 
 protected:
-    virtual Render::ImagePtr _QueryTile(TileId const& id, bool request) override;
+    virtual Render::ImagePtr _QueryTile(TileId const& id, bool& alphaBlend) override;
 
 public:
     static  RasterSourcePtr Create(Utf8StringCR resolvedName);
