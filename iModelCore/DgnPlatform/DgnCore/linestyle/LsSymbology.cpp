@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/LsSymbology.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -22,15 +22,79 @@ double LsPointComponent::_GetLength () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void LineStyleSymb::Init (ILineStyleCP lStyle)
     {
-    m_lStyle    = lStyle;
-
+    m_lStyle = lStyle;
     memset (&m_options, 0, sizeof(m_options));
-    m_nIterate  = 0;
-    m_scale       = m_dashScale = m_gapScale = 1.0;
-    m_orgWidth    = m_endWidth  = m_phaseShift  = m_autoPhase = 0.0;
+    m_nIterate = 0;
+    m_scale = m_dashScale = m_gapScale = 1.0;
+    m_orgWidth = m_endWidth = m_phaseShift = m_autoPhase = 0.0;
     m_maxCompress = 0.3;
-    m_planeByRows.InitIdentity ();
+    m_planeByRows.InitIdentity();
     m_texture = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    KeithBentley    04/01
++---------------+---------------+---------------+---------------+---------------+------*/
+bool LineStyleSymb::operator==(LineStyleSymbCR rhs) const
+    {
+    if (this == &rhs)
+        return true;
+
+    if (rhs.m_lStyle != m_lStyle)
+        return false;
+
+    if (NULL == rhs.m_lStyle && NULL == m_lStyle)
+        return true; // No need to compare further if both inactive...
+
+    if (0 != memcmp (&rhs.m_options, &m_options, sizeof (m_options)))
+        return false;
+
+    if (rhs.m_nIterate != m_nIterate)
+        return false;
+
+    if (rhs.m_scale != m_scale)
+        return false;
+
+    if (rhs.m_dashScale != m_dashScale)
+        return false;
+
+    if (rhs.m_gapScale != m_gapScale)
+        return false;
+
+    if (rhs.m_orgWidth != m_orgWidth)
+        return false;
+
+    if (rhs.m_endWidth != m_endWidth)
+        return false;
+
+    if (rhs.m_phaseShift != m_phaseShift)
+        return false;
+
+    if (rhs.m_autoPhase != m_autoPhase)
+        return false;
+
+    if (rhs.m_maxCompress != m_maxCompress)
+        return false;
+
+    if (rhs.m_totalLength != m_totalLength)
+        return false;
+
+    if (rhs.m_xElemPhase != m_xElemPhase)
+        return false;
+
+    if (!rhs.m_startTangent.IsEqual (m_startTangent))
+        return false;
+
+    if (!rhs.m_endTangent.IsEqual (m_endTangent))
+        return false;
+
+    if (!rhs.m_planeByRows.IsEqual (m_planeByRows))
+        return false;
+
+    if (rhs.m_texture != m_texture)
+        return false;
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -249,19 +313,18 @@ void LineStyleSymb::SetCenterPhase (bool isOn)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LineStyleSymb::SetTangents (DPoint3dCP start, DPoint3dCP end)
+void LineStyleSymb::SetTangents (DVec3dCP start, DVec3dCP end)
     {
     m_options.startTangentSet = false;
     m_options.endTangentSet   = false;
 
-    if (NULL != start)
+    if (nullptr != start)
         {
         m_options.startTangentSet = true;
         m_startTangent = *start;
-
         }
 
-    if (NULL != end)
+    if (nullptr != end)
         {
         m_options.endTangentSet = true;
         m_endTangent = *end;
@@ -297,7 +360,6 @@ void LineStyleSymb::SetTreatAsSingleSegment (bool segmentMode)
     m_options.treatAsSingleSegment = segmentMode;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * Set the cosmetic flag
 * @param    cosmetic true for cosmetic style, false for geometric style
@@ -331,66 +393,46 @@ void LineStyleSymb::CheckContinuationData ()
         }
     }
 
-static bool s_allowLineStyles = bool(LINESTYLES_ENABLED);
 /*---------------------------------------------------------------------------------**//**
-* see whether this element should be drawn with a custom linestyle.
-* @return the hardware linestyle to be used.
-* @bsimethod                                                    Keith.Bentley   01/03
+* @bsimethod                                                    Brien.Bastings  02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-int LineStyleSymb::FromResolvedStyle (LineStyleInfoCP styleInfo, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent)
+void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec3dCP startTangent, DVec3dCP endTangent, ViewContextR context)
     {
-    if (nullptr == styleInfo || !s_allowLineStyles)
-        return 0;
+    Clear(); // In case of error make sure m_lStyle is nullptr so we callers know this LineStyleSymb isn't valid...
 
-    int64_t lsValue = styleInfo->GetStyleId().GetValueUnchecked();
-    if (lsValue == -1 || lsValue == 0)
-        return 0;
+    if (!styleId.IsValid())
+        return;
 
-#if defined(NOTNOW)
-    //  NEEDSWORK_LineStyles Current plan is to not support fixed line codes.
-    if (IS_LINECODE(lsValue))
-        return int32_t(lsValue);
-#endif
+    LsCacheP lsCache = LsCache::GetDgnDbCache(context.GetDgnDb());
+    LsDefinitionP nameRec = lsCache->GetLineStyleP(styleId);
 
-    LsCacheP lsCache = LsCache::GetDgnDbCache(context.GetDgnDb ());
-    LsDefinitionP   nameRec = lsCache->GetLineStyleP(styleInfo->GetStyleId());
-
-    if (NULL == nameRec)
-        return 0;
-
-    LineStyleParamsCP lStyleParams = styleInfo->GetStyleParams ();
-    LsComponentCP    topComponent = nameRec->GetComponentCP (nullptr);
+    if (nullptr == nameRec)
+        return;
 
     // Make this call before IsContinuous() to force the components to load.  Loading the components
     // will make some linestyles into "continuous" because early DWG styles did not set this bit correctly,
     // so there are a lot of unlabeled continuous styles out there.
+    LsComponentCP topComponent = nameRec->GetComponentCP(nullptr);
 
     // If the line style is continuous and has no width, leave now.
-    if (nameRec->IsContinuous () && (!lStyleParams || (0 == (lStyleParams->modifiers & (STYLEMOD_SWIDTH | STYLEMOD_EWIDTH | STYLEMOD_TRUE_WIDTH)))))
-        return 0;
-
-    LineStyleParams tmpLSParams;
-
-    if (lStyleParams)
-        tmpLSParams = *lStyleParams;
-    else
-        tmpLSParams.Init ();
+    if (nameRec->IsContinuous() && (0 == (styleParams.modifiers & (STYLEMOD_SWIDTH | STYLEMOD_EWIDTH | STYLEMOD_TRUE_WIDTH))))
+        return;
 
     // If the line style is mapped to a hardware line code return the hardware line code number.
     if (nameRec->IsHardware())
-        return  (int) nameRec->GetHardwareStyle();
+        return; // (int) nameRec->GetHardwareStyle(); <- No longer supported...
 
     // If the line style definition can be loaded correctly we set it up as the current line style.
-    if (NULL == topComponent)
-        return  0;
+    if (nullptr == topComponent)
+        return;
 
-    bool        xElemPhaseSet = m_options.xElemPhaseSet;
+    bool xElemPhaseSet = m_options.xElemPhaseSet; // Save current value before Init clears it...
 
-    Init (nameRec);
+    Init(nameRec);
+    SetTangents(startTangent, endTangent);
+    m_options.isContinuous = nameRec->IsContinuous();
 
-    SetTangents (startTangent, endTangent);
-
-    if ((NULL != startTangent) && xElemPhaseSet)
+    if ((nullptr != startTangent) && xElemPhaseSet)
         {
         // if there's a start tangent, then that means we're continuing from a previous call.
         // the phase shift value should be valid too.
@@ -402,27 +444,27 @@ int LineStyleSymb::FromResolvedStyle (LineStyleInfoCP styleInfo, ViewContextR co
 
     if (!m_options.phaseShift)
         {
-        if (tmpLSParams.modifiers & STYLEMOD_DISTPHASE)
-            SetPhaseShift (true, tmpLSParams.distPhase);
-        else if (tmpLSParams.modifiers & STYLEMOD_FRACTPHASE)
-            SetFractionalPhase (true, tmpLSParams.fractPhase);
-        else if (tmpLSParams.modifiers & STYLEMOD_CENTERPHASE)
-            SetCenterPhase (true);
+        if (styleParams.modifiers & STYLEMOD_DISTPHASE)
+            SetPhaseShift(true, styleParams.distPhase);
+        else if (styleParams.modifiers & STYLEMOD_FRACTPHASE)
+            SetFractionalPhase(true, styleParams.fractPhase);
+        else if (styleParams.modifiers & STYLEMOD_CENTERPHASE)
+            SetCenterPhase(true);
         }
 
-    if (tmpLSParams.modifiers & STYLEMOD_NORMAL)
-        SetNormalVec (&tmpLSParams.normal);
+    if (styleParams.modifiers & STYLEMOD_NORMAL)
+        SetNormalVec(&styleParams.normal);
 
-    if (tmpLSParams.modifiers & STYLEMOD_RMATRIX)
-        SetPlaneAsMatrixRows (&tmpLSParams.rMatrix);
+    if (styleParams.modifiers & STYLEMOD_RMATRIX)
+        SetPlaneAsMatrixRows(&styleParams.rMatrix);
 
-    if (tmpLSParams.modifiers & STYLEMOD_DSCALE)
-        SetDashScale (tmpLSParams.dashScale);
+    if (styleParams.modifiers & STYLEMOD_DSCALE)
+        SetDashScale(styleParams.dashScale);
 
-    if (tmpLSParams.modifiers & STYLEMOD_GSCALE)
-        SetGapScale (tmpLSParams.gapScale);
+    if (styleParams.modifiers & STYLEMOD_GSCALE)
+        SetGapScale(styleParams.gapScale);
 
-    SetTreatAsSingleSegment ((tmpLSParams.modifiers & STYLEMOD_NOSEGMODE) && !(tmpLSParams.modifiers & STYLEMOD_SEGMODE));
+    SetTreatAsSingleSegment((styleParams.modifiers & STYLEMOD_NOSEGMODE) && !(styleParams.modifiers & STYLEMOD_SEGMODE));
 
 #ifdef DGNV10FORMAT_CHANGES_WIP
     //  When this is a query model we get "GetLineStyleScale->GetModelInfo->....LoadFromDb" with an invalid model ID.
@@ -431,75 +473,43 @@ int LineStyleSymb::FromResolvedStyle (LineStyleInfoCP styleInfo, ViewContextR co
     double scale = 1.0;
 #endif
 
-    if (tmpLSParams.modifiers & STYLEMOD_SCALE && 0.0 != tmpLSParams.scale)
-        scale *= tmpLSParams.scale;
+    if (styleParams.modifiers & STYLEMOD_SCALE && 0.0 != styleParams.scale)
+        scale *= styleParams.scale;
 
     // now adjust scale for units in linestyle definition
     double unitDef = nameRec->GetUnitsDefinition();
     if (unitDef < mgds_fc_epsilon)
         unitDef = 1.0;
 
-    // Update unitDef to convert to UORs
-    if (nameRec->IsUnitsMeters ())
-        {
-        //  No additional scaling is needed.
-        }
-    else if (nameRec->IsUnitsDevice ())
-        {
-        if (nameRec->GetUnitsDefinition() > mgds_fc_epsilon)
-            unitDef *= context.GetPixelSizeAtPoint (NULL);
-        }
-
+    // NOTE: Removed nameRec->IsUnitsDevice() check. Problematic if not drawing in immediate mode...and a bad idea (draws outside element range, i.e. not pickable, etc.)
+    //       Removed nameRec->IsUnitsMeters() check. No additional scaling is needed.
     scale *= unitDef;
 
-    double  startWidth = tmpLSParams.startWidth;
-    double  endWidth   = tmpLSParams.endWidth;
+    double startWidth = styleParams.startWidth;
+    double endWidth = styleParams.endWidth;
 
     // if the start/end are "true width", then the scale factor is not applied
-    if (!(tmpLSParams.modifiers & STYLEMOD_TRUE_WIDTH))  // TRUE_WIDTH means both don't scale, and use UORs.
+    if (!(styleParams.modifiers & STYLEMOD_TRUE_WIDTH))  // TRUE_WIDTH means both don't scale, and use UORs.
         {
         startWidth *= scale;
-        endWidth   *= scale;
+        endWidth *= scale;
         }
 
-    if (tmpLSParams.modifiers & STYLEMOD_SWIDTH)
-        SetOriginWidth (startWidth);
+    if (styleParams.modifiers & STYLEMOD_SWIDTH)
+        SetOriginWidth(startWidth);
 
-    if (tmpLSParams.modifiers & STYLEMOD_EWIDTH)
-        SetEndWidth (endWidth);
+    if (styleParams.modifiers & STYLEMOD_EWIDTH)
+        SetEndWidth(endWidth);
 
-    SetScale (scale);
+    SetScale(scale);
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    //  NEEDSWORK_LINESTYLES -- this probably is the right place to get a raster texture based on an image.
-    //  if (!context.Is3dView())
-        m_texture = nameRec->GetTexture(context, *this, false, scale);
+    // NEEDSWORK_LINESTYLES -- this probably is the right place to get a raster texture based on an image.
+    // Texture is required for 3d...but it should still be an option for 2d...
+    // If this is a 3d view and we have a line style then we want to convert the line style
+    // to a texture line style. Need to figure out the correct place to do this.
+    m_texture = nameRec->GetTexture(context, *this, context.Is3dView(), scale); // Need to force texture for 3d?
 #endif
-
-    return 0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* see whether this element should be drawn with a custom linestyle.
-* @return the hardware linestyle to be used.
-* @bsimethod                                                    Keith.Bentley   01/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-int LineStyleSymb::FromResolvedGeometryParams (GeometryParamsCR elParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent)
-    {
-    BeAssert (NULL == GetILineStyle());
-    return FromResolvedStyle (elParams.GetLineStyle (), context, startTangent, endTangent);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* see whether this element should be drawn with a custom linestyle.
-* @return the hardware linestyle to be used.
-* @bsimethod                                                    Keith.Bentley   01/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-int LineStyleSymb::FromNaturalGeometryParams (GeometryParamsR elParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent)
-    {
-    elParams.Resolve (context);
-
-    return FromResolvedGeometryParams (elParams, context, startTangent, endTangent);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -645,21 +655,37 @@ bool LineStyleParams::operator==(LineStyleParamsCR rhs) const
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-LineStyleInfo::LineStyleInfo(DgnStyleId styleId, LineStyleParamsCP params) {m_styleId = styleId; if (params) m_styleParams = *params; else m_styleParams.Init();}
-LineStyleInfoPtr LineStyleInfo::Create (DgnStyleId styleId, LineStyleParamsCP params) {return new LineStyleInfo (styleId, params);}
+LineStyleInfo::LineStyleInfo(DgnStyleId styleId, LineStyleParamsCP params)
+    {
+    m_styleId = styleId;
+    
+    if (params)
+        m_styleParams = *params;
+    else
+        m_styleParams.Init();
+
+    m_startTangent.Init(0.0, 0.0, 0.0);
+    m_endTangent.Init(0.0, 0.0, 0.0);
+    }
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-LineStyleParamsCP LineStyleInfo::GetStyleParams () const {return 0 != m_styleParams.modifiers ? &m_styleParams : nullptr;}
+LineStyleInfoPtr LineStyleInfo::Create(DgnStyleId styleId, LineStyleParamsCP params)
+    {
+    return new LineStyleInfo(styleId, params);
+    }
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LineStyleInfo::CopyFrom (LineStyleInfoCR other)
+void LineStyleInfo::CopyFrom(LineStyleInfoCR other)
     {
     m_styleId = other.m_styleId;
     m_styleParams = other.m_styleParams;
+    m_lStyleSymb = other.m_lStyleSymb;
+    m_startTangent = other.m_startTangent;
+    m_endTangent = other.m_endTangent;
     }
 
 /*----------------------------------------------------------------------------------*//**
@@ -676,6 +702,25 @@ bool LineStyleInfo::operator==(LineStyleInfoCR rhs) const
     if (!(rhs.m_styleParams == m_styleParams))
         return false;
 
+    if (!(rhs.m_lStyleSymb == m_lStyleSymb))
+        return false;
+
+    if (!rhs.m_startTangent.IsEqual(m_startTangent))
+        return false;
+
+    if (!rhs.m_endTangent.IsEqual(m_endTangent))
+        return false;
+
     return true;
     }
 
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Brien.Bastings  02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void LineStyleInfo::Cook(ViewContextR context)
+    {
+    bool useStart = (0.0 != m_startTangent.Magnitude());
+    bool useEnd = (0.0 != m_endTangent.Magnitude());
+
+    m_lStyleSymb.Init(m_styleId, m_styleParams, useStart ? &m_startTangent : nullptr, useEnd ? &m_endTangent : nullptr, context);
+    }

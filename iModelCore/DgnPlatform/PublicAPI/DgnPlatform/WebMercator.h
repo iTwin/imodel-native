@@ -182,28 +182,28 @@ public:
     //! @return a unique ID to identify the texture
     //! @param[in] rgbData  The raw image data
     //! @param[in] imageInfo Defines the format, size, and orientation of the raw image data
-    static uintptr_t DefineTexture (ByteStream const& rgbData, ImageUtilities::RgbImageInfo const& imageInfo);
+    static Render::TexturePtr DefineTexture (ByteStream const& rgbData, ImageUtilities::RgbImageInfo const& imageInfo, SceneContextR context);
 
     //! Add texture to temporary cache, or if a texture is already cached for this url, then replace it.
     //! @note Do not delete the texture. The cache will delete it if and when it is removed by trim or by replacement.
     //! @param[in] url  The key
     //! @param[in] textureId Identifies the texture
     //! @param[in] imageInfo Additional info about the image stored in the texture
-    static void CacheTexture (Utf8StringCR url, uintptr_t textureId, ImageUtilities::RgbImageInfo const& imageInfo);
+    static void CacheTexture (Utf8StringCR url, Render::TextureR textureId, ImageUtilities::RgbImageInfo const& imageInfo);
 
     //! Get an existing texture from the cache.
-    static BentleyStatus GetCachedTexture (uintptr_t& cachedTextureId, ImageUtilities::RgbImageInfo& cachedImageInfo, Utf8StringCR url);
+    static BentleyStatus GetCachedTexture (Render::TextureP cachedTextureId, ImageUtilities::RgbImageInfo& cachedImageInfo, Utf8StringCR url);
 
     //! Draw the specified tile
     //! @param[in] context      The viewcontext
     //! @param[in] tileid       The tile id
     //! @param[in] imageInfo    Information about the image
     //! @param[in] textureId    The texture id to use
-    void DrawTile (ViewContextR context, WebMercatorTilingSystem::TileId const& tileid, ImageUtilities::RgbImageInfo const& imageInfo, uintptr_t textureId);
+    void DrawTile (ViewContextR context, WebMercatorTilingSystem::TileId const& tileid, ImageUtilities::RgbImageInfo const& imageInfo, Render::TextureR textureId);
 
     void DrawMissingTile (ViewContextR context, WebMercatorTilingSystem::TileId const& tileid);
 
-    void DrawAndCacheTile (ViewContextR context, WebMercatorTilingSystem::TileId const& tileid, Utf8StringCR url, TiledRaster& realityData);
+    void DrawAndCacheTile (SceneContextR context, WebMercatorTilingSystem::TileId const& tileid, Utf8StringCR url, TiledRaster& realityData);
 
     #ifdef WEBMERCATOR_DEBUG_TILES
     void DrawTileDebugInfo (ViewContextR context, WebMercatorTilingSystem::TileId const& tileid);
@@ -241,7 +241,7 @@ protected:
         {
         WebMercatorTilingSystem::TileId tileid;
         ImageUtilities::RgbImageInfo imageInfo;
-        uintptr_t textureId;
+        Render::TexturePtr textureId;
         };
 
     BentleyStatus GetCachedTiles (bvector<TileDisplayImageData>& tilesAndUrls, bool& allFoundInTextureCache, uint8_t zoomLevel, ViewContextR context);

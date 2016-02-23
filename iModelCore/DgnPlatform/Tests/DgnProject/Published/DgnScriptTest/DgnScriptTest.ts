@@ -26,23 +26,23 @@ module DgnScriptTests {
     function ShowPoint (builder : be.GeometryBuilder, point: be.DPoint3d)
         {
         var arc = be.EllipticArc.CreateCircleXY (point, 0.05);
-        builder.Append (arc);
+        builder.AppendGeometry (arc);
         }
 
     function ShowArc (builder: be.GeometryBuilder, arc: be.EllipticArc )
         {
-        builder.Append (arc);
+        builder.AppendGeometry (arc);
         ShowPoint (builder, arc.PointAtFraction (0.0));
         var basis = arc.GetBasisPlane ();
-        builder.Append (new be.LineSegment (basis.Evaluate (0,0), basis.Evaluate(1.4,0)));
-        builder.Append (new be.LineSegment (basis.Evaluate (0,0), basis.Evaluate(0,0.95)));
+        builder.AppendGeometry (new be.LineSegment (basis.Evaluate (0,0), basis.Evaluate(1.4,0)));
+        builder.AppendGeometry (new be.LineSegment (basis.Evaluate (0,0), basis.Evaluate(0,0.95)));
         var points = new be.DPoint3dArray ();
             points.Add (basis.Evaluate (1,-1));
             points.Add (basis.Evaluate (1,1));
             points.Add (basis.Evaluate (-1,1));
             points.Add (basis.Evaluate (-1,-1));
             points.Add (basis.Evaluate (1,-1));
-        builder.Append (new be.LineString (points));
+        builder.AppendGeometry (new be.LineString (points));
         }
 
 
@@ -69,21 +69,29 @@ module DgnScriptTests {
         var model = db.Models.GetModel(db.Models.QueryModelId(be.DgnModel.CreateModelCode(params.modelName)));
         var ele = be.PhysicalElement.Create(model, catid, '');
 
-        //  Try out SolidPrimitive
+        //  Try out GeometryBuilder
         var builder = new be.GeometryBuilder(ele, new be.DPoint3d(0, 0, 0), new be.YawPitchRollAngles(0, 0, 0));
+
+        //  1, add RenderGeometryParams. We will look for this in the collection test below
+        var gparams = builder.GeometryParams;
+        gparams.LineColor = new be.ColorDef(255, 0, 0, 0);
+        gparams.GeometryClass = be.RenderDgnGeometryClass.Construction;
+        builder.AppendRenderGeometryParams(gparams);
 
         var shiftCount = 0;
 
+        //  2, add DgnSphere. We will look for this in the collection test below
         var sphere = be.DgnSphere.CreateSphere(new be.DPoint3d(0, 0, 0), 1.0);
         Shift (sphere, shiftCount, 0);
-        builder.AppendSolidPrimitive(sphere);
+        builder.AppendGeometry(sphere);
 
+        //  3, add DgnCone. We will look for this in the collection test below
         var cone = be.DgnCone.CreateCircularCone (
                 new be.DPoint3d (0,0,0),
                 new be.DPoint3d (1,1,0),
                 0.5, 0.3, true);
         Shift (cone, shiftCount, 1);
-        builder.AppendSolidPrimitive(cone);
+        builder.AppendGeometry(cone);
         shiftCount++;
         var center = new be.DPoint3d (0,0,zz);
         var vector0 = new be.DVector3d (2,1,0).Scale (0.3);
@@ -105,11 +113,11 @@ module DgnScriptTests {
         var centerToCenterLine  = new be.LineSegment (arc.GetCenter (), arc.GetCenter().Plus (centerToCenterVector));
         var startTestLine = new be.LineSegment (arc.PointAtFraction (0.0), arc.PointAtFraction (0.0).Plus (centerToCenterVector));
         var endTestLine   = new be.LineSegment (arc.PointAtFraction (1.0), arc.PointAtFraction (1.0).Plus (centerToCenterVector));
-        builder.Append (centerToCenterLine);
-        builder.Append (startTestLine);
-        builder.Append (endTestLine);
+        builder.AppendGeometry (centerToCenterLine);
+        builder.AppendGeometry (startTestLine);
+        builder.AppendGeometry (endTestLine);
         var line = new be.LineSegment (new be.DPoint3d (0,0,zz), new be.DPoint3d(0,4,zz));
-        builder.Append (line);
+        builder.AppendGeometry (line);
         shiftCount++;
 
         var points = new be.DPoint3dArray ();
@@ -120,9 +128,10 @@ module DgnScriptTests {
             points.Add (new be.DPoint3d (0,0.4,zz));
             points.Add (new be.DPoint3d (0.5,0.7,zz));
         var linestring = new be.LineString (points);
-        Shift (linestring, shiftCount, 0);
+
+        Shift(linestring, shiftCount, 0);
         shiftCount++;
-        builder.Append (linestring);
+        builder.AppendGeometry (linestring);
         var catenary = be.CatenaryCurve.CreateFromCoefficientAndXLimits (
                     new be.DPoint3d (0,0,zz),
                     new be.DVector3d (1,0,0),
@@ -133,21 +142,21 @@ module DgnScriptTests {
                     );
         Shift (catenary, shiftCount, 0);
         shiftCount++;
-        builder.Append (catenary);
+        builder.AppendGeometry (catenary);
 
         var arc3 = be.EllipticArc.CreateCircleStartMidEnd (new be.DPoint3d (1,0,0), new be.DPoint3d (0,1,0), new be.DPoint3d (-1,0,0));
         Shift(arc3, shiftCount,0);
         shiftCount++;
-        builder.Append (arc3);
+        builder.AppendGeometry (arc3);
 
         var bspline2 = be.BsplineCurve.CreateFromPoles (points, 2);
-        Shift (bspline2, shiftCount,0);      builder.Append (bspline2);
+        Shift (bspline2, shiftCount,0);      builder.AppendGeometry (bspline2);
         var bspline3 = be.BsplineCurve.CreateFromPoles (points, 3);
-        Shift (bspline3, shiftCount, 2);     builder.Append (bspline3);
+        Shift (bspline3, shiftCount, 2);     builder.AppendGeometry (bspline3);
         var bspline4 = be.BsplineCurve.CreateFromPoles (points, 4);
-        Shift (bspline4, shiftCount, 4);     builder.Append (bspline4);
+        Shift (bspline4, shiftCount, 4);     builder.AppendGeometry (bspline4);
         var bspline5 = be.BsplineCurve.CreateFromPoles (points, 5);
-        Shift (bspline5, shiftCount, 6);     builder.Append (bspline5);
+        Shift (bspline5, shiftCount, 6);     builder.AppendGeometry (bspline5);
 
 
         if (0 != builder.SetGeometryStreamAndPlacement(ele))
@@ -155,9 +164,65 @@ module DgnScriptTests {
 
         ele.Insert();
 
+        // Verify that my DgnCategoryId was used
+        if (!catid.Equals(ele.CategoryId))
+            be.Script.ReportError('set DgnCategoryId failed');
+
+        //  Test GeometryCollection 
+        var geomcollection = ele.Geometry;
+        var geomcollectionIter = geomcollection.Begin();
+        var igeom = 0;
+        while (geomcollection.IsValid(geomcollectionIter))
+        {
+            var geomParams = geomcollection.GetGeometryParams(geomcollectionIter);
+            var lineColor = geomParams.LineColor;
+            if (lineColor.Red != 255 || lineColor.Blue != 0 || lineColor.Green != 0)
+                be.Script.ReportError('append GeometryParams failed - LineColor');
+
+            if (geomParams.GeometryClass != be.RenderDgnGeometryClass.Construction)
+                be.Script.ReportError('append GeometryParams failed - RenderDgnGeometryClass');
+
+            var subcat = geomParams.SubCategoryId;
+            // If you use special subcategories for things like centerlines, you can test that here.
+
+            var geomPrim = geomcollection.GetGeometry(geomcollectionIter);
+            if (igeom == 0)
+            {
+                if (!geomPrim)                
+                    be.Script.ReportError('first item should be geometry!');
+                var geom = geomPrim.Geometry;
+                if (!(geom instanceof be.DgnSphere))
+                    be.Script.ReportError('first item should be a sphere');
+                var sphere: be.DgnSphere = <be.DgnSphere>geom;
+                if (!sphere)
+                    be.Script.ReportError('first item should be a sphere');
+            }
+            else if (igeom == 1)
+            {
+                if (!geomPrim)
+                    be.Script.ReportError('second item should be geometry!');
+                var geom = geomPrim.Geometry;
+                if (!(geom instanceof be.DgnCone))
+                    be.Script.ReportError('second item should be a cone');
+                var cone: be.DgnCone = <be.DgnCone>geom;
+                if (!cone)
+                    be.Script.ReportError('second item should be a cone');
+            }
+
+            ++igeom;
+            geomcollection.ToNext(geomcollectionIter);
+        }
+
+        //  Test Element.Transform
+        if (ele.Placement.Angles.YawDegrees != 0.0)
+            be.Script.ReportError('Element should have been unrotated initially');
+
         var rotateTransform = be.Transform.CreateRotationAroundRay(new be.DRay3d(new be.DPoint3d(0, 0, 0), new be.DVector3d(0, 0, 1)), be.Angle.CreateDegrees(45.0));
         ele.Transform(rotateTransform);
         ele.Update();
+
+        if (ele.Placement.Angles.YawDegrees != 45.0)
+            be.Script.ReportError('Element.Transform failed');
 
         //  EC API
         var schemas: be.SchemaManager = db.Schemas;

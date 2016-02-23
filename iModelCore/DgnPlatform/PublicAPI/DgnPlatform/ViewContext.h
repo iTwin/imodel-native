@@ -19,43 +19,9 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 
 /*=================================================================================**//**
  @addtogroup ViewContext
- A ViewContext holds the <i>current state</i> of an operation on a DgnViewport. A ViewContext must be first
- \e attached to a DgnViewport to be useful, and must be \e detached from the DgnViewport to free any memory associated with its internal state.
+ A ViewContext holds the <i>current state</i> of an operation on a DgnViewport. A ViewContext must be first attached to a DgnViewport.
  @beginGroup 
 +===============+===============+===============+===============+===============+======*/
-
-//=======================================================================================
-//! @note This is stored persistently as part of the Reference Dynamic View Settings XAttributes, and thus cannot be changed
-//=======================================================================================
-struct  ClipVolumeOverrides
-{
-    struct
-    {
-        unsigned    m_display:1;        //!< If true, the clip volume area displays.
-        unsigned    m_disableLocate:1;  //!< If true, the elements in the clip volume area cannot be located.
-        unsigned    m_disableSnap:1;    //!< If true, the elements in the clip volume area cannot be snaped.
-        unsigned    m_reflected:1;      //!< If true, the clip volume area is reflected.
-        unsigned    m_unused:28;
-    } m_flags;
-
-    int32_t    m_styleIndex;       //!< Display style of the clip volume area. -1 to match that view.
-
-    int32_t GetDisplayStyleIndex() const {return m_styleIndex;}
-    void SetDisplayStyleIndex(int32_t index) {m_styleIndex = index;}
-    bool IsEqual(const ClipVolumeOverrides& other) const
-        {
-        if (m_flags.m_display != other.m_flags.m_display)
-            return false;
-        if (m_flags.m_disableLocate != other.m_flags.m_disableLocate)
-            return false;
-        if (m_flags.m_disableSnap != other.m_flags.m_disableSnap)
-            return false;
-        if (m_styleIndex != other.m_styleIndex)
-            return false;
-
-        return true;
-        }
-};
 
 //=======================================================================================
 // @bsiclass
@@ -126,22 +92,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewContext : NonCopyableClass, CheckStop, RangeN
 public:
 
     //=======================================================================================
-    // @bsiclass                                                     KeithBentley    04/01
-    //=======================================================================================
-    struct ContextMark
-    {
-        ViewContextP m_context;
-        size_t       m_transClipMark;
-
-    public:
-        DGNPLATFORM_EXPORT explicit ContextMark(ViewContextP context);
-        ~ContextMark() {Pop();}
-        DGNPLATFORM_EXPORT void Pop();
-        DGNPLATFORM_EXPORT void SetNow();
-        void Init(ViewContextP context) {m_transClipMark = 0; m_context = context;}
-    };
-
-    //=======================================================================================
     // @bsiclass                                                     Brien.Bastings  11/07
     //=======================================================================================
     struct  ClipStencil
@@ -161,14 +111,13 @@ public:
     };
 
 protected:
-    DgnDbP                  m_dgnDb = nullptr;
-    bool                    m_isAttached = false;
-    bool                    m_is3dView = true;
-    bool                    m_wantMaterials = false;
-    bool                    m_useNpcSubRange = false;
-    bool                    m_ignoreViewRange = false;
-    bool                    m_scanRangeValid = false;
-    bool                    m_stopAfterTimeout = false;
+    DgnDbP m_dgndb = nullptr;
+    bool m_is3dView = true;
+    bool m_wantMaterials = false;
+    bool m_useNpcSubRange = false;
+    bool m_ignoreViewRange = false;
+    bool m_scanRangeValid = false;
+    bool m_stopAfterTimeout = false;
     uint64_t                m_endTime = 0;     // abort after this time.
     Render::ViewFlags       m_viewflags;
     DrawPurpose             m_purpose;
@@ -176,14 +125,13 @@ protected:
     DMap4d                  m_worldToNpc;
     DMap4d                  m_worldToView;
     ScanCriteria            m_scanCriteria;
-    TransformClipStack      m_transformClipStack;
+    Render::FrustumPlanes   m_frustumPlanes;
     DgnViewportP            m_viewport = nullptr;
+    ClipPrimitiveCPtr       m_volume;
     IElemTopologyCPtr       m_currElemTopo;
     GeometryStreamEntryId   m_currGeometryStreamEntryId;
 
     void InvalidateScanRange() {m_scanRangeValid = false;}
-    DGNPLATFORM_EXPORT virtual StatusInt _Attach(DgnViewportP, DrawPurpose purpose);
-    DGNPLATFORM_EXPORT virtual void _Detach();
     DGNPLATFORM_EXPORT virtual StatusInt _OutputGeometry(GeometrySourceCR);
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _AddSubGraphic(Render::GraphicR, DgnGeometryPartId, TransformCR, Render::GeometryParamsR);
     virtual Render::GraphicP _GetCachedPartGraphic(DgnGeometryPartId, double pixelSize, ElementAlignedBox3dR) {return nullptr;}
@@ -194,10 +142,7 @@ protected:
     DGNPLATFORM_EXPORT virtual bool _WantAreaPatterns();
     DGNPLATFORM_EXPORT virtual void _DrawAreaPattern(ClipStencil& boundary);
     DGNPLATFORM_EXPORT virtual void _DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed = false);
-    DGNPLATFORM_EXPORT virtual void _DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP range, bool closed = false);
     DGNPLATFORM_EXPORT virtual void _DrawStyledArc2d(DEllipse3dCR, bool isEllipse, double zDepth, DPoint2dCP range);
-    DGNPLATFORM_EXPORT virtual void _DrawStyledArc3d(DEllipse3dCR, bool isEllipse, DPoint3dCP range);
-    DGNPLATFORM_EXPORT virtual void _DrawStyledBSplineCurve3d(MSBsplineCurveCR);
     DGNPLATFORM_EXPORT virtual void _DrawStyledBSplineCurve2d(MSBsplineCurveCR, double zDepth);
     DGNPLATFORM_EXPORT virtual void _AddTextString(TextStringCR);
     DGNPLATFORM_EXPORT virtual StatusInt _InitContextForView();
@@ -206,8 +151,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _InitScanRangeAndPolyhedron();
     DGNPLATFORM_EXPORT virtual bool _VisitAllModelElements();
     DGNPLATFORM_EXPORT virtual StatusInt _VisitDgnModel(DgnModelP);
-    DGNPLATFORM_EXPORT virtual void _PushClip(ClipVectorCR clip);
-    DGNPLATFORM_EXPORT virtual void _PopClip();    
     DGNPLATFORM_EXPORT virtual bool _FilterRangeIntersection(GeometrySourceCR);
     virtual IPickGeomP _GetIPickGeom() {return nullptr;}
     virtual Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) = 0;
@@ -217,7 +160,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _AddContextOverrides(Render::OvrGraphicParamsR, GeometrySourceCP source);
     DGNPLATFORM_EXPORT virtual void _CookGeometryParams(Render::GeometryParamsR, Render::GraphicParamsR);
     DGNPLATFORM_EXPORT virtual void _SetScanReturn();
-    DGNPLATFORM_EXPORT virtual void _PushFrustumClip();
     DGNPLATFORM_EXPORT virtual StatusInt _ScanDgnModel(DgnModelP model);
     DGNPLATFORM_EXPORT virtual bool _ScanRangeFromPolyhedron();
     DGNPLATFORM_EXPORT virtual void _SetDgnDb(DgnDbR);
@@ -225,30 +167,29 @@ protected:
     DGNPLATFORM_EXPORT ViewContext();
 
 public:
-    int GetTransClipDepth() {return (int) m_transformClipStack.GetSize();}
+    StatusInt VisitElement(DgnElementId elementId, bool allowLoad);
     DMap4dCR GetWorldToView() const {return m_worldToView;}
     DMap4dCR GetWorldToNpc() const {return m_worldToNpc;}
     bool GetWantMaterials() {return m_wantMaterials;};
-    bool IsAttached() {return m_isAttached;}
     void SetSubRectFromViewRect(BSIRectCP viewRect);
     DGNPLATFORM_EXPORT void SetSubRectNpc(DRange3dCR subRect);
     void SetWantMaterials(bool wantMaterials) {m_wantMaterials = wantMaterials;}
     bool IsUndisplayed(GeometrySourceCR source);
     bool ValidateScanRange() {return m_scanRangeValid ? true : _ScanRangeFromPolyhedron();}
-    StatusInt Attach(DgnViewportP vp, DrawPurpose purpose) {return _Attach(vp,purpose);}
-    void Detach() {_Detach();}
+    DGNPLATFORM_EXPORT StatusInt Attach(DgnViewportP vp, DrawPurpose purpose);
     bool VisitAllModelElements() {return _VisitAllModelElements();}
     DGNPLATFORM_EXPORT bool VisitAllViewElements(BSIRectCP updateRect=nullptr);
     StatusInt InitContextForView() {return _InitContextForView();}
-    DGNPLATFORM_EXPORT bool IsWorldPointVisible(DPoint3dCR worldPoint, bool boresite);
-    DGNPLATFORM_EXPORT bool PointInsideClip(DPoint3dCR point);
-    DGNPLATFORM_EXPORT bool GetRayClipIntersection(double& distance, DPoint3dCR origin, DVec3dCR direction);
+    DGNPLATFORM_EXPORT bool IsPointVisible(DPoint3dCR worldPoint, bool boresite);
     DGNPLATFORM_EXPORT Frustum GetFrustum();
-    TransformClipStackR GetTransformClipStack() {return m_transformClipStack;}
+    Render::FrustumPlanes const& GetFrustumPlanes() const {return m_frustumPlanes;}
     ScanCriteriaCP GetScanCriteria() const {return &m_scanCriteria;}
     void InitScanRangeAndPolyhedron() {_InitScanRangeAndPolyhedron();}
     StatusInt VisitDgnModel(DgnModelP model){return _VisitDgnModel(model);}
     void SetScanReturn() {_SetScanReturn();}
+    void OutputGraphic(Render::GraphicR graphic, GeometrySourceCP source) {_OutputGraphic(graphic, source);}
+    void SetActiveVolume(ClipPrimitiveCR volume) {m_volume=&volume;}
+    ClipPrimitiveCPtr GetActiveVolume() const {return m_volume;}
     void EnableStopAfterTimout(uint32_t timeout) {m_endTime = BeTimeUtilities::QueryMillisecondsCounter()+timeout; m_stopAfterTimeout=true;}
 
     Render::GraphicPtr CreateGraphic(Render::Graphic::CreateParams const& params=Render::Graphic::CreateParams()) {return _CreateGraphic(params);}
@@ -316,21 +257,6 @@ public:
 
     //@}
 
-    /// @name Pushing and Popping Transforms and Clips
-    //@{
-    //! Push a ClipVector, creating a new local clip region.
-    //! @param[in]      clip       A clipping descriptor to push.
-    //! @see   PopTransformClip
-    void PushClip(ClipVectorCR clip) {_PushClip(clip);}
-
-    //! Push a set of clip planes, creating a new local clip region.
-    //! @param[in]      clipPlanes  Clipping planes to push - the intersections of their half planes define clip region.
-    //! @see   PopTransformClip
-    DGNPLATFORM_EXPORT void PushClipPlanes(ClipPlaneSetCR clipPlanes);
-
-    void PopClip() {_PopClip();}
-    //@}
-
     /// @name Query Methods
     //@{
 
@@ -344,7 +270,7 @@ public:
     void SetViewFlags(Render::ViewFlags flags) {m_viewflags = flags;}
 
     //! Get the DgnDb for this ViewContext.
-    DgnDbR GetDgnDb() const {BeAssert(nullptr != m_dgnDb); return *m_dgnDb;}
+    DgnDbR GetDgnDb() const {BeAssert(nullptr != m_dgndb); return *m_dgndb;}
 
     //! Set the project for this ViewContext when not attaching a viewport.
     void SetDgnDb(DgnDbR dgnDb) {return _SetDgnDb(dgnDb);}
@@ -410,14 +336,6 @@ public:
     //! @param[in]      closed      Do point represent a shape or linestring.
     void DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed=false){_DrawStyledLineString2d(nPts, pts, zDepth, range, closed);}
 
-    //! Draw a 3D linestring using the current Linestyle, if any. If there is no current Linestyle, draw a solid linestring.
-    //! @param[in]      nPts        Number of vertices in \c pts.
-    //! @param[in]      pts         Array of points in linestring
-    //! @param[in]      range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-    //!                                 optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
-    //! @param[in]      closed      Do point represent a shape or linestring.
-    void DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP range, bool closed=false){_DrawStyledLineString3d(nPts, pts, range, closed);}
-
     //! Draw a 2D elliptical arc using the current Linestyle. If there is no current Linestyle, draw a solid arc.
     //! @param[in]      ellipse     The arc data.
     //! @param[in]      isEllipse   Treat full sweep as ellipse not arc.
@@ -426,25 +344,10 @@ public:
     //!                               optional and is only used to speed processing. If you do not already have the range, pass nullptr.
     void DrawStyledArc2d(DEllipse3dCR ellipse, bool isEllipse, double zDepth, DPoint2dCP range) {_DrawStyledArc2d(ellipse, isEllipse, zDepth, range);}
 
-    //! Draw a 3D elliptical arc using the current Linestyle. If there is no current Linestyle, draw a solid arc.
-    //! @param[in]      ellipse     The arc data.
-    //! @param[in]      isEllipse   Treat full sweep as ellipse not arc.
-    //! @param[in]      range       Array of 2 points with the range (min followed by max) of the arc. This argument is
-    //!                               optional and is only used to speed processing. If you do not already have the range, pass nullptr.
-    void DrawStyledArc3d(DEllipse3dCR ellipse, bool isEllipse, DPoint3dCP range) {_DrawStyledArc3d(ellipse, isEllipse, range);}
-
     //! Draw a 2d BSpline curve using the current Linestyle. If there is no current Linestyle, draw a solid BSpline.
     //! @param        curve       bspline curve parameters
     //! @param[in]    zDepth      Z depth value.
     void DrawStyledBSplineCurve2d(MSBsplineCurveCR curve, double zDepth) {_DrawStyledBSplineCurve2d(curve, zDepth);}
-
-    //! Draw a BSpline curve using the current Linestyle. If there is no current Linestyle, draw a solid BSpline.
-    //! @param        curve       bspline curve parameters
-    void DrawStyledBSplineCurve3d(MSBsplineCurveCR curve) {_DrawStyledBSplineCurve3d(curve);}
-
-    //! Draw a curve vector using the current Linestyle. If there is no current Linestyle, draw a solid curve vector.
-    //! @param        curve       curve geometry
-    DGNPLATFORM_EXPORT void DrawStyledCurveVector3d(CurveVectorCR curve);
 
     //! Draw a 2d curve vector using the current Linestyle. If there is no current Linestyle, draw a solid curve vector.
     //! @param        curve       curve geometry
@@ -463,6 +366,7 @@ public:
 struct RenderContext : ViewContext
 {
     DEFINE_T_SUPER(ViewContext);
+    friend struct DgnViewport;
 
 protected:
     Render::OvrGraphicParams m_ovrParams;
@@ -476,9 +380,10 @@ public:
     Render::GraphicP _GetCachedGraphic(GeometrySourceCR source, double pixelSize) override {return source.Graphics().Find(*m_viewport, pixelSize);}
     DGNVIEW_EXPORT Render::GraphicP _GetCachedPartGraphic(DgnGeometryPartId, double pixelSize, ElementAlignedBox3dR) override;
     DGNVIEW_EXPORT Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize) override;
-    void _PushFrustumClip() override {}
     Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return m_target.CreateGraphic(params);}
     void _SavePartGraphic(DgnGeometryPartId partId, Render::GraphicR graphic, ElementAlignedBox3dCR localRange) override;
+    Render::TargetR GetTargetR() {return m_target;}
+    DgnViewportR GetViewportR()  {return *m_viewport;}   // A RenderContext always have a viewport.
 };
 
 //=======================================================================================

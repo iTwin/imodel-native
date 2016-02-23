@@ -25,6 +25,7 @@
 #include "DgnHost.h"
 #include <BeSQLite/BeSQLite.h>
 #include <BeSQLite/ChangeSet.h>
+#include <BeSQLite/RTreeMatch.h>
 #include <ECDb/ECDbApi.h>
 
 #define USING_NAMESPACE_BENTLEY_DGNPLATFORM using namespace BentleyApi::Dgn; // for backwards compatibility, do not use
@@ -65,7 +66,6 @@ DGNPLATFORM_TYPEDEFS(Caret)
 DGNPLATFORM_TYPEDEFS(ChangeAnnotationScale)
 DGNPLATFORM_TYPEDEFS(ClipPrimitive)
 DGNPLATFORM_TYPEDEFS(ClipVector)
-DGNPLATFORM_TYPEDEFS(ClipVolumeOverrides)
 DGNPLATFORM_TYPEDEFS(ColorDef)
 DGNPLATFORM_TYPEDEFS(ComponentDef)
 DGNPLATFORM_TYPEDEFS(ComponentModel)
@@ -104,7 +104,8 @@ DGNPLATFORM_TYPEDEFS(DgnViewport)
 DGNPLATFORM_TYPEDEFS(DictionaryElement)
 DGNPLATFORM_TYPEDEFS(DisplayStyle)
 DGNPLATFORM_TYPEDEFS(DisplayStyleFlags)
-DGNPLATFORM_TYPEDEFS(DrawingElement)
+DGNPLATFORM_TYPEDEFS (AnnotationElement2d)
+DGNPLATFORM_TYPEDEFS (DrawingGraphic)
 DGNPLATFORM_TYPEDEFS(DrawingModel)
 DGNPLATFORM_TYPEDEFS(DrawingViewDefinition)
 DGNPLATFORM_TYPEDEFS(DropGeometry)
@@ -118,6 +119,7 @@ DGNPLATFORM_TYPEDEFS(ElementAlignedBox3d)
 DGNPLATFORM_TYPEDEFS(ElementLocateManager)
 DGNPLATFORM_TYPEDEFS(FenceManager)
 DGNPLATFORM_TYPEDEFS(FenceParams)
+DGNPLATFORM_TYPEDEFS(FitContext)
 DGNPLATFORM_TYPEDEFS(Frustum)
 DGNPLATFORM_TYPEDEFS(GeomDetail)
 DGNPLATFORM_TYPEDEFS(GeometricPrimitive)
@@ -212,8 +214,9 @@ DGNPLATFORM_REF_COUNTED_PTR(DgnModel)
 DGNPLATFORM_REF_COUNTED_PTR(DgnRevision)
 DGNPLATFORM_REF_COUNTED_PTR(DgnViewport)
 DGNPLATFORM_REF_COUNTED_PTR(DictionaryElement)
+DGNPLATFORM_REF_COUNTED_PTR(AnnotationElement2d)
 DGNPLATFORM_REF_COUNTED_PTR(DisplayStyleHandlerSettings)
-DGNPLATFORM_REF_COUNTED_PTR(DrawingElement)
+DGNPLATFORM_REF_COUNTED_PTR (DrawingGraphic)
 DGNPLATFORM_REF_COUNTED_PTR(DrawingViewDefinition)
 DGNPLATFORM_REF_COUNTED_PTR(IBriefcaseManager)
 DGNPLATFORM_REF_COUNTED_PTR(IElemTopology)
@@ -396,6 +399,7 @@ public:
     DgnGeometryPartId GetGeometryPartId() const {return m_partId;}
     uint16_t GetIndex() const {return m_index;}
     uint16_t GetPartIndex() const {return m_partIndex;}
+    bool IsValid() const {return 0 != m_index;}
 };
 
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
@@ -558,11 +562,15 @@ struct Frustum
     void Multiply(TransformCR trans) {trans.Multiply(m_pts, m_pts, 8);}
     void Translate(DVec3dCR offset) {for (auto& pt : m_pts) pt.Add(offset);}
     Frustum TransformBy(TransformCR trans) {Frustum out; trans.Multiply(out.m_pts, m_pts, 8); return out;}
+    void ToRangeR(DRange3dR range) const {range.InitFrom(m_pts, 8);}
     DRange3d ToRange() const {DRange3d range; range.InitFrom(m_pts, 8); return range;}
     DGNPLATFORM_EXPORT void ScaleAboutCenter(double scale);
     void Invalidate() {memset(this, 0, sizeof(*this));}
     bool operator==(Frustum const& rhs) const {return 0==memcmp(m_pts, rhs.m_pts, sizeof(*this));}
     bool operator!=(Frustum const& rhs) const {return !(*this == rhs);}
+    Frustum() {} // uninitialized!
+    DGNPLATFORM_EXPORT explicit Frustum(DRange3dCR);
+    explicit Frustum(BeSQLite::RTree3dValCR);
 };
 
 //=======================================================================================

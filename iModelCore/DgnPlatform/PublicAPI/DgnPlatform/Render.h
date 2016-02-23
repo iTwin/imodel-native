@@ -212,6 +212,7 @@ protected:
 
 public:
     Image(uint32_t width, uint32_t height, Format format, uint8_t const* data=0, uint32_t size=0) : m_width(width), m_height(height), m_format(format), m_image(data, size) {}
+    Image(uint32_t width, uint32_t height, Format format, ByteStream&& data) : m_width(width), m_height(height), m_format(format), m_image(std::move(data)) {}
     uint32_t GetWidth() const {return m_width;}
     uint32_t GetHeight() const {return m_height;}
     Format GetFormat() const {return m_format;}
@@ -285,6 +286,132 @@ struct LineStyleParams
 };
 
 //=======================================================================================
+//! This structure contains options (modifications) that can be applied
+//! to existing line styles to change their appearance without changing the line style
+//! definition. Most of the options pertain to the operation of the StrokePatternComponent
+//! component but the plane definition and scale factors can be used by all components.
+//=======================================================================================
+struct LineStyleSymb
+{
+private:
+    // NOTE: For performance, the constructor initializes members using:
+    //         memset (&m_lStyle, 0, offsetof (LineStyleSymb, m_planeByRows)- offsetof (LineStyleSymb, m_lStyle));
+    //         So it will be necessary to update it if first/last member are changed. */
+    ILineStyleCP    m_lStyle; // if nullptr, no linestyle active
+    struct
+        {
+        uint32_t       scale:1;
+        uint32_t       dashScale:1;
+        uint32_t       gapScale:1;
+        uint32_t       orgWidth:1;
+        uint32_t       endWidth:1;
+        uint32_t       phaseShift:1;
+        uint32_t       autoPhase:1;
+        uint32_t       maxCompress:1;
+        uint32_t       iterationLimit:1;
+        uint32_t       treatAsSingleSegment:1;
+        uint32_t       plane:1;
+        uint32_t       cosmetic:1;
+        uint32_t       centerPhase:1;
+        uint32_t       xElemPhaseSet:1;
+        uint32_t       startTangentSet:1;
+        uint32_t       endTangentSet:1;
+        uint32_t       elementIsClosed:1;
+        uint32_t       continuationXElems:1;
+        uint32_t       isCurve:1;
+        uint32_t       isContinuous:1;
+        } m_options;
+
+    int         m_nIterate;
+    double      m_scale;
+    double      m_dashScale;
+    double      m_gapScale;
+    double      m_orgWidth;
+    double      m_endWidth;
+    double      m_phaseShift;
+    double      m_autoPhase;
+    double      m_maxCompress;
+    double      m_totalLength;      // length of entire element.
+    double      m_xElemPhase;       // where we left off from last element (for compound elements)
+    DVec3d      m_startTangent;
+    DVec3d      m_endTangent;
+    RotMatrix   m_planeByRows;
+    TexturePtr  m_texture;
+
+public:
+    DGNPLATFORM_EXPORT LineStyleSymb();
+    DGNPLATFORM_EXPORT void Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec3dCP startTangent, DVec3dCP endTangent, ViewContextR context);
+
+    void Clear() {m_lStyle = nullptr; m_texture = nullptr;}
+    void Init(ILineStyleCP);
+
+    DGNPLATFORM_EXPORT bool operator==(LineStyleSymbCR rhs) const; //!< Compare two LineStyleSymb.
+
+    ILineStyleCP GetILineStyle() const {return m_lStyle;}
+    void GetPlaneAsMatrixRows(RotMatrixR matrix) const {matrix = m_planeByRows;}
+    DGNPLATFORM_EXPORT double GetScale() const;
+    DGNPLATFORM_EXPORT double GetDashScale() const;
+    DGNPLATFORM_EXPORT double GetGapScale() const;
+    DGNPLATFORM_EXPORT double GetOriginWidth() const;
+    DGNPLATFORM_EXPORT double GetEndWidth() const;
+    double GetPhaseShift() const {return m_phaseShift;}
+    double GetFractionalPhase() const {return m_autoPhase;}
+    double GetMaxCompress() const {return m_maxCompress;}
+    int GetNumIterations() const {return m_nIterate;}
+    DGNPLATFORM_EXPORT double GetMaxWidth() const;
+    double GetTotalLength() const {return m_totalLength;}
+    DVec3dCP GetStartTangent() const {return &m_startTangent;}
+    DVec3dCP GetEndTangent() const{return &m_endTangent;}
+    Texture* GetTexture() const {return m_texture.get(); }
+
+    bool IsScaled() const {return m_options.scale;}
+    bool IsAutoPhase() const {return m_options.autoPhase;}
+    bool IsCenterPhase() const{return m_options.centerPhase;}
+    bool IsCosmetic() const {return m_options.cosmetic;}
+    bool IsTreatAsSingleSegment() const {return m_options.treatAsSingleSegment;}
+    bool IsElementClosed() const{return m_options.elementIsClosed; }
+    bool IsCurve() const {return m_options.isCurve; }
+    bool IsContinuous() const {return m_options.isContinuous; }
+
+    bool HasDashScale() const {return m_options.dashScale;}
+    bool HasGapScale() const {return m_options.gapScale;}
+    bool HasOrgWidth() const {return m_options.orgWidth;}
+    bool HasEndWidth() const{return m_options.endWidth;}
+    bool HasPhaseShift() const {return m_options.phaseShift;}
+    bool HasIterationLimit() const {return m_options.iterationLimit;}
+    bool HasPlane() const {return m_options.plane;}
+    bool HasStartTangent() const {return m_options.startTangentSet;}
+    bool HasEndTangent() const {return m_options.endTangentSet;}
+    bool HasTrueWidth() const  {return HasOrgWidth() || HasEndWidth();}
+    bool HasMaxCompress() const {return m_options.maxCompress;}
+
+    DGNPLATFORM_EXPORT void SetPlaneAsMatrixRows(RotMatrixCP);
+    DGNPLATFORM_EXPORT void SetNormalVec(DPoint3dCP);
+    DGNPLATFORM_EXPORT void SetOriginWidth(double width);
+    DGNPLATFORM_EXPORT void SetEndWidth(double width);
+    DGNPLATFORM_EXPORT void SetWidth(double width);
+    DGNPLATFORM_EXPORT void SetScale(double scaleFactor);
+    DGNPLATFORM_EXPORT void SetGapScale(double scaleFactor);
+    DGNPLATFORM_EXPORT void SetDashScale(double scaleFactor);
+    DGNPLATFORM_EXPORT void SetFractionalPhase(bool isOn, double fraction);
+    DGNPLATFORM_EXPORT void SetCenterPhase(bool isOn);
+    DGNPLATFORM_EXPORT void SetPhaseShift(bool isOn, double distance);
+    DGNPLATFORM_EXPORT void SetTreatAsSingleSegment(bool yesNo);
+    DGNPLATFORM_EXPORT void SetTangents(DVec3dCP, DVec3dCP);
+    DGNPLATFORM_EXPORT void SetCosmetic(bool cosmetic);
+    void SetTotalLength(double length) {m_totalLength = length;}
+    void SetLineStyle(ILineStyleCP lstyle) {m_lStyle = lstyle;}
+    void SetXElemPhase(double last) {m_xElemPhase = last; m_options.xElemPhaseSet=true;}
+    void SetElementClosed(bool closed) {m_options.elementIsClosed = closed;}
+    void SetIsCurve(bool isCurve) {m_options.isCurve = isCurve;}
+
+    DGNPLATFORM_EXPORT void ConvertLineStyleToTexture(ViewContextR context, bool force);
+    bool ContinuationXElems() const {return m_options.continuationXElems;}
+    DGNPLATFORM_EXPORT void ClearContinuationData();
+    DGNPLATFORM_EXPORT void CheckContinuationData();
+};
+
+//=======================================================================================
 //! Line style id and parameters
 //=======================================================================================
 struct LineStyleInfo : RefCountedBase
@@ -292,6 +419,10 @@ struct LineStyleInfo : RefCountedBase
 protected:
     DgnStyleId          m_styleId;
     LineStyleParams     m_styleParams; //!< modifiers for user defined linestyle (if applicable)
+    LineStyleSymb       m_lStyleSymb; //!< cooked form of linestyle
+    DVec3d              m_startTangent;
+    DVec3d              m_endTangent;
+
     DGNPLATFORM_EXPORT LineStyleInfo(DgnStyleId styleId, LineStyleParamsCP params);
 
 public:
@@ -304,8 +435,16 @@ public:
     DGNPLATFORM_EXPORT bool operator==(LineStyleInfoCR rhs) const;
 
     DgnStyleId GetStyleId() const {return m_styleId;}
-    DGNPLATFORM_EXPORT LineStyleParamsCP GetStyleParams() const;
-};
+    LineStyleParamsCP GetStyleParams() const {return 0 != m_styleParams.modifiers ? &m_styleParams : nullptr;}
+    LineStyleSymbCR GetLineStyleSymb() const {return m_lStyleSymb;}
+    LineStyleSymbR GetLineStyleSymbR() {return m_lStyleSymb;}
+    DVec3dCR GetStartTangent() const {return m_startTangent;}
+    DVec3dCR GetEndTangent() const {return m_endTangent;}
+    void SetStartTangent(DVec3dCR startTangent) {m_startTangent = startTangent;}
+    void SetEndTangent(DVec3dCR endTangent) {m_endTangent = endTangent;}
+
+    DGNPLATFORM_EXPORT void Cook(ViewContextR);
+ };
 
 struct ISprite;
 struct DgnOleDraw;
@@ -352,7 +491,6 @@ protected:
     GradientMode    m_mode;
     uint16_t        m_flags;
     uint16_t        m_nKeys;
-
     double          m_angle;
     double          m_tint;
     double          m_shift;
@@ -510,129 +648,6 @@ public:
 };
 
 //=======================================================================================
-//! This structure contains options (modifications) that can be applied
-//! to existing line styles to change their appearance without changing the line style
-//! definition. Most of the options pertain to the operation of the StrokePatternComponent
-//! component but the plane definition and scale factors can be used by all components.
-//=======================================================================================
-struct LineStyleSymb
-{
-private:
-    // NOTE: For performance, the constructor initializes members using:
-    //         memset (&m_lStyle, 0, offsetof (LineStyleSymb, m_planeByRows)- offsetof (LineStyleSymb, m_lStyle));
-    //         So it will be necessary to update it if first/last member are changed. */
-    ILineStyleCP    m_lStyle;       // if nullptr, no linestyle active
-    struct
-        {
-        uint32_t       scale:1;
-        uint32_t       dashScale:1;
-        uint32_t       gapScale:1;
-        uint32_t       orgWidth:1;
-        uint32_t       endWidth:1;
-        uint32_t       phaseShift:1;
-        uint32_t       autoPhase:1;
-        uint32_t       maxCompress:1;
-        uint32_t       iterationLimit:1;
-        uint32_t       treatAsSingleSegment:1;
-        uint32_t       plane:1;
-        uint32_t       cosmetic:1;
-        uint32_t       centerPhase:1;
-        uint32_t       xElemPhaseSet:1;
-        uint32_t       startTangentSet:1;
-        uint32_t       endTangentSet:1;
-        uint32_t       elementIsClosed:1;
-        uint32_t       continuationXElems:1;
-        uint32_t       isCurve:1;
-        } m_options;
-
-    int         m_nIterate;
-    double      m_scale;
-    double      m_dashScale;
-    double      m_gapScale;
-    double      m_orgWidth;
-    double      m_endWidth;
-    double      m_phaseShift;
-    double      m_autoPhase;
-    double      m_maxCompress;
-    double      m_totalLength;      // length of entire element.
-    double      m_xElemPhase;       // where we left off from last element (for compound elements)
-    DPoint3d    m_startTangent;
-    DPoint3d    m_endTangent;
-    RotMatrix   m_planeByRows;
-    TexturePtr  m_texture;
-
-public:
-    DGNPLATFORM_EXPORT LineStyleSymb();
-    DGNPLATFORM_EXPORT int FromResolvedGeometryParams(GeometryParamsCR, ViewContextR context, DPoint3dCP, DPoint3dCP);
-    DGNPLATFORM_EXPORT int FromNaturalGeometryParams(GeometryParamsR, ViewContextR context, DPoint3dCP, DPoint3dCP);
-    DGNPLATFORM_EXPORT int FromResolvedStyle(LineStyleInfoCP styleInfo, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent);
-
-    void Clear() {m_lStyle = nullptr; m_options.orgWidth = m_options.endWidth = false; m_texture = nullptr;}
-    void Init(ILineStyleCP);
-
-public:
-    ILineStyleCP GetILineStyle() const {return m_lStyle;}
-    void GetPlaneAsMatrixRows(RotMatrixR matrix) const {matrix = m_planeByRows;}
-    DGNPLATFORM_EXPORT double GetScale() const;
-    DGNPLATFORM_EXPORT double GetDashScale() const;
-    DGNPLATFORM_EXPORT double GetGapScale() const;
-    DGNPLATFORM_EXPORT double GetOriginWidth() const;
-    DGNPLATFORM_EXPORT double GetEndWidth() const;
-    double GetPhaseShift() const {return m_phaseShift;}
-    double GetFractionalPhase() const {return m_autoPhase;}
-    double GetMaxCompress() const {return m_maxCompress;}
-    int GetNumIterations() const {return m_nIterate;}
-    DGNPLATFORM_EXPORT double GetMaxWidth() const;
-    double GetTotalLength() const {return m_totalLength;}
-    DPoint3dCP GetStartTangent() const {return &m_startTangent;}
-    DPoint3dCP GetEndTangent() const{return &m_endTangent;}
-    Texture* GetTexture() const {return m_texture.get(); }
-    bool IsScaled() const {return m_options.scale;}
-    bool IsAutoPhase() const {return m_options.autoPhase;}
-    bool IsCenterPhase() const{return m_options.centerPhase;}
-    bool IsCosmetic() const {return m_options.cosmetic;}
-    bool IsTreatAsSingleSegment() const {return m_options.treatAsSingleSegment;}
-    bool HasDashScale() const {return m_options.dashScale;}
-    bool HasGapScale() const {return m_options.gapScale;}
-    bool HasOrgWidth() const {return m_options.orgWidth;}
-    bool HasEndWidth() const{return m_options.endWidth;}
-    bool IsElementClosed() const{return m_options.elementIsClosed; }
-    bool IsCurve() const {return m_options.isCurve; }
-    bool HasPhaseShift() const {return m_options.phaseShift;}
-    bool HasIterationLimit() const {return m_options.iterationLimit;}
-    bool HasPlane() const {return m_options.plane;}
-    bool HasStartTangent() const {return m_options.startTangentSet;}
-    bool HasEndTangent() const {return m_options.endTangentSet;}
-    DGNPLATFORM_EXPORT void SetPlaneAsMatrixRows(RotMatrixCP);
-    DGNPLATFORM_EXPORT void SetNormalVec(DPoint3dCP);
-    DGNPLATFORM_EXPORT void SetOriginWidth(double width);
-    DGNPLATFORM_EXPORT void SetEndWidth(double width);
-    DGNPLATFORM_EXPORT void SetWidth(double width);
-    DGNPLATFORM_EXPORT void SetScale(double scaleFactor);
-    DGNPLATFORM_EXPORT void SetFractionalPhase(bool isOn, double fraction);
-    DGNPLATFORM_EXPORT void SetCenterPhase(bool isOn);
-    DGNPLATFORM_EXPORT void SetPhaseShift(bool isOn, double distance);
-    DGNPLATFORM_EXPORT void SetTreatAsSingleSegment(bool yesNo);
-    DGNPLATFORM_EXPORT void SetTangents(DPoint3dCP, DPoint3dCP);
-    void SetLineStyle(ILineStyleCP lstyle) {m_lStyle = lstyle;}
-    DGNPLATFORM_EXPORT void ConvertLineStyleToTexture(ViewContextR context, bool force);
-
-    bool HasTrueWidth() const  {return HasOrgWidth() || HasEndWidth();}
-    bool HasMaxCompress() const {return m_options.maxCompress;}
-    bool ContinuationXElems() const {return m_options.continuationXElems;}
-    void SetXElemPhase(double last) {m_xElemPhase = last; m_options.xElemPhaseSet=true;}
-    void SetElementClosed(bool closed) {m_options.elementIsClosed = closed;}
-    void SetIsCurve(bool isCurve) {m_options.isCurve = isCurve;}
-
-    DGNPLATFORM_EXPORT void SetGapScale(double scaleFactor);
-    DGNPLATFORM_EXPORT void SetDashScale(double scaleFactor);
-    void SetTotalLength(double length) {m_totalLength = length;}
-    DGNPLATFORM_EXPORT void SetCosmetic(bool cosmetic);
-    DGNPLATFORM_EXPORT void ClearContinuationData();
-    DGNPLATFORM_EXPORT void CheckContinuationData();
-};
-
-//=======================================================================================
 //! The "cooked" material and symbology for a Render::Graphic. This determines the appearance
 //! (e.g. texture, color, width, linestyle, etc.) used to draw Geometry.
 //=======================================================================================
@@ -645,9 +660,10 @@ private:
     uint32_t            m_rasterWidth;
     ColorDef            m_lineColor;
     ColorDef            m_fillColor;
+    double              m_trueWidthStart;
+    double              m_trueWidthEnd;
     LineTexturePtr      m_lineTexture;
     MaterialPtr         m_material;
-    LineStyleSymb       m_lStyleSymb;
     GradientSymbPtr     m_gradient;
     PatternParamsPtr    m_patternParams;
 
@@ -656,14 +672,14 @@ public:
     enum class LinePixels : uint32_t
         {
         Solid = 0,
-        Code0 = Solid,        // 0
-        Code1 = 0x80808080,   // 1
-        Code2 = 0xf8f8f8f8,   // 2
-        Code3 = 0xffe0ffe0,   // 3
-        Code4 = 0xfe10fe10,   // 4
-        Code5 = 0xe0e0e0e0,   // 5
-        Code6 = 0xf888f888,   // 6
-        Code7 = 0xff18ff18,    // 7
+        Code0 = Solid,      // 0
+        Code1 = 0x80808080, // 1
+        Code2 = 0xf8f8f8f8, // 2
+        Code3 = 0xffe0ffe0, // 3
+        Code4 = 0xfe10fe10, // 4
+        Code5 = 0xe0e0e0e0, // 5
+        Code6 = 0xf888f888, // 6
+        Code7 = 0xff18ff18, // 7
         Invisible = 0x00000001, // nearly invisible
         };
 
@@ -671,17 +687,7 @@ public:
 
     DGNPLATFORM_EXPORT GraphicParams();
     DGNPLATFORM_EXPORT explicit GraphicParams(GraphicParamsCR rhs);
-
     DGNPLATFORM_EXPORT void Init();
-
-    //! Get the texture applied to lines for this GraphicParams
-    LineTextureP GetLineTexture() const {return m_lineTexture.get();}
-
-    //! Set a LineTexture for this GraphicParams
-    void SetLineTexture(LineTextureP texture) {m_lineTexture = texture;}
-
-    //! Set the gradient symbology
-    void SetGradient(GradientSymbP gradient) {m_gradient = gradient;}
 
     //! @name Query Methods
     //@{
@@ -701,21 +707,23 @@ public:
     //! Get the width in pixels from this GraphicParams.
     uint32_t GetWidth() const {return m_rasterWidth;}
 
-    //! Determine whether TrueWidth is on for this GraphicParams
-    bool HasTrueWidth() const {return m_lStyleSymb.HasTrueWidth();}
+    //! Get width at start in world coords from this GraphicParams.
+    double GetTrueWidthStart() const {return m_trueWidthStart;}
 
-    //! Set the lineear pixel pattern for this GraphicParams. This is only valid for overlay decorators in pixel mode.
+    //! Get width at end in world coords from this GraphicParams.
+    double GetTrueWidthEnd() const {return m_trueWidthEnd;}
+
+    //! Get the texture applied to lines for this GraphicParams
+    LineTextureP GetLineTexture() const {return m_lineTexture.get();}
+
+    //! Get the linear pixel pattern for this GraphicParams. This is only valid for overlay decorators in pixel mode.
     uint32_t GetLinePixels() const {return m_linePixels;}
-    void SetLinePixels(LinePixels code) {m_linePixels = (uint32_t) code; m_lineTexture=nullptr;}
 
     //! Determine whether the fill flag is on for this GraphicParams.
     bool IsFilled() const {return m_isFilled;}
 
     //! Determine whether the fill represents blanking region.
     bool IsBlankingRegion() const {return m_isBlankingRegion;}
-
-    //! Get the LineStyleSymb from this GraphicParams.
-    LineStyleSymbCR GetLineStyleSymb() const {return m_lStyleSymb;}
 
     //! Get the GradientSymb from this GraphicParams.
     GradientSymbCP GetGradientSymb() const {return m_gradient.get();}
@@ -729,33 +737,46 @@ public:
 
     //! @name Set Methods
     //@{
+
     //! Set the current line color for this GraphicParams.
-    //! @param[in] lineColor   the new TBGR line color for this GraphicParams.
-    void SetLineColor(ColorDef lineColor) { m_lineColor = lineColor; }
+    //! @param[in] lineColor the new TBGR line color for this GraphicParams.
+    void SetLineColor(ColorDef lineColor) {m_lineColor = lineColor;}
     void SetLineTransparency(Byte transparency) {m_lineColor.SetAlpha(transparency);}
 
     //! Set the current fill color for this GraphicParams.
-    //! @param[in] fillColor   the new TBGR fill color for this GraphicParams.
-    void SetFillColor(ColorDef fillColor) {m_fillColor = fillColor; }
+    //! @param[in] fillColor the new TBGR fill color for this GraphicParams.
+    void SetFillColor(ColorDef fillColor) {m_fillColor = fillColor;}
     void SetFillTransparency(Byte transparency) {m_fillColor.SetAlpha(transparency);}
 
+    //! Set the width in pixels for this GraphicParams.
+    //! @param[in] rasterWidth the width in pixels of lines drawn using this GraphicParams.
+    //! @note if either TrueWidthStart or TrueWidthEnd are non-zero, this value is ignored.
+    void SetWidth(uint32_t rasterWidth) {m_rasterWidth = rasterWidth;}
+
+    //! Set width at start in world coords from this GraphicParams.
+    void SetTrueWidthStart(double width) {m_trueWidthStart = width;}
+
+    //! Set width at end in world coords from this GraphicParams.
+    void SetTrueWidthEnd(double width) {m_trueWidthEnd = width;}
+
+    //! Set a LineTexture for this GraphicParams
+    void SetLineTexture(LineTextureP texture) {m_lineTexture = texture;}
+
+    //! Set the linear pixel pattern for this GraphicParams. This is only valid for overlay decorators in pixel mode.
+    void SetLinePixels(LinePixels code) {m_linePixels = (uint32_t) code; m_lineTexture=nullptr;}
+
     //! Turn on or off the fill flag for this GraphicParams.
-    //! @param[in] filled      if true, the interior of elements drawn using this GraphicParams will be filled using the fill color.
+    //! @param[in] filled if true, the interior of elements drawn using this GraphicParams will be filled using the fill color.
     void SetIsFilled(bool filled) {m_isFilled = filled;}
 
     //! Set that fill is always behind other geometry.
     void SetIsBlankingRegion(bool blanking) {m_isBlankingRegion = blanking;}
 
-    //! Set the width in pixels for this GraphicParams.
-    //! @param[in] rasterWidth the width in pixels of lines drawn using this GraphicParams.
-    //! @note         If either TrueWidthStart or TrueWidthEnd are non-zero, this value is ignored.
-    void SetWidth(uint32_t rasterWidth) {m_rasterWidth = rasterWidth;}
-
-    //! Get the LineStyleSymb from this GraphicParams for setting line style parameters.
-    LineStyleSymbR GetLineStyleSymbR() {return m_lStyleSymb;}
+    //! Set the gradient symbology
+    void SetGradient(GradientSymbP gradient) {m_gradient = gradient;}
 
     //! Set the render material.
-    void SetMaterial(Material* material) {m_material = material;}
+    void SetMaterial(MaterialP material) {m_material = material;}
 
     //! Set area patterning parameters.
     void SetPatternParams(PatternParamsP patternParams) {m_patternParams = patternParams;}
@@ -782,8 +803,8 @@ struct OvrGraphicParams
     };
 
 private:
-    uint32_t    m_flags;
-    GraphicParams m_matSymb;
+    uint32_t        m_flags;
+    GraphicParams   m_matSymb;
 
 public:
     OvrGraphicParams() : m_flags(FLAGS_None) {}
@@ -801,17 +822,19 @@ public:
     MaterialPtr GetMaterial() const {return m_matSymb.GetMaterial();}
     PatternParamsCP GetPatternParams() const {return m_matSymb.GetPatternParams();}
 
-    DGNPLATFORM_EXPORT void Clear();
+    void Clear() {SetFlags(FLAGS_None); m_matSymb.Init();};
     void SetFlags(uint32_t flags) {m_flags = flags;}
     void SetLineColor(ColorDef color) {m_matSymb.SetLineColor(color); m_flags |=  FLAGS_Color;}
     void SetFillColor(ColorDef color) {m_matSymb.SetFillColor(color); m_flags |= FLAGS_FillColor;}
     void SetLineTransparency(Byte trans) {m_matSymb.SetLineTransparency(trans); m_flags |= FLAGS_ColorTransparency;}
     void SetFillTransparency(Byte trans) {m_matSymb.SetFillTransparency(trans); m_flags |= FLAGS_FillColorTransparency;}
     void SetWidth(uint32_t width) {m_matSymb.SetWidth(width); m_flags |= FLAGS_RastWidth;}
-    void SetLinePixels(GraphicParams::LinePixels pixels) {m_matSymb.SetLinePixels(pixels); m_flags |= FLAGS_Style; m_matSymb.GetLineStyleSymbR().SetLineStyle(nullptr);}
+    void SetLinePixels(GraphicParams::LinePixels pixels) {m_matSymb.SetLinePixels(pixels); m_flags |= FLAGS_Style;}
     void SetMaterial(Material* material) {m_matSymb.SetMaterial(material); m_flags |= FLAGS_RenderMaterial;}
     void SetPatternParams(PatternParamsP patternParams) {m_matSymb.SetPatternParams(patternParams);}
-    DGNPLATFORM_EXPORT void SetLineStyle(int32_t styleNo, DgnModelR modelRef, DgnModelR styleDgnModel, LineStyleParamsCP lStyleParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent);
+    void SetLineTexture(LineTextureP texture) {m_matSymb.SetLineTexture(texture); m_flags |= FLAGS_Style;}
+    void SetTrueWidthStart(double width) {m_matSymb.SetTrueWidthStart(width); m_flags |= FLAGS_TrueWidth;}
+    void SetTrueWidthEnd(double width) {m_matSymb.SetTrueWidthEnd(width); m_flags |= FLAGS_TrueWidth;}
 };
 
 //=======================================================================================
@@ -861,16 +884,16 @@ protected:
     virtual StatusInt _Close() {m_isOpen=false; return SUCCESS;}
     virtual bool _IsForDisplay() const {return false;}
     virtual void _ActivateGraphicParams(GraphicParamsCR graphicParams, GeometryParamsCP geomParams) = 0;
-    virtual void _AddLineString(int numPoints, DPoint3dCP points, DPoint3dCP range) = 0;
-    virtual void _AddLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) = 0;
-    virtual void _AddPointString(int numPoints, DPoint3dCP points, DPoint3dCP range) = 0;
-    virtual void _AddPointString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) = 0;
-    virtual void _AddShape(int numPoints, DPoint3dCP points, bool filled, DPoint3dCP range) = 0;
-    virtual void _AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range) = 0;
-    virtual void _AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags, DPoint3dCP range) = 0;
-    virtual void _AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth, DPoint2dCP range) = 0;
-    virtual void _AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled, DPoint3dCP range) = 0;
-    virtual void _AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth, DPoint2dCP range) = 0;
+    virtual void _AddLineString(int numPoints, DPoint3dCP points) = 0;
+    virtual void _AddLineString2d(int numPoints, DPoint2dCP points, double zDepth) = 0;
+    virtual void _AddPointString(int numPoints, DPoint3dCP points) = 0;
+    virtual void _AddPointString2d(int numPoints, DPoint2dCP points, double zDepth) = 0;
+    virtual void _AddShape(int numPoints, DPoint3dCP points, bool filled) = 0;
+    virtual void _AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth) = 0;
+    virtual void _AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags) = 0;
+    virtual void _AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth) = 0;
+    virtual void _AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled) = 0;
+    virtual void _AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth) = 0;
     virtual void _AddBSplineCurve(MSBsplineCurveCR curve, bool filled) = 0;
     virtual void _AddBSplineCurve2d(MSBsplineCurveCR curve, bool filled, double zDepth) = 0;
     virtual void _AddCurveVector(CurveVectorCR curves, bool isFilled) = 0;
@@ -882,11 +905,12 @@ protected:
     virtual void _AddTextString(TextStringCR text) = 0;
     virtual void _AddTextString2d(TextStringCR text, double zDepth) = 0;
     virtual void _AddMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) = 0;
-    virtual void _AddRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) = 0;
-    virtual void _AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2d const *range) = 0;
+    virtual void _AddRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels) = 0;
+    virtual void _AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth) = 0;
+    virtual void _AddTile(Render::TextureCR tile, DPoint3dCP corners) = 0;
     virtual void _AddDgnOle(DgnOleDraw*) = 0;
     virtual void _AddPointCloud(PointCloudDraw* drawParams) = 0;
-    virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsR) = 0;
+    virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR) = 0;
     virtual Render::GraphicPtr _CreateSubGraphic(TransformCR) const = 0;
     virtual ~Graphic() {}
 
@@ -926,41 +950,31 @@ public:
     //! Draw a 3D line string.
     //! @param[in]          numPoints   Number of vertices in points array.
     //! @param[in]          points      Array of vertices in the line string.
-    //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
-    void AddLineString(int numPoints, DPoint3dCP points, DPoint3dCP range) {_AddLineString(numPoints, points, range);}
+    void AddLineString(int numPoints, DPoint3dCP points) {_AddLineString(numPoints, points);}
 
     //! Draw a 2D line string.
     //! @param[in]          numPoints   Number of vertices in points array.
     //! @param[in]          points      Array of vertices in the line string.
     //! @param[in]          zDepth      Z depth value in local coordinates.
-    //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
-    void AddLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) {_AddLineString2d(numPoints, points, zDepth, range);}
+    void AddLineString2d(int numPoints, DPoint2dCP points, double zDepth) {_AddLineString2d(numPoints, points, zDepth);}
 
     //! Draw a 3D point string. A point string is displayed as a series of points, one at each vertex in the array, with no vectors connecting the vertices.
     //! @param[in]          numPoints   Number of vertices in points array.
     //! @param[in]          points      Array of vertices in the point string.
-    //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
-    void AddPointString(int numPoints, DPoint3dCP points, DPoint3dCP range) {_AddPointString(numPoints, points, range);}
+    void AddPointString(int numPoints, DPoint3dCP points) {_AddPointString(numPoints, points);}
 
     //! Draw a 2D point string. A point string is displayed as a series of points, one at each vertex in the array, with no vectors connecting the vertices.
     //! @param[in]          numPoints   Number of vertices in points array.
     //! @param[in]          points      Array of vertices in the point string.
     //! @param[in]          zDepth      Z depth value.
-    //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
-    void AddPointString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) {_AddPointString2d(numPoints, points, zDepth, range);}
+    void AddPointString2d(int numPoints, DPoint2dCP points, double zDepth) {_AddPointString2d(numPoints, points, zDepth);}
 
     //! Draw a closed 3D shape.
     //! @param[in]          numPoints   Number of vertices in \c points array. If the last vertex in the array is not the same as the first vertex, an
     //!                                     additional vertex will be added to close the shape.
     //! @param[in]          points      Array of vertices of the shape.
     //! @param[in]          filled      If true, the shape will be drawn filled.
-    //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
-    void AddShape(int numPoints, DPoint3dCP points, bool filled, DPoint3dCP range) {_AddShape(numPoints, points, filled, range);}
+    void AddShape(int numPoints, DPoint3dCP points, bool filled) {_AddShape(numPoints, points, filled);}
 
     //! Draw a 2D shape.
     //! @param[in]          numPoints   Number of vertices in \c points array. If the last vertex in the array is not the same as the first vertex, an
@@ -968,26 +982,20 @@ public:
     //! @param[in]          points      Array of vertices of the shape.
     //! @param[in]          zDepth      Z depth value.
     //! @param[in]          filled      If true, the shape will be drawn filled.
-    //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
-    void AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range) {_AddShape2d(numPoints, points, filled, zDepth, range);}
+    void AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth) {_AddShape2d(numPoints, points, filled, zDepth);}
 
     //! Draw a 3D elliptical arc or ellipse.
     //! @param[in]          ellipse     arc data.
     //! @param[in]          isEllipse   If true, and if full sweep, then draw as an ellipse instead of an arc.
     //! @param[in]          filled      If true, and isEllipse is also true, then draw ellipse filled.
-    //! @param[in]          range       Array of 2 points with the range (min followed by max) of the arc.
-    //!                                     This argument is optional and is only used to speed processing. If you do not already have the range, pass nullptr.
-    void AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled, DPoint3dCP range) {_AddArc(ellipse, isEllipse, filled, range);}
+    void AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled) {_AddArc(ellipse, isEllipse, filled);}
 
     //! Draw a 2D elliptical arc or ellipse.
     //! @param[in]          ellipse     arc data.
     //! @param[in]          isEllipse   If true, and if full sweep, then draw as an ellipse instead of an arc.
     //! @param[in]          filled      If true, and isEllipse is also true, then draw ellipse filled.
     //! @param[in]          zDepth      Z depth value
-    //! @param[in]          range       Array of 2 points with the range (min followed by max) of the arc.
-    //!                                     This argument is optional and is only used to speed processing. If you do not already have the range, pass nullptr.
-    void AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth, DPoint2dCP range) {_AddArc2d(ellipse, isEllipse, filled, zDepth, range);}
+    void AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth) {_AddArc2d(ellipse, isEllipse, filled, zDepth);}
 
     //! Draw a BSpline curve.
     void AddBSplineCurve(MSBsplineCurveCR curve, bool filled) {_AddBSplineCurve(curve, filled);}
@@ -1030,28 +1038,27 @@ public:
     //! @param[in]          numPoints   Number of vertices in \c points array.
     //! @param[in]          points      Array of vertices.
     //! @param[in]          usageFlags  0 or 1 if tri-strip represents a thickened line.
-    //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
-    void AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags, DPoint3dCP range) {_AddTriStrip(numPoints, points, usageFlags, range);}
+    void AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags) {_AddTriStrip(numPoints, points, usageFlags);}
 
     //! Draw a filled triangle strip from 2D points.
     //! @param[in]          numPoints   Number of vertices in \c points array.
     //! @param[in]          points      Array of vertices.
     //! @param[in]          zDepth      Z depth value.
     //! @param[in]          usageFlags  0 or 1 if tri-strip represents a thickened line.
-    //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
-    void AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth, DPoint2dCP range) {_AddTriStrip2d(numPoints, points, usageFlags, zDepth, range);}
+    void AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth) {_AddTriStrip2d(numPoints, points, usageFlags, zDepth);}
 
     //! @private
     void AddMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) {_AddMosaic(numX, numY, tileIds, verts);}
+    
+    //! @private
+    void AddTile(Render::TextureCR tile, DPoint3dCP corners) {_AddTile(tile, corners);}
 
     // Helper Methods to draw simple SolidPrimitives.
-    void AddTorus(DPoint3dCR center, DVec3dCR vectorX, DVec3dCR vectorY, double majorRadius, double minorRadius, double sweepAngle, bool capped) { AddSolidPrimitive(*ISolidPrimitive::CreateDgnTorusPipe(DgnTorusPipeDetail(center, vectorX, vectorY, majorRadius, minorRadius, sweepAngle, capped)));}
-    void AddBox(DVec3dCR primary, DVec3dCR secondary, DPoint3dCR basePoint, DPoint3dCR topPoint, double baseWidth, double baseLength, double topWidth, double topLength, bool capped) {AddSolidPrimitive(*ISolidPrimitive::CreateDgnBox(DgnBoxDetail::InitFromCenters(basePoint, topPoint, primary, secondary, baseWidth, baseLength, topWidth, topLength, capped))); }
+    void AddTorus(DPoint3dCR center, DVec3dCR vectorX, DVec3dCR vectorY, double majorRadius, double minorRadius, double sweepAngle, bool capped) {AddSolidPrimitive(*ISolidPrimitive::CreateDgnTorusPipe(DgnTorusPipeDetail(center, vectorX, vectorY, majorRadius, minorRadius, sweepAngle, capped)));}
+    void AddBox(DVec3dCR primary, DVec3dCR secondary, DPoint3dCR basePoint, DPoint3dCR topPoint, double baseWidth, double baseLength, double topWidth, double topLength, bool capped) {AddSolidPrimitive(*ISolidPrimitive::CreateDgnBox(DgnBoxDetail::InitFromCenters(basePoint, topPoint, primary, secondary, baseWidth, baseLength, topWidth, topLength, capped)));}
 
-    void AddRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) {_AddRaster(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, range);}
-    void AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2dCP range) {_AddRaster2d(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, zDepth, range);}
+    void AddRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels) {_AddRaster(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels);}
+    void AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth) {_AddRaster2d(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, zDepth);}
 
     //! Draw a 3D point cloud.
     //! @param[in] drawParams Object containing draw parameters.
@@ -1060,7 +1067,7 @@ public:
     //! Draw OLE object.
     void AddDgnOle(DgnOleDraw* ole) {_AddDgnOle(ole);}
 
-    void AddSubGraphic(GraphicR graphic, TransformCR subToGraphic, GraphicParams& params) {_AddSubGraphic(graphic, subToGraphic, params);}
+    void AddSubGraphic(GraphicR graphic, TransformCR subToGraphic, GraphicParamsCR params) {_AddSubGraphic(graphic, subToGraphic, params);}
 
     //! Return whether this decoration will be drawn to a viewport as opposed to being collected for some other purpose (ex. geometry export).
     bool IsForDisplay() const {return _IsForDisplay();}
@@ -1124,6 +1131,27 @@ struct Decorations
 };
 
 //=======================================================================================
+// @bsiclass                                                    Keith.Bentley   02/16
+//=======================================================================================
+struct FrustumPlanes
+{
+    bool m_isValid = false;
+    ClipPlane m_planes[6];
+
+    FrustumPlanes() {}
+    ~FrustumPlanes() {}
+    explicit FrustumPlanes(FrustumCR frustum){Init(frustum);}
+    void Init(FrustumCR frustum);
+    bool IsValid() const {return m_isValid;}
+    enum struct Contained {Outside = 0, Partly = 1,Inside = 2,};
+    Contained Contains(FrustumCR box) const {return Contains(box.m_pts, 8);}
+    bool Intersects(FrustumCR box) const {return Contained::Outside != Contains(box);}
+    bool ContainsPoint(DPoint3dCR pt) const {return Contained::Outside != Contains(&pt, 1);}
+    DGNPLATFORM_EXPORT Contained Contains(DPoint3dCP, int nPts) const;
+    DGNPLATFORM_EXPORT bool IntersectsRay(DPoint3dCR origin, DVec3dCR direction);
+};
+
+//=======================================================================================
 //! A Render::Plan holds a Frustum and the render settings for displaying
 //! the current Render::Scene into a Render::Target.
 // @bsiclass                                                    Keith.Bentley   12/15
@@ -1154,13 +1182,14 @@ struct Plan
 struct Target : RefCounted<NonCopyableClass>
 {
 protected:
-    bool               m_abortProgressive;
+    bool               m_abort;
     Display::DevicePtr m_device;
+    ClipPrimitiveCPtr  m_activeVolume;
     GraphicListPtr     m_currentScene;
     GraphicListPtr     m_dynamics;        // drawn with zbuffer, with scene lighting
     Decorations        m_decorations;
-    BeAtomic<uint32_t> m_graphicsPerSecondProgressiveDisplay;
-    BeAtomic<uint32_t> m_graphicsPerSecond;
+    BeAtomic<uint32_t> m_graphicsPerSecondScene;
+    BeAtomic<uint32_t> m_graphicsPerSecondNonScene;
 
     virtual GraphicPtr _CreateGraphic(Graphic::CreateParams const& params) = 0;
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) = 0;
@@ -1168,7 +1197,10 @@ protected:
     virtual void _OnResized() {}
     virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const = 0;
     virtual TexturePtr _GetTexture(DgnTextureId, DgnDbR) const = 0;
-    virtual TexturePtr _CreateTileSection(Image*, bool enableAlpha) const = 0;
+
+    //N.B. CreateTileSection is called from multiple-threads implementer must ensure this is supported. If not non-shareable resource must be protected by locks.
+    virtual TexturePtr _CreateTileSection(ImageR, bool enableAlpha) const = 0;
+
     virtual void* _ResolveOverrides(OvrGraphicParamsCR) = 0;
     virtual Point2d _GetScreenOrigin() const = 0;
     virtual BSIRect _GetViewRect() const = 0;
@@ -1187,7 +1219,7 @@ public:
         static void Show();
     };
 
-    virtual void _ChangeScene(GraphicListR scene) {VerifyRenderThread(); m_currentScene = &scene;}
+    virtual void _ChangeScene(GraphicListR scene, ClipPrimitiveCP activeVolume) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
     virtual void _ChangeDynamics(GraphicListR dynamics) {VerifyRenderThread(); m_dynamics = &dynamics;}
     virtual void _ChangeDecorations(Decorations& decorations) {VerifyRenderThread(); m_decorations = decorations;}
     virtual void _ChangeRenderPlan(PlanCR) = 0;
@@ -1196,7 +1228,7 @@ public:
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
 
-    void AbortProgressive() {m_abortProgressive=true;}
+    void AbortProgressive() {m_abort=true;}
     Point2d GetScreenOrigin() const {return _GetScreenOrigin();}
     BSIRect GetViewRect() const {return _GetViewRect();}
     DVec2d GetDpiScale() const {return _GetDpiScale();}
@@ -1207,10 +1239,10 @@ public:
     void* ResolveOverrides(OvrGraphicParamsCP ovr) {return ovr ? _ResolveOverrides(*ovr) : nullptr;}
     MaterialPtr GetMaterial(DgnMaterialId id, DgnDbR dgndb) const {return _GetMaterial(id, dgndb);}
     TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return _GetTexture(id, dgndb);}
-    TexturePtr CreateTileSection(Image* image, bool enableAlpha) const {return _CreateTileSection(image, enableAlpha);}
+    TexturePtr CreateTileSection(ImageR image, bool enableAlpha) const {return _CreateTileSection(image, enableAlpha);}
 
-    uint32_t GetGraphicsPerSecond() const {return m_graphicsPerSecond.load();}
-    uint32_t GetProgressiveDisplayGraphicsPerSecond() const {return m_graphicsPerSecondProgressiveDisplay.load();}
+    uint32_t GetGraphicsPerSecondScene() const {return m_graphicsPerSecondScene.load();}
+    uint32_t GetGraphicsPerSecondNonScene() const {return m_graphicsPerSecondNonScene.load();}
     DGNPLATFORM_EXPORT void RecordFrameTime(GraphicList&, double seconds, bool isFromProgressiveDisplay);
 };
 

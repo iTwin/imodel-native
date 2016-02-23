@@ -12,8 +12,9 @@
 #define _GEOM_Js_API_H_
 
 #include <BeJavaScript/BeJavaScript.h>
-#include <DgnPlatform/DgnPlatform.h>
-#include <DgnPlatform/DgnPlatformLib.h>
+//#include <DgnPlatform/DgnPlatform.h>
+//#include <DgnPlatform/DgnPlatformLib.h>
+//#include <Geom/GeomApi.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -34,8 +35,12 @@ typedef struct _JsStructName_ * _JsStructName_##P;
 //                 the (tolerable?) side effect of making ref counts do gymnastics.
 //  3) Hence add a GetR() method to get a reference.  As with all "return a reference" methods,
 //       caller takes responsibility for (restricting) the life of the reference.
+// Note: we use RefCountedBase rather than BeProjectedRefCounted as the base class, because 
+//          we don't need to expose the class hierarchy to TypeScript. That is, all "wrapper" classes are derived directly from JsGeomWrapperBase
+//          and there are no subclasses of the various wrapper classes. If that requirement changes, then change to BeProjectedRefCounted.
+//          The advantage of using RefCountedBase is that it has fewer member variables than BeProjectedRefCounted, so we save space on every instance.
 template<typename NativeType>
-struct JsGeomWrapperBase : RefCountedBase   
+struct JsGeomWrapperBase : RefCountedBase
 {
 protected:
 NativeType m_data;
@@ -66,6 +71,7 @@ JsSTRUCT(JsGeometry)
         JsSTRUCT(JsEllipticArc)
         JsSTRUCT(JsBsplineCurve)
         JsSTRUCT(JsCatenaryCurve)
+        JsSTRUCT(JsSpiralCurve)
 
     JsSTRUCT(JsCurveVector)
         JsSTRUCT(JsUnstructuredCurveVector)
@@ -106,7 +112,7 @@ JsDVector2dP CreateJsVector (DVec2dCR data, double length);
 bool TryDoubleToIndex (double a, size_t upperBound, size_t &index);
 
 // Base class for the CurvePrimitive+Surface+Mesh+SolidPrimitive tree
-struct JsGeometry : RefCountedBase
+struct JsGeometry : BeProjectedRefCounted
 {
 virtual JsGeometry *Clone () = 0;
 virtual bool TryTransformInPlace (JsTransformP transform){return false;}

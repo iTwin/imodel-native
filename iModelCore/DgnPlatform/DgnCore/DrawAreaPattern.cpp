@@ -1121,14 +1121,11 @@ GPArrayP        pGPA,
 ViewContextR    context
 )
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     size_t        nGot, sourceCount = pGPA->GetGraphicsPointCount();
     DPoint3d      localPoints[MAX_GPA_STROKES];
     bool          is3d = context.Is3dView();
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     double        priority = context.GetCurrentGeometryParams().GetNetDisplayPriority();
-#else
-    double        priority = 0.0;
-#endif
     GraphicsPoint gp;
 
     for (size_t i=0; i < sourceCount;)
@@ -1179,6 +1176,7 @@ ViewContextR    context
             context.DrawStyledLineString2d((int) nGot, &localPoints2dBuf[0], priority, NULL, false);
             }
         }
+#endif
 
     return SUCCESS;
     }

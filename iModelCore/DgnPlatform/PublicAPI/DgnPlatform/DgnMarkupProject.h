@@ -333,7 +333,6 @@ protected:
     virtual bool _Allow3dManipulations() const override;
     virtual AxisAlignedBox3d _GetViewedExtents() const override;
     virtual ColorDef _GetBackgroundColor() const override;
-    virtual ClipVectorPtr _GetClipVector() const override {return NULL;}
     virtual bool _IsSnapAdjustmentRequired(DgnViewportR vp, bool snapLockEnabled) const override {return true;} // Always project snap to ACS plane...
     virtual bool _IsContextRotationRequired(DgnViewportR vp, bool contextLockEnabled) const override {return true;} // Always orient AccuDraw to ACS plane...
     virtual void _OnViewOpened(DgnViewportR vp) override;
@@ -344,7 +343,7 @@ protected:
 
     //virtual ScanRange _ShowTxnSummary(TxnSummaryCR summary) override; -- we don't need to override this, because the subject view will never have changed elements that must be displayed
     virtual void _OnAttachedToViewport(DgnViewportR) override;
-    virtual FitComplete _ComputeFitRange (DRange3dR range, DgnViewportR viewport, FitViewParamsR params) override;
+    virtual FitComplete _ComputeFitRange(FitContextR) override;
 
 #ifdef WIP_SpatialRedlineViewController
     // QueryView

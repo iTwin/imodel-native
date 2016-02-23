@@ -605,6 +605,8 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE GeometricModel : DgnModel
 {
     DEFINE_T_SUPER(DgnModel);
+    friend struct DgnQueryView;
+
 public:
     //=======================================================================================
     //! The DisplayInfo for a DgnModel. These are stored within a "DisplayInfo"
@@ -754,6 +756,7 @@ protected:
     //! a) make arrangements to obtain the data in the background and b) schedule itself for callbacks during progressive display in order to display the data when it becomes available.
     virtual void _AddGraphicsToScene(SceneContextR) {}
 
+    virtual void _OnFitView(FitContextR) {}
     virtual void _DrawModel(ViewContextR) {}
 
     DGNPLATFORM_EXPORT virtual DgnRangeTree* _GetRangeIndexP(bool create) const override;
@@ -764,7 +767,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _OnReversedAddElement(DgnElementCR element) override;
     DGNPLATFORM_EXPORT virtual void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original) override;
     DGNPLATFORM_EXPORT virtual void _OnReversedUpdateElement(DgnElementCR modified, DgnElementCR original) override;
-
     DGNPLATFORM_EXPORT virtual void _WriteJsonProperties(Json::Value&) const override;
     DGNPLATFORM_EXPORT virtual void _ReadJsonProperties(Json::Value const&) override;
 
@@ -773,8 +775,6 @@ protected:
     explicit GeometricModel(CreateParams const& params) : T_Super(params), m_rangeIndex(nullptr), m_displayInfo(params.m_displayInfo) {}
 
 public:
-    void DrawModel(ViewContextR context) {_DrawModel(context);}
-    void AddGraphicsToScene(SceneContextR context) {_AddGraphicsToScene(context);}
 
     //! Get the AxisAlignedBox3d of the contents of this model.
     AxisAlignedBox3d QueryModelRange() const {return _QueryModelRange();}

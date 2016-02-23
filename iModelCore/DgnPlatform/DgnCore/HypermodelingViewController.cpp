@@ -72,7 +72,6 @@ Transform static getTransformToForemostCutPlane (SectioningViewControllerCR sect
 
     return xlat;
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
@@ -88,11 +87,10 @@ void HypermodelingViewController::PushClipsForSpatialView (ViewContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HypermodelingViewController::PopClipsForSpatialView (ViewContextR context) const
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     for (auto drawing : m_drawings)
         context.PopTransformClip ();
-#endif
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
@@ -414,7 +412,6 @@ IAuxCoordSysP HypermodelingViewController::_GetAuxCoordinateSystem () const
     {
     return m_physical->GetAuxCoordinateSystem();
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
@@ -425,7 +422,6 @@ ClipVectorPtr HypermodelingViewController::_GetClipVector() const
     }
 
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/

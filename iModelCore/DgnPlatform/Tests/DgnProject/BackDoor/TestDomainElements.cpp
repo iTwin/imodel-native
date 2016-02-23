@@ -178,9 +178,9 @@ DgnDbStatus TestElementSub2::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& sta
 TestElementSub2Ptr TestElementSub2::Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, DgnElementId id, bool specifyProperyValues)
     {
     if (specifyProperyValues)
-        return new TestElementSub2(PhysicalElement::CreateParams(db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415, "Element2 - InitValue", 20000000LL, 2.71828);
+        return new TestElementSub2(TestElementSub2::CreateParams(db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415, "Element2 - InitValue", 20000000LL, 2.71828);
     else
-        return new TestElementSub2(PhysicalElement::CreateParams(db, modelId, classId, category));
+        return new TestElementSub2(TestElementSub2::CreateParams(db, modelId, classId, category));
     }
 
 //---------------------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ClipVector.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -18,17 +18,15 @@ typedef bvector<ClipPrimitivePtr> T_ClipPrimitiveVector;
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct  ClipVector : RefCounted<T_ClipPrimitiveVector>
+struct ClipVector : RefCounted<T_ClipPrimitiveVector>
 {
-private:
     ClipVector() {}
-    ClipVector(ClipPrimitivePtr primitive);
+    ClipVector(ClipPrimitiveP primitive) {push_back(primitive);}
     ClipVector(GPArrayCR gpa, double chordTolerance, double angleTolerance, double* zLow, double* zHigh, TransformCP transform);
 
-public:
-    DGNPLATFORM_EXPORT static ClipVectorPtr Create();
-    DGNPLATFORM_EXPORT static ClipVectorPtr CreateFromPrimitive(ClipPrimitivePtr primitive);
-    DGNPLATFORM_EXPORT static ClipVectorPtr CreateFromGPA(GPArrayCR gpa, double chordTolerance, double angleTolerance, double* zLow, double* zHigh, TransformCP transform);
+    static ClipVectorPtr Create() {return new ClipVector();}
+    static ClipVectorPtr CreateFromPrimitive(ClipPrimitiveP primitive) {return new ClipVector(primitive);}
+    static ClipVectorPtr CreateFromGPA(GPArrayCR gpa, double chordTolerance, double angleTolerance,  double* zLow, double* zHigh, TransformCP transform)  {return new ClipVector (gpa, chordTolerance, angleTolerance, zLow, zHigh, transform);}
     DGNPLATFORM_EXPORT static ClipVectorPtr CreateFromCurveVector(CurveVectorCR curveVector, double chordTolerance, double angleTolerance, double* zLow = NULL, double* zHigh = NULL);
     DGNPLATFORM_EXPORT static ClipVectorPtr CreateCopy(ClipVectorCR vector);
 

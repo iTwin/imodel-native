@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
+#include <DgnPlatform/VecMath.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 
@@ -970,7 +971,7 @@ void IAuxCoordSys::_AddAxisText(GraphicR graphic, Utf8CP labelStr, bool isAxisLa
         textStr.ComputeTransform().Multiply(pts, _countof(pts));
 
         graphic.SetBlankingFill(graphic.GetViewport()->GetBackgroundColor());
-        graphic.AddShape(5, pts, true, NULL);
+        graphic.AddShape(5, pts, true);
         }
 
     ColorDef    lineColor = _GetColor(*graphic.GetViewport(), ColorDef::White(), _GetTransparency(false, options), options);
@@ -993,10 +994,10 @@ void IAuxCoordSys::_AddZAxis (GraphicR graphic, ColorDef color, ACSDisplayOption
     ColorDef    fillColor = _GetColor(*graphic.GetViewport(), color, _GetTransparency(true, options), options);
 
     graphic.SetSymbology(lineColor, lineColor, 6);
-    graphic.AddPointString(2, linePts, nullptr);
+    graphic.AddPointString(2, linePts);
 
     graphic.SetSymbology(lineColor, lineColor, 1);
-    graphic.AddLineString(2, linePts, nullptr);
+    graphic.AddLineString(2, linePts);
 
     double      start = 0.0, sweep = msGeomConst_2pi, scale = ARROW_TIP_WIDTH/2.0;
     DVec3d      xVec, yVec;
@@ -1017,10 +1018,10 @@ void IAuxCoordSys::_AddZAxis (GraphicR graphic, ColorDef color, ACSDisplayOption
     DEllipse3d  ellipse;
 
     ellipse.InitFromDGNFields3d(center, xVec, yVec, scale, scale, start, sweep);
-    graphic.AddArc(ellipse, false, false, nullptr);
+    graphic.AddArc(ellipse, false, false);
 
     graphic.SetBlankingFill(fillColor);
-    graphic.AddArc(ellipse, true, true, nullptr);
+    graphic.AddArc(ellipse, true, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1056,13 +1057,13 @@ void IAuxCoordSys::_AddXYAxis (GraphicR graphic, ColorDef color, Utf8CP labelStr
     ColorDef    fillColor = _GetColor(*graphic.GetViewport(), color, _GetTransparency(true, options), options);
 
     graphic.SetSymbology(lineColor, lineColor, 1);
-    graphic.AddLineString(8, shapePts, nullptr);
+    graphic.AddLineString(8, shapePts);
 
     if (nullptr != labelStrP)
         _AddAxisText(graphic, labelStrP, true, userOrg.x, userOrg.y, 0.35, swapAxis ? 0.0 : -msGeomConst_pi/2.0, options);
 
     graphic.SetBlankingFill(fillColor);
-    graphic.AddShape(8, shapePts, true, nullptr);
+    graphic.AddShape(8, shapePts, true);
     }
 
 /*---------------------------------------------------------------------------------**//**

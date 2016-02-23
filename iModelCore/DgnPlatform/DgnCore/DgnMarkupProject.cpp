@@ -263,7 +263,7 @@ double SpatialRedlineViewController::_GetMinimumSizePixels (DrawPurpose updateTy
 uint64_t SpatialRedlineViewController::_GetMaxElementMemory () {return m_subjectView._GetMaxElementMemory();}
 #endif
 
-ViewController::FitComplete SpatialRedlineViewController::_ComputeFitRange (DRange3dR range, DgnViewportR viewport, FitViewParamsR params) {return m_subjectView._ComputeFitRange(range,viewport,params);}
+ViewController::FitComplete SpatialRedlineViewController::_ComputeFitRange (FitContextR context) {return m_subjectView._ComputeFitRange(context);}
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -329,7 +329,6 @@ void SpatialRedlineViewController::_DrawView(ViewContextR context)
     //  Draw subject model
         {
         //  set up to draw subject model 
-        ViewContext::ContextMark mark(&context);
         m_targetModelIsInSubjectView = true;   // causes GetTargetModel to return subject view's target model
         BeAssert(GetTargetModel() == m_subjectView.GetTargetModel());
 

@@ -352,11 +352,16 @@ DbResult ViewController::SaveTo(Utf8CP newName, DgnViewId& newId)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      08/13
+* return the extents of the target model, if there is one.
+* @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d ViewController::_GetViewedExtents() const
     {
-    return m_dgndb.Units().GetProjectExtents();
+    GeometricModelP target = GetTargetModel();
+    if (target && target->GetRangeIndexP(false))
+        return AxisAlignedBox3d(*target->GetRangeIndexP(false)->GetExtents());
+
+    return AxisAlignedBox3d();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -907,7 +912,7 @@ ClipVectorPtr SectionDrawingViewController::GetProjectClipVector() const
     {
     auto sectionView = GetSectioningViewController();
     if (!sectionView.IsValid())
-        return ClipVector::Create();
+        return new ClipVector();
     return sectionView->GetInsideForwardClipVector();
     }
 
@@ -997,7 +1002,7 @@ double SpatialViewController::CalculateMaxDepth(DVec3dCR delta, DVec3dCR zVec)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     12/13
 //---------------------------------------------------------------------------------------
-static bool convertToWorldPointWithStatus(DPoint3dR worldPoint, GeoLocationEventStatus& status, DgnUnits const& units, GeoPointCR location)
+static bool convertToWorldPoint(DPoint3dR worldPoint, GeoLocationEventStatus& status, DgnUnits const& units, GeoPointCR location)
     {
     if (SUCCESS != units.XyzFromLatLong(worldPoint, location))
         {
@@ -1019,7 +1024,7 @@ bool CameraViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, G
         return T_Super::_OnGeoLocationEvent(status, location);
 
     DPoint3d worldPoint;
-    if (!convertToWorldPointWithStatus(worldPoint, status, m_dgndb.Units(), location))
+    if (!convertToWorldPoint(worldPoint, status, m_dgndb.Units(), location))
         return false;
 
     worldPoint.z = GetEyePoint().z;
@@ -1040,7 +1045,7 @@ bool CameraViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, G
 bool SpatialViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR location)
     {
     DPoint3d worldPoint;
-    if (!convertToWorldPointWithStatus(worldPoint, status, m_dgndb.Units(), location))
+    if (!convertToWorldPoint(worldPoint, status, m_dgndb.Units(), location))
         return false;
 
     // If there's no perspective, just center the current location in the view.
@@ -1281,7 +1286,7 @@ bool CameraViewController::_OnOrientationEvent(RotMatrixCR orientation, Orientat
 bool DrawingViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR location)
     {
     DPoint3d worldPoint;
-    if (!convertToWorldPointWithStatus(worldPoint, status, m_dgndb.Units(), location))
+    if (!convertToWorldPoint(worldPoint, status, m_dgndb.Units(), location))
         return false;
 
     RotMatrix viewInverse;
@@ -1796,8 +1801,8 @@ static void drawLocateHitDetail(DecorateContextR context, double aperture, HitDe
 
     color.SetAlpha(200);
     graphic->SetSymbology(color, color, 1);
-    graphic->AddArc(ellipse, true, true, nullptr);
-    graphic->AddArc(ellipse, false, false, nullptr);
+    graphic->AddArc(ellipse, true, true);
+    graphic->AddArc(ellipse, false, false);
 
     double      length = (0.6 * radius);
     DSegment3d  segment;
@@ -1805,12 +1810,12 @@ static void drawLocateHitDetail(DecorateContextR context, double aperture, HitDe
     normal.Normalize(ellipse.vector0);
     segment.point[0].SumOf(pt, normal, length);
     segment.point[1].SumOf(pt, normal, -length);
-    graphic->AddLineString(2, segment.point, nullptr);
+    graphic->AddLineString(2, segment.point);
 
     normal.Normalize(ellipse.vector90);
     segment.point[0].SumOf(pt, normal, length);
     segment.point[1].SumOf(pt, normal, -length);
-    graphic->AddLineString(2, segment.point, nullptr);
+    graphic->AddLineString(2, segment.point);
     context.AddWorldOverlay(*graphic);
     }
 
@@ -1834,15 +1839,15 @@ static void drawLocateCircle(DecorateContextR context, double aperture, DPoint3d
 
     white.SetAlpha(165);
     graphic->SetSymbology(white, white, 1);
-    graphic->AddArc2d(ellipse, true, true, 0.0, NULL);
+    graphic->AddArc2d(ellipse, true, true, 0.0);
 
     black.SetAlpha(100);
     graphic->SetSymbology(black, black, 1);
-    graphic->AddArc2d(ellipse2, false, false, 0.0, NULL);
+    graphic->AddArc2d(ellipse2, false, false, 0.0);
 
     white.SetAlpha(20);
     graphic->SetSymbology(white, white, 1);
-    graphic->AddArc2d(ellipse, false, false, 0.0, NULL);
+    graphic->AddArc2d(ellipse, false, false, 0.0);
     context.AddViewOverlay(*graphic);
     }
 

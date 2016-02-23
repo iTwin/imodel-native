@@ -139,7 +139,7 @@ protected:
     virtual void _SetDelta(DVec3dCR viewDelta) = 0;
     virtual void _SetRotation(RotMatrixCR viewRot) = 0;
     enum class FitComplete {No=0, Yes=1};
-    virtual FitComplete _ComputeFitRange(DRange3dR range, DgnViewportR, FitViewParamsR) {return FitComplete::No;}
+    DGNPLATFORM_EXPORT virtual FitComplete _ComputeFitRange(FitContextR);
     virtual void _OnViewOpened(DgnViewportR) {}
     virtual bool _Allow3dManipulations() const {return false;}
     virtual void _OnAttachedToViewport(DgnViewportR) {}
@@ -251,7 +251,7 @@ protected:
     //! Used to change the writable model in which new elements are to be placed.
     virtual BentleyStatus _SetTargetModel(GeometricModelP model) {return GetTargetModel()==model ? SUCCESS : ERROR;}
 
-    //! Get the union of the range (axis-aligned bounding box) of all physical elements in project
+    //! Get the extent of the model(s) viewed by this view
     DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _GetViewedExtents() const;
 
     enum class CloseMe {No=0, Yes=1};
@@ -358,6 +358,11 @@ public:
     virtual SheetViewControllerCP _ToSheetView() const {return nullptr;}
     SheetViewControllerP  ToSheetViewP() {return const_cast<SheetViewControllerP>(_ToSheetView());}
 
+    //! perform the equivalent of a dynamic_cast to a DgnQueryView.
+    //! @return a valid DgnQueryViewCP, or nullptr if this is not a query view
+    virtual DgnQueryViewCP _ToQueryView() const {return nullptr;}
+    DgnQueryViewP ToQueryViewP() {return const_cast<DgnQueryViewP>(_ToQueryView());}
+
     //! determine whether this is a physical view
     bool IsSpatialView() const {return nullptr != _ToSpatialView();}
 
@@ -369,6 +374,9 @@ public:
 
     //! determine whether this is a sheet view
     bool IsSheetView() const {return nullptr != _ToSheetView();}
+
+    //! determine whether this is a query view
+    bool IsQueryView() const {return nullptr != _ToQueryView();}
 
     //! Get the ViewFlags.
     Render::ViewFlags GetViewFlags() const {return m_viewFlags;}
@@ -533,7 +541,6 @@ protected:
     IAuxCoordSysPtr m_auxCoordSys;      //!< The auxiliary coordinate system in use.
 
     virtual SpatialViewControllerCP _ToSpatialView() const override {return this;}
-    virtual ClipVectorPtr _GetClipVector() const {return nullptr;}
 
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(double, bool expandView) override;
     virtual DPoint3d _GetOrigin() const override {return m_origin;}
@@ -559,12 +566,9 @@ public:
     //! @param[in] viewId the id of the view in the project.
     DGNPLATFORM_EXPORT SpatialViewController(DgnDbR project, DgnViewId viewId);
 
-    ClipVectorPtr GetClipVector() const {return _GetClipVector();}
     DGNPLATFORM_EXPORT void TransformBy(TransformCR);
 
-//__PUBLISH_SECTION_END__
     DGNPLATFORM_EXPORT static double CalculateMaxDepth(DVec3dCR delta, DVec3dCR zVec);
-//__PUBLISH_SECTION_START__
 
     //! Gets the Auxiliary Coordinate System for this view.
     IAuxCoordSysP GetAuxCoordinateSystem() const {return m_auxCoordSys.get();}
@@ -584,13 +588,13 @@ This is what the parameters to the camera methods, and the values stored by Came
           ^\   .                                    /  ^
           | \  .                                   /   |        p
         d |  \ .                                  /    |        o
-        e |   \.         {targetPoint}           /     |        i
-        l |    |---------------+----------------|      |        t    [focus plane]
-        t |     \  ^delta.x    ^               /     b |        i
-        a |      \             |              /      a |        v
-        . |       \            |             /       c |        e
-        z |        \           | f          /        k |        Z
-          |         \          | o         /         D |        |
+        e |   \.         {targetPoint}           /     |        s
+        l |    |---------------+----------------|      |        i    [focus plane]
+        t |     \  ^delta.x    ^               /     b |        t
+        a |      \             |              /      a |        i
+        . |       \            |             /       c |        v
+        z |        \           | f          /        k |        e
+          |         \          | o         /         D |        Z
           |          \         | c        /          i |        |
           |           \        | u       /           s |        v
           v            \       | s      /            t |
@@ -642,9 +646,8 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraViewController : SpatialViewController
 {
     DEFINE_T_SUPER(SpatialViewController);
 
-    bool            m_isCameraOn;       //!< if true, m_camera is valid.
-    CameraInfo      m_camera;           //!< Information about the camera lens used for the view.
-    ClipVectorPtr   m_clipVector;       //!< The clip currently applied to this view
+    bool       m_isCameraOn;       //!< if true, m_camera is valid.
+    CameraInfo m_camera;           //!< Information about the camera lens used for the view.
 
 protected:
     //! Calculate and save the lens angle formed by the current delta and focus distance
@@ -655,7 +658,6 @@ protected:
     DGNPLATFORM_EXPORT virtual DPoint3d _GetTargetPoint() const override;
     DGNPLATFORM_EXPORT virtual bool _OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) override;
     DGNPLATFORM_EXPORT virtual bool _OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui) override;
-    DGNPLATFORM_EXPORT virtual ClipVectorPtr _GetClipVector() const override;
     DGNPLATFORM_EXPORT virtual ViewportStatus _SetupFromFrustum(Frustum const&) override;
     DGNPLATFORM_EXPORT virtual void _SaveToSettings(JsonValueR) const override;
     DGNPLATFORM_EXPORT virtual void _RestoreFromSettings(JsonValueCR) override;
@@ -796,11 +798,6 @@ public:
     void SetEyePoint(DPoint3dCR pt) {m_camera.SetEyePoint(pt);}
 /** @} */
 
-/** @name ClipVector */
-/** @{ */
-    void SetClipVector(ClipVectorR clip) {m_clipVector = &clip;}
-    void ClearClipVector() {m_clipVector=nullptr;}
-/** @} */
 };
 
 //=======================================================================================
@@ -819,8 +816,6 @@ protected:
     mutable uint32_t m_foremostCutPlaneIndex;
     mutable DPlane3d m_foremostCutPlane;
     ClipVolumePass m_pass;
-
-    DGNPLATFORM_EXPORT virtual ClipVectorPtr _GetClipVector() const override;
 
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR) override;
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeGeometry(ViewContextR, GeometrySourceCR, double) override;
@@ -883,7 +878,7 @@ public:
     };
 
 //=======================================================================================
-//! A DrawingViewController is used to control views of DrawingModel's
+//! A DrawingViewController is used to control views of DrawingModels
 //! @ingroup DgnViewGroup
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
@@ -904,7 +899,7 @@ public:
 //! @ingroup DgnViewGroup
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingViewController : DrawingViewController
+struct SectionDrawingViewController : DrawingViewController
 {
     DEFINE_T_SUPER(DrawingViewController);
 
@@ -983,7 +978,6 @@ private:
     virtual DPoint3d _GetTargetPoint() const override;
     virtual bool _Allow3dManipulations() const override;
     virtual AxisAlignedBox3d _GetViewedExtents() const override;
-    virtual ClipVectorPtr _GetClipVector() const override;
 
     void PushClipsForSpatialView(ViewContextR) const;
     void PopClipsForSpatialView(ViewContextR) const;

@@ -255,7 +255,7 @@ $(CoreObjs)HandlerTypeInfo$(oext) :                 $(DgnCoreDir)HandlerTypeInfo
 
 $(CoreObjs)ViewContext$(oext) :                     $(DgnCoreDir)ViewContext.cpp $(contextDepends) $(HandlerDepends) $(DgnPlatformAPISrc)DgnModel.h $(DgnPlatformAPISrc)ScanCriteria.h ${MultiCompileDepends}
 
-$(CoreObjs)RangeContext$(oext) :                    $(DgnCoreDir)RangeContext.cpp $(DgnPlatformAPISrc)NullContext.h $(DgnPlatformAPISrc)SimplifyGraphic.h $(HandlerDepends) ${MultiCompileDepends}
+$(CoreObjs)FitContext$(oext) :                      $(DgnCoreDir)FitContext.cpp $(DgnPlatformAPISrc)NullContext.h $(DgnPlatformAPISrc)SimplifyGraphic.h $(HandlerDepends) ${MultiCompileDepends}
 
 $(CoreObjs)SnapContext$(oext) :                     $(DgnCoreDir)SnapContext.cpp $(HandlerDepends) ${MultiCompileDepends}
 
@@ -334,8 +334,6 @@ $(CoreObjs)DgnTexture$(oext) :                      $(DgnCoreDir)DgnTexture.cpp 
 $(CoreObjs)DgnAuthority$(oext) :                    $(DgnCoreDir)DgnAuthority.cpp $(DgnPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
 $(coreObjs)SearchableText$(oext) :                  $(DgnCoreDir)SearchableText.cpp $(DgnPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
-
-$(CoreObjs)SatelliteChangeSets$(oext) :             $(DgnCoreDir)SatelliteChangeSets.cpp $(DgnPlatformAPISrc)SatelliteChangeSets.h ${MultiCompileDepends}
 
 $(CoreObjs)DgnMarkupProject$(oext) :                $(DgnCoreDir)DgnMarkupProject.cpp $(DgnPlatformAPISrc)DgnMarkupProject.h $(DgnPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
 

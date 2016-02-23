@@ -24,6 +24,47 @@ ViewContext::ViewContext()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt ViewContext::VisitElement(DgnElementId elementId, bool allowLoad) 
+    {
+    DgnElements& pool = m_dgndb->Elements();
+    DgnElementCPtr el = allowLoad ? pool.GetElement(elementId) : pool.FindElement(elementId);
+    if (!el.IsValid())
+        {
+        BeAssert(!allowLoad);
+        return ERROR;
+        }
+
+    GeometrySourceCP geomElem = el->ToGeometrySource();
+    if (nullptr == geomElem)
+        return ERROR;
+
+    return VisitGeometry(*geomElem);
+
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    if (pool.GetTotalAllocated() < (int64_t) m_elementReleaseTrigger)
+        return true;
+
+    pool.DropFromPool(*el);
+
+    // Purging the element does not purge the symbols so it may be necessary to do a full purge
+    if (pool.GetTotalAllocated() < (int64_t) m_purgeTrigger)
+        return true;
+
+    pool.Purge(m_elementReleaseTrigger);   // Try to get back to the elementPurgeTrigger
+
+    static const double s_purgeFactor = 1.3;
+
+    // The purge may not have succeeded if there are elements in the QueryView's list of elements and those elements hold symbol references.
+    // When that is true, we leave it to QueryView::_DrawView to try to clean up.  This logic just tries to recover from the
+    // growth is caused.  It allows some growth between calls to purge to avoid spending too much time in purge.
+    uint64_t newTotalAllocated = (uint64_t)pool.GetTotalAllocated();
+    m_purgeTrigger = (uint64_t)(s_purgeFactor * std::max(newTotalAllocated, m_elementReleaseTrigger));
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::ViewToNpc(DPoint3dP npcVec, DPoint3dCP screenVec, int nPts) const
@@ -54,14 +95,9 @@ void ViewContext::NpcToWorld(DPoint3dP worldPts, DPoint3dCP npcPts, int nPts) co
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt ViewContext::_InitContextForView()
     {
-    BeAssert(0 == GetTransClipDepth());
-
     m_worldToNpc  = *m_viewport->GetWorldToNpcMap();
     m_worldToView = *m_viewport->GetWorldToViewMap();
-    m_transformClipStack.Clear();
     m_scanRangeValid = false;
-
-    _PushFrustumClip();
 
     SetDgnDb(m_viewport->GetViewController().GetDgnDb());
 
@@ -94,23 +130,6 @@ Frustum ViewContext::GetFrustum()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_PushFrustumClip()
-    {
-    if (m_ignoreViewRange)
-        return;
-
-    int         nPlanes;
-    ClipPlane   frustumPlanes[6];
-    ViewFlags viewFlags = GetViewFlags();
-    Frustum polyhedron = GetFrustum();
-
-    if (0 != (nPlanes = ClipUtil::RangePlanesFromFrustum(frustumPlanes, polyhedron, !viewFlags.noFrontClip, !viewFlags.noBackClip, 1.0E-6)))
-        m_transformClipStack.PushClipPlanes(frustumPlanes, nPlanes);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    11/02
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_InitScanRangeAndPolyhedron()
@@ -120,49 +139,11 @@ void ViewContext::_InitScanRangeAndPolyhedron()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      09/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::PushClipPlanes(ClipPlaneSetCR clipPlanes)
-    {
-    _PushClip(*ClipVector::CreateFromPrimitive(ClipPrimitive::CreateFromClipPlanes(clipPlanes)));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_PushClip(ClipVectorCR clip)
-    {
-    m_transformClipStack.PushClip(clip);
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    for (ClipPrimitivePtr const& primitive : clip)
-        {
-        GetCurrentGraphicR()._PushTransClip(nullptr, primitive->GetClipPlanes());
-        m_transformClipStack.IncrementPushedToDrawGeom();
-        }
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      03/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_PopClip()
-    {
-    if (m_transformClipStack.IsEmpty())
-        {
-        BeAssert(false);
-        return;
-        }
-
-    m_transformClipStack.Pop(*this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_SetDgnDb(DgnDbR dgnDb)
     {
-    m_dgnDb = &dgnDb;
+    m_dgndb = &dgnDb;
     _SetupScanCriteria();
     }
 
@@ -179,18 +160,10 @@ void ViewContext::_SetupScanCriteria()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ViewContext::_Attach(DgnViewportP viewport, DrawPurpose purpose)
+StatusInt ViewContext::Attach(DgnViewportP viewport, DrawPurpose purpose)
     {
     if (nullptr == viewport)
         return  ERROR;
-
-    if (IsAttached())
-        {
-        BeAssert(!IsAttached());
-        return  ERROR;
-        }
-
-    m_isAttached = true;
 
     m_viewport = viewport;
     m_purpose = purpose;
@@ -200,17 +173,6 @@ StatusInt ViewContext::_Attach(DgnViewportP viewport, DrawPurpose purpose)
     SetViewFlags(viewport->GetViewFlags());
 
     return _InitContextForView();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    05/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_Detach()
-    {
-    BeAssert(IsAttached());
-
-    m_isAttached = false;
-    m_transformClipStack.PopAll(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -322,7 +284,8 @@ bool ViewContext::_ScanRangeFromPolyhedron()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewContext::_FilterRangeIntersection(GeometrySourceCR source)
     {
-    return ClipPlaneContainment_StronglyOutside == m_transformClipStack.ClassifyRange(source.CalculateRange3d(), nullptr != source.ToGeometrySource3d());
+    Frustum box(source.CalculateRange3d());
+    return FrustumPlanes::Contained::Outside != m_frustumPlanes.Contains(box.m_pts, 8);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -401,13 +364,13 @@ StatusInt ViewContext::_OutputGeometry(GeometrySourceCR source)
         tmpPts[8] = p[0];
 
         // Draw a "saddle" shape to accumulate correct dirty region, simple lines can be clipped out when zoomed in...
-        rangeGraphic->AddLineString(9, tmpPts, nullptr);
+        rangeGraphic->AddLineString(9, tmpPts);
 
         // Draw missing connecting lines to complete box...
-        rangeGraphic->AddLineString(2, DSegment3d::From(p[0], p[3]).point, nullptr);
-        rangeGraphic->AddLineString(2, DSegment3d::From(p[4], p[5]).point, nullptr);
-        rangeGraphic->AddLineString(2, DSegment3d::From(p[1], p[7]).point, nullptr);
-        rangeGraphic->AddLineString(2, DSegment3d::From(p[2], p[6]).point, nullptr);
+        rangeGraphic->AddLineString(2, DSegment3d::From(p[0], p[3]).point);
+        rangeGraphic->AddLineString(2, DSegment3d::From(p[4], p[5]).point);
+        rangeGraphic->AddLineString(2, DSegment3d::From(p[1], p[7]).point);
+        rangeGraphic->AddLineString(2, DSegment3d::From(p[2], p[6]).point);
         }
     else
         {
@@ -417,7 +380,7 @@ StatusInt ViewContext::_OutputGeometry(GeometrySourceCR source)
         tmpPts[3] = p[3];
         tmpPts[4] = p[0];
 
-        rangeGraphic->AddLineString(5, tmpPts, nullptr);
+        rangeGraphic->AddLineString(5, tmpPts);
         }
 
     _OutputGraphic(*rangeGraphic, &source);
@@ -590,62 +553,36 @@ void ViewContext::_SetScanReturn()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ScanCriteria::Result ViewContext::_CheckNodeRange(ScanCriteriaCR scanCriteria, DRange3dCR testRange, bool is3d)
     {
-    return ClipPlaneContainment_StronglyOutside != m_transformClipStack.ClassifyElementRange(testRange, is3d, true) ? ScanCriteria::Result::Pass : ScanCriteria::Result::Fail;
+    Frustum box(testRange);
+    return (m_frustumPlanes.Contains(box.m_pts, 8) != FrustumPlanes::Contained::Outside) ? ScanCriteria::Result::Pass : ScanCriteria::Result::Fail;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::IsWorldPointVisible(DPoint3dCR worldPoint, bool boresite)
+bool ViewContext::IsPointVisible(DPoint3dCR worldPoint, bool boresite)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    DPoint3d    localPoint;
-
-    WorldToLocal(&localPoint, &worldPoint, 1);
-
-    return IsLocalPointVisible(localPoint, boresite);
-#else
-    if (m_transformClipStack.IsEmpty())
+    if (m_frustumPlanes.ContainsPoint(worldPoint))
         return true;
 
     if (!boresite)
-        return m_transformClipStack.TestPoint(worldPoint);
+        return false;
 
-    DVec3d      worldZVec;
-
+    DVec3d worldZVec;
     if (IsCameraOn())
         {
-        worldZVec.NormalizedDifference(worldPoint, GetViewport()->GetCamera().GetEyePoint());
+        worldZVec.NormalizedDifference(worldPoint, m_viewport->GetCamera().GetEyePoint());
         }
     else
         {
         DPoint3d    zPoints[2];
-
         zPoints[0].Zero();
         zPoints[1].Init(0.0, 0.0, 1.0);
-
         NpcToWorld(zPoints, zPoints, 2);
         worldZVec.NormalizedDifference(zPoints[1], zPoints[0]);
         }
 
-    return m_transformClipStack.TestRay(worldPoint, worldZVec);
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      01/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::PointInsideClip(DPoint3dCR point)
-    {
-    return m_transformClipStack.TestPoint(point);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      01/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::GetRayClipIntersection(double& distance, DPoint3dCR origin, DVec3dCR direction)
-    {
-    return  m_transformClipStack.GetRayIntersection(distance, origin, direction);
+    return m_frustumPlanes.IntersectsRay(worldPoint, worldZVec);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -711,6 +648,7 @@ void ViewContext::SetSubRectNpc(DRange3dCR subRect)
 bool ViewContext::VisitAllViewElements(BSIRectCP updateRect)
     {
     ClearAborted();
+
     if (nullptr != updateRect)
         SetSubRectFromViewRect(updateRect);
 
@@ -727,43 +665,10 @@ bool ViewContext::VisitAllViewElements(BSIRectCP updateRect)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewContext::_VisitAllModelElements()
     {
-    SpatialViewControllerCP physController = m_viewport->GetSpatialViewControllerCP();
-    ClipVectorPtr clipVector = physController ? physController->GetClipVector() : nullptr;
-    if (clipVector.IsValid())
-        PushClip(*clipVector);
-
     // The ViewController must orchestrate the display of all of the elements in the view.
     m_viewport->GetViewControllerR().DrawView(*this);
 
-    if (clipVector.IsValid())
-        PopClip();
-
     return WasAborted();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    12/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP range, bool closed)
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    if (nPts < 1)
-        return;
-
-    LineStyleSymbP  currLsSymb;
-    ILineStyleCP    currLStyle = _GetCurrLineStyle(&currLsSymb);
-
-    if (currLStyle && (nPts > 2 || !pts->IsEqual(pts[1])))
-        {
-        currLStyle->_GetComponent()->_StrokeLineString(this, currLsSymb, pts, nPts, closed);
-        return;
-        }
-
-    if (closed)
-        GetCurrentGraphicR().AddShape(nPts, pts, false, range);
-    else
-        GetCurrentGraphicR().AddLineString(nPts, pts, range);
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -794,30 +699,6 @@ void ViewContext::_DrawStyledLineString2d(int nPts, DPoint2dCP pts, double prior
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   06/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_DrawStyledArc3d(DEllipse3dCR ellipse, bool isEllipse, DPoint3dCP range)
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    LineStyleSymbP  currLsSymb;
-    ILineStyleCP    currLStyle = _GetCurrLineStyle(&currLsSymb);
-
-    if (currLStyle)
-        {
-        double      r0, r1, start, sweep;
-        RotMatrix   rMatrix;
-        DPoint3d    center;
-
-        ellipse.GetScaledRotMatrix(center, rMatrix, r0, r1, start, sweep);
-        currLStyle->_GetComponent()->_StrokeArc(this, currLsSymb, &center, &rMatrix, r0, r1, isEllipse ? nullptr : &start, isEllipse ? nullptr : &sweep, range);
-        return;
-        }
-
-    GetCurrentGraphicR().AddArc(ellipse, isEllipse, false, range);
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   06/03
-+---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_DrawStyledArc2d(DEllipse3dCR ellipse, bool isEllipse, double zDepth, DPoint2dCP range)
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
@@ -837,25 +718,6 @@ void ViewContext::_DrawStyledArc2d(DEllipse3dCR ellipse, bool isEllipse, double 
         }
 
     GetCurrentGraphicR().AddArc2d(ellipse, isEllipse, false, zDepth, range);
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   06/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_DrawStyledBSplineCurve3d(MSBsplineCurveCR bcurve)
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    LineStyleSymbP  currLsSymb;
-    ILineStyleCP    currLStyle = _GetCurrLineStyle(&currLsSymb);
-
-    if (currLStyle)
-        {
-        currLStyle->_GetComponent()->_StrokeBSplineCurve(this, currLsSymb, &bcurve, nullptr);
-        return;
-        }
-
-    GetCurrentGraphicR().AddBSplineCurve(bcurve, false);
 #endif
     }
 
@@ -1050,37 +912,6 @@ void ViewContext::RasterDisplayParams::SetQualityFactor(double factor)
 #endif
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    05/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::ContextMark::Pop()
-    {
-    if (nullptr == m_context)
-        return;
-
-    while (m_context->GetTransClipDepth() > (int)m_transClipMark)
-        m_context->GetTransformClipStack().Pop(*m_context);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-inline void ViewContext::ContextMark::SetNow()
-    {
-    m_transClipMark = m_context->GetTransClipDepth();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-ViewContext::ContextMark::ContextMark(ViewContextP context)
-    {
-    if (nullptr == (m_context = context))
-        Init(context);
-    else
-        SetNow();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
 GraphicParams::GraphicParams()
@@ -1093,16 +924,18 @@ GraphicParams::GraphicParams()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GraphicParams::Init()
     {
-    m_lineColor         = ColorDef::Black();
-    m_fillColor         = ColorDef::Black();
     m_isFilled          = false;
     m_isBlankingRegion  = false;
-    m_rasterWidth       = 1;
-    m_patternParams     = nullptr;
-    m_gradient          = nullptr;
-    m_material          = nullptr;
     m_linePixels        = (uint32_t) LinePixels::Solid;
-    m_lStyleSymb.Clear();
+    m_rasterWidth       = 1;
+    m_lineColor         = ColorDef::Black();
+    m_fillColor         = ColorDef::Black();
+    m_trueWidthStart    = 0.0;
+    m_trueWidthEnd      = 0.0;
+    m_lineTexture       = nullptr;
+    m_material          = nullptr;
+    m_gradient          = nullptr;
+    m_patternParams     = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1167,14 +1000,24 @@ void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
         m_fillColor.SetAlpha(netTransparency);
         }
 
-    // NEEDSWORK_LINESTYLES
-    // If this is a 3d view and we have a line style then we want to convert the line style
-    // to a texture line style.  We don't do it prior to this because generating the geometry map
-    // may use the current symbology.  This seems like a horrible place to do this,
-    // so we need to come up with something better.
-    LineStyleSymb& lsSym = GetLineStyleSymbR();
-    if (nullptr == lsSym.GetTexture() && nullptr != lsSym.GetILineStyle() && context.Is3dView())
-        lsSym.ConvertLineStyleToTexture(context, true);
+    if (nullptr != elParams.GetLineStyle())
+        {
+        LineStyleSymbCR lsSymb = elParams.GetLineStyle()->GetLineStyleSymb();
+
+        if (nullptr != lsSymb.GetILineStyle())
+            {
+            if (lsSymb.IsContinuous()) // NOTE: QVis can handle this case for 2d and 3d...
+                {
+                m_trueWidthStart = (lsSymb.HasOrgWidth() ? lsSymb.GetOriginWidth() : lsSymb.GetEndWidth());
+                m_trueWidthEnd = (lsSymb.HasEndWidth() ? lsSymb.GetEndWidth() : lsSymb.GetOriginWidth());
+                }
+            else
+                {
+                TextureP lsTexture = lsSymb.GetTexture(); // For 2d do we need to check that this wasn't a forced texture???
+                m_lineTexture = (nullptr != lsTexture ? new LineTexture(lsTexture) : nullptr);
+                }
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1186,15 +1029,22 @@ bool GraphicParams::operator==(GraphicParamsCR rhs) const
     if (this == &rhs)
         return true;
 
-    if (rhs.m_lineColor        != m_lineColor        ||
-        rhs.m_fillColor        != m_fillColor        ||
-        rhs.m_isFilled         != m_isFilled         ||
+    if (rhs.m_isFilled         != m_isFilled ||
         rhs.m_isBlankingRegion != m_isBlankingRegion ||
-        rhs.m_material         != m_material         ||
-        rhs.m_rasterWidth      != m_rasterWidth)
+        rhs.m_linePixels       != m_linePixels ||
+        rhs.m_rasterWidth      != m_rasterWidth ||
+        rhs.m_lineColor        != m_lineColor ||
+        rhs.m_fillColor        != m_fillColor ||
+        rhs.m_trueWidthStart   != m_trueWidthStart ||
+        rhs.m_trueWidthEnd     != m_trueWidthEnd ||
+        rhs.m_lineTexture      != m_lineTexture ||
+        rhs.m_material         != m_material)
         return false;
 
     if (!(rhs.m_gradient == m_gradient))
+        return false;
+
+    if (!(rhs.m_patternParams == m_patternParams))
         return false;
 
     return true;
@@ -1205,14 +1055,18 @@ bool GraphicParams::operator==(GraphicParamsCR rhs) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 GraphicParams::GraphicParams(GraphicParamsCR rhs)
     {
-    m_lineColor         = rhs.m_lineColor;
-    m_fillColor         = rhs.m_fillColor;
     m_isFilled          = rhs.m_isFilled;
     m_isBlankingRegion  = rhs.m_isBlankingRegion;
-    m_material          = rhs.m_material;
+    m_linePixels        = rhs.m_linePixels;
     m_rasterWidth       = rhs.m_rasterWidth;
-    m_lStyleSymb        = rhs.m_lStyleSymb;
+    m_lineColor         = rhs.m_lineColor;
+    m_fillColor         = rhs.m_fillColor;
+    m_trueWidthStart    = rhs.m_trueWidthStart;
+    m_trueWidthEnd      = rhs.m_trueWidthEnd;
+    m_lineTexture       = rhs.m_lineTexture;
+    m_material          = rhs.m_material;
     m_gradient          = rhs.m_gradient;
+    m_patternParams     = rhs.m_patternParams;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1220,36 +1074,20 @@ GraphicParams::GraphicParams(GraphicParamsCR rhs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 GraphicParamsR GraphicParams::operator=(GraphicParamsCR rhs)
     {
-    m_lineColor         = rhs.m_lineColor;
-    m_fillColor         = rhs.m_fillColor;
     m_isFilled          = rhs.m_isFilled;
     m_isBlankingRegion  = rhs.m_isBlankingRegion;
-    m_material          = rhs.m_material;
+    m_linePixels        = rhs.m_linePixels;
     m_rasterWidth       = rhs.m_rasterWidth;
-    m_lStyleSymb        = rhs.m_lStyleSymb;
+    m_lineColor         = rhs.m_lineColor;
+    m_fillColor         = rhs.m_fillColor;
+    m_trueWidthStart    = rhs.m_trueWidthStart;
+    m_trueWidthEnd      = rhs.m_trueWidthEnd;
+    m_lineTexture       = rhs.m_lineTexture;
+    m_material          = rhs.m_material;
     m_gradient          = rhs.m_gradient;
+    m_patternParams     = rhs.m_patternParams;
 
     return *this;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void OvrGraphicParams::Clear()
-    {
-    SetFlags(FLAGS_None);
-    m_matSymb.Init();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void  OvrGraphicParams::SetLineStyle(int32_t styleNo, DgnModelR modelRef, DgnModelR styleDgnModel, LineStyleParamsCP lStyleParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent)
-    {
-#ifdef WIP_VANCOUVER_MERGE // linestyle
-    m_matSymb.GetLineStyleSymbR().FromResolvedStyle(styleNo, modelRef, styleDgnModel, lStyleParams, context, startTangent, endTangent);
-    m_flags |= MATSYMB_OVERRIDE_Style;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1258,12 +1096,13 @@ void  OvrGraphicParams::SetLineStyle(int32_t styleNo, DgnModelR modelRef, DgnMod
 GeometryParams::GeometryParams(GeometryParamsCR rhs)
     {
     m_appearanceOverrides   = rhs.m_appearanceOverrides;
+    m_resolved              = rhs.m_resolved;
     m_categoryId            = rhs.m_categoryId;
     m_subCategoryId         = rhs.m_subCategoryId;
+    m_materialId            = rhs.m_materialId;
     m_elmPriority           = rhs.m_elmPriority;
     m_netPriority           = rhs.m_netPriority;
     m_weight                = rhs.m_weight;       
-    m_geometryClass         = rhs.m_geometryClass;       
     m_lineColor             = rhs.m_lineColor;
     m_fillColor             = rhs.m_fillColor;
     m_fillDisplay           = rhs.m_fillDisplay;
@@ -1271,11 +1110,10 @@ GeometryParams::GeometryParams(GeometryParamsCR rhs)
     m_netElmTransparency    = rhs.m_netElmTransparency;
     m_fillTransparency      = rhs.m_fillTransparency;
     m_netFillTransparency   = rhs.m_netFillTransparency;
-    m_materialId            = rhs.m_materialId;
+    m_geometryClass         = rhs.m_geometryClass;       
     m_styleInfo             = rhs.m_styleInfo;
     m_gradient              = rhs.m_gradient;
     m_pattern               = rhs.m_pattern;
-    m_resolved              = rhs.m_resolved;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1284,12 +1122,13 @@ GeometryParams::GeometryParams(GeometryParamsCR rhs)
 GeometryParamsR GeometryParams::operator=(GeometryParamsCR rhs)
     {
     m_appearanceOverrides   = rhs.m_appearanceOverrides;
+    m_resolved              = rhs.m_resolved;
     m_categoryId            = rhs.m_categoryId;
     m_subCategoryId         = rhs.m_subCategoryId;
+    m_materialId            = rhs.m_materialId;
     m_elmPriority           = rhs.m_elmPriority;
     m_netPriority           = rhs.m_netPriority;
     m_weight                = rhs.m_weight;
-    m_geometryClass         = rhs.m_geometryClass;       
     m_lineColor             = rhs.m_lineColor;
     m_fillColor             = rhs.m_fillColor;
     m_fillDisplay           = rhs.m_fillDisplay;
@@ -1297,11 +1136,10 @@ GeometryParamsR GeometryParams::operator=(GeometryParamsCR rhs)
     m_netElmTransparency    = rhs.m_netElmTransparency;
     m_fillTransparency      = rhs.m_fillTransparency;
     m_netFillTransparency   = rhs.m_netFillTransparency;
-    m_materialId            = rhs.m_materialId;
+    m_geometryClass         = rhs.m_geometryClass;       
     m_styleInfo             = rhs.m_styleInfo;
     m_gradient              = rhs.m_gradient;
     m_pattern               = rhs.m_pattern;
-    m_resolved              = rhs.m_resolved;
 
     return *this;
     }
@@ -1462,6 +1300,9 @@ void GeometryParams::Resolve(DgnDbR dgnDb, DgnViewportP vp)
 void GeometryParams::Resolve(ViewContextR context)
     {
     Resolve(context.GetDgnDb(), context.GetViewport());
+
+    if (m_styleInfo.IsValid())
+        m_styleInfo->Cook(context);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1626,7 +1467,7 @@ static void drawGridRefs(Render::GraphicR graphic, DPoint3dCR org, DVec3dCR rowV
 
         linePoints[0].SumOf(org,rowVec, d);
         linePoints[1].SumOf(gridEnd,rowVec, d);
-        graphic.AddLineString(2, linePoints, nullptr);
+        graphic.AddLineString(2, linePoints);
         }
     }
 
@@ -1741,7 +1582,7 @@ static void drawGridDots(Render::GraphicR graphic, bool doIsoGrid, DPoint3dCR or
                 }
 
             if (0 != nToDisplay)
-                graphic.AddPointString(nToDisplay, points, nullptr);
+                graphic.AddPointString(nToDisplay, points);
             }
         }
     }
@@ -1767,7 +1608,7 @@ static void drawGridPlane(Render::GraphicR graphic, DPoint3dCR gridOrigin, DVec3
     shapePoints[2].SumOf(gridOrigin,xVec, repetitions.x, yVec, repetitions.y);
     shapePoints[3].SumOf(gridOrigin,yVec, repetitions.y);
 
-    graphic.AddShape(5, shapePoints, true, nullptr);
+    graphic.AddShape(5, shapePoints, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1902,6 +1743,3 @@ void DecorateContext::DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix,
     drawGrid(*graphic, isoGrid, drawDots, gridOrg, gridX, gridY, gridsPerRef, repetitions);
     AddWorldDecoration(*graphic);
     }
-
-
-

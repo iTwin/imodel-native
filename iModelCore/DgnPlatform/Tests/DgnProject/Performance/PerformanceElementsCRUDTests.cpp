@@ -243,9 +243,9 @@ DgnDbStatus PerformanceElement1::_BindUpdateParams(BeSQLite::EC::ECSqlStatement&
 PerformanceElement1Ptr PerformanceElement1::Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyPropertyValues)
     {
     if (specifyPropertyValues)
-        return new PerformanceElement1(PhysicalElement::CreateParams(db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415);
+        return new PerformanceElement1 (PerformanceElement1::CreateParams (db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415);
 
-    return new PerformanceElement1(PhysicalElement::CreateParams(db, modelId, classId, category));
+        return new PerformanceElement1 (PerformanceElement1::CreateParams (db, modelId, classId, category));
     }
 
 //---------------------------------------------------------------------------------------
@@ -409,9 +409,9 @@ DgnDbStatus PerformanceElement2::_BindUpdateParams(BeSQLite::EC::ECSqlStatement&
 PerformanceElement2Ptr PerformanceElement2::Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyPropertyValues)
     {
     if (specifyPropertyValues)
-        return new PerformanceElement2(PhysicalElement::CreateParams(db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415, "Element2 - InitValue", 20000000LL, 2.71828);
+        return new PerformanceElement2 (PerformanceElement2::CreateParams (db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415, "Element2 - InitValue", 20000000LL, 2.71828);
     else
-        return new PerformanceElement2(PhysicalElement::CreateParams(db, modelId, classId, category));
+        return new PerformanceElement2 (PerformanceElement2::CreateParams (db, modelId, classId, category));
     }
 
 //---------------------------------------------------------------------------------------
@@ -500,9 +500,9 @@ DgnDbStatus PerformanceElement3::_BindUpdateParams(BeSQLite::EC::ECSqlStatement&
 PerformanceElement3Ptr PerformanceElement3::Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyPropertyValues)
     {
     if (specifyPropertyValues)
-        return new PerformanceElement3(PhysicalElement::CreateParams(db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415, "Element2 - InitValue", 20000000LL, 2.71828, "Element3 - InitValue", 30000000LL, 1.414121);
+        return new PerformanceElement3 (PerformanceElement3::CreateParams (db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415, "Element2 - InitValue", 20000000LL, 2.71828, "Element3 - InitValue", 30000000LL, 1.414121);
     else
-        return new PerformanceElement3(PhysicalElement::CreateParams(db, modelId, classId, category));
+        return new PerformanceElement3 (PerformanceElement3::CreateParams (db, modelId, classId, category));
     }
 
 //---------------------------------------------------------------------------------------
@@ -591,9 +591,9 @@ DgnDbStatus PerformanceElement4::_BindUpdateParams(BeSQLite::EC::ECSqlStatement&
 PerformanceElement4Ptr PerformanceElement4::Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyPropertyValues)
     {
     if (specifyPropertyValues)
-        return new PerformanceElement4(PhysicalElement::CreateParams(db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415, "Element2 - InitValue", 20000000LL, 2.71828, "Element3 - InitValue", 30000000LL, 1.414121, "Element4 - InitValue", 40000000LL, 1.61803398874);
+        return new PerformanceElement4 (PerformanceElement4::CreateParams (db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415, "Element2 - InitValue", 20000000LL, 2.71828, "Element3 - InitValue", 30000000LL, 1.414121, "Element4 - InitValue", 40000000LL, 1.61803398874);
     else
-        return new PerformanceElement4(PhysicalElement::CreateParams(db, modelId, classId, category));
+        return new PerformanceElement4 (PerformanceElement4::CreateParams (db, modelId, classId, category));
     }
 
 //---------------------------------------------------------------------------------------
@@ -1013,7 +1013,6 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::BindElement4PropertyParams(ECSql
     return DgnDbStatus::Success;
     }
 
-#if defined (NOT_NOW_REMOVE)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1074,7 +1073,7 @@ void PerformanceElementsCRUDTestFixture::BindParams(DgnElementPtr& element, ECSq
 
     // Compress the serialized GeomStream
     bool m_multiChunkGeomStream = false;
-    SnappyToBlob& snappyTo = element->GetDgnDb().Elements().GetSnappyTo();
+    SnappyToBlob snappyTo;
     snappyTo.Init();
 
     GeometryStream geom = element->ToGeometrySource()->GetGeometryStream();
@@ -1186,7 +1185,7 @@ void PerformanceElementsCRUDTestFixture::BindUpdateParams(DgnElementPtr& element
 
     // Compress the serialized GeomStream
     bool m_multiChunkGeomStream = false;
-    SnappyToBlob& snappyTo = element->GetDgnDb().Elements().GetSnappyTo();
+    SnappyToBlob snappyTo;
     snappyTo.Init();
 
     GeometryStream geom = element->ToGeometrySource()->GetGeometryStream();
@@ -1259,7 +1258,6 @@ void PerformanceElementsCRUDTestFixture::BindUpdateParams(DgnElementPtr& element
         ASSERT_EQ (DgnDbStatus::Success, BindElement4PropertyParams(stmt, updateParams));
         }
     }
-#endif
 
 //Methods to verify Business Property Values returned by Sql Statements. 
 //---------------------------------------------------------------------------------------

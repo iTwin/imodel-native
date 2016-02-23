@@ -105,9 +105,9 @@ typedef TestElement const& TestElementCR;
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      06/15
 //=======================================================================================
-struct TestElementHandler : Dgn::dgn_ElementHandler::Physical
+struct TestElementHandler : Dgn::dgn_ElementHandler::Geometric3d
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT_CLASS_NAME, TestElement, TestElementHandler, Dgn::dgn_ElementHandler::Physical, )
+    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT_CLASS_NAME, TestElement, TestElementHandler, Dgn::dgn_ElementHandler::Geometric3d, )
 protected: 
     virtual void _GetClassParams(Dgn::ECSqlClassParams& params) override;
 };
@@ -116,9 +116,9 @@ protected:
 //! A test Element
 // @bsiclass                                                     Sam.Wilson      04/15
 //=======================================================================================
-struct TestElement2d : Dgn::AnnotationElement
+struct TestElement2d : Dgn::AnnotationElement2d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT2d_CLASS_NAME, Dgn::AnnotationElement) 
+    DGNELEMENT_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT2d_CLASS_NAME, Dgn::AnnotationElement2d) 
 
 public:
     TestElement2d(CreateParams const& params) : T_Super(params) {}
@@ -134,9 +134,9 @@ typedef TestElement2d const& TestElement2dCR;
 //! A test ElementHandler
 // @bsiclass                                                     Sam.Wilson      01/15
 //=======================================================================================
-struct TestElement2dHandler : Dgn::dgn_ElementHandler::Annotation
+struct TestElement2dHandler : Dgn::dgn_ElementHandler::Annotation2d
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT2d_CLASS_NAME, TestElement2d, TestElement2dHandler, Dgn::dgn_ElementHandler::Annotation, )
+    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT2d_CLASS_NAME, TestElement2d, TestElement2dHandler, Dgn::dgn_ElementHandler::Annotation2d, )
 };
 
 //=======================================================================================
@@ -165,9 +165,9 @@ typedef TestGroup const& TestGroupCR;
 //=======================================================================================
 // @bsiclass                                                     Shaun.Sewall    11/15
 //=======================================================================================
-struct TestGroupHandler : Dgn::dgn_ElementHandler::Physical
+struct TestGroupHandler : Dgn::dgn_ElementHandler::Geometric3d
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_GROUP_CLASS_NAME, TestGroup, TestGroupHandler, Dgn::dgn_ElementHandler::Physical, )
+    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_GROUP_CLASS_NAME, TestGroup, TestGroupHandler, Dgn::dgn_ElementHandler::Geometric3d, )
 };
 
 //=======================================================================================

@@ -13,7 +13,6 @@
 void DgnViewport::Initialize(ViewControllerR viewController)
     {
     m_viewController = &viewController;
-    m_needsHeal = true;
     viewController._OnAttachedToViewport(*this);
     }
 
@@ -29,7 +28,6 @@ void DgnViewport::DestroyViewport()
         m_viewController = nullptr;
         }
 
-    m_frustumValid = false;
     m_renderTarget = nullptr;
     }
 
@@ -38,8 +36,7 @@ void DgnViewport::DestroyViewport()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::InvalidateScene() const
     {
-    m_sceneValid = false;
-    m_needsHeal = true;
+    m_sync.InvalidateScene();
 
     if (m_viewController.IsValid())
         m_viewController->_InvalidateScene();
@@ -546,8 +543,7 @@ ViewportStatus DgnViewport::SetupFromViewController()
     DMap4d npcToView = CalcNpcToView();
     m_rootToView.InitProduct(npcToView, m_rootToNpc);
 
-    m_needSynchWithViewController = false;
-    m_frustumValid = true;
+    m_sync.SetValidController();
 
     return ViewportStatus::Success;
     }
@@ -584,7 +580,7 @@ void DgnViewport::FixFrustumOrder(Frustum& frustum)
 ViewportStatus DgnViewport::SetupFromFrustum(Frustum const& inFrustum)
     {
     ViewControllerP   viewController = m_viewController.get();
-    if (nullptr == viewController || !m_frustumValid)
+    if (nullptr == viewController)
         return ViewportStatus::InvalidWindow;
 
     ViewportStatus validSize = viewController->SetupFromFrustum(inFrustum);
@@ -1121,7 +1117,7 @@ void DgnViewport::SynchWithViewController(bool saveInUndo)
 
     if (saveInUndo)
         {
-        CheckForChanges();
+        SaveViewUndo();
         _SynchViewTitle();
         }
     }
@@ -1146,15 +1142,15 @@ ColorDef DgnViewport::GetBackgroundColor() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::ScheduleProgressiveTask(ProgressiveTask& pd)
+void DgnViewport::ScheduleProgressiveTask(ProgressiveTask& task)
     {
-    m_progressiveTasks.push_back(&pd);
+    m_progressiveTasks.push_back(&task);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::CheckForChanges()
+void DgnViewport::SaveViewUndo()
     {
     if (!m_undoActive)
         return;

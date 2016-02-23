@@ -2,10 +2,11 @@
 |
 |     $Source: DgnCore/linestyle/LineStyleApi.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
-#include    <DgnPlatformInternal.h>
+#include <DgnPlatformInternal.h>
+#include <DgnPlatform/VecMath.h>
 
 USING_NAMESPACE_BENTLEY_RENDER
 
@@ -412,7 +413,7 @@ StatusInt       LsComponent::_StrokeArc (ViewContextP context, LineStyleSymbP ls
 
     if (!hasStartTan || !hasEndTan)
         {
-        DPoint3d    startTang, endTang;
+        DVec3d    startTang, endTang;
 
         startTang.Init (r0 * sin (start), -r1 * cos (start), 0.0);
         endTang.Init (-r0 * sin (start + sweep), r1 * cos (start + sweep), 0.0);

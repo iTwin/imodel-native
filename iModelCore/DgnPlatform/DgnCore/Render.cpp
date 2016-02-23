@@ -47,9 +47,9 @@ void Render::Target::RecordFrameTime(GraphicList& scene, double seconds, bool is
     // The GPS from the beginning of progressive is likely to be less
     // than the GPS from the end of progressive display. Therefore,
     // we reset the progressive display value by saving the create scene value.
-    m_graphicsPerSecondProgressiveDisplay.store(gps);
+    m_graphicsPerSecondNonScene.store(gps);
     if (!isFromProgressiveDisplay)
-        m_graphicsPerSecond.store(gps);
+        m_graphicsPerSecondScene.store(gps);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -256,4 +256,78 @@ void GraphicList::Add(Graphic& graphic, void* ovr, uint32_t ovrFlags)
     {
     graphic.Close(); 
     m_list.push_back(Node(graphic, ovr, ovrFlags));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void FrustumPlanes::Init(FrustumCR frustum)
+    {
+    m_isValid = true;
+    ClipUtil::RangePlanesFromFrustum(m_planes, frustum, true, true, 1.0E-6);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+FrustumPlanes::Contained FrustumPlanes::Contains(DPoint3dCP points, int nPts) const
+    {
+    BeAssert(IsValid());
+
+    bool allInside = true;
+    for (ClipPlaneCR plane : m_planes)
+        {
+        int nOutside = 0;
+        for (int j=0; j < nPts; ++j)
+            {
+            if (plane.EvaluatePoint(points[j]) < 1.0E-8)
+                {
+                ++nOutside;
+                allInside = false;
+                }
+            }
+
+        if (nOutside == nPts)
+            return Contained::Outside;
+        }
+    
+    return allInside ? Contained::Inside : Contained::Partly;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool FrustumPlanes::IntersectsRay(DPoint3dCR origin, DVec3dCR direction)
+    {
+    double tFar  =  1e37;
+    double tNear = -1e37;
+
+    for (ClipPlaneCR plane : m_planes)
+        {
+        double vD = plane.DotProduct(direction), vN = plane.EvaluatePoint(origin);
+
+        if (0.0 == vD)
+            {
+            // Ray is parallel... No need to continue testing if outside halfspace.
+            if (vN < 0.0)
+                return false;
+            }
+        else
+            {
+            double      rayDistance = -vN / vD;
+
+            if (vD < 0.0)
+                {
+                if (rayDistance < tFar)
+                   tFar = rayDistance;
+                }
+            else
+                {
+                if (rayDistance > tNear)
+                    tNear = rayDistance;
+                }
+            }
+        } 
+
+    return tNear <= tFar;
     }

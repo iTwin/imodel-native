@@ -167,8 +167,8 @@ struct GeometryStreamIO
         void Append(DPoint3dCP, size_t nPts, int8_t boundary);
         void Append(DEllipse3dCR, int8_t boundary);
         void Append(ICurvePrimitiveCR);
-        void Append(CurveVectorCR);
-        void Append(PolyfaceQueryCR);
+        void Append(CurveVectorCR, OpCode opCode = OpCode::CurveVector);
+        void Append(PolyfaceQueryCR, OpCode opCode = OpCode::Polyface);
         void Append(ISolidPrimitiveCR);
         void Append(MSBsplineSurfaceCR);
         void Append(ISolidKernelEntityCR); // Adds multiple op-codes for when PSolid is un-available...

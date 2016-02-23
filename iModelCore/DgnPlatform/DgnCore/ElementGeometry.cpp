@@ -819,7 +819,7 @@ bool GeometryStreamIO::Writer::AppendSimplified(GeometricPrimitiveCR geom, bool 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryStreamIO::Writer::Append(CurveVectorCR curves)
+void GeometryStreamIO::Writer::Append(CurveVectorCR curves, OpCode opCode)
     {
     bvector<Byte> buffer;
 
@@ -831,7 +831,7 @@ void GeometryStreamIO::Writer::Append(CurveVectorCR curves)
         return;
         }
 
-    Append(Operation(OpCode::CurveVector, (uint32_t) buffer.size(), &buffer.front()));
+    Append(Operation(opCode, (uint32_t) buffer.size(), &buffer.front()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -857,7 +857,7 @@ void GeometryStreamIO::Writer::Append(ICurvePrimitiveCR curvePrimitive)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryStreamIO::Writer::Append(PolyfaceQueryCR meshData)
+void GeometryStreamIO::Writer::Append(PolyfaceQueryCR meshData, OpCode opCode)
     {
     bvector<Byte> buffer;
 
@@ -869,7 +869,7 @@ void GeometryStreamIO::Writer::Append(PolyfaceQueryCR meshData)
         return;
         }
 
-    Append(Operation(OpCode::Polyface, (uint32_t) buffer.size(), &buffer.front()));
+    Append(Operation(opCode, (uint32_t) buffer.size(), &buffer.front()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -913,7 +913,8 @@ void GeometryStreamIO::Writer::Append(MSBsplineSurfaceCR surface)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
     {
-    bool saveBRep = false, saveFacets = false, saveEdges = false, saveFaceIso = false;
+    bool saveBRep = false, saveFacets = false, saveEdges = false, saveFaceIso = false, facetFailure = false;
+    size_t currSize = m_buffer.size();
     IFaceMaterialAttachmentsCP attachments = entity.GetFaceMaterialAttachments();
 
     switch (entity.GetEntityType())
@@ -1039,42 +1040,34 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
             bvector<GeometryParams> params;
 
             WireframeGeomUtil::CollectPolyfaces(entity, m_db, polyfaces, params, *facetOpt);
+            facetFailure = (0 == polyfaces.size());
 
             for (size_t i=0; i < polyfaces.size(); i++)
                 {
                 if (0 == polyfaces[i]->GetPointCount())
                     continue;
 
-                bvector<Byte> buffer;
-
-                BentleyGeometryFlatBuffer::GeometryToBytes(*polyfaces[i], buffer);
-
-                if (0 == buffer.size())
-                    continue;
-
                 Append(params[i], true);
-                Append(Operation(OpCode::BRepPolyface, (uint32_t) buffer.size(), &buffer.front()));
+                Append(*polyfaces[i], OpCode::BRepPolyface);
                 }
             }
         else
             {
             PolyfaceHeaderPtr polyface = WireframeGeomUtil::CollectPolyface(entity, m_db, *facetOpt);
-
-            if (polyface.IsValid())
-                {
-                bvector<Byte> buffer;
-
-                BentleyGeometryFlatBuffer::GeometryToBytes(*polyface, buffer);
-
-                if (0 != buffer.size())
-                    Append(Operation(saveEdges ? OpCode::BRepPolyface : OpCode::BRepPolyfaceExact, (uint32_t) buffer.size(), &buffer.front()));
-                }
+            
+            if (!(facetFailure = !polyface.IsValid()))
+                Append(*polyface, saveEdges ? OpCode::BRepPolyface : OpCode::BRepPolyfaceExact);
             }
+
+        if (facetFailure)
+            m_buffer.resize(currSize); // Remove OpCode::ParasolidBRep, body is invalid...
         }
 
     // When facetted representation is an approximation, we need to store the edge curves for snapping...
     if (saveEdges)
         {
+        OpCode opCode = (facetFailure ? OpCode::CurveVector : OpCode::BRepEdges); // Just add as normal curve vector if we didn't get any facets...
+
         if (nullptr != attachments)
             {
             bvector<CurveVectorPtr> curves;
@@ -1087,15 +1080,8 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
                 if (0 == curves[i]->size())
                     continue;
 
-                bvector<Byte> buffer;
-
-                BentleyGeometryFlatBuffer::GeometryToBytes(*curves[i], buffer);
-
-                if (0 == buffer.size())
-                    continue;
-
                 Append(params[i], true);
-                Append(Operation(OpCode::BRepEdges, (uint32_t) buffer.size(), &buffer.front()));
+                Append(*curves[i], opCode);
                 }
             }
         else
@@ -1106,12 +1092,7 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
                 {
                 if (edgeCurves->size() < 25) // Don't create large flatbuffer entries, need to CheckStop...
                     {
-                    bvector<Byte> buffer;
-
-                    BentleyGeometryFlatBuffer::GeometryToBytes(*edgeCurves, buffer);
-
-                    if (0 != buffer.size())
-                        Append(Operation(OpCode::BRepEdges, (uint32_t) buffer.size(), &buffer.front()));
+                    Append(*edgeCurves, opCode);
                     }
                 else
                     {
@@ -1124,13 +1105,7 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
                         if (batchCurves->size() < 25 && curvePrimitive != edgeCurves->back())
                             continue;
 
-                        bvector<Byte> buffer;
-
-                        BentleyGeometryFlatBuffer::GeometryToBytes(*batchCurves, buffer);
-
-                        if (0 != buffer.size())
-                            Append(Operation(OpCode::BRepEdges, (uint32_t) buffer.size(), &buffer.front()));
-
+                        Append(*batchCurves, opCode);
                         batchCurves->clear();
                         }
                     }
@@ -1141,6 +1116,8 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
     // When facetted representation is an approximation, we need to store the face-iso curves for wireframe display...
     if (saveFaceIso)
         {
+        OpCode opCode = (facetFailure ? OpCode::CurveVector : OpCode::BRepFaceIso); // Just add as normal curve vector if we didn't get any facets...
+
         if (nullptr != attachments)
             {
             bvector<CurveVectorPtr> curves;
@@ -1153,15 +1130,8 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
                 if (0 == curves[i]->size())
                     continue;
 
-                bvector<Byte> buffer;
-
-                BentleyGeometryFlatBuffer::GeometryToBytes(*curves[i], buffer);
-
-                if (0 == buffer.size())
-                    continue;
-
                 Append(params[i], true);
-                Append(Operation(OpCode::BRepFaceIso, (uint32_t) buffer.size(), &buffer.front()));
+                Append(*curves[i], opCode);
                 }
             }
         else
@@ -1172,12 +1142,7 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
                 {
                 if (faceCurves->size() < 25) // Don't create large flatbuffer entries, need to CheckStop...
                     {
-                    bvector<Byte> buffer;
-
-                    BentleyGeometryFlatBuffer::GeometryToBytes(*faceCurves, buffer);
-
-                    if (0 != buffer.size())
-                        Append(Operation(OpCode::BRepFaceIso, (uint32_t) buffer.size(), &buffer.front()));
+                    Append(*faceCurves, opCode);
                     }
                 else
                     {
@@ -1190,13 +1155,7 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
                         if (batchCurves->size() < 25 && curvePrimitive != faceCurves->back())
                             continue;
 
-                        bvector<Byte> buffer;
-
-                        BentleyGeometryFlatBuffer::GeometryToBytes(*batchCurves, buffer);
-
-                        if (0 != buffer.size())
-                            Append(Operation(OpCode::BRepFaceIso, (uint32_t) buffer.size(), &buffer.front()));
-
+                        Append(*batchCurves, opCode);
                         batchCurves->clear();
                         }
                     }
@@ -1269,8 +1228,7 @@ void GeometryStreamIO::Writer::Append(GeometryParamsCR elParams, bool ignoreSubC
         Append(Operation(OpCode::BasicSymbology, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
         }
 
-#if LINESTYLES_ENABLED
-    if (nullptr != elParams.GetLineStyle() && nullptr != elParams.GetLineStyle()->GetStyleParams())
+    if (useStyle && nullptr != elParams.GetLineStyle() && nullptr != elParams.GetLineStyle()->GetStyleParams())
         {
         FlatBufferBuilder   fbb;
         LineStyleParamsCP   lsParams = elParams.GetLineStyle()->GetStyleParams();
@@ -1282,7 +1240,6 @@ void GeometryStreamIO::Writer::Append(GeometryParamsCR elParams, bool ignoreSubC
         fbb.Finish(modifiers);
         Append(Operation(OpCode::LineStyleModifiers, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
         }
-#endif
 
     if (FillDisplay::Never != elParams.GetFillDisplay())
         {
@@ -1655,10 +1612,9 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
 
             if (ppfb->useStyle())
                 {
-                DgnStyleId  styleId((uint64_t)ppfb->lineStyleId());
-                DgnStyleId  currStyleId = (nullptr != elParams.GetLineStyle() ? elParams.GetLineStyle()->GetStyleId() : DgnStyleId());
+                DgnStyleId styleId((uint64_t)ppfb->lineStyleId());
 
-                if (elParams.IsLineStyleFromSubCategoryAppearance() || styleId != currStyleId)
+                if (elParams.IsLineStyleFromSubCategoryAppearance() || styleId != (nullptr != elParams.GetLineStyle() ? elParams.GetLineStyle()->GetStyleId() : DgnStyleId()))
                     {
                     if (styleId.IsValid())
                         {
@@ -2925,15 +2881,15 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 switch (boundary)
                     {
                     case FB::BoundaryType_None:
-                        graphic.AddPointString2d(nPts, pts, geomParams.GetNetDisplayPriority(), nullptr);
+                        graphic.AddPointString2d(nPts, pts, geomParams.GetNetDisplayPriority());
                         break;
 
                     case FB::BoundaryType_Open:
-                        graphic.AddLineString2d(nPts, pts, geomParams.GetNetDisplayPriority(), nullptr);
+                        graphic.AddLineString2d(nPts, pts, geomParams.GetNetDisplayPriority());
                         break;
 
                     case FB::BoundaryType_Closed:
-                        graphic.AddShape2d(nPts, pts, FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority(), nullptr);
+                        graphic.AddShape2d(nPts, pts, FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority());
                         break;
                     }
                 break;
@@ -2958,15 +2914,15 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 switch (boundary)
                     {
                     case FB::BoundaryType_None:
-                        graphic.AddPointString(nPts, pts, nullptr);
+                        graphic.AddPointString(nPts, pts);
                         break;
 
                     case FB::BoundaryType_Open:
-                        graphic.AddLineString(nPts, pts, nullptr);
+                        graphic.AddLineString(nPts, pts);
                         break;
 
                     case FB::BoundaryType_Closed:
-                        graphic.AddShape(nPts, pts, FillDisplay::Never != geomParams.GetFillDisplay(), nullptr);
+                        graphic.AddShape(nPts, pts, FillDisplay::Never != geomParams.GetFillDisplay());
                         break;
                     }
                 break;
@@ -2990,16 +2946,16 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 if (!context.Is3dView())
                     {
                     if (FB::BoundaryType_Closed != boundary)
-                        graphic.AddArc2d(arc, false, false, geomParams.GetNetDisplayPriority(), nullptr);
+                        graphic.AddArc2d(arc, false, false, geomParams.GetNetDisplayPriority());
                     else
-                        graphic.AddArc2d(arc, true, FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority(), nullptr);
+                        graphic.AddArc2d(arc, true, FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority());
                     break;
                     }
 
                 if (FB::BoundaryType_Closed != boundary)
-                    graphic.AddArc(arc, false, false, nullptr);
+                    graphic.AddArc(arc, false, false);
                 else
-                    graphic.AddArc(arc, true, FillDisplay::Never != geomParams.GetFillDisplay(), nullptr);
+                    graphic.AddArc(arc, true, FillDisplay::Never != geomParams.GetFillDisplay());
                 break;
                 }
 

@@ -8,6 +8,7 @@
 #include "ChangeTestFixture.h"
 #include <DgnPlatform/DgnHandlersAPI.h>
 #include <DgnPlatform/VolumeElement.h>
+#include <DgnPlatform/GenericDomain.h>
 
 #define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"Dgn"))
 
@@ -25,7 +26,7 @@ struct VolumeElementTestFixture : public ChangeTestFixture
 DEFINE_T_SUPER(ChangeTestFixture)
 protected:
     VolumeElementCPtr InsertVolume(DPoint3dCR origin, DPoint2d shapeArr[5], double height, Utf8CP label);
-    PhysicalElementCPtr InsertBlock(DPoint3dCR origin, double dimension);
+    GenericPhysicalObjectCPtr InsertBlock(DPoint3dCR origin, double dimension);
 
 public:
     VolumeElementTestFixture() : T_Super(L"VolumeElementTest.dgndb") {}
@@ -44,9 +45,9 @@ VolumeElementCPtr VolumeElementTestFixture::InsertVolume(DPoint3dCR origin, DPoi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    11/2015
 //---------------------------------------------------------------------------------------
-PhysicalElementCPtr VolumeElementTestFixture::InsertBlock(DPoint3dCR center, double dimension)
+GenericPhysicalObjectCPtr VolumeElementTestFixture::InsertBlock(DPoint3dCR center, double dimension)
     {
-    PhysicalElementPtr physicalElementPtr = PhysicalElement::Create(*(m_testModel->ToSpatialModelP()), m_testCategoryId);
+    GenericPhysicalObjectPtr physicalElementPtr = GenericPhysicalObject::Create(*(m_testModel->ToSpatialModelP()), m_testCategoryId);
 
     DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(DPoint3d::FromZero(), DPoint3d::From(dimension, dimension, dimension), true);
     ISolidPrimitivePtr geomPtr = ISolidPrimitive::CreateDgnBox(blockDetail);
@@ -57,7 +58,7 @@ PhysicalElementCPtr VolumeElementTestFixture::InsertBlock(DPoint3dCR center, dou
     BentleyStatus status = builder->SetGeometryStreamAndPlacement(*physicalElementPtr);
     BeAssert(status == SUCCESS);
 
-    PhysicalElementCPtr insertedElement = m_testDb->Elements().Insert<PhysicalElement>(*physicalElementPtr);
+    GenericPhysicalObjectCPtr insertedElement = m_testDb->Elements().Insert<GenericPhysicalObject>(*physicalElementPtr);
     BeAssert(insertedElement.IsValid());
 
     return insertedElement;
@@ -140,14 +141,14 @@ TEST_F(VolumeElementTestFixture, QueryTest)
     CreateDgnDb();
 
     // Entirely inside
-    PhysicalElementCPtr insideEl = InsertBlock(DPoint3d::From(37.5, 37.5, 37.5), 25.0);
+    GenericPhysicalObjectCPtr insideEl = InsertBlock(DPoint3d::From(37.5, 37.5, 37.5), 25.0);
     InsertBlock(DPoint3d::From(-37.5, -37.5, -37.5), 25.0);
 
     // Partly overlaps
-    PhysicalElementCPtr overlapEl = InsertBlock(DPoint3d::From(100.0, 100.0, 100.0), 25.0);
+    GenericPhysicalObjectCPtr overlapEl = InsertBlock(DPoint3d::From(100.0, 100.0, 100.0), 25.0);
 
     // Entirely outside
-    PhysicalElementCPtr outsideEl = InsertBlock(DPoint3d::From(150.0, 150.0, 150.0), 25.0);
+    GenericPhysicalObjectCPtr outsideEl = InsertBlock(DPoint3d::From(150.0, 150.0, 150.0), 25.0);
     InsertBlock(DPoint3d::From(-150.0, -150.0, -150.0), 25.0);
     InsertBlock(DPoint3d::From(0.0, 0.0, 150.0), 25.0); 
     InsertBlock(DPoint3d::From(0.0, 0.0, -150.0), 25.0);

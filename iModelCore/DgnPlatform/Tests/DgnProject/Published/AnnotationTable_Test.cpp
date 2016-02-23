@@ -124,7 +124,7 @@ public:
             }
         }
 
-    void        VerifyCounts (AnnotationTableElementCR table)
+    void        VerifyCounts (AnnotationTableCR table)
         {
         AspectCountMap actualCounts;
 
@@ -243,14 +243,14 @@ double                  GetTextStyleHeight()    { return 0.25; }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-AnnotationTableElementPtr    CreateBasicTable (int numRows = 5, int numCols = 3)
+AnnotationTablePtr    CreateBasicTable (int numRows = 5, int numCols = 3)
     {
     DgnDbR          db          = GetDgnDb();
     DgnModelId      modelId     = GetModelId();
     DgnCategoryId   categoryId  = GetCategoryId();
 
-    AnnotationTableElement::CreateParams    createParams (db, modelId, AnnotationTableElement::QueryClassId(db), categoryId);
-    AnnotationTableElementPtr               tableElement = AnnotationTableElement::Create(numRows, numCols, GetTextStyleId(), 0, createParams);
+    AnnotationTable::CreateParams    createParams (db, modelId, AnnotationTable::QueryClassId(db), categoryId);
+    AnnotationTablePtr               tableElement = AnnotationTable::Create(numRows, numCols, GetTextStyleId(), 0, createParams);
     EXPECT_TRUE (tableElement.IsValid());
 
     return tableElement;
@@ -259,9 +259,9 @@ AnnotationTableElementPtr    CreateBasicTable (int numRows = 5, int numCols = 3)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId    InsertElement (AnnotationTableElementR element)
+DgnElementId    InsertElement (AnnotationTableR element)
     {
-    AnnotationTableElementCPtr  insertedElement = element.Insert();
+    AnnotationTableCPtr  insertedElement = element.Insert();
     EXPECT_TRUE(insertedElement.IsValid());
 
     DgnElementId elementId = insertedElement->GetElementId();
@@ -273,9 +273,9 @@ DgnElementId    InsertElement (AnnotationTableElementR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void        UpdateElement (AnnotationTableElementR element)
+void        UpdateElement (AnnotationTableR element)
     {
-    AnnotationTableElementCPtr  updatedElement = element.Update();
+    AnnotationTableCPtr  updatedElement = element.Update();
     EXPECT_TRUE(updatedElement.IsValid());
     }
 
@@ -284,7 +284,7 @@ void        UpdateElement (AnnotationTableElementR element)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementId    CreateBasicTablePersisted (int numRows = 5, int numCols = 3)
     {
-    AnnotationTableElementPtr   tableElement = CreateBasicTable (numRows, numCols);
+    AnnotationTablePtr   tableElement = CreateBasicTable (numRows, numCols);
     return InsertElement (*tableElement);
     }
 
@@ -325,7 +325,7 @@ static void     BuildExpectedCellList (bvector<AnnotationTableCellIndex>& expect
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     VerifyCellCollection (AnnotationTableElementCR table, bvector<AnnotationTableCellIndex> const* exclusions)
+static void     VerifyCellCollection (AnnotationTableCR table, bvector<AnnotationTableCellIndex> const* exclusions)
     {
     bvector<AnnotationTableCellIndex> expectedCells;
     BuildExpectedCellList (expectedCells, table.GetRowCount(), table.GetColumnCount(), exclusions);
@@ -346,7 +346,7 @@ static void     VerifyCellCollection (AnnotationTableElementCR table, bvector<An
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     VerifyCellsWithMergeBlocks (AnnotationTableElementCR table, bvector<MergeDescr> mergeBlocks)
+static void     VerifyCellsWithMergeBlocks (AnnotationTableCR table, bvector<MergeDescr> mergeBlocks)
     {
     // Verify that the expected cells were consumed
     bvector<AnnotationTableCellIndex> cellsThatWereConsumed;
@@ -381,7 +381,7 @@ static void     VerifyCellsWithMergeBlocks (AnnotationTableElementCR table, bvec
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AnnotationTableTest, BasicCreate)
     {
-    AnnotationTableElementPtr   tableElement = CreateBasicTable ();
+    AnnotationTablePtr   tableElement = CreateBasicTable ();
 
     EXPECT_EQ (5, tableElement->GetRowCount ());
     EXPECT_EQ (3, tableElement->GetColumnCount ());
@@ -400,7 +400,7 @@ TEST_F (AnnotationTableTest, BasicPersist)
     // Purge the cache so that we don't get a cached element.
     GetDgnDb().Elements().Purge(0);
 
-    AnnotationTableElementCPtr readTableElement = AnnotationTableElement::Get(GetDgnDb(), elementId);
+    AnnotationTableCPtr readTableElement = AnnotationTable::Get(GetDgnDb(), elementId);
     ASSERT_TRUE(readTableElement.IsValid());
 
     EXPECT_EQ (numRows, readTableElement->GetRowCount ());
@@ -425,7 +425,7 @@ TEST_F (AnnotationTableTest, PersistTwoTables)
     // Purge the cache so that we don't get a cached element.
     GetDgnDb().Elements().Purge(0);
 
-    AnnotationTableElementCPtr readTableElement = AnnotationTableElement::Get(GetDgnDb(), elementId1);
+    AnnotationTableCPtr readTableElement = AnnotationTable::Get(GetDgnDb(), elementId1);
     ASSERT_TRUE(readTableElement.IsValid());
 
     EXPECT_EQ (numRows1, readTableElement->GetRowCount ());
@@ -435,7 +435,7 @@ TEST_F (AnnotationTableTest, PersistTwoTables)
     ExpectedAspectCounts expectedCounts;
     expectedCounts.VerifyCounts(*readTableElement);
 
-    readTableElement = AnnotationTableElement::Get(GetDgnDb(), elementId2);
+    readTableElement = AnnotationTable::Get(GetDgnDb(), elementId2);
     ASSERT_TRUE(readTableElement.IsValid());
 
     EXPECT_EQ (numRows2, readTableElement->GetRowCount ());
@@ -471,8 +471,8 @@ TEST_F (AnnotationTableTest, PersistRowAndColumnAspects)
             rowHeights2.push_back (ExpectedRowHeight (iRow, 3.0 * iRow));
         }
 
-    AnnotationTableElementPtr   tableElement1 = CreateBasicTable (numRows1, numCols1);
-    AnnotationTableElementPtr   tableElement2 = CreateBasicTable (numRows2, numCols2);
+    AnnotationTablePtr   tableElement1 = CreateBasicTable (numRows1, numCols1);
+    AnnotationTablePtr   tableElement2 = CreateBasicTable (numRows2, numCols2);
 
     for (ExpectedRowHeight const& entry : rowHeights1)
         tableElement1->GetRow (entry.first)->SetHeight(entry.second);
@@ -490,7 +490,7 @@ TEST_F (AnnotationTableTest, PersistRowAndColumnAspects)
     // Purge the cache so that we don't get a cached element.
     GetDgnDb().Elements().Purge(0);
 
-    AnnotationTableElementCPtr readTableElement = AnnotationTableElement::Get(GetDgnDb(), elementId1);
+    AnnotationTableCPtr readTableElement = AnnotationTable::Get(GetDgnDb(), elementId1);
     ASSERT_TRUE(readTableElement.IsValid());
 
     for (ExpectedRowHeight const& entry : rowHeights1)
@@ -501,7 +501,7 @@ TEST_F (AnnotationTableTest, PersistRowAndColumnAspects)
     expectedCounts1.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableRow), rowHeights1.size());
     expectedCounts1.VerifyCounts(*readTableElement);
 
-    readTableElement = AnnotationTableElement::Get(GetDgnDb(), elementId2);
+    readTableElement = AnnotationTable::Get(GetDgnDb(), elementId2);
     ASSERT_TRUE(readTableElement.IsValid());
 
     for (ExpectedRowHeight const& entry : rowHeights2)
@@ -521,10 +521,10 @@ struct AnnotationTableTestAction
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual bool    _CreateTable (AnnotationTableElementPtr&, DgnDbR, DgnModelId, DgnCategoryId, DgnElementId) { return false; }
-    virtual void    _PreAction (AnnotationTableElementR) {}
-    virtual void    _DoAction (AnnotationTableElementR) = 0;
-    virtual void    _VerifyAction (AnnotationTableElementCR) const = 0;
+    virtual bool    _CreateTable (AnnotationTablePtr&, DgnDbR, DgnModelId, DgnCategoryId, DgnElementId) { return false; }
+    virtual void    _PreAction (AnnotationTableR) {}
+    virtual void    _DoAction (AnnotationTableR) = 0;
+    virtual void    _VerifyAction (AnnotationTableCR) const = 0;
     };
 
 /*=================================================================================**//**
@@ -545,9 +545,9 @@ public:
         m_tableElementId.Invalidate();
         }
 
-    AnnotationTableElementPtr CreateTable (AnnotationTableTestAction& testAction)
+    AnnotationTablePtr CreateTable (AnnotationTableTestAction& testAction)
         {
-        AnnotationTableElementPtr    table;
+        AnnotationTablePtr    table;
 
         if (testAction._CreateTable (table, GetDgnDb(), GetModelId(), GetCategoryId(), GetTextStyleId()))
             return table;
@@ -555,30 +555,30 @@ public:
         return CreateBasicTable();
         }
 
-    void ReadConstTable (AnnotationTableElementCPtr& table)
+    void ReadConstTable (AnnotationTableCPtr& table)
         {
         EXPECT_TRUE (m_tableElementId.IsValid());
 
-        table = AnnotationTableElement::Get(GetDgnDb(), m_tableElementId);
+        table = AnnotationTable::Get(GetDgnDb(), m_tableElementId);
         EXPECT_TRUE (table.IsValid());
         }
 
-    void ReadEditableTable (AnnotationTableElementPtr& table)
+    void ReadEditableTable (AnnotationTablePtr& table)
         {
         EXPECT_TRUE (m_tableElementId.IsValid());
 
-        table = AnnotationTableElement::GetForEdit(GetDgnDb(), m_tableElementId);
+        table = AnnotationTable::GetForEdit(GetDgnDb(), m_tableElementId);
         EXPECT_TRUE (table.IsValid());
         }
 
-    void AddTableToDb (AnnotationTableElementR table)
+    void AddTableToDb (AnnotationTableR table)
         {
         ASSERT_TRUE ( ! m_tableElementId.IsValid());
         m_tableElementId = InsertElement (table);
         ASSERT_TRUE (m_tableElementId.IsValid());
         }
 
-    void UpdateTableInDb (AnnotationTableElementR table)
+    void UpdateTableInDb (AnnotationTableR table)
         {
         ASSERT_EQ (m_tableElementId, table.GetElementId());
         UpdateElement (table);
@@ -587,7 +587,7 @@ public:
 
     void DoCreateTableTest (AnnotationTableTestAction& testAction)
         {
-        AnnotationTableElementPtr seedTable = CreateTable(testAction);
+        AnnotationTablePtr seedTable = CreateTable(testAction);
         EXPECT_TRUE (seedTable.IsValid());
 
         testAction._PreAction (*seedTable);
@@ -604,7 +604,7 @@ public:
         // Purge the cache so that we don't get a cached element.
         GetDgnDb().Elements().Purge(0);
 
-        AnnotationTableElementCPtr    foundTable;
+        AnnotationTableCPtr    foundTable;
 
         ReadConstTable (foundTable);
         EXPECT_TRUE (foundTable.IsValid());
@@ -614,7 +614,7 @@ public:
 
     void DoModifyTableTest (AnnotationTableTestAction& testAction)
         {
-        AnnotationTableElementPtr seedTable = CreateTable(testAction);
+        AnnotationTablePtr seedTable = CreateTable(testAction);
         EXPECT_TRUE (seedTable.IsValid());
 
         testAction._PreAction (*seedTable);
@@ -633,7 +633,7 @@ ReopenTestFile();
 GetDgnDb().Elements().Purge(0);
 #endif
 
-        AnnotationTableElementPtr        applyActionTable;
+        AnnotationTablePtr        applyActionTable;
 
         ReadEditableTable (applyActionTable);
         EXPECT_TRUE (applyActionTable.IsValid());
@@ -651,7 +651,7 @@ GetDgnDb().Elements().Purge(0);
         // Purge the cache so that we don't get a cached element.
         GetDgnDb().Elements().Purge(0);
 
-        AnnotationTableElementCPtr    postActionTable;
+        AnnotationTableCPtr    postActionTable;
 
         ReadConstTable (postActionTable);
         EXPECT_TRUE (postActionTable.IsValid());
@@ -671,7 +671,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _DoAction (AnnotationTableElementR table) override
+    void    _DoAction (AnnotationTableR table) override
         {
         // Don't do anything, a table is created and written by the test logic
         }
@@ -679,7 +679,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _VerifyAction (AnnotationTableElementCR table) const override
+    void    _VerifyAction (AnnotationTableCR table) const override
         {
         EXPECT_EQ (5, table.GetRowCount ());
         EXPECT_EQ (3, table.GetColumnCount ());
@@ -724,7 +724,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _DoAction (AnnotationTableElementR table) override
+    void    _DoAction (AnnotationTableR table) override
         {
         double  defaultRowHeight  = table.GetDefaultRowHeight();
         EXPECT_TRUE (defaultRowHeight != m_overrideHeight);
@@ -735,7 +735,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _VerifyAction (AnnotationTableElementCR table) const override
+    void    _VerifyAction (AnnotationTableCR table) const override
         {
         double  defaultRowHeight  = table.GetDefaultRowHeight();
 
@@ -792,7 +792,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _DoAction (AnnotationTableElementR table) override
+    void    _DoAction (AnnotationTableR table) override
         {
         double  defaultColumnWidth  = table.GetDefaultColumnWidth();
         EXPECT_TRUE (defaultColumnWidth != m_overrideWidth);
@@ -803,7 +803,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _VerifyAction (AnnotationTableElementCR table) const override
+    void    _VerifyAction (AnnotationTableCR table) const override
         {
         double  defaultColumnWidth  = table.GetDefaultColumnWidth();
 
@@ -860,7 +860,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _PreAction (AnnotationTableElementR table) override
+    void    _PreAction (AnnotationTableR table) override
         {
         double  overrideHeight = 0.75;
         double  defaultRowHeight  = table.GetDefaultRowHeight();
@@ -872,7 +872,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _DoAction (AnnotationTableElementR table) override
+    void    _DoAction (AnnotationTableR table) override
         {
         table.GetRow(m_index)->SetHeightFromContents();
         }
@@ -880,7 +880,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _VerifyAction (AnnotationTableElementCR table) const override
+    void    _VerifyAction (AnnotationTableCR table) const override
         {
         double  defaultRowHeight  = table.GetDefaultRowHeight();
 
@@ -935,7 +935,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _DoAction (AnnotationTableElementR table) override
+    void    _DoAction (AnnotationTableR table) override
         {
         DgnElementId   textStyleId = table.GetTextStyleId(AnnotationTableRegion::Body);
         AnnotationTextBlockPtr  textBlock   = AnnotationTextBlock::Create(table.GetDgnDb(), textStyleId, m_applyString.c_str());
@@ -947,7 +947,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _VerifyAction (AnnotationTableElementCR table) const override
+    void    _VerifyAction (AnnotationTableCR table) const override
         {
         AnnotationTableCellP  foundCell = table.GetCell (m_cellIndex);
         AnnotationTextBlockCP foundTextBlock = foundCell->GetTextBlock();
@@ -1006,7 +1006,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _PreAction (AnnotationTableElementR table) override
+    void    _PreAction (AnnotationTableR table) override
         {
         DgnElementId   textStyleId = table.GetTextStyleId(AnnotationTableRegion::Body);
         AnnotationTextBlockPtr  textBlock   = AnnotationTextBlock::Create(table.GetDgnDb(), textStyleId, "abcdefghi");
@@ -1018,7 +1018,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _DoAction (AnnotationTableElementR table) override
+    void    _DoAction (AnnotationTableR table) override
         {
         DgnElementId   textStyleId = table.GetTextStyleId(AnnotationTableRegion::Body);
         AnnotationTextBlockPtr  textBlock   = AnnotationTextBlock::Create(table.GetDgnDb(), textStyleId, m_applyString.c_str());
@@ -1030,7 +1030,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _VerifyAction (AnnotationTableElementCR table) const override
+    void    _VerifyAction (AnnotationTableCR table) const override
         {
         AnnotationTableCellP    foundCell = table.GetCell (m_cellIndex);
         AnnotationTextBlockCP   foundTextBlock = foundCell->GetTextBlock();
@@ -1092,7 +1092,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _PreAction (AnnotationTableElementR table) override
+    void    _PreAction (AnnotationTableR table) override
         {
         DgnElementId   textStyleId = table.GetTextStyleId(AnnotationTableRegion::Body);
         AnnotationTextBlockPtr  textBlock   = AnnotationTextBlock::Create(table.GetDgnDb(), textStyleId, "abcdefghi");
@@ -1104,7 +1104,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _DoAction (AnnotationTableElementR table) override
+    void    _DoAction (AnnotationTableR table) override
         {
         DgnElementId   textStyleId = table.GetTextStyleId(AnnotationTableRegion::Body);
         AnnotationTextBlockPtr  textBlock   = AnnotationTextBlock::Create(table.GetDgnDb(), textStyleId);
@@ -1118,7 +1118,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _VerifyAction (AnnotationTableElementCR table) const override
+    void    _VerifyAction (AnnotationTableCR table) const override
         {
         AnnotationTableCellP  foundCell = table.GetCell (m_cellIndex);
         EXPECT_TRUE (NULL == foundCell->GetTextBlock());
@@ -1172,7 +1172,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    07/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _PreAction (AnnotationTableElementR table) override
+    void    _PreAction (AnnotationTableR table) override
         {
         m_rowCount = table.GetRowCount();
 
@@ -1183,7 +1183,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    07/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _DoAction (AnnotationTableElementR table) override
+    void    _DoAction (AnnotationTableR table) override
         {
         // Delete a row
         table.DeleteRow (m_rowIndex);
@@ -1192,7 +1192,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    07/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _VerifyAction (AnnotationTableElementCR table) const override
+    void    _VerifyAction (AnnotationTableCR table) const override
         {
         EXPECT_EQ (m_rowCount - 1, table.GetRowCount());
 
@@ -1242,7 +1242,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    04/14
     +---------------+---------------+---------------+---------------+---------------+------*/
-    bool    _CreateTable (AnnotationTableElementPtr& table, DgnDbR db, DgnModelId mid, DgnCategoryId cid, DgnElementId tsid) override
+    bool    _CreateTable (AnnotationTablePtr& table, DgnDbR db, DgnModelId mid, DgnCategoryId cid, DgnElementId tsid) override
         {
         uint32_t          numRows  = 3;
         uint32_t          numCols  = 3;
@@ -1256,8 +1256,8 @@ public:
         //  2 |     |     |     |
         //    |-----+-----+-----+
 
-        AnnotationTableElement::CreateParams    createParams (db, mid, AnnotationTableElement::QueryClassId(db), cid);
-        table = AnnotationTableElement::Create (numRows, numCols, tsid, 0, createParams);
+        AnnotationTable::CreateParams    createParams (db, mid, AnnotationTable::QueryClassId(db), cid);
+        table = AnnotationTable::Create (numRows, numCols, tsid, 0, createParams);
 
         return true;
         }
@@ -1265,7 +1265,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _DoAction (AnnotationTableElementR table) override
+    void    _DoAction (AnnotationTableR table) override
         {
         // Merge a block of cells
         bool          failed = (SUCCESS != table.MergeCells (m_rootIndex, m_rowSpan, m_colSpan));
@@ -1275,7 +1275,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _VerifyAction (AnnotationTableElementCR table) const override
+    void    _VerifyAction (AnnotationTableCR table) const override
         {
         bvector <AnnotationTableTest::MergeDescr> mergeBlocks;
 
@@ -1444,13 +1444,13 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    03/15
     +---------------+---------------+---------------+---------------+---------------+------*/
-    bool    _CreateTable (AnnotationTableElementPtr& table, DgnDbR db, DgnModelId mid, DgnCategoryId cid, DgnElementId tsid) override
+    bool    _CreateTable (AnnotationTablePtr& table, DgnDbR db, DgnModelId mid, DgnCategoryId cid, DgnElementId tsid) override
         {
         uint32_t          numRows  = 4;
         uint32_t          numCols  = 4;
 
-        AnnotationTableElement::CreateParams    createParams (db, mid, AnnotationTableElement::QueryClassId(db), cid);
-        table = AnnotationTableElement::Create (numRows, numCols, tsid, 0, createParams);
+        AnnotationTable::CreateParams    createParams (db, mid, AnnotationTable::QueryClassId(db), cid);
+        table = AnnotationTable::Create (numRows, numCols, tsid, 0, createParams);
 
         table->MergeCells (m_existingMerge.m_rootIndex, m_existingMerge.m_rowSpan, m_existingMerge.m_colSpan);
 
@@ -1460,7 +1460,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    03/15
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _DoAction (AnnotationTableElementR table) override
+    void    _DoAction (AnnotationTableR table) override
         {
         // Merge a block of cells
         bool          failed = (SUCCESS != table.MergeCells (m_rootIndex, m_rowSpan, m_colSpan));
@@ -1470,7 +1470,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    03/15
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _VerifyAction (AnnotationTableElementCR table) const override
+    void    _VerifyAction (AnnotationTableCR table) const override
         {
         bvector <AnnotationTableTest::MergeDescr> mergeBlocks;
 
@@ -1811,7 +1811,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    04/14
     +---------------+---------------+---------------+---------------+---------------+------*/
-    bool    _CreateTable (AnnotationTableElementPtr& table, DgnDbR db, DgnModelId mid, DgnCategoryId cid, DgnElementId tsid) override
+    bool    _CreateTable (AnnotationTablePtr& table, DgnDbR db, DgnModelId mid, DgnCategoryId cid, DgnElementId tsid) override
         {
         uint32_t          numRows  = 4;
         uint32_t          numCols  = 4;
@@ -1830,8 +1830,8 @@ public:
         //  3 |     |     |     |     |
         //    |-----+-----+-----+-----|
 
-        AnnotationTableElement::CreateParams    createParams (db, mid, AnnotationTableElement::QueryClassId(db), cid);
-        table = AnnotationTableElement::Create (numRows, numCols, tsid, 0, createParams);
+        AnnotationTable::CreateParams    createParams (db, mid, AnnotationTable::QueryClassId(db), cid);
+        table = AnnotationTable::Create (numRows, numCols, tsid, 0, createParams);
 
         return true;
         }
@@ -1839,7 +1839,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    04/14
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _PreAction (AnnotationTableElementR table) override
+    void    _PreAction (AnnotationTableR table) override
         {
         // Merge a block of cells
         table.MergeCells (m_rootIndex, m_rowSpan, m_colSpan);
@@ -1851,7 +1851,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    04/14
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _DoAction (AnnotationTableElementR table) override
+    void    _DoAction (AnnotationTableR table) override
         {
         bvector<uint32_t>     rowsToDelete;
         bvector<uint32_t>     colsToDelete;
@@ -1896,7 +1896,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    04/14
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _VerifyAction (AnnotationTableElementCR table) const override
+    void    _VerifyAction (AnnotationTableCR table) const override
         {
         bvector <AnnotationTableTest::MergeDescr> mergeBlocks;
 
@@ -2027,7 +2027,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    04/14
     +---------------+---------------+---------------+---------------+---------------+------*/
-    bool    _CreateTable (AnnotationTableElementPtr& table, DgnDbR db, DgnModelId mid, DgnCategoryId cid, DgnElementId tsid) override
+    bool    _CreateTable (AnnotationTablePtr& table, DgnDbR db, DgnModelId mid, DgnCategoryId cid, DgnElementId tsid) override
         {
         uint32_t          numRows  = 4;
         uint32_t          numCols  = 4;
@@ -2046,8 +2046,8 @@ public:
         //  3 |     |     |     |     |
         //    |-----+-----+-----+-----|
 
-        AnnotationTableElement::CreateParams    createParams (db, mid, AnnotationTableElement::QueryClassId(db), cid);
-        table = AnnotationTableElement::Create (numRows, numCols, tsid, 0, createParams);
+        AnnotationTable::CreateParams    createParams (db, mid, AnnotationTable::QueryClassId(db), cid);
+        table = AnnotationTable::Create (numRows, numCols, tsid, 0, createParams);
 
         return true;
         }
@@ -2055,7 +2055,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    04/14
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _PreAction (AnnotationTableElementR table) override
+    void    _PreAction (AnnotationTableR table) override
         {
         // Merge a block of cells
         table.MergeCells (m_rootIndex, m_rowSpan, m_colSpan);
@@ -2064,7 +2064,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    04/14
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _DoAction (AnnotationTableElementR table) override
+    void    _DoAction (AnnotationTableR table) override
         {
         switch (m_insertTarget)
             {
@@ -2194,7 +2194,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    04/14
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _VerifyAction (AnnotationTableElementCR table) const override
+    void    _VerifyAction (AnnotationTableCR table) const override
         {
         AnnotationTableTest::VerifyCellsWithMergeBlocks (table, m_expectedMerges);
 
@@ -2307,11 +2307,11 @@ TEST_F (AnnotationTableActionTest, InsertMergedCells_ColumnAfter)
 +===============+===============+===============+===============+===============+======*/
 struct EdgeColorSetter
     {
-    AnnotationTableElementR         m_table;
+    AnnotationTableR         m_table;
     uint32_t                        m_rowIndex;
     AnnotationTableSymbologyValues  m_symb;
 
-    EdgeColorSetter (AnnotationTableElementR table, uint32_t rowIndex, ColorDef colorVal)
+    EdgeColorSetter (AnnotationTableR table, uint32_t rowIndex, ColorDef colorVal)
         : m_table(table), m_rowIndex(rowIndex)
         {
         m_symb.SetLineColor(colorVal);
@@ -2355,7 +2355,7 @@ ExpectedEdgeColors const&   m_expectedColors;
 
 /* ctor */ EdgeColorVerifier (bvector<ExpectedEdgeColor> const& e, uint32_t rowIndex, bool top) : m_rowIndex (rowIndex), m_expectedColors (e), m_top (top) {}
 
-void VerifyColors (AnnotationTableElementCR table)
+void VerifyColors (AnnotationTableCR table)
     {
     // The test is responsible for providing an entry for every column
     if (m_expectedColors.size() != table.GetColumnCount())
@@ -2411,7 +2411,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _DoAction (AnnotationTableElementR table) override
+    void    _DoAction (AnnotationTableR table) override
         {
         EdgeColorSetter setter (table, m_rowIndex, m_colorVal);
 
@@ -2431,7 +2431,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _VerifyAction (AnnotationTableElementCR table) const override
+    void    _VerifyAction (AnnotationTableCR table) const override
         {
         EdgeColorVerifier verifier (m_expectedColors, m_rowIndex, m_top);
         verifier.VerifyColors (table);
@@ -2574,7 +2574,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _PreAction (AnnotationTableElementR table) override
+    void    _PreAction (AnnotationTableR table) override
         {
         EdgeColorSetter setter (table, m_rowIndex, m_colorVal);
 
@@ -2586,7 +2586,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _DoAction (AnnotationTableElementR table) override
+    void    _DoAction (AnnotationTableR table) override
         {
         EdgeColorSetter setter (table, m_rowIndex, m_colorVal);
 
@@ -2602,7 +2602,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _VerifyAction (AnnotationTableElementCR table) const override
+    void    _VerifyAction (AnnotationTableCR table) const override
         {
         EdgeColorVerifier verifier (m_expectedColors, m_rowIndex, true);
         verifier.VerifyColors (table);
@@ -2649,7 +2649,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _PreAction (AnnotationTableElementR table) override
+    void    _PreAction (AnnotationTableR table) override
         {
         EdgeColorSetter setter (table, m_rowIndex, m_colorVal);
 
@@ -2662,7 +2662,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _DoAction (AnnotationTableElementR table) override
+    void    _DoAction (AnnotationTableR table) override
         {
         EdgeColorSetter setter (table, m_rowIndex, m_colorVal);
 
@@ -2678,7 +2678,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _VerifyAction (AnnotationTableElementCR table) const override
+    void    _VerifyAction (AnnotationTableCR table) const override
         {
         EdgeColorVerifier verifier (m_expectedColors, m_rowIndex, true);
         verifier.VerifyColors (table);
@@ -2725,7 +2725,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _PreAction (AnnotationTableElementR table) override
+    void    _PreAction (AnnotationTableR table) override
         {
         EdgeColorSetter setter (table, m_rowIndex, m_colorVal);
 
@@ -2738,7 +2738,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _DoAction (AnnotationTableElementR table) override
+    void    _DoAction (AnnotationTableR table) override
         {
         // |oooo|----|oooo|
         table.DeleteColumn (1);
@@ -2751,7 +2751,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _VerifyAction (AnnotationTableElementCR table) const override
+    void    _VerifyAction (AnnotationTableCR table) const override
         {
         EdgeColorVerifier verifier (m_expectedColors, m_rowIndex, true);
         verifier.VerifyColors (table);
@@ -2798,7 +2798,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _PreAction (AnnotationTableElementR table) override
+    void    _PreAction (AnnotationTableR table) override
         {
         EdgeColorSetter setter (table, m_rowIndex, m_colorVal);
 
@@ -2810,7 +2810,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _DoAction (AnnotationTableElementR table) override
+    void    _DoAction (AnnotationTableR table) override
         {
         // |----|oooo|----|
         table.DeleteColumn (m_colIndex);
@@ -2823,7 +2823,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _VerifyAction (AnnotationTableElementCR table) const override
+    void    _VerifyAction (AnnotationTableCR table) const override
         {
         EdgeColorVerifier verifier (m_expectedColors, m_rowIndex, true);
         verifier.VerifyColors (table);
@@ -2870,7 +2870,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _PreAction (AnnotationTableElementR table) override
+    void    _PreAction (AnnotationTableR table) override
         {
         EdgeColorSetter setter (table, m_rowIndex, m_colorVal);
 
@@ -2882,7 +2882,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _DoAction (AnnotationTableElementR table) override
+    void    _DoAction (AnnotationTableR table) override
         {
         // |----|oooo|----|
         table.InsertColumn (m_colIndex, TableInsertDirection::After);
@@ -2897,7 +2897,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _VerifyAction (AnnotationTableElementCR table) const override
+    void    _VerifyAction (AnnotationTableCR table) const override
         {
         EdgeColorVerifier verifier (m_expectedColors, m_rowIndex, true);
         verifier.VerifyColors (table);
@@ -2979,15 +2979,15 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    04/14
     +---------------+---------------+---------------+---------------+---------------+------*/
-    bool    _CreateTable (AnnotationTableElementPtr& table, DgnDbR db, DgnModelId mid, DgnCategoryId cid, DgnElementId textStyleId) override
+    bool    _CreateTable (AnnotationTablePtr& table, DgnDbR db, DgnModelId mid, DgnCategoryId cid, DgnElementId textStyleId) override
         {
         uint32_t          numRows  = 4;
         uint32_t          numCols  = 4;
 
         // We want a table big enough that the merge block isn't on the edges.  So that
         // we can insert and delete rows/cols before and after the merge.
-        AnnotationTableElement::CreateParams    createParams (db, mid, AnnotationTableElement::QueryClassId(db), cid);
-        table = AnnotationTableElement::Create (numRows, numCols, textStyleId, 0, createParams);
+        AnnotationTable::CreateParams    createParams (db, mid, AnnotationTable::QueryClassId(db), cid);
+        table = AnnotationTable::Create (numRows, numCols, textStyleId, 0, createParams);
 
         return true;
         }
@@ -2995,7 +2995,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    04/14
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _PreAction (AnnotationTableElementR table) override
+    void    _PreAction (AnnotationTableR table) override
         {
         table.MergeCells (m_rootIndex, m_rowSpan, m_colSpan);
 
@@ -3026,7 +3026,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    04/14
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _DoAction (AnnotationTableElementR table) override
+    void    _DoAction (AnnotationTableR table) override
         {
         ExpectedAspectCounts expectedCounts;
         expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableSymbology), 3);
@@ -3126,7 +3126,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    04/14
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _VerifyAction (AnnotationTableElementCR table) const override
+    void    _VerifyAction (AnnotationTableCR table) const override
         {
         EdgeColorVerifier verifier (m_expectedColors, m_rowIndex, true);
         verifier.VerifyColors (table);
@@ -3198,7 +3198,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    11/15
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _DoAction (AnnotationTableElementR table) override
+    void    _DoAction (AnnotationTableR table) override
         {
         table.SetDefaultTextColor (m_colorVal);
         }
@@ -3206,7 +3206,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    11/15
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _VerifyAction (AnnotationTableElementCR table) const override
+    void    _VerifyAction (AnnotationTableCR table) const override
         {
         ColorDef  color = table.GetDefaultTextColor();
         EXPECT_EQ (color, m_colorVal);
@@ -3251,7 +3251,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    11/15
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _PreAction (AnnotationTableElementR table) override
+    void    _PreAction (AnnotationTableR table) override
         {
         EXPECT_NE (m_tableColorVal, m_colorVal);
 
@@ -3261,7 +3261,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    11/15
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _DoAction (AnnotationTableElementR table) override
+    void    _DoAction (AnnotationTableR table) override
         {
         table.ClearDefaultTextColor ();
         }
@@ -3269,7 +3269,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    11/15
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _VerifyAction (AnnotationTableElementCR table) const override
+    void    _VerifyAction (AnnotationTableCR table) const override
         {
         ColorDef  color = table.GetDefaultTextColor();
         EXPECT_EQ (color, m_tableColorVal);
@@ -3315,7 +3315,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    11/15
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _PreAction (AnnotationTableElementR table) override
+    void    _PreAction (AnnotationTableR table) override
         {
         EdgeColorSetter setter (table, m_rowIndex, m_colorVal);
 
@@ -3334,7 +3334,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    11/15
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _DoAction (AnnotationTableElementR table) override
+    void    _DoAction (AnnotationTableR table) override
         {
         // Should not add a new symbology entry
 
@@ -3344,7 +3344,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    11/15
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _VerifyAction (AnnotationTableElementCR table) const override
+    void    _VerifyAction (AnnotationTableCR table) const override
         {
         ColorDef  color = table.GetDefaultTextColor();
         EXPECT_EQ (color, m_colorVal);
@@ -3410,7 +3410,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    12/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _DoAction (AnnotationTableElementR table) override
+    void    _DoAction (AnnotationTableR table) override
         {
         for (SetInstruction const& instruction : m_setInstructions)
             table.SetEdgeSymbology (instruction.m_symb, instruction.m_edges, instruction.m_cells);
@@ -3419,7 +3419,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    12/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _VerifyAction (AnnotationTableElementCR table) const override
+    void    _VerifyAction (AnnotationTableCR table) const override
         {
         for (GetInstruction const& instruction : m_getInstructions)
             {
@@ -3744,7 +3744,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    11/15
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _DoAction (AnnotationTableElementR table) override
+    void    _DoAction (AnnotationTableR table) override
         {
         AnnotationTableSymbologyValues symbology;
 
@@ -3755,7 +3755,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    11/15
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _VerifyAction (AnnotationTableElementCR table) const override
+    void    _VerifyAction (AnnotationTableCR table) const override
         {
         AnnotationTableSymbologyValues  symb;
 
@@ -3805,7 +3805,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    11/15
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _PreAction (AnnotationTableElementR table) override
+    void    _PreAction (AnnotationTableR table) override
         {
         AnnotationTableSymbologyValues symbology;
 
@@ -3817,7 +3817,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    11/15
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _DoAction (AnnotationTableElementR table) override
+    void    _DoAction (AnnotationTableR table) override
         {
         AnnotationTableSymbologyValues symbology;
 
@@ -3829,7 +3829,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    11/15
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void    _VerifyAction (AnnotationTableElementCR table) const override
+    void    _VerifyAction (AnnotationTableCR table) const override
         {
         AnnotationTableSymbologyValues  symb;
 
@@ -3868,3 +3868,264 @@ TEST_F (AnnotationTableActionTest, Modify_ClearDefaultFill)
     DoModifyTableTest (testAction);
     }
 
+#if defined (PERFORMANCE_TEST)
+
+#include <random>
+/*-------------------------------------------------------------------------------------*
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+static uint32_t   getRandomNumber (uint32_t mean, double sigma, uint32_t min, uint32_t max)
+    {
+    static std::default_random_engine s_generator;
+
+    std::normal_distribution<double> distribution(mean, sigma);
+
+    while (true)
+        {
+        double number = distribution(s_generator);
+
+        //printf ("Generated %f\t with args <%d, %d, %d, %d>\n", number, mean, sigma, min, max);
+
+        if ((number>min)&&(number<max))
+            return (uint32_t) number;
+
+        //printf ("Missed one. %f is outside of <%d, %d> with mean %d and sigma %d\n", number, min, max, mean, sigma);
+        }
+    }
+
+/*-------------------------------------------------------------------------------------*
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String  getRandomLengthString ()
+    {
+    Utf8CP          seedString = "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+    Utf8CP          lastCharP  = seedString + strlen (seedString);
+    uint32_t        firstWord = getRandomNumber(12, 4.0, 0, 24);
+    uint32_t        wordCount = getRandomNumber(4, 0.5, 0, 12);
+
+    uint32_t        iWord = 0;
+    Utf8CP          currCharP = seedString;
+    Utf8CP          firstInsertCharP = seedString;
+
+    while (firstInsertCharP < lastCharP && iWord < firstWord)
+        {
+        if (isspace (*currCharP))
+            ++iWord;
+
+        currCharP++;
+
+        if (isalpha (*currCharP))
+            firstInsertCharP = currCharP;
+        }
+
+    iWord = 0;
+    currCharP = firstInsertCharP;
+
+    Utf8CP          lastInsertCharP  = currCharP;
+
+    while (currCharP < lastCharP && iWord < wordCount)
+        {
+        if (isspace (*currCharP))
+            ++iWord;
+
+        currCharP++;
+
+        if (isalpha (*currCharP))
+            lastInsertCharP = currCharP - 1;
+        }
+
+    Utf8String  outStr;
+    outStr.assign (firstInsertCharP, lastInsertCharP - firstInsertCharP);
+
+    return outStr;
+    }
+
+#include <Bentley\BeTimeUtilities.h>
+/*=================================================================================**//**
+* @bsistruct
++===============+===============+===============+===============+===============+======*/
+struct AnnotationTablePerformanceTest : public AnnotationTableTest
+{
+ private:
+    typedef AnnotationTableTest T_Super;
+
+    uint32_t        m_numRows = 100;
+    uint32_t        m_numCols = 100;
+    DgnElementId    m_tableElementId;
+
+public:
+    AnnotationTablePerformanceTest ()
+        {
+        }
+
+    void Reset () { m_tableElementId.Invalidate(); }
+
+    void SetUp () override
+        {
+        T_Super::SetUp();
+
+        Reset();
+        }
+
+    void TearDown () override
+        {
+        T_Super::TearDown();
+        }
+
+    AnnotationTableElementPtr CreateLargeTable (double& time)
+        {
+        StopWatch timer;
+        timer.Start();
+
+        DgnDbR          db          = GetDgnDb();
+        DgnModelId      modelId     = GetModelId();
+        DgnCategoryId   categoryId  = GetCategoryId();
+
+        AnnotationTableElement::CreateParams    createParams (db, modelId, AnnotationTableElement::QueryClassId(db), categoryId);
+        AnnotationTableElementPtr               tableElement = AnnotationTableElement::Create( m_numRows, m_numCols, GetTextStyleId(), 0, createParams);
+
+        time = 1000.0 * timer.GetCurrentSeconds();
+
+        EXPECT_TRUE (tableElement.IsValid());
+        EXPECT_EQ (m_numRows, tableElement->GetRowCount ());
+        EXPECT_EQ (m_numCols, tableElement->GetColumnCount ());
+
+        return tableElement;
+        }
+
+    void FillTableWithText (double& time, AnnotationTableElementR table)
+        {
+        StopWatch timer;
+        timer.Start();
+
+        for (AnnotationTableCellR cell : table.GetCellCollection ())
+            cell.SetTextString (getRandomLengthString().c_str());
+
+        time = 1000.0 * timer.GetCurrentSeconds();
+        }
+
+    void ReadTable (double& time, AnnotationTableElementCPtr& table)
+        {
+        ASSERT_TRUE (m_tableElementId.IsValid());
+
+        StopWatch timer;
+        timer.Start();
+        table = AnnotationTableElement::Get(GetDgnDb(), m_tableElementId);
+        time = 1000.0 * timer.GetCurrentSeconds();
+
+        EXPECT_TRUE (table.IsValid());
+
+        EXPECT_EQ (m_numRows, table->GetRowCount ());
+        EXPECT_EQ (m_numCols, table->GetColumnCount ());
+        }
+
+    void ReadEditableTable (double& time, AnnotationTableElementPtr& table)
+        {
+        ASSERT_TRUE (m_tableElementId.IsValid());
+
+        StopWatch timer;
+        timer.Start();
+        table = AnnotationTableElement::GetForEdit(GetDgnDb(), m_tableElementId);
+        time = 1000.0 * timer.GetCurrentSeconds();
+
+        EXPECT_TRUE (table.IsValid());
+
+        EXPECT_EQ (m_numRows, table->GetRowCount ());
+        EXPECT_EQ (m_numCols, table->GetColumnCount ());
+        }
+
+    void AddTableToDb (double& time, AnnotationTableElementR table)
+        {
+        ASSERT_TRUE ( ! m_tableElementId.IsValid());
+        AnnotationTableElementCPtr  insertedElement;
+
+        StopWatch timer;
+        timer.Start();
+        insertedElement = table.Insert();
+        time = 1000.0 * timer.GetCurrentSeconds();
+
+        EXPECT_TRUE(insertedElement.IsValid());
+
+        m_tableElementId = insertedElement->GetElementId();
+        ASSERT_TRUE (m_tableElementId.IsValid());
+        }
+
+    void DeleteTableFromModel (double& time, AnnotationTableElementCR table)
+        {
+        StopWatch timer;
+        timer.Start();
+        EXPECT_EQ (DgnDbStatus::Success, table.Delete());
+        time = 1000.0 * timer.GetCurrentSeconds();
+        }
+
+    void DoCRUDTiming(uint32_t iter)
+        {
+        double  createTime, fillTime, addTime, readTime, deleteTime;
+
+        AnnotationTableElementPtr createTable  = CreateLargeTable(createTime);
+
+        FillTableWithText (fillTime, *createTable);
+
+        AddTableToDb (addTime, *createTable);
+
+        createTable = nullptr;
+
+#if defined (FOR_DEBUGGING)
+        // Put a break point on Reopen in order to open the file in an viewing application
+        CloseTestFile();
+        ReopenTestFile();
+#endif
+        // Purge the cache so that we don't get a cached element.
+        GetDgnDb().Elements().Purge(0);
+
+        AnnotationTableElementCPtr   foundTable;
+        ReadTable (readTime, foundTable);
+
+        DeleteTableFromModel (deleteTime, *foundTable);
+
+        foundTable = nullptr;
+
+#if defined (FOR_DEBUGGING)
+        // Put a break point on Reopen in order to open the file in an viewing application
+        CloseTestFile();
+        ReopenTestFile();
+#endif
+
+        Reset();
+
+        printf ("%d: create: %fms, fill: %fms, add: %fms, read: %fms, delete: %fms\n", iter, createTime, fillTime, addTime, readTime, deleteTime);
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTablePerformanceTest, CreateWriteReadLargeTable)
+    {
+    // The first call to Create is a lot slower than the rest.  Just make one
+    // here and disregard the time it takes.
+    //AnnotationTableElementPtr table = AnnotationTable::Create (5, 3, GetTextStyleId(), 1000.0, *GetDgnModelP());
+    //table = nullptr;
+
+    // Prepopulate the file with lots of tables.
+    //uint32_t initialCount = 100;
+    //
+    //for (uint32_t iIter = 0; iIter < initialCount; ++iIter)
+    //    {
+    //    double  createTime, fillTime, addTime;
+    //
+    //    AnnotationTableElementPtr createTable  = CreateLargeTable(createTime);
+    //    FillTableWithText (fillTime, *createTable);
+    //    AddTableToDb (addTime, *createTable);
+    //    Reset();
+    //
+    //    printf ("%d: create: %fms, fill: %fms, add: %fms\n", iIter, createTime, fillTime, addTime);
+    //    }
+
+    uint32_t numIters = 5;
+
+    for (uint32_t iIter = 0; iIter < numIters; ++iIter)
+        DoCRUDTiming(iIter);
+    }
+
+#endif //PERFORMANCE_TEST

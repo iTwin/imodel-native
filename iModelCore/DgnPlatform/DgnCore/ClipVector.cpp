@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ClipVector.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -10,52 +10,51 @@
 #define TOLERANCE_ChordAngle            .1
 #define TOLERANCE_ChordLen              1000
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClipVector::ClipVector (GPArrayCR gpa, double chordTolerance, double angleTolerance, double* zLow, double* zHigh, TransformCP pTransform)
+ClipVector::ClipVector(GPArrayCR gpa, double chordTolerance, double angleTolerance, double* zLow, double* zHigh, TransformCP pTransform)
     {
-    Transform       transform, inverseTransform;
+    Transform  transform, inverseTransform;
 
     if (NULL == pTransform)
-        gpa.GraphicsPointArray::GetPlane (transform);
+        gpa.GraphicsPointArray::GetPlane(transform);
     else
         transform = *pTransform;
 
-    inverseTransform.InverseOf (transform);
+    inverseTransform.InverseOf(transform);
 
-    size_t n = gpa.GetGraphicsPointCount ();
+    size_t n = gpa.GetGraphicsPointCount();
     for (size_t loopStart = 0, loopEnd = 0; loopStart < n; loopStart = loopEnd+1)
         {
-        gpa.FindMajorBreakAfter (loopStart, loopEnd);
+        gpa.FindMajorBreakAfter(loopStart, loopEnd);
 
         GPArraySmartP    loopGpa;
 
-        loopGpa->AppendFrom (gpa, loopStart, loopEnd);
-        loopGpa->Transform (&inverseTransform);
+        loopGpa->AppendFrom(gpa, loopStart, loopEnd);
+        loopGpa->Transform(&inverseTransform);
 
         ClipPrimitivePtr    primitive = ClipPrimitive::CreateFromGPA (loopGpa, chordTolerance, angleTolerance, 0 != loopStart, zLow, zHigh, &transform);
     
         if (primitive.IsValid())
-            push_back (primitive);
+            push_back(primitive);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClipVectorPtr  ClipVector::CreateFromCurveVector (CurveVectorCR curveVector, double chordTolerance, double angleTolerance, double* zLow, double* zHigh)
+ClipVectorPtr ClipVector::CreateFromCurveVector(CurveVectorCR curveVector, double chordTolerance, double angleTolerance, double* zLow, double* zHigh)
     {
     Transform       localToWorld, worldToLocal;;
     CurveVectorPtr  localCurveVector;
     DRange3d        range;
 
-    localCurveVector = curveVector.CloneInLocalCoordinates (LOCAL_COORDINATE_SCALE_UnitAxesAtStart, localToWorld, worldToLocal, range);
+    localCurveVector = curveVector.CloneInLocalCoordinates(LOCAL_COORDINATE_SCALE_UnitAxesAtStart, localToWorld, worldToLocal, range);
 
-    if (!localCurveVector.IsValid ())
+    if (!localCurveVector.IsValid())
         {
-        BeAssert (false);
+        BeAssert(false);
         return ClipVectorPtr();
         }
 
@@ -63,28 +62,28 @@ ClipVectorPtr  ClipVector::CreateFromCurveVector (CurveVectorCR curveVector, dou
         {
         case CurveVector::BOUNDARY_TYPE_Outer:
             {
-            ClipPrimitivePtr    clipPrimitive = ClipPrimitive::CreateFromBoundaryCurveVector (*localCurveVector, chordTolerance, angleTolerance, zLow, zHigh, &localToWorld);
+            ClipPrimitivePtr clipPrimitive = ClipPrimitive::CreateFromBoundaryCurveVector(*localCurveVector, chordTolerance, angleTolerance, zLow, zHigh, &localToWorld);
             if (clipPrimitive.IsValid())
-                return CreateFromPrimitive (clipPrimitive);
+                return new ClipVector(clipPrimitive.get());
             
             break;
             }
 
         case CurveVector::BOUNDARY_TYPE_ParityRegion:
             {
-            ClipVectorPtr   clipVector = ClipVector::Create ();
+            ClipVectorPtr   clipVector = new ClipVector();
             for (ICurvePrimitivePtr const& loop: *localCurveVector)
                 {
                 ClipPrimitivePtr    clipPrimitive;
                 CurveVectorCP       loopCurves;
 
                 if (NULL == (loopCurves = loop->GetChildCurveVectorCP()) ||
-                    ! (clipPrimitive = ClipPrimitive::CreateFromBoundaryCurveVector (*loopCurves, chordTolerance, angleTolerance, zLow, zHigh, &localToWorld)).IsValid())
+                    ! (clipPrimitive = ClipPrimitive::CreateFromBoundaryCurveVector(*loopCurves, chordTolerance, angleTolerance, zLow, zHigh, &localToWorld)).IsValid())
                     {
-                    BeAssert (false);
+                    BeAssert(false);
                     continue;
                     }
-                clipVector->push_back (clipPrimitive);
+                clipVector->push_back(clipPrimitive);
                 }
             if (!clipVector->empty())
                 return clipVector;
@@ -92,58 +91,48 @@ ClipVectorPtr  ClipVector::CreateFromCurveVector (CurveVectorCR curveVector, dou
             break;
             }
         }
-    BeAssert (false);
-    return ClipVectorPtr(); 
-    }
-
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      04/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-ClipVector::ClipVector (ClipPrimitivePtr primitive)
-    {
-    push_back (primitive);
+    BeAssert(false);
+    return nullptr; 
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClipVectorPtr   ClipVector::CreateCopy (ClipVectorCR inputVector)
+ClipVectorPtr   ClipVector::CreateCopy(ClipVectorCR inputVector)
     {
-    ClipVectorP   clipVector = new ClipVector ();
-    clipVector->AppendCopy (inputVector);
+    ClipVectorP   clipVector = new ClipVector();
+    clipVector->AppendCopy(inputVector);
     return clipVector;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    ClipVector::AppendCopy (ClipVectorCR clip)
+void    ClipVector::AppendCopy(ClipVectorCR clip)
     {
     for (ClipPrimitivePtr const& primitive: clip)
-        push_back (ClipPrimitive::CreateCopy (*primitive));
+        push_back(ClipPrimitive::CreateCopy(*primitive));
     }
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    ClipVector::Append (ClipVectorCR clip)
+void    ClipVector::Append(ClipVectorCR clip)
     {
     for (ClipPrimitivePtr const& primitive: clip)
-        push_back (primitive);
+        push_back(primitive);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus    ClipVector::AppendPlanes (ClipVectorPtr& clip, ClipPlaneSetCR planes, bool invisible)
+BentleyStatus    ClipVector::AppendPlanes(ClipVectorPtr& clip, ClipPlaneSetCR planes, bool invisible)
     {
     if (!clip.IsValid())
-        clip = new ClipVector ();
+        clip = new ClipVector();
 
-    clip->push_back (ClipPrimitive::CreateFromClipPlanes (planes, invisible));
+    clip->push_back(ClipPrimitive::CreateFromClipPlanes(planes, invisible));
 
     return SUCCESS;
     }
@@ -151,14 +140,14 @@ BentleyStatus    ClipVector::AppendPlanes (ClipVectorPtr& clip, ClipPlaneSetCR p
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus    ClipVector::AppendShape (ClipVectorPtr& clip, DPoint2dCP points, size_t nPoints, bool outside, double const* zLow, double const* zHigh, TransformCP transform, bool invisible)
+BentleyStatus    ClipVector::AppendShape(ClipVectorPtr& clip, DPoint2dCP points, size_t nPoints, bool outside, double const* zLow, double const* zHigh, TransformCP transform, bool invisible)
     {
-    ClipPrimitivePtr    clipPrimitive = ClipPrimitive::CreateFromShape (points, nPoints, outside, zLow, zHigh, transform, invisible);
+    ClipPrimitivePtr    clipPrimitive = ClipPrimitive::CreateFromShape(points, nPoints, outside, zLow, zHigh, transform, invisible);
 
     if (!clip.IsValid())
-        clip = new ClipVector ();
+        clip = new ClipVector();
 
-    clip->push_back (clipPrimitive);
+    clip->push_back(clipPrimitive);
 
     return SUCCESS;
     }
@@ -167,51 +156,48 @@ BentleyStatus    ClipVector::AppendShape (ClipVectorPtr& clip, DPoint2dCP points
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            ClipVector::GetRange (DRange3dR range, TransformCP pTransform) const
+bool ClipVector::GetRange(DRange3dR range, TransformCP pTransform) const
     {
-    range.Init ();
+    range.Init();
 
     for (ClipPrimitivePtr const& primitive: *this)
         {
         DRange3d        thisRange;
 
-        if (primitive->GetRange (thisRange, pTransform))
+        if (primitive->GetRange(thisRange, pTransform))
             {
             if (range.IsEmpty())
                 range = thisRange;
             else
-                range.IntersectionOf (range, thisRange);
+                range.IntersectionOf(range, thisRange);
             }
         }
-    return !range.IsEmpty ();
+    return !range.IsEmpty();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool    ClipVector::PointInside (DPoint3dCR point, double onTolerance) const
+bool ClipVector::PointInside(DPoint3dCR point, double onTolerance) const
     {
     for (ClipPrimitivePtr const& primitive: *this)
-        if (!primitive->PointInside (point, onTolerance))
+        if (!primitive->PointInside(point, onTolerance))
             return false;
 
     return true;
     }
 
-
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus    ClipVector::TransformInPlace (TransformCR transform)
+BentleyStatus ClipVector::TransformInPlace(TransformCR transform)
     {
     for (ClipPrimitivePtr& primitive: *this)
-        if (SUCCESS != primitive->TransformInPlace (transform))
+        if (SUCCESS != primitive->TransformInPlace(transform))
             return ERROR;
 
     return SUCCESS;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  10/2009
@@ -252,15 +238,15 @@ size_t          nPoints         //!< [in] size of point buffer
 
         if (primitive == front())
             {
-            deltaTrans.InitIdentity ();
+            deltaTrans.InitIdentity();
             }
         else
             {
             Transform   fwdTrans, invTrans;
 
-            primitive->GetTransforms (&fwdTrans, NULL);
-            front()->GetTransforms (NULL, &invTrans);
-            deltaTrans.InitProduct (invTrans, fwdTrans);
+            primitive->GetTransforms(&fwdTrans, NULL);
+            front()->GetTransforms(NULL, &invTrans);
+            deltaTrans.InitProduct(invTrans, fwdTrans);
             }
 
         loopPoints[*nLoops] = &pointBuffer[pointCount];
@@ -288,8 +274,8 @@ size_t          nPoints         //!< [in] size of point buffer
             if (pointCount > nPoints)
                 break;
 
-            memcpy (loopPoints[*nLoops], &clipPolygon->front(), clipPolygon->size() * sizeof (DPoint2d));
-            deltaTrans.Multiply (loopPoints[*nLoops], loopPoints[*nLoops], (int) clipPolygon->size());
+            memcpy(loopPoints[*nLoops], &clipPolygon->front(), clipPolygon->size() * sizeof (DPoint2d));
+            deltaTrans.Multiply(loopPoints[*nLoops], loopPoints[*nLoops], (int) clipPolygon->size());
             nLoopPoints[*nLoops] = (int) clipPolygon->size();
             (*nLoops) += 1;
             }
@@ -305,22 +291,22 @@ size_t          nPoints         //!< [in] size of point buffer
         *zBackP = zBack;
 
     if (NULL != transformP)
-        front()->GetTransforms (transformP, NULL);
+        front()->GetTransforms(transformP, NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**                                                                                     
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    ClipVector::SetInvisible (bool invisible)
+void ClipVector::SetInvisible(bool invisible)
     {
     for (ClipPrimitivePtr& primitive: *this)
-        primitive->SetInvisible (invisible);
+        primitive->SetInvisible(invisible);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    ClipVector::ParseClipPlanes ()
+void ClipVector::ParseClipPlanes()
     {
     for (ClipPrimitivePtr& primitive: *this)
         primitive->ParseClipPlanes();
@@ -329,7 +315,7 @@ void    ClipVector::ParseClipPlanes ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   ClipVector::ApplyCameraToPlanes (double focalLength)
+BentleyStatus ClipVector::ApplyCameraToPlanes(double focalLength)
     {
     for (ClipPrimitivePtr& primitive: *this)
         if (SUCCESS != primitive->ApplyCameraToPlanes(focalLength))
@@ -337,13 +323,6 @@ BentleyStatus   ClipVector::ApplyCameraToPlanes (double focalLength)
 
     return SUCCESS;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      04/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-ClipVectorPtr ClipVector::Create () { return new ClipVector(); }
-ClipVectorPtr ClipVector::CreateFromPrimitive (ClipPrimitivePtr primitive) { return new ClipVector (primitive); }
-ClipVectorPtr ClipVector::CreateFromGPA (GPArrayCR gpa, double chordTolerance, double angleTolerance,  double* zLow, double* zHigh, TransformCP transform)  { return new ClipVector (gpa, chordTolerance, angleTolerance, zLow, zHigh, transform);  }
 
 
 
