@@ -85,14 +85,8 @@ typedef JsGeometryCollection* JsGeometryCollectionP;
 // Needed by generated callbacks to construct instances of wrapper classes.
 // @bsiclass                                                    Sam/Steve.Wilson    7/15
 //=======================================================================================
-struct RefCountedBaseWithCreate : public RefCounted <IRefCounted>
+struct RefCountedBaseWithCreate : BeProjectedRefCounted
 {
-    template <typename T, typename... Arguments>
-    static RefCountedPtr<T> Create (Arguments&&... arguments)
-        {
-        return new T (std::forward<Arguments> (arguments)...);
-        };
-
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 };
 
@@ -279,10 +273,13 @@ struct JsPhysicalElement : JsDgnElement
 
     JsGeometryCollectionP GetGeometry() const;
 
+    JsDgnObjectIdP GetCategoryId() const {return m_el.IsValid()? new JsDgnObjectId(m_el->ToGeometrySource()->GetCategoryId().GetValue()): nullptr;}
+
     static JsPhysicalElement* Create(JsDgnModelP model, JsDgnObjectIdP categoryId, Utf8StringCR elementClassName);
 
     STUB_OUT_SET_METHOD(Placement, JsPlacement3dP)
     STUB_OUT_SET_METHOD(Geometry, JsGeometryCollectionP)
+    STUB_OUT_SET_METHOD(CategoryId, JsDgnObjectIdP)
 };
 
 //=======================================================================================

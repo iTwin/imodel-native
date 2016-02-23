@@ -330,6 +330,53 @@ public:
         }
 };
 
+//=======================================================================================
+// @bsiclass                                                    Eariln.Lutz     08/15
+//=======================================================================================
+struct JsSpiralCurve: JsCurvePrimitive
+{
+private:
+public:
+    JsSpiralCurve () {}
+    JsSpiralCurve (ICurvePrimitivePtr const &data) {Set (data);}
+    virtual JsSpiralCurve * Clone () override {return new JsSpiralCurve (m_curvePrimitive->Clone ());}
+
+    //! Create a spiral with radius and curvature at start, length along the spiral, and radius at end.
+    //! @param spiralType [in] transition selector -- see SpiralCurve summary
+    //! @param startBearing [in] direction (in xy plane) at the start of the curve.
+    //! @param startRadius [in] radius of curvature at start.  (0 radius is straight line)
+    //! @param length [in] length of full spiral curve
+    //! @param endRadius [in] radius at end of the full spiral
+    //! @param frame [in] coordinate frame with origin at start of full spiral, bearing angle 0 along x axis.
+    //! @param fractionA [in] fractional position (distance along) at start of active subset of the spiral.  This is nearly always 0.0.
+    //! @param fractionB [in] fractional position (distance along) at end of active subset of the spiral.  This is nearly always 1.0.
+    static JsSpiralCurve * CreateSpiralBearingRadiusLengthRadius (
+        double spiralType,
+        JsAngleP startBearing,
+        double   startRadius,
+        double length,
+        double endRadius,
+        JsTransformP frame,
+        double fractionA,
+        double fractionB
+        )
+        {
+        auto nativePrimitive = ICurvePrimitive::CreateSpiralBearingRadiusLengthRadius (
+                            (int)spiralType,
+                            startBearing->GetRadians (),
+                            startRadius,
+                            length,
+                            endRadius,
+                            frame->Get (),
+                            fractionA, fractionB);
+        if (nativePrimitive.IsValid ())
+            {
+            return new JsSpiralCurve (nativePrimitive);
+            }
+        return nullptr;
+        }
+};
+
 
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

@@ -146,7 +146,7 @@ DgnAuthorityId ChangeTestFixture::InsertNamespaceAuthority(Utf8CP authorityName)
 //---------------------------------------------------------------------------------------
 DgnElementId ChangeTestFixture::InsertPhysicalElement(SpatialModelR model, DgnCategoryId categoryId, int x, int y, int z)
     {
-    PhysicalElementPtr testElement = PhysicalElement::Create(model, categoryId);
+    GenericPhysicalObjectPtr testElement = GenericPhysicalObject::Create(model, categoryId);
 
     DPoint3d sizeOfBlock = DPoint3d::From(1, 1, 1);
     DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(DPoint3d::From(0, 0, 0), sizeOfBlock, true);

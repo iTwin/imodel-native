@@ -128,7 +128,8 @@ module DgnScriptTests {
             points.Add (new be.DPoint3d (0,0.4,zz));
             points.Add (new be.DPoint3d (0.5,0.7,zz));
         var linestring = new be.LineString (points);
-        Shift (linestring, shiftCount, 0);
+
+        Shift(linestring, shiftCount, 0);
         shiftCount++;
         builder.AppendGeometry (linestring);
         var catenary = be.CatenaryCurve.CreateFromCoefficientAndXLimits (
@@ -163,6 +164,10 @@ module DgnScriptTests {
 
         ele.Insert();
 
+        // Verify that my DgnCategoryId was used
+        if (!catid.Equals(ele.CategoryId))
+            be.Script.ReportError('set DgnCategoryId failed');
+
         //  Test GeometryCollection 
         var geomcollection = ele.Geometry;
         var geomcollectionIter = geomcollection.Begin();
@@ -177,34 +182,34 @@ module DgnScriptTests {
             if (geomParams.GeometryClass != be.RenderDgnGeometryClass.Construction)
                 be.Script.ReportError('append GeometryParams failed - RenderDgnGeometryClass');
 
+            var subcat = geomParams.SubCategoryId;
+            // If you use special subcategories for things like centerlines, you can test that here.
+
             var geomPrim = geomcollection.GetGeometry(geomcollectionIter);
             if (igeom == 0)
             {
                 if (!geomPrim)                
-                    be.Script.ReportError('first item should be a sphere');
+                    be.Script.ReportError('first item should be geometry!');
                 var geom = geomPrim.Geometry;
-                /* *** WIP_DGNJSAPI - sub-classes of Geometry are not yet being exposed 
                 if (!(geom instanceof be.DgnSphere))
                     be.Script.ReportError('first item should be a sphere');
                 var sphere: be.DgnSphere = <be.DgnSphere>geom;
                 if (!sphere)
                     be.Script.ReportError('first item should be a sphere');
-                */
             }
             else if (igeom == 1)
             {
                 if (!geomPrim)
-                    be.Script.ReportError('first item should be a cone');
-                /* *** WIP_DGNJSAPI - sub-classes of Geometry are not yet being exposed 
+                    be.Script.ReportError('second item should be geometry!');
                 var geom = geomPrim.Geometry;
                 if (!(geom instanceof be.DgnCone))
-                    be.Script.ReportError('first item should be a cone');
+                    be.Script.ReportError('second item should be a cone');
                 var cone: be.DgnCone = <be.DgnCone>geom;
                 if (!cone)
-                    be.Script.ReportError('first item should be a cone');
-                */
+                    be.Script.ReportError('second item should be a cone');
             }
 
+            ++igeom;
             geomcollection.ToNext(geomcollectionIter);
         }
 

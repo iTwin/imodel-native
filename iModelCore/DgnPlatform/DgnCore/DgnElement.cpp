@@ -717,22 +717,6 @@ void GeometrySource::SetInSelectionSet(bool yesNo) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalElementPtr PhysicalElement::Create(SpatialModelR model, DgnCategoryId categoryId)
-    {
-    DgnClassId classId = model.GetDgnDb().Domains().GetClassId(dgn_ElementHandler::Physical::GetHandler());
-
-    if (!classId.IsValid() || !categoryId.IsValid())
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    return new PhysicalElement(CreateParams(model.GetDgnDb(), model.GetModelId(), classId, categoryId));
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement::Validate() const

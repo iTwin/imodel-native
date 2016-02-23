@@ -127,7 +127,7 @@ BentleyStatus AnnotationTextBlockDraw::DrawFractionRun(AnnotationLayoutRunCR lay
             barPts[1] = { fractionWidth, barPts[0].y, 0.0 };
             
             transform.Multiply(barPts, barPts, 2);
-            graphic.AddLineString(2, barPts, nullptr);
+            graphic.AddLineString(2, barPts);
             break;
             }
         
@@ -139,7 +139,7 @@ BentleyStatus AnnotationTextBlockDraw::DrawFractionRun(AnnotationLayoutRunCR lay
             barPts[1] = { barPts[0].x + fontSize.x, barPts[0].y + (fontSize.y * 1.5), 0.0 };
 
             transform.Multiply(barPts, barPts, 2);
-            graphic.AddLineString(2, barPts, nullptr);
+            graphic.AddLineString(2, barPts);
             break;
             }
 
