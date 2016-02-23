@@ -379,7 +379,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp (NativeSqlBuilder::List& nativeSqlS
                 castFormat = "CAST(%s AS TIMESTAMP)";
                 break;
             case PRIMITIVETYPE_Double:
-                castFormat = "CAST(%s AS DOUBLE)";
+                castFormat = "CAST(%s AS REAL)";
                 break;
             case PRIMITIVETYPE_Long:
             case PRIMITIVETYPE_Integer:

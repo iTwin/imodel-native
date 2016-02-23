@@ -536,7 +536,7 @@ MapStatus ClassMap::_MapPart2(SchemaImportContext& schemaImportContext, ClassMap
             if (column != nullptr)
                 {
                 //! TODO: Handle this case for shared column strategy;
-                BeAssert(column->GetType() == ECDbSqlColumn::Type::DateTime);
+                BeAssert(column->GetType() == ECDbSqlColumn::Type::TimeStamp);
                 column->GetConstraintR().SetDefaultExpression("julianday('now')");
                 column->GetConstraintR().SetIsNotNull(true);
                 Utf8String whenCondtion;

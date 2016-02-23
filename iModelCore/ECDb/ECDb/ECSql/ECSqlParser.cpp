@@ -1224,12 +1224,12 @@ BentleyStatus ECSqlParser::parse_datetime_value_fct(unique_ptr<ValueExp>& exp, O
         return ERROR;
         }
 
-    auto type = parseNode->getChild(0);
+    auto columnType = parseNode->getChild(0);
     if (parseNode->count() == 1 ) //Keyword
         {
-        if (type->getTokenID() == SQL_TOKEN_CURRENT_DATE)
+        if (columnType->getTokenID() == SQL_TOKEN_CURRENT_DATE)
             return LiteralValueExp::Create (exp, *m_context, "CURRENT_DATE", ECSqlTypeInfo (ECN::PRIMITIVETYPE_DateTime));
-        if (type->getTokenID() == SQL_TOKEN_CURRENT_TIMESTAMP)
+        if (columnType->getTokenID() == SQL_TOKEN_CURRENT_TIMESTAMP)
             return LiteralValueExp::Create (exp, *m_context, "CURRENT_TIMESTAMP", ECSqlTypeInfo (ECN::PRIMITIVETYPE_DateTime));
 
         GetIssueReporter().Report(ECDbIssueSeverity::Error, "Unrecognized keyword '%s'.", parseNode->getTokenValue().c_str());
@@ -1238,7 +1238,7 @@ BentleyStatus ECSqlParser::parse_datetime_value_fct(unique_ptr<ValueExp>& exp, O
 
     auto unparsedDateOrTimestampValue = parseNode->getChild(1)->getTokenValue().c_str ();
     //WIP_ECSQL: Parse date value into a structure
-    if (type->getTokenID () == SQL_TOKEN_DATE || type->getTokenID () == SQL_TOKEN_TIMESTAMP)
+    if (columnType->getTokenID () == SQL_TOKEN_DATE || columnType->getTokenID () == SQL_TOKEN_TIMESTAMP)
         return LiteralValueExp::Create (exp, *m_context, unparsedDateOrTimestampValue, ECSqlTypeInfo (ECN::PRIMITIVETYPE_DateTime));
 
     exp = nullptr;
