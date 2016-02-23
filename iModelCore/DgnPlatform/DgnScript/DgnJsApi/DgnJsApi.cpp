@@ -97,6 +97,21 @@ void JsGeometryBuilder::AppendCopyOfGeometry(JsGeometryBuilderP jsbuilder, JsPla
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      06/15
+//---------------------------------------------------------------------------------------
+void JsGeometryBuilder::AppendGeometryPart(JsDgnGeometryPartP part, JsPlacement3dP jsrelativePlacement)
+    {
+    if (nullptr == part || !part->m_value.IsValid() || !part->m_value->GetId().IsValid())
+        return;
+    Transform t;
+    if (nullptr != jsrelativePlacement)
+        t = jsrelativePlacement->m_placement.GetTransform();
+    else
+        t.InitIdentity();
+    m_builder->Append(part->m_value->GetId(), t);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      02/16
 //---------------------------------------------------------------------------------------
 JsGeometryCollectionP JsPhysicalElement::GetGeometry() const {return new JsGeometryCollection(*m_el->ToGeometrySource());}

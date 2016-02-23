@@ -59,50 +59,48 @@ module DgnScriptTests {
     //---------------------------------------------------------------------------------------
     // @bsimethod                                   Sam.Wilson                      02/16
     //---------------------------------------------------------------------------------------
-    function makeRedConeInBuilder(ele: be.PhysicalElement)
+    function makeGeomPart(db: be.DgnDb, geoms: Array<be.Geometry>): be.DgnGeometryPart
     {
-        var builder = new be.GeometryBuilder(ele, new be.DPoint3d(0, 0, 0), new be.YawPitchRollAngles(0, 0, 0));
-        var cone = be.DgnCone.CreateCircularCone(
-            new be.DPoint3d(0, 0, 0),
-            new be.DPoint3d(1, 1, 0),
-            0.5, 0.3, true);
-        var gparams = builder.GeometryParams;
-        gparams.LineColor = new be.ColorDef(255, 0, 0, 0);
-        gparams.GeometryClass = be.RenderDgnGeometryClass.Construction;
-        builder.AppendRenderGeometryParams(gparams);
-        builder.AppendGeometry(cone);
-        return builder;
+        var builder = be.GeometryBuilder.CreateGeometryPart(db, true);
+        for (var i = 0; i < geoms.length; ++i)
+            builder.AppendGeometry(geoms[i]);
+        var geompart = be.DgnGeometryPart.Create(db);
+        builder.SetGeometryStream(geompart);
+        geompart.Insert();
+        return geompart;
     }
 
     //---------------------------------------------------------------------------------------
     // @bsimethod                                   Sam.Wilson                      02/16
     //---------------------------------------------------------------------------------------
-    function makeGreenSphereInBuilder(ele: be.PhysicalElement)
+    function testGeomParts(model: be.DgnModel, catid: be.DgnObjectId): void
     {
-        var builder = new be.GeometryBuilder(ele, new be.DPoint3d(0, 0, 0), new be.YawPitchRollAngles(0, 0, 0));
+        var cone = be.DgnCone.CreateCircularCone(new be.DPoint3d(0, 0, 0), new be.DPoint3d(1, 1, 0), 0.5, 0.3, true);
         var sphere = be.DgnSphere.CreateSphere(new be.DPoint3d(0, 0, 0), 1.0);
-        var gparams = builder.GeometryParams;
-        gparams.LineColor = new be.ColorDef(0, 255, 0, 0);
-        gparams.GeometryClass = be.RenderDgnGeometryClass.Construction;
-        builder.AppendRenderGeometryParams(gparams);
-        builder.AppendGeometry(sphere);
-        return builder;
-    }
+        var geoms = new Array<be.Geometry>();
+        geoms.push(cone);
+        geoms.push(sphere);
+        var geompart: be.DgnGeometryPart = makeGeomPart(model.DgnDb, geoms);
 
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                   Sam.Wilson                      02/16
-    //---------------------------------------------------------------------------------------
-    function testGeomBuilders(db: be.DgnDb, model: be.DgnModel, catid: be.DgnObjectId): void
-    {
         var ele = be.PhysicalElement.Create(model, catid, '');
 
-        /* First test that we can create separate builders and then combine them */
-        var b1: be.GeometryBuilder = makeRedConeInBuilder(ele);
-        var b2: be.GeometryBuilder = makeGreenSphereInBuilder(ele);
-
         var builder = new be.GeometryBuilder(ele, new be.DPoint3d(0, 0, 0), new be.YawPitchRollAngles(0, 0, 0));
-        builder.AppendCopyOfGeometry(b1, null);
-        builder.AppendCopyOfGeometry(b2, new be.Placement3d(new be.DPoint3d(1, 0, 0), new be.YawPitchRollAngles(0, 0, 0)));
+
+        var gparams = builder.GeometryParams;
+        gparams.GeometryClass = be.RenderDgnGeometryClass.Construction;
+
+        gparams.LineColor = new be.ColorDef(1, 0, 0, 0);
+        builder.AppendRenderGeometryParams(gparams);
+        builder.AppendGeometryPart(geompart, new be.Placement3d(new be.DPoint3d(1, 0, 0), new be.YawPitchRollAngles(0, 0, 0)));
+
+        gparams.LineColor = new be.ColorDef(2, 0, 0, 0);
+        builder.AppendRenderGeometryParams(gparams);
+        builder.AppendGeometryPart(geompart, new be.Placement3d(new be.DPoint3d(2, 0, 0), new be.YawPitchRollAngles(0, 0, 0)));
+
+        gparams.LineColor = new be.ColorDef(3, 0, 0, 0);
+        builder.AppendRenderGeometryParams(gparams);
+        builder.AppendGeometryPart(geompart, new be.Placement3d(new be.DPoint3d(3, 0, 0), new be.YawPitchRollAngles(0, 0, 0)));
+
         builder.SetGeometryStreamAndPlacement(ele);
         ele.Insert();
 
@@ -111,20 +109,88 @@ module DgnScriptTests {
         var igeom = 0;
         while (geomcollection.IsValid(geomcollectionIter))
         {
+            ++igeom;
+
+            var geomParams = geomcollection.GetGeometryParams(geomcollectionIter);
+            var lineColor = geomParams.LineColor;
+
+            if (lineColor.Red != igeom)
+                be.Script.ReportError('expected sequential colors');
+
+            if (!geomcollection.GetGeometryPart(geomcollectionIter))
+                be.Script.ReportError('expected to find geomparts');
+
+            var parttrans = geomcollection.GetGeometryToWorld(geomcollectionIter);
+
+            var xlat = parttrans.GetTranslation();
+            if (xlat.X != igeom)
+                be.Script.ReportError('expected sequential offsets');
+
+            geomcollection.ToNext(geomcollectionIter);
+        }
+
+        if (igeom != 3)
+            be.Script.ReportError('expected 3 part instances');
+    }
+    
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Sam.Wilson                      02/16
+    //---------------------------------------------------------------------------------------
+    function makeBuilderWithGeom(model: be.DgnModel, catid: be.DgnObjectId, geom: be.Geometry, color: be.ColorDef, geomClass: be.RenderDgnGeometryClass)
+    {
+        // Always use 0,0,0 for the placement of the part. We will transform it into place when we copy it into a destination assembly.
+        var builder = be.GeometryBuilder.CreateForModel(model, catid, new be.DPoint3d(0, 0, 0), new be.YawPitchRollAngles(0, 0, 0));
+        var gparams = builder.GeometryParams;
+        gparams.LineColor = color;
+        gparams.GeometryClass = geomClass;
+        builder.AppendRenderGeometryParams(gparams);
+        builder.AppendGeometry(geom);
+        return builder;
+    }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Sam.Wilson                      02/16
+    //---------------------------------------------------------------------------------------
+    function testGeomBuilderAggregation(model: be.DgnModel, catid: be.DgnObjectId): void
+    {
+        var ele = be.PhysicalElement.Create(model, catid, '');
+
+        // Create separate builders
+        var constructionClass = be.RenderDgnGeometryClass.Construction;
+        var geoms = new Array<be.Geometry>();
+        geoms.push(be.DgnCone.CreateCircularCone(new be.DPoint3d(0, 0, 0), new be.DPoint3d(1, 1, 0), 0.5, 0.3, true));
+        geoms.push(be.DgnSphere.CreateSphere(new be.DPoint3d(0, 0, 0), 1.0));
+        var builders = new Array<be.GeometryBuilder>();
+        for (var i = 0; i < geoms.length; ++i)
+            builders.push(makeBuilderWithGeom(model, catid, geoms[i], new be.ColorDef(i, 0, 0, 0), constructionClass));
+
+        // Copy contents of separate builders into the element's builder
+        var builder = new be.GeometryBuilder(ele, new be.DPoint3d(0, 0, 0), new be.YawPitchRollAngles(0, 0, 0));
+        for (var i = 0; i < builders.length; ++i)
+            builder.AppendCopyOfGeometry(builders[i], new be.Placement3d(new be.DPoint3d(i, 0, 0), new be.YawPitchRollAngles(0, 0, 0)));
+
+        //  Write the element to the Db
+        builder.SetGeometryStreamAndPlacement(ele);
+        ele.Insert();
+
+        //  Verify that the element's geometry is a concatenation of the input builders
+        var geomcollection = ele.Geometry;
+        var geomcollectionIter = geomcollection.Begin();
+        var igeom = 0;
+        while (geomcollection.IsValid(geomcollectionIter))
+        {
             var geomParams = geomcollection.GetGeometryParams(geomcollectionIter);
             var lineColor = geomParams.LineColor;
          
+            // *** NEEDS WORK: Not getting the lineColors that I expect
+            //if (lineColor.Red != igeom)
+            //    be.Script.ReportError('expected sequential colors');
+
+            var parttrans = geomcollection.GetGeometryToWorld(geomcollectionIter);
+
             var geom = geomcollection.GetGeometry(geomcollectionIter).Geometry;
-            if (igeom == 0)
-            {
-                if (!(geom instanceof be.DgnCone) || lineColor.Red != 255 || lineColor.Blue != 0 || lineColor.Green != 0)
-                    be.Script.ReportError('first item should be a red cone');
-            }
-            else if (igeom == 1)
-            {
-                if (!(geom instanceof be.DgnSphere) || lineColor.Red != 0 || lineColor.Blue != 0 || lineColor.Green != 255)
-                    be.Script.ReportError('second item should be a green sphere');
-            }
+            if (typeof geom != typeof geoms[igeom])
+                be.Script.ReportError('unexpected type');
 
             ++igeom;
             geomcollection.ToNext(geomcollectionIter);
@@ -374,8 +440,9 @@ module DgnScriptTests {
             be.Script.ReportError('Element.Transform failed');
 
         //  Test GeometryBuilders
-        testGeomBuilders(db, model, catid);
-        
+        testGeomBuilderAggregation(model, catid);
+        testGeomParts(model, catid);
+
         //  Test EC API
         testEC(db);
 

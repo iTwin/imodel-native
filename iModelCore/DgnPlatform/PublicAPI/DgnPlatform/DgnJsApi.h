@@ -573,6 +573,16 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
     JsGeometryBuilder(JsDgnElementP el, JsDPoint3dP o, JsYawPitchRollAnglesP angles);
     ~JsGeometryBuilder() {}
 
+    static JsGeometryBuilderP CreateForElement(JsDgnElementP el, JsDPoint3dP o, JsYawPitchRollAnglesP angles)
+        {
+        return new JsGeometryBuilder(el, o, angles);
+        }
+
+    static JsGeometryBuilderP CreateForModel(JsDgnModelP model, JsDgnObjectIdP catid, JsDPoint3dP o, JsYawPitchRollAnglesP angles)
+        {
+        return new JsGeometryBuilder(*GeometryBuilder::Create(*model->m_model, DgnCategoryId(catid->m_id), o->Get(), angles->GetYawPitchRollAngles()));
+        }
+
     static JsGeometryBuilderP CreateGeometryPart(JsDgnDbP db, bool is3d)
         {
         return new JsGeometryBuilder(*GeometryBuilder::CreateGeometryPart(*db->m_db, is3d));
@@ -620,6 +630,7 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
     BentleyStatus SetGeometryStream (JsDgnGeometryPartP part) {return m_builder->SetGeometryStream(*part->m_value);}
 
     void AppendCopyOfGeometry(JsGeometryBuilderP builder, JsPlacement3dP relativePlacement);
+    void AppendGeometryPart(JsDgnGeometryPartP part, JsPlacement3dP relativePlacement);
 
     STUB_OUT_SET_METHOD(GeometryParams, JsRenderGeometryParamsP)
 };

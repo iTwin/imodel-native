@@ -493,16 +493,16 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         /*** NATIVE_TYPE_NAME = JsDgnGeometryPart ***/
 
         /**
-          * Create a new DgnGeomPart object.
-          * @param db   The DgnDb that will hold the geompart
-          * @return the DgnGeomPart object
+          * Create a new DgnGeometryPart object.
+          * @param db   The DgnDb that will hold the DgnGeometryPart
+          * @return the DgnGeometryPart object
           * @see InsertGeometryPart
           */
         static Create(db: DgnDbP): DgnGeometryPartP;
 
         /**
-         * Insert this DgnGeomPart into the DgnDb.
-         * @return non-zero error status if the DgnGeomPart could not be inserted.
+         * Insert this DgnGeometryPart into the DgnDb.
+         * @return non-zero error status if the DgnGeometryPart could not be inserted.
          */
         Insert(): cxx_int32_t; 
 
@@ -557,7 +557,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         /**
          * Get the DgnGeometryPart at the specified position in this collection.
          * @param iter  The iterator
-         * @return a DgnGeometryPart or null if the current item is not a GeomPart reference.
+         * @return a DgnGeometryPart or null if the current item is not a DgnGeometryPart reference.
          * @see GetGeometry
          * @see GetGeometryToWorld
          */
@@ -597,9 +597,30 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         constructor(el: DgnElementP, o: DPoint3dP, angles: YawPitchRollAnglesP);
 
         /**
-         * Construct a new GeometryBuilder with the intention of using to create a Geompart.
-         * @param db    The DgnDb that will hold the GeomPart
-         * @param is3d  Will the GeomPart hold 3-D geometry?
+         * Construct a new GeometryBuilder to prepare geometry for the specified element. 
+         * @note This is just a short cut for calling CreateForModel.
+         * @param el    The element to which this geometry will be attached
+         * @param o     The placement origin
+         * @param angles The placement angles
+         * @return a GeometryBuilder object
+         * @see CreateForModel
+         */
+        static CreateForElement(el: DgnElementP, o: DPoint3dP, angles: YawPitchRollAnglesP): GeometryBuilderP;
+
+        /**
+         * Construct a new GeometryBuilder to prepare geometry for elements in the specified model and category
+         * @param model The model where the geometry will ultimatley be stored
+         * @param catid The category of the element that will will ultimatley contain the geometry
+         * @param o     The placement origin
+         * @param angles The placement angles
+         * @return a GeometryBuilder object
+         */
+        static CreateForModel(model: DgnModelP, catid: DgnObjectIdP, o: DPoint3dP, angles: YawPitchRollAnglesP): GeometryBuilderP;
+
+        /**
+         * Construct a new GeometryBuilder to prepare geometry for a DgnGeometryPart
+         * @param db    The DgnDb that will hold the DgnGeometryPart
+         * @param is3d  Will the DgnGeometryPart hold 3-D geometry?
          * @return a GeometryBuilder object
          */
         static CreateGeometryPart(db: DgnDbP, is3d: cxx_bool): GeometryBuilderP;
@@ -633,6 +654,13 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         AppendGeometry(geometry: GeometryP): void;
 
         /**
+         * Append an instance of a DgnGeometryPart
+         * @param geometryPart  The DgnGeometryPart
+         * @param relativePlacement if not null, the offset and/or rotation of the instance
+         */
+        AppendGeometryPart(geometryPart: DgnGeometryPartP, relativePlacement: Placement3dP): void;
+
+        /**
          * Copy the geometry in this builder to an element.
          * @param element   The element
          * @return non-zero error status if \a element is invalid or if this geometry stream is invalid
@@ -640,8 +668,8 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         SetGeometryStreamAndPlacement(element: DgnElementP): cxx_int32_t;
 
         /**
-         * Copy the geometry in this builder to a DgnGeomPart.
-         * @param part  The DgnGeomPart
+         * Copy the geometry in this builder to a DgnGeometryPart.
+         * @param part  The DgnGeometryPart
          * @return non-zero error status if \a part is invalid or if this geometry stream is invalid
          */
         SetGeometryStream(part: DgnGeometryPartP): cxx_int32_t;
