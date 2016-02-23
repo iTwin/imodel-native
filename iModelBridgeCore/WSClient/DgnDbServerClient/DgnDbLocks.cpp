@@ -66,6 +66,9 @@ IBriefcaseManager::Response DgnDbRepositoryManager::_ProcessRequest (Request con
     if (!m_connection)
         return Response (RepositoryStatus::ServerUnavailable);
 
+    if (req.Locks ().IsEmpty ())
+        return IBriefcaseManager::Response (RepositoryStatus::Success);
+
     Utf8String lastRevisionId = db.Revisions ().GetParentRevisionId ();
 
     // NEEDSWORK_LOCKS: Handle codes
@@ -92,6 +95,10 @@ IBriefcaseManager::Response DgnDbRepositoryManager::_ProcessRequest (Request con
             JsonValueCR errorData = error.GetExtendedData ();
             SetLockStates (response, req.Options (), errorData[ServerSchema::Property::LocksRequiresPull]);
             }
+        else if (DgnDbServerError::Id::RevisionDoesNotExist == error.GetId ())
+            {
+            response.SetResult (RepositoryStatus::InvalidRequest);
+            }
             
         return response;
         }
@@ -105,10 +112,11 @@ RepositoryStatus DgnDbRepositoryManager::_Demote (DgnLockSet const& locks, DgnCo
     if (!m_connection)
         return RepositoryStatus::ServerUnavailable;
 
-    Utf8String lastRevisionId = db.Revisions ().GetParentRevisionId ();
+    if (locks.empty ())
+        return RepositoryStatus::Success;
 
     // NEEDSWORK_LOCKS: Handle codes
-    auto result = m_connection->DemoteLocks (locks, db.GetBriefcaseId (), lastRevisionId, m_cancellationToken)->GetResult ();
+    auto result = m_connection->DemoteLocks (locks, db.GetBriefcaseId (), m_cancellationToken)->GetResult ();
     if (result.IsSuccess ())
         {
         return RepositoryStatus::Success;
@@ -127,13 +135,11 @@ RepositoryStatus DgnDbRepositoryManager::_Relinquish (Resources which, DgnDbR db
     if (!m_connection)
         return RepositoryStatus::ServerUnavailable;
 
-    Utf8String lastRevisionId = db.Revisions ().GetParentRevisionId ();
-
     // NEEDSWORK_LOCKS: Handle codes
     if (Resources::Locks != (which & Resources::Locks)) 
         return RepositoryStatus::Success;
 
-    auto result = m_connection->RelinquishLocks (db.GetBriefcaseId (), lastRevisionId, m_cancellationToken)->GetResult ();
+    auto result = m_connection->RelinquishLocks (db.GetBriefcaseId (), m_cancellationToken)->GetResult ();
     if (result.IsSuccess ())
         {
         return RepositoryStatus::Success;//NEEDSWORK: Can delete locks partially
@@ -151,6 +157,9 @@ RepositoryStatus DgnDbRepositoryManager::_QueryHeldResources (DgnLockSet& locks,
     {
     if (!m_connection)
         return RepositoryStatus::ServerUnavailable;
+
+    if (locks.empty ())
+        return RepositoryStatus::Success;
 
     // NEEDSWORK_LOCKS: Handle codes
     auto result = m_connection->QueryLocks (db.GetBriefcaseId (), m_cancellationToken)->GetResult ();
@@ -172,6 +181,9 @@ RepositoryStatus DgnDbRepositoryManager::_QueryStates (DgnLockInfoSet& lockState
     {
     if (!m_connection)
         return RepositoryStatus::ServerUnavailable;
+
+    if (locks.empty ())
+        return RepositoryStatus::Success;
 
     // NEEDSWORK_LOCKS: Handle codes
     auto result = m_connection->QueryLocksById (locks, m_cancellationToken)->GetResult ();

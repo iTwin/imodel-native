@@ -195,7 +195,7 @@ AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullMergeAndPushInternal(HttpRequest::
                 {
                 Utf8String revisionId = revision->GetId();
                 BeFileName revisionFile(m_db->GetDbFileName());
-                m_repositoryConnection->Push(revision, m_db->GetBriefcaseId().GetValue(), uploadCallback, cancellationToken)->Then
+                m_repositoryConnection->Push(revision, m_db->GetBriefcaseId (), uploadCallback, cancellationToken)->Then
                     ([=] (const DgnDbResult& pushResult)
                     {
                     if (pushResult.IsSuccess())
