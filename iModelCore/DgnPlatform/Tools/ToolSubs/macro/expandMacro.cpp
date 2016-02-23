@@ -12,7 +12,7 @@
 #include <DgnPlatform/DesktopTools/MacroConfigurationAdmin.h>
 #include "macro.h"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 #define DQUOTE                  (0x22)
 #define SQUOTE                  (0x27)
