@@ -263,6 +263,8 @@ void DgnMaterial::_RemapIds(DgnImportContext& importer)
     if (!importer.IsBetweenDbs())
         return;
 
+    JsonRenderMaterial material;
+    material.Load(
     Json::Value renderingAsset;
     if (SUCCESS == GetRenderingAsset(renderingAsset))
         {
@@ -282,8 +284,7 @@ DgnMaterialId DgnImportContext::RemapMaterialId(DgnMaterialId source)
     {
     if (!IsBetweenDbs())
         return source;
+
     DgnMaterialId dest = FindMaterialId(source);
-    if (dest.IsValid())
-        return dest;
-    return DgnMaterial::ImportMaterial(source, *this);
+    return dest.IsValid() ? dest : DgnMaterial::ImportMaterial(source, *this);
     }

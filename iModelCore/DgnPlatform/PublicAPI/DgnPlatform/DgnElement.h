@@ -1253,13 +1253,12 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement&) override;
-
     DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR) override;
-
     DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext&) override;
+
     virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + static_cast<uint32_t>(sizeof(m_categoryId) + sizeof(m_geom)) + m_geom.GetAllocSize(); }
 
     static void AddBaseClassParams(ECSqlClassParams& params);

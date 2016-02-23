@@ -1010,10 +1010,10 @@ public:
         void RegisterCopyrightSupplier(CopyrightSupplier& s) { m_copyrights.push_back(&s); }
 
         //! Un-register a copyright supplier
-        void UnregisterCopyrightSupplier(CopyrightSupplier& s) {auto i = std::remove(m_copyrights.begin(), m_copyrights.end(), &s); if (i != m_copyrights.end()) m_copyrights.erase(i); }
+        void UnregisterCopyrightSupplier(CopyrightSupplier& s) {auto i = std::remove(m_copyrights.begin(), m_copyrights.end(), &s); if (i != m_copyrights.end()) m_copyrights.erase(i);}
 
         //! Return the list of registered copyright suppliers
-        bvector<CopyrightSupplier*> const& GetCopyrightSuppliers() const { return m_copyrights; }
+        bvector<CopyrightSupplier*> const& GetCopyrightSuppliers() const {return m_copyrights;}
 
         //! Returns true if this Host has been initialized; otherwise, false
         bool IsInitialized() {return 0 != m_fontAdmin;}
