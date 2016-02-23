@@ -209,13 +209,13 @@ void  JsonRenderMaterial::SetColor(Utf8CP keyword, RgbFactor color)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus JsonRenderMaterial::Import(DgnImportContext& context) 
+BentleyStatus JsonRenderMaterial::Relocate(DgnImportContext& context) 
     {
     JsonRenderMaterial::TextureMap patternMap = GetPatternMap();
     if (!patternMap.IsValid())
         return ERROR;
 
-    DgnTextureId newId = patternMap.Import(context);
+    DgnTextureId newId = patternMap.Relocate(context);
     if (!newId.IsValid())
         return ERROR;
 
@@ -226,7 +226,7 @@ BentleyStatus JsonRenderMaterial::Import(DgnImportContext& context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnTextureId JsonRenderMaterial::TextureMap::Import(DgnImportContext& context) 
+DgnTextureId JsonRenderMaterial::TextureMap::Relocate(DgnImportContext& context) 
     {
     DgnTextureId thisId = GetTextureId();
     return thisId.IsValid() ? DgnTexture::ImportTexture(context, thisId) : thisId;
