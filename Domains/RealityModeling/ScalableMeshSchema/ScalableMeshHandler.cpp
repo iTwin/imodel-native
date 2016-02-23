@@ -48,7 +48,10 @@ BentleyStatus ScalableMeshModel::_QueryTexture(ITextureTileId const& tileId, ITe
 //----------------------------------------------------------------------------------------
 BentleyStatus ScalableMeshModel::_ReloadClipMask(BentleyApi::Dgn::DgnElementId& clipMaskElementId, bool isNew)
     {
-    return ERROR;
+    bvector<uint64_t> clipIds;
+    clipIds.push_back(clipMaskElementId.GetValue());
+    m_progressiveQueryEngine->ClearCaching(clipIds, m_smPtr);
+    return SUCCESS;
     }
 
 //----------------------------------------------------------------------------------------
@@ -368,7 +371,7 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
 
             for (size_t meshInd = 0; meshInd < node->GetNbMeshes(); meshInd++)
                 {
-                IScalableMeshMeshPtr mrdtmMeshPtr(node->GetMeshByParts(clips, meshInd));
+                IScalableMeshMeshPtr mrdtmMeshPtr(node->GetMeshByParts(clips,meshInd));
 
                 if (mrdtmMeshPtr != 0)
                     {         
