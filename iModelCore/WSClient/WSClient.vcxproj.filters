@@ -785,6 +785,9 @@
     <ClInclude Include="PublicAPI\WebServices\Connect\IConnectAuthenticationProvider.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ProgressFilter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Connect\DelegationTokenProvider.h">
       <Filter>Header Files</Filter>
     </ClInclude>

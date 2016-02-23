@@ -12,6 +12,8 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <WebServices/Cache/Persistence/CacheQueryHelper.h>
 #include <WebServices/Cache/Persistence/DataReadOptions.h>
+#include <WebServices/Cache/Util/ProgressFilter.h>
+
 
 #include "Logging.h"
 
@@ -31,7 +33,7 @@ ICancellationTokenPtr ct
 CachingTaskBase(cachingDataSource, ct),
 m_filesToDownloadIds(std::move(filesToDownload)),
 m_fileCacheLocation(fileCacheLocation),
-m_onProgressCallback(std::move(onProgress)),
+m_onProgressCallback(ProgressFilter::Create(onProgress)),
 m_downloadTasksRunning(0),
 m_totalBytesToDownload(0),
 m_totalBytesDownloaded(0),
@@ -43,21 +45,10 @@ m_nextFileToDownloadIndex(0)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DownloadFilesTask::ProgressCalback(double bytesDownloaded, double bytesTotal, DownloadFileProperties& file)
     {
-    if (!m_onProgressCallback)
-        {
-        return;
-        }
-
     m_totalBytesDownloaded += (uint64_t) bytesDownloaded - file.bytesDownloaded;
     file.bytesDownloaded = (uint64_t) bytesDownloaded;
 
-    uint64_t currentTimeMillis = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-    if (currentTimeMillis - m_lastTimeReported >= 250)
-        {
-        m_lastTimeReported = currentTimeMillis;
-
-        m_onProgressCallback((double) m_totalBytesDownloaded, (double) m_totalBytesToDownload, file.name);
-        }
+    m_onProgressCallback((double) m_totalBytesDownloaded, (double) m_totalBytesToDownload, file.name);
     }
 
 /*--------------------------------------------------------------------------------------+

@@ -10,6 +10,7 @@
 
 #include <Bentley/BeFile.h>
 #include <Bentley/BeTimeUtilities.h>
+#include <WebServices/Cache/Util/ProgressFilter.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -244,6 +245,8 @@ ICancellationTokenPtr ct
         return ERROR;
         }
 
+    ProgressCallback onFilteredProgress = ProgressFilter::Create(onProgress);
+
     uint32_t bufferSize = 1024 * 8;
     std::unique_ptr<char[]> buffer(new char[bufferSize]);
 
@@ -254,10 +257,7 @@ ICancellationTokenPtr ct
     uint64_t targetSize = 0;
     source.GetSize(sourceSize);
 
-    uint64_t lastTimeReported = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-
-    if (onProgress)
-        onProgress(0, 0);
+    onFilteredProgress(0, 0);
 
     while (bytesRead > 0)
         {
@@ -273,17 +273,8 @@ ICancellationTokenPtr ct
             return ERROR;
             }
 
-        if (onProgress)
-            {
             targetSize += bytesRead;
-            uint64_t currentTimeMillis = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-
-            if (currentTimeMillis - lastTimeReported >= 250)
-                {
-                lastTimeReported = currentTimeMillis;
-                onProgress((double) targetSize, (double) sourceSize);
-                }
-            }
+            onFilteredProgress((double) targetSize, (double) sourceSize);
         }
 
     if (onProgress)

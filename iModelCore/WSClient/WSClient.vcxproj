@@ -260,6 +260,7 @@
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\ISelectProvider.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\JsonDiff.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\ObservableECDb.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ProgressFilter.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\TempFile.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\ValueIncrementor.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\WebServicesCache.h" />
