@@ -20,7 +20,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                      Keith.Bentley   05/07
 //=======================================================================================
-struct ScanCriteria : DgnRangeTree::Traverser
+struct EXPORT_VTABLE_ATTRIBUTE ScanCriteria : DgnRangeTree::Traverser
 {
 public:
     enum class Result {Pass= 0, Fail = 1,};
