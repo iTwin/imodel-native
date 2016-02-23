@@ -539,6 +539,8 @@ template <class POINT, class EXTENT> struct ProcessingQuery : public RefCountedB
     atomic<bool>                                              m_isConsumingNode;
     };
 
+static bool s_delayJoinThread = false;
+static bool s_streamingSM = false;
 
 class QueryProcessor
     {
@@ -554,8 +556,9 @@ private:
     atomic<bool>                  m_run;
 
     int                           m_numWorkingThreads;
-    std::thread*                  m_workingThreads;
-    
+    std::thread*                  m_workingThreads;    
+    atomic<bool>*                 m_areWorkingThreadRunning;    
+       
     struct InLoadingNode;
 
     typedef RefCountedPtr<InLoadingNode> InLoadingNodePtr;
@@ -778,14 +781,29 @@ private:
                 }
 
             } while (m_run && (processingQueryPtr != 0));
+
+        m_areWorkingThreadRunning[threadId] = false;
         }
          
 public:
 
     QueryProcessor()
         {
-        m_numWorkingThreads = std::thread::hardware_concurrency() - 1;
+        if (!s_streamingSM)
+            {
+            m_numWorkingThreads = std::thread::hardware_concurrency() - 1;
+            }
+        else
+            {
+            m_numWorkingThreads = 14;
+            }
+
         m_workingThreads = new std::thread[m_numWorkingThreads];
+        m_areWorkingThreadRunning = new std::atomic<bool>[m_numWorkingThreads];
+
+        for (size_t ind = 0; ind < m_numWorkingThreads; ind++)
+            m_areWorkingThreadRunning[ind] = false;
+                
         m_run = false;
         m_processingQueryIndexes.resize(m_numWorkingThreads);
         }
@@ -799,6 +817,7 @@ public:
             }
 
         delete[] m_workingThreads;
+        delete[] m_areWorkingThreadRunning;
         }
 
     void AddQuery(int                                                             queryId,
@@ -953,24 +972,40 @@ public:
 
                 //Launch a group of threads
                 for (int threadId = 0; threadId < m_numWorkingThreads; ++threadId) 
-                    {                                    
-                    m_workingThreads[threadId] = std::thread(&QueryProcessor::QueryThread, this, DgnPlatformLib::QueryHost(), threadId);
+                    {                                                        
+                    if (!s_delayJoinThread && !s_streamingSM)
+                        {                
+                        m_workingThreads[threadId] = std::thread(&QueryProcessor::QueryThread, this, DgnPlatformLib::QueryHost(), threadId);
+                        }
+                    else
+                        {
+                        if (m_areWorkingThreadRunning[threadId] == false)
+                            {
+                            if (m_workingThreads[threadId].joinable())                            
+                                m_workingThreads[threadId].join();
+
+                            m_workingThreads[threadId] = std::thread(&QueryProcessor::QueryThread, this, DgnPlatformLib::QueryHost(), threadId);
+                            m_areWorkingThreadRunning[threadId] = true;
+                            }
+                        }
                     }
                 }
             }
-
+        
         void Stop()
-            {
+            {                        
             m_run = false;
 
-            for (int threadId = 0; threadId < m_numWorkingThreads; ++threadId) 
-                {
-                if (m_workingThreads[threadId].joinable())
-                    m_workingThreads[threadId].join();
+            if (!s_delayJoinThread && !s_streamingSM)
+                {                
+                for (int threadId = 0; threadId < m_numWorkingThreads; ++threadId) 
+                    {
+                    if (m_workingThreads[threadId].joinable())
+                        m_workingThreads[threadId].join();                    
+                    }         
                 }
             }
        
-
         StatusInt GetFoundNodes(bvector<IScalableMeshCachedDisplayNodePtr>& foundNodes, int queryId)
             {             
             StatusInt status;
