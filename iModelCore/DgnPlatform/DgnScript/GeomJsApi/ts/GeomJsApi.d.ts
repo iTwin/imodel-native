@@ -810,7 +810,7 @@ class PlanarRegion extends CurveVector implements BeJsProjection_SuppressConstru
         */
         Add(primitive: CurvePrimitiveP): void;
         /** Add a (child) CurveVector to this CurveVector.  */
-        Add(primitive: CurveVectorP): void;
+        Add(curveVector: CurveVectorP): void;
     }
 
     type UnstructuredCurvesP = cxx_pointer<UnstructuredCurves>;

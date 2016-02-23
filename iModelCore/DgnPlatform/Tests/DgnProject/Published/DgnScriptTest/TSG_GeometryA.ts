@@ -342,31 +342,35 @@ module DgnScriptTests {
         return loop;
         }
 
-    function TryTransformGeometryArrayInPlace (geometry: Bentley.Dgn.Geometry[], transform: Transform)
+
+    function TryTransformGeometryArrayInPlace (geometry: Array<Bentley.Dgn.Geometry>, transform: Bentley.Dgn.Transform)
         {
         var i = 0;
         for (;i < geometry.length;i++)
             geometry[i].TryTransformInPlace (transform);
         }
 
-    function CloneGeometryArray (transform: Transform) :Bentley.Dgn.Geometry[])
+    function CloneAndTransformGeometryArray (geometry :Array<Bentley.Dgn.Geometry>, transform: Bentley.Dgn.Transform):Array<Bentley.Dgn.Geometry>
         {
-        var result = new Bentley.Dgn.Geometry[];
+        var result = new Array<Bentley.Dgn.Geometry>();
         var i = 0;
         for (;i < geometry.length;i++)
-            result.push (geometry[i]);
+            result.push (geometry[i].Clone ());
+        if (transform != null)
+            TryTransformGeometryArrayInPlace (geometry, transform);
         return result;
         }
+
 
 
     function t_arrayOfGeometry ()
         {        
         var geometry1: Bentley.Dgn.Geometry[];
         geometry1.push (LoopFromPoints (RegularXYPolygonPoints (new Bentley.Dgn.DPoint3d (0,0,0), 4, 1.0, false)));
-        
-
+        var geometry2 = CloneAndTransformGeometryArray (geometry1, Bentley.Dgn.Transform.CreateTranslationXYZ (1,0,3));
         }
     t_polyfaceMeshA ();  
+    t_arrayOfGeometry ();
 
     logMessage('Test1 Z');
 }
