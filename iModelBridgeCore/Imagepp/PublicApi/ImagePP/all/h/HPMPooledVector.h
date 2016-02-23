@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPMPooledVector.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -159,7 +159,7 @@ public:
 
         void                AdvanceOf        (difference_type increment)
             {
-            HASSERT (m_index + increment > m_vector->size());
+            //HASSERT (m_index + increment > m_vector->size());
 
             m_index += increment;
 
@@ -495,7 +495,7 @@ public:
 
         void                AdvanceOf        (difference_type increment)
             {
-            HASSERT (m_index + increment > m_vector->size());
+            //HASSERT (m_index + increment > m_vector->size());
 
             m_index += increment;
 
@@ -643,6 +643,7 @@ public:
         }
     bool push_back(const DataType& newObject)
         {
+        m_itemMutex.lock();
         if (Discarded())
             Inflate();
 
@@ -652,13 +653,14 @@ public:
             throw std::bad_alloc();
    
         m_accessCount++;
-        if ((m_accessCount > 100) && (m_pool != NULL))
+        if ((m_accessCount > 100) && (m_pool != NULL) && !Pinned())
             {
             m_pool->NotifyAccess(this);
             m_accessCount = 0;
             }
 
         m_memory[m_count] = newObject;
+        m_itemMutex.unlock();
         m_count++;
         SetDirty(true);
         return true;
@@ -688,7 +690,7 @@ public:
                 throw std::bad_alloc();
 
         m_accessCount+=source->size();
-        if ((m_accessCount > 100) && (m_pool != NULL))
+        if ((m_accessCount > 100) && (m_pool != NULL) && !Pinned())
             {
             m_pool->NotifyAccess(this);
             m_accessCount = 0;
@@ -717,7 +719,7 @@ public:
 
         if (source->size() == 0)
             return false;
-
+        m_itemMutex.lock();
         // Pin the pooled vector given as source in case it gets discarded in the process
         source->Pin();
 
@@ -731,7 +733,7 @@ public:
                 throw std::bad_alloc();
 
         m_accessCount += (end - start + 1);
-        if ((m_accessCount > 100) && (m_pool != NULL))
+        if ((m_accessCount > 100) && (m_pool != NULL) && !Pinned())
             {
             m_pool->NotifyAccess(this);
             m_accessCount = 0;
@@ -741,7 +743,7 @@ public:
         m_count += (end - start + 1);
         SetDirty(true);
         source->UnPin();
-
+        m_itemMutex.unlock();
         return true;
         }
 
@@ -767,7 +769,7 @@ public:
                 throw std::bad_alloc();
 
         m_accessCount+=count;
-        if ((m_accessCount > 100) && (m_pool != NULL))
+        if ((m_accessCount > 100) && (m_pool != NULL) && !Pinned())
             {
             m_pool->NotifyAccess(this);
             m_accessCount = 0;
@@ -794,8 +796,9 @@ public:
         if (maxCount == 0)
             return false;
 
-        if (Discarded())
+        if (Discarded() && !Pinned())
             Inflate();
+        else if (Pinned()) SetDiscarded(false);
 
         HASSERT(!Discarded());
 
@@ -813,7 +816,7 @@ public:
 
     // This used to be a reference returned but this caused a problem when the ref was maintained and the
     // tile discarded...
-    const DataType& operator[](size_t index) const
+    virtual const DataType& operator[](size_t index) const
         {
         if (Discarded())
             Inflate();
@@ -823,7 +826,7 @@ public:
         HPRECONDITION(index < m_count);
 
         m_accessCount++;
-        if ((m_accessCount > 100) && (m_pool != NULL))
+        if ((m_accessCount > 100) && (m_pool != NULL) && !Pinned())
             {
             m_pool->NotifyAccess(this);
             m_accessCount = 0;
@@ -844,7 +847,7 @@ public:
         HPRECONDITION(index < m_count);
 
         m_accessCount++;
-        if ((m_accessCount > 100) && (m_pool != NULL))
+        if ((m_accessCount > 100) && (m_pool != NULL) && !Pinned())
             {
             m_pool->NotifyAccess(this);
             m_accessCount = 0;
@@ -869,9 +872,9 @@ public:
         {
         if (itr.m_vector != this)
             return iterator();
-
+        m_itemMutex.lock();
         this->erase(itr.m_index);
-
+        m_itemMutex.unlock();
         if (itr.m_index == 0)
             return iterator(this, iterator::npos);
 
@@ -883,6 +886,7 @@ public:
 
     void erase (size_t index)
         {
+        m_itemMutex.lock();
         if (Discarded())
             Inflate();
 
@@ -893,20 +897,21 @@ public:
         m_count--;
 
         m_accessCount++;
-        if ((m_accessCount > 100) && (m_pool != NULL))
+        if ((m_accessCount > 100) && (m_pool != NULL) && !Pinned())
             {
             m_pool->NotifyAccess(this);
             m_accessCount = 0;
             }
         SetDirty (true);
 
-        if (m_allocatedCount > 0)
+        if ((m_allocatedCount > 0) && (m_count == 0))
             {
             if (m_pool != NULL)
                 {
                 if (GetPoolManaged())
                     {
                     bool freeSuccess = m_pool->Free(this);
+                    freeSuccess = freeSuccess;
                     HASSERT(freeSuccess);
                     }
                 }
@@ -916,6 +921,7 @@ public:
                 m_memory = NULL;
                 }
             }
+        m_itemMutex.unlock();
         }
 
     virtual void clearFrom(size_t indexToClearFrom)
@@ -938,6 +944,7 @@ public:
 
     virtual void clear()
         {
+        m_itemMutex.lock();
         if (Discarded())
             Inflate();
 
@@ -950,6 +957,7 @@ public:
                 if (GetPoolManaged())
                     {
                     bool freeSuccess = m_pool->Free(this);
+                    freeSuccess = freeSuccess;
                     HASSERT(freeSuccess);
                     }
                 }
@@ -963,6 +971,7 @@ public:
         m_count = 0;
         m_allocatedCount = 0;
         SetDirty (true);
+        m_itemMutex.unlock();
         }
 
     iterator begin()
@@ -997,7 +1006,7 @@ public:
         HASSERT(!Discarded());
 
         m_accessCount++;
-        if ((m_accessCount > 100) && (m_pool != NULL))
+        if ((m_accessCount > 100) && (m_pool != NULL) && !Pinned())
             {
             m_pool->NotifyAccess(this);
             m_accessCount = 0;
@@ -1341,7 +1350,7 @@ public:
             HDEBUGCODE (HPMBlockID initialBlockID(m_storeBlockID););
             m_storeBlockID = m_store->StoreBlock(m_memory, m_count, m_storeBlockID);
 
-            HASSERT(m_storeBlockID.m_integerID < 1000000);
+            HASSERT(!m_storeBlockID.IsValid() || m_storeBlockID.m_integerID < 1000000000);
 
             HDEBUGCODE(m_countLoaded = true;);
             }
@@ -1375,14 +1384,14 @@ public:
 
         // Safegard to prevent count change upon loading when count has already been loaded
         // Yes this case did occur.
-        HDEBUGCODE(size_t initialCount = m_count;);
-
+//        HDEBUGCODE(size_t initialCount = m_count;);
+     
         m_count = m_store->GetBlockDataCount (m_storeBlockID);
-#ifdef __HMR_DEBUG
+/*#ifdef __HMR_DEBUG
         if (m_countLoaded)
             HASSERT(initialCount == m_count);
 #endif
-
+*/
         HDEBUGCODE(m_countLoaded = true;);
 
 

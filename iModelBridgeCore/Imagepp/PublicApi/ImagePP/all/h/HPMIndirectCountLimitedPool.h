@@ -2,9 +2,7 @@
 
 #include "HPMCountLimitedPool.h"
 #include <Mtg/MtgStructs.h>
-
 BEGIN_IMAGEPP_NAMESPACE
-
 template <typename DataType> class HPMIndirectCountLimitedPoolItem;
 
 template <typename DataType> class HPMIndirectCountLimitedPool : public HPMCountLimitedPool < DataType >
@@ -18,7 +16,7 @@ template <typename DataType> class HPMIndirectCountLimitedPool : public HPMCount
          
             }
 
-        HPMIndirectCountLimitedPool(IHPMMemoryManager* memoryManager, size_t countLimit) : HPMCountLimitedPool(memoryManager, countLimit)
+        HPMIndirectCountLimitedPool(HPMMemoryMgr* memoryManager, size_t countLimit) : HPMCountLimitedPool(memoryManager, countLimit)
             {
             
             }
@@ -31,9 +29,13 @@ template <typename DataType> class HPMIndirectCountLimitedPool : public HPMCount
 
         virtual bool Allocate(size_t Count, const HPMCountLimitedPoolItem<DataType>* poolItem)
             {
-            RecomputeTotalCount();
+            //RecomputeTotalCount();
             bool retval = HPMCountLimitedPool<DataType>::Allocate(Count, poolItem);
-            RecomputeTotalCount();
+            //RecomputeTotalCount();
+            auto ct = poolItem->m_count;
+            poolItem->m_count = Count;
+            m_totalUsedCount += dynamic_cast<const HPMIndirectCountLimitedPoolItem<DataType>*>(poolItem)->GetDeepCount();
+            poolItem->m_count = ct;
             return retval;
             }
 
@@ -41,13 +43,14 @@ template <typename DataType> class HPMIndirectCountLimitedPool : public HPMCount
             {
             NotifyAccess(poolItem);
             const HPMIndirectCountLimitedPoolItem<DataType>* pPoolItem = dynamic_cast<const HPMIndirectCountLimitedPoolItem<DataType>*>(poolItem);
+            if (pPoolItem->GetMemory() == nullptr) return Allocate(NewCount, poolItem);
             // Check if memory limit attained
             while (m_totalUsedCount + NewCount*sizeof(DataType) - pPoolItem->GetDeepCount() > m_countLimit)
                 {
                 if (m_Pool.empty() || !m_Pool.back()->Discard())
                     return false; 
                 }
-
+            pPoolItem->m_itemMutex.lock();
             DataType* newMemory;
             size_t actualAllocatedCount = NewCount;
             size_t actualAllocatedMemory = 0;
@@ -66,11 +69,15 @@ template <typename DataType> class HPMIndirectCountLimitedPool : public HPMCount
             m_totalUsedCount -= pPoolItem->GetDeepCount();
 
             if (m_memoryManager != NULL)
-                m_memoryManager->FreeMemory(reinterpret_cast<Byte*>(poolItem->GetMemory()), poolItem->GetMemoryCount() * sizeof(DataType));
+                {
+                poolItem->DestroyElements();
+                m_memoryManager->FreeMemory(reinterpret_cast<byte*>(poolItem->GetMemory()), poolItem->GetMemoryCount() * sizeof(DataType));
+                }
             else
                 delete[] poolItem->GetMemory();
 
             poolItem->SetMemory(newMemory, actualAllocatedCount);
+            pPoolItem->m_itemMutex.unlock();
             m_totalUsedCount += pPoolItem->GetDeepCount();
             return true;
             }
@@ -85,16 +92,19 @@ template <typename DataType> class HPMIndirectCountLimitedPool : public HPMCount
                     {
                     //manually call destructor since this is not a delete call...
                     poolItem->GetMemory()->~DataType();
-                    m_memoryManager->FreeMemory(reinterpret_cast<Byte*>(poolItem->GetMemory()), poolItem->GetMemoryCount() * sizeof(DataType));
+                    m_memoryManager->FreeMemory(reinterpret_cast<byte*>(poolItem->GetMemory()), poolItem->GetMemoryCount() * sizeof(DataType));
                     }
                 else
                     {
                     delete[] poolItem->GetMemory();
                     }
                 poolItem->SetMemory(NULL, 0);
-                m_Pool.erase(poolItem->GetPoolIterator());
+                m_poolMutex.lock();
+                std::list<const HPMCountLimitedPoolItem<DataType>* >::iterator dummyItr;
+                if (poolItem->GetPoolIterator() != dummyItr) m_Pool.erase(poolItem->GetPoolIterator());
                 poolItem->m_poolIteratorPtr = NULL;
                 poolItem->SetPoolManaged(false);
+                m_poolMutex.unlock();
                 // end critical section
                 }
 
@@ -107,9 +117,10 @@ template <typename DataType> class HPMIndirectCountLimitedPool : public HPMCount
                 {
                 // Critical section
                 m_totalUsedCount -= dynamic_cast<const HPMIndirectCountLimitedPoolItem<DataType>*>(poolItem)->GetDeepCount();
-
+                m_poolMutex.lock();
                 m_Pool.erase(poolItem->GetPoolIterator());
                 poolItem->SetPoolManaged(false);
+                m_poolMutex.unlock();
                 // end critical section
                 }
 
@@ -125,11 +136,13 @@ template <typename DataType> class HPMIndirectCountLimitedPool : public HPMCount
         void RecomputeTotalCount()
             {
             m_totalUsedCount = 0;
+            m_poolMutex.lock();
             auto poolIterator = m_Pool.begin();
             for (; poolIterator != m_Pool.end(); ++poolIterator)
                 {
                 if (!(*poolIterator)->Discarded()) m_totalUsedCount += (static_cast<const HPMIndirectCountLimitedPoolItem<DataType>*>(*poolIterator))->GetDeepCount();
                 }
+            m_poolMutex.unlock();
             }
     };
 
@@ -142,23 +155,36 @@ template <typename DataType> class HPMIndirectCountLimitedPool : public HPMCount
         HPMIndirectCountLimitedPoolItem() : HPMCountLimitedPoolItem<DataType>()
             {
             m_deepCount = 0;
+            m_freed = false;
             }
 
         HPMIndirectCountLimitedPoolItem(HFCPtr<HPMIndirectCountLimitedPool<DataType> >  pool) : HPMCountLimitedPoolItem<DataType>(&*pool)
             {
             m_deepCount = 0;
+            m_freed = false;
+            }
+
+        virtual void DestroyElements() const
+            {
+            for (size_t i = 0; i < m_allocatedCount; i++)
+                m_memory[i].~DataType();
             }
 
         virtual ~HPMIndirectCountLimitedPoolItem()
             {
-            /*if (Pinned())
+            if (Pinned())
                 {
                 UnPin();
                 }
-            if (m_poolIteratorPtr != NULL)
-                delete m_poolIteratorPtr;
             if (m_poolManaged)
-                m_pool->Free(this);*/
+                {
+                m_pool->Free(this);
+                m_freed = true;
+                }
+            if (m_poolIteratorPtr != NULL)
+                {
+                delete m_poolIteratorPtr;
+                }
             }
 
          size_t GetDeepCount() const

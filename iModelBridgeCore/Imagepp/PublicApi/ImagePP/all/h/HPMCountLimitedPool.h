@@ -14,7 +14,7 @@
 BEGIN_IMAGEPP_NAMESPACE
 template <typename DataType> class HPMIndirectCountLimitedPool;
 
-
+#include <mutex>
 #if (0)
 
 //***********************************************************************************************************************
@@ -695,9 +695,12 @@ public:
     -----------------------------------------------------------------------------*/
     virtual bool Allocate(size_t Count, const HPMCountLimitedPoolItem<DataType>* poolItem)
         {
+        HPRECONDITION(poolItem != nullptr);
         HPRECONDITION (!poolItem->GetPoolManaged());
 
-        // Check if memory limit attained
+        // Check if memory limit attained        
+		{
+			std::lock_guard<std::recursive_mutex> guard(m_poolMutex);
         while (m_totalUsedCount + Count > m_countLimit)
             {
             // Not enough memory ... some other must be released
@@ -706,6 +709,8 @@ public:
             if (m_Pool.empty() || !m_Pool.back()->Discard())
                 return false; // Something happened
             }
+
+		}
 
         DataType* pMemory;
         size_t actualAllocatedCount = Count;
@@ -724,8 +729,10 @@ public:
         poolItem->SetMemory(pMemory, actualAllocatedCount);
         m_totalUsedCount += actualAllocatedCount;
 
+        m_poolMutex.lock();
         m_Pool.push_front(poolItem);
         poolItem->SetPoolIterator (m_Pool.begin());
+        m_poolMutex.unlock();
         poolItem->SetPoolManaged(true);
         return true;
         }
@@ -741,6 +748,8 @@ public:
         NotifyAccess (poolItem);
 
         // Check if memory limit attained
+        		{
+			std::lock_guard<std::recursive_mutex> guard(m_poolMutex);
         while (m_totalUsedCount + NewCount - poolItem->GetMemoryCount() > m_countLimit)
             {
             // Not enough memory ... some other must be released
@@ -749,6 +758,7 @@ public:
             if (m_Pool.empty() || !m_Pool.back()->Discard())
                 return false; // Some error occured
             }
+				}
 
         DataType* newMemory;
         size_t actualAllocatedCount = NewCount;
@@ -792,7 +802,10 @@ public:
             else
                 delete [] poolItem->GetMemory();
             poolItem->SetMemory(NULL, 0);
-            m_Pool.erase (poolItem->GetPoolIterator());
+            m_poolMutex.lock();
+            std::list<const HPMCountLimitedPoolItem<DataType>* >::iterator dummyItr;
+            if (poolItem->GetPoolIterator() != dummyItr) m_Pool.erase(poolItem->GetPoolIterator());
+            m_poolMutex.unlock();
             poolItem->SetPoolManaged (false);
 // end critical section
             }
@@ -817,8 +830,9 @@ public:
 
             // Notive that the memory is NOT release ... it becomes up to the pool item to deal with releasing
             // memory.
-
+            m_poolMutex.lock();
             m_Pool.erase (poolItem->GetPoolIterator());
+            m_poolMutex.unlock();
             poolItem->SetPoolManaged (false);
 // end critical section
             }
@@ -855,8 +869,11 @@ public:
         {
         HPRECONDITION (poolItem->GetPoolManaged());
 
+        //NEEDS_WORK_SM_THREAD : Ugly lock
+        m_poolMutex.lock();
+        std::list<const HPMCountLimitedPoolItem<DataType>* >::iterator dummyItr;
         // Check if the item is the one on front
-        if (*m_Pool.begin() != *poolItem->GetPoolIterator())
+        if (poolItem->GetPoolIterator()!= dummyItr && *m_Pool.begin() != *poolItem->GetPoolIterator())
             {
             // Not the one on front ...
 // Critical section ...
@@ -865,12 +882,15 @@ public:
             poolItem->SetPoolIterator(m_Pool.begin());
 // End critical section
             }
+
+        m_poolMutex.unlock();
         }
 
 protected:
     list<const HPMCountLimitedPoolItem<DataType>*> m_Pool;
-    size_t m_countLimit;
-    size_t m_totalUsedCount;
+    size_t                                         m_countLimit;
+    std::atomic<size_t>                            m_totalUsedCount;
+    std::recursive_mutex                           m_poolMutex;
 
     IHPMMemoryManager* m_memoryManager;
 
@@ -919,6 +939,7 @@ public:
         m_pinned = false;
         m_discarded = false;
         m_dirty = true; // This is the default value ... after construction use SetDirty() to unset
+        m_freed = false;
         }
 
     HPMCountLimitedPoolItem (HFCPtr<HPMCountLimitedPool<DataType> >  pool)
@@ -936,21 +957,64 @@ public:
         m_discarded = false;
 
         m_dirty = true; // This is the default value ... after construction use SetDirty() to unset
+        m_freed = false;
         }
 
-    ~HPMCountLimitedPoolItem()
+    HPMCountLimitedPoolItem(const HPMCountLimitedPoolItem& it)
+        {
+        m_allocatedCount = it.m_allocatedCount;
+        m_count = it.m_count;
+
+        m_memory = it.m_memory;
+
+        m_pool = it.m_pool;
+        m_poolIteratorPtr = it.m_poolIteratorPtr;
+        m_poolManaged = it.m_poolManaged;
+        if (it.Pinned())
+           m_pinned = true;
+        else m_pinned = false;
+        m_discarded = it.m_discarded;
+        m_dirty = it.m_dirty; 
+        m_freed = it.m_freed;
+        }
+
+    virtual ~HPMCountLimitedPoolItem()
         {
         if (Pinned())
             {
             UnPin();
             }
-        if (m_poolIteratorPtr != NULL)
-            delete m_poolIteratorPtr;
+        
+        if (m_freed) return;
         if (m_poolManaged)
             m_pool->Free(this);
+
+        if (m_poolIteratorPtr != NULL)
+            {
+            delete m_poolIteratorPtr;
+            m_poolIteratorPtr = NULL;
+            }
         }
 
 
+    HPMCountLimitedPoolItem& operator=(const HPMCountLimitedPoolItem& it)
+        {
+        m_allocatedCount = it.m_allocatedCount;
+        m_count = it.m_count;
+
+        m_memory = it.m_memory;
+
+        m_pool = it.m_pool;
+        m_poolIteratorPtr = it.m_poolIteratorPtr;
+        m_poolManaged = it.m_poolManaged;
+        if (it.Pinned())
+            m_pinned = true;
+        else m_pinned = false;
+        m_discarded = it.m_discarded;
+        m_dirty = it.m_dirty;
+        m_freed = it.m_freed;
+        return *this;
+        }
     /**----------------------------------------------------------------------------
      Sets the pool. It can only be set if it has not already been set after using
      the default constructor.
@@ -1033,21 +1097,16 @@ public:
     -----------------------------------------------------------------------------*/
     void Pin() const // Intentionaly const as only mutable members get modified
         {
-        if (Discarded())
-            Inflate();
-
+        //NEEDS_WORK_SM : Bad, only one thread should access one node at a time.
+        //assert(!Pinned());
+        if (Pinned()) SetDiscarded(false);
         m_pinned = true;
+
+        if (Discarded())
+            Inflate();        
         }
 
-    /**----------------------------------------------------------------------------
-     The Pinned method indicates if the item is pinned
-    -----------------------------------------------------------------------------*/
-    bool Pinned() const
-        {
-        return m_pinned;
-        }
-
-    /**----------------------------------------------------------------------------
+     /**----------------------------------------------------------------------------
      Unpins the item ... The memory will be immediately deleted if the object has been
      discarded while pinned.
     -----------------------------------------------------------------------------*/
@@ -1060,11 +1119,24 @@ public:
             if (Discarded())
                 {
                 if (m_memory != NULL)
-                    delete [] m_memory;
+                    {
+                    delete[] m_memory;
+                    m_memory = NULL;
+                    }
                 }
             }
         }
-protected:
+
+protected:   
+
+    /**----------------------------------------------------------------------------
+     The Pinned method indicates if the item is pinned
+    -----------------------------------------------------------------------------*/
+    bool Pinned() const
+        {
+        return m_pinned;
+        }
+   
     /**----------------------------------------------------------------------------
      Returns pointer to memory used by pool item
     -----------------------------------------------------------------------------*/
@@ -1082,9 +1154,14 @@ protected:
         return m_allocatedCount;
         }
 
+    virtual void DestroyElements() const
+        {
+        }
+
 
     // Protected members TBD ... place as private members
-    mutable bool m_pinned;
+    mutable atomic<bool> m_pinned;
+    mutable bool m_freed;
     mutable DataType* m_memory;
     mutable size_t m_count;
     HDEBUGCODE(mutable bool m_countLoaded);
@@ -1092,7 +1169,7 @@ protected:
     mutable size_t m_allocatedCount;
     mutable HFCPtr<HPMCountLimitedPool<DataType> > m_pool;
     mutable bool m_discarded;
-
+    mutable std::recursive_mutex                           m_itemMutex;
 
 
     // Allow access to the pool of private methods below.
@@ -1102,7 +1179,7 @@ protected:
     // Sets the memory used by object ... called by pool
     void SetMemory(DataType* newMemory, size_t memoryCount) const // Intentionaly const ... only mutable members are modified
         {
-        HASSERT (!Pinned());
+        HASSERT (!Pinned() || m_memory == 0);
         m_memory = newMemory;
         m_allocatedCount = memoryCount;
         }
@@ -1140,6 +1217,12 @@ protected:
     void SetPoolManaged(bool poolManaged) const // Intentionaly const ... only mutable members are modified
         {
         m_poolManaged = poolManaged;
+        if (!poolManaged)
+            if (m_poolIteratorPtr != NULL)
+                {
+                delete m_poolIteratorPtr;
+                m_poolIteratorPtr = NULL;
+                }
         }
 
     mutable typename std::list<const HPMCountLimitedPoolItem<DataType>* >::iterator* m_poolIteratorPtr;
