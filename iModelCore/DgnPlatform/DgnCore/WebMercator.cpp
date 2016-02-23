@@ -915,7 +915,7 @@ bool WebMercatorDisplay::ShouldRejectTile(WebMercatorTilingSystem::TileId const&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String WebMercatorDisplay::_GetCopyrightMessage(DgnViewportR vp)
+Utf8String WebMercatorDisplay::_GetCopyrightMessage(DgnViewportCR vp)
     {
     if (!vp.GetViewController().GetViewedModels().Contains(m_model.GetModelId()))
         return "";

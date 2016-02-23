@@ -147,7 +147,7 @@ enum CodeColumn { AuthorityId=0, NameSpace, Value };
 bool IBriefcaseManager::LocksRequired() const
     {
     // We don't acquire locks for indirect or dynamic changes.
-    return (!GetDgnDb().Txns().IsInDynamics() && TxnManager::Mode::Indirect != GetDgnDb().Txns().GetMode());
+    return (!GetDgnDb().Txns().InDynamicTxn() && TxnManager::Mode::Indirect != GetDgnDb().Txns().GetMode());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -671,7 +671,7 @@ public:
 ReleaseContext::ReleaseContext(DgnDbR db, bool wantLocks, bool wantCodes) : m_db(db), m_status(RepositoryStatus::CannotCreateRevision)
     {
     TxnManager& txns = db.Txns();
-    if (txns.HasChanges() || txns.IsInDynamics())
+    if (txns.HasChanges() || txns.InDynamicTxn())
         {
         m_status = RepositoryStatus::PendingTransactions;
         return;
