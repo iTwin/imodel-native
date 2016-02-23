@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/stdcxx/rw/bpair.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -97,10 +97,12 @@ struct bpair
     bpair (const bpair <_TypeX, _TypeY> &__rhs) 
         : first (__rhs.first), second (__rhs.second) { }
 
+#if !defined(_MSC_VER) || _MSC_VER >= 1800
     template <class _TypeX, class _TypeY,
               class = typename std::enable_if<std::is_convertible<_TypeX, _TypeT>::value && std::is_convertible<_TypeY, _TypeY>::value, void>::type>
     bpair (bpair <_TypeX, _TypeY>&& __rhs) 
         : first(std::forward<_TypeX>(__rhs.first)), second (std::forward<_TypeY>(__rhs.second)) { }
+#endif
 
     template<class _TypeX, class _TypeY>
     bpair<_TypeT, _TypeU>& operator=(bpair<_TypeX, _TypeY>&& __rhs)
