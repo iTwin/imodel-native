@@ -1558,7 +1558,7 @@ void TxnManager::BeginDynamicOperation()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::EndDynamicOperation(IDynamicChangeProcessor* processor)
+void TxnManager::EndDynamicOperation(DynamicTxnProcessor* processor)
     {
     if (!InDynamicTxn())
         {

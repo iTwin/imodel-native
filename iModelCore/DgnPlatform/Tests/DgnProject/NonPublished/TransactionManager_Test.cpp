@@ -1260,7 +1260,7 @@ struct RootChangedCallback : TestElementDrivesElementHandler::Callback
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DynamicChangesProcessor : IDynamicChangeProcessor
+struct DynamicChangesProcessor : DynamicTxnProcessor
 {
     size_t m_expectedCount;
     uint32_t m_expectedWidth;
