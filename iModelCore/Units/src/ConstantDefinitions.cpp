@@ -20,12 +20,12 @@ void UnitRegistry::AddDefaultConstants ()
     reg.AddConstant(LENGTH, "EARTH_RAD", "M", 6.3781e6); //, "Radius Of Earth");
     reg.AddConstant(LENGTH, "ASTRO_UNIT", "M", 1.495978707e11); //, "Distance from Sun to Earth");
     reg.AddConstant(VELOCITY, "C", "M*S(-1)", 2.99792458e8); //, "Speed Of Light in Vaccum");
-    reg.AddConstant(RATIO, "PI", "ONE", PI); //, "Ratio of Circumference to its Diameter");
-    reg.AddConstant(RATIO, "PI/4", "[PI]", 0.25); //, "PI/4");
-    reg.AddConstant(RATIO, "PI/2", "[PI]", 0.5); //, "PI/2");
-    reg.AddConstant(RATIO, "PI2", "[PI]", 2); //, "2*PI");
+    reg.AddConstant(ONE, "PI", "ONE", PI); //, "Ratio of Circumference to its Diameter");
+    reg.AddConstant(ONE, "PI/4", "[PI]", 0.25); //, "PI/4");
+    reg.AddConstant(ONE, "PI/2", "[PI]", 0.5); //, "PI/2");
+    reg.AddConstant(ONE, "PI2", "[PI]", 2); //, "2*PI");
     reg.AddConstant(ANGLE, "360DEG", "ARC_DEG", 360); //, "Full Circle");
-    reg.AddConstant(RATIO, "E", "ONE", E); //, "Base of the natural logarithm");
+    reg.AddConstant(ONE, "E", "ONE", E); //, "Base of the natural logarithm");
     reg.AddConstant(GRAVCONSTANT, "G0", "M(3)*KG(-1)*S(-2)", 6.67408e-11); //, "Gravitational constant");
     reg.AddConstant(ELECTRIC_CHARGE, "Q0", "A*S", 1.6021766208e-19);// , "Elementary Charge");
     reg.AddConstant(ACCELERATION, "STD_G", "M*S(-2)", 9.80665); //, "Standard Gravity");
@@ -68,25 +68,25 @@ void UnitRegistry::AddDefaultConstants ()
     reg.AddConstant(DENSITY, "HG_60F", "KG*M(-3)", 13.557e3); //, "Density of mercury 60 degree Fahrenheit");
 
     //Decimal multiples
-    reg.AddConstant(RATIO, "DECI", "ONE", 1.0e-1); //, "DECI-prefix");
-    reg.AddConstant(RATIO, "CENTI", "ONE", 1.0e-2); //, "CENTI-prefix");
-    reg.AddConstant(RATIO, "MILLI", "ONE", 1.0e-3); //, "MILLI-prefix");
-    reg.AddConstant(RATIO, "MICRO", "ONE", 1.0e-6); //, "MICRO-prefix");
-    reg.AddConstant(RATIO, "NANO", "ONE", 1.0e-9); //, "NANO-prefix");
-    reg.AddConstant(RATIO, "PICO", "ONE", 1.0e-12); //, "PICO-prefix");
-    reg.AddConstant(RATIO, "FEMTO", "ONE", 1.0e-15); //, "FEMTO-prefix");
-    reg.AddConstant(RATIO, "ATTO", "ONE", 1.0e-18); //, "ATTO-prefix");
-    reg.AddConstant(RATIO, "ZEPTO", "ONE", 1.0e-21); //, "ZEPTO-prefix");
-    reg.AddConstant(RATIO, "YOCTO", "ONE", 1.0e-24); //, "YOCTO-prefix");
-    reg.AddConstant(RATIO, "DEKA", "ONE", 1); //, "DEKA-prefix");
-    reg.AddConstant(RATIO, "HECTO", "ONE", 1.0e2); //, "HECTO-prefix");
-    reg.AddConstant(RATIO, "KILO", "ONE", 1.0e3); //, "KILO-prefix");
-    reg.AddConstant(RATIO, "MEGA", "ONE", 1.0e6); //, "MEGA-prefix");
-    reg.AddConstant(RATIO, "GIGA", "ONE", 1.0e9); //, "GIGA-prefix");
-    reg.AddConstant(RATIO, "TERA", "ONE", 1.0e12); //, "TERA-prefix");
-    reg.AddConstant(RATIO, "PETA", "ONE", 1.0e15); //, "PETA-prefix");
-    reg.AddConstant(RATIO, "EXA", "ONE", 1.0e18); //, "EXA-prefix");
-    reg.AddConstant(RATIO, "ZETTA", "ONE", 1.0e21); //, "ZETTA-prefix");
-    reg.AddConstant(RATIO, "YOTTA", "ONE", 1.0e24); //, "YOTTA-prefix");
+    reg.AddConstant(ONE, "DECI", "ONE", 1.0e-1); //, "DECI-prefix");
+    reg.AddConstant(ONE, "CENTI", "ONE", 1.0e-2); //, "CENTI-prefix");
+    reg.AddConstant(ONE, "MILLI", "ONE", 1.0e-3); //, "MILLI-prefix");
+    reg.AddConstant(ONE, "MICRO", "ONE", 1.0e-6); //, "MICRO-prefix");
+    reg.AddConstant(ONE, "NANO", "ONE", 1.0e-9); //, "NANO-prefix");
+    reg.AddConstant(ONE, "PICO", "ONE", 1.0e-12); //, "PICO-prefix");
+    reg.AddConstant(ONE, "FEMTO", "ONE", 1.0e-15); //, "FEMTO-prefix");
+    reg.AddConstant(ONE, "ATTO", "ONE", 1.0e-18); //, "ATTO-prefix");
+    reg.AddConstant(ONE, "ZEPTO", "ONE", 1.0e-21); //, "ZEPTO-prefix");
+    reg.AddConstant(ONE, "YOCTO", "ONE", 1.0e-24); //, "YOCTO-prefix");
+    reg.AddConstant(ONE, "DEKA", "ONE", 1); //, "DEKA-prefix");
+    reg.AddConstant(ONE, "HECTO", "ONE", 1.0e2); //, "HECTO-prefix");
+    reg.AddConstant(ONE, "KILO", "ONE", 1.0e3); //, "KILO-prefix");
+    reg.AddConstant(ONE, "MEGA", "ONE", 1.0e6); //, "MEGA-prefix");
+    reg.AddConstant(ONE, "GIGA", "ONE", 1.0e9); //, "GIGA-prefix");
+    reg.AddConstant(ONE, "TERA", "ONE", 1.0e12); //, "TERA-prefix");
+    reg.AddConstant(ONE, "PETA", "ONE", 1.0e15); //, "PETA-prefix");
+    reg.AddConstant(ONE, "EXA", "ONE", 1.0e18); //, "EXA-prefix");
+    reg.AddConstant(ONE, "ZETTA", "ONE", 1.0e21); //, "ZETTA-prefix");
+    reg.AddConstant(ONE, "YOTTA", "ONE", 1.0e24); //, "YOTTA-prefix");
 
     }

@@ -77,15 +77,25 @@ void Expression::CreateExpressionWithOnlyBaseSymbols(ExpressionCR source, Expres
         }
     }
 
-// TODO: Consider how this could be combined with the merge step so we don't have to make two copies of the from expression
+bool Expression::ShareDimensions(PhenomenonCR phenomenon, UnitCR unit)
+    {
+    return DimensionallyCompatible(phenomenon.Evaluate(), unit.Evaluate(), [] (SymbolCR a, SymbolCR b) { return a.GetPhenomenonId() == b.GetPhenomenonId(); });
+    }
+
 bool Expression::DimensionallyCompatible(ExpressionCR fromExpression, ExpressionCR toExpression)
+    {
+    return DimensionallyCompatible(fromExpression, toExpression, [] (SymbolCR a, SymbolCR b) { return a.GetId() == b.GetId(); });
+    }
+
+// TODO: Consider how this could be combined with the merge step so we don't have to make two copies of the from expression
+bool Expression::DimensionallyCompatible(ExpressionCR fromExpression, ExpressionCR toExpression, std::function<bool(SymbolCR, SymbolCR)> areEqual)
     {
     Expression fromBaseSymbols;
     CreateExpressionWithOnlyBaseSymbols(fromExpression, fromBaseSymbols, true);
     Expression toBaseSymbols;
     CreateExpressionWithOnlyBaseSymbols(toExpression, toBaseSymbols, false);
 
-    MergeExpressions("", fromBaseSymbols, "", toBaseSymbols, -1);
+    MergeExpressions("", fromBaseSymbols, "", toBaseSymbols, -1, areEqual);
     for (auto const& unitExp : fromBaseSymbols)
         {
         if (unitExp->GetExponent() == 0)
@@ -104,12 +114,17 @@ bool Expression::DimensionallyCompatible(ExpressionCR fromExpression, Expression
 
 void Expression::MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExpression, Utf8CP sourceDefinition, ExpressionR sourceExpression, int startingExponent)
     {
+    MergeExpressions(targetDefinition, targetExpression, sourceDefinition, sourceExpression, startingExponent, [] (SymbolCR a, SymbolCR b) { return a.GetId() == b.GetId(); });
+    }
+
+void Expression::MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExpression, Utf8CP sourceDefinition, ExpressionR sourceExpression, int startingExponent, std::function<bool(SymbolCR, SymbolCR)> areEqual)
+    {
     LOG.debugv("Merging Expressions %s --> %s", sourceDefinition, targetDefinition);
     for (const auto& uWE : sourceExpression)
         {
         int     mergedExponent = uWE->GetExponent() * startingExponent;
 
-        auto it = find_if(targetExpression.begin(), targetExpression.end(), [&uWE] (ExpressionSymbolCP a) { return uWE->GetSymbol()->GetId() == a->GetSymbol()->GetId(); });
+        auto it = find_if(targetExpression.begin(), targetExpression.end(), [&uWE, &areEqual] (ExpressionSymbolCP a) { return areEqual(*a->GetSymbol(), *uWE->GetSymbol()); });
         if (it != targetExpression.end())
             {
             LOG.debugv("%s --> %s - Merging existing Unit %s. with Exponent: %d", sourceDefinition, targetDefinition, (*it)->GetName(), mergedExponent);

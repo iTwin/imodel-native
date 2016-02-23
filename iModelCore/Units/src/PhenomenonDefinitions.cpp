@@ -33,7 +33,7 @@ void UnitRegistry::AddDefaultPhenomena ()
     AddPhenomena(VOLUME, "LENGTH(3)");
     AddPhenomena(VELOCITY, "LENGTH*TIME(-1)");
     AddPhenomena(MOMENTUM, "MASS*VELOCITY");
-    AddPhenomena(ANGVELOCITY, "SOLIDANGLE*TIME(-1)");
+    AddPhenomena(ANGVELOCITY, "ANGLE*TIME(-1)");
     AddPhenomena(ACCELERATION, "LENGTH*TIME(-2)");
     AddPhenomena(ANGACCELERAT, "SOLIDANGLE*TIME(-2)");
     AddPhenomena(FORCE, "MASS*ACCELERATION");
@@ -74,8 +74,8 @@ void UnitRegistry::AddDefaultPhenomena ()
     AddPhenomena(MOLAR_VOLUME, "VOLUME*MOLE(-1)");
     AddPhenomena(MOLAR_CONCENTRATION, "MOLE*VOLUME(-1)");
     AddPhenomena(SLOPE, "LENGTH*LENGTH(-1)");
-    AddPhenomena(GRAVCONSTANT, ""); // TODO: Necessary?
-    AddPhenomena(THREAD_PITCH, "LENGTH"); // TODO: What about rotation portion?
+    AddPhenomena(GRAVCONSTANT, "LENGTH(3)*MASS(-1)*TIME(-2)"); // TODO: Check
+    AddPhenomena(THREAD_PITCH, "LENGTH*ANGLE(-1)"); // TODO: What about rotation portion?
     AddPhenomena(HEATTRASNFER, "POWER*AREA(-1)*TEMPERATURE(-1)"); // https://en.wikipedia.org/wiki/Heat_transfer_coefficient
     AddPhenomena(HEATFLUX, "POWER"); // https://en.wikipedia.org/wiki/Heat_flux
     AddPhenomena(WARPING_CONSTANT, "LENGTH(4)"); // https://en.wikipedia.org/wiki/Torsion_constant

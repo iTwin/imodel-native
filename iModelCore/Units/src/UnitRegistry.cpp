@@ -89,7 +89,7 @@ Utf8CP GetBasePhenomenonName(Utf8Char dimensionSymbol)
             case BasePhenomena::PlaneAngle:
                 return ANGLE;
             case BasePhenomena::Ratio:
-                return RATIO;
+                return ONE;
             case BasePhenomena::SolidAngle:
                 return SOLIDANGLE;
             case BasePhenomena::Temperature:

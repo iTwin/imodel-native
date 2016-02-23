@@ -280,17 +280,17 @@ void AddForceDensity(UnitRegistry& reg)
 
 void AddPopulationDensity(UnitRegistry& reg)
     {
-    UnitCP unit = reg.AddUnit(POPULATION_DENSITY, SI, "PERSON/SQ.M", "ONE*M(-2)");
+    UnitCP unit = reg.AddUnit(POPULATION_DENSITY, SI, "PERSON/SQ.M", "PERSON*M(-2)");
     reg.AddSynonym(unit, "PERSON_PER_METRE_SQUARED");
-    unit = reg.AddUnit(POPULATION_DENSITY, SI, "PERSON/HECTARE", "ONE*HECTARE(-1)");
+    unit = reg.AddUnit(POPULATION_DENSITY, SI, "PERSON/HECTARE", "PERSON*HECTARE(-1)");
     reg.AddSynonym(unit, "PERSON_PER_HECTARE");
-    unit = reg.AddUnit(POPULATION_DENSITY, SI, "PERSON/SQ.KM", "ONE*KM(-2)");
+    unit = reg.AddUnit(POPULATION_DENSITY, SI, "PERSON/SQ.KM", "PERSON*KM(-2)");
     reg.AddSynonym(unit, "PERSON_PER_KILOMETRE_SQUARED");
-    unit = reg.AddUnit(POPULATION_DENSITY, SI, "PERSON/ACRE", "ONE*ACRE(-1)");
+    unit = reg.AddUnit(POPULATION_DENSITY, SI, "PERSON/ACRE", "PERSON*ACRE(-1)");
     reg.AddSynonym(unit, "PERSON_PER_ACRE");
-    unit = reg.AddUnit(POPULATION_DENSITY, SI, "PERSON/SQ.FT", "ONE*FT(-2)");
+    unit = reg.AddUnit(POPULATION_DENSITY, SI, "PERSON/SQ.FT", "PERSON*FT(-2)");
     reg.AddSynonym(unit, "PERSON_PER_FOOT_SQUARED");
-    unit = reg.AddUnit(POPULATION_DENSITY, SI, "PERSON/SQ.MILE", "ONE*MILE(-2)");
+    unit = reg.AddUnit(POPULATION_DENSITY, SI, "PERSON/SQ.MILE", "PERSON*MILE(-2)");
     reg.AddSynonym(unit, "PERSON_PER_MILE_SQUARED");
     }
 

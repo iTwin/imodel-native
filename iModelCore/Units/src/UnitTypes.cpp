@@ -88,12 +88,19 @@ UnitP Unit::Create (Utf8CP sysName, PhenomenonCR phenomenon, Utf8CP unitName, in
     return new Unit (sysName, phenomenon, unitName, id, definition, dimensionSymbol, factor, offset, isConstant);
     }
 
+int Unit::GetPhenomenonId() const { return GetPhenomenon()->GetId(); }
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Unit::IsRegistered() const
     {
     return UnitRegistry::Instance().HasUnit(GetName());
+    }
+
+Expression& Unit::Evaluate() const
+    {
+    return T_Super::Evaluate(0, [] (Utf8CP unitName) { return UnitRegistry::Instance().LookupUnit(unitName); });
     }
 
 double Unit::GetConversionTo(UnitCP unit) const
@@ -105,8 +112,8 @@ double Unit::GetConversionTo(UnitCP unit) const
         }
 
     // TODO: USING A MAX RECRUSION DEPTH TO CATCH CYCLES IS SUPER HACKY AND MAKES CHRIS T. MAD.  Replace with something that actually detects cycles.
-    Expression fromExpression = Evaluate(0, [] (Utf8CP unitName) { return UnitRegistry::Instance().LookupUnit(unitName); });
-    Expression toExpression = unit->Evaluate(0, [] (Utf8CP unitName) { return UnitRegistry::Instance().LookupUnit(unitName); });
+    Expression fromExpression = Evaluate();
+    Expression toExpression = unit->Evaluate();
     
     fromExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, this->GetName());
     toExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, unit->GetName());
@@ -139,7 +146,7 @@ double Unit::GetConversionTo(UnitCP unit) const
 
 Utf8String Phenomenon::GetPhenomenonDimension() const
     {
-    Expression phenomenonExpression = Evaluate(0, [] (Utf8CP phenomenonName) { return UnitRegistry::Instance().LookupPhenomenon(phenomenonName); });
+    Expression phenomenonExpression = Evaluate();
     Expression baseExpression;
     Expression::CreateExpressionWithOnlyBaseSymbols(phenomenonExpression, baseExpression, false);
     return baseExpression.ToString();
@@ -150,4 +157,14 @@ void Phenomenon::AddUnit(UnitCR unit)
     auto it = find_if(m_units.begin(), m_units.end(), [&unit] (UnitCP existingUnit) { return existingUnit->GetId() == unit.GetId(); });
     if (it == m_units.end())
         m_units.push_back(&unit);
+    }
+
+Expression& Phenomenon::Evaluate() const
+    {
+    return T_Super::Evaluate(0, [] (Utf8CP phenomenonName) { return UnitRegistry::Instance().LookupPhenomenon(phenomenonName); });
+    }
+
+bool Phenomenon::IsCompatible(UnitCR unit) const
+    {
+    return Expression::ShareDimensions(*this, unit);
     }

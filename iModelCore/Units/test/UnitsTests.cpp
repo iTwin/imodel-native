@@ -195,6 +195,19 @@ TEST_F(UnitsTests, CheckDimensionForEveryPhenomenon)
         }
     }
 
+TEST_F(UnitsTests, PhenomenonAndUnitDimensionsMatch)
+    {
+    bvector<PhenomenonCP> allPhenomena;
+    UnitRegistry::Instance().AllPhenomena(allPhenomena);
+    for (auto const& phenomenon : allPhenomena)
+        {
+        for (auto const& unit : phenomenon->GetUnits())
+            {
+            EXPECT_TRUE(phenomenon->IsCompatible(*unit)) << "The unit " << unit->GetName() << " is not dimensionally compatible with the phenomenon it belongs to: " << phenomenon->GetName();
+            }
+        }
+    }
+
 TEST_F(UnitsTests, UnitsConversion)
     {
     bvector<Utf8String> loadErrors;

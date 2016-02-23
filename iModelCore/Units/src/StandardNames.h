@@ -49,7 +49,7 @@ static Utf8CP const TEMPERATURE = "TEMPERATURE";
 static Utf8CP const CURRENT = "CURRENT";
 static Utf8CP const MOLE = "MOLE";
 static Utf8CP const LUMINOUSINTENSITY = "LUMINOUSINTENSITY";
-static Utf8CP const RATIO = "RATIO";
+static Utf8CP const ONE = "ONE";
 static Utf8CP const ANGLE = "ANGLE";
 static Utf8CP const SOLIDANGLE = "SOLIDANGLE";
 

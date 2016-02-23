@@ -35,7 +35,7 @@ private:
     bool        m_dimensionless;
     
     mutable bool        m_evaluated;
-    Expression * m_symbolExpression;   
+    Expression * m_symbolExpression;
 
 protected:
     Symbol(Utf8CP name, Utf8CP definition, Utf8Char dimensionSymbol, int id, double factor, double offset);
@@ -43,11 +43,12 @@ protected:
     Expression& Evaluate(int depth, std::function<SymbolCP(Utf8CP)> getSymbolByName) const;
 protected:
     virtual ~Symbol();
-    
-   // TODO: Do GetName, GetId, GetDefinition, IsBaseSymbol and IsDimensionless need to be virtual?  They are common between Unit and Phenomenon
+
+    virtual int GetPhenomenonId() const = 0;
   
 public:
     UNITS_EXPORT Utf8CP GetName() const;
+    // TODO: Consider making private because it will changed depending on load order.
     UNITS_EXPORT int    GetId()   const;
     UNITS_EXPORT Utf8CP GetDefinition() const;
     UNITS_EXPORT double GetFactor() const;
@@ -69,9 +70,11 @@ struct Unit final: Symbol
     {
 DEFINE_T_SUPER(Symbol)
 friend struct UnitRegistry;
+friend struct Expression;
 
 private:
     Utf8String      m_system;
+    // TODO: Should this be a reference because it must be set?
     PhenomenonCP    m_phenomenon;
     bool            m_isConstant;
 
@@ -83,6 +86,10 @@ private:
     Unit() = delete;
     Unit (UnitCR unit) = delete;
     UnitR operator=(UnitCR unit) = delete;
+
+    Expression& Evaluate() const;
+
+    int GetPhenomenonId() const;
 
 public:
     UNITS_EXPORT double GetConversionTo(UnitCP unit) const;
@@ -99,6 +106,8 @@ struct Phenomenon final : Symbol
     {
 DEFINE_T_SUPER(Symbol)
 friend struct UnitRegistry;
+friend struct Expression;
+
 private:
     bvector<UnitCP> m_units;
 
@@ -110,10 +119,16 @@ private:
     Phenomenon(PhenomenonCR phenomenon) = delete;
     PhenomenonR operator=(PhenomenonCR phenomenon) = delete;
 
+    Expression& Evaluate() const;
+
+    int GetPhenomenonId() const { return GetId(); }
+
 public:
     UNITS_EXPORT Utf8String GetPhenomenonDimension() const;
 
     bool HasUnits() const { return m_units.size() > 0; }
     bvector<UnitCP> const GetUnits() const { return m_units; }
+
+    UNITS_EXPORT bool IsCompatible(UnitCR unit) const;
 };
 END_BENTLEY_UNITS_NAMESPACE

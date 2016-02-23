@@ -69,7 +69,12 @@ private:
     static BentleyStatus ParseDefinition(int& depth, Utf8CP definition, ExpressionR expression, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName);
     static BentleyStatus HandleToken(int& depth, ExpressionR expression, Utf8CP definition, TokenCR token, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName);
     static void MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExpression, Utf8CP sourceDefinition, ExpressionR sourceExpression, int startingExponent);
+    static void MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExpression,
+                                 Utf8CP sourceDefinition, ExpressionR sourceExpression,
+                                 int startingExponent, std::function<bool(SymbolCR, SymbolCR)> areEqual);
+    static bool ShareDimensions(PhenomenonCR phenomenon, UnitCR unit);
     static bool DimensionallyCompatible(ExpressionCR expressionA, ExpressionCR expressionB);
+    static bool DimensionallyCompatible(ExpressionCR expressionA, ExpressionCR expressionB, std::function<bool(SymbolCR, SymbolCR)> areEqual);
     static void CreateExpressionWithOnlyBaseSymbols(ExpressionCR source, ExpressionR target, bool copySymbols);
     };
 
