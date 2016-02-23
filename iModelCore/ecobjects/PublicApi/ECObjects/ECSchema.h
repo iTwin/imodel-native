@@ -1720,7 +1720,7 @@ struct KindOfQuantity : NonCopyableClass
         void SetDisplayLabel(Utf8CP value) { m_validatedName.SetDisplayLabel(value); }
 
         //! Gets the display label of this KindOfQuantity.  If no display label has been set explicitly, it will return the name of the KindOfQuantity
-        Utf8StringCR GetDisplayLabel() const { return m_validatedName.GetDisplayLabel() }
+        Utf8StringCR GetDisplayLabel() const { return m_validatedName.GetDisplayLabel(); }
 
         //! Sets the description of this KindOfQuantity
         void SetDescription(Utf8CP value) { m_description = value; }
