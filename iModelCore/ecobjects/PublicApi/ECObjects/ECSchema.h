@@ -50,6 +50,7 @@ typedef bmap<Utf8CP, ECPropertyP,    less_str>  PropertyMap;
 typedef bmap<Utf8CP, ECClassP,       less_str>  ClassMap;
 typedef bmap<Utf8CP, ECEnumerationP, less_str>  EnumerationMap;
 typedef bvector<ECEnumeratorP>                  EnumeratorList;
+typedef bmap<Utf8CP, KindOfQuantityP, less_str> KindOfQuantityMap;
 
 /*---------------------------------------------------------------------------------**//**
 * Used to hold property name and display label forECProperty, ECClass, and ECSchema.
@@ -1558,7 +1559,7 @@ friend struct SchemaXmlReaderImpl;
     public:
         //! The ECSchema that this enumeration is defined in
         ECOBJECTS_EXPORT ECSchemaCR GetSchema() const;
-        //! The name of this ECClass
+        //! The name of this Enumeration
         ECOBJECTS_EXPORT Utf8StringCR GetName() const;
         //! {SchemaName}:{EnumerationName} The pointer will remain valid as long as the ECEnumeration exists.
         ECOBJECTS_EXPORT Utf8StringCR GetFullName() const;
@@ -1669,6 +1670,63 @@ struct ECEnumerator : NonCopyableClass
         //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to a string Primitive
         //! @param[in] value The value to set
         ECOBJECTS_EXPORT ECObjectsStatus SetString(Utf8CP value);
+    };
+
+//=======================================================================================
+//! The in-memory representation of a KindOfQuantity as defined by ECSchemaXML
+//! @bsiclass
+//=======================================================================================
+struct KindOfQuantity : NonCopyableClass
+    {
+    friend struct ECSchema;
+    friend struct SchemaXmlWriter;
+    friend struct SchemaXmlReaderImpl;
+
+    private:
+        ECSchemaCR m_schema;
+        mutable Utf8String m_fullName;
+        ECValidatedName m_validatedName;
+        Utf8String m_description;
+
+        //  Lifecycle management:  The schema implementation will
+        //  serve as a factory for kind of quantities and will manage their lifecycle.
+        explicit KindOfQuantity(ECSchemaCR schema) : m_schema(schema) {};
+        ~KindOfQuantity() {};
+
+        // schemas index KindOfQuantity by name so publicly name can not be reset
+        void SetName(Utf8CP name);
+
+        /*SchemaReadStatus ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchemaReadContextR context);
+        SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const;*/
+
+    public:
+        //! The ECSchema that this kind of quantity is defined in
+        ECSchemaCR GetSchema() const { return m_schema; }
+
+        //! The name of this Instance
+        Utf8StringCR GetName() const { return m_validatedName.GetName(); }
+
+        //! {SchemaName}:{KindOfQuantityName} The pointer will remain valid as long as the KindOfQuantity exists.
+        ECOBJECTS_EXPORT Utf8StringCR GetFullName() const;
+        
+        //! Given a qualified enum name, will parse out the schema's namespace prefix and the kind of quantity name.
+        //! @param[out] prefix  The namespace prefix of the schema
+        //! @param[out] enumName   The name of the KindOfQuantity
+        //! @param[in]  stringToParse  The qualified name, in the format of {SchemaName}:{KindOfQuantityName}
+        //! @return A status code indicating whether the qualified name was successfully parsed or not
+        ECOBJECTS_EXPORT static ECObjectsStatus ParseFullName(Utf8StringR prefix, Utf8StringR kindOfQuantityName, Utf8StringCR stringToParse);
+
+        //! Sets the display label of this KindOfQuantity
+        void SetDisplayLabel(Utf8CP value) { m_validatedName.SetDisplayLabel(value); }
+
+        //! Gets the display label of this KindOfQuantity.  If no display label has been set explicitly, it will return the name of the KindOfQuantity
+        Utf8StringCR GetDisplayLabel() const { return m_validatedName.GetDisplayLabel() }
+
+        //! Sets the description of this KindOfQuantity
+        void SetDescription(Utf8CP value) { m_description = value; }
+
+        //! Gets the description of this KindOfQuantity.
+        Utf8StringCR GetDescription() const { return m_description; };
     };
 
 //---------------------------------------------------------------------------------------
@@ -2560,6 +2618,57 @@ struct ECEnumerationContainer
     };
 
 //=======================================================================================
+//! Supports STL like iterator of kind of quantities in a schema
+//! @bsiclass
+//=======================================================================================
+struct KindOfQuantityContainer
+    {
+    private:
+        friend struct ECSchema;
+        friend struct KindOfQuantity;
+
+        KindOfQuantityMap const&     m_koqMap;
+        KindOfQuantityContainer(KindOfQuantityMap const& koqMap) : m_koqMap(koqMap) {}; //public for test purposes only
+
+    public:
+        //=======================================================================================
+        // @bsistruct
+        //=======================================================================================
+        struct IteratorState : RefCountedBase
+            {
+            friend struct const_iterator;
+            public:
+                KindOfQuantityMap::const_iterator     m_mapIterator;
+
+                IteratorState(KindOfQuantityMap::const_iterator mapIterator) { m_mapIterator = mapIterator; };
+                static RefCountedPtr<IteratorState> Create(KindOfQuantityMap::const_iterator mapIterator) { return new IteratorState(mapIterator); };
+            };
+
+        //=======================================================================================
+        // @bsistruct
+        //=======================================================================================
+        struct const_iterator : std::iterator<std::forward_iterator_tag, KindOfQuantityP const>
+            {
+            private:
+                friend struct KindOfQuantityContainer;
+                RefCountedPtr<IteratorState>   m_state;
+
+                const_iterator(KindOfQuantityMap::const_iterator mapIterator) { m_state = IteratorState::Create(mapIterator); };
+                const_iterator(char*) { ; } // must publish at least one private constructor to prevent instantiation
+
+            public:
+                ECOBJECTS_EXPORT const_iterator&       operator++(); //!< Increments the iterator
+                ECOBJECTS_EXPORT bool                  operator!=(const_iterator const& rhs) const; //!< Checks for inequality
+                ECOBJECTS_EXPORT bool                  operator==(const_iterator const& rhs) const; //!< Checks for equality
+                ECOBJECTS_EXPORT ECEnumerationP const& operator* () const; //!< Returns the value at the current location
+            };
+
+    public:
+        ECOBJECTS_EXPORT const_iterator begin() const; //!< Returns the beginning of the iterator
+        ECOBJECTS_EXPORT const_iterator end()   const; //!< Returns the end of the iterator
+    };
+
+//=======================================================================================
 //! Interface to find a standalone enabler, typically for an embedded ECStruct in an ECInstance.
 //! @bsiclass
 //=======================================================================================
@@ -2767,10 +2876,12 @@ private:
     Utf8String              m_description;
     ECClassContainer        m_classContainer;
     ECEnumerationContainer  m_enumerationContainer;
+    KindOfQuantityContainer m_kindOfQuantityContainer;
 
     // maps class name -> class pointer
     ClassMap                    m_classMap;
     EnumerationMap              m_enumerationMap;
+    KindOfQuantityMap           m_kindOfQuantityMap;
     ECSchemaReferenceList       m_refSchemaList;
     bool                        m_isSupplemented;
     bool                        m_hasExplicitDisplayLabel;
@@ -2790,8 +2901,10 @@ private:
     void                                SetIsSupplemented(bool isSupplemented);
 
     void                                FindUniqueClassName(Utf8StringR newName, Utf8CP originalName);
+    bool                                NamedElementExists(Utf8CP name);
     ECObjectsStatus                     AddClass (ECClassP pClass, bool resolveConflicts = false);
     ECObjectsStatus                     AddEnumeration(ECEnumerationP pEnumeration);
+    ECObjectsStatus                     AddKindOfQuantity(KindOfQuantityP valueToAdd);
     ECObjectsStatus                     SetVersionFromString (Utf8CP versionString);
     ECObjectsStatus                     CopyConstraints(ECRelationshipConstraintR toRelationshipConstraint, ECRelationshipConstraintR fromRelationshipConstraint);
 
@@ -2864,7 +2977,9 @@ public:
     //! Returns an iterable container of ECClasses sorted by name. For unsorted called overload.
     ECOBJECTS_EXPORT ECClassContainerCR GetClasses() const;
     //! Returns an iterable container of ECClasses sorted by name. For unsorted called overload.
-    ECOBJECTS_EXPORT ECEnumerationContainerCR GetEnumerations() const;
+    ECEnumerationContainerCR GetEnumerations() const { return m_enumerationContainer; }
+    //! Returns an iterable container of ECClasses sorted by name. For unsorted called overload.
+    KindOfQuantityContainerCR GetKindOfQuantities() const { return m_kindOfQuantityContainer; }
     //! Removes an enumeration from this schema.
     ECOBJECTS_EXPORT ECObjectsStatus    DeleteEnumeration(ECEnumerationR ecEnumeration);
     
@@ -2891,10 +3006,13 @@ public:
     ECOBJECTS_EXPORT bool IsSystemSchema () const;
 
     //! Gets the number of classes in the schema
-    ECOBJECTS_EXPORT uint32_t           GetClassCount() const;
+    uint32_t           GetClassCount() const { return (uint32_t) m_classMap.size(); }
 
     //! Gets the number of enumerations in the schema
-    ECOBJECTS_EXPORT uint32_t           GetEnumerationCount() const;
+    uint32_t           GetEnumerationCount() const { return (uint32_t) m_enumerationMap.size(); }
+
+    //! Gets the number of kind of quantity in the schema
+    uint32_t           GetKindOfQuantityCount() const { return (uint32_t) m_kindOfQuantityMap.size(); }
 
     //! Returns true if the display label has been set explicitly for this schema or not
     ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
@@ -2954,6 +3072,12 @@ public:
     //! @return A status code indicating whether or not the class was successfully created and added to the schema
     ECOBJECTS_EXPORT ECObjectsStatus    CreateRelationshipClass (ECRelationshipClassP& relationshipClass, Utf8StringCR name);
 
+    //! Creates a new KindOfQuantity and adds it to the schema.
+    //! @param[out] If successful, will contain a new KindOfQuantity object
+    //! @param[in] name    Name of the object to create
+    //! @return A status code indicating whether or not the object was successfully created and added to the schema
+    ECOBJECTS_EXPORT ECObjectsStatus    CreateKindOfQuantity(KindOfQuantityP& kindOfQuantity, Utf8CP name);
+
     //! Creates a new ECEnumeration and adds it to the schema.
     //! @param[out] ecEnumeration If successful, will contain a new ECEnumeration object
     //! @param[in] name    Name of the enumeration to create
@@ -2986,12 +3110,22 @@ public:
     //! Get an enumeration by name within the context of this schema.
     //! @param[in]  name     The name of the enumeration to lookup.  This must be an unqualified (short) name.
     //! @return   A const pointer to an ECN::ECEnumeration if the named enumeration exists in within the current schema; otherwise, nullptr
-    ECOBJECTS_EXPORT ECEnumerationCP          GetEnumerationCP(Utf8CP name) const;
+    ECEnumerationCP          GetEnumerationCP(Utf8CP name) const { return const_cast<ECSchemaP> (this)->GetEnumerationP(name); }
 
     //! Get an enumeration by name within the context of this schema.
     //! @param[in]  name     The name of the enumeration to lookup.  This must be an unqualified (short) name.
     //! @return   A const pointer to an ECN::ECEnumeration if the named enumeration exists in within the current schema; otherwise, nullptr
     ECOBJECTS_EXPORT ECEnumerationP           GetEnumerationP(Utf8CP name);
+
+    //! Get a kind of quantity by name within the context of this schema.
+    //! @param[in]  name     The name of the kind of quantity to lookup.  This must be an unqualified (short) name.
+    //! @return   A const pointer to an ECN::KindOfQuantity if the named kind of quantity exists in within the current schema; otherwise, nullptr
+    KindOfQuantityCP          GetKindOfQuantityCP(Utf8CP name) const { return const_cast<ECSchemaP> (this)->GetKindOfQuantityP(name); }
+
+    //! Get an kind of quantity by name within the context of this schema.
+    //! @param[in]  name     The name of the kind of quantity to lookup.  This must be an unqualified (short) name.
+    //! @return   A const pointer to an ECN::KindOfQuantity if the named enumeration exists in within the current schema; otherwise, nullptr
+    ECOBJECTS_EXPORT KindOfQuantityP           GetKindOfQuantityP(Utf8CP name);
 
     //! Gets the other schemas that are used by classes within this schema.
     //! Referenced schemas are the schemas that contain definitions of base classes,

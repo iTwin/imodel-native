@@ -120,6 +120,8 @@ $(o)ECClass$(oext)                                         : $(baseDir)ECClass.c
 
 $(o)ECEnumeration$(oext)                                         : $(baseDir)ECEnumeration.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
+$(o)KindOfQuantity$(oext)                                         : $(baseDir)KindOfQuantity.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
 $(o)ECProperty$(oext)                                      : $(baseDir)ECProperty.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
 $(o)ECInstance$(oext)                                      : $(baseDir)ECInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
