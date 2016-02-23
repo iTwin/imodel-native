@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/GradientSettings.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,7 +13,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //=======================================================================================
 //! Holds all the values to be persisted for gradient fill.
 // @bsiclass                                                     RayBentley      10/02
-struct          GradientSettings : public GradientSymb
+struct          GradientSettings : public Render::GradientSymb
 {
 private:
 
