@@ -722,7 +722,7 @@ RepositoryStatus BriefcaseManager::_Relinquish(Resources which)
     RepositoryStatus stat;
     if (!Validate(&stat))
         return stat;
-    else if (nullptr == (server = GetRepositoryManager()))
+    if (nullptr == (server = GetRepositoryManager()))
         return RepositoryStatus::ServerUnavailable;
 
     bool wantLocks = Resources::Locks == (which & Resources::Locks),
@@ -731,9 +731,9 @@ RepositoryStatus BriefcaseManager::_Relinquish(Resources which)
     ReleaseContext context(GetDgnDb(), wantLocks, wantCodes);
     if (RepositoryStatus::Success != context.GetStatus())
         return context.GetStatus();
-    else if (!context.GetUsedLocks().IsEmpty())
+    if (!context.GetUsedLocks().IsEmpty())
         return RepositoryStatus::LockUsed;
-    else if (!context.GetUsedCodes().empty())
+    if (!context.GetUsedCodes().empty())
         return RepositoryStatus::CodeUsed;
 
     DbResult result = wantLocks ? GetLocalDb().ExecuteSql("DELETE FROM " TABLE_Locks) : BE_SQLITE_OK;
@@ -788,7 +788,7 @@ RepositoryStatus BriefcaseManager::_Demote(DgnLockSet& locks, DgnCodeSet const& 
         stat = QueryLockLevel(curLevel, lock.GetLockableId());
         if (RepositoryStatus::Success != stat)
             return stat;
-        else if (curLevel <= lock.GetLevel())
+        if (curLevel <= lock.GetLevel())
             iter = locks.erase(iter);
         else
             ++iter;

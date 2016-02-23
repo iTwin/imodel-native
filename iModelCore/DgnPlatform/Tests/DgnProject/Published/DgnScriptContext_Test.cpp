@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #ifndef BENTLEYCONFIG_NO_JAVASCRIPT
 #include "DgnHandlersTests.h"
+#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnScript.h>
 #include <DgnPlatform/GenericDomain.h>
@@ -232,6 +233,10 @@ TEST_F(DgnScriptTest, RunScripts)
     DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, /*needBriefcase*/false);
     DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE(project != NULL);
+
+    auto status = BentleyApi::DPTest::DgnPlatformTestDomain::GetDomain().ImportSchema(*project);
+    ASSERT_TRUE(DgnDbStatus::Success == status);
+
     DgnModelPtr model = project->Models().GetModel(project->Models().QueryFirstModelId());
     model->FillModel();
     Json::Value parms = Json::objectValue;

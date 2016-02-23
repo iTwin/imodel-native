@@ -191,7 +191,7 @@ DgnDbStatus DgnMaterial::_OnChildImport(DgnElementCR child, DgnModelR destModel,
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnMaterial::Iterator DgnMaterial::Iterator::Create(DgnDbR db, Options const& options)
     {
-    Utf8String ecsql("SELECT ECInstanceId,Code.[Value],Code.[Namespace],ParentId,Descr FROM " DGN_SCHEMA(DGN_CLASSNAME_MaterialElement));
+    Utf8String ecsql("SELECT ECInstanceId,Code.Value,Code.Namespace,ParentId,Descr FROM " DGN_SCHEMA(DGN_CLASSNAME_MaterialElement));
     if (options.m_byPalette)
         ecsql.append(" WHERE Code.[Namespace]=?");
 
@@ -199,7 +199,7 @@ DgnMaterial::Iterator DgnMaterial::Iterator::Create(DgnDbR db, Options const& op
         ecsql.append(options.m_byPalette ? " AND " : " WHERE ").append("ParentId=?");
 
     if (options.m_ordered)
-        ecsql.append(" ORDER BY Code.[Namespace],Code.[Value]");
+        ecsql.append(" ORDER BY Code.Namespace,Code.[Value]");
 
     Iterator iter;
     ECSqlStatement* stmt = iter.Prepare(db, ecsql.c_str(), 0);
@@ -234,7 +234,7 @@ DgnMaterialId DgnMaterial::ImportMaterial(DgnMaterialId srcMaterialId, DgnImport
     BeAssert(srcMaterial.IsValid());
     if (!srcMaterial.IsValid())
         {
-        BeAssert(false && "invalid source material ID");
+        BeAssert(false);
         return DgnMaterialId();
         }
 
@@ -258,23 +258,14 @@ DgnMaterialId DgnMaterial::ImportMaterial(DgnMaterialId srcMaterialId, DgnImport
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnMaterial::_RemapIds(DgnImportContext& importer)
     {
-#ifdef MERGE_CONFLICT
     T_Super::_RemapIds(importer);
+
     if (!importer.IsBetweenDbs())
         return;
 
     JsonRenderMaterial material;
-    material.Load(
-    Json::Value renderingAsset;
-    if (SUCCESS == GetRenderingAsset(renderingAsset))
-        {
-        RenderMaterialPtr       renderMaterial = JsonRenderMaterial::Create (renderingAsset, DgnMaterialId());
-        JsonRenderMaterial*     jsonRenderMaterial = dynamic_cast <JsonRenderMaterial*> (renderMaterial.get());
-
-        if (nullptr != jsonRenderMaterial && BSISUCCESS == jsonRenderMaterial->RelocateToDestination(importer))
-           SetRenderingAsset (jsonRenderMaterial->GetValue());
-        }
-#endif
+    if (SUCCESS==GetRenderingAsset(material.GetValueR()) && SUCCESS==material.Relocate(importer))
+        SetRenderingAsset(material.GetValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
