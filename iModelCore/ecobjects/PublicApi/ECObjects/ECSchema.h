@@ -2213,25 +2213,22 @@ struct SchemaKey
 
     //! Compares two schema names and returns whether the target schema matches this m_schemaName. Comparison is case-sensitive
     //! @param[in]  schemaName  The schema name to compare to
-    ECOBJECTS_EXPORT int  CompareByName (Utf8String schemaName) const;
+    ECOBJECTS_EXPORT int CompareByName(Utf8StringCR schemaName) const;
+
+    //! Compares the schema version of this key to the schema version of @p rhs.
+    //! @param[in] rhs Right-hand side schema key
+    //! @return a negative number if the LHS version is less than the RHS version, a positive number if LHS version is
+    //! greater than the RHS version, 0 if the versions are the same.
+    ECOBJECTS_EXPORT int CompareByVersion(SchemaKeyCR rhs) const;
 
     //! Returns whether this SchemaKey is Identical to the target SchemaKey
-    bool operator == (SchemaKeyCR rhs) const
-        {
-        return Matches(rhs, SchemaMatchType::Identical);
-        }
+    bool operator == (SchemaKeyCR rhs) const { return Matches(rhs, SchemaMatchType::Identical); }
 
     //! Returns true if the target SchemaKey is not Identical to this SchemaKey, false otherwise
-    bool operator != (SchemaKeyCR rhs) const
-        {
-        return !(*this == rhs);
-        }
+    bool operator != (SchemaKeyCR rhs) const { return !(*this == rhs); }
 
     //! Returns whether this SchemaKey's checksum is less than the target SchemaKey's.
-    bool operator < (SchemaKeyCR rhs) const
-        {
-        return LessThan (rhs, SchemaMatchType::Identical);
-        }
+    bool operator < (SchemaKeyCR rhs) const { return LessThan (rhs, SchemaMatchType::Identical); }
 
     Utf8StringCR GetName() const {return m_schemaName;}
     uint32_t GetVersionMajor() const { return m_versionMajor; };
@@ -2702,7 +2699,7 @@ private:
     ECSchemaReadContextCR schemaContext
     );
 
-    static bool SchemyKeyIsLessByVersion(CandidateSchema const& first, CandidateSchema const& second);
+    static bool SchemyKeyIsLessByVersion(CandidateSchema const& lhs, CandidateSchema const& rhs);
 
 protected:
     virtual ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override;

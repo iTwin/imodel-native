@@ -1643,18 +1643,9 @@ ECSchemaReadContextCR schemaContext
     }
 
 //Returns true if the first element goes before the second
-bool SearchPathSchemaFileLocater::SchemyKeyIsLessByVersion(CandidateSchema const& first, CandidateSchema const& second)
+bool SearchPathSchemaFileLocater::SchemyKeyIsLessByVersion(CandidateSchema const& lhs, CandidateSchema const& rhs)
     {
-    auto& left = first.Key;
-    auto& right = second.Key;
-
-    if (left.m_versionMajor != right.m_versionMajor)
-        return left.m_versionMajor < right.m_versionMajor;
-
-    if (left.m_versionWrite != right.m_versionWrite)
-        return left.m_versionWrite < right.m_versionWrite;
-
-    return left.m_versionMinor < right.m_versionMinor;
+    return lhs.Key.CompareByVersion(rhs.Key) < 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2875,12 +2866,28 @@ void            ECSchema::SetImmutable()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-int             SchemaKey::CompareByName (Utf8String schemaName) const
+int SchemaKey::CompareByName (Utf8StringCR schemaName) const
     {
     // TFS#223524: This was added to do case-insensitive comparison, but it is being used inappropriately.
     // ECSchema names are case-sensitive. If there are particular contexts in which case should be disregarded,
     // the code that handles those contexts should do so explicitly.
     return strcmp (m_schemaName.c_str(), schemaName.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  02/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+int SchemaKey::CompareByVersion(SchemaKeyCR rhs) const
+    {
+    SchemaKeyCR lhs = *this;
+
+    if (lhs.m_versionMajor != rhs.m_versionMajor)
+        return lhs.m_versionMajor - rhs.m_versionMajor;
+
+    if (lhs.m_versionWrite != rhs.m_versionWrite)
+        return lhs.m_versionWrite - rhs.m_versionWrite;
+
+    return lhs.m_versionMinor - rhs.m_versionMinor;
     }
 
 /*---------------------------------------------------------------------------------**//**
