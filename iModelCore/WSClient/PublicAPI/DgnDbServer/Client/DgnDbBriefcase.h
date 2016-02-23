@@ -15,6 +15,7 @@
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
+
 typedef std::shared_ptr<struct DgnDbBriefcase> DgnDbBriefcasePtr;
 
 //=======================================================================================
@@ -25,34 +26,32 @@ struct DgnDbBriefcase
 {
 //__PUBLISH_SECTION_END__
 private:
-    DgnDbRepositoryConnectionPtr m_repositoryConnection;
-    Dgn::DgnDbPtr m_db;
-    DgnDbBriefcase(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection);
+    static const int              s_maxDelayTime = 5000;
 
-    static const int s_maxDelayTime = 5000;
+    DgnDbRepositoryConnectionPtr  m_repositoryConnection;
+    Dgn::DgnDbPtr                 m_db;
 
-    AsyncTaskPtr<DgnDbResult> PullMergeAndPushInternal(HttpRequest::ProgressCallbackCR downloadCallback = nullptr,
-    HttpRequest::ProgressCallbackCR uploadCallback = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
+    DgnDbBriefcase (Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection);
 
-    AsyncTaskPtr<DgnDbResult> PullMergeAndPushRepeated(HttpRequest::ProgressCallbackCR downloadCallback = nullptr,
-    HttpRequest::ProgressCallbackCR uploadCallback = nullptr, ICancellationTokenPtr cancellationToken = nullptr, 
-    int attemptsCount = 1, int attempt = 1, int delay = 0);
+    AsyncTaskPtr<DgnDbResult> PullMergeAndPushInternal (HttpRequest::ProgressCallbackCR downloadCallback = nullptr, HttpRequest::ProgressCallbackCR uploadCallback = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
+    AsyncTaskPtr<DgnDbResult> PullMergeAndPushRepeated (HttpRequest::ProgressCallbackCR downloadCallback = nullptr, HttpRequest::ProgressCallbackCR uploadCallback = nullptr, ICancellationTokenPtr cancellationToken = nullptr, 
+                                                        int attemptsCount = 1, int attempt = 1, int delay = 0);
 
-//__PUBLISH_SECTION_START__
 public:
     //! Create an instance of a briefcase from previously downloaded briefcase file.
     //! @param[in] db Briefcase file.
     //! @param[in] connection Connection to a repository on server.
     //! @return Returns shared pointer of the created instance.
     //! @note OpenBriefcase in DgnDbClient is used to create an instance of a DgnDbBriefcase.
-    static DgnDbBriefcasePtr Create(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection);
+    static DgnDbBriefcasePtr                               Create                  (Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection);
 
+//__PUBLISH_SECTION_START__
+public:
     //! Pull and merge incomming revisions.
     //! @param[in] callback Download progress callback.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that returns success or an error.
-    DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnDbResult> PullAndMerge(HttpRequest::ProgressCallbackCR callback = nullptr,
-    ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnDbResult>     PullAndMerge            (HttpRequest::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Pull and merge incomming revisions and then send the outgoing revisions.
     //! @param[in] downloadCallback Download progress callback.
@@ -60,13 +59,14 @@ public:
     //! @param[in] cancellationToken
     //! @param[in] attemptsCount Maximum count of retries if fail.
     //! @return Asynchronous task that returns success or an error.
-    DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnDbResult> PullMergeAndPush(HttpRequest::ProgressCallbackCR downloadCallback = nullptr,
-    HttpRequest::ProgressCallbackCR uploadCallback = nullptr, ICancellationTokenPtr cancellationToken = nullptr, int attemptsCount = 1);
+    DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnDbResult>     PullMergeAndPush        (HttpRequest::ProgressCallbackCR downloadCallback = nullptr, HttpRequest::ProgressCallbackCR uploadCallback = nullptr,
+                                                                                    ICancellationTokenPtr cancellationToken = nullptr, int attemptsCount = 1);
 
-    DGNDBSERVERCLIENT_EXPORT Dgn::DgnDbR GetDgnDb(); //!< Briefcase file.
-    DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryConnectionPtr GetRepositoryConnection(); //!< Connection to a repository on server.
-    DGNDBSERVERCLIENT_EXPORT BeSQLite::BeBriefcaseId GetBriefcaseId (); //!< Briefcase Id.
-    DGNDBSERVERCLIENT_EXPORT Utf8String GetLastRevisionPulled (); //!< Last revision that was pulled by this briefcase.
+    DGNDBSERVERCLIENT_EXPORT Dgn::DgnDbR                   GetDgnDb                (); //!< Briefcase file.
+    DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryConnectionPtr  GetRepositoryConnection (); //!< Connection to a repository on server.
+    DGNDBSERVERCLIENT_EXPORT BeSQLite::BeBriefcaseId       GetBriefcaseId          (); //!< Briefcase Id.
+    DGNDBSERVERCLIENT_EXPORT Utf8String                    GetLastRevisionPulled   (); //!< Last revision that was pulled by this briefcase.
 
 };
+
 END_BENTLEY_DGNDBSERVER_NAMESPACE

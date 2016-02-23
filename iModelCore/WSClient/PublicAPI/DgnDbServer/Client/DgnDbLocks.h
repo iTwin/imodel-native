@@ -14,13 +14,16 @@
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
+
 typedef std::shared_ptr<struct DgnDbRepositoryManager> DgnDbRepositoryManagerPtr;
+
 //=======================================================================================
 //! 
 // @bsiclass                                      Karolis.Dziedzelis             10/2015
 //=======================================================================================
 struct DgnDbRepositoryManager : public IRepositoryManager
-    {
+{
+//__PUBLISH_SECTION_END__
 private:
     DgnDbRepositoryConnectionPtr m_connection;
     ICancellationTokenPtr        m_cancellationToken;
@@ -29,7 +32,7 @@ private:
     IHttpHandlerPtr              m_customHandler;
 
 protected:
-    DgnDbRepositoryManager(WebServices::ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler);
+    DgnDbRepositoryManager (WebServices::ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler);
 
     virtual Response                      _ProcessRequest       (Request const& req, DgnDbR db) override;
     virtual RepositoryStatus              _Demote               (DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db) override;
@@ -41,7 +44,10 @@ public:
     static DgnDbRepositoryManagerPtr      Create                (WebServices::ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler = nullptr);
     void                                  SetCredentials        (CredentialsCR credentials) { m_credentials = credentials; };
 
+//__PUBLISH_SECTION_START__
+public:
     DGNDBSERVERCLIENT_EXPORT DgnDbResult  Connect               (DgnDbCR db);
     DGNDBSERVERCLIENT_EXPORT void         SetCancellationToken  (ICancellationTokenPtr cancellationToken);
-    };
+};
+
 END_BENTLEY_DGNDBSERVER_NAMESPACE
