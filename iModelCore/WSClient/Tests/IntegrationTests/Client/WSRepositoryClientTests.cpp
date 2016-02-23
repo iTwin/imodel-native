@@ -42,9 +42,9 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_ConnectGlobalProjectQueryWithCo
     Utf8String repositoryId = "BentleyCONNECT.Global--CONNECT.GLOBAL";
     Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
 
-    ConnectSignInManager manager;
-    ASSERT_TRUE(manager.SignInWithCredentials(credentials)->GetResult().IsSuccess());
-    auto authHandler = manager.GetAuthenticationHandler(serverUrl, proxy);
+    auto manager = ConnectSignInManager::Create();
+    ASSERT_TRUE(manager->SignInWithCredentials(credentials)->GetResult().IsSuccess());
+    auto authHandler = manager->GetAuthenticationHandler(serverUrl, proxy);
 
     auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, authHandler);
 
