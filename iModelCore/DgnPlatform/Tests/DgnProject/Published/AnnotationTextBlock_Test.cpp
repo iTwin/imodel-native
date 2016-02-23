@@ -1,6 +1,6 @@
 ﻿//-------------------------------------------------------------------------------------- 
 //     $Source: Tests/DgnProject/Published/AnnotationTextBlock_Test.cpp $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include "AnnotationTestFixture.h"
@@ -303,6 +303,7 @@ TEST_F(AnnotationTextBlockTest, CreateAnnotationTextBlock)
     // Create Annotation Paragraph
     AnnotationTextRunPtr run = createAnnotationTextRun(project, testStyle);
     AnnotationParagraphPtr para = createAnnotationParagraph(project, testStyle, run);
+    para->SetStyleId(testStyle->GetElementId(), SetAnnotationTextStyleOptions::Direct);
 
     //.............................................................................................
     // Create with annotation paragraph
@@ -353,8 +354,11 @@ TEST_F(AnnotationTextBlockTest, Unicode)
     ASSERT_TRUE(testStyle.IsValid());
 
     AnnotationTextRunPtr run = createAnnotationTextRun(project, testStyle);
-    //AnnotationTextStylePtr testSytle = createAnnotationTextStyle(project, "");
+    AnnotationLineBreakRunPtr brkRun = AnnotationLineBreakRun::Create(project, testStyle->GetElementId());
+    ASSERT_TRUE(brkRun.IsValid());
     AnnotationParagraphPtr para = createAnnotationParagraph(project, testStyle, run);
+    para->GetRunsR().push_back(brkRun);
+
     //.............................................................................................
     // Create with contents
 
@@ -363,9 +367,9 @@ TEST_F(AnnotationTextBlockTest, Unicode)
     contentStr.ConvertToLocaleChars(contents);
     AnnotationTextBlockPtr doc6 = AnnotationTextBlock::Create(project, testStyle->GetElementId(), contents);
     ASSERT_TRUE(doc6.IsValid());
-
+    
     EXPECT_TRUE(testStyle->GetElementId() == doc6->GetStyleId());
-    ASSERT_TRUE(1 == doc6->GetParagraphsR().at(0)->GetRunsR().size());
+    ASSERT_TRUE(2 == doc6->GetParagraphsR().at(0)->GetRunsR().size());
     AnnotationTextRunP textRun = dynamic_cast<AnnotationTextRunP>(doc6->GetParagraphsR().at(0)->GetRunsR().at(0).get());
     ASSERT_STREQ(contents, textRun->GetContent().c_str());
 }

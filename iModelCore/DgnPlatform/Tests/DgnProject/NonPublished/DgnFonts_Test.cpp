@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/DgnFonts_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -86,6 +86,9 @@ TEST_F(FontTests, CRUD_DbFontMapDirect)
     EXPECT_TRUE(shxFont->GetName() == toFind->GetName());
     EXPECT_TRUE(shxFont->GetType() == toFind->GetType());
 
+    toFind = map.QueryByTypeAndName(DgnFontType::Shx, "NotExist");
+    EXPECT_TRUE(!toFind.IsValid());
+
     toFind = map.QueryByTypeAndName(DgnFontType::Shx, "Cdm");
     EXPECT_TRUE(toFind.IsValid());
 
@@ -95,15 +98,21 @@ TEST_F(FontTests, CRUD_DbFontMapDirect)
     DgnFontId idToFind = map.QueryIdByTypeAndName(DgnFontType::Shx, "Cdm");
     EXPECT_TRUE(idToFind.IsValid());
 
+    idToFind = map.QueryIdByTypeAndName(DgnFontType::Shx, "NotExist");
+    EXPECT_TRUE(!idToFind.IsValid());
+
     // Update 
-    //
-    
-    //
-    //EXPECT_TRUE(SUCCESS == map.Update(*shxFont, fontId1));
-    //toFind = map.QueryById(fontId1);
-    //EXPECT_TRUE(toFind.IsValid());
-    //EXPECT_TRUE(shxFont->GetName() == toFind->GetName());
-    //EXPECT_TRUE(shxFont->GetType() == toFind->GetType());
+    DgnShxFontP shxFont2 = (DgnShxFontP)shxFont.get();
+    ASSERT_TRUE(nullptr != shxFont2);
+    DgnShxFont::Metadata shxMetadata = shxFont2->GetMetadataR();
+    shxMetadata.m_codePage = LangCodePage::Unicode;
+    EXPECT_TRUE(SUCCESS == map.Update(*shxFont, fontId1));
+    toFind = map.QueryById(fontId1);
+    EXPECT_TRUE(toFind.IsValid());
+    DgnShxFont::Metadata shxMetadataUpdated = ((DgnShxFontP)toFind.get())->GetMetadataR();
+    EXPECT_TRUE(shxFont->GetName() == toFind->GetName());
+    EXPECT_TRUE(shxFont->GetType() == toFind->GetType()); 
+    EXPECT_TRUE(LangCodePage::Unicode == shxMetadataUpdated.m_codePage);
 
     // Delete
     //
@@ -171,6 +180,63 @@ TEST_F(FontTests, CreateMissingFont)
     EXPECT_TRUE(!font3->IsResolved());
 
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Umar.Hayat     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(FontTests, EmbedTTFont)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"EmbedTTFont.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+
+    DgnFonts& dbFonts = m_db->Fonts();
+
+    BeFileName ttfFontPath;
+    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(ttfFontPath, L"Fonts\\Teleindicadores1.ttf", L"Teleindicadores1.ttf", __FILE__)) << "Unable to test file";
+    bvector<BeFileName> pathList;
+    pathList.push_back(ttfFontPath);
+    T_DgnFontPtrs ttfFontList = DgnFontPersistence::File::FromTrueTypeFiles(pathList, nullptr);
+    ASSERT_TRUE(1 == ttfFontList.size());
+    DgnFontPtr ttfFont = ttfFontList.at(0);
+    
+    // Insert
+    // 
+    DgnFontId fontId2;
+    EXPECT_TRUE(SUCCESS == dbFonts.DbFontMap().Insert(*ttfFont, fontId2));
+    EXPECT_TRUE(fontId2.IsValid());
+
+    EXPECT_FALSE(DgnFontPersistence::Db::IsAnyFaceEmbedded(*ttfFont, dbFonts.DbFaceData()));
+
+    EXPECT_TRUE(SUCCESS == DgnFontPersistence::Db::Embed(dbFonts.DbFaceData(), *ttfFont));
+    EXPECT_TRUE(DgnFontPersistence::Db::IsAnyFaceEmbedded(*ttfFont, dbFonts.DbFaceData()));
+
+    EXPECT_TRUE(DbResult::BE_SQLITE_OK ==  m_db->SaveChanges("Font embedded"));
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Umar.Hayat     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(FontTests, EmbedSHxFont)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"EmbedSHxFont.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+
+    DgnFonts& dbFonts = m_db->Fonts();
+
+    BeFileName shxFilepath;
+    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(shxFilepath, L"Fonts\\Cdm.shx", L"Cdm.shx", __FILE__)) << "Unable to test file";
+    DgnFontPtr shxFont = DgnFontPersistence::File::FromShxFile(shxFilepath);
+
+    // Insert
+    // 
+    DgnFontId fontId1;
+    EXPECT_TRUE(SUCCESS == dbFonts.DbFontMap().Insert(*shxFont, fontId1));
+    EXPECT_TRUE(fontId1.IsValid());
+
+    EXPECT_FALSE(DgnFontPersistence::Db::IsAnyFaceEmbedded(*shxFont, dbFonts.DbFaceData()));
+
+    EXPECT_TRUE(SUCCESS == DgnFontPersistence::Db::Embed(dbFonts.DbFaceData(), *shxFont));
+    EXPECT_TRUE(DgnFontPersistence::Db::IsAnyFaceEmbedded(*shxFont, dbFonts.DbFaceData()));
+
+    EXPECT_TRUE(DbResult::BE_SQLITE_OK ==  m_db->SaveChanges("Font embedded"));
+    }
+
 #if defined (BENTLEY_WIN32) // Windows Desktop-only
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat     09/15
@@ -184,3 +250,102 @@ TEST_F(FontTests, RegistryFonts)
     EXPECT_TRUE(font->IsResolved());
     }
 #endif
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Umar.Hayat     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(FontTests, EmbeddedInUserDefinedFontTable)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"EmbedTTFont.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+
+    DgnFonts dbFonts(*m_db, "TestFontTable");
+    ASSERT_TRUE( SUCCESS  == dbFonts.DbFontMap().CreateFontTable());
+
+    BeFileName ttfFontPath;
+    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(ttfFontPath, L"Fonts\\Teleindicadores1.ttf", L"Teleindicadores1.ttf", __FILE__)) << "Unable to test file";
+    bvector<BeFileName> pathList;
+    pathList.push_back(ttfFontPath);
+    T_DgnFontPtrs ttfFontList = DgnFontPersistence::File::FromTrueTypeFiles(pathList, nullptr);
+    ASSERT_TRUE(1 == ttfFontList.size());
+    DgnFontPtr ttfFont = ttfFontList.at(0);
+    
+    // Insert
+    // 
+    DgnFontId fontId2;
+    EXPECT_TRUE(SUCCESS == dbFonts.DbFontMap().Insert(*ttfFont, fontId2));
+    EXPECT_TRUE(fontId2.IsValid());
+
+    EXPECT_FALSE(DgnFontPersistence::Db::IsAnyFaceEmbedded(*ttfFont, dbFonts.DbFaceData()));
+
+    EXPECT_TRUE(SUCCESS == DgnFontPersistence::Db::Embed(dbFonts.DbFaceData(), *ttfFont));
+    EXPECT_TRUE(DgnFontPersistence::Db::IsAnyFaceEmbedded(*ttfFont, dbFonts.DbFaceData()));
+
+    EXPECT_TRUE(DbResult::BE_SQLITE_OK ==  m_db->SaveChanges("Font embedded"));
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Umar.Hayat     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(FontTests, DbFaceDataDirect)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"DbFaceDataDirect.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+
+    DgnFonts& dbFonts = m_db->Fonts();
+    DgnFonts::DbFaceDataDirect& faceData = dbFonts.DbFaceData();
+    const static int FontDataSize = 10;
+    Byte fontDummyData[FontDataSize] = {1,2,3,4,5,6,7,8,9,10};
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Insert
+    DgnFonts::DbFaceDataDirect::FaceKey key1a(DgnFontType::TrueType, "Exton Fonts", DgnFonts::DbFaceDataDirect::FaceKey::FACE_NAME_Regular);
+    DgnFonts::DbFaceDataDirect::FaceKey key1b(DgnFontType::TrueType, "Exton Fonts", DgnFonts::DbFaceDataDirect::FaceKey::FACE_NAME_Bold);
+    DgnFonts::DbFaceDataDirect::FaceKey key1c(DgnFontType::TrueType, "Exton Fonts", DgnFonts::DbFaceDataDirect::FaceKey::FACE_NAME_Italic);
+    DgnFonts::DbFaceDataDirect::FaceKey key1d(DgnFontType::TrueType, "Exton Fonts", DgnFonts::DbFaceDataDirect::FaceKey::FACE_NAME_BoldItalic);
+    DgnFonts::DbFaceDataDirect::FaceKey key2a(DgnFontType::Shx, "Islamabad Fonts", DgnFonts::DbFaceDataDirect::FaceKey::FACE_NAME_Regular);
+    DgnFonts::DbFaceDataDirect::FaceKey key3a(DgnFontType::Rsc, "Islamabad Fonts", DgnFonts::DbFaceDataDirect::FaceKey::FACE_NAME_BoldItalic);
+    DgnFonts::DbFaceDataDirect::FaceKey unusedKey(DgnFontType::TrueType, "UnUsed Fonts", DgnFonts::DbFaceDataDirect::FaceKey::FACE_NAME_BoldItalic);
+    DgnFonts::DbFaceDataDirect::T_FaceMap faceMap1;
+    DgnFonts::DbFaceDataDirect::T_FaceMap faceMap2;
+    DgnFonts::DbFaceDataDirect::T_FaceMap faceMap3;
+    faceMap1.Insert(0, key1a);
+    faceMap1.Insert(1, key1b);
+    faceMap1.Insert(2, key1c);
+    faceMap1.Insert(3, key1d);
+    faceMap2.Insert(0, key2a);
+    faceMap3.Insert(0, key3a);
+    EXPECT_TRUE(SUCCESS == faceData.Insert(fontDummyData, FontDataSize, faceMap1));
+    EXPECT_TRUE(SUCCESS == faceData.Insert(fontDummyData, FontDataSize, faceMap2));
+    EXPECT_TRUE(SUCCESS == faceData.Insert(fontDummyData, FontDataSize, faceMap3));
+    EXPECT_EQ(3, faceData.MakeIterator().QueryCount());
+    
+    // Exist
+    EXPECT_TRUE(faceData.Exists(key1b));
+    EXPECT_TRUE(faceData.Exists(key2a));
+    EXPECT_FALSE(faceData.Exists(unusedKey));
+
+    int count = 0;
+    //------------------------------------------------------------------------------------------------------------------
+    // Query
+    for (DgnFonts::DbFaceDataDirect::Iterator::Entry entry : faceData.MakeIterator())
+        {
+        DgnFonts::DbFaceDataDirect::T_FaceMap faceMap = entry.GenerateFaceMap();
+        if (faceMap[0].m_familyName == "Exton Fonts")
+            {
+            EXPECT_TRUE( 4 == faceMap.count(0) );
+            }
+        else if (faceMap[0].m_familyName == "Islamabad Fonts")
+            {
+            EXPECT_TRUE( 4 == faceMap.count(0));
+            }
+        count++;
+        }
+    EXPECT_EQ(3, count);
+
+    // Delete
+    EXPECT_TRUE (SUCCESS == faceData.Delete(key1d));
+    EXPECT_FALSE(faceData.Exists(key1d));
+    EXPECT_TRUE(SUCCESS == faceData.Delete(key3a));
+    EXPECT_FALSE(faceData.Exists(key3a));
+    // Double Delete
+    EXPECT_TRUE(SUCCESS != faceData.Delete(key1d));
+
+    m_db->SaveChanges();
+    }

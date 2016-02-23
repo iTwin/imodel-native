@@ -72,16 +72,21 @@
     <ClCompile Include="Performance\TestSchemaHelper.cpp" />
     <ClCompile Include="Published\AnnotationFrameStyle_Test.cpp" />
     <ClCompile Include="Published\AnnotationFrame_Test.cpp" />
+    <ClCompile Include="Published\AnnotationLayout_Test.cpp" />
     <ClCompile Include="Published\AnnotationLeaderStyle_Test.cpp" />
     <ClCompile Include="Published\AnnotationLeader_Test.cpp" />
+    <ClCompile Include="Published\AnnotationParagraph_Test.cpp" />
     <ClCompile Include="Published\AnnotationTable_Test.cpp" />
     <ClCompile Include="Published\AnnotationTestFixture.cpp" />
     <ClCompile Include="Published\AnnotationTextBlock_Test.cpp" />
     <ClCompile Include="Published\AnnotationTextStyle_Test.cpp" />
+    <ClCompile Include="Published\BriefcaseManager_Test.cpp" />
     <ClCompile Include="Published\ChangeSummary_Test.cpp" />
     <ClCompile Include="Published\ChangeTestFixture.cpp" />
     <ClCompile Include="Published\ComponentModelBasicTest.cpp" />
     <ClCompile Include="Published\ComponentModelTest.cpp" />
+    <ClCompile Include="Published\DateTimeformat_test.cpp" />
+    <ClCompile Include="Published\DgnBaseDomainSchema_Test.cpp" />
     <ClCompile Include="Published\DgnChangeSummary_Test.cpp" />
     <ClCompile Include="Published\DgnECNavigator_Test.cpp" />
     <ClCompile Include="Published\DgnElement_Test.cpp" />
@@ -91,6 +96,7 @@
     <ClCompile Include="Published\DgnScriptContext_Test.cpp" />
     <ClCompile Include="Published\ElementGeometry_Tests.cpp" />
     <ClCompile Include="Published\ElementGroup_Tests.cpp" />
+    <ClCompile Include="Published\ExampleTestGroup.cpp" />
     <ClCompile Include="Published\FullTextSearch_Test.cpp" />
     <ClCompile Include="Published\ImageUtilities_Test.cpp" />
     <ClCompile Include="Published\LocksManager_Test.cpp" />
@@ -108,6 +114,8 @@
     <ClCompile Include="Published\UnitManager_Test.cpp" />
     <ClCompile Include="Published\valueformat_test.cpp" />
     <ClCompile Include="Published\ValueParse_Test.cpp" />
+    <ClCompile Include="Published\ViewAttachment_Test.cpp" />
+    <ClCompile Include="Published\VolumeElement_Test.cpp" />
     <ClCompile Include="TestFixture\DgnDbTestFixtures.cpp" />
     <ClCompile Include="TestFixture\GeomHelper.cpp" />
   </ItemGroup>

@@ -365,4 +365,97 @@ TEST_F(ElementAspectTests, ExternalKeyAspect_WrongAuthorityId)
     EXPECT_STREQ("TestExtKey", insertedExternalKey.c_str());
 
 }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Umar.Hayat            02/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ElementAspectTests, ExternalKeyAspect_Delete)
+    {
+    SetupSeedProject();
 
+    TestElementCPtr el1;
+    TestElementPtr tempEl1 = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement1");
+
+    //Create aspect
+    DgnAuthorityId auth1Id = Create("Auth1")->GetAuthorityId();
+    DgnAuthorityId auth2Id = Create("Auth2")->GetAuthorityId();
+    static DgnElement::AppData::Key s_appDataKey1;
+    static DgnElement::AppData::Key s_appDataKey2;
+
+    DgnElement::ExternalKeyAspectPtr extkeyAspect = DgnElement::ExternalKeyAspect::Create(auth1Id, "TestExtKey");
+    ASSERT_TRUE(extkeyAspect.IsValid());
+    DgnElement::ExternalKeyAspectPtr extkeyAspect2 = DgnElement::ExternalKeyAspect::Create(auth2Id, "TestExtKey2");
+    ASSERT_TRUE(extkeyAspect2.IsValid());
+    
+    //Add aspect 
+    tempEl1->AddAppData(s_appDataKey1, extkeyAspect.get());
+    tempEl1->AddAppData(s_appDataKey2, extkeyAspect2.get());
+
+    //Insert Elements and aspects should be added
+    el1 = m_db->Elements().Insert(*tempEl1);
+    ASSERT_TRUE(el1.IsValid());
+
+    //‎Verify that elements has the aspect
+    Utf8String insertedExternalKey;
+    EXPECT_EQ(DgnDbStatus::Success, DgnElement::ExternalKeyAspect::Query(insertedExternalKey, *el1, auth1Id));
+    EXPECT_STREQ("TestExtKey", insertedExternalKey.c_str());
+    EXPECT_EQ(DgnDbStatus::Success, DgnElement::ExternalKeyAspect::Query(insertedExternalKey, *el1, auth2Id));
+    EXPECT_STREQ("TestExtKey2", insertedExternalKey.c_str());
+
+    EXPECT_EQ(DgnDbStatus::Success, DgnElement::ExternalKeyAspect::Delete(*el1, auth1Id));
+    // Verify 
+    EXPECT_TRUE(DgnDbStatus::Success != DgnElement::ExternalKeyAspect::Query(insertedExternalKey, *el1, auth1Id));
+    EXPECT_TRUE(DgnDbStatus::Success == DgnElement::ExternalKeyAspect::Query(insertedExternalKey, *el1, auth2Id));
+
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson      05/15
+//---------------------------------------------------------------------------------------
+TEST_F(ElementAspectTests, ImportElementsWithAspect)
+{
+    SetupProject(L"3dMetricGeneral.idgndb", "DestinationDb.idgndb", Db::OpenMode::ReadWrite);
+    DgnDbPtr destDb = m_db;
+    SetupSeedProject();
+
+    TestElementCPtr el1;
+    TestElementPtr tempEl1 = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement1");
+
+    //Create aspect
+    DgnAuthorityId auth1Id = Create("Auth1")->GetAuthorityId();
+    static DgnElement::AppData::Key s_appDataKey1;
+
+    DgnElement::ExternalKeyAspectPtr extkeyAspect = DgnElement::ExternalKeyAspect::Create(auth1Id, "TestExtKey");
+    ASSERT_TRUE(extkeyAspect.IsValid());
+
+    //Add aspect 
+    tempEl1->AddAppData(s_appDataKey1, extkeyAspect.get());
+
+    //Insert Elements and aspects should be added
+    el1 = m_db->Elements().Insert(*tempEl1);
+    ASSERT_TRUE(el1.IsValid());
+
+    m_db->SaveChanges();
+
+    //  *******************************
+    //  Import element into separate db
+    if (true)
+    {
+        DgnImportContext import3(*m_db, *destDb);
+        DgnDbStatus stat;
+        DgnAuthority::Import(&stat, *m_db->Authorities().GetAuthority(auth1Id), import3);
+        DgnElementCPtr el1Dest = el1->Import(&stat, *destDb->Models().GetModel(destDb->Models().QueryFirstModelId()), import3);
+        ASSERT_TRUE(el1Dest.IsValid());
+        ASSERT_EQ(DgnDbStatus::Success, stat);
+
+        DgnElementCPtr el = destDb->Elements().Get<DgnElement>(el1Dest->GetElementId());
+        ASSERT_TRUE(el.IsValid());
+        DgnAuthorityId authIdb = destDb->Authorities().QueryAuthorityId(el->GetCodeAuthority()->GetName().c_str());
+        ASSERT_TRUE(authIdb.IsValid());
+        
+        // Verify that Authority was copied over
+        Utf8String insertedExternalKey;
+        EXPECT_TRUE(DgnDbStatus::Success == DgnElement::ExternalKeyAspect::Query(insertedExternalKey, *el, authIdb));
+        EXPECT_STREQ("TestExtKey", insertedExternalKey.c_str());
+
+        destDb->SaveChanges();
+    }
+}

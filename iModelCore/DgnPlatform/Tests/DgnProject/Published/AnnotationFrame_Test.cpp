@@ -38,7 +38,7 @@ TEST_F(AnnotationFrameTest, DefaultsAndAccessors)
     DgnDbR project = *m_testDgnManager.GetDgnProjectP();
 
     //.............................................................................................
-    AnnotationFrameStylePtr style = createAnnotationFrameStyle(project, "TestFrameStyle");
+    AnnotationFrameStylePtr style = AnnotationTestFixture::createAnnotationFrameStyle(project, "TestFrameStyle");
     AnnotationFramePtr frame = AnnotationFrame::Create(project,style->GetElementId());
     ASSERT_TRUE(frame.IsValid());
 
