@@ -40,6 +40,10 @@
 
 #include <pt/trace.h>
 
+#define xstr(s) str(s)
+#define str(s) #s
+
+
 PTbool				initializeScenesProject					(void);
 PTbool				initializeSceneGraphProject				(void);
 
@@ -284,14 +288,12 @@ int setLastErrorCode( int code )
 //-------------------------------------------------------------------------------
 // Version info
 //-------------------------------------------------------------------------------
-
+	 
 void PTAPI ptGetVersionNum(PTubyte *version)
 {
-	version[0] = REL_V;
-	version[1] = MAJ_V;
-	version[2] = MIN_V;
-	version[3] = SUBMIN_V;
+	sscanf(str(VERSION), "%u.%u.%u.%u", &(version[0]), &(version[1]), &(version[2]), &(version[3]));
 }
+
 //-------------------------------------------------------------------------------
 // (not a published API, for internal use only)
 //-------------------------------------------------------------------------------
