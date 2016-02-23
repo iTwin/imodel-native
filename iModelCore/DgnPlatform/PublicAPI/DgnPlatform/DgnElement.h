@@ -1005,6 +1005,25 @@ public:
     //! Query the DgnDb for the children of this DgnElement.
     //! @return DgnElementIdSet containing the DgnElementIds of all child elements of this DgnElement. Will be empty if no children.
     DGNPLATFORM_EXPORT DgnElementIdSet QueryChildren() const;
+
+    //! @name Unhandled properties 
+    //! @{
+
+    //! Get the value of an unhandled property
+    //! @param value The returned value
+    //! @param name The name of the unhandled property
+    //! @return non-zero error status if this element has no such unhandled property
+    DGNPLATFORM_EXPORT DgnDbStatus GetUnhandledPropertyValue(ECN::ECValueR value, Utf8CP name) const;
+    
+    //! Set the value of an unhandled property. @note you must call Update in order to write the modified property to the DgnDb.
+    //! @param value The returned value
+    //! @param name The name of the unhandled property
+    //! @return non-zero error status if this element has no such unhandled property
+    DGNPLATFORM_EXPORT DgnDbStatus SetUnhandledPropertyValue(Utf8CP name, ECN::ECValueCR value);
+
+    DGNPLATFORM_EXPORT void ComputeUnhandledProperties(bvector<ECN::ECPropertyCP>&) const;
+    
+    //! @}
 };
 
 //=======================================================================================

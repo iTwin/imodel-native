@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/macro/expandMacro.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -12,7 +12,7 @@
 #include <DgnPlatform/DesktopTools/MacroConfigurationAdmin.h>
 #include "macro.h"
 
-USING_NAMESPACE_BENTLEY_DGN
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 #define DQUOTE                  (0x22)
 #define SQUOTE                  (0x27)
@@ -1407,3 +1407,4 @@ bool        MacroConfigurationAdmin::ContainsExpression (WCharCP macroExpression
     }
 
 
+END_BENTLEY_DGNPLATFORM_NAMESPACE

@@ -33,7 +33,8 @@ static RefCountedPtr<PhysicalElement> createPhysicalElement(DgnModelR model, Utf
     Utf8String ecclass(dot+1);
     DgnDbR db = model.GetDgnDb();
     DgnClassId pclassId = DgnClassId(db.Schemas().GetECClassId(ecschema.c_str(), ecclass.c_str()));
-
+    if (!pclassId.IsValid())
+        return nullptr;
     return new PhysicalElement(PhysicalElement::CreateParams(db, model.GetModelId(), pclassId, catid));
     }
 
@@ -42,6 +43,9 @@ static RefCountedPtr<PhysicalElement> createPhysicalElement(DgnModelR model, Utf
 //---------------------------------------------------------------------------------------
 JsGeometryBuilder::JsGeometryBuilder(JsDgnElementP e, JsDPoint3dP o, JsYawPitchRollAnglesP a)
     {
+    if (nullptr == e || nullptr == o || nullptr == a || !e->m_el.IsValid() || nullptr == e->m_el->ToGeometrySource())
+        return;
+
     GeometrySource3dCP source3d = e->m_el->ToGeometrySource3d();
     if (nullptr != source3d)
         m_builder = GeometryBuilder::Create(*source3d, o->Get (), a->GetYawPitchRollAngles ());
@@ -51,6 +55,64 @@ JsGeometryBuilder::JsGeometryBuilder(JsDgnElementP e, JsDPoint3dP o, JsYawPitchR
         if (nullptr != source2d)
             m_builder = GeometryBuilder::Create(*source2d, DPoint2d::From(o->GetX(), o->GetY()), AngleInDegrees::FromDegrees(a->GetYawDegrees ()));
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      06/15
+//---------------------------------------------------------------------------------------
+void JsGeometryBuilder::AppendCopyOfGeometry(JsGeometryBuilderP jsbuilder, JsPlacement3dP jsrelativePlacement)
+    {
+    if (!m_builder.IsValid() || nullptr == jsbuilder || !jsbuilder->m_builder.IsValid())
+        return;
+    GeometryBuilderR otherbuilder = *jsbuilder->m_builder;
+    GeometryStream otherStream;
+    otherbuilder.GetGeometryStream(otherStream);
+    GeometryCollection otherGeomCollection(otherStream, m_builder->GetDgnDb());
+    Transform t;
+    if (nullptr != jsrelativePlacement)
+        t = jsrelativePlacement->m_placement.GetTransform();
+    else
+        t.InitIdentity();
+    for (auto otherItem: otherGeomCollection)
+        {
+        GeometryParams sourceParams (otherItem.GetGeometryParams());
+        sourceParams.SetCategoryId(m_builder->GetGeometryParams().GetCategoryId());
+        m_builder->Append(sourceParams);
+
+        auto geomprim = otherItem.GetGeometryPtr();
+        if (geomprim.IsValid())
+            {
+            GeometricPrimitivePtr cc = geomprim->Clone();
+            cc->TransformInPlace(t);
+            m_builder->Append(*cc);
+            }
+        else
+            {
+                /* *** TBD: embedded geompart instances
+            DgnGeometryPartCPtr gp = otherItem.GetGeometryPartPtr();
+            if (gp.IsValid())
+                {
+                Transform t = otherItem.GetGeometryToSource();
+                }
+                */
+            BeAssert(false && "AppendCopyOfBuilder - geompart instances not supported");
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      06/15
+//---------------------------------------------------------------------------------------
+void JsGeometryBuilder::AppendGeometryPart(JsDgnGeometryPartP part, JsPlacement3dP jsrelativePlacement)
+    {
+    if (!m_builder.IsValid() || nullptr == part || !part->m_value.IsValid() || !part->m_value->GetId().IsValid())
+        return;
+    Transform t;
+    if (nullptr != jsrelativePlacement)
+        t = jsrelativePlacement->m_placement.GetTransform();
+    else
+        t.InitIdentity();
+    m_builder->Append(part->m_value->GetId(), t);
     }
 
 //---------------------------------------------------------------------------------------
@@ -146,6 +208,29 @@ int32_t JsDgnElement::Update()
         return -2;
     m_el = cptr->CopyForEdit();
     return 0;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+JsECValueP JsDgnElement::GetUnhandledProperty(Utf8StringCR name) 
+    {
+    if (!m_el.IsValid())
+        return nullptr;
+    ECN::ECValue v;
+    if (m_el->GetUnhandledPropertyValue(v, name.c_str()) != DgnDbStatus::Success || v.IsNull())
+        return nullptr;
+    return new JsECValue(v);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+int32_t JsDgnElement::SetUnhandledProperty(Utf8StringCR name, JsECValueP v)
+    {
+    if (!m_el.IsValid() || nullptr == v)
+        return -1;
+    return (int32_t) m_el->SetUnhandledPropertyValue(name.c_str(), v->m_value);
     }
 
 //---------------------------------------------------------------------------------------
@@ -339,11 +424,11 @@ JsECInstanceP JsECClass::MakeInstance()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
-int32_t Script::LoadScript(JsDgnDbP db, Utf8StringCR scriptName)
+int32_t Script::LoadScript(JsDgnDbP db, Utf8StringCR scriptName, bool forceReload)
     {
     if (!db || !db->m_db.IsValid())
         return -1;
-    return (int32_t) DgnScript::LoadScript(*db->m_db, scriptName.c_str());
+    return (int32_t) DgnScript::LoadScript(*db->m_db, scriptName.c_str(), forceReload);
     }
 
 //---------------------------------------------------------------------------------------
