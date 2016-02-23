@@ -678,8 +678,7 @@ ECDbSqlTable* ECDbMapDb::CreateTableForExistingTableMapStrategy(ECDbCR ecdb, Utf
         const bool isPk = stmt.GetValueInt(5) == 1;
 
         ECDbSqlColumn::Type ecType = ECDbSqlColumn::Type::Any;
-        if (type.rfind("int64") != Utf8String::npos ||
-            type.rfind("long") != Utf8String::npos ||
+        if (type.rfind("long") != Utf8String::npos ||
             type.rfind("int") != Utf8String::npos)
             ecType = ECDbSqlColumn::Type::Integer;
         else if (type.rfind("char") != Utf8String::npos ||
