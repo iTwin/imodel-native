@@ -22,10 +22,12 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 ConnectTokenProvider::ConnectTokenProvider
 (
 std::shared_ptr<IConnectAuthenticationPersistence> customPersistence,
-bool isTokenBasedAuthentication
+bool isTokenBasedAuthentication,
+std::function<void()> tokenExpiredHandler
 ) :
 m_persistence(customPersistence ? customPersistence : ConnectAuthenticationPersistence::GetShared()),
-m_isTokenBasedAuthentication(isTokenBasedAuthentication)
+m_isTokenBasedAuthentication(isTokenBasedAuthentication),
+m_tokenExpiredHandler(tokenExpiredHandler)
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -35,8 +37,11 @@ SamlTokenPtr ConnectTokenProvider::UpdateToken()
     {
     if (m_isTokenBasedAuthentication)
         {
-        // It's impossible to renew expired token, when authentication is token based
-        // TODO: message to bring back signIn page
+        if (m_persistence->GetToken() != nullptr)
+            {
+            if (m_tokenExpiredHandler)
+                m_tokenExpiredHandler();
+            }
         return nullptr;
         }
 
@@ -60,7 +65,6 @@ SamlTokenPtr ConnectTokenProvider::GetToken()
     if (m_isTokenBasedAuthentication)
         {
         // TODO: Launch token renewal asynchronously and just return current token
-
         // Check if token was issued more than 1 hour ago. If so, renew it.
         DateTime tokenSetTime = m_persistence->GetTokenSetTime();
         if (tokenSetTime.IsValid() && ShouldRenewToken(tokenSetTime, RENEW_TOKEN_AFTER_MS))
@@ -71,10 +75,10 @@ SamlTokenPtr ConnectTokenProvider::GetToken()
                 {
                 return nullptr;
                 }
-            ConnectAuthenticationPersistence::GetShared()->SetToken(newToken);
+
+            m_persistence->SetToken(newToken);
             }
         }
-
     return m_persistence->GetToken();
     }
 

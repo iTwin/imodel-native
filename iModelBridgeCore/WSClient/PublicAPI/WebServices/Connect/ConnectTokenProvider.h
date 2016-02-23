@@ -18,6 +18,9 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ConnectTokenProvider : public IConnectTokenProvider
     {
+    private:
+        std::function<void()> m_tokenExpiredHandler;
+
     public:
         std::shared_ptr<IConnectAuthenticationPersistence> m_persistence;
         bool m_isTokenBasedAuthentication;
@@ -29,7 +32,8 @@ struct ConnectTokenProvider : public IConnectTokenProvider
         WSCLIENT_EXPORT ConnectTokenProvider
             (
             std::shared_ptr<IConnectAuthenticationPersistence> customPersistence = nullptr,
-            bool isTokenBasedAuthentication = false
+            bool isTokenBasedAuthentication = false,
+            std::function<void()> tokenExpiredHandler = nullptr
             );
 
         WSCLIENT_EXPORT SamlTokenPtr UpdateToken() override;
