@@ -551,7 +551,7 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (SchemaImportContext* schemaImportConte
                                                                              ECDB_COL_ECPropertyPathId, 
                                                                              ECDB_COL_ECArrayIndex, 
                                                                              primaryKeyColumnName},
-                                                                             nullptr,
+                                                                             false,
                                                                              true, 
                                                                              ECClass::UNSET_ECCLASSID))
                         {
@@ -873,7 +873,7 @@ BentleyStatus ECDbMap::FinishTableDefinition () const
                 //whenever we create a class id column, we index it to speed up the frequent class id look ups
                 Utf8String indexName("ix_");
                 indexName.append(table->GetName()).append("_ecclassid");
-                m_schemaImportContext->GetECDbMapDb().CreateIndex(GetECDb(), *table, indexName.c_str(), false, {ecClassIdColumn}, nullptr, true, ECClass::UNSET_ECCLASSID);
+                m_schemaImportContext->GetECDbMapDb().CreateIndex(GetECDb(), *table, indexName.c_str(), false, {ecClassIdColumn}, false, true, ECClass::UNSET_ECCLASSID);
                 }
             }
         }
