@@ -254,14 +254,14 @@ private:
     typedef bmap<Utf8CP,TxnTablePtr,CompareTableNames> T_TxnTablesByName;
     typedef bvector<TxnTable*> T_TxnTables;
 
-    DgnDbR          m_dgndb;
+    DgnDbR m_dgndb;
     T_TxnTablesByName m_tablesByName;
-    T_TxnTables     m_tables;
-    TxnId           m_curr;
-    TxnAction       m_action;
+    T_TxnTables m_tables;
+    TxnId m_curr;
+    TxnAction m_action;
     bvector<TxnId> m_multiTxnOp;
     bvector<TxnRange> m_reversedTxn;
-    bvector<DynamicChangeTrackerPtr> m_dynamics;
+    bvector<DynamicChangeTrackerPtr> m_dynamicTxns;
     BeSQLite::StatementCache m_stmts;
     BeSQLite::SnappyFromBlob m_snappyFrom;
     BeSQLite::SnappyToBlob   m_snappyTo;
@@ -462,8 +462,8 @@ public:
     //! In either case, all changes made since the most recent call to BeginDynamicOperation will be rolled back before the function returns.
     DGNPLATFORM_EXPORT void EndDynamicOperation(IDynamicChangeProcessor* processor=nullptr);
 
-    //! Returns true if a dynamic operation is in progress.
-    bool IsInDynamics() const { return !m_dynamics.empty(); }
+    //! Returns true if a dynamic transaction is in progress.
+    bool InDynamicTxn() const { return !m_dynamicTxns.empty(); }
 };
 
 //=======================================================================================
@@ -569,7 +569,6 @@ namespace dgn_TxnTable
         //! iterator for models that are directly changed. Only valid during _PropagateChanges.
         struct Iterator : BeSQLite::DbTableIterator
         {
-        public:
             Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) { }
             struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
             {

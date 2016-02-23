@@ -447,6 +447,7 @@ DgnDbStatus DgnElement::BindParams(ECSqlStatement& statement, bool isForUpdate)
 
     if (m_code.IsEmpty() && (ECSqlStatus::Success != codeBinder.GetMember(DGN_ELEMENT_CODESTRUCT_Value).BindNull()))
         return DgnDbStatus::BadArg;
+
     if (!m_code.IsEmpty() && (ECSqlStatus::Success != codeBinder.GetMember(DGN_ELEMENT_CODESTRUCT_Value).BindText(m_code.GetValue().c_str(), IECSqlBinder::MakeCopy::No)))
         return DgnDbStatus::BadArg;
 
@@ -490,23 +491,16 @@ DgnDbStatus DgnElement::_InsertInDb()
         return DgnDbStatus::WriteError;
 
     auto status = _BindInsertParams(*statement);
-    if (DgnDbStatus::Success == status)
-        {
-        auto stmtResult = statement->Step();
-        if (BE_SQLITE_DONE != stmtResult)
-            {
-            DgnElementId existingElemWithCode;
-            if (BE_SQLITE_CONSTRAINT_UNIQUE == stmtResult)
-                {
-                // SQLite doesn't tell us which constraint failed - check if it's the Code.
-                existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
-                }
+    if (DgnDbStatus::Success != status)
+        return status;
+ 
+    auto stmtResult = statement->Step();
+    if (BE_SQLITE_DONE == stmtResult)
+        return DgnDbStatus::Success;
 
-            status = existingElemWithCode.IsValid() ? DgnDbStatus::DuplicateCode : DgnDbStatus::WriteError;
-            }
-        }
-
-    return status;
+    // SQLite doesn't tell us which constraint failed - check if it's the Code.
+    auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
+    return existingElemWithCode.IsValid() ? DgnDbStatus::DuplicateCode : DgnDbStatus::WriteError;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -527,21 +521,19 @@ DgnDbStatus DgnElement::_UpdateInDb()
         return DgnDbStatus::WriteError;
 
     DgnDbStatus status = _BindUpdateParams(*stmt);
-    if (DgnDbStatus::Success == status)
-        {
-        auto stmtResult = stmt->Step();
-        if (BE_SQLITE_DONE != stmtResult)
-            {
-            // SQLite doesn't tell us which constraint failed - check if it's the Code.
-            auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
-            if (existingElemWithCode.IsValid() && existingElemWithCode != GetElementId())
-                status = DgnDbStatus::DuplicateCode;
-            else
-                status = DgnDbStatus::WriteError;
-            }
-        }
+    if (DgnDbStatus::Success != status)
+        return status;
 
-    return status;
+    auto stmtResult = stmt->Step();
+    if (BE_SQLITE_DONE == stmtResult)
+        return DgnDbStatus::Success;
+
+    // SQLite doesn't tell us which constraint failed - check if it's the Code.
+    auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
+    if (existingElemWithCode.IsValid() && existingElemWithCode != GetElementId())
+        return DgnDbStatus::DuplicateCode;
+
+    return DgnDbStatus::WriteError;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -723,10 +715,11 @@ DgnDbStatus GeometricElement::Validate() const
     {
     if (!m_categoryId.IsValid())
         return DgnDbStatus::InvalidCategory;
-    else if (m_geom.HasGeometry() && !_IsPlacementValid())
+
+    if (m_geom.HasGeometry() && !_IsPlacementValid())
         return DgnDbStatus::BadElement;
-    else
-        return DgnDbStatus::Success;
+
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

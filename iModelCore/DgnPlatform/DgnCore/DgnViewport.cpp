@@ -8,15 +8,6 @@
 #include    <DgnPlatformInternal.h>
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::Initialize(ViewControllerR viewController)
-    {
-    m_viewController = &viewController;
-    viewController._OnAttachedToViewport(*this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/02
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::DestroyViewport()
@@ -339,7 +330,7 @@ DMap4d DgnViewport::CalcNpcToView()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    RBB                             10/90
+* @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void validateCamera(CameraViewControllerR controller)
     {
@@ -1204,6 +1195,7 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
     {
     if (m_viewController.IsValid())
         m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);
+
     m_partGraphics.clear();
 
     ClearUndo();
@@ -1212,8 +1204,7 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
     viewController._OnAttachedToViewport(*this);
 
     InvalidateScene();
-
-    SetupFromViewController();
+    m_sync.InvalidateController();
     }
 
 /*---------------------------------------------------------------------------------**//**

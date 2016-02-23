@@ -259,9 +259,11 @@ TxnManager::TxnId TxnManager::QueryNextTxnId(TxnId curr) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus TxnManager::BeginMultiTxnOperation()
     {
-    BeAssert(!IsInDynamics());
-    if (IsInDynamics())
+    if (InDynamicTxn())
+        {
+        BeAssert(false);
         return DgnDbStatus::InDynamicTransaction;
+        }
 
     m_multiTxnOp.push_back(GetCurrentTxnId());
     return DgnDbStatus::Success;
@@ -272,9 +274,11 @@ DgnDbStatus TxnManager::BeginMultiTxnOperation()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus TxnManager::EndMultiTxnOperation()
     {
-    BeAssert(!IsInDynamics());
-    if (IsInDynamics())
+    if (InDynamicTxn())
+        {
+        BeAssert(false);
         return DgnDbStatus::InDynamicTransaction;
+        }
 
     if (m_multiTxnOp.empty())
         {
@@ -451,7 +455,7 @@ void TxnManager::OnEndValidate()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operation)
     {
-    BeAssert(!IsInDynamics() && "How is this being invoked when we have dynamic change trackers on the stack?");
+    BeAssert(!InDynamicTxn() && "How is this being invoked when we have dynamic change trackers on the stack?");
     CancelDynamics();
 
     if (!HasChanges())
@@ -516,7 +520,7 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TxnManager::MergeChanges(ChangeStream& changeStream)
     {
-    BeAssert(!IsInDynamics());
+    BeAssert(!InDynamicTxn());
 
     m_dgndb.Txns().EnableTracking(false);
     DbResult result = changeStream.ApplyChanges(m_dgndb);
@@ -692,7 +696,7 @@ void TxnManager::ReadChangeSet(ChangeSet& changeset, TxnId rowId, TxnAction acti
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::ApplyChanges(TxnId rowId, TxnAction action)
     {
-    BeAssert(!HasChanges() && !IsInDynamics());
+    BeAssert(!HasChanges() && !InDynamicTxn());
     BeAssert(TxnAction::Reverse == action || TxnAction::Reinstate == action); // Do not call ApplyChanges() if you don't want undo/redo notifications sent to TxnMonitors...
 
     UndoChangeSet changeset;
@@ -744,7 +748,7 @@ void TxnManager::OnEndApplyChanges()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::ReverseTxnRange(TxnRange& txnRange, Utf8StringP undoStr)
     {
-    if (HasChanges() || IsInDynamics())
+    if (HasChanges() || InDynamicTxn())
         m_dgndb.AbandonChanges(); // will cancel dynamics if active
 
     for (TxnId curr=QueryPreviousTxnId(txnRange.GetLast()); curr.IsValid() && curr >= txnRange.GetFirst(); curr=QueryPreviousTxnId(curr))
@@ -906,7 +910,7 @@ void TxnManager::ReinstateTxn(TxnRange& revTxn, Utf8StringP redoStr)
     {
     BeAssert(m_curr == revTxn.GetFirst());
 
-    if (HasChanges() || IsInDynamics())
+    if (HasChanges() || InDynamicTxn())
         m_dgndb.AbandonChanges();
 
     TxnId last = QueryPreviousTxnId(revTxn.GetLast());
@@ -1026,7 +1030,7 @@ DgnDbStatus TxnManager::GetChangeSummary(ChangeSummary& changeSummary, TxnId sta
         return DgnDbStatus::BadArg;
         }
 
-    if (HasChanges() || IsInDynamics())
+    if (HasChanges() || InDynamicTxn())
         {
         BeAssert(false && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() first");
         return DgnDbStatus::TransactionActive;
@@ -1546,7 +1550,7 @@ DynamicChangeTrackerPtr DynamicChangeTracker::Create(TxnManager& mgr)
 void TxnManager::BeginDynamicOperation()
     {
     auto tracker = DynamicChangeTracker::Create(*this);
-    m_dynamics.push_back(tracker);
+    m_dynamicTxns.push_back(tracker);
     GetDgnDb().SetChangeTracker(tracker.get());
     tracker->EnableTracking(true);
     }
@@ -1556,11 +1560,13 @@ void TxnManager::BeginDynamicOperation()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::EndDynamicOperation(IDynamicChangeProcessor* processor)
     {
-    BeAssert(IsInDynamics());
-    if (!IsInDynamics())
+    if (!InDynamicTxn())
+        {
+        BeAssert(false);
         return;
+        }
 
-    auto tracker = m_dynamics.back();
+    auto tracker = m_dynamicTxns.back();
     if (tracker->HasChanges())
         {
         UndoChangeSet changeset;
@@ -1595,9 +1601,9 @@ void TxnManager::EndDynamicOperation(IDynamicChangeProcessor* processor)
         ApplyChangeSet(changeset, TxnAction::Abandon);
         }
 
-    m_dynamics.pop_back();
-    if (IsInDynamics())
-        GetDgnDb().SetChangeTracker(m_dynamics.back().get());
+    m_dynamicTxns.pop_back();
+    if (InDynamicTxn())
+        GetDgnDb().SetChangeTracker(m_dynamicTxns.back().get());
     else
         GetDgnDb().SetChangeTracker(this);
     }
@@ -1607,7 +1613,7 @@ void TxnManager::EndDynamicOperation(IDynamicChangeProcessor* processor)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::CancelDynamics()
     {
-    while (IsInDynamics())
+    while (InDynamicTxn())
         EndDynamicOperation();
     }
 

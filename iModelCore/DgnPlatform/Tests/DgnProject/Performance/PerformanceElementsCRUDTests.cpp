@@ -1013,7 +1013,6 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::BindElement4PropertyParams(ECSql
     return DgnDbStatus::Success;
     }
 
-#if defined (NOT_NOW_REMOVE)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1074,7 +1073,7 @@ void PerformanceElementsCRUDTestFixture::BindParams(DgnElementPtr& element, ECSq
 
     // Compress the serialized GeomStream
     bool m_multiChunkGeomStream = false;
-    SnappyToBlob& snappyTo = element->GetDgnDb().Elements().GetSnappyTo();
+    SnappyToBlob snappyTo;
     snappyTo.Init();
 
     GeometryStream geom = element->ToGeometrySource()->GetGeometryStream();
@@ -1186,7 +1185,7 @@ void PerformanceElementsCRUDTestFixture::BindUpdateParams(DgnElementPtr& element
 
     // Compress the serialized GeomStream
     bool m_multiChunkGeomStream = false;
-    SnappyToBlob& snappyTo = element->GetDgnDb().Elements().GetSnappyTo();
+    SnappyToBlob snappyTo;
     snappyTo.Init();
 
     GeometryStream geom = element->ToGeometrySource()->GetGeometryStream();
@@ -1259,7 +1258,6 @@ void PerformanceElementsCRUDTestFixture::BindUpdateParams(DgnElementPtr& element
         ASSERT_EQ (DgnDbStatus::Success, BindElement4PropertyParams(stmt, updateParams));
         }
     }
-#endif
 
 //Methods to verify Business Property Values returned by Sql Statements. 
 //---------------------------------------------------------------------------------------
