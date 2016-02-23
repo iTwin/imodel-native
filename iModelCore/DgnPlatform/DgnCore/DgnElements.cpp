@@ -894,7 +894,6 @@ void DgnElements::Destroy()
     {
     BeDbMutexHolder _v_v(m_mutex);
     m_tree->Destroy();
-    m_heapZone.EmptyAll();
     m_stmts.Empty();
     m_classInfos.clear();
     }
@@ -1024,7 +1023,7 @@ void DgnElements::ResetStatistics() {m_tree->m_stats.Reset();}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_heapZone(0, false), m_mutex(BeDbMutex::MutexType::Recursive), m_stmts(20), m_snappyFrom(m_snappyFromBuffer, _countof(m_snappyFromBuffer))
+DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_mutex(BeDbMutex::MutexType::Recursive), m_stmts(20), m_snappyFrom(m_snappyFromBuffer, _countof(m_snappyFromBuffer))
     {
     m_tree = new ElemIdTree(dgndb);
     }
@@ -1173,7 +1172,7 @@ void DgnElements::InitNextId()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat)
     {
-    if (!element.m_flags.m_forceElementIdForInsert)
+    if (!element.m_flags.m_preassignedId)
         {
         InitNextId();
         m_nextAvailableId.UseNext(m_dgndb);
@@ -1217,8 +1216,8 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnDbStatus* outS
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(stat,outStat);
 
-    // don't allow elements that already have an id unless the forceElementIdForInsert flag is set (PKPM requested a "back door" for sync workflows)
-    if (element.m_elementId.IsValid() && !element.m_flags.m_forceElementIdForInsert)
+    // don't allow elements that already have an id unless the "preassignedId" flag is set (PKPM requested a "back door" for sync workflows)
+    if (element.m_elementId.IsValid() && !element.m_flags.m_preassignedId)
         {
         stat = DgnDbStatus::WrongElement; // this element must already be persistent
         return nullptr;
@@ -1246,7 +1245,7 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnDbStatus* outS
     if (!newEl.IsValid())
         element.m_elementId = DgnElementId(); // Insert failed, make sure to invalidate the DgnElementId so they don't accidentally use it
 
-    element.m_flags.m_forceElementIdForInsert = 0; // ensure flag is set to default value
+    element.m_flags.m_preassignedId = 0; // ensure flag is set to default value
     return newEl;
     }
 
@@ -1256,11 +1255,14 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnDbStatus* outS
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::ForceElementIdForInsert(DgnElementId elementId)
     {
-    if (!IsPersistent())
+    if (IsPersistent())
         {
-        m_flags.m_forceElementIdForInsert = 1;
-        m_elementId = elementId;
+        BeAssert(false);
+        return;
         }
+
+    m_flags.m_preassignedId = true;
+    m_elementId = elementId;
     }
 
 /*---------------------------------------------------------------------------------**//**

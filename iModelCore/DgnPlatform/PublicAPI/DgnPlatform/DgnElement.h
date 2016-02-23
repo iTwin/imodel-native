@@ -44,8 +44,8 @@ namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometr
 namespace dgn_TxnTable {struct Element; struct Model;};
 
 //=======================================================================================
-//! Holds ID remapping tables
-//==========================================================================    =============
+//! Holds Id remapping tables
+//=======================================================================================
 struct DgnRemapTables
 {
 protected:
@@ -72,14 +72,14 @@ public:
     DgnGeometryPartId Add(DgnGeometryPartId sourceId, DgnGeometryPartId targetId) {return m_geomPartId[sourceId] = targetId;}
     DgnCategoryId Find(DgnCategoryId sourceId) const {return FindElement<DgnCategoryId>(sourceId);}
     DgnCategoryId Add(DgnCategoryId sourceId, DgnCategoryId targetId) {return DgnCategoryId((m_elementId[sourceId] = targetId).GetValueUnchecked());}
-    DgnMaterialId Find(DgnMaterialId sourceId) const { return FindElement<DgnMaterialId>(sourceId); }
-    DgnMaterialId Add(DgnMaterialId sourceId, DgnMaterialId targetId) { return DgnMaterialId((m_elementId [sourceId] = targetId).GetValueUnchecked()); }
+    DgnMaterialId Find(DgnMaterialId sourceId) const {return FindElement<DgnMaterialId>(sourceId);}
+    DgnMaterialId Add(DgnMaterialId sourceId, DgnMaterialId targetId) {return DgnMaterialId((m_elementId [sourceId] = targetId).GetValueUnchecked());}
     DgnTextureId Find(DgnTextureId sourceId) const {return FindElement<DgnTextureId>(sourceId);}
-    DgnTextureId Add(DgnTextureId sourceId, DgnTextureId targetId) {return DgnTextureId((m_elementId [sourceId] = targetId).GetValueUnchecked()); }
+    DgnTextureId Add(DgnTextureId sourceId, DgnTextureId targetId) {return DgnTextureId((m_elementId [sourceId] = targetId).GetValueUnchecked());}
     DgnStyleId Find(DgnStyleId sourceId) const {return FindElement<DgnStyleId>(sourceId);}
-    DgnStyleId Add(DgnStyleId sourceId, DgnStyleId targetId) {return DgnStyleId((m_elementId [sourceId] = targetId).GetValueUnchecked()); }
-    DgnFontId Find(DgnFontId sourceId) const { return Find<DgnFontId>(m_fontId, sourceId); }
-    DgnFontId Add(DgnFontId sourceId, DgnFontId targetId) { return m_fontId[sourceId] = targetId; }
+    DgnStyleId Add(DgnStyleId sourceId, DgnStyleId targetId) {return DgnStyleId((m_elementId [sourceId] = targetId).GetValueUnchecked());}
+    DgnFontId Find(DgnFontId sourceId) const {return Find<DgnFontId>(m_fontId, sourceId);}
+    DgnFontId Add(DgnFontId sourceId, DgnFontId targetId) {return m_fontId[sourceId] = targetId;}
     DgnSubCategoryId Find(DgnSubCategoryId sourceId) const {return FindElement<DgnSubCategoryId>(sourceId);}
     DgnSubCategoryId Add(DgnSubCategoryId sourceId, DgnSubCategoryId targetId) {return DgnSubCategoryId((m_elementId[sourceId] = targetId).GetValueUnchecked());}
     DgnClassId Find(DgnClassId sourceId) const {return Find<DgnClassId>(m_classId, sourceId);}
@@ -129,7 +129,7 @@ public:
     bool IsBetweenDbs() const {return &GetDestinationDb() != &GetSourceDb();}
     //! @}
 
-    //! @name ID remapping
+    //! @name Id remapping
     //! @{
     //! Make sure that a DgnAuthority has been imported
     DGNPLATFORM_EXPORT DgnAuthorityId RemapAuthorityId(DgnAuthorityId sourceId);
@@ -142,9 +142,9 @@ public:
     //! Make sure that a GeometryPart has been imported
     DGNPLATFORM_EXPORT DgnGeometryPartId RemapGeometryPartId(DgnGeometryPartId sourceId);
     //! Look up a copy of a Category
-    DgnCategoryId FindCategory(DgnCategoryId sourceId) const { return m_remap.Find(sourceId); }
+    DgnCategoryId FindCategory(DgnCategoryId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of a Category
-    DgnCategoryId AddCategory(DgnCategoryId sourceId, DgnCategoryId targetId) { return m_remap.Add(sourceId, targetId); }
+    DgnCategoryId AddCategory(DgnCategoryId sourceId, DgnCategoryId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Make sure that a Category has been imported
     DGNPLATFORM_EXPORT DgnCategoryId RemapCategory(DgnCategoryId sourceId);
     //! Look up a copy of an subcategory
@@ -170,7 +170,7 @@ public:
     //! Look up a copy of a LineStyle
     DgnStyleId FindLineStyleId(DgnStyleId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of a LineStyle
-    DgnStyleId AddLineStyleId(DgnStyleId sourceId, DgnStyleId targetId) {return m_remap.Add(sourceId, targetId); }
+    DgnStyleId AddLineStyleId(DgnStyleId sourceId, DgnStyleId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Make sure that a LineStyle has been imported
     DgnStyleId RemapLineStyleId(DgnStyleId sourceId);
     //! Look up a copy of a LineStyle component
@@ -180,7 +180,7 @@ public:
     //! Look up a copy of a Material
     //! Make sure that any ids referenced by the supplied GeometryStream have been imported
     DGNPLATFORM_EXPORT DgnDbStatus RemapGeometryStreamIds(GeometryStreamR geom);
-    //! Remap a font between databases. If it exists by-type and -name, the ID is simply remapped; if not, a deep copy is made. If a deep copy is made and the source database contained the font data, the font data is also deep copied.
+    //! Remap a font between databases. If it exists by-type and -name, the Id is simply remapped; if not, a deep copy is made. If a deep copy is made and the source database contained the font data, the font data is also deep copied.
     DGNPLATFORM_EXPORT DgnFontId RemapFont(DgnFontId);
     //! @}
 
@@ -226,7 +226,7 @@ public:
     //! @param[in] destModel    The model where the instance is to be inserted
     //! @param[in] sourceElement The element that is to be copied
     //! @note Parent elements must be imported before child elements. The parent of the new element will 
-    //!         be the element in the destination db to which the source parent has been remapped, or it will be invalid if the parent has not been remapped.
+    //!       be the element in the destination db to which the source parent has been remapped, or it will be invalid if the parent has not been remapped.
     //! @return a new element if successful
     DGNPLATFORM_EXPORT DgnElementCPtr ImportElement(DgnDbStatus* stat, DgnModelR destModel, DgnElementCR sourceElement);
 };
@@ -247,12 +247,14 @@ public:
                 virtual Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
 
 //=======================================================================================
-//! An instance of a DgnElement in memory. DgnElements are the building blocks for a DgnDb.
+//! An instance of a DgnElement in memory. 
 //! @ingroup DgnElementGroup
 // @bsiclass                                                     KeithBentley    10/13
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnElement : NonCopyableClass, ICodedEntity
 {
+    DEFINE_BENTLEY_NEW_DELETE_OPERATORS
+
 public:
     friend struct DgnElements;
     friend struct DgnModel;
@@ -359,12 +361,11 @@ public:
     };
 
     //! Holds changes to a dgn.ElementAspect in memory and writes out the changes when the host DgnElement is inserted or updated.
-    //! All aspects are actually subclasses of either dgn.ElementUniqueAspect or dgn.ElementMultiAspect. dgn.ElementItem is a special case of dgn.ElementUniqueAspect.
+    //! All aspects are actually subclasses of either dgn.ElementUniqueAspect or dgn.ElementMultiAspect.
     //! A domain that defines a subclass of one of these ECClasses in the schema should normally also define a subclass of one of the
-    //! subclasses of DgnElement::Aspect in order to manage transactions.
+    //! subclasses of DgnElement::Aspect to manage transactions.
     //! A domain will normally subclass one of the following more specific subclasses:
     //!     * DgnElement::UniqueAspect when the domain defines a subclass of dgn.ElementUniqueAspect for aspects that must be 1:1 with the host element.
-    //!     *** WIP_ELEMENT_ITEM *** pending redesign * DgnElement::Item when the domain defines a subclass of dgn.ElementItem.
     //!     * DgnElement::MultiAspect when the domain defines a subclass of dgn.ElementMultiAspect for cases where multiple instances of the class can be associated with a given element.
     //! The domain must also define and register a subclass of ElementAspectHandler to load instances of its aspects.
     struct EXPORT_VTABLE_ATTRIBUTE Aspect : AppData
@@ -376,7 +377,6 @@ public:
 
     protected:
         enum class ChangeType{None, Write, Delete};
-
         ChangeType m_changeType;
 
         DgnDbStatus InsertThis(DgnElementCR el);
@@ -388,10 +388,10 @@ public:
         virtual Utf8CP _GetECSchemaName() const = 0;
 
         //! The subclass must implement this method to return the name of the class that defines the aspect.
-        virtual Utf8CP _GetECClassName() const { return DGN_CLASSNAME_ElementAspect; }
+        virtual Utf8CP _GetECClassName() const {return DGN_CLASSNAME_ElementAspect;}
 
         //! The subclass must implement this method to return the name of the superclass
-        virtual Utf8CP _GetSuperECClassName() const { return nullptr; }
+        virtual Utf8CP _GetSuperECClassName() const {return nullptr;}
 
         //! The subclass must implement this method to report an existing instance on the host element that this instance will replace.
         virtual BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) = 0;
@@ -413,14 +413,14 @@ public:
         virtual DgnDbStatus _LoadProperties(DgnElementCR el) = 0;
 
     public:
-        Utf8CP GetECClassName() const { return _GetECClassName(); }
-        Utf8CP GetSuperECClassName() const { return _GetSuperECClassName(); }
+        Utf8CP GetECClassName() const {return _GetECClassName();}
+        Utf8CP GetSuperECClassName() const {return _GetSuperECClassName();}
 
         //! Prepare to delete this aspect.
         //! @note The aspect will not actually be deleted in the Db until you call DgnElements::Update on the aspect's host element.
         void Delete() {m_changeType = ChangeType::Delete;}
 
-        //! Get the ID of the ECClass for this aspect
+        //! Get the Id of the ECClass for this aspect
         DGNPLATFORM_EXPORT DgnClassId GetECClassId(DgnDbR) const;
 
         //! Get the ECClass for this aspect
@@ -442,7 +442,7 @@ public:
     //!     * _LoadProperties
     //! @see UniqueAspect
     //! (Note: This is not stored directly as AppData, but is held by an AppData that aggregates instances for this class.)
-    //! @note A domain that defines a subclass of MultiAspect must also define a subclass of ElementAspectHandler to load it.
+    //! @note A domain that defines a subclass of MultiAspect may also define a subclass of dgn_AspectHandler to load it.
     struct EXPORT_VTABLE_ATTRIBUTE MultiAspect : Aspect
     {
         DEFINE_T_SUPER(Aspect)
@@ -454,27 +454,27 @@ public:
         BeSQLite::EC::ECInstanceId m_instanceId;
 
     public:
-        //! Get the ID of this aspect
+        //! Get the Id of this aspect
         BeSQLite::EC::ECInstanceId GetAspectInstanceId() const {return m_instanceId;}
 
         //! Load the specified instance
         //! @param el   The host element
         //! @param ecclass The class of ElementAspect to load
-        //! @param ecinstanceid The ID of the ElementAspect to load
+        //! @param ecinstanceid The Id of the ElementAspect to load
         //! @note Call this method only if you intend to modify the aspect. Use ECSql to query existing instances of the subclass.
         DGNPLATFORM_EXPORT static MultiAspect* GetAspectP(DgnElementR el, ECN::ECClassCR ecclass, BeSQLite::EC::ECInstanceId ecinstanceid);
 
         template<typename T> static T* GetP(DgnElementR el, ECN::ECClassCR cls, BeSQLite::EC::ECInstanceId id) {return dynamic_cast<T*>(GetAspectP(el,cls,id));}
 
         //! Prepare to insert an aspect for the specified element
-        //! @param el   The host element
+        //! @param el The host element
         //! @param aspect The new aspect to be adopted by the host.
         //! @note \a el will add a reference to \a aspect and will hold onto it.
         //! @note The aspect will not actually be inserted into the Db until you call DgnElements::Insert or DgnElements::Update on \a el
         DGNPLATFORM_EXPORT static void AddAspect(DgnElementR el, MultiAspect& aspect);
     };
 
-    //! Represents an ElementAspect subclass in the case where the host Element can have 0 or 1 instance of the subclass. The aspect's ID is the same as the element's ID,
+    //! Represents an ElementAspect subclass in the case where the host Element can have 0 or 1 instance of the subclass. The aspect's Id is the same as the element's Id,
     //! and the aspect class must be stored in its own table (TablePerClass).
     //! A subclass of UniqueAspect must override the following methods:
     //!     * _GetECSchemaName
@@ -508,7 +508,7 @@ public:
             Other           //!< An unspecified reason
         };
 
-        //! Get the ID of this aspect. The aspect's ID is always the same as the host element's ID. This is a convenience function that converts from DgnElementId to ECInstanceId.
+        //! Get the Id of this aspect. The aspect's Id is always the same as the host element's Id. This is a convenience function that converts from DgnElementId to ECInstanceId.
         BeSQLite::EC::ECInstanceId GetAspectInstanceId(DgnElementCR el) const {return el.GetElementId();}
 
         //! Prepare to insert or update an Aspect for the specified element
@@ -566,7 +566,6 @@ public:
 
     typedef RefCountedPtr<ExternalKeyAspect> ExternalKeyAspectPtr;
 
-    DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
 private:
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement, bool isForUpdate);
@@ -577,7 +576,7 @@ protected:
     struct Flags
     {
         uint32_t m_persistent:1;
-        uint32_t m_forceElementIdForInsert:1;
+        uint32_t m_preassignedId:1;
         uint32_t m_inSelectionSet:1;
         uint32_t m_hilited:3;
         uint32_t m_undisplayed:1;
@@ -600,22 +599,22 @@ protected:
 
     void SetPersistent(bool val) const {m_flags.m_persistent = val;} //!< @private
     void InvalidateElementId() {m_elementId = DgnElementId();} //!< @private
-    void InvalidateCode() { m_code = DgnCode(); } //!< @private
+    void InvalidateCode() {m_code = DgnCode();} //!< @private
     
     //! Invokes _CopyFrom() in the context of _Clone() or _CloneForImport(), preserving this element's code as specified by the CreateParams supplied to those methods.
     void CopyForCloneFrom(DgnElementCR src);
 
     DGNPLATFORM_EXPORT virtual ~DgnElement();
 
-    //! Invoked when loading an element from the table, to allow subclasses to extract their property values
+    //! Invoked when loading an element from the database, to allow subclasses to extract their property values
     //! from the SELECT statement. The parameters are those which were specified by this elements Handler.
-    //! @param[in]      statement    The SELECT statement which selected the data from the table
-    //! @param[in]      selectParams The properties selected by the SELECT statement. Use this to obtain an index into the statement.
-    //! @return DgnDbStatus::Success if the data was loaded successfully, or else an error status.
+    //! @param[in] statement The SELECT statement which selected the data from the database
+    //! @param[in] selectParams The properties selected by the SELECT statement. Use this to obtain an index into the statement.
+    //! @return DgnDbStatus::Success if the data was loaded successfully, else an error status.
     //! @note If you override this method, you @em must first call T_Super::_ReadSelectParams, forwarding its status.
     //! You should then extract your subclass properties from the supplied ECSqlStatement, using
     //! selectParams.GetParameterIndex() to look up the index of each parameter within the statement.
-    virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR selectParams) { return DgnDbStatus::Success; }
+    virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR selectParams) {return DgnDbStatus::Success;}
 
     //! Override this method if your element needs to load additional data from the database when it is loaded (for example,
     //! look up related data in another table).
@@ -628,7 +627,7 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert();
 
     //! Called to bind the element's property values to the ECSqlStatement when inserting
-    //! a new element.  The parameters to bind were the ones specified by this element's Handler.
+    //! a new element. The parameters to bind were the ones specified by this element's Handler.
     //! @note If you override this method, you should bind your subclass properties
     //! to the supplied ECSqlStatement, using statement.GetParameterIndex with your property's name.
     //! Then you @em must call T_Super::_BindInsertParams, forwarding its status.
@@ -650,7 +649,7 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnReversedDelete.
     DGNPLATFORM_EXPORT virtual void _OnReversedDelete() const;
 
-    //! Called when this element is about to be replace an original element in the DgnDb.
+    //! Called when this element is about to be replace its original element in the DgnDb.
     //! @param [in] original the original state of this element.
     //! Subclasses may override this method to control whether their instances are updated.
     //! @return DgnDbStatus::Success to allow the update, otherwise the update will fail with the returned status.
@@ -658,7 +657,7 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR original);
 
     //! Called to bind the element's property values to the ECSqlStatement when updating
-    //! an existing element.  The parameters to bind were the ones specified by this element's Handler
+    //! an existing element. The parameters to bind were the ones specified by this element's Handler
     //! @note If you override this method, you should bind your subclass properties
     //! to the supplied ECSqlStatement, using statement.GetParameterIndex with your property's name.
     //! Then you @em must call T_Super::_BindUpdateParams, forwarding its status.
@@ -666,7 +665,7 @@ protected:
 
     //! Called to update a DgnElement in the DgnDb with new values. Override to update subclass properties.
     //! @note This method is called from DgnElements::Update, on the persistent element, after its values have been
-    //! copied from the modified version. If the update fails, the original data will be copied back into this DgnElement.  Only
+    //! copied from the modified version. If the update fails, the original data will be copied back into this DgnElement. Only
     //! override this method if your element needs to do additional work when updating the element, such as updating
     //! a relationship.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb();
@@ -796,7 +795,7 @@ protected:
     //! Apply X,Y offset and Yaw angle adjustment when importing from one DgnDb to another, in the case where source and destination GCSs are compatible but have the Cartesian coordinate system
     //! located at different geo locations and/or have different Azimuth angles.
     //! @param[in] importer Specifies source and destination DgnDbs and knows how to remap IDs
-    virtual void _AdjustPlacementForImport(DgnImportContext const& importer) {;}
+    virtual void _AdjustPlacementForImport(DgnImportContext const& importer) {}
 
     //! Get the display label (for use in the GUI) for this DgnElement.
     //! The default implementation returns the label if set or the code if the label is not set.
@@ -809,13 +808,12 @@ protected:
     //! Override to validate the parent/child relationship and return a value other than DgnDbStatus::Success to reject proposed new parent.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetParentId(DgnElementId parentId);
 
-    virtual DgnCode const& _GetCode() const override final { return m_code; }
-    virtual bool _SupportsCodeAuthority(DgnAuthorityCR) const override { return true; }
+    virtual DgnCode const& _GetCode() const override final {return m_code;}
+    virtual bool _SupportsCodeAuthority(DgnAuthorityCR) const override {return true;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCode(DgnCode const& code) override final;
     DGNPLATFORM_EXPORT virtual DgnCode _GenerateDefaultCode() const override;
-    virtual DgnElementCP _ToDgnElement() const override final { return this; }
-    virtual DgnDbR _GetDgnDb() const override final { return m_dgndb; }
-
+    virtual DgnElementCP _ToDgnElement() const override final {return this;}
+    virtual DgnDbR _GetDgnDb() const override final {return m_dgndb;}
     virtual GeometrySourceCP _ToGeometrySource() const {return nullptr;}
     virtual SpatialElementCP _ToSpatialElement() const {return nullptr;}
     virtual PhysicalElementCP _ToPhysicalElement() const {return nullptr;}
@@ -844,12 +842,11 @@ public:
     Utf8CP GetECClassName() const {return _GetECClassName();}
     Utf8CP GetSuperECClassName() const {return _GetSuperECClassName();}
 
-
     DGNPLATFORM_EXPORT void AddRef() const;  //!< @private
     DGNPLATFORM_EXPORT void Release() const; //!< @private
     uint32_t GetRefCount() const {return m_refCount.load();} //!< Get the current reference count for this DgnElement.
 
-    //! @name Dynamic casting to DgnElement subclasses
+    //! @name Dynamic casting to subclasses of DgnElement 
     //! @{
     GeometrySourceCP ToGeometrySource() const {return _ToGeometrySource();} //!< more efficient substitute for dynamic_cast<GeometrySourceCP>(el)
     DGNPLATFORM_EXPORT GeometrySource2dCP ToGeometrySource2d() const;
@@ -938,8 +935,6 @@ public:
     //! @name AppData Management
     //! @{
     //! Get the HeapZone for the DgnDb of this element.
-    //! @private
-    DGNPLATFORM_EXPORT HeapZoneR GetHeapZone() const;
 
     //! Add Application Data to this element.
     //! @param[in] key The AppData's key. If AppData with this key already exists on this element, it is dropped and
@@ -1033,8 +1028,8 @@ public:
 struct Placement3d
 {
 protected:
-    DPoint3d            m_origin;
-    YawPitchRollAngles  m_angles;
+    DPoint3d m_origin;
+    YawPitchRollAngles m_angles;
     ElementAlignedBox3d m_boundingBox;
 
 public:
@@ -1185,6 +1180,7 @@ protected:
     virtual AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
     virtual Placement3dCR _GetPlacement() const = 0;
     virtual DgnDbStatus _SetPlacement(Placement3dCR placement) = 0;
+
 public:
     Placement3dCR GetPlacement() const {return _GetPlacement();} //!< Get the Placement3d of this element
     DgnDbStatus SetPlacement(Placement3dCR placement) {return _SetPlacement(placement);} //!< Change the Placement3d for this element
@@ -1224,20 +1220,20 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
 
         //! Construct from the supplied parameters
         //! @param[in]      db       The DgnDb in which the element is to reside
-        //! @param[in]      modelId  The ID of the model in which the element is to reside
-        //! @param[in]      classId  The ID of the element's ECClass
+        //! @param[in]      modelId  The Id of the model in which the element is to reside
+        //! @param[in]      classId  The Id of the element's ECClass
         //! @param[in]      category The category to which the element belongs
         //! @param[in]      code     The element's code
         //! @param[in]      label    (Optional) element label
-        //! @param[in]      parent   (Optional) ID of this element's parent element
+        //! @param[in]      parent   (Optional) Id of this element's parent element
         CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, DgnCodeCR code=DgnCode(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId())
-            : T_Super(db, modelId, classId, code, label, parent), m_category(category) { }
+            : T_Super(db, modelId, classId, code, label, parent), m_category(category) {}
 
         //! Constructor from base params. Chiefly for internal use.
         //! @param[in]      params   The base element parameters
         //! @param[in]      category The category to which the element belongs
         //! @return 
-        explicit CreateParams(DgnElement::CreateParams const& params, DgnCategoryId category=DgnCategoryId()) : T_Super(params), m_category(category) { }
+        explicit CreateParams(DgnElement::CreateParams const& params, DgnCategoryId category=DgnCategoryId()) : T_Super(params), m_category(category) {}
     };
 protected:
     DgnCategoryId               m_categoryId;
@@ -1245,11 +1241,10 @@ protected:
     mutable Render::GraphicSet  m_graphics;
     mutable bool                m_multiChunkGeomStream;
 
-    explicit GeometricElement(CreateParams const& params) : T_Super(params), m_categoryId(params.m_category), m_multiChunkGeomStream(false) { }
+    explicit GeometricElement(CreateParams const& params) : T_Super(params), m_categoryId(params.m_category), m_multiChunkGeomStream(false) {}
 
     virtual bool _IsPlacementValid() const = 0;
     virtual Utf8CP _GetGeometryColumnTableName() const = 0;
-
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement&) override;
@@ -1258,8 +1253,7 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR) override;
     DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext&) override;
-
-    virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + static_cast<uint32_t>(sizeof(m_categoryId) + sizeof(m_geom)) + m_geom.GetAllocSize(); }
+    virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + static_cast<uint32_t>(sizeof(m_categoryId) + sizeof(m_geom)) + m_geom.GetAllocSize();}
 
     static void AddBaseClassParams(ECSqlClassParams& params);
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
@@ -1291,44 +1285,42 @@ public:
         Placement3d m_placement; //!< The element's placement in 3d space
 
         //! Construct from supplied parameters
-        //! @param[in]      db        The DgnDb in which the element is to reside
-        //! @param[in]      modelId   The ID of the model in which the element is to reside
-        //! @param[in]      classId   The ID of the element's ECClass
-        //! @param[in]      category  The category to which the element belongs
-        //! @param[in]      placement The element's placement in 3d space
-        //! @param[in]      code      The element's code
-        //! @param[in]      label     (Optional) element label
-        //! @param[in]      parent    (Optional) ID of this element's parent element
+        //! @param[in] db        The DgnDb in which the element is to reside
+        //! @param[in] modelId   The Id of the model in which the element is to reside
+        //! @param[in] classId   The Id of the element's ECClass
+        //! @param[in] category  The category to which the element belongs
+        //! @param[in] placement The element's placement in 3d space
+        //! @param[in] code      The element's code
+        //! @param[in] label     (Optional) element label
+        //! @param[in] parent    (Optional) Id of this element's parent element
         CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(),
                 DgnCodeCR code=DgnCode(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId())
-            : T_Super(db, modelId, classId, category, code, label, parent), m_placement(placement) { }
+            : T_Super(db, modelId, classId, category, code, label, parent), m_placement(placement) {}
 
         //! Construct from base parameters. Chiefly for internal use
-        //! @param[in]      params    The base element parameters
-        //! @param[in]      category  The category to which the element belongs
-        //! @param[in]      placement The element's placement in 3d space
-        //! @return 
+        //! @param[in] params    The base element parameters
+        //! @param[in] category  The category to which the element belongs
+        //! @param[in] placement The element's placement in 3d space
         explicit CreateParams(DgnElement::CreateParams const& params, DgnCategoryId category=DgnCategoryId(), Placement3dCR placement=Placement3d())
-            : T_Super(params, category), m_placement(placement) { }
+            : T_Super(params, category), m_placement(placement) {}
     };
 protected:
     Placement3d m_placement;
 
-    explicit GeometricElement3d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) { }
-
-    virtual bool _IsPlacementValid() const override final { return m_placement.IsValid(); }
+    explicit GeometricElement3d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
+    virtual bool _IsPlacementValid() const override final {return m_placement.IsValid();}
     virtual Render::GraphicSet& _Graphics() const override final {return m_graphics;}
-    virtual DgnDbR _GetSourceDgnDb() const override final { return GetDgnDb(); }
-    virtual DgnElementCP _ToElement() const override final { return this; }
-    virtual GeometrySourceCP _ToGeometrySource() const override final { return this; }
-    virtual GeometrySource3dCP _ToGeometrySource3d() const override final { return this; }
-    virtual Utf8CP _GetGeometryColumnTableName() const override final { return DGN_TABLE(DGN_CLASSNAME_GeometricElement3d); }
-    virtual DgnCategoryId _GetCategoryId() const override final { return m_categoryId; }
-    virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { return DoSetCategoryId(categoryId); }
+    virtual DgnDbR _GetSourceDgnDb() const override final {return GetDgnDb();}
+    virtual DgnElementCP _ToElement() const override final {return this;}
+    virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
+    virtual GeometrySource3dCP _ToGeometrySource3d() const override final {return this;}
+    virtual Utf8CP _GetGeometryColumnTableName() const override final {return DGN_TABLE(DGN_CLASSNAME_GeometricElement3d);}
+    virtual DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
+    virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}
     virtual GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
-    virtual Placement3dCR _GetPlacement() const override final { return m_placement; }
+    virtual Placement3dCR _GetPlacement() const override final {return m_placement;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPlacement(Placement3dCR placement) override;
-
+    virtual void _OnUpdateFinished() const override {T_Super::_OnUpdateFinished(); m_graphics.Clear();}
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
     DGNPLATFORM_EXPORT virtual void _AdjustPlacementForImport(DgnImportContext const&) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
@@ -1337,7 +1329,6 @@ protected:
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement&);
 public:
-    virtual void _OnUpdateFinished() const override {T_Super::_OnUpdateFinished(); m_graphics.Clear();}
     DGNPLATFORM_EXPORT static void AddClassParams(ECSqlClassParams& params);
 };
 
@@ -1360,45 +1351,43 @@ public:
         Placement2d m_placement; //!< The element's placement in 2d space
 
         //! Construct from supplied parameters
-        //! @param[in]      db        The DgnDb in which the element is to reside
-        //! @param[in]      modelId   The ID of the model in which the element is to reside
-        //! @param[in]      classId   The ID of the element's ECClass
-        //! @param[in]      category  The ID of the category to which the element belongs
-        //! @param[in]      placement The element's placement in 2d space
-        //! @param[in]      code      The element's code
-        //! @param[in]      label     (Optional) element label
-        //! @param[in]      parent    (Optional) ID of this element's parent element
+        //! @param[in] db        The DgnDb in which the element is to reside
+        //! @param[in] modelId   The Id of the model in which the element is to reside
+        //! @param[in] classId   The Id of the element's ECClass
+        //! @param[in] category  The Id of the category to which the element belongs
+        //! @param[in] placement The element's placement in 2d space
+        //! @param[in] code      The element's code
+        //! @param[in] label     (Optional) element label
+        //! @param[in] parent    (Optional) Id of this element's parent element
         CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(),
                 DgnCodeCR code=DgnCode(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId())
-            : T_Super(db, modelId, classId, category, code, label, parent), m_placement(placement) { }
+            : T_Super(db, modelId, classId, category, code, label, parent), m_placement(placement) {}
 
         //! Construct from base parameters. Chiefly for internal use.
-        //! @param[in]      params    The base element parameters
-        //! @param[in]      category  The ID of the category to which the element belongs
-        //! @param[in]      placement The element's placement in 2d space
-        //! @return 
+        //! @param[in] params    The base element parameters
+        //! @param[in] category  The Id of the category to which the element belongs
+        //! @param[in] placement The element's placement in 2d space
         explicit CreateParams(DgnElement::CreateParams const& params, DgnCategoryId category=DgnCategoryId(), Placement2dCR placement=Placement2d())
-            : T_Super(params, category), m_placement(placement) { }
+            : T_Super(params, category), m_placement(placement) {}
     };
+
 protected:
     Placement2d m_placement;
 
-    explicit GeometricElement2d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) { }
-
-    virtual bool _IsPlacementValid() const override final { return m_placement.IsValid(); }
-
-    virtual DgnDbR _GetSourceDgnDb() const override final { return GetDgnDb(); }
-    virtual DgnElementCP _ToElement() const override final { return this; }
-    virtual GeometrySourceCP _ToGeometrySource() const override final { return this; }
-    virtual GeometrySource2dCP _ToGeometrySource2d() const override final { return this; }
-    virtual Utf8CP _GetGeometryColumnTableName() const override final { return DGN_TABLE(DGN_CLASSNAME_GeometricElement2d); }
-    virtual DgnCategoryId _GetCategoryId() const override final { return m_categoryId; }
-    virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { return DoSetCategoryId(categoryId); }
-    virtual GeometryStreamCR _GetGeometryStream() const override final { return m_geom; }
-    virtual Placement2dCR _GetPlacement() const override final { return m_placement; }
+    explicit GeometricElement2d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
+    virtual bool _IsPlacementValid() const override final {return m_placement.IsValid();}
+    virtual DgnDbR _GetSourceDgnDb() const override final {return GetDgnDb();}
+    virtual DgnElementCP _ToElement() const override final {return this;}
+    virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
+    virtual GeometrySource2dCP _ToGeometrySource2d() const override final {return this;}
+    virtual Utf8CP _GetGeometryColumnTableName() const override final {return DGN_TABLE(DGN_CLASSNAME_GeometricElement2d);}
+    virtual DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
+    virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}
+    virtual GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
+    virtual Placement2dCR _GetPlacement() const override final {return m_placement;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPlacement(Placement2dCR placement) override;
     virtual Render::GraphicSet& _Graphics() const override final {return m_graphics;}
-
+    virtual void _OnUpdateFinished() const override {T_Super::_OnUpdateFinished(); m_graphics.Clear();}
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
     DGNPLATFORM_EXPORT virtual void _AdjustPlacementForImport(DgnImportContext const&) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
@@ -1407,7 +1396,6 @@ protected:
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement&);
 public:
-    virtual void _OnUpdateFinished() const override {T_Super::_OnUpdateFinished(); m_graphics.Clear();}
     DGNPLATFORM_EXPORT static void AddClassParams(ECSqlClassParams& params);
 };
 
@@ -1495,7 +1483,7 @@ public:
 protected:
     virtual AnnotationElement2dCP _ToAnnotationElement2d() const override final {return this;}
 
-    explicit AnnotationElement2d(CreateParams const& params) : T_Super(params) { }
+    explicit AnnotationElement2d(CreateParams const& params) : T_Super(params) {}
 }; // AnnotationElement2d
 
 //=======================================================================================
@@ -1513,7 +1501,7 @@ public:
 protected:
     virtual DrawingGraphicCP _ToDrawingGraphic() const override final {return this;}
 
-    explicit DrawingGraphic(CreateParams const& params) : T_Super(params) { }
+    explicit DrawingGraphic(CreateParams const& params) : T_Super(params) {}
 
 }; // DrawingGraphic
 
@@ -1675,10 +1663,10 @@ public:
 
         //! Constructs parameters for a dictionary element.
         //! @param[in] db       The DgnDb in which the element is to reside.
-        //! @param[in] classId  The ID of the ECClass representing this element.
+        //! @param[in] classId  The Id of the ECClass representing this element.
         //! @param[in] code     The element's unique code.
         //! @param[in] label    The element's label
-        //! @param[in] parentId The ID of the element's parent element.
+        //! @param[in] parentId The Id of the element's parent element.
         DGNPLATFORM_EXPORT CreateParams(DgnDbR db, DgnClassId classId, DgnCode const& code, Utf8CP label=nullptr, DgnElementId parentId=DgnElementId());
 
         //! Constructor from base class. Primarily for internal use.
@@ -1690,7 +1678,7 @@ public:
     };
 protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
-    virtual DictionaryElementCP _ToDictionaryElement() const override final { return this; }
+    virtual DictionaryElementCP _ToDictionaryElement() const override final {return this;}
 
     explicit DictionaryElement(CreateParams const& params) : T_Super(params) {}
 };
@@ -1740,8 +1728,7 @@ private:
     {
         BeSQLite::EC::CachedECSqlStatementPtr m_statement;
         ECSqlClassParamsCR m_params;
-
-        ElementSelectStatement(BeSQLite::EC::CachedECSqlStatement* stmt, ECSqlClassParamsCR params) : m_statement(stmt), m_params(params) { }
+        ElementSelectStatement(BeSQLite::EC::CachedECSqlStatement* stmt, ECSqlClassParamsCR params) : m_statement(stmt), m_params(params) {}
     };
 
     struct ClassInfo : ECSqlClassInfo
@@ -1753,7 +1740,6 @@ private:
 
     DgnElementId  m_nextAvailableId;
     struct ElemIdTree* m_tree;
-    HeapZone m_heapZone;
     BeSQLite::StatementCache m_stmts;
     Byte m_snappyFromBuffer[BeSQLite::SnappyReader::SNAPPY_UNCOMPRESSED_BUFFER_SIZE];
     BeSQLite::SnappyFromMemory m_snappyFrom;
@@ -1791,17 +1777,16 @@ private:
     BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;} // NB: Not to be used during insert or update of a geometric element!
 
 public:
-    DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const;
-    DGNPLATFORM_EXPORT void ChangeMemoryUsed(int32_t delta) const;
-    DGNPLATFORM_EXPORT void DropFromPool(DgnElementCR) const;
+    DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const; //!< Get a statement from the element-specific statement cache for this DgnDb @private
+    DGNPLATFORM_EXPORT void ChangeMemoryUsed(int32_t delta) const; //! @private
+    DGNPLATFORM_EXPORT void DropFromPool(DgnElementCR) const; //! @private
 
     //! Look up an element in the pool of loaded elements for this DgnDb.
     //! @return A pointer to the element, or nullptr if the is not in the pool.
-    //! @private
+    //! @note This method will return nullptr if the element is not currently loaded. That does not mean the element doesn't exist in the database.
     DGNPLATFORM_EXPORT DgnElementCP FindElement(DgnElementId id) const;
 
     //! Query the DgnModelId of the specified DgnElementId.
-    //! @private
     DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnElementId elementId) const;
 
     //! Query for the DgnElementId of the element that has the specified code
@@ -1862,9 +1847,6 @@ public:
     //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.
     //! @note This method is merely a shortcut to #GetElement and then #Delete
     DgnDbStatus Delete(DgnElementId id) {auto el=GetElement(id); return el.IsValid() ? Delete(*el) : DgnDbStatus::NotFound;}
-
-    //! Get the Heapzone for this DgnDb.
-    HeapZone& GetHeapZone() {return m_heapZone;}
 
     DgnElementIdSet const& GetSelectionSet() const {return m_selectionSet;}
     DgnElementIdSet& GetSelectionSetR() {return m_selectionSet;}
@@ -1927,7 +1909,7 @@ struct DgnEditElementCollector
 {
 protected:
      bset<DgnElementP> m_elements; // The editable elements in the set. We manage their refcounts as we add and remove them 
-     bmap<DgnElementId,DgnElementP> m_ids; // The Elements in the set that have IDs. Child elements will always have IDs. Some top-level elements may not have an ID.
+     bmap<DgnElementId,DgnElementP> m_ids; // The Elements in the set that have IDs. Child elements will always have IDs. Some top-level elements may not have an Id.
 
 public:
     DGNPLATFORM_EXPORT DgnEditElementCollector();
@@ -1969,12 +1951,12 @@ public:
     //! @see FindElementById 
     DGNPLATFORM_EXPORT void RemoveElement(DgnElementR el);
 
-    //! Remove an element's children (by ID) from the collection.
+    //! Remove an element's children (by Id) from the collection.
     //! @param el  The parent element to query.
     //! @param maxDepth The levels of child elements to add. Pass 1 to add only the immediate children.
     DGNPLATFORM_EXPORT void RemoveChildren(DgnElementCR el, size_t maxDepth = std::numeric_limits<size_t>::max());
     
-    //! Remove the specified editable copy of an element and its children (by ID) from the collection.
+    //! Remove the specified editable copy of an element and its children (by Id) from the collection.
     //! @param el  The editable copy of the parent element to remove and to query.
     //! @param maxDepth The levels of child elements to add. Pass 1 to add only the immediate children.
     DGNPLATFORM_EXPORT void RemoveAssembly(DgnElementR el, size_t maxDepth = std::numeric_limits<size_t>::max()) {RemoveElement(el); RemoveChildren(el, maxDepth);}
@@ -1994,24 +1976,23 @@ public:
 };
 
 //=======================================================================================
-//! Applies a transform one or more  elements
+//! Applies a transform one or more elements
 // @bsiclass                                                BentleySystems
 //=======================================================================================
 struct DgnElementTransformer
 {
     DGNPLATFORM_EXPORT static DgnDbStatus ApplyTransformTo(DgnElementR el, Transform const& t); 
 
-    template<typename COLL>
-    static DgnDbStatus ApplyTransformToAll(COLL& collection, Transform const& t) 
+    template<typename COLL> static DgnDbStatus ApplyTransformToAll(COLL& collection, Transform const& t) 
         {
         for (auto& item : collection)
             {
             DgnDbStatus status = ApplyTransformTo(*item, t);
             if (DgnDbStatus::Success != status)
                 return status;
-            }
+           }
         return DgnDbStatus::Success;
-        }
+       }
 };
 
 END_BENTLEY_DGN_NAMESPACE

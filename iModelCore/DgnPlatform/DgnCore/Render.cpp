@@ -229,7 +229,7 @@ Render::Graphic* GraphicSet::Find(DgnViewportCR vp, double metersPerPixel) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GraphicSet::DropFor(DgnViewportCR vp)
     {
-    // NB: Note there can be more than one graphic for a viewport
+    // NB: Note there can be more than one Graphic for a viewport
     for (auto it=m_graphics.begin(); it!=m_graphics.end(); )
         {
         if ((*it)->IsSpecificToViewport(vp))
