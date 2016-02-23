@@ -106,12 +106,6 @@ namespace dgn_ElementHandler
         virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); GeometricElement3d::AddClassParams(params); }
     };
 
-    //! The ElementHandler for PhysicalElement
-    struct EXPORT_VTABLE_ATTRIBUTE Physical : Geometric3d
-    {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalElement, PhysicalElement, Physical, Geometric3d, DGNPLATFORM_EXPORT)
-    };
-
     //! The ElementHandler for GeometricElement2d
     struct EXPORT_VTABLE_ATTRIBUTE Geometric2d : Element
     {
@@ -125,10 +119,10 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationElement2d, AnnotationElement2d, Annotation2d, Geometric2d, DGNPLATFORM_EXPORT)
     };
 
-    //! The ElementHandler for DrawingElement
-    struct EXPORT_VTABLE_ATTRIBUTE Drawing : Geometric2d
+    //! The ElementHandler for DrawingGraphic
+    struct EXPORT_VTABLE_ATTRIBUTE DrawingGraphic : Geometric2d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, DrawingElement, Drawing, Geometric2d, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingGraphic, Dgn::DrawingGraphic, DrawingGraphic, Geometric2d, DGNPLATFORM_EXPORT)
     };
 };
 

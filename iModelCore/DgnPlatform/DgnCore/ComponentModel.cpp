@@ -149,14 +149,13 @@ DgnElementPtr HarvestedSolutionWriter::_CreateInstance(DgnDbStatus& status, DgnC
         status = DgnDbStatus::WrongHandler;
         return nullptr;
         }
-    DgnElementPtr capturedSolutionElement = dgnElem->ToPhysicalElementP();
-    if (!capturedSolutionElement.IsValid())
+    if (!dgnElem->Is3d())
         {
         BeAssert(false && "HarvestModel creates only PhysicalElements");
         status = DgnDbStatus::WrongClass;
         return nullptr;
         }
-    return capturedSolutionElement;
+    return dgnElem;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -175,9 +174,10 @@ DgnElementCPtr HarvestedSolutionInserter::_WriteInstance(DgnDbStatus& status, Dg
     if (!storedDgnElem.IsValid())
         return nullptr;
 
-    DgnElementCPtr storedPhysicalElem = storedDgnElem->ToPhysicalElement();
+    if (!storedDgnElem->Is3d())
+        return nullptr;
 
-    return storedPhysicalElem;
+    return storedDgnElem;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -691,6 +691,7 @@ bvector<Utf8String> ComponentDef::GetInputs() const
 
     return inputs;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/

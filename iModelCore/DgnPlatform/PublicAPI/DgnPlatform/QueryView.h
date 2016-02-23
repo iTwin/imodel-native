@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
+
 #include <DgnPlatform/ViewController.h>
 #include "UpdatePlan.h"
 #include <Bentley/BeThread.h>
@@ -92,16 +93,16 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
     struct RangeQuery : SpatialQuery, DgnQueryQueue::Task
     {
         DEFINE_T_SUPER(SpatialQuery)
-        bool        m_depthFirst = false;
-        bool        m_cameraOn = false;
-        bool        m_testLOD = false;
-        uint32_t    m_orthogonalProjectionIndex;
-        uint32_t    m_count = 0;
-        uint32_t    m_hitLimit = 0;     // find this many "best" elements sorted by occlusion score
-        uint64_t    m_lastId = 0;
-        double      m_lodFilterNPCArea = 0.0;
-        double      m_minScore = 0.0;
-        double      m_lastScore = 0.0;
+        bool m_depthFirst = false;
+        bool m_cameraOn = false;
+        bool m_testLOD = false;
+        uint32_t m_orthogonalProjectionIndex;
+        uint32_t m_count = 0;
+        uint32_t m_hitLimit = 0;     // find this many "best" elements sorted by occlusion score
+        uint64_t m_lastId = 0;
+        double m_lodFilterNPCArea = 0.0;
+        double m_minScore = 0.0;
+        double m_lastScore = 0.0;
         DgnQueryView::QueryResultsPtr m_results;
 
         virtual void _Go() override;
@@ -137,7 +138,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
     struct NonScene : ProgressiveTask
     {
         enum {SHOW_PROGRESS_INTERVAL = 1000}; // once per second.
-        bool     m_setTimeout = false;
+        bool m_setTimeout = false;
         uint32_t m_total = 0;
         uint32_t m_thisBatch = 0;
         uint32_t m_batchSize = 0;
@@ -154,7 +155,7 @@ protected:
     bool m_noQuery = false;
     mutable bool m_abortQuery = false;
     Utf8String m_viewSQL;
-    double m_sceneLODSize    = 6.0; 
+    double m_sceneLODSize = 6.0; 
     double m_nonSceneLODSize = 7.0; 
     SpecialElements m_special;
     ClipPrimitivePtr m_activeVolume;     //!< the active volume. If present, elements inside this volume may be treated specially

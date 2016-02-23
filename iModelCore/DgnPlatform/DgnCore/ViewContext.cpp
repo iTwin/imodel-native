@@ -41,27 +41,6 @@ StatusInt ViewContext::VisitElement(DgnElementId elementId, bool allowLoad)
         return ERROR;
 
     return VisitGeometry(*geomElem);
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    if (pool.GetTotalAllocated() < (int64_t) m_elementReleaseTrigger)
-        return true;
-
-    pool.DropFromPool(*el);
-
-    // Purging the element does not purge the symbols so it may be necessary to do a full purge
-    if (pool.GetTotalAllocated() < (int64_t) m_purgeTrigger)
-        return true;
-
-    pool.Purge(m_elementReleaseTrigger);   // Try to get back to the elementPurgeTrigger
-
-    static const double s_purgeFactor = 1.3;
-
-    // The purge may not have succeeded if there are elements in the QueryView's list of elements and those elements hold symbol references.
-    // When that is true, we leave it to QueryView::_DrawView to try to clean up.  This logic just tries to recover from the
-    // growth is caused.  It allows some growth between calls to purge to avoid spending too much time in purge.
-    uint64_t newTotalAllocated = (uint64_t)pool.GetTotalAllocated();
-    m_purgeTrigger = (uint64_t)(s_purgeFactor * std::max(newTotalAllocated, m_elementReleaseTrigger));
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -364,13 +343,13 @@ StatusInt ViewContext::_OutputGeometry(GeometrySourceCR source)
         tmpPts[8] = p[0];
 
         // Draw a "saddle" shape to accumulate correct dirty region, simple lines can be clipped out when zoomed in...
-        rangeGraphic->AddLineString(9, tmpPts, nullptr);
+        rangeGraphic->AddLineString(9, tmpPts);
 
         // Draw missing connecting lines to complete box...
-        rangeGraphic->AddLineString(2, DSegment3d::From(p[0], p[3]).point, nullptr);
-        rangeGraphic->AddLineString(2, DSegment3d::From(p[4], p[5]).point, nullptr);
-        rangeGraphic->AddLineString(2, DSegment3d::From(p[1], p[7]).point, nullptr);
-        rangeGraphic->AddLineString(2, DSegment3d::From(p[2], p[6]).point, nullptr);
+        rangeGraphic->AddLineString(2, DSegment3d::From(p[0], p[3]).point);
+        rangeGraphic->AddLineString(2, DSegment3d::From(p[4], p[5]).point);
+        rangeGraphic->AddLineString(2, DSegment3d::From(p[1], p[7]).point);
+        rangeGraphic->AddLineString(2, DSegment3d::From(p[2], p[6]).point);
         }
     else
         {
@@ -380,7 +359,7 @@ StatusInt ViewContext::_OutputGeometry(GeometrySourceCR source)
         tmpPts[3] = p[3];
         tmpPts[4] = p[0];
 
-        rangeGraphic->AddLineString(5, tmpPts, nullptr);
+        rangeGraphic->AddLineString(5, tmpPts);
         }
 
     _OutputGraphic(*rangeGraphic, &source);
@@ -1467,7 +1446,7 @@ static void drawGridRefs(Render::GraphicR graphic, DPoint3dCR org, DVec3dCR rowV
 
         linePoints[0].SumOf(org,rowVec, d);
         linePoints[1].SumOf(gridEnd,rowVec, d);
-        graphic.AddLineString(2, linePoints, nullptr);
+        graphic.AddLineString(2, linePoints);
         }
     }
 
@@ -1582,7 +1561,7 @@ static void drawGridDots(Render::GraphicR graphic, bool doIsoGrid, DPoint3dCR or
                 }
 
             if (0 != nToDisplay)
-                graphic.AddPointString(nToDisplay, points, nullptr);
+                graphic.AddPointString(nToDisplay, points);
             }
         }
     }
@@ -1608,7 +1587,7 @@ static void drawGridPlane(Render::GraphicR graphic, DPoint3dCR gridOrigin, DVec3
     shapePoints[2].SumOf(gridOrigin,xVec, repetitions.x, yVec, repetitions.y);
     shapePoints[3].SumOf(gridOrigin,yVec, repetitions.y);
 
-    graphic.AddShape(5, shapePoints, true, nullptr);
+    graphic.AddShape(5, shapePoints, true);
     }
 
 /*---------------------------------------------------------------------------------**//**

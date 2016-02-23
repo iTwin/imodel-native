@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/RenderMaterial.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -206,47 +206,28 @@ void  JsonRenderMaterial::SetColor(Utf8CP keyword, RgbFactor color)
     m_value[keyword] = colorValue;
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2015
+* @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus JsonRenderMaterial::DoImport(DgnImportContext& context, DgnDbR sourceDb) 
+BentleyStatus JsonRenderMaterial::Import(DgnImportContext& context) 
     {
-    JsonValueR  mapsMap = m_value[RENDER_MATERIAL_Map];
-    
-    if (mapsMap.isNull())
+    JsonRenderMaterial::TextureMap patternMap = GetPatternMap();
+    if (!patternMap.IsValid())
         return ERROR;
 
-    for (auto& map : mapsMap)
-        {
-        RenderMaterialMapPtr    renderMaterialMap = JsonRenderMaterialMap::Create(map);
-        JsonRenderMaterialMap*  jsonRenderMaterialMap = dynamic_cast <JsonRenderMaterialMap*> (renderMaterialMap.get());
+    DgnTextureId newId = patternMap.Import(context);
+    if (!newId.IsValid())
+        return ERROR;
 
-        if (NULL != jsonRenderMaterialMap &&
-            SUCCESS == jsonRenderMaterialMap->DoImport(context, sourceDb))
-            map = jsonRenderMaterialMap->GetValue();
-        }
-    
+    m_value[RENDER_MATERIAL_Map][RENDER_MATERIAL_TextureId] = newId.GetValue();
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2015
+* @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus JsonRenderMaterial::TextureMap::DoImport(DgnImportContext& context, DgnDbR sourceDb) 
+DgnTextureId JsonRenderMaterial::TextureMap::Import(DgnImportContext& context) 
     {
-#ifdef WIP_MERGE_YII
-    Json::Value&     textureIdValue = m_value[RENDER_MATERIAL_TextureId];
-
-    if (textureIdValue.isNull())     
-        return ERROR;                 // No external file support for now.
-
-    textureIdValue = (uint64_t) context.GetDestinationDb().Textures().ImportTexture(context, sourceDb, (DgnTextureId) textureIdValue.asUInt64()).GetValue();
-
-    return SUCCESS;
-#else
-    return ERROR;
-#endif
+    DgnTextureId thisId = GetTextureId();
+    return thisId.IsValid() ? DgnTexture::ImportTexture(context, thisId) : thisId;
     }
-
-#endif

@@ -25,16 +25,16 @@ struct NullContext : ViewContext
     struct NullGraphic : Render::Graphic
     {
         virtual void _ActivateGraphicParams(Render::GraphicParamsCR, Render::GeometryParamsCP) override {}
-        virtual void _AddLineString(int numPoints, DPoint3dCP points, DPoint3dCP range) override {}
-        virtual void _AddLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) override {}
-        virtual void _AddPointString(int numPoints, DPoint3dCP points, DPoint3dCP range) override {}
-        virtual void _AddPointString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) override {}
-        virtual void _AddShape(int numPoints, DPoint3dCP points, bool filled, DPoint3dCP range) override {}
-        virtual void _AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range) override {}
-        virtual void _AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags, DPoint3dCP range) override {}
-        virtual void _AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth, DPoint2dCP range) override {}
-        virtual void _AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled, DPoint3dCP range) override {}
-        virtual void _AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth, DPoint2dCP range) override {}
+        virtual void _AddLineString(int numPoints, DPoint3dCP points) override {}
+        virtual void _AddLineString2d(int numPoints, DPoint2dCP points, double zDepth) override {}
+        virtual void _AddPointString(int numPoints, DPoint3dCP points) override {}
+        virtual void _AddPointString2d(int numPoints, DPoint2dCP points, double zDepthe) override {}
+        virtual void _AddShape(int numPoints, DPoint3dCP points, bool filled) override {}
+        virtual void _AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth) override {}
+        virtual void _AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags) override {}
+        virtual void _AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth) override {}
+        virtual void _AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled) override {}
+        virtual void _AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth) override {}
         virtual void _AddBSplineCurve(MSBsplineCurveCR curve, bool filled) override {}
         virtual void _AddBSplineCurve2d(MSBsplineCurveCR curve, bool filled, double zDepth) override {}
         virtual void _AddCurveVector(CurveVectorCR curves, bool isFilled) override {}
@@ -45,10 +45,9 @@ struct NullContext : ViewContext
         virtual void _AddBody(ISolidKernelEntityCR, double pixelSize = 0.0) override {}
         virtual void _AddTextString(TextStringCR text) override {}
         virtual void _AddTextString2d(TextStringCR text, double zDepth) override {}
-        virtual void _AddMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) override {}
         virtual void _AddTile(Render::TextureCR tile, DPoint3dCP corners) override {}
-        virtual void _AddRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) override {}
-        virtual void _AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2d const *range) override {}
+        virtual void _AddRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels) override {}
+        virtual void _AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth) override {}
         virtual void _AddDgnOle(Render::DgnOleDraw*) override {}
         virtual void _AddPointCloud(Render::PointCloudDraw* drawParams) override {}
         virtual void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR) override {}

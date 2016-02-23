@@ -324,7 +324,6 @@ module DgnScriptTests {
         var points = new Bentley.Dgn.DPoint3dArray ();
         var startDegrees = isRadiusOuter ? 0.0 : 0.5 * stepDegrees;
         var i = 0;
-        points.AddXYZ (radius, 0, 0);
         for (i = 0; i < numSide; i++)
             {
             var angle = Bentley.Dgn.Angle.CreateDegrees (startDegrees + i * stepDegrees);
@@ -334,7 +333,7 @@ module DgnScriptTests {
         points.AddXYZ (radius, 0, 0);
         return points;
         }
-
+        var spiral = Bentley.Dgn.SpiralCurve.CreateSpiralBearingRadiusLengthRadius
     function LoopFromPoints (points: Bentley.Dgn.DPoint3dArray) : Bentley.Dgn.Geometry
         {
         var loop = new Bentley.Dgn.Loop ()
@@ -342,18 +341,16 @@ module DgnScriptTests {
         return loop;
         }
 
-
     function TryTransformGeometryArrayInPlace (geometry: Array<Bentley.Dgn.Geometry>, transform: Bentley.Dgn.Transform)
         {
         var i = 0;
-        for (;i < geometry.length;i++)
+       for (;i < geometry.length;i++)
             geometry[i].TryTransformInPlace (transform);
         }
-
     function CloneAndTransformGeometryArray (geometry :Array<Bentley.Dgn.Geometry>, transform: Bentley.Dgn.Transform):Array<Bentley.Dgn.Geometry>
         {
-        var result = new Array<Bentley.Dgn.Geometry>();
         var i = 0;
+        var result = new Array<Bentley.Dgn.Geometry> ();
         for (;i < geometry.length;i++)
             result.push (geometry[i].Clone ());
         if (transform != null)
@@ -361,6 +358,7 @@ module DgnScriptTests {
         return result;
         }
 
+    
 
 
     function t_arrayOfGeometry ()
@@ -370,7 +368,6 @@ module DgnScriptTests {
         var geometry2 = CloneAndTransformGeometryArray (geometry1, Bentley.Dgn.Transform.CreateTranslationXYZ (1,0,3));
         }
     t_polyfaceMeshA ();  
-    t_arrayOfGeometry ();
 
     logMessage('Test1 Z');
 }

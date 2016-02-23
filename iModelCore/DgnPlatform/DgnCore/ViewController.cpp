@@ -1801,8 +1801,8 @@ static void drawLocateHitDetail(DecorateContextR context, double aperture, HitDe
 
     color.SetAlpha(200);
     graphic->SetSymbology(color, color, 1);
-    graphic->AddArc(ellipse, true, true, nullptr);
-    graphic->AddArc(ellipse, false, false, nullptr);
+    graphic->AddArc(ellipse, true, true);
+    graphic->AddArc(ellipse, false, false);
 
     double      length = (0.6 * radius);
     DSegment3d  segment;
@@ -1810,12 +1810,12 @@ static void drawLocateHitDetail(DecorateContextR context, double aperture, HitDe
     normal.Normalize(ellipse.vector0);
     segment.point[0].SumOf(pt, normal, length);
     segment.point[1].SumOf(pt, normal, -length);
-    graphic->AddLineString(2, segment.point, nullptr);
+    graphic->AddLineString(2, segment.point);
 
     normal.Normalize(ellipse.vector90);
     segment.point[0].SumOf(pt, normal, length);
     segment.point[1].SumOf(pt, normal, -length);
-    graphic->AddLineString(2, segment.point, nullptr);
+    graphic->AddLineString(2, segment.point);
     context.AddWorldOverlay(*graphic);
     }
 
@@ -1839,15 +1839,15 @@ static void drawLocateCircle(DecorateContextR context, double aperture, DPoint3d
 
     white.SetAlpha(165);
     graphic->SetSymbology(white, white, 1);
-    graphic->AddArc2d(ellipse, true, true, 0.0, NULL);
+    graphic->AddArc2d(ellipse, true, true, 0.0);
 
     black.SetAlpha(100);
     graphic->SetSymbology(black, black, 1);
-    graphic->AddArc2d(ellipse2, false, false, 0.0, NULL);
+    graphic->AddArc2d(ellipse2, false, false, 0.0);
 
     white.SetAlpha(20);
     graphic->SetSymbology(white, white, 1);
-    graphic->AddArc2d(ellipse, false, false, 0.0, NULL);
+    graphic->AddArc2d(ellipse, false, false, 0.0);
     context.AddViewOverlay(*graphic);
     }
 

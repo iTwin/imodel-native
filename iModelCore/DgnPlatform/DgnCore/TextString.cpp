@@ -417,7 +417,7 @@ void TextString::AddUnderline(Render::GraphicR graphic) const
     pts[1].y = pts[0].y;
     pts[1].z = 0.0;
 
-    graphic.AddLineString(2, pts, nullptr);
+    graphic.AddLineString(2, pts);
     }
 
 static const uint8_t CURRENT_STYLE_MAJOR_VERSION = 1;

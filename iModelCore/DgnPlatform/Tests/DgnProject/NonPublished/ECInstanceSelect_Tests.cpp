@@ -186,7 +186,7 @@ TEST_F (ECInstanceSelectTests, SelectQueriesOnDbGeneratedDuringBuild_04Plant)
     ASSERT_EQ (239, stmt.GetValueInt (0));
     stmt.Finalize ();
 
-    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (*m_db, "SELECT COUNT(INSUL_THK) FROM appdw.Equipment WHERE INSUL_THK=2"));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (*m_db, "SELECT COUNT(INSUL_THK) FROM appdw.Equipment WHERE INSUL_THK='2'"));
     ASSERT_EQ (stmt.Step (), DbResult::BE_SQLITE_ROW);
     ASSERT_EQ (6, stmt.GetValueInt (0));
     stmt.Finalize ();
@@ -261,8 +261,8 @@ TEST_F (ECInstanceSelectTests, SelectQueriesOnDbGeneratedDuringBuild_79Main)
     ASSERT_EQ (1, stmt.GetValueInt (0));
     stmt.Finalize ();
 
-    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (*m_db, "Select EQP_NO From ams.EQUIP_MEQP where ELEMENT_ID>5000 ORDER BY EQP_NO ASC"));
-    Utf8String ExpectedStringValue = "104-104-104-";
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (*m_db, "Select EQP_NO From ams.EQUIP_MEQP where ELEMENT_ID>'5000' ORDER BY EQP_NO ASC"));
+    Utf8String ExpectedStringValue = "102-104-104-104-";
     Utf8String ActualStringValue = "";
 
     while (stmt.Step () != DbResult::BE_SQLITE_DONE)

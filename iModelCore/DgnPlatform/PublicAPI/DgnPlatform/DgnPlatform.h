@@ -105,7 +105,7 @@ DGNPLATFORM_TYPEDEFS(DictionaryElement)
 DGNPLATFORM_TYPEDEFS(DisplayStyle)
 DGNPLATFORM_TYPEDEFS(DisplayStyleFlags)
 DGNPLATFORM_TYPEDEFS (AnnotationElement2d)
-DGNPLATFORM_TYPEDEFS(DrawingElement)
+DGNPLATFORM_TYPEDEFS (DrawingGraphic)
 DGNPLATFORM_TYPEDEFS(DrawingModel)
 DGNPLATFORM_TYPEDEFS(DrawingViewDefinition)
 DGNPLATFORM_TYPEDEFS(DropGeometry)
@@ -216,7 +216,7 @@ DGNPLATFORM_REF_COUNTED_PTR(DgnViewport)
 DGNPLATFORM_REF_COUNTED_PTR(DictionaryElement)
 DGNPLATFORM_REF_COUNTED_PTR(AnnotationElement2d)
 DGNPLATFORM_REF_COUNTED_PTR(DisplayStyleHandlerSettings)
-DGNPLATFORM_REF_COUNTED_PTR(DrawingElement)
+DGNPLATFORM_REF_COUNTED_PTR (DrawingGraphic)
 DGNPLATFORM_REF_COUNTED_PTR(DrawingViewDefinition)
 DGNPLATFORM_REF_COUNTED_PTR(IBriefcaseManager)
 DGNPLATFORM_REF_COUNTED_PTR(IElemTopology)
@@ -977,7 +977,7 @@ struct CopyrightSupplier
     //! Return the copyright message to display in the specified viewport
     //! @param vp   The viewport that is being displayed
     //! @return a copyright message to display or an empty string to display nothing
-    virtual Utf8String _GetCopyrightMessage(DgnViewportR vp) = 0;
+    virtual Utf8String _GetCopyrightMessage(DgnViewportCR vp) = 0;
     };
 
 

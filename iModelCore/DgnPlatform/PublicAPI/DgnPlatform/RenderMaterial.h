@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/RenderMaterial.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -117,13 +117,15 @@ public:
         DGNPLATFORM_EXPORT DgnTextureId GetTextureId() const;
         Type GetType() const {return m_type;}
         double GetUnitScale(Units units) const;
+        DgnTextureId Import(DgnImportContext& context);
         double GetDouble(Utf8CP name, double defaultVal) const {return !m_value[name].isDouble() ? defaultVal : m_value[name].asDouble();}
         bool GetBool(Utf8CP name, bool defaultVal) const {return !m_value[name].isBool() ? defaultVal : m_value[name].asBool();}
+        Json::Value const& GetValue() const {return m_value;}
 
         TextureMap(Json::Value const& val, Type type) : m_value(val), m_type(type) {}
     }; // TextureMap
 
-    DGNPLATFORM_EXPORT BentleyStatus DoImport(DgnImportContext& context, DgnDbR sourceDb);
+    DGNPLATFORM_EXPORT BentleyStatus Import(DgnImportContext& context);
     DGNPLATFORM_EXPORT BentleyStatus Load(DgnMaterialId materialId, DgnDbR dgnDb);
 
     double GetDouble(Utf8CP name, double defaultVal) const {return !m_value[name].isDouble() ? defaultVal : m_value[name].asDouble();}

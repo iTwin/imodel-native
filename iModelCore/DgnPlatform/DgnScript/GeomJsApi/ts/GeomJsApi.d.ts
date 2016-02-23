@@ -10,24 +10,36 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         /*** NATIVE_TYPE_NAME = JsDPoint3d ***/ 
         /** Constructor from x,y,z coordinates */
         constructor(x: cxx_double, y: cxx_double, z: cxx_double);
+/** Read/Write access to X component */
         X: cxx_double;
+/** Read/Write access to Y component */
         Y: cxx_double;
+/** Read/Write access to Z component */
         Z: cxx_double;
 
         Clone () : DPoint3dP;
-
+/** Return a point interpolated between this and the right param. */
         Interpolate (fraction : cxx_double, right : DPoint3dP) : DPoint3dP;
+/** return point plus vector. */
         Plus (vector : DVector3dP) : DPoint3dP;
+/** Return point minus vector */
         Minus (vector : DVector3dP) : DPoint3dP;
+/** return point + vector * scalar */
         PlusScaled (vector : DVector3dP, scalar : cxx_double) : DPoint3dP;
+/** return point + vectorA * scalarA + vectorB * scalarB */
         Plus2Scaled (vectorA : DVector3dP, scalarA : cxx_double, vectorB : DVector3dP, scalarB : cxx_double) : DPoint3dP;
+/** return point + vectorA * scalarA + vectorB * scalarB + vectorC * scalarC */
         Plus3Scaled (vectorA : DVector3dP, scalarA : cxx_double, vectorB : DVector3dP, scalarB : cxx_double, vectorC : DVector3dP, scalarC : cxx_double) : DPoint3dP;
 
+/** Return a (full length) vector from this point to other */
         VectorTo(other : DPoint3dP): DVector3dP;
-
+/** Return the distance from this point to other */
         Distance(other: DPoint3dP): cxx_double;
+/** Return squared distance from this point to other */
         DistanceSquared (other : DPoint3dP) : cxx_double;        
+/** Return the largest absolute distance between corresponding compontents */
         MaxAbsDiff(vectorB: DPoint3dP): cxx_double;
+/** Return the largest absolute value of any component */
         MaxAbs (): cxx_double;
 
         OnDispose(): void;
@@ -42,23 +54,34 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         /** Constructor from x,y coordinates */
         constructor(x: cxx_double, y: cxx_double);
         Clone () : DPoint2dP;
+/** Read/Write access to X component */
         X: cxx_double;
+/** Read/Write access to Y component */
         Y: cxx_double;
         OnDispose(): void;
         Dispose(): void;
 
         Interpolate(fraction: cxx_double, right: DPoint2dP): DPoint2dP;
+/** return point plus vector. */
         Plus(vector: DVector2dP): DPoint2dP;
+/** Return point minus vector */
         Minus(vector: DVector2dP): DPoint2dP;
+/** return point + vector * scalar */
         PlusScaled(vector: DVector2dP, scalar: cxx_double): DPoint2dP;
+/** return point + vectorA * scalarA + vectorB * scalarB */
         Plus2Scaled(vectorA: DVector2dP, scalarA: cxx_double, vectorB: DVector2dP, scalarB: cxx_double): DPoint2dP;
+/** return point + vectorA * scalarA + vectorB * scalarB + vectorC * scalarC */
         Plus3Scaled(vectorA: DVector2dP, scalarA: cxx_double, vectorB: DVector2dP, scalarB: cxx_double, vectorC: DVector2dP, scalarC: cxx_double): DPoint2dP;
 
         VectorTo (other: DPoint2dP) : DVector2dP;
 
+/** Return a (full length) vector from this point to other */
         Distance(other: DPoint2dP): cxx_double;
+/** Return squared distance from this point to other */
         DistanceSquared(other: DPoint2dP): cxx_double;        
+/** Return the largest absolute distance between corresponding compontents */
         MaxAbsDiff(vectorB: DPoint2dP): cxx_double;
+/** Return the largest absolute value of any component */
         MaxAbs(): cxx_double;
 
     }
@@ -234,39 +257,56 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         Low: DPoint3dP;
         High: DPoint3dP;
 
-
+/** Test if the box is in a null (just initialized) condition.  Note that a range around a single point is NOT null. */
         IsNull(): cxx_bool;
+/** Test of the range contains a single point. */
         IsSinglePoint(): cxx_bool;
-
+/** Length of the box in the x direction */
         XLength(): cxx_double;
+/** Length of the box in the y direction */
         YLength(): cxx_double;
+/** Length of the box in the z direction */
         ZLength(): cxx_double;
-
+/** Largest absolute value among any coordinates in the box corners. */
         MaxAbs(): cxx_double;
+/** Test if the x direction size is nearly zero */
         IsAlmostZeroX(): cxx_bool;
+/** Test if the x direction size is nearly zero */
         IsAlmostZeroY(): cxx_bool;
+/** Test if the x direction size is nearly zero */
         IsAlmostZeroZ(): cxx_bool;
 
+/** Test if a point given as x,y,z is within the range. */
         ContainsXYZ(x: cxx_double, y: cxx_double, z: cxx_double): cxx_bool;
+/** Test if a point is within the range. */
         ContainsPoint(point: DPoint3dP): cxx_bool;
-        ContainsPointPointXY(point: DPoint3dP): cxx_bool;
+/** Test if the x,y coordinates of a point are within the range. */
+        ContainsPointXY(point: DPoint3dP): cxx_bool;
+/** Test of other range is within this range */
         ContainsRange(other: DRange3dP): cxx_bool;
 
+/** Test if there is any intersection with other range */        
         IntersectsRange(other: DRange3dP): cxx_bool;
 
-        // policy: only return distances (squared : no -- sqrt time will not show up in ts)
+/** Return 0 if the point is within the range, otherwise the distance to the closest face or corner */
         DistanceToPoint(point: DPoint3dP): cxx_double;
+/** Return 0 if the ranges overlap, otherwise the smallest distance between. */
         DistanceToRange(other: DRange3dP): cxx_double;
 
-
+/** Expand this range by distance a (possbily signed) in all directions */
         ExtendAllDirections(a: cxx_double): void;
+/** Expand this range by distances a (possbily signed) in all directions */
         ExtendXYZ(x: cxx_double, y: cxx_double, z: cxx_double): void;
+/** Expand this range to include a point. */
         ExtendPoint(point: DPoint3dP): void;
+/** Expand this range to include a range. */
         ExtendRange(range: DRange3dP): void;
 
+/** Return the intersection of ranges. */
         Intersect(other: DRange3dP): DRange3dP;
+/** Return the union of ranges. */
         Union(other: DRange3dP): DRange3dP;
-
+/** Put this range in a null state */
         Init(): void;
 
         OnDispose(): void;
@@ -358,64 +398,108 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
             ayx : cxx_double, ayy : cxx_double, ayz : cxx_double,
             azx : cxx_double, azy : cxx_double, azz : cxx_double
             );
+/** Create a rotation of specified angle around an axis */
         static CreateRotationAroundVector(axis: DVector3dP, angle: AngleP): RotMatrixP;
+/** Create a 90 degree rotation around an axis */
         static Create90DegreeRotationAroundVector(axis: DVector3dP): RotMatrixP;
+/** Create an identity matrix */
         static CreateIdentity () : RotMatrixP;
+/** Create a matrix with uniform scale factors */
         static CreateUniformScale (scaleFactor : cxx_double) : RotMatrixP;
+/** Create a matrix by direct list of values going across rows. */
         static CreateRowValues(x00: cxx_double, x01: cxx_double, x02: cxx_double,
             x10: cxx_double, x11: cxx_double, x12: cxx_double,
             x20: cxx_double, x21: cxx_double, x22: cxx_double): RotMatrixP;
 
+/** Create a clone */
         Clone () : RotMatrixP;
+/** Return the X column */
         ColumnX : DVector3dP;        
+/** Return the Y column */
         ColumnY : DVector3dP;        
+/** Return the Z column */
         ColumnZ : DVector3dP;        
 
+/** Return the X row */
         RowX: DVector3dP;        
+/** Return the Y row */
         RowY: DVector3dP;        
+/** Return the Z row */
         RowZ: DVector3dP;        
 
+/** Create a matrix with specific scales in each principal direction */
         static CreateScale (scaleX : cxx_double, scaleY : cxx_double, scaleZ : cxx_double) : RotMatrixP;
+/** Create a matrix from column vectors. */
         static CreateColumns (vectorU : DVector3dP, vectorV : DVector3dP, vectorZ : DVector3dP) : RotMatrixP;
+/** Create a matrix from row vectors. */
         static CreateRows (vectorU : DVector3dP, vectorV : DVector3dP, vectorZ : DVector3dP) : RotMatrixP;
 
         
+/** Create a matrix that scales along a specified direction. The scale factor can be negative; for instance scale of -1.0 (negative one) is a mirror. */
         static CreateDirectionalScale (direction : DVector3dP, scale : cxx_double) : RotMatrixP;
         // TODO: square and normalize !!!
         
+/** Create a matrix with the indicated column in the (normalized) direction, and the other two columns perpendicular. All columns are normalized */
         static Create1Vector (direction : DVector3dP, axisIndex : cxx_double) : RotMatrixP;
         static CreateFromXYVectors (vectorX : DVector3dP, vectorY : DVector3dP, axisIndex : cxx_double) : RotMatrixP;
+/** Multiply the matrix * vector, i.e. the vector is a column vector on the right. 
+    @return the vector result
+*/
         MultiplyVector (vector : DVector3dP) : DVector3dP;        
+/** Multiply the vector * matrix, i.e. the vector is a row vector on the left.
+    @return the vector result
+*/
         MultiplyTransposeVector (vector : DVector3dP) : DVector3dP;        
 
+/** Multiply the matrix * (x,y,z), i.e. the vector (x,y,z) is a column vector on the right.
+    @return the vector result
+*/
         MultiplyXYZ (x : cxx_double, y : cxx_double, z : cxx_double) : DVector3dP;        
-            
+/** Multiply the (x,y,z) * matrix, i.e. the vector (x,y,z) is a row vector on the left.
+    @return the vector result
+*/
         MultiplyTransposeXYZ ( x : cxx_double, y : cxx_double, z : cxx_double) : DVector3dP;        
 
         Solve (rightHandSide : DVector3dP) : DVector3dP;
-
+/** Mulitply two matrices.
+    @return the matrix result
+*/
          MultiplyMatrix (other : RotMatrixP) : RotMatrixP;
 
+/** return the transposed matrix */
          Transpose () : RotMatrixP;
+/** return the inverse matrix.  The return is  null if the matrix is singular (has columns that are coplanar or colinear) */
          Inverse () : RotMatrixP;
-        At(ai : cxx_double, aj : cxx_double) : cxx_double;
-        SetAt (ai : cxx_double, aj : cxx_double, value : cxx_double) : void;
-            
+/** return the entry at specific row and column */
+        At(row : cxx_double, column : cxx_double) : cxx_double;
+/** Set the entry at specific row and column */
+        SetAt (row : cxx_double, column : cxx_double, value : cxx_double) : void;
+/** Scale columns by respective factors */            
         ScaleColumnsInPlace (scaleX : cxx_double, scaleY : cxx_double, scaleZ : cxx_double) : void;
-
+/** Scale rows by respective factors */
         ScaleRowsInPlace (scaleX : cxx_double, scaleY : cxx_double, scaleZ : cxx_double) : void;
 
+/** Return the determinant */
         Determinant () : cxx_double;
+/** Return an estimate of how independent the columns are.  Near zero is bad. */
         ConditionNumber () : cxx_double;
+/** Return the sum of squares of all entries */
         SumSquares () : cxx_double;
+/** Return the sum of squares of diagonal entries */
         SumDiagonalSquares () : cxx_double;
+/** Return the Maximum absolute value of any single entry */
         MaxAbs () : cxx_double;
+/** Return the maximum absolute difference between corresponding entries */
         MaxDiff (other : RotMatrixP) : cxx_double;
-        
+/** Test if the matrix is (very near to) an identity */        
         IsIdentity () : cxx_bool;
+/** Test if the off diagonal entries are all nearly zero */
         IsDiagonal () : cxx_bool;
+/** Test if the matrix is shuffles and negates columns. */
         IsSignedPermutation () : cxx_bool;
+/** Test if the matrix is a pure rotation. */
         IsRigid () : cxx_bool;
+/** Test if all rows and columns are length 1 and are perpendicular to each other.  (I.e. the matrix is either a pure rotation with uniform scale factor of 1 or -1) */
         HasUnitLengthMutuallyPerpendicularRowsAndColumns () : cxx_bool;
 
 
@@ -544,6 +628,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     <li>EllipticArc
     <li>BsplineCurve
     <li>CatenaryCurve
+    <li>SpiralCurve
     </ul>
 <li>CurveVector
     <ul>
@@ -700,8 +785,10 @@ This property is extremely convenient for passing ellipses through viewing trans
 
     type BsplineCurveP = cxx_pointer<BsplineCurve>;
 
-    //! A wrapper for a bspline curve
-
+    //! A wrapper for a catenary curve
+    //!<ul>
+    //!<li>In the local coordinate system the curve is y = a * cosh(x/a)
+    //!</ul>
     class CatenaryCurve extends CurvePrimitive implements BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsCatenaryCurve ***/
@@ -710,8 +797,51 @@ This property is extremely convenient for passing ellipses through viewing trans
         // Create a catenary curve:   xyz = origin + x * xVector + yVector * a * cosh(x/a)        
         static CreateFromCoefficientAndXLimits (origin: DPoint3dP, xVector: DVector3dP, yVector: DVector3dP, a: cxx_double, xStart: cxx_double, xEnd: cxx_double) : CatenaryCurveP;
     }
-
     type CatenaryCurveP = cxx_pointer<CatenaryCurve>;
+
+
+    //! A wrapper for a Spiral curve
+    //!<ul>
+    //!<li>In the local coordinate system the curve is y = a * cosh(x/a)
+    //!<li>Spirals can be one of these transition types
+    //!<ul>
+    //!<li>10: Clothoid
+    //!<li>11: Bloss
+    //!<li>12: Biquadratic
+    //!<li>13: Cosine
+    //!<li>14: Sine
+    //!</ul>
+    //!</ul>
+    class SpiralCurve extends CurvePrimitive implements BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsSpiralCurve ***/
+        constructor ();
+        Clone(): SpiralCurveP;
+
+    //! Create a spiral with radius and curvature at start, length along the spiral, and radius at end.
+    //! @param spiralType [in] transition selector -- see SpiralCurve summary
+    //! @param startBearing [in] direction (in xy plane) at the start of the curve.
+    //! @param startRadius [in] radius of curvature at start.  (0 radius is straight line)
+    //! @param length [in] length of full spiral curve
+    //! @param endRadius [in] radius at end of the full spiral
+    //! @param frame [in] coordinate frame with origin at start of full spiral, bearing angle 0 along x axis.
+    //! @param fractionA [in] fractional position (distance along) at start of active subset of the spiral.  This is nearly always 0.0.
+    //! @param fractionB [in] fractional position (distance along) at end of active subset of the spiral.  This is nearly always 1.0.
+        static CreateSpiralBearingRadiusLengthRadius (
+            spiralType: cxx_double,
+            startBearing: AngleP,
+            startRadius: cxx_double,
+            length:     cxx_double,
+            endRadius: cxx_double,
+            frame: TransformP,
+            fractionA: cxx_double,
+            fractionB: cxx_double
+            ) : SpiralCurveP;
+    }
+
+    type SpiralCurveP = cxx_pointer<SpiralCurve>;
+
+
 
 /**
 @description A CurveVector is a collection of curves.

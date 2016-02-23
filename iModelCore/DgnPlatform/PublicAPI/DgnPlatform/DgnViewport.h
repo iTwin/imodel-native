@@ -91,6 +91,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
         bool m_renderPlan = false;
         bool m_controller = false;
         bool m_rotatePoint = false;
+        bool m_firstDrawComplete = false;
 
     public:
         void InvalidateDecorations() {m_decorations=false;}
@@ -99,8 +100,10 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
         void InvalidateController() {m_controller=false; InvalidateScene();}
         void InvalidateRenderPlan() {m_renderPlan=false; InvalidateScene();}
         void InvalidateRotatePoint() {m_rotatePoint=false;}
+        void InvalidateFirstDrawComplete() {m_firstDrawComplete=false;}
         void SetValidDecorations() {m_decorations=true;}
         void SetValidQuery() {m_query=true;}
+        void SetFirstDrawComplete() {m_firstDrawComplete=true;}
         void SetValidScene() {m_scene=true;}
         void SetValidController() {m_controller=true;}
         void SetValidRenderPlan() {m_renderPlan=true;}
@@ -111,6 +114,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
         bool IsValidRenderPlan() const {return m_renderPlan;}
         bool IsValidController() const {return m_controller;}
         bool IsValidRotatePoint() const {return m_rotatePoint;}
+        bool IsFirstDrawComplete() const {return m_firstDrawComplete;}
     };
 
 protected:
@@ -171,7 +175,7 @@ public:
     void SetDynamicsTransparency(Byte val) {m_dynamicsTransparency = val;}
 
     PartGraphicMap& GetPartGraphics() const {return m_partGraphics;}
-    void SetRenderTarget(Render::Target* target) {m_renderTarget=target;}
+    void SetRenderTarget(Render::Target* target) {m_renderTarget=target; m_sync.InvalidateFirstDrawComplete();}
     double GetFrustumFraction() const {return m_frustFraction;}
     bool IsVisible() {return _IsVisible();}
     Render::Plan::AntiAliasPref WantAntiAliasLines() const {return _WantAntiAliasLines();}
@@ -220,7 +224,6 @@ public:
     void Refresh();
     DGNVIEW_EXPORT void ApplyNext(int animationTime);
     DGNVIEW_EXPORT void ApplyPrevious(int animationTime);
-    DGNPLATFORM_EXPORT void Initialize(ViewControllerR);
     DGNPLATFORM_EXPORT static Render::Queue& RenderQueue();
 
     //! @return the current Camera for this DgnViewport. Note that the DgnViewport's camera may not match its ViewController's camera

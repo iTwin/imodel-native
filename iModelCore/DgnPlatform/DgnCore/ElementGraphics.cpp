@@ -293,7 +293,7 @@ static int wireframe_drawSurfaceCurveCallback(void* userArg, MSBsplineCurveP bcu
                 /* Leave this test in as it supports discontinuity in a B-spline (which arises from the conversion of group holes). */
                 if (numStrokes && !LegacyMath::RpntEqual(&chord.point[0], strokeBuffer + numStrokes - 1))
                     {
-                    info->m_graphic.AddLineString(numStrokes, strokeBuffer, NULL);
+                    info->m_graphic.AddLineString(numStrokes, strokeBuffer);
                     numStrokes = 0;
                     }
  
@@ -309,14 +309,14 @@ static int wireframe_drawSurfaceCurveCallback(void* userArg, MSBsplineCurveP bcu
  
                 if (numStrokes >= MAX_CLIPBATCH-1)
                     {
-                    info->m_graphic.AddLineString(numStrokes, strokeBuffer, NULL);
+                    info->m_graphic.AddLineString(numStrokes, strokeBuffer);
                     strokeBuffer[0] = strokeBuffer[numStrokes - 1];
                     numStrokes = 1;
                     }
                 }
             }
  
-        info->m_graphic.AddLineString(numStrokes, strokeBuffer, NULL);
+        info->m_graphic.AddLineString(numStrokes, strokeBuffer);
  
         return (info->m_context.CheckStop() ? ERROR : SUCCESS);
         }
