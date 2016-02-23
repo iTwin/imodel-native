@@ -248,11 +248,11 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         //! Pull changes from server to update cached data.
         //! @param initialInstances - list of instances that should be used to start syncing
         //! @param initialQueries - list of queries that should be used to start syncing
-        //! @param queryProviders - list of query providers to get queries for each instance that is being synced
-        //! @param onProgress - progress callback. 
+        //! @param queryProviders - list of query providers to get queries and file download option for each instance that is being synced
+        //! @param onProgress - progress callback
         //! Synced parameter - reports instances + queries synced. File sync represented by bytes synced.
         //! Note that synced value will fluctuate if query providers return more queries to sync.
-        //! Label parameter can be empty or file label being synced. 
+        //! Label parameter can be empty or show file label being synced. 
         //! @param ct - cancelling sync task
         //! @return fatal error (like server error or connection is lost) - sync is stopped and error is returned. 
         //! If server returns error specific to instances being synced (forbidden, conflict, etc) – it is put into return value list and returned as “FailedObject” 
