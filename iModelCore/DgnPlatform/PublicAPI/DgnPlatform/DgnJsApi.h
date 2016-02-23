@@ -53,6 +53,9 @@ typedef JsComponentDef* JsComponentDefP;
 struct JsECInstance;
 typedef JsECInstance* JsECInstanceP;
 
+struct JsECValue;
+typedef JsECValue* JsECValueP;
+
 struct JsECClass;
 typedef JsECClass* JsECClassP;
 
@@ -250,6 +253,8 @@ struct JsDgnElement : RefCountedBaseWithCreate
     int32_t Insert();
     int32_t Update();
     void SetParent(JsDgnElement* parent) {if (m_el.IsValid() && (nullptr != parent)) m_el->SetParentId(parent->m_el->GetElementId());}
+    JsECValueP GetUnhandledProperty(Utf8StringCR);
+    int32_t SetUnhandledProperty(Utf8StringCR, JsECValueP);
 
     STUB_OUT_SET_METHOD(Model, JsDgnModelP)
     STUB_OUT_SET_METHOD(ElementId,JsDgnObjectIdP)
@@ -831,8 +836,6 @@ struct JsECValue : RefCountedBaseWithCreate
     STUB_OUT_SET_METHOD(Integer,int32_t)
     STUB_OUT_SET_METHOD(Double,double)
 };
-
-typedef JsECValue* JsECValueP;
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15

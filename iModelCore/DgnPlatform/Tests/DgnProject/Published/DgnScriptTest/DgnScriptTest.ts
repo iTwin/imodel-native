@@ -258,6 +258,25 @@ module DgnScriptTests {
 
     }
 
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Sam.Wilson                      02/16
+    //---------------------------------------------------------------------------------------
+    function testUnhandledProperties(el: be.DgnElement)
+    {
+        if (el.GetUnhandledProperty('StringProperty'))
+            be.Script.ReportError('StringProperty should not be set at the outset');
+
+        if (0 != el.SetUnhandledProperty('StringProperty', be.ECValue.FromString('stuff')))
+            be.Script.ReportError('SetUnhandledProperty failed');
+
+        el.Update();
+
+        var prop = el.GetUnhandledProperty('StringProperty');
+        if (!prop || prop.GetString() != 'stuff')
+            be.Script.ReportError('SetUnhandledProperty failed - changed value not verified');
+    }
+
     //---------------------------------------------------------------------------------------
     // @bsimethod                                   Sam.Wilson                      02/16
     //---------------------------------------------------------------------------------------
@@ -282,7 +301,7 @@ module DgnScriptTests {
 
         //  Create element
         var model = db.Models.GetModel(db.Models.QueryModelId(be.DgnModel.CreateModelCode(params.modelName)));
-        var ele = be.PhysicalElement.Create(model, catid, '');
+        var ele = be.PhysicalElement.Create(model, catid, 'DgnPlatformTest.TestElementWithNoHandler');
 
         //  Try out GeometryBuilder
         var builder = new be.GeometryBuilder(ele, new be.DPoint3d(0, 0, 0), new be.YawPitchRollAngles(0, 0, 0));
@@ -445,6 +464,9 @@ module DgnScriptTests {
 
         //  Test EC API
         testEC(db);
+
+        //  DgnElement UnhandledProperties
+        testUnhandledProperties(ele);
 
         return 0;
     }

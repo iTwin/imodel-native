@@ -232,6 +232,24 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         Update(): cxx_int32_t;
         /** Set the Parent of this Element. @param parent The parent element. */
         SetParent(parent: cxx_pointer<DgnElement>): void;
+
+        /**
+         * Get the value of a property that is not controlled by the element's class.
+         * @note A handled property must be accessed using the API provided by the class that defines it.
+         * @param name The name of property
+         * @return the value of the property or null if the property is not found or is handled
+         */
+        GetUnhandledProperty(name: Bentley_Utf8String): ECValueP;
+
+        /**
+         * Set the value of a property that is not controlled by the element's class
+         * @note A handled property must be accessed using the API provided by the class that defines it.
+         * @param name      The name of property
+         * @param value     The new value for the property
+         * @return non-zero error status if the property is not found or is handled
+         */
+        SetUnhandledProperty(name: Bentley_Utf8String, value: ECValueP): cxx_int32_t;
+
         OnDispose(): void;
         Dispose(): void;
     }
