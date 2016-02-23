@@ -258,8 +258,8 @@ DgnMaterialId DgnMaterial::ImportMaterial(DgnMaterialId srcMaterialId, DgnImport
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnMaterial::_RemapIds(DgnImportContext& importer)
     {
-#ifdef MERGE_CONFLICT
     T_Super::_RemapIds(importer);
+#ifdef MERGE_CONFLICT
     if (!importer.IsBetweenDbs())
         return;
 
