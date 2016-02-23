@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/Client/WSRepositoryClientTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -14,6 +14,7 @@
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
 #include <WebServices/Connect/ConnectTokenProvider.h>
 #include <WebServices/Connect/Connect.h>
+#include <WebServices/Connect/ConnectSignInManager.h>
 #include <WebServices/Configuration/UrlProvider.h>
 #include <MobileDgn/Utils/Http/ProxyHttpHandler.h>
 #include <WebServices/Client/WSRepositoryClient.h>
@@ -27,6 +28,30 @@ void WSRepositoryClientTests::SetUpTestCase()
     UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &localState);
 
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_MOBILEDGN_UTILS_HTTP, Bentley::NativeLogging::LOG_INFO);
+    }
+
+TEST_F(WSRepositoryClientTests, SendQueryRequest_ConnectGlobalProjectQueryWithConnectSignInManager_Succeeds)
+    {
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+    StubLocalState localState;
+    ConnectAuthenticationPersistence::CustomInitialize(&localState);
+
+    Connect::Initialize(StubClientInfo(), proxy);
+
+    Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net/";
+    Utf8String repositoryId = "BentleyCONNECT.Global--CONNECT.GLOBAL";
+    Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
+
+    ConnectSignInManager manager;
+    ASSERT_TRUE(manager.SignInWithCredentials(credentials)->GetResult().IsSuccess());
+    auto authHandler = manager.GetAuthenticationHandler(serverUrl, proxy);
+
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, authHandler);
+
+    auto result = client->SendQueryRequest(WSQuery("GlobalSchema", "Project"))->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    auto resultStr = result.GetValue().GetJsonValue().toStyledString();
+    printf(resultStr.c_str());
     }
 
 TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_NavigateConnectGlobalWithExpiredToken_RetrievesNewTokenAndSucceeds)
