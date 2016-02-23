@@ -606,6 +606,8 @@ public:
 
     static BentleyStatus AddColumns(ECDbR, ECDbSqlTable const&, std::vector<Utf8CP> const& newColumns);
     static BentleyStatus CopyRows(ECDbR, Utf8CP sourceTable, bvector<Utf8String>& sourceColumns, Utf8CP targetTable, bvector<Utf8String>& targetColumns);
+
+    static Utf8CP ColumnTypeToSql(ECDbSqlColumn::Type);
     };
 
 

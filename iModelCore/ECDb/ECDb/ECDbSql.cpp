@@ -1439,23 +1439,12 @@ Utf8String DDLGenerator::GetColumnsDDL(std::vector<ECDbSqlColumn const*> columns
 Utf8String DDLGenerator::GetColumnDDL(ECDbSqlColumn const& o)
     {
     Utf8String sql;
-    sql.append("[").append(o.GetName()).append("]");
-    switch (o.GetType())
-        {
-            case ECDbSqlColumn::Type::Any:
-            case ECDbSqlColumn::Type::Blob:
-                sql.append(" BLOB"); break;
-            case ECDbSqlColumn::Type::Boolean:
-                sql.append(" BOOLEAN"); break;
-            case ECDbSqlColumn::Type::TimeStamp:
-                sql.append(" TIMESTAMP"); break;
-            case ECDbSqlColumn::Type::Real:
-                sql.append(" REAL"); break;
-            case ECDbSqlColumn::Type::Integer:
-                sql.append(" INTEGER"); break;
-            case ECDbSqlColumn::Type::Text:
-                sql.append(" TEXT"); break;
-        }
+    sql.append("[").append(o.GetName()).append("] ");
+    Utf8CP typeStr = ColumnTypeToSql(o.GetType());
+    if (typeStr == nullptr)
+        return "";
+
+    sql.append(typeStr);
 
     if (o.GetConstraint().IsNotNull())
         sql.append(" NOT NULL");
@@ -1473,6 +1462,34 @@ Utf8String DDLGenerator::GetColumnDDL(ECDbSqlColumn const& o)
         sql.append(" CHECK ('").append(o.GetConstraint().GetCheckExpression()).append("')");
 
     return sql;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle   02/2016
+//---------------------------------------------------------------------------------------
+//static 
+Utf8CP DDLGenerator::ColumnTypeToSql(ECDbSqlColumn::Type colType)
+    {
+    switch (colType)
+        {
+            case ECDbSqlColumn::Type::Any:
+            case ECDbSqlColumn::Type::Blob:
+                return "BLOB";
+            case ECDbSqlColumn::Type::Boolean:
+                return "BOOLEAN";
+            case ECDbSqlColumn::Type::TimeStamp:
+                return "TIMESTAMP";
+            case ECDbSqlColumn::Type::Real:
+                return "REAL";
+            case ECDbSqlColumn::Type::Integer:
+                return "INTEGER";
+            case ECDbSqlColumn::Type::Text:
+                return "TEXT";
+
+            default:
+                BeAssert(false && "Adjust ColumnTypeToSql for new column type");
+                return nullptr;
+        }
     }
 
 
