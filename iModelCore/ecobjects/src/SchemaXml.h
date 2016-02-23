@@ -2,7 +2,7 @@
 |
 |     $Source: src/SchemaXml.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -34,7 +34,13 @@ struct SchemaXmlWriter
     private:
         struct  ECSchemaWriteContext
             {
+            private:
+            bool m_preserveElementOrder = false;
+
+            public:
             bset<Utf8CP> m_alreadyWrittenClasses;
+            bool GetPreserveElementOrder() { return m_preserveElementOrder; }
+            void SetPreserveElementOrder(bool flag) { m_preserveElementOrder = flag; }
             };
 
         BeXmlWriterR m_xmlWriter;
