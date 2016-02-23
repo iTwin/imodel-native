@@ -1658,7 +1658,7 @@ TEST_F(SchemaDeserializationTest, TestDefaultElementOrder)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Stefan.Apfel    02/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, TestPreserveElementOrderWithBaseClasseAndRelationships)
+TEST_F(SchemaDeserializationTest, TestPreserveElementOrderWithBaseClassAndRelationships)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
     schemaContext->SetPreserveElementOrder(true);
@@ -1708,7 +1708,7 @@ TEST_F(SchemaDeserializationTest, TestPreserveElementOrderWithBaseClasseAndRelat
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Stefan.Apfel    02/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, TestDefaultElementOrderWithBaseClasseAndRelationships)
+TEST_F(SchemaDeserializationTest, TestDefaultElementOrderWithBaseClassAndRelationships)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
     Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
