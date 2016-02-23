@@ -1711,7 +1711,7 @@ struct KindOfQuantity : NonCopyableClass
         
         //! Given a qualified enum name, will parse out the schema's namespace prefix and the kind of quantity name.
         //! @param[out] prefix  The namespace prefix of the schema
-        //! @param[out] enumName   The name of the KindOfQuantity
+        //! @param[out] kindOfQuantityName   The name of the KindOfQuantity
         //! @param[in]  stringToParse  The qualified name, in the format of {SchemaName}:{KindOfQuantityName}
         //! @return A status code indicating whether the qualified name was successfully parsed or not
         ECOBJECTS_EXPORT static ECObjectsStatus ParseFullName(Utf8StringR prefix, Utf8StringR kindOfQuantityName, Utf8StringCR stringToParse);
@@ -3073,7 +3073,7 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    CreateRelationshipClass (ECRelationshipClassP& relationshipClass, Utf8StringCR name);
 
     //! Creates a new KindOfQuantity and adds it to the schema.
-    //! @param[out] If successful, will contain a new KindOfQuantity object
+    //! @param[out] kindOfQuantity If successful, will contain a new KindOfQuantity object
     //! @param[in] name    Name of the object to create
     //! @return A status code indicating whether or not the object was successfully created and added to the schema
     ECOBJECTS_EXPORT ECObjectsStatus    CreateKindOfQuantity(KindOfQuantityP& kindOfQuantity, Utf8CP name);
