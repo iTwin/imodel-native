@@ -261,7 +261,8 @@ void ECValidatedName::SetDisplayLabel (Utf8CP label)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchema::ECSchema ()
     :m_classContainer(m_classMap), m_enumerationContainer(m_enumerationMap), m_isSupplemented(false),
-    m_hasExplicitDisplayLabel(false), m_immutable(false), m_ecSchemaId(0), m_serializationOrder(nullptr)
+    m_hasExplicitDisplayLabel(false), m_immutable(false), m_ecSchemaId(0), m_serializationOrder(nullptr),
+    m_kindOfQuantityContainer(m_kindOfQuantityMap)
     {
     //
     };
@@ -305,6 +306,15 @@ ECSchema::~ECSchema ()
 
     m_enumerationMap.clear();
     BeAssert(m_enumerationMap.empty());
+
+    for (auto entry : m_kindOfQuantityMap)
+        {
+        auto kindOfQuantity = entry.second;
+        delete kindOfQuantity;
+        }
+
+    m_kindOfQuantityMap.clear();
+    BeAssert(m_kindOfQuantityMap.empty());
 
     m_refSchemaList.clear();
 
@@ -665,15 +675,6 @@ ECClassP ECSchema::GetClassP (Utf8CP name)
         return NULL;
     }
 
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECEnumerationCP ECSchema::GetEnumerationCP(Utf8CP name) const
-    {
-    return const_cast<ECSchemaP> (this)->GetEnumerationP(name);
-    }
-
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -681,6 +682,18 @@ ECOBJECTS_EXPORT ECEnumerationP ECSchema::GetEnumerationP(Utf8CP name)
     {
     EnumerationMap::const_iterator iterator = m_enumerationMap.find(name);
     if (iterator != m_enumerationMap.end())
+        return iterator->second;
+    else
+        return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECOBJECTS_EXPORT KindOfQuantityP ECSchema::GetKindOfQuantityP(Utf8CP name)
+    {
+    KindOfQuantityMap::const_iterator iterator = m_kindOfQuantityMap.find(name);
+    if (iterator != m_kindOfQuantityMap.end())
         return iterator->second;
     else
         return nullptr;
@@ -775,27 +788,28 @@ ECObjectsStatus ECSchema::AddClass(ECClassP pClass, bool resolveConflicts)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
-    EnumerationMap::const_iterator  enumerationIterator;
-    enumerationIterator = m_enumerationMap.find(pClass->GetName().c_str());
-    if (enumerationIterator != m_enumerationMap.end())
-        {
-        LOG.errorv("Cannot create class '%s' because an enumeration with that name already exists in the schema", pClass->GetName().c_str());
-        return ECObjectsStatus::NamedItemAlreadyExists;
-        }
-
-    bpair <ClassMap::iterator, bool> resultPair;
-    resultPair = m_classMap.insert (bpair<Utf8CP, ECClassP> (pClass->GetName().c_str(), pClass));
-    if (resultPair.second == false)
+    if (NamedElementExists(pClass->GetName().c_str()))
         {
         if (!resolveConflicts)
             {
-            LOG.errorv("Cannot create class '%s' because it already exists in the schema %s", pClass->GetName().c_str(), GetName().c_str());
+            LOG.errorv("Cannot create class '%s' because a named element the same identifier already exists in the schema",
+                       pClass->GetName().c_str());
+
             return ECObjectsStatus::NamedItemAlreadyExists;
             }
+
         Utf8String uniqueName;
         FindUniqueClassName(uniqueName, pClass->GetName().c_str());
         pClass->SetName(uniqueName);
         return AddClass(pClass, resolveConflicts);
+        }
+
+    if (m_classMap.insert(bpair<Utf8CP, ECClassP>(pClass->GetName().c_str(), pClass)).second == false)
+        {
+        LOG.errorv("There was a problem adding class '%s' to the schema",
+                   pClass->GetName().c_str());
+
+        return ECObjectsStatus::Error;
         }
 
     if (m_serializationOrder != nullptr)
@@ -1028,13 +1042,6 @@ ECObjectsStatus ECSchema::CreateEnumeration(ECEnumerationP & ecEnumeration, Utf8
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
-    ClassMap::const_iterator  classIterator;
-    classIterator = m_classMap.find(name);
-    if (classIterator != m_classMap.end())
-        {
-        return ECObjectsStatus::NamedItemAlreadyExists;
-        }
-
     ecEnumeration = new ECEnumeration(*this);
     ecEnumeration->SetName(name);
 
@@ -1056,6 +1063,23 @@ ECObjectsStatus ECSchema::CreateEnumeration(ECEnumerationP & ecEnumeration, Utf8
     return status;
     }
 
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSchema::NamedElementExists(Utf8CP name)
+    {
+    if (m_classMap.find(name) != m_classMap.end())
+        {
+        return true;
+        }
+
+    if (m_enumerationMap.find(name) != m_enumerationMap.end())
+        {
+        return true;
+        }
+
+    return m_kindOfQuantityMap.find(name) != m_kindOfQuantityMap.end();
+    }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
@@ -1064,19 +1088,20 @@ ECObjectsStatus ECSchema::AddEnumeration(ECEnumerationP pEnumeration)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
-    ClassMap::const_iterator  classIterator;
-    classIterator = m_classMap.find(pEnumeration->GetName().c_str());
-    if (classIterator != m_classMap.end())
+    if(NamedElementExists(pEnumeration->GetName().c_str()))
         {
-        LOG.errorv("Cannot create enumeration '%s' because a class with that name already exists in the schema", pEnumeration->GetName().c_str());
+        LOG.errorv("Cannot create enumeration '%s' because a named element the same identifier already exists in the schema",
+                   pEnumeration->GetName().c_str());
+
         return ECObjectsStatus::NamedItemAlreadyExists;
         }
 
-    bpair <EnumerationMap::iterator, bool> resultPair = m_enumerationMap.insert(bpair<Utf8CP, ECEnumerationP>(pEnumeration->GetName().c_str(), pEnumeration));
-    if (resultPair.second == false)
+    if (m_enumerationMap.insert(bpair<Utf8CP, ECEnumerationP>(pEnumeration->GetName().c_str(), pEnumeration)).second == false)
         {
-        LOG.errorv("Cannot create enumeration '%s' because it already exists in the schema", pEnumeration->GetName().c_str());
-        return ECObjectsStatus::NamedItemAlreadyExists;
+        LOG.errorv("There was a problem adding enumeration '%s' to the schema",
+                   pEnumeration->GetName().c_str());
+
+        return ECObjectsStatus::Error;
         }
 
     if (m_serializationOrder != nullptr)
@@ -1085,8 +1110,54 @@ ECObjectsStatus ECSchema::AddEnumeration(ECEnumerationP pEnumeration)
     return ECObjectsStatus::Success;
     }
 
-#define     ECSCHEMA_FULLNAME_FORMAT_EXPLANATION " Format must be Name.MM.mm where Name is the schema name, MM is major version and mm is minor version."
-#define     ECSCHEMA_FULLNAME_FORMAT_EXPLANATION_W L" Format must be Name.MM.mm where Name is the schema name, MM is major version and mm is minor version."
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::AddKindOfQuantity(KindOfQuantityP valueToAdd)
+    {
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
+
+    if(NamedElementExists(valueToAdd->GetName().c_str()))
+        {
+        LOG.errorv("Cannot create kind of quantity '%s' because a named element the same identifier already exists in the schema",
+                   valueToAdd->GetName().c_str());
+
+        return ECObjectsStatus::NamedItemAlreadyExists;
+        }
+
+    if (m_kindOfQuantityMap.insert(bpair<Utf8CP, KindOfQuantityP>(valueToAdd->GetName().c_str(), valueToAdd)).second == false)
+        {
+        LOG.errorv("There was a problem adding kind of quantity '%s' to the schema",
+                   valueToAdd->GetName().c_str());
+
+        return ECObjectsStatus::Error;
+        }
+
+    /*if (m_serializationOrder != nullptr)
+    m_serializationOrder->AddElement(valueToAdd->GetName().c_str(), ECSchemaElementType::KindOfQuantity);*/
+
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Robert.Schili                   11/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::CreateKindOfQuantity(KindOfQuantityP& kindOfQuantity, Utf8CP name)
+    {
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
+
+    kindOfQuantity = new KindOfQuantity(*this);
+    kindOfQuantity->SetName(name);
+
+    auto status = AddKindOfQuantity(kindOfQuantity);
+    if (ECObjectsStatus::Success != status)
+        {
+        delete kindOfQuantity;
+        kindOfQuantity = nullptr;
+        }
+
+    return status;
+    }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
@@ -1235,34 +1306,6 @@ ECObjectsStatus ECSchema::ResolveNamespacePrefix (ECSchemaCR schema, Utf8StringR
 ECClassContainerCR ECSchema::GetClasses () const
     {
     return m_classContainer;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECEnumerationContainerCR ECSchema::GetEnumerations () const
-    {
-    return m_enumerationContainer;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t ECSchema::GetClassCount
-(
-) const
-    {
-    return (uint32_t) m_classMap.size();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Robert.Schili                   11/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t ECSchema::GetEnumerationCount
-(
-) const
-    {
-    return (uint32_t) m_enumerationMap.size();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2699,6 +2742,8 @@ Utf8String SchemaKey::FormatLegacyFullSchemaName(Utf8CP schemaName, uint32_t ver
     }
 
 #define ECSCHEMA_VERSION_FORMAT_EXPLANATION " Format must be either MM.mm or MM.ww.mm where MM is major version, ww is the  write compatibility version and mm is minor version."
+#define ECSCHEMA_FULLNAME_FORMAT_EXPLANATION " Format must be either Name.MM.mm or Name.MM.ww.mm where MM is major version, ww is the  write compatibility version and mm is minor version."
+
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

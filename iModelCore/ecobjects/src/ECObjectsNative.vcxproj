@@ -66,6 +66,7 @@
     <ClCompile Include="ECProperty.cpp" />
     <ClCompile Include="ECSchema.cpp" />
     <ClCompile Include="ECEnumeration.cpp" />
+    <ClCompile Include="KindOfQuantity.cpp" />
     <ClCompile Include="ECSchemaConverter.cpp" />
     <ClCompile Include="ECType.cpp" />
     <ClCompile Include="ECValue.cpp" />
