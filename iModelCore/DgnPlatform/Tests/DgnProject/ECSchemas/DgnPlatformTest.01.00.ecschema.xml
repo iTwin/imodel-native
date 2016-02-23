@@ -187,5 +187,7 @@
 
     <ECClass typeName="TestElementWithNoHandler" isDomainClass="True">
         <BaseClass>TestElement</BaseClass>
+        <ECProperty propertyName='StringProperty' typeName='string' />
+        <ECProperty propertyName='IntProperty' typeName='int' />
     </ECClass>
 </ECSchema>

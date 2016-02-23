@@ -1640,63 +1640,146 @@ ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR e
     return ECInstanceKey(classId.GetValue(), GetAspectInstanceId(el));
     }
 
-BEGIN_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
+* @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct CachedECInstanceUpdaters : Db::AppData
+static void computePropertiesAddedByDerivedClass(bvector<ECN::ECPropertyCP>& props, ECN::ECClassCR rootClass, ECN::ECClassCR derivedClass)
+    {
+    if (&derivedClass == &rootClass)
+        return;
+
+    for (ECN::ECPropertyCP prop : derivedClass.GetProperties(false))
+        {
+        props.push_back(prop);
+        }
+
+    for (auto base : derivedClass.GetBaseClasses())
+        {
+        if (base->Is(&rootClass))
+            computePropertiesAddedByDerivedClass(props, rootClass, *base);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::ComputeUnhandledProperties(bvector<ECN::ECPropertyCP>& props) const
+    {
+    ECN::ECClassCP elemClass = GetElementClass();
+    
+    auto& handler = GetElementHandler();
+    ECN::ECClassCP handlerClass = GetDgnDb().Schemas().GetECClass(handler.GetDomain().GetDomainName(), handler.GetClassName().c_str());
+    
+    computePropertiesAddedByDerivedClass(props, *handlerClass, *elemClass);
+    }
+
+//=======================================================================================
+// @bsiclass                                                     Sam.Wilson     02/16
+//=======================================================================================
+struct UnhandledProps : DgnElement::AppData
 {
-    bmap<DgnClassId, ECInstanceUpdater*> m_cache;
+    static Key s_key;
 
-    ~CachedECInstanceUpdaters()
+    bset<Utf8String> m_pendingEdits;
+    ECN::IECInstancePtr m_instance;
+
+    virtual DropMe _OnInserted(DgnElementCR el){UpdateModifiedProperties(el); return DropMe::Yes;}
+    virtual DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original) {UpdateModifiedProperties(original); return DropMe::Yes;}
+    virtual DropMe _OnReversedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::Yes;}
+    virtual DropMe _OnDeleted(DgnElementCR el) {return DropMe::Yes;}
+
+    static UnhandledProps& Get(DgnElementCR elem)
         {
-        DeleteAll();
+        UnhandledProps* props = dynamic_cast<UnhandledProps*>(elem.FindAppData(s_key));
+        if (nullptr == props)
+            elem.AddAppData(s_key, props = new UnhandledProps);
+        return *props;
         }
 
-    void DeleteAll()
-        {
-        for (auto e : m_cache)
-            delete e.second;    
-          
-        m_cache.clear();
-        }
-
-    static CachedECInstanceUpdaters& Get(DgnDbR db)
-        {
-        static Key s_key;
-        auto ad = dynamic_cast<CachedECInstanceUpdaters*>(db.FindAppData(s_key));
-        if (nullptr == ad)
-            db.AddAppData(s_key, (ad = new CachedECInstanceUpdaters));
-        return *ad;
-        }
-
-    void TrimCache()
-        {
-        if (m_cache.size() < 10)
-            return;
-
-        DeleteAll();
-        }
-
-    ECInstanceUpdater& GetECInstanceUpdater0(DgnDbR db, ECClassCR ecClass)
-        {
-        DgnClassId clsid(ecClass.GetId());
-        auto i = m_cache.find(clsid);
-        if (i != m_cache.end())
-            return *i->second;
-        TrimCache();
-        ECInstanceUpdater* newUpdater = new ECInstanceUpdater(db, ecClass);
-        m_cache[clsid] = newUpdater;
-        return *newUpdater;
-        }
-
-    static ECInstanceUpdater& GetECInstanceUpdater(DgnDbR db, ECClassCR ecClass)
-        {
-        return Get(db).GetECInstanceUpdater0(db, ecClass);
-        }
+    ECN::IECInstancePtr GetInstance(DgnElementCR elem);
+    DgnDbStatus UpdateModifiedProperties(DgnElementCR elem);
 };
 
-END_UNNAMED_NAMESPACE
+UnhandledProps::Key UnhandledProps::s_key;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ECN::IECInstancePtr UnhandledProps::GetInstance(DgnElementCR elem)
+    {
+    if (m_instance.IsValid())
+        return m_instance;
+
+    bvector<ECN::ECPropertyCP> unhandledProps;   // NEEDS WORK: This is the same for all instances of a given ECClass. It could be cached on a per-class basis.
+    elem.ComputeUnhandledProperties(unhandledProps);
+
+    if (!elem.GetElementId().IsValid())
+        {
+        m_instance = elem.GetElementClass()->GetDefaultStandaloneEnabler()->CreateInstance();
+        //for (auto prop : unhandledProps)
+        //    m_instance->SetValue(prop->GetName().c_str(), ECValue());
+        return m_instance;
+        }
+
+    Utf8String props;
+    Utf8CP comma = "";
+    for (auto prop : unhandledProps)
+        {
+        props.append(comma).append("[").append(prop->GetName()).append("]");
+        comma = ",";
+        }
+
+    EC::ECSqlStatement stmt;
+    stmt.Prepare(elem.GetDgnDb(), Utf8PrintfString("SELECT %s FROM %s.%s WHERE ECInstanceId=%lld", props.c_str(), elem.GetElementClass()->GetSchema().GetName().c_str(), elem.GetElementClass()->GetName().c_str(), elem.GetElementId().GetValue()));
+    if (stmt.Step() != BE_SQLITE_ROW)
+        return nullptr;
+
+    ECInstanceECSqlSelectAdapter adapter(stmt);
+    return m_instance = adapter.GetInstance();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::GetUnhandledPropertyValue(ECN::ECValueR value, Utf8CP name) const
+    {
+    ECN::IECInstancePtr inst = UnhandledProps::Get(*this).GetInstance(*this);
+    if (!inst.IsValid())
+        return DgnDbStatus::NotFound;
+    return inst->GetValueOrAdhoc(value, name) == ECN::ECObjectsStatus::Success? DgnDbStatus::Success: DgnDbStatus::NotFound;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::SetUnhandledPropertyValue(Utf8CP name, ECN::ECValueCR value)
+    {
+    UnhandledProps& props = UnhandledProps::Get(*this);
+    
+    ECN::IECInstancePtr inst = props.GetInstance(*this);
+    if (!inst.IsValid())
+        return DgnDbStatus::NotFound;
+
+    if (inst->SetValueOrAdhoc(name, value) != ECN::ECObjectsStatus::Success)
+        return DgnDbStatus::NotFound;
+
+    props.m_pendingEdits.insert(name);
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus UnhandledProps::UpdateModifiedProperties(DgnElementCR elem)
+    {
+    if (!m_instance.IsValid() || m_pendingEdits.empty())
+        return DgnDbStatus::Success;
+    
+    m_instance->SetInstanceId(Utf8PrintfString("%lld", elem.GetElementId().GetValue()));
+
+    EC::ECInstanceUpdater updater(elem.GetDgnDb(), *m_instance);
+    return updater.Update(*m_instance) == BSISUCCESS? DgnDbStatus::Success: DgnDbStatus::WriteError;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/15
