@@ -311,6 +311,61 @@ module DgnScriptTests {
         ExerciseMesh(mesh, 2);
         }
 
+    // create and populate regular polygon in a plane parallel to xy.
+    // @remarks when isRadiusOuter if TRUE, the first point is placed on the x axis at x=radius.
+    // @remarks when isRadiusOuter is FALSE, the first edge is perpendicular to the x axis at x=radius
+    // @param [in] origin center of the polygon.
+    // @param [in] numSide number of polygon sides.
+    // @param [in] radius radius of computed points (see isRadiusOuter parameter)
+    // @param [in] isRadiusOuter selects measurement to points (true) or edges (false)
+    function RegularXYPolygonPoints (origin : Bentley.Dgn.DPoint3d, numSide:number, radius : number, isRadiusOuter : boolean) : Bentley.Dgn.DPoint3dArray
+        {
+        var stepDegrees = 360. / numSide;
+        var points = new Bentley.Dgn.DPoint3dArray ();
+        var startDegrees = isRadiusOuter ? 0.0 : 0.5 * stepDegrees;
+        var i = 0;
+        points.AddXYZ (radius, 0, 0);
+        for (i = 0; i < numSide; i++)
+            {
+            var angle = Bentley.Dgn.Angle.CreateDegrees (startDegrees + i * stepDegrees);
+            points.Add (origin.Plus (Bentley.Dgn.DVector3d.CreateXYAngleAndMagnitude (angle, radius)));
+            }
+        // repeat first point
+        points.AddXYZ (radius, 0, 0);
+        return points;
+        }
+
+    function LoopFromPoints (points: Bentley.Dgn.DPoint3dArray) : Bentley.Dgn.Geometry
+        {
+        var loop = new Bentley.Dgn.Loop ()
+        loop.Add (new Bentley.Dgn.LineString (points));
+        return loop;
+        }
+
+    function TryTransformGeometryArrayInPlace (geometry: Bentley.Dgn.Geometry[], transform: Transform)
+        {
+        var i = 0;
+        for (;i < geometry.length;i++)
+            geometry[i].TryTransformInPlace (transform);
+        }
+
+    function CloneGeometryArray (transform: Transform) :Bentley.Dgn.Geometry[])
+        {
+        var result = new Bentley.Dgn.Geometry[];
+        var i = 0;
+        for (;i < geometry.length;i++)
+            result.push (geometry[i]);
+        return result;
+        }
+
+
+    function t_arrayOfGeometry ()
+        {        
+        var geometry1: Bentley.Dgn.Geometry[];
+        geometry1.push (LoopFromPoints (RegularXYPolygonPoints (new Bentley.Dgn.DPoint3d (0,0,0), 4, 1.0, false)));
+        
+
+        }
     t_polyfaceMeshA ();  
 
     logMessage('Test1 Z');
