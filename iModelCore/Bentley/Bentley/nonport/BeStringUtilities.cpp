@@ -2292,18 +2292,25 @@ void*   BeStringUtilities::WCharToPointer (WCharCP inWChar)
     if ( (nullptr == inWChar) || (0 == *inWChar) )
         return NULL;
 
-    void*   output = nullptr;
     if (8 == sizeof (void*))
+        {
+        int64_t output;
         swscanf (inWChar, L"%I64x", &output);
+        return (void*)output;
+        }
     else if (4 == sizeof (void*))
-        swscanf (inWChar, L"%x", &output);
+        {
+        void*   output = nullptr;
+        swscanf (inWChar, L"%x", (unsigned int*)&output);
+        return output;
+        }
     else
         {
         // unexpected pointer size!
         BeAssert (false);
         }
 
-    return output;
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
