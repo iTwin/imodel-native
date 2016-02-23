@@ -252,14 +252,13 @@ struct ECDbSqlColumn : NonCopyableClass
     {
     enum class Type
         {
-        Any = 0, 
+        Any = 0,
         Boolean = 1,
-        Binary = 2, 
-        DateTime = 3, 
-        Double = 4, 
+        Blob = 2, 
+        TimeStamp = 3,
+        Real = 4, 
         Integer = 5, 
-        Long = 6, 
-        String = 7
+        Text = 6
         };
 
     struct Constraint : NonCopyableClass
@@ -607,6 +606,8 @@ public:
 
     static BentleyStatus AddColumns(ECDbR, ECDbSqlTable const&, std::vector<Utf8CP> const& newColumns);
     static BentleyStatus CopyRows(ECDbR, Utf8CP sourceTable, bvector<Utf8String>& sourceColumns, Utf8CP targetTable, bvector<Utf8String>& targetColumns);
+
+    static Utf8CP ColumnTypeToSql(ECDbSqlColumn::Type);
     };
 
 

@@ -140,8 +140,8 @@ DbResult ECSqlStatementBase::Step ()
     //for performance reasons ECSqlPreparedStatement::Step is not polymorphic (anymore). Cost
     //of virtual dispatch was eliminated by taking cost of caller having to downcast to each subclass type
     //and call non-virtual Step.
-    const auto type = GetPreparedStatementP ()->GetType ();
-    switch (type)
+    const auto columnType = GetPreparedStatementP ()->GetType ();
+    switch (columnType)
         {
             case ECSqlType::Select:
                 return GetPreparedStatementP<ECSqlSelectPreparedStatement> ()->Step ();

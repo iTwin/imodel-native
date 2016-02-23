@@ -1029,7 +1029,6 @@ Utf8String PropertyMapPoint::_ToString() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus PropertyMapPoint::_FindOrCreateColumnsInTable(ClassMap& classMap,  ClassMapInfo const* classMapInfo)
     {
-    const PrimitiveType colType = PRIMITIVETYPE_Double;
     Utf8String columnName;
     bool isNullable = true;
     bool isUnique = false;
@@ -1040,7 +1039,7 @@ BentleyStatus PropertyMapPoint::_FindOrCreateColumnsInTable(ClassMap& classMap, 
     bset<ECDbSqlTable const*> tables;
     Utf8String xColumnName(columnName);
     xColumnName.append("_X");
-    ECDbSqlColumn const* xCol = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, xColumnName.c_str(), colType, isNullable, isUnique, collation, "X");
+    ECDbSqlColumn const* xCol = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, xColumnName.c_str(), s_defaultCoordinateECType, isNullable, isUnique, collation, "X");
     if (xCol == nullptr)
         {
         BeAssert(false);
@@ -1049,7 +1048,7 @@ BentleyStatus PropertyMapPoint::_FindOrCreateColumnsInTable(ClassMap& classMap, 
 
     Utf8String yColumnName(columnName);
     yColumnName.append("_Y");
-    ECDbSqlColumn const* yCol = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, yColumnName.c_str(), colType, isNullable, isUnique, collation, "Y");
+    ECDbSqlColumn const* yCol = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, yColumnName.c_str(), s_defaultCoordinateECType, isNullable, isUnique, collation, "Y");
     if (yCol == nullptr)
         {
         BeAssert(false);
@@ -1061,7 +1060,7 @@ BentleyStatus PropertyMapPoint::_FindOrCreateColumnsInTable(ClassMap& classMap, 
         {
         Utf8String zColumnName(columnName);
         zColumnName.append("_Z");
-        zCol = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, zColumnName.c_str(), colType, isNullable, isUnique, collation, "Z");
+        zCol = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, zColumnName.c_str(), s_defaultCoordinateECType, isNullable, isUnique, collation, "Z");
         if (zCol == nullptr)
             {
             BeAssert(false);

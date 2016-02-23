@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ExpHelper.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -25,7 +25,7 @@ private:
     ~ExpHelper ();
 
 public:
-    static BentleyStatus ToPrimitiveType (ECN::PrimitiveType&, Utf8StringCR type);
+    static BentleyStatus ToPrimitiveType (ECN::PrimitiveType&, Utf8StringCR colType);
     static Utf8CP ToString(ECN::PrimitiveType);
     static Utf8CP ToSql(SqlCompareListType);
     static Utf8CP ToECSql(JoinDirection);

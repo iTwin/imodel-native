@@ -330,6 +330,8 @@ private:
     friend PropertyMapPtr PropertyMap::CreateAndEvaluateMapping(ClassMapLoadContext&, ECDbCR, ECN::ECPropertyCR, ECN::ECClassCR rootClass, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap);
     friend PropertyMapPtr PropertyMap::Clone(ECDbMapCR, PropertyMapCR proto, ECN::ECClassCR clonedBy, PropertyMap const* parentPropertyMap);
 
+    static const ECN::PrimitiveType s_defaultCoordinateECType = ECN::PRIMITIVETYPE_Double;
+
     bool m_is3d;
     ECDbSqlColumn const* m_xColumn;
     ECDbSqlColumn const* m_yColumn;
@@ -350,6 +352,8 @@ private:
 
 public:
     bool Is3d () const { return m_is3d; }
+
+    static ECDbSqlColumn::Type GetDefaultColumnType() { return ECDbSqlColumn::PrimitiveTypeToColumnType(s_defaultCoordinateECType); }
 };
 
 struct RelationshipConstraintMap;

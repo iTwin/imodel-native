@@ -41,12 +41,12 @@ ECDbSqlColumn* RelationshipClassMap::CreateConstraintColumn(Utf8CP columnName, C
 
     if (GetPrimaryTable().IsOwnedByECDb())
         {
-        column = GetPrimaryTable().CreateColumn(columnName, ECDbSqlColumn::Type::Long, columnId, persType);
+        column = GetPrimaryTable().CreateColumn(columnName, ECDbSqlColumn::Type::Integer, columnId, persType);
         }
     else
         {
         GetPrimaryTable().GetEditHandleR().BeginEdit();
-        column = GetPrimaryTable().CreateColumn(columnName, ECDbSqlColumn::Type::Long, columnId, PersistenceType::Virtual);
+        column = GetPrimaryTable().CreateColumn(columnName, ECDbSqlColumn::Type::Integer, columnId, PersistenceType::Virtual);
         GetPrimaryTable().GetEditHandleR().EndEdit();
         }
 
@@ -425,7 +425,7 @@ MapStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMap
                 }
 
             const PersistenceType columnPersistenceType = foreignEndTable->IsOwnedByECDb() && foreignEndTable->GetPersistenceType() == PersistenceType::Persisted ? PersistenceType::Persisted : PersistenceType::Virtual;
-            ECDbSqlColumn* fkCol = const_cast<ECDbSqlTable*>(foreignEndTable)->CreateColumn(fkColumnName.c_str(), ECDbSqlColumn::Type::Long, foreignKeyColumnKind, columnPersistenceType);
+            ECDbSqlColumn* fkCol = const_cast<ECDbSqlTable*>(foreignEndTable)->CreateColumn(fkColumnName.c_str(), ECDbSqlColumn::Type::Integer, foreignKeyColumnKind, columnPersistenceType);
             if (fkCol == nullptr)
                 {
                 LOG.errorv("Could not create foreign key column %s in table %s for the ECRelationshipClass %s.",
@@ -485,7 +485,7 @@ MapStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMap
                 if (readonly)
                     fkTable.GetEditHandleR().BeginEdit();
 
-                fkTableClassIdCol = fkTable.CreateColumn(colName, ECDbSqlColumn::Type::Long, kind, PersistenceType::Virtual);
+                fkTableClassIdCol = fkTable.CreateColumn(colName, ECDbSqlColumn::Type::Integer, kind, PersistenceType::Virtual);
 
                 if (readonly)
                     fkTable.GetEditHandleR().EndEdit();
@@ -519,7 +519,7 @@ MapStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMap
                 if (readonly)
                     fkTable.GetEditHandleR().BeginEdit();
 
-                fkTableReferencedEndClassIdCol = fkTable.CreateColumn(colName, ECDbSqlColumn::Type::Long, kind, PersistenceType::Virtual);
+                fkTableReferencedEndClassIdCol = fkTable.CreateColumn(colName, ECDbSqlColumn::Type::Integer, kind, PersistenceType::Virtual);
 
                 if (readonly)
                     fkTable.GetEditHandleR().EndEdit();
@@ -1363,7 +1363,7 @@ void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext& schemaImportCo
                 break;
         }
 
-    schemaImportContext.GetECDbMapDb().CreateIndex(GetECDbMap().GetECDbR(), GetPrimaryTable(), name.c_str(), isUniqueIndex, columns, nullptr,
+    schemaImportContext.GetECDbMapDb().CreateIndex(GetECDbMap().GetECDbR(), GetPrimaryTable(), name.c_str(), isUniqueIndex, columns, false,
                                                    true, GetClass().GetId(), 
                                                    //if a partial index is created, it must only apply to this class,
                                                    //not to subclasses, as constraints are not inherited by relationships

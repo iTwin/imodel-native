@@ -526,7 +526,7 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (SchemaImportContext* schemaImportConte
         if (Utf8String::IsNullOrEmpty (primaryKeyColumnName))
             primaryKeyColumnName = ECDB_COL_ECInstanceId;
 
-        auto column = table->CreateColumn (primaryKeyColumnName, ECDbSqlColumn::Type::Long, ColumnKind::ECInstanceId, PersistenceType::Persisted);
+        auto column = table->CreateColumn (primaryKeyColumnName, ECDbSqlColumn::Type::Integer, ColumnKind::ECInstanceId, PersistenceType::Persisted);
         if (table->GetPersistenceType () == PersistenceType::Persisted)
             {
             column->GetConstraintR ().SetIsNotNull (true);
@@ -535,9 +535,9 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (SchemaImportContext* schemaImportConte
 
         if (tableType == TableType::StructArray)
             {
-            table->CreateColumn (ECDB_COL_ParentECInstanceId, ECDbSqlColumn::Type::Long, ColumnKind::ParentECInstanceId, PersistenceType::Persisted);
-            table->CreateColumn (ECDB_COL_ECPropertyPathId, ECDbSqlColumn::Type::Long, ColumnKind::ECPropertyPathId, PersistenceType::Persisted);
-            table->CreateColumn (ECDB_COL_ECArrayIndex, ECDbSqlColumn::Type::Long, ColumnKind::ECArrayIndex, PersistenceType::Persisted);
+            table->CreateColumn (ECDB_COL_ParentECInstanceId, ECDbSqlColumn::Type::Integer, ColumnKind::ParentECInstanceId, PersistenceType::Persisted);
+            table->CreateColumn (ECDB_COL_ECPropertyPathId, ECDbSqlColumn::Type::Integer, ColumnKind::ECPropertyPathId, PersistenceType::Persisted);
+            table->CreateColumn (ECDB_COL_ECArrayIndex, ECDbSqlColumn::Type::Integer, ColumnKind::ECArrayIndex, PersistenceType::Persisted);
             if (table->GetPersistenceType() == PersistenceType::Persisted)
                 {
                 if (schemaImportContext != nullptr)
@@ -551,7 +551,7 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (SchemaImportContext* schemaImportConte
                                                                              ECDB_COL_ECPropertyPathId, 
                                                                              ECDB_COL_ECArrayIndex, 
                                                                              primaryKeyColumnName},
-                                                                             nullptr,
+                                                                             false,
                                                                              true, 
                                                                              ECClass::UNSET_ECCLASSID))
                         {
@@ -865,7 +865,7 @@ BentleyStatus ECDbMap::FinishTableDefinition () const
             if (addClassId)
                 {
                 const size_t insertPosition = 1;
-                ECDbSqlColumn * ecClassIdColumn = table->CreateColumn(ECDB_COL_ECClassId, ECDbSqlColumn::Type::Long, insertPosition, ColumnKind::ECClassId, PersistenceType::Persisted);
+                ECDbSqlColumn * ecClassIdColumn = table->CreateColumn(ECDB_COL_ECClassId, ECDbSqlColumn::Type::Integer, insertPosition, ColumnKind::ECClassId, PersistenceType::Persisted);
                 if (ecClassIdColumn == nullptr)
                     return ERROR;
                 
@@ -873,7 +873,7 @@ BentleyStatus ECDbMap::FinishTableDefinition () const
                 //whenever we create a class id column, we index it to speed up the frequent class id look ups
                 Utf8String indexName("ix_");
                 indexName.append(table->GetName()).append("_ecclassid");
-                m_schemaImportContext->GetECDbMapDb().CreateIndex(GetECDb(), *table, indexName.c_str(), false, {ecClassIdColumn}, nullptr, true, ECClass::UNSET_ECCLASSID);
+                m_schemaImportContext->GetECDbMapDb().CreateIndex(GetECDb(), *table, indexName.c_str(), false, {ecClassIdColumn}, false, true, ECClass::UNSET_ECCLASSID);
                 }
             }
         }
