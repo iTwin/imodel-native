@@ -828,7 +828,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     LOG.tracev("Reading custom attributes for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingCustomAttributes.GetElapsedSeconds());
 
     // If switch is set in reading context, the class order of the schema xml will be preserved that it can be written out in the same order.
-    if (m_schemaContext.GetPreserveClassOrder())
+    if (m_schemaContext.GetPreserveElementOrder())
         {
         schemaOut->m_serializationOrder = reader->GetSchemaElementOrder(*schemaNode);
         }
@@ -848,7 +848,9 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
 // @bsimethod                                   Carole.MacDonald            10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
 SchemaXmlWriter::SchemaXmlWriter(BeXmlWriterR xmlWriter, ECSchemaCR ecSchema, int ecXmlVersionMajor, int ecXmlVersionMinor) : m_xmlWriter(xmlWriter), m_ecSchema(ecSchema), m_ecXmlVersionMajor(ecXmlVersionMajor), m_ecXmlVersionMinor(ecXmlVersionMinor)
-    {}
+    {
+    m_context.SetPreserveElementOrder(ecSchema.m_serializationOrder != nullptr);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
@@ -908,20 +910,26 @@ SchemaWriteStatus SchemaXmlWriter::WriteClass(ECClassCR ecClass)
     else
         m_context.m_alreadyWrittenClasses.insert(ecClass.GetName().c_str());
 
-    // write the base classes first.
-    for (ECClassP baseClass : ecClass.GetBaseClasses())
-        WriteClass(*baseClass);
-
-    // Serialize relationship constraint dependencies
-    ECRelationshipClassP relClass = const_cast<ECRelationshipClassP>(ecClass.GetRelationshipClassCP());
-    if (NULL != relClass)
+    // If schema element order shouldn't be preserved, baseclasses and contraints will be written
+    //  before the actual class to write. Else the order given by the WriteClass calls is used.
+    if (!m_context.GetPreserveElementOrder())
         {
-        for (auto source : relClass->GetSource().GetConstraintClasses())
-            WriteClass(source->GetClass());
+        // write the base classes first.
+        for (ECClassP baseClass : ecClass.GetBaseClasses())
+            WriteClass(*baseClass);
 
-        for (auto target : relClass->GetTarget().GetConstraintClasses())
-            WriteClass(target->GetClass());
+        // Serialize relationship constraint dependencies
+        ECRelationshipClassP relClass = const_cast<ECRelationshipClassP>(ecClass.GetRelationshipClassCP());
+        if (NULL != relClass)
+            {
+            for (auto source : relClass->GetSource().GetConstraintClasses())
+                WriteClass(source->GetClass());
+
+            for (auto target : relClass->GetTarget().GetConstraintClasses())
+                WriteClass(target->GetClass());
+            }
         }
+
     WritePropertyDependencies(ecClass);
     WriteCustomAttributeDependencies(ecClass);
 
@@ -994,7 +1002,7 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
 
     // if there is no Element Order specified, create a new default one (enumerations, classes) ordered alphabetically.
     ECSchemaElementsOrderP serializationOrder = m_ecSchema.m_serializationOrder;
-    if (serializationOrder == nullptr)
+    if (!m_context.GetPreserveElementOrder())
         {
         ECSchemaElementsOrder::CreateAlphabeticalOrder(serializationOrder, m_ecSchema);
         }

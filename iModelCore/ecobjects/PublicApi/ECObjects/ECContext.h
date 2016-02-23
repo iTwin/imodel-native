@@ -50,7 +50,7 @@ private:
     IECSchemaRemapperCP                     m_remapper;
     bool                                    m_acceptLegacyImperfectLatestCompatibleMatch;
     bvector<WString>                        m_cultureStrings;
-    bool                                    m_preserveClassOrder = false;
+    bool                                    m_preserveElementOrder = false;
 
     bool                        GetStandardPaths (bvector<WString>& standardPaths);
 
@@ -85,8 +85,8 @@ public:
     void                ResolveClassName (Utf8StringR serializedClassName, ECSchemaCR schema) const;
 
 
-    bool GetPreserveClassOrder() { return m_preserveClassOrder; }
-    void SetPreserveClassOrder(bool flag) { m_preserveClassOrder = flag; }
+    bool GetPreserveElementOrder() { return m_preserveElementOrder; }
+    void SetPreserveElementOrder(bool flag) { m_preserveElementOrder = flag; }
 
 //__PUBLISH_SECTION_START__
 public:

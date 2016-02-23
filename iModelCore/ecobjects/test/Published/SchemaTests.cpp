@@ -1577,13 +1577,32 @@ TEST_F(SchemaDeserializationTest, KindOfQuantityTest)
     }
 
 
+void ValidateElementOrder(bvector<Utf8String> expectedTypeNames, BeXmlNodeP root)
+    {
+    BeXmlNodeP currentNode = root->GetFirstChild();
+    for (auto expectedTypeName : expectedTypeNames)
+        {
+        if (currentNode == nullptr)
+            {
+            FAIL() << "Expected end of document, Node '" << expectedTypeName << "' expected.";
+            }
+
+        Utf8String nodeTypeName;
+        EXPECT_EQ(BeXmlStatus::BEXML_Success, currentNode->GetAttributeStringValue(nodeTypeName, "typeName"));
+        EXPECT_EQ(expectedTypeName, nodeTypeName);
+
+        currentNode = currentNode->GetNextSibling();
+        }
+    }
+
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Stefan.Apfel    02/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, TestPreservingClassOrder)
+TEST_F(SchemaDeserializationTest, TestPreservingElementOrder)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    schemaContext->SetPreserveClassOrder(true);
+    schemaContext->SetPreserveElementOrder(true);
 
     Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='TestSchema' version='01.00' nameSpacePrefix='ab' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -1604,28 +1623,14 @@ TEST_F(SchemaDeserializationTest, TestPreservingClassOrder)
     BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, ecSchemaXmlString.c_str(), stringByteCount);
     EXPECT_EQ(BEXML_Success, xmlStatus);
 
-    BeXmlNodeP root = xmlDom.get()->GetRootElement();
-    
-    Utf8String nodeNameGHI;
-    BeXmlNodeP classGHINode = root->GetFirstChild();
-    EXPECT_EQ(BeXmlStatus::BEXML_Success, classGHINode->GetAttributeStringValue(nodeNameGHI, "typeName"));
-    EXPECT_EQ(Utf8String("GHI"), nodeNameGHI);
-
-    Utf8String nodeNameABC;
-    BeXmlNodeP classABCNode = classGHINode->GetNextSibling();
-    EXPECT_EQ(BeXmlStatus::BEXML_Success, classABCNode->GetAttributeStringValue(nodeNameABC, "typeName"));
-    EXPECT_EQ(Utf8String("ABC"), nodeNameABC);
-
-    Utf8String nodeNameDEF;
-    BeXmlNodeP classDEFNode = classABCNode->GetNextSibling();
-    EXPECT_EQ(BeXmlStatus::BEXML_Success, classDEFNode->GetAttributeStringValue(nodeNameDEF, "typeName"));
-    EXPECT_EQ(Utf8String("DEF"), nodeNameDEF);
+    bvector<Utf8String> typeNames = {"GHI", "ABC", "DEF"};
+    ValidateElementOrder(typeNames, xmlDom.get()->GetRootElement());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Stefan.Apfel    02/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, TestDefaultClassOrder)
+TEST_F(SchemaDeserializationTest, TestDefaultElementOrder)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
     Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
@@ -1645,24 +1650,108 @@ TEST_F(SchemaDeserializationTest, TestDefaultClassOrder)
     BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, ecSchemaXmlString.c_str(), stringByteCount);
     EXPECT_EQ(BEXML_Success, xmlStatus);
 
-    BeXmlNodeP root = xmlDom.get()->GetRootElement();
+    // Enumerations (DEF) are serialized first, then classes (ABC, GHI)
+    bvector<Utf8String> typeNames = {"DEF", "ABC", "GHI"};
+    ValidateElementOrder(typeNames, xmlDom.get()->GetRootElement());
+    }
 
-    // Enumerations are serializer first...
-    Utf8String nodeNameDEF; 
-    BeXmlNodeP classDEFNode = root->GetFirstChild();
-    EXPECT_EQ(BeXmlStatus::BEXML_Success, classDEFNode->GetAttributeStringValue(nodeNameDEF, "typeName"));
-    EXPECT_EQ(Utf8String("DEF"), nodeNameDEF);
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Stefan.Apfel    02/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, TestPreserveElementOrderWithBaseClassAndRelationships)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->SetPreserveElementOrder(true);
 
-    // then ECClasses
-    Utf8String nodeNameABC;
-    BeXmlNodeP classABCNode = classDEFNode->GetNextSibling();
-    EXPECT_EQ(BeXmlStatus::BEXML_Success, classABCNode->GetAttributeStringValue(nodeNameABC, "typeName"));
-    EXPECT_EQ(Utf8String("ABC"), nodeNameABC);
+    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='TestSchema' version='01.00' nameSpacePrefix='ab' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEntityClass typeName=\"GHI\" description=\"Project ECClass\" displayLabel=\"Class GHI\"></ECEntityClass>"
+        "    <ECEntityClass typeName=\"ABC\" description=\"Project ECClass\" displayLabel=\"Class ABC\">"
+        "      <BaseClass>MNO</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECRelationshipClass typeName=\"PQR\" isDomainClass=\"True\" strength=\"referencing\" strengthDirection=\"forward\">"
+        "      <Source cardinality = \"(0, 1)\" polymorphic = \"True\">"
+        "          <Class class = \"MNO\" />"
+        "      </Source>"
+        "      <Target cardinality = '(0, 1)' polymorphic = 'True'>"
+        "          <Class class = 'JKL'>"
+        "              <Key>"
+        "                  <Property name = 'Property1' />"
+        "                  <Property name = 'Property2' />"
+        "              </Key>"
+        "          </Class>"
+        "      </Target>"
+        "    </ECRelationshipClass>"
+        "    <ECEntityClass typeName = \"MNO\" description=\"Project ECClass\" displayLabel=\"Class MNO\"></ECEntityClass>"
+        "    <ECEntityClass typeName = \"JKL\" description=\"Project ECClass\" displayLabel=\"Class JKL\">"
+        "      <ECProperty propertyName=\"Property1\" typeName=\"string\" />"
+        "      <ECProperty propertyName=\"Property2\" typeName=\"string\" />"
+        "    </ECEntityClass>"
+        "    <ECEnumeration typeName=\"DEF\" displayLabel=\"Enumeration PQR\" backingTypeName=\"int\" />"
+        "</ECSchema>";
+    ECSchemaPtr schema;
+    EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext));
 
-    Utf8String nodeNameGHI;
-    BeXmlNodeP classGHINode = classABCNode->GetNextSibling();
-    EXPECT_EQ(BeXmlStatus::BEXML_Success, classGHINode->GetAttributeStringValue(nodeNameGHI, "typeName"));
-    EXPECT_EQ(Utf8String("GHI"), nodeNameGHI);
+    WString ecSchemaXmlString;
+    EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(ecSchemaXmlString, 3, 0));
+
+    size_t stringByteCount = ecSchemaXmlString.length() * sizeof(Utf8Char);
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, ecSchemaXmlString.c_str(), stringByteCount);
+    EXPECT_EQ(BEXML_Success, xmlStatus);
+
+    // Expecting the same order as specified in the SchemaXML Document.
+    bvector<Utf8String> typeNames = {"GHI","ABC","PQR", "MNO", "JKL", "DEF", };
+    ValidateElementOrder(typeNames, xmlDom.get()->GetRootElement());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Stefan.Apfel    02/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, TestDefaultElementOrderWithBaseClassAndRelationships)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='TestSchema' version='01.00' nameSpacePrefix='ab' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEntityClass typeName=\"GHI\" description=\"Project ECClass\" displayLabel=\"Class GHI\"></ECEntityClass>"
+        "    <ECEntityClass typeName=\"ABC\" description=\"Project ECClass\" displayLabel=\"Class ABC\">"
+        "      <BaseClass>MNO</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECRelationshipClass typeName=\"DEF\" isDomainClass=\"True\" strength=\"referencing\" strengthDirection=\"forward\">"
+        "      <Source cardinality = \"(0, 1)\" polymorphic = \"True\">"
+        "          <Class class = \"MNO\" />"
+        "      </Source>"
+        "      <Target cardinality = '(0, 1)' polymorphic = 'True'>"
+        "          <Class class = 'JKL'>"
+        "              <Key>"
+        "                  <Property name = 'Property1' />"
+        "                  <Property name = 'Property2' />"
+        "              </Key>"
+        "          </Class>"
+        "      </Target>"
+        "    </ECRelationshipClass>"
+        "    <ECEntityClass typeName = \"MNO\" description=\"Project ECClass\" displayLabel=\"Class MNO\"></ECEntityClass>"
+        "    <ECEntityClass typeName = \"JKL\" description=\"Project ECClass\" displayLabel=\"Class JKL\">"
+        "      <ECProperty propertyName=\"Property1\" typeName=\"string\" />"
+        "      <ECProperty propertyName=\"Property2\" typeName=\"string\" />"
+        "    </ECEntityClass>"
+        "    <ECEnumeration typeName=\"PQR\" displayLabel=\"Enumeration PQR\" backingTypeName=\"int\" />"
+        "</ECSchema>";
+    ECSchemaPtr schema;
+    EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext));
+
+    WString ecSchemaXmlString;
+    EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(ecSchemaXmlString, 3, 0));
+
+    size_t stringByteCount = ecSchemaXmlString.length() * sizeof(Utf8Char);
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, ecSchemaXmlString.c_str(), stringByteCount);
+    EXPECT_EQ(BEXML_Success, xmlStatus);
+
+    // First Enumeration (PQR), then classes alphabetically (ABC, DEF, GHI). As MNO is the base class of ABC and
+    // JKL has a constraint in DEF, those two classes are written before the class they depend in.
+    bvector<Utf8String> typeNames = {"PQR", "MNO", "ABC", "JKL", "DEF", "GHI"};
+    ValidateElementOrder(typeNames, xmlDom.get()->GetRootElement());
     }
 
 /*---------------------------------------------------------------------------------**//**
