@@ -224,7 +224,6 @@ public:
     void Refresh();
     DGNVIEW_EXPORT void ApplyNext(int animationTime);
     DGNVIEW_EXPORT void ApplyPrevious(int animationTime);
-    DGNPLATFORM_EXPORT void Initialize(ViewControllerR);
     DGNPLATFORM_EXPORT static Render::Queue& RenderQueue();
 
     //! @return the current Camera for this DgnViewport. Note that the DgnViewport's camera may not match its ViewController's camera

@@ -1880,30 +1880,11 @@ void SimplifyGraphic::_AddPointCloud(PointCloudDraw* drawParams)
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* points)
-    {
-    // NEEDSWORK...Provide option to handle/ignore...
-    BeAssert(numX==1 && numY==1 && "TBD: march over tiles");
-
-    DPoint3d    shapePoints[5];
-
-    shapePoints[0] = shapePoints[4] = points[0];
-    shapePoints[1] = points[1];
-    shapePoints[2] = points[2];
-    shapePoints[3] = points[3];
-
-    _AddShape(5, shapePoints, true);
-    }
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  2/2016
 //----------------------------------------------------------------------------------------
 void SimplifyGraphic::_AddTile(Render::TextureCR tile, DPoint3dCP corners)
     {
-    // NEEDS_WORK_CONTINUOUS_RENDER 
     DPoint3d    shapePoints[5];
 
     shapePoints[0] = shapePoints[4] = corners[0];

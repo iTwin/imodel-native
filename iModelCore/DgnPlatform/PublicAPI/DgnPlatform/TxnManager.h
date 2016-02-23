@@ -254,11 +254,11 @@ private:
     typedef bmap<Utf8CP,TxnTablePtr,CompareTableNames> T_TxnTablesByName;
     typedef bvector<TxnTable*> T_TxnTables;
 
-    DgnDbR          m_dgndb;
+    DgnDbR m_dgndb;
     T_TxnTablesByName m_tablesByName;
-    T_TxnTables     m_tables;
-    TxnId           m_curr;
-    TxnAction       m_action;
+    T_TxnTables m_tables;
+    TxnId m_curr;
+    TxnAction m_action;
     bvector<TxnId> m_multiTxnOp;
     bvector<TxnRange> m_reversedTxn;
     bvector<DynamicChangeTrackerPtr> m_dynamics;
@@ -569,7 +569,6 @@ namespace dgn_TxnTable
         //! iterator for models that are directly changed. Only valid during _PropagateChanges.
         struct Iterator : BeSQLite::DbTableIterator
         {
-        public:
             Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) { }
             struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
             {
