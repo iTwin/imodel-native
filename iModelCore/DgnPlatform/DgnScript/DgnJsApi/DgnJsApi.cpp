@@ -22,20 +22,25 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static RefCountedPtr<PhysicalElement> createPhysicalElement(DgnModelR model, Utf8CP ecSqlClassName, DgnCategoryId catid)//, RefCountedPtr<T> geom)
+static RefCountedPtr<GeometricElement3d> createGeometricElement3d(DgnModelR model, Utf8CP ecSqlClassName, DgnCategoryId categoryId)//, RefCountedPtr<T> geom)
     {
     if (!ecSqlClassName || !*ecSqlClassName)
         ecSqlClassName = GENERIC_SCHEMA(GENERIC_CLASSNAME_PhysicalObject);
     Utf8CP dot = strchr(ecSqlClassName, '.');
     if (nullptr == dot)
         return nullptr;
+    
     Utf8String ecschema(ecSqlClassName, dot);
     Utf8String ecclass(dot+1);
     DgnDbR db = model.GetDgnDb();
-    DgnClassId pclassId = DgnClassId(db.Schemas().GetECClassId(ecschema.c_str(), ecclass.c_str()));
-    if (!pclassId.IsValid())
+    DgnClassId classId = DgnClassId(db.Schemas().GetECClassId(ecschema.c_str(), ecclass.c_str()));
+    if (!classId.IsValid())
         return nullptr;
-    return new PhysicalElement(PhysicalElement::CreateParams(db, model.GetModelId(), pclassId, catid));
+
+    DgnElementPtr element = dgn_ElementHandler::Geometric3d::GetHandler().Create(DgnElement::CreateParams(db, model.GetModelId(), classId));
+    GeometricElement3d* geometricElement3d = dynamic_cast<GeometricElement3d*>(element.get());
+    geometricElement3d->SetCategoryId(categoryId);
+    return geometricElement3d;
     }
 
 //---------------------------------------------------------------------------------------
@@ -263,7 +268,7 @@ JsPhysicalElement* JsPhysicalElement::Create(JsDgnModelP model, JsDgnObjectIdP c
     if (!categoryId || !categoryId->IsValid() || !model || !model->m_model.IsValid())
         return nullptr;
     DgnCategoryId catid(categoryId->m_id);
-    return new JsPhysicalElement(*createPhysicalElement(*model->m_model, ecSqlClassName.c_str(), catid));
+    return new JsPhysicalElement(*createGeometricElement3d(*model->m_model, ecSqlClassName.c_str(), catid));
     }
 
 //---------------------------------------------------------------------------------------
