@@ -104,7 +104,7 @@
     </Part>
     
     <Part Name="BentleyWMSPackageNet" BMakeFile="BentleyWMSPackageNet\BentleyWMSPackageNet.mke" BMakeOptions="-dTranskitLink=1">
-        <SubPart PartName="TransKitToolsSub"    PartFile="${SrcRoot}util/TranskitTools\TransKitTools" />
+        <SubPart PartName="TransKitToolsSub"    PartFile="TransKitTools" Repository="TransKitTools" />
         <SubPart PartName="RealityPackage"/>
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="PublicAPI" />
