@@ -33,7 +33,7 @@ void UnitRegistry::AddDefaultPhenomena ()
     AddPhenomena(VOLUME, "LENGTH(3)");
     AddPhenomena(VELOCITY, "LENGTH*TIME(-1)");
     AddPhenomena(MOMENTUM, "MASS*VELOCITY");
-    AddPhenomena(ANGVELOCITY, "ANGLE*TIME(-1)");
+    AddPhenomena(ANGULAR_VELOCITY, "ANGLE*TIME(-1)");
     AddPhenomena(ACCELERATION, "LENGTH*TIME(-2)");
     AddPhenomena(ANGACCELERAT, "SOLIDANGLE*TIME(-2)");
     AddPhenomena(FORCE, "MASS*ACCELERATION");
@@ -42,7 +42,7 @@ void UnitRegistry::AddDefaultPhenomena ()
     AddPhenomena(PRESSURE_GRADIENT, "PRESSURE*LENGTH(-1)");
     AddPhenomena(TORQUE, "FORCE*LENGTH*ANGLE");
     AddPhenomena(MOMENTINERTIA, "MASS*LENGTH(2)");
-    AddPhenomena(AREA_MOMENT, "LENGTH(4)");
+    AddPhenomena(AREA_MOMENT_INERTIA, "LENGTH(4)");
     AddPhenomena(MASS_RATIO, "MASS*MASS(-1)");
     AddPhenomena(DENSITY, "MASS*VOLUME(-1)");
     AddPhenomena(SPECVOLUME, "VOLUME*MASS(-1)");
@@ -67,8 +67,8 @@ void UnitRegistry::AddDefaultPhenomena ()
     AddPhenomena(ILLUMINANCE, "LUMINOUSFLUX*LENGTH(-2)");
     //AddPhenomena(RADIATION)
     //AddPhenomena(RADEXPOSURE)
-    AddPhenomena(RADABSORBDOSE, "WORK*MASS(-1)");
-    AddPhenomena(RADEQUDOSE, "WORK*MASS(-1)");
+    //AddPhenomena(RADABSORBDOSE, "WORK*MASS(-1)");
+    //AddPhenomena(RADEQUDOSE, "WORK*MASS(-1)");
     AddPhenomena(SIZE_LENGTH_RATE, "LENGTH*LENGTH"); // TODO: ?
     AddPhenomena(THERMOCONDUCT, "POWER*LENGTH(-1)*TEMPERATURE(-1)");
     AddPhenomena(MOLAR_VOLUME, "VOLUME*MOLE(-1)");
@@ -77,8 +77,8 @@ void UnitRegistry::AddDefaultPhenomena ()
     AddPhenomena(GRAVCONSTANT, "LENGTH(3)*MASS(-1)*TIME(-2)"); // TODO: Check
     AddPhenomena(THREAD_PITCH, "LENGTH*ANGLE(-1)"); // TODO: What about rotation portion?
     AddPhenomena(HEATTRASNFER, "POWER*AREA(-1)*TEMPERATURE(-1)"); // https://en.wikipedia.org/wiki/Heat_transfer_coefficient
-    AddPhenomena(HEATFLUX, "POWER"); // https://en.wikipedia.org/wiki/Heat_flux
-    AddPhenomena(WARPING_CONSTANT, "LENGTH(4)"); // https://en.wikipedia.org/wiki/Torsion_constant
+    AddPhenomena(HEATFLUX_DENSITY, "POWER*AREA(-1)"); // https://en.wikipedia.org/wiki/Heat_flux  see description of heat flux density
+    AddPhenomena(TORSIONAL_WARPING_CONSTANT, "LENGTH(6)"); // TODO: Could also be buckling resistance ... are we missing some angular portion to this unit?
     AddPhenomena(POPULATION_DENSITY, "CAPITA*AREA(-1)");
     AddPhenomena(FREQUENCY, "TIME(-1)");
     AddPhenomena(LINEAR_LOAD, "FORCE*LENGTH(-1)");
