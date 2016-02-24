@@ -2061,6 +2061,11 @@ IScalableMeshMeshPtr IScalableMeshNode::GetMeshByParts(bvector<bool>& clipsToSho
     return _GetMeshByParts(clipsToShow, texId);
     }
 
+IScalableMeshMeshPtr IScalableMeshNode::GetMeshByParts(bset<uint64_t>& clipsToShow, ScalableMeshTextureID texId) const
+    {
+    return _GetMeshByParts(clipsToShow, texId);
+    }
+
 IScalableMeshTexturePtr IScalableMeshNode::GetTexture(size_t texture_id) const
 {
     return _GetTexture(texture_id);
@@ -2150,6 +2155,11 @@ bool     IScalableMeshNode::ModifyClip(uint64_t id,  bool isVisible) const
 bool     IScalableMeshNode::DeleteClip(uint64_t id, bool isVisible) const
     {
     return _DeleteClip(id,isVisible);
+    }
+
+bool IScalableMeshNode::HasClip(uint64_t clipId) const
+    {
+    return _HasClip(clipId);
     }
 
 int IScalableMeshNodeRayQuery::Query(IScalableMeshNodePtr&                               nodePtr,

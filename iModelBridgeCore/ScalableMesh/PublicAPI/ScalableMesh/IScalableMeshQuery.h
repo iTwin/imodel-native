@@ -24,6 +24,7 @@
 #include <list>
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/ClipVector.h>
+#include <Bentley\bset.h>
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 //#include <Bentley/RefCounted.h>
 
@@ -481,6 +482,8 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         virtual IScalableMeshMeshPtr _GetMeshByParts(const bvector<bool>& clipsToShow, ScalableMeshTextureID texId) const = 0;
 
+        virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow, ScalableMeshTextureID texId) const = 0;
+
         virtual IScalableMeshTexturePtr _GetTexture(size_t texture_id) const = 0;
 
         virtual int _GetTextureID(size_t texture_id) const = 0;
@@ -517,6 +520,8 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         virtual void _LoadHeader() const = 0;
 
+        virtual bool _HasClip(uint64_t id) const = 0;
+
                 
     public:
         static const BENTLEYSTM_EXPORT ScalableMeshTextureID UNTEXTURED_PART = 0;
@@ -530,6 +535,8 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
         BENTLEYSTM_EXPORT IScalableMeshMeshPtr GetMesh(bool loadGraph, bvector<bool>& clipsToShow) const;
 
         BENTLEYSTM_EXPORT IScalableMeshMeshPtr GetMeshByParts(bvector<bool>& clipsToShow, ScalableMeshTextureID texId) const;
+
+        BENTLEYSTM_EXPORT IScalableMeshMeshPtr GetMeshByParts(bset<uint64_t>& clipsToShow, ScalableMeshTextureID texId) const;
 
         BENTLEYSTM_EXPORT IScalableMeshTexturePtr GetTexture(size_t texture_id) const;
                 
@@ -567,6 +574,8 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
         BENTLEYSTM_EXPORT bool IsMeshLoaded() const;
 
         BENTLEYSTM_EXPORT void LoadHeader() const;
+
+        BENTLEYSTM_EXPORT bool HasClip(uint64_t id) const;
     };
 
 struct SmCachedDisplayMesh;

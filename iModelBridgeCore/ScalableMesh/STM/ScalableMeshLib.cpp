@@ -118,7 +118,7 @@ void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
     BeFileName tempDir;
     BeFileNameStatus beStatus = BeFileName::BeGetTempPath(tempDir);
     assert(BeFileNameStatus::Success == beStatus);
-    BeSQLiteLib::Initialize(tempDir.GetNameUtf8().c_str());
+    BeSQLiteLib::Initialize(tempDir);
     }
 
 /*---------------------------------------------------------------------------------**//**
