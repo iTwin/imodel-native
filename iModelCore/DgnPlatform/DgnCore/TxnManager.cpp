@@ -495,14 +495,14 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
         LOG.errorv("Cancelling txn due to fatal validation error.");
         OnEndValidate();
         return CancelChanges(changeset); // roll back entire txn
-        }
-
-    // At this point, all of the changes to all tables have been applied. Tell TxnMonitors
-    T_HOST.GetTxnAdmin()._OnCommit(*this);
+        }   
 
     DbResult result = SaveCurrentChange(changeset, operation); // save changeset into DgnDb itself, along with the description of the operation we're performing
     if (result != BE_SQLITE_DONE)
         return OnCommitStatus::Abort;
+
+    // At this point, all of the changes to all tables have been applied. Tell TxnMonitors
+    T_HOST.GetTxnAdmin()._OnCommit(*this);
 
     m_dgndb.Revisions().UpdateInitialParentRevisionId(); // All new revisions are now based on the latest parent revision id
 
