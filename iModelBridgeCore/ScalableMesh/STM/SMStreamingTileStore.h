@@ -276,36 +276,44 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
 
         void Load()
             {
-            std::unique_ptr<uint8_t> inBuffer = nullptr;
-            uint32_t bytes_read = 0;
-            // NEEDS_WORK_SM_STREAMING: Should apply a condition variable here to ensure that groups are not downloaded multiple times
-            if (s_stream_from_disk)
+            unique_lock<mutex> lk(m_pGroupMutex);
+            if (m_pIsLoading)
                 {
-                this->LoadFromLocal(inBuffer, bytes_read);
+                m_pGroupCV.wait(lk, [this] {return !m_pIsLoading; });
                 }
-            else
-                {
-                this->LoadFromAzure(inBuffer, bytes_read);
+            else {
+                std::unique_ptr<uint8_t> inBuffer = nullptr;
+                uint32_t bytes_read = 0;
+                m_pIsLoading = true;
+                if (s_stream_from_disk)
+                    {
+                    this->LoadFromLocal(inBuffer, bytes_read);
+                    }
+                else
+                    {
+                    this->LoadFromAzure(inBuffer, bytes_read);
+                    }
+                uint32_t position = 0;
+                size_t id;
+                memcpy(&id, inBuffer.get(), sizeof(size_t));
+                assert(m_pGroupHeader->GetID() == id);
+                position += sizeof(size_t);
+
+                size_t numNodes;
+                memcpy(&numNodes, inBuffer.get() + position, sizeof(numNodes));
+                assert(m_pGroupHeader->size() == numNodes);
+                position += sizeof(numNodes);
+
+                memcpy(m_pGroupHeader->data(), inBuffer.get() + position, numNodes * sizeof(SMNodeHeader));
+                position += (uint32_t)numNodes * sizeof(SMNodeHeader);
+
+                const auto headerSectionSize = bytes_read - position;
+                m_pRawHeaders.resize(headerSectionSize);
+                memcpy(m_pRawHeaders.data(), inBuffer.get() + position, headerSectionSize);
+
+                m_pIsLoading = false;
+                m_pGroupCV.notify_all();
                 }
-
-            uint32_t position = 0;
-            size_t id;
-            memcpy(&id, inBuffer.get(), sizeof(size_t));
-            assert(m_pGroupHeader->GetID() == id);
-            position += sizeof(size_t);
-
-            size_t numNodes;
-            memcpy(&numNodes, inBuffer.get() + position, sizeof(numNodes));
-            assert(m_pGroupHeader->size() == numNodes);
-            position += sizeof(numNodes);
-
-            memcpy(m_pGroupHeader->data(), inBuffer.get() + position, numNodes * sizeof(SMNodeHeader));
-            position += (uint32_t)numNodes * sizeof(SMNodeHeader);
-
-            const auto headerSectionSize = bytes_read - position;
-            m_pRawHeaders.resize(headerSectionSize);
-            memcpy(m_pRawHeaders.data(), inBuffer.get() + position, headerSectionSize);
-
             m_pIsLoaded = true;
             }
 
@@ -374,6 +382,7 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
 
     private:
         bool   m_pIsLoaded = false;
+        bool   m_pIsLoading = false;
         size_t m_pLevel = 0;
         size_t m_pTotalSize;
         size_t m_pNumLevels = 0;
@@ -384,6 +393,8 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
         WString m_pDataSourceName;
         HFCPtr<SMGroupHeader> m_pGroupHeader;
         scalable_mesh::azure::Storage* m_stream_store;
+        condition_variable m_pGroupCV;
+        mutex m_pGroupMutex;
     };
 
 
@@ -395,6 +406,29 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
         struct MemoryStruct {
             bvector<Byte>* memory;
             size_t         size;
+            };
+
+        struct PointBlock : public bvector<uint8_t> {
+        public:
+            bool IsLoading() { return m_pIsLoading; }
+            bool IsLoaded() { return m_pIsLoaded; }
+            void LockAndWait()
+                {
+                unique_lock<mutex> lock(m_pPointBlockMutex);
+                m_pPointBlockCV.wait(lock, [this]() { return m_pIsLoaded; });
+                }
+            void SetLoading() { m_pIsLoading = true; }
+            void SetLoaded() 
+                { 
+                m_pIsLoaded = true;
+                m_pIsLoading = false;
+                m_pPointBlockCV.notify_all();
+                }
+        private:
+            bool m_pIsLoading = false;
+            bool m_pIsLoaded = false;
+            condition_variable m_pPointBlockCV;
+            mutex m_pPointBlockMutex;
             };
 
         static IDTMFile::NodeID ConvertBlockID(const HPMBlockID& blockID)
@@ -413,7 +447,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             }
 
         bool WriteCompressedPacket(const HCDPacket& pi_uncompressedPacket,
-                                   HCDPacket& pi_compressedPacket)
+                                   HCDPacket& pi_compressedPacket) const
             {
             HPRECONDITION(pi_uncompressedPacket.GetDataSize() <= (numeric_limits<uint32_t>::max) ());
 
@@ -429,7 +463,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             }
 
         bool LoadCompressedPacket(const HCDPacket& pi_compressedPacket,
-                                  HCDPacket& pi_uncompressedPacket)
+                                  HCDPacket& pi_uncompressedPacket) const
             {
             HPRECONDITION(pi_compressedPacket.GetDataSize() <= (numeric_limits<uint32_t>::max) ());
 
@@ -935,6 +969,116 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             return result;
             }
 
+        PointBlock& GetBlock(HPMBlockID blockID) const
+            {
+            auto blockIDConvert = ConvertBlockID(blockID);
+            PointBlock* block = nullptr;
+            if (m_countInfo.count(blockIDConvert) > 0)
+                {
+                // Block already created. Check if data available.
+                block = &m_countInfo[blockIDConvert];
+                if (block->IsLoading())
+                    {
+                    // Data not available yet
+                    block->LockAndWait();
+                    }
+                }
+            else
+                {
+                block = &this->GetNodeData(blockID);
+                }
+            assert(block != nullptr && block->IsLoaded());
+            return *block;
+            }
+
+        PointBlock& GetNodeData(HPMBlockID blockID) const
+            {
+            assert(this->m_countInfo.count(ConvertBlockID(blockID)) == 0);
+            auto blockIDConvert = ConvertBlockID(blockID);
+            auto& points = this->m_countInfo[blockIDConvert];
+            points.SetLoading();
+
+            WString pathToPoints((s_stream_from_disk ? m_path + L"points\\" : m_path));
+            wstringstream ss;
+            ss << pathToPoints << L"p_" << blockIDConvert << L".bin";
+            auto filename = ss.str();
+
+            if (s_stream_from_disk)
+                {
+                BeFile file;
+                if (BeFileStatus::Success == file.Open(filename.c_str(), BeFileAccess::Read, BeFileSharing::None))
+                    {
+                    // Read Uncompressed size
+                    auto DataTypeArray = new uint8_t[sizeof(uint32_t)];
+                    uint32_t bytesRead = 0;
+                    auto read_result = file.Read((uint8_t*)DataTypeArray, &bytesRead, sizeof(uint32_t));
+                    HASSERT(BeFileStatus::Success == read_result);
+                    HASSERT(bytesRead <= sizeof(uint32_t));
+                    auto UncompressedSize = reinterpret_cast<uint32_t&>(*DataTypeArray);
+                    delete[] DataTypeArray;
+
+                    // Read compressed points
+                    DataTypeArray = new uint8_t[UncompressedSize];
+                    read_result = file.Read((uint8_t*)DataTypeArray, &bytesRead, UncompressedSize);
+                    HASSERT(BeFileStatus::Success == read_result);
+                    HASSERT(bytesRead <= UncompressedSize);
+                    points.resize(UncompressedSize);
+                    memcpy(points.data(), DataTypeArray, UncompressedSize);
+                    file.Close();
+                    delete[] DataTypeArray;
+                    }
+                else
+                    {
+                    HASSERT(!"Problem opening block of points for reading");
+                    }
+                file.Close();
+                }
+            else if (s_stream_from_file_server)
+                {
+                bvector<uint8_t> buffer;
+                DownloadBlockFromFileServer(filename, &buffer, 1000000);
+                assert(!buffer.empty() && buffer.size() <= 1000000);
+
+                uint32_t UncompressedSize = reinterpret_cast<uint32_t&>(buffer[0]);
+                uint32_t sizeData = (uint32_t)buffer.size();
+
+                HCDPacket uncompressedPacket, compressedPacket;
+                compressedPacket.SetBuffer(&buffer[0] + sizeof(uint32_t), sizeData - sizeof(uint32_t));
+                compressedPacket.SetDataSize(sizeData - sizeof(uint32_t));
+                uncompressedPacket.SetDataSize(UncompressedSize);
+                LoadCompressedPacket(compressedPacket, uncompressedPacket);
+                assert(UncompressedSize == uncompressedPacket.GetDataSize());
+                points.resize(UncompressedSize);
+                memcpy(points.data(), uncompressedPacket.GetBufferAddress(), uncompressedPacket.GetDataSize());
+                }
+            else {
+                // stream from azure
+                bool blobDownloaded = false;
+                m_stream_store.DownloadBlob(filename.c_str(), [this, &points, &blobDownloaded](scalable_mesh::azure::Storage::point_buffer_type& buffer)
+                    {
+                    assert(!buffer.empty());
+                    //assert(buffer.size() == sizeDataLocal);
+                    //assert(0 == memcmp(&buffer[0], dataArrayTmp, sizeDataLocal));
+                    uint32_t UncompressedSize = reinterpret_cast<uint32_t&>(buffer[0]);
+                    uint32_t sizeData = (uint32_t)buffer.size() - sizeof(uint32_t);
+
+                    HCDPacket uncompressedPacket, compressedPacket;
+                    compressedPacket.SetBuffer(&buffer[0] + sizeof(uint32_t), sizeData);
+                    compressedPacket.SetDataSize(sizeData);
+                    uncompressedPacket.SetDataSize(UncompressedSize);
+                    LoadCompressedPacket(compressedPacket, uncompressedPacket);
+                    assert(UncompressedSize == uncompressedPacket.GetDataSize());
+                    points.resize(UncompressedSize);
+                    memcpy(points.data(), uncompressedPacket.GetBufferAddress(), uncompressedPacket.GetDataSize());
+                    blobDownloaded = true;
+                    });
+                assert(blobDownloaded);
+                }
+            points.SetLoaded();
+
+            return points;
+            }
+
     public:
         // Constructor / Destroyer
 
@@ -1254,81 +1398,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
      virtual size_t GetBlockDataCount(HPMBlockID blockID) const
             {
-            //if (m_DTMFile != NULL) return SMPointTaggedTileStore::GetBlockDataCount(blockID);
-            auto blockIDConvert = ConvertBlockID(blockID);
-            if (m_countInfo.count(blockIDConvert) > 0)
-                {
-                // Already have data count...
-                return m_countInfo[blockIDConvert].size() / sizeof(POINT);
-                }
-
-            WString pathToPoints((s_stream_from_disk ? m_path + L"points\\" : m_path));
-            wstringstream ss;
-            ss << pathToPoints << L"p_" << blockIDConvert << L".bin";
-            uint32_t UncompressedSize = 0;
-            auto filename = ss.str();
-            if (s_stream_from_disk)
-                {
-
-                BeFile file;
-                if (BeFileStatus::Success == file.Open(filename.c_str(), BeFileAccess::Read, BeFileSharing::Read))
-                    {
-                    auto DataTypeArray = new Byte[sizeof(uint32_t)];
-                    uint32_t bytesRead = 0;
-                    auto read_result = file.Read((Byte*)DataTypeArray, &bytesRead, sizeof(uint32_t));
-                    HASSERT(BeFileStatus::Success == read_result);
-                    HASSERT(bytesRead <= sizeof(uint32_t));
-                    UncompressedSize = reinterpret_cast<uint32_t&>(*DataTypeArray);
-                    delete[] DataTypeArray;
-
-                    DataTypeArray = new Byte[UncompressedSize];
-                    read_result = file.Read((Byte*)DataTypeArray, &bytesRead, UncompressedSize);
-                    HASSERT(BeFileStatus::Success == read_result);
-                    HASSERT(bytesRead <= UncompressedSize);
-                    auto& points = this->m_countInfo[blockIDConvert];
-                    points.resize(UncompressedSize);
-                    memcpy(points.data(), DataTypeArray, UncompressedSize);
-                    file.Close();
-                    delete[] DataTypeArray;
-                    }
-               }
-            else if (s_stream_from_file_server)
-                {
-                bvector<Byte> buffer;
-                DownloadBlockFromFileServer(filename.c_str(), &buffer, 1000000);
-                if (!buffer.empty())
-                    {
-                    UncompressedSize = reinterpret_cast<uint32_t&>(buffer[0]);
-                    }
-                }
-            else {
-                /*bool blobDownloaded = false;
-                m_stream_store.DownloadBlobRange(filename.c_str(), 0, sizeof(uint32_t), [&UncompressedSize, &blobDownloaded](scalable_mesh::azure::Storage::point_buffer_type& buffer)
-                    {
-                    if (!buffer.empty())
-                        {
-                        UncompressedSize = reinterpret_cast<uint32_t&>(buffer[0]);
-                        blobDownloaded = true;
-                        }
-                    });
-                //assert(fileRead == blobDownloaded);
-                //assert(UncompressedSize == localUncompressedSize);*/
-                bool blobDownloaded = false;
-                m_stream_store.DownloadBlob(filename.c_str(), [this, &blobDownloaded, &UncompressedSize, &blockIDConvert](scalable_mesh::azure::Storage::point_buffer_type& buffer)
-                    {
-                    UncompressedSize = reinterpret_cast<uint32_t&>(buffer[0]);
-
-                    auto& points = this->m_countInfo[blockIDConvert];
-                    points.resize(UncompressedSize);
-                    memcpy(points.data(), buffer.data() + sizeof(uint32_t), buffer.size() - sizeof(uint32_t));
-                    blobDownloaded = true;
-                    });
-                assert(blobDownloaded);
-                //delete[] dataArrayTmp;
-                }
-            return UncompressedSize / sizeof(POINT);
-            //assert(false);
-            //return 0;
+            return this->GetBlock(blockID).size() / sizeof(POINT);
          }
 
 
@@ -1517,94 +1587,9 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
         virtual size_t LoadBlock(POINT* DataTypeArray, size_t maxCountData, HPMBlockID blockID)
             {
-            auto blockIDConvert = ConvertBlockID(blockID);
-            if (m_countInfo.count(blockIDConvert) > 0)
-                {
-                // Already have block data...
-                auto& buffer = m_countInfo[blockIDConvert];
-                auto UncompressedSize = buffer.size();
-
-                HCDPacket uncompressedPacket, compressedPacket;
-                compressedPacket.SetBuffer(buffer.data(), buffer.size());
-                compressedPacket.SetDataSize(buffer.size());
-                uncompressedPacket.SetDataSize((uint32_t)maxCountData * sizeof(POINT));
-                LoadCompressedPacket(compressedPacket, uncompressedPacket);
-                assert(UncompressedSize == uncompressedPacket.GetDataSize());
-                memcpy(DataTypeArray, uncompressedPacket.GetBufferAddress(), uncompressedPacket.GetDataSize());
-                return 1;
-                }
-            WString pathToPoints((s_stream_from_disk ? m_path + L"points\\" : m_path));
-            wstringstream ss;
-            ss << pathToPoints << L"p_" << ConvertBlockID(blockID) << L".bin";
-            auto filename = ss.str();
-            uint32_t maxDataSize = (uint32_t)maxCountData * sizeof(POINT) + sizeof(uint32_t);
-            if (s_stream_from_disk)
-                {
-                Byte* dataArrayTmp = new Byte[maxDataSize];
-                uint32_t sizeData;
-                BeFile file;
-                if (BeFileStatus::Success == file.Open(filename.c_str(), BeFileAccess::Read, BeFileSharing::None))
-                    {
-                    auto read_result = file.Read(dataArrayTmp, &sizeData, maxDataSize);
-                    HASSERT(BeFileStatus::Success == read_result);
-                    HASSERT(sizeData <= maxDataSize);
-
-                    uint32_t UncompressedSize = reinterpret_cast<uint32_t&>(*dataArrayTmp);
-
-                    HCDPacket uncompressedPacket, compressedPacket;
-                    compressedPacket.SetBuffer(dataArrayTmp + sizeof(uint32_t), sizeData - sizeof(uint32_t));
-                    compressedPacket.SetDataSize(sizeData - sizeof(uint32_t));
-                    uncompressedPacket.SetDataSize(UncompressedSize);
-                    LoadCompressedPacket(compressedPacket, uncompressedPacket);
-
-                    memcpy(DataTypeArray, uncompressedPacket.GetBufferAddress(), uncompressedPacket.GetDataSize());
-                    }
-                else
-                    {
-                    HASSERT(!"Problem opening block of points for reading");
-                    }
-                file.Close();
-                delete[] dataArrayTmp;
-                }
-            else if (s_stream_from_file_server)
-                {
-                bvector<Byte> buffer;
-                DownloadBlockFromFileServer(filename, &buffer, maxDataSize);
-                assert(!buffer.empty() && buffer.size() <= maxDataSize);
-
-                uint32_t UncompressedSize = reinterpret_cast<uint32_t&>(buffer[0]);
-                uint32_t sizeData = (uint32_t)buffer.size();
-
-                HCDPacket uncompressedPacket, compressedPacket;
-                compressedPacket.SetBuffer(&buffer[0] + sizeof(uint32_t), sizeData - sizeof(uint32_t));
-                compressedPacket.SetDataSize(sizeData - sizeof(uint32_t));
-                uncompressedPacket.SetDataSize(UncompressedSize);
-                LoadCompressedPacket(compressedPacket, uncompressedPacket);
-                assert(UncompressedSize == uncompressedPacket.GetDataSize());
-                memcpy(DataTypeArray, uncompressedPacket.GetBufferAddress(), uncompressedPacket.GetDataSize());
-                }
-            else {
-                // stream from azure
-                bool blobDownloaded = false;
-                m_stream_store.DownloadBlob(filename.c_str(), [this, DataTypeArray, &maxDataSize, &blobDownloaded](scalable_mesh::azure::Storage::point_buffer_type& buffer)
-                    {
-                    assert(!buffer.empty() && buffer.size() <= maxDataSize);
-                    //assert(buffer.size() == sizeDataLocal);
-                    //assert(0 == memcmp(&buffer[0], dataArrayTmp, sizeDataLocal));
-                    uint32_t UncompressedSize = reinterpret_cast<uint32_t&>(buffer[0]);
-                    uint32_t sizeData = (uint32_t)buffer.size() - sizeof(uint32_t);
-
-                    HCDPacket uncompressedPacket, compressedPacket;
-                    compressedPacket.SetBuffer(&buffer[0] + sizeof(uint32_t), sizeData );
-                    compressedPacket.SetDataSize(sizeData);
-                    uncompressedPacket.SetDataSize(UncompressedSize);
-                    LoadCompressedPacket(compressedPacket, uncompressedPacket);
-                    assert(UncompressedSize == uncompressedPacket.GetDataSize());
-                    memcpy(DataTypeArray, uncompressedPacket.GetBufferAddress(), uncompressedPacket.GetDataSize());
-                    blobDownloaded = true;
-                    });
-                assert(blobDownloaded);
-                }
+            auto& block = this->GetBlock(blockID);
+            memcpy(DataTypeArray, block.data(), block.size());
+               
             return 1;
             }
 
@@ -1637,6 +1622,6 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
         scalable_mesh::azure::Storage m_stream_store;
         WString m_path_to_grouped_headers;
         bvector<HFCPtr<SMNodeGroup>> m_nodeHeaderGroups;
-        mutable std::map<IDTMFile::NodeID, bvector<Byte>> m_countInfo;
+        mutable std::map<IDTMFile::NodeID, PointBlock> m_countInfo;
         std::condition_variable m_groupCV;
     };
