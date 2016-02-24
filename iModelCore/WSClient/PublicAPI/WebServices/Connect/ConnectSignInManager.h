@@ -85,18 +85,23 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
     public:
         //! Can be created after MobileDgn is initialized
         WSCLIENT_EXPORT static ConnectSignInManagerPtr Create(ILocalState* localState = nullptr, ISecureStorePtr secureStore = nullptr);
-
         WSCLIENT_EXPORT virtual ~ConnectSignInManager();
 
         //! Change default configuration with new one. Best called before any other calls are done.
         WSCLIENT_EXPORT void Configure(Configuration config);
 
+        //! Sign in using identity token. 
         WSCLIENT_EXPORT AsyncTaskPtr<SignInResult> SignInWithToken(SamlTokenPtr token);
+        //! Sign in using user credentials. Credentials will be used for future token retrieval.
         WSCLIENT_EXPORT AsyncTaskPtr<SignInResult> SignInWithCredentials(CredentialsCR credentials);
+        //! Store sign-in information on disk so user would stay signed-in. Call after successful sign-in.
         WSCLIENT_EXPORT void FinalizeSignIn();
 
+        //! Sign-out user and remove all user information from disk
         WSCLIENT_EXPORT void SignOut();
+        //! Check if user is signed-in
         WSCLIENT_EXPORT bool IsSignedIn();
+        //! Get user information stored in identity token
         WSCLIENT_EXPORT UserInfo GetUserInfo();
 
         //! Will be called when token expiration is detected
