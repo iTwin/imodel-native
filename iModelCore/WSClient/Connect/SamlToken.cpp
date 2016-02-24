@@ -2,7 +2,7 @@
 |
 |     $Source: Connect/SamlToken.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -104,15 +104,27 @@ bool SamlToken::IsValidAt(DateTimeCR dateTimeUtc) const
         return false;
         }
 
-    xmlXPathContextPtr context = m_dom->AcquireXPathContext(m_dom->GetRootElement());
-    xmlXPathObjectPtr xpathObject = m_dom->EvaluateXPathExpression("/saml:Assertion/saml:Conditions", context);
+    DateTime notBeforeUtc;
+    DateTime notOnOrAfterUtc;
+    if (SUCCESS != GetConditionDates(notBeforeUtc, notOnOrAfterUtc))
+        {
+        BeAssert(false);
+        return false;
+        }
 
-    bool result = IsValidAt(xpathObject->nodesetval, dateTimeUtc);
+    auto resultA = DateTime::Compare(dateTimeUtc, notBeforeUtc);
+    auto resultB = DateTime::Compare(dateTimeUtc, notOnOrAfterUtc);
 
-    m_dom->FreeXPathObject(*xpathObject);
-    m_dom->FreeXPathContext(*context);
+    if ((
+        resultA == DateTime::CompareResult::LaterThan ||
+        resultA == DateTime::CompareResult::Equals
+        ) &&
+        resultB == DateTime::CompareResult::EarlierThan)
+        {
+        return true;
+        }
 
-    return result;
+    return false;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -140,39 +152,30 @@ bool SamlToken::IsValidNow(uint32_t offsetMinutes) const
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    08/2014
+* @bsimethod                                                    Vincas.Razma    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SamlToken::IsValidAt(xmlNodeSetPtr conditionsPtr, DateTimeCR dateTimeUtc)
+BentleyStatus SamlToken::GetConditionDates(DateTime& notBeforeUtc, DateTime& notOnOrAfterUtc) const
     {
+    BentleyStatus result = ERROR;
+
+    xmlXPathContextPtr context = m_dom->AcquireXPathContext(m_dom->GetRootElement());
+    xmlXPathObjectPtr conditionsPtr = m_dom->EvaluateXPathExpression("/saml:Assertion/saml:Conditions", context);
+
     BeXmlDom::IterableNodeSet conditions;
-    conditions.Init(conditionsPtr);
-    if (conditions.size() != 1)
+    conditions.Init(conditionsPtr->nodesetval);
+    if (conditions.size() == 1)
         {
-        BeAssert(false);
-        return false;
+        if (SUCCESS == GetAttributteDateTimeUtc(conditions.front(), "NotBefore", notBeforeUtc) &&
+            SUCCESS == GetAttributteDateTimeUtc(conditions.front(), "NotOnOrAfter", notOnOrAfterUtc))
+            {
+            result = SUCCESS;
+            }
         }
 
-    DateTime notBeforeDateUtc;
-    DateTime notOnOrAfterDateUtc;
-    if (SUCCESS != GetAttributteDateTimeUtc(conditions.front(), "NotBefore", notBeforeDateUtc) ||
-        SUCCESS != GetAttributteDateTimeUtc(conditions.front(), "NotOnOrAfter", notOnOrAfterDateUtc))
-        {
-        return false;
-        }
+    m_dom->FreeXPathObject(*conditionsPtr);
+    m_dom->FreeXPathContext(*context);
 
-    auto resultA = DateTime::Compare(dateTimeUtc, notBeforeDateUtc);
-    auto resultB = DateTime::Compare(dateTimeUtc, notOnOrAfterDateUtc);
-
-    if ((
-        resultA == DateTime::CompareResult::LaterThan ||
-        resultA == DateTime::CompareResult::Equals
-        ) &&
-        resultB == DateTime::CompareResult::EarlierThan)
-        {
-        return true;
-        }
-
-    return false;
+    return result;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -202,6 +205,30 @@ BentleyStatus SamlToken::GetAttributteDateTimeUtc(BeXmlNodeP node, Utf8CP name, 
         }
 
     return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t SamlToken::GetLifetime() const
+    {
+    if (!IsSupported())
+        return 0;
+
+    DateTime notBefore;
+    DateTime notOnOrAfter;
+    if (SUCCESS != GetConditionDates(notBefore, notOnOrAfter))
+        return 0;
+
+    int64_t notBeforeMs;
+    int64_t notOnOrAfterMs;
+    if (SUCCESS != notBefore.ToUnixMilliseconds(notBeforeMs) ||
+        SUCCESS != notOnOrAfter.ToUnixMilliseconds(notOnOrAfterMs) ||
+        notOnOrAfterMs <= notBeforeMs)
+        return 0;
+
+    int64_t lifetimeMs = notOnOrAfterMs - notBeforeMs;
+    return (uint32_t) (lifetimeMs / (1000 * 60));
     }
 
 /*--------------------------------------------------------------------------------------+
