@@ -3749,7 +3749,7 @@ BeBriefcaseBasedId DbEmbeddedFileTable::ImportDbFile(DbResult& stat, Utf8CP name
     //  We aren't going to use the VFS to read it so it better not require a VFS.
     if (BE_SQLITE_OK != stat || nullptr != vfs)
         {
-        LOG.errorv("ImportDbFile: isValidDbFile reported error %d", stat);
+        LOG.errorv("ImportDbFile: isValidDbFile reported error %d for %s", stat, nullptr != filespec ? filespec : "");
         return BeBriefcaseBasedId();
         }
 
