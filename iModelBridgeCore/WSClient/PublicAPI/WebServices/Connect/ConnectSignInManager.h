@@ -79,7 +79,7 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         IConnectAuthenticationPersistencePtr GetPersistenceMatchingAuthenticationType();
         IConnectTokenProviderPtr GetBaseTokenProviderMatchingAuthenticationType();
 
-        IConnectTokenProviderPtr GetTokenProvider(Utf8StringCR rpUri);
+        IConnectTokenProviderPtr GetCachedTokenProvider(Utf8StringCR rpUri);
         void ClearSignInData();
 
     public:
@@ -108,10 +108,17 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         WSCLIENT_EXPORT void SetTokenExpiredHandler(std::function<void()> handler);
 
         //! Get authentication handler for specific server when signed in.
+        //! It will automatically authenticate all HttpRequests that is used with.
         //! Will configure each request to validate TLS certificate depending on UrlProvider environment.
         //! @param serverUrl should contain server URL without any directories
         //! @param httpHandler optional custom HTTP handler to send all requests trough
         WSCLIENT_EXPORT AuthenticationHandlerPtr GetAuthenticationHandler(Utf8StringCR rpUrl, IHttpHandlerPtr httpHandler = nullptr) override;
+
+        //! Get delegation token provider when signed in. Delegation tokens are short lived.
+        //! Only use this if AuthenticationHandlerPtr cannot be used.
+        //! See IConnectTokenProvider API for more info how to use it
+        //! @param rpUri relying party URI to use token for
+        WSCLIENT_EXPORT IConnectTokenProviderPtr GetTokenProvider(Utf8StringCR rpUri);
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

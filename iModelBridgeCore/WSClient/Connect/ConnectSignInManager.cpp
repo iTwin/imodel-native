@@ -236,6 +236,15 @@ AuthenticationHandlerPtr ConnectSignInManager::GetAuthenticationHandler(Utf8Stri
 +---------------+---------------+---------------+---------------+---------------+------*/
 IConnectTokenProviderPtr ConnectSignInManager::GetTokenProvider(Utf8StringCR rpUri)
     {
+    BeCriticalSectionHolder lock(m_cs);
+    return GetCachedTokenProvider(rpUri);;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+IConnectTokenProviderPtr ConnectSignInManager::GetCachedTokenProvider(Utf8StringCR rpUri)
+    {
     auto it = m_tokenProviders.find(rpUri);
     if (it != m_tokenProviders.end())
         return it->second;

@@ -22,9 +22,12 @@ struct IConnectTokenProvider
         virtual ~IConnectTokenProvider()
             {};
 
-        //! Update cached token and return it. Return null if token cannot be retrieved
+        //! Retrieves new token, caches and returns it.
+        //! Returns null if token cannot be retrieved.
         virtual SamlTokenPtr UpdateToken() = 0;
-        //! Return cached token. Return null if token is not cached
+
+        //! Returns cached token.
+        //! Returns null if token is not cached - calling UpdateToken() would be next step.
         virtual SamlTokenPtr GetToken() = 0;
     };
 
