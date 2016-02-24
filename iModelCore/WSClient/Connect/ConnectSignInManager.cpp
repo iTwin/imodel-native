@@ -66,19 +66,38 @@ void ConnectSignInManager::Configure(Configuration config)
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithToken(SamlTokenPtr token)
     {
-    if (!token->IsSupported())
-        return CreateCompletedAsyncTask(SignInResult::Error(ConnectLocalizedString(ALERT_UnsupportedToken)));
-
     BeCriticalSectionHolder lock(m_cs);
 
-    ClearSignInData();
+    if (nullptr == token || !token->IsSupported())
+        return CreateCompletedAsyncTask(SignInResult::Error(ConnectLocalizedString(ALERT_UnsupportedToken)));
 
-    m_authType = AuthenticationType::Token;
+    LOG.infov("ConnectSignIn: sign-in token lifetime %d minutes", token->GetLifetime());
 
-    m_persistence = std::make_shared<ConnectSessionAuthenticationPersistence>();
-    m_persistence->SetToken(token);
+    return Connect::RenewToken(*token, nullptr, nullptr, m_config.identityTokenLifetime)
+        ->Then<SignInResult>([=] (SamlTokenResult result)
+        {
+        if (!result.IsSuccess())
+            {
+            // TODO: return error directly and avoid additonal localized strings
+            if (HttpStatus::Unauthorized == result.GetError().GetHttpStatus())
+                return SignInResult::Error(ConnectLocalizedString(ALERT_SignInFailed_Message));
 
-    return CreateCompletedAsyncTask(SignInResult::Success());
+            return SignInResult::Error(ConnectLocalizedString(ALERT_SignInFailed_ServerError));
+            }
+
+        BeCriticalSectionHolder lock(m_cs);
+
+        ClearSignInData();
+
+        SamlTokenPtr token = result.GetValue();
+
+        m_authType = AuthenticationType::Token;
+        m_persistence = std::make_shared<ConnectSessionAuthenticationPersistence>();
+        m_persistence->SetToken(token);
+
+        LOG.infov("ConnectSignIn: renewed token lifetime %d minutes", token->GetLifetime());
+        return SignInResult::Success();
+        });
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -103,14 +122,14 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithCredentials(Credentia
 
         ClearSignInData();
 
-        m_authType = AuthenticationType::Credentials;
-
         SamlTokenPtr token = result.GetValue();
 
+        m_authType = AuthenticationType::Credentials;
         m_persistence = std::make_shared<ConnectSessionAuthenticationPersistence>();
         m_persistence->SetToken(token);
         m_persistence->SetCredentials(credentials);
 
+        LOG.infov("ConnectSignIn: token lifetime %d minutes", token->GetLifetime());
         return SignInResult::Success();
         });
     }
