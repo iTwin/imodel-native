@@ -22,25 +22,23 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static RefCountedPtr<GeometricElement3d> createGeometricElement3d(DgnModelR model, Utf8CP ecSqlClassName, DgnCategoryId categoryId)//, RefCountedPtr<T> geom)
+static RefCountedPtr<GeometricElement3d> createGeometricElement3d(DgnModelR model, Utf8CP ecSqlClassName, DgnCategoryId catid)//, RefCountedPtr<T> geom)
     {
     if (!ecSqlClassName || !*ecSqlClassName)
         ecSqlClassName = GENERIC_SCHEMA(GENERIC_CLASSNAME_PhysicalObject);
     Utf8CP dot = strchr(ecSqlClassName, '.');
     if (nullptr == dot)
         return nullptr;
-    
     Utf8String ecschema(ecSqlClassName, dot);
     Utf8String ecclass(dot+1);
     DgnDbR db = model.GetDgnDb();
-    DgnClassId classId = DgnClassId(db.Schemas().GetECClassId(ecschema.c_str(), ecclass.c_str()));
-    if (!classId.IsValid())
+    DgnClassId pclassId = DgnClassId(db.Schemas().GetECClassId(ecschema.c_str(), ecclass.c_str()));
+    if (!pclassId.IsValid())
         return nullptr;
-
-    DgnElementPtr element = dgn_ElementHandler::Geometric3d::GetHandler().Create(DgnElement::CreateParams(db, model.GetModelId(), classId));
-    GeometricElement3d* geometricElement3d = dynamic_cast<GeometricElement3d*>(element.get());
-    geometricElement3d->SetCategoryId(categoryId);
-    return geometricElement3d;
+    DgnElementPtr el = dgn_ElementHandler::Geometric3d::GetHandler().Create(GeometricElement3d::CreateParams(db, model.GetModelId(), pclassId, catid));
+    GeometricElement3d* geom = dynamic_cast<GeometricElement3d*>(el.get());
+    geom->SetCategoryId(catid); // *** TRICKY: Generic ElementHandler::Create does not set Category
+    return geom;
     }
 
 //---------------------------------------------------------------------------------------

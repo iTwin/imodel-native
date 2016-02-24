@@ -39,7 +39,7 @@
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="Props" typeName="string" description="Json string containing properties like URI"/>
+        <ECProperty propertyName="Properties" typeName="string" description="Json string containing properties like URI"/>
     </ECEntityClass>
     <ECEntityClass typeName="LocalAuthority">
         <ECCustomAttributes>
@@ -368,6 +368,9 @@
                     <IsUnique>False</IsUnique>
                 </PropertyMap>
             </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="UserProperties" typeName="string" extendedTypeName="AdHocJson">
+            <!-- WIP: placeholder in 06, will be implemented/used in 0601 -->
         </ECProperty>
         <ECProperty propertyName="LastMod" typeName="dateTime">
             <ECCustomAttributes>
@@ -811,6 +814,12 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <!-- OnDelete=Restrict to allow ElementHandlers to decide if delete is legal. If legal, the Element API will perform the equivalent of OnDelete=Cascade. -->
+                <OnDeleteAction>Restrict</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
         <Source cardinality="(0,1)" roleLabel="is on 1 element" polymorphic="true">
             <Class class="Element"/>
         </Source>
@@ -997,7 +1006,7 @@
         </ECCustomAttributes>
         <BaseClass>DictionaryElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
-        <ECProperty propertyName="Props" typeName="string"/>
+        <ECProperty propertyName="Properties" typeName="string"/>
     </ECEntityClass>
 
     <ECRelationshipClass typeName="GeometricElement2dIsInCategory" description="Element is in Category" strength="referencing" strengthDirection="Backward">
