@@ -156,50 +156,6 @@ TEST_F(ConnectSignInManagerTests, GetUserInfo_NotSignedIn_ReturnsEmpty)
     EXPECT_EQ("", info.username);
     }
 
-TEST_F(ConnectSignInManagerTests, GetUserInfo_SignedIn_ReturnsValuesFromToken)
-    {
-    auto manager = ConnectSignInManager::Create(&m_localState, m_secureStore);
-
-    auto tokenStr =
-        R"(<saml:Assertion MajorVersion="1" MinorVersion="1" xmlns:saml="urn:oasis:names:tc:SAML:1.0:assertion">
-            <saml:Conditions 
-                NotBefore   ="2016-02-24T10:48:17.584Z"
-                NotOnOrAfter="2016-02-24T10:48:17.584Z">
-            </saml:Conditions>
-            <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
-                <KeyInfo xmlns="http://www.w3.org/2000/09/xmldsig#">
-                    <X509Data>
-                        <X509Certificate>TestCert</X509Certificate>
-                    </X509Data>
-                </KeyInfo>
-            </ds:Signature>
-            <saml:AttributeStatement>
-                <saml:Attribute AttributeName="givenname">
-                    <saml:AttributeValue>ValueA</saml:AttributeValue>
-                </saml:Attribute>
-                <saml:Attribute AttributeName="surname">
-                    <saml:AttributeValue>ValueB</saml:AttributeValue>
-                </saml:Attribute>
-                <saml:Attribute AttributeName="userid">
-                    <saml:AttributeValue>ValueC</saml:AttributeValue>
-                </saml:Attribute>
-                <saml:Attribute AttributeName="name">
-                    <saml:AttributeValue>ValueD</saml:AttributeValue>
-                </saml:Attribute>
-            </saml:AttributeStatement>
-        </saml:Assertion>)";
-
-    auto token = std::make_shared<SamlToken>(tokenStr);
-    ASSERT_TRUE(manager->SignInWithToken(token)->GetResult().IsSuccess());
-
-    auto info = manager->GetUserInfo();
-
-    EXPECT_EQ("ValueA", info.firstName);
-    EXPECT_EQ("ValueB", info.lastName);
-    EXPECT_EQ("ValueC", info.userId);
-    EXPECT_EQ("ValueD", info.username);
-    }
-
 TEST_F(ConnectSignInManagerTests, GetUserInfo_SignedInWithToken_ReturnsValuesFromToken)
     {
     auto manager = ConnectSignInManager::Create(&m_localState, m_secureStore);
@@ -234,6 +190,8 @@ TEST_F(ConnectSignInManagerTests, GetUserInfo_SignedInWithToken_ReturnsValuesFro
         </saml:Assertion>)";
 
     auto token = std::make_shared<SamlToken>(tokenStr);
+
+    GetHandler().ForFirstRequest(StubImsTokenHttpResponse(*token));
     ASSERT_TRUE(manager->SignInWithToken(token)->GetResult().IsSuccess());
 
     auto info = manager->GetUserInfo();
@@ -248,6 +206,7 @@ TEST_F(ConnectSignInManagerTests, GetUserInfo_SignedInWithTokenAndSignedOut_Retu
     {
     auto manager = ConnectSignInManager::Create(&m_localState, m_secureStore);
 
+    GetHandler().ForFirstRequest(StubImsTokenHttpResponse(*StubSamlToken()));
     ASSERT_TRUE(manager->SignInWithToken(StubSamlToken())->GetResult().IsSuccess());
     manager->SignOut();
 
