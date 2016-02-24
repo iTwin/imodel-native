@@ -8,6 +8,10 @@
 
 #include <cpprest/filestream.h>
 
+#ifndef NDEBUG
+#define DEBUG_AZURE
+#endif
+
 #ifdef DEBUG_AZURE
 #include <Bentley\BeConsole.h>
 #endif
