@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/WebServices/Connect/FederationAuthenticationPersistence.h $
+|     $Source: Connect/IdentityAuthenticationPersistence.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -21,8 +21,8 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-typedef std::shared_ptr<struct FederationAuthenticationPersistence> FederationAuthenticationPersistencePtr;
-struct EXPORT_VTABLE_ATTRIBUTE FederationAuthenticationPersistence : public IConnectAuthenticationPersistence
+typedef std::shared_ptr<struct IdentityAuthenticationPersistence> IdentityAuthenticationPersistencePtr;
+struct EXPORT_VTABLE_ATTRIBUTE IdentityAuthenticationPersistence : public IConnectAuthenticationPersistence
     {
     private:
         mutable BeCriticalSection m_cs;
@@ -30,8 +30,8 @@ struct EXPORT_VTABLE_ATTRIBUTE FederationAuthenticationPersistence : public ICon
         mutable SamlTokenPtr m_token;
 
     public:
-        WSCLIENT_EXPORT FederationAuthenticationPersistence(std::shared_ptr<ISecureStore> customSecureStore = nullptr);
-        virtual ~FederationAuthenticationPersistence() {}
+        WSCLIENT_EXPORT IdentityAuthenticationPersistence(std::shared_ptr<ISecureStore> customSecureStore = nullptr);
+        virtual ~IdentityAuthenticationPersistence() {}
 
         WSCLIENT_EXPORT void SetToken(SamlTokenPtr token) override;
         WSCLIENT_EXPORT SamlTokenPtr GetToken() const override;

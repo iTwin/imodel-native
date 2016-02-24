@@ -145,8 +145,8 @@
     <ClCompile Include="Connect\ConnectTokenProvider.cpp" />
     <ClCompile Include="Connect\DelegationTokenProvider.cpp" />
     <ClCompile Include="Connect\EulaClient.cpp" />
-    <ClCompile Include="Connect\FederationTokenProvider.cpp" />
-    <ClCompile Include="Connect\FederationAuthenticationPersistence.cpp" />
+    <ClCompile Include="Connect\IdentityTokenProvider.cpp" />
+    <ClCompile Include="Connect\IdentityAuthenticationPersistence.cpp" />
     <ClCompile Include="Connect\SamlToken.cpp" />
     <ClCompile Include="Licensing\MobileTracking.cpp" />
     <ClCompile Include="Client\ObjectId.cpp" />
@@ -291,8 +291,8 @@
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectTokenProvider.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\DelegationTokenProvider.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\EulaClient.h" />
-    <ClInclude Include="PublicAPI\WebServices\Connect\FederationTokenProvider.h" />
-    <ClInclude Include="PublicAPI\WebServices\Connect\FederationAuthenticationPersistence.h" />
+    <ClInclude Include="Connect\IdentityTokenProvider.h" />
+    <ClInclude Include="Connect\IdentityAuthenticationPersistence.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\IConnectAuthenticationProvider.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\IConnectAuthenticationPersistence.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\IConnectTokenProvider.h" />

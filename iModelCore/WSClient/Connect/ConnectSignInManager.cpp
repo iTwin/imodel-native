@@ -14,10 +14,10 @@
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
 #include <WebServices/Connect/ConnectSessionAuthenticationPersistence.h>
 #include <WebServices/Connect/ConnectTokenProvider.h>
-#include <WebServices/Connect/FederationTokenProvider.h>
-#include <WebServices/Connect/FederationAuthenticationPersistence.h>
 #include <WebServices/Connect/DelegationTokenProvider.h>
 #include "Connect.xliff.h"
+#include "IdentityTokenProvider.h"
+#include "IdentityAuthenticationPersistence.h"
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -278,7 +278,7 @@ IConnectAuthenticationPersistencePtr ConnectSignInManager::GetPersistenceMatchin
     AuthenticationType type = GetAuthenticationType();
 
     if (AuthenticationType::Token == type)
-        return std::make_shared<FederationAuthenticationPersistence>(m_secureStore);
+        return std::make_shared<IdentityAuthenticationPersistence>(m_secureStore);
 
     if (AuthenticationType::Credentials == type)
         return ConnectAuthenticationPersistence::GetShared();
@@ -295,7 +295,7 @@ IConnectTokenProviderPtr ConnectSignInManager::GetBaseTokenProviderMatchingAuthe
 
     if (AuthenticationType::Token == type)
         {
-        auto provider = std::make_shared<FederationTokenProvider>(m_persistence, m_tokenExpiredHandler);
+        auto provider = std::make_shared<IdentityTokenProvider>(m_persistence, m_tokenExpiredHandler);
         provider->Configure(m_config.identityTokenLifetime, m_config.identityTokenRefreshRate);
         return provider;
         }

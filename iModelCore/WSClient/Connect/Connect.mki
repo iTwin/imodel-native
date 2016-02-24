@@ -28,11 +28,11 @@ ConnectMkiHeaders = $(ConnectMkiPublicApiDir)Authentication.h                   
                     $(ConnectMkiPublicApiDir)IConnectAuthenticationProvider.h           \
                     $(ConnectMkiPublicApiDir)IConnectTokenProvider.h                    \
                     $(ConnectMkiPublicApiDir)ITokenStore.h                              \
-                    $(ConnectMkiPublicApiDir)FederationAuthenticationPersistence.h      \
-                    $(ConnectMkiPublicApiDir)FederationTokenProvider.h                  \
                     $(ConnectMkiPublicApiDir)Passport.h                                 \
                     $(ConnectMkiPublicApiDir)SamlToken.h                                \
-                    $(ConnectMkiSourceDir)AuthenticationData.h
+                    $(ConnectMkiSourceDir)AuthenticationData.h                          \
+                    $(ConnectMkiSourceDir)IdentityAuthenticationPersistence.h           \
+                    $(ConnectMkiSourceDir)IdentityTokenProvider.h
 
 #---------------------------------------------------------------------------------------+
 #   Files to compile 
@@ -61,9 +61,9 @@ $(o)DelegationTokenProvider$(oext)                  : $(ConnectMkiSourceDir)Dele
 
 $(o)EulaClient$(oext)                               : $(ConnectMkiSourceDir)EulaClient.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 
-$(o)FederationAuthenticationPersistence$(oext)      : $(ConnectMkiSourceDir)FederationAuthenticationPersistence.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
+$(o)IdentityAuthenticationPersistence$(oext)        : $(ConnectMkiSourceDir)IdentityAuthenticationPersistence.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 
-$(o)FederationTokenProvider$(oext)                  : $(ConnectMkiSourceDir)FederationTokenProvider.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
+$(o)IdentityTokenProvider$(oext)                    : $(ConnectMkiSourceDir)IdentityTokenProvider.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 
 $(o)Passport$(oext)                                 : $(ConnectMkiSourceDir)Passport.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 

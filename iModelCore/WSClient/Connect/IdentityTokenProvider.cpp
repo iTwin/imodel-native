@@ -1,14 +1,13 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Connect/FederationTokenProvider.cpp $
+|     $Source: Connect/IdentityTokenProvider.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
-#include <WebServices/Connect/FederationTokenProvider.h>
+#include "IdentityTokenProvider.h"
 
-#include <WebServices/Connect/FederationAuthenticationPersistence.h>
 #include <WebServices/Connect/Connect.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -20,7 +19,7 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-FederationTokenProvider::FederationTokenProvider
+IdentityTokenProvider::IdentityTokenProvider
 (
 ITokenStorePtr store,
 std::function<void()> tokenExpiredHandler
@@ -34,7 +33,7 @@ m_tokenRefreshRate(TOKEN_REFRESH_RATE)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void FederationTokenProvider::Configure(uint64_t tokenLifetime, uint64_t tokenRefreshRate)
+void IdentityTokenProvider::Configure(uint64_t tokenLifetime, uint64_t tokenRefreshRate)
     {
     m_tokenLifetime = tokenLifetime;
     m_tokenRefreshRate = tokenRefreshRate;
@@ -43,7 +42,7 @@ void FederationTokenProvider::Configure(uint64_t tokenLifetime, uint64_t tokenRe
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SamlTokenPtr FederationTokenProvider::UpdateToken()
+SamlTokenPtr IdentityTokenProvider::UpdateToken()
     {
     if (m_store->GetToken() != nullptr)
         {
@@ -56,7 +55,7 @@ SamlTokenPtr FederationTokenProvider::UpdateToken()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SamlTokenPtr FederationTokenProvider::GetToken()
+SamlTokenPtr IdentityTokenProvider::GetToken()
     {
     DateTime tokenSetTime = m_store->GetTokenSetTime();
     if (tokenSetTime.IsValid() && ShouldRenewToken(tokenSetTime))
@@ -88,7 +87,7 @@ SamlTokenPtr FederationTokenProvider::GetToken()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Vytautas.Barkauskas    01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool FederationTokenProvider::ShouldRenewToken(DateTimeCR tokenSetTime)
+bool IdentityTokenProvider::ShouldRenewToken(DateTimeCR tokenSetTime)
     {
     auto renewTokenAfterMs = m_tokenRefreshRate * 60 * 1000;
 
