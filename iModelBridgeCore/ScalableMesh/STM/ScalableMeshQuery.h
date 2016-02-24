@@ -1228,7 +1228,9 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
     protected:
         HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>> m_node;        
 
-        void ComputeDiffSet(DifferenceSet& diffs, const bvector<bool>& clipsToShow, ScalableMeshTextureID texID) const;
+        void ComputeDiffSet(DifferenceSet& diffs, const bvector<bool>& clipsToShow, ScalableMeshTextureID texID, bool applyAllClips = false) const;
+
+        void ComputeDiffSet(DifferenceSet& diffs, const bset<uint64_t>& clipsToShow, ScalableMeshTextureID texID) const;
 
         virtual BcDTMPtr   _GetBcDTM() const override;
 
@@ -1239,6 +1241,8 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
         virtual IScalableMeshMeshPtr _GetMesh(bool loadGraph, bvector<bool>& clipsToShow) const override;
 
         virtual IScalableMeshMeshPtr _GetMeshByParts(const bvector<bool>& clipsToShow, ScalableMeshTextureID texId) const override;
+
+        virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow, ScalableMeshTextureID texId) const override;
 
         virtual void   _ApplyAllExistingClips() const override;
 
@@ -1276,6 +1280,8 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
         virtual void _LoadHeader() const override;
 
+        virtual bool _HasClip(uint64_t clip) const override;
+
         
     public:         
         ScalableMeshNode(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr);
@@ -1303,6 +1309,8 @@ template<class POINT> class ScalableMeshCachedMeshNode : public virtual IScalabl
 
             virtual IScalableMeshMeshPtr _GetMeshByParts(const bvector<bool>& clipsToShow, ScalableMeshTextureID texId) const override;
 
+            virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow, ScalableMeshTextureID texId) const override;
+
             virtual IScalableMeshTexturePtr _GetTexture(size_t texture_id) const override;
 
     public:             
@@ -1320,7 +1328,9 @@ template<class POINT> class ScalableMeshCachedMeshNode : public virtual IScalabl
 
             ScalableMeshCachedMeshNode() {};
 
-            void LoadMeshes(bool loadGraph, const bvector<bool>& clipsToShow);
+            void LoadMeshes(bool loadGraph, const bvector<bool>& clipsToShow, bool applyAllClips=false);
+
+            void LoadMeshes(bool loadGraph, const bset<uint64_t>& clipsToShow);
 
             virtual StatusInt _GetCachedMesh(SmCachedDisplayMesh*& cachedMesh, size_t cachedMeshId) const override {return ERROR;}
 
@@ -1417,7 +1427,9 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
                     }
                 }
             
-            void LoadMeshes(bool loadGraph, const bvector<bool>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture);                               
+            void LoadMeshes(bool loadGraph, const bvector<bool>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture, bool applyAllClips = false);
+
+            void LoadMeshes(bool loadGraph, const bset<uint64_t>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture);
 
             static ScalableMeshCachedDisplayNode<POINT>* Create(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr)
                 {
@@ -1474,6 +1486,8 @@ template<class POINT> class ScalableMeshNodeWithReprojection : public ScalableMe
         virtual IScalableMeshMeshPtr _GetMesh(bool loadGraph, bvector<bool>& clipsToShow) const override;
 
         virtual IScalableMeshMeshPtr _GetMeshByParts(const bvector<bool>& clipsToShow, ScalableMeshTextureID texId) const override;
+
+        virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow, ScalableMeshTextureID texId) const override;
     public:
         ScalableMeshNodeWithReprojection(IScalableMeshNodePtr nodeInfo, const GeoCoords::Reprojection& reproject);
         ScalableMeshNodeWithReprojection(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr, const GeoCoords::Reprojection& reproject);

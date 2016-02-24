@@ -1183,7 +1183,7 @@ template <class POINT> bool ScalableMeshNode<POINT>::_ArePointsFullResolution() 
     return meshP;    
     }
 
-template <class POINT> void ScalableMeshNode<POINT>::ComputeDiffSet(DifferenceSet& diffs, const bvector<bool>& clipsToShow, ScalableMeshTextureID texID) const
+    template <class POINT> void ScalableMeshNode<POINT>::ComputeDiffSet(DifferenceSet& diffs, const bvector<bool>& clipsToShow, ScalableMeshTextureID texID, bool applyAllClips) const
     {    
 #ifdef USE_DIFFSET
     bool allClips = true;
@@ -1211,7 +1211,47 @@ template <class POINT> void ScalableMeshNode<POINT>::ComputeDiffSet(DifferenceSe
             if (d.clientID == 0) currentTexId++;
             if (currentTexId != texID) continue;
             //uint64_t upperId = (d.clientID >> 32);
-            if (d.clientID == 0 || (d.clientID < ((uint64_t)-1) && lowerId - 1 < clipsToShow.size() && !clipsToShow[lowerId - 1]) && d.upToDate)
+            if (d.clientID == 0 || (d.clientID < ((uint64_t)-1) && lowerId - 1 < clipsToShow.size() && !clipsToShow[lowerId - 1] && !applyAllClips) && d.upToDate)
+                {
+                //meshPtr->ApplyDifferenceSet(d);
+                diffs.ApplySet(d, 0);
+                //break;
+#ifdef USE_DIFFSET
+                }
+#endif
+            }
+        }
+    }
+
+template <class POINT> void ScalableMeshNode<POINT>::ComputeDiffSet(DifferenceSet& diffs, const bset<uint64_t>& clipsToShow, ScalableMeshTextureID texID) const
+    {
+#ifdef USE_DIFFSET
+    bool allClips = true;
+    for (bool val : clipsToShow) if (!val) allClips = false;
+#endif
+
+    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
+
+    diffs.firstIndex = (int)m_meshNode->size() + 1;
+    //auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
+    int currentTexId = -1;
+    for (size_t i = 0; i < m_meshNode->m_nbClips; ++i)
+        {
+        DifferenceSet d = m_meshNode->GetClipSet(i);
+#ifdef USE_DIFFSET
+        if (allClips)
+            {
+            if (d.clientID == ((uint64_t)-1)) diffs.ApplySet(d, 0);
+            }
+        else
+            {
+#endif
+            //NEEDS_WORK_SM_ELENIE : Remove shift, use full 64 bits
+            uint64_t lowerId = (d.clientID << 32) >> 32;
+            if (d.clientID == 0) currentTexId++;
+            if (currentTexId != texID) continue;
+            //uint64_t upperId = (d.clientID >> 32);
+            if (d.clientID == 0 || (d.clientID < ((uint64_t)-1) && (lowerId - 1) < (uint64_t)clipsToShow.size() && clipsToShow.count(lowerId - 1) == 0) && d.upToDate)
                 {
                 //meshPtr->ApplyDifferenceSet(d);
                 diffs.ApplySet(d, 0);
@@ -1315,6 +1355,106 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshByP
         m_meshNode->UnPinUVsIndices();
         m_meshNode->UnPinUV();
         m_meshNode->UnPinPtsIndices();
+
+    m_node->UnPin();
+    //if (isStreaming) s_streamingMutex.unlock();
+    if (meshP != nullptr && meshP->GetNbFaces() == 0) return nullptr;
+
+    return meshP;
+    }
+
+template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshByParts(const bset<uint64_t>& clipsToShow, ScalableMeshTextureID texID) const
+    {
+    LOAD_NODE
+
+        //auto isStreaming = s_useStreamingStore;        
+
+        //if(isStreaming) s_streamingMutex.lock();
+
+        m_node->Pin();
+    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
+    m_meshNode->PinPtsIndices(0);
+    IScalableMeshMeshPtr meshP;
+    //NEEDS_WORK_SM_PROGRESSIF : Node header loaded unexpectingly
+    if (m_node->size() > 0)
+        {
+        //auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
+        //m_meshNode->PinPtsIndices(0);
+        ScalableMeshMeshPtr meshPtr = ScalableMeshMesh::Create();
+
+        vector<DPoint3d> dataPoints(m_node->size());
+
+        PtToPtConverter converter;
+
+        for (size_t pointInd = 0; pointInd < m_node->size(); pointInd++)
+            {
+            dataPoints[pointInd] = converter.operator()(m_node->operator[](pointInd));
+            }
+
+        int status = meshPtr->AppendMesh(m_node->size(), &dataPoints[0], 0, 0, 0, 0, 0, 0, 0, 0);
+
+        if (texID == IScalableMeshNode::UNTEXTURED_PART)
+            {
+            //m_meshNode->PinPtsIndices(0);
+            int32_t* faceIndexes = m_meshNode->GetPtsIndicePtr(0);
+            assert(faceIndexes != nullptr || m_meshNode->GetNbPtsIndices(0) == 0);
+            if (m_meshNode->GetNbPtsIndices(0) != 0)
+                status = meshPtr->AppendMesh(0, 0, m_meshNode->GetNbPtsIndices(0), faceIndexes, 0, 0, 0, 0, nullptr, nullptr);
+            //m_meshNode->UnPinPtsIndices(0);
+            }
+        else
+            {
+            m_meshNode->PinUV();
+            //                    m_meshNode->PinPtsIndices(i);
+            //                   m_meshNode->PinUVsIndices(i);
+            int32_t* faceIndexes = m_meshNode->GetPtsIndicePtr(texID);
+            assert(faceIndexes != nullptr || m_meshNode->GetNbPtsIndices(texID) == 0);
+            DPoint2d* pUv = m_meshNode->GetUVPtr();
+            if (m_meshNode->GetNbPtsIndices(texID) != 0)
+                status = meshPtr->AppendMesh(0, 0, m_meshNode->GetNbPtsIndices(texID), faceIndexes, 0, 0, 0, m_meshNode->GetNbUVs(), pUv, m_meshNode->GetUVsIndicesPtr(texID - 1));
+
+            // release all
+            //                m_meshNode->UnPinPtsIndices(i);
+            //                m_meshNode->UnPinUVsIndices(i);
+            m_meshNode->UnPinUV();
+            }
+        if (meshPtr->GetNbFaces() == 0)
+            {
+            m_meshNode->UnPinPtsIndices(0);
+            m_node->UnPin();
+            //if (isStreaming) s_streamingMutex.unlock();
+            return nullptr;
+            }
+
+        if (clipsToShow.size() > 0 && status == SUCCESS)
+            {
+            DifferenceSet diffs;
+
+            ComputeDiffSet(diffs, clipsToShow, texID);
+
+#ifdef USE_DIFFSET
+            meshPtr->ApplyDifferenceSet(diffs);
+#else
+            if (m_meshNode->m_nbClips > 0)
+                {
+                m_meshNode->PinUV();
+                meshPtr->ApplyClipMesh(diffs);
+                //DRange3d range = GetNodeExtent();
+                //NEEDS_WORK_SM: Only works when UVs can be calculated from point coordinates e.g. when not using atlas. Need to make sure UVs are properly interpolated for atlas.
+                // if (m_meshNode->GetNbUVs() > 0) meshPtr->RecalculateUVs(range);
+                m_meshNode->UnPinUV();
+                }
+#endif
+            }
+        assert(status == SUCCESS || m_node->size() == 0);
+
+        meshP = meshPtr.get();
+        //m_meshNode->UnPinPtsIndices(0);
+        }
+
+    m_meshNode->UnPinUVsIndices();
+    m_meshNode->UnPinUV();
+    m_meshNode->UnPinPtsIndices();
 
     m_node->UnPin();
     //if (isStreaming) s_streamingMutex.unlock();
@@ -1450,6 +1590,19 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshCachedMeshNode<POINT>::_
         }
     }
 
+template <class POINT> IScalableMeshMeshPtr ScalableMeshCachedMeshNode<POINT>::_GetMeshByParts(const bset<uint64_t>& clipsToShow, ScalableMeshTextureID texID) const
+    {
+
+    if (m_loadedMeshes.size() > 0)
+        {
+        return m_loadedMeshes[texID];
+        }
+    else
+        {
+        return __super::_GetMeshByParts(clipsToShow, texID);
+        }
+    }
+
 template <class POINT> IScalableMeshTexturePtr ScalableMeshCachedMeshNode<POINT>::_GetTexture(size_t texture_id) const
     {    
     if (m_loadedTextures.size() > 0)
@@ -1464,7 +1617,47 @@ template <class POINT> IScalableMeshTexturePtr ScalableMeshCachedMeshNode<POINT>
     }
 
 //NEEDS_WORK_SM : With new display not necessarily required
-template <class POINT> void ScalableMeshCachedMeshNode<POINT>::LoadMeshes(bool loadGraph, const bvector<bool>& clipsToShow) 
+template <class POINT> void ScalableMeshCachedMeshNode<POINT>::LoadMeshes(bool loadGraph, const bvector<bool>& clipsToShow, bool applyAllClips)
+    {
+    //Not implemented yet
+    assert(loadGraph == false);
+    //NEEDS_WORK_SM : Need to be greater or equal to 0 (SM without texture shouldn't have texture).
+    assert(GetNbTexture() >= 1);
+
+    m_loadedMeshes.resize(_GetNbMeshes());
+    m_loadedTextures.resize(_GetNbMeshes() - 1);
+
+    if (m_loadedTextures.size() == 0)
+        {
+        m_loadedMeshes[0] = __super::_GetMeshByParts(clipsToShow, -2);
+        }
+    else
+        {   
+        for (size_t meshInd = 0; meshInd < _GetNbMeshes(); meshInd++)
+            {   
+            int textureId = 0;
+
+            if (meshInd == 0)
+                {
+                textureId = -1;
+                }
+            else
+                {
+                textureId = (int)(meshInd - 1);
+                }
+
+            m_loadedMeshes[meshInd] = __super::_GetMeshByParts(clipsToShow, textureId);
+
+            if (textureId >= 0)
+                {
+                m_loadedTextures[textureId] = __super::_GetTexture(textureId);
+                }
+            }    
+        }
+    }
+
+
+template <class POINT> void ScalableMeshCachedMeshNode<POINT>::LoadMeshes(bool loadGraph, const bset<uint64_t>& clipsToShow) 
     {
     //Not implemented yet
     assert(loadGraph == false);
@@ -1502,7 +1695,6 @@ template <class POINT> void ScalableMeshCachedMeshNode<POINT>::LoadMeshes(bool l
             }    
         }
     }
-
 
 #if 0 //NEEDS_WORK_SM : Need do create a cached for texture since the same texture can pertain to more than one node
 QvCachedNodeManager::CachedNodesList QvCachedNodeManager::m_cachedNodes;
@@ -1826,7 +2018,248 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
 
 
 
-template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMeshes(bool loadGraph, const bvector<bool>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture)
+    template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMeshes(bool loadGraph, const bvector<bool>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture, bool applyAllClips)
+    {
+    static bool s_deactivateTexture = false; 
+
+    //Not implemented yet
+    assert(loadGraph == false);
+
+    LOAD_NODE
+    
+    if (displayCacheManagerPtr != 0 && !m_isLoaded)                
+        {
+        assert(m_cachedDisplayTextures.size() == 0);
+
+        //NEEDS_WORK_SM_PROGRESSIF : Node header loaded unexpectingly
+        if (m_node->size() > 0)
+            {
+            //NEEDS_WORK_SM : Load texture here
+            //m_cachedDisplayTexture
+
+            auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
+            
+            m_cachedDisplayMeshes.resize(_GetNbMeshes());
+
+            assert(meshNode->GetNbPtsIndiceArrays() == m_cachedDisplayMeshes.size());
+
+            m_cachedDisplayTextures.resize(_GetNbMeshes());
+
+            DRange3d range3D(_GetContentExtent());
+
+            DPoint3d centroid;                                                        
+            centroid = DPoint3d::From((range3D.high.x + range3D.low.x) / 2.0, (range3D.high.y + range3D.low.y) / 2.0, (range3D.high.z + range3D.low.z) / 2.0);
+
+            m_node->Pin();
+
+            vector<FloatXYZ> dataPoints(m_node->size());
+                        
+            for (size_t pointInd = 0; pointInd < m_node->size(); pointInd++)
+                {                               
+                dataPoints[pointInd].x = (float)(PointOp<POINT>::GetX(m_node->operator[](pointInd)) - centroid.x);
+                dataPoints[pointInd].y = (float)(PointOp<POINT>::GetY(m_node->operator[](pointInd)) - centroid.y);
+                dataPoints[pointInd].z = (float)(PointOp<POINT>::GetZ(m_node->operator[](pointInd)) - centroid.z);                
+                }
+
+            m_node->UnPin();
+                                       
+            for (size_t meshInd = 0; meshInd < meshNode->GetNbPtsIndiceArrays(); meshInd++)
+                {                                    
+                FloatXYZ* toLoadPoints = 0;
+                size_t    toLoadNbPoints = 0; 
+                int32_t*  toLoadFaceIndexes = 0;
+                size_t    toLoadNbFaceIndexes = 0;
+                FloatXY*  toLoadUv = 0;
+                int32_t*  toLoadUvIndex = 0;
+                size_t    toLoadUvCount = 0;
+
+                meshNode->PinPtsIndices(meshInd);
+
+                int32_t* faceIndexes = meshNode->GetPtsIndicePtr(meshInd);
+                
+                if (faceIndexes == 0)
+                    {
+                    assert(meshInd == 0);
+                    m_cachedDisplayMeshes[meshInd] = 0;
+                    }
+                else
+                    {                    
+                    size_t nbFaceIndices = meshNode->GetNbPtsIndices(meshInd);
+                    
+                    if (nbFaceIndices == 0)
+                        {
+                        meshNode->UnPinPtsIndices(meshInd);
+                        continue;
+                        }
+
+                    if (meshInd > 0 && loadTexture)
+                        {
+//                        auto idTexture = GetTextureID(meshInd - 1);
+                                                
+                        IScalableMeshTexturePtr smTexturePtr(GetTexture(meshInd - 1));
+                                                
+                        BentleyStatus status = displayCacheManagerPtr->_CreateCachedTexture(m_cachedDisplayTextures[meshInd], 
+                                                                                            smTexturePtr->GetDimension().x,
+                                                                                            smTexturePtr->GetDimension().y,
+                                                                                            false,
+                                                                                            QV_RGBA_FORMAT,
+                                                                                            smTexturePtr->GetData());
+
+                        assert(status == SUCCESS);    
+                        }
+                                                                                                                           
+                    DPoint2d* uvPtr = 0;
+                    size_t    nbUvs = 0;
+                    int32_t*  uvIndicesP = 0;
+
+                    if (m_cachedDisplayTextures[meshInd] != 0)
+                        {
+                        meshNode->PinUV();
+                        uvPtr = meshNode->GetUVPtr();
+                        nbUvs = meshNode->GetNbUVs();
+
+                        meshNode->PinUVsIndices(meshInd - 1);
+                        uvIndicesP = meshNode->GetUVsIndicesPtr(meshInd - 1);
+                        }
+                    
+                    DifferenceSet clipDiffSet; 
+                                                                
+                    if (meshNode->m_nbClips > 0 && (clipsToShow.size() > 0 || applyAllClips))
+                        {                        
+                        ComputeDiffSet(clipDiffSet, clipsToShow, meshInd, applyAllClips);
+                    
+                        ApplyClipDiffSetToMesh(toLoadPoints, toLoadNbPoints, 
+                                               toLoadFaceIndexes, toLoadNbFaceIndexes, 
+                                               toLoadUv, toLoadUvIndex, toLoadUvCount,     
+                                               &dataPoints[0], dataPoints.size(), 
+                                               faceIndexes, nbFaceIndices, 
+                                               uvPtr, uvIndicesP, nbUvs, 
+                                               clipDiffSet, 
+                                               centroid);
+
+                        for (size_t ind = 0; ind < toLoadNbFaceIndexes; ind++)
+                            {
+                            toLoadFaceIndexes[ind] -= 1;                            
+                            }                        
+                        }
+                    else
+                        {
+                        toLoadPoints = &dataPoints[0];
+                        toLoadNbPoints = dataPoints.size();
+                        toLoadFaceIndexes = new int32_t[nbFaceIndices];
+                        toLoadNbFaceIndexes = nbFaceIndices;
+                        
+                        //NEEDS_WORK_SM : Could generate them starting at 0.
+                        for (size_t ind = 0; ind < toLoadNbFaceIndexes; ind++)
+                            {
+                            toLoadFaceIndexes[ind] = faceIndexes[ind] - 1;
+                            }                        
+                        
+                        if (nbUvs > 0)
+                            {
+                            toLoadUv = new FloatXY[nbUvs];
+
+                            for (size_t ind = 0; ind < nbUvs; ind++)
+                                {
+                                toLoadUv[ind].x = uvPtr[ind].x;
+                                toLoadUv[ind].y = uvPtr[ind].y; 
+                                }
+                            }
+                        
+                        toLoadUvIndex = uvIndicesP;
+                        toLoadUvCount = nbUvs;
+                        }                                                                                
+
+                    bvector<float>          uvCoordinates;
+                    float*                  uvCoordinatesP = 0;
+                    SmCachedDisplayTexture* cachedTexture = 0;
+
+                    if (m_cachedDisplayTextures[meshInd] != 0)
+                        {                        
+                        cachedTexture = m_cachedDisplayTextures[meshInd];
+                                                
+                        assert(meshNode->GetNbUVs() == m_node->size());
+                                                
+                        //NEEDS_WORK_SM : Can we store UV coordinate as float
+                        //uvCoordinates.resize(meshNode->GetNbUVs() * 2);
+                        uvCoordinates.resize(m_node->size() * 2);
+                                                                        
+                        for (size_t uvCoordInd = 0; uvCoordInd < toLoadNbFaceIndexes; uvCoordInd++)
+                            {  
+                            if (uvCoordinates[toLoadFaceIndexes[uvCoordInd] * 2] != 0 || uvCoordinates[toLoadFaceIndexes[uvCoordInd] * 2 + 1] != 0)
+                                continue;
+
+                            assert(toLoadUv[toLoadUvIndex[uvCoordInd] - 1].x <= 1.0 && toLoadUv[toLoadUvIndex[uvCoordInd] - 1].x >= 0.0);
+                            assert(toLoadUv[toLoadUvIndex[uvCoordInd] - 1].y <= 1.0 && toLoadUv[toLoadUvIndex[uvCoordInd] - 1].y >= 0.0);
+
+                            uvCoordinates[toLoadFaceIndexes[uvCoordInd] * 2] = toLoadUv[toLoadUvIndex[uvCoordInd] - 1].x;
+                            uvCoordinates[toLoadFaceIndexes[uvCoordInd] * 2 + 1] = 1.0 - toLoadUv[toLoadUvIndex[uvCoordInd] - 1].y;
+                            }
+
+                        uvCoordinatesP = &uvCoordinates[0];
+
+                        meshNode->UnPinUV();
+                        meshNode->UnPinUVsIndices(meshInd - 1);
+                        }
+                   
+                    if (s_deactivateTexture)
+                        {                        
+                        BentleyStatus status = displayCacheManagerPtr->_CreateCachedMesh(m_cachedDisplayMeshes[meshInd], 
+                                                                                         toLoadNbPoints, 
+                                                                                         &centroid,
+                                                                                         (float*)toLoadPoints,
+                                                                                         0,
+                                                                                         (int)toLoadNbFaceIndexes / 3,
+                                                                                         toLoadFaceIndexes, 
+                                                                                         0,
+                                                                                         0);
+                    
+                        assert(status == SUCCESS);                       
+                        }
+                    else
+                        {
+                        BentleyStatus status = displayCacheManagerPtr->_CreateCachedMesh(m_cachedDisplayMeshes[meshInd], 
+                                                                                         toLoadNbPoints, 
+                                                                                         &centroid,
+                                                                                         (float*)toLoadPoints,
+                                                                                         0,
+                                                                                         (int)toLoadNbFaceIndexes / 3,
+                                                                                         toLoadFaceIndexes, 
+                                                                                         uvCoordinatesP,
+                                                                                         cachedTexture);
+                    
+                        assert(status == SUCCESS);                       
+                        }
+                    }
+
+                meshNode->UnPinPtsIndices(meshInd);
+                                     
+                if (meshNode->m_nbClips > 0)
+                    {   
+                    if (toLoadPoints != 0)
+                        delete [] toLoadPoints;
+                    
+                    if (toLoadUvIndex != 0)
+                        delete [] toLoadUvIndex;
+                    }
+                
+                if (toLoadFaceIndexes != 0)
+                    delete [] toLoadFaceIndexes;
+                
+                if (toLoadUv != 0)
+                    delete [] toLoadUv;                
+                }
+            } 
+
+        m_isLoaded = true;
+        m_displayCacheManagerPtr = displayCacheManagerPtr;
+        }
+
+    m_node->UnPin();
+    }
+
+
+    template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMeshes(bool loadGraph, const bset<uint64_t>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture)
     {
     static bool s_deactivateTexture = false; 
 
@@ -1963,12 +2396,15 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMeshes(boo
                             toLoadFaceIndexes[ind] = faceIndexes[ind] - 1;
                             }                        
                         
-                        toLoadUv = new FloatXY[nbUvs];
-
-                        for (size_t ind = 0; ind < nbUvs; ind++)
+                        if (nbUvs > 0)
                             {
-                            toLoadUv[ind].x = uvPtr[ind].x;
-                            toLoadUv[ind].y = uvPtr[ind].y; 
+                            toLoadUv = new FloatXY[nbUvs];
+
+                            for (size_t ind = 0; ind < nbUvs; ind++)
+                                {
+                                toLoadUv[ind].x = uvPtr[ind].x;
+                                toLoadUv[ind].y = uvPtr[ind].y; 
+                                }
                             }
                         
                         toLoadUvIndex = uvIndicesP;
@@ -2062,6 +2498,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMeshes(boo
 
     m_node->UnPin();
     }
+    
     
 template <class POINT>bvector<IScalableMeshNodePtr> ScalableMeshNode<POINT>::_GetNeighborAt(char relativePosX, char relativePosY, char relativePosZ) const
     {
@@ -2157,15 +2594,23 @@ template <class POINT> BcDTMPtr ScalableMeshNode<POINT>::_GetBcDTM() const
         }
     }
 
+template <class POINT> bool ScalableMeshNode<POINT>::_HasClip(uint64_t clip) const
+    {
+    auto m_meshNode = dynamic_cast<SMMeshIndexNode<POINT, YProtPtExtentType>*>(m_node.GetPtr());
+    if (m_meshNode == nullptr) return false;
+    if (m_meshNode->m_nbClips == 0) return false;
+    else return m_meshNode->HasClip(clip);
+    }
+
 template <class POINT> void ScalableMeshNode<POINT>::_ApplyAllExistingClips() const
     {
-    ClipRegistry* clipRegistryP(dynamic_cast<SMMeshIndexNode<POINT, YProtPtExtentType>*>(m_node.GetPtr())->GetClipRegistry());
+    /*ClipRegistry* clipRegistryP(dynamic_cast<SMMeshIndexNode<POINT, YProtPtExtentType>*>(m_node.GetPtr())->GetClipRegistry());
    
     for (size_t i = 0; i < clipRegistryP->GetNbClips(); ++i)
         {
         //NEEDS_WORK_SM : must remove + 1 magic number
         _AddClip(i + 1, true);
-        }
+        }*/
        
     _RefreshMergedClip();    
     }
@@ -2460,6 +2905,29 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNodeWithReprojection<POI
     }
 
 template <class POINT> IScalableMeshMeshPtr ScalableMeshNodeWithReprojection<POINT>::_GetMeshByParts(const bvector<bool>& clipsToShow, ScalableMeshTextureID texID) const
+    {
+    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
+    ScalableMeshMeshPtr meshPtr = ScalableMeshMesh::Create();
+
+    vector<DPoint3d> dataPoints(m_node->size());
+
+    PtToPtConverter converter;
+
+    for (size_t pointInd = 0; pointInd < m_node->size(); pointInd++)
+        {
+        dataPoints[pointInd] = converter.operator()(m_node->operator[](pointInd));
+        }
+    m_reprojectFunction.Reproject(&dataPoints[0], m_node->size(), &dataPoints[0]);
+    DPoint2d* pUv = m_meshNode->GetUVPtr();
+    int status = meshPtr->AppendMesh(m_node->size(), &dataPoints[0], m_node->m_nodeHeader.m_nbFaceIndexes, m_meshNode->GetPtsIndicePtr(texID), 0, 0, 0, texID >= 1 ? m_meshNode->GetNbUVs() : 0, texID >= 1 ? pUv : 0, texID >= 1 ? m_meshNode->GetUVsIndicesPtr(texID - 1) : 0);
+
+    assert(status == SUCCESS);
+
+    return meshPtr.get();
+    }
+
+
+template <class POINT> IScalableMeshMeshPtr ScalableMeshNodeWithReprojection<POINT>::_GetMeshByParts(const bset<uint64_t>& clipsToShow, ScalableMeshTextureID texID) const
     {
     auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
     ScalableMeshMeshPtr meshPtr = ScalableMeshMesh::Create();

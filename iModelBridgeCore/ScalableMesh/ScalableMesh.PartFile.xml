@@ -10,7 +10,8 @@
       <Bindings>                              
         <Libs>Delivery\PCLWrapper.lib</Libs>        
         <PublicAPI Domain="PCLWrapper" />
-        <Files ProductDirectoryName="ScalableMeshAssemblies" >Delivery\$(shlibprefix)PCLWrapper$(shlibext)</Files>                
+        <Files ProductDirectoryName="ScalableMeshAssemblies" >Delivery\$(shlibprefix)PCLWrapper$(shlibext)</Files>     
+        <Files ProductDirectoryName="MdlsysAsneeded" >Delivery\$(shlibprefix)PCLWrapper$(shlibext)</Files>          
       </Bindings>
     </Part>
     
@@ -36,6 +37,7 @@
         <Bindings>
             <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)ScalableMesh$(libext)</Libs>    
             <Assemblies ProductDirectoryName="ScalableMeshAssemblies">delivery/$(shlibprefix)ScalableMesh$(shlibext)</Assemblies> 
+            <Assemblies ProductDirectoryName="MdlsysAsneeded">delivery/$(shlibprefix)ScalableMesh$(shlibext)</Assemblies> 
             <PublicAPI Domain="ScalableMesh" />
         </Bindings>
     </Part>
@@ -54,7 +56,6 @@
 	<Part Name="ScalableMeshATPexe" BentleyBuildMakeFile="Tests/ATP/ScalableMeshATPexe.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
         <SubPart PartName="ScalableMesh"  PartFile="ScalableMesh" Repository="ScalableMesh" />
 		<SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
-		<!--<SubPart PartName="BeIcu4cLibrary"     PartFile="BeIcu4cLibrary"  Repository="Libsrc-icu4c"/>-->
         <Bindings>
 			<Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\ScalableMeshATPexe.exe</Files>
         </Bindings>

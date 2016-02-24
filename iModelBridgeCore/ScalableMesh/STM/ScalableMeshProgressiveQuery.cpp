@@ -89,6 +89,11 @@ BentleyStatus IScalableMeshProgressiveQueryEngine::ClearCaching(const bvector<DR
     return _ClearCaching(clearRanges, scalableMeshPtr);
     }
 
+BentleyStatus IScalableMeshProgressiveQueryEngine::ClearCaching(const bvector<uint64_t>& clipIds, const IScalableMeshPtr& scalableMeshPtr)
+    {
+    return _ClearCaching(clipIds, scalableMeshPtr);
+    }
+
 BentleyStatus IScalableMeshProgressiveQueryEngine::StartQuery(int                                                                      queryId,
                                                               IScalableMeshViewDependentMeshQueryParamsPtr                             queryParam,
                                                               const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes,
@@ -241,6 +246,51 @@ public:
         m_nodeListMutex.unlock();
         }
 
+    void ClearCachedNodes(const bvector<uint64_t>& clipIds, IScalableMeshPtr& scalableMeshPtr)
+        {
+        m_nodeListMutex.lock();
+
+        auto cachedNodeIter(m_cachedNodes.begin());
+        auto cachedNodeIterEnd(m_cachedNodes.end());
+
+        //NEEDS_WORK_SM : Maybe should try making it parallel?        
+        while (cachedNodeIter != cachedNodeIterEnd)
+            {
+            if (cachedNodeIter->m_scalableMeshPtr == scalableMeshPtr)
+                {
+                if (clipIds.size() > 0)
+                    {
+
+                    bool isCleared = false;
+
+                    for (auto& id : clipIds)
+                        {
+                        if (cachedNodeIter->m_displayNodePtr->HasClip(id))
+                            {
+                            cachedNodeIter = m_cachedNodes.erase(cachedNodeIter);
+                            isCleared = true;
+                            break;
+                            }
+                        }
+
+                    if (!isCleared)
+                        cachedNodeIter++;
+
+                    }
+                else
+                    {
+                    cachedNodeIter = m_cachedNodes.erase(cachedNodeIter);
+                    }
+                }
+            else
+                {
+                cachedNodeIter++;
+                }
+            }
+
+        m_nodeListMutex.unlock();
+        }
+
         void GetNodeListLock()
             {
             m_nodeListMutex.lock();
@@ -293,7 +343,7 @@ public:
                 ScalableMeshCachedDisplayNode<POINT>* meshNode(ScalableMeshCachedDisplayNode<POINT>::Create(node));               
                 meshNode->ApplyAllExistingClips();
                 
-                meshNode->LoadMeshes(false, clipVisibilities, s_displayCacheManagerPtr, loadTexture);
+                meshNode->LoadMeshes(false, clipVisibilities, s_displayCacheManagerPtr, loadTexture, true);
                 foundNodePtr = meshNode;                
                 AddCachedNode(s_scalableMeshPtr, foundNodePtr);
                 }   
@@ -443,9 +493,10 @@ template <class POINT, class EXTENT> struct ProcessingQuery : public RefCountedB
         m_foundMeshNodeMutexes = new std::mutex[nbWorkingThreads];
         m_nodeQueryProcessors.resize(nbWorkingThreads);
         m_nodeQueryProcessorMutexes = new std::mutex[nbWorkingThreads];
-
+                
         m_queryObjectP = queryObjectP;
         m_isCancel = false;
+        m_isConsumingNode = false;
         m_loadTexture = loadTexture;        
         }
 
@@ -541,6 +592,8 @@ template <class POINT, class EXTENT> struct ProcessingQuery : public RefCountedB
     atomic<bool>                                              m_isConsumingNode;
     };
 
+static bool s_delayJoinThread = false;
+static bool s_streamingSM = false;
 
 class QueryProcessor
     {
@@ -556,8 +609,9 @@ private:
     atomic<bool>                  m_run;
 
     int                           m_numWorkingThreads;
-    std::thread*                  m_workingThreads;
-    
+    std::thread*                  m_workingThreads;    
+    atomic<bool>*                 m_areWorkingThreadRunning;    
+       
     struct InLoadingNode;
 
     typedef RefCountedPtr<InLoadingNode> InLoadingNodePtr;
@@ -780,14 +834,29 @@ private:
                 }
 
             } while (m_run && (processingQueryPtr != 0));
+
+        m_areWorkingThreadRunning[threadId] = false;
         }
          
 public:
 
     QueryProcessor()
         {
-        m_numWorkingThreads = std::thread::hardware_concurrency() - 1;
+        if (!s_streamingSM)
+            {
+            m_numWorkingThreads = 1;
+            }
+        else
+            {
+            m_numWorkingThreads = 14;
+            }
+
         m_workingThreads = new std::thread[m_numWorkingThreads];
+        m_areWorkingThreadRunning = new std::atomic<bool>[m_numWorkingThreads];
+
+        for (size_t ind = 0; ind < m_numWorkingThreads; ind++)
+            m_areWorkingThreadRunning[ind] = false;
+                
         m_run = false;
         m_processingQueryIndexes.resize(m_numWorkingThreads);
         }
@@ -801,6 +870,7 @@ public:
             }
 
         delete[] m_workingThreads;
+        delete[] m_areWorkingThreadRunning;
         }
 
     void AddQuery(int                                                             queryId,
@@ -955,24 +1025,40 @@ public:
 
                 //Launch a group of threads
                 for (int threadId = 0; threadId < m_numWorkingThreads; ++threadId) 
-                    {                                    
-                    m_workingThreads[threadId] = std::thread(&QueryProcessor::QueryThread, this, DgnPlatformLib::QueryHost(), threadId);
+                    {                                                        
+                    if (!s_delayJoinThread && !s_streamingSM)
+                        {                
+                        m_workingThreads[threadId] = std::thread(&QueryProcessor::QueryThread, this, DgnPlatformLib::QueryHost(), threadId);
+                        }
+                    else
+                        {
+                        if (m_areWorkingThreadRunning[threadId] == false)
+                            {
+                            if (m_workingThreads[threadId].joinable())                            
+                                m_workingThreads[threadId].join();
+
+                            m_workingThreads[threadId] = std::thread(&QueryProcessor::QueryThread, this, DgnPlatformLib::QueryHost(), threadId);
+                            m_areWorkingThreadRunning[threadId] = true;
+                            }
+                        }
                     }
                 }
             }
-
+        
         void Stop()
-            {
+            {                        
             m_run = false;
 
-            for (int threadId = 0; threadId < m_numWorkingThreads; ++threadId) 
-                {
-                if (m_workingThreads[threadId].joinable())
-                    m_workingThreads[threadId].join();
+            if (!s_delayJoinThread && !s_streamingSM)
+                {                
+                for (int threadId = 0; threadId < m_numWorkingThreads; ++threadId) 
+                    {
+                    if (m_workingThreads[threadId].joinable())
+                        m_workingThreads[threadId].join();                    
+                    }         
                 }
             }
        
-
         StatusInt GetFoundNodes(bvector<IScalableMeshCachedDisplayNodePtr>& foundNodes, int queryId)
             {             
             StatusInt status;
@@ -1224,6 +1310,8 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
             }
 
         CachedDisplayNodeManager::GetManager().ReleaseNodeListLock();
+
+        assert(lowerResOverviewNodes.size() > 0 || (nodesToSearch.GetNodes().size() - currentInd) == 0);
         
         newQuery.m_overviewMeshNodes.insert(newQuery.m_overviewMeshNodes.end(), lowerResOverviewNodes.begin(), lowerResOverviewNodes.end());        
 
@@ -1319,6 +1407,13 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
 BentleyStatus ScalableMeshProgressiveQueryEngine::_ClearCaching(const bvector<DRange2d>* clearRanges, const IScalableMeshPtr& scalableMeshPtr)
     {
     CachedDisplayNodeManager::GetManager().ClearCachedNodes(clearRanges, s_scalableMeshPtr);
+
+    return SUCCESS;
+    }
+
+BentleyStatus ScalableMeshProgressiveQueryEngine::_ClearCaching(const bvector<uint64_t>& clipIds, const IScalableMeshPtr& scalableMeshPtr)
+    {
+    CachedDisplayNodeManager::GetManager().ClearCachedNodes(clipIds, s_scalableMeshPtr);
 
     return SUCCESS;
     }

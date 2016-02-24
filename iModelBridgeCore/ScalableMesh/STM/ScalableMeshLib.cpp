@@ -115,6 +115,10 @@ void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
 
     t_scalableTerrainModelHost = &host;
     t_scalableTerrainModelHost->Initialize();
+    BeFileName tempDir;
+    BeFileNameStatus beStatus = BeFileName::BeGetTempPath(tempDir);
+    assert(BeFileNameStatus::Success == beStatus);
+    BeSQLiteLib::Initialize(tempDir);
     }
 
 /*---------------------------------------------------------------------------------**//**

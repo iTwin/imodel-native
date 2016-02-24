@@ -473,6 +473,7 @@ public:
             bool                    m_singleFile;
             size_t                  m_numberOfSubNodesOnSplit;      // Control value that hold either 4 or 8 to indicate if a quadtree or octtree is used.
             size_t                  m_depth;                        // Cached (maximum) number of levels in the tree.
+            size_t                  m_terrainDepth;                 //Maximum number of LODs for terrain(mesh) data, set at generation time
         };
 
 #define MAX_NEIGHBORNODES_COUNT 26
@@ -613,6 +614,7 @@ public:
         if (indexHeader.m_rootNodeBlockID != SQLiteNodeHeader::NO_NODEID) m_rootNodeBlockID = HPMBlockID(indexHeader.m_rootNodeBlockID);
         m_balanced = indexHeader.m_balanced;
         m_depth = indexHeader.m_depth;
+        m_terrainDepth = indexHeader.m_terrainDepth;
         m_HasMaxExtent = indexHeader.m_HasMaxExtent;
         m_MaxExtent = ExtentOp<EXTENT>::Create(indexHeader.m_MaxExtent.low.x, indexHeader.m_MaxExtent.low.y, indexHeader.m_MaxExtent.low.z,
                                                indexHeader.m_MaxExtent.high.x, indexHeader.m_MaxExtent.high.y, indexHeader.m_MaxExtent.high.z);
@@ -630,6 +632,7 @@ public:
         header.m_rootNodeBlockID = m_rootNodeBlockID.IsValid() ? m_rootNodeBlockID.m_integerID : -1;
         header.m_balanced = m_balanced;
         header.m_depth = m_depth;
+        header.m_terrainDepth = m_terrainDepth;
         header.m_HasMaxExtent = m_HasMaxExtent;
         header.m_MaxExtent = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_MaxExtent), ExtentOp<EXTENT>::GetYMin(m_MaxExtent), ExtentOp<EXTENT>::GetZMin(m_MaxExtent),
                                             ExtentOp<EXTENT>::GetXMax(m_MaxExtent), ExtentOp<EXTENT>::GetYMax(m_MaxExtent), ExtentOp<EXTENT>::GetZMax(m_MaxExtent));

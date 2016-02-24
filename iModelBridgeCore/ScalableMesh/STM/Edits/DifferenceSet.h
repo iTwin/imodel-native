@@ -57,6 +57,11 @@ struct DifferenceSet
         return *this;
         }
 
+    bool IsEmpty()
+        {
+        return addedFaces.empty() && removedFaces.empty();
+        }
+
     size_t WriteToBinaryStream(void*& serialized);
     void LoadFromBinaryStream(void* serialized, size_t ct);
     void ApplySet(DifferenceSet& d, int firstIndex);

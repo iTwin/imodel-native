@@ -26,9 +26,9 @@
 
 //static bool s_useStreamingStore = true;
 static bool s_save_grouped_store = false;
-static bool s_stream_from_disk = true;
+static bool s_stream_from_disk = false;
 static bool s_stream_from_file_server = false;
-static bool s_stream_from_grouped_store = false;
+static bool s_stream_from_grouped_store = true;
 static uint32_t s_max_number_nodes_in_group = 100;
 static size_t s_max_group_size = 256 << 10; // 256 KB
 static size_t s_max_group_depth = 5;
@@ -536,6 +536,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             dataIndex += sizeof(nbChildren);
             header->m_apSubNodeID.clear();
             header->m_apSubNodeID.reserve(nbChildren);
+            header->m_numberOfSubNodesOnSplit = nbChildren;
             for (size_t childInd = 0; childInd < nbChildren; childInd++)
                 {
                 uint32_t childID;
@@ -1367,8 +1368,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                     if (s_stream_from_disk)
                         {
                         BeFile file;
-                        if (BeFileStatus::Success == OPEN_FILE(file, group_filename.c_str(), BeFileAccess::Write) ||//file.Open(group_filename.c_str(), BeFileAccess::Read, BeFileSharing::None) ||
-                            BeFileStatus::Success == file.Create(group_filename.c_str()))
+                        if (BeFileStatus::Success == OPEN_FILE(file, group_filename.c_str(), BeFileAccess::Write))//file.Open(group_filename.c_str(), BeFileAccess::Read, BeFileSharing::None) ||
                             {
                             uint64_t fileSize;
                             file.GetSize(fileSize);
@@ -1378,7 +1378,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                             }
                         else
                             {
-                            HASSERT(!"Problem creating new block file");
+                            HASSERT(!"Problem reading gouped header file");
                             }
 
                         file.Close();

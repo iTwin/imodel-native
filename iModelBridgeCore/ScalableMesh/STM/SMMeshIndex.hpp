@@ -48,8 +48,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT,EXTENT>::SMMeshIndexN
     m_isGraphLoaded = false;
     m_graphVec.SetDirty(false);
     m_graphVec.SetDiscarded(true);
-    m_isPtsIndiceLoaded = false;
-    
+    m_isPtsIndiceLoaded = false;            
     m_isUVLoaded = false;
     m_isUVsIndicesLoaded = false;
     m_ptsIndiceVec[0].SetDirty(false);
@@ -68,6 +67,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT,EXTENT>::SMMeshIndexN
     m_nodeHeader.m_textureID.resize(1);
     m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
 
+    m_nbClips = 0;
     m_differenceSets.SetDirty(false);
 #ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
@@ -89,16 +89,18 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_SMIndex = pi_rpParentNode->m_SMIndex;
     m_mesher2_5d = pi_rpParentNode->GetMesher2_5d();
     m_mesher3d = pi_rpParentNode->GetMesher3d();
-    m_isGraphLoaded = false;
+    m_isGraphLoaded = false;    
     m_graphVec.SetDirty(false);
     m_graphVec.SetDiscarded(true);
     m_isPtsIndiceLoaded = false;
     m_isUVLoaded = false;
-    m_isUVsIndicesLoaded = false;
+    m_isUVsIndicesLoaded = false;    
     m_ptsIndiceVec[0].SetDirty(false);
     m_uvVec.SetDirty(false);
     m_uvsIndicesVec[0].SetDirty(false);
     m_textureVec[0].SetDirty(false);
+
+    m_nbClips = 0;
     m_differenceSets.SetDirty(false);
     m_differenceSets.SetStore(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore());
     m_differenceSets.SetPool(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipPool());
@@ -144,6 +146,8 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_uvVec.SetDirty(false);
     m_uvsIndicesVec[0].SetDirty(false);
     m_textureVec[0].SetDirty(false);
+
+    m_nbClips = 0;
     m_differenceSets.SetDirty(false);
     m_differenceSets.SetStore(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore());
     m_differenceSets.SetPool(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipPool());
@@ -311,6 +315,8 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_isUVsIndicesLoaded = false;
     m_uvsIndicesVec[0].SetDirty(false);
     m_textureVec[0].SetDirty(false);
+
+    m_nbClips = 0;
     m_differenceSets.SetDirty(false);
     m_differenceSets.SetStore(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore());
     m_differenceSets.SetPool(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipPool());
@@ -363,8 +369,9 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_ptsIndiceVec[0].SetDirty(false);
     m_textureVec[0].SetDirty(false);
     m_uvsIndicesVec[0].SetDirty(false);
-
     m_uvVec.SetDirty(false);
+
+    m_nbClips = 0;
     m_differenceSets.SetDirty(false);
     m_differenceSets.SetStore(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore());
     m_differenceSets.SetPool(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipPool());
@@ -416,6 +423,8 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_nodeHeader.m_uvsIndicesID[0] = IDTMFile::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
     m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
+
+    m_nbClips = 0;
     m_differenceSets.SetDirty(false);
 #ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
@@ -460,6 +469,8 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_nodeHeader.m_uvID/*[0]*/ = IDTMFile::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
     m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
+
+    m_nbClips = 0;
     m_differenceSets.SetDirty(false);
 #ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
@@ -494,6 +505,8 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_uvVec.SetDirty(false);
     m_uvsIndicesVec[0].SetDirty(false);
     m_textureVec[0].SetDirty(false);
+
+    m_nbClips = 0;
     m_differenceSets.SetDirty(false);
     m_differenceSets.SetStore(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore());
     m_differenceSets.SetPool(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipPool());
@@ -2551,6 +2564,18 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Refres
     }
 
 //=======================================================================================
+// @bsimethod                                                   Elenie.Godzaridis 02/16
+//=======================================================================================
+template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::HasClip(uint64_t clipId)
+    {
+    for (auto& diffSet : m_differenceSets)
+        {
+        if (diffSet.clientID == clipId && (!diffSet.upToDate || !diffSet.IsEmpty())) return true;
+        }
+    return false;
+    }
+
+//=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 10/15
 //=======================================================================================
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ComputeMergedClips()
@@ -2607,12 +2632,12 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
     bvector<uint64_t> clipIds;
     for (auto& diffSet : m_differenceSets)
         {
-        uint64_t upperId = (diffSet.clientID >> 32);
-        if (upperId == 0 && diffSet.clientID != 0)
+        //uint64_t upperId = (diffSet.clientID >> 32);
+        if (diffSet.clientID < ((uint64_t)-1) && diffSet.clientID != 0)
             {
             clipIds.push_back(diffSet.clientID);
             polys.push_back(bvector<DPoint3d>());
-            GetClipRegistry()->GetClip(diffSet.clientID - 1, polys.back());
+            GetClipRegistry()->GetClip(diffSet.clientID, polys.back());
             }
         }
     m_differenceSets.clear();
@@ -2716,7 +2741,8 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::AddCli
             d.clientID = clipId;
             d.firstIndex = (int32_t)size() + 1;
             m_differenceSets.push_back(d);
-            (m_differenceSets.begin() + (m_differenceSets.size() - 1))->upToDate = true;
+            m_nbClips++;
+            (m_differenceSets.begin() + (m_differenceSets.size() - 1))->upToDate = false;
             for (auto& other : m_differenceSets)
                 {
                 if (other.clientID == ((uint64_t)-1)) other.upToDate = false;
@@ -3229,6 +3255,11 @@ template<class POINT, class EXTENT> ISMPointIndexMesher<POINT, EXTENT>* SMMeshIn
 
 template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::TextureFromRaster(HIMMosaic* sourceRasterP)
     {
+    if (m_indexHeader.m_terrainDepth == (size_t)-1)
+        {
+        m_indexHeader.m_terrainDepth = m_pRootNode->GetDepth();
+        m_indexHeader.m_depth = (size_t)-1;
+        }
     if (sourceRasterP == nullptr || sourceRasterP->GetEffectiveShape() == nullptr || sourceRasterP->GetEffectiveShape()->IsEmpty()) return;
     if (m_pRootNode != NULL)   dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pRootNode)->TextureFromRasterRecursive(sourceRasterP);
     }
@@ -3473,6 +3504,7 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::SetClipSt
     {
     m_clipStore = clipStore;
     if (!m_clipStore->LoadMasterHeader(NULL, 1)) m_clipStore->StoreMasterHeader(NULL, 0);
+    if (m_pRootNode != nullptr)dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(m_pRootNode.GetPtr())->m_differenceSets.SetStore(m_clipStore);
     }
 
 
@@ -3484,4 +3516,5 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::SetClipRe
 template<class POINT, class EXTENT>  void SMMeshIndex<POINT, EXTENT>::SetClipPool(HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>>& clipPool)
     {
     m_clipPool = clipPool;
+    if (m_pRootNode != nullptr)dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(m_pRootNode.GetPtr())->m_differenceSets.SetPool(m_clipPool);
     }
