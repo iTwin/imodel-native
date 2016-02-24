@@ -58,8 +58,6 @@ SamlTokenPtr FederationTokenProvider::UpdateToken()
 +---------------+---------------+---------------+---------------+---------------+------*/
 SamlTokenPtr FederationTokenProvider::GetToken()
     {
-    // TODO: Launch token renewal asynchronously and just return current token
-    // Check if token was issued more than 1 hour ago. If so, renew it.
     DateTime tokenSetTime = m_store->GetTokenSetTime();
     if (tokenSetTime.IsValid() && ShouldRenewToken(tokenSetTime))
         {
@@ -67,11 +65,21 @@ SamlTokenPtr FederationTokenProvider::GetToken()
         if (nullptr == oldToken)
             return nullptr;
 
-        auto tokenResult = Connect::RenewToken(*oldToken, nullptr, nullptr, m_tokenLifetime)->GetResult();
-        if (!tokenResult.IsSuccess())
-            return nullptr;
+        AsyncTasksManager::GetDefaultScheduler()->ExecuteAsyncWithoutAttachingToCurrentTask([=]
+            {
+            // TODO: avoid launching twice - use UniqueTaskHolder once its fixed
+            LOG.infov("Renewing identity token");
+            Connect::RenewToken(*oldToken, nullptr, nullptr, m_tokenLifetime)
+                ->Then([=] (SamlTokenResult result)
+                {
+                if (!result.IsSuccess())
+                    return;
 
-        m_store->SetToken(tokenResult.GetValue());
+                auto token = result.GetValue();
+                m_store->SetToken(token);
+                LOG.infov("Renewed identity token lifetime %d minutes", token->GetLifetime());
+                });
+            });
         }
 
     return m_store->GetToken();
