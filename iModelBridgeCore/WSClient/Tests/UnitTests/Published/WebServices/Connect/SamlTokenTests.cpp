@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/SamlTokenTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "SamlTokenTests.h"
@@ -102,6 +102,18 @@ TEST_F (SamlTokenTests, IsValidNow_ValidTokenAndOffsetIsInValidity_True)
     {
     SamlToken token (StubSamlTokenXML (100));
     EXPECT_TRUE (token.IsValidNow (4));
+    }
+
+TEST_F(SamlTokenTests, GetLifetime_InvalidToken_Zero)
+    {
+    SamlToken token;
+    EXPECT_EQ(0, token.GetLifetime());
+    }
+
+TEST_F(SamlTokenTests, GetLifetime_TokenWithValidLifetime_LifetimeReturned)
+    {
+    SamlToken token(StubSamlTokenXML(42));
+    EXPECT_EQ(42, token.GetLifetime());
     }
 
 TEST_F (SamlTokenTests, GetAttributes_AttributesExist_SuccessAndReturnsAttributes)
