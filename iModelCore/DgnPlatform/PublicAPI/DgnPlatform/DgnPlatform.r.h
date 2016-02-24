@@ -2,30 +2,45 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnPlatform.r.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <Geom/GeomApi.h>
-#include "ExportMacros.h"
-#include <BeJsonCpp/BeJsonUtilities.h>
 
-#define BEGIN_BENTLEY_DGN_NAMESPACE BEGIN_BENTLEY_NAMESPACE namespace Dgn {
-#define END_BENTLEY_DGN_NAMESPACE   } END_BENTLEY_NAMESPACE
+#if !defined (mdl_resource_compiler) && !defined (mdl_type_resource_generator)
+  #include <Geom/GeomApi.h>
+  #include "ExportMacros.h"
+  #include <BeJsonCpp/BeJsonUtilities.h>
 
-#define BEGIN_BENTLEY_RENDER_NAMESPACE BEGIN_BENTLEY_DGN_NAMESPACE namespace Render {
-#define END_BENTLEY_RENDER_NAMESPACE   } END_BENTLEY_DGN_NAMESPACE
+  #define BEGIN_BENTLEY_DGN_NAMESPACE BEGIN_BENTLEY_NAMESPACE namespace Dgn {
+  #define END_BENTLEY_DGN_NAMESPACE   } END_BENTLEY_NAMESPACE
 
-#define BEGIN_BENTLEY_DISPLAY_NAMESPACE BEGIN_BENTLEY_DGN_NAMESPACE namespace Display {
-#define END_BENTLEY_DISPLAY_NAMESPACE   } END_BENTLEY_DGN_NAMESPACE
+  #define BEGIN_BENTLEY_RENDER_NAMESPACE BEGIN_BENTLEY_DGN_NAMESPACE namespace Render {
+  #define END_BENTLEY_RENDER_NAMESPACE   } END_BENTLEY_DGN_NAMESPACE
+
+  #define BEGIN_BENTLEY_DISPLAY_NAMESPACE BEGIN_BENTLEY_DGN_NAMESPACE namespace Display {
+  #define END_BENTLEY_DISPLAY_NAMESPACE   } END_BENTLEY_DGN_NAMESPACE
+#else
+  #include <Geom/GeomApi.r.h>
+  #define BEGIN_BENTLEY_DGN_NAMESPACE
+  #define END_BENTLEY_DGN_NAMESPACE
+
+  #define BEGIN_BENTLEY_RENDER_NAMESPACE
+  #define END_BENTLEY_RENDER_NAMESPACE
+
+  #define BEGIN_BENTLEY_DISPLAY_NAMESPACE
+  #define END_BENTLEY_DISPLAY_NAMESPACE
+#endif
 
 // for backwards compatibility, do not use
 #ifndef BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 #define BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE BEGIN_BENTLEY_DGN_NAMESPACE 
 #define END_BENTLEY_DGNPLATFORM_NAMESPACE   END_BENTLEY_DGN_NAMESPACE
 #endif
+
+
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 

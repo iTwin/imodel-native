@@ -17,13 +17,13 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     class Geometry { /*** NATIVE_TYPE_NAME = JsGeometry ***/ }
     /*** END_FORWARD_DECLARATIONS ***/
 
-    type TransformP             = cxx_pointer<Transform>;
-    type DPoint3dP              = cxx_pointer<DPoint3d>;
-    type YawPitchRollAnglesP    = cxx_pointer<YawPitchRollAngles>;
-    type SolidPrimitiveP        = cxx_pointer<SolidPrimitive>;
-    type DgnSphereP             = cxx_pointer<DgnSphere>;
-    type DgnBoxP                = cxx_pointer<DgnBox>;
-    type GeometryP              = cxx_pointer<Geometry>;
+    type TransformP = cxx_pointer<Transform>;
+    type DPoint3dP = cxx_pointer<DPoint3d>;
+    type YawPitchRollAnglesP = cxx_pointer<YawPitchRollAngles>;
+    type SolidPrimitiveP = cxx_pointer<SolidPrimitive>;
+    type DgnSphereP = cxx_pointer<DgnSphere>;
+    type DgnBoxP = cxx_pointer<DgnBox>;
+    type GeometryP = cxx_pointer<Geometry>;
 
     enum ECPropertyPrimitiveType { }
 
@@ -31,7 +31,8 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     enum LoggingSeverity { }
 
     /** Access to the message log */
-    class Logging implements BeJsProjection_SuppressConstructor {
+    class Logging implements BeJsProjection_SuppressConstructor
+    {
 
         /**
         * Set the severity level for the specified category
@@ -74,21 +75,23 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     type Placement3dP = cxx_pointer<Placement3d>;
 
     /** Script Management Utilities */
-    class Script implements BeJsProjection_SuppressConstructor {
+    class Script implements BeJsProjection_SuppressConstructor
+    {
 
         /**
          * Make sure that the specified script is loaded.
          * @param db         The name of the DgnDb to check for a local script library
          * @param scriptName The name which was used to register the script in the script librray
+         * @param forceReload  If true, the script's contents will be re-evaluated even if this script was previously loaded. Otherwise, the script is loaded and evaluated only once per session.
          * @return 0 (SUCCESS) if the script was loaded; otherwise, a non-zero error code.
          */
-        static LoadScript(db: DgnDbP, scriptName: Bentley_Utf8String): cxx_int32_t;
+        static LoadScript(db: DgnDbP, scriptName: Bentley_Utf8String, forceReload: cxx_bool): cxx_int32_t;
 
         /**
-         * Make sure that the specified library is loaded
-         * @param libName The name of the library that is to be loaded
-         * @note This function differs from LoadScript in that ImportLibrary is used to activate libraries that are provided by the app or the domain,
-         * where LoadScript is used to load scripts that are found in the script library.
+         * Make sure that the specified builtin script library is loaded.
+         * @param libName Identifies the library that is to be loaded
+         * @note This function differs from LoadScript in that ImportLibrary is used to activate builtin libraries that are provided by apps or domains,
+         * where LoadScript is used to load external scripts that are found in the script library or are loaded from a URL.
          */
         static ImportLibrary(libName: Bentley_Utf8String): void;
 
@@ -212,7 +215,8 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     type DgnCategoryP = cxx_pointer<DgnCategory>;
 
     /** An Element */
-    class DgnElement implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+    class DgnElement implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
         /*** NATIVE_TYPE_NAME = JsDgnElement ***/ 
         /** The Element's ID */
         ElementId: DgnObjectIdP;
@@ -228,6 +232,24 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         Update(): cxx_int32_t;
         /** Set the Parent of this Element. @param parent The parent element. */
         SetParent(parent: cxx_pointer<DgnElement>): void;
+
+        /**
+         * Get the value of a property that is not controlled by the element's class.
+         * @note A handled property must be accessed using the API provided by the class that defines it.
+         * @param name The name of property
+         * @return the value of the property or null if the property is not found or is handled
+         */
+        GetUnhandledProperty(name: Bentley_Utf8String): ECValueP;
+
+        /**
+         * Set the value of a property that is not controlled by the element's class
+         * @note A handled property must be accessed using the API provided by the class that defines it.
+         * @param name      The name of property
+         * @param value     The new value for the property
+         * @return non-zero error status if the property is not found or is handled
+         */
+        SetUnhandledProperty(name: Bentley_Utf8String, value: ECValueP): cxx_int32_t;
+
         OnDispose(): void;
         Dispose(): void;
     }
@@ -240,7 +262,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         /*** NATIVE_TYPE_NAME = JsPhysicalElement ***/
 
         /** Get the placement of this element */
-        Placement : Placement3dP;
+        Placement: Placement3dP;
 
         /** Transform the element's Placement 
          * @param transform The transform to apply to the element's Placement. The transform must be pure rotation and/or translation.
@@ -248,6 +270,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         */
         Transform(transform: TransformP): cxx_int32_t;
 
+        /** Get the element's DgnCategoryId */
+        CategoryId: DgnObjectIdP;
+    
         /** The element's geometry (read-only) */
         Geometry: GeometryCollectionP;
 
@@ -265,7 +290,8 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     type PhysicalElementP = cxx_pointer<PhysicalElement>;
 
     /** A Model in a DgnDb */
-    class DgnModel implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+    class DgnModel implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
         /*** NATIVE_TYPE_NAME = JsDgnModel ***/
         /** The ID of this model */
         ModelId: DgnObjectIdP;
@@ -287,7 +313,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     class ComponentModel extends DgnModel implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsComponentModel ***/
-        
+
         OnDispose(): void;
         Dispose(): void;
     }
@@ -297,7 +323,8 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     /**
      * A component definition
      */
-    class ComponentDef implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+    class ComponentDef implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
         /*** NATIVE_TYPE_NAME = JsComponentDef ***/
         
         /**
@@ -483,7 +510,19 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     {
         /*** NATIVE_TYPE_NAME = JsDgnGeometryPart ***/
 
-        // *** TBD
+        /**
+          * Create a new DgnGeometryPart object.
+          * @param db   The DgnDb that will hold the DgnGeometryPart
+          * @return the DgnGeometryPart object
+          * @see InsertGeometryPart
+          */
+        static Create(db: DgnDbP): DgnGeometryPartP;
+
+        /**
+         * Insert this DgnGeometryPart into the DgnDb.
+         * @return non-zero error status if the DgnGeometryPart could not be inserted.
+         */
+        Insert(): cxx_int32_t; 
 
         OnDispose(): void;
         Dispose(): void;
@@ -536,7 +575,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         /**
          * Get the DgnGeometryPart at the specified position in this collection.
          * @param iter  The iterator
-         * @return a DgnGeometryPart or null if the current item is not a GeomPart reference.
+         * @return a DgnGeometryPart or null if the current item is not a DgnGeometryPart reference.
          * @see GetGeometry
          * @see GetGeometryToWorld
          */
@@ -567,13 +606,50 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         /*** NATIVE_TYPE_NAME = JsGeometryBuilder ***/ 
 
         /**
-         * Construct a new GeometryBuilder
+         * Construct a new GeometryBuilder with the intention of using it to set up the geometry of the specified element.
          * @param el    The element to which this geometry will be attached
          * @param o     The placement origin
          * @param angles The placement angles
-         * @see SetGeometryStreamAndPlacement for how to attach the geometry in this builder to an element.
+         * @see SetGeometryStreamAndPlacement for how to copy the geometry in this builder to an element.
         */
         constructor(el: DgnElementP, o: DPoint3dP, angles: YawPitchRollAnglesP);
+
+        /**
+         * Construct a new GeometryBuilder to prepare geometry for the specified element. 
+         * @note This is just a short cut for calling CreateForModel.
+         * @param el    The element to which this geometry will be attached
+         * @param o     The placement origin
+         * @param angles The placement angles
+         * @return a GeometryBuilder object
+         * @see CreateForModel
+         */
+        static CreateForElement(el: DgnElementP, o: DPoint3dP, angles: YawPitchRollAnglesP): GeometryBuilderP;
+
+        /**
+         * Construct a new GeometryBuilder to prepare geometry for elements in the specified model and category
+         * @param model The model where the geometry will ultimatley be stored
+         * @param catid The category of the element that will will ultimatley contain the geometry
+         * @param o     The placement origin
+         * @param angles The placement angles
+         * @return a GeometryBuilder object
+         */
+        static CreateForModel(model: DgnModelP, catid: DgnObjectIdP, o: DPoint3dP, angles: YawPitchRollAnglesP): GeometryBuilderP;
+
+        /**
+         * Construct a new GeometryBuilder to prepare geometry for a DgnGeometryPart
+         * @param db    The DgnDb that will hold the DgnGeometryPart
+         * @param is3d  Will the DgnGeometryPart hold 3-D geometry?
+         * @return a GeometryBuilder object
+         */
+        static CreateGeometryPart(db: DgnDbP, is3d: cxx_bool): GeometryBuilderP;
+
+        /**
+         * Append a copy of each geometric primitive in the specified builder to this builder, with a transform.
+         * @param builder   the builder to copy from
+         * @param relativePlacement if not null, the offset and/or rotation of the copied geometry 
+         */
+        AppendCopyOfGeometry(builder: GeometryBuilderP, relativePlacement: Placement3dP): void;
+
         /**
          * Append RenderGeometryParams to the builder. 
          * @param params The parameters to apply to subsequent geometry
@@ -596,15 +672,31 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         AppendGeometry(geometry: GeometryP): void;
 
         /**
-         * Attach the geometry in this builder to an element.
-         * @param element   The elment
+         * Append an instance of a DgnGeometryPart
+         * @param geometryPart  The DgnGeometryPart
+         * @param relativePlacement if not null, the offset and/or rotation of the instance
+         */
+        AppendGeometryPart(geometryPart: DgnGeometryPartP, relativePlacement: Placement3dP): void;
+
+        /**
+         * Copy the geometry in this builder to an element.
+         * @param element   The element
          * @return non-zero error status if \a element is invalid or if this geometry stream is invalid
          */
         SetGeometryStreamAndPlacement(element: DgnElementP): cxx_int32_t;
 
+        /**
+         * Copy the geometry in this builder to a DgnGeometryPart.
+         * @param part  The DgnGeometryPart
+         * @return non-zero error status if \a part is invalid or if this geometry stream is invalid
+         */
+        SetGeometryStream(part: DgnGeometryPartP): cxx_int32_t;
+
         OnDispose(): void;
         Dispose(): void;
     }
+
+    type GeometryBuilderP = cxx_pointer<GeometryBuilder>;
 
     /* ------------------------------------------ ScriptBasedTool -----------------------------------------------*/
 

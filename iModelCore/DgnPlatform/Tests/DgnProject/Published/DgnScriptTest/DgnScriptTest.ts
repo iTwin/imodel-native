@@ -19,16 +19,27 @@ module DgnScriptTests {
 
     var shiftXSize = 5.0;
     var shiftYsize = 2.5;
-    function Shift (g: be.Geometry, dx: number, dy: number)
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   
+    //---------------------------------------------------------------------------------------
+    function Shift(g: be.Geometry, dx: number, dy: number)
         {
         g.TryTransformInPlace (be.Transform.CreateTranslationXYZ (dx*shiftXSize, dy*shiftYsize, 0.0));
         }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   
+    //---------------------------------------------------------------------------------------
     function ShowPoint (builder : be.GeometryBuilder, point: be.DPoint3d)
         {
         var arc = be.EllipticArc.CreateCircleXY (point, 0.05);
         builder.AppendGeometry (arc);
         }
 
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   
+    //---------------------------------------------------------------------------------------
     function ShowArc (builder: be.GeometryBuilder, arc: be.EllipticArc )
         {
         builder.AppendGeometry (arc);
@@ -45,7 +56,230 @@ module DgnScriptTests {
         builder.AppendGeometry (new be.LineString (points));
         }
 
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Sam.Wilson                      02/16
+    //---------------------------------------------------------------------------------------
+    function makeGeomPart(db: be.DgnDb, geoms: Array<be.Geometry>): be.DgnGeometryPart
+    {
+        var builder = be.GeometryBuilder.CreateGeometryPart(db, true);
+        for (var i = 0; i < geoms.length; ++i)
+            builder.AppendGeometry(geoms[i]);
+        var geompart = be.DgnGeometryPart.Create(db);
+        builder.SetGeometryStream(geompart);
+        geompart.Insert();
+        return geompart;
+    }
 
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Sam.Wilson                      02/16
+    //---------------------------------------------------------------------------------------
+    function testGeomParts(model: be.DgnModel, catid: be.DgnObjectId): void
+    {
+        var cone = be.DgnCone.CreateCircularCone(new be.DPoint3d(0, 0, 0), new be.DPoint3d(1, 1, 0), 0.5, 0.3, true);
+        var sphere = be.DgnSphere.CreateSphere(new be.DPoint3d(0, 0, 0), 1.0);
+        var geoms = new Array<be.Geometry>();
+        geoms.push(cone);
+        geoms.push(sphere);
+        var geompart: be.DgnGeometryPart = makeGeomPart(model.DgnDb, geoms);
+
+        var ele = be.PhysicalElement.Create(model, catid, '');
+
+        var builder = new be.GeometryBuilder(ele, new be.DPoint3d(0, 0, 0), new be.YawPitchRollAngles(0, 0, 0));
+
+        var gparams = builder.GeometryParams;
+        gparams.GeometryClass = be.RenderDgnGeometryClass.Construction;
+
+        gparams.LineColor = new be.ColorDef(1, 0, 0, 0);
+        builder.AppendRenderGeometryParams(gparams);
+        builder.AppendGeometryPart(geompart, new be.Placement3d(new be.DPoint3d(1, 0, 0), new be.YawPitchRollAngles(0, 0, 0)));
+
+        gparams.LineColor = new be.ColorDef(2, 0, 0, 0);
+        builder.AppendRenderGeometryParams(gparams);
+        builder.AppendGeometryPart(geompart, new be.Placement3d(new be.DPoint3d(2, 0, 0), new be.YawPitchRollAngles(0, 0, 0)));
+
+        gparams.LineColor = new be.ColorDef(3, 0, 0, 0);
+        builder.AppendRenderGeometryParams(gparams);
+        builder.AppendGeometryPart(geompart, new be.Placement3d(new be.DPoint3d(3, 0, 0), new be.YawPitchRollAngles(0, 0, 0)));
+
+        builder.SetGeometryStreamAndPlacement(ele);
+        ele.Insert();
+
+        var geomcollection = ele.Geometry;
+        var geomcollectionIter = geomcollection.Begin();
+        var igeom = 0;
+        while (geomcollection.IsValid(geomcollectionIter))
+        {
+            ++igeom;
+
+            var geomParams = geomcollection.GetGeometryParams(geomcollectionIter);
+            var lineColor = geomParams.LineColor;
+
+            if (lineColor.Red != igeom)
+                be.Script.ReportError('expected sequential colors');
+
+            if (!geomcollection.GetGeometryPart(geomcollectionIter))
+                be.Script.ReportError('expected to find geomparts');
+
+            var parttrans = geomcollection.GetGeometryToWorld(geomcollectionIter);
+
+            var xlat = parttrans.GetTranslation();
+            if (xlat.X != igeom)
+                be.Script.ReportError('expected sequential offsets');
+
+            geomcollection.ToNext(geomcollectionIter);
+        }
+
+        if (igeom != 3)
+            be.Script.ReportError('expected 3 part instances');
+    }
+    
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Sam.Wilson                      02/16
+    //---------------------------------------------------------------------------------------
+    function makeBuilderWithGeom(model: be.DgnModel, catid: be.DgnObjectId, geom: be.Geometry, color: be.ColorDef, geomClass: be.RenderDgnGeometryClass)
+    {
+        // Always use 0,0,0 for the placement of the part. We will transform it into place when we copy it into a destination assembly.
+        var builder = be.GeometryBuilder.CreateForModel(model, catid, new be.DPoint3d(0, 0, 0), new be.YawPitchRollAngles(0, 0, 0));
+        var gparams = builder.GeometryParams;
+        gparams.LineColor = color;
+        gparams.GeometryClass = geomClass;
+        builder.AppendRenderGeometryParams(gparams);
+        builder.AppendGeometry(geom);
+        return builder;
+    }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Sam.Wilson                      02/16
+    //---------------------------------------------------------------------------------------
+    function testGeomBuilderAggregation(model: be.DgnModel, catid: be.DgnObjectId): void
+    {
+        var ele = be.PhysicalElement.Create(model, catid, '');
+
+        // Create separate builders
+        var constructionClass = be.RenderDgnGeometryClass.Construction;
+        var geoms = new Array<be.Geometry>();
+        geoms.push(be.DgnCone.CreateCircularCone(new be.DPoint3d(0, 0, 0), new be.DPoint3d(1, 1, 0), 0.5, 0.3, true));
+        geoms.push(be.DgnSphere.CreateSphere(new be.DPoint3d(0, 0, 0), 1.0));
+        var builders = new Array<be.GeometryBuilder>();
+        for (var i = 0; i < geoms.length; ++i)
+            builders.push(makeBuilderWithGeom(model, catid, geoms[i], new be.ColorDef(i, 0, 0, 0), constructionClass));
+
+        // Copy contents of separate builders into the element's builder
+        var builder = new be.GeometryBuilder(ele, new be.DPoint3d(0, 0, 0), new be.YawPitchRollAngles(0, 0, 0));
+        for (var i = 0; i < builders.length; ++i)
+            builder.AppendCopyOfGeometry(builders[i], new be.Placement3d(new be.DPoint3d(i, 0, 0), new be.YawPitchRollAngles(0, 0, 0)));
+
+        //  Write the element to the Db
+        builder.SetGeometryStreamAndPlacement(ele);
+        ele.Insert();
+
+        //  Verify that the element's geometry is a concatenation of the input builders
+        var geomcollection = ele.Geometry;
+        var geomcollectionIter = geomcollection.Begin();
+        var igeom = 0;
+        while (geomcollection.IsValid(geomcollectionIter))
+        {
+            var geomParams = geomcollection.GetGeometryParams(geomcollectionIter);
+            var lineColor = geomParams.LineColor;
+         
+            // *** NEEDS WORK: Not getting the lineColors that I expect
+            //if (lineColor.Red != igeom)
+            //    be.Script.ReportError('expected sequential colors');
+
+            var parttrans = geomcollection.GetGeometryToWorld(geomcollectionIter);
+
+            var geom = geomcollection.GetGeometry(geomcollectionIter).Geometry;
+            if (typeof geom != typeof geoms[igeom])
+                be.Script.ReportError('unexpected type');
+
+            ++igeom;
+            geomcollection.ToNext(geomcollectionIter);
+        }
+
+    if (igeom != 2)
+        be.Script.ReportError('expected only 2 geoms');
+    }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Sam.Wilson                      02/16
+    //---------------------------------------------------------------------------------------
+    function testEC(db: be.DgnDb): void
+    {
+        //  EC API
+        var schemas: be.SchemaManager = db.Schemas;
+        var pe: be.ECClass = schemas.GetECClass(be.DGN_ECSCHEMA_NAME, be.DGN_CLASSNAME_PhysicalElement);
+        if (!pe)
+            be.Script.ReportError('SchemaManager.GetECClass could not find ' + be.DGN_ECSCHEMA_NAME + '.' + be.DGN_CLASSNAME_PhysicalElement);
+
+        var peprops: be.ECPropertyCollection = pe.Properties;
+        var foundCode: boolean = false;
+        var propertyCount: number = 0;
+        for (var propiter = peprops.Begin(); peprops.IsValid(propiter); peprops.ToNext(propiter))
+        {
+            var peprop: be.ECProperty = peprops.GetECProperty(propiter);
+            be.Logging.Message('DgnScriptTest', be.LoggingSeverity.Info, peprop.Name);
+            if (peprop.Name == 'Code')
+                foundCode = true;
+            ++propertyCount;
+        }
+        if (!foundCode)
+            be.Script.ReportError('ECPropertyCollection must have failed -- the Code property was not found');
+        if (propertyCount <= 2)
+            be.Script.ReportError('ECPropertyCollection must have failed -- there are more than 2 properties on PhysicalElement');
+
+
+        var baseclasses: be.ECClassCollection = pe.BaseClasses;
+        var foundSpatialElement: boolean = false;
+        var baseCount: number = 0;
+        for (var clsiter = baseclasses.Begin(); baseclasses.IsValid(clsiter); baseclasses.ToNext(clsiter))
+        {
+            var cls: be.ECClass = baseclasses.GetECClass(clsiter);
+            be.Logging.Message('DgnScriptTest', be.LoggingSeverity.Info, cls.Name);
+            if (cls.Name == 'SpatialElement')
+                foundSpatialElement = true;
+            ++baseCount;
+        }
+        if (!foundSpatialElement)
+            be.Script.ReportError('BaseClasses ECClassCollection must have failed -- I assume that PhysicalElement is derived from SpatialElement, but that base class was not found');
+        if (baseCount != 1)
+            be.Script.ReportError('BaseClasses ECClassCollection must have failed -- there should be 1 but I got ' + JSON.stringify(baseCount));
+
+        var se: be.ECClass = schemas.GetECClass(be.DGN_ECSCHEMA_NAME, be.DGN_CLASSNAME_SpatialElement);
+        var derivedclasses: be.ECClassCollection = se.DerivedClasses;
+        var derivedCount: number = 0;
+        for (var clsiter = derivedclasses.Begin(); derivedclasses.IsValid(clsiter); derivedclasses.ToNext(clsiter))
+        {
+            var cls: be.ECClass = derivedclasses.GetECClass(clsiter);
+            be.Logging.Message('DgnScriptTest', be.LoggingSeverity.Info, cls.Name);
+            ++derivedCount;
+        }
+        if (derivedCount == 0)
+            be.Script.ReportError('DerivedClasses ECClassCollection must have failed -- there should be at least 1');
+
+    }
+
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Sam.Wilson                      02/16
+    //---------------------------------------------------------------------------------------
+    function testUnhandledProperties(el: be.DgnElement)
+    {
+        if (el.GetUnhandledProperty('StringProperty'))
+            be.Script.ReportError('StringProperty should not be set at the outset');
+
+        if (0 != el.SetUnhandledProperty('StringProperty', be.ECValue.FromString('stuff')))
+            be.Script.ReportError('SetUnhandledProperty failed');
+
+        el.Update();
+
+        var prop = el.GetUnhandledProperty('StringProperty');
+        if (!prop || prop.GetString() != 'stuff')
+            be.Script.ReportError('SetUnhandledProperty failed - changed value not verified');
+    }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Sam.Wilson                      02/16
+    //---------------------------------------------------------------------------------------
     function TestDgnDbScript(db: be.DgnDb, params: Params): number
     {
         var zz = 0.1;
@@ -67,7 +301,7 @@ module DgnScriptTests {
 
         //  Create element
         var model = db.Models.GetModel(db.Models.QueryModelId(be.DgnModel.CreateModelCode(params.modelName)));
-        var ele = be.PhysicalElement.Create(model, catid, '');
+        var ele = be.PhysicalElement.Create(model, catid, 'DgnPlatformTest.TestElementWithNoHandler');
 
         //  Try out GeometryBuilder
         var builder = new be.GeometryBuilder(ele, new be.DPoint3d(0, 0, 0), new be.YawPitchRollAngles(0, 0, 0));
@@ -128,7 +362,8 @@ module DgnScriptTests {
             points.Add (new be.DPoint3d (0,0.4,zz));
             points.Add (new be.DPoint3d (0.5,0.7,zz));
         var linestring = new be.LineString (points);
-        Shift (linestring, shiftCount, 0);
+
+        Shift(linestring, shiftCount, 0);
         shiftCount++;
         builder.AppendGeometry (linestring);
         var catenary = be.CatenaryCurve.CreateFromCoefficientAndXLimits (
@@ -163,6 +398,10 @@ module DgnScriptTests {
 
         ele.Insert();
 
+        // Verify that my DgnCategoryId was used
+        if (!catid.Equals(ele.CategoryId))
+            be.Script.ReportError('set DgnCategoryId failed');
+
         //  Test GeometryCollection 
         var geomcollection = ele.Geometry;
         var geomcollectionIter = geomcollection.Begin();
@@ -177,34 +416,34 @@ module DgnScriptTests {
             if (geomParams.GeometryClass != be.RenderDgnGeometryClass.Construction)
                 be.Script.ReportError('append GeometryParams failed - RenderDgnGeometryClass');
 
+            var subcat = geomParams.SubCategoryId;
+            // If you use special subcategories for things like centerlines, you can test that here.
+
             var geomPrim = geomcollection.GetGeometry(geomcollectionIter);
             if (igeom == 0)
             {
                 if (!geomPrim)                
-                    be.Script.ReportError('first item should be a sphere');
+                    be.Script.ReportError('first item should be geometry!');
                 var geom = geomPrim.Geometry;
-                /* *** WIP_DGNJSAPI - sub-classes of Geometry are not yet being exposed 
                 if (!(geom instanceof be.DgnSphere))
                     be.Script.ReportError('first item should be a sphere');
                 var sphere: be.DgnSphere = <be.DgnSphere>geom;
                 if (!sphere)
                     be.Script.ReportError('first item should be a sphere');
-                */
             }
             else if (igeom == 1)
             {
                 if (!geomPrim)
-                    be.Script.ReportError('first item should be a cone');
-                /* *** WIP_DGNJSAPI - sub-classes of Geometry are not yet being exposed 
+                    be.Script.ReportError('second item should be geometry!');
                 var geom = geomPrim.Geometry;
                 if (!(geom instanceof be.DgnCone))
-                    be.Script.ReportError('first item should be a cone');
+                    be.Script.ReportError('second item should be a cone');
                 var cone: be.DgnCone = <be.DgnCone>geom;
                 if (!cone)
-                    be.Script.ReportError('first item should be a cone');
-                */
+                    be.Script.ReportError('second item should be a cone');
             }
 
+            ++igeom;
             geomcollection.ToNext(geomcollectionIter);
         }
 
@@ -219,60 +458,22 @@ module DgnScriptTests {
         if (ele.Placement.Angles.YawDegrees != 45.0)
             be.Script.ReportError('Element.Transform failed');
 
-        //  EC API
-        var schemas: be.SchemaManager = db.Schemas;
-        var pe: be.ECClass = schemas.GetECClass(be.DGN_ECSCHEMA_NAME, be.DGN_CLASSNAME_PhysicalElement);
-        if (!pe)
-            be.Script.ReportError('SchemaManager.GetECClass could not find ' + be.DGN_ECSCHEMA_NAME + '.' + be.DGN_CLASSNAME_PhysicalElement);
+        //  Test GeometryBuilders
+        testGeomBuilderAggregation(model, catid);
+        testGeomParts(model, catid);
 
-        var peprops: be.ECPropertyCollection = pe.Properties;
-        var foundCode: boolean = false;
-        var propertyCount: number = 0;
-        for (var propiter = peprops.Begin(); peprops.IsValid(propiter); peprops.ToNext(propiter))
-        {
-            var peprop: be.ECProperty = peprops.GetECProperty(propiter);
-            be.Logging.Message('DgnScriptTest', be.LoggingSeverity.Info, peprop.Name);
-            if (peprop.Name == 'Code')
-                foundCode = true;
-            ++propertyCount;
-        }
-        if (!foundCode)
-            be.Script.ReportError('ECPropertyCollection must have failed -- the Code property was not found');
-        if (propertyCount <= 2)
-            be.Script.ReportError('ECPropertyCollection must have failed -- there are more than 2 properties on PhysicalElement');
+        //  Test EC API
+        testEC(db);
 
-
-        var baseclasses: be.ECClassCollection = pe.BaseClasses;
-        var foundSpatialElement: boolean = false;
-        var baseCount: number = 0;
-        for (var clsiter = baseclasses.Begin(); baseclasses.IsValid(clsiter); baseclasses.ToNext(clsiter))
-        {
-            var cls: be.ECClass = baseclasses.GetECClass(clsiter);
-            be.Logging.Message('DgnScriptTest', be.LoggingSeverity.Info, cls.Name);
-            if (cls.Name == 'SpatialElement')
-                foundSpatialElement = true;
-            ++baseCount;
-        }
-        if (!foundSpatialElement)
-            be.Script.ReportError('BaseClasses ECClassCollection must have failed -- I assume that PhysicalElement is derived from SpatialElement, but that base class was not found');
-        if (baseCount != 1)
-            be.Script.ReportError('BaseClasses ECClassCollection must have failed -- there should be 1 but I got ' + JSON.stringify(baseCount));
-
-        var se: be.ECClass = schemas.GetECClass(be.DGN_ECSCHEMA_NAME, be.DGN_CLASSNAME_SpatialElement);
-        var derivedclasses: be.ECClassCollection = se.DerivedClasses;
-        var derivedCount: number = 0;
-        for (var clsiter = derivedclasses.Begin(); derivedclasses.IsValid(clsiter); derivedclasses.ToNext(clsiter))
-        {
-            var cls: be.ECClass = derivedclasses.GetECClass(clsiter);
-            be.Logging.Message('DgnScriptTest', be.LoggingSeverity.Info, cls.Name);
-            ++derivedCount;
-        }
-        if (derivedCount == 0)
-            be.Script.ReportError('DerivedClasses ECClassCollection must have failed -- there should be at least 1');
+        //  DgnElement UnhandledProperties
+        testUnhandledProperties(ele);
 
         return 0;
     }
 
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Sam.Wilson                      02/16
+    //---------------------------------------------------------------------------------------
     be.RegisterDgnDbScript('DgnScriptTests.TestDgnDbScript', TestDgnDbScript);
 }
 

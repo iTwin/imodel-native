@@ -53,6 +53,9 @@ typedef JsComponentDef* JsComponentDefP;
 struct JsECInstance;
 typedef JsECInstance* JsECInstanceP;
 
+struct JsECValue;
+typedef JsECValue* JsECValueP;
+
 struct JsECClass;
 typedef JsECClass* JsECClassP;
 
@@ -71,6 +74,9 @@ typedef JsPhysicalElement* JsPhysicalElementP;
 struct JsGeometryCollection;
 typedef JsGeometryCollection* JsGeometryCollectionP;
 
+struct JsGeometryBuilder;
+typedef JsGeometryBuilder* JsGeometryBuilderP;
+
 #define JS_ITERATOR_IMPL(JSITCLASS,CPPCOLL) typedef CPPCOLL T_CppColl;\
     T_CppColl::const_iterator m_iter;\
     JSITCLASS(CPPCOLL::const_iterator it) : m_iter(it) {;}
@@ -85,14 +91,8 @@ typedef JsGeometryCollection* JsGeometryCollectionP;
 // Needed by generated callbacks to construct instances of wrapper classes.
 // @bsiclass                                                    Sam/Steve.Wilson    7/15
 //=======================================================================================
-struct RefCountedBaseWithCreate : public RefCounted <IRefCounted>
+struct RefCountedBaseWithCreate : BeProjectedRefCounted
 {
-    template <typename T, typename... Arguments>
-    static RefCountedPtr<T> Create (Arguments&&... arguments)
-        {
-        return new T (std::forward<Arguments> (arguments)...);
-        };
-
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 };
 
@@ -159,14 +159,10 @@ struct Logging : RefCountedBaseWithCreate // ***  NEEDS WORK: It should not be n
 //=======================================================================================
 struct Script : RefCountedBaseWithCreate // ***  NEEDS WORK: It should not be necessary to derive from RefCountedBase, since I suppress my constructor. This is a bug in BeJavaScript that should be fixed.
 {
-	static int32_t LoadScript(JsDgnDbP, Utf8StringCR scriptName);
+	static int32_t LoadScript(JsDgnDbP db, Utf8StringCR scriptName, bool forceReload);
 
-    //! Make sure the that specified library is loaded
-    //! @param libName  The name of the library that is to be loaded
     static void ImportLibrary (Utf8StringCR libName);
 
-    //! Report an error. An error is more than a message. The platform is will treat it as an error. For example, the platform may terminate the current command.
-    //! @param description  A description of the error
     static void ReportError(Utf8StringCR description);
 };
 
@@ -257,6 +253,8 @@ struct JsDgnElement : RefCountedBaseWithCreate
     int32_t Insert();
     int32_t Update();
     void SetParent(JsDgnElement* parent) {if (m_el.IsValid() && (nullptr != parent)) m_el->SetParentId(parent->m_el->GetElementId());}
+    JsECValueP GetUnhandledProperty(Utf8StringCR);
+    int32_t SetUnhandledProperty(Utf8StringCR, JsECValueP);
 
     STUB_OUT_SET_METHOD(Model, JsDgnModelP)
     STUB_OUT_SET_METHOD(ElementId,JsDgnObjectIdP)
@@ -279,10 +277,13 @@ struct JsPhysicalElement : JsDgnElement
 
     JsGeometryCollectionP GetGeometry() const;
 
+    JsDgnObjectIdP GetCategoryId() const {return m_el.IsValid()? new JsDgnObjectId(m_el->ToGeometrySource()->GetCategoryId().GetValue()): nullptr;}
+
     static JsPhysicalElement* Create(JsDgnModelP model, JsDgnObjectIdP categoryId, Utf8StringCR elementClassName);
 
     STUB_OUT_SET_METHOD(Placement, JsPlacement3dP)
     STUB_OUT_SET_METHOD(Geometry, JsGeometryCollectionP)
+    STUB_OUT_SET_METHOD(CategoryId, JsDgnObjectIdP)
 };
 
 //=======================================================================================
@@ -515,6 +516,9 @@ struct JsDgnGeometryPart : RefCountedBaseWithCreate
 {
     DgnGeometryPartPtr m_value;
     JsDgnGeometryPart(DgnGeometryPart& v) : m_value(&v) {;}
+
+    static JsDgnGeometryPart* Create(JsDgnDbP db) {return new JsDgnGeometryPart(*DgnGeometryPart::Create(*db->m_db));}
+    BentleyStatus Insert() {return m_value->GetDgnDb().GeometryParts().InsertGeometryPart(*m_value);}
 };
 
 typedef JsDgnGeometryPart* JsDgnGeometryPartP;
@@ -570,8 +574,24 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
 {
     GeometryBuilderPtr m_builder;
 
+    JsGeometryBuilder(GeometryBuilderR gb) : m_builder(&gb) {}
     JsGeometryBuilder(JsDgnElementP el, JsDPoint3dP o, JsYawPitchRollAnglesP angles);
     ~JsGeometryBuilder() {}
+
+    static JsGeometryBuilderP CreateForElement(JsDgnElementP el, JsDPoint3dP o, JsYawPitchRollAnglesP angles)
+        {
+        return new JsGeometryBuilder(el, o, angles);
+        }
+
+    static JsGeometryBuilderP CreateForModel(JsDgnModelP model, JsDgnObjectIdP catid, JsDPoint3dP o, JsYawPitchRollAnglesP angles)
+        {
+        return new JsGeometryBuilder(*GeometryBuilder::Create(*model->m_model, DgnCategoryId(catid->m_id), o->Get(), angles->GetYawPitchRollAngles()));
+        }
+
+    static JsGeometryBuilderP CreateGeometryPart(JsDgnDbP db, bool is3d)
+        {
+        return new JsGeometryBuilder(*GeometryBuilder::CreateGeometryPart(*db->m_db, is3d));
+        }
 
     JsRenderGeometryParamsP GetGeometryParams() const 
         {
@@ -612,10 +632,13 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
         }
 
     BentleyStatus SetGeometryStreamAndPlacement (JsDgnElementP el) {return m_builder->SetGeometryStreamAndPlacement(*el->m_el->ToGeometrySourceP());}
+    BentleyStatus SetGeometryStream (JsDgnGeometryPartP part) {return m_builder->SetGeometryStream(*part->m_value);}
+
+    void AppendCopyOfGeometry(JsGeometryBuilderP builder, JsPlacement3dP relativePlacement);
+    void AppendGeometryPart(JsDgnGeometryPartP part, JsPlacement3dP relativePlacement);
 
     STUB_OUT_SET_METHOD(GeometryParams, JsRenderGeometryParamsP)
 };
-typedef JsGeometryBuilder* JsGeometryBuilderP;
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
@@ -813,8 +836,6 @@ struct JsECValue : RefCountedBaseWithCreate
     STUB_OUT_SET_METHOD(Integer,int32_t)
     STUB_OUT_SET_METHOD(Double,double)
 };
-
-typedef JsECValue* JsECValueP;
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15

@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/macro/ConfigurationManager.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -11,7 +11,7 @@
 #include <DgnPlatform/DesktopTools/envvutil.h>
 #include "macro.h"
 
-USING_NAMESPACE_BENTLEY_DGN
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 BentleyStatus IConfigurationAdmin::GetConfigVariable(WStringR cfgValue, WCharCP cfgVarName, ConfigurationVariableLevel level) { return _GetConfigVariable(cfgValue, cfgVarName, level); }
 
@@ -836,3 +836,5 @@ bool        DgnPlatformConfigVars::DisableQuickScan()
     {
     return ConfigurationManager::MonitorBoolean (m_disableQuickScan.m_monitor, m_disableQuickScan.m_value, L"MS_DISABLE_OCCLUSION_SORT", false);
     }
+
+END_BENTLEY_DGNPLATFORM_NAMESPACE

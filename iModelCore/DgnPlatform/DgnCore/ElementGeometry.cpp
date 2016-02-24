@@ -2271,7 +2271,7 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                 DgnSubCategoryCPtr subCat = (subCategoryId.IsValid() ? DgnSubCategory::QuerySubCategory(subCategoryId, db) : nullptr);
 
                 if (subCat.IsValid() && nullptr != subCat->GetCode().GetValueCP())
-                    output._DoOutputLine(Utf8PrintfString("OpCode::BasicSymbology - SubCategory: %s\n", subCat->GetCode().GetValueCP()).c_str());
+                    output._DoOutputLine(Utf8PrintfString("OpCode::BasicSymbology - SubCategory: %s - Id: %" PRIu64 "\n", subCat->GetCode().GetValueCP(), subCategoryId.GetValue()).c_str());
                 else if (subCategoryId.IsValid())
                     output._DoOutputLine(Utf8PrintfString("OpCode::BasicSymbology - SubCategoryId: %" PRIu64 "\n", subCategoryId.GetValue()).c_str());
                 else
@@ -2592,13 +2592,12 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
         {
         for (DgnGeometryPartId partId : parts)
             {
-            output._DoOutputLine(Utf8PrintfString("\n[--- PartId: %" PRIu64 " ---]\n\n", partId.GetValue()).c_str());
-
             DgnGeometryPartPtr partGeometry = db.GeometryParts().LoadGeometryPart(partId);
 
             if (!partGeometry.IsValid())
                 continue;
 
+            output._DoOutputLine(Utf8PrintfString("\n[--- Part: %s - Id: %" PRIu64 " ---]\n\n", partGeometry->GetCode().GetValueCP(), partId.GetValue()).c_str());
             GeometryStreamIO::Debug(output, partGeometry->GetGeometryStream(), db, true);
             }
         }
@@ -2881,15 +2880,15 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 switch (boundary)
                     {
                     case FB::BoundaryType_None:
-                        graphic.AddPointString2d(nPts, pts, geomParams.GetNetDisplayPriority(), nullptr);
+                        graphic.AddPointString2d(nPts, pts, geomParams.GetNetDisplayPriority());
                         break;
 
                     case FB::BoundaryType_Open:
-                        graphic.AddLineString2d(nPts, pts, geomParams.GetNetDisplayPriority(), nullptr);
+                        graphic.AddLineString2d(nPts, pts, geomParams.GetNetDisplayPriority());
                         break;
 
                     case FB::BoundaryType_Closed:
-                        graphic.AddShape2d(nPts, pts, FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority(), nullptr);
+                        graphic.AddShape2d(nPts, pts, FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority());
                         break;
                     }
                 break;
@@ -2914,15 +2913,15 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 switch (boundary)
                     {
                     case FB::BoundaryType_None:
-                        graphic.AddPointString(nPts, pts, nullptr);
+                        graphic.AddPointString(nPts, pts);
                         break;
 
                     case FB::BoundaryType_Open:
-                        graphic.AddLineString(nPts, pts, nullptr);
+                        graphic.AddLineString(nPts, pts);
                         break;
 
                     case FB::BoundaryType_Closed:
-                        graphic.AddShape(nPts, pts, FillDisplay::Never != geomParams.GetFillDisplay(), nullptr);
+                        graphic.AddShape(nPts, pts, FillDisplay::Never != geomParams.GetFillDisplay());
                         break;
                     }
                 break;
@@ -2946,16 +2945,16 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 if (!context.Is3dView())
                     {
                     if (FB::BoundaryType_Closed != boundary)
-                        graphic.AddArc2d(arc, false, false, geomParams.GetNetDisplayPriority(), nullptr);
+                        graphic.AddArc2d(arc, false, false, geomParams.GetNetDisplayPriority());
                     else
-                        graphic.AddArc2d(arc, true, FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority(), nullptr);
+                        graphic.AddArc2d(arc, true, FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority());
                     break;
                     }
 
                 if (FB::BoundaryType_Closed != boundary)
-                    graphic.AddArc(arc, false, false, nullptr);
+                    graphic.AddArc(arc, false, false);
                 else
-                    graphic.AddArc(arc, true, FillDisplay::Never != geomParams.GetFillDisplay(), nullptr);
+                    graphic.AddArc(arc, true, FillDisplay::Never != geomParams.GetFillDisplay());
                 break;
                 }
 

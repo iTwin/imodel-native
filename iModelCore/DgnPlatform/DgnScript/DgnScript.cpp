@@ -43,7 +43,7 @@ struct DgnScriptContext : BeJsContext
         BeAssert(!m_dgndbScriptRegistry.IsUndefined() && m_dgndbScriptRegistry.IsObject());
         }
 
-    DgnDbStatus LoadProgram(Dgn::DgnDbR db, Utf8CP tsFunctionSpec);
+    DgnDbStatus LoadProgram(Dgn::DgnDbR db, Utf8CP tsFunctionSpec, bool forceReload);
     DgnDbStatus ExecuteEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms);
     DgnDbStatus ExecuteComponentGenerateElements(int& functionReturnStatus, Dgn::ComponentModelR componentModel, Dgn::DgnModelR destModel, ECN::IECInstanceR instance, Dgn::ComponentDefR cdef, Utf8StringCR functionName);
     DgnDbStatus ExecuteDgnDbScript(int& functionReturnStatus, Dgn::DgnDbR db, Utf8StringCR jsFunctionName, Json::Value const& parms);
@@ -56,7 +56,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnScriptContext::LoadProgram(Dgn::DgnDbR db, Utf8CP jsFunctionSpec)
+DgnDbStatus DgnScriptContext::LoadProgram(Dgn::DgnDbR db, Utf8CP jsFunctionSpec, bool forceReload)
     {
     Utf8String jsProgramName;
     Utf8CP dot = strrchr(jsFunctionSpec, '.');
@@ -69,7 +69,7 @@ DgnDbStatus DgnScriptContext::LoadProgram(Dgn::DgnDbR db, Utf8CP jsFunctionSpec)
         jsProgramName.assign(jsFunctionSpec, dot);
         }
 
-    if (m_jsScriptsExecuted.find(jsProgramName) != m_jsScriptsExecuted.end())
+    if (!forceReload && (m_jsScriptsExecuted.find(jsProgramName) != m_jsScriptsExecuted.end()))
         return DgnDbStatus::Success;
 
     DgnScriptType sTypePreferred = DgnScriptType::JavaScript;
@@ -128,10 +128,10 @@ DgnDbStatus DgnScriptContext::LoadProgram(Dgn::DgnDbR db, Utf8CP jsFunctionSpec)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnScript::LoadScript(Dgn::DgnDbR db, Utf8CP jsFunctionSpec)
+DgnDbStatus DgnScript::LoadScript(Dgn::DgnDbR db, Utf8CP jsFunctionSpec, bool forceReload)
     {
     DgnScriptContext& ctx = static_cast<DgnScriptContext&>(T_HOST.GetScriptAdmin().GetDgnScriptContext());
-    return ctx.LoadProgram(db, jsFunctionSpec);
+    return ctx.LoadProgram(db, jsFunctionSpec, forceReload);
     }
 
 //---------------------------------------------------------------------------------------
@@ -150,7 +150,7 @@ DgnDbStatus DgnScriptContext::ExecuteEga(int& functionReturnStatus, Dgn::DgnElem
     {
     functionReturnStatus = -1;
 
-    DgnDbStatus status = LoadProgram(el.GetDgnDb(), jsEgaFunctionName);
+    DgnDbStatus status = LoadProgram(el.GetDgnDb(), jsEgaFunctionName, false);
     if (DgnDbStatus::Success != status)
         return status;
 
@@ -201,7 +201,7 @@ DgnDbStatus DgnScriptContext::ExecuteDgnDbScript(int& functionReturnStatus, Dgn:
     BeJsFunction jsfunc = m_dgndbScriptRegistry.GetFunctionProperty(functionName.c_str());
     if (jsfunc.IsUndefined())
         {
-        DgnDbStatus status = LoadProgram(db, functionName.c_str());
+        DgnDbStatus status = LoadProgram(db, functionName.c_str(), false);
         if (DgnDbStatus::Success != status)
             return status;
         
@@ -249,7 +249,7 @@ DgnDbStatus DgnScriptContext::ExecuteComponentGenerateElements(int& functionRetu
     {
     functionReturnStatus = -1;
 
-    DgnDbStatus status = LoadProgram(componentModel.GetDgnDb(), jsFunctionName.c_str());
+    DgnDbStatus status = LoadProgram(componentModel.GetDgnDb(), jsFunctionName.c_str(), false);
     if (DgnDbStatus::Success != status)
         return status;
 
@@ -448,7 +448,7 @@ void/*Json::Value*/ DgnPlatformLib::Host::ScriptAdmin::EvaluateScript(Utf8CP scr
     {
     BeJsContext::EvaluateStatus evstatus;
     BeJsContext::EvaluateException evexception;
-    /*auto res = */GetDgnScriptContext().EvaluateScript(script, "file:///DgnScriptContex", &evstatus, &evexception);
+    /*auto res = */GetDgnScriptContext().EvaluateScript(script, "file:///DgnScriptContext.js", &evstatus, &evexception);
     //m_jsContext->
     if (BeJsContext::EvaluateStatus::Success != evstatus)
         {

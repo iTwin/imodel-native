@@ -977,7 +977,7 @@ struct CopyrightSupplier
     //! Return the copyright message to display in the specified viewport
     //! @param vp   The viewport that is being displayed
     //! @return a copyright message to display or an empty string to display nothing
-    virtual Utf8String _GetCopyrightMessage(DgnViewportR vp) = 0;
+    virtual Utf8String _GetCopyrightMessage(DgnViewportCR vp) = 0;
     };
 
 
