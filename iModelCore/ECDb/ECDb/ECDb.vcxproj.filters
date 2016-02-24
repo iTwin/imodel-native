@@ -55,6 +55,9 @@
     <Filter Include="ECSchemas">
       <UniqueIdentifier>{48af7464-6331-4c7d-9e22-c4bb3bead7ba}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ECDbSchemaManager\Editor">
+      <UniqueIdentifier>{530c817c-10c4-4c2a-b027-5c943a300928}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECDbInternalTypes.h" />
@@ -412,6 +415,9 @@
     <ClInclude Include="ECDbSchemaPersistenceHelper.h">
       <Filter>ECDbSchemaManager</Filter>
     </ClInclude>
+    <ClInclude Include="ECDbSchemaEditor.h">
+      <Filter>ECDbSchemaManager\Editor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -759,6 +765,9 @@
     </ClCompile>
     <ClCompile Include="ECDbSchemaPersistenceHelper.cpp">
       <Filter>ECDbSchemaManager</Filter>
+    </ClCompile>
+    <ClCompile Include="ECDbSchemaEditor.cpp">
+      <Filter>ECDbSchemaManager\Editor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
