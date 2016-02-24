@@ -1,8 +1,15 @@
-#include <ScalableMeshATPPch.h>
+//#include "ScalableMeshATPPch.h"
 #include "ATPUtils.h"
+
+#include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdio.h>
+#include <errno.h>
+#include <wtypes.h>
+
 #include "ATPDefinitions.h"
 #include "ATPGeneration.h"
-
 
 WString GetHeaderForTestType(TestType t)
     {

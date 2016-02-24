@@ -20,9 +20,9 @@
 
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
-IDTMSourcePtr CreateSourceFor(const WString&          sourcePath,
+/*IDTMSourcePtr CreateSourceFor(const WString&          sourcePath,
                                     DTMSourceDataType importedType, 
-                                    BeXmlNodeP        pTestChildNode = 0);
+                                    BeXmlNodeP        pTestChildNode = 0);*/
                                     
 void ParseDTMFeatureType(WString& name, DTMFeatureType& type);
 

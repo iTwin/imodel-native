@@ -1,6 +1,13 @@
-#include <ScalableMeshATPPch.h>
+//#include "ScalableMeshATPPch.h"
 
 #include "Initialize.h"
+
+#include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdio.h>
+#include <errno.h>
+#include <wtypes.h>
 
 using namespace std;
 #include <DgnPlatform\IAuxCoordSys.h>
@@ -18,23 +25,20 @@ using namespace std;
 #include <TerrainModel\TerrainModel.h>
 #include <ScalableMesh\ScalableMeshDefs.h>
 #include <ScalableMesh\IScalableMeshMoniker.h>
-#include <ScalableMesh\IScalableMeshStream.h>
+//#include <ScalableMesh\IScalableMeshStream.h>
 #include <ScalableMesh\IScalableMeshURL.h>
 #include <DgnPlatform/DgnPlatform.h>
-#include <DgnView/DgnViewAPI.h>
+//#include <DgnView/DgnViewAPI.h>
 //#include <RmgrTools/Tools/RscFileManager.h>
-#include <ScalableMesh/IScalableMeshMoniker.h>
-#include <ScalableMesh/IScalableMeshStream.h>
-#include <ScalableMesh/IScalableMeshURL.h>
 /*#include <ScalableTerrainModel\IMrDTMMoniker.h>
 #include <ScalableTerrainModel\IMrDTMStream.h>
 #include <ScalableTerrainModel\IMrDTMURL.h>*/
 #include <DgnView/DgnViewLib.h>
-#include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 
 #include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
-
+#include <ScalableMesh\ScalableMeshAdmin.h>
+#include <ScalableMesh\ScalableMeshLib.h>
 //#include <DgnPlatform\Tools\ConfigurationManager.h>
 
 //USING_NAMESPACE_RASTER
@@ -64,7 +68,7 @@ struct AppViewManager : ViewManager
         virtual DgnDisplay::QvSystemContextP _GetQvSystemContext() override { return nullptr; }
         virtual bool                _DoesHostHaveFocus()        override { return true; }
         virtual IndexedViewSetR     _GetActiveViewSet()         override { return *(IndexedViewSetP)nullptr; }
-        virtual bool                _ForceSoftwareRendering()  override;
+        //virtual bool                _ForceSoftwareRendering()  override;
         virtual int                 _GetDynamicsStopInterval()  override { return 200; }
 
     public:
@@ -108,8 +112,8 @@ class AppHost : public DgnViewLib::Host
                     //virtual ToolAdmin&                                                     _SupplyToolAdmin() override;                
         //            virtual IViewManager&                             _SupplyViewManager() override;              
                     //virtual SolidsKernelAdmin&                                             _SupplySolidsKernelAdmin() override;        
-        virtual DgnPlatformLib::Host::RasterAttachmentAdmin&      _SupplyRasterAttachmentAdmin() override;
-        virtual DgnPlatformLib::Host::PointCloudAdmin&            _SupplyPointCloudAdmin() override;
+//        virtual DgnPlatformLib::Host::RasterAttachmentAdmin&      _SupplyRasterAttachmentAdmin() override;
+//        virtual DgnPlatformLib::Host::PointCloudAdmin&            _SupplyPointCloudAdmin() override;
         //virtual FontAdmin&                                                     _SupplyFontAdmin() override;                
         //virtual MaterialAdmin&                                                 _SupplyMaterialAdmin();                     
         //virtual ProgressiveDisplayManager&                                     _SupplyProgressiveDisplayManager() override;
@@ -175,7 +179,7 @@ void AppHost::Startup(/*HWND*/)
 
 //    RscFileManager::StaticInitialize(L"en");
 
-    DgnViewLib::Initialize(*this, true);
+//    DgnViewLib::Initialize(*this, true);
 
     //Application needs to initialize PdfLibInitializer dll if it wants support for PDF raster attachment.
     //BENTLEY_NAMESPACE_NAME::PdfLibInitializer::Initialize(*new ViewDemoPdfLibInitializerHost());

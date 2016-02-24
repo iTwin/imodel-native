@@ -10,29 +10,37 @@ baseDir         = $(_MakeFilePath)
 %include  mdl.mki
 %include $(baseDir)ScalableMeshATPexePolicy.mki
 %include $(SrcRoot)scalablemesh/ScalableMesh.mki
-#SolutionPolicyMki=$(baseDir)ScalableMeshATPexe.mki
+#SolutionPolicyMki=$(SrcRoot)scalablemesh/ScalableMesh.mki
 
 consoleAppUnicode = 1
+
+#CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED
+
+#always:
+#        |  Compiler options: $(cDefs)$(cDefsPost) $(copt) $(cIncs) $(PublicApiIncludes) $(CCompOpts)
+#        |  -------- --------
+
+#CCompOpts + $(PublicApiIncludes) 
 
 #----------------------------------------------------------------------
 #   Build precompiled header
 #----------------------------------------------------------------------
 appName = ScalableMeshATPexe
-PchCompiland = $(baseDir)ScalableMeshATPPch.cpp
+#PchCompiland = $(baseDir)ScalableMeshATPPch.cpp
 o = $(OutputRootDir)Build/ScalableMesh/$(appName)/
 always:
     ~mkdir $(o)
 
-PchOutputDir = $(o)
-PchExtraOptions    = -Zm180 -D__BENTLEYSTM_BUILD__ -DNOMINMAX 
-CompileOptionsMki =  $(baseDir)ScalableMeshATPexePolicy.mki
-%include $(SharedMki)PreCompileHeader.mki
+#PchOutputDir = $(o)
+#PchExtraOptions    =  -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTM_BUILD__ -DSCALABLE_MESH_DGN -DNOMINMAX 
+#CompileOptionsMki =  $(baseDir)ScalableMeshATPexePolicy.mki
+#%include $(SharedMki)PreCompileHeader.mki
 
 # UsePrecompiledHeaderOptions is defined for us by PreCompileHeader.mki
-CCPchOpts = $(UsePrecompiledHeaderOptions)
+#CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECTION
 
 
-PCHHeaderDepends=$(o)ScalableMeshATPPch$(oext)
+#PCHHeaderDepends=$(o)ScalableMeshATPPch$(oext)
 MultiCompileDepends=$(_MakeFileSpec) 
 #DisableMultiCompile=1
 %include MultiCppCompileRule.mki
@@ -46,6 +54,19 @@ ScalableMeshDir = $(SrcRoot)ScalableMesh/
 
 CCompOpts + -DUNICODE
 
+
+
+# Need to ignore this because it's in Vancouver's header files.
+# C4312: 'type cast': conversion from '...' to '...' of greater size
+CCompOpts + -wd4267
+
+# C4091: '... ': ignored on left of '...' when no variable is declared
+CCompOpts + -wd4244
+
+
+
+
+
 #MultiCompileDepends = $(_MakeFileSpec)
 #%include MultiCppCompileRule.mki
 
@@ -53,29 +74,29 @@ CCompOpts + -DUNICODE
 nameToDefine=SCALABLE_MESH_ATP
 %include cdefapnd.mki
 
-#$(o)MrDTMUtil.obj: $(baseDir)TiledTriangulation/MrDTMUtil.cpp $(baseDir)TiledTriangulation/MrDTMUtil.h $(PCHHeaderDepends) ${MultiCompileDepends}
+#$(o)MrDTMUtil$(oext): $(baseDir)TiledTriangulation/MrDTMUtil.cpp $(baseDir)TiledTriangulation/MrDTMUtil.h ${MultiCompileDepends}
 
-#$(o)MrDTMFace.obj: $(baseDir)TiledTriangulation/MrDTMFace.cpp $(baseDir)TiledTriangulation/MrDTMFace.h $(PCHHeaderDepends) ${MultiCompileDepends}
+#$(o)MrDTMFace$(oext): $(baseDir)TiledTriangulation/MrDTMFace.cpp $(baseDir)TiledTriangulation/MrDTMFace.h ${MultiCompileDepends}
 
-#$(o)TiledTriangulatorValidator.obj: $(baseDir)TiledTriangulation/TiledTriangulatorValidator.cpp $(baseDir)TiledTriangulation/TiledTriangulatorValidator.h $(PCHHeaderDepends) ${MultiCompileDepends}
+#$(o)TiledTriangulatorValidator$(oext): $(baseDir)TiledTriangulation/TiledTriangulatorValidator.cpp $(baseDir)TiledTriangulation/TiledTriangulatorValidator.h ${MultiCompileDepends}
 
-#$(o)TiledTriangulatorUtil.obj: $(baseDir)TiledTriangulation/TiledTriangulatorUtil.cpp $(baseDir)TiledTriangulation/TiledTriangulatorUtil.h $(PCHHeaderDepends) ${MultiCompileDepends}
+#$(o)TiledTriangulatorUtil$(oext): $(baseDir)TiledTriangulation/TiledTriangulatorUtil.cpp $(baseDir)TiledTriangulation/TiledTriangulatorUtil.h ${MultiCompileDepends}
 
-$(o)ATPFileFinder.obj: $(baseDir)Common/ATPFileFinder.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+$(o)ATPFileFinder$(oext): $(baseDir)Common/ATPFileFinder.cpp ${MultiCompileDepends}
 
-#$(o)DrapeLineTool.obj: $(baseDir)Tool/DrapeLineTool.cpp $(baseDir)Tool/DrapeLineTool.h $(PCHHeaderDepends) ${MultiCompileDepends}
+#$(o)DrapeLineTool$(oext): $(baseDir)Tool/DrapeLineTool.cpp $(baseDir)Tool/DrapeLineTool.h ${MultiCompileDepends}
 
-#$(o)VolumeCalculationTool.obj: $(baseDir)Tool/VolumeCalculationTool.cpp $(baseDir)Tool/VolumeCalculationTool.h $(PCHHeaderDepends) ${MultiCompileDepends}
+#$(o)VolumeCalculationTool$(oext): $(baseDir)Tool/VolumeCalculationTool.cpp $(baseDir)Tool/VolumeCalculationTool.h ${MultiCompileDepends}
 
-$(o)ATPUtils.obj: $(baseDir)Common/ATPUtils.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+$(o)ATPUtils$(oext): $(baseDir)Common/ATPUtils.cpp ${MultiCompileDepends}
 
-$(o)ATPDefinitions.obj: $(baseDir)Common/ATPDefinitions.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+$(o)ATPDefinitions$(oext): $(baseDir)Common/ATPDefinitions.cpp ${MultiCompileDepends}
 
-$(o)ATPGeneration.obj: $(baseDir)Common/ATPGeneration.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+$(o)ATPGeneration$(oext): $(baseDir)Common/ATPGeneration.cpp ${MultiCompileDepends}
 
-$(o)Initialize.obj: $(baseDir)Initialize.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+$(o)Initialize$(oext): $(baseDir)Initialize.cpp ${MultiCompileDepends}
 
-$(o)ScalableMeshATPexe.obj: $(baseDir)ScalableMeshATPexe.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+$(o)ScalableMeshATPexe$(oext): $(baseDir)ScalableMeshATPexe.cpp ${MultiCompileDepends}
 
 
 
@@ -89,31 +110,27 @@ $(o)ScalableMeshATPexe.obj: $(baseDir)ScalableMeshATPexe.cpp $(PCHHeaderDepends)
 EXE_DEST     = $(o)
 EXE_NAME     = $(appname)
 EXE_OBJS     = $(MultiCompileObjectList)
-DLM_OBJECT_PCH      = $(o)ScalableMeshATPPch$(oext)
-DLM_OBJECT_FILES = $(MultiCompileObjectList) 
+EXE_LOPT1 = -ENTRY:wmainCRTStartup
+#DLM_OBJECT_PCH      = $(o)ScalableMeshATPPch$(oext)
+#DLM_OBJECT_FILES = $(MultiCompileObjectList) 
 LINKER_LIBRARIES  = $(ContextSubpartsLibs)BentleyAllocator.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)Bentley.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)ECObjects.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BentleyGeom.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnPlatform.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BaseGeoCoord.lib
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnView.lib
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnGeoCoord.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)ScalableMesh.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)TerrainModelCore.lib
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)IppGraLibs.lib
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)IppUtlLibs.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)Imagepp.lib
 
-
-LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)RmgrTools.lib
-LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)RasterCore.lib
-LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)PointCloud.lib
-LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)BeXml.lib
 LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)DgnView.lib
+LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)BeXml.lib
 
 EXE_TMP_DIR  = $(o)
 
 %include $(sharedMki)linktool.mki
+
+#%include $(sharedMki)LinkLibrary.mki
 
 always:
     ~linkfile "$(BuildContext)Delivery/$(appname)$(exeext)=$(o)$(appname)$(exeext)"

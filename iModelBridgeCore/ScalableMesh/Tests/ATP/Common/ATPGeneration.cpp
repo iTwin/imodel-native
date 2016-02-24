@@ -1,5 +1,14 @@
-#include <ScalableMeshATPPch.h>
+//#include "ScalableMeshATPPch.h"
 #include "ATPUtils.h"
+
+#include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdio.h>
+#include <errno.h>
+#include <wtypes.h>
+
+
 #include "ATPDefinitions.h"
 #include "ATPGeneration.h"
 #include "ATPFileFinder.h"
@@ -8,6 +17,7 @@
 //#include <ScalableMesh\IScalableMeshSourceImportConfig.h>
 //#include <DgnPlatform\DgnDocumentManager.h>
 //#include <DgnPlatform\LevelCache.h>
+#include <ScalableMesh/IScalableMeshSourceImportConfig.h>
 #include <DgnPlatform\DgnPlatformErrors.r.h>
 #include <DgnPlatform\DgnPlatformBaseType.r.h>
 
@@ -349,8 +359,9 @@ bool ParseGenerationOptions(ScalableMeshMesherType* mesherType, ScalableMeshFilt
 
 bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pTestNode)
     {
+    assert(false && "not implemented");
     bool isSuccess = true;
-
+/*
     BeXmlNodeP pTestChildNode = pTestNode->GetFirstChild();
 
     while ((0 != pTestChildNode) && (isSuccess == true))
@@ -425,7 +436,7 @@ bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pTes
 
         pTestChildNode = pTestChildNode->GetNextSibling();
         }
-
+        */
     return isSuccess;
     }
 

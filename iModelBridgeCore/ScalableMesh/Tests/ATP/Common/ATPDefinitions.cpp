@@ -1,12 +1,24 @@
-#include <ScalableMeshATPPch.h>
-#include "ATPUtils.h"
+//#include "ScalableMeshATPPch.h"
 #include "ATPDefinitions.h"
+
+#include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdio.h>
+#include <errno.h>
+#include <wtypes.h>
+
+#include <ScalableMesh/Foundations/Definitions.h>
+#undef static_assert
+
+#include "ATPUtils.h"
 #include "ATPGeneration.h"
 #include "..\TiledTriangulation\MrDTMUtil.h"
 #include "..\Tool\DrapeLineTool.h"
 #include "..\Tool\VolumeCalculationTool.h"
 #include "..\Initialize.h"
 #include "..\TiledTriangulation\ITiledTriangulatorValidator.h"
+
 
 
 using namespace std;
@@ -18,30 +30,23 @@ using namespace std;
 #include <ScalableMesh\IScalableMeshSourceImportConfig.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include <ScalableMesh/ScalableMeshUtilityFunctions.h>
-#include <ScalableMesh/IScalableMeshSourceImporter.h>
+//#include <ScalableMesh/IScalableMeshSourceImporter.h>
+#include <TerrainModel/Core/DTMDefs.h>
 #include <TerrainModel/TerrainModel.h>
 #include <TerrainModel/Core/bcDTMBaseDef.h>
 #include <TerrainModel/Core/bcDTMClass.h>
-#include <TerrainModel/Core/bcdtminlines.h>
-#include <DgnPlatform/Tools/ConfigurationManager.h>
-#include <DgnPlatform/DgnDocumentManager.h>
-#include <DgnPlatform/DgnAttachment.h>
-#include <RmgrTools/Tools/RscFileManager.h>
-#include <PointCloud/PointCloud.h>
-#include <PointCloud/PointCloudApi.h>
+//#include <TerrainModel/Core/bcdtminlines.h>
+//#include <DgnPlatform/Tools/ConfigurationManager.h>
+//#include <DgnPlatform/DgnDocumentManager.h>
+//#include <DgnPlatform/DgnAttachment.h>
+//#include <RmgrTools/Tools/RscFileManager.h>
+//#include <PointCloud/PointCloud.h>
+//#include <PointCloud/PointCloudApi.h>
 #include <Bentley/BeTimeUtilities.h>
-#include <ScalableMesh/AutomaticGroundDetection/GroundDetectionManager.h>
-#include <PointCloudCore/PtVortex.h>
+//#include <ScalableMesh/AutomaticGroundDetection/GroundDetectionManager.h>
+//#include <PointCloudCore/PtVortex.h>
 #include <ScalableMesh/IScalableMeshNodeCreator.h>
 #include <Vu/VuApi.h>
-
-
-#include <time.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <stdio.h>
-#include <errno.h>
-#include <wtypes.h>
 
 #include <ImagePP/h/ImageppAPI.h>
 
@@ -59,14 +64,17 @@ using namespace std;
 #include <ImagePP/all/h/HIMMosaic.h>
 #include <Imagepp/all/h/HRSObjectStore.h>
 
+#include <GeoCoord/BaseGeoCoord.h>
+
 
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_GEOCOORDINATES
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
-USING_NAMESPACE_BENTLEY_POINTCLOUD
-USING_NAMESPACE_POINTCLOUDCORE
+USING_NAMESPACE_IMAGEPP
+//USING_NAMESPACE_BENTLEY_POINTCLOUD
+//USING_NAMESPACE_POINTCLOUDCORE
 
 
 enum
@@ -87,7 +95,7 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         }
     else
         {
-        Int64 useCpuVal = 0;
+        int64_t useCpuVal = 0;
         WString accelerator;
         status = pTestNode->GetAttributeStringValue(accelerator, "accelerator");
         if (status == BEXML_Success && 0 == BeStringUtilities::Wcsicmp(accelerator.c_str(), L"cpu"))
@@ -95,21 +103,21 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             useCpuVal = 1;
             IScalableMeshATP::StoreInt(L"useCpu", useCpuVal);
             }
-        Int64 useThreadInGeneration = 0;
+        int64_t useThreadInGeneration = 0;
         WString threading;
         status = pTestNode->GetAttributeStringValue(threading, "multithread");
         if (status == BEXML_Success && 0 == BeStringUtilities::Wcsicmp(threading.c_str(), L"true"))
             {
             useThreadInGeneration = 1;
-            BentleyStatus defineStatus = ConfigurationManager::DefineVariable(L"SM_MULTITHREAD_GENERATION", L"1");
+//            BentleyStatus defineStatus = ConfigurationManager::DefineVariable(L"SM_MULTITHREAD_GENERATION", L"1");
 
-            assert(defineStatus == SUCCESS);
+//            assert(defineStatus == SUCCESS);
             }
         else
             {
-            BentleyStatus defineStatus = ConfigurationManager::DefineVariable(L"SM_MULTITHREAD_GENERATION", L"0");
+//            BentleyStatus defineStatus = ConfigurationManager::DefineVariable(L"SM_MULTITHREAD_GENERATION", L"0");
 
-            assert(defineStatus == SUCCESS);
+//            assert(defineStatus == SUCCESS);
             }
 
         WString isSingleFileString;
@@ -133,33 +141,33 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
             swprintf(mesherTypeChar, L"%i", mesherType);
 
-            BentleyStatus defineStatus = ConfigurationManager::DefineVariable(L"SM_3D_MESHER_TYPE", mesherTypeChar);
+//            BentleyStatus defineStatus = ConfigurationManager::DefineVariable(L"SM_3D_MESHER_TYPE", mesherTypeChar);
 
-            assert(defineStatus == SUCCESS);
+//            assert(defineStatus == SUCCESS);
 
             WChar filterTypeChar[10];
 
             swprintf(filterTypeChar, L"%i", filterType);
 
-            defineStatus = ConfigurationManager::DefineVariable(L"SM_FILTER_TYPE", filterTypeChar);
+//            defineStatus = ConfigurationManager::DefineVariable(L"SM_FILTER_TYPE", filterTypeChar);
 
-            assert(defineStatus == SUCCESS);
+//            assert(defineStatus == SUCCESS);
 
             WChar trimmingMethodChar[10];
 
             swprintf(trimmingMethodChar, L"%i", trimmingMethod);
 
-            defineStatus = ConfigurationManager::DefineVariable(L"SM_TRIMMING_METHOD", trimmingMethodChar);
+//            defineStatus = ConfigurationManager::DefineVariable(L"SM_TRIMMING_METHOD", trimmingMethodChar);
 
-            assert(defineStatus == SUCCESS);
+//            assert(defineStatus == SUCCESS);
 
             WChar saveTypeChar[10];
 
             swprintf(saveTypeChar, L"%i", saveType);
 
-            defineStatus = ConfigurationManager::DefineVariable(L"SM_STORE_DGNDB", saveTypeChar);
+//            defineStatus = ConfigurationManager::DefineVariable(L"SM_STORE_DGNDB", saveTypeChar);
 
-            assert(defineStatus == SUCCESS);
+//            assert(defineStatus == SUCCESS);
             }
         StatusInt createStatus;
         BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(stmFileName.c_str(), createStatus));
@@ -170,9 +178,9 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             }
         else
             {
-            IScalableMeshATP::StoreDouble(WString("nTimeToCreateSeeds"), 0.0);
-            IScalableMeshATP::StoreDouble(WString("nTimeToEstimateParams"), 0.0);
-            IScalableMeshATP::StoreDouble(WString("nTimeToFilterGround"), 0.0);
+            IScalableMeshATP::StoreDouble(WString(L"nTimeToCreateSeeds"), 0.0);
+            IScalableMeshATP::StoreDouble(WString(L"nTimeToEstimateParams"), 0.0);
+            IScalableMeshATP::StoreDouble(WString(L"nTimeToFilterGround"), 0.0);
             IScalableMeshATP::StoreInt(L"chosenAccelerator", 1);
             double nTimeToCreateSeeds = 0, nTimeToEstimateParams = 0, nTimeToFilterGround = 0;
             WString gcsKeyName;//
@@ -181,7 +189,7 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
             if (status == BEXML_Success)
                 {
-                BaseGCSPtr baseGCSPtr(BaseGCS::CreateGCS(gcsKeyName.c_str()));
+                BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr baseGCSPtr(BaseGCS::CreateGCS(gcsKeyName.c_str()));
                 StatusInt status = creatorPtr->SetBaseGCS(baseGCSPtr);
                 assert(status == SUCCESS);
                 }//
@@ -202,7 +210,7 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
                     IScalableMeshPtr stmFile = IScalableMesh::GetFor(stmFileName.c_str(), false, true, status);
 
-                    Int64 pointCount = 0;
+                    int64_t pointCount = 0;
                     WString result;
 
                     if (stmFile != 0)
@@ -240,10 +248,10 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                     WString mesher = GetMesherTypeName(mesherType);
                     WString filter = GetFilterTypeName(filterType);
                     WString trimming = GetTrimmingTypeName(trimmingMethod);
-                    Int64 acceleratorUseCpu = 0;
-                    IScalableMeshATP::GetDouble(WString("nTimeToCreateSeeds"), nTimeToCreateSeeds);
-                    IScalableMeshATP::GetDouble(WString("nTimeToEstimateParams"), nTimeToEstimateParams);
-                    IScalableMeshATP::GetDouble(WString("nTimeToFilterGround"), nTimeToFilterGround);
+                    int64_t acceleratorUseCpu = 0;
+                    IScalableMeshATP::GetDouble(WString(L"nTimeToCreateSeeds"), nTimeToCreateSeeds);
+                    IScalableMeshATP::GetDouble(WString(L"nTimeToEstimateParams"), nTimeToEstimateParams);
+                    IScalableMeshATP::GetDouble(WString(L"nTimeToFilterGround"), nTimeToFilterGround);
                     IScalableMeshATP::GetInt(L"chosenAccelerator", acceleratorUseCpu);
                     // L"File Name,Mesher,Filter,Nb Input Points,Nb Output Points,Point Kept (%%),File Size (Mb),Accelerator Used,GroundDetection: Time for seeds(s),GroundDetection: Time for Params Estimation (s), GroundDetection: Time for TIN growing (s),GroundDetection (s),GroundDetection(%%), Import Points (%%),Balancing (%%),Meshing (%%),Filtering (%%),Stitching (%%),Duration (minutes),Duration (hours), GroundDetection(minutes), Import Points (minutes),Balancing (minutes),Meshing (minutes),Filtering (minutes),Stitching (minutes),Status\n";
 
@@ -274,7 +282,7 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                     }
                 else
                     {
-                    fwprintf(pResultFile, L"%s,%s,%s,%.5f,%s\n", L"", L"", L"", 0, 0, 0, 0, 0, 0, 0, 0, L"ERROR");
+                    fwprintf(pResultFile, L"%s,%s,%s,%.5f,%s\n", L"", L"", L"", 0.0, L"ERROR");
                     }
                 fflush(pResultFile);
                 }
@@ -284,7 +292,8 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
 void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    WString stmFileName;
+    assert(false && "not implemented");
+/*    WString stmFileName;
     ScalableMeshMesherType mesherType = SCM_MESHER_3D_DELAUNAY;
     ScalableMeshFilterType filterType = SCM_FILTER_CGAL_SIMPLIFIER;
     vector<UpToDateState> sourcesPartialUpdate;
@@ -299,11 +308,11 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     else
         {
         // Create three datasets
-        WString suffixPartialUpdate("_partialUpdate");
+        WString suffixPartialUpdate(L"_partialUpdate");
         WString stmFileName_PartialUpdateTest(UpdateTest_GetStmFileNameWithSuffix(stmFileName, suffixPartialUpdate));
         StatusInt status;
         BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPartialUpdatePtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(stmFileName_PartialUpdateTest.c_str(), status));
-        WString suffixGenerate("_generate");
+        WString suffixGenerate(L"_generate");
         WString stmFileName_GenerateTest(UpdateTest_GetStmFileNameWithSuffix(stmFileName, suffixGenerate));
         BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorGeneratePtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(stmFileName_GenerateTest.c_str(), status));
 
@@ -355,19 +364,19 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                         WString updateType;
                         if (pSubNode->GetAttributeStringValue(updateType, "updateType") == BEXML_Success)
                             {
-                            fwprintf(pResultFile, L",%s,%s\n", sourcePath, updateType);
-                            if (updateType.Equals(WString("Add")))
+                            fwprintf(pResultFile, L",%s,%s\n", sourcePath.c_str(), updateType.c_str());
+                            if (updateType.Equals(WString(L"Add")))
                                 {
                                 sourcesPartialUpdate.push_back(UpToDateState::ADD);
                                 sourceToAdd.push_back(sourcePath);
                                 }
-                            else if (updateType.Equals(WString("Remove")))
+                            else if (updateType.Equals(WString(L"Remove")))
                                 sourcesPartialUpdate.push_back(UpToDateState::REMOVE);
-                            else if (updateType.Equals(WString("Modify")))
+                            else if (updateType.Equals(WString(L"Modify")))
                                 sourcesPartialUpdate.push_back(UpToDateState::MODIFY);
-                            else if (updateType.Equals(WString("UpToDate")))
+                            else if (updateType.Equals(WString(L"UpToDate")))
                                 sourcesPartialUpdate.push_back(UpToDateState::UP_TO_DATE);
-                            if (!updateType.Equals(WString("Add")))
+                            if (!updateType.Equals(WString(L"Add")))
                                 {
                                 IDTMSourcePtr srcPtr = CreateSourceFor(sourcePath, type);
                                 SourceImportConfig& sourceImportConfig = srcPtr->EditConfig();
@@ -383,11 +392,11 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
                                 if (BSISUCCESS != creatorPartialUpdatePtr->EditSources().Add(srcPtr))
                                     {
-                                    wprintf(L"ERROR : cannot add %s\r\n", sourcePath);
+                                    wprintf(L"ERROR : cannot add %s\r\n", sourcePath.c_str());
                                     break;
                                     }
                                 }
-                            if (!updateType.Equals(WString("Remove")))
+                            if (!updateType.Equals(WString(L"Remove")))
                                 {
                                 IDTMSourcePtr srcPtr = CreateSourceFor(sourcePath, type);
                                 SourceImportConfig& sourceImportConfig = srcPtr->EditConfig();
@@ -403,7 +412,7 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
                                 if (BSISUCCESS != creatorGeneratePtr->EditSources().Add(srcPtr))
                                     {
-                                    wprintf(L"ERROR : cannot add %s\r\n", sourcePath);
+                                    wprintf(L"ERROR : cannot add %s\r\n", sourcePath.c_str());
                                     break;
                                     }
                                 }
@@ -426,7 +435,7 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                             // Datasource without the attribute "updateType"
                             if (BSISUCCESS != creatorPartialUpdatePtr->EditSources().Add(srcPtr))
                                 {
-                                wprintf(L"ERROR : cannot add %s\r\n", sourcePath);
+                                wprintf(L"ERROR : cannot add %s\r\n", sourcePath.c_str());
                                 break;
                                 }
                             sourcesPartialUpdate.push_back(UpToDateState::UP_TO_DATE);
@@ -441,12 +450,12 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
             WChar mesherTypeChar[10];
             swprintf(mesherTypeChar, L"%i", mesherType);
-            BentleyStatus defineStatus = ConfigurationManager::DefineVariable(L"SM_3D_MESHER_TYPE", mesherTypeChar);
-            assert(defineStatus == SUCCESS);
+//            BentleyStatus defineStatus = ConfigurationManager::DefineVariable(L"SM_3D_MESHER_TYPE", mesherTypeChar);
+//            assert(defineStatus == SUCCESS);
             WChar filterTypeChar[10];
             swprintf(filterTypeChar, L"%i", filterType);
-            defineStatus = ConfigurationManager::DefineVariable(L"SM_FILTER_TYPE", filterTypeChar);
-            assert(defineStatus == SUCCESS);
+//            defineStatus = ConfigurationManager::DefineVariable(L"SM_FILTER_TYPE", filterTypeChar);
+//            assert(defineStatus == SUCCESS);
             StatusInt status;
             creatorGeneratePtr = BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(stmFileName_GenerateTest.c_str(), status);
             clock_t tGen = clock();
@@ -523,7 +532,7 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
                 if (BSISUCCESS != creatorPartialUpdatePtr->EditSources().Add(srcPtr))
                     {
-                    wprintf(L"ERROR : cannot add %s\r\n", sourceToAdd[i]);
+                    wprintf(L"ERROR : cannot add %s\r\n", sourceToAdd[i].c_str());
                     break;
                     }
                 }
@@ -539,7 +548,7 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             creatorPartialUpdatePtr->SaveToFile();
             assert(status == 0);
             creatorPartialUpdatePtr = 0;
-            Int64 nOfPointsGen, nOfPointsUpdate;
+            int64_t nOfPointsGen, nOfPointsUpdate;
             IScalableMeshPtr sm = IScalableMesh::GetFor(stmFileName_GenerateTest.c_str(), true, true);
             nOfPointsGen = sm->GetPointCount();
             sm = 0;
@@ -556,12 +565,13 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             fwprintf(pResultFile, L"NOfPoints After Update, %I64d\n", nOfPointsUpdate);
             fflush(pResultFile);
             }
-        }
+        }*/
     }
 
 void PerformMeshQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    WString stmFileName;
+    assert(false && "not implemented");
+/*    WString stmFileName;
     ScalableMeshMesherType mesherType = SCM_MESHER_3D_DELAUNAY;
     ScalableMeshFilterType filterType = SCM_FILTER_CGAL_SIMPLIFIER;
     int blossomMatching = 0;
@@ -577,7 +587,7 @@ void PerformMeshQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     else
         {
         StatusInt status;
-        Bentley::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPtr(Bentley::ScalableMesh::IScalableMeshSourceCreator::GetFor(stmFileName.c_str(), status));
+        BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(stmFileName.c_str(), status));
 
         if (creatorPtr == 0 || status != BSISUCCESS)
             {
@@ -589,12 +599,12 @@ void PerformMeshQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             {
             if (0 == BeStringUtilities::Stricmp(pSubNode->GetName(), "mesher"))
                 {
-                Int32 mesherId;
+                int32_t mesherId;
                 StatusInt status = pSubNode->GetAttributeInt32Value(mesherId, "type");
 
                 if ((status == BEXML_Success) && (mesherId >= 0) && (mesherId < SCM_MESHER_QTY))
                     {
-                    mesherType = (Bentley::ScalableMesh::ScalableMeshMesherType)mesherId;
+                    mesherType = (BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesherType)mesherId;
                     }
                 else
                     {
@@ -647,12 +657,12 @@ void PerformMeshQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                 }
             else if (0 == BeStringUtilities::Stricmp(pSubNode->GetName(), "filter"))
                 {
-                Int32 filterId;
+                int32_t filterId;
                 StatusInt status = pSubNode->GetAttributeInt32Value(filterId, "type");
 
                 if ((status == BEXML_Success) && (filterId >= 0) && (filterId < SCM_FILTER_QTY))
                     {
-                    filterType = (Bentley::ScalableMesh::ScalableMeshFilterType)filterId;
+                    filterType = (BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshFilterType)filterId;
                     }
                 else
                     {
@@ -672,7 +682,7 @@ void PerformMeshQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                         {
                         if (BSISUCCESS != creatorPtr->EditSources().Add(CreateSourceFor(datasetPath, DTM_SOURCE_DATA_POINT)))
                             {
-                            wprintf(L"ERROR : cannot add %s\r\n", datasetPath);
+                            wprintf(L"ERROR : cannot add %s\r\n", datasetPath.c_str());
                             break;
                             }
                         }
@@ -684,49 +694,49 @@ void PerformMeshQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
         swprintf(mesherTypeChar, L"%i", mesherType);
 
-        BentleyStatus defineStatus = ConfigurationManager::DefineVariable(L"SM_3D_MESHER_TYPE", mesherTypeChar);
+//        BentleyStatus defineStatus = ConfigurationManager::DefineVariable(L"SM_3D_MESHER_TYPE", mesherTypeChar);
 
-        assert(defineStatus == SUCCESS);
+//        assert(defineStatus == SUCCESS);
 
         WChar filterTypeChar[10];
 
         swprintf(filterTypeChar, L"%i", filterType);
 
-        defineStatus = ConfigurationManager::DefineVariable(L"SM_FILTER_TYPE", filterTypeChar);
+//        defineStatus = ConfigurationManager::DefineVariable(L"SM_FILTER_TYPE", filterTypeChar);
 
-        assert(defineStatus == SUCCESS);
+//        assert(defineStatus == SUCCESS);
 
         WChar blossomMatchingChar[10];
 
         swprintf(blossomMatchingChar, L"%i", blossomMatching);
 
-        defineStatus = ConfigurationManager::DefineVariable(L"SM_BLOSSOM_MATCHING", blossomMatchingChar);
+//        defineStatus = ConfigurationManager::DefineVariable(L"SM_BLOSSOM_MATCHING", blossomMatchingChar);
 
-        assert(defineStatus == SUCCESS);
+//        assert(defineStatus == SUCCESS);
 
         WChar indexMethodChar[10];
 
         swprintf(indexMethodChar, L"%i", indexMethod);
 
-        defineStatus = ConfigurationManager::DefineVariable(L"SM_INDEX_METHOD", indexMethodChar);
+//        defineStatus = ConfigurationManager::DefineVariable(L"SM_INDEX_METHOD", indexMethodChar);
 
-        assert(defineStatus == SUCCESS);
+//        assert(defineStatus == SUCCESS);
 
         WChar trimmingMethodChar[10];
 
         swprintf(trimmingMethodChar, L"%i", trimmingMethod);
 
-        defineStatus = ConfigurationManager::DefineVariable(L"SM_TRIMMING_METHOD", trimmingMethodChar);
+//        defineStatus = ConfigurationManager::DefineVariable(L"SM_TRIMMING_METHOD", trimmingMethodChar);
 
-        assert(defineStatus == SUCCESS);
+//        assert(defineStatus == SUCCESS);
 
-        defineStatus = ConfigurationManager::DefineVariable(L"SM_ATP_MESHING_RESULT", L"1");
+//        defineStatus = ConfigurationManager::DefineVariable(L"SM_ATP_MESHING_RESULT", L"1");
 
-        assert(defineStatus == SUCCESS);
+//        assert(defineStatus == SUCCESS);
         // isSingleFile
         status = creatorPtr->Create();
 
-        defineStatus = ConfigurationManager::UndefineVariable(L"SM_ATP_MESHING_RESULT");
+//        defineStatus = ConfigurationManager::UndefineVariable(L"SM_ATP_MESHING_RESULT");
 
 
         if (status == SUCCESS)
@@ -734,7 +744,7 @@ void PerformMeshQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
             IScalableMeshPtr stmFile = IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
 
-            Int64 pointCount = 0;
+            int64_t pointCount = 0;
             WString result;
 
             if (stmFile != 0)
@@ -750,25 +760,25 @@ void PerformMeshQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
             WString mesher = GetMesherTypeName(mesherType);
             WString filter = GetFilterTypeName(filterType);
-            Int64 totalTri = 0;
-            Int64 totalWrongTri = 0;
+            int64_t totalTri = 0;
+            int64_t totalWrongTri = 0;
             double ratioWrongTri = 0.0;
             double quality = 0.0;
             double ratioMissingTri = 0.0;
-            Int64 totalMissingTri = 0;
-            IScalableMeshATP::GetInt(WString("trimCheck_numTrianglesChecked"), totalTri);
-            IScalableMeshATP::GetInt(WString("trimCheck_numTrianglesWrong"), totalWrongTri);
-            IScalableMeshATP::GetDouble(WString("trimCheck_ratioWrongTriangles"), ratioWrongTri);
-            IScalableMeshATP::GetInt(WString("trimCheck_numTrianglesMissing"), totalMissingTri);
-            IScalableMeshATP::GetDouble(WString("trimCheck_ratioMissingTriangles"), ratioMissingTri);
-            IScalableMeshATP::GetDouble(WString("trimCheck_quality"), quality);
-            IScalableMeshATP::StoreInt(WString("trimCheck_numTrianglesChecked"), 0);
-            IScalableMeshATP::StoreInt(WString("trimCheck_numTrianglesWrong"), 0);
-            IScalableMeshATP::StoreDouble(WString("trimCheck_ratioWrongTriangles"), 0.0);
-            IScalableMeshATP::StoreInt(WString("trimCheck_numTrianglesMissing"), 0);
-            IScalableMeshATP::StoreDouble(WString("trimCheck_ratioMissingTriangles"), 0.0);
-            IScalableMeshATP::StoreDouble(WString("trimCheck_quality"), 0.0);
-            IScalableMeshATP::StoreInt(WString("trimCheck_numGoodTriangles"), 0);
+            int64_t totalMissingTri = 0;
+            IScalableMeshATP::GetInt(WString(L"trimCheck_numTrianglesChecked"), totalTri);
+            IScalableMeshATP::GetInt(WString(L"trimCheck_numTrianglesWrong"), totalWrongTri);
+            IScalableMeshATP::GetDouble(WString(L"trimCheck_ratioWrongTriangles"), ratioWrongTri);
+            IScalableMeshATP::GetInt(WString(L"trimCheck_numTrianglesMissing"), totalMissingTri);
+            IScalableMeshATP::GetDouble(WString(L"trimCheck_ratioMissingTriangles"), ratioMissingTri);
+            IScalableMeshATP::GetDouble(WString(L"trimCheck_quality"), quality);
+            IScalableMeshATP::StoreInt(WString(L"trimCheck_numTrianglesChecked"), 0);
+            IScalableMeshATP::StoreInt(WString(L"trimCheck_numTrianglesWrong"), 0);
+            IScalableMeshATP::StoreDouble(WString(L"trimCheck_ratioWrongTriangles"), 0.0);
+            IScalableMeshATP::StoreInt(WString(L"trimCheck_numTrianglesMissing"), 0);
+            IScalableMeshATP::StoreDouble(WString(L"trimCheck_ratioMissingTriangles"), 0.0);
+            IScalableMeshATP::StoreDouble(WString(L"trimCheck_quality"), 0.0);
+            IScalableMeshATP::StoreInt(WString(L"trimCheck_numGoodTriangles"), 0);
             // fwprintf(pResultFile, L"Test Case,%s,%s\n",stmFileName.c_str(),result.c_str());
             //  fwprintf(pResultFile, L"NOfPoints, Mesher, Filter, Use Blossom?, Index Method, Total Triangles Meshed, Total Wrong Triangles, Wrong Triangles(%%), Total Triangles Missing,Missing Triangles (%%), Quality(higher is better)\n");
             fwprintf(pResultFile, L"%s,%s,%I64d,%s,%s,%s,%s,%s,%I64d,%I64d,%.5f,%I64d,%.5f,%.5f\n",
@@ -789,15 +799,16 @@ void PerformMeshQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             }
         else
             {
-            fwprintf(pResultFile, L"Test Case,%s,%s\n", stmFileName.c_str(), "ERROR");
+            fwprintf(pResultFile, L"Test Case,%s,%s\n", stmFileName.c_str(), L"ERROR");
             }
         fflush(pResultFile);
-        }
+        }*/
     }
 
-/*void Perform2DStitchQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
+void Perform2DStitchQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    WString stmFileName;
+    assert(false && "not implemented");
+/*    WString stmFileName;
     ScalableMeshMesherType mesherType = SCM_MESHER_2D_DELAUNAY;
     ScalableMeshFilterType filterType = SCM_FILTER_CGAL_SIMPLIFIER;
 
@@ -860,16 +871,16 @@ void PerformMeshQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
         swprintf(mesherTypeChar, L"%i", mesherType);
 
-        BentleyStatus defineStatus = ConfigurationManager::DefineVariable(L"SM_3D_MESHER_TYPE", mesherTypeChar);
+//        BentleyStatus defineStatus = ConfigurationManager::DefineVariable(L"SM_3D_MESHER_TYPE", mesherTypeChar);
 
-        assert(defineStatus == SUCCESS);
+//        assert(defineStatus == SUCCESS);
         WChar filterTypeChar[10];
 
         swprintf(filterTypeChar, L"%i", filterType);
 
-        defineStatus = ConfigurationManager::DefineVariable(L"SM_FILTER_TYPE", filterTypeChar);
+//        defineStatus = ConfigurationManager::DefineVariable(L"SM_FILTER_TYPE", filterTypeChar);
 
-        assert(defineStatus == SUCCESS);
+//        assert(defineStatus == SUCCESS);
         // isSingleFile
         status = creatorPtr->Create();
 
@@ -879,7 +890,7 @@ void PerformMeshQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
             IScalableMeshPtr stmFile = IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
 
-            Int64 pointCount = 0;
+            int64_t pointCount = 0;
             WString result;
 
             if (stmFile != 0)
@@ -892,7 +903,7 @@ void PerformMeshQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                 result = L"CREATION : SUCCESS | STM FILE OPENING : FAILURE";
                 }
 
-            /* get all points from full res, adapted from MrDTMDataRef::GetDtmForSingleResolution */
+            // get all points from full res, adapted from MrDTMDataRef::GetDtmForSingleResolution
             IScalableMeshFixResolutionIndexQueryParamsPtr queryParamsPtr(IScalableMeshFixResolutionIndexQueryParams::CreateParams());
             queryParamsPtr->SetResolutionIndex(stmFile->GetNbResolutions() - 1);
 
@@ -946,7 +957,7 @@ void PerformMeshQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                     totalNbOverlappingTriangles++;
                     continue;
                     }*/
-                    status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, DTMFeatureType::GraphicBreak, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &triangle[0], 4);
+/*                    status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, DTMFeatureType::GraphicBreak, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &triangle[0], 4);
                     //}
                     }
                 bcdtmObject_triangulateStmTrianglesDtmObject(dtmObjP);
@@ -980,13 +991,13 @@ void PerformMeshQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             }
         else
             {
-            fwprintf(pResultFile, L"%s,%s\n", stmFileName.c_str(), "ERROR");
+            fwprintf(pResultFile, L"%s,%s\n", stmFileName.c_str(), L"ERROR");
             }
         fflush(pResultFile);
-        }
-    }*/
+        }*/
+    }
 
-int CollectAllElmsCallback
+/*int CollectAllElmsCallback
 (
     ElementRefP      elemRef,
     void            *callbackArg,
@@ -999,12 +1010,12 @@ int CollectAllElmsCallback
     agendaP->Insert(elemRef, modelP);
 
     return SUCCESS;
-    }
+    }*/
 
-/*void PerformDrapeLineTest(BeXmlNodeP pTestNode, FILE* pResultFile)
+void PerformDrapeLineTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    //assert(false && "Not ported yet! Perhaps we could use your help?");
-    WString stmFileName, linesFileName, name;
+    assert(false && "Not ported yet! Perhaps we could use your help?");
+    /*WString stmFileName, linesFileName, name;
     // Parses the test(s) definition:
     if (pTestNode->GetAttributeStringValue(stmFileName, "stmFileName") != BEXML_Success)
         {
@@ -1207,9 +1218,9 @@ int CollectAllElmsCallback
                 stmFile = nullptr;
                 dtmP = nullptr;
                 //drape agenda
-    }*/
+    */}
 
-int CollectFirstMeshElement
+/*int CollectFirstMeshElement
     (
         ElementRefP      elemRef,
         void            *callbackArg,
@@ -1223,12 +1234,12 @@ int CollectFirstMeshElement
         agendaP->Insert(elemRef, modelP);
 
     return SUCCESS;
-    }
+    }*/
 
-/*void PerformVolumeTest(BeXmlNodeP pTestNode, FILE* pResultFile)
+void PerformVolumeTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    //assert(false && "Not ported yet! Perhaps we could use your help?");
-        WString stmFileName, corridorFileName;
+    assert(false && "Not ported yet! Perhaps we could use your help?");
+/*        WString stmFileName, corridorFileName;
         // Parses the test(s) definition:
         if (pTestNode->GetAttributeStringValue(stmFileName, "stmFileName") != BEXML_Success)
             {
@@ -1666,8 +1677,8 @@ int CollectFirstMeshElement
                                 IScalableMeshATP::StoreDouble(L"volumeTime", 0.0);
                                 IScalableMeshATP::StoreInt(L"nTrianglesInCorridor", 0);
                                 fflush(pResultFile);
-    }
-    */
+    */}
+    
 /*---------------------------------------------------------------------------------**//**
 * Self-contained importer test.
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1800,7 +1811,7 @@ bool WriteFeatureCallback(const DPoint3d* featurePoints, size_t nbOfFeaturesPoin
     return true;
     }
 
-class ScalableMeshSourceImporterStorage : public IScalableMeshSourceImporterStorage
+/*class ScalableMeshSourceImporterStorage : public IScalableMeshSourceImporterStorage
     {
     private:
 
@@ -2135,7 +2146,7 @@ class ScalableMeshSourceImporterStorage : public IScalableMeshSourceImporterStor
             return new ScalableMeshSourceImporterStorage(sourceInfoFileName, isReading);
             }
     };
-
+*/
 #define BUFFERSIZE 4096
 
 bool CompareFileBinary(FILE* pFile1, FILE* pFile2)
@@ -2221,14 +2232,15 @@ bool CompareWithBaseline(FILE* pPointResultFile, FILE* pFeatureResultFile, WStri
     return samePointAsBaseline && sameFeatureAsBaseline;
     }
 
-bool PerformStorageRestoreTest(Bentley::ScalableMesh::IScalableMeshSourceImporterPtr&       importerFromStoragePtr,
+/*bool PerformStorageRestoreTest(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceImporterPtr&       importerFromStoragePtr,
                                clock_t&                                       storageTime,
                                clock_t&                                       restoreTime,
                                const Bentley::ScalableMesh::IScalableMeshSourceImporterPtr& importerFromSourcesPtr,
                                WString&                                       sourceInfoFileName)
     {
     bool success = false;
-
+    assert(false && "Can't support now");
+/*
     storageTime = clock();
 
     IScalableMeshSourceImporterStoragePtr importerStorage(ScalableMeshSourceImporterStorage::Create(sourceInfoFileName, false));
@@ -2257,13 +2269,14 @@ bool PerformStorageRestoreTest(Bentley::ScalableMesh::IScalableMeshSourceImporte
             success = true;
             }
         }
-
-    return success;
-    }
+    */
+ /*   return success;
+    }*/
 
 void PerformSelfContainedImporterTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    BeXmlStatus status;
+    assert(false && "not supported");
+    /*BeXmlStatus status;
     WString pointFileName;
     WString featureFileName;
     WString sourceInfoFileName;
@@ -2312,7 +2325,7 @@ void PerformSelfContainedImporterTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
         assert(s_pFeatureResultFile);
 
-        Bentley::ScalableMesh::IScalableMeshSourceImporterPtr importerPtr(Bentley::ScalableMesh::IScalableMeshSourceImporter::Create());
+        BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceImporterPtr importerPtr(Bentley::ScalableMesh::IScalableMeshSourceImporter::Create());
 
         importerPtr->SetFeatureCallback(WriteFeatureCallback);
         importerPtr->SetPointsCallback(WritePointsCallback);
@@ -2329,7 +2342,7 @@ void PerformSelfContainedImporterTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
             if (status == BEXML_Success)
                 {
-                BaseGCSPtr baseGCSPtr(BaseGCS::CreateGCS(gcsKeyName.c_str()));
+                BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr baseGCSPtr(BaseGCS::CreateGCS(gcsKeyName.c_str()));
                 StatusInt status = importerPtr->SetBaseGCS(baseGCSPtr);
                 assert(status == SUCCESS);
                 }
@@ -2413,7 +2426,7 @@ void PerformSelfContainedImporterTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
         fclose(s_pFeatureResultFile);
         s_pFeatureResultFile = 0;
-        }
+        }*/
     }
 
 std::vector<std::pair<std::vector<DPoint3d>, DTMFeatureType>> s_importedFeatures;
@@ -2432,7 +2445,8 @@ bool NoPointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoints3
 
 void PerformGISFeaturesImporterTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    WString baselineFileName, result;
+    assert(false && "not supported");
+/*    WString baselineFileName, result;
     Int64 breaklineCount = 0, createdBreaklineCount = 0, differentBreaklines = 0;
     if (pTestNode->GetAttributeStringValue(baselineFileName, "baseline") != BEXML_Success)
         {
@@ -2490,10 +2504,10 @@ void PerformGISFeaturesImporterTest(BeXmlNodeP pTestNode, FILE* pResultFile)
              createdBreaklineCount,
              differentBreaklines,
              (elapsed / CLOCKS_PER_SEC) / 60);
-    fflush(pResultFile);
+    fflush(pResultFile);*/
     }
 
-void CreateBuffersAndQueryForPointCloud(EditElementHandleP pcloud, IPointCloudDataQueryPtr query, IPointCloudQueryBuffersPtr buffers, WString& fileName)
+/*void CreateBuffersAndQueryForPointCloud(EditElementHandleP pcloud, IPointCloudDataQueryPtr query, IPointCloudQueryBuffersPtr buffers, WString& fileName)
     {
         DgnDocumentMonikerPtr monikerPtr = PointCloudDisplay::CreateDocumentMonikerFromFileName(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef(), fileName.c_str());
         PointCloudPropertiesPtr propsP = PointCloudProperties::Create(*monikerPtr, *ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef());
@@ -2512,13 +2526,13 @@ void CreateBuffersAndQueryForPointCloud(EditElementHandleP pcloud, IPointCloudDa
 
 struct CompareClassifResult
     {
-    Int64 nTypeIError = 0;
-    Int64 nTypeIIError = 0;
-    Int64 nTotalPts = 0;
-    Int64 nGroundBaseline = 0;
-    Int64 nObjectsBaseline = 0;
-    Int64 nCorrectGround = 0;
-    Int64 nCorrectObjects = 0;
+    int64_t nTypeIError = 0;
+    int64_t nTypeIIError = 0;
+    int64_t nTotalPts = 0;
+    int64_t nGroundBaseline = 0;
+    int64_t nObjectsBaseline = 0;
+    int64_t nCorrectGround = 0;
+    int64_t nCorrectObjects = 0;
     double nTypeIErrorpercent;
     double nTypeIIErrorpercent;
     double totalError;
@@ -2526,7 +2540,7 @@ struct CompareClassifResult
     double specificity;
     };
 
-void CompareClassifications(WString& testFileName, WString& baselineFileName, CompareClassifResult& res)
+/*void CompareClassifications(WString& testFileName, WString& baselineFileName, CompareClassifResult& res)
     {
     const UChar groundNumber = 2;
     EditElementHandle ehBaseline, ehTest;
@@ -2580,11 +2594,12 @@ void CompareClassifications(WString& testFileName, WString& baselineFileName, Co
     res.totalError = 100.0*(res.nTypeIError + res.nTypeIIError) / res.nTotalPts;
     res.sensitivity = 100.0* res.nCorrectGround / res.nGroundBaseline;
     res.specificity = 100.0*res.nCorrectObjects / res.nObjectsBaseline;
-    }
+    }*/
 
 void PerformClassificationCompareTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    WString baselineFileName, testFileName, result;
+    assert(false && "not supported");
+    /*WString baselineFileName, testFileName, result;
     if (pTestNode->GetAttributeStringValue(baselineFileName, "baseline") != BEXML_Success)
         {
         printf("ERROR : baseline attribute not found\r\n");
@@ -2611,10 +2626,10 @@ void PerformClassificationCompareTest(BeXmlNodeP pTestNode, FILE* pResultFile)
              res.totalError,
              res.sensitivity,
              res.specificity);
-    fflush(pResultFile);
+    fflush(pResultFile);*/
     }
 
-void RunGroundDetection(WString& path)
+/*void RunGroundDetection(WString& path)
     {
     EditElementHandle pcloud;
     // Replace ACTIVEMODEL by ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef()
@@ -2759,11 +2774,12 @@ void FormatParams(std::vector<ParameterDescription>& params, std::string& paramS
         paramStream << param.name << "-" << std::to_string((long double)param.currentVal) << "--";
         }
     paramString = paramStream.str();
-    }
+    }*/
 
 void PerformGroundParametersTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    BeXmlNodeP pTestChildNode = pTestNode->GetFirstChild();
+    assert(false && "not supported");
+    /*BeXmlNodeP pTestChildNode = pTestNode->GetFirstChild();
     std::vector<std::vector<WString>> filePaths;
     WString parameterConfig;
     if (pTestNode->GetAttributeStringValue(parameterConfig, "params") != BEXML_Success)
@@ -2825,7 +2841,7 @@ void PerformGroundParametersTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                  starred ? L"STARRED" : L"",
                  WString(paramString.c_str()).c_str());
         fflush(pResultFile);
-        }
+        }*/
     }
 
 void PerformNodeCreationTest(BeXmlNodeP pTestNode, FILE* pResultFile)
@@ -2839,16 +2855,16 @@ void PerformNodeCreationTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         printf("ERROR : stmFileName attribute not found\r\n");
         }
     int openStatus;
-    IScalableMeshNodeCreatorPtr ptr = Bentley::ScalableMesh::IScalableMeshNodeCreator::GetFor(stmFileName.c_str(), openStatus);
+    IScalableMeshNodeCreatorPtr ptr = BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshNodeCreator::GetFor(stmFileName.c_str(), openStatus);
     IScalableMeshNodeEditPtr rootNode = ptr->AddNode(openStatus);
     DRange3d extent = DRange3d::FromMinMax(-1.0, 1.0);
     rootNode->SetNodeExtent(extent);
     rootNode->SetContentExtent(extent);
-    DRange3d childExt = DRange3d::From(Bentley::DPoint3d::From(-1.0, -1.0), Bentley::DPoint3d::From(0.0, 0.0));
+    DRange3d childExt = DRange3d::From(BENTLEY_NAMESPACE_NAME::DPoint3d::From(-1.0, -1.0), BENTLEY_NAMESPACE_NAME::DPoint3d::From(0.0, 0.0));
     IScalableMeshNodeEditPtr childNode = ptr->AddNode(rootNode, childExt, openStatus);
-    childExt = DRange3d::From(Bentley::DPoint3d::From(-1.0, 0.0), Bentley::DPoint3d::From(0.0, 1.0));
+    childExt = DRange3d::From(BENTLEY_NAMESPACE_NAME::DPoint3d::From(-1.0, 0.0), BENTLEY_NAMESPACE_NAME::DPoint3d::From(0.0, 1.0));
     childNode = ptr->AddNode(rootNode, childExt, openStatus);
-    childExt = DRange3d::From(Bentley::DPoint3d::From(0.0, -1.0), Bentley::DPoint3d::From(1.0, 0.0));
+    childExt = DRange3d::From(BENTLEY_NAMESPACE_NAME::DPoint3d::From(0.0, -1.0), BENTLEY_NAMESPACE_NAME::DPoint3d::From(1.0, 0.0));
     childNode = ptr->AddNode(rootNode, childExt, openStatus);
     }
 
@@ -2881,7 +2897,7 @@ void PerformLoadingTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     fflush(pResultFile);
     }
 
-bool ReadElementsFromDgnFileAndLevel(ElementAgenda& agenda, DgnAttachment*& attachedDgn, WString dgnFileName, WString levelName)
+/*bool ReadElementsFromDgnFileAndLevel(ElementAgenda& agenda, DgnAttachment*& attachedDgn, WString dgnFileName, WString levelName)
     {
     DgnFileStatus fileOpenStatus;
     DgnDocumentPtr lineDoc = DgnDocument::CreateFromFileName(fileOpenStatus, dgnFileName.c_str(), NULL, DEFDGNFILE_ID, DgnDocument::FetchMode::Read);
@@ -3050,7 +3066,7 @@ bool FindMatchingElement(size_t& index, bvector<DPoint3d>& query, ElementAgenda&
             }
         }
     return false;
-    }
+    }*/
 
 void ReadValuesFromCSV(double& val1, double& val2, WString fileName, WString rowName)
     {
@@ -3085,7 +3101,8 @@ void ReadValuesFromCSV(double& val1, double& val2, WString fileName, WString row
 
 void PerformDrapeBaselineTest(BeXmlNodeP pTestNode, FILE* pResultFile, BeXmlNodeP pRootNode)
     {
-    BeXmlStatus status;
+    assert(false && "not supported");
+/*    BeXmlStatus status;
     WString stmFileName;
     status = pTestNode->GetAttributeStringValue(stmFileName, "stmFileName");
 
@@ -3211,7 +3228,7 @@ void PerformDrapeBaselineTest(BeXmlNodeP pTestNode, FILE* pResultFile, BeXmlNode
                  L"ERROR");
         }
     fflush(pResultFile);
-
+    */
     }
 
 bool TriangleWithinClosedFeature(const DPoint3d* triangle, const std::vector<DPoint3d>& feature)
@@ -3336,7 +3353,7 @@ void PerformConstraintTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         return;
         }
     StatusInt createStatus;
-    Bentley::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPtr(Bentley::ScalableMesh::IScalableMeshSourceCreator::GetFor(stmFileName.c_str(), createStatus));
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(stmFileName.c_str(), createStatus));
 
     if (creatorPtr == 0)
         {
@@ -3350,7 +3367,7 @@ void PerformConstraintTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
         if (status == BEXML_Success)
             {
-            BaseGCSPtr baseGCSPtr(BaseGCS::CreateGCS(gcsKeyName.c_str()));
+            BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr baseGCSPtr(BaseGCS::CreateGCS(gcsKeyName.c_str()));
             StatusInt status = creatorPtr->SetBaseGCS(baseGCSPtr);
             assert(status == SUCCESS);
             }
@@ -3417,7 +3434,7 @@ void PerformConstraintTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     }
 
 static HPMPool* s_rasterMemPool = nullptr;
-
+/*
 void readJPG(WString texturePath, bvector<Byte>& textureTmp, size_t& sizeTmp)
     {
     int textureWidthInPixels = 1024, textureHeightInPixels = 1024;
@@ -3463,7 +3480,6 @@ void readJPG(WString texturePath, bvector<Byte>& textureTmp, size_t& sizeTmp)
                                    pRaster->GetCoordSys(),//nullptr,//sourceRasterP->GetCoordSys(),
                                    pPixelType,
                                    8,
-                                   HRABitmap::UPPER_LEFT_HORIZONTAL,
                                    pCodec);
 
     pTextureBitmap->GetPacket()->SetBuffer(pixelBufferP + 3 * sizeof(int), textureWidthInPixels * textureHeightInPixels * nOfChannels);
@@ -3474,7 +3490,7 @@ void readJPG(WString texturePath, bvector<Byte>& textureTmp, size_t& sizeTmp)
     //CR 332863 - Quick trick to display the STM outside in smooth outside the area where texture data are available. 
     //              Note that this trick will lead to the translucent color shown throughout transparent raster being a shade of gray 
     //              instead of the color of the background.
-    UInt32 whiteOpaque = 0xFFFFFFFF;
+    uint32_t whiteOpaque = 0xFFFFFFFF;
 
     clearOptions.SetRawDataValue(&whiteOpaque);
 
@@ -3497,11 +3513,12 @@ void readJPG(WString texturePath, bvector<Byte>& textureTmp, size_t& sizeTmp)
     file_s.open("C:\\Users\\Thomas.Butzbach\\Documents\\data_scalableMesh\\test_SDK\\binary1.txt", ios_base::binary);
     file_s.write((char*)pixelBufferP, sizeTmp);
     file_s.close();*/
-    }
+//    }
 
 void PerformSDKCreationTexturedMeshNode(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    BeXmlStatus status;
+    assert(false && "not implemented");
+/*    BeXmlStatus status;
     WString stmFileName;
     int32_t nTextures;
     status = pTestNode->GetAttributeStringValue(stmFileName, "stmFileName");
@@ -3519,11 +3536,11 @@ void PerformSDKCreationTexturedMeshNode(BeXmlNodeP pTestNode, FILE* pResultFile)
     StatusInt createStatus;
 
     // Create scalableMesh File
-    Bentley::ScalableMesh::IScalableMeshNodeCreatorPtr scMesh = ScalableMesh::IScalableMeshNodeCreator::GetFor(stmFileName.c_str(), createStatus);
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshNodeCreatorPtr scMesh = ScalableMesh::IScalableMeshNodeCreator::GetFor(stmFileName.c_str(), createStatus);
     // Create empty scalableMesh
     createStatus = scMesh->Create();
     // Create root node
-    Bentley::ScalableMesh::IScalableMeshNodeEditPtr rootNode = scMesh->AddNode(createStatus);
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshNodeEditPtr rootNode = scMesh->AddNode(createStatus);
 
     // Add extent to rootnode
     DRange3d ext;
@@ -3602,7 +3619,7 @@ void PerformSDKCreationTexturedMeshNode(BeXmlNodeP pTestNode, FILE* pResultFile)
     ptsIndicesLines.push_back(5);
     ptsIndicesLines.push_back(7);
     ptsIndicesLines.push_back(8);
-    while ((0 != pTestChildNode) /*&& (isSuccess == true)*/)
+    while ((0 != pTestChildNode) /*&& (isSuccess == true)*/             /*)
         {
         if (0 != BeStringUtilities::Stricmp(pTestChildNode->GetName(), "texture"))
             {
@@ -3624,7 +3641,7 @@ void PerformSDKCreationTexturedMeshNode(BeXmlNodeP pTestNode, FILE* pResultFile)
         ptsIndices[faceTextured+1].push_back(3);
         ptsIndices[faceTextured+1].push_back(4);*/
 
-        uvIndices[faceTextured].push_back(1);
+/*        uvIndices[faceTextured].push_back(1);
         uvIndices[faceTextured].push_back(2);
         uvIndices[faceTextured].push_back(3);
         uvIndices[faceTextured].push_back(1);
@@ -3659,8 +3676,8 @@ void PerformSDKCreationTexturedMeshNode(BeXmlNodeP pTestNode, FILE* pResultFile)
 
         sizeVec[k] = sizeTmp;
         // errror pointer non initialiser
-        textureByteArrayVec[k].resize(sizeTmp /*+ 3 * sizeof(int)*/);
-        memcpy_s(&textureByteArrayVec[k][0], sizeof(textureByteArrayVec[k][0])*textureByteArrayVec[k].size() /*+ 3 * sizeof(int)*/, &textureTmp[0], sizeof(unsigned char) * sizeVec[k]/* + 3 * sizeof(int)*/);
+        textureByteArrayVec[k].resize(sizeTmp /*+ 3 * sizeof(int)*/                         /*);
+        memcpy_s(&textureByteArrayVec[k][0], sizeof(textureByteArrayVec[k][0])*textureByteArrayVec[k].size() /*+ 3 * sizeof(int)*/             /*, &textureTmp[0], sizeof(unsigned char) * sizeVec[k]/* + 3 * sizeof(int)*/                       /*);
         }
 
     if (rootNode->AddTextures(textureByteArrayVec, nTextures, true) != SUCCESS)
@@ -3674,7 +3691,7 @@ void PerformSDKCreationTexturedMeshNode(BeXmlNodeP pTestNode, FILE* pResultFile)
     rootNode = 0;
     scMesh = 0;
 
-    }
+    }*/
 
     }
 
@@ -3704,7 +3721,9 @@ void PerformStreaming(BeXmlNodeP pTestNode, FILE* pResultFile)
     int64_t pointCount = 0, pointCountStream = 0;
     //WString resultPointCount, allTestPass;
     bool pointCountPass, allTestPass, nodeCountPass, pointCountNodePass;
+    pointCountNodePass = true;
     allTestPass = true;
+    pointCountPass = false;
 
     if (stmFile != 0 && stmStreamFile != 0)
         {
@@ -3771,11 +3790,11 @@ void PerformStreaming(BeXmlNodeP pTestNode, FILE* pResultFile)
         //nodeExtent = node->GetNodeExtent();
         bvector<bool> clips;
         IScalableMeshMeshPtr mesh = node->GetMesh(false, clips);
-        const Bentley::PolyfaceQuery* polyface = mesh->GetPolyfaceQuery();
+        const BENTLEY_NAMESPACE_NAME::PolyfaceQuery* polyface = mesh->GetPolyfaceQuery();
 
         bvector<bool> clipsStreaming;
         IScalableMeshMeshPtr meshStreaming = returnedNodesStreaming[j]->GetMesh(false, clips);
-        const Bentley::PolyfaceQuery* polyfaceStreaming = meshStreaming->GetPolyfaceQuery();
+        const BENTLEY_NAMESPACE_NAME::PolyfaceQuery* polyfaceStreaming = meshStreaming->GetPolyfaceQuery();
 
         DPoint3d point;
         DPoint3d pointStreaming;
