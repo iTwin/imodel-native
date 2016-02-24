@@ -4790,6 +4790,31 @@ TEST_F(DataSourceCacheTests, CacheResponse_PartialResultsContainInstanceWihtIdOn
     EXPECT_EQ("ModifiedValueB", instanceJson["TestProperty2"].asString());
     }
 
+TEST_F(DataSourceCacheTests, CacheResponse_ResultNoLongerContainsInstanceThatWasLocallyModified_RemovesModifiedInstance)
+    {
+    auto cache = GetTestCache();
+
+    auto key = StubCachedResponseKey(*cache);
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"});
+    instances.Add({"TestSchema.TestClass", "B"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+
+    auto instance = cache->FindInstance({"TestSchema.TestClass", "A"});
+    auto properties = ToJson(R"({"TestProperty" : "Modified"})");
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, properties));
+
+    ASSERT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsInCache());
+    ASSERT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsInCache());
+
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "B"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+
+    ASSERT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsInCache());
+    ASSERT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsInCache());
+    }
+
 TEST_F(DataSourceCacheTests, CacheResponse_FullResultContainsInstanceThatWasLocallyDeleted_IgnoresInstance)
     {
     auto cache = GetTestCache();
