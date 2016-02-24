@@ -12,6 +12,4 @@ BeTextFileTests.*
 BeStringUtilitiesTests.UriEncoding
 DoubleFormatterTest.ReplaceDecimalSeparator     # Only replace default decimal Separator
 
-#----------------------------------------------------------------------------------------
-# *** Broken in 06; need to be re-visited ***
-#----------------------------------------------------------------------------------------
+BeStringUtilitiesTests.ParseArguments    # Notified Barry
