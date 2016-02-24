@@ -360,10 +360,10 @@
     <ClCompile Include="Connect\DelegationTokenProvider.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Connect\FederationTokenProvider.cpp">
+    <ClCompile Include="Connect\IdentityAuthenticationPersistence.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Connect\FederationAuthenticationPersistence.cpp">
+    <ClCompile Include="Connect\IdentityTokenProvider.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -794,10 +794,10 @@
     <ClInclude Include="PublicAPI\WebServices\Connect\IConnectAuthenticationPersistence.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\WebServices\Connect\FederationTokenProvider.h">
+    <ClInclude Include="Connect\IdentityTokenProvider.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\WebServices\Connect\FederationAuthenticationPersistence.h">
+    <ClInclude Include="Connect\IdentityAuthenticationPersistence.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

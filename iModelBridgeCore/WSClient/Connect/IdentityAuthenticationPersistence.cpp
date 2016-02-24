@@ -1,38 +1,38 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Connect/FederationAuthenticationPersistence.cpp $
+|     $Source: Connect/IdentityAuthenticationPersistence.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
-#include <WebServices/Connect/FederationAuthenticationPersistence.h>
+#include "IdentityAuthenticationPersistence.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_MOBILEDGN
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
-#define SecureStoreNameSpace_Connect    "ConnectFederation"
+#define SecureStoreNameSpace_Connect    "ConnectIdentity"
 #define SecureStoreKey_Token            "Token"
 #define SecureStoreKey_TokenSetTime     "TokenSetTime"
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-FederationAuthenticationPersistence::FederationAuthenticationPersistence(std::shared_ptr<ISecureStore> customSecureStore) :
+IdentityAuthenticationPersistence::IdentityAuthenticationPersistence(std::shared_ptr<ISecureStore> customSecureStore) :
 m_secureStore(customSecureStore ? customSecureStore : std::make_shared<SecureStore>())
     {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void FederationAuthenticationPersistence::SetCredentials(CredentialsCR credentials)
+void IdentityAuthenticationPersistence::SetCredentials(CredentialsCR credentials)
     {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Credentials FederationAuthenticationPersistence::GetCredentials() const
+Credentials IdentityAuthenticationPersistence::GetCredentials() const
     {
     return Credentials();
     }
@@ -40,7 +40,7 @@ Credentials FederationAuthenticationPersistence::GetCredentials() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void FederationAuthenticationPersistence::SetToken(SamlTokenPtr token)
+void IdentityAuthenticationPersistence::SetToken(SamlTokenPtr token)
     {
     BeCriticalSectionHolder lock(m_cs);
 
@@ -55,7 +55,7 @@ void FederationAuthenticationPersistence::SetToken(SamlTokenPtr token)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-SamlTokenPtr FederationAuthenticationPersistence::GetToken() const
+SamlTokenPtr IdentityAuthenticationPersistence::GetToken() const
     {
     BeCriticalSectionHolder lock(m_cs);
 
@@ -75,7 +75,7 @@ SamlTokenPtr FederationAuthenticationPersistence::GetToken() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Vytautas.Barkauskas    01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DateTime FederationAuthenticationPersistence::GetTokenSetTime() const
+DateTime IdentityAuthenticationPersistence::GetTokenSetTime() const
     {
     Utf8String timeStr = m_secureStore->LoadValue(SecureStoreNameSpace_Connect, SecureStoreKey_TokenSetTime);
 

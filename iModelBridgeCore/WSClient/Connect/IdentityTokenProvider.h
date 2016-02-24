@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/WebServices/Connect/FederationTokenProvider.h $
+|     $Source: Connect/IdentityTokenProvider.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -16,7 +16,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct FederationTokenProvider : public IConnectTokenProvider
+struct IdentityTokenProvider : public IConnectTokenProvider
     {
     private:
         ITokenStorePtr m_store;
@@ -29,7 +29,7 @@ struct FederationTokenProvider : public IConnectTokenProvider
         bool ShouldRenewToken(DateTimeCR tokenSetTime);
 
     public:
-        WSCLIENT_EXPORT FederationTokenProvider(ITokenStorePtr store, std::function<void()> tokenExpiredHandler = nullptr);
+        WSCLIENT_EXPORT IdentityTokenProvider(ITokenStorePtr store, std::function<void()> tokenExpiredHandler = nullptr);
 
         //! Set new token lifetime and refresh rate in minutes
         WSCLIENT_EXPORT void Configure(uint64_t tokenLifetime, uint64_t tokenRefreshRate);
