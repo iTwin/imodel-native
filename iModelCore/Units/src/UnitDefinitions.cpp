@@ -551,7 +551,7 @@ void AddForce(UnitRegistry& reg)
 
 void AddHeatFlux(UnitRegistry& reg)
     {
-    reg.AddUnit(HEATFLUX, SI, "W/SQ.M", "W*M(-2)"); //, BISQPrimUom);
+    reg.AddUnit(HEATFLUX_DENSITY, SI, "W/SQ.M", "W*M(-2)"); //, BISQPrimUom);
     }
 
 void AddHeatTransfer(UnitRegistry& reg)
@@ -618,18 +618,18 @@ void AddMolarConcentration(UnitRegistry& reg)
     reg.AddSynonym(unit, "MOLE_PER_FOOT_CUBED");
     }
 
-// TODO: Check Area moment?
+// NOTE: Changed to Area moment of inertia based on Wiki pages on moment of inertia and area moment of inertia
 void AddMomentOfInertia(UnitRegistry& reg)
     {
-    UnitCP unit = reg.AddUnit(MOMENTINERTIA, USCUSTOM, "M^4", "M(4)");
+    UnitCP unit = reg.AddUnit(AREA_MOMENT_INERTIA, USCUSTOM, "M^4", "M(4)");
     reg.AddSynonym(unit, "METRE_TO_THE_FOURTH");
-    unit = reg.AddUnit(MOMENTINERTIA, INDUSTRIAL, "CM^4", "CM(4)");
+    unit = reg.AddUnit(AREA_MOMENT_INERTIA, INDUSTRIAL, "CM^4", "CM(4)");
     reg.AddSynonym(unit, "CENTIMETRE_TO_THE_FOURTH");
-    unit = reg.AddUnit(MOMENTINERTIA, INDUSTRIAL, "IN^4", "IN(4)");
+    unit = reg.AddUnit(AREA_MOMENT_INERTIA, INDUSTRIAL, "IN^4", "IN(4)");
     reg.AddSynonym(unit, "INCH_TO_THE_FOURTH");
-    unit = reg.AddUnit(MOMENTINERTIA, INDUSTRIAL, "FT^4", "FT(4)");
+    unit = reg.AddUnit(AREA_MOMENT_INERTIA, INDUSTRIAL, "FT^4", "FT(4)");
     reg.AddSynonym(unit, "FOOT_TO_THE_FOURTH");
-    unit = reg.AddUnit(MOMENTINERTIA, SI, "MM^4", "MM(4)");
+    unit = reg.AddUnit(AREA_MOMENT_INERTIA, SI, "MM^4", "MM(4)");
     reg.AddSynonym(unit, "MILLIMETRE_TO_THE_FOURTH");
     }
 
@@ -842,28 +842,28 @@ void AddVelocity(UnitRegistry& reg)
 
 void AddAngularVelocity(UnitRegistry& reg)
     {
-    UnitCP unit = reg.AddUnit(ANGVELOCITY, SI, "RAD/S", "RAD*S(-1)");
+    UnitCP unit = reg.AddUnit(ANGULAR_VELOCITY, SI, "RAD/S", "RAD*S(-1)");
     reg.AddSynonym(unit, "RADIAN/SECOND");
     reg.AddSynonym(unit, "RADIAN_PER_SECOND");
-    unit = reg.AddUnit(ANGVELOCITY, SI, "RAD/MIN", "RAD*MIN(-1)");
+    unit = reg.AddUnit(ANGULAR_VELOCITY, SI, "RAD/MIN", "RAD*MIN(-1)");
     reg.AddSynonym(unit, "RADIAN/MINUTE");
     reg.AddSynonym(unit, "RADIAN_PER_MINUTE");
-    unit = reg.AddUnit(ANGVELOCITY, SI, "RAD/HR", "RAD*HR(-1)");
+    unit = reg.AddUnit(ANGULAR_VELOCITY, SI, "RAD/HR", "RAD*HR(-1)");
     reg.AddSynonym(unit, "RADIAN/HOUR");
     reg.AddSynonym(unit, "RADIAN_PER_HOUR");
-    unit = reg.AddUnit(ANGVELOCITY, SI, "RPS", "[PI]*RAD*S(-1)", 2.0);
+    unit = reg.AddUnit(ANGULAR_VELOCITY, SI, "RPS", "[PI]*RAD*S(-1)", 2.0);
     reg.AddSynonym(unit, "CYCLE_PER_SECOND");
-    unit = reg.AddUnit(ANGVELOCITY, SI, "RPM", "[PI]*RAD*MIN(-1)", 2.0);
+    unit = reg.AddUnit(ANGULAR_VELOCITY, SI, "RPM", "[PI]*RAD*MIN(-1)", 2.0);
     reg.AddSynonym(unit, "CYCLE_PER_MINUTE");
-    unit = reg.AddUnit(ANGVELOCITY, SI, "RPH", "[PI]*RAD*HOUR(-1)", 2.0);
+    unit = reg.AddUnit(ANGULAR_VELOCITY, SI, "RPH", "[PI]*RAD*HOUR(-1)", 2.0);
     reg.AddSynonym(unit, "CYCLE_PER_HOUR");
-    unit = reg.AddUnit(ANGVELOCITY, SI, "DEG/S", "ARC_DEG*S(-1)", 1.0);
+    unit = reg.AddUnit(ANGULAR_VELOCITY, SI, "DEG/S", "ARC_DEG*S(-1)", 1.0);
     reg.AddSynonym(unit, "ARC_DEG/S");
     reg.AddSynonym(unit, "DEGREE_PER_SECOND");
-    unit = reg.AddUnit(ANGVELOCITY, SI, "DEG/MIN", "ARC_DEG*MIN(-1)", 1.0);
+    unit = reg.AddUnit(ANGULAR_VELOCITY, SI, "DEG/MIN", "ARC_DEG*MIN(-1)", 1.0);
     reg.AddSynonym(unit, "ARC_DEG/MIN");
     reg.AddSynonym(unit, "DEGREE_PER_MINUTE");
-    unit = reg.AddUnit(ANGVELOCITY, SI, "DEG/HR", "ARC_DEG*HR(-1)", 1.0);
+    unit = reg.AddUnit(ANGULAR_VELOCITY, SI, "DEG/HR", "ARC_DEG*HR(-1)", 1.0);
     reg.AddSynonym(unit, "ARC_DEG/HOUR");
     reg.AddSynonym(unit, "DEGREE_PER_HOUR");
     }
@@ -928,15 +928,15 @@ void AddSpecificVolume(UnitRegistry& reg)
 
 void AddWarpingConstant(UnitRegistry& reg)
     {
-    UnitCP unit = reg.AddUnit(WARPING_CONSTANT, INDUSTRIAL, "M^6", "M(6)");
+    UnitCP unit = reg.AddUnit(TORSIONAL_WARPING_CONSTANT, INDUSTRIAL, "M^6", "M(6)");
     reg.AddSynonym(unit, "METRE_TO_THE_SIXTH");
-    unit = reg.AddUnit(WARPING_CONSTANT, INDUSTRIAL, "MM^6", "MM(6)");
+    unit = reg.AddUnit(TORSIONAL_WARPING_CONSTANT, INDUSTRIAL, "MM^6", "MM(6)");
     reg.AddSynonym(unit, "MILLIMETRE_TO_THE_SIXTH");
-    unit = reg.AddUnit(WARPING_CONSTANT, INDUSTRIAL, "CM^6", "CM(6)");
+    unit = reg.AddUnit(TORSIONAL_WARPING_CONSTANT, INDUSTRIAL, "CM^6", "CM(6)");
     reg.AddSynonym(unit, "CENTIMETRE_TO_THE_SIXTH");
-    unit = reg.AddUnit(WARPING_CONSTANT, INDUSTRIAL, "IN^6", "IN(6)");
+    unit = reg.AddUnit(TORSIONAL_WARPING_CONSTANT, INDUSTRIAL, "IN^6", "IN(6)");
     reg.AddSynonym(unit, "INCH_TO_THE_SIXTH");
-    unit = reg.AddUnit(WARPING_CONSTANT, INDUSTRIAL, "FT^6", "FT(6)");
+    unit = reg.AddUnit(TORSIONAL_WARPING_CONSTANT, INDUSTRIAL, "FT^6", "FT(6)");
     reg.AddSynonym(unit, "FOOT_TO_THE_SIXTH");
     }
 
