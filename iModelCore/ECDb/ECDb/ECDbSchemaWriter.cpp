@@ -40,11 +40,7 @@ BentleyStatus ECDbSchemaWriter::CreateECSchemaEntry(ECSchemaCR ecSchema)
     if (BE_SQLITE_OK != stmt->BindInt(6, ecSchema.GetVersionMajor()))
         return ERROR;
 
-    //WIP_3DIGITVERSION
-    //if (BE_SQLITE_OK != stmt->BindInt(7, ecSchema.GetVersionMiddle()))
-    //    return ERROR;
-    //VersionMiddle is persisted as 0 until we have API support for it in 0601
-    if (BE_SQLITE_OK != stmt->BindInt(7, 0))
+    if (BE_SQLITE_OK != stmt->BindInt(7, ecSchema.GetVersionWrite()))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindInt(8, ecSchema.GetVersionMinor()))

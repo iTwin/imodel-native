@@ -490,14 +490,12 @@ BentleyStatus ECDbSchemaReader::LoadECSchemaFromDb(DbECSchemaEntry*& schemaEntry
     Utf8CP description = stmt->GetValueText(2);
     Utf8CP nsprefix = stmt->GetValueText(3);
     uint32_t versionMajor = (uint32_t) stmt->GetValueInt(4);
-    //WIP_3DIGITVERSION
-    //uint32_t versionMiddle = (uint32_t) stmt->GetValueInt(5);
+    uint32_t versionWrite = (uint32_t) stmt->GetValueInt(5);
     uint32_t versionMinor = (uint32_t) stmt->GetValueInt(6);
     const int typesInSchema = stmt->GetValueInt(7);
 
     ECSchemaPtr schema = nullptr;
-    //WIP_3DIGITVERSION add versionMiddle to CreateSchema call
-    if (ECSchema::CreateSchema(schema, schemaName, versionMajor, versionMinor) != ECObjectsStatus::Success)
+    if (ECSchema::CreateSchema(schema, schemaName, nsprefix, versionMajor, versionWrite, versionMinor) != ECObjectsStatus::Success)
         return ERROR;
 
     schema->SetId(ecSchemaId);
@@ -507,9 +505,6 @@ BentleyStatus ECDbSchemaReader::LoadECSchemaFromDb(DbECSchemaEntry*& schemaEntry
 
     if (!Utf8String::IsNullOrEmpty(description))
         schema->SetDescription(description);
-
-    if (!Utf8String::IsNullOrEmpty(nsprefix))
-        schema->SetNamespacePrefix(nsprefix);
 
     unique_ptr<DbECSchemaEntry> schemaEntryPtr = unique_ptr<DbECSchemaEntry>(new DbECSchemaEntry(schema, typesInSchema));
     schemaEntry = schemaEntryPtr.get();
