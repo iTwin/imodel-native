@@ -494,7 +494,7 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
         changeset.ConcatenateWith(indirectChanges); // combine direct and indirect changes into a single changeset
         }
 
-    if (BSISUCCESS != status)
+    if (SUCCESS != status)
         {
         LOG.errorv("Cancelling txn due to fatal validation error.");
         OnEndValidate();
@@ -943,7 +943,6 @@ DgnDbStatus TxnManager::ReverseAll(bool prompt)
 
     if (prompt && !T_HOST.GetTxnAdmin()._OnPromptReverseAll())
         {
-        T_HOST.GetTxnAdmin()._RestartTool();
         return DgnDbStatus::NothingToUndo;
         }
 
