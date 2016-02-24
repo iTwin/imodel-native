@@ -168,6 +168,13 @@ public:
     //! @remarks All instances that subsequently use this Updater are presumed to have the same property values set.
     ECDB_EXPORT ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, bvector<uint32_t>& propertiesToBind);
 
+    //! Instantiates a new ECInstanceUpdater.
+    //! @param[in] ecdb ECDb file handle
+    //! @param[in] ecClass ECClass if ECInstances this updater can update
+    //! @param[in] propertiesToBind A list of ECProperties that should be used to create the column bindings.
+    //! @remarks All instances that subsequently use this Updater are presumed to have the same property values set.
+    ECDB_EXPORT ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, bvector<ECN::ECPropertyCP>& propertiesToBind);
+
     ECDB_EXPORT ~ECInstanceUpdater();
 
     //! Indicates whether this ECInstanceUpdater is valid and can be used to update ECInstances.
