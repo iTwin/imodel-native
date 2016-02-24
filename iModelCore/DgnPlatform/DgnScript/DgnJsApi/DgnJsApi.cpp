@@ -22,7 +22,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static RefCountedPtr<PhysicalElement> createPhysicalElement(DgnModelR model, Utf8CP ecSqlClassName, DgnCategoryId catid)//, RefCountedPtr<T> geom)
+static RefCountedPtr<GeometricElement3d> createGeometricElement3d(DgnModelR model, Utf8CP ecSqlClassName, DgnCategoryId catid)//, RefCountedPtr<T> geom)
     {
     if (!ecSqlClassName || !*ecSqlClassName)
         ecSqlClassName = GENERIC_SCHEMA(GENERIC_CLASSNAME_PhysicalObject);
@@ -35,7 +35,7 @@ static RefCountedPtr<PhysicalElement> createPhysicalElement(DgnModelR model, Utf
     DgnClassId pclassId = DgnClassId(db.Schemas().GetECClassId(ecschema.c_str(), ecclass.c_str()));
     if (!pclassId.IsValid())
         return nullptr;
-    return new PhysicalElement(PhysicalElement::CreateParams(db, model.GetModelId(), pclassId, catid));
+    return dynamic_cast<GeometricElement3d*>(dgn_ElementHandler::Geometric3d::GetHandler().Create(GeometricElement3d::CreateParams(db, model.GetModelId(), pclassId, catid)).get());
     }
 
 //---------------------------------------------------------------------------------------
@@ -263,7 +263,7 @@ JsPhysicalElement* JsPhysicalElement::Create(JsDgnModelP model, JsDgnObjectIdP c
     if (!categoryId || !categoryId->IsValid() || !model || !model->m_model.IsValid())
         return nullptr;
     DgnCategoryId catid(categoryId->m_id);
-    return new JsPhysicalElement(*createPhysicalElement(*model->m_model, ecSqlClassName.c_str(), catid));
+    return new JsPhysicalElement(*createGeometricElement3d(*model->m_model, ecSqlClassName.c_str(), catid));
     }
 
 //---------------------------------------------------------------------------------------

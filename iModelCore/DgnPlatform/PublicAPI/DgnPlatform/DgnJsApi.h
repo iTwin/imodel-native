@@ -269,7 +269,7 @@ typedef JsDgnElement* JsDgnElementP;
 //=======================================================================================
 struct JsPhysicalElement : JsDgnElement
 {
-    JsPhysicalElement(PhysicalElementR el) : JsDgnElement(el) {;}
+    JsPhysicalElement(GeometricElement3d& el) : JsDgnElement(el) {;}
 
     JsPlacement3dP GetPlacement() const;
 
