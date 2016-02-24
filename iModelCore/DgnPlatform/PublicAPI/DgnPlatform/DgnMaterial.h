@@ -80,7 +80,7 @@ public:
     };
 
 private:
-    Data    m_data;
+    Data m_data;
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
 protected:

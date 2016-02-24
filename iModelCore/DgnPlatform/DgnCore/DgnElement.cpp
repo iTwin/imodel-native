@@ -122,11 +122,6 @@ void DgnElement::ClearAllAppData()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    02/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-HeapZone& DgnElement::GetHeapZone()  const {return GetDgnDb().Elements().GetHeapZone();}
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_DeleteInDb() const
@@ -447,6 +442,7 @@ DgnDbStatus DgnElement::BindParams(ECSqlStatement& statement, bool isForUpdate)
 
     if (m_code.IsEmpty() && (ECSqlStatus::Success != codeBinder.GetMember(DGN_ELEMENT_CODESTRUCT_Value).BindNull()))
         return DgnDbStatus::BadArg;
+
     if (!m_code.IsEmpty() && (ECSqlStatus::Success != codeBinder.GetMember(DGN_ELEMENT_CODESTRUCT_Value).BindText(m_code.GetValue().c_str(), IECSqlBinder::MakeCopy::No)))
         return DgnDbStatus::BadArg;
 
@@ -490,23 +486,16 @@ DgnDbStatus DgnElement::_InsertInDb()
         return DgnDbStatus::WriteError;
 
     auto status = _BindInsertParams(*statement);
-    if (DgnDbStatus::Success == status)
-        {
-        auto stmtResult = statement->Step();
-        if (BE_SQLITE_DONE != stmtResult)
-            {
-            DgnElementId existingElemWithCode;
-            if (BE_SQLITE_CONSTRAINT_UNIQUE == stmtResult)
-                {
-                // SQLite doesn't tell us which constraint failed - check if it's the Code.
-                existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
-                }
+    if (DgnDbStatus::Success != status)
+        return status;
+ 
+    auto stmtResult = statement->Step();
+    if (BE_SQLITE_DONE == stmtResult)
+        return DgnDbStatus::Success;
 
-            status = existingElemWithCode.IsValid() ? DgnDbStatus::DuplicateCode : DgnDbStatus::WriteError;
-            }
-        }
-
-    return status;
+    // SQLite doesn't tell us which constraint failed - check if it's the Code.
+    auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
+    return existingElemWithCode.IsValid() ? DgnDbStatus::DuplicateCode : DgnDbStatus::WriteError;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -527,21 +516,19 @@ DgnDbStatus DgnElement::_UpdateInDb()
         return DgnDbStatus::WriteError;
 
     DgnDbStatus status = _BindUpdateParams(*stmt);
-    if (DgnDbStatus::Success == status)
-        {
-        auto stmtResult = stmt->Step();
-        if (BE_SQLITE_DONE != stmtResult)
-            {
-            // SQLite doesn't tell us which constraint failed - check if it's the Code.
-            auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
-            if (existingElemWithCode.IsValid() && existingElemWithCode != GetElementId())
-                status = DgnDbStatus::DuplicateCode;
-            else
-                status = DgnDbStatus::WriteError;
-            }
-        }
+    if (DgnDbStatus::Success != status)
+        return status;
 
-    return status;
+    auto stmtResult = stmt->Step();
+    if (BE_SQLITE_DONE == stmtResult)
+        return DgnDbStatus::Success;
+
+    // SQLite doesn't tell us which constraint failed - check if it's the Code.
+    auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
+    if (existingElemWithCode.IsValid() && existingElemWithCode != GetElementId())
+        return DgnDbStatus::DuplicateCode;
+
+    return DgnDbStatus::WriteError;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -723,10 +710,11 @@ DgnDbStatus GeometricElement::Validate() const
     {
     if (!m_categoryId.IsValid())
         return DgnDbStatus::InvalidCategory;
-    else if (m_geom.HasGeometry() && !_IsPlacementValid())
+
+    if (m_geom.HasGeometry() && !_IsPlacementValid())
         return DgnDbStatus::BadElement;
-    else
-        return DgnDbStatus::Success;
+
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1647,63 +1635,146 @@ ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR e
     return ECInstanceKey(classId.GetValue(), GetAspectInstanceId(el));
     }
 
-BEGIN_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
+* @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct CachedECInstanceUpdaters : Db::AppData
+static void computePropertiesAddedByDerivedClass(bvector<ECN::ECPropertyCP>& props, ECN::ECClassCR rootClass, ECN::ECClassCR derivedClass)
+    {
+    if (&derivedClass == &rootClass)
+        return;
+
+    for (ECN::ECPropertyCP prop : derivedClass.GetProperties(false))
+        {
+        props.push_back(prop);
+        }
+
+    for (auto base : derivedClass.GetBaseClasses())
+        {
+        if (base->Is(&rootClass))
+            computePropertiesAddedByDerivedClass(props, rootClass, *base);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::ComputeUnhandledProperties(bvector<ECN::ECPropertyCP>& props) const
+    {
+    ECN::ECClassCP elemClass = GetElementClass();
+    
+    auto& handler = GetElementHandler();
+    ECN::ECClassCP handlerClass = GetDgnDb().Schemas().GetECClass(handler.GetDomain().GetDomainName(), handler.GetClassName().c_str());
+    
+    computePropertiesAddedByDerivedClass(props, *handlerClass, *elemClass);
+    }
+
+//=======================================================================================
+// @bsiclass                                                     Sam.Wilson     02/16
+//=======================================================================================
+struct UnhandledProps : DgnElement::AppData
 {
-    bmap<DgnClassId, ECInstanceUpdater*> m_cache;
+    static Key s_key;
 
-    ~CachedECInstanceUpdaters()
+    bset<Utf8String> m_pendingEdits;
+    ECN::IECInstancePtr m_instance;
+
+    virtual DropMe _OnInserted(DgnElementCR el){UpdateModifiedProperties(el); return DropMe::Yes;}
+    virtual DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original) {UpdateModifiedProperties(original); return DropMe::Yes;}
+    virtual DropMe _OnReversedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::Yes;}
+    virtual DropMe _OnDeleted(DgnElementCR el) {return DropMe::Yes;}
+
+    static UnhandledProps& Get(DgnElementCR elem)
         {
-        DeleteAll();
+        UnhandledProps* props = dynamic_cast<UnhandledProps*>(elem.FindAppData(s_key));
+        if (nullptr == props)
+            elem.AddAppData(s_key, props = new UnhandledProps);
+        return *props;
         }
 
-    void DeleteAll()
-        {
-        for (auto e : m_cache)
-            delete e.second;    
-          
-        m_cache.clear();
-        }
-
-    static CachedECInstanceUpdaters& Get(DgnDbR db)
-        {
-        static Key s_key;
-        auto ad = dynamic_cast<CachedECInstanceUpdaters*>(db.FindAppData(s_key));
-        if (nullptr == ad)
-            db.AddAppData(s_key, (ad = new CachedECInstanceUpdaters));
-        return *ad;
-        }
-
-    void TrimCache()
-        {
-        if (m_cache.size() < 10)
-            return;
-
-        DeleteAll();
-        }
-
-    ECInstanceUpdater& GetECInstanceUpdater0(DgnDbR db, ECClassCR ecClass)
-        {
-        DgnClassId clsid(ecClass.GetId());
-        auto i = m_cache.find(clsid);
-        if (i != m_cache.end())
-            return *i->second;
-        TrimCache();
-        ECInstanceUpdater* newUpdater = new ECInstanceUpdater(db, ecClass);
-        m_cache[clsid] = newUpdater;
-        return *newUpdater;
-        }
-
-    static ECInstanceUpdater& GetECInstanceUpdater(DgnDbR db, ECClassCR ecClass)
-        {
-        return Get(db).GetECInstanceUpdater0(db, ecClass);
-        }
+    ECN::IECInstancePtr GetInstance(DgnElementCR elem);
+    DgnDbStatus UpdateModifiedProperties(DgnElementCR elem);
 };
 
-END_UNNAMED_NAMESPACE
+UnhandledProps::Key UnhandledProps::s_key;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ECN::IECInstancePtr UnhandledProps::GetInstance(DgnElementCR elem)
+    {
+    if (m_instance.IsValid())
+        return m_instance;
+
+    bvector<ECN::ECPropertyCP> unhandledProps;   // NEEDS WORK: This is the same for all instances of a given ECClass. It could be cached on a per-class basis.
+    elem.ComputeUnhandledProperties(unhandledProps);
+
+    if (!elem.GetElementId().IsValid())
+        {
+        m_instance = elem.GetElementClass()->GetDefaultStandaloneEnabler()->CreateInstance();
+        //for (auto prop : unhandledProps)
+        //    m_instance->SetValue(prop->GetName().c_str(), ECValue());
+        return m_instance;
+        }
+
+    Utf8String props;
+    Utf8CP comma = "";
+    for (auto prop : unhandledProps)
+        {
+        props.append(comma).append("[").append(prop->GetName()).append("]");
+        comma = ",";
+        }
+
+    EC::ECSqlStatement stmt;
+    stmt.Prepare(elem.GetDgnDb(), Utf8PrintfString("SELECT %s FROM %s.%s WHERE ECInstanceId=%lld", props.c_str(), elem.GetElementClass()->GetSchema().GetName().c_str(), elem.GetElementClass()->GetName().c_str(), elem.GetElementId().GetValue()));
+    if (stmt.Step() != BE_SQLITE_ROW)
+        return nullptr;
+
+    ECInstanceECSqlSelectAdapter adapter(stmt);
+    return m_instance = adapter.GetInstance();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::GetUnhandledPropertyValue(ECN::ECValueR value, Utf8CP name) const
+    {
+    ECN::IECInstancePtr inst = UnhandledProps::Get(*this).GetInstance(*this);
+    if (!inst.IsValid())
+        return DgnDbStatus::NotFound;
+    return inst->GetValueOrAdhoc(value, name) == ECN::ECObjectsStatus::Success? DgnDbStatus::Success: DgnDbStatus::NotFound;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::SetUnhandledPropertyValue(Utf8CP name, ECN::ECValueCR value)
+    {
+    UnhandledProps& props = UnhandledProps::Get(*this);
+    
+    ECN::IECInstancePtr inst = props.GetInstance(*this);
+    if (!inst.IsValid())
+        return DgnDbStatus::NotFound;
+
+    if (inst->SetValueOrAdhoc(name, value) != ECN::ECObjectsStatus::Success)
+        return DgnDbStatus::NotFound;
+
+    props.m_pendingEdits.insert(name);
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus UnhandledProps::UpdateModifiedProperties(DgnElementCR elem)
+    {
+    if (!m_instance.IsValid() || m_pendingEdits.empty())
+        return DgnDbStatus::Success;
+    
+    m_instance->SetInstanceId(Utf8PrintfString("%lld", elem.GetElementId().GetValue()));
+
+    EC::ECInstanceUpdater updater(elem.GetDgnDb(), *m_instance);
+    return updater.Update(*m_instance) == BSISUCCESS? DgnDbStatus::Success: DgnDbStatus::WriteError;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/15

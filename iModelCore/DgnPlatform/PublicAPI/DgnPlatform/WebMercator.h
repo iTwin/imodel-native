@@ -251,7 +251,7 @@ protected:
 
     DGNPLATFORM_EXPORT bool ShouldRejectTile (WebMercatorTilingSystem::TileId const& tileid, Utf8StringCR url, TiledRaster& realityData);
 
-    DGNPLATFORM_EXPORT Utf8String _GetCopyrightMessage(DgnViewportR vp) override;
+    DGNPLATFORM_EXPORT Utf8String _GetCopyrightMessage(DgnViewportCR vp) override;
 
     //! Displays tiled rasters and schedules downloads. 
     //! INPUT: This function assumes that m_missingTiles has been populated.

@@ -409,10 +409,6 @@ DgnDbStatus DgnPlatformTestDomain::ImportDummySchema(DgnDbR db)
     BeFileName schemaFile(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
     schemaFile.AppendToPath(L"ECSchemas/" DPTEST_DUMMY_SCHEMA_NAMEW L".01.00.ecschema.xml");
 
-    WString schemaBaseNameW;
-    schemaFile.ParseName(NULL, NULL, &schemaBaseNameW, NULL);
-    Utf8String schemaBaseName(schemaBaseNameW);
-
     BeFileName schemaDir = schemaFile.GetDirectoryName();
 
     ECN::ECSchemaReadContextPtr contextPtr = ECN::ECSchemaReadContext::CreateContext();

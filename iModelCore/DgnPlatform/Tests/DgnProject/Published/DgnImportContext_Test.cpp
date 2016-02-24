@@ -25,51 +25,54 @@ struct ImportTest : DgnDbTestFixture
     void InsertElement(DgnDbR, DgnModelId, bool is3d, bool expectSuccess);
 };
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnMaterialId     createTexturedMaterial (DgnDbR dgnDb, Utf8CP materialName, WCharCP pngFileName, RenderMaterialMap::Units unitMode)
+static DgnMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, WCharCP pngFileName, JsonRenderMaterial::TextureMap::Units unitMode)
     {
-    Json::Value                     renderMaterialAsset;
-    RgbFactor                       red = { 1.0, 0.0, 0.0};
-    bvector <Byte>                  fileImageData, imageData;
-    uint32_t                        width, height;
-    ImageUtilities::RgbImageInfo    rgbImageInfo;
-    BeFile                          imageFile;
+    RgbFactor red = { 1.0, 0.0, 0.0};
+    ByteStream fileImageData, imageData;
+    uint32_t width, height;
+    ImageUtilities::RgbImageInfo rgbImageInfo;
+   
+    JsonRenderMaterial renderMaterialAsset;
+    renderMaterialAsset.SetColor(RENDER_MATERIAL_Color, red);
+    renderMaterialAsset.SetBool(RENDER_MATERIAL_FlagHasBaseColor, true);
 
-    
-    RenderMaterialUtil::SetColor (renderMaterialAsset, RENDER_MATERIAL_Color, red);
-    renderMaterialAsset[RENDER_MATERIAL_FlagHasBaseColor] = true;
-    
-
-    if (BeFileStatus::Success == imageFile.Open (pngFileName, BeFileAccess::Read) &&
-        SUCCESS == ImageUtilities::ReadImageFromPngFile (fileImageData, rgbImageInfo, imageFile))
+    BeFile imageFile;
+    if (BeFileStatus::Success == imageFile.Open(pngFileName, BeFileAccess::Read) &&
+        SUCCESS == ImageUtilities::ReadImageFromPngFile(fileImageData, rgbImageInfo, imageFile))
         {
         width = rgbImageInfo.width;
         height = rgbImageInfo.height;
 
-        imageData.resize (width * height * 4);
-
-        for (size_t i=0, j=0; i<imageData.size(); )
+        imageData.Resize(width * height * 4);
+        Byte* p = imageData.GetDataP(); 
+        Byte* s = fileImageData.GetDataP(); 
+        for (uint32_t i=0; i<imageData.GetSize(); i += 4)
             {
-            imageData[i++] = fileImageData[j++];
-            imageData[i++] = fileImageData[j++];
-            imageData[i++] = fileImageData[j++];
-            imageData[i++] = 255;     // Alpha.
+            *p++ = *s++;
+            *p++ = *s++;
+            *p++ = *s++;
+            *p++ = 255;     // Alpha.
+            ++s;
             }
+
+        EXPECT_EQ(p, imageData.GetDataP() + imageData.GetSize());
+        EXPECT_EQ(s, fileImageData.GetDataP() + imageData.GetSize());
         }
     else
         {
         width = height = 512;
-        imageData.resize (width * height * 4);
+        imageData.Resize(width * height * 4);
 
         size_t      value = 0;
-        for (auto& imageByte : imageData)
-            imageByte = ++value % 0xff;        
+        Byte* imageByte=imageData.GetDataP();
+        for (uint32_t i=0; i<imageData.GetSize(); ++i)
+            *imageByte++ = ++value % 0xff;        
         }
 
-    DgnTexture::Data textureData(DgnTexture::Format::RAW, &imageData.front(), imageData.size(), width, height);
+    DgnTexture::Data textureData(DgnTexture::Format::RAW, imageData.GetData(), imageData.GetSize(), width, height);
     DgnTexture texture(DgnTexture::CreateParams(dgnDb, materialName/*###TODO unnamed textures*/, textureData));
     texture.Insert();
     DgnTextureId textureId = texture.GetTextureId();
@@ -79,18 +82,17 @@ static DgnMaterialId     createTexturedMaterial (DgnDbR dgnDb, Utf8CP materialNa
 
     patternMap[RENDER_MATERIAL_TextureId]        = textureId.GetValue();
     patternMap[RENDER_MATERIAL_PatternScaleMode] = (int) unitMode;
-    patternMap[RENDER_MATERIAL_PatternMapping]   = (int) RenderMaterialMap::Mode::Parametric;
+    patternMap[RENDER_MATERIAL_PatternMapping]   = (int) JsonRenderMaterial::TextureMap::Mode::Parametric;
 
     mapsMap[RENDER_MATERIAL_MAP_Pattern] = patternMap;
-    renderMaterialAsset[RENDER_MATERIAL_Map] = mapsMap;
+    renderMaterialAsset.GetValueR()[RENDER_MATERIAL_Map] = mapsMap;
 
     DgnMaterial material(DgnMaterial::CreateParams(dgnDb, "Test Palette", materialName));
-    material.SetRenderingAsset (renderMaterialAsset);
+    material.SetRenderingAsset(renderMaterialAsset.GetValue());
     auto createdMaterial = material.Insert();
     EXPECT_TRUE(createdMaterial.IsValid());
     return createdMaterial.IsValid() ? createdMaterial->GetMaterialId() : DgnMaterialId();
     }
-#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
@@ -234,12 +236,11 @@ TEST_F(ImportTest, ImportGroups)
     }
 
 }
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-static DgnElementCPtr insertElement(DgnDbR db, DgnModelId mid, bool is3d, DgnSubCategoryId subcat, GeometryParams* customParms)
+static DgnElementCPtr insertElement(DgnDbR db, DgnModelId mid, bool is3d, DgnSubCategoryId subcat, Render::GeometryParams* customParms)
     {
     DgnCategoryId cat = DgnSubCategory::QueryCategoryId(subcat, db);
 
@@ -264,11 +265,10 @@ static DgnElementCPtr insertElement(DgnDbR db, DgnModelId mid, bool is3d, DgnSub
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-static void getFirstGeometryParams(GeometryParams& ret, DgnElementCR gel)
+static Render::GeometryParams getFirstGeometryParams(DgnElementCR gel)
     {
-    GeometryCollection gcollection(gel);
-    gcollection.begin(); // has the side-effect of setting up the current element display params on the collection
-    ret = gcollection.GetGeometryParams();
+    GeometryCollection gcollection(*gel.ToGeometrySource());
+    return gcollection.begin().GetGeometryParams(); // has the side-effect of setting up the current element display params on the collection
     }
 
 //---------------------------------------------------------------------------------------
@@ -329,7 +329,7 @@ static bool areDisplayParamsEqual(Render::GeometryParamsCR lhsUnresolved, DgnDbR
     rhs.Resolve(rcontext);
 
     //  Use custom logic to compare the complex properties 
-    if (!areMaterialsEqual(lhs.GetMaterial(), ldb, rhs.GetMaterial(), rdb))
+    if (!areMaterialsEqual(lhs.GetMaterialId(), ldb, rhs.GetMaterialId(), rdb))
         return false;
 
     // *** TBD linestyles
@@ -339,8 +339,8 @@ static bool areDisplayParamsEqual(Render::GeometryParamsCR lhsUnresolved, DgnDbR
     //  Compare the rest of the simple properites
     rhs.SetCategoryId(lhs.GetCategoryId());
     rhs.SetSubCategoryId(lhs.GetSubCategoryId());
-    lhs.SetMaterial(DgnMaterialId());
-    rhs.SetMaterial(DgnMaterialId());
+    lhs.SetMaterialId(DgnMaterialId());
+    rhs.SetMaterialId(DgnMaterialId());
     lhs.SetLineStyle(nullptr);
     rhs.SetLineStyle(nullptr);
     lhs.SetGradient(nullptr);
@@ -372,11 +372,9 @@ static void checkImportedElement(DgnElementCPtr destElem, DgnElementCR sourceEle
 
     ASSERT_EQ( sourceCat->GetCode(), destCat->GetCode() );
 
-    Render::GeometryParams sourceDisplayParams;
-    getFirstGeometryParams(sourceDisplayParams, sourceElem);
+    Render::GeometryParams sourceDisplayParams = getFirstGeometryParams(sourceElem);
 
-    Render::GeometryParams destDisplayParams;
-    getFirstGeometryParams(destDisplayParams, *destElem);
+    Render::GeometryParams destDisplayParams = getFirstGeometryParams(*destElem);
     
     DgnSubCategoryId destSubCategoryId = destDisplayParams.GetSubCategoryId();
     ASSERT_TRUE( destSubCategoryId.IsValid() );
@@ -387,7 +385,6 @@ static void checkImportedElement(DgnElementCPtr destElem, DgnElementCR sourceEle
 
     ASSERT_TRUE( areDisplayParamsEqual(sourceDisplayParams, sourceDb, destDisplayParams, destDb) );
     }
-#endif
 
 //---------------------------------------------------------------------------------------
 // Check that category, subcategory, and its appearance are deep-copied and remapped
@@ -395,7 +392,6 @@ static void checkImportedElement(DgnElementCPtr destElem, DgnElementCR sourceEle
 //---------------------------------------------------------------------------------------
 TEST_F(ImportTest, ImportElementAndCategory1)
 {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     static Utf8CP s_catName="MyCat";
 
     SetupProject(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
@@ -403,7 +399,8 @@ TEST_F(ImportTest, ImportElementAndCategory1)
 
     //  Create a Category for the elements. 
     DgnSubCategory::Appearance sourceAppearanceRequested = createAppearance(ColorDef(1, 2, 3, 0));
-    sourceAppearanceRequested.SetMaterial(createTexturedMaterial(*sourceDb, "Texture1", L"", RenderMaterialMap::Units::Relative));
+    sourceAppearanceRequested.SetMaterial(createTexturedMaterial(*sourceDb, "Texture1", L"", JsonRenderMaterial::TextureMap::Units::Relative));
+
     DgnCategoryId sourceCategoryId = createCategory(*sourceDb, s_catName, DgnCategory::Scope::Analytical, sourceAppearanceRequested);
     ASSERT_TRUE( sourceCategoryId.IsValid() );
     DgnSubCategoryId sourceSubCategory1Id = DgnCategory::GetDefaultSubCategoryId(sourceCategoryId);
@@ -411,7 +408,7 @@ TEST_F(ImportTest, ImportElementAndCategory1)
 
     //  Create a custom SubCategory for one of the elements to use
     DgnSubCategory::Appearance sourceAppearance2 = createAppearance(ColorDef(2, 2, 3, 0));
-    sourceAppearance2.SetMaterial(createTexturedMaterial(*sourceDb, "Texture2", L"", RenderMaterialMap::Units::Relative));
+    sourceAppearance2.SetMaterial(createTexturedMaterial(*sourceDb, "Texture2", L"", JsonRenderMaterial::TextureMap::Units::Relative));
     DgnSubCategoryCPtr sourceSubCategory2;
         {
         DgnSubCategoryPtr s = new DgnSubCategory(DgnSubCategory::CreateParams(*sourceDb, sourceCategoryId, "SubCat2", sourceAppearance2));
@@ -427,14 +424,13 @@ TEST_F(ImportTest, ImportElementAndCategory1)
     // Put elements in this category into the source model
     DgnElementCPtr sourceElem = insertElement(*sourceDb, sourcemod->GetModelId(), true, sourceSubCategory1Id, nullptr);   // 1 is based on default subcat
     DgnElementCPtr sourceElem2 = insertElement(*sourceDb, sourcemod->GetModelId(), true, sourceSubCategory2Id, nullptr);  // 2 is based on custom subcat
-    GeometryParams customParams;
+    Render::GeometryParams customParams;
     customParams.SetCategoryId(sourceCategoryId);
-    customParams.SetMaterial(createTexturedMaterial(*sourceDb, "Texture3", L"", RenderMaterialMap::Units::Relative));
+    customParams.SetMaterialId(createTexturedMaterial(*sourceDb, "Texture3", L"", JsonRenderMaterial::TextureMap::Units::Relative));
     DgnElementCPtr sourceElem3 = insertElement(*sourceDb, sourcemod->GetModelId(), true, sourceSubCategory1Id, &customParams); // 3 is based on default subcat with custom display params
     sourceDb->SaveChanges();
 
-    GeometryParams sourceDisplayParams;
-    getFirstGeometryParams(sourceDisplayParams, *sourceElem);
+    Render::GeometryParams sourceDisplayParams = getFirstGeometryParams(*sourceElem);
 
     ASSERT_EQ( sourceCategoryId , sourceElem->ToGeometrySource3d()->GetCategoryId() ); // check that the source element really was assigned to the Category that I specified above
     ASSERT_EQ( sourceSubCategory1Id , sourceDisplayParams.GetSubCategoryId() ); // check that the source element's geometry really was assigned to the SubCategory that I specified above
@@ -489,7 +485,6 @@ TEST_F(ImportTest, ImportElementAndCategory1)
 
         destDb->SaveChanges();
     }
-#endif
 }
 
 

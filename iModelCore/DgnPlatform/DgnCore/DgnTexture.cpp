@@ -211,7 +211,7 @@ DgnTextureId DgnTexture::ImportTexture(DgnImportContext& context, DgnTextureId s
     DgnTextureCPtr sourceTexture = DgnTexture::QueryTexture(source, context.GetSourceDb());
     if (!sourceTexture.IsValid())
         {
-        BeAssert(!source.IsValid() && "look up should fail only for an invalid Textureid");
+        BeAssert(!source.IsValid()); //look up should fail only for an invalid Textureid
         return DgnTextureId();
         }
 
@@ -243,9 +243,6 @@ DgnTextureId DgnImportContext::RemapTextureId(DgnTextureId source)
     if (!IsBetweenDbs())
         return source;
 
-    DgnTextureId dest = FindTextureId (source);
-    if (dest.IsValid())
-        return dest;
-
-    return DgnTexture::ImportTexture(*this, source);
+    DgnTextureId dest = FindTextureId(source);
+    return dest.IsValid() ? dest : DgnTexture::ImportTexture(*this, source);
     }

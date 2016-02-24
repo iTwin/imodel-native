@@ -176,7 +176,6 @@ public:
     DGNPLATFORM_EXPORT bool HasPending(Task::Operation op);
 };
 
-
 //=======================================================================================
 // @bsiclass                                                    BentleySystems
 //=======================================================================================
@@ -562,7 +561,7 @@ private:
 
 public:
     DGNPLATFORM_EXPORT GeometryParams();
-    DGNPLATFORM_EXPORT explicit GeometryParams(GeometryParamsCR rhs);
+    DGNPLATFORM_EXPORT GeometryParams(GeometryParamsCR rhs);
     DGNPLATFORM_EXPORT void ResetAppearance(); //!< Like Init, but saves and restores category and sub-category around the call to Init. This is particularly useful when a single element draws objects of different symbology, but its draw code does not have easy access to reset the category.
     DGNPLATFORM_EXPORT void Resolve(DgnDbR, DgnViewportP vp=nullptr); // Resolve effective values using the supplied DgnDb and optional DgnViewport (for view bg fill and view sub-category overrides)...
     DGNPLATFORM_EXPORT void Resolve(ViewContextR); // Resolve effective values using the supplied ViewContext.
@@ -904,19 +903,18 @@ protected:
     virtual void _AddBody(ISolidKernelEntityCR, double pixelSize = 0.0) = 0;
     virtual void _AddTextString(TextStringCR text) = 0;
     virtual void _AddTextString2d(TextStringCR text, double zDepth) = 0;
-    virtual void _AddMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) = 0;
     virtual void _AddRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels) = 0;
     virtual void _AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth) = 0;
-    virtual void _AddTile(Render::TextureCR tile, DPoint3dCP corners) = 0;
+    virtual void _AddTile(TextureCR tile, DPoint3dCP corners) = 0;
     virtual void _AddDgnOle(DgnOleDraw*) = 0;
     virtual void _AddPointCloud(PointCloudDraw* drawParams) = 0;
     virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR) = 0;
-    virtual Render::GraphicPtr _CreateSubGraphic(TransformCR) const = 0;
+    virtual GraphicPtr _CreateSubGraphic(TransformCR) const = 0;
     virtual ~Graphic() {}
 
 public:
     explicit Graphic(CreateParams const& params=CreateParams()) : m_vp(params.m_vp), m_pixelSize(params.m_pixelSize), m_minSize(0.0), m_maxSize(0.0) {m_localToWorldTransform = params.m_placement;}
-    Render::GraphicPtr CreateSubGraphic(TransformCR subToGraphic) const {return _CreateSubGraphic(subToGraphic);} // NOTE: subToGraphic is provided to allow stroking in world coords...
+    GraphicPtr CreateSubGraphic(TransformCR subToGraphic) const {return _CreateSubGraphic(subToGraphic);} // NOTE: subToGraphic is provided to allow stroking in world coords...
 
     StatusInt Close() {return m_isOpen ? _Close() : SUCCESS;}
     bool IsOpen() const {return m_isOpen;}
@@ -1048,10 +1046,7 @@ public:
     void AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth) {_AddTriStrip2d(numPoints, points, usageFlags, zDepth);}
 
     //! @private
-    void AddMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) {_AddMosaic(numX, numY, tileIds, verts);}
-    
-    //! @private
-    void AddTile(Render::TextureCR tile, DPoint3dCP corners) {_AddTile(tile, corners);}
+    void AddTile(TextureCR tile, DPoint3dCP corners) {_AddTile(tile, corners);}
 
     // Helper Methods to draw simple SolidPrimitives.
     void AddTorus(DPoint3dCR center, DVec3dCR vectorX, DVec3dCR vectorY, double majorRadius, double minorRadius, double sweepAngle, bool capped) {AddSolidPrimitive(*ISolidPrimitive::CreateDgnTorusPipe(DgnTorusPipeDetail(center, vectorX, vectorY, majorRadius, minorRadius, sweepAngle, capped)));}
@@ -1193,7 +1188,6 @@ protected:
 
     virtual GraphicPtr _CreateGraphic(Graphic::CreateParams const& params) = 0;
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) = 0;
-    virtual void _AdjustBrightness(bool useFixedAdaptation, double brightness) = 0;
     virtual void _OnResized() {}
     virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const = 0;
     virtual TexturePtr _GetTexture(DgnTextureId, DgnDbR) const = 0;

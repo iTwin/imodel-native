@@ -148,7 +148,7 @@ typedef RefCountedPtr<TxnTable> TxnTablePtr;
 //! to react to change propagation caused by dynamic operations before they are rolled back.
 // @bsiclass                                                      Paul.Connelly   10/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE IDynamicChangeProcessor
+struct EXPORT_VTABLE_ATTRIBUTE DynamicTxnProcessor
 {
     virtual void _ProcessDynamicChanges() = 0;
 };
@@ -254,14 +254,14 @@ private:
     typedef bmap<Utf8CP,TxnTablePtr,CompareTableNames> T_TxnTablesByName;
     typedef bvector<TxnTable*> T_TxnTables;
 
-    DgnDbR          m_dgndb;
+    DgnDbR m_dgndb;
     T_TxnTablesByName m_tablesByName;
-    T_TxnTables     m_tables;
-    TxnId           m_curr;
-    TxnAction       m_action;
+    T_TxnTables m_tables;
+    TxnId m_curr;
+    TxnAction m_action;
     bvector<TxnId> m_multiTxnOp;
     bvector<TxnRange> m_reversedTxn;
-    bvector<DynamicChangeTrackerPtr> m_dynamics;
+    bvector<DynamicChangeTrackerPtr> m_dynamicTxns;
     BeSQLite::StatementCache m_stmts;
     BeSQLite::SnappyFromBlob m_snappyFrom;
     BeSQLite::SnappyToBlob   m_snappyTo;
@@ -285,7 +285,7 @@ private:
     TxnTable* FindTxnTable(Utf8CP tableName) const;
     BeSQLite::DbResult ApplyChangeSet(BeSQLite::ChangeSet& changeset, TxnAction isUndo);
     bool IsMultiTxnMember(TxnId rowid);
-    BentleyStatus MergeChanges(BeSQLite::ChangeStream& changeStream);
+    RevisionStatus MergeRevisionChanges(BeSQLite::ChangeStream& changeStream, Utf8StringCR newParentRevisionId);
     void CancelDynamics();
     void OnBeginApplyChanges();
     void OnEndApplyChanges();
@@ -454,16 +454,16 @@ public:
     //! Dynamic operations can be nested.
     DGNPLATFORM_EXPORT void BeginDynamicOperation();
 
-    //! Pops the current dynamic operation from the top of the stack, reverting all temporary changes made during the operation.
-    //! An IDynamicChangeProcessor may be supplied to capture the results of the dynamic changes
+    //! Pops the current dynamic transaction from the top of the stack, reverting all temporary changes made during the transaction
+    //! A DynamicTxnProcessor may be supplied to capture the results of the dynamic txn
     //! In that case, if any changes exist in the current dynamic operation:
     //!  - Any indirect changes resulting from the dynamic changes will be computed; then
     //!  - The change processor will be invoked
     //! In either case, all changes made since the most recent call to BeginDynamicOperation will be rolled back before the function returns.
-    DGNPLATFORM_EXPORT void EndDynamicOperation(IDynamicChangeProcessor* processor=nullptr);
+    DGNPLATFORM_EXPORT void EndDynamicOperation(DynamicTxnProcessor* processor=nullptr);
 
-    //! Returns true if a dynamic operation is in progress.
-    bool IsInDynamics() const { return !m_dynamics.empty(); }
+    //! Returns true if a dynamic transaction is in progress.
+    bool InDynamicTxn() const { return !m_dynamicTxns.empty(); }
 };
 
 //=======================================================================================
@@ -497,6 +497,7 @@ namespace dgn_TxnTable
         bool m_changes;
         static Utf8CP MyTableName() {return DGN_TABLE(DGN_CLASSNAME_Element);}
         Utf8CP _GetTableName() const {return MyTableName();}
+        bvector<Render::GraphicPtr> m_deleted;
 
         Element(TxnManager& mgr) : TxnTable(mgr) {}
 
@@ -569,7 +570,6 @@ namespace dgn_TxnTable
         //! iterator for models that are directly changed. Only valid during _PropagateChanges.
         struct Iterator : BeSQLite::DbTableIterator
         {
-        public:
             Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) { }
             struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
             {

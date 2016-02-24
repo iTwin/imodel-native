@@ -955,7 +955,7 @@ struct DynamicTxnsTest : TransactionManagerTests
         Utf8PrintfString code("%c", s_code++);
         DgnElementCPtr elem = DgnDbTestFixture::InsertElement(code);
         EXPECT_TRUE(elem.IsValid());
-        if (saveIfNotInDynamics && !m_db->Txns().IsInDynamics())
+        if (saveIfNotInDynamics && !m_db->Txns().InDynamicTxn())
             EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
 
         ids.push_back(elem->GetElementId());
@@ -997,21 +997,21 @@ TEST_F(DynamicTxnsTest, BasicInvariants)
     // IsInDynamics accurately reflects pushing and popping of dynamic operations
     DgnDbR db = *m_db;
     auto& txns = db.Txns();
-    EXPECT_FALSE(txns.IsInDynamics());
+    EXPECT_FALSE(txns.InDynamicTxn());
     txns.BeginDynamicOperation();
-    EXPECT_TRUE(txns.IsInDynamics());
+    EXPECT_TRUE(txns.InDynamicTxn());
     txns.BeginDynamicOperation();
-    EXPECT_TRUE(txns.IsInDynamics());
+    EXPECT_TRUE(txns.InDynamicTxn());
     txns.EndDynamicOperation();
-    EXPECT_TRUE(txns.IsInDynamics());
+    EXPECT_TRUE(txns.InDynamicTxn());
     txns.EndDynamicOperation();
-    EXPECT_FALSE(txns.IsInDynamics());
+    EXPECT_FALSE(txns.InDynamicTxn());
 
     // Abandoning changes while in dynamics cancels dynamics
     txns.BeginDynamicOperation();
-    EXPECT_TRUE(txns.IsInDynamics());
+    EXPECT_TRUE(txns.InDynamicTxn());
     db.AbandonChanges();
-    EXPECT_FALSE(txns.IsInDynamics());
+    EXPECT_FALSE(txns.InDynamicTxn());
 
     AssertScope V_V_V_;
 
@@ -1102,7 +1102,7 @@ TEST_F(DynamicTxnsTest, DynamicTxns)
     ExpectAllExist(persistentElemIds);
     ExpectAllExist(dynamicElemIds);
     EXPECT_EQ(BE_SQLITE_OK, db.AbandonChanges());
-    EXPECT_FALSE(txns.IsInDynamics());
+    EXPECT_FALSE(txns.InDynamicTxn());
     ExpectNoneExist(dynamicElemIds);
     ExpectNoneExist(persistentElemIds);
 
@@ -1260,7 +1260,7 @@ struct RootChangedCallback : TestElementDrivesElementHandler::Callback
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DynamicChangesProcessor : IDynamicChangeProcessor
+struct DynamicChangesProcessor : DynamicTxnProcessor
 {
     size_t m_expectedCount;
     uint32_t m_expectedWidth;
