@@ -165,13 +165,17 @@ ConversionOptions options
 )
     {
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext(true);
+
+	if (options.TargetECXmlVersion == 3)
+		context->SetPreserveElementOrder(true);
+
     context->AddSchemaPath(options.InputFile.GetDirectoryName().GetName());
     for (auto const& refDir: options.ReferenceDirectories)
         context->AddSchemaPath(refDir.GetName());
 
     if (options.HasConversionDirectory)
         context->AddConversionSchemaPath(options.ConversionDirectory.GetName());
-    
+
     if (options.InputFile.IsDirectory())
         {
         BeFileName schemaPath(options.InputFile);
