@@ -22,6 +22,7 @@
 #define UNITS_TYPEDEFS(_name_)  \
     BEGIN_BENTLEY_UNITS_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_UNITS_NAMESPACE
 
+#include <math.h>
 #include <algorithm>
 
 using namespace std;

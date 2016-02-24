@@ -156,7 +156,7 @@ BentleyStatus Expression::HandleToken(int& depth, ExpressionR expression,
         }
     else
         {
-        LOG.debugv("%s - Adding Unit %s with Exponent: %d", definition, token, mergedExponent);
+        LOG.debugv("%s - Adding Unit %s with Exponent: %d", definition, token.GetName(), mergedExponent);
         symbol = getSymbolByName(token.GetName());
         if (nullptr != symbol)
             {
@@ -168,7 +168,7 @@ BentleyStatus Expression::HandleToken(int& depth, ExpressionR expression,
 
     if (nullptr == symbol)
         {
-        LOG.errorv("Failed to parse %s because the unit %s could not be found", definition, token);
+        LOG.errorv("Failed to parse %s because the unit %s could not be found", definition, token.GetName());
         return BentleyStatus::ERROR;
         }
 
