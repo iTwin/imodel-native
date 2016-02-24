@@ -10,12 +10,16 @@
 
 #include <WebServices/Client/WebServicesClient.h>
 #include <MobileDgn/Utils/Http/AuthenticationHandler.h>
+#include <MobileDgn/Utils/SecureStore.h>
 #include <WebServices/Connect/IConnectAuthenticationPersistence.h>
 #include <WebServices/Connect/IConnectAuthenticationProvider.h>
 #include <WebServices/Connect/IConnectTokenProvider.h>
 #include <WebServices/Connect/SamlToken.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
+
+USING_NAMESPACE_BENTLEY_MOBILEDGN
+USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
 typedef AsyncResult<void, AsyncError> SignInResult;
 
@@ -45,21 +49,42 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
             };
 
     private:
+        enum class AuthenticationType
+            {
+            None = 0,
+            Credentials = 1,
+            Token = 2
+            };
+
+    private:
         mutable BeCriticalSection m_cs;
+
+        ILocalState& m_localState;
+        ISecureStorePtr m_secureStore;
+
         Configuration m_config;
+
+        AuthenticationType m_authType = AuthenticationType::None;
+
         IConnectAuthenticationPersistencePtr m_persistence;
         bmap<Utf8String, IConnectTokenProviderPtr> m_tokenProviders;
         std::function<void()> m_tokenExpiredHandler;
 
     private:
-        ConnectSignInManager();
-        bool IsTokenBasedAuthentication();
+        ConnectSignInManager(ILocalState* localState, ISecureStorePtr secureStore);
+
+        AuthenticationType GetAuthenticationType();
+        void StoreAuthenticationType(AuthenticationType type);
+
+        IConnectAuthenticationPersistencePtr GetPersistenceMatchingAuthenticationType();
+        IConnectTokenProviderPtr GetBaseTokenProviderMatchingAuthenticationType();
+
         IConnectTokenProviderPtr GetTokenProvider(Utf8StringCR rpUri);
         void ClearSignInData();
 
     public:
-        //! Must be created after mobileDgn is initialized
-        WSCLIENT_EXPORT static ConnectSignInManagerPtr Create();
+        //! Can be created after MobileDgn is initialized
+        WSCLIENT_EXPORT static ConnectSignInManagerPtr Create(ILocalState* localState = nullptr, ISecureStorePtr secureStore = nullptr);
 
         WSCLIENT_EXPORT virtual ~ConnectSignInManager();
 
@@ -71,13 +96,13 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         WSCLIENT_EXPORT void FinalizeSignIn();
 
         WSCLIENT_EXPORT void SignOut();
-        WSCLIENT_EXPORT bool IsSignedIn() const;
-        WSCLIENT_EXPORT UserInfo GetUserInfo() const;
+        WSCLIENT_EXPORT bool IsSignedIn();
+        WSCLIENT_EXPORT UserInfo GetUserInfo();
 
         //! Will be called when token expiration is detected
         WSCLIENT_EXPORT void SetTokenExpiredHandler(std::function<void()> handler);
 
-        //! Get authentication handler for specific server.
+        //! Get authentication handler for specific server when signed in.
         //! Will configure each request to validate TLS certificate depending on UrlProvider environment.
         //! @param serverUrl should contain server URL without any directories
         //! @param httpHandler optional custom HTTP handler to send all requests trough

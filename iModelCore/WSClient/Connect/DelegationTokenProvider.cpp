@@ -67,7 +67,10 @@ AsyncTaskPtr<SamlTokenResult> DelegationTokenProvider::RetrieveNewToken()
     LOG.debugv("Requesting token for: %s", m_rpUri.c_str());
     SamlTokenPtr baseToken = m_baseTokenProvider->GetToken();
     if (nullptr == baseToken)
+        {
+        LOG.error("Base token not found");
         return CreateCompletedAsyncTask(SamlTokenResult::Error({}));
+        }
 
     return Connect::RenewToken(*baseToken, m_rpUri.c_str(), nullptr, m_tokenLifetime)
     ->Then<SamlTokenResult>([=] (SamlTokenResult result)
