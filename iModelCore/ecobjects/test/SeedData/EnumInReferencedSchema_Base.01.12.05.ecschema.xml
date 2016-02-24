@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="EnumInReferencedSchema_Base" nameSpacePrefix="enrb" version="01.12.05" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+    <ECEnumeration typeName="MyEnumeration" backingTypeName="int" description="This is a description." displayLabel="This is a display label." isStrict="true">
+        <ECEnumerator value="1" displayLabel="Red" />
+        <ECEnumerator value="2" displayLabel="Yellow" />
+        <ECEnumerator value="3" displayLabel="Blue" />
+    </ECEnumeration>
+</ECSchema>

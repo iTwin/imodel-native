@@ -916,6 +916,36 @@ TEST_F (SchemaDeserializationTest, ExpectSuccessWhenDeserializingSchemaWithBaseC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (SchemaDeserializationTest, ExpectSuccessWhenDeserializingSchemaWithEnumerationInReferencedFile)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext ();
+    WString seedPath (ECTestFixture::GetTestDataPath (L"").c_str ());
+    schemaContext->AddSchemaPath (seedPath.c_str ());
+
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath (L"EnumInReferencedSchema.01.00.01.ecschema.xml").c_str (), *schemaContext);
+    EXPECT_EQ (SchemaReadStatus::Success, status);
+
+    ASSERT_TRUE(schema.IsValid());
+
+    ECClassP pClass = schema->GetClassP ("Entity");
+    ASSERT_TRUE (nullptr != pClass);
+
+    ECPropertyP p = pClass->GetPropertyP("EnumeratedProperty");
+    ASSERT_TRUE(p != nullptr);
+
+    PrimitiveECPropertyCP prim = p->GetAsPrimitiveProperty();
+    ASSERT_TRUE(prim != nullptr);
+
+    ECEnumerationCP ecEnum = prim->GetEnumeration();
+    ASSERT_TRUE(ecEnum != nullptr);
+
+    ASSERT_TRUE(ecEnum->GetSchema().GetVersionWrite() == 12);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (SchemaDeserializationTest, ExpectSuccessWhenECSchemaContainsOnlyRequiredAttributes)
     {
     // show error messages but do not assert.
