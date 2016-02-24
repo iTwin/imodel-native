@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnHost.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -44,15 +44,11 @@ public:
         virtual void _OnHostTermination (bool isProgramExit) {delete this;}
     public:
         void OnHostTermination (bool isProgramExit) {_OnHostTermination(isProgramExit);}
-        };
-
-    struct HostObjectBase : IHostObject
-        {
         DEFINE_BENTLEY_NEW_DELETE_OPERATORS
         };
 
     template<typename T>
-    struct HostValue : HostObjectBase
+    struct HostValue : IHostObject
         {
         private:
         T   m_value;
