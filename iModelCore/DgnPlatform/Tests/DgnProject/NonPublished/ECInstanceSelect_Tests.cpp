@@ -130,7 +130,7 @@ TEST_F (ECInstanceSelectTests, SelectQueriesOnDbGeneratedDuringBuild_04Plant)
     ASSERT_EQ (ExpectedSumOfArea, ActualSumOfArea);
     stmt.Finalize ();
 
-    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (*m_db, "SELECT EQUIP_NO FROM appdw.Nozzle WHERE COMP_LEN=4.5 OR COMPONENT_ID='AT_EGXUTRMA_1A'"));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (*m_db, "SELECT EQUIP_NO FROM appdw.Nozzle WHERE COMP_LEN='4.5' OR COMPONENT_ID='AT_EGXUTRMA_1A'"));
     ASSERT_EQ (stmt.Step (), DbResult::BE_SQLITE_ROW);
     ASSERT_STREQ ("50TW-102", stmt.GetValueText (0));
     stmt.Finalize ();
