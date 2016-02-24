@@ -21,7 +21,7 @@
 #endif
 
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 #define CFGVAR_UNLOCK_PASSWORD      L"WorkspaceManagerAppUseOnly"
 #define CFGVAR_DEFINED_NULL         ((WStringP)-1) /* defined but no translation */
