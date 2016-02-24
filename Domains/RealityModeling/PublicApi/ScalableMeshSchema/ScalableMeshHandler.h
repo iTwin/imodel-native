@@ -25,8 +25,6 @@ BEGIN_BENTLEY_SCALABLEMESH_SCHEMA_NAMESPACE
 
 class ScalableMeshDrawingInfo;
 
-class ScalableMeshDrawingInfo;
-
 typedef RefCountedPtr<ScalableMeshDrawingInfo> ScalableMeshDrawingInfoPtr;     
 
 class ScalableMeshDrawingInfo : public RefCountedBase
@@ -78,13 +76,14 @@ public :
     const DMatrix4d& GetLocalToViewTransform() {return m_localToViewTransformation;}   
     };
 
+
 //=======================================================================================
 // @bsiclass                                                  
 //=======================================================================================
 struct ScalableMeshModel : IMeshSpatialModel
     {
+        DGNMODEL_DECLARE_MEMBERS("ScalableMeshModel", IMeshSpatialModel)
 
-    DGNMODEL_DECLARE_MEMBERS("ScalableMeshModel", IMeshSpatialModel)
         private:
 
         IScalableMeshPtr                        m_smPtr;
