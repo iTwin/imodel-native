@@ -187,6 +187,8 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
     
     bool isOutputQuickVision = context.GetIViewDraw ().IsOutputQuickVision();
 
+    assert(isOutputQuickVision == true);
+
     ElemMatSymbP matSymbP = context.GetElemMatSymb ();
 
     matSymbP->Init ();
@@ -195,20 +197,10 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
     
     context.ResetContextOverrides(); // If not reset, last drawn override is applyed to dtm (Selected/Hide preview)
     context.GetIDrawGeom ().ActivateMatSymb (matSymbP);
-
-                    
-    /*
-    if (hasViewChanged)
-        {
-        s_smLoader.ClearLoadedNodes();
-        s_smLoader.ClearRequestedNodes();
-        }
-        */
-
+      
     Transform storageToUorsTransform;
     storageToUorsTransform.InitFrom(storageToUors);
     context.PushTransform(storageToUorsTransform);
-
 
     bvector<IScalableMeshCachedDisplayNodePtr> requestedNodes;
     bvector<IScalableMeshCachedDisplayNodePtr> nodesWithoutQvElem;
@@ -386,24 +378,15 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
         }
 
 
-    if ((DrawPurpose::Update == context.GetDrawPurpose() || DrawPurpose::UpdateHealing == context.GetDrawPurpose()) && 
-        overviewMeshNodes.size() > 0)
-        {                   
-        //StartProgressiveDisplay(context);                
-        }
-    else
-        {        
-        if (overviewMeshNodes.size() == 0)
-            {
-            //s_smProgressiveDisplayHandler.EndProgressive();            
-            }        
-        }     
+    context.PopTransformClip();
     }
 
 
 //========================================================================================
-// @bsiclass                                                        Ray.Bentley     09/2015
+// @bsiclass                                                        Mathieu.St-Pierre     02/2016
 //========================================================================================
+static bool s_drawInProcess = true;
+
 struct ScalableMeshProgressiveDisplay : Dgn::IProgressiveDisplay, NonCopyableClass
 {
     DEFINE_BENTLEY_REF_COUNTED_MEMBERS
@@ -428,7 +411,7 @@ public:
     virtual bool _WantTimeoutSet(uint32_t& limit)   {return false; }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                      Ray.Bentley     09/2015
+// @bsimethod                                                      Mathieu.St-Pierre     02/2016
 //----------------------------------------------------------------------------------------
 virtual Completion _Process(ViewContextR viewContext) override
     {
@@ -465,13 +448,14 @@ virtual Completion _Process(ViewContextR viewContext) override
         completionStatus = Completion::Finished;
         }
 
-    ProgressiveDrawMeshNode2(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, viewContext, m_storageToUorsTransfo);                              
+    if (s_drawInProcess)
+        ProgressiveDrawMeshNode2(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, viewContext, m_storageToUorsTransfo);                              
             
     return completionStatus;
     }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                               Mathieu.St-Pierre      09/2015
+// @bsimethod                                               Mathieu.St-Pierre      02/2016
 //----------------------------------------------------------------------------------------
 static void Schedule (IScalableMeshProgressiveQueryEnginePtr& progressiveQueryEngine,
                       ScalableMeshDrawingInfoPtr&             currentDrawingInfoPtr, 
@@ -487,10 +471,35 @@ static void Schedule (IScalableMeshProgressiveQueryEnginePtr& progressiveQueryEn
 
 };  
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  4/2015
+//----------------------------------------------------------------------------------------
+bool ShouldDrawInContext (ViewContextR context) 
+    {
+    switch (context.GetDrawPurpose())
+        {
+        case DrawPurpose::Hilite:
+        case DrawPurpose::Unhilite:
+        case DrawPurpose::ChangedPre:       // Erase, rely on Healing.
+        case DrawPurpose::RestoredPre:      // Erase, rely on Healing.
+        case DrawPurpose::Pick:
+        case DrawPurpose::Flash:
+        case DrawPurpose::CaptureGeometry:
+        case DrawPurpose::FenceAccept:
+        case DrawPurpose::RegionFlood:
+        case DrawPurpose::FitView:
+        case DrawPurpose::ExportVisibleEdges:
+        case DrawPurpose::ModelFacet:
+            return false;
+        }
+
+    return true;
+    }
+
 
 void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
-    {
-    if (context.GetViewport() == 0)
+    {    
+    if (!ShouldDrawInContext(context) || NULL == context.GetViewport())
         return;
          
     ScalableMeshDrawingInfoPtr nextDrawingInfoPtr(new ScalableMeshDrawingInfo(&context));
@@ -502,7 +511,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         //if the view has not changed.
         if (m_currentDrawingInfoPtr->HasAppearanceChanged(nextDrawingInfoPtr) == false)                
             {
-            assert((m_currentDrawingInfoPtr->m_overviewNodes.size() == 0) && (m_currentDrawingInfoPtr->m_meshNodes.size() > 0));
+            //assert((m_currentDrawingInfoPtr->m_overviewNodes.size() == 0) && (m_currentDrawingInfoPtr->m_meshNodes.size() > 0));
 
             ProgressiveDrawMeshNode2(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_storageToUorsTransfo);                              
             return;                        
