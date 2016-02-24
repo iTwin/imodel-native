@@ -28,7 +28,7 @@ BentleyApi::NativeLogging::ILogger* s_logger = BentleyApi::NativeLogging::Loggin
 //---------------------------------------------------------------------------------------
 static void ShowUsage(char* str)
     {
-    fprintf(stderr, "\n%s -i <inputSchemaPath> -o <outputDirectory> [-x exmlVersion] [-r directories] [-c directory] [-a] [-s] [-u] [-v version]\n\n%s\n\n%s\n\n%s\t\t%s\n%s\t%s\n%s\t%s\n%s\t\t%s\n%s\t\t%s\n%s\t\t%s\n%s\t\t%s\n\n%s\t%s\n\t%s\n\n",
+    fprintf(stderr, "\n%s -i <inputSchemaPath> -o <outputDirectory> [-x exmlVersion] [-r directories] [-c directory] [-a] [-s] [-u] [-v version]\n\n%s\n\n%s\n\n%s\t\t%s\n%s\t%s\n%s\t%s\n%s\t\t%s\n%s\t\t%s\n%s\t\t%s\n%s\n\n%s\t%s\n\t%s\n\n",
         str, "Tool to convert ECSchemas between different versions of ECXml", "options:",
         " -x --xml 2|3", "convert to the specified exmlversion",
         " -r --ref DIR0 [DIR1 ... DIRN]", "other directories for reference schemas",
@@ -36,7 +36,7 @@ static void ShowUsage(char* str)
         " -u --include", "include the standard schemas in the converted schemas",
         " -a --all", "convert the entire schema graph",
         " -s --sup", "convert all the supplemental schemas",
-        " -v --ver XX.XX", "specify the schema version",
+        " -v --ver XX.XX.XX / XX.XX  specify the schema version",
         "Notes:",
         "if the input path is a directory, all files matching '*.ecschema.xml' will be converted",
         "if output directory is the same as the input directory, the files will be overwritten");
@@ -59,8 +59,9 @@ struct ConversionOptions
     bool                IncludeStandards = false;
 
     bool                ChangeVersion = false;
-    uint32_t            MajorVersion;
-    uint32_t            MinorVersion;
+    uint32_t            MajorVersion = 0;
+	uint32_t			WriteVersion = 0;
+    uint32_t            MinorVersion = 0;
     };
 
 //---------------------------------------------------------------------------------------
@@ -77,6 +78,7 @@ ConversionOptions   options
     if (options.ChangeVersion)
         {
         schema.SetVersionMajor(options.MajorVersion);
+		schema.SetVersionWrite(options.WriteVersion);
         schema.SetVersionMinor(options.MinorVersion);
         }
     schemaName.AssignUtf8(schema.GetFullSchemaName().c_str());
@@ -226,13 +228,19 @@ static bool TryParseInput(int argc, char** argv, ConversionOptions& options)
                 return false;
 
             ++i;
-            outputDefined = true;
-            options.OutputDirectory.AssignUtf8(argv[i]);
-            if (!options.OutputDirectory.Contains(L"\\"))
-                {
-                fprintf(stderr, "-o should be followed by a directory");
-                return false;
-                }
+
+			if (CreateDirectory(argv[i], NULL) ||
+				ERROR_ALREADY_EXISTS == GetLastError())
+				{
+				outputDefined = true;
+				options.OutputDirectory.AssignUtf8(argv[i]);
+				}
+
+			if (!options.OutputDirectory.Contains(L"\\"))
+				{
+				fprintf(stderr, "-o should be followed by a directory");
+				return false;
+				}
             }
         else if (0 == strcmp(argv[i], "-v") || 0 == strcmp(argv[i], "--ver"))
             {
@@ -240,10 +248,23 @@ static bool TryParseInput(int argc, char** argv, ConversionOptions& options)
                 return false;
 
             ++i;
-            double ver = atof(argv[i]);
+			bvector<Utf8String> tokens;
+			BeStringUtilities::Split((Utf8CP)argv[i], ".", tokens);
             options.ChangeVersion = true;
-            options.MajorVersion = ((int)(ver * 100)) / 100;
-            options.MinorVersion = ((int)(ver * 100)) % 100;
+
+			options.MajorVersion = atoi(tokens[0].c_str());
+			if (tokens.size() == 3)
+				{
+				options.WriteVersion = atoi(tokens[1].c_str());
+				options.MinorVersion = atoi(tokens[2].c_str());
+				}
+			else if (tokens.size() == 2)
+				options.MinorVersion = atoi(tokens[1].c_str());
+			else
+				{
+				fprintf(stderr, "Incorrect format for the schema version!!");
+				return false;
+				}
             }
         else if (0 == strcmp(argv[i], "-a") || 0 == strcmp(argv[i], "--all"))
             options.IncludeAll = true;
