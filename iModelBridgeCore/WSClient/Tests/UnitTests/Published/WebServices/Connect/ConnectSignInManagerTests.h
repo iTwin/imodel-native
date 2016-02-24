@@ -14,7 +14,7 @@
 
 class ConnectSignInManagerTests : public BaseMockHttpHandlerTest
     {
-    private:
+    public:
         std::shared_ptr<StubBuddiClient> m_client;
         StubLocalState m_localState;
         std::shared_ptr<StubSecureStore> m_secureStore;

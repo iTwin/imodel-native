@@ -14,6 +14,8 @@
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
 #include <WebServices/Connect/ConnectSessionAuthenticationPersistence.h>
 #include <WebServices/Connect/ConnectTokenProvider.h>
+#include <WebServices/Connect/FederationTokenProvider.h>
+#include <WebServices/Connect/FederationAuthenticationPersistence.h>
 #include <WebServices/Connect/DelegationTokenProvider.h>
 #include "Connect.xliff.h"
 
@@ -22,13 +24,17 @@ USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
+#define LOCALSTATE_Namespace            "Connect"
+#define LOCALSTATE_AuthenticationType   "AuthenticationType"
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                           Vytautas.Barkauskas    12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ConnectSignInManager::ConnectSignInManager()
+ConnectSignInManager::ConnectSignInManager(ILocalState* localState, ISecureStorePtr secureStore) :
+m_localState(localState ? *localState : MobileDgnCommon::LocalState()),
+m_secureStore(secureStore ? secureStore : std::make_shared<SecureStore>(&m_localState))
     {
-    if (ConnectAuthenticationPersistence::GetShared()->GetToken() != nullptr)
-        m_persistence = ConnectAuthenticationPersistence::GetShared();
+    m_persistence = GetPersistenceMatchingAuthenticationType();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -40,9 +46,9 @@ ConnectSignInManager::~ConnectSignInManager()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                           Vytautas.Barkauskas    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ConnectSignInManagerPtr ConnectSignInManager::Create()
+ConnectSignInManagerPtr ConnectSignInManager::Create(ILocalState* localState, ISecureStorePtr secureStore)
     {
-    return std::shared_ptr<ConnectSignInManager>(new ConnectSignInManager());
+    return std::shared_ptr<ConnectSignInManager>(new ConnectSignInManager(localState, secureStore));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -61,13 +67,13 @@ void ConnectSignInManager::Configure(Configuration config)
 AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithToken(SamlTokenPtr token)
     {
     if (!token->IsSupported())
-        {
         return CreateCompletedAsyncTask(SignInResult::Error(ConnectLocalizedString(ALERT_UnsupportedToken)));
-        }
 
     BeCriticalSectionHolder lock(m_cs);
 
     ClearSignInData();
+
+    m_authType = AuthenticationType::Token;
 
     m_persistence = std::make_shared<ConnectSessionAuthenticationPersistence>();
     m_persistence->SetToken(token);
@@ -97,6 +103,8 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithCredentials(Credentia
 
         ClearSignInData();
 
+        m_authType = AuthenticationType::Credentials;
+
         SamlTokenPtr token = result.GetValue();
 
         m_persistence = std::make_shared<ConnectSessionAuthenticationPersistence>();
@@ -113,9 +121,21 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithCredentials(Credentia
 void ConnectSignInManager::FinalizeSignIn()
     {
     auto currentPersistence = m_persistence;
-    m_persistence = ConnectAuthenticationPersistence::GetShared();
+
+    m_persistence = GetPersistenceMatchingAuthenticationType();
     m_persistence->SetToken(currentPersistence->GetToken());
     m_persistence->SetCredentials(currentPersistence->GetCredentials());
+
+    StoreAuthenticationType(m_authType);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                           Vytautas.Barkauskas    12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ConnectSignInManager::IsSignedIn()
+    {
+    BeCriticalSectionHolder lock(m_cs);
+    return AuthenticationType::None != GetAuthenticationType();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -132,56 +152,50 @@ void ConnectSignInManager::SignOut()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSignInManager::ClearSignInData()
     {
-    m_persistence = nullptr;
     m_tokenProviders.clear();
 
-    ConnectAuthenticationPersistence::GetShared()->SetToken(nullptr);
-    ConnectAuthenticationPersistence::GetShared()->SetCredentials(Credentials());
-    }
+    StoreAuthenticationType(AuthenticationType::None);
 
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                           Vytautas.Barkauskas    01/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ConnectSignInManager::IsTokenBasedAuthentication()
-    {
-    return
-        m_persistence != nullptr &&
-        m_persistence->GetToken() != nullptr &&
-        m_persistence->GetCredentials().IsEmpty();
+    if (m_persistence)
+        {
+        m_persistence->SetToken(nullptr);
+        m_persistence->SetCredentials(Credentials());
+        m_persistence = std::make_shared<ConnectSessionAuthenticationPersistence>();
+        }
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                           Vytautas.Barkauskas    12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ConnectSignInManager::IsSignedIn() const
-    {
-    BeCriticalSectionHolder lock(m_cs);
-    return nullptr != m_persistence && m_persistence->GetToken() != nullptr;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                           Vytautas.Barkauskas    12/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-ConnectSignInManager::UserInfo ConnectSignInManager::GetUserInfo() const
+ConnectSignInManager::UserInfo ConnectSignInManager::GetUserInfo()
     {
     BeCriticalSectionHolder lock(m_cs);
 
-    UserInfo userInfo;
+    UserInfo info;
 
     if (!IsSignedIn())
-        return userInfo;
+        return info;
 
-    SamlTokenPtr token = ConnectAuthenticationPersistence::GetShared()->GetToken();
-
+    SamlTokenPtr token = m_persistence->GetToken();
     bmap<Utf8String, Utf8String> attributes;
-    if (SUCCESS != token->GetAttributes(attributes))
-        return userInfo;
+    if (nullptr == token || SUCCESS != token->GetAttributes(attributes))
+        return info;
 
-    userInfo.username = attributes["name"];
-    userInfo.firstName = attributes["givenname"];
-    userInfo.lastName = attributes["surname"];
-    userInfo.userId = attributes["userid"];
-    return userInfo;
+    info.username = attributes["name"];
+    info.firstName = attributes["givenname"];
+    info.lastName = attributes["surname"];
+    info.userId = attributes["userid"];
+
+    return info;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                           Vytautas.Barkauskas    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectSignInManager::SetTokenExpiredHandler(std::function<void()> handler)
+    {
+    BeCriticalSectionHolder lock(m_cs);
+    m_tokenExpiredHandler = handler;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -191,7 +205,7 @@ AuthenticationHandlerPtr ConnectSignInManager::GetAuthenticationHandler(Utf8Stri
     {
     BeCriticalSectionHolder lock(m_cs);
 
-    // Harcoded URI for first G0505 release (2016 Q1). Should match service server URL in future
+    // TODO: Harcoded URI for first G0505 release (2016 Q1). Should match service server URL in future
     Utf8String rpUri = "https://connect-wsg20.bentley.com";
 
     auto handler = UrlProvider::GetSecurityConfigurator(httpHandler);
@@ -207,8 +221,7 @@ IConnectTokenProviderPtr ConnectSignInManager::GetTokenProvider(Utf8StringCR rpU
     if (it != m_tokenProviders.end())
         return it->second;
 
-    auto baseProvider = std::make_shared<ConnectTokenProvider>(m_persistence, IsTokenBasedAuthentication(), m_tokenExpiredHandler);
-    baseProvider->Configure(m_config.identityTokenLifetime, m_config.identityTokenRefreshRate);
+    IConnectTokenProviderPtr baseProvider = GetBaseTokenProviderMatchingAuthenticationType();
 
     auto delegationProvider = std::make_shared<DelegationTokenProvider>(rpUri, baseProvider);
     delegationProvider->Configure(m_config.delegationTokenLifetime);
@@ -218,9 +231,63 @@ IConnectTokenProviderPtr ConnectSignInManager::GetTokenProvider(Utf8StringCR rpU
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                           Vytautas.Barkauskas    02/2016
+* @bsimethod                                           Vytautas.Barkauskas    01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSignInManager::SetTokenExpiredHandler(std::function<void()> handler)
+ConnectSignInManager::AuthenticationType ConnectSignInManager::GetAuthenticationType()
     {
-    m_tokenExpiredHandler = handler;
+    if (AuthenticationType::None != m_authType)
+        return m_authType;
+
+    m_authType = static_cast<AuthenticationType>(m_localState.GetValue(LOCALSTATE_Namespace, LOCALSTATE_AuthenticationType).asInt());
+    return m_authType;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectSignInManager::StoreAuthenticationType(AuthenticationType type)
+    {
+    m_authType = type;
+    m_localState.SaveValue(LOCALSTATE_Namespace, LOCALSTATE_AuthenticationType, static_cast<int>(type));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+IConnectAuthenticationPersistencePtr ConnectSignInManager::GetPersistenceMatchingAuthenticationType()
+    {
+    AuthenticationType type = GetAuthenticationType();
+
+    if (AuthenticationType::Token == type)
+        return std::make_shared<FederationAuthenticationPersistence>(m_secureStore);
+
+    if (AuthenticationType::Credentials == type)
+        return ConnectAuthenticationPersistence::GetShared();
+
+    return std::make_shared<ConnectSessionAuthenticationPersistence>();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+IConnectTokenProviderPtr ConnectSignInManager::GetBaseTokenProviderMatchingAuthenticationType()
+    {
+    AuthenticationType type = GetAuthenticationType();
+
+    if (AuthenticationType::Token == type)
+        {
+        auto provider = std::make_shared<FederationTokenProvider>(m_persistence, m_tokenExpiredHandler);
+        provider->Configure(m_config.identityTokenLifetime, m_config.identityTokenRefreshRate);
+        return provider;
+        }
+
+    if (AuthenticationType::Credentials == type)
+        {
+        auto provider = std::make_shared<ConnectTokenProvider>(m_persistence);
+        provider->Configure(m_config.identityTokenLifetime);
+        return provider;
+        }
+
+    // Not signed in - return failing token provider
+    return std::make_shared<ConnectTokenProvider>(std::make_shared<ConnectSessionAuthenticationPersistence>());
     }

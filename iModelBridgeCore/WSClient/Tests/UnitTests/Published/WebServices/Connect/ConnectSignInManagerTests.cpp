@@ -20,14 +20,14 @@ void ConnectSignInManagerTests::SetUp()
     m_secureStore = std::make_shared<StubSecureStore>();
     m_localState = StubLocalState();
 
-    Connect::Initialize (StubClientInfo (), GetHandlerPtr ());
+    Connect::Initialize(StubClientInfo(), GetHandlerPtr());
     ConnectAuthenticationPersistence::CustomInitialize(&m_localState, m_secureStore);
     StubUrlProviderEnvironment(UrlProvider::Environment::Dev);
     }
 
 void ConnectSignInManagerTests::TearDown()
     {
-    Connect::Uninintialize ();
+    Connect::Uninintialize();
     }
 
 void ConnectSignInManagerTests::StubUrlProviderEnvironment(UrlProvider::Environment env)
@@ -38,7 +38,8 @@ void ConnectSignInManagerTests::StubUrlProviderEnvironment(UrlProvider::Environm
 TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderProduction_SetsValidateCertificateForAllRequests)
     {
     StubUrlProviderEnvironment(UrlProvider::Environment::Release);
-    auto authHandler = ConnectSignInManager::Create()->GetAuthenticationHandler("https://foo.com", GetHandlerPtr());
+    auto manager = ConnectSignInManager::Create(&m_localState, m_secureStore);
+    auto authHandler = manager->GetAuthenticationHandler("https://foo.com", GetHandlerPtr());
 
     GetHandler().ExpectOneRequest().ForFirstRequest([=] (HttpRequestCR request)
         {
@@ -52,7 +53,8 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderProduction
 TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderQa_DoesNotSetSetValidateCertificateForRequests)
     {
     StubUrlProviderEnvironment(UrlProvider::Environment::Qa);
-    auto authHandler = ConnectSignInManager::Create()->GetAuthenticationHandler("https://foo.com", GetHandlerPtr());
+    auto manager = ConnectSignInManager::Create(&m_localState, m_secureStore);
+    auto authHandler = manager->GetAuthenticationHandler("https://foo.com", GetHandlerPtr());
 
     GetHandler().ExpectOneRequest().ForFirstRequest([=] (HttpRequestCR request)
         {
@@ -66,7 +68,8 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderQa_DoesNot
 TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderDev_DoesNotSetSetValidateCertificateForRequests)
     {
     StubUrlProviderEnvironment(UrlProvider::Environment::Dev);
-    auto authHandler = ConnectSignInManager::Create()->GetAuthenticationHandler("https://foo.com", GetHandlerPtr());
+    auto manager = ConnectSignInManager::Create(&m_localState, m_secureStore);
+    auto authHandler = manager->GetAuthenticationHandler("https://foo.com", GetHandlerPtr());
 
     GetHandler().ExpectOneRequest().ForFirstRequest([=] (HttpRequestCR request)
         {
@@ -80,7 +83,12 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderDev_DoesNo
 TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TwoRequestsSentUsingDifferentAuthHandlersWithSameServer_TokenReusedForSecondRequest)
     {
     ConnectAuthenticationPersistence::GetShared()->SetToken(StubSamlToken());
-    auto manager = ConnectSignInManager::Create();
+    auto manager = ConnectSignInManager::Create(&m_localState, m_secureStore);
+
+    GetHandler().ForFirstRequest(StubImsTokenHttpResponse());
+    ASSERT_TRUE(manager->SignInWithCredentials({"Foo", "Boo"})->GetResult().IsSuccess());
+    EXPECT_EQ(1, GetHandler().GetRequestsPerformed());
+
     auto authHandler1 = manager->GetAuthenticationHandler("https://foo.com", GetHandlerPtr());
     auto authHandler2 = manager->GetAuthenticationHandler("https://foo.com", GetHandlerPtr());
 
@@ -103,7 +111,13 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TwoRequestsSentUsingD
 TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent)
     {
     ConnectAuthenticationPersistence::GetShared()->SetToken(StubSamlToken());
-    auto authHandler = ConnectSignInManager::Create()->GetAuthenticationHandler("https://foo.com", GetHandlerPtr());
+    auto manager = ConnectSignInManager::Create(&m_localState, m_secureStore);
+
+    GetHandler().ForFirstRequest(StubImsTokenHttpResponse());
+    ASSERT_TRUE(manager->SignInWithCredentials({"Foo", "Boo"})->GetResult().IsSuccess());
+    EXPECT_EQ(1, GetHandler().GetRequestsPerformed());
+
+    auto authHandler = manager->GetAuthenticationHandler("https://foo.com", GetHandlerPtr());
 
     AsyncTestCheckpoint checkpoint;
 
@@ -111,7 +125,7 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TwoRequestsSentInPara
     GetHandler().ForAnyRequest([&] (HttpRequestCR request)
         {
         if (request.GetUrl().find("/IssueEx") != Utf8String::npos)
-            tokenRequestCount ++;
+            tokenRequestCount++;
 
         checkpoint.CheckinAndWait();
 
@@ -129,4 +143,120 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TwoRequestsSentInPara
 
     EXPECT_EQ(1, tokenRequestCount);
     }
+
+TEST_F(ConnectSignInManagerTests, GetUserInfo_NotSignedIn_ReturnsEmpty)
+    {
+    auto manager = ConnectSignInManager::Create(&m_localState, m_secureStore);
+
+    auto info = manager->GetUserInfo();
+
+    EXPECT_EQ("", info.firstName);
+    EXPECT_EQ("", info.lastName);
+    EXPECT_EQ("", info.userId);
+    EXPECT_EQ("", info.username);
+    }
+
+TEST_F(ConnectSignInManagerTests, GetUserInfo_SignedIn_ReturnsValuesFromToken)
+    {
+    auto manager = ConnectSignInManager::Create(&m_localState, m_secureStore);
+
+    auto tokenStr =
+        R"(<saml:Assertion MajorVersion="1" MinorVersion="1" xmlns:saml="urn:oasis:names:tc:SAML:1.0:assertion">
+            <saml:Conditions 
+                NotBefore   ="2016-02-24T10:48:17.584Z"
+                NotOnOrAfter="2016-02-24T10:48:17.584Z">
+            </saml:Conditions>
+            <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+                <KeyInfo xmlns="http://www.w3.org/2000/09/xmldsig#">
+                    <X509Data>
+                        <X509Certificate>TestCert</X509Certificate>
+                    </X509Data>
+                </KeyInfo>
+            </ds:Signature>
+            <saml:AttributeStatement>
+                <saml:Attribute AttributeName="givenname">
+                    <saml:AttributeValue>ValueA</saml:AttributeValue>
+                </saml:Attribute>
+                <saml:Attribute AttributeName="surname">
+                    <saml:AttributeValue>ValueB</saml:AttributeValue>
+                </saml:Attribute>
+                <saml:Attribute AttributeName="userid">
+                    <saml:AttributeValue>ValueC</saml:AttributeValue>
+                </saml:Attribute>
+                <saml:Attribute AttributeName="name">
+                    <saml:AttributeValue>ValueD</saml:AttributeValue>
+                </saml:Attribute>
+            </saml:AttributeStatement>
+        </saml:Assertion>)";
+
+    auto token = std::make_shared<SamlToken>(tokenStr);
+    ASSERT_TRUE(manager->SignInWithToken(token)->GetResult().IsSuccess());
+
+    auto info = manager->GetUserInfo();
+
+    EXPECT_EQ("ValueA", info.firstName);
+    EXPECT_EQ("ValueB", info.lastName);
+    EXPECT_EQ("ValueC", info.userId);
+    EXPECT_EQ("ValueD", info.username);
+    }
+
+TEST_F(ConnectSignInManagerTests, GetUserInfo_SignedInWithToken_ReturnsValuesFromToken)
+    {
+    auto manager = ConnectSignInManager::Create(&m_localState, m_secureStore);
+
+    auto tokenStr =
+        R"(<saml:Assertion MajorVersion="1" MinorVersion="1" xmlns:saml="urn:oasis:names:tc:SAML:1.0:assertion">
+            <saml:Conditions 
+                NotBefore   ="2016-02-24T10:48:17.584Z"
+                NotOnOrAfter="2016-02-24T10:48:17.584Z">
+            </saml:Conditions>
+            <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+                <KeyInfo xmlns="http://www.w3.org/2000/09/xmldsig#">
+                    <X509Data>
+                        <X509Certificate>TestCert</X509Certificate>
+                    </X509Data>
+                </KeyInfo>
+            </ds:Signature>
+            <saml:AttributeStatement>
+                <saml:Attribute AttributeName="givenname">
+                    <saml:AttributeValue>ValueA</saml:AttributeValue>
+                </saml:Attribute>
+                <saml:Attribute AttributeName="surname">
+                    <saml:AttributeValue>ValueB</saml:AttributeValue>
+                </saml:Attribute>
+                <saml:Attribute AttributeName="userid">
+                    <saml:AttributeValue>ValueC</saml:AttributeValue>
+                </saml:Attribute>
+                <saml:Attribute AttributeName="name">
+                    <saml:AttributeValue>ValueD</saml:AttributeValue>
+                </saml:Attribute>
+            </saml:AttributeStatement>
+        </saml:Assertion>)";
+
+    auto token = std::make_shared<SamlToken>(tokenStr);
+    ASSERT_TRUE(manager->SignInWithToken(token)->GetResult().IsSuccess());
+
+    auto info = manager->GetUserInfo();
+
+    EXPECT_EQ("ValueA", info.firstName);
+    EXPECT_EQ("ValueB", info.lastName);
+    EXPECT_EQ("ValueC", info.userId);
+    EXPECT_EQ("ValueD", info.username);
+    }
+
+TEST_F(ConnectSignInManagerTests, GetUserInfo_SignedInWithTokenAndSignedOut_ReturnsEmpty)
+    {
+    auto manager = ConnectSignInManager::Create(&m_localState, m_secureStore);
+
+    ASSERT_TRUE(manager->SignInWithToken(StubSamlToken())->GetResult().IsSuccess());
+    manager->SignOut();
+
+    auto info = manager->GetUserInfo();
+
+    EXPECT_EQ("", info.firstName);
+    EXPECT_EQ("", info.lastName);
+    EXPECT_EQ("", info.userId);
+    EXPECT_EQ("", info.username);
+    }
+
 #endif
