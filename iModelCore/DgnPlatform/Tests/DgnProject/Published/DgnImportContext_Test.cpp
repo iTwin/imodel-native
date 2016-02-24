@@ -324,8 +324,10 @@ static bool areDisplayParamsEqual(Render::GeometryParamsCR lhsUnresolved, DgnDbR
 
     //  We must "resolve" each GeometryParams object before we can ask for its properties.
     Dgn::NullContext lcontext;
+    lcontext.SetDgnDb(ldb);
     lhs.Resolve(lcontext);
     NullContext rcontext;
+    rcontext.SetDgnDb(rdb);
     rhs.Resolve(rcontext);
 
     //  Use custom logic to compare the complex properties 

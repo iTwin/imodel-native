@@ -2,7 +2,7 @@
 |
 |   $Source: DgnCore/UnitManager.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -635,7 +635,7 @@ struct Dgn::UserUnitTableEntry
 * units.def is parsed once and its contents cached here.
 * @bsistruct
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct UserUnitTable : DgnHost::HostObjectBase
+struct UserUnitTable : DgnHost::IHostObject
     {
 private:
     UnitEntryVector         m_unitVector;
