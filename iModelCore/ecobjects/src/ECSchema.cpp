@@ -750,6 +750,21 @@ ECObjectsStatus ECSchema::DeleteEnumeration (ECEnumerationR ecEnumeration)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Robert.Schili   05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::DeleteKindOfQuantity (KindOfQuantityR kindOfQuantity)
+    {
+    KindOfQuantityMap::iterator iter = m_kindOfQuantityMap.find (kindOfQuantity.GetName().c_str());
+    if (iter == m_kindOfQuantityMap.end() || iter->second != &kindOfQuantity)
+        return ECObjectsStatus::Error;
+
+    m_kindOfQuantityMap.erase (iter);
+
+    delete &kindOfQuantity;
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::RenameClass (ECClassR ecClass, Utf8CP newName)
