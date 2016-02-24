@@ -61,7 +61,8 @@ private:
 public:
     ClassUpdaterImpl (ECDbCR ecdb, ECClassCR ecClass);
     ClassUpdaterImpl (ECDbCR ecdb, IECInstanceCR instance);
-    ClassUpdaterImpl (ECDbCR ecdb, ECClassCR ecClass, bvector<uint32_t>& propertiesToBind);
+    ClassUpdaterImpl(ECDbCR ecdb, ECClassCR ecClass, bvector<uint32_t>& propertiesToBind);
+    ClassUpdaterImpl(ECDbCR ecdb, ECClassCR ecClass, bvector<ECPropertyCP>& propertiesToBind);
 
     ~ClassUpdaterImpl ()
         {}
@@ -93,6 +94,14 @@ ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::IECInstanceCR instance)
 //@bsimethod                                   Carole.MacDonald                   09/14
 //+---------------+---------------+---------------+---------------+---------------+------
 ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, bvector<uint32_t>& propertiesToBind)
+    {
+    m_impl = new ClassUpdaterImpl(ecdb, ecClass, propertiesToBind);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Carole.MacDonald                   02/16
+//+---------------+---------------+---------------+---------------+---------------+------
+ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, bvector<ECN::ECPropertyCP>& propertiesToBind)
     {
     m_impl = new ClassUpdaterImpl(ecdb, ecClass, propertiesToBind);
     }
@@ -210,9 +219,18 @@ ClassUpdaterImpl::ClassUpdaterImpl (ECDbCR ecdb, IECInstanceCR instance)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald                   09/14
+// @bsimethod                                   Carole.MacDonald                   02/16
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassUpdaterImpl::ClassUpdaterImpl(ECDbCR ecdb, ECClassCR ecClass, bvector<uint32_t>& propertiesToBind)
+    : Impl(ecClass), m_ecdb(ecdb), m_isValid(false), m_needsCalculatedPropertyEvaluation(false)
+    {
+    Initialize(propertiesToBind);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald                   09/14
+//+---------------+---------------+---------------+---------------+---------------+------
+ClassUpdaterImpl::ClassUpdaterImpl(ECDbCR ecdb, ECClassCR ecClass, bvector<ECN::ECPropertyCP>& propertiesToBind)
     : Impl(ecClass), m_ecdb(ecdb), m_isValid(false), m_needsCalculatedPropertyEvaluation(false)
     {
     Initialize(propertiesToBind);
