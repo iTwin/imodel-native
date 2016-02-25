@@ -526,30 +526,12 @@ MapStatus ClassMap::_MapPart2(SchemaImportContext& schemaImportContext, ClassMap
     MapStatus stat = AddPropertyMaps(schemaImportContext.GetClassMapLoadContext(), parentClassMap, nullptr, &mapInfo);
     if (stat != MapStatus::Success)
         return stat;
-    if (mapInfo.GetClassHasCurrentTimeStampProperty() != nullptr)
+
+    ECPropertyCP currentTimeStampProp = mapInfo.GetClassHasCurrentTimeStampProperty();
+    if (currentTimeStampProp != nullptr)
         {
-        PropertyMapCP propertyMap = GetPropertyMap(mapInfo.GetClassHasCurrentTimeStampProperty()->GetName().c_str());
-        if (propertyMap != nullptr)
-            {
-            ECDbSqlColumn* column = const_cast<ECDbSqlColumn*>(propertyMap->GetSingleColumn());
-            BeAssert(column != nullptr && "TimeStamp column cannot be null");
-            if (column != nullptr)
-                {
-                //! TODO: Handle this case for shared column strategy;
-                BeAssert(column->GetType() == ECDbSqlColumn::Type::TimeStamp);
-                column->GetConstraintR().SetDefaultExpression("julianday('now')");
-                column->GetConstraintR().SetIsNotNull(true);
-                Utf8String whenCondtion;
-                Utf8CP lastModName = column->GetName().c_str();
-                whenCondtion.Sprintf("old.%s=new.%s AND old.%s!=julianday('now')", lastModName, lastModName, lastModName);
-                Utf8String body;
-                Utf8CP instanceId = GetPropertyMap("ECInstanceId")->GetSingleColumn()->GetName().c_str();
-                body.Sprintf("BEGIN UPDATE %s SET %s=julianday('now') WHERE %s=new.%s; END", column->GetTableR().GetName().c_str(), lastModName, instanceId, instanceId);
-                Utf8String triggerName;
-                triggerName.Sprintf("%s_CurrentTimeStamp", column->GetTableR().GetName().c_str());
-                column->GetTableR().CreateTrigger(triggerName.c_str(), column->GetTableR(), whenCondtion.c_str(), body.c_str(), TriggerType::Create, TriggerSubType::After);
-                }
-            }
+        if (SUCCESS != CreateCurrentTimeStampTrigger(*currentTimeStampProp))
+            return MapStatus::Error;
         }
 
     //Add cascade delete for joinedTable;
@@ -592,12 +574,60 @@ MapStatus ClassMap::_MapPart2(SchemaImportContext& schemaImportContext, ClassMap
     return MapStatus::Success;
     }
 
+#define CURRENTIMESTAMP_SQLEXP "julianday('now')"
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      02/2014
 //---------------------------------------------------------------------------------------
-MapStatus ClassMap::_OnInitialized()
+BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(ECPropertyCR currentTimeStampProp)
     {
-    return MapStatus::Success;
+    PropertyMapCP propertyMap = GetPropertyMap(currentTimeStampProp.GetName().c_str());
+    if (propertyMap == nullptr)
+        return SUCCESS;
+
+    ECDbSqlColumn* currentTimeStampColumn = const_cast<ECDbSqlColumn*>(propertyMap->GetSingleColumn());
+    if (currentTimeStampColumn == nullptr)
+        {
+        BeAssert(currentTimeStampColumn != nullptr && "TimeStamp column cannot be null");
+        return ERROR;
+        }
+
+    if (currentTimeStampColumn->GetType() == ECDbSqlColumn::Type::Any)
+        {
+        m_ecDbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning,
+                   "ECProperty '%s' in ECClass '%s' has the ClassHasCurrentTimeStampProperty custom attribute but is mapped to a shared column. "
+                   "ECDb therefore does not create the current timestamp trigger for this property.",
+                           currentTimeStampProp.GetName().c_str(), currentTimeStampProp.GetClass().GetFullName());
+
+        return SUCCESS;
+        }
+
+    BeAssert(currentTimeStampColumn->GetType() == ECDbSqlColumn::Type::TimeStamp);
+    currentTimeStampColumn->GetConstraintR().SetDefaultExpression(CURRENTIMESTAMP_SQLEXP);
+    currentTimeStampColumn->GetConstraintR().SetIsNotNull(true);
+
+    PropertyMapCP idPropMap = GetECInstanceIdPropertyMap();
+    if (idPropMap == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    ECDbSqlTable& table = currentTimeStampColumn->GetTableR();
+    Utf8CP tableName = table.GetName().c_str();
+    Utf8CP instanceIdColName = idPropMap->GetSingleColumn()->GetName().c_str();
+    Utf8CP currentTimeStampColName = currentTimeStampColumn->GetName().c_str();
+
+    Utf8String triggerName;
+    //triggerName.Sprintf("%s_%s_SetCurrentTimeStamp", tableName, currentTimeStampColName);
+    triggerName.Sprintf("%s_CurrentTimeStamp", tableName);
+    Utf8String body;
+    body.Sprintf("BEGIN UPDATE %s SET %s=" CURRENTIMESTAMP_SQLEXP " WHERE %s=new.%s; END", tableName, currentTimeStampColName, instanceIdColName, instanceIdColName);
+
+    Utf8String whenCondition;
+    whenCondition.Sprintf("old.%s=new.%s AND old.%s!=" CURRENTIMESTAMP_SQLEXP, currentTimeStampColName, currentTimeStampColName, currentTimeStampColName);
+
+    return table.CreateTrigger(triggerName.c_str(), whenCondition.c_str(), body.c_str(), TriggerType::Create, TriggerSubType::After);
     }
 
 //---------------------------------------------------------------------------------------

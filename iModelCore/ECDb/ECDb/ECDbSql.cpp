@@ -234,11 +234,11 @@ ECDbSqlColumn* ECDbSqlTable::CreateColumn(Utf8CP name, ECDbSqlColumn::Type type,
 //---------------------------------------------------------------------------------------
 // @bsimethod                          muhammad.zaighum                           01/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlTable::CreateTrigger(Utf8CP triggerName, ECDbSqlTable& table, Utf8CP condition, Utf8CP body, TriggerType ecsqlType, TriggerSubType triggerSubType)
+BentleyStatus ECDbSqlTable::CreateTrigger(Utf8CP triggerName, Utf8CP condition, Utf8CP body, TriggerType ecsqlType, TriggerSubType triggerSubType)
     {
     if (m_triggers.find(triggerName) == m_triggers.end())
         {
-        m_triggers[triggerName] = std::unique_ptr<ECDbSqlTrigger>(new ECDbSqlTrigger(triggerName, table, condition, body, ecsqlType, triggerSubType));
+        m_triggers[triggerName] = std::unique_ptr<ECDbSqlTrigger>(new ECDbSqlTrigger(triggerName, *this, condition, body, ecsqlType, triggerSubType));
         return SUCCESS;
         }
     return ERROR;

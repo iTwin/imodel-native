@@ -277,8 +277,9 @@ struct ClassMap : public IClassMap, RefCountedBase
 
     private:
         BentleyStatus InitializeDisableECInstanceIdAutogeneration();
+        BentleyStatus CreateCurrentTimeStampTrigger(ECN::ECPropertyCR);
 
-        virtual MapStatus _OnInitialized();
+        virtual MapStatus _OnInitialized() { return MapStatus::Success; }
         virtual Type _GetClassMapType() const override;
 
     protected:

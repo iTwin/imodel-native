@@ -524,7 +524,7 @@ public:
         ECDbSqlColumn* CreateColumn (Utf8CP name, ECDbSqlColumn::Type type, size_t position, ColumnKind kind = ColumnKind::DataColumn, PersistenceType persistenceType = PersistenceType::Persisted);
         std::vector<ECDbSqlTable const*> const& GetChildTables() const {return m_childTables;}
             
-        BentleyStatus CreateTrigger(Utf8CP triggerName, ECDbSqlTable& table, Utf8CP condition, Utf8CP body, TriggerType ecsqlType,TriggerSubType triggerSubType);
+        BentleyStatus CreateTrigger(Utf8CP triggerName, Utf8CP condition, Utf8CP body, TriggerType ecsqlType,TriggerSubType triggerSubType);
         std::vector<const ECDbSqlTrigger*> GetTriggers()const;
         ECDbSqlColumn const* FindColumnCP (Utf8CP name) const;
         ECDbSqlColumn* FindColumnP (Utf8CP name) const;
@@ -554,8 +554,8 @@ public:
 struct ECDbSqlTrigger : NonCopyableClass
     {
     public:
-        
-        friend BentleyStatus ECDbSqlTable::CreateTrigger(Utf8CP triggerName, ECDbSqlTable& table, Utf8CP condition, Utf8CP body, TriggerType ecsqlType,TriggerSubType triggerSubType);
+        friend BentleyStatus ECDbSqlTable::CreateTrigger(Utf8CP triggerName, Utf8CP condition, Utf8CP body, TriggerType ecsqlType,TriggerSubType triggerSubType);
+
     private:
         Utf8String m_triggerName;
         ECDbSqlTable& m_table;
