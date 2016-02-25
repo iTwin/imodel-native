@@ -2,8 +2,8 @@
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
 InstanceCRUDTests.* 	# No need to run with the build, used by testing after build for verifying CRUD operations.
-ECDbInstancesExpressionSymbolProviderTests.SymbolsAreInjectedWhenImportingSchemas   # Grigas WIP
-ECDbInstancesExpressionSymbolProviderTests.SymbolsAreInjectedWhenOpeningECDb        # Grigas WIP
+ECDbExpressionSymbolProviderRelatedInstanceTests.SymbolsAreInjectedWhenImportingSchemas   # Grigas WIP
+ECDbExpressionSymbolProviderRelatedInstanceTests.SymbolsAreInjectedWhenOpeningECDb        # Grigas WIP
 
 #----------------------------------------------------------------------------------------
 #   Tests that need attention

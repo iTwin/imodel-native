@@ -10,15 +10,31 @@
 
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                02/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECDbExpressionContext::ECDbExpressionContext(ECDbCR db)
-    : SymbolExpressionContext(nullptr), m_db(db) 
-    {
-    AddSymbol(*PropertySymbol::Create<ECDbExpressionContext, Utf8CP>("Path", *this, &ECDbExpressionContext::GetPath));
-    AddSymbol(*PropertySymbol::Create<ECDbExpressionContext, ECValue>("Name", *this, &ECDbExpressionContext::GetName));
-    }
+//=======================================================================================
+// @bsiclass                                      Grigas.Petraitis              02/2016
+//+===============+===============+===============+===============+===============+======
+struct ECDbExpressionContext : ECN::SymbolExpressionContext
+{
+private:
+    ECDbCR m_db;
+
+private:
+    Utf8CP GetPath() const {return m_db.GetDbFileName();}
+    ECN::ECValue GetName() const {return ECN::ECValue(BeFileName(m_db.GetDbFileName()).GetFileNameWithoutExtension().c_str());}
+
+protected:
+    ECDbExpressionContext(ECDbCR db)
+        : SymbolExpressionContext(nullptr), m_db(db) 
+        {
+        AddSymbol(*PropertySymbol::Create<ECDbExpressionContext, Utf8CP>("Path", *this, &ECDbExpressionContext::GetPath));
+        AddSymbol(*PropertySymbol::Create<ECDbExpressionContext, ECValue>("Name", *this, &ECDbExpressionContext::GetName));
+        }
+
+    ECDbCR GetECDb() const {return m_db;}
+
+public:
+    static RefCountedPtr<ECDbExpressionContext> Create(ECDbCR db) {return new ECDbExpressionContext(db);}
+};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2016
@@ -26,21 +42,13 @@ ECDbExpressionContext::ECDbExpressionContext(ECDbCR db)
 void ECDbExpressionSymbolProvider::_PublishSymbols(SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const
     {
     context.AddSymbol(*ContextSymbol::CreateContextSymbol("ECDb", *ECDbExpressionContext::Create(m_db)));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                02/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECDbInstancesExpressionSymbolProvider::_PublishSymbols(SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const
-    {
-    ECDbExpressionSymbolProvider::_PublishSymbols(context, requestedSymbolSets);
     context.AddSymbol(*MethodSymbol::Create("GetRelatedInstance", NULL, &GetRelatedInstance, const_cast<ECDbP>(&GetECDb())));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus ECDbInstancesExpressionSymbolProvider::GetRelatedInstance(EvaluationResult& evalResult, void* context, ECInstanceListCR instanceData, EvaluationResultVector& args)
+ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstance(EvaluationResult& evalResult, void* context, ECInstanceListCR instanceData, EvaluationResultVector& args)
     {
     // This method takes a single string argument of the format:
     //  "RelationshipClassName:Direction:RelatedClassName[, PropertyName:FailureValue]"
@@ -148,40 +156,10 @@ ExpressionStatus ECDbInstancesExpressionSymbolProvider::GetRelatedInstance(Evalu
             relatedInstance = adapter.GetInstance();
             break;
             }
-
-        /*QueryRelatedClassSpecifierPtr relClassSpec = QueryRelatedClassSpecifier::Create (relationshipClass, relatedClass, direction, true, true);   // allow polymorphism
-
-        DgnECInstanceCreateContext context(SelectedProperties::Create (true).get(), DgnECInstanceCreateOptions (false, false));
-        if (NULL != relationshipClass && NULL != relatedClass)
-            {
-            DgnECInstanceIterable relatedInstances = DgnECManager::GetManager().FindRelatedInstances (*instance, *relClassSpec, context);
-            if (relatedInstances.begin() != relatedInstances.end())
-                relatedInstance = *relatedInstances.begin();
-            }
-        else
-            {
-            // We have to get all of the relationships for this instance and compare the class names
-            for (IDgnECRelationshipInstanceP const& relationship: DgnECManager::GetManager().FindRelationships (*instance, *relClassSpec, context))
-                {
-                if (!relationship->GetEnabler().GetClass().GetName().Equals (relationshipName))
-                    continue;   // note this does not support polymorphism
-
-                ECClassCP foundRelatedClass = GetRelatedClassDefinition (*relationship, direction, relatedName);
-                if (NULL != foundRelatedClass)
-                    {
-                    relatedInstance = (STRENGTHDIRECTION_Forward == direction) ? relationship->GetTarget().get() : relationship->GetSource().get();
-                    break;
-                    }
-                }
-            }
-
-        if (relatedInstance.IsValid())
-            break;*/
         }
 
     /*if (relatedInstance.IsNull() && !failureSpec.empty())
         relatedInstance = CreatePseudoRelatedInstance (failureSpec.c_str());*/
-
     
     if (relatedInstance.IsValid())
         evalResult.SetInstance (*relatedInstance);
@@ -212,7 +190,7 @@ static ECRelationshipClassCP GetRelationshipClassFromSameSchema(ECClassCR other,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbInstancesExpressionSymbolProvider::FindRelationshipAndClassInfo(ECDbCR db, ECRelationshipClassCP& relationship, Utf8CP relationshipName, ECEntityClassCP& entityClass, Utf8CP className)
+BentleyStatus ECDbExpressionSymbolProvider::FindRelationshipAndClassInfo(ECDbCR db, ECRelationshipClassCP& relationship, Utf8CP relationshipName, ECEntityClassCP& entityClass, Utf8CP className)
     {
     // already have both - immediate return
     if (nullptr != relationship && nullptr != entityClass)
@@ -259,7 +237,7 @@ BentleyStatus ECDbInstancesExpressionSymbolProvider::FindRelationshipAndClassInf
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECDbInstancesExpressionSymbolsContext::ECDbInstancesExpressionSymbolsContext(ECDbCR ecdb)
     {
-    m_provider = new ECDbInstancesExpressionSymbolProvider(ecdb);
+    m_provider = new ECDbExpressionSymbolProvider(ecdb);
     InternalECSymbolProviderManager::GetManager().RegisterSymbolProvider(*m_provider);
     }
 

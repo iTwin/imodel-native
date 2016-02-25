@@ -211,6 +211,7 @@
     <ClCompile Include="Published\ECSqlMetadataQueryTest.cpp">
       <Filter>Published\ECSql</Filter>
     </ClCompile>
+    <ClCompile Include="Published\ECDbSymbolProviderTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Performance\PerformanceTests.h">
