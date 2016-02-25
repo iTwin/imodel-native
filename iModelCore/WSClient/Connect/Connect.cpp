@@ -20,7 +20,6 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 static ClientInfoPtr s_clientInfo;
 static IHttpHandlerPtr s_customHttpHandler;
 static bool s_connectInitialized = false;
-static bool s_tokenBasedAuthentication = false;
 
 /////////////////////////////////////////////////////////////
 // Authentication related stuff
@@ -36,7 +35,7 @@ const uint64_t Connect::DefaultTokenLifetime = TOKEN_LIFETIME;
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Travis.Cobbs    04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Connect::Initialize(ClientInfoPtr clientInfo, IHttpHandlerPtr customHttpHandler, bool tokenBasedAuthentication)
+void Connect::Initialize(ClientInfoPtr clientInfo, IHttpHandlerPtr customHttpHandler)
     {
     BeAssert(nullptr != clientInfo);
 
@@ -45,7 +44,6 @@ void Connect::Initialize(ClientInfoPtr clientInfo, IHttpHandlerPtr customHttpHan
         s_clientInfo = clientInfo;
         s_customHttpHandler = customHttpHandler;
         s_connectInitialized = true;
-        s_tokenBasedAuthentication = tokenBasedAuthentication;
         }
     }
 
@@ -189,14 +187,6 @@ bool Connect::IsImsLoginRedirect(HttpResponseCR response)
         return false;
         }
     return true;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Connect::IsTokenBasedAuthorization()
-    {
-    return s_tokenBasedAuthentication;
     }
 
 /*--------------------------------------------------------------------------------------+
