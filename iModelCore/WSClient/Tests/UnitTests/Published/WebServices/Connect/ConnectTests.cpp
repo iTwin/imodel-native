@@ -59,7 +59,7 @@ TEST_F(ConnectTests, GetStsToken_ByCredentials_SendsRequestToRetrieveToken)
 
         EXPECT_EQ("http://applies.to.url", bodyJson["AppliesTo"].asString());
         EXPECT_EQ("", bodyJson["ActAs"].asString());
-        EXPECT_FALSE(bodyJson["Lifetime"].asString().empty());
+        EXPECT_EQ("123", bodyJson["Lifetime"].asString());
 
         EXPECT_EQ("Basic " + Base64Utilities::Encode("Foo:Boo"), request.GetHeaders().GetAuthorization());
         EXPECT_EQ("http://sts.url", request.GetUrl());
@@ -67,7 +67,26 @@ TEST_F(ConnectTests, GetStsToken_ByCredentials_SendsRequestToRetrieveToken)
         return StubHttpResponse();
         });
 
-    Connect::GetStsToken(Credentials("Foo", "Boo"), "http://applies.to.url", "http://sts.url")->GetResult();
+    Connect::GetStsToken(Credentials("Foo", "Boo"), "http://applies.to.url", "http://sts.url", 123)->GetResult();
+    }
+
+TEST_F(ConnectTests, GetStsToken_ByCredentialsWithZeroLifetime_SendsRequestToRetrieveTokenWithoutLifetimee)
+    {
+    GetHandler().ForFirstRequest([&] (HttpRequestCR request)
+        {
+        auto bodyJson = request.GetRequestBody()->AsJson();
+
+        EXPECT_EQ("http://applies.to.url", bodyJson["AppliesTo"].asString());
+        EXPECT_EQ("", bodyJson["ActAs"].asString());
+        EXPECT_FALSE(bodyJson.isMember("Lifetime"));
+
+        EXPECT_EQ("Basic " + Base64Utilities::Encode("Foo:Boo"), request.GetHeaders().GetAuthorization());
+        EXPECT_EQ("http://sts.url", request.GetUrl());
+
+        return StubHttpResponse();
+        });
+
+    Connect::GetStsToken(Credentials("Foo", "Boo"), "http://applies.to.url", "http://sts.url", 0)->GetResult();
     }
 
 TEST_F(ConnectTests, GetStsToken_ByParentToken_SendsRequestToRetrieveToken)
@@ -81,8 +100,7 @@ TEST_F(ConnectTests, GetStsToken_ByParentToken_SendsRequestToRetrieveToken)
         EXPECT_EQ("http://applies.to.url", bodyJson["AppliesTo"].asString());
         EXPECT_EQ("http://applies.to.url", bodyJson["AppliesToBootstrapToken"].asString());
         EXPECT_EQ(parentToken.AsString(), bodyJson["ActAs"].asString());
-
-        EXPECT_FALSE(bodyJson["Lifetime"].asString().empty());
+        EXPECT_EQ("123", bodyJson["Lifetime"].asString());
 
         EXPECT_STREQ("X509 access_token=TestCert", request.GetHeaders().GetAuthorization());
         EXPECT_EQ("http://sts.url", request.GetUrl());
@@ -90,7 +108,29 @@ TEST_F(ConnectTests, GetStsToken_ByParentToken_SendsRequestToRetrieveToken)
         return StubHttpResponse();
         });
 
-    Connect::GetStsToken(parentToken, "http://applies.to.url", "http://sts.url")->GetResult();
+    Connect::GetStsToken(parentToken, "http://applies.to.url", "http://sts.url", 123)->GetResult();
+    }
+
+TEST_F(ConnectTests, GetStsToken_ByParentTokenWithZeroLifetime_SendsRequestToRetrieveTokenWithoutLifetime)
+    {
+    SamlToken parentToken(StubSamlTokenXML(0, "TestCert"));
+
+    GetHandler().ForFirstRequest([&] (HttpRequestCR request)
+        {
+        auto bodyJson = request.GetRequestBody()->AsJson();
+
+        EXPECT_EQ("http://applies.to.url", bodyJson["AppliesTo"].asString());
+        EXPECT_EQ("http://applies.to.url", bodyJson["AppliesToBootstrapToken"].asString());
+        EXPECT_EQ(parentToken.AsString(), bodyJson["ActAs"].asString());
+        EXPECT_FALSE(bodyJson.isMember("Lifetime"));
+
+        EXPECT_STREQ("X509 access_token=TestCert", request.GetHeaders().GetAuthorization());
+        EXPECT_EQ("http://sts.url", request.GetUrl());
+
+        return StubHttpResponse();
+        });
+
+    Connect::GetStsToken(parentToken, "http://applies.to.url", "http://sts.url", 0)->GetResult();
     }
 
 TEST_F(ConnectTests, IsImsLoginRedirect_NonLoginUrl_False)

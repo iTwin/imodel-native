@@ -21,17 +21,6 @@ static ClientInfoPtr s_clientInfo;
 static IHttpHandlerPtr s_customHttpHandler;
 static bool s_connectInitialized = false;
 
-/////////////////////////////////////////////////////////////
-// Authentication related stuff
-
-#ifdef DEBUG
-#define TOKEN_LIFETIME 30
-#else // DEBUG
-#define TOKEN_LIFETIME (24*60)
-#endif // !DEBUG
-
-const uint64_t Connect::DefaultTokenLifetime = TOKEN_LIFETIME;
-
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Travis.Cobbs    04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -107,7 +96,10 @@ AsyncTaskPtr<SamlTokenResult> Connect::GetStsToken(Utf8StringCR authorization, J
     issueExParamsValue["KeyType"] = "";
     issueExParamsValue["AppliesTo"] = appliesToUrlString;
     issueExParamsValue["Claims"] = "";
-    issueExParamsValue["Lifetime"] = Utf8PrintfString("%llu", tokenLifetime);
+
+    if (0 != tokenLifetime)
+        issueExParamsValue["Lifetime"] = Utf8PrintfString("%llu", tokenLifetime);
+
     issueExParamsValue["OnBehalfOf"] = "";
     issueExParamsValue["Properties"] = "";
     issueExParamsValue["DeviceId"] = s_clientInfo->GetDeviceId();
