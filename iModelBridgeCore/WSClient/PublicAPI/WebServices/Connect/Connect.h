@@ -38,7 +38,7 @@ struct Connect
 
     public:
         //! Initialize once in app lifetime
-        WSCLIENT_EXPORT static void Initialize(ClientInfoPtr clientInfo, IHttpHandlerPtr customHttpHandler = nullptr, bool tokenBasedAuthentication = false);
+        WSCLIENT_EXPORT static void Initialize(ClientInfoPtr clientInfo, IHttpHandlerPtr customHttpHandler = nullptr);
         WSCLIENT_EXPORT static void Uninintialize();
 
         WSCLIENT_EXPORT static AsyncTaskPtr<SamlTokenResult> Login(CredentialsCR creds, Utf8CP appliesToUrl = nullptr, Utf8CP stsUrl = nullptr, uint64_t tokenLifetime = DefaultTokenLifetime);
@@ -51,7 +51,6 @@ struct Connect
         // This is workaround because IMS does not give any other indication.
         WSCLIENT_EXPORT static bool IsImsLoginRedirect(HttpResponseCR response);
 
-        WSCLIENT_EXPORT static bool IsTokenBasedAuthorization();
         WSCLIENT_EXPORT static Utf8String GetFederatedSignInUrl(Utf8String windowsDomainName = nullptr);
     };
 
