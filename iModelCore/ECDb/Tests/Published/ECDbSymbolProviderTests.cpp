@@ -34,7 +34,7 @@ struct ECDbExpressionSymbolProviderTests : testing::Test
 
     ExpressionStatus EvaluateExpression(EvaluationResult& result, Utf8CP expr)
         {
-        SymbolExpressionContextPtr context;
+        SymbolExpressionContextPtr context = SymbolExpressionContext::Create(nullptr);
         _PublishSymbols(*context);
 
         NodePtr tree = ECEvaluator::ParseValueExpressionAndCreateTree (expr);
