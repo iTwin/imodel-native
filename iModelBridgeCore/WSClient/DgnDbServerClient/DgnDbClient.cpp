@@ -156,14 +156,14 @@ DgnClientFx::Utils::AsyncTaskPtr<DgnDbRepositoriesResult> DgnDbClient::GetReposi
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-Json::Value RepositoryCreationJson(Utf8StringCR repositoryId, Utf8StringCR repositoryGuid, Utf8StringCR description, Utf8StringCR localPath, bool published)
+Json::Value RepositoryCreationJson(Utf8StringCR repositoryName, Utf8StringCR repositoryGuid, Utf8StringCR description, Utf8StringCR localPath, bool published)
     {
     Json::Value repositoryCreation(Json::objectValue);
     repositoryCreation[ServerSchema::Instance] = Json::objectValue;
     repositoryCreation[ServerSchema::Instance][ServerSchema::SchemaName] = ServerSchema::Schema::Admin;
     repositoryCreation[ServerSchema::Instance][ServerSchema::ClassName] = ServerSchema::Class::Repository;
     repositoryCreation[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::Description] = description;
-    repositoryCreation[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::Id] = repositoryId;
+    repositoryCreation[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::RepositoryName] = repositoryName;
     repositoryCreation[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::FileId] = repositoryGuid;
     Utf8String fileName;
     BeStringUtilities::WCharToUtf8(fileName, BeFileName(localPath).GetFileNameAndExtension().c_str());
@@ -209,7 +209,7 @@ AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::InitializeRepository(IWSReposit
             });
     }
 
-DgnDbPtr CleanDb(DgnDbR db, Utf8StringCR repositoryId)
+DgnDbPtr CleanDb(DgnDbR db)
     {
     //NEEDSWORK: Make a clean copy for a server. This code should move to the server once we have long running services.
     BeFileName tempFile;
@@ -235,7 +235,7 @@ DgnDbPtr CleanDb(DgnDbR db, Utf8StringCR repositoryId)
     tempdb->SaveBriefcaseLocalValue("ParentRevisionId", "");                            //Clear parent revision id
     tempdb->ChangeBriefcaseId(BeBriefcaseId(0));                                        //Set BriefcaseId to 0 (master)
     tempdb->SaveBriefcaseLocalValue(DgnDbServer::Db::Local::RepositoryURL, "");         //Set URL
-    tempdb->SaveBriefcaseLocalValue(DgnDbServer::Db::Local::RepositoryId, repositoryId);//Set repository ID
+    //tempdb->SaveBriefcaseLocalValue(DgnDbServer::Db::Local::RepositoryId, repositoryId);//Set repository ID, we know this only after it is pushed to the server
                                                                                         //Save changes
     tempdb->SaveChanges();
     //NEEDSWORK: end of file cleanup
@@ -245,7 +245,7 @@ DgnDbPtr CleanDb(DgnDbR db, Utf8StringCR repositoryId)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::CreateNewRepository(Dgn::DgnDbPtr db, Utf8StringCR repositoryId, Utf8StringCR description,
+AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::CreateNewRepository(Dgn::DgnDbPtr db, Utf8StringCR repositoryName, Utf8StringCR description,
     bool published, HttpRequest::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken)
     {
     BeAssert(DgnDbServerHost::IsInitialized() && Error::NotInitialized);
@@ -261,12 +261,12 @@ AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::CreateNewRepository(Dgn::DgnDbP
         {
         return CreateCompletedAsyncTask<DgnDbRepositoryResult>(DgnDbRepositoryResult::Error(Error::InvalidCredentials));
         }
-    if (repositoryId.empty())
+    if (repositoryName.empty())
         {
         return CreateCompletedAsyncTask<DgnDbRepositoryResult>(DgnDbRepositoryResult::Error(Error::InvalidRepository));
         }
 
-    DgnDbPtr tempdb = CleanDb(*db, repositoryId);
+    DgnDbPtr tempdb = CleanDb(*db);
     if (!tempdb.IsValid())
         CreateCompletedAsyncTask<DgnDbRepositoryResult>(DgnDbRepositoryResult::Error(Error::DbNotFound));
     Utf8String dbFileName = tempdb->GetDbFileName();
@@ -287,7 +287,7 @@ AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::CreateNewRepository(Dgn::DgnDbP
         // Stage 1. Create repository.
         Utf8String adminRepositoryURL = (*repositoriesResult.GetValue().begin()).GetId();
         IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, adminRepositoryURL, m_clientInfo, nullptr, m_customHandler);
-        Json::Value repositoryCreationJson = RepositoryCreationJson(repositoryId, dbFileId, description, dbFileName, published);
+        Json::Value repositoryCreationJson = RepositoryCreationJson(repositoryName, dbFileId, description, dbFileName, published);
         client->SetCredentials(m_credentials);
         client->SendCreateObjectRequest(repositoryCreationJson, BeFileName(), callback, cancellationToken)
             ->Then([=] (const WSCreateObjectResult& createRepositoryResult)
@@ -316,7 +316,7 @@ AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::CreateNewRepository(Dgn::DgnDbP
                         }
 
                     // Stage 3. Initialize repository.
-                    InitializeRepository(client, repositoryId, repositoryCreationJson, repositoryObjectId, callback, cancellationToken)
+                    InitializeRepository(client, repositoryInstanceId, repositoryCreationJson, repositoryObjectId, callback, cancellationToken)
                         ->Then([=] (const DgnDbRepositoryResult& result)
                         {
                         if (result.IsSuccess())
@@ -339,7 +339,7 @@ AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::CreateNewRepository(Dgn::DgnDbP
                         }
 
                     // Stage 3. Initialize repository.
-                    InitializeRepository(client, repositoryId, repositoryCreationJson, repositoryObjectId, callback, cancellationToken)
+                    InitializeRepository(client, repositoryInstanceId, repositoryCreationJson, repositoryObjectId, callback, cancellationToken)
                         ->Then([=] (const DgnDbRepositoryResult& result)
                         {
                         if (result.IsSuccess())
