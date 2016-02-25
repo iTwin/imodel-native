@@ -339,18 +339,23 @@ static bool areDisplayParamsEqual(Render::GeometryParamsCR lhsUnresolved, DgnDbR
     // *** TBD PatternParams
 
     //  Compare the rest of the simple properites
-    rhs.SetCategoryId(lhs.GetCategoryId());
-    rhs.SetSubCategoryId(lhs.GetSubCategoryId());
-    lhs.SetMaterialId(DgnMaterialId());
-    rhs.SetMaterialId(DgnMaterialId());
-    lhs.SetLineStyle(nullptr);
-    rhs.SetLineStyle(nullptr);
-    lhs.SetGradient(nullptr);
-    rhs.SetGradient(nullptr);
-    lhs.SetPatternParams(nullptr);
-    rhs.SetPatternParams(nullptr);
+#define EXPECT_PARAMS_EQ(FUNC) if (lhs. FUNC () != rhs. FUNC ()) return false
 
-    return lhs == rhs;
+    EXPECT_PARAMS_EQ(GetLineColor);
+    EXPECT_PARAMS_EQ(GetWeight);
+    EXPECT_PARAMS_EQ(GetGeometryClass);
+    EXPECT_PARAMS_EQ(GetNetDisplayPriority);
+    EXPECT_PARAMS_EQ(GetDisplayPriority);
+    EXPECT_PARAMS_EQ(GetFillColor);
+    EXPECT_PARAMS_EQ(GetFillDisplay);
+    EXPECT_PARAMS_EQ(GetTransparency);
+    EXPECT_PARAMS_EQ(GetNetTransparency);
+    EXPECT_PARAMS_EQ(GetFillTransparency);
+    EXPECT_PARAMS_EQ(GetNetFillTransparency);
+
+#undef EXPECT_PARAMS_EQ
+
+    return true;
     }
 
 //---------------------------------------------------------------------------------------

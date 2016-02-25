@@ -815,8 +815,6 @@ protected:
     virtual DgnElementCP _ToDgnElement() const override final {return this;}
     virtual DgnDbR _GetDgnDb() const override final {return m_dgndb;}
     virtual GeometrySourceCP _ToGeometrySource() const {return nullptr;}
-    virtual SpatialElementCP _ToSpatialElement() const {return nullptr;}
-    virtual PhysicalElementCP _ToPhysicalElement() const {return nullptr;}
     virtual AnnotationElement2dCP _ToAnnotationElement2d() const {return nullptr;}
     virtual DrawingGraphicCP _ToDrawingGraphic() const {return nullptr;}
     virtual DefinitionElementCP _ToDefinitionElement() const {return nullptr;}
@@ -854,8 +852,6 @@ public:
 
     DefinitionElementCP ToDefinitionElement() const {return _ToDefinitionElement();}    //!< more efficient substitute for dynamic_cast<DefinitionElementCP>(el)
     DictionaryElementCP ToDictionaryElement() const {return _ToDictionaryElement();}    //!< more efficient substitute for dynamic_cast<DictionaryElementCP>(el)
-    SpatialElementCP ToSpatialElement() const {return _ToSpatialElement();}             //!< more efficient substitute for dynamic_cast<SpatialElementCP>(el)
-    PhysicalElementCP ToPhysicalElement() const {return _ToPhysicalElement();}          //!< more efficient substitute for dynamic_cast<PhysicalElementCP>(el)
     AnnotationElement2dCP ToAnnotationElement2d() const {return _ToAnnotationElement2d();} //!< more efficient substitute for dynamic_cast<AnnotationElement2dCP>(el)
     DrawingGraphicCP ToDrawingGraphic() const {return _ToDrawingGraphic();}             //!< more efficient substitute for dynamic_cast<DrawingGraphicCP>(el)
     IElementGroupCP ToIElementGroup() const {return _ToIElementGroup();}                //!< more efficient substitute for dynamic_cast<IElementGroup>(el)
@@ -866,8 +862,6 @@ public:
 
     DefinitionElementP ToDefinitionElementP() {return const_cast<DefinitionElementP>(_ToDefinitionElement());}  //!< more efficient substitute for dynamic_cast<DefinitionElementP>(el)
     DictionaryElementP ToDictionaryElementP() {return const_cast<DictionaryElementP>(_ToDictionaryElement());}  //!< more efficient substitute for dynamic_cast<DictionaryElementP>(el)
-    SpatialElementP ToSpatialElementP() {return const_cast<SpatialElementP>(_ToSpatialElement());}              //!< more efficient substitute for dynamic_cast<PhysicalElementP>(el)
-    PhysicalElementP ToPhysicalElementP() {return const_cast<PhysicalElementP>(_ToPhysicalElement());}          //!< more efficient substitute for dynamic_cast<PhysicalElementP>(el)
     AnnotationElement2dP ToAnnotationElement2dP() {return const_cast<AnnotationElement2dP>(_ToAnnotationElement2d());} //!< more efficient substitute for dynamic_cast<AnnotationElement2dP>(el)
     DrawingGraphicP ToDrawingGraphicP() {return const_cast<DrawingGraphicP>(_ToDrawingGraphic());}              //!< more efficient substitute for dynamic_cast<DrawingGraphicP>(el)
     //! @}
@@ -1442,7 +1436,6 @@ struct EXPORT_VTABLE_ATTRIBUTE SpatialElement : GeometricElement3d
 {
     DEFINE_T_SUPER(GeometricElement3d);
 protected:
-    SpatialElementCP _ToSpatialElement() const override final {return this;}
     explicit SpatialElement(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -1456,7 +1449,6 @@ struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : SpatialElement
 {
     DEFINE_T_SUPER(SpatialElement)
 protected:
-    PhysicalElementCP _ToPhysicalElement() const override final {return this;}
     explicit PhysicalElement(CreateParams const& params) : T_Super(params) {}
 };
 
