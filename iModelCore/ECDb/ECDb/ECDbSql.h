@@ -736,28 +736,6 @@ struct ECDbClassMapInfo : NonCopyableClass
 struct ECDbMapStorage
     {
     private:
-
-        const Utf8CP Sql_InsertPropertyPath = "INSERT OR REPLACE INTO ec_PropertyPath (Id, RootPropertyId, AccessString) VALUES (?,?,?)";
-        const Utf8CP Sql_InsertClassMap = "INSERT INTO ec_ClassMap(Id, ParentId, ClassId, MapStrategy, MapStrategyOptions, MapStrategyAppliesToSubclasses) VALUES (?,?,?,?,?,?)";
-        const Utf8CP Sql_DeleteClassMap = "DELETE FROM ec_ClassMap WHERE Id = ?";
-
-        const Utf8CP Sql_InsertPropertyMap = "INSERT OR REPLACE INTO ec_PropertyMap (ClassMapId, PropertyPathId, ColumnId) VALUES (?,?,?)";
-        const Utf8CP Sql_SelectPropertyPath = "SELECT Id, RootPropertyId, AccessString FROM ec_PropertyPath";
-        const Utf8CP Sql_SelectClassMap = "SELECT Id, ParentId, ClassId, MapStrategy, MapStrategyOptions, MapStrategyAppliesToSubclasses FROM ec_ClassMap ORDER BY Id, ParentId";
-        const Utf8CP Sql_SelectPropertyMap = "SELECT PropertyPathId, T.Name TableName, C.Name ColumnName FROM ec_PropertyMap P INNER JOIN ec_Column C ON C.Id = P.ColumnId INNER JOIN ec_Table T ON T.Id = C.TableId WHERE P.ClassMapId = ?";
-        enum class StatementType
-            {
-            SqlInsertPropertyPath,
-            SqlInsertClassMap,
-            SqlInsertPropertyMap,
-            SqlSelectPropertyPath,
-            SqlSelectClassMap,
-            SqlSelectPropertyMap,
-            SqlDeleteClassMap,
-            };
-
-
-        std::map<StatementType, std::unique_ptr<Statement>>  m_statementCache;
         mutable std::map<ECDbPropertyPathId, std::unique_ptr<ECDbPropertyPath>> m_propertyPaths;
         mutable std::map<ECN::ECPropertyId, std::map<Utf8CP, ECDbPropertyPath*, CompareUtf8>> m_propertyPathByPropertyId;
         mutable std::map<ECDbClassMapId, std::unique_ptr<ECDbClassMapInfo>> m_classMaps;
@@ -767,7 +745,7 @@ struct ECDbMapStorage
     private:
         ECDbPropertyPath* Set(std::unique_ptr<ECDbPropertyPath> propertyPath) const;
         ECDbClassMapInfo* Set(std::unique_ptr<ECDbClassMapInfo> classMap) const;
-        CachedStatementPtr GetStatement(StatementType type) const;
+
         DbResult InsertOrReplace() const;
         DbResult InsertPropertyMap(ECDbPropertyMapInfo const& o) const;
         DbResult InsertClassMap(ECDbClassMapInfo const& o) const;

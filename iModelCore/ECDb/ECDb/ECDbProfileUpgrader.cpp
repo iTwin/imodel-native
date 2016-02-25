@@ -187,6 +187,22 @@ bool ECDbProfileUpgrader::IsView (ECDbCR ecdb, Utf8CP tableOrViewName)
     return stmt->Step () == BE_SQLITE_ROW;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle        02/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ECDbProfileUpgrader_3001::_Upgrade(ECDbR ecdb) const
+    {
+    DbResult stat = ecdb.ExecuteSql("ALTER TABLE ec_ClassMap ADD COLUMN MapStrategyMinSharedColumnCount INTEGER;");
+    if (stat != BE_SQLITE_OK)
+        {
+        LOG.error("ECDb profile upgrade failed: Adding column 'MapStrategyMinSharedColumnCount' to table 'ec_ClassMap' failed.");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    LOG.debug("ECDb profile upgrade: In table 'ec_ClassMap' added column 'MapStrategyMinSharedColumnCount'.");
+    return BE_SQLITE_OK;
+    }
+
 //*************************************** ECDbProfileSchemaUpgrader *********************************
 //static
 SchemaKey ECDbProfileECSchemaUpgrader::s_ecdbfileinfoSchemaKey = SchemaKey ("ECDb_FileInfo", 2, 0);
@@ -281,7 +297,7 @@ BentleyStatus ECDbProfileECSchemaUpgrader::ReadECDbFileInfoSchema (ECSchemaReadC
 Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml ()
     {
     return "<?xml version='1.0' encoding='utf-8'?> "
-        "<ECSchema schemaName='ECDb_System' nameSpacePrefix='ecdbsys' version='3.0'  xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "<ECSchema schemaName='ECDb_System' nameSpacePrefix='ecdbsys' version='3.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.13' prefix='bsca' /> "
         "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' /> "
         "    <ECCustomAttributes> "

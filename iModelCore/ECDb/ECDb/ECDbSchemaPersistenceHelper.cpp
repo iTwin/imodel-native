@@ -38,9 +38,7 @@ bool ECDbSchemaPersistenceHelper::TryGetECSchemaKey(SchemaKey& key, ECDbCR ecdb,
     if (stmt->Step() != BE_SQLITE_ROW)
         return false;
 
-    //WIP_3DIGITVERSION
-    //key = SchemaKey(stmt->GetValueText(0), stmt->GetValueInt(1), stmt->GetValueInt(2), stmt->GetValueInt(3));
-    key = SchemaKey(stmt->GetValueText(0), stmt->GetValueInt(1), stmt->GetValueInt(3));
+    key = SchemaKey(stmt->GetValueText(0), stmt->GetValueInt(1), stmt->GetValueInt(2), stmt->GetValueInt(3));
     return true;
     }
 /*---------------------------------------------------------------------------------------
@@ -96,7 +94,7 @@ ECSchemaId ECDbSchemaPersistenceHelper::GetECSchemaId(ECDbCR db, Utf8CP schemaNa
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaPersistenceHelper::GetECClassKeys(ECClassKeys& keys, ECSchemaId schemaId, ECDbCR db) // WIP_FNV: take a name, instead... and modify the where clause
+BentleyStatus ECDbSchemaPersistenceHelper::GetECClassKeys(ECClassKeys& keys, ECSchemaId schemaId, ECDbCR db)
     {
     keys.clear ();
     CachedStatementPtr stmt = nullptr;

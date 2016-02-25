@@ -2569,48 +2569,6 @@ ECDbClassMapInfo* ECDbMapStorage::CreateClassMap(ECN::ECClassId classId, ECDbMap
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-CachedStatementPtr ECDbMapStorage::GetStatement(StatementType type) const
-    {
-    CachedStatementPtr stmt = nullptr;
-
-    DbResult stat = BE_SQLITE_ERROR;
-    switch (type)
-        {
-            case StatementType::SqlDeleteClassMap:
-                stat = m_manager.GetECDbR().GetCachedStatement(stmt, Sql_DeleteClassMap);
-                break;
-            case StatementType::SqlInsertPropertyPath:
-                stat = m_manager.GetECDbR().GetCachedStatement(stmt, Sql_InsertPropertyPath);
-                break;
-            case StatementType::SqlInsertClassMap:
-                stat = m_manager.GetECDbR().GetCachedStatement(stmt, Sql_InsertClassMap);
-                break;
-            case StatementType::SqlInsertPropertyMap:
-                stat = m_manager.GetECDbR().GetCachedStatement(stmt, Sql_InsertPropertyMap);
-                break;
-            case StatementType::SqlSelectPropertyPath:
-                stat = m_manager.GetECDbR().GetCachedStatement(stmt, Sql_SelectPropertyPath);
-                break;
-            case StatementType::SqlSelectClassMap:
-                stat = m_manager.GetECDbR().GetCachedStatement(stmt, Sql_SelectClassMap);
-                break;
-            case StatementType::SqlSelectPropertyMap:
-                stat = m_manager.GetECDbR().GetCachedStatement(stmt, Sql_SelectPropertyMap);
-                break;
-
-        }
-    if (stat != BE_SQLITE_OK)
-        {
-        BeAssert(false && "Failed to prepare statement");
-        return nullptr;
-        }
-
-    return stmt;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        01/2015
-//---------------------------------------------------------------------------------------
 void ECDbMapStorage::Reset() const
     {
     m_propertyPaths.clear();
@@ -2618,7 +2576,6 @@ void ECDbMapStorage::Reset() const
     m_classMaps.clear();
     m_classMapByClassId.clear();
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
@@ -2667,7 +2624,7 @@ DbResult ECDbMapStorage::InsertOrReplace() const
 //---------------------------------------------------------------------------------------
 DbResult ECDbMapStorage::InsertPropertyMap(ECDbPropertyMapInfo const& o) const
     {
-    auto stmt = GetStatement(StatementType::SqlInsertPropertyMap);
+    CachedStatementPtr stmt = m_manager.GetECDb().GetCachedStatement("INSERT OR REPLACE INTO ec_PropertyMap (ClassMapId, PropertyPathId, ColumnId) VALUES (?,?,?)");
     if (stmt == nullptr)
         {
         BeAssert(false && "Failed to get statement");
@@ -2697,11 +2654,17 @@ DbResult ECDbMapStorage::InsertPropertyMap(ECDbPropertyMapInfo const& o) const
 DbResult ECDbMapStorage::InsertClassMap(ECDbClassMapInfo const& o) const
     {
     //Delete the entry first, as using SQLite's INSERT OR REPLACE is dangerous.
-    CachedStatementPtr deleteSt = GetStatement(StatementType::SqlDeleteClassMap);
-    deleteSt->BindInt64(1, o.GetId());
-    deleteSt->Step();
+    CachedStatementPtr stmt = m_manager.GetECDb().GetCachedStatement("DELETE FROM ec_ClassMap WHERE Id=?");
+    if (stmt == nullptr)
+        {
+        BeAssert(false && "Failed to get statement");
+        return BE_SQLITE_ERROR;
+        }
 
-    CachedStatementPtr stmt = GetStatement(StatementType::SqlInsertClassMap);
+    stmt->BindInt64(1, o.GetId());
+    stmt->Step();
+
+    stmt = m_manager.GetECDb().GetCachedStatement("INSERT INTO ec_ClassMap(Id, ParentId, ClassId, MapStrategy, MapStrategyOptions, MapStrategyMinSharedColumnCount, MapStrategyAppliesToSubclasses) VALUES (?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         {
         BeAssert(false && "Failed to get statement");
@@ -2717,7 +2680,11 @@ DbResult ECDbMapStorage::InsertClassMap(ECDbClassMapInfo const& o) const
     stmt->BindInt64(3, o.GetClassId());
     stmt->BindInt(4, (int) o.GetMapStrategy().GetStrategy());
     stmt->BindInt(5, (int) o.GetMapStrategy().GetOptions());
-    stmt->BindInt(6, o.GetMapStrategy().AppliesToSubclasses() ? 1 : 0);
+    const int minSharedColCount = o.GetMapStrategy().GetMinimumSharedColumnCount();
+    if (minSharedColCount != ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT)
+        stmt->BindInt(6, minSharedColCount);
+    
+    stmt->BindInt(7, o.GetMapStrategy().AppliesToSubclasses() ? 1 : 0);
 
     const DbResult stat = stmt->Step();
     return stat == BE_SQLITE_DONE ? BE_SQLITE_OK : stat;
@@ -2728,7 +2695,7 @@ DbResult ECDbMapStorage::InsertClassMap(ECDbClassMapInfo const& o) const
 //---------------------------------------------------------------------------------------
 DbResult ECDbMapStorage::InsertPropertyPath(ECDbPropertyPath const& o) const
     {
-    CachedStatementPtr stmt = GetStatement(StatementType::SqlInsertPropertyPath);
+    CachedStatementPtr stmt = m_manager.GetECDb().GetCachedStatement("INSERT OR REPLACE INTO ec_PropertyPath (Id, RootPropertyId, AccessString) VALUES (?,?,?)");
     if (stmt == nullptr)
         {
         BeAssert(false && "Failed to get statement");
@@ -2759,12 +2726,13 @@ DbResult ECDbMapStorage::Read() const
 //---------------------------------------------------------------------------------------
 DbResult ECDbMapStorage::ReadPropertyMap(ECDbClassMapInfo& o) const
     {
-    CachedStatementPtr stmt = GetStatement(StatementType::SqlSelectPropertyMap);
+    CachedStatementPtr stmt = m_manager.GetECDb().GetCachedStatement("SELECT PropertyPathId, T.Name TableName, C.Name ColumnName FROM ec_PropertyMap P INNER JOIN ec_Column C ON C.Id = P.ColumnId INNER JOIN ec_Table T ON T.Id = C.TableId WHERE P.ClassMapId = ?");
     if (stmt == nullptr)
         {
         BeAssert(false && "Failed to get statement");
         return BE_SQLITE_ERROR;
         }
+
     stmt->BindInt64(1, o.GetId());
     std::map<ECDbPropertyPathId, ECDbPropertyMapInfo*> infoCache;
     while (stmt->Step() == BE_SQLITE_ROW)
@@ -2808,9 +2776,7 @@ DbResult ECDbMapStorage::ReadPropertyMap(ECDbClassMapInfo& o) const
             infoCache[propertyPathId] = info;
             }
         else
-            {
             info = itor->second;
-            }
 
         info->GetColumnsR().push_back(column);
         }
@@ -2823,7 +2789,7 @@ DbResult ECDbMapStorage::ReadPropertyMap(ECDbClassMapInfo& o) const
 //---------------------------------------------------------------------------------------
 DbResult ECDbMapStorage::ReadClassMaps() const
     {
-    CachedStatementPtr stmt = GetStatement(StatementType::SqlSelectClassMap);
+    CachedStatementPtr stmt = m_manager.GetECDb().GetCachedStatement("SELECT Id, ParentId, ClassId, MapStrategy, MapStrategyOptions, MapStrategyMinSharedColumnCount, MapStrategyAppliesToSubclasses FROM ec_ClassMap ORDER BY Id, ParentId");
     if (stmt == nullptr)
         {
         BeAssert(false && "Failed to get statement");
@@ -2836,10 +2802,12 @@ DbResult ECDbMapStorage::ReadClassMaps() const
         ECDbClassMapId parentId = stmt->IsColumnNull(1) ? 0LL : stmt->GetValueInt64(1);
         ECN::ECClassId classId = stmt->GetValueInt64(2);
 
+        const int minSharedColCount = stmt->IsColumnNull(5) ? ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT : stmt->GetValueInt(5);
         ECDbMapStrategy mapStrategy;
         if (SUCCESS != mapStrategy.Assign((ECDbMapStrategy::Strategy) stmt->GetValueInt(3),
                                           (ECDbMapStrategy::Options) stmt->GetValueInt(4),
-                                          stmt->GetValueInt(5) == 1))
+                                          minSharedColCount,
+                                          stmt->GetValueInt(6) == 1))
             {
             BeAssert(false && "Found invalid persistence values for ECDbMapStrategy");
             return BE_SQLITE_ERROR;
@@ -2867,7 +2835,7 @@ DbResult ECDbMapStorage::ReadClassMaps() const
 //---------------------------------------------------------------------------------------
 DbResult ECDbMapStorage::ReadPropertyPaths() const
     {
-    CachedStatementPtr stmt = GetStatement(StatementType::SqlSelectPropertyPath);
+    CachedStatementPtr stmt = m_manager.GetECDb().GetCachedStatement("SELECT Id, RootPropertyId, AccessString FROM ec_PropertyPath");
     if (stmt == nullptr)
         {
         BeAssert(false && "Failed to get statement");
