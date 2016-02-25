@@ -2,7 +2,7 @@
 |
 |     $Source: DgnHandlers/DgnECSymbolProvider.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -361,7 +361,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus DgnECSymbolProvider::AnyMatches (EvaluationResult& evalResult, IValueListResultCR valueList, EvaluationResultVector& args)
+ExpressionStatus DgnECSymbolProvider::AnyMatches (EvaluationResult& evalResult, void* context, IValueListResultCR valueList, EvaluationResultVector& args)
     {
     return PredicateProcessor::Any (evalResult, valueList, args);
     }
@@ -369,7 +369,7 @@ ExpressionStatus DgnECSymbolProvider::AnyMatches (EvaluationResult& evalResult, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus DgnECSymbolProvider::AllMatch (EvaluationResult& evalResult, IValueListResultCR valueList, EvaluationResultVector& args)
+ExpressionStatus DgnECSymbolProvider::AllMatch (EvaluationResult& evalResult, void* context, IValueListResultCR valueList, EvaluationResultVector& args)
     {
     return PredicateProcessor::All (evalResult, valueList, args);
     }
@@ -377,7 +377,7 @@ ExpressionStatus DgnECSymbolProvider::AllMatch (EvaluationResult& evalResult, IV
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus DgnECSymbolProvider::GetInstanceId (EvaluationResult& evalResult, ECInstanceListCR instanceData, EvaluationResultVector& args)
+ExpressionStatus DgnECSymbolProvider::GetInstanceId (EvaluationResult& evalResult, void* context, ECInstanceListCR instanceData, EvaluationResultVector& args)
     {
     if (0 == instanceData.size())
         return ExpressionStatus::StructRequired;
@@ -398,7 +398,7 @@ ExpressionStatus DgnECSymbolProvider::GetInstanceId (EvaluationResult& evalResul
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus DgnECSymbolProvider::GetInstanceLabel (EvaluationResult& evalResult, ECInstanceListCR instanceData, EvaluationResultVector& args)
+ExpressionStatus DgnECSymbolProvider::GetInstanceLabel (EvaluationResult& evalResult, void* context, ECInstanceListCR instanceData, EvaluationResultVector& args)
     {
     if (0 == instanceData.size())
         return ExpressionStatus::StructRequired;
@@ -419,7 +419,7 @@ ExpressionStatus DgnECSymbolProvider::GetInstanceLabel (EvaluationResult& evalRe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus DgnECSymbolProvider::GetClass (EvaluationResult& evalResult, ECInstanceListCR instanceData, EvaluationResultVector& args)
+ExpressionStatus DgnECSymbolProvider::GetClass (EvaluationResult& evalResult, void* context, ECInstanceListCR instanceData, EvaluationResultVector& args)
     {
     if (0 == instanceData.size())
         return ExpressionStatus::StructRequired;
@@ -511,7 +511,7 @@ InstancePropertyPair extractProperty (ExpressionStatus& status, ECInstanceListCR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus DgnECSymbolProvider::IsOfClass (EvaluationResult& evalResult, ECInstanceListCR instanceData, EvaluationResultVector& args)
+ExpressionStatus DgnECSymbolProvider::IsOfClass (EvaluationResult& evalResult, void* context, ECInstanceListCR instanceData, EvaluationResultVector& args)
     {
     IECInstancePtr instance;
     Utf8CP schemaname, classname;

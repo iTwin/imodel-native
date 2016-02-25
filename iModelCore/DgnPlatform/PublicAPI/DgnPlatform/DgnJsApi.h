@@ -279,6 +279,10 @@ struct JsPhysicalElement : JsDgnElement
 
     JsDgnObjectIdP GetCategoryId() const {return m_el.IsValid()? new JsDgnObjectId(m_el->ToGeometrySource()->GetCategoryId().GetValue()): nullptr;}
 
+    static GeometricElement3d* ToGeometricElement3d(DgnElementR el) {return dynamic_cast<GeometricElement3d*>(&el);} // *** WIP_DGNJSAPI - remove this when we get a _ToGeometricElement3d method on DgnElement
+
+    GeometricElement3d* GetGeometricElement3d() const {return m_el.IsValid()? ToGeometricElement3d(*m_el): nullptr;}
+
     static JsPhysicalElement* Create(JsDgnModelP model, JsDgnObjectIdP categoryId, Utf8StringCR elementClassName);
 
     STUB_OUT_SET_METHOD(Placement, JsPlacement3dP)
@@ -297,7 +301,14 @@ struct JsHitDetail : RefCountedBaseWithCreate
 
     JsDPoint3dP GetHitPoint() const { return new JsDPoint3d(m_detail.GetHitPoint()); }
     JsDPoint3dP GetTestPoint() const { return new JsDPoint3d(m_detail.GetTestPoint()); }
-    JsPhysicalElementP GetElement() const { return new JsPhysicalElement(const_cast<PhysicalElementR>(*m_detail.GetElement()->ToPhysicalElement())); }
+    GeometricElement3d* ToGeometricElement3d(DgnElementR el) const {return dynamic_cast<GeometricElement3d*>(&el);}
+    JsPhysicalElementP GetElement() const 
+        { 
+        auto geom = JsPhysicalElement::ToGeometricElement3d(const_cast<DgnElementR>(*m_detail.GetElement())); // *** WIP_DGNJSAPI - remove this when we get a _ToGeometricElement3d method on DgnElement
+        if (nullptr == geom)
+            return nullptr;
+        return new JsPhysicalElement(*geom); 
+        }
     Utf8String GetHitType() const { return (HitDetailType::Hit == m_detail.GetHitType()) ? "hit" : (HitDetailType::Snap == m_detail.GetHitType()) ? "snap" : "intersection"; }
 
     STUB_OUT_SET_METHOD(HitPoint, JsDPoint3dP)
@@ -544,7 +555,7 @@ struct JsGeometryCollection : RefCountedBaseWithCreate
     JS_COLLECTION_IMPL(JsGeometryCollection,JsGeometryCollectionIterator)
 
     JsGeometryCollection(GeometrySourceCR el) : m_collection(el) {}
-    JsGeometryCollection(JsPhysicalElementP el) : m_collection(*el->m_el->ToPhysicalElementP()) {}
+    JsGeometryCollection(JsPhysicalElementP el) : m_collection(*el->GetGeometricElement3d()) {}
 
     JsGeometricPrimitiveP GetGeometry(JsGeometryCollectionIteratorP iter)
         {

@@ -71,7 +71,7 @@ void ECInstanceSelectTests::VerifyInstanceCounts(WCharCP fileName, bmap<Utf8Stri
         for (bmap<Utf8String, int>::const_iterator iter = classList.begin(); iter != classList.end(); iter++)
             LOG.errorv("%s:%d", iter->first.c_str(), iter->second);
         }
-    ASSERT_TRUE(classList.size() == benchMark.size()) << "Size of the maps doesn't match.  Expected: " << benchMark.size() << " Actual: " << classList.size();
+    ASSERT_TRUE(classList.size() == benchMark.size()) << "Size of the maps doesn't match.  Expected: " << (int)benchMark.size() << " Actual: " << (int)classList.size();
 
     bmap<Utf8String, int>::iterator i, j;
     i = classList.begin();
