@@ -2,7 +2,7 @@
 #
 #  $Source: tools/SchemaConverter/SchemaConverter.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 appName = SchemaConverter
@@ -30,7 +30,6 @@ EXE_NAME    = $(appName)
 EXE_OBJS    = $(MultiCompileObjectList)
 
 LINKER_LIBRARIES            = $(BuildContext)SubParts/Libs/$(libprefix)Bentley$(libext)
-LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyAllocator$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext)
