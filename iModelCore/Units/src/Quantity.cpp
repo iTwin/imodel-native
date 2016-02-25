@@ -31,6 +31,9 @@ Quantity::Quantity (double magnitude, UnitCP unit)
     m_magnitude = magnitude;
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 Quantity::Quantity(const Quantity& rhs)
     {
     m_unit = rhs.m_unit;
@@ -62,7 +65,7 @@ BentleyStatus Quantity::ConvertTo(Utf8CP unitName, double& value) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Quantity::operator== (const Quantity& rhs) const
+bool Quantity::operator== (QuantityCR rhs) const
     {
     if (m_unit == rhs.m_unit && m_magnitude == rhs.m_magnitude)
         return true;
@@ -80,7 +83,7 @@ bool Quantity::operator== (const Quantity& rhs) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Quantity::operator!= (const Quantity& rhs) const
+bool Quantity::operator!= (QuantityCR rhs) const
     {
     return !(*this == rhs);
     }
@@ -88,111 +91,91 @@ bool Quantity::operator!= (const Quantity& rhs) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Quantity Quantity::operator*(const Quantity& rhs) const
+bool Quantity::operator< (QuantityCR rhs) const
     {
-    Quantity result = *this;
-    result *= rhs;
-    return result;
+    double convFactor;
+    if (SUCCESS != rhs.ConvertTo(m_unit->GetName(), convFactor))
+        return false;
+
+    return m_magnitude < convFactor*rhs.m_magnitude;
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Quantity Quantity::operator/(const Quantity& rhs) const
+bool Quantity::operator> (QuantityCR rhs) const
     {
-    Quantity result = *this;
-    result /= rhs;
-    return result;
+    double convFactor;
+    if (SUCCESS != rhs.ConvertTo(m_unit->GetName(), convFactor))
+        return false;
+
+    return m_magnitude > convFactor*rhs.m_magnitude;
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Quantity Quantity::operator+(const Quantity& rhs) const
+bool Quantity::operator>= (QuantityCR rhs) const
     {
-    Quantity result = *this;
-    result += rhs;
-    return result;
+    return !(*this < rhs);
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Quantity Quantity::operator-(const Quantity& rhs) const
+bool Quantity::operator<= (QuantityCR rhs) const
     {
-    Quantity result = *this;
-    result -= rhs;
-    return result;
+    return !(*this > rhs);
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Quantity& Quantity::operator*=(const Quantity& rhs)
+QuantityPtr Quantity::Multiply(QuantityCR rhs) const
     {
-    //m_magnitude *= rhs.m_magnitude;
-    //UnitCR resultUnit = *m_unit * *rhs.m_unit;
-    //if (!resultUnit.IsRegistered())
-    //    {
-    //    m_error = true;
-    //    m_errorMessage = Utf8PrintfString("Resulting unit is unregistered: %s", resultUnit.GetName());
-    //    return *this;
-    //    }
+    double convFactor;
+    if (SUCCESS != rhs.ConvertTo(m_unit->GetName(), convFactor))
+        return nullptr;
 
-    //m_unit = &resultUnit;
-
-    return *this;
+    double newValue = convFactor * m_magnitude * rhs.m_magnitude;
+    return Quantity::Create(newValue, m_unit->GetName());
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Quantity& Quantity::operator/=(const Quantity& rhs)
+QuantityPtr Quantity::Divide(QuantityCR rhs) const
     {
-    //m_magnitude /= rhs.m_magnitude;
-    //UnitCR resultUnit = *m_unit / *rhs.m_unit;
-    //if (!resultUnit.IsRegistered())
-    //    {
-    //    m_error = true;
-    //    m_errorMessage = Utf8PrintfString("Resulting unit is unregistered: %s", resultUnit.GetName());
-    //    return *this;
-    //    }
+    double convFactor;
+    if (SUCCESS != rhs.ConvertTo(m_unit->GetName(), convFactor))
+        return nullptr;
 
-    //m_unit = &resultUnit;
-
-    return *this;
+    double newValue = m_magnitude / rhs.m_magnitude / convFactor;
+    return Quantity::Create(newValue, m_unit->GetName());
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Quantity& Quantity::operator+=(const Quantity& rhs)
+QuantityPtr Quantity::Add(QuantityCR rhs) const
     {
-    if (m_unit != rhs.m_unit)
-        {
-        m_error = true;
-        m_errorMessage = Utf8PrintfString("Units are not compatible.  left: %s.  right: %s", m_unit->GetName(), rhs.m_unit->GetName());
-        return *this;
-        }
+    double convFactor;
+    if (SUCCESS != rhs.ConvertTo(m_unit->GetName(), convFactor))
+        return nullptr;
 
-    m_magnitude += rhs.m_magnitude;
-
-    return *this;
+    double newValue = m_magnitude + convFactor * rhs.m_magnitude;
+    return Quantity::Create(newValue, m_unit->GetName());
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Quantity& Quantity::operator-=(const Quantity& rhs)
+QuantityPtr Quantity::Subtract(QuantityCR rhs) const 
     {
-    if (m_unit != rhs.m_unit)
-        {
-        m_error = true;
-        m_errorMessage = Utf8PrintfString("Units are not compatible.  left: %s.  right: %s", m_unit->GetName(), rhs.m_unit->GetName());
-        return *this;
-        }
+    double convFactor;
+    if (SUCCESS != rhs.ConvertTo(m_unit->GetName(), convFactor))
+        return nullptr;
 
-    m_magnitude -= rhs.m_magnitude;
-
-    return *this;
+    double newValue = m_magnitude - convFactor * rhs.m_magnitude;
+    return Quantity::Create(newValue, m_unit->GetName());
     }

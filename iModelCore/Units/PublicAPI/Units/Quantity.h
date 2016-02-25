@@ -27,7 +27,6 @@ private:
     Quantity (double magnitude, UnitCP unit);
     Quantity(const Quantity& rhs);
 
-
     double      m_magnitude;
     UnitCP      m_unit;
     bool        m_error;
@@ -45,20 +44,18 @@ public:
     BentleyStatus ConvertTo(Utf8CP unitName, double& value) const;
 
     // Binary comparison operators.
-    bool operator== (const Quantity& rhs) const;
-    bool operator!= (const Quantity& rhs) const;
+    bool operator== (QuantityCR rhs) const;
+    bool operator!= (QuantityCR rhs) const;
+    bool operator> (QuantityCR rhs) const;
+    bool operator< (QuantityCR rhs) const;
+    bool operator>= (QuantityCR rhs) const;
+    bool operator<= (QuantityCR rhs) const;
 
     // Arithmetic operators.
-    Quantity operator*(const Quantity& rhs) const;
-    Quantity operator/(const Quantity& rhs) const;
-    Quantity operator+(const Quantity& rhs) const;
-    Quantity operator-(const Quantity& rhs) const;
-
-    // Compound assignment operators.
-    Quantity& operator*=(const Quantity& rhs);
-    Quantity& operator/=(const Quantity& rhs);
-    Quantity& operator+=(const Quantity& rhs);
-    Quantity& operator-=(const Quantity& rhs);
+    QuantityPtr Add (QuantityCR rhs) const;
+    QuantityPtr Subtract (QuantityCR rhs) const;
+    QuantityPtr Multiply (QuantityCR rhs) const;
+    QuantityPtr Divide (QuantityCR rhs) const;
     };
 
 END_BENTLEY_UNITS_NAMESPACE
