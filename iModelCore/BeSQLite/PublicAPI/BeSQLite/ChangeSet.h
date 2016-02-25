@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeSQLite/ChangeSet.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -109,6 +109,7 @@ public:
     BE_SQLITE_EXPORT explicit Changes(ChangeSet const& changeSet);
 
     //! Construct an iterator for a ChangeStream
+    //! @remarks The ChangeStream needs to implement _InputPage to send the stream
     explicit Changes(ChangeStream& changeStream) : m_changeStream(&changeStream) {}
 
     //! Construct an iterator for a page of changes in a ChangeStream
@@ -236,19 +237,23 @@ public:
     //! @param[in] tracker  ChangeTracker from which to create ChangeSet or PatchSet
     //! @param[in] setType  whether to create a full ChangeSet or just a PatchSet
     //! @return BE_SQLITE_OK if successful. Error status otherwise. 
+    //! @remarks If using a ChangeStream, implement _OutputPage to receive the stream
     DbResult FromChangeTrack(ChangeTracker& tracker, SetType setType=SetType::Full) { return _FromChangeTrack(tracker, setType); }
 
     //! Create a ChagneSet or PathSet by merging the contents of a ChangeGroup
     //! @param[in] changeGroup ChangeGroup to be merged together. 
     //! @return BE_SQLITE_OK if successful. Error status otherwise. 
+    //! @remarks If using a ChangeStream, implement _OutputPage to receive the stream
     DbResult FromChangeGroup(ChangeGroup& changeGroup) { return _FromChangeGroup(changeGroup); }
 
     //! Apply all of the changes in an ChangeSet to the supplied database.
     //! @param[in] db the database to which the changes are applied.
     //! @return BE_SQLITE_OK if successful. Error status otherwise. 
+    //! @remarks If using a ChangeStream, implement _InputPage to send the stream
     DbResult ApplyChanges(DbR db) { return _ApplyChanges(db); }
 
     //! Returns a Changes object for iterating over the changes contained within this IChangeSet
+    //! @remarks If using a ChangeStream, implement _InputPage to send the stream
     Changes GetChanges() { return _GetChanges(); }
 };
 
