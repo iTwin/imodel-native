@@ -1046,7 +1046,7 @@ bool SMSQLiteFile::HasMasterHeader()
 bool SMSQLiteFile::HasPoints()
 {
     CachedStatementPtr stmt;
-    m_database->GetCachedStatement(stmt, "SELECT count(NodeId) FROM SMPoint");
+    m_database->GetCachedStatement(stmt, "SELECT count(NodeId) FROM SMPoint LIMIT 1");
     DbResult status = stmt->Step();
     assert((status == BE_SQLITE_DONE) || (status == BE_SQLITE_ROW));
     int nodeIdCount = stmt->GetValueInt(0);

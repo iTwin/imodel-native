@@ -1910,7 +1910,7 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
                                    FloatXYZ const* inPoints, size_t inNbPoints, 
                                    int32_t const*  inFaceIndexes, size_t inNbFaceIndexes, 
                                    DPoint2d* pInUv, int32_t* pInUvIndex, size_t inUvCount, 
-                                   const DifferenceSet d, 
+                                   const DifferenceSet& d, 
                                    const DPoint3d& ptTranslation)
     {       
     points = new FloatXYZ[d.addedVertices.size() + inNbPoints];    
@@ -1978,13 +1978,16 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
                 }
              assert(d.addedFaces[i] - 1 >= 0 && d.addedFaces[i] - 1 < inNbPoints + d.addedVertices.size() && d.addedFaces[i + 1] - 1 >= 0 && d.addedFaces[i + 1] - 1 < inNbPoints + d.addedVertices.size()
             && d.addedFaces[i + 2] - 1 >= 0 && d.addedFaces[i + 2] - 1 < inNbPoints + d.addedVertices.size());
-          
             for (size_t j = 0; j < 3 && newNIndexes <newMaxNIndexes; ++j)
                 {
                 int32_t idx = (int32_t)(d.addedFaces[i + j] >= d.firstIndex ? d.addedFaces[i + j] - d.firstIndex + inNbPoints + 1 : d.addedFaces[i + j]);
                 assert(idx > 0 && idx <= inNbPoints + d.addedVertices.size());
                 newfaceIndexes[newNIndexes] = idx;
-                if(d.addedUvIndices.size() > 0) newUvIndices[newNIndexes] = d.addedUvIndices[i+j]+(int32_t)inUvCount;
+
+                if (d.addedUvIndices.size() > 0)
+                    {
+                    newUvIndices[newNIndexes] = d.addedUvIndices[i + j] + (int32_t)inUvCount;
+                    }
                 newNIndexes++;
                 }
             }
@@ -2102,7 +2105,7 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
                                                                                             smTexturePtr->GetDimension().x,
                                                                                             smTexturePtr->GetDimension().y,
                                                                                             false,
-                                                                                            QV_RGBA_FORMAT,
+                                                                                            QV_RGB_FORMAT,
                                                                                             smTexturePtr->GetData());
 
                         assert(status == SUCCESS);    
@@ -2136,7 +2139,6 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
                                                uvPtr, uvIndicesP, nbUvs, 
                                                clipDiffSet, 
                                                centroid);
-
                         for (size_t ind = 0; ind < toLoadNbFaceIndexes; ind++)
                             {
                             toLoadFaceIndexes[ind] -= 1;                            
@@ -2182,12 +2184,12 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
                                                 
                         //NEEDS_WORK_SM : Can we store UV coordinate as float
                         //uvCoordinates.resize(meshNode->GetNbUVs() * 2);
-                        uvCoordinates.resize(m_node->size() * 2);
+                        uvCoordinates.resize(/*m_node->size()*/toLoadUvCount * 2);
                                                                         
                         for (size_t uvCoordInd = 0; uvCoordInd < toLoadNbFaceIndexes; uvCoordInd++)
                             {  
-                            if (uvCoordinates[toLoadFaceIndexes[uvCoordInd] * 2] != 0 || uvCoordinates[toLoadFaceIndexes[uvCoordInd] * 2 + 1] != 0)
-                                continue;
+                           // if (uvCoordinates[toLoadFaceIndexes[uvCoordInd] * 2] != 0 || uvCoordinates[toLoadFaceIndexes[uvCoordInd] * 2 + 1] != 0)
+                           //     continue;
 
                             assert(toLoadUv[toLoadUvIndex[uvCoordInd] - 1].x <= 1.0 && toLoadUv[toLoadUvIndex[uvCoordInd] - 1].x >= 0.0);
                             assert(toLoadUv[toLoadUvIndex[uvCoordInd] - 1].y <= 1.0 && toLoadUv[toLoadUvIndex[uvCoordInd] - 1].y >= 0.0);
