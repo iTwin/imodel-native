@@ -776,11 +776,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
         reader = new SchemaXmlReader3(m_schemaContext, m_xmlDom);
 
     if (SchemaReadStatus::Success != (status = reader->ReadSchemaReferencesFromXml(schemaOut, *schemaNode)))
-        {
-        m_schemaContext.RemoveSchema(*schemaOut);
-        schemaOut = NULL;
         return status;
-        }
 
     readingSchemaReferences.Stop();
     LOG.tracev("Reading schema references for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingSchemaReferences.GetElapsedSeconds());
@@ -790,11 +786,8 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     status = reader->ReadClassStubsFromXml(schemaOut, *schemaNode, classes);
 
     if (SchemaReadStatus::Success != status)
-        {
-        m_schemaContext.RemoveSchema(*schemaOut);
-        schemaOut = NULL;
         return status;
-        }
+    
     readingClassStubs.Stop();
     LOG.tracev("Reading class stubs for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingClassStubs.GetElapsedSeconds());
 
@@ -802,22 +795,16 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     status = reader->ReadEnumerationsFromXml(schemaOut, *schemaNode);
 
     if (SchemaReadStatus::Success != status)
-        {
-        m_schemaContext.RemoveSchema(*schemaOut);
-        schemaOut = nullptr;
         return status;
-        }
+    
     readingEnumerations.Stop();
     LOG.tracev("Reading enumerations stubs for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingEnumerations.GetElapsedSeconds());
 
     // NEEDSWORK ECClass inheritance (base classes, properties & relationship endpoints)
     StopWatch readingClassContents("Reading class contents", true);
     if (SchemaReadStatus::Success != (status = reader->ReadClassContentsFromXml(schemaOut, classes)))
-        {
-        m_schemaContext.RemoveSchema(*schemaOut);
-        schemaOut = NULL;
         return status;
-        }
+    
     readingClassContents.Stop();
     LOG.tracev("Reading class contents for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingClassContents.GetElapsedSeconds());
 
