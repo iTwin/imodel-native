@@ -600,7 +600,7 @@ protected:
     virtual Utf8CP                  _GetName() const = 0;
     virtual void                    _PublishSymbols (SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const = 0;
 public:
-    ECOBJECTS_EXPORT virtual ~IECSymbolProvider(); // required due to other virtual functions
+    ECOBJECTS_EXPORT virtual ~IECSymbolProvider() { /* required due to other virtual functions */ }
     ECOBJECTS_EXPORT Utf8CP         GetName() const
                                         { return _GetName(); }
     ECOBJECTS_EXPORT void           PublishSymbols (SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const
