@@ -308,9 +308,9 @@ NativeSqlBuilder::List PropertyMap::_ToNativeSql(Utf8CP classIdentifier, ECSqlTy
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PropertyMap::FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfo const* classMapInfo)
+BentleyStatus PropertyMap::FindOrCreateColumnsInTable(ClassMap const& classMap)
     {
-    return _FindOrCreateColumnsInTable(classMap, classMapInfo);
+    return _FindOrCreateColumnsInTable(classMap);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -662,11 +662,11 @@ BentleyStatus PropertyMapStruct::Initialize(ClassMapLoadContext& ctx, ECDbCR ecd
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan     09/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus PropertyMapStruct::_FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfo const* classMapInfo)
+BentleyStatus PropertyMapStruct::_FindOrCreateColumnsInTable(ClassMap const& classMap)
     {
     for(auto childPropMap : m_children)
         {
-        if (SUCCESS != const_cast<PropertyMapP> (childPropMap)->FindOrCreateColumnsInTable(classMap, classMapInfo))
+        if (SUCCESS != const_cast<PropertyMap*> (childPropMap)->FindOrCreateColumnsInTable(classMap))
             return ERROR;
 
         m_mappedTables.insert(m_mappedTables.end(), childPropMap->GetTables().begin(), childPropMap->GetTables().end());
@@ -830,7 +830,7 @@ bool PropertyMapSingleColumn::_IsVirtual () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-BentleyStatus PropertyMapSingleColumn::_FindOrCreateColumnsInTable (ClassMap& classMap , ClassMapInfo const* classMapInfo)
+BentleyStatus PropertyMapSingleColumn::_FindOrCreateColumnsInTable(ClassMap const& classMap) 
     {
     if (!GetProperty().GetIsPrimitive())
         {
@@ -845,9 +845,8 @@ BentleyStatus PropertyMapSingleColumn::_FindOrCreateColumnsInTable (ClassMap& cl
     if (SUCCESS != DetermineColumnInfo(colName, isNullable, isUnique, collation, classMap.GetECDbMap().GetECDb()))
         return ERROR;
 
-    const PrimitiveType colType = GetProperty().GetAsPrimitiveProperty()->GetType();
-
-    ECDbSqlColumn* col = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, colName.c_str(), colType, isNullable, isUnique, collation, nullptr);
+    const ECDbSqlColumn::Type colType = ECDbSqlColumn::PrimitiveTypeToColumnType(GetProperty().GetAsPrimitiveProperty()->GetType());
+    ECDbSqlColumn* col = classMap.GetColumnFactory().CreateColumn(*this, colName.c_str(), colType, !isNullable, isUnique, collation);
     if (col == nullptr)
         {
         BeAssert(col != nullptr && "This actually indicates a mapping error. The method PropertyMapSingleColumn::_FindOrCreateColumnsInTable should therefore be changed to return an error.");
@@ -1027,7 +1026,7 @@ Utf8String PropertyMapPoint::_ToString() const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PropertyMapPoint::_FindOrCreateColumnsInTable(ClassMap& classMap,  ClassMapInfo const* classMapInfo)
+BentleyStatus PropertyMapPoint::_FindOrCreateColumnsInTable(ClassMap const& classMap)
     {
     Utf8String columnName;
     bool isNullable = true;
@@ -1036,10 +1035,12 @@ BentleyStatus PropertyMapPoint::_FindOrCreateColumnsInTable(ClassMap& classMap, 
     if (SUCCESS != DetermineColumnInfo(columnName, isNullable, isUnique, collation, classMap.GetECDbMap().GetECDb()))
         return ERROR;
 
+    const ECDbSqlColumn::Type colType = ECDbSqlColumn::Type::Real;
     bset<ECDbSqlTable const*> tables;
     Utf8String xColumnName(columnName);
     xColumnName.append("_X");
-    ECDbSqlColumn const* xCol = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, xColumnName.c_str(), s_defaultCoordinateECType, isNullable, isUnique, collation, "X");
+
+    ECDbSqlColumn const* xCol = classMap.GetColumnFactory().CreateColumn(*this, xColumnName.c_str(), colType, !isNullable, isUnique, collation);
     if (xCol == nullptr)
         {
         BeAssert(false);
@@ -1048,7 +1049,7 @@ BentleyStatus PropertyMapPoint::_FindOrCreateColumnsInTable(ClassMap& classMap, 
 
     Utf8String yColumnName(columnName);
     yColumnName.append("_Y");
-    ECDbSqlColumn const* yCol = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, yColumnName.c_str(), s_defaultCoordinateECType, isNullable, isUnique, collation, "Y");
+    ECDbSqlColumn const* yCol = classMap.GetColumnFactory().CreateColumn(*this, yColumnName.c_str(), colType, !isNullable, isUnique, collation);
     if (yCol == nullptr)
         {
         BeAssert(false);
@@ -1060,7 +1061,7 @@ BentleyStatus PropertyMapPoint::_FindOrCreateColumnsInTable(ClassMap& classMap, 
         {
         Utf8String zColumnName(columnName);
         zColumnName.append("_Z");
-        zCol = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, zColumnName.c_str(), s_defaultCoordinateECType, isNullable, isUnique, collation, "Z");
+        zCol = classMap.GetColumnFactory().CreateColumn(*this, zColumnName.c_str(), colType, !isNullable, isUnique, collation);
         if (zCol == nullptr)
             {
             BeAssert(false);
@@ -1099,7 +1100,7 @@ PropertyMapPrimitiveArray::PropertyMapPrimitiveArray (ECDbCR ecdb, ECPropertyCR 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-BentleyStatus PropertyMapPrimitiveArray::_FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfo const* classMapInfo)
+BentleyStatus PropertyMapPrimitiveArray::_FindOrCreateColumnsInTable(ClassMap const& classMap)
     {
     if (!GetProperty().GetIsPrimitiveArray())
         {
@@ -1114,10 +1115,7 @@ BentleyStatus PropertyMapPrimitiveArray::_FindOrCreateColumnsInTable(ClassMap& c
     if (SUCCESS != DetermineColumnInfo(colName, isNullable, isUnique, collation, classMap.GetECDbMap().GetECDb()))
         return ERROR;
 
-    //prim array is persisted as BLOB in a single col
-    const PrimitiveType colType = PRIMITIVETYPE_Binary;
-
-    ECDbSqlColumn* col = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, colName.c_str(), colType, isNullable, isUnique, collation, nullptr);
+    ECDbSqlColumn* col = classMap.GetColumnFactory().CreateColumn(*this, colName.c_str(), ECDbSqlColumn::Type::Blob, !isNullable, isUnique, collation);
     if (col == nullptr)
         {
         BeAssert(col != nullptr && "This actually indicates a mapping error. The method PropertyMapPrimitiveArray::_FindOrCreateColumnsInTable should therefore be changed to return an error.");
