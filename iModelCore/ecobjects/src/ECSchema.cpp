@@ -407,12 +407,15 @@ ECObjectsStatus ECSchema::SetNamespacePrefix (Utf8StringCR namespacePrefix)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
-	else if (!ECNameValidation::IsValidName(namespacePrefix.c_str()))
-		return ECObjectsStatus::InvalidName;
+    else if (Utf8String::IsNullOrEmpty(namespacePrefix.c_str()))
+        return ECObjectsStatus::Success;
+          
+    else if (!ECNameValidation::IsValidName(namespacePrefix.c_str()))
+        return ECObjectsStatus::InvalidName;
 
-	ECNameValidation::EncodeToValidName(m_namespacePrefix, namespacePrefix);
+    ECNameValidation::EncodeToValidName(m_namespacePrefix, namespacePrefix);
 
-	return ECObjectsStatus::Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1949,7 +1952,11 @@ SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSc
         return status; // already logged
 
     if (SchemaReadStatus::Success != status)
-        LOG.errorv (L"Failed to read XML file: %ls", ecSchemaXmlFile);
+        {
+        LOG.errorv(L"Failed to read XML file: %ls", ecSchemaXmlFile);
+        schemaContext.RemoveSchema(*schemaOut);
+        schemaOut = nullptr;
+        }
     else
         {
         //We have serialized a schema and its valid. Add its checksum
@@ -2000,6 +2007,8 @@ ECSchemaReadContextR schemaContext
         BeStringUtilities::Strncpy (first200Bytes, ecSchemaXml, 200);
         first200Bytes[200] = '\0';
         LOG.errorv ("Failed to read XML from string (1st 200 characters approx.): %s", first200Bytes);
+        schemaContext.RemoveSchema(*schemaOut);
+        schemaOut = nullptr;
         }
     else
         {
@@ -2049,6 +2058,8 @@ ECSchemaReadContextR schemaContext
         wcsncpy (first200Characters, ecSchemaXml, 200);
         first200Characters[200] = L'\0';
         LOG.errorv (L"Failed to read XML from string (1st 200 characters): %ls", first200Characters);
+        schemaContext.RemoveSchema(*schemaOut);
+        schemaOut = nullptr;
         }
     else
         {
