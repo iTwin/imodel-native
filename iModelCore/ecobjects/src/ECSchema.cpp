@@ -261,7 +261,7 @@ void ECValidatedName::SetDisplayLabel (Utf8CP label)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchema::ECSchema ()
     :m_classContainer(m_classMap), m_enumerationContainer(m_enumerationMap), m_isSupplemented(false),
-    m_hasExplicitDisplayLabel(false), m_immutable(false), m_ecSchemaId(0), m_serializationOrder(nullptr),
+    m_hasExplicitDisplayLabel(false), m_immutable(false), m_ecSchemaId(0),
     m_kindOfQuantityContainer(m_kindOfQuantityMap)
     {
     //
@@ -724,8 +724,7 @@ ECObjectsStatus ECSchema::DeleteClass (ECClassR ecClass)
 
     m_classMap.erase (iter);
 
-    if (m_serializationOrder != nullptr)
-    m_serializationOrder->RemoveElement(ecClass.GetName().c_str());
+    m_serializationOrder.RemoveElement(ecClass.GetName().c_str());
 
     delete &ecClass;
     return ECObjectsStatus::Success;
@@ -742,8 +741,7 @@ ECObjectsStatus ECSchema::DeleteEnumeration (ECEnumerationR ecEnumeration)
 
     m_enumerationMap.erase (iter);
 
-    if (m_serializationOrder != nullptr)
-    m_serializationOrder->RemoveElement(ecEnumeration.GetName().c_str());
+    m_serializationOrder.RemoveElement(ecEnumeration.GetName().c_str());
 
     delete &ecEnumeration;
     return ECObjectsStatus::Success;
@@ -827,8 +825,10 @@ ECObjectsStatus ECSchema::AddClass(ECClassP pClass, bool resolveConflicts)
         return ECObjectsStatus::Error;
         }
 
-    if (m_serializationOrder != nullptr)
-    m_serializationOrder->AddElement(pClass->GetName().c_str(), ECSchemaElementType::ECClass);
+    if (m_serializationOrder.GetPreserveElementOrder())
+        {
+        m_serializationOrder.AddElement(pClass->GetName().c_str(), ECSchemaElementType::ECClass);
+        }
 
     //DebugDump(); wprintf(L"\n");
     return ECObjectsStatus::Success;
@@ -1119,8 +1119,10 @@ ECObjectsStatus ECSchema::AddEnumeration(ECEnumerationP pEnumeration)
         return ECObjectsStatus::Error;
         }
 
-    if (m_serializationOrder != nullptr)
-    m_serializationOrder->AddElement(pEnumeration->GetName().c_str(), ECSchemaElementType::ECEnumeration);
+    if (m_serializationOrder.GetPreserveElementOrder())
+        {
+        m_serializationOrder.AddElement(pEnumeration->GetName().c_str(), ECSchemaElementType::ECEnumeration);
+        }
 
     return ECObjectsStatus::Success;
     }
@@ -2603,9 +2605,9 @@ void ECSchemaElementsOrder::RemoveElement(Utf8CP elementName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchemaElementsOrder::CreateAlphabeticalOrder(ECSchemaElementsOrderP &elementOrder, ECSchemaCR ecSchema)
+void ECSchemaElementsOrder::CreateAlphabeticalOrder(ECSchemaCR ecSchema)
     {
-    elementOrder = new ECSchemaElementsOrder();
+    m_elementVector.clear();
     for (ECEnumerationCP pEnum : ecSchema.GetEnumerations())
         {
         if (NULL == pEnum)
@@ -2614,7 +2616,7 @@ void ECSchemaElementsOrder::CreateAlphabeticalOrder(ECSchemaElementsOrderP &elem
             continue;
             }
         else
-            elementOrder->AddElement(pEnum->GetName().c_str(), ECSchemaElementType::ECEnumeration);
+            AddElement(pEnum->GetName().c_str(), ECSchemaElementType::ECEnumeration);
         }
 
     std::list<ECClassP> sortedClasses;
@@ -2634,24 +2636,8 @@ void ECSchemaElementsOrder::CreateAlphabeticalOrder(ECSchemaElementsOrderP &elem
 
     for (ECClassP pClass : sortedClasses)
         {
-        elementOrder->AddElement(pClass->GetName().c_str(), ECSchemaElementType::ECClass);
+        AddElement(pClass->GetName().c_str(), ECSchemaElementType::ECClass);
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<bpair<Utf8String, ECSchemaElementType>>::const_iterator  ECSchemaElementsOrder::begin() const
-    {
-    return m_elementVector.begin();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<bpair<Utf8String, ECSchemaElementType>>::const_iterator  ECSchemaElementsOrder::end() const
-    {
-    return m_elementVector.end();
     }
 
 /*---------------------------------------------------------------------------------**//**
