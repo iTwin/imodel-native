@@ -36,7 +36,7 @@ static RefCountedPtr<GeometricElement3d> createGeometricElement3d(DgnModelR mode
     if (!pclassId.IsValid())
         return nullptr;
     DgnElementPtr el = dgn_ElementHandler::Geometric3d::GetHandler().Create(GeometricElement3d::CreateParams(db, model.GetModelId(), pclassId, catid));
-    GeometricElement3d* geom = dynamic_cast<GeometricElement3d*>(el.get());
+    GeometricElement3d* geom = JsPhysicalElement::ToGeometricElement3d(*el);
     geom->SetCategoryId(catid); // *** TRICKY: Generic ElementHandler::Create does not set Category
     return geom;
     }
