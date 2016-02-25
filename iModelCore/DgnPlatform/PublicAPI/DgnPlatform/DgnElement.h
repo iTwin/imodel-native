@@ -1427,7 +1427,7 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE GraphicalElement3d : GeometricElement3d
 {
     DEFINE_T_SUPER(GeometricElement3d);
-public:
+protected:
     explicit GraphicalElement3d(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -1443,7 +1443,6 @@ struct EXPORT_VTABLE_ATTRIBUTE SpatialElement : GeometricElement3d
     DEFINE_T_SUPER(GeometricElement3d);
 protected:
     SpatialElementCP _ToSpatialElement() const override final {return this;}
-public:
     explicit SpatialElement(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -1458,7 +1457,6 @@ struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : SpatialElement
     DEFINE_T_SUPER(SpatialElement)
 protected:
     PhysicalElementCP _ToPhysicalElement() const override final {return this;}
-public:
     explicit PhysicalElement(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -1471,7 +1469,7 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE SpatialLocationElement : SpatialElement
 {
     DEFINE_T_SUPER(SpatialElement);
-public:
+protected:
     explicit SpatialLocationElement(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -1483,7 +1481,7 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE GraphicalElement2d : GeometricElement2d
 {
     DEFINE_T_SUPER(GeometricElement2d);
-public:
+protected:
     explicit GraphicalElement2d(CreateParams const& params) : T_Super(params) {}
 };
 

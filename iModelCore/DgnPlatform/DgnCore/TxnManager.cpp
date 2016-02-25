@@ -494,19 +494,19 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
         changeset.ConcatenateWith(indirectChanges); // combine direct and indirect changes into a single changeset
         }
 
-    if (BSISUCCESS != status)
+    if (SUCCESS != status)
         {
         LOG.errorv("Cancelling txn due to fatal validation error.");
         OnEndValidate();
         return CancelChanges(changeset); // roll back entire txn
-        }
-
-    // At this point, all of the changes to all tables have been applied. Tell TxnMonitors
-    T_HOST.GetTxnAdmin()._OnCommit(*this);
+        }   
 
     DbResult result = SaveCurrentChange(changeset, operation); // save changeset into DgnDb itself, along with the description of the operation we're performing
     if (result != BE_SQLITE_DONE)
         return OnCommitStatus::Abort;
+
+    // At this point, all of the changes to all tables have been applied. Tell TxnMonitors
+    T_HOST.GetTxnAdmin()._OnCommit(*this);
 
     m_dgndb.Revisions().UpdateInitialParentRevisionId(); // All new revisions are now based on the latest parent revision id
 
@@ -570,7 +570,7 @@ RevisionStatus TxnManager::MergeRevisionChanges(ChangeStream& changeStream, Utf8
             // Note: All that the above operation does is to COMMIT the current Txn and BEGIN a new one. 
             // The user should NOT be able to revert the revision id by a call to AbandonChanges() anymore, since
             // the merged changes are lost after this routine and cannot be used for change propagation anymore. 
-            if (BE_SQLITE_DONE != result)
+            if (BE_SQLITE_OK != result)
                 {
                 BeAssert(false);
                 status = RevisionStatus::SQLiteError;
@@ -943,7 +943,6 @@ DgnDbStatus TxnManager::ReverseAll(bool prompt)
 
     if (prompt && !T_HOST.GetTxnAdmin()._OnPromptReverseAll())
         {
-        T_HOST.GetTxnAdmin()._RestartTool();
         return DgnDbStatus::NothingToUndo;
         }
 
