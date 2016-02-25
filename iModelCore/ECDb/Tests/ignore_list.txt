@@ -34,5 +34,3 @@ ECDbRelationshipsIntegrityTests.BackwardEmbeddingRelationshipsTest
 #Crashes in DgnDb0601Dev -> Hassan
 ECSqlInsertTestFramework.MiscTests
 ECSqlSelectTestFramework.StructTests
-#TFS 349690
-ECDbSchemaManagerTests.EnforceECEnumeration

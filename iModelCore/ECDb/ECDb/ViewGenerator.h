@@ -188,4 +188,5 @@ struct ECDbViewFactory
         BentleyStatus CreateView(SqlViewBuilder& viewBuilder);
     };
 #endif
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
