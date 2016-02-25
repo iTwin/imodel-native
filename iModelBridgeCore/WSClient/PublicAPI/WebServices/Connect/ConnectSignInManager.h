@@ -73,6 +73,8 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
     private:
         ConnectSignInManager(ILocalState* localState, ISecureStorePtr secureStore);
 
+        void UpdateSignInIfNeeded();
+
         AuthenticationType GetAuthenticationType();
         void StoreAuthenticationType(AuthenticationType type);
 
@@ -83,7 +85,8 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         void ClearSignInData();
 
     public:
-        //! Can be created after MobileDgn is initialized
+        //! Can be created after MobileDgn is initialized.
+        //! Will renew sign-in information asynchronously if needed.
         WSCLIENT_EXPORT static ConnectSignInManagerPtr Create(ILocalState* localState = nullptr, ISecureStorePtr secureStore = nullptr);
         WSCLIENT_EXPORT virtual ~ConnectSignInManager();
 
