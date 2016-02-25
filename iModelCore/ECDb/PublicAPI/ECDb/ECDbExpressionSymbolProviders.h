@@ -33,7 +33,7 @@ public:
 //=======================================================================================
 // @bsiclass                                      Grigas.Petraitis              02/2016
 //+===============+===============+===============+===============+===============+======
-struct ECDbExpressionSymbolProvider : ECN::IECSymbolProvider
+struct EXPORT_VTABLE_ATTRIBUTE ECDbExpressionSymbolProvider : ECN::IECSymbolProvider
 {
 private:
     ECDbCR m_db;
@@ -48,7 +48,7 @@ public:
 //=======================================================================================
 // @bsiclass                                      Grigas.Petraitis              02/2016
 //+===============+===============+===============+===============+===============+======
-struct ECDbInstancesExpressionSymbolProvider : ECDbExpressionSymbolProvider
+struct EXPORT_VTABLE_ATTRIBUTE ECDbInstancesExpressionSymbolProvider : ECDbExpressionSymbolProvider
 {
 private:
     static ECN::ExpressionStatus GetRelatedInstance(ECN::EvaluationResult& evalResult, void* context, ECN::ECInstanceListCR instanceData, ECN::EvaluationResultVector& args);
