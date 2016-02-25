@@ -2079,7 +2079,7 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
                 
                 if (faceIndexes == 0)
                     {
-                    assert(meshInd == 0);
+                    assert(meshInd == 0 || m_node->size() <= 4);
                     m_cachedDisplayMeshes[meshInd] = 0;
                     }
                 else
