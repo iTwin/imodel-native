@@ -66,7 +66,6 @@ Objects =% $(MultiCompileObjectList)
 #   Create the Windows NT DLL from Objects
 #-----------------------------------------------------------------------
 LINKER_LIBRARIES   =    $(ContextSubpartsLibs)Bentley.lib \
-                        $(ContextSubpartsLibs)BentleyAllocator.lib \
                         $(ContextSubpartsLibs)liblog4cxx010.lib \
                         $(BuildContextSubParts)staticlibs/libapr010302.lib \
                         $(BuildContextSubParts)staticlibs/libaprutil010302.lib \

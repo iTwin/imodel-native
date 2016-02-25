@@ -2,7 +2,7 @@
 #
 #     $Source: src/native/interface/atp/bsilogTest.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 HAVE_PERMISSION_TO_COMPILE_AT_W3=1
@@ -51,7 +51,6 @@ CPPUNITTEST_OUT     = $(o)
 CPPUNITTEST_NAME    = $(executableName)
 CPPUNITTEST_DEST    = $(atpDir)
 CPPUNITTEST_LIBS    = $(BuildContext)SubParts/Libs/bentley.lib
-CPPUNITTEST_LIBS    + $(BuildContext)SubParts/Libs/BentleyAllocator.lib
 CPPUNITTEST_LIBS_DELAYLOAD  =
 CPPUNITTEST_OBJS    = $(allObjs)
 CPPUNITTEST_PATH    = $(binDir)
