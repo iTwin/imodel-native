@@ -135,7 +135,7 @@
     </ClCompile>
     <Link Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>UnitTests.lib;Bentley.lib;BentleyAllocator.lib;BeSQLite.lib;kernel32.lib;user32.lib</AdditionalDependencies>
+      <AdditionalDependencies>UnitTests.lib;Bentley.lib;BeSQLite.lib;kernel32.lib;user32.lib</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
     </Link>
@@ -154,7 +154,7 @@
     </ClCompile>
     <Link Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
       <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>UnitTests.lib;Bentley.lib;BentleyAllocator.lib;BeSQLite.lib;kernel32.lib;user32.lib</AdditionalDependencies>
+      <AdditionalDependencies>UnitTests.lib;Bentley.lib;BeSQLite.lib;kernel32.lib;user32.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
@@ -165,7 +165,7 @@
     </ClCompile>
     <Link Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
       <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\amd64\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>UnitTests.lib;Bentley.lib;BentleyAllocator.lib;BeSQLite.lib;kernel32.lib;user32.lib</AdditionalDependencies>
+      <AdditionalDependencies>UnitTests.lib;Bentley.lib;BeSQLite.lib;kernel32.lib;user32.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -176,7 +176,7 @@
     </ClCompile>
     <Link Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\amd64\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>UnitTests.lib;Bentley.lib;BentleyAllocator.lib;BeSQLite.lib;kernel32.lib;user32.lib</AdditionalDependencies>
+      <AdditionalDependencies>UnitTests.lib;Bentley.lib;BeSQLite.lib;kernel32.lib;user32.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
@@ -187,7 +187,7 @@
     </ClCompile>
     <Link Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
       <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\ARM\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>UnitTests.lib;Bentley.lib;BentleyAllocator.lib;BeSQLite.lib;kernel32.lib;user32.lib</AdditionalDependencies>
+      <AdditionalDependencies>UnitTests.lib;Bentley.lib;BeSQLite.lib;kernel32.lib;user32.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
@@ -198,7 +198,7 @@
     </ClCompile>
     <Link Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
       <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\ARM\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>UnitTests.lib;Bentley.lib;BentleyAllocator.lib;BeSQLite.lib;kernel32.lib;user32.lib</AdditionalDependencies>
+      <AdditionalDependencies>UnitTests.lib;Bentley.lib;BeSQLite.lib;kernel32.lib;user32.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
@@ -209,7 +209,7 @@
     </ClCompile>
     <Link Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
       <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>UnitTests.lib;Bentley.lib;BentleyAllocator.lib;BeSQLite.lib;kernel32.lib;user32.lib</AdditionalDependencies>
+      <AdditionalDependencies>UnitTests.lib;Bentley.lib;BeSQLite.lib;kernel32.lib;user32.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -220,7 +220,7 @@
     </ClCompile>
     <Link Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>UnitTests.lib;Bentley.lib;BentleyAllocator.lib;BeSQLite.lib;kernel32.lib;user32.lib</AdditionalDependencies>
+      <AdditionalDependencies>UnitTests.lib;Bentley.lib;BeSQLite.lib;kernel32.lib;user32.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
@@ -231,7 +231,7 @@
     </ClCompile>
     <Link Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
       <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>UnitTests.lib;Bentley.lib;BentleyAllocator.lib;BeSQLite.lib;kernel32.lib;user32.lib</AdditionalDependencies>
+      <AdditionalDependencies>UnitTests.lib;Bentley.lib;BeSQLite.lib;kernel32.lib;user32.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
@@ -242,7 +242,7 @@
     </ClCompile>
     <Link Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
       <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>UnitTests.lib;Bentley.lib;BentleyAllocator.lib;BeSQLite.lib;kernel32.lib;user32.lib</AdditionalDependencies>
+      <AdditionalDependencies>UnitTests.lib;Bentley.lib;BeSQLite.lib;kernel32.lib;user32.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
