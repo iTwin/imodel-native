@@ -327,7 +327,7 @@ TEST_F (ECInstanceSelectTests, VerifyInstanceCountFor04Plant)
             }
         }
 
-    ASSERT_TRUE(ClassList.size() == BenchMark.size()) << "Size of the maps doesn't match.  Expected: " << BenchMark.size() << " Actual: " << ClassList.size();
+    ASSERT_TRUE(ClassList.size() == BenchMark.size()) << "Size of the maps doesn't match.  Expected: " << (int)BenchMark.size() << " Actual: " << (int)ClassList.size();
 
     bmap<Utf8String, int>::iterator i, j;
     i = ClassList.begin ();
