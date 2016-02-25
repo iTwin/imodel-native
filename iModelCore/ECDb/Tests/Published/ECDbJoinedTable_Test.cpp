@@ -9,6 +9,7 @@
 #include "SchemaImportTestFixture.h"
 #include "ECSqlStatementTestsSchemaHelper.h"
 #include <initializer_list>
+#include <cmath>
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
