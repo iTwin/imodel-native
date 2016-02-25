@@ -8,7 +8,6 @@
 #include "ECDbPublishedTests.h"
 #include "SchemaImportTestFixture.h"
 #include "../BackDoor/PublicAPI/BackDoor/ECDb/BackDoor.h"
-#include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestProject.h"
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
@@ -1512,6 +1511,174 @@ TEST_F (ECDbMappingTestFixture, SharedColumnCATests)
         "    </ECEntityClass>"
         "</ECSchema>", true, "Defining SharedColumns in subclass of class with DisableSharedColumns is expected to work"));
 
+    testItems.push_back(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>SharedColumns</Options>"
+        "                   <MinimumSharedColumnCount>100</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub1' modifier='None'>"
+        "        <BaseClass>Parent</BaseClass>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub11' modifier='None'>"
+        "        <BaseClass>Sub1</BaseClass>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Options>SharedColumns</Options>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>", true, "Defining SharedColumns in subclass of class with DisableSharedColumns is expected to work"));
+
+    testItems.push_back(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>100</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub1' modifier='None'>"
+        "        <BaseClass>Parent</BaseClass>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub11' modifier='None'>"
+        "        <BaseClass>Sub1</BaseClass>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Options>SharedColumns</Options>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>", true, "MinimumSharedColumnCount can be defined for SharedColumnsForSubclasses"));
+
+    testItems.push_back(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>SharedColumns</Options>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub1' modifier='None'>"
+        "        <BaseClass>Parent</BaseClass>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub11' modifier='None'>"
+        "        <BaseClass>Sub1</BaseClass>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Options>SharedColumns</Options>"
+        "                   <MinimumSharedColumnCount>100</MinimumSharedColumnCount>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>", false, "MinimumSharedColumnCount can only be defined on first occurrence of SharedColumn option in a hierarchy"));
+
+    testItems.push_back(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>SharedColumns</Options>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub1' modifier='None'>"
+        "        <BaseClass>Parent</BaseClass>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub11' modifier='None'>"
+        "        <BaseClass>Sub1</BaseClass>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <MinimumSharedColumnCount>100</MinimumSharedColumnCount>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>", false, "MinimumSharedColumnCount can only be defined on first occurrence of SharedColumn option in a hierarchy"));
+
+    testItems.push_back(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>SharedColumnsForSubclasses</Options>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub1' modifier='None'>"
+        "        <BaseClass>Parent</BaseClass>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub11' modifier='None'>"
+        "        <BaseClass>Sub1</BaseClass>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <MinimumSharedColumnCount>100</MinimumSharedColumnCount>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>", false, "MinimumSharedColumnCount can only be defined on first occurrence of SharedColumn option in a hierarchy"));
+
     AssertSchemaImport (testItems, "sharedtablecatests.ecdb");
 
     }
@@ -2095,7 +2262,7 @@ TEST_F(ECDbMappingTestFixture, PropertyWithSameNameAsStructMemberColumn)
      ASSERT_FALSE (asserted);
 
      ASSERT_TRUE (ecdb.ColumnExists ("ts_Foo", "Code_Name"));
-     ASSERT_TRUE (ecdb.ColumnExists ("ts_Foo", "c127__43_ode__4e_ame"));
+     ASSERT_TRUE (ecdb.ColumnExists ("ts_Foo", "c127_Code_Name"));
      }
 
      {
@@ -2116,7 +2283,7 @@ TEST_F(ECDbMappingTestFixture, PropertyWithSameNameAsStructMemberColumn)
      ASSERT_FALSE (asserted);
 
      ASSERT_TRUE (ecdb.ColumnExists ("ts_Foo", "Code_Name"));
-     ASSERT_TRUE (ecdb.ColumnExists ("ts_Foo", "c127__43_ode_5f__4e_ame"));
+     ASSERT_TRUE (ecdb.ColumnExists ("ts_Foo", "c127_Code_Name"));
      }
     }
 
@@ -7947,8 +8114,7 @@ protected:
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ReferentialIntegrityTestFixture, ForeignKeyRelationshipMap_EnforceReferentialIntegrity)
     {
-    ECDbTestProject test;
-    ECDbR ecdb = test.Create ("ForeignKeyRelationshipMap_EnforceReferentialIntegrity.ecdb");
+    ECDbR ecdb = SetupECDb("ForeignKeyRelationshipMap_EnforceReferentialIntegrity.ecdb");
     ExecuteRelationshipInsertionIntegrityTest (ecdb, false, true, true);
     //when AllowDuplicate is turned of, OneFooHasManyGoo will also be mapped as endtable therefore ReferentialIntegrityCheck will be performed for it, so there will be two rows in the ForeignKey table
     ASSERT_FALSE (ecdb.TableExists ("ts_OneFooHasOneGoo"));
@@ -7972,8 +8138,7 @@ TEST_F(ReferentialIntegrityTestFixture, ForeignKeyRelationshipMap_EnforceReferen
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ReferentialIntegrityTestFixture, ForeignKeyConstraint_EnforceReferentialIntegrityCheck_AllowDuplicateRelation)
     {
-    ECDbTestProject test;
-    ECDbR ecdb = test.Create ("ForeignKeyConstraint_EnforceReferentialIntegrityCheck_AllowDuplicateRelation.ecdb");
+    ECDbR ecdb = SetupECDb("ForeignKeyConstraint_EnforceReferentialIntegrityCheck_AllowDuplicateRelation.ecdb");
     ExecuteRelationshipInsertionIntegrityTest (ecdb, true, true, true);
     //when AllowDuplicate is turned on, OneFooHasManyGoo will also be mapped as endtable therefore there will be only one row in the ForeignKey table
     ASSERT_FALSE (ecdb.TableExists ("ts_OneFooHasOneGoo"));
@@ -7998,8 +8163,7 @@ TEST_F(ReferentialIntegrityTestFixture, ForeignKeyConstraint_EnforceReferentialI
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ReferentialIntegrityTestFixture, DoNotAllowDuplicateRelationships)
     {
-    ECDbTestProject test;
-    ECDbR ecdb = test.Create ("RelationshipCardinalityTest.ecdb");
+    ECDbR ecdb = SetupECDb("RelationshipCardinalityTest.ecdb");
     ExecuteRelationshipInsertionIntegrityTest (ecdb, false, false, true);
     ASSERT_TRUE (ecdb.TableExists ("ts_Foo"));
     ASSERT_TRUE (ecdb.TableExists ("ts_Goo"));
@@ -8013,8 +8177,7 @@ TEST_F(ReferentialIntegrityTestFixture, DoNotAllowDuplicateRelationships)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ReferentialIntegrityTestFixture, AllowDuplicateRelationships)
     {
-    ECDbTestProject test;
-    ECDbR ecdb = test.Create ("RelationshipCardinalityTest_AllowDuplicateRelationships.ecdb");
+    ECDbR ecdb = SetupECDb("RelationshipCardinalityTest_AllowDuplicateRelationships.ecdb");
     ExecuteRelationshipInsertionIntegrityTest (ecdb, true, false, true);
     ASSERT_TRUE (ecdb.TableExists ("ts_Foo"));
     ASSERT_TRUE (ecdb.TableExists ("ts_Goo"));

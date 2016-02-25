@@ -307,7 +307,7 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext const&
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCP ECDbSchemaManager::GetECSchema (Utf8CP schemaName, bool ensureAllClassesLoaded) const
     {
-    const ECSchemaId schemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(GetECDb(), schemaName); //WIP_FNV: could be more efficient if it first looked through those already cached in memory...
+    const ECSchemaId schemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(GetECDb(), schemaName);
     if (INT64_C(0) == schemaId)
         return nullptr;
 
@@ -339,7 +339,7 @@ bool ECDbSchemaManager::ContainsECSchema (Utf8CP schemaName)  const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP ECDbSchemaManager::GetECClass (Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema) const // WIP_FNV: probably stays the same... though I expected this to look in memory, first
+ECClassCP ECDbSchemaManager::GetECClass (Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema) const
     {
     ECClassId id = ECClass::UNSET_ECCLASSID;
     if (!TryGetECClassId(id, schemaNameOrPrefix, className, resolveSchema))
@@ -359,7 +359,7 @@ ECClassCP ECDbSchemaManager::GetECClass(ECClassId ecClassId) const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDbSchemaManager::TryGetECClassId(ECClassId& id, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema) const // WIP_FNV: probably stays the same... though I expected this to look in memory, first
+bool ECDbSchemaManager::TryGetECClassId(ECClassId& id, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema) const
     {
     return m_ecReader->TryGetECClassId(id, schemaNameOrPrefix, className, resolveSchema);
     }

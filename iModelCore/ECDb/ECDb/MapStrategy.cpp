@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/MapStrategy.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -12,12 +12,12 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                07/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus UserECDbMapStrategy::Assign(Strategy strategy, Options options, bool isPolymorphic)
+BentleyStatus UserECDbMapStrategy::Assign(Strategy strategy, Options options, int minimumSharedColumnCount, bool appliesToSubclasses)
     {
     m_strategy = strategy;
     m_options = options;
-    m_appliesToSubclasses = isPolymorphic;
-
+    m_minimumSharedColumnCount = minimumSharedColumnCount;
+    m_appliesToSubclasses = appliesToSubclasses;
     return IsValid() ? SUCCESS : ERROR;
     }
 
@@ -41,7 +41,10 @@ bool UserECDbMapStrategy::IsValid() const
             if (!m_appliesToSubclasses)
                 return m_options == Options::None || m_options == Options::SharedColumns;
 
-            return !Enum::Contains(m_options, invalidOptions1) && !Enum::Contains(m_options, invalidOptions2) && !Enum::Contains(m_options, invalidOptions3);
+            if (Enum::Contains(m_options, invalidOptions1) || Enum::Contains(m_options, invalidOptions2) || Enum::Contains(m_options, invalidOptions3))
+                return false;
+
+            return m_minimumSharedColumnCount == ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT || Enum::Intersects(m_options, Options::SharedColumns | Options::SharedColumnsForSubclasses);
             }
 
             case Strategy::ExistingTable:
@@ -67,7 +70,7 @@ BentleyStatus UserECDbMapStrategy::TryParse(UserECDbMapStrategy& mapStrategy, EC
     if (SUCCESS != TryParse(option, mapStrategyCustomAttribute.GetOptions()))
         return ERROR;
 
-    return mapStrategy.Assign(strategy, option, mapStrategyCustomAttribute.AppliesToSubclasses());
+    return mapStrategy.Assign(strategy, option, mapStrategyCustomAttribute.GetMinimumSharedColumnCount(), mapStrategyCustomAttribute.AppliesToSubclasses());
     }
 
 //---------------------------------------------------------------------------------
@@ -169,7 +172,14 @@ Utf8String UserECDbMapStrategy::ToString() const
         str.append(" (applies to subclasses)");
 
     if (m_options != Options::None)
-        str.append("Options: ").append(ToString(m_options));
+        str.append(" Options: ").append(ToString(m_options));
+
+    if (m_minimumSharedColumnCount != ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT)
+        {
+        Utf8String snip;
+        snip.Sprintf(" Minimum shared column count: %d", m_minimumSharedColumnCount);
+        str.append(std::move(snip));
+        }
 
     return std::move(str);
     }
@@ -199,10 +209,11 @@ Utf8String UserECDbMapStrategy::ToString(Options options)
     bool isFirstItem = true;
     for (Utf8CP token : tokens)
         {
-        if (isFirstItem)
+        if (!isFirstItem)
             str.append(",");
 
         str.append(token);
+        isFirstItem = false;
         }
 
     return str;
@@ -245,11 +256,10 @@ BentleyStatus ECDbMapStrategy::Assign(UserECDbMapStrategy const& userStrategy)
     if (Enum::Contains(userOptions, UserECDbMapStrategy::Options::JoinedTablePerDirectSubclass))
         m_options = Enum::Or(m_options, Options::ParentOfJoinedTable);
 
+    m_minimumSharedColumnCount = userStrategy.GetMinimumSharedColumnCount();
+
     if (!IsValid())
-        {
-        LOG.errorv("Invalid MapStrategy: %s", ToString().c_str());
         return ERROR;
-        }
 
     m_isResolved = true;
     return SUCCESS;
@@ -258,10 +268,11 @@ BentleyStatus ECDbMapStrategy::Assign(UserECDbMapStrategy const& userStrategy)
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                02/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbMapStrategy::Assign(Strategy strategy, Options option, bool appliesToSubclasses)
+BentleyStatus ECDbMapStrategy::Assign(Strategy strategy, Options option, int minimumSharedColumnCount, bool appliesToSubclasses)
     {
     m_strategy = strategy;
     m_options = option;
+    m_minimumSharedColumnCount = minimumSharedColumnCount;
     m_appliesToSubclasses = appliesToSubclasses;
     
     if (!IsValid())
@@ -286,13 +297,13 @@ bool ECDbMapStrategy::IsValid() const
             if (!m_appliesToSubclasses)
                 return m_options == Options::None || m_options == Options::SharedColumns;
 
-            Options validOptions1 = Enum::Or(Options::SharedColumns, Options::JoinedTable);
-            Options validOptions2 = Enum::Or(Options::SharedColumns, Options::ParentOfJoinedTable);
+            const Options validOptions1 = Enum::Or(Options::SharedColumns, Options::JoinedTable);
+            const Options validOptions2 = Enum::Or(Options::SharedColumns, Options::ParentOfJoinedTable);
             return m_options == Options::None || Enum::Contains(validOptions1, m_options) || Enum::Contains(validOptions2, m_options);
             }
 
             default:
-                return m_options == Options::None;
+                return m_options == Options::None && m_minimumSharedColumnCount == ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT;
         }
     }
 
@@ -338,7 +349,7 @@ Utf8String ECDbMapStrategy::ToString() const
 
     if (m_options != Options::None)
         {
-        str.append("Option: ");
+        str.append(" Option: ");
 
         bool needsComma = false;
         if (Enum::Contains(m_options, Options::SharedColumns))
@@ -365,6 +376,13 @@ Utf8String ECDbMapStrategy::ToString() const
             needsComma = true;
             }
 
+        }
+
+    if (m_minimumSharedColumnCount != ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT)
+        {
+        Utf8String snip;
+        snip.Sprintf(" Minimum shared column count: %d", m_minimumSharedColumnCount);
+        str.append(snip);
         }
 
     return std::move(str);

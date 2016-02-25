@@ -18,8 +18,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 enum class TraversalFeedback
     {
     Cancel, //! cancel traversal altogether and return
-    NextSibling, //! donot traverse children of current node instead go with next sibling
-    Next //! if there is children of current node process them first and then go to nextr sibling
+    NextSibling, //! do not traverse children of current node instead go with next sibling
+    Next //! if there is children of current node process them first and then go to next sibling
     };
 
 struct ClassMap;
@@ -86,7 +86,7 @@ private:
 
     virtual void _GetColumns(std::vector<ECDbSqlColumn const*>&) const;
     
-    virtual BentleyStatus _FindOrCreateColumnsInTable(ClassMap&, ClassMapInfo const*) { return SUCCESS; }
+    virtual BentleyStatus _FindOrCreateColumnsInTable(ClassMap const&) { return SUCCESS; }
     virtual BentleyStatus _Save(ECDbClassMapInfo&) const;
     virtual BentleyStatus _Load(ECDbClassMapInfo const&) { return SUCCESS; }
 
@@ -169,7 +169,7 @@ public:
     Utf8CP GetPropertyAccessString () const;
 
     //! Make sure our table has the necessary columns, if any
-    BentleyStatus FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfo const* classMapInfo);
+    BentleyStatus FindOrCreateColumnsInTable(ClassMap const&);
 
     //! Returns whether this property map refers to the ECInstanceId system property or not.
     //! @return true if the property map refers to the ECInstanceId system property. false otherwise.
@@ -220,7 +220,7 @@ private:
         return SUCCESS;
         }
 
-    virtual BentleyStatus _FindOrCreateColumnsInTable(ClassMap&, ClassMapInfo const*) override;
+    virtual BentleyStatus _FindOrCreateColumnsInTable(ClassMap const&) override;
     virtual Utf8String _ToString() const override;
 
 protected:
@@ -247,7 +247,7 @@ private:
     friend PropertyMapPtr PropertyMap::Clone(ECDbMapCR, PropertyMapCR proto, ECN::ECClassCR clonedBy, PropertyMap const* parentPropertyMap);
 
     virtual void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const override;
-    virtual BentleyStatus _FindOrCreateColumnsInTable(ClassMap&, ClassMapInfo const*) override;
+    virtual BentleyStatus _FindOrCreateColumnsInTable(ClassMap const&) override;
     virtual BentleyStatus _Load(ECDbClassMapInfo const&) override;
     virtual BentleyStatus _Save(ECDbClassMapInfo&) const override;
 
@@ -317,7 +317,7 @@ private:
         :PropertyMapSingleColumn(static_cast<PropertyMapSingleColumn const&>(proto), parentPropertyMap), m_primitiveArrayEnabler(proto.m_primitiveArrayEnabler)
         {}
 
-    virtual BentleyStatus _FindOrCreateColumnsInTable(ClassMap&, ClassMapInfo const*) override;
+    virtual BentleyStatus _FindOrCreateColumnsInTable(ClassMap const&) override;
     Utf8String _ToString() const override;
 };
 
@@ -342,7 +342,7 @@ private:
         :PropertyMap(proto, parentPropertyMap), m_xColumn(proto.m_xColumn), m_yColumn(proto.m_yColumn), m_zColumn(proto.m_zColumn), m_is3d(proto.m_is3d)
         {}
 
-    BentleyStatus _FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfo const* classMapInfo) override;
+    virtual BentleyStatus _FindOrCreateColumnsInTable(ClassMap const&) override;
     void _GetColumns (std::vector<ECDbSqlColumn const*>& columns) const;
     virtual BentleyStatus _Save(ECDbClassMapInfo&) const override;
     virtual BentleyStatus _Load(ECDbClassMapInfo const&) override;
