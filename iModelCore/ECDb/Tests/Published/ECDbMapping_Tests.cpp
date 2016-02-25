@@ -8,7 +8,6 @@
 #include "ECDbPublishedTests.h"
 #include "SchemaImportTestFixture.h"
 #include "../BackDoor/PublicAPI/BackDoor/ECDb/BackDoor.h"
-#include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestProject.h"
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
@@ -2263,7 +2262,7 @@ TEST_F(ECDbMappingTestFixture, PropertyWithSameNameAsStructMemberColumn)
      ASSERT_FALSE (asserted);
 
      ASSERT_TRUE (ecdb.ColumnExists ("ts_Foo", "Code_Name"));
-     ASSERT_TRUE (ecdb.ColumnExists ("ts_Foo", "c127__43_ode__4e_ame"));
+     ASSERT_TRUE (ecdb.ColumnExists ("ts_Foo", "c127_Code_Name"));
      }
 
      {
@@ -2284,7 +2283,7 @@ TEST_F(ECDbMappingTestFixture, PropertyWithSameNameAsStructMemberColumn)
      ASSERT_FALSE (asserted);
 
      ASSERT_TRUE (ecdb.ColumnExists ("ts_Foo", "Code_Name"));
-     ASSERT_TRUE (ecdb.ColumnExists ("ts_Foo", "c127__43_ode_5f__4e_ame"));
+     ASSERT_TRUE (ecdb.ColumnExists ("ts_Foo", "c127_Code_Name"));
      }
     }
 
@@ -8115,8 +8114,7 @@ protected:
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ReferentialIntegrityTestFixture, ForeignKeyRelationshipMap_EnforceReferentialIntegrity)
     {
-    ECDbTestProject test;
-    ECDbR ecdb = test.Create ("ForeignKeyRelationshipMap_EnforceReferentialIntegrity.ecdb");
+    ECDbR ecdb = SetupECDb("ForeignKeyRelationshipMap_EnforceReferentialIntegrity.ecdb");
     ExecuteRelationshipInsertionIntegrityTest (ecdb, false, true, true);
     //when AllowDuplicate is turned of, OneFooHasManyGoo will also be mapped as endtable therefore ReferentialIntegrityCheck will be performed for it, so there will be two rows in the ForeignKey table
     ASSERT_FALSE (ecdb.TableExists ("ts_OneFooHasOneGoo"));
@@ -8140,8 +8138,7 @@ TEST_F(ReferentialIntegrityTestFixture, ForeignKeyRelationshipMap_EnforceReferen
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ReferentialIntegrityTestFixture, ForeignKeyConstraint_EnforceReferentialIntegrityCheck_AllowDuplicateRelation)
     {
-    ECDbTestProject test;
-    ECDbR ecdb = test.Create ("ForeignKeyConstraint_EnforceReferentialIntegrityCheck_AllowDuplicateRelation.ecdb");
+    ECDbR ecdb = SetupECDb("ForeignKeyConstraint_EnforceReferentialIntegrityCheck_AllowDuplicateRelation.ecdb");
     ExecuteRelationshipInsertionIntegrityTest (ecdb, true, true, true);
     //when AllowDuplicate is turned on, OneFooHasManyGoo will also be mapped as endtable therefore there will be only one row in the ForeignKey table
     ASSERT_FALSE (ecdb.TableExists ("ts_OneFooHasOneGoo"));
@@ -8166,8 +8163,7 @@ TEST_F(ReferentialIntegrityTestFixture, ForeignKeyConstraint_EnforceReferentialI
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ReferentialIntegrityTestFixture, DoNotAllowDuplicateRelationships)
     {
-    ECDbTestProject test;
-    ECDbR ecdb = test.Create ("RelationshipCardinalityTest.ecdb");
+    ECDbR ecdb = SetupECDb("RelationshipCardinalityTest.ecdb");
     ExecuteRelationshipInsertionIntegrityTest (ecdb, false, false, true);
     ASSERT_TRUE (ecdb.TableExists ("ts_Foo"));
     ASSERT_TRUE (ecdb.TableExists ("ts_Goo"));
@@ -8181,8 +8177,7 @@ TEST_F(ReferentialIntegrityTestFixture, DoNotAllowDuplicateRelationships)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ReferentialIntegrityTestFixture, AllowDuplicateRelationships)
     {
-    ECDbTestProject test;
-    ECDbR ecdb = test.Create ("RelationshipCardinalityTest_AllowDuplicateRelationships.ecdb");
+    ECDbR ecdb = SetupECDb("RelationshipCardinalityTest_AllowDuplicateRelationships.ecdb");
     ExecuteRelationshipInsertionIntegrityTest (ecdb, true, false, true);
     ASSERT_TRUE (ecdb.TableExists ("ts_Foo"));
     ASSERT_TRUE (ecdb.TableExists ("ts_Goo"));

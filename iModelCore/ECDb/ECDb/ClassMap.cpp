@@ -1060,21 +1060,16 @@ ECDbSqlColumn* ColumnFactory::ApplyDefaultStrategy(Utf8CP requestedColumnName, P
     if (existingColumn != nullptr && !IsColumnInUse(*existingColumn) &&
         ECDbSqlColumn::IsCompatible(existingColumn->GetType(), colType))
         {
-        if (GetTable().IsOwnedByECDb())
+        if (!GetTable().IsOwnedByECDb() || (existingColumn->GetConstraint().IsNotNull() == addNotNullConstraint &&
+                                            existingColumn->GetConstraint().IsUnique() == addUniqueConstraint &&
+                                            existingColumn->GetConstraint().GetCollation() == collation))
             {
-            if (existingColumn->GetConstraint().IsNotNull() == addNotNullConstraint &&
-                existingColumn->GetConstraint().IsUnique() == addUniqueConstraint &&
-                existingColumn->GetConstraint().GetCollation() == collation)
-                {
-                return existingColumn;
-                }
-            else
-                {
-                LOG.warningv("Column %s in table %s is used by multiple property maps where property name and data type matches,"
-                             " but where 'Nullable', 'Unique', or 'Collation' differs, and which will therefore be ignored for some of the properties.",
-                             existingColumn->GetName().c_str(), GetTable().GetName().c_str());
-                }
+            return existingColumn;
             }
+
+        LOG.warningv("Column %s in table %s is used by multiple property maps where property name and data type matches,"
+                     " but where 'Nullable', 'Unique', or 'Collation' differs, and which will therefore be ignored for some of the properties.",
+                     existingColumn->GetName().c_str(), GetTable().GetName().c_str());
         }
 
     const ECClassId classId = GetPersistenceClassId(propMap);
