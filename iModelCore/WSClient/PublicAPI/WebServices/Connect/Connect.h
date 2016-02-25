@@ -27,10 +27,6 @@ typedef AsyncResult<SamlTokenPtr, HttpError> SamlTokenResult;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct Connect
     {
-    public:
-        //! Default token lifetime in minutes
-        WSCLIENT_EXPORT static const uint64_t DefaultTokenLifetime;
-
     private:
         static AsyncTaskPtr<SamlTokenResult> GetStsToken(Utf8StringCR authorization, JsonValueCR issueExParams, Utf8CP appliesToUrl, Utf8CP stsUrl, uint64_t tokenLifetime);
         static Utf8String GetClientRelyingPartyUri();
@@ -41,11 +37,11 @@ struct Connect
         WSCLIENT_EXPORT static void Initialize(ClientInfoPtr clientInfo, IHttpHandlerPtr customHttpHandler = nullptr);
         WSCLIENT_EXPORT static void Uninintialize();
 
-        WSCLIENT_EXPORT static AsyncTaskPtr<SamlTokenResult> Login(CredentialsCR creds, Utf8CP appliesToUrl = nullptr, Utf8CP stsUrl = nullptr, uint64_t tokenLifetime = DefaultTokenLifetime);
-        WSCLIENT_EXPORT static AsyncTaskPtr<SamlTokenResult> RenewToken(SamlTokenCR parentToken, Utf8CP appliesToUrl = nullptr, Utf8CP stsUrl = nullptr, uint64_t tokenLifetime = DefaultTokenLifetime);
+        WSCLIENT_EXPORT static AsyncTaskPtr<SamlTokenResult> Login(CredentialsCR creds, Utf8CP appliesToUrl = nullptr, Utf8CP stsUrl = nullptr, uint64_t tokenLifetime = 0);
+        WSCLIENT_EXPORT static AsyncTaskPtr<SamlTokenResult> RenewToken(SamlTokenCR parentToken, Utf8CP appliesToUrl = nullptr, Utf8CP stsUrl = nullptr, uint64_t tokenLifetime = 0);
 
-        WSCLIENT_EXPORT static AsyncTaskPtr<SamlTokenResult> GetStsToken(CredentialsCR creds, Utf8CP appliesToUrl, Utf8CP stsUrl, uint64_t tokenLifetime = DefaultTokenLifetime);
-        WSCLIENT_EXPORT static AsyncTaskPtr<SamlTokenResult> GetStsToken(SamlTokenCR parentToken, Utf8CP appliesToUrl, Utf8CP stsUrl, uint64_t tokenLifetime = DefaultTokenLifetime);
+        WSCLIENT_EXPORT static AsyncTaskPtr<SamlTokenResult> GetStsToken(CredentialsCR creds, Utf8CP appliesToUrl, Utf8CP stsUrl, uint64_t tokenLifetime = 0);
+        WSCLIENT_EXPORT static AsyncTaskPtr<SamlTokenResult> GetStsToken(SamlTokenCR parentToken, Utf8CP appliesToUrl, Utf8CP stsUrl, uint64_t tokenLifetime = 0);
 
         // Checks if given response is IMS Login redirect that should be treated as invalid credentials.
         // This is workaround because IMS does not give any other indication.
