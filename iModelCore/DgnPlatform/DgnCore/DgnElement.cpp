@@ -493,6 +493,10 @@ DgnDbStatus DgnElement::_InsertInDb()
     if (BE_SQLITE_DONE == stmtResult)
         return DgnDbStatus::Success;
 
+    status = SaveUserProperties();
+    if (DgnDbStatus::Success != status)
+        return status;
+
     // SQLite doesn't tell us which constraint failed - check if it's the Code.
     auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
     return existingElemWithCode.IsValid() ? DgnDbStatus::DuplicateCode : DgnDbStatus::WriteError;
@@ -522,6 +526,10 @@ DgnDbStatus DgnElement::_UpdateInDb()
     auto stmtResult = stmt->Step();
     if (BE_SQLITE_DONE == stmtResult)
         return DgnDbStatus::Success;
+
+    status = SaveUserProperties();
+    if (DgnDbStatus::Success != status)
+        return status;
 
     // SQLite doesn't tell us which constraint failed - check if it's the Code.
     auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
@@ -737,6 +745,8 @@ void DgnElement::CreateParams::RelocateToDestinationDb(DgnImportContext& importe
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::CopyForCloneFrom(DgnElementCR src)
     {
+    src.LoadUserProperties(); // See notes in CopyUserProperties()
+
     DgnCode code = GetCode();
     _CopyFrom(src);
     m_code = code;
@@ -820,6 +830,8 @@ void DgnElement::_CopyFrom(DgnElementCR other)
     m_code      = other.m_code;
     m_label     = other.m_label;
     m_parentId  = other.m_parentId;
+    
+    CopyUserProperties(other);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -854,6 +866,111 @@ DgnElement::CreateParams DgnElement::GetCreateParamsForImport(DgnModelR destMode
         parms.RelocateToDestinationDb(importer);
 
     return parms;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::LoadUserProperties() const
+    {
+    // See notes in CopyUserProperties()
+    if (m_userProperties)
+        return;
+    
+    if (!IsPersistent())
+        {
+        m_userProperties = new AdHocJsonValue();
+        return;
+        }
+    BeAssert(GetElementId().IsValid());
+
+    CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT UserProperties FROM " DGN_SCHEMA(DGN_CLASSNAME_Element) " WHERE ECInstanceId=?");
+    BeAssert(stmt.IsValid());
+
+    stmt->BindId(1, GetElementId());
+
+    DbResult result = stmt->Step();
+    BeAssert(result == BE_SQLITE_ROW && "Expected user properties for element");
+    UNUSED_VARIABLE(result);
+
+    m_userProperties = new AdHocJsonValue();
+
+    Utf8CP userPropertiesStr = stmt->GetValueText(0);
+    if (!Utf8String::IsNullOrEmpty(userPropertiesStr))
+       m_userProperties->FromString(userPropertiesStr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::SaveUserProperties() const
+    {
+    // See notes in CopyUserProperties()
+    if (!m_userProperties)
+        return DgnDbStatus::Success;
+    
+    CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement("UPDATE ONLY " DGN_SCHEMA(DGN_CLASSNAME_Element) "SET UserProperties = ? WHERE ECInstanceId = ?");
+    BeAssert(stmt.IsValid());
+
+    if (m_userProperties->IsEmpty())
+        stmt->BindNull(0);
+    else
+        stmt->BindText(0, m_userProperties->ToString().c_str(), IECSqlBinder::MakeCopy::Yes);
+
+    BeAssert(GetElementId().IsValid());
+    stmt->BindId(1, GetElementId());
+
+    DbResult result = stmt->Step();
+    if (result != BE_SQLITE_DONE)
+        {
+        BeAssert(false && "Could not save user properties");
+        return DgnDbStatus::WriteError;
+        }
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::UnloadUserProperties() const
+    {
+    // See notes in CopyUserProperties()
+    if (!m_userProperties)
+        return;
+
+    delete m_userProperties;
+    m_userProperties = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::CopyUserProperties(DgnElementCR other)
+    {
+    /* We do not want to incur the expense of loading/saving the user properties unless 
+     * necessary - these properties may be quite large, and in the majority of use-cases 
+     * DgnElement-s don't need to access these properties (even if they contain them). 
+     * 
+     * We dynamically load these properties only in these scenarios - 
+     * ... when access is required - see GetUserProperties(). 
+     * ... when copies are made for cloning - see CopyForCloneFrom(). 
+     * 
+     * Note that we do NOT dynamically load these properties when copies are made for
+     * edits (CopyForEdit()) and updates (UpdateElement()). Whereas clone-s can be done between 
+     * different elements, edits/updates are done only for the same element. 
+     *
+     * We then save these properties only if they have been loaded (see SaveUserProperties()).
+     *
+     * Therefore, in this routine (which is called from _CopyFrom(), i.e., called in all scenarios 
+     * where an in-memory copy is made), we can  reliably infer that we need to make a copy of the 
+     * user properties only when they have been loaded in the source/other element.  
+     */
+
+    if (other.m_userProperties)
+        GetUserPropertiesR() = other.GetUserProperties();
+    else
+        m_userProperties = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**

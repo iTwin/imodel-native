@@ -805,3 +805,77 @@ TEST_F(DgnElementTests, TestUnhandledProperties)
     EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetUnhandledPropertyValue(checkValue, "StringProperty"));
     EXPECT_STREQ("changed value", checkValue.ToString().c_str());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Ramanujam.Raman      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, TestUserProperties)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"TestUserProperties.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    
+    // Note: Even if this test uses SetValueEC() and GetValueEC() for setting the user properties, the preference
+    // would be to use the primitive setters and getters. The choice here was to just meant to get more coverage
+    // by testing the outermost wrappers. 
+
+    DgnElementCPtr persistentEl;
+    if (true)
+        {
+        DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
+        TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
+        TestElement el(params);
+
+        //  No user properties yet
+        ECN::ECValue checkValue = el.GetUserProperties().GetValueEC("StringProperty");
+        EXPECT_TRUE(checkValue.IsNull());
+
+        //  Set user property (in memory)
+        ASSERT_EQ(true, el.GetUserPropertiesR().SetValueEC("StringProperty", ECN::ECValue("initial value")));
+
+        //      ... check that we see the pending value
+        checkValue = el.GetUserProperties().GetValueEC("StringProperty");
+        EXPECT_FALSE(checkValue.IsNull());
+        EXPECT_STREQ("initial value", checkValue.ToString().c_str());
+
+        //  Insert the element
+        persistentEl = el.Insert();
+        }
+    
+    ASSERT_TRUE(persistentEl.IsValid());
+
+    // Check that we see the stored value
+    ECN::ECValue checkValue = persistentEl->GetUserProperties().GetValueEC("StringProperty");
+    EXPECT_FALSE(checkValue.IsNull());
+    EXPECT_STREQ("initial value", checkValue.ToString().c_str());
+
+    if (true)
+        {
+        //  Get ready to modify the element
+        RefCountedPtr<TestElement> editEl = persistentEl->MakeCopy<TestElement>();
+
+        //      ... initially we still see the initial/stored value
+        checkValue = editEl->GetUserProperties().GetValueEC("StringProperty");
+        EXPECT_FALSE(checkValue.IsNull());
+        EXPECT_STREQ("initial value", checkValue.ToString().c_str());
+
+        //  Set a new value (in memory)
+        EXPECT_EQ(true, editEl->GetUserPropertiesR().SetValueEC("StringProperty", ECN::ECValue("changed value")));
+
+        //      ... check that we now see the pending value on the edited copy ...
+        checkValue = editEl->GetUserProperties().GetValueEC("StringProperty");
+        EXPECT_FALSE(checkValue.IsNull());
+        EXPECT_STREQ("changed value", checkValue.ToString().c_str());
+
+        //      ... but no change on the persistent element
+        checkValue = persistentEl->GetUserProperties().GetValueEC("StringProperty");
+        EXPECT_FALSE(checkValue.IsNull());
+        EXPECT_STREQ("initial value", checkValue.ToString().c_str());
+
+        //  Update the element
+        persistentEl = editEl->Update();
+        }
+
+    // Check that the stored value was changed
+    checkValue = persistentEl->GetUserProperties().GetValueEC("StringProperty");
+    EXPECT_FALSE(checkValue.IsNull());
+    EXPECT_STREQ("changed value", checkValue.ToString().c_str());
+    }
