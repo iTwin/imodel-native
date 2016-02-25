@@ -656,7 +656,7 @@ struct ArrayExpressionTests : InstanceListExpressionTests
             }
         }
 
-    static ExpressionStatus     SumArrayMembers (EvaluationResultR result, IValueListResultCR valueList, EvaluationResultVector& args)
+    static ExpressionStatus     SumArrayMembers (EvaluationResultR result, void* context, IValueListResultCR valueList, EvaluationResultVector& args)
         {
         uint32_t count = valueList.GetCount();
         int32_t sum = 0;
@@ -827,14 +827,14 @@ struct MethodsReturningInstancesTests : InstanceListExpressionTests
         context.AddSymbol (*MethodSymbol::Create ("CreateInstancesA", NULL, &CreateInstancesA));
         }
 
-    static ExpressionStatus     CreateInstanceA (EvaluationResultR result, ECInstanceListCR, EvaluationResultVector& args)
+    static ExpressionStatus     CreateInstanceA (EvaluationResultR result, void* context, ECInstanceListCR, EvaluationResultVector& args)
         {
         IECInstancePtr instance = CreateInstance ("ClassA", *s_schema);
         instance->SetValue ("String", ECValue ("A"));
         result.SetInstance (*instance);
         return ExpressionStatus::Success;
         }
-    static ExpressionStatus     CreateInstancesA (EvaluationResultR result, ECInstanceListCR, EvaluationResultVector& args)
+    static ExpressionStatus     CreateInstancesA (EvaluationResultR result, void* context, ECInstanceListCR, EvaluationResultVector& args)
         {
         ECInstanceList instances;
         IECInstancePtr a = CreateInstance ("ClassA", *s_schema);
