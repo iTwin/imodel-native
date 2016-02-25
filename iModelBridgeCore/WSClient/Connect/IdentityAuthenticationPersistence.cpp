@@ -12,9 +12,9 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_MOBILEDGN
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
-#define SecureStoreNameSpace_Connect    "ConnectIdentity"
-#define SecureStoreKey_Token            "Token"
-#define SecureStoreKey_TokenSetTime     "TokenSetTime"
+#define SecureStoreNameSpace_Connect    "Connect"
+#define SecureStoreKey_Token            "IdentityToken"
+#define SecureStoreKey_TokenSetTime     "IdentityTokenSetTime"
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
