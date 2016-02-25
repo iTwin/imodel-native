@@ -2,7 +2,7 @@
 #
 #  $Source: BentleyTest/TestRunner/TestRunner.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 %include mdl.mki
@@ -18,12 +18,11 @@ BuildContext            = $(OutputRootDir)BuildContexts/gtest/
     o                       = $(OutputRootDir)Build/gtest/TestRunnerPagalloc/
     DgnPlatformToolsLib     = DgnPlatformTools.lib
     testRunnerDependencies  = $(BuildContext)SubParts/Libs/Bentley.lib \
-                              $(BuildContext)SubParts/Libs/BentleyAllocator.lib \
                               $(BuildContext)SubParts/Libs/Toolsubs.lib
 %else
     appName                 = TestRunner
     o                       = $(OutputRootDir)Build/gtest/TestRunner/
-    testRunnerDependencies  = $(BuildContext)SubParts/Libs/Bentley.lib $(BuildContext)SubParts/Libs/BentleyAllocator.lib
+    testRunnerDependencies  = $(BuildContext)SubParts/Libs/Bentley.lib
 %endif
 
 %if $(TARGET_PLATFORM)=="Windows"  # *** WIP_NONPORT - define a way to specify OS libraries symbolically, without naming them
