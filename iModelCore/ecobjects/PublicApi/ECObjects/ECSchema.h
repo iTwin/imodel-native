@@ -2913,20 +2913,22 @@ enum class ECSchemaElementType
 //! 
 //! @bsiclass
 //=======================================================================================
-struct ECSchemaElementsOrder : RefCountedBase
-    {
-    private:
-        bvector<bpair<Utf8String, ECSchemaElementType>> m_elementVector;
+struct ECSchemaElementsOrder : NonCopyableClass
+{
+private:
+    bvector<bpair<Utf8String, ECSchemaElementType>> m_elementVector;
+    bool m_preserveElementOrder;
 public:
+    ECSchemaElementsOrder() : m_preserveElementOrder(false) {}
+
     void AddElement(Utf8CP name, ECSchemaElementType type);
     void RemoveElement(Utf8CP name);
-    static void CreateAlphabeticalOrder(ECSchemaElementsOrder* &order, ECSchemaCR ecSchema);
-
-public:
-    ECOBJECTS_EXPORT bvector<bpair<Utf8String, ECSchemaElementType>>::const_iterator begin() const; //!< Returns the beginning of the iterator
-    ECOBJECTS_EXPORT bvector<bpair<Utf8String, ECSchemaElementType>>::const_iterator end()   const; //!< Returns the end of the iterator
+    void CreateAlphabeticalOrder(ECSchemaCR ecSchema);
+    bool GetPreserveElementOrder() const { return m_preserveElementOrder; }
+    void SetPreserveElementOrder(bool value) { m_preserveElementOrder = value; }
+    bvector<bpair<Utf8String, ECSchemaElementType>>::const_iterator begin() const { return m_elementVector.begin(); } //!< Returns the beginning of the iterator
+    bvector<bpair<Utf8String, ECSchemaElementType>>::const_iterator end() const { return m_elementVector.end(); } //!< Returns the end of the iterator
 };
-typedef ECSchemaElementsOrder* ECSchemaElementsOrderP;
 
 //=======================================================================================
 //! The in-memory representation of a schema as defined by ECSchemaXML
@@ -2937,7 +2939,6 @@ struct ECSchema : RefCountedBase, IECCustomAttributeContainer
 private:
     ECSchema (ECSchema const&);
     ECSchema& operator= (ECSchema const&);
-
 
 friend struct SearchPathSchemaFileLocater;
 friend struct SupplementedSchemaBuilder;
@@ -2967,7 +2968,7 @@ private:
     bool                        m_hasExplicitDisplayLabel;
     SupplementalSchemaInfoPtr   m_supplementalSchemaInfo;
     bool                        m_immutable;
-    ECSchemaElementsOrderP      m_serializationOrder;
+    mutable ECSchemaElementsOrder m_serializationOrder; //mutable because we might modify this during serialization
 
     bmap<ECSchemaP, Utf8String> m_referencedSchemaNamespaceMap;
     /*__PUBLISH_SECTION_END__*/

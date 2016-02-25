@@ -34,13 +34,8 @@ struct SchemaXmlWriter
     private:
         struct  ECSchemaWriteContext
             {
-            private:
-            bool m_preserveElementOrder = false;
-
             public:
             bset<Utf8CP> m_alreadyWrittenClasses;
-            bool GetPreserveElementOrder() { return m_preserveElementOrder; }
-            void SetPreserveElementOrder(bool flag) { m_preserveElementOrder = flag; }
             };
 
         BeXmlWriterR m_xmlWriter;
