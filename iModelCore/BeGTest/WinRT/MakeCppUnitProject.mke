@@ -2,7 +2,7 @@
 #
 #     $Source: WinRT/MakeCppUnitProject.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %ifndef TEST_NAME
@@ -140,9 +140,6 @@ LINKER_LIBRARIES   =   $[@wildcard $(collectionLibsDir)*$(libext)]
 # Libs used by the test runner itself
 #--------------------------------------------------------------------------------------
 $(projectDir)Bentley.lib : $(BuildContext)SubParts/Libs/Bentley.lib
-    $(LinkFirstDepToFirstTarget)
-
-$(projectDir)BentleyAllocator.lib : $(BuildContext)SubParts/Libs/BentleyAllocator.lib
     $(LinkFirstDepToFirstTarget)
 
 $(projectDir)BeSQLite.lib : $(BuildContext)SubParts/Libs/BeSQLite.lib
