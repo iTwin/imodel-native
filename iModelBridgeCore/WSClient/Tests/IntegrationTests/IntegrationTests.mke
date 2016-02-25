@@ -2,7 +2,7 @@
 #
 #     $Source: Tests/IntegrationTests/IntegrationTests.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 
@@ -91,7 +91,6 @@ GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeJsonCpp$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)ECObjects$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeCurl$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeLibxml2$(libext)
-GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BentleyAllocator$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)WebServicesClient$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)WebServicesCache$(libext)
 
