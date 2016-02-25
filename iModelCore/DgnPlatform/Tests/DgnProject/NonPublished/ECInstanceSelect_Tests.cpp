@@ -287,15 +287,18 @@ TEST_F (ECInstanceSelectTests, VerifyInstanceCountFor04Plant)
 
     BenchMark["ArcPlates"] = 9;
     BenchMark["ArcShapes"] = 40;
+    BenchMark["Component"] = 787;
     BenchMark["Equipment"] = 29;
     BenchMark["Equipment_Part"] = 15;
     BenchMark["NonComponent"] = 21;
     BenchMark["Nozzle"] = 55;
+    BenchMark["Object"] = 503;
     BenchMark["Pipeline"] = 61;
     BenchMark["PipingComponent"] = 703;
     BenchMark["Plates"] = 1;
     BenchMark["Shapes"] = 433;
     BenchMark["VolBodies"] = 20;
+    BenchMark["Volume"] = 503;
 
     ASSERT_EQ (BentleyStatus::SUCCESS, m_db->Schemas ().GetECSchemas (schemaList));
 
