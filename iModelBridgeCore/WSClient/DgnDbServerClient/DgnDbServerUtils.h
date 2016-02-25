@@ -104,24 +104,6 @@ namespace Db
         }
     }
 
-namespace Error
-    {
-    static Utf8CP NotInitialized = "DgnDbServerClient library not initialized";
-    static Utf8CP InvalidRepository = "Invalid repository.";
-    static Utf8CP InvalidRevision = "Invalid revision.";
-    static Utf8CP MasterId = "Trying to open master file as briefcase.";
-    static Utf8CP InvalidCredentials = "Invalid credentials.";
-    static Utf8CP InvalidServerURL = "Invalid server URL";
-    static Utf8CP DbNotFound = "Could not find briefcase db file.";
-    static Utf8CP DbNotRepository = "Db file is not a valid briefcase.";
-    static Utf8CP ConnectionNotFound = "Connection is not open.";
-    static Utf8CP DbReadOnly = "Briefcase db is open as read only.";
-    static Utf8CP RevisionsMerge = "Unable to merge revisions.";
-    static Utf8CP RevisionsFinish = "Unable to finish creating revision.";
-    static Utf8CP CantWriteToDgnDb = "Can't write to DgnDb file.";
-    static Utf8CP TrackingNotEnabled = "Change tracking is not enabled.";
-    }
-
 //=======================================================================================
 //@bsiclass                                      Karolis.Dziedzelis             11/2015
 //=======================================================================================
