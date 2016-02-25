@@ -81,7 +81,7 @@ public:
 
     //! Create a new repository on the server.
     //! @param[in] db A DgnDb file to upload as a master file for the repository.
-    //! @param[in] repositoryId Repository name on server.
+    //! @param[in] repositoryName Repository name user entered.
     //! @param[in] description Short description of the repository.
     //! @param[in] publish Sets the respository as published (unpublished repositories cannot be accessed).
     //! @param[in] callback Progress callback for the file upload.
