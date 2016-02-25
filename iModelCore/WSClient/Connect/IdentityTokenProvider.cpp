@@ -33,6 +33,14 @@ m_tokenRefreshRate(TOKEN_REFRESH_RATE)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+IdentityTokenProviderPtr IdentityTokenProvider::Create(ITokenStorePtr store, std::function<void()> tokenExpiredHandler)
+    {
+    return std::shared_ptr<IdentityTokenProvider>(new IdentityTokenProvider(store, tokenExpiredHandler));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void IdentityTokenProvider::Configure(uint64_t tokenLifetime, uint64_t tokenRefreshRate)
     {
     m_tokenLifetime = tokenLifetime;
@@ -64,6 +72,8 @@ SamlTokenPtr IdentityTokenProvider::GetToken()
         if (nullptr == oldToken)
             return nullptr;
 
+        auto thisPtr = shared_from_this();
+
         AsyncTasksManager::GetDefaultScheduler()->ExecuteAsyncWithoutAttachingToCurrentTask([=]
             {
             // TODO: avoid launching twice - use UniqueTaskHolder once its fixed
@@ -77,6 +87,8 @@ SamlTokenPtr IdentityTokenProvider::GetToken()
                 auto token = result.GetValue();
                 m_store->SetToken(token);
                 LOG.infov("Renewed identity token lifetime %d minutes", token->GetLifetime());
+
+                thisPtr;
                 });
             });
         }

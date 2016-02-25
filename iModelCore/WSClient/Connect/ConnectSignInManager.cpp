@@ -35,6 +35,7 @@ m_localState(localState ? *localState : MobileDgnCommon::LocalState()),
 m_secureStore(secureStore ? secureStore : std::make_shared<SecureStore>(&m_localState))
     {
     m_persistence = GetPersistenceMatchingAuthenticationType();
+    UpdateSignInIfNeeded();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -49,6 +50,18 @@ ConnectSignInManager::~ConnectSignInManager()
 ConnectSignInManagerPtr ConnectSignInManager::Create(ILocalState* localState, ISecureStorePtr secureStore)
     {
     return std::shared_ptr<ConnectSignInManager>(new ConnectSignInManager(localState, secureStore));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectSignInManager::UpdateSignInIfNeeded()
+    {
+    if (!IsSignedIn())
+        return;
+
+    auto provider = GetBaseTokenProviderMatchingAuthenticationType();
+    provider->GetToken(); // Will renew token if needed
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -164,6 +177,7 @@ void ConnectSignInManager::SignOut()
     {
     BeCriticalSectionHolder lock(m_cs);
     ClearSignInData();
+    LOG.infov("ConnectSignOut");
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -304,7 +318,7 @@ IConnectTokenProviderPtr ConnectSignInManager::GetBaseTokenProviderMatchingAuthe
 
     if (AuthenticationType::Token == type)
         {
-        auto provider = std::make_shared<IdentityTokenProvider>(m_persistence, m_tokenExpiredHandler);
+        auto provider = IdentityTokenProvider::Create(m_persistence, m_tokenExpiredHandler);
         provider->Configure(m_config.identityTokenLifetime, m_config.identityTokenRefreshRate);
         return provider;
         }

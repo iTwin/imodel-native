@@ -64,11 +64,11 @@ AsyncTaskPtr<SamlTokenResult> DelegationTokenProvider::RetrieveNewToken()
     //LOG.debugv("Delegating token for: %s", m_rpUri.c_str());
     //return m_tokenRetriever.GetTask([=] () -> AsyncTaskPtr<SamlTokenResult>
     //    {
-    LOG.debugv("Requesting token for: %s", m_rpUri.c_str());
+    LOG.infov("Requesting '%s' delegation token", m_rpUri.c_str());
     SamlTokenPtr baseToken = m_baseTokenProvider->GetToken();
     if (nullptr == baseToken)
         {
-        LOG.error("Base token not found");
+        LOG.errorv("Base token not found for '%s' delegation token", m_rpUri.c_str());
         return CreateCompletedAsyncTask(SamlTokenResult::Error({}));
         }
 
@@ -80,6 +80,7 @@ AsyncTaskPtr<SamlTokenResult> DelegationTokenProvider::RetrieveNewToken()
             // Base token was rejected, try update
             m_baseTokenProvider->UpdateToken();
             }
+        LOG.infov("Received '%s' delegation token lifetime %d minutes", m_rpUri.c_str(), result.GetValue()->GetLifetime());
         return result;
         });
     //});

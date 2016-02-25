@@ -16,7 +16,8 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct IdentityTokenProvider : public IConnectTokenProvider
+typedef std::shared_ptr<struct IdentityTokenProvider> IdentityTokenProviderPtr;
+struct IdentityTokenProvider : IConnectTokenProvider, std::enable_shared_from_this<IdentityTokenProvider>
     {
     private:
         ITokenStorePtr m_store;
@@ -26,10 +27,11 @@ struct IdentityTokenProvider : public IConnectTokenProvider
         uint64_t m_tokenRefreshRate;
 
     private:
+        IdentityTokenProvider(ITokenStorePtr store, std::function<void()> tokenExpiredHandler);
         bool ShouldRenewToken(DateTimeCR tokenSetTime);
 
     public:
-        WSCLIENT_EXPORT IdentityTokenProvider(ITokenStorePtr store, std::function<void()> tokenExpiredHandler = nullptr);
+        WSCLIENT_EXPORT static IdentityTokenProviderPtr Create(ITokenStorePtr store, std::function<void()> tokenExpiredHandler = nullptr);
 
         //! Set new token lifetime and refresh rate in minutes
         WSCLIENT_EXPORT void Configure(uint64_t tokenLifetime, uint64_t tokenRefreshRate);
