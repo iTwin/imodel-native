@@ -40,23 +40,23 @@ DgnDbBriefcasePtr DgnDbBriefcase::Create(Dgn::DgnDbPtr db, DgnDbRepositoryConnec
 //---------------------------------------------------------------------------------------
 AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullAndMerge(HttpRequest::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken)
     {
-    BeAssert(DgnDbServerHost::IsInitialized() && Error::NotInitialized);
+    BeAssert(DgnDbServerHost::IsInitialized());
     std::shared_ptr<DgnDbServerHost> host = std::make_shared<DgnDbServerHost>();
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
-        return CreateCompletedAsyncTask<DgnDbResult>(DgnDbResult::Error(Error::DbNotFound));
+        return CreateCompletedAsyncTask<DgnDbResult>(DgnDbResult::Error(DgnDbServerError::Id::FileNotFound));
         }
     if (!m_repositoryConnection)
         {
-        return CreateCompletedAsyncTask<DgnDbResult>(DgnDbResult::Error(Error::ConnectionNotFound));
+        return CreateCompletedAsyncTask<DgnDbResult>(DgnDbResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
         }
     if (m_db->IsReadonly())
         {
-        return CreateCompletedAsyncTask<DgnDbResult>(DgnDbResult::Error(Error::DbReadOnly));
+        return CreateCompletedAsyncTask<DgnDbResult>(DgnDbResult::Error(DgnDbServerError::Id::BriefcaseIsReadOnly));
         }
-    if (!m_db->Txns ().IsTracking ())
+    if (!m_db->Txns().IsTracking())
         {
-        return CreateCompletedAsyncTask<DgnDbResult> (DgnDbResult::Error (Error::TrackingNotEnabled));
+        return CreateCompletedAsyncTask<DgnDbResult>(DgnDbResult::Error(DgnDbServerError::Id::TrackingNotEnabled));
         }
     Utf8String lastRevisionId = GetLastRevisionPulled ();
     return m_repositoryConnection->Pull(lastRevisionId, callback, cancellationToken)->Then<DgnDbResult>([=] (const DgnDbServerRevisionsResult& result)
@@ -164,19 +164,19 @@ AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullMergeAndPushRepeated(HttpRequest::
 AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullMergeAndPushInternal(HttpRequest::ProgressCallbackCR downloadCallback,
     HttpRequest::ProgressCallbackCR uploadCallback, ICancellationTokenPtr cancellationToken)
     {
-    BeAssert(DgnDbServerHost::IsInitialized() && Error::NotInitialized);
+    BeAssert(DgnDbServerHost::IsInitialized());
     std::shared_ptr<DgnDbServerHost> host = std::make_shared<DgnDbServerHost>();
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
-        return CreateCompletedAsyncTask<DgnDbResult>(DgnDbResult::Error(Error::DbNotFound));
+        return CreateCompletedAsyncTask<DgnDbResult>(DgnDbResult::Error(DgnDbServerError::Id::FileNotFound));
         }
     if (!m_repositoryConnection)
         {
-        return CreateCompletedAsyncTask<DgnDbResult>(DgnDbResult::Error(Error::ConnectionNotFound));
+        return CreateCompletedAsyncTask<DgnDbResult>(DgnDbResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
         }
     if (m_db->IsReadonly())
         {
-        return CreateCompletedAsyncTask<DgnDbResult>(DgnDbResult::Error(Error::DbReadOnly));
+        return CreateCompletedAsyncTask<DgnDbResult>(DgnDbResult::Error(DgnDbServerError::Id::BriefcaseIsReadOnly));
         }
     std::shared_ptr<DgnDbResult> finalResult = std::make_shared<DgnDbResult>();
     return PullAndMerge(downloadCallback, cancellationToken)->Then([=] (const DgnDbResult& result)
@@ -184,7 +184,6 @@ AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullMergeAndPushInternal(HttpRequest::
         if (result.IsSuccess())
             {
             DgnDbServerHost::Adopt(host);
-            BeAssert(m_db.IsValid());
             DgnRevisionPtr revision = m_db->Revisions ().StartCreateRevision ();
             DgnDbServerHost::Forget (host, false);
             if (!revision.IsValid ())

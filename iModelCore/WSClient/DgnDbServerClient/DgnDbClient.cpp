@@ -114,14 +114,14 @@ Utf8String ParseRepositoryId(const WSRepository& repository)
 //---------------------------------------------------------------------------------------
 DgnClientFx::Utils::AsyncTaskPtr<DgnDbRepositoriesResult> DgnDbClient::GetRepositories(ICancellationTokenPtr cancellationToken)
     {
-    BeAssert(DgnDbServerHost::IsInitialized() && Error::NotInitialized);
+    BeAssert(DgnDbServerHost::IsInitialized());
     if (m_serverUrl.empty())
         {
-        return CreateCompletedAsyncTask<DgnDbRepositoriesResult>(DgnDbRepositoriesResult::Error(Error::InvalidServerURL));
+        return CreateCompletedAsyncTask<DgnDbRepositoriesResult>(DgnDbRepositoriesResult::Error(DgnDbServerError::Id::InvalidServerURL));
         }
     if (!m_credentials.IsValid() && !m_customHandler)
         {
-        return CreateCompletedAsyncTask<DgnDbRepositoriesResult>(DgnDbRepositoriesResult::Error(Error::InvalidCredentials));
+        return CreateCompletedAsyncTask<DgnDbRepositoriesResult>(DgnDbRepositoriesResult::Error(DgnDbServerError::Id::CredentialsNotSet));
         }
     std::shared_ptr<DgnDbRepositoriesResult> finalResult = std::make_shared<DgnDbRepositoriesResult>();
     return GetRepositoriesByPlugin(ServerSchema::Plugin::Repository, cancellationToken)->Then([=]
@@ -129,12 +129,16 @@ DgnClientFx::Utils::AsyncTaskPtr<DgnDbRepositoriesResult> DgnDbClient::GetReposi
         {
         if (response.IsSuccess())
             {
+            if (response.GetValue().empty())
+                {
+                finalResult->SetSuccess(bvector<RepositoryInfoPtr>());
+                return;
+                }
             bset<std::shared_ptr<AsyncTask>> tasks;
             for (const auto& repository : response.GetValue())
                 tasks.insert(ConnectToRepository(RepositoryInfo::Create(m_serverUrl, ParseRepositoryId(repository)), cancellationToken));
             AsyncTask::WhenAll(tasks)->Then([=] ()
                 {
-                //Do we check whether all connections failed here?
                 bvector<RepositoryInfoPtr> repositories;
                 for (auto task : tasks)
                     {
@@ -253,27 +257,27 @@ DgnDbPtr CleanDb(DgnDbR db)
 AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::CreateNewRepository(Dgn::DgnDbPtr db, Utf8StringCR repositoryName, Utf8StringCR description,
     bool published, HttpRequest::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken)
     {
-    BeAssert(DgnDbServerHost::IsInitialized() && Error::NotInitialized);
+    BeAssert(DgnDbServerHost::IsInitialized());
     if (!db.IsValid() || !db->GetFileName().DoesPathExist())
         {
-        return CreateCompletedAsyncTask<DgnDbRepositoryResult>(DgnDbRepositoryResult::Error(Error::DbNotFound));
+        return CreateCompletedAsyncTask<DgnDbRepositoryResult>(DgnDbRepositoryResult::Error(DgnDbServerError::Id::FileNotFound));
         }
     if (m_serverUrl.empty())
         {
-        return CreateCompletedAsyncTask<DgnDbRepositoryResult>(DgnDbRepositoryResult::Error(Error::InvalidServerURL));
+        return CreateCompletedAsyncTask<DgnDbRepositoryResult>(DgnDbRepositoryResult::Error(DgnDbServerError::Id::InvalidServerURL));
         }
     if (!m_credentials.IsValid() && !m_customHandler)
         {
-        return CreateCompletedAsyncTask<DgnDbRepositoryResult>(DgnDbRepositoryResult::Error(Error::InvalidCredentials));
+        return CreateCompletedAsyncTask<DgnDbRepositoryResult>(DgnDbRepositoryResult::Error(DgnDbServerError::Id::CredentialsNotSet));
         }
     if (repositoryName.empty())
         {
-        return CreateCompletedAsyncTask<DgnDbRepositoryResult>(DgnDbRepositoryResult::Error(Error::InvalidRepository));
+        return CreateCompletedAsyncTask<DgnDbRepositoryResult>(DgnDbRepositoryResult::Error(DgnDbServerError::Id::InvalidRepostioryName));
         }
 
     DgnDbPtr tempdb = CleanDb(*db);
     if (!tempdb.IsValid())
-        CreateCompletedAsyncTask<DgnDbRepositoryResult>(DgnDbRepositoryResult::Error(Error::DbNotFound));
+        CreateCompletedAsyncTask<DgnDbRepositoryResult>(DgnDbRepositoryResult::Error(DgnDbServerError::Id::FileNotFound));
     Utf8String dbFileName = tempdb->GetDbFileName();
     BeFileName fileName = tempdb->GetFileName();
     Utf8String dbFileId = tempdb->GetDbGuid().ToString();
@@ -339,7 +343,7 @@ AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::CreateNewRepository(Dgn::DgnDbP
                     {
                     if (!result.IsSuccess())
                         {
-                        finalResult->SetError(DgnDbServerError(result.GetError().GetDisplayMessage().c_str()));
+                        finalResult->SetError(DgnDbServerError(DgnDbServerError::Id::AzureError, result.GetError().GetDisplayMessage().c_str(), result.GetError().GetDisplayDescription().c_str()));
                         return;
                         }
 
@@ -367,10 +371,10 @@ AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::CreateNewRepository(Dgn::DgnDbP
 AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::CreateNewRepository(Dgn::DgnDbPtr db, bool published, HttpRequest::ProgressCallbackCR callback,
     ICancellationTokenPtr cancellationToken)
     {
-    BeAssert(DgnDbServerHost::IsInitialized() && Error::NotInitialized);
+    BeAssert(DgnDbServerHost::IsInitialized());
     if (!db.IsValid() || !db->GetFileName().DoesPathExist())
         {
-        return CreateCompletedAsyncTask<DgnDbRepositoryResult>(DgnDbRepositoryResult::Error(Error::DbNotFound));
+        return CreateCompletedAsyncTask<DgnDbRepositoryResult>(DgnDbRepositoryResult::Error(DgnDbServerError::Id::FileNotFound));
         }
     Utf8String name;
     db->QueryProperty(name, BeSQLite::PropertySpec(Db::Properties::Name, Db::Properties::ProjectNamespace));
@@ -385,23 +389,19 @@ AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::CreateNewRepository(Dgn::DgnDbP
 AsyncTaskPtr<DgnDbBriefcaseResult> DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, bool doSync, HttpRequest::ProgressCallbackCR callback,
     ICancellationTokenPtr cancellationToken)
     {
-    BeAssert(DgnDbServerHost::IsInitialized() && Error::NotInitialized);
+    BeAssert(DgnDbServerHost::IsInitialized());
     if (!db.IsValid() || !db->GetFileName().DoesPathExist())
         {
-        return CreateCompletedAsyncTask<DgnDbBriefcaseResult>(DgnDbBriefcaseResult::Error(Error::DbNotFound));
+        return CreateCompletedAsyncTask<DgnDbBriefcaseResult>(DgnDbBriefcaseResult::Error(DgnDbServerError::Id::FileNotFound));
         }
     if (!m_credentials.IsValid() && !m_customHandler)
         {
-        return CreateCompletedAsyncTask<DgnDbBriefcaseResult>(DgnDbBriefcaseResult::Error(Error::InvalidCredentials));
-        }
-    if (db->GetBriefcaseId().IsMasterId())
-        {
-        return CreateCompletedAsyncTask<DgnDbBriefcaseResult>(DgnDbBriefcaseResult::Error(Error::MasterId));
+        return CreateCompletedAsyncTask<DgnDbBriefcaseResult>(DgnDbBriefcaseResult::Error(DgnDbServerError::Id::CredentialsNotSet));
         }
     RepositoryInfoPtr repository = RepositoryInfo::ReadRepositoryInfo(*db);
-    if (!repository)
+    if (!repository || db->GetBriefcaseId().IsMasterId())
         {
-        return CreateCompletedAsyncTask<DgnDbBriefcaseResult>(DgnDbBriefcaseResult::Error(Error::DbNotRepository));
+        return CreateCompletedAsyncTask<DgnDbBriefcaseResult>(DgnDbBriefcaseResult::Error(DgnDbServerError::Id::FileIsNotBriefcase));
         }
     std::shared_ptr<DgnDbBriefcaseResult> finalResult = std::make_shared<DgnDbBriefcaseResult>();
     return ConnectToRepository(repository)->Then([=] (const DgnDbRepositoryConnectionResult& connectionResult)
@@ -436,19 +436,19 @@ AsyncTaskPtr<DgnDbBriefcaseResult> DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, 
 AsyncTaskPtr<DgnDbFileNameResult> DgnDbClient::AquireBriefcase(Utf8StringCR repositoryId, BeFileNameCR localPath, bool doSync,
     HttpRequest::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken)
     {
-    BeAssert(DgnDbServerHost::IsInitialized() && Error::NotInitialized);
+    BeAssert(DgnDbServerHost::IsInitialized());
     std::shared_ptr<DgnDbServerHost> host = std::make_shared<DgnDbServerHost>();
     if (repositoryId.empty())
         {
-        return CreateCompletedAsyncTask<DgnDbFileNameResult>(DgnDbFileNameResult::Error(Error::InvalidRepository));
+        return CreateCompletedAsyncTask<DgnDbFileNameResult>(DgnDbFileNameResult::Error(DgnDbServerError::Id::InvalidRepostioryName));
         }
     if (m_serverUrl.empty())
         {
-        return CreateCompletedAsyncTask<DgnDbFileNameResult>(DgnDbFileNameResult::Error(Error::InvalidServerURL));
+        return CreateCompletedAsyncTask<DgnDbFileNameResult>(DgnDbFileNameResult::Error(DgnDbServerError::Id::InvalidServerURL));
         }
     if (!m_credentials.IsValid() && !m_customHandler)
         {
-        return CreateCompletedAsyncTask<DgnDbFileNameResult>(DgnDbFileNameResult::Error(Error::InvalidCredentials));
+        return CreateCompletedAsyncTask<DgnDbFileNameResult>(DgnDbFileNameResult::Error(DgnDbServerError::Id::CredentialsNotSet));
         }
     if (!localPath.GetDirectoryName().DoesPathExist())
         {
@@ -529,8 +529,8 @@ AsyncTaskPtr<DgnDbFileNameResult> DgnDbClient::AquireBriefcase(Utf8StringCR repo
                                 }
                             else
                                 {
-                                DgnDbServerHost::Forget (host);
-                                finalResult->SetError (Error::CantWriteToDgnDb);
+                                finalResult->SetError(DgnDbServerError(DgnDbServerError::Id::DgnDbError, db->GetLastError(&status).c_str()));
+                                DgnDbServerHost::Forget(host);
                                 }
                             });
                         }
