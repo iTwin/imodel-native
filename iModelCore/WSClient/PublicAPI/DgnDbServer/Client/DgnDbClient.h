@@ -87,7 +87,7 @@ public:
     //! @param[in] callback Progress callback for the file upload.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has created repository information as the result.
-    DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnDbRepositoryResult>    CreateNewRepository   (Dgn::DgnDbPtr db, Utf8StringCR repositoryId, Utf8StringCR description, bool publish = true, 
+    DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnDbRepositoryResult>    CreateNewRepository   (Dgn::DgnDbPtr db, Utf8StringCR repositoryName, Utf8StringCR description, bool publish = true,
                                                                                            HttpRequest::ProgressCallbackCR  callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Download a briefcase of a repository from the server.

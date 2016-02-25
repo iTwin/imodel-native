@@ -56,11 +56,11 @@ IHttpHandlerPtr            customHandler
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-RepositoryInfoPtr RepositoryInfoParser (Utf8StringCR repositoryUrl, JsonValueCR value)
+RepositoryInfoPtr RepositoryInfoParser (Utf8StringCR repositoryUrl, Utf8StringCR repositoryId, JsonValueCR value)
     {
     DateTime uploadedDate = DateTime();
     DateTime::FromString(uploadedDate, static_cast<Utf8CP>(value[ServerSchema::Property::UploadedDate].asCString()));
-    return RepositoryInfo::Create(repositoryUrl, value[ServerSchema::Property::Id].asString(), value[ServerSchema::Property::FileId].asString(),
+    return RepositoryInfo::Create(repositoryUrl, repositoryId, value[ServerSchema::Property::FileId].asString(),
                                   value[ServerSchema::Property::URL].asString(), value[ServerSchema::Property::Description].asString(),
                                   value[ServerSchema::Property::UserUploaded].asString(), uploadedDate);
     }
@@ -86,7 +86,7 @@ AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::UpdateRepositoryInfo (ICanc
         {
         if (response.IsSuccess())
             {
-            m_repositoryInfo = RepositoryInfoParser(m_repositoryInfo->GetServerURL(),
+            m_repositoryInfo = RepositoryInfoParser(m_repositoryInfo->GetServerURL(), response.GetValue ().GetJsonValue ()[ServerSchema::Instances][0][ServerSchema::InstanceId].asCString (),
                                                     response.GetValue().GetJsonValue()[ServerSchema::Instances][0][ServerSchema::Properties]);
             return DgnDbResult::Success();
             }
@@ -299,12 +299,16 @@ const DgnLockSet&               locks,
 const BeBriefcaseId&            briefcaseId,
 Utf8StringCR                    releasedWithRevisionId,
 WSChangeset&                    changeset,
-const WSChangeset::ChangeState& changeState
+const WSChangeset::ChangeState& changeState,
+bool                            includeOnlyExclusive = false
 )
     {
     bvector<uint64_t> objects[9];
     for (auto& lock : locks)
         {
+        if (includeOnlyExclusive && LockLevel::Exclusive != lock.GetLevel ())
+            continue;
+
         int index = static_cast<int32_t>(lock.GetType ()) * 3 + static_cast<int32_t>(lock.GetLevel ());
         if (index >= 0 && index <= 8)
             objects[index].push_back (lock.GetId ().GetValue ());
@@ -785,7 +789,7 @@ ICancellationTokenPtr           cancellationToken
     LockRequest usedLocks;
     usedLocks.FromRevision (*revision);
     if (!usedLocks.IsEmpty ())
-        SetLocksJsonRequestToChangeSet (usedLocks.GetLockSet (), briefcaseId, revision->GetId (), *changeset, WSChangeset::ChangeState::Modified);
+        SetLocksJsonRequestToChangeSet (usedLocks.GetLockSet (), briefcaseId, revision->GetId (), *changeset, WSChangeset::ChangeState::Modified, true);
 
     //Push Revision initialization request and Locks update in a single batch
     Json::Value requestJson;
