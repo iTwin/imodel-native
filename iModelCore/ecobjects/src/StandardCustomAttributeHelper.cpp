@@ -20,26 +20,8 @@ const DateTime::Info DateTimeInfo::s_default = DateTime::Info (DateTimeInfo::DEF
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-DateTimeInfo::DateTimeInfo ()
-    : m_isKindNull (true), m_isComponentNull (true)
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 09/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-DateTimeInfo::DateTimeInfo (DateTime::Info const& metadata)
-    : m_isKindNull (false), m_isComponentNull (false), m_info (metadata)
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 02/2013
-//+---------------+---------------+---------------+---------------+---------------+------
 DateTimeInfo::DateTimeInfo (bool isKindNull, DateTime::Kind kind, bool isComponentNull, DateTime::Component component)
-    : m_isKindNull (isKindNull), m_isComponentNull (isComponentNull), m_info (kind, component)
-    {
-    }
+    : m_isKindNull (isKindNull), m_isComponentNull (isComponentNull), m_info (kind, component) {}
 
 
 //---------------------------------------------------------------------------------------
@@ -47,19 +29,10 @@ DateTimeInfo::DateTimeInfo (bool isKindNull, DateTime::Kind kind, bool isCompone
 //+---------------+---------------+---------------+---------------+---------------+------
 bool DateTimeInfo::operator== (DateTimeInfo const& rhs) const
     {
-    return (
-            ((m_isKindNull && rhs.m_isKindNull) || (!m_isKindNull && !rhs.m_isKindNull && m_info.GetKind () == rhs.m_info.GetKind ())) &&
-            ((m_isComponentNull && rhs.m_isComponentNull) || (!m_isComponentNull && !rhs.m_isComponentNull && m_info.GetComponent () == rhs.m_info.GetComponent ()))
-            );
+    return ((m_isKindNull && rhs.m_isKindNull) || (!m_isKindNull && !rhs.m_isKindNull && m_info.GetKind() == rhs.m_info.GetKind())) &&
+        ((m_isComponentNull && rhs.m_isComponentNull) || (!m_isComponentNull && !rhs.m_isComponentNull && m_info.GetComponent() == rhs.m_info.GetComponent()));
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 08/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-bool DateTimeInfo::operator!= (DateTimeInfo const& rhs) const
-    {
-    return !(*this == rhs);
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 02/2013
@@ -80,43 +53,13 @@ DateTime::Info DateTimeInfo::GetInfo (bool useDefaultIfUnset) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-bool DateTimeInfo::IsNull () const
-    {
-    return IsKindNull () && IsComponentNull ();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 02/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-bool DateTimeInfo::IsKindNull () const
-    {
-    return m_isKindNull;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 02/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-bool DateTimeInfo::IsComponentNull () const
-    {
-    return m_isComponentNull;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 02/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-DateTime::Info const& DateTimeInfo::GetInfo () const
-    {
-    return m_info;
-    }
+DateTime::Info const& DateTimeInfo::GetInfo () const { return m_info; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-DateTime::Info const& DateTimeInfo::GetDefault ()
-    {
-    return s_default;
-    }
+DateTime::Info const& DateTimeInfo::GetDefault () { return s_default; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 02/2013
@@ -390,6 +333,7 @@ public:
 
     static ECObjectsStatus TryGetTrimmedValue(Utf8StringR val, IECInstanceCR ca, Utf8CP ecPropertyAccessString);
     static ECObjectsStatus TryGetTrimmedValue(Utf8StringR val, IECInstanceCR ca, uint32_t propIndex, uint32_t arrayIndex);
+    static ECObjectsStatus TryGetIntegerValue(int& val, IECInstanceCR ca, Utf8CP ecPropertyAccessString);
     static ECObjectsStatus TryGetBooleanValue(bool& val, IECInstanceCR ca, Utf8CP ecPropertyAccessString);
     };
 
@@ -528,7 +472,15 @@ ECObjectsStatus ECDbClassMap::TryGetMapStrategy(MapStrategy& mapStrategy) const
     if (ECObjectsStatus::Success != stat)
         return stat;
 
-    mapStrategy = MapStrategy(strategy.c_str(), mapStrategyOptions.c_str(), appliesToSubclasses);
+    int minimumSharedColumnCount = MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT;
+    stat = CustomAttributeReader::TryGetIntegerValue(minimumSharedColumnCount, *m_ca, "MapStrategy.MinimumSharedColumnCount");
+    //MinimumSharedColumnCount property was added in a later version of the schema. So PropertyNotFound error would indicate
+    //that the CA references an older version of the ECDbMap schema which did not have the property yet. This is no error,
+    //and we just use the unset value
+    if (ECObjectsStatus::Success != stat && ECObjectsStatus::PropertyNotFound != stat)
+        return stat;
+
+    mapStrategy = MapStrategy(strategy.c_str(), mapStrategyOptions.c_str(), minimumSharedColumnCount, appliesToSubclasses);
     return ECObjectsStatus::Success;
     }
 
@@ -903,6 +855,27 @@ ECObjectsStatus CustomAttributeReader::TryGetTrimmedValue(Utf8StringR strVal, EC
         strVal = val.GetUtf8CP();
         strVal.Trim();
         }
+
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   02 / 2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static 
+ECObjectsStatus CustomAttributeReader::TryGetIntegerValue(int& val, IECInstanceCR ca, Utf8CP ecPropertyAccessString)
+    {
+    ECValue v;
+    ECObjectsStatus stat = ca.GetValue(v, ecPropertyAccessString);
+    if (ECObjectsStatus::Success != stat)
+        {
+        LOG.errorv("Could not retrieve value of ECProperty '%s' of the '%s' custom attribute ECInstance.",
+                   ecPropertyAccessString, ca.GetClass().GetFullName());
+        return stat;
+        }
+
+    if (!v.IsNull())
+        val = v.GetInteger();
 
     return ECObjectsStatus::Success;
     }

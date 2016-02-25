@@ -808,16 +808,16 @@ ExpressionStatus InstanceListExpressionContext::_GetValue(EvaluationResultR eval
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-MethodReferenceStandard::MethodReferenceStandard(ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod)
-    : m_staticMethod(staticMethod), m_instanceMethod(instanceMethod), m_valueListMethod(NULL)
+MethodReferenceStandard::MethodReferenceStandard(ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod, void* context)
+    : m_staticMethod(staticMethod), m_instanceMethod(instanceMethod), m_valueListMethod(NULL), m_context(context)
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-MethodReferenceStandard::MethodReferenceStandard(ExpressionValueListMethod_t valueListMethod)
-    : m_staticMethod(NULL), m_instanceMethod(NULL), m_valueListMethod(valueListMethod)
+MethodReferenceStandard::MethodReferenceStandard(ExpressionValueListMethod_t valueListMethod, void* context)
+    : m_staticMethod(NULL), m_instanceMethod(NULL), m_valueListMethod(valueListMethod), m_context(context)
     {
     //
     }
@@ -830,7 +830,7 @@ ExpressionStatus MethodReferenceStandard::_InvokeStaticMethod (EvaluationResultR
     if (NULL == m_staticMethod)
         return ExpressionStatus::StaticMethodRequired;
 
-    return (*m_staticMethod)(evalResult, arguments);
+    return (*m_staticMethod)(evalResult, m_context, arguments);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -838,34 +838,8 @@ ExpressionStatus MethodReferenceStandard::_InvokeStaticMethod (EvaluationResultR
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus MethodReferenceStandard::_InvokeValueListMethod (EvaluationResultR evalResult, IValueListResultCR valueList, EvaluationResultVector& args)
     {
-    return NULL != m_valueListMethod ? (*m_valueListMethod)(evalResult, valueList, args) : ExpressionStatus::InstanceMethodRequired;
+    return NULL != m_valueListMethod ? (*m_valueListMethod)(evalResult, m_context, valueList, args) : ExpressionStatus::InstanceMethodRequired;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2013
-//---------------------------------------------------------------------------------------
-MethodReferenceStaticWithContext::MethodReferenceStaticWithContext(ExpressionStaticMethodWithContext_t staticMethod, void*methodData)
-    : m_staticMethod(staticMethod), m_context(methodData) {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2013
-//---------------------------------------------------------------------------------------
-MethodReferencePtr MethodReferenceStaticWithContext::Create(ExpressionStaticMethodWithContext_t staticMethod, void*context)
-    {
-    return new MethodReferenceStaticWithContext(staticMethod, context);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2013
-//---------------------------------------------------------------------------------------
-ExpressionStatus MethodReferenceStaticWithContext::_InvokeStaticMethod (EvaluationResultR evalResult, EvaluationResultVector& arguments)
-    {
-    if (NULL == m_staticMethod)
-        return ExpressionStatus::StaticMethodRequired;
-
-    return (*m_staticMethod)(evalResult, m_context, arguments);
-    }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
@@ -875,23 +849,23 @@ ExpressionStatus MethodReferenceStandard::_InvokeInstanceMethod (EvaluationResul
     if (NULL == m_instanceMethod)
         return ExpressionStatus::InstanceMethodRequired;
 
-    return (*m_instanceMethod)(evalResult, instanceData, arguments);
+    return (*m_instanceMethod)(evalResult, m_context, instanceData, arguments);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-MethodReferencePtr MethodReferenceStandard::Create(ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod)
+MethodReferencePtr MethodReferenceStandard::Create(ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod, void* context)
     {
-    return new MethodReferenceStandard(staticMethod, instanceMethod);
+    return new MethodReferenceStandard(staticMethod, instanceMethod, context);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-MethodReferencePtr MethodReferenceStandard::Create (ExpressionValueListMethod_t method)
+MethodReferencePtr MethodReferenceStandard::Create (ExpressionValueListMethod_t method, void* context)
     {
-    return new MethodReferenceStandard (method);
+    return new MethodReferenceStandard (method, context);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -915,9 +889,9 @@ MethodSymbol::MethodSymbol (Utf8CP name, ExpressionValueListMethod_t method)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-MethodSymbolPtr MethodSymbol::Create(Utf8CP name, ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod)
+MethodSymbolPtr MethodSymbol::Create(Utf8CP name, ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod, void* context)
     {
-    MethodReferencePtr  ref = MethodReferenceStandard::Create(staticMethod, instanceMethod);
+    MethodReferencePtr  ref = MethodReferenceStandard::Create(staticMethod, instanceMethod, context);
     return new MethodSymbol(name, *ref);
     }
 
@@ -927,15 +901,6 @@ MethodSymbolPtr MethodSymbol::Create(Utf8CP name, ExpressionStaticMethod_t stati
 MethodSymbolPtr MethodSymbol::Create (Utf8CP name, ExpressionValueListMethod_t method)
     {
     return new MethodSymbol (name, method);
-    }
-    
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2013
-//---------------------------------------------------------------------------------------
-MethodSymbolPtr MethodSymbol::Create(Utf8CP name, ExpressionStaticMethodWithContext_t staticMethod, void*context)
-    {
-    MethodReferencePtr  ref = MethodReferenceStaticWithContext::Create(staticMethod, context);
-    return new MethodSymbol(name, *ref);
     }
 
 /*---------------------------------------------------------------------------------**//**

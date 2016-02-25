@@ -41,7 +41,7 @@ struct SchemaXmlReaderImpl
         virtual SchemaReadStatus ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector&  classes) = 0;
         SchemaReadStatus ReadEnumerationsFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode);
         
-        ECSchemaElementsOrderP GetSchemaElementOrder(BeXmlNodeR schemaNode);
+        void PopulateSchemaElementOrder(ECSchemaElementsOrder& elementOrder, BeXmlNodeR schemaNode);
         virtual bool IsECClassElementNode(BeXmlNodeR schemaNode);
         virtual bool IsECEnumerationElementNode(BeXmlNodeR schemaNode);
     };
@@ -594,9 +594,9 @@ SchemaReadStatus SchemaXmlReader3::ReadClassContentsFromXml(ECSchemaPtr& schemaO
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   
 //---------------+---------------+---------------+---------------+---------------+-------
-ECSchemaElementsOrderP SchemaXmlReaderImpl::GetSchemaElementOrder(BeXmlNodeR schemaNode)
+ void SchemaXmlReaderImpl::PopulateSchemaElementOrder(ECSchemaElementsOrder& elementOrder, BeXmlNodeR schemaNode)
     {
-    ECSchemaElementsOrderP elementOrder = new ECSchemaElementsOrder();
+    elementOrder.SetPreserveElementOrder(true);
     for (BeXmlNodeP candidateNode = schemaNode.GetFirstChild(); nullptr != candidateNode; candidateNode = candidateNode->GetNextSibling())
         {
         Utf8String typeName;
@@ -609,14 +609,13 @@ ECSchemaElementsOrderP SchemaXmlReaderImpl::GetSchemaElementOrder(BeXmlNodeR sch
 
         if (IsECClassElementNode(*candidateNode))
             {
-            elementOrder->AddElement(typeName.c_str(), ECSchemaElementType::ECClass);
+            elementOrder.AddElement(typeName.c_str(), ECSchemaElementType::ECClass);
             }
         else if(IsECEnumerationElementNode(*candidateNode))
             {
-            elementOrder->AddElement(typeName.c_str(), ECSchemaElementType::ECEnumeration);
+            elementOrder.AddElement(typeName.c_str(), ECSchemaElementType::ECEnumeration);
             }
         }
-    return elementOrder;
     }
 
 //---------------------------------------------------------------------------------------
@@ -777,11 +776,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
         reader = new SchemaXmlReader3(m_schemaContext, m_xmlDom);
 
     if (SchemaReadStatus::Success != (status = reader->ReadSchemaReferencesFromXml(schemaOut, *schemaNode)))
-        {
-        m_schemaContext.RemoveSchema(*schemaOut);
-        schemaOut = NULL;
         return status;
-        }
 
     readingSchemaReferences.Stop();
     LOG.tracev("Reading schema references for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingSchemaReferences.GetElapsedSeconds());
@@ -791,11 +786,8 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     status = reader->ReadClassStubsFromXml(schemaOut, *schemaNode, classes);
 
     if (SchemaReadStatus::Success != status)
-        {
-        m_schemaContext.RemoveSchema(*schemaOut);
-        schemaOut = NULL;
         return status;
-        }
+    
     readingClassStubs.Stop();
     LOG.tracev("Reading class stubs for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingClassStubs.GetElapsedSeconds());
 
@@ -803,22 +795,16 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     status = reader->ReadEnumerationsFromXml(schemaOut, *schemaNode);
 
     if (SchemaReadStatus::Success != status)
-        {
-        m_schemaContext.RemoveSchema(*schemaOut);
-        schemaOut = nullptr;
         return status;
-        }
+    
     readingEnumerations.Stop();
     LOG.tracev("Reading enumerations stubs for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingEnumerations.GetElapsedSeconds());
 
     // NEEDSWORK ECClass inheritance (base classes, properties & relationship endpoints)
     StopWatch readingClassContents("Reading class contents", true);
     if (SchemaReadStatus::Success != (status = reader->ReadClassContentsFromXml(schemaOut, classes)))
-        {
-        m_schemaContext.RemoveSchema(*schemaOut);
-        schemaOut = NULL;
         return status;
-        }
+    
     readingClassContents.Stop();
     LOG.tracev("Reading class contents for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingClassContents.GetElapsedSeconds());
 
@@ -830,7 +816,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     // If switch is set in reading context, the class order of the schema xml will be preserved that it can be written out in the same order.
     if (m_schemaContext.GetPreserveElementOrder())
         {
-        schemaOut->m_serializationOrder = reader->GetSchemaElementOrder(*schemaNode);
+        reader->PopulateSchemaElementOrder(schemaOut->m_serializationOrder, *schemaNode);
         }
 
     //Compute the schema checkSum
@@ -849,7 +835,6 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
 //---------------+---------------+---------------+---------------+---------------+-------
 SchemaXmlWriter::SchemaXmlWriter(BeXmlWriterR xmlWriter, ECSchemaCR ecSchema, int ecXmlVersionMajor, int ecXmlVersionMinor) : m_xmlWriter(xmlWriter), m_ecSchema(ecSchema), m_ecXmlVersionMajor(ecXmlVersionMajor), m_ecXmlVersionMinor(ecXmlVersionMinor)
     {
-    m_context.SetPreserveElementOrder(ecSchema.m_serializationOrder != nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -912,7 +897,7 @@ SchemaWriteStatus SchemaXmlWriter::WriteClass(ECClassCR ecClass)
 
     // If schema element order shouldn't be preserved, baseclasses and contraints will be written
     //  before the actual class to write. Else the order given by the WriteClass calls is used.
-    if (!m_context.GetPreserveElementOrder())
+    if (!ecClass.GetSchema().m_serializationOrder.GetPreserveElementOrder())
         {
         // write the base classes first.
         for (ECClassP baseClass : ecClass.GetBaseClasses())
@@ -1001,14 +986,14 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
     m_ecSchema.WriteCustomAttributes(m_xmlWriter);
 
     // if there is no Element Order specified, create a new default one (enumerations, classes) ordered alphabetically.
-    ECSchemaElementsOrderP serializationOrder = m_ecSchema.m_serializationOrder;
-    if (!m_context.GetPreserveElementOrder())
+    auto& serializationOrder = m_ecSchema.m_serializationOrder;
+    if (!serializationOrder.GetPreserveElementOrder())
         {
-        ECSchemaElementsOrder::CreateAlphabeticalOrder(serializationOrder, m_ecSchema);
+        serializationOrder.CreateAlphabeticalOrder(m_ecSchema);
         }
     
     // Serializes the Class and Enumerations in the given order...
-    for (auto schemaElementEntry : *serializationOrder)
+    for (auto schemaElementEntry : serializationOrder)
         {
         Utf8CP elementName = schemaElementEntry.first.c_str();
         if (schemaElementEntry.second == ECSchemaElementType::ECClass)
