@@ -20,7 +20,7 @@ struct UnitsTests : UnitsTestFixture
     {
     typedef std::function<void(bvector<Utf8String>&)> CSVLineProcessor;
 
-    static void TestUnitConversion(double fromVal, Utf8CP fromUnitName, double expectedVal, Utf8CP targetUnitName, double tolerance, 
+    static bool TestUnitConversion(double fromVal, Utf8CP fromUnitName, double expectedVal, Utf8CP targetUnitName, double tolerance, 
                                    bvector<Utf8String>& loadErrors, bvector<Utf8String>& conversionErrors, bool showDetailLogs = false);
 
     static Utf8String ParseUOM(Utf8CP unitName, bset<Utf8String>& notMapped)
@@ -77,7 +77,7 @@ struct UnitsTests : UnitsTestFixture
 /*---------------------------------------------------------------------------------**//**
 // @bsiclass                                     Basanta.Kharel                 12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UnitsTests::TestUnitConversion (double fromVal, Utf8CP fromUnitName, double expectedVal, Utf8CP targetUnitName, double tolerance, 
+bool UnitsTests::TestUnitConversion (double fromVal, Utf8CP fromUnitName, double expectedVal, Utf8CP targetUnitName, double tolerance, 
                                      bvector<Utf8String>& loadErrors, bvector<Utf8String>& conversionErrors, bool showDetailLogs)
     {
     //if either units are not in the library conversion is not possible
@@ -88,8 +88,7 @@ void UnitsTests::TestUnitConversion (double fromVal, Utf8CP fromUnitName, double
         {
         Utf8PrintfString loadError("Could not convert from %s to %s because could not load one of the units", fromUnitName, targetUnitName);
         loadErrors.push_back(loadError);
-        EXPECT_TRUE(false) << "Failed due to missing units: " << fromUnitName << ", " << targetUnitName;
-        return;
+        return false;
         }
 
     // Bad
@@ -118,7 +117,7 @@ void UnitsTests::TestUnitConversion (double fromVal, Utf8CP fromUnitName, double
         Utf8PrintfString formattedText("Conversion from %s to %s. Input: %lf Output: %lf Expected: %lf Tolerance: %.9f", fromUnitName, targetUnitName, fromVal, convertedVal, expectedVal, tolerance);
         conversionErrors.push_back(formattedText);
         }
-    ASSERT_FALSE(std::isnan(convertedVal) || !std::isfinite(convertedVal)) << "Conversion from " << fromUnitName << " to " << targetUnitName << " resulted in an invalid number";
+    EXPECT_FALSE(std::isnan(convertedVal) || !std::isfinite(convertedVal)) << "Conversion from " << fromUnitName << " to " << targetUnitName << " resulted in an invalid number";
     EXPECT_NEAR(expectedVal, convertedVal, tolerance)<<  "Conversion from "<< fromUnitName << " to " << targetUnitName <<". Input : " << fromVal << ", Output : " << convertedVal << ", ExpectedOutput : " << expectedVal << "Tolerance : " << tolerance<< "\n";
 
     if (showDetailLogs)
@@ -126,6 +125,7 @@ void UnitsTests::TestUnitConversion (double fromVal, Utf8CP fromUnitName, double
         NativeLogging::LoggingConfig::SetSeverity("UnitsNative", NativeLogging::SEVERITY::LOG_ERROR);
         NativeLogging::LoggingConfig::SetSeverity("Performance", NativeLogging::SEVERITY::LOG_ERROR);
         }
+    return true;
     }
     
 TEST_F (UnitsTests, UnitsMapping)
@@ -208,29 +208,178 @@ TEST_F(UnitsTests, PhenomenonAndUnitDimensionsMatch)
         }
     }
 
+TEST_F(UnitsTests, UnitsConversions_Complex)
+    {
+    bvector<Utf8String> loadErrors;
+    bvector<Utf8String> conversionErrors;
+
+    TestUnitConversion(30.48 * 60, "CENTIMETRE_PER_HOUR", 1.0, "FOOT_PER_MINUTE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(30.48 * 3600, "CENTIMETRE_PER_HOUR", 1.0, "FOOT_PER_SECOND", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(2.54 * 60, "CENTIMETRE_PER_HOUR", 1.0, "INCH_PER_MINUTE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(2.54 * 3600, "CENTIMETRE_PER_HOUR", 1.0, "INCH_PER_SECOND", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1853.184 * 100, "CENTIMETRE_PER_HOUR", 1.0, "KNOT", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(30.48 * 5280, "CENTIMETRE_PER_HOUR", 1.0, "MILE_PER_HOUR", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0 / 24.0, "CENTIMETRE_PER_HOUR", 1.0, "CENTIMETRE_PER_DAY", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(30.48 / 24.0, "CENTIMETRE_PER_HOUR", 1.0, "FOOT_PER_DAY", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(2.54 / 24.0, "CENTIMETRE_PER_HOUR", 1.0, "INCH_PER_DAY", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(100.0 / 24.0, "CENTIMETRE_PER_HOUR", 1.0, "METRE_PER_DAY", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(0.1 / 24.0, "CENTIMETRE_PER_HOUR", 1.0, "MILLIMETRE_PER_DAY", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(30.48 * 60e6, "CENTIMETRE_PER_HOUR", 1.0e6, "FOOT_PER_MINUTE", 1.0e-6, loadErrors, conversionErrors);
+    TestUnitConversion(30.48 * 3600e6, "CENTIMETRE_PER_HOUR", 1.0e6, "FOOT_PER_SECOND", 1.0e-4, loadErrors, conversionErrors);
+    TestUnitConversion(2.54 * 60e6, "CENTIMETRE_PER_HOUR", 1.0e6, "INCH_PER_MINUTE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(2.54 * 3600e6, "CENTIMETRE_PER_HOUR", 1.0e6, "INCH_PER_SECOND", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1853.184 * 100 * 1e6, "CENTIMETRE_PER_HOUR", 1.0e6, "KNOT", 1.0e-5, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e6 * 30.48 * 5280, "CENTIMETRE_PER_HOUR", 1.0e6, "MILE_PER_HOUR", 1.0e-4, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e6 / 24.0, "CENTIMETRE_PER_HOUR", 1.0e6, "CENTIMETRE_PER_DAY", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(30.48e6 / 24.0, "CENTIMETRE_PER_HOUR", 1.0e6, "FOOT_PER_DAY", 1.0e-2, loadErrors, conversionErrors);
+    TestUnitConversion(2.54e6 / 24.0, "CENTIMETRE_PER_HOUR", 1.0e6, "INCH_PER_DAY", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e8 / 24.0, "CENTIMETRE_PER_HOUR", 1.0e6, "METRE_PER_DAY", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e5 / 24.0, "CENTIMETRE_PER_HOUR", 1.0e6, "MILLIMETRE_PER_DAY", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(9.80665 / 1.0e-5, "DYNE", 1.0, "KILOGRAM_FORCE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1000 / 1.0e-5, "DYNE", 1.0, "KILONEWTON", 1.0e-5, loadErrors, conversionErrors);
+    TestUnitConversion(0.001 / 1.0e-5, "DYNE", 1.0, "MILLINEWTON", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0 / 1.0e-5, "DYNE", 1.0, "NEWTON", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(9.80665e6 / 1.0e-5, "DYNE", 1.0e6, "KILOGRAM_FORCE", 1.0e-3, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e5 / 1.01325e5, "ATMOSPHERE", 1.0, "BAR", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(((1 - 1.01325) * 1.0e5) / 1.01325e5, "ATMOSPHERE", 1.0, "BAR_GAUGE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(0.1 / 1.01325e5, "ATMOSPHERE", 1.0, "BARYE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(2.989067e3 / 1.01325e5, "ATMOSPHERE", 1.0, "FOOT_OF_H2O_CONVENTIONAL", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(249.1083 / 1.01325e5, "ATMOSPHERE", 1.0, "INCH_OF_H2O_AT_32_FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(2.49082e2 / 1.01325e5, "ATMOSPHERE", 1.0, "INCH_OF_H2O_AT_39_2_FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(2.4884e2 / 1.01325e5, "ATMOSPHERE", 1.0, "INCH_OF_H2O_AT_60_FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(3.38638e3 / 1.01325e5, "ATMOSPHERE", 1.0, "INCH_OF_HG_AT_32_FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(3.386389e3 / 1.01325e5, "ATMOSPHERE", 1.0, "INCH_OF_HG_CONVENTIONAL", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(3.37685e3 / 1.01325e5, "ATMOSPHERE", 1.0, "INCH_OF_HG_AT_60_FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(9.80665e4 / 1.01325e5, "ATMOSPHERE", 1.0, "KILOGRAM_FORCE_PER_CENTIMETRE_SQUARED", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(((1 - 101.325 / 98.0665) * 9.80665e4) / 1.01325e5, "ATMOSPHERE", 1.0, "KILOGRAM_FORCE_PER_CENTIMETRE_SQUARED_GAUGE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(9.80665 / 1.01325e5, "ATMOSPHERE", 1.0, "KILOGRAM_FORCE_PER_METRE_SQUARED", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1000 / 1.01325e5, "ATMOSPHERE", 1.0, "KILOPASCAL", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(((1 - 101.325) * 1000) / 1.01325e5, "ATMOSPHERE", 1.0, "KILOPASCAL_GAUGE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1000000 / 1.01325e5, "ATMOSPHERE", 1.0, "MEGAPASCAL", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(((1 - 101.325 / 1000) * 1000000) / 1.01325e5, "ATMOSPHERE", 1.0, "MEGAPASCAL_GAUGE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(9806.65 / 1.01325e5, "ATMOSPHERE", 1.0, "METRE_OF_H2O_CONVENTIONAL", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(9.80665 / 1.01325e5, "ATMOSPHERE", 1.0, "MILLIMETRE_OF_H2O_CONVENTIONAL", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion((3.38638e3 / 25.4) / 1.01325e5, "ATMOSPHERE", 1.0, "MILLIMETRE_OF_HG_AT_32_FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1 / 1.01325e5, "ATMOSPHERE", 1.0, "NEWTON_PER_METRE_SQUARED", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1 / 1.01325e5, "ATMOSPHERE", 1.0, "PASCAL", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(47.88026 / 1.01325e5, "ATMOSPHERE", 1.0, "POUND_FORCE_PER_FOOT_SQUARED", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(6.894757e3 / 1.01325e5, "ATMOSPHERE", 1.0, "POUND_FORCE_PER_INCH_SQUARED", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(((1 - 101.325 / 6.894757) * 6.894757e3) / 1.01325e5, "ATMOSPHERE", 1.0, "POUND_FORCE_PER_INCH_SQUARED_GAUGE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.333224e2 / 1.01325e5, "ATMOSPHERE", 1.0, "TORR", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e2 / 1.01325e5, "ATMOSPHERE", 1.0, "MILLIBAR", 1e-8, loadErrors, conversionErrors);
+    TestUnitConversion(100.0 / 1.01325e5, "ATMOSPHERE", 1.0, "HECTOPASCAL", 1e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1000000.0 * 1.0e5 / 1.01325e5, "ATMOSPHERE", 1000000.0, "BAR", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(((1000000.0 - 1.01325) * 1.0e5) / 1.01325e5, "ATMOSPHERE", 1000000.0, "BAR_GAUGE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(100000 / 1.01325e5, "ATMOSPHERE", 1000000.0, "BARYE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1000000.0 * 2.989067e3 / 1.01325e5, "ATMOSPHERE", 1000000.0, "FOOT_OF_H2O_CONVENTIONAL", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1000000.0 * 249.1083 / 1.01325e5, "ATMOSPHERE", 1000000.0, "INCH_OF_H2O_AT_32_FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1000000.0 * 2.49082e2 / 1.01325e5, "ATMOSPHERE", 1000000.0, "INCH_OF_H2O_AT_39_2_FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1000000.0 * 2.4884e2 / 1.01325e5, "ATMOSPHERE", 1000000.0, "INCH_OF_H2O_AT_60_FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1000000.0 * 3.38638e3 / 1.01325e5, "ATMOSPHERE", 1000000.0, "INCH_OF_HG_AT_32_FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1000000.0 * 3.386389e3 / 1.01325e5, "ATMOSPHERE", 1000000.0, "INCH_OF_HG_CONVENTIONAL", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1000000.0 * 3.37685e3 / 1.01325e5, "ATMOSPHERE", 1000000.0, "INCH_OF_HG_AT_60_FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1000000.0 * 9.80665e4 / 1.01325e5, "ATMOSPHERE", 1000000.0, "KILOGRAM_FORCE_PER_CENTIMETRE_SQUARED", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(((1000000 - 101.325 / 98.0665) * 9.80665e4) / 1.01325e5, "ATMOSPHERE", 1000000.0, "KILOGRAM_FORCE_PER_CENTIMETRE_SQUARED_GAUGE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1000000.0 * 9.80665 / 1.01325e5, "ATMOSPHERE", 1000000.0, "KILOGRAM_FORCE_PER_METRE_SQUARED", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1000000000 / 1.01325e5, "ATMOSPHERE", 1000000.0, "KILOPASCAL", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(((1000000 - 101.325) * 1000) / 1.01325e5, "ATMOSPHERE", 1000000.0, "KILOPASCAL_GAUGE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1000000000000 / 1.01325e5, "ATMOSPHERE", 1000000.0, "MEGAPASCAL", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(((1000000 - 101.325 / 1000) * 1000000) / 1.01325e5, "ATMOSPHERE", 1000000.0, "MEGAPASCAL_GAUGE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1000000.0 * 9806.65 / 1.01325e5, "ATMOSPHERE", 1000000.0, "METRE_OF_H2O_CONVENTIONAL", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1000000.0 * 9.80665 / 1.01325e5, "ATMOSPHERE", 1000000.0, "MILLIMETRE_OF_H2O_CONVENTIONAL", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion((1000000.0 * 133.322) / 1.01325e5, "ATMOSPHERE", 1000000.0, "MILLIMETRE_OF_HG_AT_32_FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1000000 / 1.01325e5, "ATMOSPHERE", 1000000.0, "NEWTON_PER_METRE_SQUARED", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1000000 / 1.01325e5, "ATMOSPHERE", 1000000.0, "PASCAL", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1000000.0 * 1.333224e2 / 1.01325e5, "ATMOSPHERE", 1000000.0, "TORR", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e8 / 1.01325e5, "ATMOSPHERE", 1.0e6, "MILLIBAR", 1e-8, loadErrors, conversionErrors);
+    TestUnitConversion(100.0e6 / 1.01325e5, "ATMOSPHERE", 1.0e6, "HECTOPASCAL", 1e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0 / (1000.0 * 3600.0), "KILOWATT_HOUR_PER_METRE_CUBED", 1.0, "JOULE_PER_METRE_CUBED", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0 / 3600, "KILOWATT_HOUR_PER_METRE_CUBED", 1.0, "KILOJOULE_PER_METRE_CUBED", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0 / 3.6, "KILOWATT_HOUR_PER_METRE_CUBED", 1.0, "MEGAJOULE_PER_METRE_CUBED", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e6 / (1000 * 3600), "KILOWATT_HOUR_PER_METRE_CUBED", 1.0e6, "JOULE_PER_METRE_CUBED", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e6 / 3600, "KILOWATT_HOUR_PER_METRE_CUBED", 1.0e6, "KILOJOULE_PER_METRE_CUBED", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e6 / 3.6, "KILOWATT_HOUR_PER_METRE_CUBED", 1.0e6, "MEGAJOULE_PER_METRE_CUBED", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(3600 * 24, "GRAM_PER_DAY", 1.0, "GRAM_PER_SECOND", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(3.6 * 24, "KILOGRAM_PER_DAY", 1.0, "GRAM_PER_SECOND", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e6 * 3600 * 24, "MICROGRAM_PER_DAY", 1.0, "GRAM_PER_SECOND", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e6 * 3600, "MICROGRAM_PER_HOUR", 1.0, "GRAM_PER_SECOND", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e6 * 60, "MICROGRAM_PER_MINUTE", 1.0, "GRAM_PER_SECOND", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e3 * 3600 * 24, "MILLIGRAM_PER_DAY", 1.0, "GRAM_PER_SECOND", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e3 * 3600, "MILLIGRAM_PER_HOUR", 1.0, "GRAM_PER_SECOND", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e3 * 60, "MILLIGRAM_PER_MINUTE", 1.0, "GRAM_PER_SECOND", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(3600 * 24 * 1.0e6, "GRAM_PER_DAY", 1.0e6, "GRAM_PER_SECOND", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(3600 * 1.0e6, "GRAM_PER_HOUR", 1.0e6, "GRAM_PER_SECOND", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(60 * 1.0e6, "GRAM_PER_MINUTE", 1.0e6, "GRAM_PER_SECOND", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(3.6e6 * 24, "KILOGRAM_PER_DAY", 1.0e6, "GRAM_PER_SECOND", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e12 * 3600 * 24, "MICROGRAM_PER_DAY", 1.0e6, "GRAM_PER_SECOND", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e12 * 3600, "MICROGRAM_PER_HOUR", 1.0e6, "GRAM_PER_SECOND", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e12 * 60, "MICROGRAM_PER_MINUTE", 1.0e6, "GRAM_PER_SECOND", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e9 * 3600 * 24, "MILLIGRAM_PER_DAY", 1.0e6, "GRAM_PER_SECOND", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e9 * 3600, "MILLIGRAM_PER_HOUR", 1.0e6, "GRAM_PER_SECOND", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e9 * 60, "MILLIGRAM_PER_MINUTE", 1.0e6, "GRAM_PER_SECOND", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(5280.0 / 2, "FOOT_PER_MILE", 50.0, "PERCENT_SLOPE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0 / 33.0, "VERTICAL_PER_HORIZONTAL", 33.0, "ONE_OVER_SLOPE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0 / 7000.0, "KILOGRAM_PER_KILOGRAM", 1.0, "GRAIN_MASS_PER_POUND_MASS", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(5.0 / 9.0, "RECIPROCAL_DELTA_DEGREE_FAHRENHEIT", 1.0, "RECIPROCAL_DELTA_DEGREE_CELSIUS", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(5.0 / 9.0, "RECIPROCAL_DELTA_DEGREE_FAHRENHEIT", 1.0, "RECIPROCAL_DELTA_DEGREE_KELVIN", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(9.0 / 5.0, "RECIPROCAL_DELTA_DEGREE_CELSIUS", 1.0, "RECIPROCAL_DELTA_DEGREE_FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(9.0 / 5.0, "RECIPROCAL_DELTA_DEGREE_CELSIUS", 1.0, "RECIPROCAL_DELTA_DEGREE_RANKINE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0 / 0.3048, "ONE_PER_METRE", 1.0, "ONE_PER_FOOT", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0 / 1000.0, "ONE_PER_FOOT", 1.0, "ONE_PER_THOUSAND_FOOT", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0 / 5280.0, "ONE_PER_FOOT", 1.0, "ONE_PER_MILE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e6 / 0.3048, "ONE_PER_METRE", 1.0e6, "ONE_PER_FOOT", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e6 / 1000.0, "ONE_PER_FOOT", 1.0e6, "ONE_PER_THOUSAND_FOOT", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e6 / 5280.0, "ONE_PER_FOOT", 1.0e6, "ONE_PER_MILE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0 / 3600.0, "HERTZ", 1.0, "ONE_PER_HOUR", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0 / 31536000.0, "HERTZ", 1.0, "ONE_PER_YEAR", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0 / 86400.0, "HERTZ", 1.0, "ONE_PER_DAY", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0 / 60.0, "HERTZ", 1.0, "ONE_PER_MINUTE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e6 / 3600.0, "HERTZ", 1.0e6, "ONE_PER_HOUR", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e6 / 31536000.0, "HERTZ", 1.0e6, "ONE_PER_YEAR", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e6 / 86400.0, "HERTZ", 1.0e6, "ONE_PER_DAY", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e6 / 60.0, "HERTZ", 1.0e6, "ONE_PER_MINUTE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0 / 0.00023884589662749597, "JOULE_PER_KILOGRAM_DELTA_DEGREE_KELVIN", 1.0, "BTU_PER_POUND_MASS_PER_DELTA_DEGREE_RANKINE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e6 / 0.00023884589662749597, "JOULE_PER_KILOGRAM_DELTA_DEGREE_KELVIN", 1.0e6, "BTU_PER_POUND_MASS_PER_DELTA_DEGREE_RANKINE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0 / 0.42992261392949271, "KILOJOULE_PER_KILOMOLE", 1.0, "BTU_PER_POUND_MOLE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(1.0e6 / 0.42992261392949271, "KILOJOULE_PER_KILOMOLE", 1.0e6, "BTU_PER_POUND_MOLE", 1.0e-8, loadErrors, conversionErrors);
+    
+    Utf8String loadErrorString("Could not convert because one or both of the following units could not be loaded:\n");
+    for (auto const& val : loadErrors)
+        loadErrorString.append(val + "\n");
+    
+    Utf8String conversionErrorString("Failed to convert between the following units:\n");
+    for (auto const& val : conversionErrors)
+        conversionErrorString.append(val + "\n");
+    EXPECT_EQ(0, loadErrors.size()) << loadErrorString;
+    EXPECT_EQ(0, conversionErrors.size()) << conversionErrorString;
+    }
+
 TEST_F(UnitsTests, UnitsConversion)
     {
     bvector<Utf8String> loadErrors;
     bvector<Utf8String> conversionErrors;
 
-    int numberAttempted = 0;
-    auto lineProcessor = [&loadErrors, &conversionErrors, &numberAttempted](bvector<Utf8String>& tokens)
+    int numberConversions = 0;
+    int numberWhereUnitsFound = 0;
+    auto lineProcessor = [&loadErrors, &conversionErrors, &numberConversions, &numberWhereUnitsFound](bvector<Utf8String>& tokens)
         {
-        ++numberAttempted;
+        ++numberConversions;
         //passing 1.0e-6 to tolerance instead of the csv value
-        TestUnitConversion(GetDouble(tokens[0]), tokens[1].c_str(), GetDouble(tokens[2]), tokens[3].c_str(), 1.0e-6, loadErrors, conversionErrors);
+        if (TestUnitConversion(GetDouble(tokens[0]), tokens[1].c_str(), GetDouble(tokens[2]), tokens[3].c_str(), 1.0e-6, loadErrors, conversionErrors))
+            ++numberWhereUnitsFound;
         };
 
     ReadConversionCsvFile(L"unitcomparisondata.csv", lineProcessor);
 
-    Utf8PrintfString loadErrorString ("Attempted to load %d, error loading :\n", numberAttempted);
+    Utf8PrintfString loadErrorString ("Attempted %d conversions, error loading :\n", numberConversions);
 
     for (auto const& val : loadErrors)
         loadErrorString.append(val + "\n");
 
     EXPECT_EQ(0, loadErrors.size()) << loadErrorString;
 
-    Utf8PrintfString conversionErrorString("Attempted to convert %d, %d failed, %d skipped because of missing units, error Converting :\n", numberAttempted - loadErrors.size(), conversionErrors.size(), loadErrors.size());
+    Utf8PrintfString conversionErrorString("Total number of conversions %d, units found for %d, %d passed, %d failed, %d skipped because of missing units, error Converting :\n", 
+                                           numberConversions, numberWhereUnitsFound, numberWhereUnitsFound - conversionErrors.size(), conversionErrors.size(), loadErrors.size());
 
     for (auto const& val : conversionErrors)
         conversionErrorString.append(val + "\n");

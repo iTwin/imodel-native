@@ -306,6 +306,13 @@ void AddElectricCharge(UnitRegistry& reg)
     reg.AddUnit(ELECTRIC_CHARGE, SI, "COULOMB", "A*S");
     }
 
+void AddElectricPotential(UnitRegistry& reg)
+    {
+    reg.AddUnit(ELECTRIC_POTENTIAL, SI, "VOLT", "N*M*COULOMB(-1)");
+    reg.AddUnit(ELECTRIC_POTENTIAL, SI, "KILOVOLT", "[KILO]*VOLT");
+    reg.AddUnit(ELECTRIC_POTENTIAL, SI, "MEGAVOLT", "[MEGA]*VOLT");
+    }
+
 void AddEnergy(UnitRegistry& reg)
     {
     UnitCP unit = reg.AddUnit(WORK, SI, "J", "N*M");
@@ -586,6 +593,8 @@ void AddTorque(UnitRegistry& reg)
     reg.AddSynonym(unit, "NEWTON_METRE");
     unit = reg.AddUnit(TORQUE, SI, "N_CM", "N*CM*RAD");
     reg.AddSynonym(unit, "NEWTON_CENTIMETRE");
+    unit = reg.AddUnit(TORQUE, USCUSTOM, "LBF_FT", "LBF*FT*RAD");
+    reg.AddSynonym(unit, "POUND_FOOT");
     }
 
 void AddMolarVolume(UnitRegistry& reg)
@@ -990,6 +999,8 @@ void UnitRegistry::AddDefaultUnits ()
     AddForceDensity(reg);
     AddPopulationDensity(reg);
     AddElectricCurrent(reg);
+    AddElectricCharge(reg);
+    AddElectricPotential(reg);
     AddEnergy(reg);
     AddEnergyDensity(reg);
     AddHeatingValue(reg);
