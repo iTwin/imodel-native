@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <wtypes.h>
+#include <random>
 
 #include <ScalableMesh/Foundations/Definitions.h>
 #undef static_assert
@@ -26,6 +27,7 @@ using namespace std;
 #include <ScalableMesh/IScalableMesh.h>
 #include <ScalableMesh/IScalableMeshATP.h>
 #include <ScalableMesh/IScalableMeshSourceCreator.h>
+#include <ScalableMesh/IScalableMeshSources.h>
 #include <ScalableMesh/Import/ScalableMeshData.h>
 #include <ScalableMesh\IScalableMeshSourceImportConfig.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
@@ -36,7 +38,7 @@ using namespace std;
 #include <TerrainModel/Core/bcDTMBaseDef.h>
 #include <TerrainModel/Core/bcDTMClass.h>
 //#include <TerrainModel/Core/bcdtminlines.h>
-//#include <DgnPlatform/Tools/ConfigurationManager.h>
+#include <DgnPlatform/DesktopTools/ConfigurationManager.h>
 //#include <DgnPlatform/DgnDocumentManager.h>
 //#include <DgnPlatform/DgnAttachment.h>
 //#include <RmgrTools/Tools/RscFileManager.h>
@@ -109,15 +111,15 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         if (status == BEXML_Success && 0 == BeStringUtilities::Wcsicmp(threading.c_str(), L"true"))
             {
             useThreadInGeneration = 1;
-//            BentleyStatus defineStatus = ConfigurationManager::DefineVariable(L"SM_MULTITHREAD_GENERATION", L"1");
+            BentleyStatus defineStatus = ConfigurationManager::DefineVariable(L"SM_MULTITHREAD_GENERATION", L"1");
 
-//            assert(defineStatus == SUCCESS);
+            assert(defineStatus == SUCCESS);
             }
         else
             {
-//            BentleyStatus defineStatus = ConfigurationManager::DefineVariable(L"SM_MULTITHREAD_GENERATION", L"0");
+            BentleyStatus defineStatus = ConfigurationManager::DefineVariable(L"SM_MULTITHREAD_GENERATION", L"0");
 
-//            assert(defineStatus == SUCCESS);
+            assert(defineStatus == SUCCESS);
             }
 
         WString isSingleFileString;
@@ -141,33 +143,33 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
             swprintf(mesherTypeChar, L"%i", mesherType);
 
-//            BentleyStatus defineStatus = ConfigurationManager::DefineVariable(L"SM_3D_MESHER_TYPE", mesherTypeChar);
+            BentleyStatus defineStatus = ConfigurationManager::DefineVariable(L"SM_3D_MESHER_TYPE", mesherTypeChar);
 
-//            assert(defineStatus == SUCCESS);
+            assert(defineStatus == SUCCESS);
 
             WChar filterTypeChar[10];
 
             swprintf(filterTypeChar, L"%i", filterType);
 
-//            defineStatus = ConfigurationManager::DefineVariable(L"SM_FILTER_TYPE", filterTypeChar);
+            defineStatus = ConfigurationManager::DefineVariable(L"SM_FILTER_TYPE", filterTypeChar);
 
-//            assert(defineStatus == SUCCESS);
+            assert(defineStatus == SUCCESS);
 
             WChar trimmingMethodChar[10];
 
             swprintf(trimmingMethodChar, L"%i", trimmingMethod);
 
-//            defineStatus = ConfigurationManager::DefineVariable(L"SM_TRIMMING_METHOD", trimmingMethodChar);
+            defineStatus = ConfigurationManager::DefineVariable(L"SM_TRIMMING_METHOD", trimmingMethodChar);
 
-//            assert(defineStatus == SUCCESS);
+            assert(defineStatus == SUCCESS);
 
             WChar saveTypeChar[10];
 
             swprintf(saveTypeChar, L"%i", saveType);
 
-//            defineStatus = ConfigurationManager::DefineVariable(L"SM_STORE_DGNDB", saveTypeChar);
+            defineStatus = ConfigurationManager::DefineVariable(L"SM_STORE_DGNDB", saveTypeChar);
 
-//            assert(defineStatus == SUCCESS);
+            assert(defineStatus == SUCCESS);
             }
         StatusInt createStatus;
         BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(stmFileName.c_str(), createStatus));
@@ -292,8 +294,7 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
 void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    assert(false && "not implemented");
-/*    WString stmFileName;
+    WString stmFileName;
     ScalableMeshMesherType mesherType = SCM_MESHER_3D_DELAUNAY;
     ScalableMeshFilterType filterType = SCM_FILTER_CGAL_SIMPLIFIER;
     vector<UpToDateState> sourcesPartialUpdate;
@@ -378,7 +379,8 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                                 sourcesPartialUpdate.push_back(UpToDateState::UP_TO_DATE);
                             if (!updateType.Equals(WString(L"Add")))
                                 {
-                                IDTMSourcePtr srcPtr = CreateSourceFor(sourcePath, type);
+                                //IDTMSourcePtr srcPtr = CreateSourceFor(sourcePath, type);
+                                IDTMSourcePtr srcPtr = IDTMLocalFileSource::Create(type, sourcePath.c_str());
                                 SourceImportConfig& sourceImportConfig = srcPtr->EditConfig();
                                 ScalableMeshData data = sourceImportConfig.GetReplacementSMData();
 
@@ -398,7 +400,8 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                                 }
                             if (!updateType.Equals(WString(L"Remove")))
                                 {
-                                IDTMSourcePtr srcPtr = CreateSourceFor(sourcePath, type);
+                                //IDTMSourcePtr srcPtr = CreateSourceFor(sourcePath, type);
+                                IDTMSourcePtr srcPtr = IDTMLocalFileSource::Create(type, sourcePath.c_str());
                                 SourceImportConfig& sourceImportConfig = srcPtr->EditConfig();
                                 ScalableMeshData data = sourceImportConfig.GetReplacementSMData();
 
@@ -419,7 +422,8 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                             }
                         else
                             {
-                            IDTMSourcePtr srcPtr = CreateSourceFor(sourcePath, type);
+                            //IDTMSourcePtr srcPtr = CreateSourceFor(sourcePath, type);
+                            IDTMSourcePtr srcPtr = IDTMLocalFileSource::Create(type, sourcePath.c_str());
                             SourceImportConfig& sourceImportConfig = srcPtr->EditConfig();
                             ScalableMeshData data = sourceImportConfig.GetReplacementSMData();
 
@@ -450,12 +454,12 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
             WChar mesherTypeChar[10];
             swprintf(mesherTypeChar, L"%i", mesherType);
-//            BentleyStatus defineStatus = ConfigurationManager::DefineVariable(L"SM_3D_MESHER_TYPE", mesherTypeChar);
-//            assert(defineStatus == SUCCESS);
+            BentleyStatus defineStatus = ConfigurationManager::DefineVariable(L"SM_3D_MESHER_TYPE", mesherTypeChar);
+            assert(defineStatus == SUCCESS);
             WChar filterTypeChar[10];
             swprintf(filterTypeChar, L"%i", filterType);
-//            defineStatus = ConfigurationManager::DefineVariable(L"SM_FILTER_TYPE", filterTypeChar);
-//            assert(defineStatus == SUCCESS);
+            defineStatus = ConfigurationManager::DefineVariable(L"SM_FILTER_TYPE", filterTypeChar);
+            assert(defineStatus == SUCCESS);
             StatusInt status;
             creatorGeneratePtr = BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(stmFileName_GenerateTest.c_str(), status);
             clock_t tGen = clock();
@@ -516,7 +520,8 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             for (int i = 0; i < sourceToAdd.size(); i++)
                 {
 
-                IDTMSourcePtr srcPtr = CreateSourceFor(sourceToAdd[i], DTM_SOURCE_DATA_POINT);
+                //IDTMSourcePtr srcPtr = CreateSourceFor(sourceToAdd[i], DTM_SOURCE_DATA_POINT);
+                IDTMSourcePtr srcPtr = IDTMLocalFileSource::Create(DTM_SOURCE_DATA_POINT, sourceToAdd[i].c_str());
                 SourceImportConfig& sourceImportConfig = srcPtr->EditConfig();
                 ScalableMeshData data = sourceImportConfig.GetReplacementSMData();
 
@@ -565,7 +570,7 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             fwprintf(pResultFile, L"NOfPoints After Update, %I64d\n", nOfPointsUpdate);
             fflush(pResultFile);
             }
-        }*/
+        }
     }
 
 void PerformMeshQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
@@ -694,49 +699,49 @@ void PerformMeshQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
         swprintf(mesherTypeChar, L"%i", mesherType);
 
-//        BentleyStatus defineStatus = ConfigurationManager::DefineVariable(L"SM_3D_MESHER_TYPE", mesherTypeChar);
+        BentleyStatus defineStatus = ConfigurationManager::DefineVariable(L"SM_3D_MESHER_TYPE", mesherTypeChar);
 
-//        assert(defineStatus == SUCCESS);
+        assert(defineStatus == SUCCESS);
 
         WChar filterTypeChar[10];
 
         swprintf(filterTypeChar, L"%i", filterType);
 
-//        defineStatus = ConfigurationManager::DefineVariable(L"SM_FILTER_TYPE", filterTypeChar);
+        defineStatus = ConfigurationManager::DefineVariable(L"SM_FILTER_TYPE", filterTypeChar);
 
-//        assert(defineStatus == SUCCESS);
+        assert(defineStatus == SUCCESS);
 
         WChar blossomMatchingChar[10];
 
         swprintf(blossomMatchingChar, L"%i", blossomMatching);
 
-//        defineStatus = ConfigurationManager::DefineVariable(L"SM_BLOSSOM_MATCHING", blossomMatchingChar);
+        defineStatus = ConfigurationManager::DefineVariable(L"SM_BLOSSOM_MATCHING", blossomMatchingChar);
 
-//        assert(defineStatus == SUCCESS);
+        assert(defineStatus == SUCCESS);
 
         WChar indexMethodChar[10];
 
         swprintf(indexMethodChar, L"%i", indexMethod);
 
-//        defineStatus = ConfigurationManager::DefineVariable(L"SM_INDEX_METHOD", indexMethodChar);
+        defineStatus = ConfigurationManager::DefineVariable(L"SM_INDEX_METHOD", indexMethodChar);
 
-//        assert(defineStatus == SUCCESS);
+        assert(defineStatus == SUCCESS);
 
         WChar trimmingMethodChar[10];
 
         swprintf(trimmingMethodChar, L"%i", trimmingMethod);
 
-//        defineStatus = ConfigurationManager::DefineVariable(L"SM_TRIMMING_METHOD", trimmingMethodChar);
+        defineStatus = ConfigurationManager::DefineVariable(L"SM_TRIMMING_METHOD", trimmingMethodChar);
 
-//        assert(defineStatus == SUCCESS);
+        assert(defineStatus == SUCCESS);
 
-//        defineStatus = ConfigurationManager::DefineVariable(L"SM_ATP_MESHING_RESULT", L"1");
+        defineStatus = ConfigurationManager::DefineVariable(L"SM_ATP_MESHING_RESULT", L"1");
 
-//        assert(defineStatus == SUCCESS);
+        assert(defineStatus == SUCCESS);
         // isSingleFile
         status = creatorPtr->Create();
 
-//        defineStatus = ConfigurationManager::UndefineVariable(L"SM_ATP_MESHING_RESULT");
+        defineStatus = ConfigurationManager::UndefineVariable(L"SM_ATP_MESHING_RESULT");
 
 
         if (status == SUCCESS)
@@ -871,16 +876,16 @@ void Perform2DStitchQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
         swprintf(mesherTypeChar, L"%i", mesherType);
 
-//        BentleyStatus defineStatus = ConfigurationManager::DefineVariable(L"SM_3D_MESHER_TYPE", mesherTypeChar);
+        BentleyStatus defineStatus = ConfigurationManager::DefineVariable(L"SM_3D_MESHER_TYPE", mesherTypeChar);
 
-//        assert(defineStatus == SUCCESS);
+        assert(defineStatus == SUCCESS);
         WChar filterTypeChar[10];
 
         swprintf(filterTypeChar, L"%i", filterType);
 
-//        defineStatus = ConfigurationManager::DefineVariable(L"SM_FILTER_TYPE", filterTypeChar);
+        defineStatus = ConfigurationManager::DefineVariable(L"SM_FILTER_TYPE", filterTypeChar);
 
-//        assert(defineStatus == SUCCESS);
+        assert(defineStatus == SUCCESS);
         // isSingleFile
         status = creatorPtr->Create();
 
@@ -3927,3 +3932,340 @@ void PerformStreaming(BeXmlNodeP pTestNode, FILE* pResultFile)
 
     fflush(pResultFile);
     }
+
+    bool GetMeshAsSingleTileDTM(IScalableMesh* meshP, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& tmP)
+        {
+        /* IScalableMeshMeshQueryPtr meshQueryInterface = meshP->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
+        bvector<IScalableMeshNodePtr> returnedNodes;
+        IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
+        DRange3d fileRange;
+        meshP->GetRange(fileRange);
+        DPoint3d box[4] = {
+        DPoint3d::From(fileRange.low.x, fileRange.low.y, fileRange.low.z),
+        DPoint3d::From(fileRange.low.x, fileRange.high.y, fileRange.low.z),
+        DPoint3d::From(fileRange.high.x, fileRange.low.y, fileRange.high.z),
+        DPoint3d::From(fileRange.high.x, fileRange.high.y, fileRange.high.z)
+        };
+        meshQueryInterface->Query(returnedNodes, box, 4, params);*/
+        int            status;
+        DTMPtr         dtmPtr;
+        IScalableMeshFixResolutionIndexQueryParamsPtr queryParamsPtr(IScalableMeshFixResolutionIndexQueryParams::CreateParams());
+        queryParamsPtr->SetResolutionIndex(meshP->GetNbResolutions() - 1);
+        IScalableMeshPointQueryPtr fixResPointQueryPtr(meshP->GetQueryInterface(SCM_QUERY_FIX_RESOLUTION_VIEW));
+        bvector<DPoint3d> points;
+        status = fixResPointQueryPtr->Query(points, 0, 0, IScalableMeshQueryParametersPtr(queryParamsPtr));
+
+        BcDTMPtr bcDtmInMemPtr(BcDTM::Create());
+
+        bcDtmInMemPtr->AddPoints(points);
+        bcDtmInMemPtr->SetTriangulationParameters(0, 0, 0, 0);
+        bcDtmInMemPtr->Triangulate();
+
+        tmP = bcDtmInMemPtr;
+        /*  int status = CreateBcDTM(tmP);
+        BC_DTM_OBJ* dtmObjP(tmP->GetBcDTM()->GetTinHandle());
+        bvector<DPoint3d> allPts;
+        for (auto& node : returnedNodes)
+        {
+        bvector<bool> clips;
+        IScalableMeshMeshPtr scalableMesh = node->GetMesh(false, clips);
+        const PolyfaceQuery* polyface = scalableMesh->GetPolyfaceQuery();
+        WString nameBefore = L"e:\\output\\scmesh\\2015-12-23\\afterquery_";
+        nameBefore.append(std::to_wstring(node->GetLevel()).c_str());
+        nameBefore.append(L"_");
+        nameBefore.append(std::to_wstring(node->GetNodeExtent().low.x).c_str());
+        nameBefore.append(L"_");
+        nameBefore.append(std::to_wstring(node->GetNodeExtent().low.y).c_str());
+        nameBefore.append(L".m");
+        size_t nVertices = polyface->GetPointCount();
+        size_t nIndices = polyface->GetPointIndexCount();
+        FILE* meshBeforeStitch = _wfopen(nameBefore.c_str(), L"wb");
+        fwrite(&nVertices, sizeof(size_t), 1, meshBeforeStitch);
+        fwrite(polyface->GetPointCP(), sizeof(DPoint3d), nVertices, meshBeforeStitch);
+        fwrite(&nIndices, sizeof(size_t), 1, meshBeforeStitch);
+        fwrite(polyface->GetPointIndexCP(), sizeof(int32_t), nIndices, meshBeforeStitch);
+        fclose(meshBeforeStitch);
+        allPts.insert(allPts.end(), polyface->GetPointCP(), polyface->GetPointCP() + polyface->GetPointCount());
+        }
+        status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, DTMFeatureType::RandomSpots, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &allPts[0], (long)allPts.size());
+        status = bcdtmObject_triangulateDtmObject(dtmObjP);*/
+        return status == DTM_SUCCESS;
+        }
+
+    void GenerateLine(bvector<DPoint3d>& polyLine, DRange3d& range)
+        {
+        std::random_device rd;
+
+        std::default_random_engine e1(rd());
+        std::uniform_real_distribution<double> val_x(range.low.x, range.high.x);
+        std::uniform_real_distribution<double> val_y(range.low.y, range.high.y);
+        std::uniform_int_distribution<int> nOfPts(2, 12);
+        int nPts = nOfPts(e1);
+        for (int i = 0; i < nPts; ++i)
+            {
+            DPoint3d pt = DPoint3d::From(val_x(e1), val_y(e1), range.high.z);
+            polyLine.push_back(pt);
+            }
+
+        }
+
+    void GenerateLinesToDrapeOnExtent(bvector<bvector<DPoint3d>>& lines, int nLines, DRange3d& range)
+        {
+        for (int i = 0; i < nLines; i++)
+            {
+            bvector<DPoint3d> polyLine;
+            GenerateLine(polyLine, range);
+            lines.push_back(polyLine);
+            }
+        }
+
+    void DrapeLinesOnScalableMesh(bvector<bvector<DPoint3d>>&lines, bvector<bvector<DPoint3d>>& drapedLines, DTMPtr& dtmP2)
+        {
+        for (auto& line : lines)
+            {
+            bvector<DPoint3d> lineDraped;
+            auto draping = dtmP2->GetDTMDraping();
+            BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDrapedLinePtr drapedLine;
+            draping->DrapeLinear(drapedLine, line.data(), (int)line.size());
+            //        delete draping;
+            if (!drapedLine.IsNull())
+                {
+                unsigned int numPoints = drapedLine->GetPointCount();
+                for (unsigned int ptNum = 0; ptNum < numPoints; ptNum++)
+                    {
+                    DPoint3d pt;
+                    drapedLine->GetPointByIndex(&pt, nullptr, nullptr, ptNum);
+                    lineDraped.push_back(pt);
+                    }
+                bvector<DPoint3d>::iterator it = unique(lineDraped.begin(), lineDraped.end(), DPoint3dEqualityTest);
+                lineDraped.resize(std::distance(lineDraped.begin(), it));
+                }
+            drapedLines.push_back(lineDraped);
+            }
+        }
+
+    void DrapeLinesOnDTM(bvector<bvector<DPoint3d>>&lines, bvector<bvector<DPoint3d>>& drapedLinesTM, DTMPtr& tmPtr)
+        {
+        for (auto& line : lines)
+            {
+            bvector<DPoint3d> lineDraped;
+            BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDrapedLinePtr drapedLine;
+            tmPtr->GetBcDTM()->DrapeLinear(drapedLine, &line[0], (int)line.size());
+            if (!drapedLine.IsNull())
+                {
+                unsigned int numPoints = drapedLine->GetPointCount();
+                for (unsigned int ptNum = 0; ptNum < numPoints; ptNum++)
+                    {
+                    DPoint3d pt;
+                    DTMDrapedLineCode code;
+                    drapedLine->GetPointByIndex(&pt, nullptr, &code, ptNum);
+                    if (code != DTMDrapedLineCode::External && code != DTMDrapedLineCode::InVoid) lineDraped.push_back(pt);
+                    }
+                bvector<DPoint3d>::iterator it = unique(lineDraped.begin(), lineDraped.end(), DPoint3dEqualityTest);
+                lineDraped.resize(std::distance(lineDraped.begin(), it));
+                }
+            drapedLinesTM.push_back(lineDraped);
+            }
+        }
+
+    void PerformTestDrapeRandomLines(BeXmlNodeP pTestNode, FILE* pResultFile)
+        {
+        BeXmlStatus status;
+        WString stmFileName;
+        status = pTestNode->GetAttributeStringValue(stmFileName, "stmFileName");
+
+        if (status != BEXML_Success)
+            {
+            printf("ERROR : stmFileName attribute not found\r\n");
+            }
+        WString nLines;
+        status = pTestNode->GetAttributeStringValue(nLines, "numberOfLines");
+
+        if (status != BEXML_Success)
+            {
+            printf("ERROR : stmFileName attribute not found\r\n");
+            }
+        Utf8String utf8(nLines);
+        int nLine = atoi(utf8.c_str());
+        StatusInt openStatus;
+        IScalableMeshPtr stmFile = IScalableMesh::GetFor(stmFileName.c_str(), true, true, openStatus);
+        bvector<bvector<DPoint3d>> lines, drapedLines, drapedLinesTM, drapedLines2, lines2;
+        if (openStatus == SUCCESS)
+            {
+            DTMPtr tmPtr;
+            GetMeshAsSingleTileDTM(stmFile.get(), tmPtr);
+            WString stmFileName2 = stmFileName + L"2.stm";
+            // IScalableMeshPtr dtmP2;
+            // CreateScalableMeshFromTM(dtmP2, stmFileName2, tmPtr);
+            DRange3d range;
+            stmFile->GetRange(range);
+            range.ScaleAboutCenter(range, 0.80);
+            GenerateLinesToDrapeOnExtent(lines, nLine, range);
+            lines2 = lines;
+            clock_t start = clock();
+            //  DTMPtr dtmp = dtmP2->GetDTMInterface();
+            //  DrapeLinesOnScalableMesh(lines, drapedLines, dtmp);
+            double timeToDrapeSM = (double)(clock() - start) / CLOCKS_PER_SEC;
+            start = clock();
+            DrapeLinesOnDTM(lines, drapedLinesTM, tmPtr);
+            double timeToDrapeTM = (double)(clock() - start) / CLOCKS_PER_SEC;
+            DTMPtr d = stmFile->GetDTMInterface();
+            start = clock();
+            DrapeLinesOnScalableMesh(lines, drapedLines, d);
+            double timeToDrapeSM2 = (double)(clock() - start) / CLOCKS_PER_SEC;
+            size_t nDiffLines = 0;
+            WString name = stmFileName;
+            name.ReplaceAll(L".stm", L"");
+            size_t pos = name.find_last_of(L"\\");
+            if (pos != std::string::npos) name = name.substr(pos + 1);
+            WString testcaseNameTM = name + L"_tm";
+            WString testcaseNameLine = name + L"_line";
+            WString testcaseNameOrig = name + L"_orig";
+
+            // Copy all lines in dgn, didn't need this.
+//            DgnModelRefP model = mdlModelRef_getActive();
+//            FileLevelCache& fileLevelCache = model->GetDgnFileP()->GetLevelCacheR();
+            for (auto& line : lines)
+                {
+                size_t lineN = &line - &lines[0];
+//                Transform uorToMeter, meterToUor;
+//                GetTransformForPoints(uorToMeter, meterToUor);
+
+//                bsiTransform_multiplyDPoint3dArrayInPlace(&meterToUor, (DPoint3dP)&line[0], (int)line.size());
+//                EditLevelHandle outputLevelOriginal = fileLevelCache.CreateLevel((testcaseNameOrig + std::to_wstring(lineN).c_str()).c_str(), LEVEL_NULL_CODE, LEVEL_NULL_ID);
+//                fileLevelCache.Write();
+                {
+//                MSElementDescrP pNewElmDsc = NULL;
+//                mdlElmdscr_createFromVertices(&pNewElmDsc, NULL, &line[0], line.size(), FALSE, FALSE);
+//                pNewElmDsc->el.ehdr.level = outputLevelOriginal.GetLevelId();
+//                EditElementHandle handle(pNewElmDsc, true, true, model);
+//                handle.AddToModel();
+                }
+                size_t nPtsDraped = drapedLines[lineN].size();
+                double length = 0.0;
+                for (size_t i = 1; i < drapedLines[lineN].size(); ++i)
+                    {
+                    DVec3d aToB = DVec3d::FromStartEnd(drapedLines[lineN][i - 1], drapedLines[lineN][i]);
+                    length += aToB.Magnitude();
+                    }
+                size_t nPtsDrapedDTM = drapedLinesTM[lineN].size();
+                double lengthDTM = 0.0;
+                for (size_t i = 1; i < drapedLinesTM[lineN].size(); ++i)
+                    {
+                    DVec3d aToB = DVec3d::FromStartEnd(drapedLinesTM[lineN][i - 1], drapedLinesTM[lineN][i]);
+                    lengthDTM += aToB.Magnitude();
+                    }
+
+/*                if (fabs(lengthDTM - length) > 1e-3 || nPtsDraped != nPtsDrapedDTM)
+                    {
+                    EditLevelHandle outputLevelTM = fileLevelCache.CreateLevel((testcaseNameTM + std::to_wstring(lineN).c_str()).c_str(), LEVEL_NULL_CODE, LEVEL_NULL_ID);
+                    fileLevelCache.Write();
+                    bsiTransform_multiplyDPoint3dArrayInPlace(&meterToUor, (DPoint3dP)&drapedLinesTM[lineN][0], (int)drapedLinesTM[lineN].size());
+                    bsiTransform_multiplyDPoint3dArrayInPlace(&meterToUor, (DPoint3dP)&drapedLines[lineN][0], (int)drapedLines[lineN].size());
+                    if (drapedLinesTM[lineN].size() > 0)
+                        {
+                        MSElementDescrP pNewElmDsc = NULL;
+                        mdlElmdscr_createFromVertices(&pNewElmDsc, NULL, &drapedLinesTM[lineN][0], drapedLinesTM[lineN].size(), FALSE, FALSE);
+                        pNewElmDsc->el.ehdr.level = outputLevelTM.GetLevelId();
+                        EditElementHandle handle(pNewElmDsc, true, true, model);
+                        handle.AddToModel();
+                        }
+                    EditLevelHandle outputLevelLine = fileLevelCache.CreateLevel((testcaseNameLine + std::to_wstring(lineN).c_str()).c_str(), LEVEL_NULL_CODE, LEVEL_NULL_ID);
+                    fileLevelCache.Write();
+                    if (drapedLines[lineN].size() > 0)
+                        {
+                        MSElementDescrP pNewElmDsc = NULL;
+                        mdlElmdscr_createFromVertices(&pNewElmDsc, NULL, &drapedLines[lineN][0], drapedLines[lineN].size(), FALSE, FALSE);
+                        pNewElmDsc->el.ehdr.level = outputLevelLine.GetLevelId();
+                        EditElementHandle handle(pNewElmDsc, true, true, model);
+                        handle.AddToModel();
+                        }
+
+                    }*/
+                // L"Test Case, Line Number, N Of Points Draped (SM), N Of Points Draped (Civil), Length (SM), Length (Civil), N Of Points Difference (%%), Length Difference (%%), NDifferentLines Total, Time total(SM) (s), Time total(Civil) (s)\n";
+                fwprintf(pResultFile, L"%s,%I64d,%I64d,%I64d,%0.5f,%0.5f,%0.5f, %0.5f\n",
+                         stmFileName.c_str(),
+                         lineN,
+                         nPtsDraped,
+                         nPtsDrapedDTM,
+                         length,
+                         lengthDTM,
+                         100.0*(std::max(nPtsDraped, nPtsDrapedDTM) - std::min(nPtsDraped, nPtsDrapedDTM)) / std::max(nPtsDraped, nPtsDrapedDTM),
+                         (std::max(length, lengthDTM) - std::min(length, lengthDTM)) / std::max(length, lengthDTM) * 100.0);
+                ++lineN;
+                if (fabs(lengthDTM - length) > 1e-3 || nPtsDraped != nPtsDrapedDTM) ++nDiffLines;
+                }
+            fwprintf(pResultFile, L"%s,,,,,,,,%I64d,%0.5f,%0.5f,%0.5f\n",
+                     stmFileName.c_str(),
+                     nDiffLines,
+                     timeToDrapeSM,
+                     timeToDrapeTM,
+                     timeToDrapeSM2
+                     );
+            d = stmFile->GetDTMInterface();
+            fwprintf(pResultFile, L"Timings for 10 iterations\n");
+            start = clock();
+            /*for (size_t i = 0; i < 10; ++i)
+            {
+            DrapeLinesOnScalableMesh(lines2, drapedLines, dtmp);
+            }*/
+            double timeToDrapeSM10 = (double)(clock() - start) / CLOCKS_PER_SEC;
+            start = clock();
+            for (size_t i = 0; i < 10; ++i)
+                {
+                DrapeLinesOnDTM(lines2, drapedLinesTM, tmPtr);
+                }
+            double timeToDrapeTM10 = (double)(clock() - start) / CLOCKS_PER_SEC;
+            start = clock();
+            for (size_t i = 0; i < 10; ++i)
+                {
+                DrapeLinesOnScalableMesh(lines2, drapedLines2, d);
+                }
+            double timeToDrapeSM210 = (double)(clock() - start) / CLOCKS_PER_SEC;
+            fwprintf(pResultFile, L"%s,,,,,,,,%I64d,%0.5f,%0.5f,%0.5f,%0.5f,%0.5f,%0.5f\n",
+                     stmFileName.c_str(),
+                     nDiffLines,
+                     timeToDrapeSM10,
+                     timeToDrapeTM10,
+                     timeToDrapeSM210,
+                     timeToDrapeSM10 / 10.0,
+                     timeToDrapeTM10 / 10.0,
+                     timeToDrapeSM210 / 10.0
+                     );
+            fwprintf(pResultFile, L"Timings for 100 iterations\n");
+            start = clock();
+            /*for (size_t i = 0; i < 100; ++i)
+            {
+            DrapeLinesOnScalableMesh(lines2, drapedLines, dtmp);
+            }*/
+            double timeToDrapeSM100 = (double)(clock() - start) / CLOCKS_PER_SEC;
+            start = clock();
+            for (size_t i = 0; i < 100; ++i)
+                {
+                DrapeLinesOnDTM(lines2, drapedLinesTM, tmPtr);
+                }
+            double timeToDrapeTM100 = (double)(clock() - start) / CLOCKS_PER_SEC;
+            start = clock();
+            for (size_t i = 0; i < 100; ++i)
+                {
+                DrapeLinesOnScalableMesh(lines2, drapedLines2, d);
+                }
+            double timeToDrapeSM2100 = (double)(clock() - start) / CLOCKS_PER_SEC;
+            fwprintf(pResultFile, L"%s,,,,,,,,%I64d,%0.5f,%0.5f,%0.5f,%0.5f,%0.5f,%0.5f\n",
+                     stmFileName.c_str(),
+                     nDiffLines,
+                     timeToDrapeSM100,
+                     timeToDrapeTM100,
+                     timeToDrapeSM2100,
+                     timeToDrapeSM100 / 100.0,
+                     timeToDrapeTM100 / 100.0,
+                     timeToDrapeSM2100 / 100.0
+                     );
+            }
+        else
+            {
+            fwprintf(pResultFile, L"%s\n",
+                     L"ERROR");
+            }
+        fflush(pResultFile);
+        }

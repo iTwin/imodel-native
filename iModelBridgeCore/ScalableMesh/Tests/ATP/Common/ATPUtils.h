@@ -33,7 +33,8 @@ typedef enum
     TEST_DRAPE_BASELINE,
     TEST_CONSTRAINTS,
     TEST_SDK_MESH,
-    TEST_STREAMING
+    TEST_STREAMING,
+    TEST_RANDOM_DRAPE
     } TestType;
 
 

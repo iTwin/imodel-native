@@ -359,9 +359,8 @@ bool ParseGenerationOptions(ScalableMeshMesherType* mesherType, ScalableMeshFilt
 
 bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pTestNode)
     {
-    assert(false && "not implemented");
     bool isSuccess = true;
-/*
+
     BeXmlNodeP pTestChildNode = pTestNode->GetFirstChild();
 
     while ((0 != pTestChildNode) && (isSuccess == true))
@@ -383,7 +382,8 @@ bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pTes
                 if ((datasetPath.c_str()[datasetPath.size() - 1] != L'\\') &&
                     (datasetPath.c_str()[datasetPath.size() - 1] != L'/'))
                     {
-                    IDTMSourcePtr srcPtr = CreateSourceFor(datasetPath, dataType, pTestChildNode);
+                    //IDTMSourcePtr srcPtr = CreateSourceFor(datasetPath, dataType, pTestChildNode);
+                    IDTMSourcePtr srcPtr = IDTMLocalFileSource::Create(dataType, datasetPath.c_str());
                     AddOptionToSource(srcPtr, pTestChildNode);
                     if (BSISUCCESS != sourceCollection.Add(srcPtr))
                         {
@@ -413,7 +413,8 @@ bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pTes
                         if (0 == BeStringUtilities::Wcsicmp(extension.c_str(), L"classif")) continue;
                         if (!ext.empty() && 0 != BeStringUtilities::Wcsicmp(extension.c_str(), ext.c_str())) continue;
                         if (!filter.empty() && !name.ContainsI(filter)) continue;
-                        IDTMSourcePtr srcPtr = CreateSourceFor(firstPath, dataType, pTestChildNode);
+                        //IDTMSourcePtr srcPtr = CreateSourceFor(firstPath, dataType, pTestChildNode);
+                        IDTMSourcePtr srcPtr = IDTMLocalFileSource::Create(dataType, firstPath.c_str());
                         AddOptionToSource(srcPtr, pTestChildNode);
                         if (BSISUCCESS != sourceCollection.Add(srcPtr))
                             {
@@ -436,7 +437,7 @@ bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pTes
 
         pTestChildNode = pTestChildNode->GetNextSibling();
         }
-        */
+
     return isSuccess;
     }
 

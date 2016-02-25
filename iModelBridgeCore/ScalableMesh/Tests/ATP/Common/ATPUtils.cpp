@@ -62,6 +62,9 @@ WString GetHeaderForTestType(TestType t)
         case TEST_STREAMING:
             return L"File Name Original, File Name Streaming, AllTestPass, Point Count Pass, Node Count Pass, time load all node headers, time streaming load all node headers, points Node Pass\n";
             break;
+        case TEST_RANDOM_DRAPE:
+            return L"Test Case, Line Number, N Of Points Draped (SM), N Of Points Draped (Civil), Length (SM), Length (Civil), N Of Points Difference (%%), Length Difference (%%), NDifferentLines Total, Time total(SM) (s), Time total(Civil) (s)\n";
+            break;
         default: break;
         }
     return L"";
@@ -121,6 +124,8 @@ bool ParseTestType(BeXmlNodeP pRootNode, TestType& t)
             t = TEST_SDK_MESH;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"streaming"))
             t = TEST_STREAMING;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"drapeRandom"))
+            t = TEST_RANDOM_DRAPE;
         else return false;
         }
     else return false;
@@ -264,6 +269,9 @@ bool RunTestPlan(BeFileName& testPlanPath)
                 break;
             case TEST_STREAMING:
                 PerformStreaming(pTestNode, pResultFile);
+                break;
+            case TEST_RANDOM_DRAPE:
+                PerformTestDrapeRandomLines(pTestNode, pResultFile);
                 break;
             default: break;
             }
