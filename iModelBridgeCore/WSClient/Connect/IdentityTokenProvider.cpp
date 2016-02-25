@@ -88,7 +88,7 @@ SamlTokenPtr IdentityTokenProvider::GetToken()
                 m_store->SetToken(token);
                 LOG.infov("Renewed identity token lifetime %d minutes", token->GetLifetime());
 
-                thisPtr;
+                thisPtr.get();
                 });
             });
         }
