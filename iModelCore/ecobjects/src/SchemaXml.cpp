@@ -148,7 +148,7 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadSchemaReferencesFromXml(ECSchemaPtr& s
             return SchemaReadStatus::InvalidECSchemaXml;
             }
 
-        if (ECObjectsStatus::Success != ECSchema::ParseVersionString(key.m_versionMajor, key.m_versionMinor, versionString.c_str()))
+        if (ECObjectsStatus::Success != SchemaKey::ParseVersionString(key.m_versionMajor, key.m_versionWrite, key.m_versionMinor, versionString.c_str()))
             {
             LOG.errorv("Invalid ECSchemaXML: unable to parse version string for referenced schema %s.", key.m_schemaName.c_str());
             return SchemaReadStatus::InvalidECSchemaXml;

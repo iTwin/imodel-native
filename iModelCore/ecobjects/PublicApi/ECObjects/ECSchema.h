@@ -51,6 +51,7 @@ typedef bmap<Utf8CP, ECClassP,       less_str>  ClassMap;
 typedef bmap<Utf8CP, ECEnumerationP, less_str>  EnumerationMap;
 typedef bvector<ECEnumeratorP>                  EnumeratorList;
 typedef bmap<Utf8CP, KindOfQuantityP, less_str> KindOfQuantityMap;
+typedef bvector<Utf8String>                     UnitOfMeasurementList;
 
 /*---------------------------------------------------------------------------------**//**
 * Used to hold property name and display label forECProperty, ECClass, and ECSchema.
@@ -1672,6 +1673,36 @@ struct ECEnumerator : NonCopyableClass
         ECOBJECTS_EXPORT ECObjectsStatus SetString(Utf8CP value);
     };
 
+//======================================================================================
+//! QuantityConversionType describes how conversion between compatible units should be performe
+//! @bsiclass                                                     Robert.Schili      02/2016
+//+===============+===============+===============+===============+===============+=====
+enum class QuantityConversionType
+    {
+    //! Trivial Formula-based linear or affine transformation
+    FormulaBased,
+
+    //! Will be used for various “nominal” dimensions like pipe sizes,
+    //! standard dimensions of mechanical parts and a few other similar situations
+    Mapping
+    };
+
+//======================================================================================
+//! QuantityPresentationType describes how values should be treated in general
+//! @bsiclass                                                     Robert.Schili      02/2016
+//+===============+===============+===============+===============+===============+=====
+enum class QuantityPresentationType
+    {
+    //! Default representation using a decimal value
+    Decimal,
+
+    //! Used for presenting big numbers and mostly will be used in scientific applications
+    Scientific,
+
+    //! Multi-UOM presentation. For example geographic latitudes and longitudes in a form of degrees, minutes and seconds
+    Fractional
+    };
+
 //=======================================================================================
 //! The in-memory representation of a KindOfQuantity as defined by ECSchemaXML
 //! @bsiclass
@@ -1683,14 +1714,33 @@ struct KindOfQuantity : NonCopyableClass
     friend struct SchemaXmlReaderImpl;
 
     private:
+        static const QuantityConversionType DEFAULT_CONVERSION_TYPE = QuantityConversionType::FormulaBased;
+        static const QuantityPresentationType DEFAULT_PRESENTATION_TYPE = QuantityPresentationType::Decimal;
+
         ECSchemaCR m_schema;
-        mutable Utf8String m_fullName;
-        ECValidatedName m_validatedName;
+        mutable Utf8String m_fullName; //cached nsprefix:name representation
+        ECValidatedName m_validatedName; //wraps name and displaylabel
         Utf8String m_description;
+        //! Describes how the conversion between compatible units should be performed
+        QuantityConversionType m_conversionType;
+        //! Addresses how values should be treated in general
+        QuantityPresentationType m_presentationType;
+        //! Optional format that accompanies the presentation type.
+        //! can store a direct set of formatting instructions or alternatively it can be a reference key by
+        //! which the actual format will be extracted from some additional resource based on the context of the formatting operation
+        Utf8String m_presentationFormat;
+        //! list of compatible UOM’s appropriate for presenting quantities on the UI and available for the user selection.
+        //! The names should be accompanied by the display precision of values for presenting the data in accordance with
+        //! engineering and standard requirements. 
+        UnitOfMeasurementList m_presentationUOMList;
+        //! UOM used for persisting the information
+        Utf8String m_persistenceUOM;
 
         //  Lifecycle management:  The schema implementation will
         //  serve as a factory for kind of quantities and will manage their lifecycle.
-        explicit KindOfQuantity(ECSchemaCR schema) : m_schema(schema) {};
+        explicit KindOfQuantity(ECSchemaCR schema) : m_schema(schema), m_presentationType(DEFAULT_PRESENTATION_TYPE),
+            m_conversionType(DEFAULT_CONVERSION_TYPE) {};
+
         ~KindOfQuantity() {};
 
         // schemas index KindOfQuantity by name so publicly name can not be reset
@@ -1708,7 +1758,6 @@ struct KindOfQuantity : NonCopyableClass
 
         //! {SchemaName}:{KindOfQuantityName} The pointer will remain valid as long as the KindOfQuantity exists.
         ECOBJECTS_EXPORT Utf8StringCR GetFullName() const;
-        
         //! Given a qualified enum name, will parse out the schema's namespace prefix and the kind of quantity name.
         //! @param[out] prefix  The namespace prefix of the schema
         //! @param[out] kindOfQuantityName   The name of the KindOfQuantity
@@ -1717,16 +1766,47 @@ struct KindOfQuantity : NonCopyableClass
         ECOBJECTS_EXPORT static ECObjectsStatus ParseFullName(Utf8StringR prefix, Utf8StringR kindOfQuantityName, Utf8StringCR stringToParse);
 
         //! Sets the display label of this KindOfQuantity
+        //! @param[in]  value  The new value to apply
         void SetDisplayLabel(Utf8CP value) { m_validatedName.SetDisplayLabel(value); }
-
         //! Gets the display label of this KindOfQuantity.  If no display label has been set explicitly, it will return the name of the KindOfQuantity
         Utf8StringCR GetDisplayLabel() const { return m_validatedName.GetDisplayLabel(); }
 
         //! Sets the description of this KindOfQuantity
+        //! @param[in]  value  The new value to apply
         void SetDescription(Utf8CP value) { m_description = value; }
-
         //! Gets the description of this KindOfQuantity.
         Utf8StringCR GetDescription() const { return m_description; };
+
+        //! Sets the conversion type of this KindOfQuantity
+        //! @param[in]  value  The new value to apply
+        void SetConversionType(QuantityConversionType value) { m_conversionType = value; }
+        //! Gets the conversion type of this KindOfQuantity.
+        QuantityConversionType GetConversionType() const { return m_conversionType; };
+
+        //! Sets the presentation type of this KindOfQuantity
+        //! @param[in]  value  The new value to apply
+        void SetPresentationType(QuantityPresentationType value) { m_presentationType = value; }
+        //! Gets the presentation type of this KindOfQuantity.
+        QuantityPresentationType GetPresentationType() const { return m_presentationType; };
+
+        //! Sets the presentation format of this KindOfQuantity
+        //! @param[in]  value  The new value to apply
+        void SetPresentationFormat(Utf8CP value) { m_presentationFormat = value; }
+        //! Gets the presentation format of this KindOfQuantity. (Optional format that accompanies the presentation type)
+        Utf8StringCR GetPresentationFormat() const { return m_presentationFormat; };
+
+        //! Gets a list of compatible UOM’s appropriate for presenting quantities on the UI and available for the user selection.
+        UnitOfMeasurementList const& GetPresentationUOMList() const { return m_presentationUOMList; };
+        //! Gets an editable list of compatible UOM’s appropriate for presenting quantities on the UI and available for the user selection.
+        //! The names should be accompanied by the display precision of values for presenting the data in accordance with
+        //! engineering and standard requirements. 
+        UnitOfMeasurementList& GetPresentationUOMListR() { return m_presentationUOMList; };
+
+        //! Sets the Unit of measuerement used for persisting the information
+        //! @param[in]  value  The new value to apply
+        void SetPersistenceUOM(Utf8CP value) { m_persistenceUOM = value; }
+        //! Gets the Unit of measuerement used for persisting the information
+        Utf8StringCR GetPersistenceUOM() const { return m_persistenceUOM; };
     };
 
 //---------------------------------------------------------------------------------------
@@ -2978,10 +3058,13 @@ public:
     ECOBJECTS_EXPORT ECClassContainerCR GetClasses() const;
     //! Returns an iterable container of ECClasses sorted by name. For unsorted called overload.
     ECEnumerationContainerCR GetEnumerations() const { return m_enumerationContainer; }
-    //! Returns an iterable container of ECClasses sorted by name. For unsorted called overload.
-    KindOfQuantityContainerCR GetKindOfQuantities() const { return m_kindOfQuantityContainer; }
     //! Removes an enumeration from this schema.
     ECOBJECTS_EXPORT ECObjectsStatus    DeleteEnumeration(ECEnumerationR ecEnumeration);
+    //! Returns an iterable container of ECClasses sorted by name. For unsorted called overload.
+    KindOfQuantityContainerCR GetKindOfQuantities() const { return m_kindOfQuantityContainer; }
+    //! Removes a kind of quantity from this schema.
+    ECOBJECTS_EXPORT ECObjectsStatus    DeleteKindOfQuantity(KindOfQuantityR kindOfQuantity);
+    
     
     //! Indicates whether this schema is a so-called @b dynamic schema by
     //! checking whether the @b DynamicSchema custom attribute from the standard schema @b Bentley_Standard_CustomAttributes
