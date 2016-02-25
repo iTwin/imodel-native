@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/RefCounted.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
@@ -18,7 +18,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            bentleyAllocator_delete (void*rawMemory, size_t size)
+void            BentleyApi::bentleyAllocator_delete (void*rawMemory, size_t size)
     {
     ::operator delete (rawMemory);
     }
@@ -26,7 +26,7 @@ void            bentleyAllocator_delete (void*rawMemory, size_t size)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    08/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void*           bentleyAllocator_new (size_t size)
+void*           BentleyApi::bentleyAllocator_new (size_t size)
     {
     return ::operator new (size);
     }
@@ -35,7 +35,7 @@ void*           bentleyAllocator_new (size_t size)
 *** deprecated 
 * @bsimethod                                    Keith.Bentley                   01/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            bentleyAllocator_deleteRefCounted (void*rawMemory, size_t size)
+void            BentleyApi::bentleyAllocator_deleteRefCounted (void*rawMemory, size_t size)
     {
     ::operator delete (rawMemory);
     }
@@ -44,7 +44,7 @@ void            bentleyAllocator_deleteRefCounted (void*rawMemory, size_t size)
 *** deprecated 
 * @bsimethod                                    John.Gooding                    08/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void*           bentleyAllocator_allocateRefCounted(size_t size)
+void*           BentleyApi::bentleyAllocator_allocateRefCounted(size_t size)
     {
     return ::operator new (size);
     }
@@ -53,7 +53,7 @@ void*           bentleyAllocator_allocateRefCounted(size_t size)
 *** deprecated 
 * @bsimethod                                    Keith.Bentley                   01/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            bentleyAllocator_deleteArrayRefCounted (void*rawMemory, size_t size)
+void            BentleyApi::bentleyAllocator_deleteArrayRefCounted (void*rawMemory, size_t size)
     {
     ::operator delete (rawMemory);
     }
@@ -62,7 +62,7 @@ void            bentleyAllocator_deleteArrayRefCounted (void*rawMemory, size_t s
 *** deprecated 
 * @bsimethod                                    John.Gooding                    08/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void*           bentleyAllocator_allocateArrayRefCounted(size_t size)
+void*           BentleyApi::bentleyAllocator_allocateArrayRefCounted(size_t size)
     {
     return ::operator new (size);
     }
@@ -83,7 +83,7 @@ void*           bentleyAllocator_allocateArrayRefCounted(size_t size)
 *** deprecated 
 * @bsimethod                                    Keith.Bentley                   01/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            bentleyAllocator_deleteIRefCounted (void*rawMemory, size_t size)
+void            BentleyApi::bentleyAllocator_deleteIRefCounted (void*rawMemory, size_t size)
     {
     assert (false && "DeleteIRefCounted");
     ::operator delete (rawMemory);
@@ -93,7 +93,7 @@ void            bentleyAllocator_deleteIRefCounted (void*rawMemory, size_t size)
 *** deprecated 
 * @bsimethod                                    John.Gooding                    08/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void*           bentleyAllocator_allocateIRefCounted(size_t size)
+void*           BentleyApi::bentleyAllocator_allocateIRefCounted(size_t size)
     {
     assert (false && "AllocateIRefCounted");
     return ::operator new (size);
@@ -103,7 +103,7 @@ void*           bentleyAllocator_allocateIRefCounted(size_t size)
 *** deprecated 
 * @bsimethod                                    Keith.Bentley                   01/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            bentleyAllocator_deleteArrayIRefCounted (void*rawMemory, size_t size)
+void            BentleyApi::bentleyAllocator_deleteArrayIRefCounted (void*rawMemory, size_t size)
     {
     assert (false && "DeleteArrayIRefCounted");
     ::operator delete (rawMemory);
@@ -113,7 +113,7 @@ void            bentleyAllocator_deleteArrayIRefCounted (void*rawMemory, size_t 
 *** deprecated 
 * @bsimethod                                    John.Gooding                    08/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void*           bentleyAllocator_allocateArrayIRefCounted(size_t size)
+void*           BentleyApi::bentleyAllocator_allocateArrayIRefCounted(size_t size)
     {
     assert (false && "AllocateArrayIRefCounted");
     return ::operator new (size);
@@ -122,11 +122,11 @@ void*           bentleyAllocator_allocateArrayIRefCounted(size_t size)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-void*           bentleyAllocator_realloc (void* p, size_t n) {return realloc(p,n);}
-void*           bentleyAllocator_malloc (size_t n) {return malloc(n);}
-void            bentleyAllocator_free (void* p, size_t) {return free(p);}
+void*           BentleyApi::bentleyAllocator_realloc (void* p, size_t n) {return realloc(p,n);}
+void*           BentleyApi::bentleyAllocator_malloc (size_t n) {return malloc(n);}
+void            BentleyApi::bentleyAllocator_free (void* p, size_t) {return free(p);}
 
-void*           bentleyAllocator_getNullRefBuffer ()
+void*           BentleyApi::bentleyAllocator_getNullRefBuffer ()
     {
     static char s_buf[32];
     return s_buf;
@@ -135,7 +135,7 @@ void*           bentleyAllocator_getNullRefBuffer ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void bentleyAllocator_enableLowFragmentationCRTHeap()
+void BentleyApi::bentleyAllocator_enableLowFragmentationCRTHeap()
     {
 #if defined (BENTLEY_WIN32)
 
