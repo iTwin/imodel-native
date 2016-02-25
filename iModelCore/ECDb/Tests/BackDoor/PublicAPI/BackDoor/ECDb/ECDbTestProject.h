@@ -13,9 +13,10 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 typedef bmap<ECInstanceId, ECN::IECInstancePtr> ECInstanceMap;
 typedef const ECInstanceMap& ECInstanceMapCR;
 
-/*=================================================================================**//**
-* @bsiclass                                                 Ramanujam.Raman      04/2012
-+===============+===============+===============+===============+===============+======*/
+//=================================================================================
+//! @deprecated Use ECDbTestFixture instead
+// @bsiclass                                                 Ramanujam.Raman      04/2012
+//+===============+===============+===============+===============+===============+======*/
 struct ECDbTestProject
 {
 public:
