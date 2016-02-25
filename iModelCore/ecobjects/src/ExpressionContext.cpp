@@ -1223,6 +1223,16 @@ ExpressionStatus PropertySymbol::_GetValue (EvaluationResultR evalResult, Primar
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
+IECSymbolProvider::~IECSymbolProvider()
+    {
+    // N.B. At least one virtual method must be in a CPP file to satisfy clang and gcc shared library linking.
+    // Instead of fabricating an extra "key" method, just put the destructor here.
+    // The virtual destructor is required anyway by clang since other virtual methods exist.
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
 void IECSymbolProvider::RegisterExternalSymbolPublisher (ExternalSymbolPublisher publisher)
     {
     g_externalSymbolPublisher.SetValueAsPointer((void*)publisher);
