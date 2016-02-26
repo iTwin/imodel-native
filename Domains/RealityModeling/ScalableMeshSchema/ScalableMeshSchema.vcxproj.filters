@@ -27,13 +27,13 @@
     <ClCompile Include="ScalableMeshHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\ScalableMeshDomain.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ScalableMeshDomain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ScalableMeshDisplayCacheManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ScalableMeshProgressiveDisplay.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -57,6 +57,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ScalableMeshDisplayCacheManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ScalableMeshProgressiveDisplay.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
