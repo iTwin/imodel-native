@@ -99,6 +99,7 @@ EC_TYPEDEFS (SchemaNameClassNamePair);
 EC_TYPEDEFS (UnitSpec);
 EC_TYPEDEFS (Unit);
 EC_TYPEDEFS (UnitConverter);
+EC_TYPEDEFS(AdHocJsonValue);
 
 //__PUBLISH_SECTION_END__
 EC_TYPEDEFS (AdhocPropertyMetadata);
