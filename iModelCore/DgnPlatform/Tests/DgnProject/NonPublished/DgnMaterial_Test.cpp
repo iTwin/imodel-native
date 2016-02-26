@@ -63,6 +63,8 @@ TEST_F(MaterialTest, CRUD)
     DgnMaterialCPtr updatedMat = mat->Update();
     EXPECT_TRUE(updatedMat.IsValid());
     Compare(*mat, *updatedMat);
+
+    EXPECT_TRUE(DgnDbStatus::DeletionProhibited == mat->Delete());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -189,7 +191,7 @@ TEST_F(MaterialTest, ParentChildClone)
     EXPECT_FALSE(destChildB->GetParentMaterialId().IsValid());
     }
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
+* @bsimethod                                                    Umar.Hayat   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MaterialTest, Iterate)
     {
@@ -245,4 +247,42 @@ TEST_F(MaterialTest, Iterate)
             count++;
         }
     ASSERT_EQ(5, count);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Umar.Hayat   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MaterialTest, Iterate_WithFilter)
+    {
+    SetupProject(L"materials_Iterate.idgndb");
+    DgnMaterialCPtr mat1 = CreateMaterial("Palette1", "Material1");
+    ASSERT_TRUE(mat1.IsValid());
+    DgnMaterialCPtr mat2 = CreateMaterial("Palette1", "Material2");
+    ASSERT_TRUE(mat2.IsValid());
+    DgnMaterialCPtr mat3 = CreateMaterial("Palette2", "Material3",mat2->GetMaterialId());
+    ASSERT_TRUE(mat3.IsValid());
+
+    int count = 0;
+    for (DgnMaterial::Entry entry : DgnMaterial::MakeIterator(*m_db, DgnMaterial::Iterator::Options::ByPalette("Palette1")))
+        {
+        if (entry.GetId() == mat1->GetMaterialId())
+            EXPECT_STREQ(mat1->GetMaterialName().c_str(), entry.GetName());
+        else if (entry.GetId() == mat2->GetMaterialId())
+            EXPECT_STREQ(mat2->GetMaterialName().c_str(), entry.GetName());
+        else
+            FAIL() << "This material should not exisit";
+
+            count++;
+        }
+    ASSERT_EQ(2, count);
+
+    for (DgnMaterial::Entry entry : DgnMaterial::MakeIterator(*m_db, DgnMaterial::Iterator::Options::ByParentId(mat2->GetMaterialId())))
+    {
+        if (entry.GetId() == mat3->GetMaterialId())
+            EXPECT_STREQ(mat1->GetMaterialName().c_str(), entry.GetName());
+        else
+            FAIL() << "This material should not exisit";
+
+        count++;
+    }
+    ASSERT_EQ(1, count);
     }

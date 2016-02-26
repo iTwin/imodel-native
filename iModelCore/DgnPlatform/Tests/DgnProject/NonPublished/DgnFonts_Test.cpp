@@ -86,6 +86,14 @@ TEST_F(FontTests, CRUD_DbFontMapDirect)
     EXPECT_TRUE(shxFont->GetName() == toFind->GetName());
     EXPECT_TRUE(shxFont->GetType() == toFind->GetType());
 
+    DgnFontCP toFindP = m_db->Fonts().FindFontById(fontId1);
+    EXPECT_TRUE(nullptr != toFindP);
+    EXPECT_TRUE(shxFont->GetName() == toFindP->GetName());
+
+    toFindP = m_db->Fonts().FindFontByTypeAndName(DgnFontType::Shx, "Cdm");
+    EXPECT_TRUE(nullptr != toFindP);
+    EXPECT_TRUE(shxFont->GetName() == toFindP->GetName());
+
     toFind = map.QueryByTypeAndName(DgnFontType::Shx, "NotExist");
     EXPECT_TRUE(!toFind.IsValid());
 
@@ -100,6 +108,7 @@ TEST_F(FontTests, CRUD_DbFontMapDirect)
 
     idToFind = map.QueryIdByTypeAndName(DgnFontType::Shx, "NotExist");
     EXPECT_TRUE(!idToFind.IsValid());
+
 
     // Update 
     DgnShxFontP shxFont2 = (DgnShxFontP)shxFont.get();
@@ -329,11 +338,11 @@ TEST_F(FontTests, DbFaceDataDirect)
         DgnFonts::DbFaceDataDirect::T_FaceMap faceMap = entry.GenerateFaceMap();
         if (faceMap[0].m_familyName == "Exton Fonts")
             {
-            EXPECT_TRUE( 4 == faceMap.count(0) );
+            EXPECT_EQ( 4 , faceMap.count(0) );
             }
         else if (faceMap[0].m_familyName == "Islamabad Fonts")
             {
-            EXPECT_TRUE( 4 == faceMap.count(0));
+            EXPECT_EQ( 4 , faceMap.count(0));
             }
         count++;
         }

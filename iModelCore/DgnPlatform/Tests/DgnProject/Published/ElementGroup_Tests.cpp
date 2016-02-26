@@ -330,7 +330,7 @@ TEST_F(ElementGroupTests, ElementGroupsMembersHelper)
         {
         ++relationshipCount;
         }
-    EXPECT_TRUE(2 == relationshipCount);
+    EXPECT_TRUE(3 == relationshipCount);
     m_db->SaveChanges();
 
     DgnElementIdSet allMembers = ElementGroupsMembers::QueryMembers(groupElement);
