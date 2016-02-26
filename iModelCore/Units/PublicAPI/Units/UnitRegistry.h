@@ -24,7 +24,7 @@ private:
 
     Utf8Vector m_systems;
     bmap<Utf8String, PhenomenonP> m_phenomena;
-    bmap<Utf8String, UnitCP> m_units;
+    bmap<Utf8String, UnitP> m_units;
     int m_nextId = 0;
 
     bmap<bpair<Utf8String, Utf8String>, double> m_conversions;
@@ -44,9 +44,11 @@ private:
     void AddBasePhenomena(Utf8Char dimensionalSymbol);
     UnitCP AddDimensionBaseUnit(Utf8CP unitName, Utf8Char dimensionSymbol);
 
-    UnitCP AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant);
+    UnitP AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant);
 
     PhenomenonP LookupPhenomenonP(Utf8CP name) const;
+    UnitP LookupUnitP(Utf8CP name) const;
+    UnitP AddUnitP(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double factor = 1, double offset = 0);
 
     bool NameConflicts(Utf8CP name);
 
@@ -62,6 +64,7 @@ public:
     UNITS_EXPORT UnitCP AddUnit(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double factor = 1, double offset = 0);
     UNITS_EXPORT UnitCP AddConstant(Utf8CP phenomName, Utf8CP constantName, Utf8CP definition, double factor);
     UNITS_EXPORT BentleyStatus AddSynonym(UnitCP unit, Utf8CP synonymName);
+    UNITS_EXPORT BentleyStatus AddSynonym(Utf8CP unitName, Utf8CP synonymName);
     
     // Lookup methods
     UNITS_EXPORT UnitCP LookupUnit(Utf8CP name) const;

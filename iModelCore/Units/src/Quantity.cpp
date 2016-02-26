@@ -57,8 +57,7 @@ BentleyStatus Quantity::ConvertTo(Utf8CP unitName, double& value) const
         return SUCCESS;
         }
 
-    auto newFactor = m_unit->GetConversionTo(newUnit);
-    value = m_magnitude * newFactor;
+    value = m_unit->Convert(m_magnitude, newUnit);
     return SUCCESS;
     }
 

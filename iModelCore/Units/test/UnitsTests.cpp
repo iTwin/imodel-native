@@ -99,8 +99,7 @@ bool UnitsTests::TestUnitConversion (double fromVal, Utf8CP fromUnitName, double
         }
 
     PERFORMANCELOG.debugv("About to try to convert from %s to %s", fromUnit->GetName(), targetUnit->GetName());
-    double conversionFactor = fromUnit->GetConversionTo(targetUnit);
-    double convertedVal = conversionFactor * fromVal;
+    double convertedVal = fromUnit->Convert(fromVal, targetUnit);;
 
     //QuantityP q = SimpleQuantity(fromVal, fromUnitName);
     //if (nullptr == q)
@@ -491,7 +490,7 @@ TEST_F(UnitsPerformanceTests, GenerateEveryConversionValue)
         UnitCP firstUnit = *phenomenon->GetUnits().begin();
         for (auto const& unit : phenomenon->GetUnits())
             {
-            double conversion = firstUnit->GetConversionTo(unit);
+            double conversion = firstUnit->Convert(42, unit);
             ASSERT_FALSE(std::isnan(conversion)) << "Generated conversion factor is invalid from " << firstUnit->GetName() << " to " << unit->GetName();
             ++numConversions;
             }

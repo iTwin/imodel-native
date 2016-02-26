@@ -103,45 +103,69 @@ Expression& Unit::Evaluate() const
     return T_Super::Evaluate(0, [] (Utf8CP unitName) { return UnitRegistry::Instance().LookupUnit(unitName); });
     }
 
-double Unit::GetConversionTo(UnitCP unit) const
+double FastIntegerPower(double a, uint32_t n)
     {
-    if (nullptr == unit)
+    double q = a;
+    double product = (n & 0x01) ? a : 1.0;
+    n = n >> 1;
+    while (n > 0)
         {
-        LOG.errorv("Cannot convert from %s to a null unit, returning a conversion factor of 0.0", this->GetName());
+        q = q * q;
+        if (n & 0x01)
+            product *= q;
+        n = n >> 1;
+        }
+    return product;
+    }
+
+double Unit::Convert(double value, UnitCP toUnit) const
+    {
+    if (nullptr == toUnit)
+        {
+        LOG.errorv("Cannot convert from %s to a null toUnit, returning a conversion factor of 0.0", this->GetName());
         return 0.0;
         }
 
     // TODO: USING A MAX RECRUSION DEPTH TO CATCH CYCLES IS SUPER HACKY AND MAKES CHRIS T. MAD.  Replace with something that actually detects cycles.
     Expression fromExpression = Evaluate();
-    Expression toExpression = unit->Evaluate();
+    Expression toExpression = toUnit->Evaluate();
     
     fromExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, this->GetName());
-    toExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, unit->GetName());
+    toExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, toUnit->GetName());
 
     if (!Expression::DimensionallyCompatible(fromExpression, toExpression))
         {
-        LOG.errorv("Cannot convert from %s: (%s) to %s: (%s) because they two units are not dimensionally compatible.  Returning a conversion factor of 0.0", 
-                   this->GetName(), this->GetDefinition(), unit->GetName(), unit->GetDefinition());
+        LOG.errorv("Cannot convert from %s: (%s) to %s: (%s) because they two toUnits are not dimensionally compatible.  Returning a conversion factor of 0.0", 
+                   this->GetName(), this->GetDefinition(), toUnit->GetName(), toUnit->GetDefinition());
         return 0.0;
         }
 
     Expression combinedExpression;
     Expression::Copy(fromExpression, combinedExpression);
 
-    Expression::MergeExpressions(GetDefinition(), combinedExpression, unit->GetDefinition(), toExpression, -1);
+    Expression::MergeExpressions(GetDefinition(), combinedExpression, toUnit->GetDefinition(), toExpression, -1);
     if (LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_DEBUG))
         {
-        Utf8PrintfString combinedName("%s/%s", this->GetName(), unit->GetName());
+        Utf8PrintfString combinedName("%s/%s", this->GetName(), toUnit->GetName());
         combinedExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, combinedName.c_str());
         }
-    double factor = GetFactor() / unit->GetFactor();
-    for (auto const& unitExp : combinedExpression)
-        {
-       // TODO: Consider always doing positive exponents and dividing if exponent is negative
-       factor *= pow(unitExp->GetSymbolFactor(), unitExp->GetExponent());
-        }
 
-    return factor;
+    double factor = GetFactor();
+    double offset = GetOffset();
+    for (auto const& toUnitExp : combinedExpression)
+        {
+        if (toUnitExp->GetExponent() > 0)
+            factor *= FastIntegerPower(toUnitExp->GetSymbolFactor(), toUnitExp->GetExponent());
+        else
+            factor /= FastIntegerPower(toUnitExp->GetSymbolFactor(), abs(toUnitExp->GetExponent()));
+        
+        if (toUnitExp->GetSymbol()->GetOffset() != 0.0)
+            offset = offset * factor + toUnitExp->GetSymbol()->GetOffset();
+        }
+    factor /= toUnit->GetFactor();
+    offset = offset * factor + toUnit->GetOffset();
+
+    return value * factor + offset;
     }
 
 Utf8String Phenomenon::GetPhenomenonDimension() const

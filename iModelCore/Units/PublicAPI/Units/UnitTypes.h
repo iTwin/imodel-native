@@ -52,6 +52,7 @@ public:
     UNITS_EXPORT int    GetId()   const;
     UNITS_EXPORT Utf8CP GetDefinition() const;
     UNITS_EXPORT double GetFactor() const;
+    double GetOffset() const { return m_offset; }
     UNITS_EXPORT bool IsBaseSymbol() const;
     UNITS_EXPORT bool IsDimensionless() const;
 
@@ -92,7 +93,7 @@ private:
     int GetPhenomenonId() const;
 
 public:
-    UNITS_EXPORT double GetConversionTo(UnitCP unit) const;
+    UNITS_EXPORT double Convert(double value, UnitCP toUnit) const;
 
     // TODO: Should GetId be private?  Should probably only be used internally because id is not gaurantteed to be consistent between runs (though it is because units are added in our code)
 

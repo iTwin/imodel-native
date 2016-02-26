@@ -110,7 +110,7 @@ void AddTemperature(UnitRegistry& reg)
     UnitCP unit = reg.AddUnit(TEMPERATURE, SI, "CELSIUS", "K", 1.0, -273.15);
     reg.AddSynonym(unit, "DEGREE_CELSIUS");
     //SimpleUOM(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "#CELSIUS", 1.8)->AddSynonym("DEGREE_FAHRENHEIT");
-    unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "CELSIUS", 1.8, 1.0);
+    unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "CELSIUS", 1.8, -32);
     reg.AddSynonym(unit, "DEGREE_FAHRENHEIT");
     unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "RANKINE", "K", 1.8);
     reg.AddSynonym(unit, "DEGREE_RANKINE");
@@ -675,31 +675,51 @@ void AddPressure(UnitRegistry& reg)
     {
     UnitCP unit = reg.AddUnit(PRESSURE, SI, "PA", "N*M(-2)");
     reg.AddSynonym(unit, "PASCAL");
+    reg.AddSynonym(unit, "NEWTON_PER_METRE_SQUARED");
+
+    reg.AddUnit(PRESSURE, SI, "PA_GAUGE", "PA", 1, 101325); // TODO: Use constant for this
+
+    // TODO: See if this is equal to another unit here.
+    reg.AddUnit(PRESSURE, SI, "NEWTON_PER_MILLIMETRE_SQUARED", "N*MM(-2)");
+
+
     reg.AddUnit(PRESSURE, SI, "HECTOPASCAL", "[HECTO]*PA"); //, BISQSecUom);
     reg.AddUnit(PRESSURE, SI, "KILOPASCAL", "[KILO]*PA"); //, BISQSecUom);
-    reg.AddUnit(PRESSURE, SI, "KILOPASCAL_GAUGE", "[KILO]*PA", 1.0, 1.0); //, BISQNoDescript); //, BISQSecUom);
+    reg.AddUnit(PRESSURE, SI, "KILOPASCAL_GAUGE", "[KILO]*PA", 1, 101325e-3); // TODO: Use constant for this
+    reg.AddUnit(PRESSURE, SI, "MEGAPASCAL", "[MEGA]*PA");
+    reg.AddUnit(PRESSURE, SI, "MEGAPASCAL_GAUGE", "[MEGA]*PA", 1, 101325e-6); // TODO: Use constant for this
 
-    unit = reg.AddUnit(PRESSURE, INTERNATIONAL, "AT", "KGF*CM(-2)");
-    reg.AddSynonym(unit, "ATMOSPHERE");
+    unit = reg.AddUnit(PRESSURE, INTERNATIONAL, "AT", "KGF*CM(-2)");  // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
+    reg.AddSynonym(unit, "ATMOSPHERE_TECHNIAL");
     reg.AddSynonym(unit, "KILOGRAM_FORCE_PER_CENTIMETRE_SQUARED");
+    unit = reg.AddUnit(PRESSURE, INDUSTRIAL, "AT_GAUGE", "AT", 1.0, 1.0332274528);
+    reg.AddSynonym(unit, "KILOGRAM_FORCE_PER_CENTIMETRE_SQUARED_GAUGE");
+
     unit = reg.AddUnit(PRESSURE, INTERNATIONAL, "KGF/SQ.M", "KGF*M(-2)");
     reg.AddSynonym(unit, "KILOGRAM_FORCE_PER_METRE_SQUARED");
-    unit = reg.AddUnit(PRESSURE, SI, "ATM", "PA", 1.01325e5);
-    reg.AddSynonym(unit, "STANDARD_ATMOSPHERE");
+    unit = reg.AddUnit(PRESSURE, SI, "ATM", "PA", 101325);  // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
+    reg.AddSynonym(unit, "ATMOSPHERE");
     reg.AddUnit(PRESSURE, SI, "BAR", "PA", 1.0e5); //, BISQNoDescript); //, BISQSecUom);
+    reg.AddUnit(PRESSURE, INDUSTRIAL, "BAR_GAUGE", "PA", 1.0e5, 1); //, BISQNoDescript); //, BISQSecUom);
     unit = reg.AddUnit(PRESSURE, SI, "MBAR", "[MILLI]*BAR");
     reg.AddSynonym(unit, "MILLIBAR");
     reg.AddUnit(PRESSURE, CGS, "BARYE", "PA", 0.1); //, BISQSecUom);   // 1.0 dyn/sq.cm
-    unit = reg.AddUnit(PRESSURE, SI, "PSI", "LBF*IN(-2)");
-    reg.AddSynonym(unit, "POUND_PER_SQUARED_INCH");
-    unit = reg.AddUnit(PRESSURE, SI, "KSI", "[KILO]*LBF*IN(-2)");
-    reg.AddSynonym(unit, "KILOPOUND_PER_SQUARED_INCH");
-    reg.AddUnit(PRESSURE, INDUSTRIAL, "BAR_GAUGE", "BAR", 1.0, -1.0); //, BISQNoDescript); //, BISQSecUom);
-    unit = reg.AddUnit(PRESSURE, INDUSTRIAL, "ATM_GAUGE", "AT", 1.0, 1.0332274528);
-    reg.AddSynonym(unit, "KILOGRAM_FORCE_PER_CENTIMETRE_SQUARED_GAUGE");
-    unit = reg.AddUnit(PRESSURE, SI, "METRE_OF_H2O_CONVENTIONAL", "[STD_G]*[H2O_0C]*M");
-    reg.AddSynonym(unit, "MAQ");
-    reg.AddUnit(PRESSURE, SI, "MILLIMETRE_OF_H2O_CONVENTIONAL", "[STD_G]*[H2O_0C]*MM"); //, BISQSecUom);
+
+
+    unit = reg.AddUnit(PRESSURE, USCUSTOM, "PSI", "LBF*IN(-2)");
+    reg.AddSynonym(unit, "POUND_FORCE_PER_INCH_SQUARED");
+
+    unit = reg.AddUnit(PRESSURE, USCUSTOM, "PSIG", "LBF*IN(-2)", 1, 14.6959); // TODO: Get reference for the offset
+    reg.AddSynonym(unit, "POUND_FORCE_PER_INCH_SQUARED_GAUGE");
+
+    unit = reg.AddUnit(PRESSURE, USCUSTOM, "KSI", "[KILO]*LBF*IN(-2)");
+    reg.AddUnit(PRESSURE, USCUSTOM, "POUND_FORCE_PER_FOOT_SQUARED", "LBF*FT(-2)");
+
+    reg.AddUnit(PRESSURE, USCUSTOM, "TORR", "PA", 1.333224e2);   // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
+
+    unit = reg.AddUnit(PRESSURE, SI, "METRE_OF_H2O_CONVENTIONAL", "[STD_G]*[H2O_4C]*M");
+
+    reg.AddUnit(PRESSURE, SI, "MILLIMETRE_OF_H2O_CONVENTIONAL", "[STD_G]*[H2O_4C]*MM"); //, BISQSecUom);
     reg.AddUnit(PRESSURE, USCUSTOM, "FOOT_OF_H2O_CONVENTIONAL", "[STD_G]*[H2O_4C]*FT"); //, BISQSecUom);
     reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_H2O_AT_32_FAHRENHEIT", "[STD_G]*[H2O_32F]*IN"); //, BISQSecUom);
     reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_H2O_AT_39_2_FAHRENHEIT", "[STD_G]*[H2O_39.2F]*IN"); //, BISQSecUom);
@@ -845,8 +865,12 @@ void AddVelocity(UnitRegistry& reg)
     unit = reg.AddUnit(VELOCITY, SI, "MPH", "MILE*HR(-1)");
     reg.AddSynonym(unit, "MILE_PER_HOUR");
 
-    unit = reg.AddUnit(VELOCITY, MARITIME, "KNOT", "NAUT_MILE*HR(-1)");
-    reg.AddSynonym(unit, "KNOT_INTERNATIONAL");
+    unit = reg.AddUnit(VELOCITY, MARITIME, "KNOT_UK_ADMIRALTY", "M*HR(-1)", 1853.184);
+    // TODO: This is a bad synonym but needed for compatiblity with legacy units ... consider removing all synonyms and only using the name matching for conversion
+    reg.AddSynonym("KNOT_UK_ADMIRALTY", "KNOT");
+
+
+    unit = reg.AddUnit(VELOCITY, MARITIME, "KNOT_INTERNATIONAL", "NAUT_MILE*HR(-1)");
     }
 
 void AddAngularVelocity(UnitRegistry& reg)

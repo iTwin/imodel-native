@@ -31,6 +31,9 @@ void UnitRegistry::AddDefaultConstants ()
     reg.AddConstant(ACCELERATION, "STD_G", "M*S(-2)", 9.80665); //, "Standard Gravity");
     //reg.AddConstant(ACTION, "H", "J*S", 6.62607004e-34); //, "Planck constant"); // NOTE: Not used so removed instead of adding 'ACTION' phenomenon
     //reg.AddConstant(MOLE, "A0", "MOL(-1)", 6.022140857e23); //, "Avogadro Number"); // NOTE: Not actually MOLE but MOLE(-1), we don't use it anywhere so removed it
+
+    // TODO: These densities need a reference really really badly.  Using H20_4C for Conventional because it is the documented value for
+    // conventional density that I found but it is not consistently the documented value for density of water at 4C.
     // Densities of Water in KG/CUB.M
     reg.AddConstant(DENSITY, "H2O_0C", "KG*M(-3)", 0.99987e3); //, "Density of water at 0 degree Celsius");
     reg.AddConstant(DENSITY, "H2O_4C", "KG*M(-3)", 1.00000e3); //, "Density of water at 4 degree Celsius");
@@ -66,6 +69,8 @@ void UnitRegistry::AddDefaultConstants ()
     reg.AddConstant(DENSITY, "HG_20C", "KG*M(-3)", 13.546e3); //, "Density of mercury 20 degree Celsius");
     reg.AddConstant(DENSITY, "HG_25C", "KG*M(-3)", 13.532e3); //, "Density of mercury 25 degree Celsius");
     reg.AddConstant(DENSITY, "HG_60F", "KG*M(-3)", 13.557e3); //, "Density of mercury 60 degree Fahrenheit");
+
+    reg.AddConstant(PRESSURE, "GAUGE_OFFSET", "PA", 101325); // TODO: Get NIST reference, There are other standards but this is the one we used in Old units framework
 
     //Decimal multiples
     reg.AddConstant(ONE, "DECI", "ONE", 1.0e-1); //, "DECI-prefix");

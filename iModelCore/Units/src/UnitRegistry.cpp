@@ -180,7 +180,7 @@ void UnitRegistry::AddDefaultSystems ()
 //---------------------------------------------------------------------------------------//
 // @bsimethod                                              Colin.Kerr           02/16
 //+---------------+---------------+---------------+---------------+---------------+------//
-UnitCP UnitRegistry::AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant)
+UnitP UnitRegistry::AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant)
     {
     if (Utf8String::IsNullOrEmpty(unitName))
         {
@@ -211,7 +211,7 @@ UnitCP UnitRegistry::AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8C
 
     ++m_nextId;
 
-    m_units.insert(bpair<Utf8String, UnitCP>(unitName, unit));
+    m_units.insert(bpair<Utf8String, UnitP>(unitName, unit));
 
     return unit;
     }
@@ -240,7 +240,7 @@ UnitCP UnitRegistry::AddDimensionBaseUnit(Utf8CP unitName, Utf8Char dimensionSym
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitCP UnitRegistry::AddUnit (Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double factor, double offset)
+UnitP UnitRegistry::AddUnitP (Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double factor, double offset)
     {
     if (Utf8String::IsNullOrEmpty(unitName))
         {
@@ -248,6 +248,14 @@ UnitCP UnitRegistry::AddUnit (Utf8CP phenomName, Utf8CP systemName, Utf8CP unitN
         return nullptr;
         }
     return AddUnitInternal(phenomName, systemName, unitName, definition, ' ', factor, offset, false);
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+UnitCP UnitRegistry::AddUnit (Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double factor, double offset)
+    {
+    return AddUnitP(phenomName, systemName, unitName, definition, factor, offset);
     }
 
 //---------------------------------------------------------------------------------------//
@@ -286,6 +294,35 @@ UnitCP UnitRegistry::AddConstant(Utf8CP phenomName, Utf8CP constantName, Utf8CP 
 //---------------------------------------------------------------------------------------//
 // @bsimethod                                              Colin.Kerr           02/16
 //+---------------+---------------+---------------+---------------+---------------+------//
+BentleyStatus UnitRegistry::AddSynonym(Utf8CP unitName, Utf8CP synonymName)
+    {
+    if (Utf8String::IsNullOrEmpty(synonymName))
+        return BentleyStatus::ERROR;
+    if (Utf8String::IsNullOrEmpty(unitName))
+        return BentleyStatus::ERROR;
+
+    if (NameConflicts(synonymName))
+        {
+        LOG.errorv("Could not create synonym with name '%s' becasue it conflicts with an existing name", synonymName);
+        return BentleyStatus::ERROR;
+        }
+
+    UnitP unit = LookupUnitP(unitName);
+
+    if (nullptr == unit)
+        {
+        LOG.errorv("Could not create synonym with name '%s' because the unit it is for is null", synonymName);
+        return BentleyStatus::ERROR;
+        }
+
+    m_units.insert(bpair<Utf8String, UnitP>(synonymName, unit));
+
+    return BentleyStatus::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------//
+// @bsimethod                                              Colin.Kerr           02/16
+//+---------------+---------------+---------------+---------------+---------------+------//
 BentleyStatus UnitRegistry::AddSynonym(UnitCP unit, Utf8CP synonymName)
     {
     if (Utf8String::IsNullOrEmpty(synonymName))
@@ -297,15 +334,17 @@ BentleyStatus UnitRegistry::AddSynonym(UnitCP unit, Utf8CP synonymName)
         return BentleyStatus::ERROR;
         }
 
-    if (NameConflicts(synonymName))
-        {
-        LOG.errorv("Could not create synonym with name '%s' becasue it conflicts with an existing name", synonymName);
-        return BentleyStatus::ERROR;
-        }
+    return AddSynonym(unit->GetName(), synonymName);
+    }
 
-    m_units.insert(bpair<Utf8String, UnitCP>(synonymName, unit));
+UnitP UnitRegistry::LookupUnitP(Utf8CP name) const
+    {
+    auto nameStr = Utf8String(name);
+    auto val_iter = m_units.find(nameStr);
+    if (val_iter == m_units.end())
+        return nullptr;
 
-    return BentleyStatus::SUCCESS;
+    return (*val_iter).second;
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -313,12 +352,7 @@ BentleyStatus UnitRegistry::AddSynonym(UnitCP unit, Utf8CP synonymName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 UnitCP UnitRegistry::LookupUnit (Utf8CP name) const
     {
-    auto nameStr = Utf8String(name);
-    auto val_iter = m_units.find (nameStr);
-    if (val_iter == m_units.end())
-        return nullptr;
-
-    return (*val_iter).second;
+    return LookupUnitP(name);
     }
 
 /*--------------------------------------------------------------------------------**//**
