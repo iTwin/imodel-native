@@ -369,9 +369,7 @@
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="UserProperties" typeName="string" extendedTypeName="AdHocJson">
-            <!-- WIP: placeholder in 06, will be implemented/used in 0601 -->
-        </ECProperty>
+        <ECProperty propertyName="UserProperties" typeName="string" extendedTypeName="AdHocJson"/>
         <ECProperty propertyName="LastMod" typeName="dateTime">
             <ECCustomAttributes>
                 <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">

@@ -1000,7 +1000,7 @@ CachedStatementPtr DgnElements::GetStatement(Utf8CP sql) const
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), m_dgndb(params.m_dgndb), m_modelId(params.m_modelId), m_classId(params.m_classId),
-    m_code(params.m_code), m_label(params.m_label), m_parentId(params.m_parentId)
+    m_code(params.m_code), m_label(params.m_label), m_parentId(params.m_parentId), m_userProperties(nullptr)
     {
     ++GetDgnDb().Elements().m_tree->m_totals.m_extant;
     }
@@ -1012,7 +1012,8 @@ DgnElement::~DgnElement()
     {
     BeAssert(!IsPersistent());
     ClearAllAppData();
-    
+    UnloadUserProperties();
+
     --GetDgnDb().Elements().m_tree->m_totals.m_extant;
     }
 
