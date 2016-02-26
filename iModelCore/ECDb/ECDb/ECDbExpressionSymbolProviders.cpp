@@ -8,7 +8,7 @@
 #include "ECDbPch.h"
 #include <ECDb/ECDbExpressionSymbolProviders.h>
 
-BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2016
@@ -279,5 +279,3 @@ void ECDbInstancesExpressionSymbolsContext::LeaveContext()
     InternalECSymbolProviderManager::GetManager().UnregisterSymbolProvider(*m_provider);
     DELETE_AND_CLEAR(m_provider);
     }
-
-END_BENTLEY_SQLITE_EC_NAMESPACE
