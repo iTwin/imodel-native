@@ -5,6 +5,9 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+/** @namespace Bentley::Dgn Types defined by the Bentley DgnPlatform TypeScript/JavaScript API
+*/
+
 declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ 
 {
     /*** BEGIN_FORWARD_DECLARATIONS ***/
