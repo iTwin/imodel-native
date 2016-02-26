@@ -79,7 +79,7 @@
     <ClCompile Include="TestUtils\WSClientIntegrationTestsHost.cpp" />
     <ClCompile Include="TestUtils\TestMain.cpp" />
     <ClCompile Include="Repository\ConnectWorkspaceManagerTests.cpp" />
-    <ClCompile Include="Connect\ConnectTests.cpp" />
+    <ClCompile Include="Connect\ImsClientTests.cpp" />
     <ClCompile Include="Client\WSClientTests.cpp" />
     <ClCompile Include="Client\WSRepositoryClientTests.cpp" />
   </ItemGroup>
@@ -94,7 +94,7 @@
     <ClInclude Include="Repository\WorkspaceTests.h" />
     <ClInclude Include="Repository\WorkspaceUpgradeTests.h" />
     <ClInclude Include="Repository\ConnectWorkspaceManagerTests.h" />
-    <ClInclude Include="Connect\ConnectTests.h" />
+    <ClInclude Include="Connect\ImsClientTests.h" />
     <ClInclude Include="Client\WSClientTests.h" />
     <ClInclude Include="Client\WSRepositoryClientTests.h" />
     <ClInclude Include="TestUtils\WSClientIntegrationTestsHost.h" />

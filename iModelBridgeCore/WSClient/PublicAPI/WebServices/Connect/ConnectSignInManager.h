@@ -14,6 +14,7 @@
 #include <WebServices/Connect/IConnectAuthenticationPersistence.h>
 #include <WebServices/Connect/IConnectAuthenticationProvider.h>
 #include <WebServices/Connect/IConnectTokenProvider.h>
+#include <WebServices/Connect/IImsClient.h>
 #include <WebServices/Connect/SamlToken.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
@@ -59,6 +60,7 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
     private:
         mutable BeCriticalSection m_cs;
 
+        IImsClientPtr m_client;
         ILocalState& m_localState;
         ISecureStorePtr m_secureStore;
 
@@ -71,7 +73,7 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         std::function<void()> m_tokenExpiredHandler;
 
     private:
-        ConnectSignInManager(ILocalState* localState, ISecureStorePtr secureStore);
+        ConnectSignInManager(IImsClientPtr client, ILocalState* localState, ISecureStorePtr secureStore);
 
         void UpdateSignInIfNeeded();
 
@@ -87,7 +89,13 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
     public:
         //! Can be created after MobileDgn is initialized.
         //! Will renew sign-in information asynchronously if needed.
-        WSCLIENT_EXPORT static ConnectSignInManagerPtr Create(ILocalState* localState = nullptr, ISecureStorePtr secureStore = nullptr);
+        WSCLIENT_EXPORT static ConnectSignInManagerPtr Create
+            (
+            IImsClientPtr client,
+            ILocalState* localState = nullptr,
+            ISecureStorePtr secureStore = nullptr
+            );
+
         WSCLIENT_EXPORT virtual ~ConnectSignInManager();
 
         //! Change default configuration with new one. Best called before any other calls are done.

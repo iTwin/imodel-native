@@ -9,7 +9,7 @@
 #include <WebServices/Connect/Authentication.h>
 
 #include <MobileDgn/MobileDgnUi.h>
-#include <WebServices/Connect/Connect.h>
+#include <WebServices/Connect/ImsClient.h>
 #include <WebServices/Connect/Authentication.h>
 
 #include "AuthenticationData.h"
@@ -34,7 +34,8 @@ void WebServices::Authenticate(JsonValueCR messageDataObj)
         }
     else
         {
-        result = Connect::Login(Credentials(username, password))->GetResult();
+        auto rpUri = ImsClient::GetLegacyRelyingPartyUri();
+        result = ImsClient::GetShared()->RequestToken(Credentials(username, password), rpUri)->GetResult();
         }
 
     if (!result.IsSuccess())

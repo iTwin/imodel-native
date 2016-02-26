@@ -20,6 +20,9 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 * @bsiclass                                                     Vincas.Razma    05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 typedef std::shared_ptr<struct ClientInfo> ClientInfoPtr;
+typedef const struct  ClientInfo& ClientInfoCR;
+typedef struct ClientInfo& ClientInfoR;
+
 struct ClientInfo : public IHttpHeaderProvider
     {
     private:

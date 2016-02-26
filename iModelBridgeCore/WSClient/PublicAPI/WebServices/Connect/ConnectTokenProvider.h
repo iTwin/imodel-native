@@ -10,6 +10,7 @@
 
 #include <WebServices/Connect/IConnectAuthenticationPersistence.h>
 #include <WebServices/Connect/IConnectTokenProvider.h>
+#include <WebServices/Connect/IImsClient.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
@@ -19,11 +20,12 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 struct ConnectTokenProvider : public IConnectTokenProvider
     {
     private:
+        IImsClientPtr m_client;
         IConnectAuthenticationPersistencePtr m_persistence;
         uint64_t m_tokenLifetime;
 
     public:
-        WSCLIENT_EXPORT ConnectTokenProvider(IConnectAuthenticationPersistencePtr customPersistence = nullptr);
+        WSCLIENT_EXPORT ConnectTokenProvider(IImsClientPtr client, IConnectAuthenticationPersistencePtr customPersistence = nullptr);
 
         //! Set new token lifetime in minutes
         WSCLIENT_EXPORT void Configure(uint64_t tokenLifetime);

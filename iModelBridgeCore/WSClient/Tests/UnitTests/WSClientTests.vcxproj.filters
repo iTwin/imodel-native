@@ -74,7 +74,6 @@
     <ClInclude Include="Published\Connect\SecureStoreTests.h" />
     <ClInclude Include="Published\WebServices\Connect\ConnectAuthenticationHandlerTests.h" />
     <ClInclude Include="Published\WebServices\Connect\ConnectAuthenticationPersistenceTests.h" />
-    <ClInclude Include="Published\WebServices\Connect\ConnectTests.h" />
     <ClInclude Include="Published\WebServices\Connect\ConnectTestsHelper.h" />
     <ClInclude Include="Published\WebServices\Connect\ConnectTokenProviderTests.h" />
     <ClInclude Include="Published\WebServices\Connect\MockConnectAuthenticationPersistence.h" />
@@ -151,6 +150,9 @@
     <ClInclude Include="Published\WebServices\Cache\Util\JsonUtilTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\ProgressFilterTests.h" />
     <ClInclude Include="Published\WebServices\Connect\ConnectSignInManagerTests.h" />
+    <ClInclude Include="Published\WebServices\Connect\MockImsClient.h" />
+    <ClInclude Include="Published\WebServices\Connect\StubImsClient.h" />
+    <ClInclude Include="Published\WebServices\Connect\ImsClientTests.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp">
@@ -265,7 +267,6 @@
     <ClCompile Include="Published\Connect\SecureStoreTests.cpp" />
     <ClCompile Include="Published\WebServices\Connect\ConnectAuthenticationHandlerTests.cpp" />
     <ClCompile Include="Published\WebServices\Connect\ConnectAuthenticationPersistenceTests.cpp" />
-    <ClCompile Include="Published\WebServices\Connect\ConnectTests.cpp" />
     <ClCompile Include="Published\WebServices\Connect\ConnectTestsHelper.cpp" />
     <ClCompile Include="Published\WebServices\Connect\ConnectTokenProviderTests.cpp" />
     <ClCompile Include="Published\WebServices\Connect\SamlTokenTests.cpp" />
@@ -317,6 +318,7 @@
     <ClCompile Include="Published\WebServices\Cache\Util\JsonUtilTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\ProgressFilterTests.cpp" />
     <ClCompile Include="Published\WebServices\Connect\ConnectSignInManagerTests.cpp" />
+    <ClCompile Include="Published\WebServices\Connect\ImsClientTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="dependencies.mki" />

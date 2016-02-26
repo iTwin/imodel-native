@@ -13,7 +13,7 @@
 #include <WebServices/Connect/ConnectAuthenticationHandler.h>
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
 #include <WebServices/Connect/ConnectTokenProvider.h>
-#include <WebServices/Connect/Connect.h>
+#include <WebServices/Connect/ImsClient.h>
 #include <WebServices/Connect/ConnectSignInManager.h>
 #include <WebServices/Configuration/UrlProvider.h>
 #include <MobileDgn/Utils/Http/ProxyHttpHandler.h>
@@ -36,13 +36,12 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_ConnectGlobalProjectQueryWithCo
     StubLocalState localState;
     ConnectAuthenticationPersistence::CustomInitialize(&localState);
 
-    Connect::Initialize(StubClientInfo(), proxy);
-
     Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net/";
     Utf8String repositoryId = "BentleyCONNECT.Global--CONNECT.GLOBAL";
     Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
 
-    auto manager = ConnectSignInManager::Create();
+    auto imsClient = ImsClient::Create(StubClientInfo(), proxy);
+    auto manager = ConnectSignInManager::Create(imsClient, &localState);
     ASSERT_TRUE(manager->SignInWithCredentials(credentials)->GetResult().IsSuccess());
     auto authHandler = manager->GetAuthenticationHandler(serverUrl, proxy);
 
@@ -50,14 +49,13 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_ConnectGlobalProjectQueryWithCo
 
     auto result = client->SendQueryRequest(WSQuery("GlobalSchema", "Project"))->GetResult();
     ASSERT_TRUE(result.IsSuccess());
-    auto resultStr = result.GetValue().GetJsonValue().toStyledString();
-    printf(resultStr.c_str());
+    auto resultStr = RapidJsonToString(result.GetValue().GetRapidJsonDocument());
     }
 
 TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_NavigateConnectGlobalWithExpiredToken_RetrievesNewTokenAndSucceeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    Connect::Initialize(StubClientInfo(), proxy);
+    auto imsClient = ImsClient::Create(StubClientInfo(), proxy);
 
     Utf8String serverUrl = "https://dev-wsg20-eus.cloudapp.net/";
     Utf8String repositoryId = "BentleyCONNECT.Global--CONNECT.GLOBAL";
@@ -65,7 +63,7 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_NavigateConnectGlobalWith
     StubLocalState localState;
     ConnectAuthenticationPersistence::CustomInitialize(&localState);
     auto persistence = ConnectAuthenticationPersistence::GetShared();
-    auto provider = std::make_shared<ConnectTokenProvider>(persistence);
+    auto provider = std::make_shared<ConnectTokenProvider>(imsClient, persistence);
     auto authHandler = std::make_shared<ConnectAuthenticationHandler>(serverUrl, provider, proxy);
 
     Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
@@ -78,13 +76,14 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_NavigateConnectGlobalWith
 
     auto result = client->SendGetChildrenRequest(ObjectId())->GetResult();
     ASSERT_TRUE(result.IsSuccess());
-    BeDebugLog(result.GetValue().GetJsonValue().toStyledString().c_str());
+    auto resultStr = RapidJsonToString(result.GetValue().GetRapidJsonDocument());
+    printf(resultStr.c_str());
     }
 
 TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_NavigateConnectGlobalWithExpiredTokenAndWrongPassword_ReturnsCredentialError)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    Connect::Initialize(StubClientInfo(), proxy);
+    auto imsClient = ImsClient::Create(StubClientInfo(), proxy);
 
     Utf8String serverUrl = "https://dev-wsg20-eus.cloudapp.net/";
     Utf8String repositoryId = "BentleyCONNECT.Global--CONNECT.GLOBAL";
@@ -92,7 +91,7 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_NavigateConnectGlobalWith
     StubLocalState localState;
     ConnectAuthenticationPersistence::CustomInitialize(&localState);
     auto persistence = ConnectAuthenticationPersistence::GetShared();
-    auto provider = std::make_shared<ConnectTokenProvider>(persistence);
+    auto provider = std::make_shared<ConnectTokenProvider>(imsClient, persistence);
     auto authHandler = std::make_shared<ConnectAuthenticationHandler>(serverUrl, provider, proxy);
 
     Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "wrongPassword");
@@ -112,7 +111,6 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_NavigateConnectGlobalWith
 TEST_F(WSRepositoryClientTests, DISABLED_SendCreateObjectRequest_ProjectWiseAndWSG1_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    Connect::Initialize(StubClientInfo(), proxy);
 
     Utf8String serverUrl = "https://bsw-construct2.bentley.com/ws";
     Utf8String repositoryId = "pw.PW";
@@ -155,7 +153,6 @@ TEST_F(WSRepositoryClientTests, DISABLED_SendCreateObjectRequest_ProjectWiseAndW
 TEST_F(WSRepositoryClientTests, DISABLED_SendCreateObjectRequest_ProjectWiseAndWSG2_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    Connect::Initialize(StubClientInfo(), proxy);
 
     Utf8String serverUrl = "https://bsw-construct2.bentley.com/ws21";
     Utf8String repositoryId = "pw--BSW-CONSTRUCT.bentley.com~3APW";

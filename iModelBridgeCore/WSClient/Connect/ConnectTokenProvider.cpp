@@ -9,7 +9,8 @@
 #include <WebServices/Connect/ConnectTokenProvider.h>
 
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
-#include <WebServices/Connect/Connect.h>
+#include <WebServices/Connect/ConnectAuthenticationPersistence.h>
+#include <WebServices/Connect/ImsClient.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
@@ -19,7 +20,8 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ConnectTokenProvider::ConnectTokenProvider(IConnectAuthenticationPersistencePtr customPersistence) :
+ConnectTokenProvider::ConnectTokenProvider(IImsClientPtr client, IConnectAuthenticationPersistencePtr customPersistence) :
+m_client(client),
 m_persistence(customPersistence ? customPersistence : ConnectAuthenticationPersistence::GetShared()),
 m_tokenLifetime(TOKEN_LIFETIME)
     {}
@@ -41,7 +43,8 @@ SamlTokenPtr ConnectTokenProvider::UpdateToken()
     if (!creds.IsValid())
         return nullptr;
 
-    auto result = Connect::Login(creds, nullptr, nullptr, m_tokenLifetime)->GetResult();
+    auto rpUri = ImsClient::GetLegacyRelyingPartyUri();
+    auto result = m_client->RequestToken(creds, rpUri, m_tokenLifetime)->GetResult();
     if (!result.IsSuccess())
         return nullptr;
 

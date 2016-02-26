@@ -9,9 +9,9 @@
 //__PUBLISH_SECTION_START__
 
 #include <WebServices/Client/WebServicesClient.h>
-#include <WebServices/Connect/Connect.h>
 #include <WebServices/Connect/IConnectAuthenticationPersistence.h>
 #include <WebServices/Connect/IConnectTokenProvider.h>
+#include <WebServices/Connect/IImsClient.h>
 #include <MobileDgn/Utils/Threading/UniqueTaskHolder.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
@@ -22,6 +22,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 struct DelegationTokenProvider : public IConnectTokenProvider
     {
     private:
+        IImsClientPtr m_client;
         Utf8String m_rpUri;
         IConnectTokenProviderPtr m_baseTokenProvider;
         SamlTokenPtr m_token;
@@ -35,7 +36,7 @@ struct DelegationTokenProvider : public IConnectTokenProvider
         //! Create token provider for delegating service specific tokens
         //! @param rpUri Relying Party URI for token
         //! @param baseTokenProvider token provider for base/identity token to be used to delegate new token
-        WSCLIENT_EXPORT DelegationTokenProvider(Utf8String rpUri, IConnectTokenProviderPtr baseTokenProvider);
+        WSCLIENT_EXPORT DelegationTokenProvider(IImsClientPtr client, Utf8String rpUri, IConnectTokenProviderPtr baseTokenProvider);
 
         //! Set new token lifetime
         WSCLIENT_EXPORT void Configure(uint64_t tokenLifetime);

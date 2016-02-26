@@ -8,7 +8,7 @@
 #include "ClientInternal.h"
 #include "IdentityTokenProvider.h"
 
-#include <WebServices/Connect/Connect.h>
+#include <WebServices/Connect/ImsClient.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
@@ -21,9 +21,11 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 +---------------+---------------+---------------+---------------+---------------+------*/
 IdentityTokenProvider::IdentityTokenProvider
 (
+IImsClientPtr client,
 ITokenStorePtr store,
 std::function<void()> tokenExpiredHandler
 ) :
+m_client(client),
 m_store(store),
 m_tokenExpiredHandler(tokenExpiredHandler),
 m_tokenLifetime(TOKEN_LIFETIME),
@@ -33,9 +35,9 @@ m_tokenRefreshRate(TOKEN_REFRESH_RATE)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-IdentityTokenProviderPtr IdentityTokenProvider::Create(ITokenStorePtr store, std::function<void()> tokenExpiredHandler)
+IdentityTokenProviderPtr IdentityTokenProvider::Create(IImsClientPtr client, ITokenStorePtr store, std::function<void()> tokenExpiredHandler)
     {
-    return std::shared_ptr<IdentityTokenProvider>(new IdentityTokenProvider(store, tokenExpiredHandler));
+    return std::shared_ptr<IdentityTokenProvider>(new IdentityTokenProvider(client, store, tokenExpiredHandler));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -78,7 +80,7 @@ SamlTokenPtr IdentityTokenProvider::GetToken()
             {
             // TODO: avoid launching twice - use UniqueTaskHolder once its fixed
             LOG.infov("Renewing identity token");
-            Connect::RenewToken(*oldToken, nullptr, nullptr, m_tokenLifetime)
+            m_client->RequestToken(*oldToken, nullptr, m_tokenLifetime)
                 ->Then([=] (SamlTokenResult result)
                 {
                 if (!result.IsSuccess())

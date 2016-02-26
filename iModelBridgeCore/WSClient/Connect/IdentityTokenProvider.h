@@ -10,6 +10,7 @@
 
 #include <WebServices/Connect/IConnectAuthenticationPersistence.h>
 #include <WebServices/Connect/IConnectTokenProvider.h>
+#include <WebServices/Connect/IImsClient.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
@@ -20,6 +21,7 @@ typedef std::shared_ptr<struct IdentityTokenProvider> IdentityTokenProviderPtr;
 struct IdentityTokenProvider : IConnectTokenProvider, std::enable_shared_from_this<IdentityTokenProvider>
     {
     private:
+        IImsClientPtr m_client;
         ITokenStorePtr m_store;
         std::function<void()> m_tokenExpiredHandler;
 
@@ -27,11 +29,16 @@ struct IdentityTokenProvider : IConnectTokenProvider, std::enable_shared_from_th
         uint64_t m_tokenRefreshRate;
 
     private:
-        IdentityTokenProvider(ITokenStorePtr store, std::function<void()> tokenExpiredHandler);
+        IdentityTokenProvider(IImsClientPtr client, ITokenStorePtr store, std::function<void()> tokenExpiredHandler);
         bool ShouldRenewToken(DateTimeCR tokenSetTime);
 
     public:
-        WSCLIENT_EXPORT static IdentityTokenProviderPtr Create(ITokenStorePtr store, std::function<void()> tokenExpiredHandler = nullptr);
+        WSCLIENT_EXPORT static IdentityTokenProviderPtr Create
+            (
+            IImsClientPtr client,
+            ITokenStorePtr store,
+            std::function<void()> tokenExpiredHandler = nullptr
+            );
 
         //! Set new token lifetime and refresh rate in minutes
         WSCLIENT_EXPORT void Configure(uint64_t tokenLifetime, uint64_t tokenRefreshRate);

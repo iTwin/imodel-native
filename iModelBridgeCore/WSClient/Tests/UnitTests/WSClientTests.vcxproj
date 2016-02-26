@@ -74,15 +74,17 @@
     <ClInclude Include="Published\WebServices\Connect\ConnectAuthenticationHandlerTests.h" />
     <ClInclude Include="Published\WebServices\Connect\ConnectAuthenticationPersistenceTests.h" />
     <ClInclude Include="Published\WebServices\Connect\ConnectSignInManagerTests.h" />
-    <ClInclude Include="Published\WebServices\Connect\ConnectTests.h" />
+    <ClInclude Include="Published\WebServices\Connect\ImsClientTests.h" />
     <ClInclude Include="Published\WebServices\Connect\ConnectTestsHelper.h" />
     <ClInclude Include="Published\WebServices\Connect\ConnectTokenProviderTests.h" />
     <ClInclude Include="Published\WebServices\Connect\MockConnectAuthenticationPersistence.h" />
     <ClInclude Include="Published\WebServices\Connect\MockConnectTokenProvider.h" />
+    <ClInclude Include="Published\WebServices\Connect\MockImsClient.h" />
     <ClInclude Include="Published\WebServices\Connect\MockLocalState.h" />
     <ClInclude Include="Published\Connect\PasswordPersistenceTests.h" />
     <ClInclude Include="Published\WebServices\Connect\SamlTokenTests.h" />
     <ClInclude Include="Published\Connect\SecureStoreTests.h" />
+    <ClInclude Include="Published\WebServices\Connect\StubImsClient.h" />
     <ClInclude Include="Published\WebServices\Connect\StubLocalState.h" />
     <ClInclude Include="Published\Utils\FSTest.h" />
     <ClInclude Include="Published\Utils\Http\AuthenticationHandlerTests.h" />
@@ -199,7 +201,7 @@
     <ClCompile Include="Published\WebServices\Connect\ConnectAuthenticationHandlerTests.cpp" />
     <ClCompile Include="Published\WebServices\Connect\ConnectAuthenticationPersistenceTests.cpp" />
     <ClCompile Include="Published\WebServices\Connect\ConnectSignInManagerTests.cpp" />
-    <ClCompile Include="Published\WebServices\Connect\ConnectTests.cpp" />
+    <ClCompile Include="Published\WebServices\Connect\ImsClientTests.cpp" />
     <ClCompile Include="Published\WebServices\Connect\ConnectTestsHelper.cpp" />
     <ClCompile Include="Published\WebServices\Connect\ConnectTokenProviderTests.cpp" />
     <ClCompile Include="Published\Connect\PasswordPersistenceTests.cpp" />
