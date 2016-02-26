@@ -19,11 +19,11 @@ TEST_F(ImsClientTests, GetToken_ProdUrls_RetrievesToken)
     UrlProvider::Initialize(UrlProvider::Release, UrlProvider::DefaultTimeout, &localState);
 
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    auto client = ImsClient::Create(StubClientInfo(), proxy);
+    auto client = ImsClient::Create(StubValidClientInfo(), proxy);
 
     Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
 
-    auto result = client->GetToken(credentials, ImsClient::GetLegacyRelyingPartyUri())->GetResult();
+    auto result = client->RequestToken(credentials, ImsClient::GetLegacyRelyingPartyUri())->GetResult();
     ASSERT_TRUE(result.IsSuccess());
 
     SamlTokenPtr token = result.GetValue();
@@ -37,11 +37,11 @@ TEST_F(ImsClientTests, GetToken_QaUrls_RetrievesToken)
     UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &localState);
 
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    auto client = ImsClient::Create(StubClientInfo(), proxy);
+    auto client = ImsClient::Create(StubValidClientInfo(), proxy);
 
     Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
 
-    auto result = client->GetToken(credentials, ImsClient::GetLegacyRelyingPartyUri())->GetResult();
+    auto result = client->RequestToken(credentials, ImsClient::GetLegacyRelyingPartyUri())->GetResult();
     ASSERT_TRUE(result.IsSuccess());
 
     SamlTokenPtr token = result.GetValue();
