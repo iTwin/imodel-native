@@ -96,7 +96,7 @@
     - @ref ECSQLSamples
     - @ref ECDbCodeSamples "Code examples": Illustrates typical workflows when working with business
     data in the @ref ECDbFile "ECDb file".
-    - @ref ECDbRelationshipMappingRules
+    - @ref ECDbECSchemaRules
     - @ref ECDbSchemaMappingCustomization
     - @ref ECDbCreatingECDbFromScratch
 
@@ -207,6 +207,12 @@
     - @ref BentleyApi::ECN::ECProperty "ECProperties" may not be of the same type as its @ref BentleyApi::ECN::ECClass "ECClass".
     - @ref BentleyApi::ECN::ArrayECProperty "Array ECProperties'" @b MinOccurs and @b MaxOccurs are enforced.
 
+    ### Enumerations
+    - %ECDb does not enforce @ref BentleyApi::ECN::ECEnumeration::GetIsStrict "strict" 
+    @ref BentleyApi::ECN::ECEnumeration "ECEnumerations". For %ECProperties that
+    have a @ref BentleyApi::ECN::ECEnumeration::GetIsStrict "strict" %ECEnumeration as property type, 
+    callers have to make sure to not assign values which are not defined in the %ECEnumeration.
+    
     @see @ref ECDbOverview
     */
 
