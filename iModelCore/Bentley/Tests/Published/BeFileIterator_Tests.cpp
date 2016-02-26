@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/BeFileIterator_Tests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -59,7 +59,7 @@ static void createFiles(BeFileNameCR root)
 //---------------------------------------------------------------------------------------
 // @betest                                      Sam.Wilson  05/2013
 //---------------------------------------------------------------------------------------
-TEST (BeFileListIterator, Test1)
+TEST (BeFileListIterator, Test_Recursive)
     {
     BeFileName root;
     BeTest::GetHost().GetOutputRoot(root);
@@ -83,11 +83,41 @@ TEST (BeFileListIterator, Test1)
             foundFileName31 = true;
         ++count;
         }
-    ASSERT_TRUE(count > 2);
+    ASSERT_EQ( 7 , count);
     ASSERT_TRUE(foundFileName1);
     ASSERT_TRUE(foundFileName31);
     }
+//---------------------------------------------------------------------------------------
+// @betest                                          Umar.Hayat                  02/2016
+//---------------------------------------------------------------------------------------
+TEST (BeFileListIterator, Test_NonRecursive)
+    {
+    BeFileName root;
+    BeTest::GetHost().GetOutputRoot(root);
+    root.AppendToPath(L"IteratorTestNonRecursive");
+    createFiles(root);
 
+    BeFileName wildcard (NULL, root, L"*", NULL);
+    BeFileListIterator it (wildcard, /*recursive*/false);
+    BeFileName name;
+    size_t count=0;
+    bool foundFileName0 = false;
+    bool foundFileName31 = false;
+    while (it.GetNextFileName (name) == SUCCESS)
+        {
+        BeFileName dir (BeFileName::DevAndDir, name);
+        ASSERT_TRUE( 0 == BeStringUtilities::Wcsnicmp (root, dir, wcslen(root)) );
+        BeFileName base (BeFileName::Basename, name);
+        if (0==BeStringUtilities::Wcsicmp (base, L"File0"))
+            foundFileName0 = true;
+        else if (0==BeStringUtilities::Wcsicmp (base, L"File31"))
+            foundFileName31 = true;
+        ++count;
+        }
+    ASSERT_EQ( 4 , count);
+    ASSERT_TRUE(foundFileName0);
+    ASSERT_FALSE(foundFileName31);
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Sam.Wilson  05/2013
 //---------------------------------------------------------------------------------------
@@ -110,7 +140,7 @@ static size_t countV8InDir (BeFileNameCR dir)
     }
 
 //---------------------------------------------------------------------------------------
-// @betest                                      Sam.Wilson  05/2013
+// @betest                                          Umar.Hayat                  02/2016
 //---------------------------------------------------------------------------------------
 TEST (BeDirectoryIterator, Test1)
     {
@@ -126,4 +156,17 @@ TEST (BeDirectoryIterator, Test1)
     bvector<BeFileName> found;
     BeDirectoryIterator::WalkDirsAndMatch(found, root, L"*.txt", /*recursive*/true);
     ASSERT_EQ( found.size(), countv8 );
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Sam.Wilson  05/2013
+//---------------------------------------------------------------------------------------
+TEST(BeDirectoryIterator, FileNamePattern_Parse)
+    {
+    BeFileName wildcard (NULL, L"C:\\abc\\bca\\", L"a*.txt", NULL);
+    BeFileName dir;
+    WString glob;
+    FileNamePattern::Parse(dir, glob, wildcard);
+    EXPECT_STREQ(L"\\a*.txt", dir.c_str());
+    EXPECT_STREQ(L"a*.txt", glob.c_str());
     }

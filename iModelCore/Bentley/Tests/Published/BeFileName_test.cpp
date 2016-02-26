@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/BeFileName_test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -466,6 +466,21 @@ TEST (BeFileNameTests, GetDirectoryNameNoDriveRelative)
     // instance version
     BeFileName fileName (L"foo/bar/bat.txt");
     ASSERT_TRUE (expected == fileName.GetDirectoryName());
+}
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                  02/16
+//---------------------------------------------------------------------------------------
+TEST (BeFileNameTests, GetDirectoryNameWithoutDrive)
+{
+#ifdef _WIN32
+    BeFileName fileName (L"C:\\foo\\bar\\bat.txt");
+    EXPECT_STREQ (L"\\foo\\bar\\" , BeFileName::GetDirectoryWithoutDevice (fileName.GetName()).c_str());
+    EXPECT_STREQ(L"\\foo\\bar\\" , fileName.GetDirectoryWithoutDevice().c_str());
+#else
+    BeFileName fileName (L"/foo/bar/bat.txt");
+    EXPECT_STREQ (L"/foo/bar/" , BeFileName::GetDirectoryWithoutDevice (fileName.GetName()).c_str());
+    EXPECT_STREQ (L"/foo/bar/" , fileName.GetDirectoryWithoutDevice().c_str());
+#endif
 }
 
 //---------------------------------------------------------------------------------------
@@ -1571,21 +1586,20 @@ TEST (BeFileNameTests, BeFileNameParseNameNoClear2)
     SUCCEED ();
 }
 
-//------------------------------------------------------------------------------------------------------------------
-// @betest                                     Hassan.Arshad                  10/13
-// Desc: Testing of GetDevice    (    WCharCP Path ) method.
-// Expected Result: Empty string should be returned if the device is not mentioned in the path
-//-------------------------------------------------------------------------------------------------------------------
-TEST (BeFileNameTests, BeFileNameGetDevice)
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                  02/16
+//---------------------------------------------------------------------------------------
+TEST (BeFileNameTests, GetDevice)
 {
 #ifdef _WIN32
-    WCharCP Path = L"\\foo\\bar\\bat.txt";
-    ASSERT_TRUE (L"" == BeFileName::GetDevice (Path));
+    BeFileName fileName (L"C:\\foo\\bar\\bat.txt");
+    EXPECT_STREQ (L"C" , BeFileName::GetDevice (fileName.GetName()).c_str());
+    EXPECT_STREQ (L"C" , fileName.GetDevice().c_str());
 #else
-    WCharCP Path = L"/foo/bar/bat.txt";
-    ASSERT_TRUE (L"" == BeFileName::GetDevice(Path));
+    BeFileName fileName (L"/foo/bar/bat.txt");
+    EXPECT_STREQ (L"" , BeFileName::GetDevice (fileName.GetName()).c_str());
+    EXPECT_STREQ (L"" , fileName.GetDevice().c_str());
 #endif
-    SUCCEED ();
 }
 
 //------------------------------------------------------------------------------------------------------------------
@@ -2093,4 +2107,91 @@ TEST(BeFileNameTests, ReadOnly)
     ASSERT_TRUE (tempFileName.IsFileReadOnly());
     ASSERT_TRUE (tempFileName.BeDeleteFile() == BeFileNameStatus::Success); // should blow right by the read-only status
     ASSERT_TRUE (!tempFileName.DoesPathExist());
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod                                         Umar.Hayat                    02/16
+//---------------------------------------------------------------------------------------
+static void SetupDirectory(BeFileNameCR root)
+    {
+    if (!root.DoesPathExist())
+        BeFileName::CreateNewDirectory(root.c_str());
+
+    BeFileName child1, child2;
+    child1 = child2 = root;
+    child1.AppendToPath(L"Child1");
+    child2.AppendToPath(L"Child2");
+
+    if (!child1.DoesPathExist())
+        BeFileName::CreateNewDirectory(child1.c_str());
+    if (!child2.DoesPathExist())
+        BeFileName::CreateNewDirectory(child2.c_str());
+    BeFile file0, file1, file2, file3;
+    BeFileName fileName0, fileName1, fileName2;
+
+    fileName0 = root;
+    fileName0.AppendToPath(L"File0.txt");
+    EXPECT_EQ(BeFileStatus::Success, file0.Create(fileName0, true));
+    fileName1 = child1;
+    fileName1.AppendToPath(L"File1.log");
+    EXPECT_EQ(BeFileStatus::Success, file1.Create(fileName1, true));
+    fileName2 = child2;
+    fileName2.AppendToPath(L"File2.txt");
+    file2.Create(fileName2, true);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                         Umar.Hayat                    02/16
+//---------------------------------------------------------------------------------------
+static void Verify(BeFileNameCR root, bool SubFolderExpected=true)
+    {
+    ASSERT_TRUE(root.DoesPathExist());
+
+    BeFileName child1, child2;
+    child1 = child2 = root;
+    BeFileName::AppendToPath(child1, L"Child1");
+    BeFileName::AppendToPath(child2, L"Child2");
+    ASSERT_TRUE(SubFolderExpected == child1.DoesPathExist());
+    ASSERT_TRUE(SubFolderExpected == child2.DoesPathExist());
+
+    BeFile file0, file1, file2, file3;
+    BeFileName fileName0, fileName1, fileName2;
+
+    fileName0 = root;
+    BeFileName::AppendToPath(fileName0, L"File0.txt");
+    fileName1 = child1;
+    BeFileName::AppendToPath(fileName1, L"File1.log");
+    fileName2 = child2;
+    BeFileName::AppendToPath(fileName2, L"File2.txt");
+    ASSERT_TRUE(fileName0.DoesPathExist());
+    ASSERT_TRUE(SubFolderExpected == fileName1.DoesPathExist());
+    ASSERT_TRUE(SubFolderExpected == fileName2.DoesPathExist());
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                          Umar.Hayat                    02/16
+//---------------------------------------------------------------------------------------
+TEST (BeFileNameTests, CloneDirectory)
+{
+#if defined (BENTLEY_WIN32)
+
+    BeFileName rootDir, srcDir, destDir1, destDir2;
+    BeTest::GetHost().GetOutputRoot(rootDir);
+    srcDir = destDir1 = destDir2 = rootDir;
+    SetupDirectory(srcDir.AppendToPath(L"srcDir"));
+
+    //--------------------------------------------------------------------------------------------------------------------
+    // Clone with sub directry 
+    EXPECT_TRUE(BeFileNameStatus::Success == BeFileName::CloneDirectory(srcDir, destDir1.AppendToPath(L"destDir1WithSub"), true));
+    Verify(destDir1);
+
+    //--------------------------------------------------------------------------------------------------------------------
+    // Clone without sub directories
+    EXPECT_TRUE(BeFileNameStatus::Success == BeFileName::CloneDirectory(srcDir, destDir2.AppendToPath(L"destDir2"),false));
+    Verify(destDir2, false);
+
+    //--------------------------------------------------------------------------------------------------------------------
+    // Source Does not exist 
+    EXPECT_TRUE(BeFileNameStatus::Success != BeFileName::CloneDirectory(BeFileName(rootDir).AppendToPath(L"DirNoExist"), BeFileName(rootDir).AppendToPath(L"DestDirNoExist")));
+
+#endif
 }

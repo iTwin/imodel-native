@@ -31,25 +31,10 @@ struct AW
 
 //---------------------------------------------------------------------------------------
 // @betest                                     Hassan.Arshad                  10/13
-// Desc: Testing of Utf16WChar method.
-// 
-//---------------------------------------------------------------------------------------
-TEST (BeStringUtilitiesTests, BeStringUtilUtf16WChar)
-    {
-   uint16_t string1[]=  {48,0};
-   WCharCP string2= L"0\0";
-   Utf16CP string3= string1;
-
-   int status= BeStringUtilities::CompareUtf16WChar(string3,string2);
-   EXPECT_EQ(0,status);
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                                     Hassan.Arshad                  10/13
 // Desc: Testing of Utf16WCharHello method.
 // 
 //---------------------------------------------------------------------------------------
-TEST (BeStringUtilitiesTests, BeStringUtilUtf16WCharHello)
+TEST(BeStringUtilitiesTests, CompareUtf16WChar)
     {
     uint16_t string1[]=  {72,69,76,76,79,0};
     WCharCP string2= L"HELLO\0";
@@ -64,7 +49,7 @@ TEST (BeStringUtilitiesTests, BeStringUtilUtf16WCharHello)
 // Desc: Testing of WCharToUtf16 method.
 // 
 //---------------------------------------------------------------------------------------
-TEST (BeStringUtilitiesTests, BeStringUtilWCharToUtf16)
+TEST (BeStringUtilitiesTests, WCharToUtf16)
     {
     WCharCP string2= L"HELLO\0";
     Utf16Buffer utf16String ;
@@ -80,7 +65,7 @@ TEST (BeStringUtilitiesTests, BeStringUtilWCharToUtf16)
 // Desc: Testing of WCharToUtf16NotNull method.
 // 
 //---------------------------------------------------------------------------------------
-TEST (BeStringUtilitiesTests, BeStringUtilWCharToUtf16NotNull)
+TEST (BeStringUtilitiesTests, WCharToUtf16NotNull)
     {
     WCharCP string2= L"HELLO";
     Utf16Buffer utf16String ;
@@ -115,7 +100,7 @@ TEST (BeStringUtilitiesTests, Strlwr)
 // Desc: Testing of Strupr method.
 // 
 //---------------------------------------------------------------------------------------
-TEST (BeStringUtilitiesTests, BeStringUtilStrupr)
+TEST (BeStringUtilitiesTests, Strupr)
     {
         {
         char string[] = "hello";
@@ -126,6 +111,14 @@ TEST (BeStringUtilitiesTests, BeStringUtilStrupr)
         char string[] = "HELLO 5! There?";
         char* outStr = BeStringUtilities::Strupr(string);
         EXPECT_STREQ("HELLO 5! THERE?", outStr) << outStr;
+        }
+        {
+            wchar_t* nonasc = L"\u20AC"; // this is the Euro symbol
+            Utf8String nonasc_utf8(nonasc);    // s/ be E2 82 AC 00
+            ScopedArray<char> nonascbuf(nonasc_utf8.size() + 1);
+            strcpy(nonascbuf.GetData(), nonasc_utf8.c_str());
+            char* outStr = BeStringUtilities::Strupr(nonascbuf.GetData());
+            EXPECT_STREQ(nonasc_utf8.c_str(), outStr);
         }
     }
 
@@ -381,6 +374,8 @@ TEST (BeStringUtilitiesTests, BeStringUtilWmemcpy)
  
     BeStringUtilities::Wmemcpy(dest, _countof(dest), src,  _countof(src));
     EXPECT_EQ(SUCCESS,BeStringUtilities::Wmemcpy(dest, _countof(dest), src,  _countof(src)));
+
+    EXPECT_STREQ(src, dest);
     }
 //---------------------------------------------------------------------------------------
 // @betest                                     Hassan.Arshad                  10/13
@@ -599,6 +594,39 @@ TEST(BeStringUtilitiesTests, RoundtripUtf16)
     BeStringUtilities::Utf16ToWChar(strWString, strUtf16.data());
 
     ASSERT_EQ(0, wcscmp(TESTDATA_StringW, strWString.c_str()));
+
+    // Empty Utf16 String
+    BeStringUtilities::WCharToUtf16(strUtf16, L"");
+
+    BeStringUtilities::Utf16ToWChar(strWString, strUtf16.data());
+
+    ASSERT_EQ(0, wcscmp(L"", strWString.c_str()));
+    
+    SUCCEED();
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                    02/16
+//---------------------------------------------------------------------------------------
+TEST(BeStringUtilitiesTests, Utf16ToUtf8)
+    {
+    // The first caller to convert strings in a process has to ensure BeStringUtilities::Initialize is called.
+    initBeStringUtilities();
+
+    Utf16Buffer strUtf16;
+    BeStringUtilities::WCharToUtf16(strUtf16, TESTDATA_StringW);
+
+    Utf8String strWString;
+    BeStringUtilities::Utf16ToUtf8(strWString, strUtf16.data());
+
+    EXPECT_STREQ( TESTDATA_String, strWString.c_str());
+
+    // Empty Utf16 String
+    BeStringUtilities::WCharToUtf16(strUtf16, L"");
+
+    BeStringUtilities::Utf16ToUtf8(strWString, strUtf16.data());
+
+    EXPECT_STREQ("", strWString.c_str());
 
     SUCCEED();
     }
@@ -1125,4 +1153,89 @@ TEST (BeStringUtilitiesTests, ParseHexUInt64)
     stat = BeStringUtilities::ParseHexUInt64(number, str);
     ASSERT_EQ (ERROR, stat);
     }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                    02/16
+//---------------------------------------------------------------------------------------
+TEST (BeStringUtilitiesTests, Wtof)
+    {
+    EXPECT_EQ(0.0, BeStringUtilities::Wtof(L"0"));
+    EXPECT_DOUBLE_EQ(1.0, BeStringUtilities::Wtof(L"1"));
+    EXPECT_DOUBLE_EQ(0.0, BeStringUtilities::Wtof(L"0.0"));
+    EXPECT_DOUBLE_EQ(1.0, BeStringUtilities::Wtof(L"1.0"));
+    EXPECT_NEAR(1.10,   BeStringUtilities::Wtof(L"1.10"), 0.0001);
+    EXPECT_NEAR(1.01,   BeStringUtilities::Wtof(L"1.01"), 0.01);
+    EXPECT_NEAR(1.001,  BeStringUtilities::Wtof(L"1.001"), 0.001);
+    EXPECT_NEAR(1.0001, BeStringUtilities::Wtof(L"1.0001"), 0.0001);
+    EXPECT_NEAR(1.00001,    BeStringUtilities::Wtof(L"1.00001"), 0.00001);
+    EXPECT_NEAR(1.000001,   BeStringUtilities::Wtof(L"1.000001"), 0.000001);
 
+    EXPECT_NEAR(-1.0, BeStringUtilities::Wtof(L"-1.0"),0.0001);
+    EXPECT_DOUBLE_EQ(0.0, BeStringUtilities::Wtof(L"-0"));
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                    02/16
+//---------------------------------------------------------------------------------------
+TEST (BeStringUtilitiesTests, Wtoi)
+    {
+    EXPECT_EQ(0,    BeStringUtilities::Wtoi(L"0"));
+    EXPECT_EQ(1,    BeStringUtilities::Wtoi(L"1"));
+    EXPECT_EQ(0,    BeStringUtilities::Wtoi(L"0.0"));
+    EXPECT_EQ(100,    BeStringUtilities::Wtoi(L"100"));
+    EXPECT_EQ(1,    BeStringUtilities::Wtoi(L"01"));
+    EXPECT_EQ(999999, BeStringUtilities::Wtoi(L"999999"));
+
+    EXPECT_EQ(-10,    BeStringUtilities::Wtoi(L"-10"));
+    EXPECT_EQ(0, BeStringUtilities::Wtoi(L"-0"));
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                    02/16
+//---------------------------------------------------------------------------------------
+TEST (BeStringUtilitiesTests, MemMove)
+    {
+    char str[] = "foo-bar";
+ 
+    BeStringUtilities::Memmove(&str[3],4, &str[4], 4);
+
+    EXPECT_STREQ("foobar", str);
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                    02/16
+//---------------------------------------------------------------------------------------
+TEST (BeStringUtilitiesTests, WMemMove)
+    {
+    wchar_t str[] = L"foo-bar";
+ 
+    BeStringUtilities::Wmemmove(&str[3],4, &str[4], 4);
+
+    EXPECT_STREQ(L"foobar", str);
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                    02/16
+//---------------------------------------------------------------------------------------
+TEST (BeStringUtilitiesTests, Wcslwr)
+    {
+    EXPECT_STREQ(L"ascii",  BeStringUtilities::Wcslwr(L"ASCII"));
+    EXPECT_STREQ(L"ascii",  BeStringUtilities::Wcslwr(L"Ascii"));
+    EXPECT_STREQ(L"dgn v8", BeStringUtilities::Wcslwr(L"Dgn V8"));
+
+    // Start with a non-ascii string. In this case, it has no lower-case version.
+    WCharP nonasc = L"\u20AC"; // this is the Euro symbol
+    //  Convert to UTF8 and lowercase it
+    WString nonasc_wchar (nonasc);    // s/ be E2 82 AC 00
+    EXPECT_STREQ(nonasc, BeStringUtilities::Wcslwr(nonasc)); // s/ be a nop
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                    02/16
+//---------------------------------------------------------------------------------------
+TEST (BeStringUtilitiesTests, Wcsupr)
+    {
+    EXPECT_STREQ(L"ASCII",  BeStringUtilities::Wcslwr(L"ascii"));
+    EXPECT_STREQ(L"ASCII",  BeStringUtilities::Wcslwr(L"Ascii"));
+    EXPECT_STREQ(L"DGN V8", BeStringUtilities::Wcslwr(L"Dgn V8"));
+
+    // Start with a non-ascii string. In this case, it has no lower-case version.
+    WCharP nonasc = L"\u20AC"; // this is the Euro symbol
+    //  Convert to UTF8 and lowercase it
+    WString nonasc_wchar (nonasc);    // s/ be E2 82 AC 00
+    EXPECT_STREQ(nonasc, BeStringUtilities::Wcslwr(nonasc)); // s/ be a nop
+    }

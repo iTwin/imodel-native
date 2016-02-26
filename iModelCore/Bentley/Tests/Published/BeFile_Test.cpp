@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/BeFile_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32) || defined (__unix__)
@@ -255,7 +255,38 @@ TEST_F(BeFileTests, ReadEntireFile)
         EXPECT_EQ(strlen(buf), entireFile.size())<<"Should had read all file.";
         m_file.Close();
         }
-}
+    }
+
+
+//---------------------------------------------------------------------------------------
+//Reads entire file in ByteStream
+//
+// @bsimethod                                        Umar.Hayat                    02/16
+//---------------------------------------------------------------------------------------
+TEST_F(BeFileTests, ReadEntireFile_ByteStream)
+    {
+    while(!m_testData.empty())
+        {
+        // Prepre file with one line
+        BeFileName fileName;
+        CreatePathForTempFile(&fileName, L"Write", m_testData.back());
+        WCharCP filePath = fileName.GetName();
+        m_testData.pop_back();
+        char const* buf = "QWERTYUIOP QWERTYUJHG !@#$%^&*() 1234567890 !Q!Q!Q!Q!Q QWERTYUIOP QWERTYUJHG !@#$%^&*() 1234567890 !Q!Q!Q!Q!QE";
+        PrepareFile(filePath, buf, 1, true);
+        //------Test steps--------------
+        BeFileAccess access= BeFileAccess::Read;
+        BeFileStatus status =m_file.Open(filePath, access);
+        EXPECT_TRUE(status == BeFileStatus::Success)<<"Failed to open file, file: "<<filePath;
+        //Read entire file
+        ByteStream entireFile;
+        status =m_file.ReadEntireFile(entireFile);
+        //-------Verification-----------
+        EXPECT_TRUE(status == BeFileStatus::Success)<<"Failed to read entire file, file: "<<filePath;
+        EXPECT_EQ(strlen(buf), entireFile.GetSize())<<"Should had read all file.";
+        m_file.Close();
+        }
+    }
 
 //---------------------------------------------------------------------------------------
 //Write to file

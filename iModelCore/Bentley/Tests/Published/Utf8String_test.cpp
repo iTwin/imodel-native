@@ -145,6 +145,23 @@ TEST(Utf8StringTest, EndsWith_DifferentCaseStrings)
     EXPECT_FALSE(Utf8String("ABC").EndsWithI(nullptr));
 
     EXPECT_FALSE(Utf8String("ABC").EndsWithI(""));
+
+    EXPECT_FALSE(Utf8String("ABC").EndsWithI("abcd"));
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                          02/16
+//---------------------------------------------------------------------------------------
+TEST(Utf8StringTest, EndsWith_Utf8String)
+    {
+    EXPECT_TRUE(Utf8String("ABC").EndsWith(Utf8String("")));
+
+    EXPECT_TRUE(Utf8String("ABC").EndsWith(Utf8String("BC")));
+
+    EXPECT_TRUE(Utf8String("ABC").EndsWith(Utf8String("ABC")));
+
+    EXPECT_FALSE(Utf8String("ABC").EndsWith(Utf8String("ABCD")));
+
+    EXPECT_FALSE(Utf8String("ABC").EndsWith(Utf8String("abc")));
     }
 
 //---------------------------------------------------------------------------------------
@@ -243,6 +260,8 @@ TEST(Utf8StringTest, StartsWith)
     // Check Case
     EXPECT_FALSE(Utf8String("ABC").StartsWith("abc"));
     EXPECT_TRUE(Utf8String("ABC").StartsWithI("abc"));
+    EXPECT_FALSE(Utf8String("ABC").StartsWithI("abcd"));
+    EXPECT_FALSE(Utf8String("ABC").StartsWithI(""));
     }
 //---------------------------------------------------------------------------------------
 // @betest                                      Umar.Hayat                          01/16

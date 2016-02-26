@@ -22,10 +22,14 @@
     <ClCompile Include="NonPublished\bentleylogging_test.cpp" />
     <ClCompile Include="NonPublished\consoleatp.cpp" />
     <ClCompile Include="NonPublished\fileatp.cpp" />
+    <ClCompile Include="Published\Base64UtilitiesTests.cpp" />
+    <ClCompile Include="Published\BeFileIterator_Tests.cpp" />
     <ClCompile Include="Published\BeFileName_test.cpp" />
+    <ClCompile Include="Published\BeFile_Test.cpp" />
     <ClCompile Include="Published\BeNumerical_Test.cpp" />
     <ClCompile Include="Published\BeStringUtilities_tests.cpp" />
     <ClCompile Include="Published\BeTextFile_Test.cpp" />
+    <ClCompile Include="Published\BeThread_Tests.cpp" />
     <ClCompile Include="Published\BeTimeUtilities_test.cpp" />
     <ClCompile Include="Published\bmap_test.cpp" />
     <ClCompile Include="Published\bset_test.cpp" />
@@ -37,10 +41,13 @@
     <ClCompile Include="Published\OsEnvUnitTests.cpp" />
     <ClCompile Include="Published\printf_test.cpp" />
     <ClCompile Include="Published\printf_test2.cpp" />
+    <ClCompile Include="Published\RefCounted_test.cpp" />
     <ClCompile Include="Published\scanf_test.cpp" />
     <ClCompile Include="Published\DateTimeTestHelpers.cpp" />
+    <ClCompile Include="Published\shared_mutex.cpp" />
     <ClCompile Include="Published\Utf8String_test.cpp" />
     <ClCompile Include="Published\valueformat_test.cpp" />
+    <ClCompile Include="Published\VersionTests.cpp" />
     <ClCompile Include="Published\WString_test.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -48,8 +55,15 @@
     <None Include="ignore_list.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Published\Base64UtilitiesTests.h" />
+    <ClInclude Include="Published\bunique_ptr_test.h" />
     <ClInclude Include="Published\DateTimeTestDataset.h" />
     <ClInclude Include="Published\DateTimeTestHelpers.h" />
+    <ClInclude Include="Published\shared_mutex.h" />
+    <ClInclude Include="Published\VersionTests.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="Published\datetimedstanalysis.logging.config.xml" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{18CE72BD-2296-43A0-91BC-C76D2EC910C9}</ProjectGuid>
