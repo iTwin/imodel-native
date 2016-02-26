@@ -392,9 +392,9 @@ TEST (BeStringUtilitiesTests, BeStringUtilMemcpy)
     const wchar_t src[]= L"DELETE";
     wchar_t dest[]= L"123456";
  
-    VERIFY( BentleyStatus::SUCCESS == BeStringUtilities::Memcpy(dest, 12, src,  6) );
+    VERIFY(BentleyStatus::SUCCESS == BeStringUtilities::Memcpy(dest, sizeof(dest), src, 3 * sizeof(wchar_t)));
     ASSERT_STREQ(L"DEL456", dest);
-    VERIFY(BentleyStatus::SUCCESS == BeStringUtilities::Memcpy(dest, 12, src, 0));
+    VERIFY(BentleyStatus::SUCCESS == BeStringUtilities::Memcpy(dest, sizeof(dest), src, 0));
     ASSERT_STREQ(L"DEL456", dest);
     }
 
