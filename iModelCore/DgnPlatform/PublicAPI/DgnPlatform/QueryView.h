@@ -151,7 +151,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
     };
 
 protected:
-    bool m_forceNewQuery = false;
     bool m_noQuery = false;
     mutable bool m_abortQuery = false;
     Utf8String m_viewSQL;
@@ -174,6 +173,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _OnUpdate(DgnViewportR vp, UpdatePlan const& plan) override;
     DGNPLATFORM_EXPORT virtual void _OnAttachedToViewport(DgnViewportR) override;
     DGNPLATFORM_EXPORT virtual void _CreateScene(SceneContextR) override;
+    DGNPLATFORM_EXPORT virtual void _CreateTerrain(TerrainContextR context) override;
     DGNPLATFORM_EXPORT virtual void _VisitAllElements(ViewContextR) override;
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR context) override;
     DGNPLATFORM_EXPORT virtual void _OnCategoryChange(bool singleEnabled) override;
