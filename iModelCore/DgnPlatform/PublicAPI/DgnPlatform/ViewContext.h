@@ -425,6 +425,7 @@ struct TerrainContext : RenderContext
 private:
     Render::GraphicListR m_terrain;
     UpdatePlan const& m_plan;
+    void _OutputGraphic(Render::GraphicR graphic, GeometrySourceCP) override;
 
 public:
     TerrainContext(DgnViewportR vp, Render::GraphicListR terrain, UpdatePlan const& plan) : m_terrain(terrain), RenderContext(vp, DrawPurpose::CreateTerrain), m_plan(plan) {}
