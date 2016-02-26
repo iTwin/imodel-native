@@ -48,6 +48,20 @@ ConnectSignInManager::~ConnectSignInManager()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+ConnectSignInManagerPtr ConnectSignInManager::Create
+(
+ClientInfoPtr clientInfo,
+IHttpHandlerPtr httpHandler,
+ILocalState* localState,
+ISecureStorePtr secureStore
+)
+    {
+    return Create(ImsClient::Create(clientInfo, httpHandler), localState, secureStore);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 ConnectSignInManagerPtr ConnectSignInManager::Create(IImsClientPtr client, ILocalState* localState, ISecureStorePtr secureStore)
     {
     return std::shared_ptr<ConnectSignInManager>(new ConnectSignInManager(client, localState, secureStore));

@@ -91,6 +91,16 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         //! Will renew sign-in information asynchronously if needed.
         WSCLIENT_EXPORT static ConnectSignInManagerPtr Create
             (
+            ClientInfoPtr clientInfo,
+            IHttpHandlerPtr httpHandler = nullptr,
+            ILocalState* localState = nullptr,
+            ISecureStorePtr secureStore = nullptr
+            );
+
+        //! Can be created after MobileDgn is initialized.
+        //! Will renew sign-in information asynchronously if needed.
+        WSCLIENT_EXPORT static ConnectSignInManagerPtr Create
+            (
             IImsClientPtr client,
             ILocalState* localState = nullptr,
             ISecureStorePtr secureStore = nullptr
