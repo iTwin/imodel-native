@@ -2,7 +2,7 @@
 #
 #     $Source: RealityPlatform/Example/DownloadEngineExample.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #  
 #----------------------------------------------------------------------
 consoleAppUnicode   = 1     # use wmain  
@@ -42,7 +42,6 @@ EXE_OBJS     = $(o)DownloadEngineExample$(oext)
 
 LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
-                       $(ContextSubpartsLibs)$(libprefix)BentleyAllocator$(libext) \
                        $(ContextDeliveryDir)RealityPlatform.lib
 
 %include $(SharedMki)linktool.mki

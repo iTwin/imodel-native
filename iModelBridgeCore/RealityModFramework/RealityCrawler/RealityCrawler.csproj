@@ -205,7 +205,6 @@
 copy D:\Output\dgndb06\Winx64\build\BeCurl\BeCurl.dll $(TargetDir)
 copy D:\Output\dgndb06\Winx64\build\BeIcu4c\BeIcu4c.dll $(TargetDir)
 copy D:\Output\dgndb06\Winx64\build\BeLibxml2\BeLibxml2.dll $(TargetDir)
-copy D:\Output\dgndb06\Winx64\build\BentleyAllocator\BentleyAllocator.dll $(TargetDir)
 copy D:\Output\dgndb06\Winx64\build\Bentley\BentleyG.dll $(TargetDir)
 copy D:\Output\dgndb06\Winx64\build\GeomLibs\delivery\basegeom\bin\BentleyGeomG.dll $(TargetDir)
 copy D:\Output\dgndb06\Winx64\build\BeOpenSSL\BeOpenSSL.dll $(TargetDir)

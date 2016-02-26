@@ -52,7 +52,6 @@ $(o)BentleyWMSPackageNet$(oext):     $(baseDir)BentleyWMSPackageNet.cpp  $(baseD
 BuildContextSubPartsLibDir = $(BuildContext)SubParts/Libs/
 
 BuildContextSubPartsLibraries = $(BuildContextSubPartsLibDir)Bentley.lib \
-                                $(BuildContextSubPartsLibDir)BentleyAllocator.lib \
                                 $(BuildContextSubPartsLibDir)RealityPackage.lib \
                                 $(BuildContextSubPartsLibDir)RealityPlatform.lib \
                                 $(BuildContextSubPartsLibDir)BentleyGeom.lib
