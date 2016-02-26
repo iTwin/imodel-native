@@ -153,7 +153,6 @@ void DgnQueryView::ClearAlwaysDrawn()
     RequestAbort(true);
     m_special.m_always.clear();
     m_noQuery = false;
-    m_forceNewQuery = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -163,7 +162,6 @@ void DgnQueryView::SetNeverDrawn(DgnElementIdSet const& newSet)
     {
     RequestAbort(true);
     m_special.m_never = newSet; // NB: copies values
-    m_forceNewQuery = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -173,7 +171,6 @@ void DgnQueryView::ClearNeverDrawn()
     {
     RequestAbort(true);
     m_special.m_never.clear();
-    m_forceNewQuery = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -187,7 +184,6 @@ void DgnQueryView::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
     RequestAbort(true);
     if (onOff)
         {
-        m_forceNewQuery = true;
         m_viewedModels.insert(modelId);
         //  Ensure the model is in the m_loadedModels list.  QueryModel
         //  must not do this in the query thread.
@@ -206,9 +202,7 @@ void DgnQueryView::_OnCategoryChange(bool singleEnabled)
     {
     T_Super::_OnCategoryChange(singleEnabled);
     RequestAbort(true);
-    m_forceNewQuery = true;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
@@ -241,7 +235,6 @@ bool DgnQueryView::_IsInSet(int nVals, DbValue const* vals) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::_OnAttachedToViewport(DgnViewportR)
     {
-    m_forceNewQuery = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -312,6 +305,23 @@ void DgnQueryView::AddtoSceneQuick(SceneContextR context, SceneMembers& members,
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnQueryView::_CreateTerrain(TerrainContextR context) 
+    {
+    DgnDb::VerifyClientThread();
+
+    auto& models = m_dgndb.Models();
+    for (DgnModelId modelId : GetViewedModels())
+        {
+        DgnModelPtr model = models.GetModel(modelId);
+        auto geomModel = model.IsValid() ? model->ToGeometricModel3d() : nullptr;
+        if (nullptr != geomModel)
+            geomModel->_AddTerrain(context);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Create the scene and potentially schedule progressive tasks
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -336,10 +346,11 @@ void DgnQueryView::_CreateScene(SceneContextR context)
     AddtoSceneQuick(context, *members, *results);
 
     // Next, allow external data models to draw or schedule external data. Note: Do this even if we're already aborted
+    auto& models = m_dgndb.Models();
     for (DgnModelId modelId : GetViewedModels())
         {
-        DgnModelPtr model = m_dgndb.Models().GetModel(modelId);
-        auto geomModel = model.IsValid() ? model->ToGeometricModelP() : nullptr;
+        DgnModelPtr model = models.GetModel(modelId);
+        auto geomModel = model.IsValid() ? model->ToGeometricModel3d() : nullptr;
         if (nullptr != geomModel)
             geomModel->_AddGraphicsToScene(context);
         }

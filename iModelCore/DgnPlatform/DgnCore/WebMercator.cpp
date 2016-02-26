@@ -1060,7 +1060,7 @@ BentleyStatus WebMercatorDisplay::GetCachedTiles(bvector<TileDisplayImageData>& 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorModel::_AddGraphicsToScene(SceneContextR context)
+void WebMercatorModel::_AddTerrain(TerrainContextR context) const
     {
     RefCountedPtr<WebMercatorDisplay> display = new WebMercatorDisplay(*this, *context.GetViewport());
     display->DrawView(context);
@@ -1252,7 +1252,7 @@ ProgressiveTask::Completion WebMercatorDisplay::_DoProgressive(SceneContextR con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-WebMercatorDisplay::WebMercatorDisplay(WebMercatorModel& model, DgnViewportR vp) 
+WebMercatorDisplay::WebMercatorDisplay(WebMercatorModel const& model, DgnViewportR vp) 
     :
     m_model(model),
     m_optimalZoomLevel(0), 
