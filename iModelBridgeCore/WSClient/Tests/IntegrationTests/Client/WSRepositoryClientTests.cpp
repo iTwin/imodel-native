@@ -20,32 +20,30 @@
 #include <WebServices/Client/WSRepositoryClient.h>
 #include <curl/curl.h>
 
-void WSRepositoryClientTests::SetUpTestCase()
+void WSRepositoryClientTests::SetUp()
     {
-    static StubLocalState localState;
-    localState.GetStubMap().clear();
+    WSClientBaseTest::SetUp();
 
-    UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &localState);
+    m_localState = StubLocalState();
 
+    ConnectAuthenticationPersistence::CustomInitialize(&m_localState);
+    UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &m_localState);
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_MOBILEDGN_UTILS_HTTP, Bentley::NativeLogging::LOG_INFO);
     }
 
 TEST_F(WSRepositoryClientTests, SendQueryRequest_ConnectGlobalProjectQueryWithConnectSignInManager_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    StubLocalState localState;
-    ConnectAuthenticationPersistence::CustomInitialize(&localState);
 
     Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net/";
     Utf8String repositoryId = "BentleyCONNECT.Global--CONNECT.GLOBAL";
     Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
 
-    auto imsClient = ImsClient::Create(StubClientInfo(), proxy);
-    auto manager = ConnectSignInManager::Create(imsClient, &localState);
+    auto manager = ConnectSignInManager::Create(StubValidClientInfo(), proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(credentials)->GetResult().IsSuccess());
     auto authHandler = manager->GetAuthenticationHandler(serverUrl, proxy);
 
-    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, authHandler);
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, authHandler);
 
     auto result = client->SendQueryRequest(WSQuery("GlobalSchema", "Project"))->GetResult();
     ASSERT_TRUE(result.IsSuccess());
@@ -55,13 +53,11 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_ConnectGlobalProjectQueryWithCo
 TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_NavigateConnectGlobalWithExpiredToken_RetrievesNewTokenAndSucceeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    auto imsClient = ImsClient::Create(StubClientInfo(), proxy);
 
     Utf8String serverUrl = "https://dev-wsg20-eus.cloudapp.net/";
     Utf8String repositoryId = "BentleyCONNECT.Global--CONNECT.GLOBAL";
 
-    StubLocalState localState;
-    ConnectAuthenticationPersistence::CustomInitialize(&localState);
+    auto imsClient = ImsClient::Create(StubValidClientInfo(), proxy);
     auto persistence = ConnectAuthenticationPersistence::GetShared();
     auto provider = std::make_shared<ConnectTokenProvider>(imsClient, persistence);
     auto authHandler = std::make_shared<ConnectAuthenticationHandler>(serverUrl, provider, proxy);
@@ -72,7 +68,7 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_NavigateConnectGlobalWith
     Utf8String expiredTokenStr(R"xml(<saml:Assertion MajorVersion="1" MinorVersion="1" AssertionID="_0c2f6953-48a5-40ca-92f6-3c613bdc0579" Issuer="https://ims-testing.bentley.com/" IssueInstant="2015-04-03T08:38:30.287Z" xmlns:saml="urn:oasis:names:tc:SAML:1.0:assertion"><saml:Conditions NotBefore="2015-04-03T08:38:30.209Z" NotOnOrAfter="2015-04-03T09:08:30.209Z"><saml:AudienceRestrictionCondition><saml:Audience>https://dev-wsg20-eus.cloudapp.net</saml:Audience></saml:AudienceRestrictionCondition></saml:Conditions><saml:AttributeStatement><saml:Subject><saml:SubjectConfirmation><saml:ConfirmationMethod>urn:oasis:names:tc:SAML:1.0:cm:holder-of-key</saml:ConfirmationMethod><KeyInfo xmlns="http://www.w3.org/2000/09/xmldsig#"><trust:BinarySecret xmlns:trust="http://docs.oasis-open.org/ws-sx/ws-trust/200512">PV03neG5CWyeYHKsDlGnavKapHke96FWEQabwf453NE=</trust:BinarySecret></KeyInfo></saml:SubjectConfirmation></saml:Subject><saml:Attribute AttributeName="name" AttributeNamespace="http://schemas.xmlsoap.org/ws/2005/05/identity/claims"><saml:AttributeValue>8cc45bd041514b58947ea6c09c@gmail.com</saml:AttributeValue></saml:Attribute><saml:Attribute AttributeName="givenname" AttributeNamespace="http://schemas.xmlsoap.org/ws/2005/05/identity/claims"><saml:AttributeValue>John</saml:AttributeValue></saml:Attribute><saml:Attribute AttributeName="surname" AttributeNamespace="http://schemas.xmlsoap.org/ws/2005/05/identity/claims"><saml:AttributeValue>Stevenson</saml:AttributeValue></saml:Attribute><saml:Attribute AttributeName="emailaddress" AttributeNamespace="http://schemas.xmlsoap.org/ws/2005/05/identity/claims"><saml:AttributeValue>8cc45bd041514b58947ea6c09c@gmail.com</saml:AttributeValue></saml:Attribute><saml:Attribute AttributeName="sapbupa" AttributeNamespace="http://schemas.bentley.com/ws/2011/03/identity/claims"><saml:AttributeValue>1004124332</saml:AttributeValue></saml:Attribute><saml:Attribute AttributeName="site" AttributeNamespace="http://schemas.bentley.com/ws/2011/03/identity/claims"><saml:AttributeValue>4024103</saml:AttributeValue></saml:Attribute><saml:Attribute AttributeName="ultimatesite" AttributeNamespace="http://schemas.bentley.com/ws/2011/03/identity/claims"><saml:AttributeValue>1001381840</saml:AttributeValue></saml:Attribute><saml:Attribute AttributeName="sapentitlement" AttributeNamespace="http://schemas.bentley.com/ws/2011/03/identity/claims"><saml:AttributeValue>NEW_BENTLEY_LEARN</saml:AttributeValue><saml:AttributeValue>ELS_FOUR_HR</saml:AttributeValue></saml:Attribute><saml:Attribute AttributeName="entitlement" AttributeNamespace="http://schemas.bentley.com/ws/2011/03/identity/claims"><saml:AttributeValue>NEW_BENTLEY_LEARN</saml:AttributeValue><saml:AttributeValue>ELS_Four_Hour</saml:AttributeValue></saml:Attribute><saml:Attribute AttributeName="countryiso" AttributeNamespace="http://schemas.bentley.com/ws/2011/03/identity/claims"><saml:AttributeValue>US</saml:AttributeValue></saml:Attribute><saml:Attribute AttributeName="languageiso" AttributeNamespace="http://schemas.bentley.com/ws/2011/03/identity/claims"><saml:AttributeValue>EN</saml:AttributeValue></saml:Attribute><saml:Attribute AttributeName="ismarketingprospect" AttributeNamespace="http://schemas.bentley.com/ws/2011/03/identity/claims"><saml:AttributeValue>false</saml:AttributeValue></saml:Attribute><saml:Attribute AttributeName="isbentleyemployee" AttributeNamespace="http://schemas.bentley.com/ws/2011/03/identity/claims"><saml:AttributeValue>false</saml:AttributeValue></saml:Attribute><saml:Attribute AttributeName="userid" AttributeNamespace="http://schemas.bentley.com/ws/2011/03/identity/claims"><saml:AttributeValue>53e87de9-ed14-4ef1-bd78-35e8218bb5cc</saml:AttributeValue></saml:Attribute><saml:Attribute AttributeName="organization" AttributeNamespace="http://schemas.bentley.com/ws/2011/03/identity/claims"><saml:AttributeValue>Pennsylvania DOT</saml:AttributeValue></saml:Attribute><saml:Attribute AttributeName="has_select" AttributeNamespace="http://schemas.bentley.com/ws/2011/03/identity/claims"><saml:AttributeValue>true</saml:AttributeValue></saml:Attribute></saml:AttributeStatement><ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" /><ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256" /><ds:Reference URI="#_0c2f6953-48a5-40ca-92f6-3c613bdc0579"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" /><ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" /></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256" /><ds:DigestValue>zuD1kD7SvjbASTm6n61CgDZgUe/bwi8ncnYTssIVai0=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>Jcm4Bn43ifm9lYuHfREXM/C49u/QuiSgZMQ/ptweUK3UKw6yZVK4E6oCU25NzmNXp26fuftil30VqsyQaeZIuIb/22HQgZmFLwsvmbzMbNRp3cxiJ5dYLmTb99jsFzs/SqxfQMFJTUKN2CJhLgt33Ib928vBgC7TzP7aV6iKsgfCpX0ukEloVtmwbwSpSiVYTkU917lVmjmtIyY5Jn9D7wLg6rFcKM+739Z+Ft0Hr5LZC14jhJJ8JB0pYq8lA773J+f7+XF8CWXJqWTedpCWHpvdoQvopX8PHIPf1qANtuKBemHy0uXcB+shDW5W2dEfwWpxDTEP+e03Rt2cI118qw==</ds:SignatureValue><KeyInfo xmlns="http://www.w3.org/2000/09/xmldsig#"><X509Data><X509Certificate>MIIFKzCCBBOgAwIBAgIQAe1xT+EFUrGFCgROz+3tMjANBgkqhkiG9w0BAQsFADBNMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMScwJQYDVQQDEx5EaWdpQ2VydCBTSEEyIFNlY3VyZSBTZXJ2ZXIgQ0EwHhcNMTQxMDEzMDAwMDAwWhcNMTUxMTA0MTIwMDAwWjCBhDELMAkGA1UEBhMCVVMxFTATBgNVBAgTDFBlbm5zeWx2YW5pYTEOMAwGA1UEBxMFRXh0b24xJjAkBgNVBAoTHUJlbnRsZXkgU3lzdGVtcywgSW5jb3Jwb3JhdGVkMQswCQYDVQQLEwJJVDEZMBcGA1UEAxMQYXV0aC5iZW50bGV5LmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAPF+DcSZwV3PiexVlIAmxrOZBw6lI6nHcA8iO7EFD7yP/Z0706F0wKmxVsVm1iCt6TVdoD2DzB3HXaCY1CczbYLcZzBpgfbYN4Lkdby+UsTY3aHoaNvmYqtMwntDKtyI9j+Z+T6fMm/HcQ8EO/d0Bb49afO2RiBSq/k4fTD58MCjIMOa9KCoaLeCTu7IIA7RgVZw1DlIF6lJZSaISHHFhlK6lE9jjM1uxoOH1VZzEnutTj4puPOs3IhtCZAWF8vnRWDtDmKeEAjonZ1ng8WviEsFSY11cPaggWxyWgMhWV80i7sJn0nLEihCoqsxtQRf95r61zPM385xvXdqxYu8MskCAwEAAaOCAc0wggHJMB8GA1UdIwQYMBaAFA+AYRyCMWHVLyjnjUY4tCzhxtniMB0GA1UdDgQWBBTo8RZMp1LccsSyAcziGgvSru8eAjAbBgNVHREEFDASghBhdXRoLmJlbnRsZXkuY29tMA4GA1UdDwEB/wQEAwIFoDAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwawYDVR0fBGQwYjAvoC2gK4YpaHR0cDovL2NybDMuZGlnaWNlcnQuY29tL3NzY2Etc2hhMi1nMy5jcmwwL6AtoCuGKWh0dHA6Ly9jcmw0LmRpZ2ljZXJ0LmNvbS9zc2NhLXNoYTItZzMuY3JsMEIGA1UdIAQ7MDkwNwYJYIZIAYb9bAEBMCowKAYIKwYBBQUHAgEWHGh0dHBzOi8vd3d3LmRpZ2ljZXJ0LmNvbS9DUFMwfAYIKwYBBQUHAQEEcDBuMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5kaWdpY2VydC5jb20wRgYIKwYBBQUHMAKGOmh0dHA6Ly9jYWNlcnRzLmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydFNIQTJTZWN1cmVTZXJ2ZXJDQS5jcnQwDAYDVR0TAQH/BAIwADANBgkqhkiG9w0BAQsFAAOCAQEAsnH+6e49UpUUq+m2zWxioWEewUU42ak9Kr2TTyYiFMwPeEmH09czp3Z5b2dEFt6wDSrTlGugO0SHDz8gI79hdckl/vi1lF0zzW8grMPJw5QxYoDtHgkOAMTBMZKWGnrE/dhr02EkjVmIdxVvWCJ/mt4GNJroTcFMHCRy9+rplHKA1n9fMXAHspmzILq8wHd/HkDT4sDHkoM4RJhNlzt3mKvyyknhFf7K0JjG/+Cp1+RQ/k5m1QZL1LaoiRkWzF31hQRTwkqYAoyr6rHCiDmoMWQgzH9TfbfX2zFcnOO1kv6euB5doDoUsb4ppof8hM67O5sBtKVwzUkRsP069NUGlg==</X509Certificate></X509Data></KeyInfo></ds:Signature></saml:Assertion>)xml");
     persistence->SetToken(std::make_shared<SamlToken>(expiredTokenStr));
 
-    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, authHandler);
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, authHandler);
 
     auto result = client->SendGetChildrenRequest(ObjectId())->GetResult();
     ASSERT_TRUE(result.IsSuccess());
@@ -83,13 +79,11 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_NavigateConnectGlobalWith
 TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_NavigateConnectGlobalWithExpiredTokenAndWrongPassword_ReturnsCredentialError)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    auto imsClient = ImsClient::Create(StubClientInfo(), proxy);
 
     Utf8String serverUrl = "https://dev-wsg20-eus.cloudapp.net/";
     Utf8String repositoryId = "BentleyCONNECT.Global--CONNECT.GLOBAL";
 
-    StubLocalState localState;
-    ConnectAuthenticationPersistence::CustomInitialize(&localState);
+    auto imsClient = ImsClient::Create(StubValidClientInfo(), proxy);
     auto persistence = ConnectAuthenticationPersistence::GetShared();
     auto provider = std::make_shared<ConnectTokenProvider>(imsClient, persistence);
     auto authHandler = std::make_shared<ConnectAuthenticationHandler>(serverUrl, provider, proxy);
@@ -100,7 +94,7 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_NavigateConnectGlobalWith
     Utf8String expiredTokenStr(R"xml(<saml:Assertion MajorVersion="1" MinorVersion="1" AssertionID="_0c2f6953-48a5-40ca-92f6-3c613bdc0579" Issuer="https://ims-testing.bentley.com/" IssueInstant="2015-04-03T08:38:30.287Z" xmlns:saml="urn:oasis:names:tc:SAML:1.0:assertion"><saml:Conditions NotBefore="2015-04-03T08:38:30.209Z" NotOnOrAfter="2015-04-03T09:08:30.209Z"><saml:AudienceRestrictionCondition><saml:Audience>https://dev-wsg20-eus.cloudapp.net</saml:Audience></saml:AudienceRestrictionCondition></saml:Conditions><saml:AttributeStatement><saml:Subject><saml:SubjectConfirmation><saml:ConfirmationMethod>urn:oasis:names:tc:SAML:1.0:cm:holder-of-key</saml:ConfirmationMethod><KeyInfo xmlns="http://www.w3.org/2000/09/xmldsig#"><trust:BinarySecret xmlns:trust="http://docs.oasis-open.org/ws-sx/ws-trust/200512">PV03neG5CWyeYHKsDlGnavKapHke96FWEQabwf453NE=</trust:BinarySecret></KeyInfo></saml:SubjectConfirmation></saml:Subject><saml:Attribute AttributeName="name" AttributeNamespace="http://schemas.xmlsoap.org/ws/2005/05/identity/claims"><saml:AttributeValue>8cc45bd041514b58947ea6c09c@gmail.com</saml:AttributeValue></saml:Attribute><saml:Attribute AttributeName="givenname" AttributeNamespace="http://schemas.xmlsoap.org/ws/2005/05/identity/claims"><saml:AttributeValue>John</saml:AttributeValue></saml:Attribute><saml:Attribute AttributeName="surname" AttributeNamespace="http://schemas.xmlsoap.org/ws/2005/05/identity/claims"><saml:AttributeValue>Stevenson</saml:AttributeValue></saml:Attribute><saml:Attribute AttributeName="emailaddress" AttributeNamespace="http://schemas.xmlsoap.org/ws/2005/05/identity/claims"><saml:AttributeValue>8cc45bd041514b58947ea6c09c@gmail.com</saml:AttributeValue></saml:Attribute><saml:Attribute AttributeName="sapbupa" AttributeNamespace="http://schemas.bentley.com/ws/2011/03/identity/claims"><saml:AttributeValue>1004124332</saml:AttributeValue></saml:Attribute><saml:Attribute AttributeName="site" AttributeNamespace="http://schemas.bentley.com/ws/2011/03/identity/claims"><saml:AttributeValue>4024103</saml:AttributeValue></saml:Attribute><saml:Attribute AttributeName="ultimatesite" AttributeNamespace="http://schemas.bentley.com/ws/2011/03/identity/claims"><saml:AttributeValue>1001381840</saml:AttributeValue></saml:Attribute><saml:Attribute AttributeName="sapentitlement" AttributeNamespace="http://schemas.bentley.com/ws/2011/03/identity/claims"><saml:AttributeValue>NEW_BENTLEY_LEARN</saml:AttributeValue><saml:AttributeValue>ELS_FOUR_HR</saml:AttributeValue></saml:Attribute><saml:Attribute AttributeName="entitlement" AttributeNamespace="http://schemas.bentley.com/ws/2011/03/identity/claims"><saml:AttributeValue>NEW_BENTLEY_LEARN</saml:AttributeValue><saml:AttributeValue>ELS_Four_Hour</saml:AttributeValue></saml:Attribute><saml:Attribute AttributeName="countryiso" AttributeNamespace="http://schemas.bentley.com/ws/2011/03/identity/claims"><saml:AttributeValue>US</saml:AttributeValue></saml:Attribute><saml:Attribute AttributeName="languageiso" AttributeNamespace="http://schemas.bentley.com/ws/2011/03/identity/claims"><saml:AttributeValue>EN</saml:AttributeValue></saml:Attribute><saml:Attribute AttributeName="ismarketingprospect" AttributeNamespace="http://schemas.bentley.com/ws/2011/03/identity/claims"><saml:AttributeValue>false</saml:AttributeValue></saml:Attribute><saml:Attribute AttributeName="isbentleyemployee" AttributeNamespace="http://schemas.bentley.com/ws/2011/03/identity/claims"><saml:AttributeValue>false</saml:AttributeValue></saml:Attribute><saml:Attribute AttributeName="userid" AttributeNamespace="http://schemas.bentley.com/ws/2011/03/identity/claims"><saml:AttributeValue>53e87de9-ed14-4ef1-bd78-35e8218bb5cc</saml:AttributeValue></saml:Attribute><saml:Attribute AttributeName="organization" AttributeNamespace="http://schemas.bentley.com/ws/2011/03/identity/claims"><saml:AttributeValue>Pennsylvania DOT</saml:AttributeValue></saml:Attribute><saml:Attribute AttributeName="has_select" AttributeNamespace="http://schemas.bentley.com/ws/2011/03/identity/claims"><saml:AttributeValue>true</saml:AttributeValue></saml:Attribute></saml:AttributeStatement><ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" /><ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256" /><ds:Reference URI="#_0c2f6953-48a5-40ca-92f6-3c613bdc0579"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" /><ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" /></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256" /><ds:DigestValue>zuD1kD7SvjbASTm6n61CgDZgUe/bwi8ncnYTssIVai0=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>Jcm4Bn43ifm9lYuHfREXM/C49u/QuiSgZMQ/ptweUK3UKw6yZVK4E6oCU25NzmNXp26fuftil30VqsyQaeZIuIb/22HQgZmFLwsvmbzMbNRp3cxiJ5dYLmTb99jsFzs/SqxfQMFJTUKN2CJhLgt33Ib928vBgC7TzP7aV6iKsgfCpX0ukEloVtmwbwSpSiVYTkU917lVmjmtIyY5Jn9D7wLg6rFcKM+739Z+Ft0Hr5LZC14jhJJ8JB0pYq8lA773J+f7+XF8CWXJqWTedpCWHpvdoQvopX8PHIPf1qANtuKBemHy0uXcB+shDW5W2dEfwWpxDTEP+e03Rt2cI118qw==</ds:SignatureValue><KeyInfo xmlns="http://www.w3.org/2000/09/xmldsig#"><X509Data><X509Certificate>MIIFKzCCBBOgAwIBAgIQAe1xT+EFUrGFCgROz+3tMjANBgkqhkiG9w0BAQsFADBNMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMScwJQYDVQQDEx5EaWdpQ2VydCBTSEEyIFNlY3VyZSBTZXJ2ZXIgQ0EwHhcNMTQxMDEzMDAwMDAwWhcNMTUxMTA0MTIwMDAwWjCBhDELMAkGA1UEBhMCVVMxFTATBgNVBAgTDFBlbm5zeWx2YW5pYTEOMAwGA1UEBxMFRXh0b24xJjAkBgNVBAoTHUJlbnRsZXkgU3lzdGVtcywgSW5jb3Jwb3JhdGVkMQswCQYDVQQLEwJJVDEZMBcGA1UEAxMQYXV0aC5iZW50bGV5LmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAPF+DcSZwV3PiexVlIAmxrOZBw6lI6nHcA8iO7EFD7yP/Z0706F0wKmxVsVm1iCt6TVdoD2DzB3HXaCY1CczbYLcZzBpgfbYN4Lkdby+UsTY3aHoaNvmYqtMwntDKtyI9j+Z+T6fMm/HcQ8EO/d0Bb49afO2RiBSq/k4fTD58MCjIMOa9KCoaLeCTu7IIA7RgVZw1DlIF6lJZSaISHHFhlK6lE9jjM1uxoOH1VZzEnutTj4puPOs3IhtCZAWF8vnRWDtDmKeEAjonZ1ng8WviEsFSY11cPaggWxyWgMhWV80i7sJn0nLEihCoqsxtQRf95r61zPM385xvXdqxYu8MskCAwEAAaOCAc0wggHJMB8GA1UdIwQYMBaAFA+AYRyCMWHVLyjnjUY4tCzhxtniMB0GA1UdDgQWBBTo8RZMp1LccsSyAcziGgvSru8eAjAbBgNVHREEFDASghBhdXRoLmJlbnRsZXkuY29tMA4GA1UdDwEB/wQEAwIFoDAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwawYDVR0fBGQwYjAvoC2gK4YpaHR0cDovL2NybDMuZGlnaWNlcnQuY29tL3NzY2Etc2hhMi1nMy5jcmwwL6AtoCuGKWh0dHA6Ly9jcmw0LmRpZ2ljZXJ0LmNvbS9zc2NhLXNoYTItZzMuY3JsMEIGA1UdIAQ7MDkwNwYJYIZIAYb9bAEBMCowKAYIKwYBBQUHAgEWHGh0dHBzOi8vd3d3LmRpZ2ljZXJ0LmNvbS9DUFMwfAYIKwYBBQUHAQEEcDBuMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5kaWdpY2VydC5jb20wRgYIKwYBBQUHMAKGOmh0dHA6Ly9jYWNlcnRzLmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydFNIQTJTZWN1cmVTZXJ2ZXJDQS5jcnQwDAYDVR0TAQH/BAIwADANBgkqhkiG9w0BAQsFAAOCAQEAsnH+6e49UpUUq+m2zWxioWEewUU42ak9Kr2TTyYiFMwPeEmH09czp3Z5b2dEFt6wDSrTlGugO0SHDz8gI79hdckl/vi1lF0zzW8grMPJw5QxYoDtHgkOAMTBMZKWGnrE/dhr02EkjVmIdxVvWCJ/mt4GNJroTcFMHCRy9+rplHKA1n9fMXAHspmzILq8wHd/HkDT4sDHkoM4RJhNlzt3mKvyyknhFf7K0JjG/+Cp1+RQ/k5m1QZL1LaoiRkWzF31hQRTwkqYAoyr6rHCiDmoMWQgzH9TfbfX2zFcnOO1kv6euB5doDoUsb4ppof8hM67O5sBtKVwzUkRsP069NUGlg==</X509Certificate></X509Data></KeyInfo></ds:Signature></saml:Assertion>)xml");
     persistence->SetToken(std::make_shared<SamlToken>(expiredTokenStr));
 
-    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, authHandler);
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, authHandler);
 
     auto result = client->SendGetChildrenRequest(ObjectId())->GetResult();
     ASSERT_FALSE(result.IsSuccess());
@@ -116,7 +110,7 @@ TEST_F(WSRepositoryClientTests, DISABLED_SendCreateObjectRequest_ProjectWiseAndW
     Utf8String repositoryId = "pw.PW";
     Credentials credentials("admin", "admin");
 
-    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, proxy);
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
     client->SetCredentials(credentials);
 
     // Create in VR/upload/ folder
@@ -158,7 +152,7 @@ TEST_F(WSRepositoryClientTests, DISABLED_SendCreateObjectRequest_ProjectWiseAndW
     Utf8String repositoryId = "pw--BSW-CONSTRUCT.bentley.com~3APW";
     Credentials credentials("admin", "admin");
 
-    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, proxy);
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
     client->SetCredentials(credentials);
 
     // Create in VR/upload/ folder
@@ -210,7 +204,7 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_FileLargerThanUploadChun
     Utf8String repositoryId = "Bentley.eB--viltest2-5~2CeB_Mobile";
     Credentials credentials("admin", "admin");
 
-    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, proxy);
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
     client->SetCredentials(credentials);
 
     // Create in VR/upload/ folder

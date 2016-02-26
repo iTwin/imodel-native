@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/WebServicesTestsHelper.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -123,6 +123,7 @@ WSError StubWSConnectionError();
 WSError StubWSCanceledError();
 
 ClientInfoPtr StubClientInfo();
+ClientInfoPtr StubValidClientInfo();
 
 ECN::ECSchemaPtr ParseSchema(Utf8StringCR schemaXml, ECN::ECSchemaReadContextPtr context = nullptr);
 

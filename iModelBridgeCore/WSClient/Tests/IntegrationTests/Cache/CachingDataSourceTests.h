@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/Cache/CachingDataSourceTests.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -12,5 +12,6 @@
 
 struct CachingDataSourceTests : public WSClientBaseTest
     {
-    static void SetUpTestCase();
+    StubLocalState m_localState;
+    void SetUp();
     };
