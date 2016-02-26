@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/ConnectTokenProviderTests.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -10,13 +10,12 @@
 
 #include "ConnectTestsHelper.h"
 
-class ConnectTokenProviderTests : public BaseMockHttpHandlerTest
+class ConnectTokenProviderTests : public WSClientBaseTest
     {
     private:
-        std::shared_ptr<StubBuddiClient> m_client;
+        std::shared_ptr<StubBuddiClient> m_buddiClient;
         StubLocalState m_localState;
 
     public:
         virtual void SetUp () override;
-        virtual void TearDown () override;
     };

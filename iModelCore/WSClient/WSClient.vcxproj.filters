@@ -90,9 +90,6 @@
     <ClCompile Include="Connect\AuthenticationData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Connect\Connect.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Connect\ConnectAuthenticationHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -366,6 +363,9 @@
     <ClCompile Include="Connect\IdentityTokenProvider.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Connect\ImsClient.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client\WebApi\WebApi.h">
@@ -450,9 +450,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Connect\Authentication.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\WebServices\Connect\Connect.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectAuthenticationHandler.h">
@@ -801,6 +798,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Connect\IdentityAuthenticationPersistence.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Connect\IImsClient.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Connect\ImsClient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

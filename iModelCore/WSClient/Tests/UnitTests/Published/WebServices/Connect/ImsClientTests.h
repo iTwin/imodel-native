@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/UnitTests/Published/WebServices/Connect/ConnectTests.h $
+|     $Source: Tests/UnitTests/Published/WebServices/Connect/ImsClientTests.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -10,13 +10,12 @@
 
 #include "ConnectTestsHelper.h"
 
-class ConnectTests : public BaseMockHttpHandlerTest
+class ImsClientTests : public BaseMockHttpHandlerTest
     {
     private:
-        std::shared_ptr<StubBuddiClient> m_client;
+        std::shared_ptr<StubBuddiClient> m_buddiClient;
         StubLocalState m_localState;
 
     public:
         virtual void SetUp () override;
-        virtual void TearDown () override;
     };

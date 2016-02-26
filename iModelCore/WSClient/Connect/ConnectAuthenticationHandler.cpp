@@ -2,14 +2,14 @@
 |
 |     $Source: Connect/ConnectAuthenticationHandler.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include <WebServices/Connect/ConnectAuthenticationHandler.h>
 
 #include <Bentley/Base64Utilities.h>
-#include <WebServices/Connect/Connect.h>
+#include <WebServices/Connect/ImsClient.h>
 #include <WebServices/Connect/ConnectTokenProvider.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -26,7 +26,7 @@ IHttpHandlerPtr customHttpHandler
 ) :
 AuthenticationHandler(customHttpHandler),
 m_urlBaseToAuth(urlBaseToAuth),
-m_tokenProvider(customTokenProvider ? customTokenProvider : std::make_shared<ConnectTokenProvider>()),
+m_tokenProvider(customTokenProvider ? customTokenProvider : std::make_shared<ConnectTokenProvider>(ImsClient::GetShared())),
 m_thread(WorkerThread::Create("ConnectAuthenticationHandler"))
     {}
 
@@ -46,7 +46,7 @@ bool ConnectAuthenticationHandler::_ShouldRetryAuthentication(HttpResponseCR res
         {
         return true;
         }
-    if (Connect::IsImsLoginRedirect(response))
+    if (ImsClient::IsLoginRedirect(response))
         {
         return true;
         }

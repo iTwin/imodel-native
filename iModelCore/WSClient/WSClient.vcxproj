@@ -135,7 +135,7 @@
     <ClCompile Include="Configuration\BuddiError.cpp" />
     <ClCompile Include="Connect\Authentication.cpp" />
     <ClCompile Include="Connect\AuthenticationData.cpp" />
-    <ClCompile Include="Connect\Connect.cpp" />
+    <ClCompile Include="Connect\ImsClient.cpp" />
     <ClCompile Include="Connect\ConnectAuthenticationHandler.cpp" />
     <ClCompile Include="Connect\ConnectAuthenticationPersistence.cpp" />
     <ClCompile Include="Connect\ConnectSessionAuthenticationPersistence.cpp" />
@@ -281,7 +281,7 @@
     <ClInclude Include="PublicAPI\WebServices\Configuration\BuddiClient.h" />
     <ClInclude Include="PublicAPI\WebServices\Configuration\BuddiError.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\Authentication.h" />
-    <ClInclude Include="PublicAPI\WebServices\Connect\Connect.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\ImsClient.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectAuthenticationHandler.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectAuthenticationPersistence.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectMessaging.h" />
@@ -297,6 +297,7 @@
     <ClInclude Include="PublicAPI\WebServices\Connect\IConnectAuthenticationProvider.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\IConnectAuthenticationPersistence.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\IConnectTokenProvider.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\IImsClient.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ITokenStore.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\SamlToken.h" />
     <ClInclude Include="PublicAPI\WebServices\Licensing\MobileTracking.h" />

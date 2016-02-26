@@ -13,7 +13,7 @@
 #include <WebServices/Connect/ConnectAuthenticationHandler.h>
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
 #include <WebServices/Connect/ConnectTokenProvider.h>
-#include <WebServices/Connect/Connect.h>
+#include <WebServices/Connect/ImsClient.h>
 #include <MobileDgn/Utils/Http/ProxyHttpHandler.h>
 #include <WebServices/Configuration/UrlProvider.h>
 
@@ -33,7 +33,7 @@ void CachingDataSourceTests::SetUpTestCase()
 TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectGlobal_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    Connect::Initialize(StubClientInfo(), proxy);
+    auto imsClient = ImsClient::Create(StubClientInfo(), proxy);
 
     Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net/";
     Utf8String repositoryId = "BentleyCONNECT.Global--CONNECT.GLOBAL";
@@ -43,7 +43,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectGlobal_Succeeds)
     StubLocalState localState;
     ConnectAuthenticationPersistence::CustomInitialize(&localState);
     auto persistence = ConnectAuthenticationPersistence::GetShared();
-    auto provider = std::make_shared<ConnectTokenProvider>(persistence);
+    auto provider = std::make_shared<ConnectTokenProvider>(imsClient, persistence);
     auto authHandler = std::make_shared<ConnectAuthenticationHandler>(serverUrl, provider, proxy);
 
     persistence->SetCredentials(credentials);
@@ -57,7 +57,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectGlobal_Succeeds)
 TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectSharedContent_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    Connect::Initialize(StubClientInfo(), proxy);
+    auto imsClient = ImsClient::Create(StubClientInfo(), proxy);
 
     Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net/";
     Utf8String repositoryId = "BentleyCONNECT.SharedContent--CONNECT.SharedContent";
@@ -67,7 +67,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectSharedContent_Succeeds
     StubLocalState localState;
     ConnectAuthenticationPersistence::CustomInitialize(&localState);
     auto persistence = ConnectAuthenticationPersistence::GetShared();
-    auto provider = std::make_shared<ConnectTokenProvider>(persistence);
+    auto provider = std::make_shared<ConnectTokenProvider>(imsClient, persistence);
     auto authHandler = std::make_shared<ConnectAuthenticationHandler>(serverUrl, provider, proxy);
 
     persistence->SetCredentials(credentials);
@@ -90,7 +90,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectSharedContent_Succeeds
 TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectPersonalShare_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    Connect::Initialize(StubClientInfo(), proxy);
+    auto imsClient = ImsClient::Create(StubClientInfo(), proxy);
 
     Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net";
     Utf8String repositoryId = "BentleyCONNECT.PersonalPublishing--CONNECT.PersonalPublishing";
@@ -100,7 +100,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectPersonalShare_Succeeds
     StubLocalState localState;
     ConnectAuthenticationPersistence::CustomInitialize(&localState);
     auto persistence = ConnectAuthenticationPersistence::GetShared();
-    auto provider = std::make_shared<ConnectTokenProvider>(persistence);
+    auto provider = std::make_shared<ConnectTokenProvider>(imsClient, persistence);
     auto authHandler = std::make_shared<ConnectAuthenticationHandler>(serverUrl, provider, proxy);
 
     persistence->SetCredentials(credentials);
@@ -115,7 +115,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectShare_Succeeds)
     {
     // Fails because user has no shared projects, need other user
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    Connect::Initialize(StubClientInfo(), proxy);
+    auto imsClient = ImsClient::Create(StubClientInfo(), proxy);
 
     Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net";
     Utf8String repositoryId = "BentleyCONNECT.ProjectContent--f84ee4ab-3b31-4ba9-bf8e-edd124c73393";
@@ -125,7 +125,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectShare_Succeeds)
     StubLocalState localState;
     ConnectAuthenticationPersistence::CustomInitialize(&localState);
     auto persistence = ConnectAuthenticationPersistence::GetShared();
-    auto provider = std::make_shared<ConnectTokenProvider>(persistence);
+    auto provider = std::make_shared<ConnectTokenProvider>(imsClient, persistence);
     auto authHandler = std::make_shared<ConnectAuthenticationHandler>(serverUrl, provider, proxy);
 
     persistence->SetCredentials(credentials);
@@ -140,7 +140,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectDataRetrieved_S
     {
     // Fails because user has no shared projects, need other user
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    Connect::Initialize(StubClientInfo(), proxy);
+    auto imsClient = ImsClient::Create(StubClientInfo(), proxy);
 
     Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net";
     Utf8String repositoryId = "BentleyCONNECT.ProjectContent--f84ee4ab-3b31-4ba9-bf8e-edd124c73393";
@@ -150,7 +150,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectDataRetrieved_S
     StubLocalState localState;
     ConnectAuthenticationPersistence::CustomInitialize(&localState);
     auto persistence = ConnectAuthenticationPersistence::GetShared();
-    auto provider = std::make_shared<ConnectTokenProvider>(persistence);
+    auto provider = std::make_shared<ConnectTokenProvider>(imsClient, persistence);
     auto authHandler = std::make_shared<ConnectAuthenticationHandler>(serverUrl, provider, proxy);
 
     persistence->SetCredentials(credentials);
@@ -596,7 +596,7 @@ TEST_F(CachingDataSourceTests, DISABLED_OpenOrCreate_WSG2eBPluginProductionRepos
 TEST_F(CachingDataSourceTests, GetObjects_PunchlistQueries_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    Connect::Initialize(StubClientInfo(), proxy);
+    auto imsClient = ImsClient::Create(StubClientInfo(), proxy);
 
     Utf8String serverUrl = "https://qa-punchlist-eus.cloudapp.net";
     Utf8String repositoryId = "IssuePlugin--default";
@@ -609,7 +609,7 @@ TEST_F(CachingDataSourceTests, GetObjects_PunchlistQueries_Succeeds)
     StubLocalState localState;
     ConnectAuthenticationPersistence::CustomInitialize(&localState);
     auto persistence = ConnectAuthenticationPersistence::GetShared();
-    auto provider = std::make_shared<ConnectTokenProvider>(persistence);
+    auto provider = std::make_shared<ConnectTokenProvider>(imsClient, persistence);
     auto authHandler = std::make_shared<ConnectAuthenticationHandler>(serverUrl, provider, proxy);
     persistence->SetCredentials(credentials);
 

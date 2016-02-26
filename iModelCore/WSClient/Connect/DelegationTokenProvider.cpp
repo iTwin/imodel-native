@@ -10,7 +10,7 @@
 #include "../Client/Logging.h"
 
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
-#include <WebServices/Connect/Connect.h>
+#include <WebServices/Connect/ImsClient.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -19,7 +19,8 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-DelegationTokenProvider::DelegationTokenProvider(Utf8String rpUri, IConnectTokenProviderPtr baseTokenProvider) :
+DelegationTokenProvider::DelegationTokenProvider(IImsClientPtr client, Utf8String rpUri, IConnectTokenProviderPtr baseTokenProvider) :
+m_client(client),
 m_rpUri(rpUri),
 m_baseTokenProvider(baseTokenProvider),
 m_tokenLifetime(TOKEN_LIFETIME)
@@ -72,7 +73,7 @@ AsyncTaskPtr<SamlTokenResult> DelegationTokenProvider::RetrieveNewToken()
         return CreateCompletedAsyncTask(SamlTokenResult::Error({}));
         }
 
-    return Connect::RenewToken(*baseToken, m_rpUri.c_str(), nullptr, m_tokenLifetime)
+    return m_client->RequestToken(*baseToken, m_rpUri, m_tokenLifetime)
     ->Then<SamlTokenResult>([=] (SamlTokenResult result)
         {
         if (!result.IsSuccess() && result.GetError().GetHttpStatus() == HttpStatus::Unauthorized)
@@ -80,7 +81,10 @@ AsyncTaskPtr<SamlTokenResult> DelegationTokenProvider::RetrieveNewToken()
             // Base token was rejected, try update
             m_baseTokenProvider->UpdateToken();
             }
-        LOG.infov("Received '%s' delegation token lifetime %d minutes", m_rpUri.c_str(), result.GetValue()->GetLifetime());
+
+        if (result.IsSuccess())
+            LOG.infov("Received '%s' delegation token lifetime %d minutes", m_rpUri.c_str(), result.GetValue()->GetLifetime());
+
         return result;
         });
     //});

@@ -12,7 +12,7 @@
 #include <MobileDgn/Utils/Http/HttpStatusHelper.h>
 #include <MobileDgn/Utils/Threading/WorkerThreadPool.h>
 #include <WebServices/Configuration/UrlProvider.h>
-#include <WebServices/Connect/Connect.h>
+#include <WebServices/Connect/ImsClient.h>
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
 
 USING_NAMESPACE_BENTLEY
@@ -146,7 +146,7 @@ HttpRequest ConnectSpaces::CreateGetRequest(Utf8StringCR url, bool acceptJson, b
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IsRedirectToStsLogin(HttpResponseCR response)
     {
-    return Connect::IsImsLoginRedirect(response);
+    return ImsClient::IsLoginRedirect(response);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -194,7 +194,7 @@ BentleyStatus ConnectSpaces::GetNewTokenIfNeeded(bool getNewToken, StatusAction 
         return SUCCESS;
         }
 
-    auto result = Connect::Login(m_credentials, appliesToUrl)->GetResult();
+    auto result = ImsClient::GetShared()->RequestToken(m_credentials, appliesToUrl)->GetResult();
     m_credentialsCriticalSection.Leave();
 
     if (result.IsSuccess())

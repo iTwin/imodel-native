@@ -9,7 +9,7 @@
 #include <WebServices/Connect/ConnectSignInManager.h>
 
 #include <WebServices/Configuration/UrlProvider.h>
-#include <WebServices/Connect/Connect.h>
+#include <WebServices/Connect/ImsClient.h>
 #include <WebServices/Connect/ConnectAuthenticationHandler.h>
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
 #include <WebServices/Connect/ConnectSessionAuthenticationPersistence.h>
@@ -30,7 +30,8 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                           Vytautas.Barkauskas    12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ConnectSignInManager::ConnectSignInManager(ILocalState* localState, ISecureStorePtr secureStore) :
+ConnectSignInManager::ConnectSignInManager(IImsClientPtr client, ILocalState* localState, ISecureStorePtr secureStore) :
+m_client(client),
 m_localState(localState ? *localState : MobileDgnCommon::LocalState()),
 m_secureStore(secureStore ? secureStore : std::make_shared<SecureStore>(&m_localState))
     {
@@ -45,11 +46,11 @@ ConnectSignInManager::~ConnectSignInManager()
     {}
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                           Vytautas.Barkauskas    02/2016
+* @bsimethod                                                    Vincas.Razma    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ConnectSignInManagerPtr ConnectSignInManager::Create(ILocalState* localState, ISecureStorePtr secureStore)
+ConnectSignInManagerPtr ConnectSignInManager::Create(IImsClientPtr client, ILocalState* localState, ISecureStorePtr secureStore)
     {
-    return std::shared_ptr<ConnectSignInManager>(new ConnectSignInManager(localState, secureStore));
+    return std::shared_ptr<ConnectSignInManager>(new ConnectSignInManager(client, localState, secureStore));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -86,7 +87,7 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithToken(SamlTokenPtr to
 
     LOG.infov("ConnectSignIn: sign-in token lifetime %d minutes", token->GetLifetime());
 
-    return Connect::RenewToken(*token, nullptr, nullptr, m_config.identityTokenLifetime)
+    return m_client->RequestToken(*token, nullptr, m_config.identityTokenLifetime)
         ->Then<SignInResult>([=] (SamlTokenResult result)
         {
         if (!result.IsSuccess())
@@ -119,7 +120,8 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithToken(SamlTokenPtr to
 AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithCredentials(CredentialsCR credentials)
     {
     BeCriticalSectionHolder lock(m_cs);
-    return Connect::Login(credentials, nullptr, nullptr, m_config.identityTokenLifetime)
+
+    return m_client->RequestToken(credentials, nullptr, m_config.identityTokenLifetime)
         ->Then<SignInResult>([=] (SamlTokenResult result)
         {
         if (!result.IsSuccess())
@@ -265,7 +267,7 @@ IConnectTokenProviderPtr ConnectSignInManager::GetCachedTokenProvider(Utf8String
 
     IConnectTokenProviderPtr baseProvider = GetBaseTokenProviderMatchingAuthenticationType();
 
-    auto delegationProvider = std::make_shared<DelegationTokenProvider>(rpUri, baseProvider);
+    auto delegationProvider = std::make_shared<DelegationTokenProvider>(m_client, rpUri, baseProvider);
     delegationProvider->Configure(m_config.delegationTokenLifetime);
 
     m_tokenProviders[rpUri] = delegationProvider;
@@ -318,18 +320,18 @@ IConnectTokenProviderPtr ConnectSignInManager::GetBaseTokenProviderMatchingAuthe
 
     if (AuthenticationType::Token == type)
         {
-        auto provider = IdentityTokenProvider::Create(m_persistence, m_tokenExpiredHandler);
+        auto provider = IdentityTokenProvider::Create(m_client, m_persistence, m_tokenExpiredHandler);
         provider->Configure(m_config.identityTokenLifetime, m_config.identityTokenRefreshRate);
         return provider;
         }
 
     if (AuthenticationType::Credentials == type)
         {
-        auto provider = std::make_shared<ConnectTokenProvider>(m_persistence);
+        auto provider = std::make_shared<ConnectTokenProvider>(m_client, m_persistence);
         provider->Configure(m_config.identityTokenLifetime);
         return provider;
         }
 
     // Not signed in - return failing token provider
-    return std::make_shared<ConnectTokenProvider>(std::make_shared<ConnectSessionAuthenticationPersistence>());
+    return std::make_shared<ConnectTokenProvider>(m_client, std::make_shared<ConnectSessionAuthenticationPersistence>());
     }

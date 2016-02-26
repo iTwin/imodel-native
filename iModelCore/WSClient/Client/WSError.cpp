@@ -2,12 +2,12 @@
 |
 |     $Source: Client/WSError.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include <map>
-#include <WebServices/Connect/Connect.h>
+#include <WebServices/Connect/ImsClient.h>
 #include <MobileDgn/Utils/Http/HttpStatusHelper.h>
 #include <BeXml/BeXml.h>
 
@@ -117,7 +117,7 @@ WSError::WSError(HttpResponseCR httpResponse) : WSError()
         return;
         }
 
-    if (Connect::IsImsLoginRedirect(httpResponse) ||                // Bentley CONNECT login redirect
+    if (ImsClient::IsLoginRedirect(httpResponse) ||                 // Bentley CONNECT login redirect
         HttpStatus::Unauthorized == httpResponse.GetHttpStatus())   // Bentley CONNECT token could not be retrieved
         {
         m_message = HttpError::GetHttpDisplayMessage(HttpStatus::Unauthorized);

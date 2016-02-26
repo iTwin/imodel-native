@@ -10,7 +10,6 @@
 
 #include <Bentley/Base64Utilities.h>
 #include <MobileDgn/MobileDgnUi.h>
-#include <WebServices/Connect/Connect.h>
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
 #include <WebServices/Connect/ConnectSpaces.h>
 

@@ -13,7 +13,6 @@ ConnectMkiSourceDir = $(ClientSourceDirectory)Connect/
 #   Set up build dependencies
 #--------------------------------------------------------------------------------------
 ConnectMkiHeaders = $(ConnectMkiPublicApiDir)Authentication.h                           \
-                    $(ConnectMkiPublicApiDir)Connect.h                                  \
                     $(ConnectMkiPublicApiDir)ConnectAuthenticationHandler.h             \
                     $(ConnectMkiPublicApiDir)ConnectAuthenticationPersistence.h         \
                     $(ConnectMkiPublicApiDir)ConnectSessionAuthenticationPersistence.h  \
@@ -28,6 +27,7 @@ ConnectMkiHeaders = $(ConnectMkiPublicApiDir)Authentication.h                   
                     $(ConnectMkiPublicApiDir)IConnectAuthenticationProvider.h           \
                     $(ConnectMkiPublicApiDir)IConnectTokenProvider.h                    \
                     $(ConnectMkiPublicApiDir)ITokenStore.h                              \
+                    $(ConnectMkiPublicApiDir)ImsClient.h                                \
                     $(ConnectMkiPublicApiDir)Passport.h                                 \
                     $(ConnectMkiPublicApiDir)SamlToken.h                                \
                     $(ConnectMkiSourceDir)AuthenticationData.h                          \
@@ -40,8 +40,6 @@ ConnectMkiHeaders = $(ConnectMkiPublicApiDir)Authentication.h                   
 $(o)Authentication$(oext)                           : $(ConnectMkiSourceDir)Authentication.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 
 $(o)AuthenticationData$(oext)                       : $(ConnectMkiSourceDir)AuthenticationData.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
-
-$(o)Connect$(oext)                                  : $(ConnectMkiSourceDir)Connect.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 
 $(o)ConnectAuthenticationHandler$(oext)             : $(ConnectMkiSourceDir)ConnectAuthenticationHandler.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 
@@ -64,6 +62,8 @@ $(o)EulaClient$(oext)                               : $(ConnectMkiSourceDir)Eula
 $(o)IdentityAuthenticationPersistence$(oext)        : $(ConnectMkiSourceDir)IdentityAuthenticationPersistence.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 
 $(o)IdentityTokenProvider$(oext)                    : $(ConnectMkiSourceDir)IdentityTokenProvider.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
+
+$(o)ImsClient$(oext)                                : $(ConnectMkiSourceDir)ImsClient.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 
 $(o)Passport$(oext)                                 : $(ConnectMkiSourceDir)Passport.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 

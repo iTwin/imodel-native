@@ -1,31 +1,26 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/UnitTests/Published/WebServices/Connect/ConnectTests.cpp $
+|     $Source: Tests/UnitTests/Published/WebServices/Connect/ImsClientTests.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ConnectTests.h"
-#include <WebServices/Connect/Connect.h>
+#include "ImsClientTests.h"
+#include <WebServices/Connect/ImsClient.h>
 #include <Bentley/Base64Utilities.h>
 #include <WebServices/Configuration/UrlProvider.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 using namespace ::testing;
 
-void ConnectTests::SetUp()
+void ImsClientTests::SetUp()
     {
-    Connect::Initialize(StubClientInfo(), GetHandlerPtr());
-    m_client = std::make_shared<StubBuddiClient>();
-    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &m_localState, m_client);
+    BaseMockHttpHandlerTest::SetUp();
+    m_buddiClient = std::make_shared<StubBuddiClient>();
+    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &m_localState, m_buddiClient);
     }
 
-void ConnectTests::TearDown()
-    {
-    Connect::Uninintialize();
-    }
-
-TEST_F(ConnectTests, Login_DefaultUrls_SendsRequestToRetrieveToken)
+TEST_F(ImsClientTests, GetToken_DefaultUrls_SendsRequestToRetrieveToken)
     {
     GetHandler().ForFirstRequest([&] (HttpRequestCR request)
         {
@@ -34,10 +29,11 @@ TEST_F(ConnectTests, Login_DefaultUrls_SendsRequestToRetrieveToken)
         return StubHttpResponse();
         });
 
-    Connect::Login(Credentials("Foo", "Boo"))->GetResult();
+    auto client = ImsClient::Create(StubClientInfo(), GetHandlerPtr());
+    client->RequestToken(Credentials("Foo", "Boo"))->GetResult();
     }
 
-TEST_F(ConnectTests, Login_ResponseContainsToken_ReturnsToken)
+TEST_F(ImsClientTests, GetToken_ResponseContainsToken_ReturnsToken)
     {
     auto tokenStr = StubSamlTokenXML();
     Json::Value bodyJson;
@@ -45,13 +41,14 @@ TEST_F(ConnectTests, Login_ResponseContainsToken_ReturnsToken)
 
     GetHandler().ForFirstRequest(StubHttpResponse(HttpStatus::OK, bodyJson.toStyledString()));
 
-    auto result = Connect::Login(Credentials("Foo", "Boo"))->GetResult();
+    auto client = ImsClient::Create(StubClientInfo(), GetHandlerPtr());
+    auto result = client->RequestToken(Credentials("Foo", "Boo"))->GetResult();
 
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_EQ(tokenStr, result.GetValue()->AsString());
     }
 
-TEST_F(ConnectTests, GetStsToken_ByCredentials_SendsRequestToRetrieveToken)
+TEST_F(ImsClientTests, GetToken_ByCredentials_SendsRequestToRetrieveToken)
     {
     GetHandler().ForFirstRequest([&] (HttpRequestCR request)
         {
@@ -62,15 +59,15 @@ TEST_F(ConnectTests, GetStsToken_ByCredentials_SendsRequestToRetrieveToken)
         EXPECT_EQ("123", bodyJson["Lifetime"].asString());
 
         EXPECT_EQ("Basic " + Base64Utilities::Encode("Foo:Boo"), request.GetHeaders().GetAuthorization());
-        EXPECT_EQ("http://sts.url", request.GetUrl());
 
         return StubHttpResponse();
         });
 
-    Connect::GetStsToken(Credentials("Foo", "Boo"), "http://applies.to.url", "http://sts.url", 123)->GetResult();
+    auto client = ImsClient::Create(StubClientInfo(), GetHandlerPtr());
+    client->RequestToken(Credentials("Foo", "Boo"), "http://applies.to.url", 123)->GetResult();
     }
 
-TEST_F(ConnectTests, GetStsToken_ByCredentialsWithZeroLifetime_SendsRequestToRetrieveTokenWithoutLifetimee)
+TEST_F(ImsClientTests, GetToken_ByCredentialsWithZeroLifetime_SendsRequestToRetrieveTokenWithoutLifetimee)
     {
     GetHandler().ForFirstRequest([&] (HttpRequestCR request)
         {
@@ -81,15 +78,15 @@ TEST_F(ConnectTests, GetStsToken_ByCredentialsWithZeroLifetime_SendsRequestToRet
         EXPECT_FALSE(bodyJson.isMember("Lifetime"));
 
         EXPECT_EQ("Basic " + Base64Utilities::Encode("Foo:Boo"), request.GetHeaders().GetAuthorization());
-        EXPECT_EQ("http://sts.url", request.GetUrl());
 
         return StubHttpResponse();
         });
 
-    Connect::GetStsToken(Credentials("Foo", "Boo"), "http://applies.to.url", "http://sts.url", 0)->GetResult();
+    auto client = ImsClient::Create(StubClientInfo(), GetHandlerPtr());
+    client->RequestToken(Credentials("Foo", "Boo"), "http://applies.to.url", 0)->GetResult();
     }
 
-TEST_F(ConnectTests, GetStsToken_ByParentToken_SendsRequestToRetrieveToken)
+TEST_F(ImsClientTests, GetToken_ByParentToken_SendsRequestToRetrieveToken)
     {
     SamlToken parentToken(StubSamlTokenXML(0, "TestCert"));
 
@@ -103,15 +100,15 @@ TEST_F(ConnectTests, GetStsToken_ByParentToken_SendsRequestToRetrieveToken)
         EXPECT_EQ("123", bodyJson["Lifetime"].asString());
 
         EXPECT_STREQ("X509 access_token=TestCert", request.GetHeaders().GetAuthorization());
-        EXPECT_EQ("http://sts.url", request.GetUrl());
 
         return StubHttpResponse();
         });
 
-    Connect::GetStsToken(parentToken, "http://applies.to.url", "http://sts.url", 123)->GetResult();
+    auto client = ImsClient::Create(StubClientInfo(), GetHandlerPtr());
+    client->RequestToken(parentToken, "http://applies.to.url", 123)->GetResult();
     }
 
-TEST_F(ConnectTests, GetStsToken_ByParentTokenWithZeroLifetime_SendsRequestToRetrieveTokenWithoutLifetime)
+TEST_F(ImsClientTests, GetToken_ByParentTokenWithZeroLifetime_SendsRequestToRetrieveTokenWithoutLifetime)
     {
     SamlToken parentToken(StubSamlTokenXML(0, "TestCert"));
 
@@ -125,30 +122,30 @@ TEST_F(ConnectTests, GetStsToken_ByParentTokenWithZeroLifetime_SendsRequestToRet
         EXPECT_FALSE(bodyJson.isMember("Lifetime"));
 
         EXPECT_STREQ("X509 access_token=TestCert", request.GetHeaders().GetAuthorization());
-        EXPECT_EQ("http://sts.url", request.GetUrl());
 
         return StubHttpResponse();
         });
 
-    Connect::GetStsToken(parentToken, "http://applies.to.url", "http://sts.url", 0)->GetResult();
+    auto client = ImsClient::Create(StubClientInfo(), GetHandlerPtr());
+    client->RequestToken(parentToken, "http://applies.to.url", 0)->GetResult();
     }
 
-TEST_F(ConnectTests, IsImsLoginRedirect_NonLoginUrl_False)
+TEST_F(ImsClientTests, IsLoginRedirect_NonLoginUrl_False)
     {
-    EXPECT_FALSE(Connect::IsImsLoginRedirect(StubHttpResponseWithUrl(HttpStatus::OK, "http://test.com/other")));
+    EXPECT_FALSE(ImsClient::IsLoginRedirect(StubHttpResponseWithUrl(HttpStatus::OK, "http://test.com/other")));
     }
 
-TEST_F(ConnectTests, IsImsLoginRedirect_StatusNotOK_False)
+TEST_F(ImsClientTests, IsLoginRedirect_StatusNotOK_False)
     {
-    EXPECT_FALSE(Connect::IsImsLoginRedirect(StubHttpResponseWithUrl(HttpStatus::Found, "http://test.com//IMS/Account/Login?foo")));
+    EXPECT_FALSE(ImsClient::IsLoginRedirect(StubHttpResponseWithUrl(HttpStatus::Found, "http://test.com//IMS/Account/Login?foo")));
     }
 
-TEST_F(ConnectTests, IsImsLoginRedirect_IMSLoginUrlAndStatusOK_True)
+TEST_F(ImsClientTests, IsLoginRedirect_IMSLoginUrlAndStatusOK_True)
     {
-    EXPECT_TRUE(Connect::IsImsLoginRedirect(StubHttpResponseWithUrl(HttpStatus::OK, "http://test.com//IMS/Account/Login?foo")));
+    EXPECT_TRUE(ImsClient::IsLoginRedirect(StubHttpResponseWithUrl(HttpStatus::OK, "http://test.com//IMS/Account/Login?foo")));
     }
 
-TEST_F(ConnectTests, GetFederatedSignInUrl_NoDomainParameter_UrlHasNoOfhParameter)
+TEST_F(ImsClientTests, GetFederatedSignInUrl_NoDomainParameter_UrlHasNoOfhParameter)
     {
 #if defined (BENTLEY_WIN32)
     const Utf8String platformType("desktop");
@@ -159,10 +156,11 @@ TEST_F(ConnectTests, GetFederatedSignInUrl_NoDomainParameter_UrlHasNoOfhParamete
     Utf8String signInUrl("TestUrl?wa=wsignin1.0&wtrealm=sso%3A%2F%2Fwsfed_");
     signInUrl += platformType + "%2FTestAppProductId";
 
-    EXPECT_STREQ(signInUrl.c_str(), Connect::GetFederatedSignInUrl().c_str());
+    auto info = StubClientInfo();
+    EXPECT_STREQ(signInUrl.c_str(), ImsClient::GetFederatedSignInUrl(*info).c_str());
     }
 
-TEST_F(ConnectTests, GetFederatedSignInUrl_DomainParameter_UrlHasOfhParameter)
+TEST_F(ImsClientTests, GetFederatedSignInUrl_DomainParameter_UrlHasOfhParameter)
     {
 #if defined (BENTLEY_WIN32)
     const Utf8String platformType("desktop");
@@ -174,5 +172,6 @@ TEST_F(ConnectTests, GetFederatedSignInUrl_DomainParameter_UrlHasOfhParameter)
     Utf8String signInUrl("TestUrl?wa=wsignin1.0&wtrealm=sso%3A%2F%2Fwsfed_");
     signInUrl += platformType + "%2FTestAppProductId&ofh=" + Base64Utilities::Encode(domainName);
 
-    EXPECT_STREQ(signInUrl.c_str(), Connect::GetFederatedSignInUrl(domainName).c_str());
+    auto info = StubClientInfo();
+    EXPECT_STREQ(signInUrl.c_str(), ImsClient::GetFederatedSignInUrl(*info, domainName).c_str());
     }
