@@ -1508,20 +1508,20 @@ void            BeStringUtilities::ParseArguments(bvector<WString>& subStrings, 
     uint32_t argc, numchars;
     WChar   **argv, *argStrings;
 
-    // Determine the space needed for argc/argv
-    parseIntoArgcArgv(inString, NULL, NULL, &argc, &numchars, auxDelimiters);
-    argv       = (WChar**)_alloca((argc+1) * sizeof(WChar *) );
-    argStrings = (WChar*)_alloca((numchars+1) * sizeof(WChar) );
-
     // if there are auxDelimiters, add them to the usual space and tab.
     WCharCP allDelimiters = nullptr;
     WString allDelimiterString;
     if (nullptr != auxDelimiters)
         {
-        allDelimiterString.assign (L" \t");
-        allDelimiterString.append (auxDelimiters);
+        allDelimiterString.assign(L" \t");
+        allDelimiterString.append(auxDelimiters);
         allDelimiters = allDelimiterString.c_str();
         }
+
+    // Determine the space needed for argc/argv
+    parseIntoArgcArgv(inString, NULL, NULL, &argc, &numchars, allDelimiters);
+    argv       = (WChar**)_alloca((argc+1) * sizeof(WChar *) );
+    argStrings = (WChar*)_alloca((numchars+1) * sizeof(WChar) );
 
     // Actually split up the arguments
     parseIntoArgcArgv(inString, argv, argStrings, &argc, &numchars, allDelimiters);

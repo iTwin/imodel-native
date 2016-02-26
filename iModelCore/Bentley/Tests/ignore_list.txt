@@ -11,7 +11,3 @@ BeFileNameTests.UNCReadOnlyTest         # Testable UNC path is required to be av
 BeTextFileTests.*
 BeStringUtilitiesTests.UriEncoding              # Notified Sam
 DoubleFormatterTest.ReplaceDecimalSeparator     # Only replace default decimal Separator
-
-#----------------------------------------------------------------------------------------
-# *** Broken in 06; need to be re-visited ***
-#----------------------------------------------------------------------------------------
