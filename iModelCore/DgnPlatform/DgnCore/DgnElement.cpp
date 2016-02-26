@@ -745,7 +745,7 @@ void DgnElement::CreateParams::RelocateToDestinationDb(DgnImportContext& importe
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::CopyForCloneFrom(DgnElementCR src)
     {
-    src.LoadUserProperties(); // See notes in CopyUserProperties()
+    src.LoadUserProperties();
 
     DgnCode code = GetCode();
     _CopyFrom(src);
@@ -873,15 +873,13 @@ DgnElement::CreateParams DgnElement::GetCreateParamsForImport(DgnModelR destMode
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::LoadUserProperties() const
     {
-    // See notes in CopyUserProperties()
     if (m_userProperties)
         return;
     
+    m_userProperties = new AdHocJsonValue();
+
     if (!IsPersistent())
-        {
-        m_userProperties = new AdHocJsonValue();
-        return;
-        }
+       return;
     BeAssert(GetElementId().IsValid());
 
     CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT UserProperties FROM " DGN_SCHEMA(DGN_CLASSNAME_Element) " WHERE ECInstanceId=?");
@@ -893,8 +891,6 @@ void DgnElement::LoadUserProperties() const
     BeAssert(result == BE_SQLITE_ROW && "Expected user properties for element");
     UNUSED_VARIABLE(result);
 
-    m_userProperties = new AdHocJsonValue();
-
     Utf8CP userPropertiesStr = stmt->GetValueText(0);
     if (!Utf8String::IsNullOrEmpty(userPropertiesStr))
        m_userProperties->FromString(userPropertiesStr);
@@ -905,7 +901,6 @@ void DgnElement::LoadUserProperties() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::SaveUserProperties() const
     {
-    // See notes in CopyUserProperties()
     if (!m_userProperties)
         return DgnDbStatus::Success;
     
@@ -935,7 +930,6 @@ DgnDbStatus DgnElement::SaveUserProperties() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::UnloadUserProperties() const
     {
-    // See notes in CopyUserProperties()
     if (!m_userProperties)
         return;
 
@@ -970,7 +964,7 @@ void DgnElement::CopyUserProperties(DgnElementCR other)
     if (other.m_userProperties)
         GetUserPropertiesR() = other.GetUserProperties();
     else
-        m_userProperties = nullptr;
+        UnloadUserProperties();
     }
 
 /*---------------------------------------------------------------------------------**//**
