@@ -50,25 +50,42 @@ struct DgnDbServerError : public DgnClientFx::Utils::AsyncError
             ConnectionError,
             Canceled,
 
+            //DgnDbServer Client API Errors
+            NoRepositoriesFound,
+            FileIsNotBriefcase,
+            CredentialsNotSet,
+            FileNotFound,
+            DgnDbServerClientNotInitialized,
+            InvalidServerURL,
+            InvalidRepostioryName,
+            InvalidRepositoryConnection,
+            InvalidRevision,
+            BriefcaseIsReadOnly,
+            TrackingNotEnabled,
+
             //Revision Manager Errors
             MergeError,
-            RevisionManagerError
+            RevisionManagerError,
+
+            AzureError,
+            DgnDbError
             };
 
     private:
-        Id m_id;
+        DgnDbServerError::Id m_id;
         std::shared_ptr<WebServices::WSError> m_wsError;
-        bool RequiresExtendedData(Id id);
-        Id ErrorIdFromString(Utf8StringCR errorIdString);
-        Id ErrorIdFromWSError(WebServices::WSErrorCR error);
+        bool RequiresExtendedData(DgnDbServerError::Id id);
+        DgnDbServerError::Id ErrorIdFromString(Utf8StringCR errorIdString);
+        DgnDbServerError::Id ErrorIdFromWSError(WebServices::WSErrorCR error);
 
     public:
         DGNDBSERVERCLIENT_EXPORT DgnDbServerError();
-        DGNDBSERVERCLIENT_EXPORT DgnDbServerError(Utf8CP message, Utf8CP description = nullptr);
+        DGNDBSERVERCLIENT_EXPORT DgnDbServerError(DgnDbServerError::Id id);
+        DGNDBSERVERCLIENT_EXPORT DgnDbServerError(DgnDbServerError::Id id, Utf8CP message, Utf8CP description = nullptr);
         DGNDBSERVERCLIENT_EXPORT DgnDbServerError(WebServices::WSErrorCR error);
         DGNDBSERVERCLIENT_EXPORT DgnDbServerError(Dgn::RevisionStatus const& status);
 
         JsonValueCR GetExtendedData();
-        DGNDBSERVERCLIENT_EXPORT Id GetId();
+        DGNDBSERVERCLIENT_EXPORT DgnDbServerError::Id GetId();
     };
 END_BENTLEY_DGNDBSERVER_NAMESPACE
