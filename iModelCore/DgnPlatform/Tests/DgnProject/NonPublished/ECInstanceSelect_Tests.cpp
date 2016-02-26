@@ -71,7 +71,7 @@ void ECInstanceSelectTests::VerifyInstanceCounts(WCharCP fileName, bmap<Utf8Stri
         for (bmap<Utf8String, int>::const_iterator iter = classList.begin(); iter != classList.end(); iter++)
             LOG.errorv("%s:%d", iter->first.c_str(), iter->second);
         }
-    ASSERT_TRUE(classList.size() == benchMark.size()) << "Size of the maps doesn't match.";
+    ASSERT_TRUE(classList.size() == benchMark.size()) << "Size of the maps doesn't match.  Expected: " << (int)benchMark.size() << " Actual: " << (int)classList.size();
 
     bmap<Utf8String, int>::iterator i, j;
     i = classList.begin();
@@ -130,7 +130,7 @@ TEST_F (ECInstanceSelectTests, SelectQueriesOnDbGeneratedDuringBuild_04Plant)
     ASSERT_EQ (ExpectedSumOfArea, ActualSumOfArea);
     stmt.Finalize ();
 
-    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (*m_db, "SELECT EQUIP_NO FROM appdw.Nozzle WHERE COMP_LEN=4.5 OR COMPONENT_ID='AT_EGXUTRMA_1A'"));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (*m_db, "SELECT EQUIP_NO FROM appdw.Nozzle WHERE COMP_LEN='4.5' OR COMPONENT_ID='AT_EGXUTRMA_1A'"));
     ASSERT_EQ (stmt.Step (), DbResult::BE_SQLITE_ROW);
     ASSERT_STREQ ("50TW-102", stmt.GetValueText (0));
     stmt.Finalize ();

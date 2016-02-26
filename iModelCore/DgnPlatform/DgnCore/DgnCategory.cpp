@@ -11,7 +11,7 @@
 #define CAT_PROP_Scope      "Scope"
 #define CAT_PROP_Rank       "Rank"
 #define SUBCAT_PROP_Descr   "Descr"
-#define SUBCAT_PROP_Props   "Props"
+#define SUBCAT_PROP_Props   "Properties"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
