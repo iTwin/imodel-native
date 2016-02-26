@@ -422,6 +422,7 @@ public:
 //=======================================================================================
 struct TerrainContext : RenderContext
 {
+    DEFINE_T_SUPER(RenderContext);
 private:
     Render::GraphicListR m_terrain;
     UpdatePlan const& m_plan;
