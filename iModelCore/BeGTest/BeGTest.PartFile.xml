@@ -178,6 +178,13 @@
 
     </ProductDirectoryList>
 
+    <!-- Every unit-test related part that calls DetectAndCompileUnitTests.mki should depend on this -->
+    <!-- When using gtest, the DetectAndCompileUnitTests.mki will assume that the gtest and gmock include directories have been bound into the buildcontext -->
+    <Part Name="BeGtest-Includes">
+        <SubPart PartName="google_gtest"    PartFile="gtest"        Repository="util-gtest" />
+        <SubPart PartName="google_gmock"    PartFile="gmock"        Repository="util-gmock" />
+    </Part>
+
     <!-- *********************************************************************************************** -->
     <!-- This part should be used by any part that wants to build and/or run a gtest EXE -->
     <!-- *********************************************************************************************** -->

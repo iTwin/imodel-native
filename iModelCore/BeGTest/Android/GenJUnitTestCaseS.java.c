@@ -70,9 +70,12 @@ public class __FIXTURE__ extends ActivityInstrumentationTestCase2<TestActivity>
         String[] libs = libraryNames.split ("\\s");
         for (String libraryName : libs)
             {
-            libraryName = libraryName.replaceFirst ("^lib", "");
-            if (!libraryName.equals ("gnustl_shared"))
-                System.loadLibrary (libraryName);
+            if (!libraryName.isEmpty())
+                {
+                libraryName = libraryName.replaceFirst ("^lib", "");
+                if (!libraryName.equals ("gnustl_shared"))
+                    System.loadLibrary (libraryName);
+                }
             }
         }
 
