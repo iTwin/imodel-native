@@ -125,7 +125,14 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
     if (baseClassMaps.empty())
         {
         BeAssert(polymorphicSharedTableClassMaps.empty() && polymorphicOwnTableClassMaps.empty() && polymorphicNotMappedClassMaps.empty());
-        return m_resolvedStrategy.Assign(userStrategy);
+        if (SUCCESS != m_resolvedStrategy.Assign(userStrategy))
+            {
+            m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid MapStrategy '%s' on ECClass '%s'.", 
+                                                                         userStrategy.ToString().c_str(), m_ecClass.GetFullName());
+            return ERROR;
+            }
+
+        return SUCCESS;
         }
 
     // ClassMappingRule: No more than one ancestor of a class can use SharedTable-Polymorphic strategy. Mapping fails if this is violated
@@ -195,12 +202,10 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
             options = ECDbMapStrategy::Options::SharedColumns;
 
         if (Enum::Contains(userStrategy.GetOptions(), UserECDbMapStrategy::Options::JoinedTablePerDirectSubclass))
-            {
             options = options | ECDbMapStrategy::Options::ParentOfJoinedTable;
-            }
         else if (Enum::Intersects(parentStrategy.GetOptions(), ECDbMapStrategy::Options::JoinedTable | ECDbMapStrategy::Options::ParentOfJoinedTable))
             {
-            //! Find out if there is any primitive property that need mapping. Simply looking at local property count does not work with multi inheritence
+            //! Find out if there is any property that need mapping. Simply looking at local property count does not work with multi inheritence
             bool requiresJoinedTable = false;
             for (ECPropertyCP property : GetECClass().GetProperties(true))
                 {
@@ -250,7 +255,7 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
                 }
             }
 
-        return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::SharedTable, options, true);
+        return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::SharedTable, options, userStrategy.GetMinimumSharedColumnCount(), true);
         }
 
     // ClassMappingRule: If one or more parent is using OwnClass-polymorphic, use OwnClass-polymorphic mapping
@@ -286,19 +291,22 @@ bool ClassMapInfo::ValidateChildStrategy(ECDbMapStrategy const& parentStrategy, 
                 isValid = childStrategy.GetStrategy() == UserECDbMapStrategy::Strategy::None &&
                     !childStrategy.AppliesToSubclasses();
 
+                //if shared columns has already been specified on parent, neither SharedColumnsForSubclasses nor
+                //minimum shared col count cannot be specified on child
                 if (isValid && Enum::Contains(parentOptions, ECDbMapStrategy::Options::SharedColumns))
-                    isValid = !Enum::Contains(childOptions, UserECDbMapStrategy::Options::SharedColumnsForSubclasses);
+                    isValid = !Enum::Contains(childOptions, UserECDbMapStrategy::Options::SharedColumnsForSubclasses) && 
+                    childStrategy.GetMinimumSharedColumnCount() == ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT;
 
                 if (isValid)
                     isValid = !Enum::Contains(childOptions, UserECDbMapStrategy::Options::JoinedTablePerDirectSubclass) ||
                              !Enum::Intersects(parentOptions, ECDbMapStrategy::Options::JoinedTable | ECDbMapStrategy::Options::ParentOfJoinedTable);
 
                 if (!isValid)
-                    detailError = "For subclasses of a class with MapStrategy SharedTable (AppliesToSubclasses), Strategy must be unset and "
-                                "Options must not specify " USERMAPSTRATEGY_OPTIONS_SHAREDCOLUMNSFORSUBCLASSES " "
-                                "if 'shared columns' were already enabled on a base class, "
-                                "and must not specify " USERMAPSTRATEGY_OPTIONS_JOINEDTABLEPERDIRECTSUBCLASS " " 
-                                "if it was already specified on a base class.";
+                    detailError = "For subclasses of a class with MapStrategy SharedTable (AppliesToSubclasses): Strategy must be unset; "
+                    "Options must not specify " USERMAPSTRATEGY_OPTIONS_SHAREDCOLUMNSFORSUBCLASSES " and MinimumSharedColumnCount must not be set "
+                    "if 'shared columns' were already enabled on a base class; "
+                    "Options must not specify " USERMAPSTRATEGY_OPTIONS_JOINEDTABLEPERDIRECTSUBCLASS " "
+                    "if it was already specified on a base class.";
 
                 break;
                 }
@@ -319,9 +327,9 @@ bool ClassMapInfo::ValidateChildStrategy(ECDbMapStrategy const& parentStrategy, 
 
     if (!isValid)
         {
-        m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, 
-                     "MapStrategy %s of ECClass '%s' does not match the parent's MapStrategy. %s",
-                     childStrategy.ToString().c_str(), m_ecClass.GetFullName(), detailError);
+        m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                        "The '%s' ECClass' MapStrategy '%s' does not match the parent's MapStrategy. %s",
+                        m_ecClass.GetFullName(), childStrategy.ToString().c_str(), detailError);
         }
 
     return isValid;

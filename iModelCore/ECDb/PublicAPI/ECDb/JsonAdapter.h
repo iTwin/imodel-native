@@ -358,7 +358,9 @@ public:
     //! Gets the first instance from the current row as JSON
     //! @param [out] ecJsonInstance JSON representation of the ECInstance as a property-value map. 
     //! @return false if there was an error in retrieving/formatting values. true otherwise.
-    //! @remarks The format of the JSON is very similar to that described in @ref GetRow() except that there 
+    //! @remarks Uses the class of the first column, and thereafter ignores any columns that don't 
+    //! belong to the same class. 
+    //! The format of the JSON is very similar to that described in @ref GetRow() except that there 
     //! is just one top level instance, instead of an array of instances. 
     //! @code
     //! [

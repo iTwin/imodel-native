@@ -288,7 +288,7 @@ ECDbProfileManager::ECDbProfileUpgraderSequence const& ECDbProfileManager::GetUp
     {
     if (s_upgraderSequence.empty())
         {
-        //no upgraders on top of the minimally supported version for this version of ECDb yet
+        s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3001()));
         }
 
     return s_upgraderSequence;
@@ -392,7 +392,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
                            "Name TEXT NOT NULL,"
                            "DisplayLabel TEXT,"
                            "Description TEXT,"
-                           "IsReadonly BOOLEAN NOT NULL CHECK (IsReadonly IN (0, 1)),"
+                           "IsReadonly BOOLEAN NOT NULL CHECK (IsReadonly IN (0,1)),"
                            "Kind INTEGER NOT NULL,"
                            "Ordinal INTEGER,"
                            "PrimitiveType INTEGER,"
@@ -433,7 +433,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
                            "MultiplicityLowerLimit INTEGER,"
                            "MultiplicityUpperLimit INTEGER,"
                            "RoleLabel TEXT,"
-                           "IsPolymorphic BOOLEAN NOT NULL CHECK (IsPolymorphic IN (0, 1)),"
+                           "IsPolymorphic BOOLEAN NOT NULL CHECK (IsPolymorphic IN (0,1)),"
                            "PRIMARY KEY (RelationshipClassId, RelationshipEnd))");
     if (BE_SQLITE_OK != stat)
         return stat;
@@ -469,7 +469,8 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
                            //resolved map strategy:
                            "MapStrategy INTEGER NOT NULL,"
                            "MapStrategyOptions INTEGER,"
-                           "MapStrategyAppliesToSubclasses BOOLEAN NOT NULL CHECK (MapStrategyAppliesToSubclasses IN (0, 1)))");
+                           "MapStrategyAppliesToSubclasses BOOLEAN NOT NULL CHECK (MapStrategyAppliesToSubclasses IN (0,1)),"
+                           "MapStrategyMinSharedColumnCount INTEGER)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -492,7 +493,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
                            "BaseTableId INTEGER REFERENCES ec_Table(Id) ON DELETE CASCADE,"
                            "Name TEXT NOT NULL COLLATE NOCASE,"
                            "Type INTEGER NOT NULL,"
-                           "IsVirtual BOOLEAN NOT NULL CHECK (IsVirtual IN (0, 1)))");
+                           "IsVirtual BOOLEAN NOT NULL CHECK (IsVirtual IN (0,1)))");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -502,7 +503,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
                            "TableId INTEGER NOT NULL REFERENCES ec_Table(Id) ON DELETE CASCADE,"
                            "Name TEXT NOT NULL COLLATE NOCASE,"
                            "Type INTEGER NOT NULL,"
-                           "IsVirtual BOOLEAN NOT NULL CHECK (IsVirtual IN (0, 1)),"
+                           "IsVirtual BOOLEAN NOT NULL CHECK (IsVirtual IN (0,1)),"
                            "Ordinal INTEGER NOT NULL,"
                            "NotNullConstraint BOOLEAN,"
                            "UniqueConstraint BOOLEAN,"
