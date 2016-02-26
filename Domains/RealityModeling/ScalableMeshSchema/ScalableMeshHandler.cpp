@@ -736,6 +736,10 @@ ScalableMeshModelP ScalableMeshModel::CreateModel(BentleyApi::Dgn::DgnDbR dgnDb)
     ScalableMeshModelP model = new ScalableMeshModel(DgnModel::CreateParams(dgnDb, classId, DgnModel::CreateModelCode("scalableTerrain")));
 
     model->Insert();
+    ScalableMeshTerrainModelAppData* appData(ScalableMeshTerrainModelAppData::Get(dgnDb));
+
+    appData->m_smTerrainPhysicalModelP = model;
+    appData->m_modelSearched = true;
     dgnDb.SaveChanges();
     return model;
     }
