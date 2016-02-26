@@ -12,9 +12,9 @@
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-DgnDbServerError::DgnDbServerError(Utf8CP message, Utf8CP description)
+DgnDbServerError::DgnDbServerError(Id id, Utf8CP message, Utf8CP description)
     {
-    m_id = Id::Unknown;
+    m_id = id;
     m_message = message;
     m_description = description;
     }
@@ -99,6 +99,10 @@ bool DgnDbServerError::RequiresExtendedData(Id id)
         }
     }
 
+DgnDbServerError::DgnDbServerError(Id id)
+    {
+    m_id = id;
+    }
 
 DgnDbServerError::DgnDbServerError(WSErrorCR error)
     {
