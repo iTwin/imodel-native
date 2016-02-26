@@ -220,7 +220,7 @@ struct WebMercatorDisplay : ProgressiveTask, CopyrightSupplier
     friend struct WebMercatorModel;
 
 protected:
-    WebMercatorModel& m_model;              //!< The model
+    WebMercatorModel const& m_model;              //!< The model
     bvector<WebMercatorTilingSystem::TileId> m_missingTilesToBeRequested;    //!< Tiles that are missing and that should be requested
     bmap<Utf8String, WebMercatorTilingSystem::TileId> m_missingTilesPending; //!< Tiles that are missing and that we are waiting for.
     uint32_t m_failedAttempts;
@@ -267,7 +267,7 @@ protected:
     //! Construct an instance of a WebMercatorRealityDataHandler.
     //! @param[in] model        The WebMercatorModel
     //! @param[in] vp           The viewport that is to display the map
-    DGNPLATFORM_EXPORT WebMercatorDisplay (WebMercatorModel& model, DgnViewportR vp);
+    DGNPLATFORM_EXPORT WebMercatorDisplay (WebMercatorModel const& model, DgnViewportR vp);
 
     DGNPLATFORM_EXPORT ~WebMercatorDisplay();
 };
@@ -308,7 +308,7 @@ public:
     //! Create a new WebMercatorModel object, in preparation for loading it from the DgnDb.
     WebMercatorModel(CreateParams const& params) : T_Super(params) {}
 
-    DGNPLATFORM_EXPORT void _AddGraphicsToScene(SceneContextR) override;
+    DGNPLATFORM_EXPORT void _AddTerrain(TerrainContextR) const override;
     DGNPLATFORM_EXPORT void _WriteJsonProperties(Json::Value&) const override;
     DGNPLATFORM_EXPORT void _ReadJsonProperties(Json::Value const&) override;
     AxisAlignedBox3d _QueryModelRange() const override {return m_mercator.m_range;}

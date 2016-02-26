@@ -754,7 +754,8 @@ protected:
     //! <h2>Displaying external data using progressive display</h2>
     //! An implementation of _AddGraphicsToScene is required to be very fast. If some external data is not immediately available, then the implementation should
     //! a) make arrangements to obtain the data in the background and b) schedule itself for callbacks during progressive display in order to display the data when it becomes available.
-    virtual void _AddGraphicsToScene(SceneContextR) {}
+    virtual void _AddGraphicsToScene(SceneContextR) const {}
+    virtual void _AddTerrain(TerrainContextR) const {}
 
     virtual void _OnFitView(FitContextR) {}
     virtual void _DrawModel(ViewContextR) {}
@@ -817,7 +818,6 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricModel2d : GeometricModel
 
 protected:
     GeometricModel2dCP _ToGeometricModel2d() const override final {return this;}
-
     CoordinateSpace _GetCoordinateSpace() const override final {return CoordinateSpace::Local;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element);
 

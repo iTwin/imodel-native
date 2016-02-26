@@ -88,6 +88,7 @@ struct Task : RefCounted<NonCopyableClass>
     {
         Initialize,
         ChangeScene,
+        ChangeTerrain,
         ChangeRenderPlan,
         ChangeDynamics,
         ChangeDecorations,
@@ -1181,7 +1182,8 @@ protected:
     Display::DevicePtr m_device;
     ClipPrimitiveCPtr  m_activeVolume;
     GraphicListPtr     m_currentScene;
-    GraphicListPtr     m_dynamics;        // drawn with zbuffer, with scene lighting
+    GraphicListPtr     m_terrain;
+    GraphicListPtr     m_dynamics;
     Decorations        m_decorations;
     BeAtomic<uint32_t> m_graphicsPerSecondScene;
     BeAtomic<uint32_t> m_graphicsPerSecondNonScene;
@@ -1214,6 +1216,7 @@ public:
     };
 
     virtual void _ChangeScene(GraphicListR scene, ClipPrimitiveCP activeVolume) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
+    virtual void _ChangeTerrain(GraphicListR terrain) {VerifyRenderThread(); m_terrain = &terrain;}
     virtual void _ChangeDynamics(GraphicListR dynamics) {VerifyRenderThread(); m_dynamics = &dynamics;}
     virtual void _ChangeDecorations(Decorations& decorations) {VerifyRenderThread(); m_decorations = decorations;}
     virtual void _ChangeRenderPlan(PlanCR) = 0;

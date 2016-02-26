@@ -490,16 +490,14 @@ DgnDbStatus DgnElement::_InsertInDb()
         return status;
  
     auto stmtResult = statement->Step();
-    if (BE_SQLITE_DONE == stmtResult)
-        return DgnDbStatus::Success;
+    if (BE_SQLITE_DONE != stmtResult)
+        {
+        // SQLite doesn't tell us which constraint failed - check if it's the Code.
+        auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
+        return existingElemWithCode.IsValid() ? DgnDbStatus::DuplicateCode : DgnDbStatus::WriteError;
+        }
 
-    status = SaveUserProperties();
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    // SQLite doesn't tell us which constraint failed - check if it's the Code.
-    auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
-    return existingElemWithCode.IsValid() ? DgnDbStatus::DuplicateCode : DgnDbStatus::WriteError;
+    return SaveUserProperties();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -524,19 +522,17 @@ DgnDbStatus DgnElement::_UpdateInDb()
         return status;
 
     auto stmtResult = stmt->Step();
-    if (BE_SQLITE_DONE == stmtResult)
-        return DgnDbStatus::Success;
+    if (BE_SQLITE_DONE != stmtResult)
+        {
+        // SQLite doesn't tell us which constraint failed - check if it's the Code.
+        auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
+        if (existingElemWithCode.IsValid() && existingElemWithCode != GetElementId())
+            return DgnDbStatus::DuplicateCode;
 
-    status = SaveUserProperties();
-    if (DgnDbStatus::Success != status)
-        return status;
+        return DgnDbStatus::WriteError;
+        }
 
-    // SQLite doesn't tell us which constraint failed - check if it's the Code.
-    auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
-    if (existingElemWithCode.IsValid() && existingElemWithCode != GetElementId())
-        return DgnDbStatus::DuplicateCode;
-
-    return DgnDbStatus::WriteError;
+    return SaveUserProperties();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -904,16 +900,16 @@ DgnDbStatus DgnElement::SaveUserProperties() const
     if (!m_userProperties)
         return DgnDbStatus::Success;
     
-    CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement("UPDATE ONLY " DGN_SCHEMA(DGN_CLASSNAME_Element) "SET UserProperties = ? WHERE ECInstanceId = ?");
+    CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement("UPDATE " DGN_SCHEMA(DGN_CLASSNAME_Element) " SET UserProperties=? WHERE ECInstanceId=?");
     BeAssert(stmt.IsValid());
 
     if (m_userProperties->IsEmpty())
-        stmt->BindNull(0);
+        stmt->BindNull(1);
     else
-        stmt->BindText(0, m_userProperties->ToString().c_str(), IECSqlBinder::MakeCopy::Yes);
-
+        stmt->BindText(1, m_userProperties->ToString().c_str(), IECSqlBinder::MakeCopy::Yes);
+ 
     BeAssert(GetElementId().IsValid());
-    stmt->BindId(1, GetElementId());
+    stmt->BindId(2, GetElementId());
 
     DbResult result = stmt->Step();
     if (result != BE_SQLITE_DONE)
