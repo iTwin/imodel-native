@@ -1041,67 +1041,108 @@ TEST_F(ECDbSchemaManagerTests, IGeometryTypes)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad.Hassane                 02/16
 //+---------------+---------------+---------------+---------------+---------------+-----
-TEST_F(ECDbSchemaManagerTests, EnforceECEnumeration)
+TEST_F (ECDbSchemaManagerTests, EnforceECEnumeration)
     {
+    ECDbR ecdb = SetupECDb ("propertywithEnumerationType.ecdb",
+        SchemaItem ("<?xml version='1.0' encoding='utf-8' ?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            " <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False'>"
+            "   <ECEnumerator value = '0' displayLabel = 'txt' />"
+            "   <ECEnumerator value = '1' displayLabel = 'bat' />"
+            " </ECEnumeration>"
+            " <ECEnumeration typeName='StrictEnum' backingTypeName='int' isStrict='True'>"
+            "   <ECEnumerator value = '0' displayLabel = 'txt' />"
+            "   <ECEnumerator value = '1' displayLabel = 'bat' />"
+            " </ECEnumeration>"
+            "  <ECEntityClass typeName='File' >"
+            "    <ECProperty propertyName='Type' typeName='NonStrictEnum' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Folder' >"
+            "    <ECProperty propertyName='Type' typeName='StrictEnum' />"
+            "  </ECEntityClass>"
+            "</ECSchema>"));
+    ASSERT_TRUE (ecdb.IsDbOpen ());
 
-    ECDbR ecdb = SetupECDb("propertywithEnumerationType.ecdb",
-                           SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
-                                      "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                      " <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False'>"
-                                      "   <ECEnumerator value = '0' displayLabel = 'txt' />"
-                                      "   <ECEnumerator value = '1' displayLabel = 'bat' />"
-                                      " </ECEnumeration>"
-                                      " <ECEnumeration typeName='StrictEnum' backingTypeName='int' isStrict='True'>"
-                                      "   <ECEnumerator value = '0' displayLabel = 'txt' />"
-                                      "   <ECEnumerator value = '1' displayLabel = 'bat' />"
-                                      " </ECEnumeration>"
-                                      "  <ECEntityClass typeName='File' >"
-                                      "    <ECProperty propertyName='Type' typeName='NonStrictEnum' />"
-                                      "  </ECEntityClass>"
-                                      "  <ECEntityClass typeName='Folder' >"
-                                      "    <ECProperty propertyName='Type' typeName='StrictEnum' />"
-                                      "  </ECEntityClass>"
-                                      "</ECSchema>"));
-    ASSERT_TRUE(ecdb.IsDbOpen());
-
-    //not strict enum tests
+    //non strict enum Insert tests
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.File(Type) VALUES(?)"));
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindInt(1, 0));
-    ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
-    statement.Reset();
-    statement.ClearBindings();
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "INSERT INTO ts.File(Type) VALUES(?)"));
+    ASSERT_EQ (ECSqlStatus::Success, statement.BindInt (1, 0));
+    ASSERT_EQ (BE_SQLITE_DONE, statement.Step ());
+    statement.Reset ();
+    statement.ClearBindings ();
 
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindInt(1, 2));
-    ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
-    statement.Finalize();
+    ASSERT_EQ (ECSqlStatus::Success, statement.BindInt (1, 2));
+    ASSERT_EQ (BE_SQLITE_DONE, statement.Step ());
+    statement.Finalize ();
 
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.File(Type) VALUES(0)"));
-    ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
-    statement.Finalize();
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "INSERT INTO ts.File(Type) VALUES(0)"));
+    ASSERT_EQ (BE_SQLITE_DONE, statement.Step ());
+    statement.Finalize ();
 
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.File(Type) VALUES(2)"));
-    ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
-    statement.Finalize();
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "INSERT INTO ts.File(Type) VALUES(2)"));
+    ASSERT_EQ (BE_SQLITE_DONE, statement.Step ());
+    statement.Finalize ();
 
-    //strict enum tests
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.Folder(Type) VALUES(?)"));
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindInt(1, 0));
-    ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
-    statement.Reset();
-    statement.ClearBindings();
+    //non strict enum Update tests
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "UPDATE ts.File SET Type=1 WHERE Type=0"));
+    ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
+    statement.Finalize ();
 
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindInt(1, 2));
-    ASSERT_EQ(BE_SQLITE_DONE, statement.Step()) << "ECDb does not enforce strict enums, so inserting a wrong value is expected to not fail.";
-    statement.Finalize();
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "UPDATE ts.File SET Type=3 WHERE Type=1"));
+    ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
+    statement.Finalize ();
 
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.Folder(Type) VALUES(0)"));
-    ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
-    statement.Finalize();
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "UPDATE ts.File SET Type=? WHERE Type=?"));
+    ASSERT_EQ (ECSqlStatus::Success, statement.BindInt (1, 0));
+    ASSERT_EQ (ECSqlStatus::Success, statement.BindInt (2, 3));
+    ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
+    statement.Reset ();
+    statement.ClearBindings ();
 
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.Folder(Type) VALUES(2)"));
-    ASSERT_EQ(BE_SQLITE_DONE, statement.Step()) << "ECDb does not enforce strict enums, so inserting a wrong value is expected to not fail.";
-    statement.Finalize();
+    ASSERT_EQ (ECSqlStatus::Success, statement.BindInt (1, 1));
+    ASSERT_EQ (ECSqlStatus::Success, statement.BindInt (2, 2));
+    ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
+    statement.Finalize ();
+
+    //strict enum Insert tests
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "INSERT INTO ts.Folder(Type) VALUES(?)"));
+    ASSERT_EQ (ECSqlStatus::Success, statement.BindInt (1, 0));
+    ASSERT_EQ (BE_SQLITE_DONE, statement.Step ());
+    statement.Reset ();
+    statement.ClearBindings ();
+
+    ASSERT_EQ (ECSqlStatus::Success, statement.BindInt (1, 2));
+    ASSERT_EQ (BE_SQLITE_DONE, statement.Step ()) << "ECDb does not enforce strict enums, so inserting a wrong value is expected to not fail.";
+    statement.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "INSERT INTO ts.Folder(Type) VALUES(1)"));
+    ASSERT_EQ (BE_SQLITE_DONE, statement.Step ());
+    statement.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "INSERT INTO ts.Folder(Type) VALUES(2)"));
+    ASSERT_EQ (BE_SQLITE_DONE, statement.Step ()) << "ECDb does not enforce strict enums, so inserting a wrong value is expected to not fail.";
+    statement.Finalize ();
+
+    //strict enum Update tests
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "UPDATE ts.Folder SET Type=1 WHERE Type=0"));
+    ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
+    statement.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "UPDATE ts.Folder SET Type=2 WHERE Type=1"));
+    ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
+    statement.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "UPDATE ts.Folder SET Type=? WHERE Type=?"));
+    ASSERT_EQ (ECSqlStatus::Success, statement.BindInt (1, 0));
+    ASSERT_EQ (ECSqlStatus::Success, statement.BindInt (2, 1));
+    ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
+    statement.Reset ();
+    statement.ClearBindings ();
+
+    ASSERT_EQ (ECSqlStatus::Success, statement.BindInt (1, 2));
+    ASSERT_EQ (ECSqlStatus::Success, statement.BindInt (2, 0));
+    ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
+    statement.Finalize ();
     }
 
 END_ECDBUNITTESTS_NAMESPACE
