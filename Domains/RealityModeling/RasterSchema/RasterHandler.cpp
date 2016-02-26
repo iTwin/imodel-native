@@ -33,7 +33,7 @@ RasterModel::~RasterModel()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-RasterQuadTreeP RasterModel::GetTree()
+RasterQuadTreeP RasterModel::GetTree() const
     {
     if(!m_rasterTreeP.IsValid())
         _LoadQuadTree();
@@ -44,7 +44,7 @@ RasterQuadTreeP RasterModel::GetTree()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-void RasterModel::_AddGraphicsToScene(SceneContextR context)
+void RasterModel::_AddGraphicsToScene(SceneContextR context) const
     {
     //Note that this call occurs on the client thread and that is must be fast.
     RasterQuadTreeP pTree = GetTree();

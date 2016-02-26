@@ -24,18 +24,18 @@ DGNMODEL_DECLARE_MEMBERS(RASTER_CLASSNAME_RasterModel, Dgn::SpatialModel)
 protected:
     friend struct RasterModelHandler;
 
-    RasterQuadTreePtr m_rasterTreeP;
+    mutable RasterQuadTreePtr m_rasterTreeP;
     
     //! Destruct a RasterModel object.
     ~RasterModel();
         
-    virtual void _AddGraphicsToScene(Dgn::SceneContextR) override;
+    virtual void _AddGraphicsToScene(Dgn::SceneContextR) const override;
     virtual void _WriteJsonProperties(Json::Value&) const override;
     virtual void _ReadJsonProperties(Json::Value const&) override;
 
-    virtual BentleyStatus _LoadQuadTree() {return BSIERROR;}
+    virtual BentleyStatus _LoadQuadTree() const {return BSIERROR;}
 
-    RasterQuadTreeP GetTree();
+    RasterQuadTreeP GetTree() const;
 
     //&&MM TODO 
     virtual void _OnFitView(Dgn::FitContextR) {}
