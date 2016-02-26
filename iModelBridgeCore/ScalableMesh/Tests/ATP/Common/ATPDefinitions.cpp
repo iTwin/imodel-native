@@ -1,43 +1,5 @@
-#include "ATPUtils.h"
+//#include "ScalableMeshATPPch.h"
 #include "ATPDefinitions.h"
-#include "ATPGeneration.h"
-#include "..\TiledTriangulation\MrDTMUtil.h"
-#include "..\Tool\DrapeLineTool.h"
-#include "..\Tool\VolumeCalculationTool.h"
-#include "..\Initialize.h"
-#include "..\TiledTriangulation\ITiledTriangulatorValidator.h"
-#include <sys/stat.h>
-#include <random>
-#include <array>
-
-using namespace std;
-
-#include <ScalableMesh/IScalableMesh.h>
-#include <ScalableMesh/IScalableMeshATP.h>
-#include <ScalableMesh/IScalableMeshSourceCreator.h>
-#include <ScalableMesh/Import/ScalableMeshData.h>
-#include <ScalableMesh\IScalableMeshSourceImportConfig.h>
-#include <ScalableMesh/GeoCoords/GCS.h>
-#include <ScalableMesh/ScalableMeshUtilityFunctions.h>
-#include <ScalableMesh/IScalableMeshSourceImporter.h>
-#include <TerrainModel/TerrainModel.h>
-#include <TerrainModel/Core/bcDTMBaseDef.h>
-#include <TerrainModel/Core/bcDTMClass.h>
-#include <TerrainModel/Core/bcdtminlines.h>
-#include <DgnPlatform/Tools/ConfigurationManager.h>
-#include <DgnPlatform/DgnDocumentManager.h>
-#include <DgnPlatform/DgnAttachment.h>
-#include <RmgrTools/Tools/RscFileManager.h>
-#include <PointCloud/PointCloud.h>
-#include <PointCloud/PointCloudApi.h>
-#include <Bentley/BeTimeUtilities.h>
-#include <ScalableMesh/AutomaticGroundDetection/GroundDetectionManager.h>
-#include <PointCloudCore/PtVortex.h>
-#include <ScalableMesh/IScalableMeshNodeCreator.h>
-#include <Vu/VuApi.h>
-#include <ScalableMesh/ScalableMeshLib.h>
-#include <ScalableMesh/ScalableMeshAdmin.h>
-
 
 #include <time.h>
 #include <sys/types.h>
@@ -45,6 +7,48 @@ using namespace std;
 #include <stdio.h>
 #include <errno.h>
 #include <wtypes.h>
+#include <random>
+
+#include <ScalableMesh/Foundations/Definitions.h>
+#undef static_assert
+
+#include "ATPUtils.h"
+#include "ATPGeneration.h"
+#include "..\TiledTriangulation\MrDTMUtil.h"
+#include "..\Tool\DrapeLineTool.h"
+#include "..\Tool\VolumeCalculationTool.h"
+#include "..\Initialize.h"
+#include "..\TiledTriangulation\ITiledTriangulatorValidator.h"
+
+
+
+using namespace std;
+
+#include <ScalableMesh/IScalableMesh.h>
+#include <ScalableMesh/IScalableMeshATP.h>
+#include <ScalableMesh/IScalableMeshSourceCreator.h>
+#include <ScalableMesh/IScalableMeshSources.h>
+#include <ScalableMesh/Import/ScalableMeshData.h>
+#include <ScalableMesh\IScalableMeshSourceImportConfig.h>
+#include <ScalableMesh/GeoCoords/GCS.h>
+#include <ScalableMesh/ScalableMeshUtilityFunctions.h>
+//#include <ScalableMesh/IScalableMeshSourceImporter.h>
+#include <TerrainModel/Core/DTMDefs.h>
+#include <TerrainModel/TerrainModel.h>
+#include <TerrainModel/Core/bcDTMBaseDef.h>
+#include <TerrainModel/Core/bcDTMClass.h>
+//#include <TerrainModel/Core/bcdtminlines.h>
+#include <DgnPlatform/DesktopTools/ConfigurationManager.h>
+//#include <DgnPlatform/DgnDocumentManager.h>
+//#include <DgnPlatform/DgnAttachment.h>
+//#include <RmgrTools/Tools/RscFileManager.h>
+//#include <PointCloud/PointCloud.h>
+//#include <PointCloud/PointCloudApi.h>
+#include <Bentley/BeTimeUtilities.h>
+//#include <ScalableMesh/AutomaticGroundDetection/GroundDetectionManager.h>
+//#include <PointCloudCore/PtVortex.h>
+#include <ScalableMesh/IScalableMeshNodeCreator.h>
+#include <Vu/VuApi.h>
 
 #include <ImagePP/h/ImageppAPI.h>
 
@@ -62,14 +66,17 @@ using namespace std;
 #include <ImagePP/all/h/HIMMosaic.h>
 #include <Imagepp/all/h/HRSObjectStore.h>
 
+#include <GeoCoord/BaseGeoCoord.h>
+
 
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_GEOCOORDINATES
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
-USING_NAMESPACE_BENTLEY_POINTCLOUD
-USING_NAMESPACE_POINTCLOUDCORE
+USING_NAMESPACE_IMAGEPP
+//USING_NAMESPACE_BENTLEY_POINTCLOUD
+//USING_NAMESPACE_POINTCLOUDCORE
 
 
 enum
@@ -90,7 +97,7 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         }
     else
         {
-        Int64 useCpuVal = 0;
+        int64_t useCpuVal = 0;
         WString accelerator;
         status = pTestNode->GetAttributeStringValue(accelerator, "accelerator");
         if (status == BEXML_Success && 0 == BeStringUtilities::Wcsicmp(accelerator.c_str(), L"cpu"))
@@ -98,7 +105,7 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             useCpuVal = 1;
             IScalableMeshATP::StoreInt(L"useCpu", useCpuVal);
             }
-        Int64 useThreadInGeneration = 0;
+        int64_t useThreadInGeneration = 0;
         WString threading;
         status = pTestNode->GetAttributeStringValue(threading, "multithread");
         if (status == BEXML_Success && 0 == BeStringUtilities::Wcsicmp(threading.c_str(), L"true"))
@@ -173,9 +180,9 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             }
         else
             {
-            IScalableMeshATP::StoreDouble(WString("nTimeToCreateSeeds"), 0.0);
-            IScalableMeshATP::StoreDouble(WString("nTimeToEstimateParams"), 0.0);
-            IScalableMeshATP::StoreDouble(WString("nTimeToFilterGround"), 0.0);
+            IScalableMeshATP::StoreDouble(WString(L"nTimeToCreateSeeds"), 0.0);
+            IScalableMeshATP::StoreDouble(WString(L"nTimeToEstimateParams"), 0.0);
+            IScalableMeshATP::StoreDouble(WString(L"nTimeToFilterGround"), 0.0);
             IScalableMeshATP::StoreInt(L"chosenAccelerator", 1);
             double nTimeToCreateSeeds = 0, nTimeToEstimateParams = 0, nTimeToFilterGround = 0;
             WString gcsKeyName;//
@@ -184,7 +191,7 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
             if (status == BEXML_Success)
                 {
-                BaseGCSPtr baseGCSPtr(BaseGCS::CreateGCS(gcsKeyName.c_str()));
+                BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr baseGCSPtr(BaseGCS::CreateGCS(gcsKeyName.c_str()));
                 StatusInt status = creatorPtr->SetBaseGCS(baseGCSPtr);
                 assert(status == SUCCESS);
                 }//
@@ -205,7 +212,7 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
                     IScalableMeshPtr stmFile = IScalableMesh::GetFor(stmFileName.c_str(), false, true, status);
 
-                    Int64 pointCount = 0;
+                    int64_t pointCount = 0;
                     WString result;
 
                     if (stmFile != 0)
@@ -243,10 +250,10 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                     WString mesher = GetMesherTypeName(mesherType);
                     WString filter = GetFilterTypeName(filterType);
                     WString trimming = GetTrimmingTypeName(trimmingMethod);
-                    Int64 acceleratorUseCpu = 0;
-                    IScalableMeshATP::GetDouble(WString("nTimeToCreateSeeds"), nTimeToCreateSeeds);
-                    IScalableMeshATP::GetDouble(WString("nTimeToEstimateParams"), nTimeToEstimateParams);
-                    IScalableMeshATP::GetDouble(WString("nTimeToFilterGround"), nTimeToFilterGround);
+                    int64_t acceleratorUseCpu = 0;
+                    IScalableMeshATP::GetDouble(WString(L"nTimeToCreateSeeds"), nTimeToCreateSeeds);
+                    IScalableMeshATP::GetDouble(WString(L"nTimeToEstimateParams"), nTimeToEstimateParams);
+                    IScalableMeshATP::GetDouble(WString(L"nTimeToFilterGround"), nTimeToFilterGround);
                     IScalableMeshATP::GetInt(L"chosenAccelerator", acceleratorUseCpu);
                     // L"File Name,Mesher,Filter,Nb Input Points,Nb Output Points,Point Kept (%%),File Size (Mb),Accelerator Used,GroundDetection: Time for seeds(s),GroundDetection: Time for Params Estimation (s), GroundDetection: Time for TIN growing (s),GroundDetection (s),GroundDetection(%%), Import Points (%%),Balancing (%%),Meshing (%%),Filtering (%%),Stitching (%%),Duration (minutes),Duration (hours), GroundDetection(minutes), Import Points (minutes),Balancing (minutes),Meshing (minutes),Filtering (minutes),Stitching (minutes),Status\n";
 
@@ -277,7 +284,7 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                     }
                 else
                     {
-                    fwprintf(pResultFile, L"%s,%s,%s,%.5f,%s\n", L"", L"", L"", 0, 0, 0, 0, 0, 0, 0, 0, L"ERROR");
+                    fwprintf(pResultFile, L"%s,%s,%s,%.5f,%s\n", L"", L"", L"", 0.0, L"ERROR");
                     }
                 fflush(pResultFile);
                 }
@@ -302,11 +309,11 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     else
         {
         // Create three datasets
-        WString suffixPartialUpdate("_partialUpdate");
+        WString suffixPartialUpdate(L"_partialUpdate");
         WString stmFileName_PartialUpdateTest(UpdateTest_GetStmFileNameWithSuffix(stmFileName, suffixPartialUpdate));
         StatusInt status;
         BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPartialUpdatePtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(stmFileName_PartialUpdateTest.c_str(), status));
-        WString suffixGenerate("_generate");
+        WString suffixGenerate(L"_generate");
         WString stmFileName_GenerateTest(UpdateTest_GetStmFileNameWithSuffix(stmFileName, suffixGenerate));
         BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorGeneratePtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(stmFileName_GenerateTest.c_str(), status));
 
@@ -358,21 +365,22 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                         WString updateType;
                         if (pSubNode->GetAttributeStringValue(updateType, "updateType") == BEXML_Success)
                             {
-                            fwprintf(pResultFile, L",%s,%s\n", sourcePath, updateType);
-                            if (updateType.Equals(WString("Add")))
+                            fwprintf(pResultFile, L",%s,%s\n", sourcePath.c_str(), updateType.c_str());
+                            if (updateType.Equals(WString(L"Add")))
                                 {
                                 sourcesPartialUpdate.push_back(UpToDateState::ADD);
                                 sourceToAdd.push_back(sourcePath);
                                 }
-                            else if (updateType.Equals(WString("Remove")))
+                            else if (updateType.Equals(WString(L"Remove")))
                                 sourcesPartialUpdate.push_back(UpToDateState::REMOVE);
-                            else if (updateType.Equals(WString("Modify")))
+                            else if (updateType.Equals(WString(L"Modify")))
                                 sourcesPartialUpdate.push_back(UpToDateState::MODIFY);
-                            else if (updateType.Equals(WString("UpToDate")))
+                            else if (updateType.Equals(WString(L"UpToDate")))
                                 sourcesPartialUpdate.push_back(UpToDateState::UP_TO_DATE);
-                            if (!updateType.Equals(WString("Add")))
+                            if (!updateType.Equals(WString(L"Add")))
                                 {
-                                IDTMSourcePtr srcPtr = CreateSourceFor(sourcePath, type);
+                                //IDTMSourcePtr srcPtr = CreateSourceFor(sourcePath, type);
+                                IDTMSourcePtr srcPtr = IDTMLocalFileSource::Create(type, sourcePath.c_str());
                                 SourceImportConfig& sourceImportConfig = srcPtr->EditConfig();
                                 ScalableMeshData data = sourceImportConfig.GetReplacementSMData();
 
@@ -386,13 +394,14 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
                                 if (BSISUCCESS != creatorPartialUpdatePtr->EditSources().Add(srcPtr))
                                     {
-                                    wprintf(L"ERROR : cannot add %s\r\n", sourcePath);
+                                    wprintf(L"ERROR : cannot add %s\r\n", sourcePath.c_str());
                                     break;
                                     }
                                 }
-                            if (!updateType.Equals(WString("Remove")))
+                            if (!updateType.Equals(WString(L"Remove")))
                                 {
-                                IDTMSourcePtr srcPtr = CreateSourceFor(sourcePath, type);
+                                //IDTMSourcePtr srcPtr = CreateSourceFor(sourcePath, type);
+                                IDTMSourcePtr srcPtr = IDTMLocalFileSource::Create(type, sourcePath.c_str());
                                 SourceImportConfig& sourceImportConfig = srcPtr->EditConfig();
                                 ScalableMeshData data = sourceImportConfig.GetReplacementSMData();
 
@@ -406,14 +415,15 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
                                 if (BSISUCCESS != creatorGeneratePtr->EditSources().Add(srcPtr))
                                     {
-                                    wprintf(L"ERROR : cannot add %s\r\n", sourcePath);
+                                    wprintf(L"ERROR : cannot add %s\r\n", sourcePath.c_str());
                                     break;
                                     }
                                 }
                             }
                         else
                             {
-                            IDTMSourcePtr srcPtr = CreateSourceFor(sourcePath, type);
+                            //IDTMSourcePtr srcPtr = CreateSourceFor(sourcePath, type);
+                            IDTMSourcePtr srcPtr = IDTMLocalFileSource::Create(type, sourcePath.c_str());
                             SourceImportConfig& sourceImportConfig = srcPtr->EditConfig();
                             ScalableMeshData data = sourceImportConfig.GetReplacementSMData();
 
@@ -429,7 +439,7 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                             // Datasource without the attribute "updateType"
                             if (BSISUCCESS != creatorPartialUpdatePtr->EditSources().Add(srcPtr))
                                 {
-                                wprintf(L"ERROR : cannot add %s\r\n", sourcePath);
+                                wprintf(L"ERROR : cannot add %s\r\n", sourcePath.c_str());
                                 break;
                                 }
                             sourcesPartialUpdate.push_back(UpToDateState::UP_TO_DATE);
@@ -510,7 +520,8 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             for (int i = 0; i < sourceToAdd.size(); i++)
                 {
 
-                IDTMSourcePtr srcPtr = CreateSourceFor(sourceToAdd[i], DTM_SOURCE_DATA_POINT);
+                //IDTMSourcePtr srcPtr = CreateSourceFor(sourceToAdd[i], DTM_SOURCE_DATA_POINT);
+                IDTMSourcePtr srcPtr = IDTMLocalFileSource::Create(DTM_SOURCE_DATA_POINT, sourceToAdd[i].c_str());
                 SourceImportConfig& sourceImportConfig = srcPtr->EditConfig();
                 ScalableMeshData data = sourceImportConfig.GetReplacementSMData();
 
@@ -526,7 +537,7 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
                 if (BSISUCCESS != creatorPartialUpdatePtr->EditSources().Add(srcPtr))
                     {
-                    wprintf(L"ERROR : cannot add %s\r\n", sourceToAdd[i]);
+                    wprintf(L"ERROR : cannot add %s\r\n", sourceToAdd[i].c_str());
                     break;
                     }
                 }
@@ -542,7 +553,7 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             creatorPartialUpdatePtr->SaveToFile();
             assert(status == 0);
             creatorPartialUpdatePtr = 0;
-            Int64 nOfPointsGen, nOfPointsUpdate;
+            int64_t nOfPointsGen, nOfPointsUpdate;
             IScalableMeshPtr sm = IScalableMesh::GetFor(stmFileName_GenerateTest.c_str(), true, true);
             nOfPointsGen = sm->GetPointCount();
             sm = 0;
@@ -564,7 +575,8 @@ void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
 void PerformMeshQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    WString stmFileName;
+    assert(false && "not implemented");
+/*    WString stmFileName;
     ScalableMeshMesherType mesherType = SCM_MESHER_3D_DELAUNAY;
     ScalableMeshFilterType filterType = SCM_FILTER_CGAL_SIMPLIFIER;
     int blossomMatching = 0;
@@ -580,7 +592,7 @@ void PerformMeshQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     else
         {
         StatusInt status;
-        Bentley::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPtr(Bentley::ScalableMesh::IScalableMeshSourceCreator::GetFor(stmFileName.c_str(), status));
+        BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(stmFileName.c_str(), status));
 
         if (creatorPtr == 0 || status != BSISUCCESS)
             {
@@ -592,12 +604,12 @@ void PerformMeshQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             {
             if (0 == BeStringUtilities::Stricmp(pSubNode->GetName(), "mesher"))
                 {
-                Int32 mesherId;
+                int32_t mesherId;
                 StatusInt status = pSubNode->GetAttributeInt32Value(mesherId, "type");
 
                 if ((status == BEXML_Success) && (mesherId >= 0) && (mesherId < SCM_MESHER_QTY))
                     {
-                    mesherType = (Bentley::ScalableMesh::ScalableMeshMesherType)mesherId;
+                    mesherType = (BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesherType)mesherId;
                     }
                 else
                     {
@@ -650,12 +662,12 @@ void PerformMeshQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                 }
             else if (0 == BeStringUtilities::Stricmp(pSubNode->GetName(), "filter"))
                 {
-                Int32 filterId;
+                int32_t filterId;
                 StatusInt status = pSubNode->GetAttributeInt32Value(filterId, "type");
 
                 if ((status == BEXML_Success) && (filterId >= 0) && (filterId < SCM_FILTER_QTY))
                     {
-                    filterType = (Bentley::ScalableMesh::ScalableMeshFilterType)filterId;
+                    filterType = (BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshFilterType)filterId;
                     }
                 else
                     {
@@ -675,7 +687,7 @@ void PerformMeshQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                         {
                         if (BSISUCCESS != creatorPtr->EditSources().Add(CreateSourceFor(datasetPath, DTM_SOURCE_DATA_POINT)))
                             {
-                            wprintf(L"ERROR : cannot add %s\r\n", datasetPath);
+                            wprintf(L"ERROR : cannot add %s\r\n", datasetPath.c_str());
                             break;
                             }
                         }
@@ -737,7 +749,7 @@ void PerformMeshQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
             IScalableMeshPtr stmFile = IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
 
-            Int64 pointCount = 0;
+            int64_t pointCount = 0;
             WString result;
 
             if (stmFile != 0)
@@ -753,25 +765,25 @@ void PerformMeshQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
             WString mesher = GetMesherTypeName(mesherType);
             WString filter = GetFilterTypeName(filterType);
-            Int64 totalTri = 0;
-            Int64 totalWrongTri = 0;
+            int64_t totalTri = 0;
+            int64_t totalWrongTri = 0;
             double ratioWrongTri = 0.0;
             double quality = 0.0;
             double ratioMissingTri = 0.0;
-            Int64 totalMissingTri = 0;
-            IScalableMeshATP::GetInt(WString("trimCheck_numTrianglesChecked"), totalTri);
-            IScalableMeshATP::GetInt(WString("trimCheck_numTrianglesWrong"), totalWrongTri);
-            IScalableMeshATP::GetDouble(WString("trimCheck_ratioWrongTriangles"), ratioWrongTri);
-            IScalableMeshATP::GetInt(WString("trimCheck_numTrianglesMissing"), totalMissingTri);
-            IScalableMeshATP::GetDouble(WString("trimCheck_ratioMissingTriangles"), ratioMissingTri);
-            IScalableMeshATP::GetDouble(WString("trimCheck_quality"), quality);
-            IScalableMeshATP::StoreInt(WString("trimCheck_numTrianglesChecked"), 0);
-            IScalableMeshATP::StoreInt(WString("trimCheck_numTrianglesWrong"), 0);
-            IScalableMeshATP::StoreDouble(WString("trimCheck_ratioWrongTriangles"), 0.0);
-            IScalableMeshATP::StoreInt(WString("trimCheck_numTrianglesMissing"), 0);
-            IScalableMeshATP::StoreDouble(WString("trimCheck_ratioMissingTriangles"), 0.0);
-            IScalableMeshATP::StoreDouble(WString("trimCheck_quality"), 0.0);
-            IScalableMeshATP::StoreInt(WString("trimCheck_numGoodTriangles"), 0);
+            int64_t totalMissingTri = 0;
+            IScalableMeshATP::GetInt(WString(L"trimCheck_numTrianglesChecked"), totalTri);
+            IScalableMeshATP::GetInt(WString(L"trimCheck_numTrianglesWrong"), totalWrongTri);
+            IScalableMeshATP::GetDouble(WString(L"trimCheck_ratioWrongTriangles"), ratioWrongTri);
+            IScalableMeshATP::GetInt(WString(L"trimCheck_numTrianglesMissing"), totalMissingTri);
+            IScalableMeshATP::GetDouble(WString(L"trimCheck_ratioMissingTriangles"), ratioMissingTri);
+            IScalableMeshATP::GetDouble(WString(L"trimCheck_quality"), quality);
+            IScalableMeshATP::StoreInt(WString(L"trimCheck_numTrianglesChecked"), 0);
+            IScalableMeshATP::StoreInt(WString(L"trimCheck_numTrianglesWrong"), 0);
+            IScalableMeshATP::StoreDouble(WString(L"trimCheck_ratioWrongTriangles"), 0.0);
+            IScalableMeshATP::StoreInt(WString(L"trimCheck_numTrianglesMissing"), 0);
+            IScalableMeshATP::StoreDouble(WString(L"trimCheck_ratioMissingTriangles"), 0.0);
+            IScalableMeshATP::StoreDouble(WString(L"trimCheck_quality"), 0.0);
+            IScalableMeshATP::StoreInt(WString(L"trimCheck_numGoodTriangles"), 0);
             // fwprintf(pResultFile, L"Test Case,%s,%s\n",stmFileName.c_str(),result.c_str());
             //  fwprintf(pResultFile, L"NOfPoints, Mesher, Filter, Use Blossom?, Index Method, Total Triangles Meshed, Total Wrong Triangles, Wrong Triangles(%%), Total Triangles Missing,Missing Triangles (%%), Quality(higher is better)\n");
             fwprintf(pResultFile, L"%s,%s,%I64d,%s,%s,%s,%s,%s,%I64d,%I64d,%.5f,%I64d,%.5f,%.5f\n",
@@ -792,15 +804,16 @@ void PerformMeshQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             }
         else
             {
-            fwprintf(pResultFile, L"Test Case,%s,%s\n", stmFileName.c_str(), "ERROR");
+            fwprintf(pResultFile, L"Test Case,%s,%s\n", stmFileName.c_str(), L"ERROR");
             }
         fflush(pResultFile);
-        }
+        }*/
     }
 
 void Perform2DStitchQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    WString stmFileName;
+    assert(false && "not implemented");
+/*    WString stmFileName;
     ScalableMeshMesherType mesherType = SCM_MESHER_2D_DELAUNAY;
     ScalableMeshFilterType filterType = SCM_FILTER_CGAL_SIMPLIFIER;
 
@@ -882,7 +895,7 @@ void Perform2DStitchQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
             IScalableMeshPtr stmFile = IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
 
-            Int64 pointCount = 0;
+            int64_t pointCount = 0;
             WString result;
 
             if (stmFile != 0)
@@ -895,7 +908,7 @@ void Perform2DStitchQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                 result = L"CREATION : SUCCESS | STM FILE OPENING : FAILURE";
                 }
 
-            /* get all points from full res, adapted from MrDTMDataRef::GetDtmForSingleResolution */
+            // get all points from full res, adapted from MrDTMDataRef::GetDtmForSingleResolution
             IScalableMeshFixResolutionIndexQueryParamsPtr queryParamsPtr(IScalableMeshFixResolutionIndexQueryParams::CreateParams());
             queryParamsPtr->SetResolutionIndex(stmFile->GetNbResolutions() - 1);
 
@@ -949,7 +962,7 @@ void Perform2DStitchQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                     totalNbOverlappingTriangles++;
                     continue;
                     }*/
-                    status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, DTMFeatureType::GraphicBreak, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &triangle[0], 4);
+/*                    status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, DTMFeatureType::GraphicBreak, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &triangle[0], 4);
                     //}
                     }
                 bcdtmObject_triangulateStmTrianglesDtmObject(dtmObjP);
@@ -983,13 +996,13 @@ void Perform2DStitchQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             }
         else
             {
-            fwprintf(pResultFile, L"%s,%s\n", stmFileName.c_str(), "ERROR");
+            fwprintf(pResultFile, L"%s,%s\n", stmFileName.c_str(), L"ERROR");
             }
         fflush(pResultFile);
-        }
+        }*/
     }
 
-int CollectAllElmsCallback
+/*int CollectAllElmsCallback
 (
     ElementRefP      elemRef,
     void            *callbackArg,
@@ -1002,12 +1015,12 @@ int CollectAllElmsCallback
     agendaP->Insert(elemRef, modelP);
 
     return SUCCESS;
-    }
+    }*/
 
 void PerformDrapeLineTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    //assert(false && "Not ported yet! Perhaps we could use your help?");
-    WString stmFileName, linesFileName, name;
+    assert(false && "Not ported yet! Perhaps we could use your help?");
+    /*WString stmFileName, linesFileName, name;
     // Parses the test(s) definition:
     if (pTestNode->GetAttributeStringValue(stmFileName, "stmFileName") != BEXML_Success)
         {
@@ -1143,7 +1156,7 @@ void PerformDrapeLineTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         if(vec.size()>0)fwprintf(linesFile, L"\n");
         }
         fclose(linesFile);*/
-                //create elements
+/*                //create elements
                 FileLevelCache& fileLevelCache = model->GetDgnFileP()->GetLevelCacheR();
                 EditLevelHandle outputLevel = fileLevelCache.CreateLevel(name.c_str(), LEVEL_NULL_CODE, LEVEL_NULL_ID);
                 fileLevelCache.Write();
@@ -1210,9 +1223,9 @@ void PerformDrapeLineTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                 stmFile = nullptr;
                 dtmP = nullptr;
                 //drape agenda
-    }
+    */}
 
-int CollectFirstMeshElement
+/*int CollectFirstMeshElement
     (
         ElementRefP      elemRef,
         void            *callbackArg,
@@ -1226,12 +1239,12 @@ int CollectFirstMeshElement
         agendaP->Insert(elemRef, modelP);
 
     return SUCCESS;
-    }
+    }*/
 
 void PerformVolumeTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    //assert(false && "Not ported yet! Perhaps we could use your help?");
-        WString stmFileName, corridorFileName;
+    assert(false && "Not ported yet! Perhaps we could use your help?");
+/*        WString stmFileName, corridorFileName;
         // Parses the test(s) definition:
         if (pTestNode->GetAttributeStringValue(stmFileName, "stmFileName") != BEXML_Success)
             {
@@ -1344,7 +1357,7 @@ void PerformVolumeTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         fileLevelCacheGround.Write();*/
 
 
-
+/*
 
 
 
@@ -1488,7 +1501,7 @@ void PerformVolumeTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
                 */
 
-
+/*
                 
                         for (int i = 0; i<volumeMesh.size(); i++)
                             {
@@ -1507,7 +1520,7 @@ void PerformVolumeTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                             /*mdlElmdscr_add(desc);
                             EditElementHandle handle(pNewElmDsc, true, true, model); 
                             handle.AddToModel();*/
-                                        }
+/*                                        }
 
                                     if (status != SUCCESS)
                                         {
@@ -1669,8 +1682,8 @@ void PerformVolumeTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                                 IScalableMeshATP::StoreDouble(L"volumeTime", 0.0);
                                 IScalableMeshATP::StoreInt(L"nTrianglesInCorridor", 0);
                                 fflush(pResultFile);
-    }
-
+    */}
+    
 /*---------------------------------------------------------------------------------**//**
 * Self-contained importer test.
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1803,7 +1816,7 @@ bool WriteFeatureCallback(const DPoint3d* featurePoints, size_t nbOfFeaturesPoin
     return true;
     }
 
-class ScalableMeshSourceImporterStorage : public IScalableMeshSourceImporterStorage
+/*class ScalableMeshSourceImporterStorage : public IScalableMeshSourceImporterStorage
     {
     private:
 
@@ -2138,7 +2151,7 @@ class ScalableMeshSourceImporterStorage : public IScalableMeshSourceImporterStor
             return new ScalableMeshSourceImporterStorage(sourceInfoFileName, isReading);
             }
     };
-
+*/
 #define BUFFERSIZE 4096
 
 bool CompareFileBinary(FILE* pFile1, FILE* pFile2)
@@ -2224,14 +2237,15 @@ bool CompareWithBaseline(FILE* pPointResultFile, FILE* pFeatureResultFile, WStri
     return samePointAsBaseline && sameFeatureAsBaseline;
     }
 
-bool PerformStorageRestoreTest(Bentley::ScalableMesh::IScalableMeshSourceImporterPtr&       importerFromStoragePtr,
+/*bool PerformStorageRestoreTest(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceImporterPtr&       importerFromStoragePtr,
                                clock_t&                                       storageTime,
                                clock_t&                                       restoreTime,
                                const Bentley::ScalableMesh::IScalableMeshSourceImporterPtr& importerFromSourcesPtr,
                                WString&                                       sourceInfoFileName)
     {
     bool success = false;
-
+    assert(false && "Can't support now");
+/*
     storageTime = clock();
 
     IScalableMeshSourceImporterStoragePtr importerStorage(ScalableMeshSourceImporterStorage::Create(sourceInfoFileName, false));
@@ -2260,13 +2274,14 @@ bool PerformStorageRestoreTest(Bentley::ScalableMesh::IScalableMeshSourceImporte
             success = true;
             }
         }
-
-    return success;
-    }
+    */
+ /*   return success;
+    }*/
 
 void PerformSelfContainedImporterTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    BeXmlStatus status;
+    assert(false && "not supported");
+    /*BeXmlStatus status;
     WString pointFileName;
     WString featureFileName;
     WString sourceInfoFileName;
@@ -2315,7 +2330,7 @@ void PerformSelfContainedImporterTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
         assert(s_pFeatureResultFile);
 
-        Bentley::ScalableMesh::IScalableMeshSourceImporterPtr importerPtr(Bentley::ScalableMesh::IScalableMeshSourceImporter::Create());
+        BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceImporterPtr importerPtr(Bentley::ScalableMesh::IScalableMeshSourceImporter::Create());
 
         importerPtr->SetFeatureCallback(WriteFeatureCallback);
         importerPtr->SetPointsCallback(WritePointsCallback);
@@ -2332,7 +2347,7 @@ void PerformSelfContainedImporterTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
             if (status == BEXML_Success)
                 {
-                BaseGCSPtr baseGCSPtr(BaseGCS::CreateGCS(gcsKeyName.c_str()));
+                BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr baseGCSPtr(BaseGCS::CreateGCS(gcsKeyName.c_str()));
                 StatusInt status = importerPtr->SetBaseGCS(baseGCSPtr);
                 assert(status == SUCCESS);
                 }
@@ -2416,7 +2431,7 @@ void PerformSelfContainedImporterTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
         fclose(s_pFeatureResultFile);
         s_pFeatureResultFile = 0;
-        }
+        }*/
     }
 
 std::vector<std::pair<std::vector<DPoint3d>, DTMFeatureType>> s_importedFeatures;
@@ -2435,7 +2450,8 @@ bool NoPointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoints3
 
 void PerformGISFeaturesImporterTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    WString baselineFileName, result;
+    assert(false && "not supported");
+/*    WString baselineFileName, result;
     Int64 breaklineCount = 0, createdBreaklineCount = 0, differentBreaklines = 0;
     if (pTestNode->GetAttributeStringValue(baselineFileName, "baseline") != BEXML_Success)
         {
@@ -2493,10 +2509,10 @@ void PerformGISFeaturesImporterTest(BeXmlNodeP pTestNode, FILE* pResultFile)
              createdBreaklineCount,
              differentBreaklines,
              (elapsed / CLOCKS_PER_SEC) / 60);
-    fflush(pResultFile);
+    fflush(pResultFile);*/
     }
 
-void CreateBuffersAndQueryForPointCloud(EditElementHandleP pcloud, IPointCloudDataQueryPtr query, IPointCloudQueryBuffersPtr buffers, WString& fileName)
+/*void CreateBuffersAndQueryForPointCloud(EditElementHandleP pcloud, IPointCloudDataQueryPtr query, IPointCloudQueryBuffersPtr buffers, WString& fileName)
     {
         DgnDocumentMonikerPtr monikerPtr = PointCloudDisplay::CreateDocumentMonikerFromFileName(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef(), fileName.c_str());
         PointCloudPropertiesPtr propsP = PointCloudProperties::Create(*monikerPtr, *ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef());
@@ -2515,13 +2531,13 @@ void CreateBuffersAndQueryForPointCloud(EditElementHandleP pcloud, IPointCloudDa
 
 struct CompareClassifResult
     {
-    Int64 nTypeIError = 0;
-    Int64 nTypeIIError = 0;
-    Int64 nTotalPts = 0;
-    Int64 nGroundBaseline = 0;
-    Int64 nObjectsBaseline = 0;
-    Int64 nCorrectGround = 0;
-    Int64 nCorrectObjects = 0;
+    int64_t nTypeIError = 0;
+    int64_t nTypeIIError = 0;
+    int64_t nTotalPts = 0;
+    int64_t nGroundBaseline = 0;
+    int64_t nObjectsBaseline = 0;
+    int64_t nCorrectGround = 0;
+    int64_t nCorrectObjects = 0;
     double nTypeIErrorpercent;
     double nTypeIIErrorpercent;
     double totalError;
@@ -2529,7 +2545,7 @@ struct CompareClassifResult
     double specificity;
     };
 
-void CompareClassifications(WString& testFileName, WString& baselineFileName, CompareClassifResult& res)
+/*void CompareClassifications(WString& testFileName, WString& baselineFileName, CompareClassifResult& res)
     {
     const UChar groundNumber = 2;
     EditElementHandle ehBaseline, ehTest;
@@ -2583,11 +2599,12 @@ void CompareClassifications(WString& testFileName, WString& baselineFileName, Co
     res.totalError = 100.0*(res.nTypeIError + res.nTypeIIError) / res.nTotalPts;
     res.sensitivity = 100.0* res.nCorrectGround / res.nGroundBaseline;
     res.specificity = 100.0*res.nCorrectObjects / res.nObjectsBaseline;
-    }
+    }*/
 
 void PerformClassificationCompareTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    WString baselineFileName, testFileName, result;
+    assert(false && "not supported");
+    /*WString baselineFileName, testFileName, result;
     if (pTestNode->GetAttributeStringValue(baselineFileName, "baseline") != BEXML_Success)
         {
         printf("ERROR : baseline attribute not found\r\n");
@@ -2614,10 +2631,10 @@ void PerformClassificationCompareTest(BeXmlNodeP pTestNode, FILE* pResultFile)
              res.totalError,
              res.sensitivity,
              res.specificity);
-    fflush(pResultFile);
+    fflush(pResultFile);*/
     }
 
-void RunGroundDetection(WString& path)
+/*void RunGroundDetection(WString& path)
     {
     EditElementHandle pcloud;
     // Replace ACTIVEMODEL by ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef()
@@ -2762,11 +2779,12 @@ void FormatParams(std::vector<ParameterDescription>& params, std::string& paramS
         paramStream << param.name << "-" << std::to_string((long double)param.currentVal) << "--";
         }
     paramString = paramStream.str();
-    }
+    }*/
 
 void PerformGroundParametersTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    BeXmlNodeP pTestChildNode = pTestNode->GetFirstChild();
+    assert(false && "not supported");
+    /*BeXmlNodeP pTestChildNode = pTestNode->GetFirstChild();
     std::vector<std::vector<WString>> filePaths;
     WString parameterConfig;
     if (pTestNode->GetAttributeStringValue(parameterConfig, "params") != BEXML_Success)
@@ -2828,7 +2846,7 @@ void PerformGroundParametersTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                  starred ? L"STARRED" : L"",
                  WString(paramString.c_str()).c_str());
         fflush(pResultFile);
-        }
+        }*/
     }
 
 void PerformNodeCreationTest(BeXmlNodeP pTestNode, FILE* pResultFile)
@@ -2842,16 +2860,16 @@ void PerformNodeCreationTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         printf("ERROR : stmFileName attribute not found\r\n");
         }
     int openStatus;
-    IScalableMeshNodeCreatorPtr ptr = Bentley::ScalableMesh::IScalableMeshNodeCreator::GetFor(stmFileName.c_str(), openStatus);
+    IScalableMeshNodeCreatorPtr ptr = BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshNodeCreator::GetFor(stmFileName.c_str(), openStatus);
     IScalableMeshNodeEditPtr rootNode = ptr->AddNode(openStatus);
     DRange3d extent = DRange3d::FromMinMax(-1.0, 1.0);
     rootNode->SetNodeExtent(extent);
     rootNode->SetContentExtent(extent);
-    DRange3d childExt = DRange3d::From(Bentley::DPoint3d::From(-1.0, -1.0), Bentley::DPoint3d::From(0.0, 0.0));
+    DRange3d childExt = DRange3d::From(BENTLEY_NAMESPACE_NAME::DPoint3d::From(-1.0, -1.0), BENTLEY_NAMESPACE_NAME::DPoint3d::From(0.0, 0.0));
     IScalableMeshNodeEditPtr childNode = ptr->AddNode(rootNode, childExt, openStatus);
-    childExt = DRange3d::From(Bentley::DPoint3d::From(-1.0, 0.0), Bentley::DPoint3d::From(0.0, 1.0));
+    childExt = DRange3d::From(BENTLEY_NAMESPACE_NAME::DPoint3d::From(-1.0, 0.0), BENTLEY_NAMESPACE_NAME::DPoint3d::From(0.0, 1.0));
     childNode = ptr->AddNode(rootNode, childExt, openStatus);
-    childExt = DRange3d::From(Bentley::DPoint3d::From(0.0, -1.0), Bentley::DPoint3d::From(1.0, 0.0));
+    childExt = DRange3d::From(BENTLEY_NAMESPACE_NAME::DPoint3d::From(0.0, -1.0), BENTLEY_NAMESPACE_NAME::DPoint3d::From(1.0, 0.0));
     childNode = ptr->AddNode(rootNode, childExt, openStatus);
     }
 
@@ -2884,7 +2902,7 @@ void PerformLoadingTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     fflush(pResultFile);
     }
 
-bool ReadElementsFromDgnFileAndLevel(ElementAgenda& agenda, DgnAttachment*& attachedDgn, WString dgnFileName, WString levelName)
+/*bool ReadElementsFromDgnFileAndLevel(ElementAgenda& agenda, DgnAttachment*& attachedDgn, WString dgnFileName, WString levelName)
     {
     DgnFileStatus fileOpenStatus;
     DgnDocumentPtr lineDoc = DgnDocument::CreateFromFileName(fileOpenStatus, dgnFileName.c_str(), NULL, DEFDGNFILE_ID, DgnDocument::FetchMode::Read);
@@ -3053,7 +3071,7 @@ bool FindMatchingElement(size_t& index, bvector<DPoint3d>& query, ElementAgenda&
             }
         }
     return false;
-    }
+    }*/
 
 void ReadValuesFromCSV(double& val1, double& val2, WString fileName, WString rowName)
     {
@@ -3088,7 +3106,8 @@ void ReadValuesFromCSV(double& val1, double& val2, WString fileName, WString row
 
 void PerformDrapeBaselineTest(BeXmlNodeP pTestNode, FILE* pResultFile, BeXmlNodeP pRootNode)
     {
-    BeXmlStatus status;
+    assert(false && "not supported");
+/*    BeXmlStatus status;
     WString stmFileName;
     status = pTestNode->GetAttributeStringValue(stmFileName, "stmFileName");
 
@@ -3214,7 +3233,7 @@ void PerformDrapeBaselineTest(BeXmlNodeP pTestNode, FILE* pResultFile, BeXmlNode
                  L"ERROR");
         }
     fflush(pResultFile);
-
+    */
     }
 
 bool TriangleWithinClosedFeature(const DPoint3d* triangle, const std::vector<DPoint3d>& feature)
@@ -3339,7 +3358,7 @@ void PerformConstraintTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         return;
         }
     StatusInt createStatus;
-    Bentley::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPtr(Bentley::ScalableMesh::IScalableMeshSourceCreator::GetFor(stmFileName.c_str(), createStatus));
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(stmFileName.c_str(), createStatus));
 
     if (creatorPtr == 0)
         {
@@ -3353,7 +3372,7 @@ void PerformConstraintTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
         if (status == BEXML_Success)
             {
-            BaseGCSPtr baseGCSPtr(BaseGCS::CreateGCS(gcsKeyName.c_str()));
+            BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr baseGCSPtr(BaseGCS::CreateGCS(gcsKeyName.c_str()));
             StatusInt status = creatorPtr->SetBaseGCS(baseGCSPtr);
             assert(status == SUCCESS);
             }
@@ -3420,7 +3439,7 @@ void PerformConstraintTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     }
 
 static HPMPool* s_rasterMemPool = nullptr;
-
+/*
 void readJPG(WString texturePath, bvector<Byte>& textureTmp, size_t& sizeTmp)
     {
     int textureWidthInPixels = 1024, textureHeightInPixels = 1024;
@@ -3466,7 +3485,6 @@ void readJPG(WString texturePath, bvector<Byte>& textureTmp, size_t& sizeTmp)
                                    pRaster->GetCoordSys(),//nullptr,//sourceRasterP->GetCoordSys(),
                                    pPixelType,
                                    8,
-                                   HRABitmap::UPPER_LEFT_HORIZONTAL,
                                    pCodec);
 
     pTextureBitmap->GetPacket()->SetBuffer(pixelBufferP + 3 * sizeof(int), textureWidthInPixels * textureHeightInPixels * nOfChannels);
@@ -3477,7 +3495,7 @@ void readJPG(WString texturePath, bvector<Byte>& textureTmp, size_t& sizeTmp)
     //CR 332863 - Quick trick to display the STM outside in smooth outside the area where texture data are available. 
     //              Note that this trick will lead to the translucent color shown throughout transparent raster being a shade of gray 
     //              instead of the color of the background.
-    UInt32 whiteOpaque = 0xFFFFFFFF;
+    uint32_t whiteOpaque = 0xFFFFFFFF;
 
     clearOptions.SetRawDataValue(&whiteOpaque);
 
@@ -3500,11 +3518,12 @@ void readJPG(WString texturePath, bvector<Byte>& textureTmp, size_t& sizeTmp)
     file_s.open("C:\\Users\\Thomas.Butzbach\\Documents\\data_scalableMesh\\test_SDK\\binary1.txt", ios_base::binary);
     file_s.write((char*)pixelBufferP, sizeTmp);
     file_s.close();*/
-    }
+//    }
 
 void PerformSDKCreationTexturedMeshNode(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    BeXmlStatus status;
+    assert(false && "not implemented");
+/*    BeXmlStatus status;
     WString stmFileName;
     int32_t nTextures;
     status = pTestNode->GetAttributeStringValue(stmFileName, "stmFileName");
@@ -3522,11 +3541,11 @@ void PerformSDKCreationTexturedMeshNode(BeXmlNodeP pTestNode, FILE* pResultFile)
     StatusInt createStatus;
 
     // Create scalableMesh File
-    Bentley::ScalableMesh::IScalableMeshNodeCreatorPtr scMesh = ScalableMesh::IScalableMeshNodeCreator::GetFor(stmFileName.c_str(), createStatus);
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshNodeCreatorPtr scMesh = ScalableMesh::IScalableMeshNodeCreator::GetFor(stmFileName.c_str(), createStatus);
     // Create empty scalableMesh
     createStatus = scMesh->Create();
     // Create root node
-    Bentley::ScalableMesh::IScalableMeshNodeEditPtr rootNode = scMesh->AddNode(createStatus);
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshNodeEditPtr rootNode = scMesh->AddNode(createStatus);
 
     // Add extent to rootnode
     DRange3d ext;
@@ -3605,7 +3624,7 @@ void PerformSDKCreationTexturedMeshNode(BeXmlNodeP pTestNode, FILE* pResultFile)
     ptsIndicesLines.push_back(5);
     ptsIndicesLines.push_back(7);
     ptsIndicesLines.push_back(8);
-    while ((0 != pTestChildNode) /*&& (isSuccess == true)*/)
+    while ((0 != pTestChildNode) /*&& (isSuccess == true)*/             /*)
         {
         if (0 != BeStringUtilities::Stricmp(pTestChildNode->GetName(), "texture"))
             {
@@ -3627,7 +3646,7 @@ void PerformSDKCreationTexturedMeshNode(BeXmlNodeP pTestNode, FILE* pResultFile)
         ptsIndices[faceTextured+1].push_back(3);
         ptsIndices[faceTextured+1].push_back(4);*/
 
-        uvIndices[faceTextured].push_back(1);
+/*        uvIndices[faceTextured].push_back(1);
         uvIndices[faceTextured].push_back(2);
         uvIndices[faceTextured].push_back(3);
         uvIndices[faceTextured].push_back(1);
@@ -3662,8 +3681,8 @@ void PerformSDKCreationTexturedMeshNode(BeXmlNodeP pTestNode, FILE* pResultFile)
 
         sizeVec[k] = sizeTmp;
         // errror pointer non initialiser
-        textureByteArrayVec[k].resize(sizeTmp /*+ 3 * sizeof(int)*/);
-        memcpy_s(&textureByteArrayVec[k][0], sizeof(textureByteArrayVec[k][0])*textureByteArrayVec[k].size() /*+ 3 * sizeof(int)*/, &textureTmp[0], sizeof(unsigned char) * sizeVec[k]/* + 3 * sizeof(int)*/);
+        textureByteArrayVec[k].resize(sizeTmp /*+ 3 * sizeof(int)*/                         /*);
+        memcpy_s(&textureByteArrayVec[k][0], sizeof(textureByteArrayVec[k][0])*textureByteArrayVec[k].size() /*+ 3 * sizeof(int)*/             /*, &textureTmp[0], sizeof(unsigned char) * sizeVec[k]/* + 3 * sizeof(int)*/                       /*);
         }
 
     if (rootNode->AddTextures(textureByteArrayVec, nTextures, true) != SUCCESS)
@@ -3677,7 +3696,7 @@ void PerformSDKCreationTexturedMeshNode(BeXmlNodeP pTestNode, FILE* pResultFile)
     rootNode = 0;
     scMesh = 0;
 
-    }
+    }*/
 
     }
 
@@ -3707,7 +3726,9 @@ void PerformStreaming(BeXmlNodeP pTestNode, FILE* pResultFile)
     int64_t pointCount = 0, pointCountStream = 0;
     //WString resultPointCount, allTestPass;
     bool pointCountPass, allTestPass, nodeCountPass, pointCountNodePass;
+    pointCountNodePass = true;
     allTestPass = true;
+    pointCountPass = false;
 
     if (stmFile != 0 && stmStreamFile != 0)
         {
@@ -3774,11 +3795,11 @@ void PerformStreaming(BeXmlNodeP pTestNode, FILE* pResultFile)
         //nodeExtent = node->GetNodeExtent();
         bvector<bool> clips;
         IScalableMeshMeshPtr mesh = node->GetMesh(false, clips);
-        const Bentley::PolyfaceQuery* polyface = mesh->GetPolyfaceQuery();
+        const BENTLEY_NAMESPACE_NAME::PolyfaceQuery* polyface = mesh->GetPolyfaceQuery();
 
         bvector<bool> clipsStreaming;
         IScalableMeshMeshPtr meshStreaming = returnedNodesStreaming[j]->GetMesh(false, clips);
-        const Bentley::PolyfaceQuery* polyfaceStreaming = meshStreaming->GetPolyfaceQuery();
+        const BENTLEY_NAMESPACE_NAME::PolyfaceQuery* polyfaceStreaming = meshStreaming->GetPolyfaceQuery();
 
         DPoint3d point;
         DPoint3d pointStreaming;
@@ -3911,3 +3932,340 @@ void PerformStreaming(BeXmlNodeP pTestNode, FILE* pResultFile)
 
     fflush(pResultFile);
     }
+
+    bool GetMeshAsSingleTileDTM(IScalableMesh* meshP, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& tmP)
+        {
+        /* IScalableMeshMeshQueryPtr meshQueryInterface = meshP->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
+        bvector<IScalableMeshNodePtr> returnedNodes;
+        IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
+        DRange3d fileRange;
+        meshP->GetRange(fileRange);
+        DPoint3d box[4] = {
+        DPoint3d::From(fileRange.low.x, fileRange.low.y, fileRange.low.z),
+        DPoint3d::From(fileRange.low.x, fileRange.high.y, fileRange.low.z),
+        DPoint3d::From(fileRange.high.x, fileRange.low.y, fileRange.high.z),
+        DPoint3d::From(fileRange.high.x, fileRange.high.y, fileRange.high.z)
+        };
+        meshQueryInterface->Query(returnedNodes, box, 4, params);*/
+        int            status;
+        DTMPtr         dtmPtr;
+        IScalableMeshFixResolutionIndexQueryParamsPtr queryParamsPtr(IScalableMeshFixResolutionIndexQueryParams::CreateParams());
+        queryParamsPtr->SetResolutionIndex(meshP->GetNbResolutions() - 1);
+        IScalableMeshPointQueryPtr fixResPointQueryPtr(meshP->GetQueryInterface(SCM_QUERY_FIX_RESOLUTION_VIEW));
+        bvector<DPoint3d> points;
+        status = fixResPointQueryPtr->Query(points, 0, 0, IScalableMeshQueryParametersPtr(queryParamsPtr));
+
+        BcDTMPtr bcDtmInMemPtr(BcDTM::Create());
+
+        bcDtmInMemPtr->AddPoints(points);
+        bcDtmInMemPtr->SetTriangulationParameters(0, 0, 0, 0);
+        bcDtmInMemPtr->Triangulate();
+
+        tmP = bcDtmInMemPtr;
+        /*  int status = CreateBcDTM(tmP);
+        BC_DTM_OBJ* dtmObjP(tmP->GetBcDTM()->GetTinHandle());
+        bvector<DPoint3d> allPts;
+        for (auto& node : returnedNodes)
+        {
+        bvector<bool> clips;
+        IScalableMeshMeshPtr scalableMesh = node->GetMesh(false, clips);
+        const PolyfaceQuery* polyface = scalableMesh->GetPolyfaceQuery();
+        WString nameBefore = L"e:\\output\\scmesh\\2015-12-23\\afterquery_";
+        nameBefore.append(std::to_wstring(node->GetLevel()).c_str());
+        nameBefore.append(L"_");
+        nameBefore.append(std::to_wstring(node->GetNodeExtent().low.x).c_str());
+        nameBefore.append(L"_");
+        nameBefore.append(std::to_wstring(node->GetNodeExtent().low.y).c_str());
+        nameBefore.append(L".m");
+        size_t nVertices = polyface->GetPointCount();
+        size_t nIndices = polyface->GetPointIndexCount();
+        FILE* meshBeforeStitch = _wfopen(nameBefore.c_str(), L"wb");
+        fwrite(&nVertices, sizeof(size_t), 1, meshBeforeStitch);
+        fwrite(polyface->GetPointCP(), sizeof(DPoint3d), nVertices, meshBeforeStitch);
+        fwrite(&nIndices, sizeof(size_t), 1, meshBeforeStitch);
+        fwrite(polyface->GetPointIndexCP(), sizeof(int32_t), nIndices, meshBeforeStitch);
+        fclose(meshBeforeStitch);
+        allPts.insert(allPts.end(), polyface->GetPointCP(), polyface->GetPointCP() + polyface->GetPointCount());
+        }
+        status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, DTMFeatureType::RandomSpots, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &allPts[0], (long)allPts.size());
+        status = bcdtmObject_triangulateDtmObject(dtmObjP);*/
+        return status == DTM_SUCCESS;
+        }
+
+    void GenerateLine(bvector<DPoint3d>& polyLine, DRange3d& range)
+        {
+        std::random_device rd;
+
+        std::default_random_engine e1(rd());
+        std::uniform_real_distribution<double> val_x(range.low.x, range.high.x);
+        std::uniform_real_distribution<double> val_y(range.low.y, range.high.y);
+        std::uniform_int_distribution<int> nOfPts(2, 12);
+        int nPts = nOfPts(e1);
+        for (int i = 0; i < nPts; ++i)
+            {
+            DPoint3d pt = DPoint3d::From(val_x(e1), val_y(e1), range.high.z);
+            polyLine.push_back(pt);
+            }
+
+        }
+
+    void GenerateLinesToDrapeOnExtent(bvector<bvector<DPoint3d>>& lines, int nLines, DRange3d& range)
+        {
+        for (int i = 0; i < nLines; i++)
+            {
+            bvector<DPoint3d> polyLine;
+            GenerateLine(polyLine, range);
+            lines.push_back(polyLine);
+            }
+        }
+
+    void DrapeLinesOnScalableMesh(bvector<bvector<DPoint3d>>&lines, bvector<bvector<DPoint3d>>& drapedLines, DTMPtr& dtmP2)
+        {
+        for (auto& line : lines)
+            {
+            bvector<DPoint3d> lineDraped;
+            auto draping = dtmP2->GetDTMDraping();
+            BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDrapedLinePtr drapedLine;
+            draping->DrapeLinear(drapedLine, line.data(), (int)line.size());
+            //        delete draping;
+            if (!drapedLine.IsNull())
+                {
+                unsigned int numPoints = drapedLine->GetPointCount();
+                for (unsigned int ptNum = 0; ptNum < numPoints; ptNum++)
+                    {
+                    DPoint3d pt;
+                    drapedLine->GetPointByIndex(&pt, nullptr, nullptr, ptNum);
+                    lineDraped.push_back(pt);
+                    }
+                bvector<DPoint3d>::iterator it = unique(lineDraped.begin(), lineDraped.end(), DPoint3dEqualityTest);
+                lineDraped.resize(std::distance(lineDraped.begin(), it));
+                }
+            drapedLines.push_back(lineDraped);
+            }
+        }
+
+    void DrapeLinesOnDTM(bvector<bvector<DPoint3d>>&lines, bvector<bvector<DPoint3d>>& drapedLinesTM, DTMPtr& tmPtr)
+        {
+        for (auto& line : lines)
+            {
+            bvector<DPoint3d> lineDraped;
+            BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDrapedLinePtr drapedLine;
+            tmPtr->GetBcDTM()->DrapeLinear(drapedLine, &line[0], (int)line.size());
+            if (!drapedLine.IsNull())
+                {
+                unsigned int numPoints = drapedLine->GetPointCount();
+                for (unsigned int ptNum = 0; ptNum < numPoints; ptNum++)
+                    {
+                    DPoint3d pt;
+                    DTMDrapedLineCode code;
+                    drapedLine->GetPointByIndex(&pt, nullptr, &code, ptNum);
+                    if (code != DTMDrapedLineCode::External && code != DTMDrapedLineCode::InVoid) lineDraped.push_back(pt);
+                    }
+                bvector<DPoint3d>::iterator it = unique(lineDraped.begin(), lineDraped.end(), DPoint3dEqualityTest);
+                lineDraped.resize(std::distance(lineDraped.begin(), it));
+                }
+            drapedLinesTM.push_back(lineDraped);
+            }
+        }
+
+    void PerformTestDrapeRandomLines(BeXmlNodeP pTestNode, FILE* pResultFile)
+        {
+        BeXmlStatus status;
+        WString stmFileName;
+        status = pTestNode->GetAttributeStringValue(stmFileName, "stmFileName");
+
+        if (status != BEXML_Success)
+            {
+            printf("ERROR : stmFileName attribute not found\r\n");
+            }
+        WString nLines;
+        status = pTestNode->GetAttributeStringValue(nLines, "numberOfLines");
+
+        if (status != BEXML_Success)
+            {
+            printf("ERROR : stmFileName attribute not found\r\n");
+            }
+        Utf8String utf8(nLines);
+        int nLine = atoi(utf8.c_str());
+        StatusInt openStatus;
+        IScalableMeshPtr stmFile = IScalableMesh::GetFor(stmFileName.c_str(), true, true, openStatus);
+        bvector<bvector<DPoint3d>> lines, drapedLines, drapedLinesTM, drapedLines2, lines2;
+        if (openStatus == SUCCESS)
+            {
+            DTMPtr tmPtr;
+            GetMeshAsSingleTileDTM(stmFile.get(), tmPtr);
+            WString stmFileName2 = stmFileName + L"2.stm";
+            // IScalableMeshPtr dtmP2;
+            // CreateScalableMeshFromTM(dtmP2, stmFileName2, tmPtr);
+            DRange3d range;
+            stmFile->GetRange(range);
+            range.ScaleAboutCenter(range, 0.80);
+            GenerateLinesToDrapeOnExtent(lines, nLine, range);
+            lines2 = lines;
+            clock_t start = clock();
+            //  DTMPtr dtmp = dtmP2->GetDTMInterface();
+            //  DrapeLinesOnScalableMesh(lines, drapedLines, dtmp);
+            double timeToDrapeSM = (double)(clock() - start) / CLOCKS_PER_SEC;
+            start = clock();
+            DrapeLinesOnDTM(lines, drapedLinesTM, tmPtr);
+            double timeToDrapeTM = (double)(clock() - start) / CLOCKS_PER_SEC;
+            DTMPtr d = stmFile->GetDTMInterface();
+            start = clock();
+            DrapeLinesOnScalableMesh(lines, drapedLines, d);
+            double timeToDrapeSM2 = (double)(clock() - start) / CLOCKS_PER_SEC;
+            size_t nDiffLines = 0;
+            WString name = stmFileName;
+            name.ReplaceAll(L".stm", L"");
+            size_t pos = name.find_last_of(L"\\");
+            if (pos != std::string::npos) name = name.substr(pos + 1);
+            WString testcaseNameTM = name + L"_tm";
+            WString testcaseNameLine = name + L"_line";
+            WString testcaseNameOrig = name + L"_orig";
+
+            // Copy all lines in dgn, didn't need this.
+//            DgnModelRefP model = mdlModelRef_getActive();
+//            FileLevelCache& fileLevelCache = model->GetDgnFileP()->GetLevelCacheR();
+            for (auto& line : lines)
+                {
+                size_t lineN = &line - &lines[0];
+//                Transform uorToMeter, meterToUor;
+//                GetTransformForPoints(uorToMeter, meterToUor);
+
+//                bsiTransform_multiplyDPoint3dArrayInPlace(&meterToUor, (DPoint3dP)&line[0], (int)line.size());
+//                EditLevelHandle outputLevelOriginal = fileLevelCache.CreateLevel((testcaseNameOrig + std::to_wstring(lineN).c_str()).c_str(), LEVEL_NULL_CODE, LEVEL_NULL_ID);
+//                fileLevelCache.Write();
+                {
+//                MSElementDescrP pNewElmDsc = NULL;
+//                mdlElmdscr_createFromVertices(&pNewElmDsc, NULL, &line[0], line.size(), FALSE, FALSE);
+//                pNewElmDsc->el.ehdr.level = outputLevelOriginal.GetLevelId();
+//                EditElementHandle handle(pNewElmDsc, true, true, model);
+//                handle.AddToModel();
+                }
+                size_t nPtsDraped = drapedLines[lineN].size();
+                double length = 0.0;
+                for (size_t i = 1; i < drapedLines[lineN].size(); ++i)
+                    {
+                    DVec3d aToB = DVec3d::FromStartEnd(drapedLines[lineN][i - 1], drapedLines[lineN][i]);
+                    length += aToB.Magnitude();
+                    }
+                size_t nPtsDrapedDTM = drapedLinesTM[lineN].size();
+                double lengthDTM = 0.0;
+                for (size_t i = 1; i < drapedLinesTM[lineN].size(); ++i)
+                    {
+                    DVec3d aToB = DVec3d::FromStartEnd(drapedLinesTM[lineN][i - 1], drapedLinesTM[lineN][i]);
+                    lengthDTM += aToB.Magnitude();
+                    }
+
+/*                if (fabs(lengthDTM - length) > 1e-3 || nPtsDraped != nPtsDrapedDTM)
+                    {
+                    EditLevelHandle outputLevelTM = fileLevelCache.CreateLevel((testcaseNameTM + std::to_wstring(lineN).c_str()).c_str(), LEVEL_NULL_CODE, LEVEL_NULL_ID);
+                    fileLevelCache.Write();
+                    bsiTransform_multiplyDPoint3dArrayInPlace(&meterToUor, (DPoint3dP)&drapedLinesTM[lineN][0], (int)drapedLinesTM[lineN].size());
+                    bsiTransform_multiplyDPoint3dArrayInPlace(&meterToUor, (DPoint3dP)&drapedLines[lineN][0], (int)drapedLines[lineN].size());
+                    if (drapedLinesTM[lineN].size() > 0)
+                        {
+                        MSElementDescrP pNewElmDsc = NULL;
+                        mdlElmdscr_createFromVertices(&pNewElmDsc, NULL, &drapedLinesTM[lineN][0], drapedLinesTM[lineN].size(), FALSE, FALSE);
+                        pNewElmDsc->el.ehdr.level = outputLevelTM.GetLevelId();
+                        EditElementHandle handle(pNewElmDsc, true, true, model);
+                        handle.AddToModel();
+                        }
+                    EditLevelHandle outputLevelLine = fileLevelCache.CreateLevel((testcaseNameLine + std::to_wstring(lineN).c_str()).c_str(), LEVEL_NULL_CODE, LEVEL_NULL_ID);
+                    fileLevelCache.Write();
+                    if (drapedLines[lineN].size() > 0)
+                        {
+                        MSElementDescrP pNewElmDsc = NULL;
+                        mdlElmdscr_createFromVertices(&pNewElmDsc, NULL, &drapedLines[lineN][0], drapedLines[lineN].size(), FALSE, FALSE);
+                        pNewElmDsc->el.ehdr.level = outputLevelLine.GetLevelId();
+                        EditElementHandle handle(pNewElmDsc, true, true, model);
+                        handle.AddToModel();
+                        }
+
+                    }*/
+                // L"Test Case, Line Number, N Of Points Draped (SM), N Of Points Draped (Civil), Length (SM), Length (Civil), N Of Points Difference (%%), Length Difference (%%), NDifferentLines Total, Time total(SM) (s), Time total(Civil) (s)\n";
+                fwprintf(pResultFile, L"%s,%I64d,%I64d,%I64d,%0.5f,%0.5f,%0.5f, %0.5f\n",
+                         stmFileName.c_str(),
+                         lineN,
+                         nPtsDraped,
+                         nPtsDrapedDTM,
+                         length,
+                         lengthDTM,
+                         100.0*(std::max(nPtsDraped, nPtsDrapedDTM) - std::min(nPtsDraped, nPtsDrapedDTM)) / std::max(nPtsDraped, nPtsDrapedDTM),
+                         (std::max(length, lengthDTM) - std::min(length, lengthDTM)) / std::max(length, lengthDTM) * 100.0);
+                ++lineN;
+                if (fabs(lengthDTM - length) > 1e-3 || nPtsDraped != nPtsDrapedDTM) ++nDiffLines;
+                }
+            fwprintf(pResultFile, L"%s,,,,,,,,%I64d,%0.5f,%0.5f,%0.5f\n",
+                     stmFileName.c_str(),
+                     nDiffLines,
+                     timeToDrapeSM,
+                     timeToDrapeTM,
+                     timeToDrapeSM2
+                     );
+            d = stmFile->GetDTMInterface();
+            fwprintf(pResultFile, L"Timings for 10 iterations\n");
+            start = clock();
+            /*for (size_t i = 0; i < 10; ++i)
+            {
+            DrapeLinesOnScalableMesh(lines2, drapedLines, dtmp);
+            }*/
+            double timeToDrapeSM10 = (double)(clock() - start) / CLOCKS_PER_SEC;
+            start = clock();
+            for (size_t i = 0; i < 10; ++i)
+                {
+                DrapeLinesOnDTM(lines2, drapedLinesTM, tmPtr);
+                }
+            double timeToDrapeTM10 = (double)(clock() - start) / CLOCKS_PER_SEC;
+            start = clock();
+            for (size_t i = 0; i < 10; ++i)
+                {
+                DrapeLinesOnScalableMesh(lines2, drapedLines2, d);
+                }
+            double timeToDrapeSM210 = (double)(clock() - start) / CLOCKS_PER_SEC;
+            fwprintf(pResultFile, L"%s,,,,,,,,%I64d,%0.5f,%0.5f,%0.5f,%0.5f,%0.5f,%0.5f\n",
+                     stmFileName.c_str(),
+                     nDiffLines,
+                     timeToDrapeSM10,
+                     timeToDrapeTM10,
+                     timeToDrapeSM210,
+                     timeToDrapeSM10 / 10.0,
+                     timeToDrapeTM10 / 10.0,
+                     timeToDrapeSM210 / 10.0
+                     );
+            fwprintf(pResultFile, L"Timings for 100 iterations\n");
+            start = clock();
+            /*for (size_t i = 0; i < 100; ++i)
+            {
+            DrapeLinesOnScalableMesh(lines2, drapedLines, dtmp);
+            }*/
+            double timeToDrapeSM100 = (double)(clock() - start) / CLOCKS_PER_SEC;
+            start = clock();
+            for (size_t i = 0; i < 100; ++i)
+                {
+                DrapeLinesOnDTM(lines2, drapedLinesTM, tmPtr);
+                }
+            double timeToDrapeTM100 = (double)(clock() - start) / CLOCKS_PER_SEC;
+            start = clock();
+            for (size_t i = 0; i < 100; ++i)
+                {
+                DrapeLinesOnScalableMesh(lines2, drapedLines2, d);
+                }
+            double timeToDrapeSM2100 = (double)(clock() - start) / CLOCKS_PER_SEC;
+            fwprintf(pResultFile, L"%s,,,,,,,,%I64d,%0.5f,%0.5f,%0.5f,%0.5f,%0.5f,%0.5f\n",
+                     stmFileName.c_str(),
+                     nDiffLines,
+                     timeToDrapeSM100,
+                     timeToDrapeTM100,
+                     timeToDrapeSM2100,
+                     timeToDrapeSM100 / 100.0,
+                     timeToDrapeTM100 / 100.0,
+                     timeToDrapeSM2100 / 100.0
+                     );
+            }
+        else
+            {
+            fwprintf(pResultFile, L"%s\n",
+                     L"ERROR");
+            }
+        fflush(pResultFile);
+        }

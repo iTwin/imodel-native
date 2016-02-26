@@ -17,3 +17,4 @@ void PerformDrapeBaselineTest(BeXmlNodeP pTestNode, FILE* pResultFile, BeXmlNode
 void PerformConstraintTest(BeXmlNodeP pTestNode, FILE* pResultFile);
 void PerformSDKCreationTexturedMeshNode(BeXmlNodeP pTestNode, FILE* pResultFile);
 void PerformStreaming(BeXmlNodeP pTestNode, FILE* pResultFile);
+void PerformTestDrapeRandomLines(BeXmlNodeP pTestNode, FILE* pResultFile);

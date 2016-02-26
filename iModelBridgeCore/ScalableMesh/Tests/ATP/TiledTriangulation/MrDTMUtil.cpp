@@ -6,14 +6,15 @@
 |
 +----------------------------------------------------------------------*/
 //#include "DcStmCorePCH.h" //always first
+//#include "ScalableMeshATPPch.h"
 #include "MrDTMUtil.h"
 //#include <thread>
-#include <DgnPlatform/Tools/fileutil.h>
-#include <ScalableMesh/ScalableMeshLib.h>
-#include <DgnGeoCoord/DgnGeoCoord.h>
+//#include <DgnPlatform/Tools/fileutil.h>
+#include <DgnPlatform/DesktopTools/fileutil.h>
+//#include <DgnGeoCoord/DgnGeoCoord.h>
 //#include <DcInternal\DcStmCore\DGNModelGeoref.h>
 //#include <DcInternal\DcStmCore\GeoDTMCore.h>
-
+#undef static_assert
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -21,8 +22,8 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY
 //USING_NAMESPACE_GEODTMAPP
 
-using Bentley::GeoCoordinates::DgnGCS;
-using Bentley::GeoCoordinates::DgnGCSPtr;
+//using BENTLEY_NAMESPACE_NAME::GeoCoordinates::DgnGCS;
+//using BENTLEY_NAMESPACE_NAME::GeoCoordinates::DgnGCSPtr;
 
 #define GeoCoord_MstnGCS_DLLNAME        "Bentley.MicroStation.GeoCoord.dll"
 #define GeoCoord_basegeocoord_DLLNAME   "basegeocoord.dll"
@@ -71,9 +72,9 @@ void AugmentExtentByFactor(DRange2d& extent, const double& factor)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                Raymond.Gauthier    01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt64 getExtractedTMMaxPointCountFromConfig ()
+uint64_t getExtractedTMMaxPointCountFromConfig ()
     {
-    static const UInt64 DEFAULT = 5000000;
+    static const uint64_t DEFAULT = 5000000;
 
     return DEFAULT;
 
@@ -113,7 +114,7 @@ UInt64 getExtractedTMMaxPointCountFromConfig ()
 * @bsimethod                                                Mathieu.St-Pierre    09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 //Copied from PointCloudQueryService function
-void GetFromModelRefToActiveTransform(TransformR fromModelRefToActiveTransform, DgnModelRefP modelRef)
+/*void GetFromModelRefToActiveTransform(TransformR fromModelRefToActiveTransform, DgnModelP modelRef)
     {
     bsiTransform_initIdentity(&fromModelRefToActiveTransform);
 
@@ -133,25 +134,25 @@ void GetFromModelRefToActiveTransform(TransformR fromModelRefToActiveTransform, 
 
         bsiTransform_multiplyTransformTransform(&fromModelRefToActiveTransform, &fromRootToActive, &fromElemModelRefToRoot);
         }
-    }
+    }*/
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                Raymond.Gauthier    01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt64 getExtractedTMMaxPointCount ()
+uint64_t getExtractedTMMaxPointCount ()
     {
     // Lazily initialize our value and preserve it afterward.
-    static const UInt64 VALUE = getExtractedTMMaxPointCountFromConfig();
+    static const uint64_t VALUE = getExtractedTMMaxPointCountFromConfig();
     return VALUE;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Marc.Bedard  10/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeoCoord_IsAvailable()
+/*bool GeoCoord_IsAvailable()
     {
     return GeoCoordinationManager::GetServices() != NULL;
-    }
+    }*/
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Simon.Normand                   11/2009
@@ -191,7 +192,7 @@ void EnsureFolderSeparatorCharacterAtEnd (WStringR wFolderName)
         wFolderName.push_back (WCSDIR_SEPARATOR_CHAR);
     }
 
-typedef StatusInt (*DcStmAppMsgLoaderFP)(WCharP pString, UInt32 listId, UInt32 stringNum);
+typedef StatusInt (*DcStmAppMsgLoaderFP)(WCharP pString, uint32_t listId, uint32_t stringNum);
 
 
 
@@ -274,9 +275,9 @@ StatusInt ExportSTMToDTM(EditElementHandleR stmElm, DgnModelRefP modelRef)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Chantal.Poulin  02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-Bentley::DgnPlatform::StandardUnit FindUnitNumber(double ratioToMeter)
+/*BentleyApi::Dgn::StandardUnit FindUnitNumber(double ratioToMeter)
     {    
-    Bentley::DgnPlatform::StandardUnit unitNumber = Bentley::DgnPlatform::StandardUnit::None;
+    BentleyApi::Dgn::StandardUnit unitNumber = BentleyApi::Dgn::StandardUnit::None;
 
     UnitIteratorOptionsPtr pUnitIterOptions(UnitIteratorOptions::Create());
 
@@ -329,7 +330,7 @@ Bentley::DgnPlatform::StandardUnit FindUnitNumber(double ratioToMeter)
         }
 
     return unitNumber;
-    }
+    }*/
 
 inline const TransfoMatrix& FromBSI (const Transform& transform)
     {
@@ -2115,14 +2116,14 @@ StatusInt GetApproximationNbPtsNeedToExtract(ElementHandleCR                  ee
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mathieu.St-Pierre                   06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GetTransformForPoints(Transform& uorToMeter, Transform& meterToUor)
+/*void GetTransformForPoints(Transform& uorToMeter, Transform& meterToUor)
     {
     const double invUorPerMeter = 1.0/ ModelInfo::GetUorPerMeter(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef()->GetModelInfoCP());
 
     bsiTransform_initFromRowValues(&uorToMeter, invUorPerMeter, 0.0, 0.0, 0.0, 0.0, invUorPerMeter, 0.0, 0.0, 0.0, 0.0, invUorPerMeter, 0.0);
 
     bsiTransform_invertTransform(&meterToUor, &uorToMeter);
-    }
+    }*/
 
 void AugmentRangeByFactor(DRange2d& range, const double& factor)
     {

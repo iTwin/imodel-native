@@ -8,6 +8,7 @@
 
 //#include "DcStmCorePCH.h"
 //#include "MrDTMUtil.h"
+//#include "ScalableMeshATPPch.h"
 #include "TiledTriangulatorUtil.h"
 #include "MrDTMUtil.h"
 #include "MrDTMFace.h"
@@ -35,7 +36,7 @@ bool isEqualPoint3d(const DPoint3d& point1, const DPoint3d& point2)
 //=======================================================================================
 // @bsimethod                                                   Mathieu.St-Pierre 09/10
 //=======================================================================================
-void dumpDTMInTinFile(Bentley::TerrainModel::BcDTM* dtmP, WString& fileName, const __int64* indP)
+/*void dumpDTMInTinFile(Bentley::TerrainModel::BcDTM* dtmP, WString& fileName, const __int64* indP)
     {
     StatusInt status;
 
@@ -56,7 +57,7 @@ void dumpDTMInTinFile(Bentley::TerrainModel::BcDTM* dtmP, WString& fileName, con
         }
 
     assert(status == 0);
-    }
+    }*/
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                   06/2013
@@ -97,7 +98,7 @@ void dumpDTMInTinFile(Bentley::TerrainModel::BcDTM* dtmP, WString& fileName, con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Richard.Bois  07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt addLinearsIn (DTMPtr& dtmPtr,
+/*StatusInt addLinearsIn (DTMPtr& dtmPtr,
                                              list<HFCPtr<HVEDTMLinearFeature>>& linearList,
                                              unsigned int                       maxNumberOfPoints)
     {
@@ -184,7 +185,7 @@ StatusInt addLinearsIn (DTMPtr& dtmPtr,
 
     return status;
     }
-
+    */
 bool isClosedFeature(DTMFeatureType featureType)
     {
     bool isClosed;

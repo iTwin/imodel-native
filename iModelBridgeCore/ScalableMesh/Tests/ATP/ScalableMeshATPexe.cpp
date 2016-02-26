@@ -1,5 +1,6 @@
-#include "Initialize.h"
+//#include "ScalableMeshATPPch.h"
 #include "ScalableMeshATPexe.h"
+#include "Initialize.h"
 #include "Common/ATPUtils.h"
 #include "Common/ATPFileFinder.h"
 
@@ -10,6 +11,16 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 namespace ScalableMeshATPexe
     {   
+    DgnPlatformLib::Host::GeoCoordinationAdmin&      ScalableMeshATPexe::_SupplyGeoCoordinationAdmin()
+        {
+
+        //WString geocoordinateDataPath(L".\\GeoCoordinateData\\");
+        BeFileName geocoordinateDataPath(L".\\GeoCoordinateData\\");
+
+        //return *DgnGeoCoordinationAdmin::Create (geocoordinateDataPath.c_str(), IACSManager::GetManager()); 
+        return *DgnGeoCoordinationAdmin::Create(geocoordinateDataPath);
+        }
+
 
 
     BentleyStatus ScalableMeshATPexe::Initialize(int argc, WCharP argv[])
@@ -41,7 +52,7 @@ namespace ScalableMeshATPexe
                 %ls runatp -i|--input= -c|--clean\n\
                 --input=                (required)  path to XML file for ATP or directory with xml files for ATP. \n\
                 --clean                 (optional)  Delete stm file (if -i is a directory delete all stm files). \n\
-                ", programName, programName);
+                ", programName);
 
         return 1;
         }

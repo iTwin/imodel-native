@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 //#include "DcStmCorePCH.h"
+//#include "ScalableMeshATPPch.h"
 #include "MrDTMFace.h"
 
 //BEGIN_GEODTMAPP_NAMESPACE

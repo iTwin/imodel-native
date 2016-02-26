@@ -1,8 +1,8 @@
+/*#include <ScalableMeshATPPch.h>
 #include "DrapeLineTool.h"
 #include "..\Common\ATPUtils.h"
 #include "..\TiledTriangulation\MrDTMUtil.h"
 #include <ScalableMesh/IScalableMeshATP.h>
-#include <ScalableMesh/ScalableMeshLib.h>
 
 #define ABORT (ERROR + 1)
 
@@ -11,7 +11,7 @@
     return LegacyMath::DEqual(point1.x, point2.x) && LegacyMath::DEqual(point1.y, point2.y);
     }*/
 
-StatusInt DoBatchDrape(ElementAgenda* vectorAgenda, DTMPtr& dtmPtr, bvector<bvector<DPoint3d>>& drapeLines)
+/*StatusInt DoBatchDrape(ElementAgenda* vectorAgenda, DTMPtr& dtmPtr, bvector<bvector<DPoint3d>>& drapeLines)
     {
     bool aborded = false;
 
@@ -25,10 +25,7 @@ StatusInt DoBatchDrape(ElementAgenda* vectorAgenda, DTMPtr& dtmPtr, bvector<bvec
     int numPartial = 0;
     int numPts = 0;
     double drapeLength = 0.0;
-   /* FileLevelCache& fileLevelCache = mdlModelRef_getActive()->GetDgnFileP()->GetLevelCacheR();
-    EditLevelHandle partialLevel = fileLevelCache.CreateLevel(L"partialDrapes", LEVEL_NULL_CODE, LEVEL_NULL_ID);
-    EditLevelHandle failedLevel = fileLevelCache.CreateLevel(L"failedDrapes", LEVEL_NULL_CODE, LEVEL_NULL_ID);
-    fileLevelCache.Write();*/
+
     clock_t timer = clock();
     for (; curr < end; curr++) //For each valid element we do the draping
         {
@@ -81,11 +78,7 @@ StatusInt DoBatchDrape(ElementAgenda* vectorAgenda, DTMPtr& dtmPtr, bvector<bvec
         else if (status == ERROR)
             {
             numElemNOTDraped++;
-          /*  MSElementDescrP pNewElmDsc = NULL;
-            mdlElmdscr_createFromVertices(&pNewElmDsc, NULL, &origCopy[0], origCopy.size(), FALSE, FALSE);
-            pNewElmDsc->el.ehdr.level = failedLevel.GetLevelId();
-            EditElementHandle handle(pNewElmDsc, true, true, mdlModelRef_getActive());
-            handle.AddToModel();*/
+
             continue;
             }
         numElemDraped++;
@@ -144,11 +137,7 @@ StatusInt DoBatchDrape(ElementAgenda* vectorAgenda, DTMPtr& dtmPtr, bvector<bvec
             else
                 {
                 numPartial++;
-               /* MSElementDescrP pNewElmDsc = NULL;
-                mdlElmdscr_createFromVertices(&pNewElmDsc, NULL, &origCopy[0], origCopy.size(), FALSE, FALSE);
-                pNewElmDsc->el.ehdr.level = partialLevel.GetLevelId();
-                EditElementHandle handle(pNewElmDsc, true, true, mdlModelRef_getActive());
-                handle.AddToModel();*/
+
                // if (bsiDPoint3d_pointEqualTolerance(&intersectPt1, &intersectPt2, 0.001))
                 DPoint3d intersectPt1 = pt;
                 intersectPt1.z = origPoints[origPoints.size() - 1].z;
@@ -181,7 +170,7 @@ StatusInt DoBatchDrape(ElementAgenda* vectorAgenda, DTMPtr& dtmPtr, bvector<bvec
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                              Elenie.Godzaridis                   12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DrapeOnScalableMesh (DTMPtr& smPtr, std::vector<std::vector<DPoint3d>>& drapedPoints, std::vector<DPoint3d> origPoints)
+/*StatusInt DrapeOnScalableMesh (DTMPtr& smPtr, std::vector<std::vector<DPoint3d>>& drapedPoints, std::vector<DPoint3d> origPoints)
     {
     Transform uorToMeter;
     Transform meterToUor;
@@ -222,4 +211,4 @@ StatusInt DrapeOnScalableMesh (DTMPtr& smPtr, std::vector<std::vector<DPoint3d>>
         }
     
     return SUCCESS;
-    }
+    }*/

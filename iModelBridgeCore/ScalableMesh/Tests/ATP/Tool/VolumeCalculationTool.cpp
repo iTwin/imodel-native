@@ -1,3 +1,4 @@
+/*#include <ScalableMeshATPPch.h>
 #include "VolumeCalculationTool.h"
 #include "..\TiledTriangulation\MrDTMUtil.h"
 #include <ScalableMesh\IScalableMeshATP.h>
@@ -123,4 +124,4 @@ double ComputeVolumeCutAndFill(DTMPtr smPtr, double& cut, double& fill, Polyface
     if (volume == NULL) return 0;
     volume->ComputeVolumeCutAndFill(cut, fill, area, mesh, elemRange, volumeMeshVector);
     return cut - fill;
-    }
+    }*/

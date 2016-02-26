@@ -1,4 +1,4 @@
-#pragma  once
+/*#pragma  once
 #include <Bentley/Bentley.h>
 #include <DgnPlatform/DgnCoreAPI.h>
 
@@ -71,4 +71,4 @@ struct STMDrapeHelper
 
     };
 
-//bool DPoint3dEqualityTest(const DPoint3d& point1, const DPoint3d& point2);
+//bool DPoint3dEqualityTest(const DPoint3d& point1, const DPoint3d& point2);*/

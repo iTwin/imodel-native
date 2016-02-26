@@ -142,7 +142,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p  ScalableMesh -f  ScalableMes
     <NMakeAssemblySearchPath>
     </NMakeAssemblySearchPath>
     <SourcePath>$(SourcePath);D:\PointoolsVortexAPI</SourcePath>
-    <IncludePath>C:\dev\ScalableMesh-Topaz\out\debug\Winx64\BuildContexts\DgnPlatform\PublicAPI;C:\dev\ScalableMesh-Topaz\out\debug\Winx64\BuildContexts\scalablemesh\PublicAPI;$(IncludePath)</IncludePath>
+    <IncludePath>C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnPlatform\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\TerrainModel\PublicAPI;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMesh -f ScalableMesh -r ScalableMesh -ax64 re ScalableMesh</NMakeBuildCommandLine>

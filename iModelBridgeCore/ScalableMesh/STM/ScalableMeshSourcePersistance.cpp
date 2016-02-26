@@ -430,12 +430,18 @@ struct IDTMLocalFileSourceCreator : public IDTMSourceCreator
             const DocumentEnv&    env) const
         {
             DTMSourceDataType   sourceType;
-            IMonikerPtr         monikerPtr;
+            //IMonikerPtr         monikerPtr;
 
-            if (LoadSourcePart(sourceData, env, sourceType, monikerPtr))
-                return new IDTMLocalFileSource(new IDTMLocalFileSource::Impl(sourceType, monikerPtr.get()));
+            uint32_t sourceTypeField = sourceData.GetSourceType();
+            sourceType = static_cast<DTMSourceDataType>(sourceTypeField);
+            WString fullPath = sourceData.GetMonikerString();
 
-            return 0;
+            //IDTMSourcePtr srcPtr = IDTMLocalFileSource::Create(sourceType, fullPath.c_str());
+            //return srcPtr.get();
+            //if (LoadSourcePart(sourceData, env, sourceType, monikerPtr))
+            return new IDTMLocalFileSource(new IDTMLocalFileSource::Impl(sourceType, fullPath.c_str()));
+
+            //return 0;
         }
 
     } s_localFileSourceCreator;

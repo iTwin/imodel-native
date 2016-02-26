@@ -63,11 +63,14 @@
     <ClCompile Include="..\TiledTriangulation\MrDTMUtil.cpp">
       <Filter>Source Files\TiledTriangulation</Filter>
     </ClCompile>
-    <ClCompile Include="..\DrapeLineTool\DrapeLineTool.cpp">
-      <Filter>Source Files\Tool</Filter>
-    </ClCompile>
     <ClCompile Include="..\Tool\VolumeCalculationTool.cpp">
       <Filter>Source Files\Tool</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Tool\DrapeLineTool.cpp">
+      <Filter>Source Files\Tool</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ScalableMeshATPPch.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -104,10 +107,13 @@
     <ClInclude Include="..\TiledTriangulation\MrDTMUtil.h">
       <Filter>Header Files\TiledTriangulation</Filter>
     </ClInclude>
-    <ClInclude Include="..\DrapeLineTool\DrapeLineTool.h">
+    <ClInclude Include="..\Tool\VolumeCalculationTool.h">
       <Filter>Header Files\Tool</Filter>
     </ClInclude>
-    <ClInclude Include="..\Tool\VolumeCalculationTool.h">
+    <ClInclude Include="..\ScalableMeshATPPch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Tool\DrapeLineTool.h">
       <Filter>Header Files\Tool</Filter>
     </ClInclude>
   </ItemGroup>
@@ -116,5 +122,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\ScalableMeshATPexe.mke" />
+    <None Include="..\ScalableMeshATPexe.mki" />
   </ItemGroup>
 </Project>

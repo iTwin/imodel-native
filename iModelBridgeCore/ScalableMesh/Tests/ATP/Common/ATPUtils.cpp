@@ -1,7 +1,15 @@
+//#include "ScalableMeshATPPch.h"
 #include "ATPUtils.h"
+
+#include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdio.h>
+#include <errno.h>
+#include <wtypes.h>
+
 #include "ATPDefinitions.h"
 #include "ATPGeneration.h"
-
 
 WString GetHeaderForTestType(TestType t)
     {
@@ -53,6 +61,9 @@ WString GetHeaderForTestType(TestType t)
             break;
         case TEST_STREAMING:
             return L"File Name Original, File Name Streaming, AllTestPass, Point Count Pass, Node Count Pass, time load all node headers, time streaming load all node headers, points Node Pass\n";
+            break;
+        case TEST_RANDOM_DRAPE:
+            return L"Test Case, Line Number, N Of Points Draped (SM), N Of Points Draped (Civil), Length (SM), Length (Civil), N Of Points Difference (%%), Length Difference (%%), NDifferentLines Total, Time total(SM) (s), Time total(Civil) (s)\n";
             break;
         default: break;
         }
@@ -113,6 +124,8 @@ bool ParseTestType(BeXmlNodeP pRootNode, TestType& t)
             t = TEST_SDK_MESH;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"streaming"))
             t = TEST_STREAMING;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"drapeRandom"))
+            t = TEST_RANDOM_DRAPE;
         else return false;
         }
     else return false;
@@ -151,9 +164,9 @@ bool RemoveStmFiles(BeFileName& inputFileName)
         status = pTestNode->GetAttributeStringValue(stmFileName, "stmFileName");
         if (t == TEST_PARTIAL_UPDATE)
             {
-            WString suffixPartialUpdate("_partialUpdate");
+            WString suffixPartialUpdate(L"_partialUpdate");
             WString stmFileName_PartialUpdateTest(UpdateTest_GetStmFileNameWithSuffix(stmFileName, suffixPartialUpdate));
-            WString suffixGenerate("_generate");
+            WString suffixGenerate(L"_generate");
             WString stmFileName_GenerateTest(UpdateTest_GetStmFileNameWithSuffix(stmFileName, suffixGenerate));
             char* pathPartialUpdate = new char[255];
             wcstombs(pathPartialUpdate, stmFileName_PartialUpdateTest.c_str(), 255);
@@ -256,6 +269,9 @@ bool RunTestPlan(BeFileName& testPlanPath)
                 break;
             case TEST_STREAMING:
                 PerformStreaming(pTestNode, pResultFile);
+                break;
+            case TEST_RANDOM_DRAPE:
+                PerformTestDrapeRandomLines(pTestNode, pResultFile);
                 break;
             default: break;
             }
@@ -394,6 +410,7 @@ DPoint3d ParsePoint(std::string& line)
     std::string token;
     size_t n = 0;
     DPoint3d pt;
+    pt.Zero();
     std::istringstream str(line);
     while (std::getline(str, token, ','))
         {
