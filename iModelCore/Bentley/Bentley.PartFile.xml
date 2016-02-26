@@ -15,6 +15,8 @@
     </Part>
   
     <Part Name="Base" BentleyBuildMakeFile="prewire.mke">
+        <!-- BeTest.h includes <gtest/gtest.h> in some builds, and so Bentley depends on gtest, at least for include files. -->
+        <SubPart PartName="BeGtest-Includes" Repository="BeGTest" PartFile="BeGTest" />
         <Bindings>
             <PublicAPI Domain="Bentley" />
             <PublicAPI Domain="Logging" />
