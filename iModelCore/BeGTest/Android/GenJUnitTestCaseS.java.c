@@ -64,6 +64,9 @@ public class __FIXTURE__ extends ActivityInstrumentationTestCase2<TestActivity>
    
     static void loadNativeLibraries (String libraryNames) 
         {
+        if (libraryNames.isEmpty())
+            return;
+        Log.i ("BeTestX", "loadNativeLibraries=" + libraryNames);
         String[] libs = libraryNames.split ("\\s");
         for (String libraryName : libs)
             {
