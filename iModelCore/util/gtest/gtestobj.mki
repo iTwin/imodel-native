@@ -2,7 +2,7 @@
 #
 #  $Source: gtestobj.mki $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -36,7 +36,7 @@ $(GUNITTEST_OBJ_DEST)gtest$(oext) : $(GUnitTestDir)src/gtest.cpp $(GUnitTestDir)
 $(GUNITTEST_OBJ_DEST)gtest_main$(oext) : $(GUnitTestDir)src/gtest_main.cpp $(GUnitTestDir)include/gtest/gtest.h
 %endif
 
-%if defined (winNT)
+%if $(TARGET_PLATFORM)=="Windows"
 $(GUNITTEST_OBJ_DEST)StackWalker$(oext) : $(GUnitTestDir)src/StackWalker.cpp $(GUnitTestDir)src/StackWalker.h
 %endif
 
@@ -51,7 +51,8 @@ LOCAL_GUNITTEST_OBJS = $(GUNITTEST_OBJ_DEST)gtest-death-test$(oext) \
                        $(GUNITTEST_OBJ_DEST)gtest-printers$(oext) \
                        $(GUNITTEST_OBJ_DEST)gtest$(oext) \
                        $(GUNITTEST_OBJS)
-%if defined (winNT)
+
+%if $(TARGET_PLATFORM)=="Windows"
     LOCAL_GUNITTEST_OBJS + $(GUNITTEST_OBJ_DEST)StackWalker$(oext) 
 %endif
 
