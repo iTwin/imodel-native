@@ -130,6 +130,8 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         SCALABLEMESH_SCHEMA_EXPORT IScalableMesh* GetScalableMesh();
 
+        SCALABLEMESH_SCHEMA_EXPORT Transform GetUorsToStorage();
+
 
     };
 

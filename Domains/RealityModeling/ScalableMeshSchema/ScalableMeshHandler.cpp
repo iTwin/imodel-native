@@ -91,7 +91,7 @@ BentleyStatus ScalableMeshModel::_CreateIterator(ITerrainTileIteratorPtr& iterat
 TerrainModel::IDTM* ScalableMeshModel::_GetDTM()
     {
     if (nullptr == m_smPtr.get()) return nullptr;
-    return m_smPtr->GetDTMInterface();
+    return m_smPtr->GetDTMInterface(m_storageToUorsTransfo);
     }
 
 //----------------------------------------------------------------------------------------
@@ -818,6 +818,17 @@ ScalableMeshModelP ScalableMeshModel::CreateModel(BentleyApi::Dgn::DgnDbR dgnDb)
     appData->m_modelSearched = true;
     dgnDb.SaveChanges();
     return model;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Elenie.Godzaridis     2/2016
+//----------------------------------------------------------------------------------------
+Transform ScalableMeshModel::GetUorsToStorage()
+    {
+    Transform t;
+    t.InitFrom(m_storageToUorsTransfo);
+    t = t.ValidatedInverse();
+    return t;
     }
 
 
