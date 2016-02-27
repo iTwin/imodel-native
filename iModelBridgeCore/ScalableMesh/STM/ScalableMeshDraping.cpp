@@ -525,14 +525,16 @@ bool MeshTraversalQueue::SetStartPoint(DPoint3d pt)
 
 bool ScalableMeshDraping::_ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint)
     {
-    DPoint3d startPt = testPoint;
+    DPoint3d transformedPt = testPoint;
+    m_UorsToStorage.Multiply(transformedPt);
+    DPoint3d startPt = transformedPt;
     DPoint3d endPt;
     DPoint3d pt;
     DMatrix4d invW2vMap;
 
 
     invW2vMap.QrInverseOf(w2vMap);
-    w2vMap.MultiplyAndRenormalize(&pt, &testPoint, 1);
+    w2vMap.MultiplyAndRenormalize(&pt, &transformedPt, 1);
     pt.z -= 100;
     invW2vMap.MultiplyAndRenormalize(&endPt, &pt, 1);
     if (startPt.DistanceSquaredXY(endPt) < 1e-4)
@@ -544,6 +546,7 @@ bool ScalableMeshDraping::_ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap
             }
         pointOnDTM = startPt;
         pointOnDTM.z = elevation;
+        m_transform.Multiply(pointOnDTM);
         return true;
         }
     else
@@ -560,7 +563,11 @@ bool ScalableMeshDraping::_ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap
         for (auto& node : nodes)
             {
             BcDTMPtr dtmP = node->GetBcDTM();
-            if (dtmP->GetDTMDraping()->ProjectPoint(pointOnDTM,w2vMap,testPoint)) return true;
+            if (dtmP != nullptr && dtmP->GetDTMDraping()->ProjectPoint(pointOnDTM, w2vMap, transformedPt))
+                {
+                m_transform.Multiply(pointOnDTM);
+                return true;
+                }
             }
         return false;
         }
@@ -574,13 +581,22 @@ bool ScalableMeshDraping::_DrapeAlongVector(DPoint3d* endPt, double *slope, doub
     IScalableMeshNodeRayQueryPtr query = m_scmPtr->GetNodeQueryInterface();
     bvector<IScalableMeshNodePtr> nodes;
     params->SetDirection(vecDirection);
-    if (query->Query(nodes, &point, NULL, 0, params) != SUCCESS)
+    DPoint3d transformedPt = point;
+    m_UorsToStorage.Multiply(transformedPt);
+    if (query->Query(nodes, &transformedPt, NULL, 0, params) != SUCCESS)
          return false;
     bvector<bool> clips;
     for (auto& node : nodes)
         {
         BcDTMPtr dtmP = node->GetBcDTM();
-        if (dtmP->GetDTMDraping()->DrapeAlongVector(endPt, slope, aspect, triangle, drapedType, point, directionOfVector, slopeOfVector)) return true;
+        if (dtmP != nullptr && dtmP->GetDTMDraping()->DrapeAlongVector(endPt, slope, aspect, triangle, drapedType, transformedPt, directionOfVector, slopeOfVector))
+            {
+            if (endPt != nullptr)
+                {
+                m_transform.Multiply(*endPt);
+                }
+            return true;
+            }
         }
     return false;
     }
@@ -590,10 +606,27 @@ DTMStatusInt ScalableMeshDraping::_DrapePoint(double* elevationP, double* slopeP
     IScalableMeshNodeQueryParamsPtr params = IScalableMeshNodeQueryParams::CreateParams();
     IScalableMeshNodeRayQueryPtr query = m_scmPtr->GetNodeQueryInterface();
     IScalableMeshNodePtr node;
-    if (query->Query(node, &point, NULL, 0, params) != SUCCESS)
-        return DTM_ERROR;
+    DPoint3d transformedPt = point;
+    m_UorsToStorage.Multiply(transformedPt);
+    if (query->Query(node, &transformedPt, NULL, 0, params) != SUCCESS)
+        {
+        if (drapedTypeP != nullptr) *drapedTypeP = 0;
+        return DTM_SUCCESS;
+        }
     BcDTMPtr bcdtm = node->GetBcDTM();
-    return bcdtm->GetDTMDraping()->DrapePoint(elevationP, slopeP, aspectP, triangle, drapedTypeP, point);
+    if (bcdtm == nullptr)
+        {
+        if (drapedTypeP != nullptr) *drapedTypeP = 0;
+        return DTM_SUCCESS;
+        }
+    DTMStatusInt result = bcdtm->GetDTMDraping()->DrapePoint(elevationP, slopeP, aspectP, triangle, drapedTypeP, transformedPt);
+    if (elevationP != nullptr)
+        {
+        transformedPt.z = *elevationP;
+        m_transform.Multiply(transformedPt);
+        *elevationP = transformedPt.z;
+        }
+    return result;
     }
 
 int PickLineSegmentForProjectedPoint(DPoint3dCP line, int nPts, int beginning, DPoint3dCR pt)
@@ -618,10 +651,19 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
     bvector<bvector<DPoint3d>> drapedPointsTemp(numPoints);
     //Trying to find point to start drape
     bool findTriangleAlongRay = false;
-    MeshTraversalQueue queue(pts, numPoints);
+    bvector<DPoint3d> transformedLine(numPoints);
+    memcpy(&transformedLine[0], pts, numPoints*sizeof(DPoint3d));
+    m_UorsToStorage.Multiply(&transformedLine[0], numPoints);
+    MeshTraversalQueue queue(&transformedLine[0], numPoints);
     queue.UseScalableMesh(m_scmPtr);
     IScalableMeshMeshPtr meshP = NULL;
-    if (!queue.TryStartTraversal(findTriangleAlongRay,0)) return DTMStatusInt::DTM_ERROR;
+    if (!queue.TryStartTraversal(findTriangleAlongRay, 0))
+        {
+        bvector<DPoint3d> line(numPoints);
+        memcpy(&line[0], pts, numPoints*sizeof(DPoint3d));
+        ret = SMDrapedLine::Create(line);
+        return DTMStatusInt::DTM_SUCCESS;
+        }
     while (queue.HasNodesToProcess())
         {
         MeshTraversalStep& startNode = queue.Step();
@@ -700,13 +742,13 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
         //begin greedy drape
         if (!s_civilDraping)
             {
-            if (ERROR == meshP->ProjectPolyLineOnMesh(endPoint, drapedPointsTemp, &pts[0], (int)numPoints, &startNode.currentSegment, triangle, startNode.startPoint, edge))
+            if (ERROR == meshP->ProjectPolyLineOnMesh(endPoint, drapedPointsTemp, &transformedLine[0], (int)numPoints, &startNode.currentSegment, triangle, startNode.startPoint, edge))
                 {
                 //can't find triangle
                 DRay3d toTileInterior = DRay3d::FromOriginAndVector(startNode.startPoint, DVec3d::FromStartEnd(pts[startNode.currentSegment], pts[startNode.currentSegment + 1]));
                 if (meshP->FindTriangleAlongRay(triangle, toTileInterior))
                     {
-                    if (ERROR == meshP->ProjectPolyLineOnMesh(endPoint, drapedPointsTemp, &pts[0], (int)numPoints, &startNode.currentSegment, triangle, startNode.startPoint, edge))
+                    if (ERROR == meshP->ProjectPolyLineOnMesh(endPoint, drapedPointsTemp, &transformedLine[0], (int)numPoints, &startNode.currentSegment, triangle, startNode.startPoint, edge))
                         {
                         return DTMStatusInt::DTM_ERROR;
                         }
@@ -721,20 +763,23 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
             {
             BcDTMPtr dtmPtr = startNode.linkedNode->GetBcDTM();
             DTMDrapedLinePtr drapeForTile;
-            dtmPtr->GetDTMDraping()->DrapeLinear(drapeForTile, &pts[0] + startNode.currentSegment, numPoints - startNode.currentSegment);
             size_t nAdded = 0;
-            for (size_t i = 0; i < drapeForTile->GetPointCount(); ++i)
+            if (dtmPtr != nullptr)
                 {
-                DTMDrapedLineCode code;
-                DPoint3d pt;
-                drapeForTile->GetPointByIndex(&pt, NULL, &code, (unsigned int)i);
-                if (code == DTMDrapedLineCode::Tin || code == DTMDrapedLineCode::OnPoint || code == DTMDrapedLineCode::Breakline || code == DTMDrapedLineCode::Edge)
+                dtmPtr->GetDTMDraping()->DrapeLinear(drapeForTile, &transformedLine[0] + startNode.currentSegment, numPoints - startNode.currentSegment);
+                for (size_t i = 0; i < drapeForTile->GetPointCount(); ++i)
                     {
-                    startNode.currentSegment = PickLineSegmentForProjectedPoint(pts, numPoints, startNode.currentSegment, pt);
-                    drapedPointsTemp[startNode.currentSegment].push_back(pt);
-                    ++nAdded;
+                    DTMDrapedLineCode code;
+                    DPoint3d pt;
+                    drapeForTile->GetPointByIndex(&pt, NULL, &code, (unsigned int)i);
+                    if (code == DTMDrapedLineCode::Tin || code == DTMDrapedLineCode::OnPoint || code == DTMDrapedLineCode::Breakline || code == DTMDrapedLineCode::Edge)
+                        {
+                        startNode.currentSegment = PickLineSegmentForProjectedPoint(&transformedLine[0], numPoints, startNode.currentSegment, pt);
+                        drapedPointsTemp[startNode.currentSegment].push_back(pt);
+                        ++nAdded;
+                        }
+                    if (nAdded != 0 && code == DTMDrapedLineCode::External) break;
                     }
-                if (nAdded != 0 && code == DTMDrapedLineCode::External) break;
                 }
             if(nAdded > 0) endPoint = drapedPointsTemp[startNode.currentSegment].back();
             else
@@ -744,7 +789,7 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
                 continue;
                 }
             }
-        if (startNode.currentSegment < numPoints - 1 || pow(DRay3d::FromOriginAndVector(pts[numPoints - 1], DVec3d::From(0, 0, -1)).DirectionDotVectorToTarget(endPoint), 2) != (DVec3d::FromStartEnd(pts[numPoints - 1], endPoint)).MagnitudeSquared())
+        if (startNode.currentSegment < numPoints - 1 || pow(DRay3d::FromOriginAndVector(transformedLine[numPoints - 1], DVec3d::From(0, 0, -1)).DirectionDotVectorToTarget(endPoint), 2) != (DVec3d::FromStartEnd(transformedLine[numPoints - 1], endPoint)).MagnitudeSquared())
             {
             DRange3d ext = startNode.linkedNode->GetNodeExtent();
             //drape did not reach end of node, but line still has segment. Try to find current segment in neighbor instead
@@ -778,10 +823,11 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
        bvector<DPoint3d> drapedLine;
        for (size_t i = 0; i < drapedPointsTemp.size(); i++)
            for (auto pt : drapedPointsTemp[i]) drapedLine.push_back(pt);
+       m_transform.Multiply(&drapedLine[0],(int) drapedLine.size());
        ret = SMDrapedLine::Create(drapedLine);
         return DTMStatusInt::DTM_SUCCESS;
     }
 
-ScalableMeshDraping::ScalableMeshDraping(IScalableMeshPtr scMesh) : m_scmPtr(scMesh.get()) {}
+ScalableMeshDraping::ScalableMeshDraping(IScalableMeshPtr scMesh) : m_scmPtr(scMesh.get()), m_transform(Transform::FromIdentity()), m_UorsToStorage(Transform::FromIdentity()) {}
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

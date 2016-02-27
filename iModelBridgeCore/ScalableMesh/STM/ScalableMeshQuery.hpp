@@ -2591,6 +2591,7 @@ template <class POINT> BcDTMPtr ScalableMeshNode<POINT>::_GetBcDTM() const
         {
         bvector<bool> clips;
         auto meshP = GetMesh(false, clips);
+        if (meshP == nullptr) return nullptr;
         meshP->GetAsBcDTM(m_meshNode->m_tileBcDTM);
         return m_meshNode->m_tileBcDTM.get();
         }
