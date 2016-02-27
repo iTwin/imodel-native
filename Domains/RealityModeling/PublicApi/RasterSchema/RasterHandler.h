@@ -19,7 +19,7 @@ struct RasterModelHandler;
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RasterModel : Dgn::SpatialModel
 {
-DGNMODEL_DECLARE_MEMBERS(RASTER_CLASSNAME_RasterModel, Dgn::SpatialModel)
+    DGNMODEL_DECLARE_MEMBERS(RASTER_CLASSNAME_RasterModel, Dgn::SpatialModel)
 
 protected:
     friend struct RasterModelHandler;
@@ -28,11 +28,7 @@ protected:
     
     //! Destruct a RasterModel object.
     ~RasterModel();
-        
-    virtual void _AddGraphicsToScene(Dgn::SceneContextR) const override;
-    virtual void _WriteJsonProperties(Json::Value&) const override;
-    virtual void _ReadJsonProperties(Json::Value const&) override;
-
+    virtual void _AddSceneGraphics(Dgn::SceneContextR) const override;
     virtual BentleyStatus _LoadQuadTree() const {return BSIERROR;}
 
     RasterQuadTreeP GetTree() const;
@@ -42,7 +38,6 @@ protected:
 
     //&&MM TODO this how we make our raster pick-able
     virtual void _DrawModel(Dgn::ViewContextR) {}
-
 
 public:
     //! Create a new RasterModel object, in preparation for loading it from the DgnDb.
@@ -56,7 +51,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RasterModelHandler : Dgn::dgn_ModelHandler::Spatial
 {
-    RASTERMODELHANDLER_DECLARE_MEMBERS (RASTER_CLASSNAME_RasterModel, RasterModel, RasterModelHandler, Dgn::dgn_ModelHandler::Spatial, RASTERSCHEMA_EXPORT)
+    RASTERMODELHANDLER_DECLARE_MEMBERS(RASTER_CLASSNAME_RasterModel, RasterModel, RasterModelHandler, Dgn::dgn_ModelHandler::Spatial, RASTERSCHEMA_EXPORT)
 };
 
 END_BENTLEY_RASTERSCHEMA_NAMESPACE
