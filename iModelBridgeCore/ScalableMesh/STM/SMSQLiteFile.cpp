@@ -370,7 +370,8 @@ bool SMSQLiteFile::GetNodeHeader(SQLiteNodeHeader& nodeHeader)
     nodeHeader.m_clipSetsID = std::vector<int>();
     nodeHeader.m_numberOfSubNodesOnSplit = nodeHeader.m_apSubNodeID.size();
     int64_t texIdx = stmt->GetValueInt64(14);
-    if (texIdx != SQLiteNodeHeader::NO_NODEID)
+    nodeHeader.m_areTextured = stmt->GetValueInt(15) ? true : false;
+    if (texIdx != SQLiteNodeHeader::NO_NODEID && nodeHeader.m_areTextured)
         {
         nodeHeader.m_textureID.resize(1);
         nodeHeader.m_textureID[0] = texIdx;
@@ -381,7 +382,6 @@ bool SMSQLiteFile::GetNodeHeader(SQLiteNodeHeader& nodeHeader)
         nodeHeader.m_uvsIndicesID.resize(1);
         nodeHeader.m_uvsIndicesID[0] = texIdx;
         }
-    nodeHeader.m_areTextured = stmt->GetValueInt(15) ? true : false;
     stmt->ClearBindings();
     return true;
     }
@@ -1046,7 +1046,7 @@ bool SMSQLiteFile::HasMasterHeader()
 bool SMSQLiteFile::HasPoints()
 {
     CachedStatementPtr stmt;
-    m_database->GetCachedStatement(stmt, "SELECT count(NodeId) FROM SMPoint LIMIT 1");
+    m_database->GetCachedStatement(stmt, "SELECT MAX(_ROWID_) FROM SMPoint LIMIT 1"); //select count() is not optimized on sqlite
     DbResult status = stmt->Step();
     assert((status == BE_SQLITE_DONE) || (status == BE_SQLITE_ROW));
     int nodeIdCount = stmt->GetValueInt(0);

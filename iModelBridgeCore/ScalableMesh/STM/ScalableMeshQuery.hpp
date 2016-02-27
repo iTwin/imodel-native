@@ -1567,7 +1567,7 @@ template <class POINT> IScalableMeshTexturePtr ScalableMeshNode<POINT>::_GetText
 
         m_meshNode->UnPinTexture(texture_id);
     }
-    
+    else assert(m_node->m_nodeHeader.m_nodeCount == 0);
     return textureP;
 }
 
