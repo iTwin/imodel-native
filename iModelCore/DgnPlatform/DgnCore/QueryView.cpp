@@ -63,6 +63,82 @@ DgnQueryView::~DgnQueryView()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+void DgnQueryView::_DrawDecorations(DecorateContextR context)
+    {
+    bvector<Utf8String> copyrights;
+    for (DgnModelId modelId : GetViewedModels())
+        {
+        DgnModelPtr model = m_dgndb.Models().GetModel(modelId);
+        if (!model.IsValid())
+            continue;
+
+        auto message = model->GetCopyrightMessage();
+        if (nullptr != message)
+            copyrights.push_back(message);
+        }
+
+    if (copyrights.empty())
+        return;
+
+    DgnViewportCR vp = *context.GetViewport();
+    static int const S_TRANSPARENCY = 10;
+    ColorDef fgColor = ColorDef::Black();
+    ColorDef bgColor = ColorDef::White();
+    fgColor = vp.MakeColorTransparency(fgColor, S_TRANSPARENCY);
+    bgColor = vp.MakeColorTransparency(bgColor, S_TRANSPARENCY);
+
+    //  Compute the length of the longest message
+    size_t widest = 0;
+    for (auto& msg : copyrights)
+        {
+        widest = std::max(widest, msg.size());
+        }
+
+    if (0 == widest)
+        return;
+
+    auto graphic = context.CreateGraphic();
+    graphic->SetSymbology(fgColor, bgColor, 0);
+
+    //  Display the first (c) message at the bottom right.
+    BSIRect rect = vp.GetViewRect();
+    DPoint3d cloc = DPoint3d::From(rect.Right(), rect.Bottom(), 0);
+
+    static int const S_TEXTHEIGHT = 12; // in pixels
+    cloc.x -= widest * S_TEXTHEIGHT;
+
+    TextStringStyle style;
+    style.SetFont(DgnFontManager::GetLastResortTrueTypeFont());
+    style.SetSize(DPoint2d::From(S_TEXTHEIGHT, S_TEXTHEIGHT));   // size is in pixels
+
+    TextString textString;
+    textString.SetStyle(style);
+    RotMatrix yUp = RotMatrix::FromScaleFactors(1.0, -1.0, 1.0); // In view coords, origin is top left and y is down. The view treats text just like any other geometry.
+    textString.SetOrientation(yUp);                             // So, unless you invert y, the view will draw the letters of your text downward.
+
+    for (auto& msg : copyrights)
+        {
+        DPoint3d box[4];
+        box[0].Init(cloc.x              , cloc.y, 0);           // top left
+        box[1].Init(cloc.x + widest*S_TEXTHEIGHT, cloc.y, 0);           // top right
+        box[2].Init(cloc.x + widest*S_TEXTHEIGHT, cloc.y - S_TEXTHEIGHT, 0);    // bottom right
+        box[3].Init(cloc.x              , cloc.y - S_TEXTHEIGHT, 0);    // bottom left
+
+//        graphic->AddShape(4, box, true);
+
+        textString.SetText(msg.c_str());
+        textString.SetOrigin(cloc);
+        graphic->AddTextString(textString);
+
+        cloc.y -= S_TEXTHEIGHT; // stack the next message above this one
+        }
+
+    context.AddViewOverlay(*graphic);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d DgnQueryView::_GetViewedExtents() const
     {
     return m_dgndb.Units().GetProjectExtents();
@@ -317,7 +393,7 @@ void DgnQueryView::_CreateTerrain(TerrainContextR context)
         DgnModelPtr model = models.GetModel(modelId);
         auto geomModel = model.IsValid() ? model->ToGeometricModel3d() : nullptr;
         if (nullptr != geomModel)
-            geomModel->_AddTerrain(context);
+            geomModel->_AddTerrainGraphics(context);
         }
     }
 
@@ -352,7 +428,7 @@ void DgnQueryView::_CreateScene(SceneContextR context)
         DgnModelPtr model = models.GetModel(modelId);
         auto geomModel = model.IsValid() ? model->ToGeometricModel3d() : nullptr;
         if (nullptr != geomModel)
-            geomModel->_AddGraphicsToScene(context);
+            geomModel->_AddSceneGraphics(context);
         }
 
     if (members->size() < results->GetCount()) // did we get them all?
@@ -1232,3 +1308,4 @@ DgnElementId DgnQueryView::SpatialQuery::StepRtree()
     auto rc=m_rangeStmt->Step();
     return (rc != BE_SQLITE_ROW) ? DgnElementId() : m_rangeStmt->GetValueId<DgnElementId>(0);
     }
+

@@ -442,15 +442,6 @@ DPoint2d WebMercatorUorConverter::ConvertUorsToWpixels(DPoint2dCR pt)
     return fromGeoToWpixelPoint(latlng);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-WebMercatorTileDisplayHelper::WebMercatorTileDisplayHelper(DgnViewportR vp)
-    :
-    m_converter(vp),
-    m_drawingSubstituteTiles(false)
-    {
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
@@ -490,7 +481,7 @@ struct TextureCache
     {
     struct Entry 
         {
-        Render::TexturePtr  m_textureId;
+        Render::TexturePtr  m_texture;
         ImageUtilities::RgbImageInfo m_imageInfo;
         uint64_t    m_insertTime;
         };
@@ -498,16 +489,13 @@ struct TextureCache
     bmap<Utf8String, Entry> m_map;
 
     static TextureCache* s_instance;
-    static TextureCache& Instance() { if (NULL==s_instance) s_instance = new TextureCache; return *s_instance;}
+    static TextureCache& Instance() { if (nullptr==s_instance) s_instance = new TextureCache; return *s_instance;}
 
-    TextureCache(){;}
-
-
-    void Insert(Utf8StringCR url, ImageUtilities::RgbImageInfo const& info, Render::TextureR tid)
+    void Insert(Utf8StringCR url, ImageUtilities::RgbImageInfo const& info, Render::TextureR texture)
         {
         auto& entry = m_map[url];
 
-        entry.m_textureId = &tid;
+        entry.m_texture = &texture;
         entry.m_imageInfo = info;
         entry.m_insertTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
         }
@@ -515,28 +503,28 @@ struct TextureCache
     Entry const* Get(Utf8StringCR url)
         {
         auto ifound = m_map.find(url);
-        return (ifound == m_map.end())? NULL: &ifound->second;
+        return (ifound == m_map.end())? nullptr: &ifound->second;
         }
 
     bool IsCacheTooLarge() const {return m_map.size() >= 200;}
 
     void Trim()
         {
-        bmap<uint64_t, bvector<Utf8String>> lru;
+        if (!IsCacheTooLarge())
+            return;
+
+        bmultimap<uint64_t, Utf8String> lru;
         for (auto const& mapentry: m_map)
             {
-            lru[mapentry.second.m_insertTime].push_back(mapentry.first);
+            lru.Insert(mapentry.second.m_insertTime, mapentry.first);
             }
 
         for (auto const& lruentry : lru)
             {
-            for (auto const& url : lruentry.second)
-                {
-                if (!IsCacheTooLarge())
-                    return;
+            if (!IsCacheTooLarge())
+                return;
 
-                m_map.erase(url);
-                }
+            m_map.erase(lruentry.second);
             }
         }
     };
@@ -546,33 +534,31 @@ TextureCache* TextureCache::s_instance;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WebMercatorTileDisplayHelper::GetCachedTexture(Render::TextureP cachedTextureId, ImageUtilities::RgbImageInfo& cachedImageInfo, Utf8StringCR url)
+Render::TextureP WebMercatorTileDisplay::GetCachedTexture(ImageUtilities::RgbImageInfo& cachedImageInfo, Utf8StringCR url)
     {
     auto existingTexture = TextureCache::Instance().Get(url);
-    if (existingTexture == NULL)
-        return BSIERROR;
+    if (existingTexture == nullptr)
+        return nullptr;
 
-    cachedTextureId = existingTexture->m_textureId.get();
     cachedImageInfo = existingTexture->m_imageInfo;
-    return cachedTextureId != nullptr ? BSIERROR : BSIERROR;
+    return existingTexture->m_texture.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::TexturePtr WebMercatorTileDisplayHelper::DefineTexture(ByteStream const& rgbData, ImageUtilities::RgbImageInfo const& imageInfo, SceneContextR context)
+Render::TexturePtr WebMercatorTileDisplay::DefineTexture(ByteStream const& rgbData, ImageUtilities::RgbImageInfo const& imageInfo, SceneContextR context)
     {
     BeAssert(!imageInfo.isBGR);
     
     Render::ImagePtr pImage = new Render::Image(imageInfo.width, imageInfo.height, imageInfo.hasAlpha ? Render::Image::Format::Rgba : Render::Image::Format::Rgb, rgbData.GetData(), rgbData.GetSize());
-
     return context.GetTargetR().CreateTileSection(*pImage, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorTileDisplayHelper::CacheTexture(Utf8StringCR url, Render::TextureR textureId, ImageUtilities::RgbImageInfo const& imageInfo)
+void WebMercatorTileDisplay::CacheTexture(Utf8StringCR url, Render::TextureR textureId, ImageUtilities::RgbImageInfo const& imageInfo)
     {
     TextureCache::Instance().Trim();
     TextureCache::Instance().Insert(url, imageInfo, textureId);
@@ -581,7 +567,7 @@ void WebMercatorTileDisplayHelper::CacheTexture(Utf8StringCR url, Render::Textur
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorTileDisplayHelper::DrawTile(ViewContextR context, WebMercatorTilingSystem::TileId const& tileid, ImageUtilities::RgbImageInfo const& imageInfo, Render::TextureR textureId)
+void WebMercatorTileDisplay::DrawTile(ViewContextR context, WebMercatorTilingSystem::TileId const& tileid, ImageUtilities::RgbImageInfo const& imageInfo, Render::TextureR texture)
     {
     // Get 4 corners in this order:
     //  [0]     [1]
@@ -623,16 +609,15 @@ void WebMercatorTileDisplayHelper::DrawTile(ViewContextR context, WebMercatorTil
         DrawTileAsBox(context, tileid, z, false);
     #endif
 
-    //NEEDS_WORK_CONTINUOUS_RENDER : TODO graphic object should be cached instead of texture
-    Render::GraphicPtr pTileGraphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport()));
-    pTileGraphic->AddTile(textureId, uvPts);     
-    context.OutputGraphic(*pTileGraphic, nullptr);
+    GraphicPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport()));
+    graphic->AddTile(texture, uvPts);     
+    context.OutputGraphic(*graphic, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorTileDisplayHelper::DrawAndCacheTile(SceneContextR context, WebMercatorTilingSystem::TileId const& tileid, Utf8StringCR url, TiledRaster& realityData)
+void WebMercatorTileDisplay::DrawAndCacheTile(SceneContextR context, WebMercatorTilingSystem::TileId const& tileid, Utf8StringCR url, TiledRaster& realityData)
     {
     auto const& data = realityData.GetData();
     auto const& expectedImageInfo = realityData.GetImageInfo();
@@ -665,16 +650,16 @@ void WebMercatorTileDisplayHelper::DrawAndCacheTile(SceneContextR context, WebMe
     if (SUCCESS != status)
         return;
 
-    auto tid = DefineTexture(m_rgbBuffer, actualImageInfo, context);
-    CacheTexture(url, *tid, actualImageInfo);
-    DrawTile(context, tileid, actualImageInfo, *tid);
+    auto texture = DefineTexture(m_rgbBuffer, actualImageInfo, context);
+    CacheTexture(url, *texture, actualImageInfo);
+    DrawTile(context, tileid, actualImageInfo, *texture);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 #ifdef WEBMERCATOR_DEBUG_TILES
-void WebMercatorTileDisplayHelper::DrawTileAsBox(ViewContextR context, WebMercatorTilingSystem::TileId const& tileid, double z, bool filled)
+void WebMercatorTileDisplay::DrawTileAsBox(ViewContextR context, WebMercatorTilingSystem::TileId const& tileid, double z, bool filled)
     {
     DPoint3d uvPts[4];
     m_converter.ComputeTileCorners(uvPts, tileid);
@@ -688,23 +673,23 @@ void WebMercatorTileDisplayHelper::DrawTileAsBox(ViewContextR context, WebMercat
     box[2] = uvPts[3];
     box[3] = uvPts[2];
     box[4] = box[0];
-    context.GetIDrawGeom().AddShape(_countof(box), box, filled, NULL);
+    context.GetIDrawGeom().AddShape(_countof(box), box, filled, nullptr);
 
     //DPoint3d diagonal[2];
     //diagonal[0] = uvPts[2];
     //diagonal[1] = uvPts[1];
-    //context.GetIDrawGeom().AddLineString (2, diagonal, NULL);
+    //context.GetIDrawGeom().AddLineString (2, diagonal, nullptr);
     //
     //diagonal[0] = uvPts[0];
     //diagonal[1] = uvPts[3];
-    //context.GetIDrawGeom().AddLineString (2, diagonal, NULL);
+    //context.GetIDrawGeom().AddLineString (2, diagonal, nullptr);
     }
 #endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorTileDisplayHelper::DrawMissingTile(ViewContextR context, WebMercatorTilingSystem::TileId const& tileid)
+void WebMercatorTileDisplay::DrawMissingTile(ViewContextR context, WebMercatorTilingSystem::TileId const& tileid)
     {
 #ifdef WEBMERCATOR_DEBUG_TILES
     RgbColorDef color = {100,100,100};
@@ -719,23 +704,23 @@ void WebMercatorTileDisplayHelper::DrawMissingTile(ViewContextR context, WebMerc
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void drawPoint(ViewContextR context, DPoint3dCR pt, bool drawCrossHair=false)
     {
-        auto pixels = context.GetPixelSizeAtPoint(NULL);
+        auto pixels = context.GetPixelSizeAtPoint(nullptr);
 
     DEllipse3d circle;
     auto z = DVec3d::From(0,0,1);
     circle.InitFromCenterNormalRadius(pt, z, 5*pixels);
-    context.GetIDrawGeom().AddArc(circle, true, true, NULL);
+    context.GetIDrawGeom().AddArc(circle, true, true, nullptr);
 
     if (drawCrossHair)
         {
         DPoint3d pts[2];
         pts[0].SumOf(pt, DVec3d::From(0,-100*pixels,0));
         pts[1].SumOf(pt, DVec3d::From(0, 100*pixels,0));
-        context.GetIDrawGeom().AddLineString(2, pts, NULL);
+        context.GetIDrawGeom().AddLineString(2, pts, nullptr);
 
         pts[0].SumOf(pt, DVec3d::From(-100*pixels,0,0));
         pts[1].SumOf(pt, DVec3d::From(100*pixels,0,0));
-        context.GetIDrawGeom().AddLineString(2, pts, NULL);
+        context.GetIDrawGeom().AddLineString(2, pts, nullptr);
         }
     }
 #endif
@@ -746,11 +731,11 @@ static void drawPoint(ViewContextR context, DPoint3dCR pt, bool drawCrossHair=fa
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void drawText(ViewContextR context, DPoint3dCR ptUl, Utf8StringCR strings, TextElementJustification just = TextElementJustification::LeftBaseline)
     {
-    auto pixels = context.GetPixelSizeAtPoint(NULL);
+    auto pixels = context.GetPixelSizeAtPoint(nullptr);
     
     DPoint2d textScale;
     textScale.Init(10*pixels, 10*pixels);
-    TextStringPropertiesPtr props = TextStringProperties::Create(DgnFontManager::GetLastResortTrueTypeFont(), NULL, textScale);
+    TextStringPropertiesPtr props = TextStringProperties::Create(DgnFontManager::GetLastResortTrueTypeFont(), nullptr, textScale);
     props->SetJustification(just);
 
     DPoint3d pt(ptUl);
@@ -758,7 +743,7 @@ static void drawText(ViewContextR context, DPoint3dCR ptUl, Utf8StringCR strings
     Utf8String str;
     while ((offset = strings.GetNextToken(str, "\n", offset)) != Utf8String::npos)
         {
-        TextStringPtr textString = TextString::Create(WString(str.c_str(),BentleyCharEncoding::Utf8).c_str(), NULL, NULL, *props);
+        TextStringPtr textString = TextString::Create(WString(str.c_str(),BentleyCharEncoding::Utf8).c_str(), nullptr, nullptr, *props);
         BeAssert(textString.IsValid());
 
         textString->SetOriginFromUserOrigin(pt);
@@ -913,23 +898,6 @@ bool WebMercatorDisplay::ShouldRejectTile(WebMercatorTilingSystem::TileId const&
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String WebMercatorDisplay::_GetCopyrightMessage(DgnViewportCR vp)
-    {
-    if (!vp.GetViewController().GetViewedModels().Contains(m_model.GetModelId()))
-        return "";
-    ModelHandlerP modelHandler = dgn_ModelHandler::Model::FindHandler(m_model.GetDgnDb(), m_model.GetClassId());
-    dgn_ModelHandler::WebMercator* webMercatorModelHandler = dynamic_cast<dgn_ModelHandler::WebMercator*>(modelHandler);
-    if (nullptr == webMercatorModelHandler)
-        {
-        BeAssert(false);
-        return "";
-        }
-    return webMercatorModelHandler->_GetCopyright(m_model.m_mercator);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus WebMercatorDisplay::DrawSubstituteTilesFinerFromTextureCache(ViewContextR context, WebMercatorTilingSystem::TileId const& tileid, uint32_t maxLevelsToTry)
@@ -959,10 +927,10 @@ BentleyStatus WebMercatorDisplay::DrawSubstituteTilesFinerFromTextureCache(ViewC
 
             // *** NB: Do not try to read from the RealityDataCache. This method is called from _DrawView, and it must be fast!
 
-            Render::TextureP finerImageTid = nullptr;
-            if (m_helper.GetCachedTexture(finerImageTid, finerImageInfo, finerUrl) == BSISUCCESS)
+            Render::TextureP finerImage = m_helper.GetCachedTexture(finerImageInfo, finerUrl);
+            if (nullptr != finerImage)
                 {
-                m_helper.DrawTile(context, finerTileid, finerImageInfo, *finerImageTid);
+                m_helper.DrawTile(context, finerTileid, finerImageInfo, *finerImage);
                 }
             else
                 {
@@ -985,8 +953,8 @@ BentleyStatus WebMercatorDisplay::DrawCoarserTilesForViewFromTextureCache(ViewCo
         {
         for (auto const& coarserTileddata : coarserTileDisplayImageData)
             {
-            if (coarserTileddata.textureId.IsValid())
-                m_helper.DrawTile(context, coarserTileddata.tileid, coarserTileddata.imageInfo, *coarserTileddata.textureId);
+            if (coarserTileddata.m_texture.IsValid())
+                m_helper.DrawTile(context, coarserTileddata.m_tileid, coarserTileddata.m_imageInfo, *coarserTileddata.m_texture);
             }
         return BSISUCCESS;
         }
@@ -1001,7 +969,7 @@ BentleyStatus WebMercatorDisplay::DrawCoarserTilesForViewFromTextureCache(ViewCo
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 #ifdef WEBMERCATOR_DEBUG_TILES
-void WebMercatorTileDisplayHelper::DrawTileDebugInfo(ViewContextR context, WebMercatorTilingSystem::TileId const& tileid)
+void WebMercatorTileDisplay::DrawTileDebugInfo(ViewContextR context, WebMercatorTilingSystem::TileId const& tileid)
     {
     DPoint3d corners[4];
     m_converter.ComputeTileCorners(corners, tileid); // corners[0] is upper left
@@ -1037,20 +1005,17 @@ BentleyStatus WebMercatorDisplay::GetCachedTiles(bvector<TileDisplayImageData>& 
     for (auto tileid  : tileIds)
         {
         TileDisplayImageData data;
-        data.tileid = tileid;
+        data.m_tileid = tileid;
 
         Utf8String url;
-        if (CreateUrl(url, data.imageInfo, data.tileid) != BSISUCCESS)
+        if (CreateUrl(url, data.m_imageInfo, data.m_tileid) != BSISUCCESS)
             return BSIERROR; // ?? when would this ever happen??
 
-        Render::TextureP pCachedTexture = nullptr;
-        if (m_helper.GetCachedTexture(pCachedTexture, data.imageInfo, url) != BSISUCCESS)
-            {
+        Render::TextureP cachedTexture = m_helper.GetCachedTexture(data.m_imageInfo, url);
+        if (nullptr == cachedTexture)
             allFoundInTextureCache = false;
-            }
 
-        data.textureId = pCachedTexture;
-
+        data.m_texture = cachedTexture;
         tileDisplayImageData.push_back(data);
         }
 
@@ -1060,7 +1025,7 @@ BentleyStatus WebMercatorDisplay::GetCachedTiles(bvector<TileDisplayImageData>& 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorModel::_AddTerrain(TerrainContextR context) const
+void WebMercatorModel::_AddTerrainGraphics(TerrainContextR context) const
     {
     RefCountedPtr<WebMercatorDisplay> display = new WebMercatorDisplay(*this, *context.GetViewport());
     display->DrawView(context);
@@ -1080,7 +1045,7 @@ void WebMercatorDisplay::DrawView(ViewContextR context)
     //
     //  First, determine if we can draw map tiles at all.
     //
-    if (!shouldDraw(context) || NULL == context.GetViewport())
+    if (!shouldDraw(context) || nullptr == context.GetViewport())
         return;
 
     if (context.GetViewport()->IsCameraOn())    // *** TBD: Not sure if we can support tiled raster in a perspective view or not. 
@@ -1098,7 +1063,7 @@ void WebMercatorDisplay::DrawView(ViewContextR context)
         return;
 
 #ifdef WIP_REALITY_DATACACHE
-    T_HOST.GetRealityDataAdmin().GetCache().CancelAll<TiledRaster> (NULL);
+    T_HOST.GetRealityDataAdmin().GetCache().CancelAll<TiledRaster> (nullptr);
 #endif
 
     //
@@ -1131,10 +1096,10 @@ void WebMercatorDisplay::DrawView(ViewContextR context)
             m_helper.DrawTileDebugInfo(context, tileddata.tileid);
         #endif
 
-        auto tileid = tileddata.tileid;
-        if (tileddata.textureId.IsValid())
+        auto tileid = tileddata.m_tileid;
+        if (tileddata.m_texture.IsValid())
             {
-            m_helper.DrawTile(context, tileid, tileddata.imageInfo, *tileddata.textureId);
+            m_helper.DrawTile(context, tileid, tileddata.m_imageInfo, *tileddata.m_texture);
             }
         else
             {
@@ -1264,16 +1229,8 @@ WebMercatorDisplay::WebMercatorDisplay(WebMercatorModel const& model, DgnViewpor
     m_nextRetryTime(0),
     m_failedAttempts(0)
     {
-    T_HOST.RegisterCopyrightSupplier(*this);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-WebMercatorDisplay::~WebMercatorDisplay() 
-    {
-    T_HOST.UnregisterCopyrightSupplier(*this);
-    }
 
 #ifdef WIP_MAP_SERVICE
 /*---------------------------------------------------------------------------------**//**
@@ -1492,12 +1449,12 @@ BentleyStatus dgn_ModelHandler::StreetMap::_CreateUrl(Utf8StringR url, ImageUtil
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String dgn_ModelHandler::StreetMap::_GetCopyright(WebMercatorModel::Mercator const& props)
+Utf8CP StreetMapModel::_GetCopyrightMessage() const
     {
-    if (props.m_mapService[0] == '0')
+    if (m_mercator.m_mapService[0] == '0')
         return "(c) Mapbox, Data ODbL (c) OpenStreetMap contributors";
 
-    return "";
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**

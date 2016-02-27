@@ -180,6 +180,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff) override;
     DGNPLATFORM_EXPORT virtual FitComplete _ComputeFitRange(struct FitContext&) override;
     DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _GetViewedExtents() const;
+    DGNPLATFORM_EXPORT virtual void _DrawDecorations(DecorateContextR) override;
 
 public:
     //! @param dgndb  The DgnDb for the view
