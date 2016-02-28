@@ -53,7 +53,8 @@ static bool s_drawSubstitutes = true;
 * Max size of a tile coordiante is 2^22
 *
 +---------------+---------------+---------------+---------------+---------------+------*/
-namespace {
+BEGIN_UNNAMED_NAMESPACE
+
 static int const TILE_SIZE = 256;
 
 struct Upoint2d
@@ -61,7 +62,6 @@ struct Upoint2d
     uint32_t    x;
     uint32_t    y;
     };
-
 
 static Upoint2d s_pixelOrigin = {TILE_SIZE / 2, TILE_SIZE / 2};
 static double s_pixelsPerLonDegree = TILE_SIZE / 360.0;
@@ -328,18 +328,66 @@ static double computeGroundResolutionInMeters(uint8_t zoomLevel, double latitude
     return 156543.034 * cos(latitude) / (1<<zoomLevel);
     }
 
-}; // anonymous namespace
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+struct TextureCache
+{
+    struct Entry 
+        {
+        uint64_t m_insertTime;
+        Render::TexturePtr  m_texture;
+        ImageUtilities::RgbImageInfo m_imageInfo;
+        };
+
+    bmap<Utf8String, Entry> m_map;
+
+    void Insert(Utf8StringCR url, ImageUtilities::RgbImageInfo const& info, Render::TextureR texture)
+        {
+        Trim();
+
+        auto& entry = m_map[url];
+
+        entry.m_texture = &texture;
+        entry.m_imageInfo = info;
+        entry.m_insertTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+        }
+
+    Entry const* Get(Utf8StringCR url)
+        {
+        auto ifound = m_map.find(url);
+        return (ifound == m_map.end())? nullptr: &ifound->second;
+        }
+
+    void Trim()
+        {
+        if (m_map.size() < 200)
+            return;
+        BeAssert(m_map.size() == 200);
+
+        // find the oldest entry and remove it.
+        auto oldest = m_map.begin();
+        auto oldestTime = oldest->second.m_insertTime;
+        for (auto it=++oldest; it!=m_map.end(); ++it)
+            {
+            if (it->second.m_insertTime < oldestTime)
+                {
+                oldest = it;
+                oldestTime = it->second.m_insertTime;
+                }
+            }
+        m_map.erase(oldest);
+        }
+};
+
+static TextureCache s_textureCache;
+
+END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-// In Graphite06, data is stored in meters. 
-#define GET_METERS_PER_UOR(units) 1.0
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-double WebMercatorUorConverter::ComputeViewResolutionInMetersPerPixel(DgnViewportR vp)
+double WebMercatorUnitConverter::ComputeViewResolutionInMetersPerPixel(DgnViewportR vp)
     {
     DRange3d range = vp.GetViewCorners(); // lower left back, upper right front    -- View coordinates aka "pixels"
     
@@ -351,9 +399,7 @@ double WebMercatorUorConverter::ComputeViewResolutionInMetersPerPixel(DgnViewpor
     DPoint3d cornersWorld[8];
     vp.ViewToWorld(cornersWorld, corners, _countof(cornersWorld));
 
-    double viewDiagInUors = cornersWorld[0].Distance(cornersWorld[3]); // UORs
-    
-    auto viewDiagInMeters = viewDiagInUors * m_meters_per_uor;    // meters
+    double viewDiagInMeters = cornersWorld[0].Distance(cornersWorld[3]); // UORs
     
     return viewDiagInMeters / viewDiagInPixels;                 // meters/pixel
     }
@@ -373,12 +419,10 @@ BentleyStatus projectPointToPlaneInDirection(DPoint3d& pointOnPlane, DPlane3dCR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-WebMercatorUorConverter::WebMercatorUorConverter(DgnViewportR vp) : m_units(vp.GetViewController().GetDgnDb().Units())
+WebMercatorUnitConverter::WebMercatorUnitConverter(DgnViewportR vp) : m_units(vp.GetViewController().GetDgnDb().Units())
     {
-    GeoPoint centerLatLng = ConvertUorsToLatLng(DPoint3d::FromSumOf(*vp.GetViewOrigin(), *vp.GetViewDelta(), 0.5));
+    GeoPoint centerLatLng = ConvertMetersToLatLng(DPoint3d::FromSumOf(*vp.GetViewOrigin(), *vp.GetViewDelta(), 0.5));
     m_originLatitudeInRadians = Angle::DegreesToRadians(centerLatLng.latitude);
-
-    m_meters_per_uor = GET_METERS_PER_UOR(m_units);        // (meters/UOR)
 
     // NB: define m_originLatitudeInRadians before calling ComputeGroundResolutionInMeters
     }
@@ -387,7 +431,7 @@ WebMercatorUorConverter::WebMercatorUorConverter(DgnViewportR vp) : m_units(vp.G
 * Compute meters/pixel at the Project's geo origin the specified zoomLevel.
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-double WebMercatorUorConverter::ComputeGroundResolutionInMeters(uint8_t zoomLevel)
+double WebMercatorUnitConverter::ComputeGroundResolutionInMeters(uint8_t zoomLevel)
     {
     return computeGroundResolutionInMeters(zoomLevel, m_originLatitudeInRadians); // meters/pixel
     }
@@ -395,17 +439,17 @@ double WebMercatorUorConverter::ComputeGroundResolutionInMeters(uint8_t zoomLeve
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeoPoint WebMercatorUorConverter::ConvertUorsToLatLng(DPoint3dCR dp)
+GeoPoint WebMercatorUnitConverter::ConvertMetersToLatLng(DPoint3dCR dp)
     {
-    auto i = m_uorsToLatLng.find(dp);
-    if (i != m_uorsToLatLng.end())
+    auto i = m_metersToLatLng.find(dp);
+    if (i != m_metersToLatLng.end())
         return i->second;
 
     GeoPoint gp;
     m_units.LatLongFromXyz(gp, dp);
 
-    m_uorsToLatLng[dp] = gp;
-    m_latLngToUors[gp] = dp;
+    m_metersToLatLng[dp] = gp;
+    m_latLngToMeters[gp] = dp;
 
     return gp;
     }
@@ -413,17 +457,17 @@ GeoPoint WebMercatorUorConverter::ConvertUorsToLatLng(DPoint3dCR dp)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d WebMercatorUorConverter::ConvertLatLngToUors(GeoPoint gp)
+DPoint3d WebMercatorUnitConverter::ConvertLatLngToMeters(GeoPoint gp)
     {
-    auto i = m_latLngToUors.find(gp);
-    if (i != m_latLngToUors.end())
+    auto i = m_latLngToMeters.find(gp);
+    if (i != m_latLngToMeters.end())
         return i->second;
 
     DPoint3d dp;
     m_units.XyzFromLatLong(dp, gp);
 
-    m_latLngToUors[gp] = dp;
-    m_uorsToLatLng[dp] = gp;
+    m_latLngToMeters[gp] = dp;
+    m_metersToLatLng[dp] = gp;
 
     return dp;
     }
@@ -434,10 +478,10 @@ DPoint3d WebMercatorUorConverter::ConvertLatLngToUors(GeoPoint gp)
 * an out-of-range point is clamped to the edge of the box.
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint2d WebMercatorUorConverter::ConvertUorsToWpixels(DPoint2dCR pt)
+DPoint2d WebMercatorUnitConverter::ConvertMetersToWpixels(DPoint2dCR pt)
     {
     auto pt3 = DPoint3d::From(pt.x,pt.y,0);
-    auto latlng = ConvertUorsToLatLng(pt3);
+    auto latlng = ConvertMetersToLatLng(pt3);
     clampGeoPoint(latlng);
     return fromGeoToWpixelPoint(latlng);
     }
@@ -446,13 +490,12 @@ DPoint2d WebMercatorUorConverter::ConvertUorsToWpixels(DPoint2dCR pt)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WebMercatorUorConverter::ComputeTileCorners(DPoint3d* corners, WebMercatorTilingSystem::TileId const& tileid)
+BentleyStatus WebMercatorUnitConverter::ComputeTileCorners(DPoint3d* corners, WebMercatorTilingSystem::TileId const& tileid)
     {
     WebMercatorTilingSystem::TileId t11(tileid);
     t11.row = t11.column = 1;
     auto t11Wpixels = fromTileIdToWpixelPoint(t11);
     auto tileSizeWpixels = t11Wpixels.x;
-
 
     // We want 4 corners in the wpixel coordinate system that Google maps uses
     //    ----x----->
@@ -468,7 +511,7 @@ BentleyStatus WebMercatorUorConverter::ComputeTileCorners(DPoint3d* corners, Web
 
     for (size_t i=0; i<_countof(cornersWpixels); ++i)
         {
-        corners[i] = ConvertLatLngToUors(fromWpixelToGeoPoint(cornersWpixels[i]));
+        corners[i] = ConvertLatLngToMeters(fromWpixelToGeoPoint(cornersWpixels[i]));
         }
 
     return BSISUCCESS;
@@ -477,66 +520,9 @@ BentleyStatus WebMercatorUorConverter::ComputeTileCorners(DPoint3d* corners, Web
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct TextureCache
-    {
-    struct Entry 
-        {
-        Render::TexturePtr  m_texture;
-        ImageUtilities::RgbImageInfo m_imageInfo;
-        uint64_t    m_insertTime;
-        };
-
-    bmap<Utf8String, Entry> m_map;
-
-    static TextureCache* s_instance;
-    static TextureCache& Instance() { if (nullptr==s_instance) s_instance = new TextureCache; return *s_instance;}
-
-    void Insert(Utf8StringCR url, ImageUtilities::RgbImageInfo const& info, Render::TextureR texture)
-        {
-        auto& entry = m_map[url];
-
-        entry.m_texture = &texture;
-        entry.m_imageInfo = info;
-        entry.m_insertTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-        }
-
-    Entry const* Get(Utf8StringCR url)
-        {
-        auto ifound = m_map.find(url);
-        return (ifound == m_map.end())? nullptr: &ifound->second;
-        }
-
-    bool IsCacheTooLarge() const {return m_map.size() >= 200;}
-
-    void Trim()
-        {
-        if (!IsCacheTooLarge())
-            return;
-
-        bmultimap<uint64_t, Utf8String> lru;
-        for (auto const& mapentry: m_map)
-            {
-            lru.Insert(mapentry.second.m_insertTime, mapentry.first);
-            }
-
-        for (auto const& lruentry : lru)
-            {
-            if (!IsCacheTooLarge())
-                return;
-
-            m_map.erase(lruentry.second);
-            }
-        }
-    };
-
-TextureCache* TextureCache::s_instance;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/14
-+---------------+---------------+---------------+---------------+---------------+------*/
 Render::TextureP WebMercatorTileDisplay::GetCachedTexture(ImageUtilities::RgbImageInfo& cachedImageInfo, Utf8StringCR url)
     {
-    auto existingTexture = TextureCache::Instance().Get(url);
+    auto existingTexture = s_textureCache.Get(url);
     if (existingTexture == nullptr)
         return nullptr;
 
@@ -551,8 +537,8 @@ Render::TexturePtr WebMercatorTileDisplay::DefineTexture(ByteStream const& rgbDa
     {
     BeAssert(!imageInfo.isBGR);
     
-    Render::ImagePtr pImage = new Render::Image(imageInfo.width, imageInfo.height, imageInfo.hasAlpha ? Render::Image::Format::Rgba : Render::Image::Format::Rgb, rgbData.GetData(), rgbData.GetSize());
-    return context.GetTargetR().CreateTileSection(*pImage, false);
+    Render::ImagePtr image = new Render::Image(imageInfo.width, imageInfo.height, imageInfo.hasAlpha ? Render::Image::Format::Rgba : Render::Image::Format::Rgb, rgbData.GetData(), rgbData.GetSize());
+    return context.GetTargetR().CreateTileSection(*image, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -560,8 +546,7 @@ Render::TexturePtr WebMercatorTileDisplay::DefineTexture(ByteStream const& rgbDa
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WebMercatorTileDisplay::CacheTexture(Utf8StringCR url, Render::TextureR textureId, ImageUtilities::RgbImageInfo const& imageInfo)
     {
-    TextureCache::Instance().Trim();
-    TextureCache::Instance().Insert(url, imageInfo, textureId);
+    s_textureCache.Insert(url, imageInfo, textureId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -758,7 +743,7 @@ static void drawText(ViewContextR context, DPoint3dCR ptUl, Utf8StringCR strings
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WebMercatorTilingSystem::GetOptimalZoomLevelForView(uint8_t& zoomLevel, DgnViewportR vp, WebMercatorUorConverter& converter, bool preferFinerResolution)
+BentleyStatus WebMercatorTilingSystem::GetOptimalZoomLevelForView(uint8_t& zoomLevel, DgnViewportR vp, WebMercatorUnitConverter& converter, bool preferFinerResolution)
     {
     // Get the number of meters / screen pixel that we are showing in the view
     double viewResolution = converter.ComputeViewResolutionInMetersPerPixel(vp); 
@@ -784,7 +769,7 @@ BentleyStatus WebMercatorTilingSystem::GetOptimalZoomLevelForView(uint8_t& zoomL
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WebMercatorTilingSystem::GetTileIdsForView(bvector<TileId>& tileids, uint8_t zoomLevel, DgnViewportR vp, WebMercatorUorConverter& converter)
+BentleyStatus WebMercatorTilingSystem::GetTileIdsForView(bvector<TileId>& tileids, uint8_t zoomLevel, DgnViewportR vp, WebMercatorUnitConverter& converter)
     {
     auto const& vc = vp.GetViewController();
 
@@ -819,8 +804,8 @@ BentleyStatus WebMercatorTilingSystem::GetTileIdsForView(bvector<TileId>& tileid
         ulptxy.y = std::max(llptxy.y, urptxy.y);
         lrptxy.y = std::min(llptxy.y, urptxy.y);
 
-        ul = converter.ConvertUorsToWpixels(ulptxy);
-        lr = converter.ConvertUorsToWpixels(lrptxy);
+        ul = converter.ConvertMetersToWpixels(ulptxy);
+        lr = converter.ConvertMetersToWpixels(lrptxy);
         }
 
     // Get tileids of upper left and lower right
@@ -868,36 +853,6 @@ static bool shouldDraw(ViewContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WebMercatorDisplay::CreateUrl(Utf8StringR url, ImageUtilities::RgbImageInfo& imageInfo, WebMercatorTilingSystem::TileId const& tileid)
-    {
-    ModelHandlerP modelHandler = dgn_ModelHandler::Model::FindHandler(m_model.GetDgnDb(), m_model.GetClassId());
-    dgn_ModelHandler::WebMercator* webMercatorModelHandler = dynamic_cast<dgn_ModelHandler::WebMercator*>(modelHandler);
-    if (nullptr == webMercatorModelHandler)
-        {
-        BeAssert(false);
-        return BSIERROR;
-        }
-    return webMercatorModelHandler->_CreateUrl(url, imageInfo, m_model.m_mercator, tileid);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool WebMercatorDisplay::ShouldRejectTile(WebMercatorTilingSystem::TileId const& tileid, Utf8StringCR url, TiledRaster& realityData)
-    {
-    ModelHandlerP modelHandler = dgn_ModelHandler::Model::FindHandler(m_model.GetDgnDb(), m_model.GetClassId());
-    dgn_ModelHandler::WebMercator* webMercatorModelHandler = dynamic_cast<dgn_ModelHandler::WebMercator*>(modelHandler);
-    if (nullptr == webMercatorModelHandler)
-        {
-        BeAssert(false);
-        return false;
-        }
-    return webMercatorModelHandler->_ShouldRejectTile(m_model.m_mercator, tileid, url, realityData);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus WebMercatorDisplay::DrawSubstituteTilesFinerFromTextureCache(ViewContextR context, WebMercatorTilingSystem::TileId const& tileid, uint32_t maxLevelsToTry)
@@ -922,7 +877,7 @@ BentleyStatus WebMercatorDisplay::DrawSubstituteTilesFinerFromTextureCache(ViewC
 
             Utf8String finerUrl;
             ImageUtilities::RgbImageInfo finerImageInfo;
-            if (CreateUrl(finerUrl, finerImageInfo, finerTileid) != BSISUCCESS)
+            if (m_model._CreateUrl(finerUrl, finerImageInfo, finerTileid) != BSISUCCESS)
                 continue;
 
             // *** NB: Do not try to read from the RealityDataCache. This method is called from _DrawView, and it must be fast!
@@ -973,17 +928,17 @@ void WebMercatorTileDisplay::DrawTileDebugInfo(ViewContextR context, WebMercator
     {
     DPoint3d corners[4];
     m_converter.ComputeTileCorners(corners, tileid); // corners[0] is upper left
-    DPoint3d ulUors = corners[0];
-    GeoPoint ulGP = m_converter.ConvertUorsToLatLng(ulUors);
-    ulUors.z = 50000;
+    DPoint3d ulMeters = corners[0];
+    GeoPoint ulGP = m_converter.ConvertMetersToLatLng(ulMeters);
+    ulMeters.z = 50000;
 
     //RgbColorDef tccolor = {0,255,0};
     //setSymbology (context, tccolor, 128, 2);
-    //drawPoint (context, ulUors);
+    //drawPoint (context, ulMeters);
 
     RgbColorDef txtcolor = {10,10,10};
     setSymbology(context, txtcolor, 0, 1);
-    drawText(context, ulUors, Utf8PrintfString("%0.15lf\n%0.15lf",ulGP.latitude,ulGP.longitude)/*fmtSexagesimal(ulGP)*/);
+    drawText(context, ulMeters, Utf8PrintfString("%0.15lf\n%0.15lf",ulGP.latitude,ulGP.longitude)/*fmtSexagesimal(ulGP)*/);
 
     auto centerPt = DPoint3d::FromInterpolate(corners[0], 0.5, corners[3]);
     centerPt.z = 5000;
@@ -1008,7 +963,7 @@ BentleyStatus WebMercatorDisplay::GetCachedTiles(bvector<TileDisplayImageData>& 
         data.m_tileid = tileid;
 
         Utf8String url;
-        if (CreateUrl(url, data.m_imageInfo, data.m_tileid) != BSISUCCESS)
+        if (m_model._CreateUrl(url, data.m_imageInfo, data.m_tileid) != BSISUCCESS)
             return BSIERROR; // ?? when would this ever happen??
 
         Render::TextureP cachedTexture = m_helper.GetCachedTexture(data.m_imageInfo, url);
@@ -1149,13 +1104,13 @@ ProgressiveTask::Completion WebMercatorDisplay::_DoProgressive(SceneContextR con
         
         Utf8String url;
         ImageUtilities::RgbImageInfo expectedImageInfo;
-        CreateUrl(url, expectedImageInfo, tileid);
+        m_model._CreateUrl(url, expectedImageInfo, tileid);
         RefCountedPtr<TiledRaster> realityData;
         if (RealityDataCacheResult::Success == T_HOST.GetRealityDataAdmin().GetCache().Get<TiledRaster>(realityData, url.c_str(), *TiledRaster::RequestOptions::Create(expectedImageInfo)))
             {
             BeAssert(realityData.IsValid());
             //  The image is available from the cache. Great! Draw it.
-            if (!ShouldRejectTile(tileid, url, *realityData))
+            if (!m_model._ShouldRejectTile(tileid, url, *realityData))
                 m_helper.DrawAndCacheTile(context, tileid, url, *realityData);
             }
         else
@@ -1186,7 +1141,7 @@ ProgressiveTask::Completion WebMercatorDisplay::_DoProgressive(SceneContextR con
                 return Completion::Aborted;
 
             //  Yes, we now have the image. Draw it and remove it from the list of missing tiles.
-            if (!ShouldRejectTile(tileid, url, *realityData))
+            if (!m_model._ShouldRejectTile(tileid, url, *realityData))
                 m_helper.DrawAndCacheTile(context, tileid, url, *realityData);
 
             iMissing = m_missingTilesPending.erase(iMissing); 
@@ -1325,11 +1280,11 @@ Utf8String StreetMapModelHandler::CreateGoogleMapsUrl(WebMercatorTilingSystem::T
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String dgn_ModelHandler::StreetMap::CreateOsmUrl(WebMercatorTilingSystem::TileId const& tileid, WebMercatorModel::Mercator const& props)
+Utf8String StreetMapModel::CreateOsmUrl(WebMercatorTilingSystem::TileId const& tileid) const
     {
     Utf8String url;
 
-    if (!props.m_mapType.empty() && props.m_mapType[0] == '0')  // "(c) OpenStreetMap contributors"
+    if (!m_mercator.m_mapType.empty() && m_mercator.m_mapType[0] == '0')  // "(c) OpenStreetMap contributors"
         url = Utf8PrintfString("http://a.tile.openstreetmap.org/%d/%d/%d.png",tileid.zoomLevel, tileid.column, tileid.row);
     else // *** For now, use MapQuest for satellite images (just in developer builds) ***
         url = Utf8PrintfString("http://otile1.mqcdn.com/tiles/1.0.0/sat/%d/%d/%d.jpg",tileid.zoomLevel, tileid.column, tileid.row);  // "Portions Courtesy NASA/JPL-Caltech and U.S. Depart. of Agriculture, Farm Service Agency"
@@ -1345,7 +1300,7 @@ Utf8String dgn_ModelHandler::StreetMap::CreateOsmUrl(WebMercatorTilingSystem::Ti
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String dgn_ModelHandler::StreetMap::CreateMapBoxUrl(WebMercatorTilingSystem::TileId const& tileid, WebMercatorModel::Mercator const& props)
+Utf8String StreetMapModel::CreateMapBoxUrl(WebMercatorTilingSystem::TileId const& tileid) const
     {
     Utf8String url;
 
@@ -1361,7 +1316,7 @@ Utf8String dgn_ModelHandler::StreetMap::CreateMapBoxUrl(WebMercatorTilingSystem:
     */
     char const* format = "png32";
 
-    char const* mapid = (!props.m_mapType.empty() && props.m_mapType [0] == '0')? "mapbox.streets": "mapbox.satellite";
+    char const* mapid = (!m_mercator.m_mapType.empty() && m_mercator.m_mapType [0] == '0')? "mapbox.streets": "mapbox.satellite";
 
     //                                                  m  z  x  y  f
     url = Utf8PrintfString("http://api.mapbox.com/v4/%s/%d/%d/%d.%s?access_token=", 
@@ -1377,9 +1332,9 @@ Utf8String dgn_ModelHandler::StreetMap::CreateMapBoxUrl(WebMercatorTilingSystem:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool dgn_ModelHandler::StreetMap::_ShouldRejectTile(WebMercatorModel::Mercator const& mapService, WebMercatorTilingSystem::TileId const& tileid, Utf8StringCR url, TiledRaster& realityData) 
+bool StreetMapModel::_ShouldRejectTile(WebMercatorTilingSystem::TileId const& tileid, Utf8StringCR url, TiledRaster& realityData) const
     {
-    if (mapService.m_mapService[0] != '0' || mapService.m_mapType[0] != '1')
+    if (m_mercator.m_mapService[0] != '0' || m_mercator.m_mapType[0] != '1')
         return false;
 
     static uint8_t const s_mapbox_x[] =
@@ -1416,7 +1371,7 @@ bool dgn_ModelHandler::StreetMap::_ShouldRejectTile(WebMercatorModel::Mercator c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus dgn_ModelHandler::StreetMap::_CreateUrl(Utf8StringR url, ImageUtilities::RgbImageInfo& expectedImageInfo, WebMercatorModel::Mercator const& props, WebMercatorTilingSystem::TileId const& tileid)
+BentleyStatus StreetMapModel::_CreateUrl(Utf8StringR url, ImageUtilities::RgbImageInfo& expectedImageInfo, WebMercatorTilingSystem::TileId const& tileid) const
     {
     // The usual image format info
     expectedImageInfo.height = expectedImageInfo.width = 256;
@@ -1424,22 +1379,22 @@ BentleyStatus dgn_ModelHandler::StreetMap::_CreateUrl(Utf8StringR url, ImageUtil
     expectedImageInfo.isBGR = false;
     expectedImageInfo.isTopDown = true;
 
-    if (props.m_mapService.empty())
+    if (m_mercator.m_mapService.empty())
         {
         BeAssert(false && "missing map service");
         LOG.error("missing map service");
         return BSIERROR;
         }
 
-    if (props.m_mapService[0] == '0')
+    if (m_mercator.m_mapService[0] == '0')
         {
-        url = CreateMapBoxUrl(tileid, props);
+        url = CreateMapBoxUrl(tileid);
         //printf ("url=%s\n", url.c_str());
         }
     else
         {
         BeAssert(false && "unrecognized map service");
-        LOG.errorv("[%s] is an unrecognized map service", props.m_mapService.c_str());
+        LOG.errorv("[%s] is an unrecognized map service", m_mercator.m_mapService.c_str());
         return BSIERROR;
         }
 
@@ -1585,9 +1540,9 @@ void LatLongGridRealityDataHandler::_AddGraphicsToScene(ViewContextR context)
     DPoint3d cornersWorld[8];
     vp.ViewToWorld(cornersWorld, corners, _countof(cornersWorld));
 
-    double viewDiagInUors = cornersWorld[0].Distance(cornersWorld[3]); // UORs
+    double viewDiagInMeters = cornersWorld[0].Distance(cornersWorld[3]); // UORs
     
-    auto viewDiagInMeters = viewDiagInUors * m_meters_per_uor;    // meters
+    auto viewDiagInMeters = viewDiagInMeters * m_meters_per_uor;    // meters
     
     return viewDiagInMeters / viewDiagInPixels;                 // meters/pixel
     }
@@ -1603,25 +1558,6 @@ Utf8CP TiledRaster::_GetId() const {return m_url.c_str();}
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TiledRaster::_IsExpired() const {return DateTime::CompareResult::EarlierThan == DateTime::Compare(GetExpirationDate(), DateTime::GetCurrentTime());}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               10/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-ByteStream const& TiledRaster::GetData() const {return m_data;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               10/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-DateTime TiledRaster::GetCreationDate() const {return m_creationDate;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               10/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-ImageUtilities::RgbImageInfo const& TiledRaster::GetImageInfo() const {return m_rasterInfo;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               10/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String TiledRaster::GetContentType() const {return m_contentType;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014

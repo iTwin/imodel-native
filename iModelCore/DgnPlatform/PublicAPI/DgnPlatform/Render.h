@@ -1216,7 +1216,7 @@ public:
     };
 
     virtual void _ChangeScene(GraphicListR scene, ClipPrimitiveCP activeVolume) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
-    virtual void _ChangeTerrain(GraphicListR terrain) {VerifyRenderThread(); m_terrain = &terrain;}
+    virtual void _ChangeTerrain(GraphicListR terrain) {VerifyRenderThread(); m_terrain = !terrain.IsEmpty() ? &terrain : nullptr;}
     virtual void _ChangeDynamics(GraphicListR dynamics) {VerifyRenderThread(); m_dynamics = &dynamics;}
     virtual void _ChangeDecorations(Decorations& decorations) {VerifyRenderThread(); m_decorations = decorations;}
     virtual void _ChangeRenderPlan(PlanCR) = 0;

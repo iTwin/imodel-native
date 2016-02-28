@@ -17,7 +17,7 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-struct WebMercatorUorConverter;
+struct WebMercatorUnitConverter;
 struct WebMercatorModel;
 struct WebMercatorModelHandler;
 
@@ -42,8 +42,8 @@ struct WebMercatorTilingSystem
     //! Figure out what zoom level to use. The basic algorithm is to use tiles with about the same meters/pixel resolution as the
     //! Dgn view is using for model data. Normally, we find two zoom levels, one with less and the other with more resolution.
     //! The preferFinerResolution parameter specifies which to use. The finer the resolution, the more tiles must be downloaded and displayed.
-    static BentleyStatus GetOptimalZoomLevelForView(uint8_t& zoomLevel, DgnViewportR, WebMercatorUorConverter&, bool preferFinerResolution);
-    static BentleyStatus GetTileIdsForView(bvector<TileId>& tileids, uint8_t desiredZoomLevel, DgnViewportR, WebMercatorUorConverter&);
+    static BentleyStatus GetOptimalZoomLevelForView(uint8_t& zoomLevel, DgnViewportR, WebMercatorUnitConverter&, bool preferFinerResolution);
+    static BentleyStatus GetTileIdsForView(bvector<TileId>& tileids, uint8_t desiredZoomLevel, DgnViewportR, WebMercatorUnitConverter&);
 };
 
 #define WEBMERCATOR_COMPARE_VALUES(val0, val1)  if (val0 < val1) { return true; } if (val0 > val1) { return false; }
@@ -77,15 +77,14 @@ struct CompareGeoPointLess
 // in all parts of the WebMercator projection.
 // @bsiclass                                                    Sam.Wilson      10/2014
 //=======================================================================================
-struct WebMercatorUorConverter
-    {
+struct WebMercatorUnitConverter
+{
     DgnUnits& m_units;
     double m_originLatitudeInRadians;
-    double m_meters_per_uor;
-    bmap<DPoint3d, GeoPoint, CompareDPoint3dLess> m_uorsToLatLng;
-    bmap<GeoPoint, DPoint3d, CompareGeoPointLess> m_latLngToUors;
+    bmap<DPoint3d, GeoPoint, CompareDPoint3dLess> m_metersToLatLng;
+    bmap<GeoPoint, DPoint3d, CompareGeoPointLess> m_latLngToMeters;
 
-    WebMercatorUorConverter(DgnViewportR);
+    WebMercatorUnitConverter(DgnViewportR);
 
     bool IsValid() const {return m_units.GetDgnGCS() != NULL;}
 
@@ -97,21 +96,21 @@ struct WebMercatorUorConverter
     //! Compute meters/pixel at the DgnDb's geo origin the specified zoomLevel.
     double ComputeGroundResolutionInMeters(uint8_t zoomLevel);
 
-    //! Convert a DPoint3d expressed in the Project's UOR coordinate system to a GeoPoint.
-    GeoPoint ConvertUorsToLatLng(DPoint3dCR pt);
+    //! Convert a DPoint3d expressed in the Project's coordinate system to a GeoPoint.
+    GeoPoint ConvertMetersToLatLng(DPoint3dCR pt);
 
-    //! Convert a GeoPoint to a point expressed in the Project's UOR coordinate system.
-    DPoint3d ConvertLatLngToUors(GeoPoint gp);
+    //! Convert a GeoPoint to a point expressed in the Project's coordinate system.
+    DPoint3d ConvertLatLngToMeters(GeoPoint gp);
 
-    //! Convert a DPoint2d expressed in the Project's UOR coordinate system to a DPoint2d expressed in wpixels.
-    DPoint2d ConvertUorsToWpixels(DPoint2dCR pt);
-    };
+    //! Convert a DPoint2d expressed in the Project's coordinate system to a DPoint2d expressed in wpixels.
+    DPoint2d ConvertMetersToWpixels(DPoint2dCR pt);
+};
 
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            10/2014
 //=======================================================================================
 struct TiledRaster : IRealityData<TiledRaster, BeSQLiteRealityDataStorage, HttpRealityDataSource>
-    {
+{
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        10/2014
     //===================================================================================
@@ -153,23 +152,21 @@ protected:
 
 public:
     static RefCountedPtr<TiledRaster> Create();    
-    ByteStream const& GetData() const;
-    DateTime GetCreationDate() const;
-    ImageUtilities::RgbImageInfo const& GetImageInfo() const;
-    Utf8String GetContentType() const;
-    };
+    ByteStream const& GetData() const {return m_data;}
+    DateTime GetCreationDate() const {return m_creationDate;}
+    ImageUtilities::RgbImageInfo const& GetImageInfo() const {return m_rasterInfo;}
+    Utf8String GetContentType() const {return m_contentType;}
+};
 
 //=======================================================================================
 // Utility for displaying WebMercator tiles
 // @bsiclass                                                    Sam.Wilson      10/2014
 //=======================================================================================
 struct WebMercatorTileDisplay
-    {
-//protected:
-    WebMercatorUorConverter m_converter;
+{
+    WebMercatorUnitConverter m_converter;
     ByteStream m_rgbBuffer;
     bool m_drawingSubstituteTiles;
-public:
 
     //! Construct a helper object
     //! @param[in] vp      The viewport
@@ -209,7 +206,7 @@ public:
     void DrawTileDebugInfo(ViewContextR context, WebMercatorTilingSystem::TileId const& tileid);
     void DrawTileAsBox(ViewContextR context, WebMercatorTilingSystem::TileId const& tileid, double z, bool filled);
     #endif
-    };
+};
 
 //=======================================================================================
 // Dislays tiles of a street map as they become available over time.
@@ -245,11 +242,6 @@ protected:
         };
 
     BentleyStatus GetCachedTiles(bvector<TileDisplayImageData>& tilesAndUrls, bool& allFoundInTextureCache, uint8_t zoomLevel, ViewContextR context);
-
-    //! Helper function that invokes _CreateUrl on the handler
-    DGNPLATFORM_EXPORT BentleyStatus CreateUrl(Utf8StringR url, ImageUtilities::RgbImageInfo& imageInfo, WebMercatorTilingSystem::TileId const& tileid);
-
-    DGNPLATFORM_EXPORT bool ShouldRejectTile(WebMercatorTilingSystem::TileId const& tileid, Utf8StringCR url, TiledRaster& realityData);
 
     //! Displays tiled rasters and schedules downloads. 
     //! INPUT: This function assumes that m_missingTiles has been populated.
@@ -310,8 +302,36 @@ public:
     DGNPLATFORM_EXPORT void _ReadJsonProperties(Json::Value const&) override;
     AxisAlignedBox3d _QueryModelRange() const override {return m_mercator.m_range;}
 
+    //! Create the URL to request the specified tile from a map service.
+    //! @param[out] url             The returned URL
+    //! @param[out] imageInfo       Expected image format
+    //! @param[in] mapService       Identifies the type of map that is being displayed
+    //! @param[in] tileid           The location of the tile, according to the WebMercator tiling system
+    //! @return non-zero if URL cannot be computed
+    virtual BentleyStatus _CreateUrl(Utf8StringR url, ImageUtilities::RgbImageInfo& imageInfo, WebMercatorTilingSystem::TileId const& tileid) const {return BSIERROR;}
+
+    virtual bool _ShouldRejectTile(WebMercatorTilingSystem::TileId const& tileid, Utf8StringCR url, TiledRaster& realityData) const {return false;}
+
     //! Call this after creating a new model, in order to set up subclass-specific properties.
     void SetMercator(Mercator const&);
+};
+
+//=======================================================================================
+// A street map model
+// @bsiclass                                                    Sam.Wilson      10/2014
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE StreetMapModel : WebMercatorModel
+{
+    DGNMODEL_DECLARE_MEMBERS("StreetMapModel", WebMercatorModel);
+
+    Utf8CP _GetCopyrightMessage() const override;
+    BentleyStatus _CreateUrl(Utf8StringR url, ImageUtilities::RgbImageInfo& imageInfo, WebMercatorTilingSystem::TileId const&) const override;
+    bool _ShouldRejectTile(WebMercatorTilingSystem::TileId const& tileid, Utf8StringCR url, TiledRaster& realityData) const override;
+
+    Utf8String CreateOsmUrl(WebMercatorTilingSystem::TileId const&) const;
+    Utf8String CreateMapBoxUrl(WebMercatorTilingSystem::TileId const&) const;
+public:
+    StreetMapModel(CreateParams const& params) : T_Super(params) {}
 };
 
 namespace dgn_ModelHandler
@@ -325,34 +345,8 @@ namespace dgn_ModelHandler
     struct EXPORT_VTABLE_ATTRIBUTE WebMercator : Spatial
     {
         MODELHANDLER_DECLARE_MEMBERS ("WebMercatorModel", WebMercatorModel, WebMercator, Spatial, DGNPLATFORM_EXPORT)
-
-    public:
-        //! Create the URL to request the specified tile from a map service.
-        //! @param[out] url             The returned URL
-        //! @param[out] imageInfo       Expected image format
-        //! @param[in] mapService       Identifies the type of map that is being displayed
-        //! @param[in] tileid           The location of the tile, according to the WebMercator tiling system
-        //! @return non-zero if URL cannot be computed
-        virtual BentleyStatus _CreateUrl(Utf8StringR url, ImageUtilities::RgbImageInfo& imageInfo, WebMercatorModel::Mercator const& mapService, WebMercatorTilingSystem::TileId const& tileid) {return BSIERROR;}
-
-        virtual bool _ShouldRejectTile(WebMercatorModel::Mercator const& mapService, WebMercatorTilingSystem::TileId const& tileid, Utf8StringCR url, TiledRaster& realityData) {return false;}
     };
-};
 
-//=======================================================================================
-// A street map model
-// @bsiclass                                                    Sam.Wilson      10/2014
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE StreetMapModel : WebMercatorModel
-{
-    DGNMODEL_DECLARE_MEMBERS("StreetMapModel", WebMercatorModel);
-    Utf8CP _GetCopyrightMessage() const override;
-public:
-    StreetMapModel(CreateParams const& params) : T_Super(params) {}
-};
-
-namespace dgn_ModelHandler
-{
     //=======================================================================================
     // A handler for models that communicate with one of the well known street map services
     // to obtain and display street maps and satellite imagery based on the WebMercator tiling system.
@@ -378,14 +372,6 @@ namespace dgn_ModelHandler
             SatelliteImage,         //!< Show a satellite image (if available)
             };
 
-    protected:
-        DGNPLATFORM_EXPORT BentleyStatus _CreateUrl(Utf8StringR url, ImageUtilities::RgbImageInfo& imageInfo, WebMercatorModel::Mercator const&, WebMercatorTilingSystem::TileId const&) override;
-        DGNPLATFORM_EXPORT bool _ShouldRejectTile(WebMercatorModel::Mercator const& mapService, WebMercatorTilingSystem::TileId const& tileid, Utf8StringCR url, TiledRaster& realityData) override;
-
-        DGNPLATFORM_EXPORT Utf8String CreateOsmUrl(WebMercatorTilingSystem::TileId const&, WebMercatorModel::Mercator const&);
-        DGNPLATFORM_EXPORT Utf8String CreateMapBoxUrl(WebMercatorTilingSystem::TileId const&, WebMercatorModel::Mercator const&);
-
-    public:
         //! Create a new street map model in the DgnDb.
         //! @praam[in] db           The DgnDb
         //! @param[in] mapService   Identifies the map service that will supply the maps or imagery
@@ -396,19 +382,6 @@ namespace dgn_ModelHandler
         DGNPLATFORM_EXPORT static DgnModelId CreateStreetMapModel(DgnDbR db, MapService mapService, MapType mapType, bool finerResolution);
     };
 };
-
-//=======================================================================================
-// Displays a grid of latitude and longitude lines
-// @bsiclass                                                    Sam.Wilson      10/2014
-//=======================================================================================
-#ifdef TBD_LATLNG_GRID
-struct LatLongGridRealityDataHandler : SpatialModel
-{
-protected:
-    DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR) override;
-
-};
-#endif
 
 //! @endGroup
 
