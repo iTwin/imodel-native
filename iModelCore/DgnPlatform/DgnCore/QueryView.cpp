@@ -65,47 +65,28 @@ DgnQueryView::~DgnQueryView()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::_DrawDecorations(DecorateContextR context)
     {
-    bvector<Utf8String> copyrights;
-    for (DgnModelId modelId : GetViewedModels())
-        {
-        DgnModelPtr model = m_dgndb.Models().GetModel(modelId);
-        if (!model.IsValid())
-            continue;
-
-        auto message = model->GetCopyrightMessage();
-        if (nullptr != message)
-            copyrights.push_back(message);
-        }
-
-    if (copyrights.empty())
+    if (m_copyrightMsgs.empty())
         return;
 
     DgnViewportCR vp = *context.GetViewport();
     static int const S_TRANSPARENCY = 10;
     ColorDef fgColor = ColorDef::Black();
     ColorDef bgColor = ColorDef::White();
-    fgColor = vp.MakeColorTransparency(fgColor, S_TRANSPARENCY);
     bgColor = vp.MakeColorTransparency(bgColor, S_TRANSPARENCY);
 
-    //  Compute the length of the longest message
-    size_t widest = 0;
-    for (auto& msg : copyrights)
-        {
-        widest = std::max(widest, msg.size());
-        }
-
-    if (0 == widest)
-        return;
-
     auto graphic = context.CreateGraphic();
-    graphic->SetSymbology(fgColor, bgColor, 0);
+    Render::GraphicParams params;
+    params.SetLineColor(fgColor);
+    params.SetFillColor(fgColor);
+    params.SetIsBlankingRegion(true);
+    graphic->ActivateGraphicParams(params);
 
     //  Display the first (c) message at the bottom right.
     BSIRect rect = vp.GetViewRect();
     DPoint3d cloc = DPoint3d::From(rect.Right(), rect.Bottom(), 0);
 
     static int const S_TEXTHEIGHT = 12; // in pixels
-    cloc.x -= widest * S_TEXTHEIGHT;
+    cloc.x -= S_TEXTHEIGHT;
 
     TextStringStyle style;
     style.SetFont(DgnFontManager::GetLastResortTrueTypeFont());
@@ -113,21 +94,22 @@ void DgnQueryView::_DrawDecorations(DecorateContextR context)
 
     TextString textString;
     textString.SetStyle(style);
-    RotMatrix yUp = RotMatrix::FromScaleFactors(1.0, -1.0, 1.0); // In view coords, origin is top left and y is down. The view treats text just like any other geometry.
-    textString.SetOrientation(yUp);                             // So, unless you invert y, the view will draw the letters of your text downward.
+    textString.SetOrientation(RotMatrix::FromScaleFactors(1.0, -1.0, 1.0)); // In view coords, y is flipped
 
-    for (auto& msg : copyrights)
+    for (auto& msg : m_copyrightMsgs)
         {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
         DPoint3d box[4];
         box[0].Init(cloc.x              , cloc.y, 0);           // top left
         box[1].Init(cloc.x + widest*S_TEXTHEIGHT, cloc.y, 0);           // top right
         box[2].Init(cloc.x + widest*S_TEXTHEIGHT, cloc.y - S_TEXTHEIGHT, 0);    // bottom right
         box[3].Init(cloc.x              , cloc.y - S_TEXTHEIGHT, 0);    // bottom left
+#endif
 
 //        graphic->AddShape(4, box, true);
 
         textString.SetText(msg.c_str());
-        textString.SetOrigin(cloc);
+        textString.SetOriginFromJustificationOrigin(cloc, TextString::HorizontalJustification::Right, TextString::VerticalJustification::Bottom);
         graphic->AddTextString(textString);
 
         cloc.y -= S_TEXTHEIGHT; // stack the next message above this one
@@ -387,13 +369,21 @@ void DgnQueryView::_CreateTerrain(TerrainContextR context)
     {
     DgnDb::VerifyClientThread();
 
+    m_copyrightMsgs.clear();
     auto& models = m_dgndb.Models();
     for (DgnModelId modelId : GetViewedModels())
         {
         DgnModelPtr model = models.GetModel(modelId);
-        auto geomModel = model.IsValid() ? model->ToGeometricModel3d() : nullptr;
+        if (!model.IsValid())
+            continue;
+
+        auto geomModel = model->ToGeometricModel3d();
         if (nullptr != geomModel)
             geomModel->_AddTerrainGraphics(context);
+
+        Utf8CP message = model->GetCopyrightMessage();
+        if (!Utf8String::IsNullOrEmpty(message)) // skip empty strings.
+            m_copyrightMsgs.insert(message);
         }
     }
 

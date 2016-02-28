@@ -335,9 +335,11 @@ struct TextureCache
 {
     struct Entry 
         {
-        uint64_t m_insertTime;
+        static uint64_t Next() {static uint64_t s_count=0; return ++s_count;}
+        mutable uint64_t m_accessed;
         Render::TexturePtr  m_texture;
         ImageUtilities::RgbImageInfo m_imageInfo;
+        void Accessed() const {m_accessed = Next();}
         };
 
     bmap<Utf8String, Entry> m_map;
@@ -350,7 +352,7 @@ struct TextureCache
 
         entry.m_texture = &texture;
         entry.m_imageInfo = info;
-        entry.m_insertTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+        entry.Accessed();
         }
 
     Entry const* Get(Utf8StringCR url)
@@ -367,13 +369,13 @@ struct TextureCache
 
         // find the oldest entry and remove it.
         auto oldest = m_map.begin();
-        auto oldestTime = oldest->second.m_insertTime;
+        auto oldestTime = oldest->second.m_accessed;
         for (auto it=++oldest; it!=m_map.end(); ++it)
             {
-            if (it->second.m_insertTime < oldestTime)
+            if (it->second.m_accessed < oldestTime)
                 {
                 oldest = it;
-                oldestTime = it->second.m_insertTime;
+                oldestTime = it->second.m_accessed;
                 }
             }
         m_map.erase(oldest);
@@ -526,6 +528,7 @@ Render::TextureP WebMercatorTileDisplay::GetCachedTexture(ImageUtilities::RgbIma
     if (existingTexture == nullptr)
         return nullptr;
 
+    existingTexture->Accessed(); // update lru
     cachedImageInfo = existingTexture->m_imageInfo;
     return existingTexture->m_texture.get();
     }

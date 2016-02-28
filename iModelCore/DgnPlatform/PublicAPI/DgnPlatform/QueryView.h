@@ -157,6 +157,7 @@ protected:
     double m_sceneLODSize = 6.0; 
     double m_nonSceneLODSize = 7.0; 
     SpecialElements m_special;
+    bset<Utf8String> m_copyrightMsgs;  // only keep unique ones
     ClipPrimitivePtr m_activeVolume;     //!< the active volume. If present, elements inside this volume may be treated specially
     mutable QueryResultsPtr m_results;
 
