@@ -1158,7 +1158,7 @@ TEST (BeStringUtilitiesTests, ParseHexUInt64)
 //---------------------------------------------------------------------------------------
 TEST (BeStringUtilitiesTests, Wtof)
     {
-    EXPECT_EQ(0.0, BeStringUtilities::Wtof(L"0"));
+    EXPECT_DOUBLE_EQ(0.0, BeStringUtilities::Wtof(L"0"));
     EXPECT_DOUBLE_EQ(1.0, BeStringUtilities::Wtof(L"1"));
     EXPECT_DOUBLE_EQ(0.0, BeStringUtilities::Wtof(L"0.0"));
     EXPECT_DOUBLE_EQ(1.0, BeStringUtilities::Wtof(L"1.0"));
@@ -1214,9 +1214,12 @@ TEST (BeStringUtilitiesTests, WMemMove)
 //---------------------------------------------------------------------------------------
 TEST (BeStringUtilitiesTests, Wcslwr)
     {
-    EXPECT_STREQ(L"ascii",  BeStringUtilities::Wcslwr(L"ASCII"));
-    EXPECT_STREQ(L"ascii",  BeStringUtilities::Wcslwr(L"Ascii"));
-    EXPECT_STREQ(L"dgn v8", BeStringUtilities::Wcslwr(L"Dgn V8"));
+    wchar_t str1[] = L"ASCII";
+    EXPECT_STREQ(L"ascii",  BeStringUtilities::Wcslwr(str1));
+    wchar_t str2[] = L"Ascii";
+    EXPECT_STREQ(L"ascii", BeStringUtilities::Wcslwr(str2));
+    wchar_t str3[] = L"Dgn V8";
+    EXPECT_STREQ(L"dgn v8", BeStringUtilities::Wcslwr(str3));
 
     // Start with a non-ascii string. In this case, it has no lower-case version.
     WCharP nonasc = L"\u20AC"; // this is the Euro symbol
@@ -1229,13 +1232,32 @@ TEST (BeStringUtilitiesTests, Wcslwr)
 //---------------------------------------------------------------------------------------
 TEST (BeStringUtilitiesTests, Wcsupr)
     {
-    EXPECT_STREQ(L"ASCII",  BeStringUtilities::Wcslwr(L"ascii"));
-    EXPECT_STREQ(L"ASCII",  BeStringUtilities::Wcslwr(L"Ascii"));
-    EXPECT_STREQ(L"DGN V8", BeStringUtilities::Wcslwr(L"Dgn V8"));
+    wchar_t str1[] = L"ascii";
+    EXPECT_STREQ(L"ASCII", BeStringUtilities::Wcsupr(str1));
+    wchar_t str2[] = L"Ascii";
+    EXPECT_STREQ(L"ASCII", BeStringUtilities::Wcsupr(str2));
+    wchar_t str3[] = L"Dgn v8";
+    EXPECT_STREQ(L"DGN V8", BeStringUtilities::Wcsupr(str3));
 
     // Start with a non-ascii string. In this case, it has no lower-case version.
     WCharP nonasc = L"\u20AC"; // this is the Euro symbol
     //  Convert to UTF8 and lowercase it
     WString nonasc_wchar (nonasc);    // s/ be E2 82 AC 00
     EXPECT_STREQ(nonasc, BeStringUtilities::Wcslwr(nonasc)); // s/ be a nop
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                     Umar.Hayat                  02/16
+//---------------------------------------------------------------------------------------
+TEST (BeStringUtilitiesTests, ParseDelimitedString)
+    {
+    WCharCP str = L"One Two 3G4,\t\"Fourty Two\"";
+    bvector<WString> tokens;
+
+    BeStringUtilities::ParseDelimitedString(tokens, str, L", ");
+    wprintf(L"%ls\n%ls\n", tokens[0].c_str(), tokens[1].c_str());
+    ASSERT_EQ(4, tokens.size());
+    EXPECT_STREQ(L"One", tokens[0].c_str());
+    EXPECT_STREQ(L"Two", tokens[1].c_str());
+    EXPECT_STREQ(L"3G4", tokens[2].c_str());
+    EXPECT_STREQ(L"Fourty Two", tokens[3].c_str());
     }

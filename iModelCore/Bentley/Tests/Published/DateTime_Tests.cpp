@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/DateTime_Tests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -317,6 +317,9 @@ TEST (DateTimeTests, DateTimeComponentToString)
     EXPECT_EQ(0, date.CompareTo("Date"));
     Utf8String dateTime = DateTime::Info::ComponentToString(DateTime::Component::DateAndTime);
     EXPECT_EQ(0, dateTime.CompareTo("DateTime"));
+    // To WString
+    EXPECT_STREQ(L"Date",     DateTime::Info::ComponentToStringW(DateTime::Component::Date).c_str());
+    EXPECT_STREQ(L"DateTime", DateTime::Info::ComponentToStringW(DateTime::Component::DateAndTime).c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1044,6 +1047,21 @@ TEST (DateTimeTests, ConversionTestsDSTEST)
     DateTimeTestItemList testDataset;
     DateTimeTestDataset::CreateDstUSESTTestDataset (testDataset);
     DateTimeAsserter::Assert (testDataset);
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                    02/16
+//---------------------------------------------------------------------------------------
+TEST (DateTimeTests, DateTimeKindToString)
+    {
+    // To WString
+    EXPECT_STREQ(L"Local",       DateTime::Info::KindToStringW(DateTime::Kind::Local).c_str());
+    EXPECT_STREQ(L"Utc",         DateTime::Info::KindToStringW(DateTime::Kind::Utc).c_str());
+    EXPECT_STREQ(L"Unspecified", DateTime::Info::KindToStringW(DateTime::Kind::Unspecified).c_str());
+    // To Utf8String
+    EXPECT_STREQ("Local",       DateTime::Info::KindToString(DateTime::Kind::Local).c_str());
+    EXPECT_STREQ("Utc",         DateTime::Info::KindToString(DateTime::Kind::Utc).c_str());
+    EXPECT_STREQ("Unspecified", DateTime::Info::KindToString(DateTime::Kind::Unspecified).c_str());
     }
 
 //***************************************************************************************

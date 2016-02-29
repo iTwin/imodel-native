@@ -123,6 +123,11 @@ TEST(WStringTest, ToLowerToUpper)
     str = L"StrIng";
     str.ToUpper();
     ASSERT_STREQ( str.c_str(), L"STRING");
+    // To Upper Non Ascii
+    WCharP nonasc = L"\u20AC"; // this is the Euro symbol
+    //  Convert to UTF8 and lowercase it
+    WString nonasc_wchar(nonasc);    // s/ be E2 82 AC 00
+    EXPECT_STREQ(nonasc, nonasc_wchar.ToUpper().c_str()); // s/ be a nop
     }
 
 // ******************************************************

@@ -1501,21 +1501,31 @@ TEST (BeFileNameTests, TrailingSeparatorBehavior)
     }
 
 //---------------------------------------------------------------------------------------
-// @betest                                      Shaun.Sewall                    11/13
+// @betest                                      Umar.Hayat                    02/16
 //---------------------------------------------------------------------------------------
-#ifdef WIP_NEEDS_WORK // *** Bentley unit tests must not depend on BeTestDocuments
-                      // *** Also, SubStation_NoFence.i.idgndb is not a symlink in the new test builder framework ***
 TEST (BeFileNameTests, GetFileSizeForSymbolicLink)
     {
 #if defined (BENTLEY_WIN32)
 
-    BeFileName symLinkFileName;
+    BeFileName rootDir;
+    BeTest::GetHost().GetOutputRoot(rootDir);
+    BeFileName targetFileName, symLinkFileName;
+    targetFileName = symLinkFileName = rootDir;
+    targetFileName.AppendToPath(L"targetFile.txt");
+    symLinkFileName.AppendToPath(L"SymlinkedFile.txt");
+    
+    BeFile file;
+    ASSERT_TRUE(BeFileStatus::Success == file.Create(targetFileName.c_str(), true));
+    Utf8String someData = "hakuna matata";
+    ASSERT_TRUE(BeFileStatus::Success == file.Write(nullptr, someData.c_str(), (uint32_t)someData.length()));
+    ASSERT_TRUE(BeFileStatus::Success == file.Close());
 
-    BeTest::GetHost().GetDocumentsRoot (symLinkFileName);
-    symLinkFileName.AppendToPath(L"DgnDb");
-    symLinkFileName.AppendToPath(L"SubStation_NoFence.i.idgndb");
+    Utf8String target_utf8(targetFileName.c_str());
+    Utf8String symlinkFile_utf8(symLinkFileName.c_str());
 
-    ASSERT_TRUE (BeFileName::IsSymbolicLink (symLinkFileName.GetName()));
+    CreateSymbolicLinkA(symlinkFile_utf8.c_str(), target_utf8.c_str(), 0);
+
+    ASSERT_TRUE (BeFileName::IsSymbolicLink (symLinkFileName.c_str()));
 
     // following a sym link is not yet supported on WinRT
     uint64_t fileSize;
@@ -1532,7 +1542,6 @@ TEST (BeFileNameTests, GetFileSizeForSymbolicLink)
 
 #endif
     }
-#endif
 
 //---------------------------------------------------------------------------------------
 // @betest                                     Hassan.Arshad                  09/13
@@ -2141,7 +2150,7 @@ static void SetupDirectory(BeFileNameCR root)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                         Umar.Hayat                    02/16
 //---------------------------------------------------------------------------------------
-static void Verify(BeFileNameCR root, bool SubFolderExpected=true)
+static void VerifyDirectory(BeFileNameCR root, bool SubFolderExpected = true)
     {
     ASSERT_TRUE(root.DoesPathExist());
 
@@ -2171,7 +2180,7 @@ static void Verify(BeFileNameCR root, bool SubFolderExpected=true)
 // @betest                                          Umar.Hayat                    02/16
 //---------------------------------------------------------------------------------------
 TEST (BeFileNameTests, CloneDirectory)
-{
+    {
 #if defined (BENTLEY_WIN32)
 
     BeFileName rootDir, srcDir, destDir1, destDir2;
@@ -2182,16 +2191,82 @@ TEST (BeFileNameTests, CloneDirectory)
     //--------------------------------------------------------------------------------------------------------------------
     // Clone with sub directry 
     EXPECT_TRUE(BeFileNameStatus::Success == BeFileName::CloneDirectory(srcDir, destDir1.AppendToPath(L"destDir1WithSub"), true));
-    Verify(destDir1);
+    VerifyDirectory(destDir1);
 
     //--------------------------------------------------------------------------------------------------------------------
     // Clone without sub directories
     EXPECT_TRUE(BeFileNameStatus::Success == BeFileName::CloneDirectory(srcDir, destDir2.AppendToPath(L"destDir2"),false));
-    Verify(destDir2, false);
+    VerifyDirectory(destDir2, false);
 
     //--------------------------------------------------------------------------------------------------------------------
     // Source Does not exist 
     EXPECT_TRUE(BeFileNameStatus::Success != BeFileName::CloneDirectory(BeFileName(rootDir).AppendToPath(L"DirNoExist"), BeFileName(rootDir).AppendToPath(L"DestDirNoExist")));
 
 #endif
-}
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                          Umar.Hayat                    02/16
+//---------------------------------------------------------------------------------------
+TEST(BeFileNameTests, IsAbsolutePath)
+    {
+#if defined (BENTLEY_WIN32)
+    Utf8CP fileSpec = "C:\\dir\\dir\\somefile.txt";
+#else
+    Utf8CP fileSpec = "/var/dir/somefile.txt";
+#endif
+    BeFileName fileName(fileSpec, BentleyCharEncoding::Utf8);
+    EXPECT_TRUE(fileName.IsAbsolutePath());
+
+    BeFileName fileName2(fileName.GetFileNameAndExtension());
+    EXPECT_FALSE(fileName2.IsAbsolutePath());
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                          Umar.Hayat                    02/16
+//---------------------------------------------------------------------------------------
+TEST (BeFileNameTests, IsUrl)
+    {
+#if defined (BENTLEY_WIN32)
+    Utf8CP fileSpec = "C:\\dir\\dir\\somefile.txt";
+#else
+    Utf8CP fileSpec = "/var/dir/somefile.txt";
+#endif
+    BeFileName fileName(fileSpec, BentleyCharEncoding::Utf8);
+    EXPECT_FALSE(fileName.IsUrl());
+
+    BeFileName fileName2(L"http://www.google.com/");
+    EXPECT_TRUE(fileName2.IsUrl());
+
+    // Need to be fixed 
+    //BeFileName fileName3(L"https://www.google.com/");
+    //EXPECT_TRUE(fileName3.IsUrl());
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                          Umar.Hayat                    02/16
+//---------------------------------------------------------------------------------------
+TEST (BeFileNameTests, PopDir)
+    {
+#if defined (BENTLEY_WIN32)
+    CharCP fileSpec = "C:\\dir\\somefile.txt";
+#else
+    CharCP fileSpec = "/var/dir/somefile.txt";
+#endif
+    BeFileName fileName(fileSpec, BentleyCharEncoding::Locale);
+
+#if defined (BENTLEY_WIN32)
+    EXPECT_STREQ(L"C:\\dir\\somefile.txt", fileName.c_str());
+    fileName.PopDir();
+    EXPECT_STREQ(L"C:\\dir", fileName.c_str());
+    fileName.PopDir();
+    EXPECT_STREQ(L"C:", fileName.c_str());
+    fileName.PopDir();
+    EXPECT_STREQ(L"", fileName.c_str());
+#else
+    EXPECT_STREQ(L"/var/dir/somefile.txt", fileName.c_str());
+    fileName.PopDir();
+    EXPECT_STREQ(L"/var/dir", fileName.c_str());
+    fileName.PopDir();
+    EXPECT_STREQ(L"/var", fileName.c_str());
+    fileName.PopDir();
+    EXPECT_STREQ(L"", fileName.c_str());
+#endif
+    }

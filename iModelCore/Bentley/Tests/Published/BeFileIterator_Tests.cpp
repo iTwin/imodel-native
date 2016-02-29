@@ -90,7 +90,7 @@ TEST (BeFileListIterator, Test_Recursive)
 //---------------------------------------------------------------------------------------
 // @betest                                          Umar.Hayat                  02/2016
 //---------------------------------------------------------------------------------------
-TEST (BeFileListIterator, Test_NonRecursive)
+TEST(BeFileListIterator, Test_NonRecursive)
     {
     BeFileName root;
     BeTest::GetHost().GetOutputRoot(root);
@@ -117,6 +117,27 @@ TEST (BeFileListIterator, Test_NonRecursive)
     ASSERT_EQ( 4 , count);
     ASSERT_TRUE(foundFileName0);
     ASSERT_FALSE(foundFileName31);
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                          Umar.Hayat                  02/2016
+//---------------------------------------------------------------------------------------
+TEST(BeFileListIterator, Test_EmptyDir)
+    {
+    BeFileName root;
+    BeTest::GetHost().GetOutputRoot(root);
+    root.AppendToPath(L"Empty");
+    if (!root.DoesPathExist())
+        ASSERT_TRUE (BeFileNameStatus::Success ==  BeFileName::CreateNewDirectory(root.c_str()));
+
+    BeFileName wildcard (NULL, root, L"*", NULL);
+    BeFileListIterator it (wildcard, /*recursive*/true);
+    BeFileName name;
+    size_t count=0;
+    while (it.GetNextFileName (name) == SUCCESS)
+        {
+        ++count;
+        }
+    ASSERT_EQ( 0 , count);
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Sam.Wilson  05/2013
