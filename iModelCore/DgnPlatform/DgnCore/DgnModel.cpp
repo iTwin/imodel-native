@@ -1060,7 +1060,16 @@ DgnModelId DgnModels::QueryFirstModelId() const
     return DgnModelId();
     }
 
-/*---------------------------------------------------------------------------------**//**
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  2/2016
+//----------------------------------------------------------------------------------------
+void DgnModels::DropGraphicsForViewport(DgnViewportCR viewport)
+    {
+    for (auto iter : m_models)
+        {
+        if(iter.second.IsValid())
+            iter.second->_DropGraphicsForViewport(viewport);
+        }        
     }
 
 /*---------------------------------------------------------------------------------**//**

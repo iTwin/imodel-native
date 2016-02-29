@@ -15,7 +15,8 @@ void DgnViewport::DestroyViewport()
     m_progressiveTasks.clear();
     if (m_viewController.IsValid())
         {
-        m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);
+        m_viewController->GetDgnDb().Models().DropGraphicsForViewport(*this);
+        m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);        
         m_viewController = nullptr;
         }
 
@@ -1194,7 +1195,10 @@ void DgnViewport::ClearUndo()
 void DgnViewport::ChangeViewController(ViewControllerR viewController)
     {
     if (m_viewController.IsValid())
-        m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);
+        {
+        m_viewController->GetDgnDb().Models().DropGraphicsForViewport(*this);
+        m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);        
+        }
 
     m_partGraphics.clear();
 
