@@ -45,4 +45,15 @@
         return DGN_ECSCHEMA_NAME + "." + name;
     }
 
+    /**
+     * Throws an exeception. This is for the use of native code.
+     */
+    export function ThrowException(name: string, details: string): void 
+    {
+        if (details)
+            throw new Error(name + " (" + details + ")");
+        else
+            throw new Error(name);
+    }
+
 } 

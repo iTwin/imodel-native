@@ -23,6 +23,42 @@ module DgnScriptTests {
     //---------------------------------------------------------------------------------------
     // @bsimethod                                   
     //---------------------------------------------------------------------------------------
+    function testInvalidArg()
+    {
+        var badEle: be.DgnElement = null;
+        try
+            {
+            if (badEle.ElementId.IsValid())
+                be.Script.ReportError('should not be here 1');
+            be.Script.ReportError('should not be here 2');
+            }
+        catch (e)
+            {
+            be.Logging.Message('testInvalidArg1', be.LoggingSeverity.Info, JSON.stringify(e));
+            }
+
+        /* *** BeJsContext is not quite ready to return values while JsRT is in an exception state
+
+        try
+        {
+            var builder = new be.GeometryBuilder(badEle, new be.DPoint3d(0, 0, 0), new be.YawPitchRollAngles(0,0,0));
+            be.Script.ReportError('should not be here 3');
+        }
+        catch (e)
+        {
+            be.Logging.Message('testInvalidArg2', be.LoggingSeverity.Info, JSON.stringify(e));
+        }
+
+        */
+
+        be.Logging.Message('DgnScriptTest', be.LoggingSeverity.Info, 'testInvalidArg - this should work');
+
+
+    }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   
+    //---------------------------------------------------------------------------------------
     function Shift(g: be.Geometry, dx: number, dy: number)
         {
         g.TryTransformInPlace (be.Transform.CreateTranslationXYZ (dx*shiftXSize, dy*shiftYsize, 0.0));
@@ -467,6 +503,9 @@ module DgnScriptTests {
 
         //  DgnElement UnhandledProperties
         testUnhandledProperties(ele);
+
+        //  Test argument validation
+        testInvalidArg();
 
         return 0;
     }
