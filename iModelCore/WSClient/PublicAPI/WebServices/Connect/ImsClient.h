@@ -55,10 +55,8 @@ struct ImsClient : IImsClient
         WSCLIENT_EXPORT static ImsClientPtr GetShared();
 
         //! Create new client
-        //! @param clientInfo - client applicaiton info
+        //! @param info - client applicaiton info
         //! @param httpHandler - custom httpHandler to route requests trough
-        //! @param activeStsUrl
-        //! @param delegationStsUrl
         WSCLIENT_EXPORT static ImsClientPtr Create(ClientInfoPtr info, IHttpHandlerPtr httpHandler = nullptr);
 
         //! Get security token using credentials
@@ -68,7 +66,7 @@ struct ImsClient : IImsClient
         WSCLIENT_EXPORT AsyncTaskPtr<SamlTokenResult> RequestToken(CredentialsCR creds, Utf8String rpUri = nullptr, uint64_t lifetime = 0) override;
 
         //! Get security token using other token. Can be used to renew same token or get delegation token for different RP
-        //! @param creds - credentials to use for token
+        //! @param parent - parent.
         //! @param rpUri - relying party URI the token will be used for. Defaults to application RP.
         //! @param lifetime - request specific token lifetime in minutes. Zero defaults to lifetime defined by service
         WSCLIENT_EXPORT AsyncTaskPtr<SamlTokenResult> RequestToken(SamlTokenCR parent, Utf8String rpUri = nullptr, uint64_t lifetime = 0) override;

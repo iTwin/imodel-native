@@ -9,8 +9,8 @@
 #include "IdentityAuthenticationPersistence.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-USING_NAMESPACE_BENTLEY_MOBILEDGN
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 #define SecureStoreNameSpace_Connect    "Connect"
 #define SecureStoreKey_Token            "IdentityToken"
@@ -42,7 +42,7 @@ Credentials IdentityAuthenticationPersistence::GetCredentials() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void IdentityAuthenticationPersistence::SetToken(SamlTokenPtr token)
     {
-    BeCriticalSectionHolder lock(m_cs);
+    BeMutexHolder lock(m_cs);
 
     m_secureStore->SaveValue(SecureStoreNameSpace_Connect, SecureStoreKey_Token, token ? token->AsString().c_str() : "");
 
@@ -57,7 +57,7 @@ void IdentityAuthenticationPersistence::SetToken(SamlTokenPtr token)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SamlTokenPtr IdentityAuthenticationPersistence::GetToken() const
     {
-    BeCriticalSectionHolder lock(m_cs);
+    BeMutexHolder lock(m_cs);
 
     if (nullptr == m_token)
         {

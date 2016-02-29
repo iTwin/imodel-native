@@ -32,7 +32,7 @@ USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConnectSignInManager::ConnectSignInManager(IImsClientPtr client, ILocalState* localState, ISecureStorePtr secureStore) :
 m_client(client),
-m_localState(localState ? *localState : MobileDgnCommon::LocalState()),
+m_localState(localState ? *localState : DgnClientFxCommon::LocalState()),
 m_secureStore(secureStore ? secureStore : std::make_shared<SecureStore>(&m_localState))
     {
     m_persistence = GetPersistenceMatchingAuthenticationType();
@@ -84,7 +84,7 @@ void ConnectSignInManager::UpdateSignInIfNeeded()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSignInManager::Configure(Configuration config)
     {
-    BeCriticalSectionHolder lock(m_cs);
+    BeMutexHolder lock(m_cs);
     m_config = config;
     m_tokenProviders.clear();
     UpdateSignInIfNeeded();
@@ -95,7 +95,7 @@ void ConnectSignInManager::Configure(Configuration config)
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithToken(SamlTokenPtr token)
     {
-    BeCriticalSectionHolder lock(m_cs);
+    BeMutexHolder lock(m_cs);
 
     if (nullptr == token || !token->IsSupported())
         return CreateCompletedAsyncTask(SignInResult::Error(ConnectLocalizedString(ALERT_UnsupportedToken)));
@@ -114,7 +114,7 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithToken(SamlTokenPtr to
             return SignInResult::Error(ConnectLocalizedString(ALERT_SignInFailed_ServerError));
             }
 
-        BeCriticalSectionHolder lock(m_cs);
+        BeMutexHolder lock(m_cs);
 
         ClearSignInData();
 
@@ -134,7 +134,7 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithToken(SamlTokenPtr to
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithCredentials(CredentialsCR credentials)
     {
-    BeCriticalSectionHolder lock(m_cs);
+    BeMutexHolder lock(m_cs);
 
     return m_client->RequestToken(credentials, nullptr, m_config.identityTokenLifetime)
         ->Then<SignInResult>([=] (SamlTokenResult result)
@@ -148,7 +148,7 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithCredentials(Credentia
             return SignInResult::Error(ConnectLocalizedString(ALERT_SignInFailed_ServerError));
             }
 
-        BeCriticalSectionHolder lock(m_cs);
+        BeMutexHolder lock(m_cs);
 
         ClearSignInData();
 
@@ -183,7 +183,7 @@ void ConnectSignInManager::FinalizeSignIn()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConnectSignInManager::IsSignedIn()
     {
-    BeCriticalSectionHolder lock(m_cs);
+    BeMutexHolder lock(m_cs);
     return AuthenticationType::None != GetAuthenticationType();
     }
 
@@ -192,7 +192,7 @@ bool ConnectSignInManager::IsSignedIn()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSignInManager::SignOut()
     {
-    BeCriticalSectionHolder lock(m_cs);
+    BeMutexHolder lock(m_cs);
     ClearSignInData();
     LOG.infov("ConnectSignOut");
     }
@@ -219,7 +219,7 @@ void ConnectSignInManager::ClearSignInData()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConnectSignInManager::UserInfo ConnectSignInManager::GetUserInfo()
     {
-    BeCriticalSectionHolder lock(m_cs);
+    BeMutexHolder lock(m_cs);
 
     UserInfo info;
 
@@ -244,7 +244,7 @@ ConnectSignInManager::UserInfo ConnectSignInManager::GetUserInfo()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSignInManager::SetTokenExpiredHandler(std::function<void()> handler)
     {
-    BeCriticalSectionHolder lock(m_cs);
+    BeMutexHolder lock(m_cs);
     m_tokenExpiredHandler = handler;
     }
 
@@ -253,7 +253,7 @@ void ConnectSignInManager::SetTokenExpiredHandler(std::function<void()> handler)
 +---------------+---------------+---------------+---------------+---------------+------*/
 AuthenticationHandlerPtr ConnectSignInManager::GetAuthenticationHandler(Utf8StringCR serverUrl, IHttpHandlerPtr httpHandler)
     {
-    BeCriticalSectionHolder lock(m_cs);
+    BeMutexHolder lock(m_cs);
 
     // TODO: Harcoded URI for first G0505 release (2016 Q1). Should match service server URL in future
     Utf8String rpUri = "https://connect-wsg20.bentley.com";
@@ -267,7 +267,7 @@ AuthenticationHandlerPtr ConnectSignInManager::GetAuthenticationHandler(Utf8Stri
 +---------------+---------------+---------------+---------------+---------------+------*/
 IConnectTokenProviderPtr ConnectSignInManager::GetTokenProvider(Utf8StringCR rpUri)
     {
-    BeCriticalSectionHolder lock(m_cs);
+    BeMutexHolder lock(m_cs);
     return GetCachedTokenProvider(rpUri);;
     }
 
