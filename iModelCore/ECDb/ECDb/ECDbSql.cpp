@@ -224,12 +224,47 @@ std::vector<ECDbSqlConstraint const*> ECDbSqlTable::GetConstraints() const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        09/2014
+// @bsimethod                                               Krischan.Eberle 02/2016
 //---------------------------------------------------------------------------------------
-ECDbSqlColumn* ECDbSqlTable::CreateColumn(Utf8CP name, ECDbSqlColumn::Type type, ColumnKind kind, PersistenceType persistenceType)
+BentleyStatus ECDbSqlTable::EnsureMinimumNumberOfSharedColumns()
     {
-    return CreateColumn(name, type, m_orderedColumns.size(), kind, persistenceType);
+    if (m_minimumSharedColumnCount == ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT)
+        return SUCCESS; // no min count specified -> nothing to do
+
+    int existingSharedColCount = 0;
+    for (ECDbSqlColumn const* col : m_orderedColumns)
+        {
+        if (col->IsShared())
+            existingSharedColCount++;
+        }
+
+    const int neededSharedColumns = m_minimumSharedColumnCount - existingSharedColCount;
+    if (neededSharedColumns <= 0)
+        return SUCCESS;
+
+    for (int i = 0; i < neededSharedColumns; i++)
+        {
+        if (CreateSharedColumn() == nullptr)
+            return ERROR;
+        }
+
+    return SUCCESS;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Krischan.Eberle 02/2016
+//---------------------------------------------------------------------------------------
+BentleyStatus ECDbSqlTable::SetMinimumSharedColumnCount(int minimumSharedColumnCount)
+    {
+    //can only by one ECClass of this table
+    if (minimumSharedColumnCount == ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT ||
+        m_minimumSharedColumnCount != ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT)
+        return ERROR;
+
+    m_minimumSharedColumnCount = minimumSharedColumnCount;
+    return SUCCESS;
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                          muhammad.zaighum                           01/2015
@@ -306,7 +341,7 @@ ECDbSqlColumn* ECDbSqlTable::CreateColumn(Utf8CP name, ECDbSqlColumn::Type type,
             return nullptr;
             }
 
-        newColumn = std::make_shared<ECDbSqlColumn>(name, type, *this, resolvePersistenceType, GetDbDefR().GetManagerR().GetIdGenerator().NextColumnId());
+        newColumn = std::make_shared<ECDbSqlColumn>(*this, name, type, kind, resolvePersistenceType, GetDbDefR().GetManagerR().GetIdGenerator().NextColumnId());
         }
     else
         {
@@ -316,10 +351,9 @@ ECDbSqlColumn* ECDbSqlTable::CreateColumn(Utf8CP name, ECDbSqlColumn::Type type,
             m_nameGeneratorForColumn.Generate(generatedName);
             } while (FindColumnCP(generatedName.c_str()));
 
-            newColumn = std::make_shared<ECDbSqlColumn>(generatedName.c_str(), type, *this, resolvePersistenceType, GetDbDefR().GetManagerR().GetIdGenerator().NextColumnId());
+            newColumn = std::make_shared<ECDbSqlColumn>(*this, generatedName.c_str(), type, kind, resolvePersistenceType, GetDbDefR().GetManagerR().GetIdGenerator().NextColumnId());
         }
 
-    newColumn->SetKind(kind);
     m_orderedColumns.insert(m_orderedColumns.begin() + position, newColumn.get());
     m_columns[newColumn->GetName().c_str()] = newColumn;
 
@@ -677,29 +711,28 @@ ECDbSqlTable* ECDbMapDb::CreateTableForExistingTableMapStrategy(ECDbCR ecdb, Utf
         Utf8CP dflt_value = stmt.GetValueText(4);
         const bool isPk = stmt.GetValueInt(5) == 1;
 
-        ECDbSqlColumn::Type ecType = ECDbSqlColumn::Type::Any;
+        ECDbSqlColumn::Type colType = ECDbSqlColumn::Type::Any;
         if (type.rfind("long") != Utf8String::npos ||
             type.rfind("int") != Utf8String::npos)
-            ecType = ECDbSqlColumn::Type::Integer;
+            colType = ECDbSqlColumn::Type::Integer;
         else if (type.rfind("char") != Utf8String::npos ||
                  type.rfind("clob") != Utf8String::npos ||
-                 type.rfind("json") != Utf8String::npos ||
                  type.rfind("text") != Utf8String::npos)
-            ecType = ECDbSqlColumn::Type::Text;
+            colType = ECDbSqlColumn::Type::Text;
         else if (type.rfind("blob") != Utf8String::npos ||
                  type.rfind("binary") != Utf8String::npos)
-            ecType = ECDbSqlColumn::Type::Blob;
+            colType = ECDbSqlColumn::Type::Blob;
         else if (type.rfind("real") != Utf8String::npos ||
                  type.rfind("floa") != Utf8String::npos ||
                  type.rfind("doub") != Utf8String::npos)
-            ecType = ECDbSqlColumn::Type::Real;
+            colType = ECDbSqlColumn::Type::Real;
         else if (type.rfind("date") != Utf8String::npos ||
                  type.rfind("timestamp") != Utf8String::npos)
-            ecType = ECDbSqlColumn::Type::TimeStamp;
+            colType = ECDbSqlColumn::Type::TimeStamp;
         else if (type.rfind("bool") != Utf8String::npos)
-            ecType = ECDbSqlColumn::Type::Boolean;
+            colType = ECDbSqlColumn::Type::Boolean;
 
-        ECDbSqlColumn* column = newTableDef->CreateColumn(name, ecType);
+        ECDbSqlColumn* column = newTableDef->CreateColumn(name, colType, ColumnKind::DataColumn, PersistenceType::Persisted);
         if (column == nullptr)
             {
             BeAssert(false && "Failed to create column");
@@ -1666,7 +1699,10 @@ Utf8CP ECDbSqlColumn::KindToString(ColumnKind columnKind)
                 return "TargetECInstanceId";
             case ColumnKind::TargetECClassId:
                 return "TargetECClassId";
-
+            case ColumnKind::DataColumn:
+                return "DataColumn";
+            case ColumnKind::SharedDataColumn:
+                return "SharedDataColumn";
             default:
                 return nullptr;
         }
@@ -1887,50 +1923,6 @@ Utf8CP StringPool::Get(Utf8CP str) const
 //****************************************************************************************
 //ECDbSqlPersistence
 //****************************************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        01/2015
-//---------------------------------------------------------------------------------------
-CachedStatementPtr ECDbSqlPersistence::GetStatement(StatementType type) const
-    {
-    CachedStatementPtr stmtP = nullptr;
-
-    DbResult stat = BE_SQLITE_ERROR;
-    switch (type)
-        {
-            case StatementType::SqlInsertTable:
-                stat = m_ecdb.GetCachedStatement(stmtP, Sql_InsertTable);
-                break;
-            case StatementType::SqlInsertColumn:
-                stat = m_ecdb.GetCachedStatement(stmtP, Sql_InsertColumn);
-                break;
-            case StatementType::SqlInsertForeignKey:
-                stat = m_ecdb.GetCachedStatement(stmtP, Sql_InsertForeignKey);
-                break;
-            case StatementType::SqlInsertForeignKeyColumn:
-                stat = m_ecdb.GetCachedStatement(stmtP, Sql_InsertForeignKeyColumn);
-                break;
-            case StatementType::SqlSelectTable:
-                stat = m_ecdb.GetCachedStatement(stmtP, Sql_SelectTable);
-                break;
-            case StatementType::SqlSelectColumn:
-                stat = m_ecdb.GetCachedStatement(stmtP, Sql_SelectColumn);
-                break;
-            case StatementType::SqlSelectForeignKey:
-                stat = m_ecdb.GetCachedStatement(stmtP, Sql_SelectForeignKey);
-                break;
-            case StatementType::SqlSelectForeignKeyColumn:
-                stat = m_ecdb.GetCachedStatement(stmtP, Sql_SelectForeignKeyColumn);
-                break;
-        }
-
-    if (stat != BE_SQLITE_OK)
-        {
-        BeAssert(false && "Failed to prepare statement for inserting table definition");
-        return nullptr;
-        }
-
-    return stmtP;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
@@ -1969,8 +1961,8 @@ DbResult ECDbSqlPersistence::ReadForeignKeys(ECDbMapDb& o) const
 //---------------------------------------------------------------------------------------
 DbResult ECDbSqlPersistence::ReadTables(ECDbMapDb& o) const
     {
-    auto stmt = GetStatement(StatementType::SqlSelectTable);
-    if (stmt.IsNull())
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT A.Id, A.Name, A.Type, A.IsVirtual, B.Name BaseTableName FROM ec_Table A LEFT JOIN ec_Table B ON A.BaseTableId = B.Id ORDER BY A.BaseTableId");
+    if (stmt == nullptr)
         return BE_SQLITE_ERROR;
 
     while (stmt->Step() == BE_SQLITE_ROW)
@@ -2036,8 +2028,8 @@ DbResult ECDbSqlPersistence::ReadTable(Statement& stmt, ECDbMapDb& o) const
 //---------------------------------------------------------------------------------------
 DbResult ECDbSqlPersistence::ReadColumns(ECDbSqlTable& o) const
     {
-    auto stmt = GetStatement(StatementType::SqlSelectColumn);
-    if (stmt.IsNull())
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Id, Name, Type, IsVirtual, NotNullConstraint, UniqueConstraint, CheckConstraint, DefaultConstraint, CollationConstraint, OrdinalInPrimaryKey, ColumnKind FROM ec_Column WHERE TableId = ? ORDER BY Ordinal");
+    if (stmt == nullptr)
         return BE_SQLITE_ERROR;
 
     DbResult stat = stmt->BindInt64(1, o.GetId());
@@ -2117,8 +2109,8 @@ DbResult ECDbSqlPersistence::ReadColumn(Statement& stmt, ECDbSqlTable& o, std::m
 //---------------------------------------------------------------------------------------
 DbResult ECDbSqlPersistence::ReadForeignKeys(ECDbSqlTable& o) const
     {
-    auto stmt = GetStatement(StatementType::SqlSelectForeignKey);
-    if (stmt.IsNull())
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT F.Id, R.Name, F.Name, F.OnDelete, F.OnUpdate FROM ec_ForeignKey F INNER JOIN ec_Table R ON R.Id=F.ReferencedTableId WHERE F.TableId=?");
+    if (stmt == nullptr)
         return BE_SQLITE_ERROR;
 
     stmt->BindInt64(1, o.GetId());
@@ -2165,8 +2157,8 @@ DbResult ECDbSqlPersistence::ReadForeignKey(Statement& stmt, ECDbSqlTable& o) co
     n->SetOnDeleteAction(onDelete);
     n->SetOnUpdateAction(onUpdate);
 
-    auto cstmt = GetStatement(StatementType::SqlSelectForeignKeyColumn);
-    if (cstmt.IsNull())
+    CachedStatementPtr cstmt = m_ecdb.GetCachedStatement("SELECT A.Name, B.Name FROM ec_ForeignKeyColumn F INNER JOIN ec_Column A ON F.ColumnId=A.Id INNER JOIN ec_Column B ON F.ReferencedColumnId=B.Id  WHERE F.ForeignKeyId=? ORDER BY F.Ordinal");
+    if (cstmt == nullptr)
         return BE_SQLITE_ERROR;
 
     cstmt->BindInt64(1, id);
@@ -2213,8 +2205,8 @@ DbResult ECDbSqlPersistence::Insert(ECDbMapDb const& db) const
 //---------------------------------------------------------------------------------------
 DbResult ECDbSqlPersistence::InsertTable(ECDbSqlTable const& o) const
     {
-    auto stmt = GetStatement(StatementType::SqlInsertTable);
-    if (stmt.IsNull())
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT OR REPLACE INTO ec_Table (Id, Name, Type, IsVirtual, BaseTableId) VALUES (?, ?, ?, ?, ?)");
+    if (stmt == nullptr)
         return BE_SQLITE_ERROR;
 
     stmt->BindInt64(1, o.GetId());
@@ -2256,8 +2248,8 @@ DbResult ECDbSqlPersistence::InsertTable(ECDbSqlTable const& o) const
 //---------------------------------------------------------------------------------------
 DbResult ECDbSqlPersistence::InsertColumn(ECDbSqlColumn const& o, int primaryKeyOrdinal) const
     {
-    auto stmt = GetStatement(StatementType::SqlInsertColumn);
-    if (stmt.IsNull())
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT OR REPLACE INTO ec_Column (Id, TableId, Name, Type, IsVirtual, Ordinal, NotNullConstraint, UniqueConstraint, CheckConstraint, DefaultConstraint, CollationConstraint, OrdinalInPrimaryKey, ColumnKind) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    if (stmt == nullptr)
         return BE_SQLITE_ERROR;
 
     stmt->BindInt64(1, o.GetId());
@@ -2309,8 +2301,8 @@ DbResult ECDbSqlPersistence::InsertForeignKey(ECDbSqlForeignKeyConstraint const&
         return BE_SQLITE_ERROR;
         }
 
-    auto stmt = GetStatement(StatementType::SqlInsertForeignKey);
-    if (stmt.IsNull())
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT OR REPLACE INTO ec_ForeignKey (Id, TableId, ReferencedTableId, Name, OnDelete, OnUpdate) VALUES (?, ?, ?, ?, ?, ?)");
+    if (stmt == nullptr)
         return BE_SQLITE_ERROR;
 
     stmt->BindInt64(1, o.GetId());
@@ -2329,8 +2321,8 @@ DbResult ECDbSqlPersistence::InsertForeignKey(ECDbSqlForeignKeyConstraint const&
     if (stat != BE_SQLITE_DONE)
         return stat;
 
-    stmt = GetStatement(StatementType::SqlInsertForeignKeyColumn);
-    if (stmt.IsNull())
+    stmt = m_ecdb.GetCachedStatement("INSERT OR REPLACE INTO ec_ForeignKeyColumn (ForeignKeyId, ColumnId, ReferencedColumnId, Ordinal) VALUES (?, ?, ?, ?)");
+    if (stmt == nullptr)
         return BE_SQLITE_ERROR;
 
     for (size_t i = 0; i < o.Count(); i++)
@@ -2908,7 +2900,11 @@ void ECDbClassMapInfo::GetPropertyMaps(std::vector<ECDbPropertyMapInfo const*>& 
     propertyMaps.erase(
         std::remove_if(
             propertyMaps.begin(),
-            propertyMaps.end(), [] (ECDbPropertyMapInfo const* minfo) { return minfo->ExpectingSingleColumn()->GetKind() != ColumnKind::DataColumn; }),
+            propertyMaps.end(), [] (ECDbPropertyMapInfo const* minfo) 
+                            { 
+                            const ColumnKind kind = minfo->ExpectingSingleColumn()->GetKind();
+                            return kind!= ColumnKind::DataColumn && kind != ColumnKind::SharedDataColumn;
+                            }),
         propertyMaps.end());
 
     for (std::unique_ptr<ECDbPropertyMapInfo> const& localPropertyMap : m_localPropertyMaps)

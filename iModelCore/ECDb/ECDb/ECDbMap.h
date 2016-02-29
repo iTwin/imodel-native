@@ -100,7 +100,6 @@ public:
             void Reset ();
         };
 
-
 private:
     mutable BeMutex m_mutex;
 
@@ -117,11 +116,13 @@ private:
 
     MapStatus DoMapSchemas(bvector<ECN::ECSchemaCP> const&);
     MapStatus MapClass(ECN::ECClassCR);
-    BentleyStatus FinishTableDefinition() const;
     BentleyStatus SaveMappings() const;
     BentleyStatus CreateOrUpdateRequiredTables() const;
     BentleyStatus EvaluateColumnNotNullConstraints() const;
     BentleyStatus CreateOrUpdateIndexesInDb() const;
+
+    BentleyStatus FinishTableDefinitions(bool onlyCreateClassIdColumns = false) const;
+    BentleyStatus CreateClassIdColumnIfNecessary(ECDbSqlTable&, bset<ClassMap*> const&) const;
 
     MapStatus AddClassMap(ClassMapPtr&) const;
 

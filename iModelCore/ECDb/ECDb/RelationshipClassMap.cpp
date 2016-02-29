@@ -563,7 +563,7 @@ MapStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMap
         if (fkTable.IsOwnedByECDb() && fkTable.GetPersistenceType() == PersistenceType::Persisted
             && referencedTable->GetPersistenceType() == PersistenceType::Persisted)
             {
-            if (fkCol->IsReusable())
+            if (fkCol->IsShared())
                 {
                 GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning,
                      "The ECRelationshipClass '%s' implies a foreign key constraint. ECDb cannot create it though for the "

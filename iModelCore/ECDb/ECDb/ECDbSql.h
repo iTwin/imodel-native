@@ -37,9 +37,8 @@ enum class ColumnKind
     SourceECClassId = 64,
     TargetECInstanceId = 128,
     TargetECClassId = 256,
-    DataColumn = 512, //! Data column defined by none key column in ECClass
-    //Following is helper group for search operation. There cannot be a column with OR'ed flags
-    ConstraintECInstanceId = SourceECInstanceId | TargetECInstanceId,
+    DataColumn = 512, //! unshared data column
+    SharedDataColumn = 1024, //! shared data column
     NonRelSystemColumn = ECInstanceId | ECClassId | ParentECInstanceId | ECPropertyPathId | ECArrayIndex
     };
 
@@ -297,17 +296,17 @@ struct ECDbSqlColumn : NonCopyableClass
         };
 
     private:
-        Type m_type;
-        ECDbSqlTable& m_ownerTable;
-        Constraint m_constraints;
-        Utf8String m_name;
-        PersistenceType m_persistenceType;
-        ColumnKind m_kind;
         ECDbColumnId m_id;
+        ECDbSqlTable& m_table;
+        Utf8String m_name;
+        Type m_type;
+        ColumnKind m_kind;
+        Constraint m_constraints;
+        PersistenceType m_persistenceType;
 
     public:
-        ECDbSqlColumn(Utf8CP name, Type type, ECDbSqlTable& owner, PersistenceType persistenceType, ECDbColumnId id)
-            : m_name(name), m_ownerTable(owner), m_type(type), m_persistenceType(persistenceType), m_kind(ColumnKind::DataColumn), m_id(id)
+        ECDbSqlColumn(ECDbSqlTable& table, Utf8CP name, Type type, ColumnKind kind, PersistenceType persistenceType, ECDbColumnId id)
+            : m_id(id), m_table(table), m_name(name), m_type(type), m_persistenceType(persistenceType), m_kind(kind)
             {}
 
         ~ECDbSqlColumn() {}
@@ -317,8 +316,8 @@ struct ECDbSqlColumn : NonCopyableClass
         PersistenceType GetPersistenceType() const { return m_persistenceType; }
         Utf8StringCR GetName() const { return m_name; }
         Type GetType() const { return m_type; };
-        ECDbSqlTable const& GetTable() const { return m_ownerTable; }
-        ECDbSqlTable&  GetTableR() const { return m_ownerTable; }
+        ECDbSqlTable const& GetTable() const { return m_table; }
+        ECDbSqlTable&  GetTableR() const { return m_table; }
         Constraint const& GetConstraint() const { return m_constraints; };
         Constraint& GetConstraintR() { return m_constraints; };
 
@@ -326,7 +325,7 @@ struct ECDbSqlColumn : NonCopyableClass
         BentleyStatus SetKind(ColumnKind);
         BentleyStatus AddKind(ColumnKind);
 
-        bool IsReusable() const { return m_type == Type::Any; }
+        bool IsShared() const { return m_kind == ColumnKind::SharedDataColumn; }
         Utf8String GetFullName() const;
         std::weak_ptr<ECDbSqlColumn> GetWeakPtr() const;
 
@@ -483,6 +482,7 @@ public:
         std::map<Utf8CP, std::shared_ptr<ECDbSqlColumn>, CompareIUtf8> m_columns;
         std::map<Utf8CP, std::unique_ptr<ECDbSqlTrigger>, CompareIUtf8> m_triggers;
         std::vector<ECDbSqlColumn const*> m_orderedColumns;
+        int m_minimumSharedColumnCount;
         mutable bool m_isClassIdColumnCached;
         mutable ECDbSqlColumn const* m_classIdColumn;
         std::vector<std::unique_ptr<ECDbSqlConstraint>> m_constraints;
@@ -493,7 +493,8 @@ public:
     
         ECDbSqlTable(Utf8CP name, ECDbMapDb& sqlDbDef, ECDbTableId id, PersistenceType type, TableType tableType, ECDbSqlTable const* parentOfJoinedTable)
             : m_dbDef(sqlDbDef), m_id(id), m_name(name), m_nameGeneratorForColumn("sc%02x"), m_persistenceType(type), m_tableType(tableType),
-            m_isClassIdColumnCached(false), m_classIdColumn(nullptr), m_persistenceManager(*this), m_parentOfJoinedTable(parentOfJoinedTable)
+            m_minimumSharedColumnCount(ECN::ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT), m_isClassIdColumnCached(false),
+            m_classIdColumn(nullptr), m_persistenceManager(*this), m_parentOfJoinedTable(parentOfJoinedTable)
             {
             BeAssert((tableType == TableType::Joined && parentOfJoinedTable != nullptr) ||
                      (tableType != TableType::Joined && parentOfJoinedTable == nullptr) && "parentOfJoinedTable must be provided for TableType::Joined and must be null for any other TableType.");
@@ -519,9 +520,12 @@ public:
         bool IsOwnedByECDb() const { return m_tableType != TableType::Existing; }
         ECDbMapDb const& GetDbDef () const{ return m_dbDef; }
         ECDbMapDb & GetDbDefR () { return m_dbDef; }
-        //! Any type will be mark as reusable column
-        ECDbSqlColumn* CreateColumn (Utf8CP name, ECDbSqlColumn::Type type, ColumnKind kind = ColumnKind::DataColumn, PersistenceType persistenceType = PersistenceType::Persisted);
-        ECDbSqlColumn* CreateColumn (Utf8CP name, ECDbSqlColumn::Type type, size_t position, ColumnKind kind = ColumnKind::DataColumn, PersistenceType persistenceType = PersistenceType::Persisted);
+        ECDbSqlColumn* CreateColumn(Utf8CP name, ECDbSqlColumn::Type, size_t position, ColumnKind, PersistenceType);
+        ECDbSqlColumn* CreateColumn(Utf8CP name, ECDbSqlColumn::Type type, ColumnKind kind, PersistenceType persistenceType) { return CreateColumn(name, type, m_orderedColumns.size(), kind, persistenceType); }
+        ECDbSqlColumn* CreateSharedColumn() { return CreateColumn(nullptr, ECDbSqlColumn::Type::Any, ColumnKind::SharedDataColumn, PersistenceType::Persisted); }
+        BentleyStatus SetMinimumSharedColumnCount(int minimumSharedColumnCount);
+        BentleyStatus EnsureMinimumNumberOfSharedColumns();
+
         std::vector<ECDbSqlTable const*> const& GetChildTables() const {return m_childTables;}
             
         BentleyStatus CreateTrigger(Utf8CP triggerName, Utf8CP condition, Utf8CP body, TriggerType ecsqlType,TriggerSubType triggerSubType);
@@ -796,31 +800,7 @@ public:
 struct ECDbSqlPersistence : NonCopyableClass
     {
     private:
-        const Utf8CP Sql_InsertTable = "INSERT OR REPLACE INTO ec_Table (Id, Name, Type, IsVirtual, BaseTableId) VALUES (?, ?, ?, ?, ?)";
-        const Utf8CP Sql_InsertColumn = "INSERT OR REPLACE INTO ec_Column (Id, TableId, Name, Type, IsVirtual, Ordinal, NotNullConstraint, UniqueConstraint, CheckConstraint, DefaultConstraint, CollationConstraint, OrdinalInPrimaryKey, ColumnKind) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        const Utf8CP Sql_InsertForeignKey = "INSERT OR REPLACE INTO ec_ForeignKey (Id, TableId, ReferencedTableId, Name, OnDelete, OnUpdate) VALUES (?, ?, ?, ?, ?, ?)";
-        const Utf8CP Sql_InsertForeignKeyColumn = "INSERT OR REPLACE INTO ec_ForeignKeyColumn (ForeignKeyId, ColumnId, ReferencedColumnId, Ordinal) VALUES (?, ?, ?, ?)";
-        const Utf8CP Sql_SelectTable = "SELECT A.Id, A.Name, A.Type, A.IsVirtual,  B.Name BaseTableName FROM ec_Table A LEFT JOIN ec_Table B ON A.BaseTableId = B.Id ORDER BY A.BaseTableId";
-        const Utf8CP Sql_SelectColumn = "SELECT Id, Name, Type, IsVirtual, NotNullConstraint, UniqueConstraint, CheckConstraint, DefaultConstraint, CollationConstraint, OrdinalInPrimaryKey, ColumnKind FROM ec_Column WHERE TableId = ? ORDER BY Ordinal";
-        const Utf8CP Sql_SelectForeignKey = "SELECT F.Id, R.Name, F.Name, F.OnDelete, F.OnUpdate FROM ec_ForeignKey F INNER JOIN ec_Table R ON R.Id = F.ReferencedTableId WHERE F.TableId = ?";
-        const Utf8CP Sql_SelectForeignKeyColumn = "SELECT A.Name, B.Name FROM ec_ForeignKeyColumn F INNER JOIN ec_Column A ON F.ColumnId = A.Id INNER JOIN ec_Column B ON F.ReferencedColumnId = B.Id  WHERE F.ForeignKeyId = ? ORDER BY F.Ordinal";
-
-        enum class StatementType
-            {
-            SqlInsertTable,
-            SqlInsertColumn,
-            SqlInsertForeignKey,
-            SqlInsertForeignKeyColumn,
-            SqlSelectTable,
-            SqlSelectColumn,
-            SqlSelectForeignKey,
-            SqlSelectForeignKeyColumn
-            };
-
-    private:
-        ECDb& m_ecdb;
-
-    private:
+        ECDbCR m_ecdb;
 
         DbResult ReadTables (ECDbMapDb&) const;
         DbResult ReadTable (Statement&, ECDbMapDb&) const;
@@ -835,12 +815,10 @@ struct ECDbSqlPersistence : NonCopyableClass
         DbResult InsertForeignKey (ECDbSqlForeignKeyConstraint const&) const;
 
     public:
-        explicit ECDbSqlPersistence (ECDbR ecdb):m_ecdb (ecdb) {}
+        explicit ECDbSqlPersistence (ECDbCR ecdb):m_ecdb (ecdb) {}
         ~ECDbSqlPersistence (){};
         DbResult Read (ECDbMapDb&) const;
         DbResult Insert (ECDbMapDb const&) const;
-
-        CachedStatementPtr GetStatement(StatementType) const;
     };
 
 //======================================================================================

@@ -1320,7 +1320,7 @@ TEST_F (ECDbMappingTestFixture, ForeignKeyMapCATests)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbMappingTestFixture, SharedColumnCATests)
+TEST_F (ECDbMappingTestFixture, SharedColumnCA)
     {
     std::vector<SchemaItem> testItems;
     testItems.push_back (SchemaItem (
@@ -1348,7 +1348,7 @@ TEST_F (ECDbMappingTestFixture, SharedColumnCATests)
         "                 </MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Price' typeName='double' />"
+        "        <ECProperty propertyName='Cost' typeName='double' />"
         "    </ECEntityClass>"
         "</ECSchema>", true, "DisableSharedColumns on subclass"));
 
@@ -1377,7 +1377,7 @@ TEST_F (ECDbMappingTestFixture, SharedColumnCATests)
         "                 </MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Price' typeName='double' />"
+        "        <ECProperty propertyName='Cost' typeName='double' />"
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='Sub11' modifier='None'>"
         "        <BaseClass>Sub1</BaseClass>"
@@ -1388,7 +1388,7 @@ TEST_F (ECDbMappingTestFixture, SharedColumnCATests)
         "                 </MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Price' typeName='double' />"
+        "        <ECProperty propertyName='Diameter' typeName='double' />"
         "    </ECEntityClass>"
         "</ECSchema>", true, "Defining SharedColumns in subclass is expected to work"));
 
@@ -1417,7 +1417,7 @@ TEST_F (ECDbMappingTestFixture, SharedColumnCATests)
         "                 </MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Price' typeName='double' />"
+        "        <ECProperty propertyName='Cost' typeName='double' />"
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='Sub11' modifier='None'>"
         "        <BaseClass>Sub1</BaseClass>"
@@ -1428,7 +1428,7 @@ TEST_F (ECDbMappingTestFixture, SharedColumnCATests)
         "                 </MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Price' typeName='double' />"
+        "        <ECProperty propertyName='Diameter' typeName='double' />"
         "    </ECEntityClass>"
         "</ECSchema>", false, "Option SharedColumnsForSubclasses is only allowed on subclass if base classes haven't defined shared columns yet."));
 
@@ -1456,7 +1456,7 @@ TEST_F (ECDbMappingTestFixture, SharedColumnCATests)
         "                 </MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Price' typeName='double' />"
+        "        <ECProperty propertyName='Cost' typeName='double' />"
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='Sub11' modifier='None'>"
         "        <BaseClass>Sub1</BaseClass>"
@@ -1467,7 +1467,7 @@ TEST_F (ECDbMappingTestFixture, SharedColumnCATests)
         "                 </MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Price' typeName='double' />"
+        "        <ECProperty propertyName='Diameter' typeName='double' />"
         "    </ECEntityClass>"
         "</ECSchema>", true, "Option SharedColumnsForSubclasses is allowed on subclass as base classes haven't defined shared columns yet."));
 
@@ -1496,7 +1496,7 @@ TEST_F (ECDbMappingTestFixture, SharedColumnCATests)
         "                 </MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Price' typeName='double' />"
+        "        <ECProperty propertyName='Cost' typeName='double' />"
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='Sub11' modifier='None'>"
         "        <BaseClass>Sub1</BaseClass>"
@@ -1507,7 +1507,7 @@ TEST_F (ECDbMappingTestFixture, SharedColumnCATests)
         "                 </MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Price' typeName='double' />"
+        "        <ECProperty propertyName='Diameter' typeName='double' />"
         "    </ECEntityClass>"
         "</ECSchema>", true, "Defining SharedColumns in subclass of class with DisableSharedColumns is expected to work"));
 
@@ -1530,7 +1530,7 @@ TEST_F (ECDbMappingTestFixture, SharedColumnCATests)
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='Sub1' modifier='None'>"
         "        <BaseClass>Parent</BaseClass>"
-        "        <ECProperty propertyName='Price' typeName='double' />"
+        "        <ECProperty propertyName='Cost' typeName='double' />"
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='Sub11' modifier='None'>"
         "        <BaseClass>Sub1</BaseClass>"
@@ -1541,7 +1541,7 @@ TEST_F (ECDbMappingTestFixture, SharedColumnCATests)
         "                 </MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Price' typeName='double' />"
+        "        <ECProperty propertyName='Diameter' typeName='double' />"
         "    </ECEntityClass>"
         "</ECSchema>", true, "Defining SharedColumns in subclass of class with DisableSharedColumns is expected to work"));
 
@@ -1564,7 +1564,7 @@ TEST_F (ECDbMappingTestFixture, SharedColumnCATests)
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='Sub1' modifier='None'>"
         "        <BaseClass>Parent</BaseClass>"
-        "        <ECProperty propertyName='Price' typeName='double' />"
+        "        <ECProperty propertyName='Cost' typeName='double' />"
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='Sub11' modifier='None'>"
         "        <BaseClass>Sub1</BaseClass>"
@@ -1575,7 +1575,7 @@ TEST_F (ECDbMappingTestFixture, SharedColumnCATests)
         "                 </MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Price' typeName='double' />"
+        "        <ECProperty propertyName='Diameter' typeName='double' />"
         "    </ECEntityClass>"
         "</ECSchema>", true, "MinimumSharedColumnCount can be defined for SharedColumnsForSubclasses"));
 
@@ -1597,7 +1597,7 @@ TEST_F (ECDbMappingTestFixture, SharedColumnCATests)
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='Sub1' modifier='None'>"
         "        <BaseClass>Parent</BaseClass>"
-        "        <ECProperty propertyName='Price' typeName='double' />"
+        "        <ECProperty propertyName='Cost' typeName='double' />"
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='Sub11' modifier='None'>"
         "        <BaseClass>Sub1</BaseClass>"
@@ -1609,7 +1609,7 @@ TEST_F (ECDbMappingTestFixture, SharedColumnCATests)
         "                 </MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Price' typeName='double' />"
+        "        <ECProperty propertyName='Diameter' typeName='double' />"
         "    </ECEntityClass>"
         "</ECSchema>", false, "MinimumSharedColumnCount can only be defined on first occurrence of SharedColumn option in a hierarchy"));
 
@@ -1631,7 +1631,7 @@ TEST_F (ECDbMappingTestFixture, SharedColumnCATests)
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='Sub1' modifier='None'>"
         "        <BaseClass>Parent</BaseClass>"
-        "        <ECProperty propertyName='Price' typeName='double' />"
+        "        <ECProperty propertyName='Cost' typeName='double' />"
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='Sub11' modifier='None'>"
         "        <BaseClass>Sub1</BaseClass>"
@@ -1642,7 +1642,7 @@ TEST_F (ECDbMappingTestFixture, SharedColumnCATests)
         "                 </MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Price' typeName='double' />"
+        "        <ECProperty propertyName='Diameter' typeName='double' />"
         "    </ECEntityClass>"
         "</ECSchema>", false, "MinimumSharedColumnCount can only be defined on first occurrence of SharedColumn option in a hierarchy"));
 
@@ -1664,7 +1664,7 @@ TEST_F (ECDbMappingTestFixture, SharedColumnCATests)
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='Sub1' modifier='None'>"
         "        <BaseClass>Parent</BaseClass>"
-        "        <ECProperty propertyName='Price' typeName='double' />"
+        "        <ECProperty propertyName='Cost' typeName='double' />"
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='Sub11' modifier='None'>"
         "        <BaseClass>Sub1</BaseClass>"
@@ -1675,12 +1675,84 @@ TEST_F (ECDbMappingTestFixture, SharedColumnCATests)
         "                 </MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Price' typeName='double' />"
+        "        <ECProperty propertyName='Diameter' typeName='double' />"
         "    </ECEntityClass>"
         "</ECSchema>", false, "MinimumSharedColumnCount can only be defined on first occurrence of SharedColumn option in a hierarchy"));
 
     AssertSchemaImport (testItems, "sharedtablecatests.ecdb");
 
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   02/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, MinimumSharedColumnCount)
+    {
+    ECDbR ecdb = SetupECDb("minimumsharedcolcount.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>100</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub1' modifier='None'>"
+        "        <BaseClass>Parent</BaseClass>"
+        "        <ECProperty propertyName='Cost' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub2' modifier='None'>"
+        "        <BaseClass>Parent</BaseClass>"
+        "        <ECProperty propertyName='DoubleProp' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub11' modifier='None'>"
+        "        <BaseClass>Sub1</BaseClass>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Options>SharedColumns</Options>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Diameter' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"));
+
+    bvector<Utf8String> colNames;
+    ecdb.GetColumns(colNames, "ts_Parent");
+    ASSERT_EQ(colNames.size(), 103);
+
+    ecdb.SaveChanges();
+
+    SchemaItem secondSchema(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='TestSchema' version='01.00' prefix='ts' />"
+        "    <ECEntityClass typeName='Sub3'>"
+        "        <BaseClass>ts:Parent</BaseClass>"
+        "        <ECProperty propertyName='Prop3' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub111'>"
+        "        <BaseClass>ts:Sub11</BaseClass>"
+        "        <ECProperty propertyName='Prop111' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, ecdb, secondSchema);
+    ASSERT_FALSE(asserted);
+
+    colNames.clear();
+    ecdb.GetColumns(colNames, "ts_Parent");
+    ASSERT_EQ(colNames.size(), 103);
     }
 
 //---------------------------------------------------------------------------------------

@@ -454,12 +454,12 @@ MapStatus ClassMap::Map(SchemaImportContext& schemaImportContext, ClassMapInfo c
 MapStatus ClassMap::_MapPart1(SchemaImportContext& schemaImportContext, ClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
     {
     m_dbView = std::unique_ptr<ClassDbView> (new ClassDbView(*this));
-    ECDbSqlTable const* baseTable = nullptr;
+    ECDbSqlTable const* primaryTable = nullptr;
     TableType tableType = TableType::Primary;
     if (Enum::Contains(mapInfo.GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::JoinedTable))
         {
         tableType = TableType::Joined;
-        baseTable = &parentClassMap->GetPrimaryTable();
+        primaryTable = &parentClassMap->GetPrimaryTable();
         }
     else if (IClassMap::MapsToStructArrayTable(m_ecClass))
         tableType = TableType::StructArray;
@@ -470,11 +470,11 @@ MapStatus ClassMap::_MapPart1(SchemaImportContext& schemaImportContext, ClassMap
         {
         if (TableType::Joined == tableType)
             {
-            BeAssert(baseTable != nullptr);
+            BeAssert(primaryTable != nullptr);
             }
 
         ECDbSqlTable* table = const_cast<ECDbMapR>(m_ecDbMap).FindOrCreateTable(&schemaImportContext, mapInfo.GetTableName(), tableType,
-            mapInfo.IsMapToVirtualTable(), mapInfo.GetECInstanceIdColumnName(), baseTable);
+            mapInfo.IsMapToVirtualTable(), mapInfo.GetECInstanceIdColumnName(), primaryTable);
 
         if (!EXPECTED_CONDITION(table != nullptr))
             return MapStatus::Error;
@@ -500,6 +500,17 @@ MapStatus ClassMap::_MapPart1(SchemaImportContext& schemaImportContext, ClassMap
         {
         if (findOrCreateTable() == MapStatus::Error)
             return MapStatus::Error;
+        }
+
+    if (mapInfo.GetMapStrategy().GetMinimumSharedColumnCount() != ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT)
+        {
+        if (SUCCESS != GetJoinedTable().SetMinimumSharedColumnCount(mapInfo.GetMapStrategy().GetMinimumSharedColumnCount()))
+            {
+            m_ecDbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                     "Only one ECClass per table can specify a minimum shared column count. Found duplicate definition on ECClass '%s'.",
+                      m_ecClass.GetFullName());
+            return MapStatus::Error;
+            }
         }
 
     //Add ECInstanceId property map
@@ -592,7 +603,7 @@ BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(ECPropertyCR currentTimeSt
         return ERROR;
         }
 
-    if (currentTimeStampColumn->GetType() == ECDbSqlColumn::Type::Any)
+    if (currentTimeStampColumn->IsShared())
         {
         m_ecDbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning,
                    "ECProperty '%s' in ECClass '%s' has the ClassHasCurrentTimeStampProperty custom attribute but is mapped to a shared column. "
@@ -1151,7 +1162,7 @@ ECDbSqlColumn* ColumnFactory::ApplySharedColumnStrategy() const
     if (TryFindReusableSharedDataColumn(reusableColumn))
         return const_cast<ECDbSqlColumn*>(reusableColumn);
 
-    return GetTable().CreateColumn(nullptr, ECDbSqlColumn::Type::Any, ColumnKind::DataColumn, PersistenceType::Persisted);
+    return GetTable().CreateSharedColumn();
     }
 
 //------------------------------------------------------------------------------------------
@@ -1215,13 +1226,10 @@ bool ColumnFactory::TryFindReusableSharedDataColumn(ECDbSqlColumn const*& reusab
     {
     reusableColumn = nullptr;
     std::vector<ECDbSqlColumn const*> reusableColumns;
-    for (auto column : GetTable().GetColumns())
+    for (ECDbSqlColumn const* column : GetTable().GetColumns())
         {
-        if (Enum::Contains(column->GetKind(), ColumnKind::DataColumn) && column->GetType() == ECDbSqlColumn::Type::Any)
-            {
-            if (!IsColumnInUse(*column))
-                reusableColumns.push_back(column);
-            }
+        if (column->IsShared() && !IsColumnInUse(*column))
+            reusableColumns.push_back(column);
         }
 
     if (reusableColumns.empty())
