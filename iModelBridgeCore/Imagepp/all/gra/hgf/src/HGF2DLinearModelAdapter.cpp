@@ -28,8 +28,8 @@ HGF2DLinearModelAdapter::HGF2DLinearModelAdapter()
     : HGF2DTransfoModelAdapter(HGF2DIdentity())
 
     {
-    m_pPreTransfoModel      = new HGF2DIdentity();
-    m_pPostTransfoModel     = new HGF2DIdentity();
+    m_pPreTransfoModel = new HGF2DIdentity();
+    m_pPostTransfoModel = new HGF2DIdentity();
 
     m_ApplicationArea = HGF2DLiteExtent(0.0, 0.0, 1.0, 1.0);
     m_Step = 1.0;
@@ -45,36 +45,36 @@ HGF2DLinearModelAdapter::HGF2DLinearModelAdapter()
 
 
 /** -----------------------------------------------------------------------------
-    Creates an linear model transformation adapter model based on the given model.
-    A copy of the given model is performed and kept internally in the
-    transformation model adapter.
+Creates an linear model transformation adapter model based on the given model.
+A copy of the given model is performed and kept internally in the
+transformation model adapter.
 
-    The linear model adapter samples the transformation of the model to adapt
-    in the indicated region at every step in both X and Y directions. The
-    given extent may not represent an empty area and the step must be twice as
-    small as both the extent width and height.
+The linear model adapter samples the transformation of the model to adapt
+in the indicated region at every step in both X and Y directions. The
+given extent may not represent an empty area and the step must be twice as
+small as both the extent width and height.
 
-    The adapted model must be non-linear.
+The adapted model must be non-linear.
 
-    The units of the present adapter are those of the non-linear model adapted
+The units of the present adapter are those of the non-linear model adapted
 
-    @param pi_rNonLinearTransfoModel Constant reference to a transformation model
-                                     to adapt. A copy of this model is done.
+@param pi_rNonLinearTransfoModel Constant reference to a transformation model
+to adapt. A copy of this model is done.
 
-    @param pi_rApplicationArea The extent in direct channel coordinates
-                               to create an affine or projective approximation of the
-                               non-linear model. Transformation is sample in this
-                               area using provided step.
+@param pi_rApplicationArea The extent in direct channel coordinates
+to create an affine or projective approximation of the
+non-linear model. Transformation is sample in this
+area using provided step.
 
-    @param pi_Step  The sampling step used in the sampling of the transformation
-                    in direct raw unit. This step must be greater than 0.0.
+@param pi_Step  The sampling step used in the sampling of the transformation
+in direct raw unit. This step must be greater than 0.0.
 
-    @param pi_AdaptAsAffine Optional parameter indicating if the adaptation must
-                            must restrict the approximation to a simple affine
-                            and not compute projection parameters. The default is
-                            to adapt as a projective.
+@param pi_AdaptAsAffine Optional parameter indicating if the adaptation must
+must restrict the approximation to a simple affine
+and not compute projection parameters. The default is
+to adapt as a projective.
 
-    -----------------------------------------------------------------------------
+-----------------------------------------------------------------------------
 */
 HGF2DLinearModelAdapter::HGF2DLinearModelAdapter(const HGF2DTransfoModel& pi_rNonLinearTransfoModel,
                                                  const HGF2DLiteExtent&   pi_rApplicationArea,
@@ -97,8 +97,8 @@ HGF2DLinearModelAdapter::HGF2DLinearModelAdapter(const HGF2DTransfoModel& pi_rNo
     HPRECONDITION((pi_Step * 2.0) < pi_rApplicationArea.GetWidth());
     HPRECONDITION((pi_Step * 2.0) < pi_rApplicationArea.GetHeight());
 
-    m_pPreTransfoModel      = new HGF2DIdentity();
-    m_pPostTransfoModel     = new HGF2DIdentity();
+    m_pPreTransfoModel = new HGF2DIdentity();
+    m_pPostTransfoModel = new HGF2DIdentity();
 
 
     m_ApplicationArea = pi_rApplicationArea;
@@ -111,51 +111,51 @@ HGF2DLinearModelAdapter::HGF2DLinearModelAdapter(const HGF2DTransfoModel& pi_rNo
 
 
 /** -----------------------------------------------------------------------------
-    PROTECTED
-    For internal use only.
-    Creates a affine or projective transformation model adapter model based on the given model.
-    A copy of the given model is performed and kept internally in the
-    transformation model adapter.
+PROTECTED
+For internal use only.
+Creates a affine or projective transformation model adapter model based on the given model.
+A copy of the given model is performed and kept internally in the
+transformation model adapter.
 
-    The linear model adapter samples the transformation of the model to adapt
-    in the indicated region at every step in both X and Y directions. The
-    given extent may not represent an empty area and the step must be twice as
-    small as both the extent width and height.
+The linear model adapter samples the transformation of the model to adapt
+in the indicated region at every step in both X and Y directions. The
+given extent may not represent an empty area and the step must be twice as
+small as both the extent width and height.
 
-    The adapted model must be non-linear.
+The adapted model must be non-linear.
 
-    The units of the present adapter are those of the non-linear model adapted
+The units of the present adapter are those of the non-linear model adapted
 
-    Contrarly to public constructor, the method requires a pre and post transformation
-    models that must be linearity preserving. These models are used to generate
-    composition with other linear models without increasing the complexity
-    of the result model. Copies of each of these models is performed.
+Contrarly to public constructor, the method requires a pre and post transformation
+models that must be linearity preserving. These models are used to generate
+composition with other linear models without increasing the complexity
+of the result model. Copies of each of these models is performed.
 
-    @param pi_rNonLinearTransfoModel Constant reference to a transformation model
-                                     to adapt. A copy of this model is done.
+@param pi_rNonLinearTransfoModel Constant reference to a transformation model
+to adapt. A copy of this model is done.
 
-    @param pi_rPreTransfoModel A linearity and paralelism preserving transformation model
-                               that describes the transformation to apply before
-                               the non linear model adapted.
+@param pi_rPreTransfoModel A linearity and paralelism preserving transformation model
+that describes the transformation to apply before
+the non linear model adapted.
 
-    @param pi_rPostTransfoModel A linearity and paralelism preserving transformation model
-                                that describes the transformation to apply after
-                                the non linear model adapted.
+@param pi_rPostTransfoModel A linearity and paralelism preserving transformation model
+that describes the transformation to apply after
+the non linear model adapted.
 
-    @param pi_rApplicationArea The extent in direct channel coordinates
-                               to create an affine or projective approximation of the
-                               non-linear model. Transformation is sample in this
-                               area using provided step.
+@param pi_rApplicationArea The extent in direct channel coordinates
+to create an affine or projective approximation of the
+non-linear model. Transformation is sample in this
+area using provided step.
 
-    @param pi_Step  The sampling step used in the sampling of the transformation
-                    in direct raw unit. This step must be greater than 0.0.
+@param pi_Step  The sampling step used in the sampling of the transformation
+in direct raw unit. This step must be greater than 0.0.
 
-    @param pi_AdaptAsAffine Optional parameter indicating if the adaptation must
-                            must restrict the approximation to a simple affine
-                            and not compute projection parameters. The default is
-                            to adapt as a projective.
+@param pi_AdaptAsAffine Optional parameter indicating if the adaptation must
+must restrict the approximation to a simple affine
+and not compute projection parameters. The default is
+to adapt as a projective.
 
-    -----------------------------------------------------------------------------
+-----------------------------------------------------------------------------
 */
 HGF2DLinearModelAdapter::HGF2DLinearModelAdapter(const HGF2DTransfoModel& pi_rNonLinearTransfoModel,
                                                  const HGF2DTransfoModel& pi_rPreTransfo,
@@ -184,8 +184,8 @@ HGF2DLinearModelAdapter::HGF2DLinearModelAdapter(const HGF2DTransfoModel& pi_rNo
     HPRECONDITION((pi_Step * 2.0) < pi_rApplicationArea.GetWidth());
     HPRECONDITION((pi_Step * 2.0) < pi_rApplicationArea.GetHeight());
 
-    m_pPreTransfoModel       = pi_rPreTransfo.Clone();
-    m_pPostTransfoModel      = pi_rPostTransfo.Clone();
+    m_pPreTransfoModel = pi_rPreTransfo.Clone();
+    m_pPostTransfoModel = pi_rPostTransfo.Clone();
 
 
     m_ApplicationArea = pi_rApplicationArea;
@@ -198,60 +198,60 @@ HGF2DLinearModelAdapter::HGF2DLinearModelAdapter(const HGF2DTransfoModel& pi_rNo
 
 
 /** -----------------------------------------------------------------------------
-    PROTECTED
-    For internal use only.
-    Creates a linear model transformation model adapter model based on the given model.
-    A copy of the given model is performed and kept internally in the
-    transformation model adapter.
+PROTECTED
+For internal use only.
+Creates a linear model transformation model adapter model based on the given model.
+A copy of the given model is performed and kept internally in the
+transformation model adapter.
 
-    The linear model adapter samples the transformation of the model to adapt
-    in the indicated region at every step in both X and Y directions. The
-    given extent may not represent an empty area and the step must be twice as
-    small as both the extent width and height.
+The linear model adapter samples the transformation of the model to adapt
+in the indicated region at every step in both X and Y directions. The
+given extent may not represent an empty area and the step must be twice as
+small as both the extent width and height.
 
-    The adapted model must be non-linear.
+The adapted model must be non-linear.
 
-    The units of the present model are those of the linear model approximation
-    not those of the adapter model
+The units of the present model are those of the linear model approximation
+not those of the adapter model
 
-    Contrarly to public constructor, the method requires a pre and post transformation
-    models that must be linearity preserving. These models are used to generate
-    composition with other linear models without increasing the complexity
-    of the result model. Copies of each of these models is performed.
+Contrarly to public constructor, the method requires a pre and post transformation
+models that must be linearity preserving. These models are used to generate
+composition with other linear models without increasing the complexity
+of the result model. Copies of each of these models is performed.
 
-    In addition, this constructor received the already computed adpater that
-    results from composition. This implies that non-linear model,
-    application area nor step are used since the approximation is already
-    resloved.
+In addition, this constructor received the already computed adpater that
+results from composition. This implies that non-linear model,
+application area nor step are used since the approximation is already
+resloved.
 
-    @param pi_rNonLinearTransfoModel Constant reference to a transformation model
-                                     to adapt. A copy of this model is done.
+@param pi_rNonLinearTransfoModel Constant reference to a transformation model
+to adapt. A copy of this model is done.
 
-    @param pi_rLinearApproximation The already compute linear model approximation. A
-                                   copy of this model is done.
+@param pi_rLinearApproximation The already compute linear model approximation. A
+copy of this model is done.
 
-    @param pi_rPreTransfoModel A linearity and paralelism preserving transformation model
-                               that describes the transformation to apply before
-                               the non linear model adapted.
+@param pi_rPreTransfoModel A linearity and paralelism preserving transformation model
+that describes the transformation to apply before
+the non linear model adapted.
 
-    @param pi_rPostTransfoModel A linearity and paralelism preserving transformation model
-                                that describes the transformation to apply after
-                                the non linear model adapted.
+@param pi_rPostTransfoModel A linearity and paralelism preserving transformation model
+that describes the transformation to apply after
+the non linear model adapted.
 
-    @param pi_rApplicationArea The extent in direct channel coordinates
-                               to create a linear model approximation of the
-                               non-linear model. Transformation is sample in this
-                               area using provided step.
+@param pi_rApplicationArea The extent in direct channel coordinates
+to create a linear model approximation of the
+non-linear model. Transformation is sample in this
+area using provided step.
 
-    @param pi_Step  The sampling step used in the sampling of the transformation
-                    in direct raw unit. This step must be greater than 0.0.
+@param pi_Step  The sampling step used in the sampling of the transformation
+in direct raw unit. This step must be greater than 0.0.
 
-    @param pi_AdaptAsAffine Optional parameter indicating if the adaptation must
-                            must restrict the approximation to a simple affine
-                            and not compute projection parameters. The default is
-                            to adapt as a projective.
+@param pi_AdaptAsAffine Optional parameter indicating if the adaptation must
+must restrict the approximation to a simple affine
+and not compute projection parameters. The default is
+to adapt as a projective.
 
-    -----------------------------------------------------------------------------
+-----------------------------------------------------------------------------
 */
 HGF2DLinearModelAdapter::HGF2DLinearModelAdapter(const HGF2DTransfoModel& pi_rNonLinearTransfoModel,
                                                  const HGF2DTransfoModel& pi_rLinearApproximation,
@@ -285,9 +285,9 @@ HGF2DLinearModelAdapter::HGF2DLinearModelAdapter(const HGF2DTransfoModel& pi_rNo
     HPRECONDITION((pi_Step * 2.0) < pi_rApplicationArea.GetHeight());
 
 
-    m_pPreTransfoModel       = pi_rPreTransfo.Clone();
-    m_pPostTransfoModel      = pi_rPostTransfo.Clone();
-    m_pLinearModel           = pi_rLinearApproximation.Clone();
+    m_pPreTransfoModel = pi_rPreTransfo.Clone();
+    m_pPostTransfoModel = pi_rPostTransfo.Clone();
+    m_pLinearModel = pi_rLinearApproximation.Clone();
 
 
 
@@ -307,17 +307,17 @@ HGF2DLinearModelAdapter::HGF2DLinearModelAdapter(const HGF2DTransfoModel& pi_rNo
 
 
 /** -----------------------------------------------------------------------------
-    This is the copy constructor. It copies the state of the given linear model
-    adapter. Note that copies of all transformation models is performed.
+This is the copy constructor. It copies the state of the given linear model
+adapter. Note that copies of all transformation models is performed.
 
-    @param pi_rObj  Constant reference to a linear model adapter to copy state from.
+@param pi_rObj  Constant reference to a linear model adapter to copy state from.
 
-    -----------------------------------------------------------------------------
+-----------------------------------------------------------------------------
 */
 HGF2DLinearModelAdapter::HGF2DLinearModelAdapter(const HGF2DLinearModelAdapter& pi_rObj)
     : HGF2DTransfoModelAdapter(pi_rObj)
     {
-    Copy (pi_rObj);
+    Copy(pi_rObj);
 
     HINVARIANTS;
     }
@@ -326,17 +326,16 @@ HGF2DLinearModelAdapter::HGF2DLinearModelAdapter(const HGF2DLinearModelAdapter& 
 // The destructor.
 //-----------------------------------------------------------------------------
 HGF2DLinearModelAdapter::~HGF2DLinearModelAdapter()
-    {
-    }
+    {}
 
 /** -----------------------------------------------------------------------------
-    This is the assignment operator. It copies the state of the given linear model
-    adapter. Note that copies of all transformation models is performed.
+This is the assignment operator. It copies the state of the given linear model
+adapter. Note that copies of all transformation models is performed.
 
-    @param pi_rObj  Constant reference to a linear model adapter to copy state from.
+@param pi_rObj  Constant reference to a linear model adapter to copy state from.
 
-    @return Returns a reference to self to be used as an l-value.
-    -----------------------------------------------------------------------------
+@return Returns a reference to self to be used as an l-value.
+-----------------------------------------------------------------------------
 */
 HGF2DLinearModelAdapter& HGF2DLinearModelAdapter::operator=(const HGF2DLinearModelAdapter& pi_rObj)
     {
@@ -347,7 +346,7 @@ HGF2DLinearModelAdapter& HGF2DLinearModelAdapter::operator=(const HGF2DLinearMod
         {
         // Call ancestor operator=
         HGF2DTransfoModelAdapter::operator=(pi_rObj);
-        Copy (pi_rObj);
+        Copy(pi_rObj);
         }
 
     // Return reference to self
@@ -359,7 +358,7 @@ HGF2DLinearModelAdapter& HGF2DLinearModelAdapter::operator=(const HGF2DLinearMod
 // Converter (direct)
 //-----------------------------------------------------------------------------
 StatusInt HGF2DLinearModelAdapter::ConvertDirect(double* pio_pXInOut,
-                                            double* pio_pYInOut) const
+                                                 double* pio_pYInOut) const
     {
     HINVARIANTS;
 
@@ -374,9 +373,9 @@ StatusInt HGF2DLinearModelAdapter::ConvertDirect(double* pio_pXInOut,
 // Converter (direct)
 //-----------------------------------------------------------------------------
 StatusInt HGF2DLinearModelAdapter::ConvertDirect(double pi_XIn,
-                                            double pi_YIn,
-                                            double* po_pXOut,
-                                            double* po_pYOut) const
+                                                 double pi_YIn,
+                                                 double* po_pXOut,
+                                                 double* po_pYOut) const
     {
     HINVARIANTS;
 
@@ -409,8 +408,8 @@ StatusInt HGF2DLinearModelAdapter::ConvertDirect(double    pi_YIn,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DLinearModelAdapter::ConvertDirect(size_t pi_NumLoc, 
-                                                 double* pio_aXInOut, 
+StatusInt HGF2DLinearModelAdapter::ConvertDirect(size_t pi_NumLoc,
+                                                 double* pio_aXInOut,
                                                  double* pio_aYInOut) const
     {
     HINVARIANTS;
@@ -477,8 +476,8 @@ StatusInt HGF2DLinearModelAdapter::ConvertInverse(double    pi_YIn,
 //-----------------------------------------------------------------------------
 // Converter (Inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DLinearModelAdapter::ConvertInverse(size_t pi_NumLoc, 
-                                                  double* pio_aXInOut, 
+StatusInt HGF2DLinearModelAdapter::ConvertInverse(size_t pi_NumLoc,
+                                                  double* pio_aXInOut,
                                                   double* pio_aYInOut) const
     {
     HINVARIANTS;
@@ -495,7 +494,7 @@ StatusInt HGF2DLinearModelAdapter::ConvertInverse(size_t pi_NumLoc,
 // PreservesLinearity
 // Indicate if the transformation model preserves linearity
 //-----------------------------------------------------------------------------
-bool   HGF2DLinearModelAdapter::PreservesLinearity () const
+bool   HGF2DLinearModelAdapter::PreservesLinearity() const
     {
     HINVARIANTS;
 
@@ -552,7 +551,7 @@ bool HGF2DLinearModelAdapter::CanBeRepresentedByAMatrix() const
 //  IsIdentity
 //  Returns true if the model contains no transformation
 //-----------------------------------------------------------------------------
-bool HGF2DLinearModelAdapter::IsIdentity () const
+bool HGF2DLinearModelAdapter::IsIdentity() const
     {
     HINVARIANTS;
 
@@ -563,7 +562,7 @@ bool HGF2DLinearModelAdapter::IsIdentity () const
 //  IsStetchable
 //  Returns true if the model contains only scaling and translation
 //-----------------------------------------------------------------------------
-bool HGF2DLinearModelAdapter::IsStretchable (double pi_AngleTolerance) const
+bool HGF2DLinearModelAdapter::IsStretchable(double pi_AngleTolerance) const
     {
     HINVARIANTS;
 
@@ -636,7 +635,7 @@ void    HGF2DLinearModelAdapter::Reverse()
 // ComposeInverseWithDirectOf
 // Composes a new transformation model as a combination of self and given
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGF2DLinearModelAdapter::ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGF2DLinearModelAdapter::ComposeInverseWithDirectOf(const HGF2DTransfoModel& pi_rModel) const
     {
     HINVARIANTS;
 
@@ -674,7 +673,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DLinearModelAdapter::ComposeInverseWithDirectOf (
 // This method allocates a copy of self. The caller is responsible for
 // the deletion of this object.
 //-----------------------------------------------------------------------------
-HGF2DTransfoModel* HGF2DLinearModelAdapter::Clone () const
+HGF2DTransfoModel* HGF2DLinearModelAdapter::Clone() const
     {
     HINVARIANTS;
 
@@ -687,7 +686,7 @@ HGF2DTransfoModel* HGF2DLinearModelAdapter::Clone () const
 // ComposeYourself
 // PRIVATE
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGF2DLinearModelAdapter::ComposeYourself (const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGF2DLinearModelAdapter::ComposeYourself(const HGF2DTransfoModel& pi_rModel) const
     {
     HINVARIANTS;
 
@@ -729,16 +728,16 @@ HFCPtr<HGF2DTransfoModel>  HGF2DLinearModelAdapter::ComposeYourself (const HGF2D
 
         if (m_AdaptAsAffine)
             {
-            ((HGF2DAffine*)(&(*pResultPreModel)))->SetByMatrixParameters(ResMatrix[0][2],
-                                                                         ResMatrix[0][0],
-                                                                         ResMatrix[0][1],
-                                                                         ResMatrix[1][2],
-                                                                         ResMatrix[1][0],
-                                                                         ResMatrix[1][1]);
+            ((HGF2DAffine*) (&(*pResultPreModel)))->SetByMatrixParameters(ResMatrix[0][2],
+                                                                          ResMatrix[0][0],
+                                                                          ResMatrix[0][1],
+                                                                          ResMatrix[1][2],
+                                                                          ResMatrix[1][0],
+                                                                          ResMatrix[1][1]);
             }
         else
             {
-            ((HGF2DProjective*)(&(*pResultPreModel)))->SetByMatrix(MySelfMatrix * pi_rModel.GetMatrix());
+            ((HGF2DProjective*) (&(*pResultPreModel)))->SetByMatrix(MySelfMatrix * pi_rModel.GetMatrix());
             }
 
         // Compute the new affine or projective
@@ -766,16 +765,16 @@ HFCPtr<HGF2DTransfoModel>  HGF2DLinearModelAdapter::ComposeYourself (const HGF2D
             HASSERT(ResMatrix[2][0] == 0.0);
             HASSERT(ResMatrix[2][1] == 0.0);
 
-            ((HGF2DAffine*)(&(*pResultLinModel)))->SetByMatrixParameters(ResMatrix[0][2],
-                                                                         ResMatrix[0][0],
-                                                                         ResMatrix[0][1],
-                                                                         ResMatrix[1][2],
-                                                                         ResMatrix[1][0],
-                                                                         ResMatrix[1][1]);
+            ((HGF2DAffine*) (&(*pResultLinModel)))->SetByMatrixParameters(ResMatrix[0][2],
+                                                                          ResMatrix[0][0],
+                                                                          ResMatrix[0][1],
+                                                                          ResMatrix[1][2],
+                                                                          ResMatrix[1][0],
+                                                                          ResMatrix[1][1]);
             }
         else
             {
-            ((HGF2DProjective*)(&(*pResultLinModel)))->SetByMatrix(MySelfMatrix * pi_rModel.GetMatrix());
+            ((HGF2DProjective*) (&(*pResultLinModel)))->SetByMatrix(MySelfMatrix * pi_rModel.GetMatrix());
             }
 
         // Convert center area coordinates
@@ -804,7 +803,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DLinearModelAdapter::ComposeYourself (const HGF2D
 //  This methods prepares the conversion parameters from the basic
 //  model attribute
 //-----------------------------------------------------------------------------
-void HGF2DLinearModelAdapter::Prepare ()
+void HGF2DLinearModelAdapter::Prepare()
     {
     // Obtain conversion ratio for direct X to inverse X units
 
@@ -821,8 +820,8 @@ void HGF2DLinearModelAdapter::Prepare ()
 void HGF2DLinearModelAdapter::Copy(const HGF2DLinearModelAdapter& pi_rObj)
     {
     // Copy master data
-    m_pPreTransfoModel       = pi_rObj.m_pPreTransfoModel->Clone();
-    m_pPostTransfoModel      = pi_rObj.m_pPostTransfoModel->Clone();
+    m_pPreTransfoModel = pi_rObj.m_pPreTransfoModel->Clone();
+    m_pPostTransfoModel = pi_rObj.m_pPostTransfoModel->Clone();
 
     m_Step = pi_rObj.m_Step;
 
@@ -853,16 +852,16 @@ HFCPtr<HGF2DTransfoModel> HGF2DLinearModelAdapter::CreateSimplifiedModel() const
 
 
 /** -----------------------------------------------------------------------------
-    PRIVATE METHOD
-    This method performs the generation of a affine or projective by sampling of the
-    transformation of the non-linear model.
+PRIVATE METHOD
+This method performs the generation of a affine or projective by sampling of the
+transformation of the non-linear model.
 
-    @param pi_rExtent The application area over which sampling is performed.
+@param pi_rExtent The application area over which sampling is performed.
 
-    @param pi_Step The sampling step used in both X and Y directions.
+@param pi_Step The sampling step used in both X and Y directions.
 
-    @return Returns the generated affine or projective linear transformation model.
-    -----------------------------------------------------------------------------
+@return Returns the generated affine or projective linear transformation model.
+-----------------------------------------------------------------------------
 */
 HFCPtr<HGF2DTransfoModel> HGF2DLinearModelAdapter::CreateDirectModelFromExtent(const HGF2DLiteExtent& pi_rExtent, double pi_Step) const
     {
@@ -874,7 +873,7 @@ HFCPtr<HGF2DTransfoModel> HGF2DLinearModelAdapter::CreateDirectModelFromExtent(c
     HPRECONDITION(pi_Step > 0.0);
 
     // Calculate the number of tie points needed
-    uint32_t NumberOfPoints = (uint32_t)(((pi_rExtent.GetHeight() / pi_Step) + 2) * ((pi_rExtent.GetWidth() / pi_Step) + 2));
+    uint32_t NumberOfPoints = (uint32_t) (((pi_rExtent.GetHeight() / pi_Step) + 2) * ((pi_rExtent.GetWidth() / pi_Step) + 2));
 
 
     // Allocate Tie Points (6 double per tie points pair)
@@ -885,9 +884,9 @@ HFCPtr<HGF2DTransfoModel> HGF2DLinearModelAdapter::CreateDirectModelFromExtent(c
     double CurrentY;
     double TempX;
     double TempY;
-    for (CurrentY = pi_rExtent.GetYMin() ; CurrentY < pi_rExtent.GetYMax() ; CurrentY += pi_Step)
+    for (CurrentY = pi_rExtent.GetYMin(); CurrentY < pi_rExtent.GetYMax(); CurrentY += pi_Step)
         {
-        for (CurrentX = pi_rExtent.GetXMin() ; CurrentX < pi_rExtent.GetXMax() ; CurrentX += pi_Step)
+        for (CurrentX = pi_rExtent.GetXMin(); CurrentX < pi_rExtent.GetXMax(); CurrentX += pi_Step)
             {
             pTiePoints[CurrentTiePointVal] = CurrentX;
             ++CurrentTiePointVal;
@@ -899,9 +898,10 @@ HFCPtr<HGF2DTransfoModel> HGF2DLinearModelAdapter::CreateDirectModelFromExtent(c
             m_pPreTransfoModel->ConvertDirect(CurrentX, CurrentY, &TempX, &TempY);
 
             // Apply non-linear transformation
-            m_pAdaptedTransfoModel->ConvertDirect(&TempX, &TempY);
+            StatusInt errorStatus = m_pAdaptedTransfoModel->ConvertDirect(&TempX, &TempY);
+            BeAssertOnce(SUCCESS == errorStatus); //CSMap gives a Error status.
 
-            // Apply the post-transformation
+                                                  // Apply the post-transformation
             m_pPostTransfoModel->ConvertDirect(&TempX, &TempY);
 
 
@@ -921,12 +921,12 @@ HFCPtr<HGF2DTransfoModel> HGF2DLinearModelAdapter::CreateDirectModelFromExtent(c
     if (m_AdaptAsAffine)
         {
         // Create matrix
-        GetAffineTransfoMatrixFromScaleAndTiePts(MyFlatMatrix, (unsigned short)CurrentTiePointVal, pTiePoints);
+        GetAffineTransfoMatrixFromScaleAndTiePts(MyFlatMatrix, (unsigned short) CurrentTiePointVal, pTiePoints);
         }
     else
         {
         // Create matrix
-        GetProjectiveTransfoMatrixFromScaleAndTiePts(MyFlatMatrix, (unsigned short)CurrentTiePointVal, pTiePoints);
+        GetProjectiveTransfoMatrixFromScaleAndTiePts(MyFlatMatrix, (unsigned short) CurrentTiePointVal, pTiePoints);
         }
 
     HFCMatrix<3, 3> MyMatrix;
