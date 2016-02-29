@@ -98,13 +98,13 @@
     <Part Name="RealityDbECPluginCNuGet" BMakeFile="RealityDbECPlugin\NuGet\RealityDbECPluginC.NuGetPackage.mke">
         <RequiredRepository>Bsitools-NuGet</RequiredRepository>
         <SubPart PartName="RealityDbECPluginC" />
-<!--         <Bindings>
-            <Files ProductDirectoryName="RealityDbECPluginNuGetPackages">Delivery/Bentley.RealityDbECPluginC.1.0.0.0.nupkg</Files>
-        </Bindings> -->
+        <Bindings>
+            <Files ProductDirectoryName="RealityDbECPluginNuGetPackages" Required="false">Install\Bentley.RealityDbECPluginC.*.nupkg</Files>
+        </Bindings>
     </Part>
     
     <Part Name="BentleyWMSPackageNet" BMakeFile="BentleyWMSPackageNet\BentleyWMSPackageNet.mke" BMakeOptions="-dTranskitLink=1">
-        <SubPart PartName="TransKitToolsSub"    PartFile="${SrcRoot}util/TranskitTools\TransKitTools" />
+        <SubPart PartName="TransKitToolsSub"    PartFile="TransKitTools" Repository="TransKitTools" />
         <SubPart PartName="RealityPackage"/>
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="PublicAPI" />
