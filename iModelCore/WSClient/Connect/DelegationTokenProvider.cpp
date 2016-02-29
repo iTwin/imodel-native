@@ -19,10 +19,10 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-DelegationTokenProvider::DelegationTokenProvider(IImsClientPtr client, Utf8String rpUri, IConnectTokenProviderPtr baseTokenProvider) :
+DelegationTokenProvider::DelegationTokenProvider(IImsClientPtr client, Utf8String rpUri, IConnectTokenProviderPtr parentTokenProvider) :
 m_client(client),
 m_rpUri(rpUri),
-m_baseTokenProvider(baseTokenProvider),
+m_parentTokenProvider(parentTokenProvider),
 m_tokenLifetime(TOKEN_LIFETIME)
     {}
 
@@ -62,15 +62,15 @@ SamlTokenPtr DelegationTokenProvider::GetToken()
 AsyncTaskPtr<SamlTokenResult> DelegationTokenProvider::RetrieveNewToken(bool updateBaseTokenIfFailed)
     {
     LOG.infov("Requesting '%s' delegation token", m_rpUri.c_str());
-    SamlTokenPtr baseToken = m_baseTokenProvider->GetToken();
-    if (nullptr == baseToken)
+    SamlTokenPtr parentToken = m_parentTokenProvider->GetToken();
+    if (nullptr == parentToken)
         {
         LOG.errorv("Base token not found for '%s' delegation token", m_rpUri.c_str());
         return CreateCompletedAsyncTask(SamlTokenResult::Error({}));
         }
 
     auto finalResult = std::make_shared<SamlTokenResult>();
-    return m_client->RequestToken(*baseToken, m_rpUri, m_tokenLifetime)
+    return m_client->RequestToken(*parentToken, m_rpUri, m_tokenLifetime)
     ->Then([=] (SamlTokenResult result)
         {
         *finalResult = result;
@@ -84,7 +84,7 @@ AsyncTaskPtr<SamlTokenResult> DelegationTokenProvider::RetrieveNewToken(bool upd
         if (!updateBaseTokenIfFailed)
             return;
 
-        if (nullptr == m_baseTokenProvider->UpdateToken())
+        if (nullptr == m_parentTokenProvider->UpdateToken())
             return;
 
         RetrieveNewToken(false)->Then([=] (SamlTokenResult result)
