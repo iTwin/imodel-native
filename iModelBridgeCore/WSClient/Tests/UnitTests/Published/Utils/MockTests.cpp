@@ -27,6 +27,7 @@
 #include "../WebServices/Connect/MockConnectAuthenticationPersistence.h"
 #include "../WebServices/Connect/MockConnectTokenProvider.h"
 #include "../WebServices/Connect/MockLocalState.h"
+#include "../WebServices/Connect/MockImsClient.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -49,6 +50,7 @@ TEST_F(MockTests, Ctor_Default_Builds)
     MockConnectAuthenticationPersistence();
     MockConnectTokenProvider();
     MockLocalState();
+    MockImsClient();
     }
 
 #endif

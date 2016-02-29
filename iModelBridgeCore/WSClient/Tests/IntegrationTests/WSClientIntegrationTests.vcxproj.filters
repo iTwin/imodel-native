@@ -48,13 +48,13 @@
     <ClCompile Include="Client\WSRepositoryClientTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Connect\ConnectTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="TestUtils\WSClientIntegrationTestsHost.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Configuration\BuddiClientTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Connect\ImsClientTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Cache\ECDbAdapterTests.cpp">
@@ -95,13 +95,13 @@
     <ClInclude Include="Client\WSRepositoryClientTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Connect\ConnectTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="TestUtils\WSClientIntegrationTestsHost.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Configuration\BuddiClientTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Connect\ImsClientTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Cache\ECDbAdapterTests.h">

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/WebServices/Connect/IConnectTokenProvider.h $
+|     $Source: PublicAPI/WebServices/Connect/ITokenStore.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,27 +8,27 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
+#include <WebServices/WebServices.h>
 #include <WebServices/Connect/SamlToken.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 /*--------------------------------------------------------------------------------------+
-* @bsiclass                                                     Vincas.Razma    12/2014
+* @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
-typedef std::shared_ptr<struct IConnectTokenProvider> IConnectTokenProviderPtr;
-struct IConnectTokenProvider
+typedef std::shared_ptr<struct ITokenStore> ITokenStorePtr;
+struct EXPORT_VTABLE_ATTRIBUTE ITokenStore
     {
     public:
-        virtual ~IConnectTokenProvider()
+        virtual ~ITokenStore()
             {};
 
-        //! Retrieves new token, caches and returns it.
-        //! Returns null if token cannot be retrieved.
-        virtual SamlTokenPtr UpdateToken() = 0;
-
-        //! Returns cached token.
-        //! Returns null if token is not cached - calling UpdateToken() would be next step.
-        virtual SamlTokenPtr GetToken() = 0;
+        //! Store token
+        virtual void SetToken(SamlTokenPtr token) = 0;
+        //! Return existing token or null if no token was stored
+        virtual SamlTokenPtr GetToken()  const = 0;
+        //! Return time when token was set or invalid if no token was stored
+        virtual DateTime GetTokenSetTime() const = 0;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

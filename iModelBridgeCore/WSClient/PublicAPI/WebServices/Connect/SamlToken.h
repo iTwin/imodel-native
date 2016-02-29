@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Connect/SamlToken.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,7 +24,7 @@ struct SamlToken
         mutable BeXmlDomPtr m_dom;
 
     private:
-        static bool IsValidAt(xmlNodeSetPtr conditions, DateTimeCR dateTimeUtc);
+        BentleyStatus GetConditionDates(DateTime& notBeforeUtc, DateTime& notOnOrAfterUtc) const;
         static BentleyStatus GetAttributteDateTimeUtc(BeXmlNodeP node, Utf8CP name, DateTimeR dateTimeOut);
 
     public:
@@ -42,6 +42,8 @@ struct SamlToken
         //! Check whenever token is valid at current time with given offset in minutes
         //! Note that client clock might not be correctly set.
         WSCLIENT_EXPORT bool IsValidNow(uint32_t offsetMinutes) const;
+        //! Get token lifetime in minutes 
+        WSCLIENT_EXPORT uint32_t GetLifetime() const;
         //! Get token attributes
         WSCLIENT_EXPORT BentleyStatus GetAttributes(bmap<Utf8String, Utf8String>& atributtesOut) const;
         //! Get base 64 encoded certificate

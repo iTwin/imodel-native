@@ -132,6 +132,7 @@ WSError StubWSConnectionError();
 WSError StubWSCanceledError();
 
 ClientInfoPtr StubClientInfo();
+ClientInfoPtr StubValidClientInfo();
 
 ECN::ECSchemaPtr ParseSchema(Utf8StringCR schemaXml, ECN::ECSchemaReadContextPtr context = nullptr);
 

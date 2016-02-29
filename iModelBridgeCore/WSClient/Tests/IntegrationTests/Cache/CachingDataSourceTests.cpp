@@ -13,19 +13,21 @@
 #include <WebServices/Connect/ConnectAuthenticationHandler.h>
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
 #include <WebServices/Connect/ConnectTokenProvider.h>
-#include <WebServices/Connect/Connect.h>
+#include <WebServices/Connect/ConnectSignInManager.h>
+#include <WebServices/Connect/ImsClient.h>
 #include <DgnClientFx/Utils/Http/ProxyHttpHandler.h>
 #include <WebServices/Configuration/UrlProvider.h>
 
 #include "../../UnitTests/Published/WebServices/Cache/CachingTestsHelper.h"
 #include "../../UnitTests/Published/WebServices/Connect/StubLocalState.h"
 
-void CachingDataSourceTests::SetUpTestCase()
+void CachingDataSourceTests::SetUp()
     {
-    static StubLocalState localState;
-    localState.GetStubMap().clear();
+    WSClientBaseTest::SetUp();
+    m_localState = StubLocalState();
 
-    UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &localState);
+    ConnectAuthenticationPersistence::CustomInitialize(&m_localState);
+    UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &m_localState);
 
     CacheTransactionManager::SetAllowUnsafeAccess(true);
     }
@@ -49,22 +51,17 @@ BeFileName GetTestCachePath()
 TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectGlobal_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    Connect::Initialize(StubClientInfo(), proxy);
 
     Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net/";
     Utf8String repositoryId = "BentleyCONNECT.Global--CONNECT.GLOBAL";
     Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
     BeFileName cachePath = GetTestCachePath();
 
-    StubLocalState localState;
-    ConnectAuthenticationPersistence::CustomInitialize(&localState);
-    auto persistence = ConnectAuthenticationPersistence::GetShared();
-    auto provider = std::make_shared<ConnectTokenProvider>(persistence);
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(serverUrl, provider, proxy);
+    auto manager = ConnectSignInManager::Create(StubValidClientInfo(), proxy, &m_localState);
+    ASSERT_TRUE(manager->SignInWithCredentials(credentials)->GetResult().IsSuccess());
+    auto authHandler = manager->GetAuthenticationHandler(serverUrl, proxy);
 
-    persistence->SetCredentials(credentials);
-
-    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, authHandler);
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, authHandler);
 
     auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
     ASSERT_FALSE(nullptr == result.GetValue());
@@ -73,22 +70,17 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectGlobal_Succeeds)
 TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectSharedContent_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    Connect::Initialize(StubClientInfo(), proxy);
 
     Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net/";
     Utf8String repositoryId = "BentleyCONNECT.SharedContent--CONNECT.SharedContent";
     Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
     BeFileName cachePath = GetTestCachePath();
 
-    StubLocalState localState;
-    ConnectAuthenticationPersistence::CustomInitialize(&localState);
-    auto persistence = ConnectAuthenticationPersistence::GetShared();
-    auto provider = std::make_shared<ConnectTokenProvider>(persistence);
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(serverUrl, provider, proxy);
+    auto manager = ConnectSignInManager::Create(StubValidClientInfo(), proxy, &m_localState);
+    ASSERT_TRUE(manager->SignInWithCredentials(credentials)->GetResult().IsSuccess());
+    auto authHandler = manager->GetAuthenticationHandler(serverUrl, proxy);
 
-    persistence->SetCredentials(credentials);
-
-    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, authHandler);
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, authHandler);
 
     auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
     ASSERT_FALSE(nullptr == result.GetValue());
@@ -106,22 +98,17 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectSharedContent_Succeeds
 TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectPersonalShare_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    Connect::Initialize(StubClientInfo(), proxy);
 
     Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net";
     Utf8String repositoryId = "BentleyCONNECT.PersonalPublishing--CONNECT.PersonalPublishing";
     Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
     BeFileName cachePath = GetTestCachePath();
 
-    StubLocalState localState;
-    ConnectAuthenticationPersistence::CustomInitialize(&localState);
-    auto persistence = ConnectAuthenticationPersistence::GetShared();
-    auto provider = std::make_shared<ConnectTokenProvider>(persistence);
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(serverUrl, provider, proxy);
+    auto manager = ConnectSignInManager::Create(StubValidClientInfo(), proxy, &m_localState);
+    ASSERT_TRUE(manager->SignInWithCredentials(credentials)->GetResult().IsSuccess());
+    auto authHandler = manager->GetAuthenticationHandler(serverUrl, proxy);
 
-    persistence->SetCredentials(credentials);
-
-    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, authHandler);
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, authHandler);
 
     auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
     ASSERT_FALSE(nullptr == result.GetValue());
@@ -130,22 +117,17 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectPersonalShare_Succeeds
 TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectShare_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    Connect::Initialize(StubClientInfo(), proxy);
 
     Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net";
     Utf8String repositoryId = "BentleyCONNECT.ProjectContent--c4d60664-1226-4d4f-8beb-7d0e372ccc06";
     Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
     BeFileName cachePath = GetTestCachePath();
 
-    StubLocalState localState;
-    ConnectAuthenticationPersistence::CustomInitialize(&localState);
-    auto persistence = ConnectAuthenticationPersistence::GetShared();
-    auto provider = std::make_shared<ConnectTokenProvider>(persistence);
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(serverUrl, provider, proxy);
+    auto manager = ConnectSignInManager::Create(StubValidClientInfo(), proxy, &m_localState);
+    ASSERT_TRUE(manager->SignInWithCredentials(credentials)->GetResult().IsSuccess());
+    auto authHandler = manager->GetAuthenticationHandler(serverUrl, proxy);
 
-    persistence->SetCredentials(credentials);
-
-    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, authHandler);
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, authHandler);
 
     auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
     ASSERT_FALSE(nullptr == result.GetValue());
@@ -160,7 +142,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13eBPluginRepository_Succeeds)
     Credentials creds("admin", "admin");
     BeFileName cachePath = GetTestCachePath();
 
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, proxy);
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
 
     auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
@@ -176,7 +158,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13ProjectWisePluginRepository_Suc
     Credentials creds("admin", "admin");
     BeFileName cachePath = GetTestCachePath();
 
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, proxy);
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
 
     auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
@@ -192,7 +174,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13SharePointPluginRepository_Succ
     Credentials creds("VILTEST2-10\\administrator", "Q!w2e3r4");
     BeFileName cachePath = GetTestCachePath();
 
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, proxy);
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
 
     auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
@@ -208,7 +190,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG22eBPluginRepository_Succeeds)
     Credentials creds("admin", "admin");
     BeFileName cachePath = GetTestCachePath();
 
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, proxy);
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
 
     auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
@@ -224,7 +206,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG23ProjectWisePluginRepository_Suc
     Credentials creds("admin", "admin");
     BeFileName cachePath = GetTestCachePath();
 
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, proxy);
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
 
     auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
@@ -243,7 +225,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG2xProjectWisePluginMapMobileRepos
     auto info = std::make_shared<ClientInfo>("Bentley-MapMobile", BeVersion(5,4), "77def89a-7e50-4f0e-a4c7-24fb6044dbfb", 
         "CLQIqB7y8eCUpdJe5uyRVVaaGbk=", "Windows 6.1", nullptr);
 
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, proxy);
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
 
     auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
@@ -259,7 +241,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG24SharePointPluginRepository_Succ
     Credentials creds(R"(.\administrator)", "Q!w2e3r4");
     BeFileName cachePath = GetTestCachePath();
 
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, proxy);
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
 
     auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
@@ -275,7 +257,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG23ProjectWisePluginRepository
     Credentials creds("admin", "admin");
     BeFileName cachePath = GetTestCachePath();
 
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, proxy);
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
 
     auto ds = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult().GetValue();
@@ -429,7 +411,7 @@ TEST_F(CachingDataSourceTests, GetObjects_WSG2PWSpatialQuery_Succeeds)
     Credentials creds("admin", "admin");
     BeFileName cachePath = GetTestCachePath();
 
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, proxy);
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
 
     auto ds = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult().GetValue();
@@ -461,7 +443,7 @@ TEST_F(CachingDataSourceTests, DISABLED_OpenOrCreate_WSG2eBPluginProductionRepos
     {
     // Test can be copied to app to test performance on device.
 
-    auto m_clientInfo = StubClientInfo();
+    auto m_clientInfo = StubValidClientInfo();
     BeFileName tempDir = DgnClientFxCommon::GetApplicationPaths().GetTemporaryDirectory();
     BeFileName cachePath(L"C:\\temp\\temp.ecdb");
     //BeFileName cachePath(tempDir + L"/temp.ecdb");
@@ -570,7 +552,6 @@ TEST_F(CachingDataSourceTests, DISABLED_OpenOrCreate_WSG2eBPluginProductionRepos
 TEST_F(CachingDataSourceTests, GetObjects_PunchlistQueries_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    Connect::Initialize(StubClientInfo(), proxy);
 
     Utf8String serverUrl = "https://qa-punchlist-eus.cloudapp.net";
     Utf8String repositoryId = "IssuePlugin--default";
@@ -580,14 +561,11 @@ TEST_F(CachingDataSourceTests, GetObjects_PunchlistQueries_Succeeds)
     cachePath = BeFileName(StubFilePath("punchlistcache.ecdb"));
     DataSourceCache::DeleteCacheFromDisk(cachePath, StubCacheEnvironemnt());
 
-    StubLocalState localState;
-    ConnectAuthenticationPersistence::CustomInitialize(&localState);
-    auto persistence = ConnectAuthenticationPersistence::GetShared();
-    auto provider = std::make_shared<ConnectTokenProvider>(persistence);
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(serverUrl, provider, proxy);
-    persistence->SetCredentials(credentials);
+    auto manager = ConnectSignInManager::Create(StubValidClientInfo(), proxy, &m_localState);
+    ASSERT_TRUE(manager->SignInWithCredentials(credentials)->GetResult().IsSuccess());
+    auto authHandler = manager->GetAuthenticationHandler(serverUrl, proxy);
 
-    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, authHandler);
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, authHandler);
 
     auto ds = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult().GetValue();
     ASSERT_FALSE(nullptr == ds);

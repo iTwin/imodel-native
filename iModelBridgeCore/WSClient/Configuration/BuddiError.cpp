@@ -2,14 +2,13 @@
 |
 |     $Source: Configuration/BuddiError.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include <WebServices/Configuration/BuddiError.h>
 
 #include <DgnClientFx/Utils/Http/HttpStatusHelper.h>
-#include <WebServices/Connect/Connect.h>
 #include "BuddiError.xliff.h"
 
 /*--------------------------------------------------------------------------------------+
