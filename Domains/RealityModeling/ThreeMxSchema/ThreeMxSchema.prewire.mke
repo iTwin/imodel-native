@@ -2,7 +2,7 @@
 #
 #     $Source: ThreeMxSchema/ThreeMxSchema.prewire.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
@@ -10,5 +10,5 @@
 $(BuildContext)PublicAPI/ThreeMxSchema : $(_MakeFilePath)../PublicAPI/ThreeMxSchema
     $(LinkFirstDepToFirstTargetAsDirectory)
 
-$(BuildContext)ECSchemas/Domain/BentleyThreeMx.01.00.ecschema.xml : $(_MakeFilePath)BentleyThreeMx.01.00.ecschema.xml
+$(BuildContext)ECSchemas/Domain/ThreeMx.01.00.ecschema.xml : $(_MakeFilePath)ThreeMx.01.00.ecschema.xml
     $(LinkFirstDepToFirstTarget)

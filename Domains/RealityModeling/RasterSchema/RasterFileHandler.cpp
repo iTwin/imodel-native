@@ -239,7 +239,7 @@ RasterFileModel::~RasterFileModel()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     6/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus RasterFileModel::_LoadQuadTree()
+BentleyStatus RasterFileModel::_LoadQuadTree() const
     {
     m_rasterTreeP = nullptr;
 

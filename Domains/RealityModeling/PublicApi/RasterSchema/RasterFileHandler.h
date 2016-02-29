@@ -73,7 +73,7 @@ protected:
 
     virtual void            _WriteJsonProperties(Json::Value&) const override;
     virtual void            _ReadJsonProperties(Json::Value const&) override;
-    virtual BentleyStatus   _LoadQuadTree() override;
+    virtual BentleyStatus   _LoadQuadTree() const override;
     virtual Dgn::AxisAlignedBox3d _QueryModelRange() const override;
 
 public:

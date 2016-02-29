@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<ECSchema schemaName="BentleyThreeMx" nameSpacePrefix="ThreeMx" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+<ECSchema schemaName="ThreeMx" nameSpacePrefix="ThreeMx" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
     
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.10" prefix="bsca" />
     <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />

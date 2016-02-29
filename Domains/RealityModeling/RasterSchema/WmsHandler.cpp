@@ -236,7 +236,7 @@ WmsModel::~WmsModel()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus WmsModel::_LoadQuadTree()
+BentleyStatus WmsModel::_LoadQuadTree() const
     {
     m_rasterTreeP = nullptr;
 
