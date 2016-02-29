@@ -367,7 +367,7 @@ void RevisionTestFixture::ExtractCodesFromRevision(DgnCodeSet& assigned, CodeSet
     DgnRevisionPtr rev = m_testDb->Revisions().StartCreateRevision();
     BeAssert(rev.IsValid());
 
-    ChangeStreamFileReader stream(rev->GetChangeStreamFile());
+    ChangeStreamFileReader stream(rev->GetChangeStreamFile(), *m_testDb);
     DgnChangeSummary summary(*m_testDb);
     EXPECT_EQ(SUCCESS, summary.FromChangeSet(stream));
     summary.GetCodes(assigned, discarded);
