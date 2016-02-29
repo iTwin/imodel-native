@@ -42,6 +42,15 @@ RasterQuadTreeP RasterModel::GetTree()
     }
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  2/2016
+//----------------------------------------------------------------------------------------
+void RasterModel::_DropGraphicsForViewport(DgnViewportCR viewport)
+    {
+    if (m_rasterTreeP.IsValid())
+        m_rasterTreeP->DropGraphicsForViewport(viewport);
+    }
+
+//----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
 void RasterModel::_AddGraphicsToScene(SceneContextR context)

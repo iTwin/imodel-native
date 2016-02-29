@@ -138,8 +138,9 @@ public:
     Dgn::Render::GraphicP GetCachedGraphic(Dgn::DgnViewportCR, bool notifyAccess = true);
     void SaveGraphic(Dgn::DgnViewportCR, Dgn::Render::GraphicR);
     void OnItemRemoveFromCache(RasterTileCache::ItemId const& id);
-
-    RasterQuadTreeR GetTreeR() {return m_tree;}
+    void DropGraphicsForViewport(Dgn::DgnViewportCR viewport);
+    
+    RasterQuadTreeR GetTreeR() {return m_tree;}       
 
 private:
     RasterTile(TileId const& id, RasterTileP parent, RasterQuadTreeR tree);
@@ -206,6 +207,10 @@ public:
     //! Some format look best when increased quality is used. ex. WMS. Or we just want to display faster. Full quality is 1.0.
     void SetVisibleQualityFactor(double factor) {m_visibleQualityFactor=factor;}
     double GetVisibleQualityFactor() const {return m_visibleQualityFactor;}
+
+    static RasterTileCache& GetTileCache();     // Tile graphics cache among all rasters
+
+    void DropGraphicsForViewport(Dgn::DgnViewportCR viewport);
 
 private:
     

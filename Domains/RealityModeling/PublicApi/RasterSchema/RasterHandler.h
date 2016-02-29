@@ -43,6 +43,7 @@ protected:
     //&&MM TODO this how we make our raster pick-able
     virtual void _DrawModel(Dgn::ViewContextR) {}
 
+    virtual void _DropGraphicsForViewport(Dgn::DgnViewportCR viewport) override;
 
 public:
     //! Create a new RasterModel object, in preparation for loading it from the DgnDb.

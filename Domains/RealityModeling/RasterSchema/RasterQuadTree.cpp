@@ -15,7 +15,7 @@ static const uint32_t DRAW_COARSER_DELTA = 5;
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  2/2016
 //----------------------------------------------------------------------------------------
-static RasterTileCache& GetTileCache()
+RasterTileCache& RasterQuadTree::GetTileCache()
     {
     static RasterTileCache* s_instance = NULL;
     if (NULL == s_instance)
@@ -213,7 +213,7 @@ void TileDataQuery::Run()
         enableAlphaBlend = false;
         }
 #endif         
-    if (pImage.IsValid())
+    if (pImage.IsValid() && !IsCanceled())
         m_pTile = m_target.CreateTileSection(*pImage, enableAlphaBlend);
         
     m_isFinished = true;
@@ -319,7 +319,7 @@ RasterTile::~RasterTile()
         RasterTileCache::ItemId itemToRemove = itr->m_cacheId;
         // Remove from m_cachedGraphics prior to remove from cache because OnItemRemoveFromCache() would do it and invalidate our iterator.
         itr = m_cachedGraphics.erase(itr);
-        GetTileCache().RemoveItem(itemToRemove);
+        RasterQuadTree::GetTileCache().RemoveItem(itemToRemove);
         }
     }
 
@@ -513,6 +513,9 @@ void RasterTile::QueryVisible(std::vector<RasterTilePtr>& visibles, ViewContextR
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RasterTile::IsVisible (ViewContextR viewContext, double& factor) const
     {
+    //&&MM I did another kind of visibility test win TexturedMesh.cpp(TextureTile::IsVisible) that
+    // uses a radius and centerPt. That technique could help with non linear transformation of the
+    // raster. (ex: 4 corners reprojection).  Is it faster?
     DPoint3d npcCorners[4];
     DPoint3d frustCorners[4];
     memcpy(frustCorners, m_corners, sizeof(frustCorners));
@@ -579,6 +582,30 @@ bool RasterTile::IsVisible (ViewContextR viewContext, double& factor) const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  2/2016
 //----------------------------------------------------------------------------------------
+void RasterTile::DropGraphicsForViewport(Dgn::DgnViewportCR viewport)
+    {
+    for (auto itr(m_cachedGraphics.begin()); itr != m_cachedGraphics.end(); ++itr)
+        {
+        if (itr->m_pViewport == &viewport)
+            {
+            // Will trigger OnItemRemoveFromCache() and remove it from the cache.
+            RasterQuadTree::GetTileCache().RemoveItem(itr->m_cacheId);
+            break;
+            }
+        }
+
+    // Recurse in children
+    for (size_t i = 0; i < 4; ++i)
+        {
+        RasterTileP pChild = GetChildP(i);
+        if (pChild != NULL)
+            pChild->DropGraphicsForViewport(viewport);
+        }
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  2/2016
+//----------------------------------------------------------------------------------------
 Render::GraphicP RasterTile::GetCachedGraphic(DgnViewportCR viewport, bool notifyAccess)
     {
     for (auto& cacheEntry : m_cachedGraphics)
@@ -586,7 +613,7 @@ Render::GraphicP RasterTile::GetCachedGraphic(DgnViewportCR viewport, bool notif
         if (cacheEntry.m_pViewport == &viewport)
             {
             if(notifyAccess)
-                GetTileCache().NotifyAccess(cacheEntry.m_cacheId);
+                RasterQuadTree::GetTileCache().NotifyAccess(cacheEntry.m_cacheId);
             return cacheEntry.m_graphic.get();
             }
         }
@@ -600,7 +627,7 @@ Render::GraphicP RasterTile::GetCachedGraphic(DgnViewportCR viewport, bool notif
 void RasterTile::SaveGraphic(DgnViewportCR viewport, Render::GraphicR graphic)
     {
     GraphicCacheEntry entry;
-    entry.m_cacheId = GetTileCache().AddItem(*this);
+    entry.m_cacheId = RasterQuadTree::GetTileCache().AddItem(*this);
     entry.m_pViewport = &viewport;
     entry.m_graphic = &graphic;
    
@@ -669,6 +696,16 @@ void RasterQuadTree::Draw(SceneContextR context)
 
     RefCountedPtr<RasterProgressiveDisplay> display = RasterProgressiveDisplay::Create(*this, context);
     display->Draw(context);
+    }
+
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  2/2016
+//----------------------------------------------------------------------------------------
+void RasterQuadTree::DropGraphicsForViewport(Dgn::DgnViewportCR viewport)
+    {
+    if (m_pRoot.IsValid())
+        m_pRoot->DropGraphicsForViewport(viewport);
     }
 
 //----------------------------------------------------------------------------------------
