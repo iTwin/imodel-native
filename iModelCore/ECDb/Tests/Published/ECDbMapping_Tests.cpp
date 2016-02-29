@@ -1686,6 +1686,21 @@ TEST_F (ECDbMappingTestFixture, SharedColumnCA)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   02/16
 //+---------------+---------------+---------------+---------------+---------------+------
+void AssertColumnCount(ECDbCR ecdb, std::vector<std::pair<Utf8String, int>> const& testItems, Utf8CP scenario)
+    {
+    for (std::pair<Utf8String, int> const& kvPair : testItems)
+        {
+        Utf8CP tableName = kvPair.first.c_str();
+        const int expectedColCount = kvPair.second;
+        bvector<Utf8String> colNames;
+        ASSERT_TRUE(ecdb.GetColumns(colNames, tableName)) << tableName << " Scenario: " << scenario;
+        ASSERT_EQ(expectedColCount, colNames.size()) << tableName << " Scenario: " << scenario;
+        }
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   02/16
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, MinimumSharedColumnCount)
     {
     ECDbR ecdb = SetupECDb("minimumsharedcolcount.ecdb", SchemaItem(
@@ -1726,11 +1741,12 @@ TEST_F(ECDbMappingTestFixture, MinimumSharedColumnCount)
         "    </ECEntityClass>"
         "</ECSchema>"));
 
-    bvector<Utf8String> colNames;
-    ecdb.GetColumns(colNames, "ts_Parent");
-    ASSERT_EQ(colNames.size(), 103);
-
+    ASSERT_TRUE(ecdb.IsDbOpen());
     ecdb.SaveChanges();
+
+    std::vector<std::pair<Utf8String, int>> testItems;
+    testItems.push_back(std::make_pair("ts_Parent", 103));
+    AssertColumnCount(ecdb, testItems, "After first schema import");
 
     SchemaItem secondSchema(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1750,9 +1766,247 @@ TEST_F(ECDbMappingTestFixture, MinimumSharedColumnCount)
     AssertSchemaImport(asserted, ecdb, secondSchema);
     ASSERT_FALSE(asserted);
 
-    colNames.clear();
-    ecdb.GetColumns(colNames, "ts_Parent");
-    ASSERT_EQ(colNames.size(), 103);
+    AssertColumnCount(ecdb, testItems, "After second schema import");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   02/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, MinimumSharedColumnCountWithJoinedTable)
+    {
+    ECDbR ecdb = SetupECDb("minimumsharedcolcount.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>100</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub1' modifier='None'>"
+        "        <BaseClass>Parent</BaseClass>"
+        "        <ECProperty propertyName='Cost' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub2' modifier='None'>"
+        "        <BaseClass>Parent</BaseClass>"
+        "        <ECProperty propertyName='DoubleProp' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub11' modifier='None'>"
+        "        <BaseClass>Sub1</BaseClass>"
+        "        <ECProperty propertyName='Diameter' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ecdb.SaveChanges();
+
+    std::vector<std::pair<Utf8String, int>> testItems;
+    testItems.push_back(std::make_pair("ts_Parent", 3));
+    testItems.push_back(std::make_pair("ts_Sub1", 102));
+    testItems.push_back(std::make_pair("ts_Sub2", 102));
+    AssertColumnCount(ecdb, testItems, "After first schema import");
+
+    SchemaItem secondSchema(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='TestSchema' version='01.00' prefix='ts' />"
+        "    <ECEntityClass typeName='Sub3'>"
+        "        <BaseClass>ts:Parent</BaseClass>"
+        "        <ECProperty propertyName='Prop3' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub111'>"
+        "        <BaseClass>ts:Sub11</BaseClass>"
+        "        <ECProperty propertyName='Prop111' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, ecdb, secondSchema);
+    ASSERT_FALSE(asserted);
+
+    testItems.push_back(std::make_pair("ts2_Sub3", 102));
+    AssertColumnCount(ecdb, testItems, "After second schema import");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   02/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, MinimumSharedColumnBisScenario)
+    {
+    ECDbR ecdb = SetupECDb("minimumsharedcolcount.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Element' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='InformationElement' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Options>JoinedTablePerDirectSubclass</Options>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <BaseClass>Element</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='DefinitionElement' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Options>SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>50</MinimumSharedColumnCount>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <BaseClass>InformationElement</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='GeometricElement' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Options>JoinedTablePerDirectSubclass</Options>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <BaseClass>Element</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='GeometricElement2d' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Options>SharedColumnsForSubclasses</Options>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <BaseClass>GeometricElement</BaseClass>"
+        "        <ECProperty propertyName='GeometryStream' typeName='binary' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='GeometricElement3d' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Options>SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <BaseClass>GeometricElement</BaseClass>"
+        "        <ECProperty propertyName='GeometryStream' typeName='binary' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub1' modifier='None'>"
+        "        <BaseClass>DefinitionElement</BaseClass>"
+        "        <ECProperty propertyName='Sub1Prop1' typeName='double' />"
+        "        <ECProperty propertyName='Sub1Prop2' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub11' modifier='None'>"
+        "        <BaseClass>Sub1</BaseClass>"
+        "        <ECProperty propertyName='Sub11Prop' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub2' modifier='None'>"
+        "        <BaseClass>GeometricElement2d</BaseClass>"
+        "        <ECProperty propertyName='Sub2Prop' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub3' modifier='None'>"
+        "        <BaseClass>GeometricElement3d</BaseClass>"
+        "        <ECProperty propertyName='Sub3Prop1' typeName='double' />"
+        "        <ECProperty propertyName='Sub3Prop2' typeName='double' />"
+        "        <ECProperty propertyName='Sub3Prop3' typeName='double' />"
+        "        <ECProperty propertyName='Sub3Prop4' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ecdb.SaveChanges();
+
+    const int elementExpectedColCount = 3;
+    const int definitionElementExpectedColCount = 52;
+    int geometricElement2dExpectedColCount = 4;
+    int geometricElement3dExpectedColCount = 8;
+
+    std::vector<std::pair<Utf8String, int>> testItems;
+    testItems.push_back(std::make_pair("ts_Element", elementExpectedColCount));
+    testItems.push_back(std::make_pair("ts_DefinitionElement", definitionElementExpectedColCount));
+    testItems.push_back(std::make_pair("ts_GeometricElement2d", geometricElement2dExpectedColCount));
+    testItems.push_back(std::make_pair("ts_GeometricElement3d", geometricElement3dExpectedColCount));
+
+    AssertColumnCount(ecdb, testItems, "after first schema import");
+
+    SchemaItem secondSchema(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='TestSchema' version='01.00' prefix='ts' />"
+        "    <ECEntityClass typeName='Sub4'>"
+        "        <BaseClass>ts:InformationElement</BaseClass>"
+        "        <ECProperty propertyName='Sub4Prop' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub21'>"
+        "        <BaseClass>ts:Sub2</BaseClass>"
+        "        <ECProperty propertyName='Sub21Prop' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub31'>"
+        "        <BaseClass>ts:Sub3</BaseClass>"
+        "        <ECProperty propertyName='Sub31Prop1' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, ecdb, secondSchema);
+    ASSERT_FALSE(asserted);
+
+    geometricElement2dExpectedColCount++;
+    const int sub4ExpectedColCount = 3;
+
+    testItems.clear();
+    testItems.push_back(std::make_pair("ts_Element", elementExpectedColCount));
+    testItems.push_back(std::make_pair("ts_DefinitionElement", definitionElementExpectedColCount));
+    testItems.push_back(std::make_pair("ts_GeometricElement2d", geometricElement2dExpectedColCount));
+    testItems.push_back(std::make_pair("ts_GeometricElement3d", geometricElement3dExpectedColCount));
+    testItems.push_back(std::make_pair("ts2_Sub4", sub4ExpectedColCount));
+
+    AssertColumnCount(ecdb, testItems, "after second schema import");
+
+    SchemaItem thirdSchema(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema3' nameSpacePrefix='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='TestSchema' version='01.00' prefix='ts' />"
+        "    <ECEntityClass typeName='Sub32'>"
+        "        <BaseClass>ts:Sub3</BaseClass>"
+        "        <ECProperty propertyName='Sub32Prop1' typeName='double' />"
+        "        <ECProperty propertyName='Sub32Prop2' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>");
+
+    asserted = false;
+    AssertSchemaImport(asserted, ecdb, thirdSchema);
+    ASSERT_FALSE(asserted);
+
+    geometricElement3dExpectedColCount++;
+
+    testItems.clear();
+    testItems.push_back(std::make_pair("ts_Element", elementExpectedColCount));
+    testItems.push_back(std::make_pair("ts_DefinitionElement", definitionElementExpectedColCount));
+    testItems.push_back(std::make_pair("ts_GeometricElement2d", geometricElement2dExpectedColCount));
+    testItems.push_back(std::make_pair("ts_GeometricElement3d", geometricElement3dExpectedColCount));
+    testItems.push_back(std::make_pair("ts2_Sub4", sub4ExpectedColCount));
+
+    AssertColumnCount(ecdb, testItems, "after third schema import");
     }
 
 //---------------------------------------------------------------------------------------

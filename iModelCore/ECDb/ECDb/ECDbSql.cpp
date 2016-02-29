@@ -258,8 +258,11 @@ BentleyStatus ECDbSqlTable::SetMinimumSharedColumnCount(int minimumSharedColumnC
     {
     //can only by one ECClass of this table
     if (minimumSharedColumnCount == ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT ||
-        m_minimumSharedColumnCount != ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT)
+        (m_minimumSharedColumnCount != ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT && minimumSharedColumnCount != m_minimumSharedColumnCount))
+        {
+        BeAssert(false && "Cannot modify MinimumSharedColumnCount on an ECDbSqlTable if it has been set already.");
         return ERROR;
+        }
 
     m_minimumSharedColumnCount = minimumSharedColumnCount;
     return SUCCESS;
@@ -276,6 +279,7 @@ BentleyStatus ECDbSqlTable::CreateTrigger(Utf8CP triggerName, Utf8CP condition, 
         m_triggers[triggerName] = std::unique_ptr<ECDbSqlTrigger>(new ECDbSqlTrigger(triggerName, *this, condition, body, ecsqlType, triggerSubType));
         return SUCCESS;
         }
+
     return ERROR;
     }
 

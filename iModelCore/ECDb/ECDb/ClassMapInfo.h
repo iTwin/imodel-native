@@ -50,6 +50,7 @@ protected:
 
 private:
     BentleyStatus DoEvaluateMapStrategy(bool& baseClassesNotMappedYet, UserECDbMapStrategy&);
+    BentleyStatus EvaluateSharedTableMapStrategy(IClassMap const& parentClassMap, ECDbMapStrategy const& parentStrategy, UserECDbMapStrategy const& userStrategy);
 
     bool GatherBaseClassMaps (bvector<IClassMap const*>& baseClassMaps, bvector<IClassMap const*>& tphMaps, bvector<IClassMap const*>& tpcMaps, bvector<IClassMap const*>& nmhMaps, ECN::ECClassCR ecClass) const;
     bool ValidateChildStrategy(ECDbMapStrategy const& parentStrategy, UserECDbMapStrategy const& childStrategy) const;
