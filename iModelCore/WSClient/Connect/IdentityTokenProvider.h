@@ -31,6 +31,8 @@ struct IdentityTokenProvider : IConnectTokenProvider, std::enable_shared_from_th
     private:
         IdentityTokenProvider(IImsClientPtr client, ITokenStorePtr store, std::function<void()> tokenExpiredHandler);
         bool ShouldRenewToken(DateTimeCR tokenSetTime);
+        AsyncTaskPtr<SamlTokenResult> RenewToken();
+        void RenewTokenIfNeeded();
 
     public:
         WSCLIENT_EXPORT static IdentityTokenProviderPtr Create
