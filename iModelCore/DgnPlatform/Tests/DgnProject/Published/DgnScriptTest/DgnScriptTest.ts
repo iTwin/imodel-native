@@ -243,11 +243,14 @@ module DgnScriptTests {
     {
         //  EC API
         var schemas: be.SchemaManager = db.Schemas;
-        var pe: be.ECClass = schemas.GetECClass(be.DGN_ECSCHEMA_NAME, be.DGN_CLASSNAME_PhysicalElement);
-        if (!pe)
+        var elementClass: be.ECClass = schemas.GetECClass(be.DGN_ECSCHEMA_NAME, be.DGN_CLASSNAME_PhysicalElement);
+        if (!elementClass)
             be.Script.ReportError('SchemaManager.GetECClass could not find ' + be.DGN_ECSCHEMA_NAME + '.' + be.DGN_CLASSNAME_PhysicalElement);
 
-        var peprops: be.ECPropertyCollection = pe.Properties;
+        // -----------------------------------------------
+        // Test GetProperties and ECPropertyCollection
+        // -----------------------------------------------
+        var peprops: be.ECPropertyCollection = elementClass.Properties;
         var foundCode: boolean = false;
         var propertyCount: number = 0;
         for (var propiter = peprops.Begin(); peprops.IsValid(propiter); peprops.ToNext(propiter))
@@ -263,8 +266,35 @@ module DgnScriptTests {
         if (propertyCount <= 2)
             be.Script.ReportError('ECPropertyCollection must have failed -- there are more than 2 properties on PhysicalElement');
 
+        // -----------------------------------------------
+        // Test GetProperty and PrimitiveECProperty
+        // -----------------------------------------------
+        var codeProp = elementClass.GetProperty('Code');
+        if (!codeProp)
+            be.Script.ReportError('GetProperty failed to find Code property');
+        else
+        {
+            var primProp = codeProp.GetAsPrimitiveProperty();
+            if (primProp)
+                be.Script.ReportError('Code property is NOT a primitive property');
+        }
 
-        var baseclasses: be.ECClassCollection = pe.BaseClasses;
+        var LastModProp = elementClass.GetProperty('LastMod');
+        if (!LastModProp)
+            be.Script.ReportError('GetProperty failed to find LastMod property');
+        else
+        {
+            var primProp = LastModProp.GetAsPrimitiveProperty();
+            if (!primProp)
+                be.Script.ReportError('LastModProp property is a primitive property');
+            if (primProp.Type != be.ECPropertyPrimitiveType.DateTime)
+                be.Script.ReportError('LastModProp property type should be DateTime');
+        }
+
+        // -----------------------------------------------
+        // Test Base/DerivecClasses and ECClassCollection
+        // -----------------------------------------------
+        var baseclasses: be.ECClassCollection = elementClass.BaseClasses;
         var foundSpatialElement: boolean = false;
         var baseCount: number = 0;
         for (var clsiter = baseclasses.Begin(); baseclasses.IsValid(clsiter); baseclasses.ToNext(clsiter))
@@ -294,6 +324,37 @@ module DgnScriptTests {
 
     }
 
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Sam.Wilson                      02/16
+    //---------------------------------------------------------------------------------------
+    function testUserProperties(el: be.DgnElement)
+    {
+        var userprops = el.UserProperties;
+
+        if (userprops.GetValueEC('stuff'))
+            be.Script.ReportError('no user props expected initially');
+
+        userprops.SetValueEC('stuff', be.ECValue.FromString('foo'));
+        el.UserProperties = userprops;
+
+        var stuffValue = userprops.GetValueEC('stuff');
+        if (!stuffValue || stuffValue.GetString() != 'foo')
+            be.Script.ReportError('stuff userprop not found');
+
+        el.Update();
+
+        userprops = el.UserProperties;
+        stuffValue = userprops.GetValueEC('stuff');
+        if (!stuffValue || stuffValue.GetString() != 'foo')
+            be.Script.ReportError('stuff userprop not preserved by update');
+
+        userprops.SetValueEC('nonsense', be.ECValue.FromString('bar'));
+        el.UserProperties = userprops;
+
+        var stuffValue = userprops.GetValueEC('nonsense');
+        if (!stuffValue || stuffValue.GetString() != 'bar')
+            be.Script.ReportError('nonsense userprop not found');
+    }
 
     //---------------------------------------------------------------------------------------
     // @bsimethod                                   Sam.Wilson                      02/16
@@ -501,8 +562,9 @@ module DgnScriptTests {
         //  Test EC API
         testEC(db);
 
-        //  DgnElement UnhandledProperties
+        //  DgnElement UnhandledProperties and UserProperties
         testUnhandledProperties(ele);
+        testUserProperties(ele);
 
         //  Test argument validation
         testInvalidArg();

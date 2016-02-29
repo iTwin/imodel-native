@@ -253,6 +253,11 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
          */
         SetUnhandledProperty(name: Bentley_Utf8String, value: ECValueP): cxx_int32_t;
 
+        /**
+         * Get/set the user properties for this element
+         */
+        UserProperties: AdHocJsonValueP;
+
         OnDispose(): void;
         Dispose(): void;
     }
@@ -752,12 +757,34 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     class ECClass implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsECClass ***/ 
+
+        /** The name of the class */
         Name: Bentley_Utf8String;
+
+        /** The base classes of this class */
         BaseClasses: ECClassCollectionP;
+
+        /** The classes that derive from this class */
         DerivedClasses: ECClassCollectionP;
+
+        /** The properties defined by this class and all of its base classes. */
         Properties: ECPropertyCollectionP;
+
+        /**
+         * Get the definition of the specified property of this class or any of its base classes
+         * @param name The name of the property to look up 
+         * @return the property definition or null if no such property is found
+         */
+        GetProperty(name: Bentley_Utf8String): ECPropertyP;
+
+        /**
+         * Query the specified custom attribute on this property definition
+         * @param className The class of the custom attribute to look up
+         * @return the custom attribute or null if no such custom attribute is defined for this property.
+         */
         GetCustomAttribute(className: Bentley_Utf8String): ECInstanceP;
 
+        /** Create a non-persistent instance of this ECClass */
         MakeInstance(): ECInstanceP;
 
         OnDispose(): void;
@@ -804,6 +831,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         Dispose(): void;
     }
 
+    /**
+     * An ECValue
+     */
     class ECValue implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsECValue ***/
@@ -824,6 +854,51 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type ECValueP = cxx_pointer<ECValue>;
 
+    /**
+     * An AdHocJsonValue
+     */
+    class AdHocJsonValue implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsAdHocJsonValue ***/
+
+        /** Set the value of the specified ad hoc property.
+         * @param name  The name of the property
+         * @param value The value of the property.
+         */
+        SetValueEC(name: Bentley_Utf8String, value: ECValueP): void;
+
+        /*
+         * Set the units of the property value
+         * @param[in] name Name of the property
+         * @param[in] units String representing the units of the property value
+         */
+        SetUnits(name: Bentley_Utf8String, units: Bentley_Utf8String): void;
+
+        /** Remove the specified ad hoc property.
+         * @param name  The name of the property
+         */
+        RemoveValue(name: Bentley_Utf8String): void;
+
+        /** Get the value of the specified ad hoc property.
+         * @param name  The name of the property
+         * @return the value of the property or null if the property is not found.
+         */
+        GetValueEC(name: Bentley_Utf8String): ECValueP;
+
+        /*
+         * Get the units of the property value
+         * @param[out] units String representing the units of the property
+         * @param[in] name Name of the property
+         * @return true if the read only attribute was set. false otherwise. 
+         */
+        GetUnits(name: Bentley_Utf8String): Bentley_Utf8String;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type AdHocJsonValueP = cxx_pointer<AdHocJsonValue>;
+
     class ECClassCollectionIterator implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
     {
         /*** NATIVE_TYPE_NAME = JsECClassCollectionIterator ***/
@@ -833,6 +908,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type ECClassCollectionIteratorP = cxx_pointer<ECClassCollectionIterator>;
 
+    /**
+     * A collection of ECClasses
+     */
     class ECClassCollection implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
     {
         /*** NATIVE_TYPE_NAME = JsECClassCollection ***/
@@ -847,11 +925,24 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type ECClassCollectionP = cxx_pointer<ECClassCollection>;
 
+    /**
+     * An ECProperty.
+     */
     class ECProperty implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsECProperty ***/
+
+        /** The name of the property */
         Name: Bentley_Utf8String;
-        IsPrimitive: cxx_bool;
+
+        /** If this property holds a primitive type, return a PrimitiveECProperty. If not, it holds a struct or an array. */
+        GetAsPrimitiveProperty(): PrimitiveECPropertyP;
+
+        /**
+         * Query the specified custom attribute on this property definition
+         * @param className The class of the custom attribute to look up
+         * @return the custom attribute or null if no such custom attribute is defined for this property.
+         */
         GetCustomAttribute(className: Bentley_Utf8String): ECInstanceP;
 
         OnDispose(): void;
@@ -860,6 +951,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type ECPropertyP = cxx_pointer<ECProperty>;
 
+    /**
+     * A PrimitiveECProperty
+     */
     class PrimitiveECProperty extends ECProperty implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsPrimitiveECProperty ***/
@@ -880,6 +974,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type ECPropertyCollectionIteratorP = cxx_pointer<ECPropertyCollectionIterator>;
 
+    /**
+     * A collection of ECProperties
+     */
     class ECPropertyCollection implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
     {
         /*** NATIVE_TYPE_NAME = JsECPropertyCollection ***/

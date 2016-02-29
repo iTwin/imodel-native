@@ -65,11 +65,17 @@ typedef JsECInstance* JsECInstanceP;
 struct JsECValue;
 typedef JsECValue* JsECValueP;
 
+struct JsAdHocJsonValue;
+typedef JsAdHocJsonValue* JsAdHocJsonValueP;
+
 struct JsECClass;
 typedef JsECClass* JsECClassP;
 
 struct JsECProperty;
 typedef JsECProperty* JsECPropertyP;
+
+struct JsPrimitiveECProperty;
+typedef JsPrimitiveECProperty* JsPrimitiveECPropertyP;
 
 struct JsDgnCategory;
 typedef JsDgnCategory* JsDgnCategoryP;
@@ -284,6 +290,9 @@ struct JsDgnElement : RefCountedBaseWithCreate
         }
     JsECValueP GetUnhandledProperty(Utf8StringCR);
     int32_t SetUnhandledProperty(Utf8StringCR, JsECValueP);
+
+    JsAdHocJsonValueP GetUserProperties() const;
+    void SetUserProperties(JsAdHocJsonValueP);
 
     STUB_OUT_SET_METHOD(Model, JsDgnModelP)
     STUB_OUT_SET_METHOD(ElementId,JsDgnObjectIdP)
@@ -854,6 +863,8 @@ struct JsECClass : RefCountedBaseWithCreate
         return new JsECPropertyCollection(m_ecClass->GetProperties());
         }
 
+    JsECPropertyP GetProperty(Utf8StringCR name);
+
     JsECInstanceP GetCustomAttribute(Utf8StringCR className);
 
     JsECInstanceP MakeInstance();
@@ -921,11 +932,8 @@ struct JsECProperty : RefCountedBaseWithCreate
         DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
         return m_property->GetName();
         }
-    bool GetIsPrimitive() const 
-        {
-        DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
-        return m_property->GetIsPrimitive();
-        }
+
+    JsPrimitiveECPropertyP GetAsPrimitiveProperty() const;
     JsECInstanceP GetCustomAttribute(Utf8StringCR className);
     
     STUB_OUT_SET_METHOD(Name,Utf8String)
@@ -943,8 +951,6 @@ struct JsPrimitiveECProperty : JsECProperty
 
     STUB_OUT_SET_METHOD(Type,ECPropertyPrimitiveType)
 };
-
-typedef JsPrimitiveECProperty* JsPrimitiveECPropertyP;
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
@@ -975,6 +981,23 @@ struct JsECValue : RefCountedBaseWithCreate
     STUB_OUT_SET_METHOD(String,Utf8StringCR)
     STUB_OUT_SET_METHOD(Integer,int32_t)
     STUB_OUT_SET_METHOD(Double,double)
+};
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
+struct JsAdHocJsonValue : RefCountedBaseWithCreate
+{
+    ECN::AdHocJsonValue m_props;
+
+    JsAdHocJsonValue(ECN::AdHocJsonValueCR p) : m_props(p) {;}
+
+    void SetUnits(Utf8StringCR name, Utf8StringCR units) {m_props.SetUnits(name.c_str(), units.c_str());}
+    bool SetValueEC(Utf8StringCR name, JsECValueP value) {DGNJSAPI_VALIDATE_ARGS(DGNJSAPI_IS_VALID_JSOBJ(value), false); return m_props.SetValueEC(name.c_str(), value->m_value);}
+    void RemoveValue(Utf8StringCR name) {m_props.RemoveValue(name.c_str());}
+
+    Utf8String GetUnits(Utf8StringCR name) const {Utf8String u; return m_props.GetUnits(u, name.c_str())? u: "";}
+    JsECValueP GetValueEC(Utf8StringCR name) {ECN::ECValue v = m_props.GetValueEC(name.c_str()); return v.IsNull()? nullptr: new JsECValue(v);}
 };
 
 //=======================================================================================
