@@ -323,3 +323,11 @@ Utf8StringCR SamlToken::AsString() const
     {
     return m_token;
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SamlToken::operator==(const SamlToken& other) const
+    {
+    return m_token == other.m_token;
+    }
