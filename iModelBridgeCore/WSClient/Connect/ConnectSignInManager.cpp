@@ -87,6 +87,7 @@ void ConnectSignInManager::Configure(Configuration config)
     BeCriticalSectionHolder lock(m_cs);
     m_config = config;
     m_tokenProviders.clear();
+    UpdateSignInIfNeeded();
     }
 
 /*--------------------------------------------------------------------------------------+
