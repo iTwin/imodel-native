@@ -40,6 +40,9 @@
     <None Include="ConversionData\unitcomparisondata.csv">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="ConversionData\ConversionsBetweenAllOldUnits.csv">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ignore_list.txt" />

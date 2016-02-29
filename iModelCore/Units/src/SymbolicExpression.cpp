@@ -190,7 +190,7 @@ BentleyStatus Expression::HandleToken(int& depth, ExpressionR expression,
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Colin.Kerr         02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Expression::ParseDefinition(int& depth, Utf8CP definition, 
+BentleyStatus Expression::ParseDefinition(SymbolCR owner, int& depth, Utf8CP definition,
     ExpressionR expression, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName)
     {
     ++depth;
@@ -201,6 +201,7 @@ BentleyStatus Expression::ParseDefinition(int& depth, Utf8CP definition,
     Token currentToken;
     Exponent currentExponent;
     bool inExponent = false;
+    int numTokens = 0;
     for (auto const& character : definitionString)
         {
         if (Utf8String::IsAsciiWhiteSpace(character))
@@ -216,6 +217,7 @@ BentleyStatus Expression::ParseDefinition(int& depth, Utf8CP definition,
                 }
 
             HandleToken(depth, expression, definition, currentToken, startingExponent, getSymbolByName);
+            ++numTokens;
             currentToken.Clear();
             continue;
             }
@@ -248,7 +250,17 @@ BentleyStatus Expression::ParseDefinition(int& depth, Utf8CP definition,
         }
  
     if (currentToken.IsValid())
+        {
         HandleToken(depth, expression, definition, currentToken, startingExponent, getSymbolByName);
+        ++numTokens;
+        }
+
+    // TODO: Need some validation that folks aren't defining units with offsets in ways we don't support.
+    //if (owner.HasOffset() && numTokens > 1)
+    //    {
+    //    LOG.errorv("%s has an invalid symbol expression (%s) because it has more than one symbol and an offset", owner.GetName(), definition);
+    //    return BentleyStatus::ERROR;
+    //    }
 
     auto new_iter = remove_if(expression.begin(), expression.end(), [](ExpressionSymbol* a) { return a->GetExponent() == 0; });
     expression.erase(new_iter, expression.end());
@@ -259,6 +271,15 @@ BentleyStatus Expression::ParseDefinition(int& depth, Utf8CP definition,
     LOG.debugv("%s - DONE", definition);
 
     return expression.size() > 0 ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;
+    }
+
+bool Expression::Contains(ExpressionSymbolCR symbol) const
+    {
+    auto it = find_if(begin(), end(), [&symbol] (ExpressionSymbol* a) { return a->GetSymbol()->GetId() == symbol.GetSymbol()->GetId(); });
+    if (it == end() || 0 == (*it)->GetExponent())
+        return false;
+
+    return true;
     }
 
 void Expression::AddCopy(ExpressionSymbolCR sWE) 

@@ -107,17 +107,18 @@ void AddTime(UnitRegistry& reg)
 //TODO: Handle temperature and delta temperature
 void AddTemperature(UnitRegistry& reg)
     {
-    UnitCP unit = reg.AddUnit(TEMPERATURE, SI, "CELSIUS", "K", 1.0, -273.15);
+    UnitCP unit = reg.AddUnit(TEMPERATURE, SI, "CELSIUS", "K", 1.0, 273.15);
     reg.AddSynonym(unit, "DEGREE_CELSIUS");
     //SimpleUOM(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "#CELSIUS", 1.8)->AddSynonym("DEGREE_FAHRENHEIT");
-    unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "CELSIUS", 1.8, -32);
+    unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "CELSIUS", 5.0/9.0, -32);
     reg.AddSynonym(unit, "DEGREE_FAHRENHEIT");
-    unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "RANKINE", "K", 1.8);
+    unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "RANKINE", "K", 5.0 / 9.0);
     reg.AddSynonym(unit, "DEGREE_RANKINE");
-    unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "ROMER", "CELSIUS", 21.0 / 40.0, 7.5);
-    reg.AddSynonym(unit, "DEGREE_ROMER");
-    unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "REAMUR", "CELSIUS", 0.8);
-    reg.AddSynonym(unit, "DEGREE_REAMUR");
+
+    //unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "ROMER", "CELSIUS", 21.0 / 40.0, 7.5);
+    //reg.AddSynonym(unit, "DEGREE_ROMER");
+    //unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "REAMUR", "CELSIUS", 0.8);
+    //reg.AddSynonym(unit, "DEGREE_REAMUR");
 
     /* the algorithm will decided whether to use full conversion or delta
     some indicator could be used to explicitly indicate using deltas (like ^ preceding the name)
@@ -717,17 +718,19 @@ void AddPressure(UnitRegistry& reg)
 
     reg.AddUnit(PRESSURE, USCUSTOM, "TORR", "PA", 1.333224e2);   // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
 
-    unit = reg.AddUnit(PRESSURE, SI, "METRE_OF_H2O_CONVENTIONAL", "[STD_G]*[H2O_4C]*M");
+    // TODO: Go back to density conversion once we have verified sources for those values
+    unit = reg.AddUnit(PRESSURE, SI, "METRE_OF_H2O_CONVENTIONAL", "[KILO]*MILLIMETRE_OF_H2O_CONVENTIONAL");
 
-    reg.AddUnit(PRESSURE, SI, "MILLIMETRE_OF_H2O_CONVENTIONAL", "[STD_G]*[H2O_4C]*MM"); //, BISQSecUom);
-    reg.AddUnit(PRESSURE, USCUSTOM, "FOOT_OF_H2O_CONVENTIONAL", "[STD_G]*[H2O_4C]*FT"); //, BISQSecUom);
-    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_H2O_AT_32_FAHRENHEIT", "[STD_G]*[H2O_32F]*IN"); //, BISQSecUom);
-    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_H2O_AT_39_2_FAHRENHEIT", "[STD_G]*[H2O_39.2F]*IN"); //, BISQSecUom);
-    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_H2O_AT_60_FAHRENHEIT", "[STD_G]*[H2O_60F]*IN"); //, BISQSecUom);
-    reg.AddUnit(PRESSURE, USCUSTOM, "MILLIMETRE_OF_HG_AT_32_FAHRENHEIT", "[STD_G]*[HG_0C]*MM"); //, BISQSecUom);
-    unit = reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_HG_CONVENTIONAL", "[STD_G]*[HG_0C]*IN");
-    reg.AddSynonym(unit, "INCH_OF_HG_AT_32_FAHRENHEIT");
-    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_HG_AT_60_FAHRENHEIT", "[STD_G]*[HG_60F]*IN"); //, BISQSecUom);
+    reg.AddUnit(PRESSURE, SI, "MILLIMETRE_OF_H2O_CONVENTIONAL", "PA", 9.80665); // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
+    reg.AddUnit(PRESSURE, USCUSTOM, "FOOT_OF_H2O_CONVENTIONAL", "PA", 2.989067e3); // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
+    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_H2O_AT_32_FAHRENHEIT", "PA", 249.1083); // Water is assumed to be in a liquid state. Equal to water at 0C.  No verified source
+    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_H2O_AT_39_2_FAHRENHEIT", "PA", 2.49082e2); // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
+    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_H2O_AT_60_FAHRENHEIT", "PA", 2.4884e2); // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
+    
+    reg.AddUnit(PRESSURE, USCUSTOM, "MILLIMETRE_OF_HG_AT_32_FAHRENHEIT", "PA", 1.33322e2); // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  Used centimeter of mercury (0 C) to pascal
+    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_HG_CONVENTIONAL", "PA", 3.386389e3); // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
+    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_HG_AT_32_FAHRENHEIT", "PA", 3.38638e3); // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
+    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_HG_AT_60_FAHRENHEIT", "PA", 3.37685e3); // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
     }
 
 void AddPressureGradient(UnitRegistry& reg)

@@ -55,6 +55,8 @@ private:
     const_iterator begin() const { return m_symbolExpression.begin(); }
     const_iterator end() const { return m_symbolExpression.end(); }
 
+    ExpressionSymbolCP FirstSymbol() const { return m_symbolExpression.front(); }
+
     void erase(iterator deleteIterator, iterator end) { m_symbolExpression.erase(deleteIterator, end); }
     size_t size() const { return m_symbolExpression.size(); }
 
@@ -65,8 +67,9 @@ private:
 
     void LogExpression(NativeLogging::SEVERITY loggingLevel, Utf8CP name) const;
     Utf8String ToString() const;
+    bool Contains(ExpressionSymbolCR symbol) const;
 
-    static BentleyStatus ParseDefinition(int& depth, Utf8CP definition, ExpressionR expression, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName);
+    static BentleyStatus ParseDefinition(SymbolCR owner, int& depth, Utf8CP definition, ExpressionR expression, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName);
     static BentleyStatus HandleToken(int& depth, ExpressionR expression, Utf8CP definition, TokenCR token, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName);
     static void MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExpression, Utf8CP sourceDefinition, ExpressionR sourceExpression, int startingExponent);
     static void MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExpression,

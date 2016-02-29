@@ -58,12 +58,13 @@ Expression& Symbol::Evaluate(int depth, std::function<SymbolCP(Utf8CP)> getSymbo
     {
     if (!m_evaluated)
         {
-        Expression::ParseDefinition(depth, m_definition.c_str(), *m_symbolExpression, 1, getSymbolByName);
+        Expression::ParseDefinition(*this, depth, m_definition.c_str(), *m_symbolExpression, 1, getSymbolByName);
         m_evaluated = true;
         }
     return *m_symbolExpression;
     }
 
+// TODO: This is confusing because it accepts symbols but will only work if both symbols are of the same type.
 bool Symbol::IsCompatibleWith(SymbolCR rhs) const
     {
     return Expression::DimensionallyCompatible(*(this->m_symbolExpression), *(rhs.m_symbolExpression));
@@ -82,10 +83,10 @@ Unit::Unit(Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, int id, Utf8CP d
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitP Unit::Create (Utf8CP sysName, PhenomenonCR phenomenon, Utf8CP unitName, int id, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant)
+UnitP Unit::Create(Utf8CP sysName, PhenomenonCR phenomenon, Utf8CP unitName, int id, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant)
     {
     LOG.debugv("Creating unit %s  Factor: %lf  Offset: %d", unitName, factor, offset);
-    return new Unit (sysName, phenomenon, unitName, id, definition, dimensionSymbol, factor, offset, isConstant);
+    return new Unit(sysName, phenomenon, unitName, id, definition, dimensionSymbol, factor, offset, isConstant);
     }
 
 int Unit::GetPhenomenonId() const { return GetPhenomenon()->GetId(); }
@@ -151,7 +152,6 @@ double Unit::Convert(double value, UnitCP toUnit) const
         }
 
     double factor = GetFactor();
-    double offset = GetOffset();
     for (auto const& toUnitExp : combinedExpression)
         {
         if (toUnitExp->GetExponent() > 0)
@@ -159,13 +159,19 @@ double Unit::Convert(double value, UnitCP toUnit) const
         else
             factor /= FastIntegerPower(toUnitExp->GetSymbolFactor(), abs(toUnitExp->GetExponent()));
         
-        if (toUnitExp->GetSymbol()->GetOffset() != 0.0)
-            offset = offset * factor + toUnitExp->GetSymbol()->GetOffset();
+
         }
     factor /= toUnit->GetFactor();
-    offset = offset * factor + toUnit->GetOffset();
 
-    return value * factor + offset;
+    if (HasOffset() && (toUnit->GetId() == fromExpression.FirstSymbol()->GetSymbol()->GetId()))
+        value += GetOffset();
+
+    value *= factor;
+
+    if (toUnit->HasOffset() && (GetId() == toExpression.FirstSymbol()->GetSymbol()->GetId()))
+        value -= toUnit->GetOffset();
+
+    return value;
     }
 
 Utf8String Phenomenon::GetPhenomenonDimension() const

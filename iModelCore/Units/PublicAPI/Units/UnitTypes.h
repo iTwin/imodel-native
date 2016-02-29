@@ -52,9 +52,11 @@ public:
     UNITS_EXPORT int    GetId()   const;
     UNITS_EXPORT Utf8CP GetDefinition() const;
     UNITS_EXPORT double GetFactor() const;
+    bool    HasOffset() const { return 0.0 != m_offset; }
     double GetOffset() const { return m_offset; }
     UNITS_EXPORT bool IsBaseSymbol() const;
     UNITS_EXPORT bool IsDimensionless() const;
+
 
     bool IsCompatibleWith(SymbolCR rhs) const;
 
@@ -79,7 +81,7 @@ private:
     PhenomenonCP    m_phenomenon;
     bool            m_isConstant;
 
-    static UnitP Create (Utf8CP sysName, PhenomenonCR phenomenon, Utf8CP unitName, int id, Utf8CP definition, Utf8Char baseDimensionSymbol, double factor, double offset, bool isConstant);
+    static UnitP Create(Utf8CP sysName, PhenomenonCR phenomenon, Utf8CP unitName, int id, Utf8CP definition, Utf8Char baseDimensionSymbol, double factor, double offset, bool isConstant);
 
     Unit (Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, int id, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant);
 
@@ -98,6 +100,8 @@ public:
     // TODO: Should GetId be private?  Should probably only be used internally because id is not gaurantteed to be consistent between runs (though it is because units are added in our code)
 
     bool IsRegistered()    const;
+
+    // TODO: Consider removal ... not used now but might be used if we refactor how prefix constants are combined with their units.
     bool IsConstant() const { return m_isConstant; }
 
     PhenomenonCP GetPhenomenon()   const { return m_phenomenon; }

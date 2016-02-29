@@ -22,6 +22,7 @@ struct UnitsTests : UnitsTestFixture
 
     static bool TestUnitConversion(double fromVal, Utf8CP fromUnitName, double expectedVal, Utf8CP targetUnitName, double tolerance, 
                                    bvector<Utf8String>& loadErrors, bvector<Utf8String>& conversionErrors, bool showDetailLogs = false);
+    static void TestConversionsLoadedFromCvsFile(Utf8CP fileName);
 
     static Utf8String ParseUOM(Utf8CP unitName, bset<Utf8String>& notMapped)
         {
@@ -38,7 +39,7 @@ struct UnitsTests : UnitsTestFixture
         return UnitRegistry::Instance().LookupUnit(unitName);
         }
 
-    void GetMapping(WCharCP file, bmap<Utf8String, Utf8String>& unitNameMap, bset<Utf8String>& notMapped)
+    static void GetMapping(WCharCP file, bmap<Utf8String, Utf8String>& unitNameMap, bset<Utf8String>& notMapped)
         {
         auto lineProcessor = [&unitNameMap, &notMapped] (bvector<Utf8String>& tokens)
             {
@@ -51,7 +52,7 @@ struct UnitsTests : UnitsTestFixture
         ReadConversionCsvFile(file, lineProcessor);
         }
 
-    void ReadConversionCsvFile(WCharCP file, CSVLineProcessor lineProcessor)
+    static void ReadConversionCsvFile(WCharCP file, CSVLineProcessor lineProcessor)
         {
         Utf8String path = UnitsTestFixture::GetConversionDataPath(file);
         std::ifstream ifs(path.begin(), std::ifstream::in);
@@ -152,6 +153,43 @@ TEST_F (UnitsTests, UnitsMapping)
 //    bvector<Utf8String> conversionErrors;
 //    TestUnitConversion(1.0, "JOULE", 1.0, "NEWTON_METRE", 1.0e-8, loadErrors, conversionErrors);
 //    }
+
+TEST_F(UnitsTests, TestOffsetConversions)
+    {
+    bvector<Utf8String> loadErrors;
+    bvector<Utf8String> conversionErrors;
+    TestUnitConversion(32, "FAHRENHEIT", 0, "CELSIUS", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(20, "FAHRENHEIT", -6.666666666666666666666666666, "CELSIUS", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(122, "FAHRENHEIT", 50, "CELSIUS", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(60, "FAHRENHEIT", 288.705555555555, "KELVIN", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(60, "FAHRENHEIT", 519.67, "RANKINE", 1.0e-8, loadErrors, conversionErrors);
+
+    TestUnitConversion(1, "CELSIUS", 33.8, "FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(-15, "CELSIUS", 5, "FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(-25, "CELSIUS", -13, "FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(60, "CELSIUS", 140, "FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(60, "CELSIUS", 333.15, "KELVIN", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(60, "CELSIUS", 599.67, "RANKINE", 1.0e-8, loadErrors, conversionErrors);
+
+    TestUnitConversion(42, "KELVIN", -231.15, "CELSIUS", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(42, "KELVIN", -384.07, "FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(42, "KELVIN", 75.6, "RANKINE", 1.0e-8, loadErrors, conversionErrors);
+
+    TestUnitConversion(42, "RANKINE", -249.81666666666, "CELSIUS", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(42, "RANKINE", -417.67, "FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(42, "RANKINE", 23.333333333333333, "KELVIN", 1.0e-8, loadErrors, conversionErrors);
+
+    Utf8String loadErrorString("Could not convert because one or both of the following units could not be loaded:\n");
+    for (auto const& val : loadErrors)
+        loadErrorString.append(val + "\n");
+
+    Utf8String conversionErrorString("Failed to convert between the following units:\n");
+    for (auto const& val : conversionErrors)
+        conversionErrorString.append(val + "\n");
+    EXPECT_EQ(0, loadErrors.size()) << loadErrorString;
+    EXPECT_EQ(0, conversionErrors.size()) << conversionErrorString;
+
+    }
 
 TEST_F(UnitsTests, TestBasiConversion)
     {
@@ -353,14 +391,14 @@ TEST_F(UnitsTests, UnitsConversions_Complex)
     EXPECT_EQ(0, conversionErrors.size()) << conversionErrorString;
     }
 
-TEST_F(UnitsTests, UnitsConversion)
+void UnitsTests::TestConversionsLoadedFromCvsFile(Utf8CP fileName)
     {
     bvector<Utf8String> loadErrors;
     bvector<Utf8String> conversionErrors;
 
     int numberConversions = 0;
     int numberWhereUnitsFound = 0;
-    auto lineProcessor = [&loadErrors, &conversionErrors, &numberConversions, &numberWhereUnitsFound](bvector<Utf8String>& tokens)
+    auto lineProcessor = [&loadErrors, &conversionErrors, &numberConversions, &numberWhereUnitsFound] (bvector<Utf8String>& tokens)
         {
         ++numberConversions;
         //passing 1.0e-6 to tolerance instead of the csv value
@@ -368,22 +406,33 @@ TEST_F(UnitsTests, UnitsConversion)
             ++numberWhereUnitsFound;
         };
 
-    ReadConversionCsvFile(L"unitcomparisondata.csv", lineProcessor);
+    WString fileNameLong(fileName, BentleyCharEncoding::Utf8);
+    ReadConversionCsvFile(fileNameLong.c_str(), lineProcessor);
 
-    Utf8PrintfString loadErrorString ("Attempted %d conversions, error loading :\n", numberConversions);
+    Utf8PrintfString loadErrorString("%s - Attempted %d conversions, error loading :\n", fileName, numberConversions);
 
     for (auto const& val : loadErrors)
         loadErrorString.append(val + "\n");
 
     EXPECT_EQ(0, loadErrors.size()) << loadErrorString;
 
-    Utf8PrintfString conversionErrorString("Total number of conversions %d, units found for %d, %d passed, %d failed, %d skipped because of missing units, error Converting :\n", 
-                                           numberConversions, numberWhereUnitsFound, numberWhereUnitsFound - conversionErrors.size(), conversionErrors.size(), loadErrors.size());
+    Utf8PrintfString conversionErrorString("%s - Total number of conversions %d, units found for %d, %d passed, %d failed, %d skipped because of missing units, error Converting :\n",
+                                            fileName, numberConversions, numberWhereUnitsFound, numberWhereUnitsFound - conversionErrors.size(), conversionErrors.size(), loadErrors.size());
 
     for (auto const& val : conversionErrors)
         conversionErrorString.append(val + "\n");
 
     EXPECT_EQ(0, conversionErrors.size()) << conversionErrorString;
+    }
+
+TEST_F(UnitsTests, UnitsConversion_CompareToRawOutputFromOldSystem)
+    {
+    TestConversionsLoadedFromCvsFile("ConversionsBetweenAllOldUnits.csv");
+    }
+
+TEST_F(UnitsTests, UnitsConversion)
+    {
+    TestConversionsLoadedFromCvsFile("unitcomparisondata.csv");
     }
 
 void GetUnitsByName(UnitRegistry& hub, bvector<Utf8String>& unitNames)
