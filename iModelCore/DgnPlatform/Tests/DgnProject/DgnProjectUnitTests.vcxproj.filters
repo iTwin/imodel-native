@@ -148,9 +148,6 @@
     <ClCompile Include="Published\ComponentModelTest.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Performance\PerformanceElementsTests.cpp">
-      <Filter>Performance</Filter>
-    </ClCompile>
     <ClCompile Include="NonPublished\ElementMaterial_tests.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
@@ -253,6 +250,9 @@
     <ClCompile Include="Performance\ComponentModel_PerfTest.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
+    <ClCompile Include="NonPublished\BackwardCompatibility_Tests.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\DgnHandlersTests.h">
@@ -287,9 +287,6 @@
     </ClInclude>
     <ClInclude Include="Published\AnnotationTestFixture.h">
       <Filter>Published</Filter>
-    </ClInclude>
-    <ClInclude Include="Performance\PerformanceElements.h">
-      <Filter>Performance</Filter>
     </ClInclude>
     <ClInclude Include="Performance\PerformanceElementsCRUDTests.h">
       <Filter>Performance</Filter>
