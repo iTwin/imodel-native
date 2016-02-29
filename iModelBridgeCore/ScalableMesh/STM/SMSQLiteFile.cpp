@@ -868,8 +868,14 @@ void SMSQLiteFile::StoreDiffSet(int64_t& diffsetID, const bvector<uint8_t>& diff
 
 size_t SMSQLiteFile::GetNumberOfPoints(int64_t nodeID)
     {
+    std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
-    m_database->GetCachedStatement(stmt, "SELECT SizePts FROM SMPoint WHERE NodeId=?");
+    DbResult rc = m_database->GetCachedStatement(stmt, "SELECT SizePts FROM SMPoint WHERE NodeId=?");
+    if (rc != BE_SQLITE_OK)
+        {
+        assert(!"Can't get number of points");
+        return 0;
+        }
     stmt->BindInt64(1, nodeID);
     DbResult status = stmt->Step();
     //assert(status == BE_SQLITE_ROW);
@@ -879,8 +885,14 @@ size_t SMSQLiteFile::GetNumberOfPoints(int64_t nodeID)
 
 size_t SMSQLiteFile::GetNumberOfIndices(int64_t nodeID)
     {
+    std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
-    m_database->GetCachedStatement(stmt, "SELECT SizeIndices FROM SMPoint WHERE NodeId=?");
+    DbResult rc = m_database->GetCachedStatement(stmt, "SELECT SizeIndices FROM SMPoint WHERE NodeId=?");
+    if (rc != BE_SQLITE_OK)
+        {
+        assert(!"Can't get number of indices");
+        return 0;
+        }
     stmt->BindInt64(1, nodeID);
     DbResult status = stmt->Step();
    // assert(status == BE_SQLITE_ROW);
@@ -890,8 +902,14 @@ size_t SMSQLiteFile::GetNumberOfIndices(int64_t nodeID)
 
 size_t SMSQLiteFile::GetNumberOfUVIndices(int64_t nodeID)
     {
+    std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
-    m_database->GetCachedStatement(stmt, "SELECT SizeUVs FROM SMTexture WHERE NodeId=?");
+    DbResult rc = m_database->GetCachedStatement(stmt, "SELECT SizeUVs FROM SMTexture WHERE NodeId=?");
+    if (rc != BE_SQLITE_OK)
+        {
+        assert(!"Can't get number of UV indices");
+        return 0;
+        }
     stmt->BindInt64(1, nodeID);
     DbResult status = stmt->Step();
     // assert(status == BE_SQLITE_ROW);
@@ -901,6 +919,7 @@ size_t SMSQLiteFile::GetNumberOfUVIndices(int64_t nodeID)
 
 size_t SMSQLiteFile::GetTextureByteCount(int64_t nodeID)
     {
+    std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT SizeTexture FROM SMTexture WHERE NodeId=?");
     stmt->BindInt64(1, nodeID);
@@ -912,6 +931,7 @@ size_t SMSQLiteFile::GetTextureByteCount(int64_t nodeID)
 
 size_t SMSQLiteFile::GetNumberOfUVs(int64_t nodeID)
     {
+    std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT SizeUVs FROM SMUVs WHERE NodeId=?");
     stmt->BindInt64(1, nodeID);
@@ -923,6 +943,7 @@ size_t SMSQLiteFile::GetNumberOfUVs(int64_t nodeID)
 
 size_t SMSQLiteFile::GetNumberOfFeaturePoints(int64_t featureID)
     {
+    std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT Size FROM SMFeatures WHERE FeatureId=?");
     stmt->BindInt64(1, featureID);
@@ -934,6 +955,7 @@ size_t SMSQLiteFile::GetNumberOfFeaturePoints(int64_t featureID)
 
 size_t SMSQLiteFile::GetClipPolygonByteCount(int64_t clipID)
     {
+    std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT Size FROM SMClipDefinitions WHERE PolygonId=?");
     stmt->BindInt64(1, clipID);
