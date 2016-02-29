@@ -15,13 +15,13 @@
 #include <WebServices/Connect/IConnectTokenProvider.h>
 #include <WebServices/Connect/IImsClient.h>
 #include <WebServices/Connect/SamlToken.h>
-#include <MobileDgn/Utils/Http/AuthenticationHandler.h>
-#include <MobileDgn/Utils/SecureStore.h>
+#include <DgnClientFx/Utils/Http/AuthenticationHandler.h>
+#include <DgnClientFx/Utils/SecureStore.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-USING_NAMESPACE_BENTLEY_MOBILEDGN
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 typedef AsyncResult<void, AsyncError> SignInResult;
 
@@ -59,7 +59,7 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
             };
 
     private:
-        mutable BeCriticalSection m_cs;
+        mutable BeMutex m_cs;
 
         IImsClientPtr m_client;
         ILocalState& m_localState;
@@ -132,7 +132,7 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         //! Get authentication handler for specific server when signed in.
         //! It will automatically authenticate all HttpRequests that is used with.
         //! Will configure each request to validate TLS certificate depending on UrlProvider environment.
-        //! @param serverUrl should contain server URL without any directories
+        //! @param rpUrl should contain server URL without any directories
         //! @param httpHandler optional custom HTTP handler to send all requests trough
         WSCLIENT_EXPORT AuthenticationHandlerPtr GetAuthenticationHandler(Utf8StringCR rpUrl, IHttpHandlerPtr httpHandler = nullptr) override;
 

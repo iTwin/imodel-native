@@ -10,13 +10,12 @@
 
 #include <WebServices/WebServices.h>
 #include <WebServices/Connect/IConnectAuthenticationPersistence.h>
-#include <MobileDgn/MobileDgnApplication.h>
-#include <MobileDgn/Utils/SecureStore.h>
+#include <DgnClientFx/Utils/SecureStore.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-USING_NAMESPACE_BENTLEY_MOBILEDGN
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    02/2016
@@ -25,7 +24,7 @@ typedef std::shared_ptr<struct IdentityAuthenticationPersistence> IdentityAuthen
 struct EXPORT_VTABLE_ATTRIBUTE IdentityAuthenticationPersistence : public IConnectAuthenticationPersistence
     {
     private:
-        mutable BeCriticalSection m_cs;
+        mutable BeMutex m_cs;
         std::shared_ptr<ISecureStore> m_secureStore;
         mutable SamlTokenPtr m_token;
 
