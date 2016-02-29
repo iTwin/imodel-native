@@ -2,7 +2,7 @@
 |
 |   $Source: PublicAPI/DgnPlatform/DgnECSymbolProvider.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #pragma once
@@ -34,10 +34,10 @@ private:
     virtual void            _PublishSymbols (ECN::SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const override;
 
     // ECInstance methods for use in ECExpressions
-    static ECN::ExpressionStatus GetInstanceId (ECN::EvaluationResult& evalResult, ECN::ECInstanceListCR instanceData, ECN::EvaluationResultVector& args);
-    static ECN::ExpressionStatus GetInstanceLabel (ECN::EvaluationResult& evalResult, ECN::ECInstanceListCR instanceData, ECN::EvaluationResultVector& args);
-    static ECN::ExpressionStatus GetClass (ECN::EvaluationResult& evalResult, ECN::ECInstanceListCR instanceData, ECN::EvaluationResultVector& args);
-    static ECN::ExpressionStatus IsOfClass (ECN::EvaluationResult& evalResult, ECN::ECInstanceListCR instanceData, ECN::EvaluationResultVector& args);
+    static ECN::ExpressionStatus GetInstanceId (ECN::EvaluationResult& evalResult, void* context, ECN::ECInstanceListCR instanceData, ECN::EvaluationResultVector& args);
+    static ECN::ExpressionStatus GetInstanceLabel (ECN::EvaluationResult& evalResult, void* context, ECN::ECInstanceListCR instanceData, ECN::EvaluationResultVector& args);
+    static ECN::ExpressionStatus GetClass (ECN::EvaluationResult& evalResult, void* context, ECN::ECInstanceListCR instanceData, ECN::EvaluationResultVector& args);
+    static ECN::ExpressionStatus IsOfClass (ECN::EvaluationResult& evalResult, void* context, ECN::ECInstanceListCR instanceData, ECN::EvaluationResultVector& args);
 
 #ifdef DETERMINE_NEED_TO_SUPPORT_IN_GRAPHITE
     static ECN::ExpressionStatus GetRelatedInstance (ECN::EvaluationResult& evalResult, ECN::ECInstanceListCR instanceData, ECN::EvaluationResultVector& args);
@@ -46,8 +46,8 @@ private:
     static ECN::ExpressionStatus ResolveSymbology (ECN::EvaluationResult& evalResult, ECN::ECInstanceListCR instanceData, ECN::EvaluationResultVector& args);
 #endif
     // IValueListResult methods for use in ECExpressions
-    static ECN::ExpressionStatus AnyMatches (ECN::EvaluationResult& evalResult, ECN::IValueListResultCR valueList, ECN::EvaluationResultVector& args);
-    static ECN::ExpressionStatus AllMatch (ECN::EvaluationResult& evalResult, ECN::IValueListResultCR valueList, ECN::EvaluationResultVector& args);
+    static ECN::ExpressionStatus AnyMatches (ECN::EvaluationResult& evalResult, void* context, ECN::IValueListResultCR valueList, ECN::EvaluationResultVector& args);
+    static ECN::ExpressionStatus AllMatch (ECN::EvaluationResult& evalResult, void* context, ECN::IValueListResultCR valueList, ECN::EvaluationResultVector& args);
 
     // Helpers for ECInstance methods
     ECN::ECSchemaR                   GetSchema();

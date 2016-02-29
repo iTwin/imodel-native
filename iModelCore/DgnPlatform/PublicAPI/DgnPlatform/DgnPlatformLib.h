@@ -21,13 +21,15 @@
 #include <Logging/bentleylogging.h>
 
 typedef struct _EXCEPTION_POINTERS*  LPEXCEPTION_POINTERS;
-typedef struct FT_LibraryRec_* FT_Library; // Shield users from freetype.h because they have a bad include scheme.
+struct FT_LibraryRec_;
 
 #define T_HOST DgnPlatformLib::GetHost()
 
 DGNPLATFORM_TYPEDEFS(DgnHost)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
+
+typedef struct ::FT_LibraryRec_* FreeType_LibraryP; 
 
 /*=================================================================================**//**
 @addtogroup DgnPlatformHost
@@ -128,8 +130,6 @@ public:
             bmap<Utf8String, bpair<ScriptLibraryImporter*,bool>> m_importers;
             ScriptNotificationHandler* m_notificationHandler;
 
-            DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
             DGNPLATFORM_EXPORT ScriptAdmin();
             DGNPLATFORM_EXPORT ~ScriptAdmin();
 
@@ -152,6 +152,11 @@ public:
             //! @param[in] stypePreferred   The type of script that the caller prefers, if there are multiple kinds stored for the specified name.
             //! @return non-zero if the JS program is not available from the library.
             DGNPLATFORM_EXPORT virtual DgnDbStatus _FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DateTime& lastModifiedTime, DgnDbR db, Utf8CP sName, DgnScriptType stypePreferred);
+
+            //! Generate an exception in JavaScript
+            //! @param exname   The name of the exception to throw
+            //! @param details  Information about the exception
+            DGNPLATFORM_EXPORT virtual void _ThrowException(Utf8CP exname, Utf8CP details);
 
             //! Register the script error handler
             ScriptNotificationHandler* RegisterScriptNotificationHandler(ScriptNotificationHandler& h) {auto was  = m_notificationHandler; m_notificationHandler = &h; return was;}
@@ -196,8 +201,6 @@ public:
                 Immediate     = 2
                 };
 
-            DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
             //! Handle the specified exception
             virtual WasHandled _ProcessException(_EXCEPTION_POINTERS*) {return WasHandled::ContinueSearch;};
             virtual WasHandled _FilterException(_EXCEPTION_POINTERS*, bool onlyWantFloatingPoint) {return WasHandled::ContinueSearch;}
@@ -216,8 +219,6 @@ public:
         //! Provides paths to known locations
         struct IKnownLocationsAdmin : IHostObject
             {
-            DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
         protected:
             virtual ~IKnownLocationsAdmin() {}
             virtual BeFileNameCR _GetLocalTempDirectoryBaseName() = 0; //!< @see GetLocalTempDirectoryBaseName
@@ -255,14 +256,12 @@ public:
             template <typename CALLER> void CallMonitors(CALLER const& caller);
 
         public:
-            DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
             virtual bool _OnPromptReverseAll() {return true;}
-            virtual void _RestartTool()  {}
+            virtual void _RestartTool() {}
             virtual void _OnNothingToUndo() {}
             virtual void _OnPrepareForUndoRedo(){}
-            virtual void _OnNothingToRedo(){}
-
+            virtual void _OnNothingToRedo() {}
             DGNPLATFORM_EXPORT virtual void _OnCommit(TxnManager&);
             DGNPLATFORM_EXPORT virtual void _OnReversedChanges(TxnManager&);
             DGNPLATFORM_EXPORT virtual void _OnUndoRedo(TxnManager&, TxnAction);
@@ -290,33 +289,32 @@ public:
             DgnFontPtr m_lastResortRscFont;
             DgnFontPtr m_lastResortShxFont;
             bool m_triedToLoadFTLibrary;
-            FT_Library m_ftLibrary;
+            FreeType_LibraryP m_ftLibrary;
         
             DGNPLATFORM_EXPORT virtual BeFileName _GetLastResortFontDbPath();
             DGNPLATFORM_EXPORT virtual BentleyStatus _EnsureLastResortFontDb();
             DGNPLATFORM_EXPORT virtual DgnFontPtr _CreateLastResortFont(DgnFontType);
         
         public:
-            DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
             FontAdmin() : m_isInitialized(false), m_lastResortFontDb(nullptr), m_dbFonts(nullptr), m_triedToLoadFTLibrary(false), m_ftLibrary(nullptr) {}
             DGNPLATFORM_EXPORT virtual ~FontAdmin();
 
-            virtual DgnFontCR _GetLastResortTrueTypeFont() { return m_lastResortTTFont.IsValid() ? *m_lastResortTTFont : *(m_lastResortTTFont = _CreateLastResortFont(DgnFontType::TrueType)); }
-            DgnFontCR GetLastResortTrueTypeFont() { return _GetLastResortTrueTypeFont(); }
-            virtual DgnFontCR _GetLastResortRscFont() { return m_lastResortRscFont.IsValid() ? *m_lastResortRscFont : *(m_lastResortRscFont = _CreateLastResortFont(DgnFontType::Rsc)); }
-            DgnFontCR GetLastResortRscFont() { return _GetLastResortRscFont(); }
-            virtual DgnFontCR _GetLastResortShxFont() { return m_lastResortShxFont.IsValid() ? *m_lastResortShxFont : *(m_lastResortShxFont = _CreateLastResortFont(DgnFontType::Shx)); }
-            DgnFontCR GetLastResortShxFont() { return _GetLastResortShxFont(); }
-            virtual DgnFontCR _GetAnyLastResortFont() { return _GetLastResortTrueTypeFont(); }
-            DgnFontCR GetAnyLastResortFont() { return _GetAnyLastResortFont(); }
-            virtual DgnFontCR _GetDecoratorFont() { return _GetLastResortTrueTypeFont(); }
-            DgnFontCR GetDecoratorFont() { return _GetDecoratorFont(); }
+            virtual DgnFontCR _GetLastResortTrueTypeFont() {return m_lastResortTTFont.IsValid() ? *m_lastResortTTFont : *(m_lastResortTTFont = _CreateLastResortFont(DgnFontType::TrueType));}
+            DgnFontCR GetLastResortTrueTypeFont() {return _GetLastResortTrueTypeFont();}
+            virtual DgnFontCR _GetLastResortRscFont() {return m_lastResortRscFont.IsValid() ? *m_lastResortRscFont : *(m_lastResortRscFont = _CreateLastResortFont(DgnFontType::Rsc));}
+            DgnFontCR GetLastResortRscFont() {return _GetLastResortRscFont();}
+            virtual DgnFontCR _GetLastResortShxFont() {return m_lastResortShxFont.IsValid() ? *m_lastResortShxFont : *(m_lastResortShxFont = _CreateLastResortFont(DgnFontType::Shx));}
+            DgnFontCR GetLastResortShxFont() {return _GetLastResortShxFont();}
+            virtual DgnFontCR _GetAnyLastResortFont() {return _GetLastResortTrueTypeFont();}
+            DgnFontCR GetAnyLastResortFont() {return _GetAnyLastResortFont();}
+            virtual DgnFontCR _GetDecoratorFont() {return _GetLastResortTrueTypeFont();}
+            DgnFontCR GetDecoratorFont() {return _GetDecoratorFont();}
             DGNPLATFORM_EXPORT virtual DgnFontCR _ResolveFont(DgnFontCP);
-            DgnFontCR ResolveFont(DgnFontCP font) { return _ResolveFont(font); }
-            virtual bool _IsUsingAnRtlLocale() { return false; }
-            bool IsUsingAnRtlLocale() { return _IsUsingAnRtlLocale(); }
-            DGNPLATFORM_EXPORT virtual FT_Library _GetFreeTypeLibrary();
-            FT_Library GetFreeTypeLibrary() { return _GetFreeTypeLibrary(); }
+            DgnFontCR ResolveFont(DgnFontCP font) {return _ResolveFont(font);}
+            virtual bool _IsUsingAnRtlLocale() {return false;}
+            bool IsUsingAnRtlLocale() {return _IsUsingAnRtlLocale();}
+            DGNPLATFORM_EXPORT virtual FreeType_LibraryP _GetFreeTypeLibrary();
+            FreeType_LibraryP GetFreeTypeLibrary() {return _GetFreeTypeLibrary();}
         };
 
         //! Allows interaction between the host and the LineStyleManager.
@@ -329,8 +327,6 @@ public:
                 //! to scale viewport reference attachments linestyles.
                 SETTINGS_ScaleViewportLineStyles = 1,
                 };
-
-            DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
             //! Allows the host to provide a semi-colon-delimited list of search patterns to search for RSC files (which can each have zero or more RSC line styles).
             //! The order of files in the list is important
@@ -356,26 +352,9 @@ public:
             virtual bool _GetSettingsValue(LineStyleAdmin::Settings name, bool defaultValue) {return defaultValue;}
             };
 
-        //! Supervise the processing of materials.
-        struct MaterialAdmin : IHostObject
-            {
-            DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
-            //! Determine whether DgnPlatform should attempt to determine materials for geometry during display.
-            virtual bool _WantDisplayMaterials() {return true;}
-            //! Convert a stored material preview from a jpeg data block to an rgb image
-            virtual BentleyStatus _GetMaterialPreviewAsRGB(Byte *rgbImage, Point2dCR outSize, Byte const* jpegImage, size_t jpegDataSize) {return ERROR;}
-            //! Convert an RGB image to a jpeg compressed
-            virtual BentleyStatus _GetMaterialPreviewJPEGFromRGB(Byte** jpegDataP, size_t& jpegDataSize, Byte const* rgb, Point2dCR size) {return ERROR;}
-            //! Create an RGB image from a buffer
-            virtual BentleyStatus _CreateImageFileFromRGB(WStringCR fileName, Byte *image, Point2dCR size, bool isRGBA)  {return ERROR;};
-            };
-
         //! Supervise the processing of Raster Attachments
         struct RasterAttachmentAdmin : IHostObject
             {
-            DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
             //Control if raster are displayed or not
             virtual bool _IsDisplayEnable() const {return true;}
 
@@ -421,8 +400,6 @@ public:
                 DisplayQueryType_Complete    = 1,
                 };
 
-            DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
             //! Get the density used for dynamic display.
             //! @return the dynamic density (a value between 0 and 1).
             virtual float _GetDisplayDynamicDensity() const {return 0.10f;}
@@ -447,19 +424,19 @@ public:
 
             //! Copy the spatial reference from a point cloud file to a point cloud element
             //! @param[in]      eRef         The point cloud element.
-            virtual BentleyStatus _SyncSpatialReferenceFromFile(DgnElementP eRef) { return ERROR; }
+            virtual BentleyStatus _SyncSpatialReferenceFromFile(DgnElementP eRef) {return ERROR; }
 
             //! returns whether we should automatically synchronize the spatial reference from the POD file
-            virtual bool _GetAutomaticallySyncSpatialReferenceFromFile() const { return false; }
+            virtual bool _GetAutomaticallySyncSpatialReferenceFromFile() const {return false;}
 
             //! returns whether we should automatically synchronize the spatial reference to the POD file
-            virtual bool _GetAutomaticallySyncSpatialReferenceToFile() const { return false; }
+            virtual bool _GetAutomaticallySyncSpatialReferenceToFile() const {return false;}
 
             //! returns whether we should automatically synchronize the spatial reference from the POD file even if it is empty
-            virtual bool _GetSyncEmptySpatialReferenceFromFile() const { return false; }
+            virtual bool _GetSyncEmptySpatialReferenceFromFile() const {return false;}
 
             //! returns whether we should automatically synchronize the spatial reference to the POD file even if it is empty
-            virtual bool _GetSyncEmptySpatialReferenceToFile() const { return false; }
+            virtual bool _GetSyncEmptySpatialReferenceToFile() const {return false;}
 
             //! Resolve the file name that corresponds to the fileId. The fileId is provided by the application, which is responsible to map this fileId to
             //! a file that the application knows. Generally, the application will override this admin method.
@@ -491,8 +468,6 @@ public:
         //! to output element graphics as solid kernel entities and facet sets.
         struct SolidsKernelAdmin : IHostObject
             {
-            DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
             //! Report if Parasolids is loaded.
             virtual bool _IsParasolidLoaded() {return false;}
 
@@ -837,8 +812,6 @@ public:
         //! Receives messages sent to NotificationManager. Hosts can implement this interface to communicate issues to the user.
         struct NotificationAdmin : IHostObject
             {
-            DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
             //! Implement this method to display messages from NotificationManager::OutputMessage.
             virtual StatusInt _OutputMessage(NotifyMessageDetails const&) {return SUCCESS;}
 
@@ -858,10 +831,8 @@ public:
         //! Supervises the processing of GeoCoordination
         struct GeoCoordinationAdmin : IHostObject
             {
-            DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
             //! Allows the host to provide a path to coordinate system definition files.
-            virtual WString _GetDataDirectory() { return L""; }
+            virtual WString _GetDataDirectory() {return L"";}
 
             virtual IGeoCoordinateServicesP _GetServices() const {return nullptr;}
             };
@@ -869,7 +840,6 @@ public:
         //! Formatter preferences for units, fields, etc
         struct FormatterAdmin : IHostObject
             {
-            DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
             //! If true, display coordinates in DGN format(eg. 1:0 1/4); if false, display DWG format(eg. 1'-0 1/4").
             virtual bool    _AllowDgnCoordinateReadout() const {return true;}
@@ -878,10 +848,8 @@ public:
         //! Supplies functionality for coordinating multi-user DgnDb repositories
         struct RepositoryAdmin : IHostObject
             {
-            DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
             DGNPLATFORM_EXPORT virtual IBriefcaseManagerPtr _CreateBriefcaseManager(DgnDbR db) const;
-            virtual IRepositoryManagerP _GetRepositoryManager(DgnDbR db) const { return nullptr; }
+            virtual IRepositoryManagerP _GetRepositoryManager(DgnDbR db) const {return nullptr;}
             };
 
         typedef bvector<DgnDomain*> T_RegisteredDomains;
@@ -895,7 +863,6 @@ public:
         RasterAttachmentAdmin*  m_rasterAttachmentAdmin;
         PointCloudAdmin*        m_pointCloudAdmin;
         NotificationAdmin*      m_notificationAdmin;
-        MaterialAdmin*          m_materialAdmin;
         SolidsKernelAdmin*      m_solidsKernelAdmin;
         GeoCoordinationAdmin*   m_geoCoordAdmin;
         TxnAdmin*               m_txnAdmin;
@@ -906,7 +873,6 @@ public:
         RepositoryAdmin*        m_repositoryAdmin;
         Utf8String              m_productName;
         T_RegisteredDomains     m_registeredDomains;
-        bvector<CopyrightSupplier*> m_copyrights;
 
     public:
         T_RegisteredDomains& RegisteredDomains() {return m_registeredDomains;}
@@ -935,9 +901,6 @@ public:
         //! Supply the NotificationAdmin for this session. This method is guaranteed to be called once per thread from DgnPlatformLib::Host::Initialize and never again.
         DGNPLATFORM_EXPORT virtual NotificationAdmin& _SupplyNotificationAdmin();
 
-        //! Supply the MaterialAdmin for this session. This method is guaranteed to be called once per thread from DgnPlatformLib::Host::Initialize and never again.
-        DGNPLATFORM_EXPORT virtual MaterialAdmin& _SupplyMaterialAdmin();
-
         //! Supply the SolidsKernelAdmin for this session. This method is guaranteed to be called once per thread from DgnPlatformLib::Host::Initialize and never again.
         DGNPLATFORM_EXPORT virtual SolidsKernelAdmin& _SupplySolidsKernelAdmin();
 
@@ -959,7 +922,7 @@ public:
         //! Supply the product name to be used to describe the host.
         virtual void _SupplyProductName(Utf8StringR) = 0;
 
-        virtual BeSQLite::L10N::SqlangFiles  _SupplySqlangFiles() = 0;
+        virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() = 0;
 
         Host()
             {
@@ -971,7 +934,6 @@ public:
             m_rasterAttachmentAdmin = nullptr;
             m_pointCloudAdmin = nullptr;
             m_notificationAdmin = nullptr;
-            m_materialAdmin = nullptr;
             m_solidsKernelAdmin = nullptr;
             m_geoCoordAdmin = nullptr;
             m_txnAdmin = nullptr;
@@ -993,7 +955,6 @@ public:
         RasterAttachmentAdmin&  GetRasterAttachmentAdmin() {return *m_rasterAttachmentAdmin;}
         PointCloudAdmin&        GetPointCloudAdmin()       {return *m_pointCloudAdmin;}
         NotificationAdmin&      GetNotificationAdmin()     {return *m_notificationAdmin;}
-        MaterialAdmin&          GetMaterialAdmin()         {return *m_materialAdmin;}
         SolidsKernelAdmin&      GetSolidsKernelAdmin()     {return *m_solidsKernelAdmin;}
         GeoCoordinationAdmin&   GetGeoCoordinationAdmin()  {return *m_geoCoordAdmin;}
         TxnAdmin&               GetTxnAdmin()              {return *m_txnAdmin;}
@@ -1005,15 +966,6 @@ public:
         Utf8CP                  GetProductName()           {return m_productName.c_str();}
 
         void ChangeNotificationAdmin(NotificationAdmin& newAdmin) {m_notificationAdmin = &newAdmin;}
-
-        //! Register a copyright supplier. Do not free the supplier until after you call UnregisterCopyrightSupplier.
-        void RegisterCopyrightSupplier(CopyrightSupplier& s) { m_copyrights.push_back(&s); }
-
-        //! Un-register a copyright supplier
-        void UnregisterCopyrightSupplier(CopyrightSupplier& s) {auto i = std::remove(m_copyrights.begin(), m_copyrights.end(), &s); if (i != m_copyrights.end()) m_copyrights.erase(i);}
-
-        //! Return the list of registered copyright suppliers
-        bvector<CopyrightSupplier*> const& GetCopyrightSuppliers() const {return m_copyrights;}
 
         //! Returns true if this Host has been initialized; otherwise, false
         bool IsInitialized() {return 0 != m_fontAdmin;}

@@ -418,6 +418,21 @@ public:
 };
 
 //=======================================================================================
+// @bsiclass                                                    Keith.Bentley   02/16
+//=======================================================================================
+struct TerrainContext : RenderContext
+{
+    DEFINE_T_SUPER(RenderContext);
+private:
+    Render::GraphicListR m_terrain;
+    UpdatePlan const& m_plan;
+    void _OutputGraphic(Render::GraphicR graphic, GeometrySourceCP) override;
+
+public:
+    TerrainContext(DgnViewportR vp, Render::GraphicListR terrain, UpdatePlan const& plan) : m_terrain(terrain), RenderContext(vp, DrawPurpose::CreateTerrain), m_plan(plan) {}
+};
+
+//=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/15
 //=======================================================================================
 struct DynamicsContext : RenderContext

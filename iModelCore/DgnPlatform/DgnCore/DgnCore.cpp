@@ -388,7 +388,6 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
     BeAssert(NULL == m_rasterAttachmentAdmin);
     BeAssert(NULL == m_pointCloudAdmin);
     BeAssert(NULL == m_notificationAdmin);
-    BeAssert(NULL == m_materialAdmin);
     BeAssert(NULL == m_solidsKernelAdmin);
     BeAssert(NULL == m_geoCoordAdmin);
     BeAssert(NULL == m_txnAdmin);
@@ -437,7 +436,6 @@ bool DgnPlatformLib::Host::LineStyleAdmin::_GetLocalLineStylePaths(WStringR path
 * @bsimethod                                                    Brien.Bastings  07/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnPlatformLib::Host::SolidsKernelAdmin&     DgnPlatformLib::Host::_SupplySolidsKernelAdmin()     {return *new SolidsKernelAdmin();}
-DgnPlatformLib::Host::MaterialAdmin&         DgnPlatformLib::Host::_SupplyMaterialAdmin()         {return *new MaterialAdmin();}
 DgnPlatformLib::Host::FontAdmin&             DgnPlatformLib::Host::_SupplyFontAdmin()             {return *new FontAdmin();}
 DgnPlatformLib::Host::NotificationAdmin&     DgnPlatformLib::Host::_SupplyNotificationAdmin()     {return *new NotificationAdmin();}
 DgnPlatformLib::Host::LineStyleAdmin&        DgnPlatformLib::Host::_SupplyLineStyleAdmin()        {return *new LineStyleAdmin();}

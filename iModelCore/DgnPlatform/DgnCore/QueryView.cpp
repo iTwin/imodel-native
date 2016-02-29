@@ -63,6 +63,64 @@ DgnQueryView::~DgnQueryView()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+void DgnQueryView::_DrawDecorations(DecorateContextR context)
+    {
+    if (m_copyrightMsgs.empty())
+        return;
+
+    DgnViewportCR vp = *context.GetViewport();
+    static int const S_TRANSPARENCY = 10;
+    ColorDef fgColor = ColorDef::Black();
+    ColorDef bgColor = ColorDef::White();
+    bgColor = vp.MakeColorTransparency(bgColor, S_TRANSPARENCY);
+
+    auto graphic = context.CreateGraphic();
+    Render::GraphicParams params;
+    params.SetLineColor(fgColor);
+    params.SetFillColor(fgColor);
+    params.SetIsBlankingRegion(true);
+    graphic->ActivateGraphicParams(params);
+
+    //  Display the first (c) message at the bottom right.
+    BSIRect rect = vp.GetViewRect();
+    DPoint3d cloc = DPoint3d::From(rect.Right(), rect.Bottom(), 0);
+
+    static int const S_TEXTHEIGHT = 12; // in pixels
+    cloc.x -= S_TEXTHEIGHT;
+
+    TextStringStyle style;
+    style.SetFont(DgnFontManager::GetLastResortTrueTypeFont());
+    style.SetSize(DPoint2d::From(S_TEXTHEIGHT, S_TEXTHEIGHT));   // size is in pixels
+
+    TextString textString;
+    textString.SetStyle(style);
+    textString.SetOrientation(RotMatrix::FromScaleFactors(1.0, -1.0, 1.0)); // In view coords, y is flipped
+
+    for (auto& msg : m_copyrightMsgs)
+        {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+        DPoint3d box[4];
+        box[0].Init(cloc.x              , cloc.y, 0);           // top left
+        box[1].Init(cloc.x + widest*S_TEXTHEIGHT, cloc.y, 0);           // top right
+        box[2].Init(cloc.x + widest*S_TEXTHEIGHT, cloc.y - S_TEXTHEIGHT, 0);    // bottom right
+        box[3].Init(cloc.x              , cloc.y - S_TEXTHEIGHT, 0);    // bottom left
+#endif
+
+//        graphic->AddShape(4, box, true);
+
+        textString.SetText(msg.c_str());
+        textString.SetOriginFromJustificationOrigin(cloc, TextString::HorizontalJustification::Right, TextString::VerticalJustification::Bottom);
+        graphic->AddTextString(textString);
+
+        cloc.y -= S_TEXTHEIGHT; // stack the next message above this one
+        }
+
+    context.AddViewOverlay(*graphic);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d DgnQueryView::_GetViewedExtents() const
     {
     return m_dgndb.Units().GetProjectExtents();
@@ -153,7 +211,6 @@ void DgnQueryView::ClearAlwaysDrawn()
     RequestAbort(true);
     m_special.m_always.clear();
     m_noQuery = false;
-    m_forceNewQuery = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -163,7 +220,6 @@ void DgnQueryView::SetNeverDrawn(DgnElementIdSet const& newSet)
     {
     RequestAbort(true);
     m_special.m_never = newSet; // NB: copies values
-    m_forceNewQuery = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -173,7 +229,6 @@ void DgnQueryView::ClearNeverDrawn()
     {
     RequestAbort(true);
     m_special.m_never.clear();
-    m_forceNewQuery = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -187,7 +242,6 @@ void DgnQueryView::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
     RequestAbort(true);
     if (onOff)
         {
-        m_forceNewQuery = true;
         m_viewedModels.insert(modelId);
         //  Ensure the model is in the m_loadedModels list.  QueryModel
         //  must not do this in the query thread.
@@ -206,9 +260,7 @@ void DgnQueryView::_OnCategoryChange(bool singleEnabled)
     {
     T_Super::_OnCategoryChange(singleEnabled);
     RequestAbort(true);
-    m_forceNewQuery = true;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
@@ -241,7 +293,6 @@ bool DgnQueryView::_IsInSet(int nVals, DbValue const* vals) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::_OnAttachedToViewport(DgnViewportR)
     {
-    m_forceNewQuery = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -312,6 +363,31 @@ void DgnQueryView::AddtoSceneQuick(SceneContextR context, SceneMembers& members,
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnQueryView::_CreateTerrain(TerrainContextR context) 
+    {
+    DgnDb::VerifyClientThread();
+
+    m_copyrightMsgs.clear();
+    auto& models = m_dgndb.Models();
+    for (DgnModelId modelId : GetViewedModels())
+        {
+        DgnModelPtr model = models.GetModel(modelId);
+        if (!model.IsValid())
+            continue;
+
+        auto geomModel = model->ToGeometricModel3d();
+        if (nullptr != geomModel)
+            geomModel->_AddTerrainGraphics(context);
+
+        Utf8CP message = model->GetCopyrightMessage();
+        if (!Utf8String::IsNullOrEmpty(message)) // skip empty strings.
+            m_copyrightMsgs.insert(message);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Create the scene and potentially schedule progressive tasks
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -336,12 +412,13 @@ void DgnQueryView::_CreateScene(SceneContextR context)
     AddtoSceneQuick(context, *members, *results);
 
     // Next, allow external data models to draw or schedule external data. Note: Do this even if we're already aborted
+    auto& models = m_dgndb.Models();
     for (DgnModelId modelId : GetViewedModels())
         {
-        DgnModelPtr model = m_dgndb.Models().GetModel(modelId);
-        auto geomModel = model.IsValid() ? model->ToGeometricModelP() : nullptr;
+        DgnModelPtr model = models.GetModel(modelId);
+        auto geomModel = model.IsValid() ? model->ToGeometricModel3d() : nullptr;
         if (nullptr != geomModel)
-            geomModel->_AddGraphicsToScene(context);
+            geomModel->_AddSceneGraphics(context);
         }
 
     if (members->size() < results->GetCount()) // did we get them all?
@@ -1221,3 +1298,4 @@ DgnElementId DgnQueryView::SpatialQuery::StepRtree()
     auto rc=m_rangeStmt->Step();
     return (rc != BE_SQLITE_ROW) ? DgnElementId() : m_rangeStmt->GetValueId<DgnElementId>(0);
     }
+

@@ -121,14 +121,14 @@ void DgnDomains::SyncWithSchemas()
         auto thisDomain = registeredDomains.find(domainName);
         if (thisDomain == registeredDomains.end())
             {
-            LOG.errorv("Error Missing Domain [%s]", stmt.GetValueText(0));
+            LOG.warningv("Missing Domain [%s]", stmt.GetValueText(0));
             continue;
             }
 
         if (thisDomain->second->GetVersion() < stmt.GetValueInt(1))
             {
             LOG.errorv("Wrong Domain version [%s]", stmt.GetValueText(0));
-            BeAssert(false && "DgnDomains::SyncWithSchemas() failed. Check log for details");
+            BeAssert(false);
             continue;
             }
 

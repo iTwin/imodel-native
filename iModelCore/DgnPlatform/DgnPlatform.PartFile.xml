@@ -35,7 +35,7 @@
         <SubPart PartName="ECDb"                PartFile="ECDb"         Repository="ECDb" />
         <SubPart PartName="GeomDlls"            PartFile="geomlibs"     Repository="GeomLibs" />
         <SubPart PartName="BeXmlDll"            PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
-        <SubPart PartName="ECObjectsNative"     PartFile="ecobjects"    Repository="ecobjects" />
+        <SubPart PartName="ECObjectsNative"     PartFile="ECObjects"    Repository="ecobjects" />
         <SubPart PartName="Freetype2Library"    PartFile="freetype2"    Repository="libsrc-freetype2" />
         <SubPart PartName="BeJsonCpp"           PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
         <SubPart PartName="png"                 PartFile="png"          Repository="Libsrc-png"/>
@@ -602,7 +602,7 @@
         <SubPart PartName="UnitTests-Performance"        Repository="ECDb" PartFile="ECDb"/>
         <SubPart PartName="UnitTests-Performance"        Repository="Bentley" PartFile="Bentley"/>
         <SubPart PartName="UnitTests-Performance"        Repository="DgnPlatform" PartFile="DgnPlatform"/>
-        <SubPart PartName="PerformanceTests"             Repository="ecobjects" PartFile="ecobjects"/>
+        <SubPart PartName="PerformanceTests"             Repository="ecobjects" PartFile="ECObjects"/>
         <SubPart PartName="UnitTests-PerformanceTest"        Repository="geomlibs" PartFile="geomlibs"/>
         <!-- Pull in the dgnplatform's db3 file to serve as the "framework" sqlang for testing purposes -->
         <SubPart PartName="DgnPlatformSqlang"            Repository="DgnPlatform" PartFile="DgnPlatform"/>

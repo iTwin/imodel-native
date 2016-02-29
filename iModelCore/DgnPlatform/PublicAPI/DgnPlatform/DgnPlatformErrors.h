@@ -147,6 +147,7 @@ enum class RevisionStatus : int
     IsCreatingRevision, //!< Cannot perform operation since system is in the middle of a creating a revision
     IsNotCreatingRevision, //!< Cannot perform operation since the system is not creating a revision
     MergeError, //!< Error merging changes from the revision to the Db
+    MergePropagationError, //!< Error propagating the changes after the merge
     NothingToMerge, //!< No revisions to merge
     NoTransactions, //!< No transactions are available to create a revision
     SQLiteError, //!< Error performing a SQLite operation on the Db
