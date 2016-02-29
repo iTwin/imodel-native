@@ -59,12 +59,8 @@ SamlTokenPtr DelegationTokenProvider::GetToken()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<SamlTokenResult> DelegationTokenProvider::RetrieveNewToken()
+AsyncTaskPtr<SamlTokenResult> DelegationTokenProvider::RetrieveNewToken(bool updateBaseTokenIfFailed)
     {
-    // WIP: pending fix on UniqueTaskHolder
-    //LOG.debugv("Delegating token for: %s", m_rpUri.c_str());
-    //return m_tokenRetriever.GetTask([=] () -> AsyncTaskPtr<SamlTokenResult>
-    //    {
     LOG.infov("Requesting '%s' delegation token", m_rpUri.c_str());
     SamlTokenPtr baseToken = m_baseTokenProvider->GetToken();
     if (nullptr == baseToken)
@@ -73,19 +69,33 @@ AsyncTaskPtr<SamlTokenResult> DelegationTokenProvider::RetrieveNewToken()
         return CreateCompletedAsyncTask(SamlTokenResult::Error({}));
         }
 
+    auto finalResult = std::make_shared<SamlTokenResult>();
     return m_client->RequestToken(*baseToken, m_rpUri, m_tokenLifetime)
-    ->Then<SamlTokenResult>([=] (SamlTokenResult result)
+    ->Then([=] (SamlTokenResult result)
         {
-        if (!result.IsSuccess() && result.GetError().GetHttpStatus() == HttpStatus::Unauthorized)
-            {
-            // Base token was rejected, try update
-            m_baseTokenProvider->UpdateToken();
-            }
+        *finalResult = result;
 
         if (result.IsSuccess())
-            LOG.infov("Received '%s' delegation token lifetime %d minutes", m_rpUri.c_str(), result.GetValue()->GetLifetime());
+            return;
 
-        return result;
+        if (result.GetError().GetHttpStatus() != HttpStatus::Unauthorized)
+            return;
+
+        if (!updateBaseTokenIfFailed)
+            return;
+
+        if (nullptr == m_baseTokenProvider->UpdateToken())
+            return;
+
+        RetrieveNewToken(false)->Then([=] (SamlTokenResult result)
+            {
+            *finalResult = result;
+            });
+        })
+    ->Then<SamlTokenResult>([=]
+        {
+        if (finalResult->IsSuccess())
+            LOG.infov("Received '%s' delegation token lifetime %d minutes", m_rpUri.c_str(), finalResult->GetValue()->GetLifetime());
+        return *finalResult;
         });
-    //});
     }

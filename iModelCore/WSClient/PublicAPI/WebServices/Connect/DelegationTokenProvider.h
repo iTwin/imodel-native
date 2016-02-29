@@ -30,7 +30,7 @@ struct DelegationTokenProvider : public IConnectTokenProvider
         uint64_t m_tokenLifetime;
 
     private:
-        AsyncTaskPtr<SamlTokenResult> RetrieveNewToken();
+        AsyncTaskPtr<SamlTokenResult> RetrieveNewToken(bool updateBaseTokenIfFailed = true);
 
     public:
         //! Create token provider for delegating service specific tokens
