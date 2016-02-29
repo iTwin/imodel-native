@@ -774,6 +774,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
          * Get the definition of the specified property of this class or any of its base classes
          * @param name The name of the property to look up 
          * @return the property definition or null if no such property is found
+         $$PUBLISH_INSERT_FILE$$ dgnJsApi_ECClass_GetProperty.sampleCode
          */
         GetProperty(name: Bentley_Utf8String): ECPropertyP;
 
@@ -867,7 +868,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
          */
         SetValueEC(name: Bentley_Utf8String, value: ECValueP): void;
 
-        /*
+        /**
          * Set the units of the property value
          * @param[in] name Name of the property
          * @param[in] units String representing the units of the property value
@@ -885,11 +886,10 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
          */
         GetValueEC(name: Bentley_Utf8String): ECValueP;
 
-        /*
+        /**
          * Get the units of the property value
-         * @param[out] units String representing the units of the property
          * @param[in] name Name of the property
-         * @return true if the read only attribute was set. false otherwise. 
+         * @return units String representing the units of the property
          */
         GetUnits(name: Bentley_Utf8String): Bentley_Utf8String;
 
