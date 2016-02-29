@@ -159,6 +159,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMesh -f ScalableMesh 
     <NMakeAssemblySearchPath />
     <SourcePath>$(SourcePath)</SourcePath>
     <IncludePath>$(OutDir)BuildContexts\DgnPlatform\PublicAPI;$(OutDir)BuildContexts\TerrainModel\PublicAPI;$(IncludePath)</IncludePath>
+    <OutDir>C:\dev\realitymesh\out\scalablemeshteam\VS2012\debug\Winx64\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Local LKG|Win32'">
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
@@ -226,6 +227,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMesh -f ScalableMesh 
     <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\ScalableMesh\ScalableMesh\PublicAPI\ScalableMesh</NMakeIncludeSearchPath>
     <IncludePath>$(OutDir)BuildContexts\DgnPlatform\PublicAPI;$(OutDir)BuildContexts\TerrainModel\PublicAPI;$(IncludePath)</IncludePath>
     <SourcePath>$(SourcePath)</SourcePath>
+    <OutDir>C:\dev\realitymesh\out\scalablemeshteam\VS2012\release\Winx64\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseProduct|Win32'">
     <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel </NMakeBuildCommandLine>
@@ -702,6 +704,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMesh -f ScalableMesh 
     <ClCompile Include="STM\ScalableMesh\ScalableMeshGraph.cpp" />
     <ClCompile Include="STM\ScalableMeshLib.cpp" />
     <ClCompile Include="STM\ScalableTerrainModelPCH.cpp" />
+    <ClCompile Include="STM\SMStreamingTileStore.cpp" />
     <ClCompile Include="STM\Threading\LightThreadPool.cpp" />
     <ClCompile Include="STM\Threading\ScalableMeshScheduler.cpp" />
   </ItemGroup>
