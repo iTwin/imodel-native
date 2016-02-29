@@ -69,10 +69,3 @@ HttpResponse StubImsTokenHttpResponse(SamlTokenCR token)
     authBody["RequestedSecurityToken"] = token.AsString();
     return StubHttpResponse(HttpStatus::OK, authBody.toStyledString());
     }
-
-BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
-bool operator==(const SamlToken& a, const SamlToken& b)
-    {
-    return a.AsString() == b.AsString();
-    }
-END_BENTLEY_WEBSERVICES_NAMESPACE
