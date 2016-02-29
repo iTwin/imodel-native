@@ -32,6 +32,13 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 #define VALUE_TYPE_SET_CAST(JSTYPE,CPPTYPE,NAME) void Set##NAME (JSTYPE v) {m_value.Set##NAME((CPPTYPE)(v));}
 #define VALUE_TYPE_GET_SET_CAST(JSTYPE,CPPTYPE,NAME) VALUE_TYPE_GET_CAST(JSTYPE,NAME) VALUE_TYPE_SET_CAST(JSTYPE,CPPTYPE,NAME)
 
+#define DGNJSAPI_DGNSCRIPT_THROW(X,D) DgnPlatformLib::GetHost().GetScriptAdmin()._ThrowException(X,D)
+#define DGNJSAPI_VALIDATE_ARGS_VOID(EXPR) {if (!(EXPR)) {DGNJSAPI_DGNSCRIPT_THROW("Args",#EXPR); return;}}
+#define DGNJSAPI_VALIDATE_ARGS_NULL(EXPR) {if (!(EXPR)) {DGNJSAPI_DGNSCRIPT_THROW("Args",#EXPR); return nullptr;}}
+#define DGNJSAPI_VALIDATE_ARGS(EXPR,RETVAL) {if (!(EXPR)) {DGNJSAPI_DGNSCRIPT_THROW("Args",#EXPR); return (RETVAL);}}
+
+#define DGNJSAPI_VALID_JSOBJ(O) ((O) && (O)->IsValid())
+
 struct JsDgnDb;
 typedef JsDgnDb* JsDgnDbP;
 
@@ -210,6 +217,7 @@ struct JsAuthorityIssuedCode : RefCountedBaseWithCreate
 {
     DgnCode m_code;
     explicit JsAuthorityIssuedCode(DgnCode const& c) : m_code(c) {;}
+    bool IsValid() const {return m_code.IsValid();}
 
     Utf8String GetValue() const {return m_code.GetValue();}
     Utf8String GetNamespace() const {return m_code.GetNamespace();}
@@ -229,6 +237,7 @@ struct JsDgnDb : RefCountedBaseWithCreate
 {
     DgnDbPtr m_db;
     explicit JsDgnDb(DgnDbR db) : m_db(&db) {;}
+    bool IsValid() const {return m_db.IsValid();}
 
     JsDgnModelsP GetModels();
     JsECDbSchemaManagerP GetSchemas();
@@ -245,7 +254,7 @@ struct JsDgnElement : RefCountedBaseWithCreate
     DgnElementPtr m_el;
 
     JsDgnElement(DgnElementR el) : m_el(&el) {;}
-
+    bool IsValid() const {return m_el.IsValid();}
     JsDgnObjectIdP GetElementId() {return new JsDgnObjectId(m_el->GetElementId().GetValueUnchecked());}
     JsAuthorityIssuedCodeP GetCode() const {return new JsAuthorityIssuedCode(m_el->GetCode());}
     JsDgnModelP GetModel();
@@ -327,6 +336,7 @@ struct JsDgnModel : RefCountedBaseWithCreate
     ComponentModel* ToDgnComponentModel() {return dynamic_cast<ComponentModel*>(m_model.get());}
 
     JsDgnModel(DgnModelR m) : m_model(&m) {;}
+    bool IsValid() const {return m_model.IsValid();}
 
     JsDgnObjectIdP GetModelId() {return new JsDgnObjectId(m_model->GetModelId().GetValueUnchecked());}
     JsAuthorityIssuedCodeP GetCode() const {return new JsAuthorityIssuedCode(m_model->GetCode());}
@@ -372,6 +382,7 @@ struct JsComponentDef : RefCountedBaseWithCreate
     ComponentDefPtr m_cdef;
 
     JsComponentDef(ComponentDef& cd) : m_cdef(&cd) {}
+    bool IsValid() const {return m_cdef.IsValid();}
 
     Utf8String GetName() const {return m_cdef->GetName();}
     JsDgnCategoryP GetCategory() const;
@@ -509,8 +520,9 @@ typedef JsTextString* JsTextStringP;
 struct JsGeometricPrimitive : RefCountedBaseWithCreate
 {
     GeometricPrimitivePtr m_value;
-
     JsGeometricPrimitive(GeometricPrimitive& v) : m_value(&v) {;}
+    bool IsValid() const {return m_value.IsValid();}
+
     JsGeometryP GetGeometry() const;
     JsTextStringP GetTextString() const;
 
@@ -527,6 +539,7 @@ struct JsDgnGeometryPart : RefCountedBaseWithCreate
 {
     DgnGeometryPartPtr m_value;
     JsDgnGeometryPart(DgnGeometryPart& v) : m_value(&v) {;}
+    bool IsValid() const {return m_value.IsValid();}
 
     static JsDgnGeometryPart* Create(JsDgnDbP db) {return new JsDgnGeometryPart(*DgnGeometryPart::Create(*db->m_db));}
     BentleyStatus Insert() {return m_value->GetDgnDb().GeometryParts().InsertGeometryPart(*m_value);}
@@ -588,24 +601,29 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
     JsGeometryBuilder(GeometryBuilderR gb) : m_builder(&gb) {}
     JsGeometryBuilder(JsDgnElementP el, JsDPoint3dP o, JsYawPitchRollAnglesP angles);
     ~JsGeometryBuilder() {}
+    bool IsValid() const {return m_builder.IsValid();}
 
     static JsGeometryBuilderP CreateForElement(JsDgnElementP el, JsDPoint3dP o, JsYawPitchRollAnglesP angles)
         {
+        DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_VALID_JSOBJ(el) && o && angles);
         return new JsGeometryBuilder(el, o, angles);
         }
 
     static JsGeometryBuilderP CreateForModel(JsDgnModelP model, JsDgnObjectIdP catid, JsDPoint3dP o, JsYawPitchRollAnglesP angles)
         {
+        DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_VALID_JSOBJ(model) && o && angles);
         return new JsGeometryBuilder(*GeometryBuilder::Create(*model->m_model, DgnCategoryId(catid->m_id), o->Get(), angles->GetYawPitchRollAngles()));
         }
 
     static JsGeometryBuilderP CreateGeometryPart(JsDgnDbP db, bool is3d)
         {
+        DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_VALID_JSOBJ(db));
         return new JsGeometryBuilder(*GeometryBuilder::CreateGeometryPart(*db->m_db, is3d));
         }
 
     JsRenderGeometryParamsP GetGeometryParams() const 
         {
+        DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
         return new JsRenderGeometryParams(m_builder->GetGeometryParams());
         }
 
@@ -659,6 +677,7 @@ struct JsDgnCategory : RefCountedBaseWithCreate
     DgnCategoryCPtr m_category;
 
     JsDgnCategory(DgnCategoryCR cat) : m_category(&cat) {;}
+    bool IsValid() const {return m_category.IsValid();}
 
     JsDgnDbP GetDgnDb() {return m_category.IsValid()? new JsDgnDb(m_category->GetDgnDb()): nullptr;}
     JsDgnObjectIdP GetCategoryId() {return m_category.IsValid()? new JsDgnObjectId(m_category->GetCategoryId().GetValueUnchecked()): nullptr;}
@@ -734,6 +753,7 @@ typedef JsECPropertyCollection* JsECPropertyCollectionP;
 struct JsECClass : RefCountedBaseWithCreate
 {
     ECN::ECClassCP m_ecClass;
+    bool IsValid() const {return nullptr != m_ecClass;}
 
     JsECClass(ECN::ECClassCR c) : m_ecClass(&c) {;}
 
@@ -760,6 +780,7 @@ struct JsECSchema : RefCountedBaseWithCreate
     ECN::ECSchemaCP m_ecSchema;
 
     JsECSchema(ECN::ECSchemaCR c) : m_ecSchema(&c) {;}
+    bool IsValid() const {return nullptr != m_ecSchema;}
 
     Utf8String GetName() {return m_ecSchema? m_ecSchema->GetName(): "";}
 
@@ -794,6 +815,7 @@ struct JsECDbSchemaManager : RefCountedBaseWithCreate
 struct JsECProperty : RefCountedBaseWithCreate
 {
     ECN::ECPropertyCP m_property;
+    bool IsValid() const {return nullptr != m_property;}
 
     JsECProperty(ECN::ECPropertyCR prop) : m_property(&prop) {;}
 
@@ -826,6 +848,8 @@ struct JsECValue : RefCountedBaseWithCreate
 {
     ECN::ECValue m_value;
 
+    bool IsValid() const {return !m_value.IsNull();}
+
     //static          FromDouble(v: cxx_double): ECValueP;
     static JsECValue* FromDouble(double v) {return new JsECValue(ECN::ECValue(v));}
 
@@ -856,6 +880,7 @@ struct JsECInstance : RefCountedBaseWithCreate
     ECN::IECInstancePtr m_instance;
 
     JsECInstance(ECN::IECInstanceR i) : m_instance(&i) {;}
+    bool IsValid() const {return m_instance.IsValid();}
 
     JsECClassP GetClass() {return m_instance.IsValid()? new JsECClass(m_instance->GetClass()): nullptr;} 
     JsECValueP GetValue(Utf8StringCR propertyName) 

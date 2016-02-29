@@ -458,3 +458,12 @@ void/*Json::Value*/ DgnPlatformLib::Host::ScriptAdmin::EvaluateScript(Utf8CP scr
             HandleScriptError(ScriptNotificationHandler::Category::Exception, evexception.message.c_str(), evexception.trace.c_str());
         }
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      02/16
+//---------------------------------------------------------------------------------------
+void DgnPlatformLib::Host::ScriptAdmin::_ThrowException(Utf8CP exname, Utf8CP details)
+    {
+    // *** WIP_DGNSCRIPT - call some script that will actually throw an exception
+    HandleScriptError(ScriptNotificationHandler::Category::Exception, exname, details);
+    }

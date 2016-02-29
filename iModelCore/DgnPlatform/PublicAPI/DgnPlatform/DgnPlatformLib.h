@@ -153,6 +153,11 @@ public:
             //! @return non-zero if the JS program is not available from the library.
             DGNPLATFORM_EXPORT virtual DgnDbStatus _FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DateTime& lastModifiedTime, DgnDbR db, Utf8CP sName, DgnScriptType stypePreferred);
 
+            //! Generate an exception in JavaScript
+            //! @param exname   The name of the exception to throw
+            //! @param details  Information about the exception
+            DGNPLATFORM_EXPORT virtual void _ThrowException(Utf8CP exname, Utf8CP details);
+
             //! Register the script error handler
             ScriptNotificationHandler* RegisterScriptNotificationHandler(ScriptNotificationHandler& h) {auto was  = m_notificationHandler; m_notificationHandler = &h; return was;}
 
