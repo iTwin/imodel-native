@@ -69,11 +69,12 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT,EXTENT>::SMMeshIndexN
 
     m_nbClips = 0;
     m_differenceSets.SetDirty(false);
-#ifdef SM_BESQL_FORMAT
+//#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
     m_ptsIndiceVec[0].SetBlockID(GetBlockID());
     m_graphVec.SetBlockID(GetBlockID());
-#endif
+    m_differenceSets.SetBlockID(GetBlockID());
+//#endif
     }
 
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(size_t pi_SplitTreshold,
@@ -114,11 +115,12 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_nodeHeader.m_uvID = IDTMFile::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
     m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
-#ifdef SM_BESQL_FORMAT
+//#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
     m_ptsIndiceVec[0].SetBlockID(GetBlockID());
     m_graphVec.SetBlockID(GetBlockID());
-#endif
+    m_differenceSets.SetBlockID(GetBlockID());
+//#endif
     }
 
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(size_t pi_SplitTreshold,
@@ -161,11 +163,12 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_nodeHeader.m_uvID = IDTMFile::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
     m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
-#ifdef SM_BESQL_FORMAT
+//#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
     m_ptsIndiceVec[0].SetBlockID(GetBlockID());
     m_graphVec.SetBlockID(GetBlockID());
-#endif
+    m_differenceSets.SetBlockID(GetBlockID());
+//#endif
     }
 
 /* SM_NEEDS_WORK : Did we use it ?
@@ -331,11 +334,13 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_nodeHeader.m_uvID = IDTMFile::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
     m_nodeHeader.m_textureID[0]= IDTMFile::GetNullNodeID();
-#ifdef SM_BESQL_FORMAT
+//#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
     m_ptsIndiceVec[0].SetBlockID(GetBlockID());
     m_graphVec.SetBlockID(GetBlockID());
-#endif
+    m_differenceSets.SetBlockID(GetBlockID());
+
+//#endif
     }
 
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(HPMBlockID blockID,
@@ -388,6 +393,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
     m_ptsIndiceVec[0].SetBlockID(GetBlockID());
     m_graphVec.SetBlockID(GetBlockID());
+    m_differenceSets.SetBlockID(GetBlockID());
     }
 
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(size_t pi_SplitTreshold,
@@ -426,11 +432,12 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
 
     m_nbClips = 0;
     m_differenceSets.SetDirty(false);
-#ifdef SM_BESQL_FORMAT
+//#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
     m_ptsIndiceVec[0].SetBlockID(GetBlockID());
     m_graphVec.SetBlockID(GetBlockID());
-#endif
+    m_differenceSets.SetBlockID(GetBlockID());
+//#endif
     }
 
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(HPMBlockID blockID,
@@ -472,11 +479,12 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
 
     m_nbClips = 0;
     m_differenceSets.SetDirty(false);
-#ifdef SM_BESQL_FORMAT
+//#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
     m_ptsIndiceVec[0].SetBlockID(GetBlockID());
     m_graphVec.SetBlockID(GetBlockID());
-#endif
+    m_differenceSets.SetBlockID(GetBlockID());
+//#endif
     }
 
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(HPMBlockID blockID,
@@ -519,11 +527,12 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_nodeHeader.m_uvID = IDTMFile::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
     m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
-#ifdef SM_BESQL_FORMAT
+//#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
     m_ptsIndiceVec[0].SetBlockID(GetBlockID());
     m_graphVec.SetBlockID(GetBlockID());
-#endif
+    m_differenceSets.SetBlockID(GetBlockID());
+//#endif
     }
 
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::~SMMeshIndexNode()
@@ -3514,7 +3523,7 @@ template<class POINT, class EXTENT>  void SMMeshIndex<POINT, EXTENT>::SetFeature
 template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::SetClipStore(HFCPtr<IHPMPermanentStore<DifferenceSet, Byte, Byte>>& clipStore)
     {
     m_clipStore = clipStore;
-    if (!m_clipStore->LoadMasterHeader(NULL, 1)) m_clipStore->StoreMasterHeader(NULL, 0);
+    //if (!m_clipStore->LoadMasterHeader(NULL, 1)) m_clipStore->StoreMasterHeader(NULL, 0);
     if (m_pRootNode != nullptr)dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(m_pRootNode.GetPtr())->m_differenceSets.SetStore(m_clipStore);
     }
 

@@ -402,7 +402,11 @@ size_t GetNbPtsIndices(size_t texture_id) const
         {
         if (m_ptsIndiceVec.size() <= texture_id)
             return 0;
-        else return m_ptsIndiceVec[texture_id].size();
+        else
+            {
+            if (m_ptsIndiceVec[texture_id].Discarded()) m_ptsIndiceVec[texture_id].Inflate();
+            return m_ptsIndiceVec[texture_id].size();
+            }
         }
 
     size_t GetNbPtsIndiceArrays() const

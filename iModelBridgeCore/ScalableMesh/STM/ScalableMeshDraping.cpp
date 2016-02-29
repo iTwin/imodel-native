@@ -766,8 +766,8 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
             size_t nAdded = 0;
             if (dtmPtr != nullptr)
                 {
-                dtmPtr->GetDTMDraping()->DrapeLinear(drapeForTile, &transformedLine[0] + startNode.currentSegment, numPoints - startNode.currentSegment);
-                for (size_t i = 0; i < drapeForTile->GetPointCount(); ++i)
+                DTMStatusInt status = dtmPtr->GetDTMDraping()->DrapeLinear(drapeForTile, &transformedLine[0] + startNode.currentSegment, numPoints - startNode.currentSegment);
+                for (size_t i = 0; status == DTM_SUCCESS && i < drapeForTile->GetPointCount(); ++i)
                     {
                     DTMDrapedLineCode code;
                     DPoint3d pt;

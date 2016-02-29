@@ -870,7 +870,16 @@ void SMSQLiteFile::StoreClipPolygon(int64_t& clipID, const bvector<uint8_t>& cli
 void SMSQLiteFile::StoreDiffSet(int64_t& diffsetID, const bvector<uint8_t>& diffsetData, size_t uncompressedSize)
     {
     std::lock_guard<std::mutex> lock(dbLock);
-    CachedStatementPtr stmt;
+    CachedStatementPtr stmt; 
+    size_t nRows = 0;
+    if (diffsetID != SQLiteNodeHeader::NO_NODEID)
+        {
+        CachedStatementPtr stmt3;
+        m_database->GetCachedStatement(stmt3, "SELECT COUNT(DiffsetId) FROM SMDiffSets WHERE DiffsetId=?");
+        stmt3->BindInt64(1, diffsetID);
+        stmt3->Step();
+        nRows = stmt3->GetValueInt64(0);
+        }
     if (diffsetID == SQLiteNodeHeader::NO_NODEID)
         {
         Savepoint insertTransaction(*m_database, "insert");
@@ -884,6 +893,18 @@ void SMSQLiteFile::StoreDiffSet(int64_t& diffsetID, const bvector<uint8_t>& diff
         m_database->GetCachedStatement(stmt2, "SELECT last_insert_rowid()");
         status = stmt2->Step();
         diffsetID = stmt2->GetValueInt64(0);
+        }
+    else if (nRows == 0)
+        {
+        Savepoint insertTransaction(*m_database, "insert");
+        m_database->GetCachedStatement(stmt, "INSERT INTO SMDiffSets (DiffsetId, Data,Size) VALUES(?, ?,?)");
+        stmt->BindInt64(1, diffsetID);
+        stmt->BindBlob(2, &diffsetData[0], (int)diffsetData.size(), MAKE_COPY_NO);
+        stmt->BindInt64(3, uncompressedSize);
+        DbResult status = stmt->Step();
+        assert(status == BE_SQLITE_DONE);
+        stmt->ClearBindings();
+        m_database->SaveChanges();
         }
     else
         {

@@ -1423,6 +1423,7 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
         bcdtmObject_storeDtmFeatureInDtmObject(bcdtm->GetTinHandle(), DTMFeatureType::GraphicBreak, bcdtm->GetTinHandle()->nullUserTag, 1, &bcdtm->GetTinHandle()->nullFeatureId, &triangle[0], 4);
         }
     int status = bcdtmObject_triangulateStmTrianglesDtmObject(bcdtm->GetTinHandle());
+    assert(status == SUCCESS);
     return status == SUCCESS? DTM_SUCCESS : DTM_ERROR;
     }
 

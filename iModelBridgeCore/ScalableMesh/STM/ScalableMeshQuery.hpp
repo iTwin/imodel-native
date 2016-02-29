@@ -1073,7 +1073,7 @@ template <class POINT> bool ScalableMeshNode<POINT>::_ArePointsFullResolution() 
         file_s.open("C:\\dev\\ContextCapture\\_log.txt", ios_base::app);
         file_s << "PushIndices etc... -- shit 10" << endl;*/
         
-        int status = meshPtr->AppendMesh(m_node->size(), const_cast<DPoint3d*>(&m_node->operator[](0)), m_node->m_nodeHeader.m_nbFaceIndexes, m_meshNode->GetPtsIndicePtr(0), 0, 0, 0, 0, 0, 0);
+        int status = meshPtr->AppendMesh(m_node->size(), const_cast<DPoint3d*>(&m_node->operator[](0)), m_node->m_nodeHeader.m_nbFaceIndexes, m_meshNode->m_nodeHeader.m_areTextured ? m_meshNode->GetPtsIndicePtr(1) : m_meshNode->GetPtsIndicePtr(0), 0, 0, 0, 0, 0, 0);
         assert(status == SUCCESS);
         meshP = meshPtr.get();
         m_meshNode->ReleaseGraph();
