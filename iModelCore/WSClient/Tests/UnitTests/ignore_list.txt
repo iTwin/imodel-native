@@ -49,3 +49,6 @@ ECDbAdapterTests.DeleteInstances_DeletedInstanceIsInHoldingCircularRelationships
 CachingDataSourceTests.*
 ChangeManagerTests.*
 DataSourceCacheTests.*
+
+# Pending fix on UniqueTaskHolder
+ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent

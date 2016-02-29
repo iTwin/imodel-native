@@ -2,7 +2,7 @@
 |
 |     $Source: Connect/ConnectSetup.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -10,7 +10,6 @@
 
 #include <Bentley/Base64Utilities.h>
 #include <DgnClientFx/DgnClientUi.h>
-#include <WebServices/Connect/Connect.h>
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
 #include <WebServices/Connect/ConnectSpaces.h>
 
@@ -32,12 +31,6 @@ Utf8String base64_scramble(Utf8String value, int multiplier);
 
 void WebServices::ConnectSetup(JsonValueCR messageDataObj, bool requireToken)
     {
-    if (Connect::IsTokenBasedAuthorization())
-        {
-        ConnectImsSetup(messageDataObj);
-        return;
-        }
-
     // The following code will be no longer used, when apps switch to WebView authentication
     Credentials cred;
     bool validCredentials = GetCredentials(messageDataObj, cred);
@@ -93,38 +86,6 @@ void WebServices::ConnectSetup(JsonValueCR messageDataObj, bool requireToken)
     csSetup[CS_MESSAGE_FIELD_token] = token;
 
     DgnClientUi::SendMessageToWorkThreadInternal (CS_MESSAGE_SetCredentials, std::move (csSetup));
-    }
-
-void WebServices::ConnectImsSetup(JsonValueCR messageDataObj)
-    {
-    Credentials cred;
-    Utf8String token;
-
-    bool getTokenResult = GetToken(messageDataObj, token);
-    if (!getTokenResult)
-        {
-        ConnectSignOut(messageDataObj);
-        return;
-        }
-
-    DgnClientApp::AbstractUiState().SetValue(CONNECT_SIGNED_IN, true);
-    SamlToken sToken(token);
-    Utf8String displayUserName;
-    bmap<Utf8String, Utf8String> attributes;
-    if (SUCCESS == sToken.GetAttributes(attributes))
-        {
-        Utf8String givenName = attributes["givenname"];
-        Utf8String surName = attributes["surname"];
-        displayUserName = givenName + " " + surName;
-        DgnClientApp::AbstractUiState().SetValue(BENTLEY_CONNECT_USERNAME, attributes["name"]);
-        cred = Credentials(attributes["name"], "password");
-        ConnectAuthenticationPersistence::GetShared()->SetCredentials(cred);
-        }
-
-    DgnClientApp::AbstractUiState().SetValue(BENTLEY_CONNECT_DISPLAYUSERNAME, displayUserName.c_str());
-    DgnClientApp::AbstractUiState().SetValue(BENTLEY_CONNECT_USERID, attributes["userid"].c_str());
-
-    DgnClientApp::App().Messages().Send(NotificationMessage("FieldApps.Message.Connect.Setup_Succeeded"));
     }
 
 void WebServices::ConnectSignOut(JsonValueCR messageDataObj)

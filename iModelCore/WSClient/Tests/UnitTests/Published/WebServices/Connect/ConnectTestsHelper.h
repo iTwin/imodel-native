@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/ConnectTestsHelper.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -18,3 +18,7 @@ Utf8String StubSamlTokenXML (uint32_t validMinutes = 0, Utf8StringCR stubCertifi
 SamlTokenPtr StubSamlToken (uint32_t validMinutes = 0);
 HttpResponse StubImsTokenHttpResponse (uint32_t validMinutes = 0);
 HttpResponse StubImsTokenHttpResponse (SamlTokenCR token);
+
+BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
+bool operator==(const SamlToken& a, const SamlToken& b);
+END_BENTLEY_WEBSERVICES_NAMESPACE

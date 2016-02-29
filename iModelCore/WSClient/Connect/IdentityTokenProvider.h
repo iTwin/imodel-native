@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/WebServices/Connect/ConnectTokenProvider.h $
+|     $Source: Connect/IdentityTokenProvider.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -17,18 +17,31 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ConnectTokenProvider : public IConnectTokenProvider
+typedef std::shared_ptr<struct IdentityTokenProvider> IdentityTokenProviderPtr;
+struct IdentityTokenProvider : IConnectTokenProvider, std::enable_shared_from_this<IdentityTokenProvider>
     {
     private:
         IImsClientPtr m_client;
-        IConnectAuthenticationPersistencePtr m_persistence;
+        ITokenStorePtr m_store;
+        std::function<void()> m_tokenExpiredHandler;
+
         uint64_t m_tokenLifetime;
+        uint64_t m_tokenRefreshRate;
+
+    private:
+        IdentityTokenProvider(IImsClientPtr client, ITokenStorePtr store, std::function<void()> tokenExpiredHandler);
+        bool ShouldRenewToken(DateTimeCR tokenSetTime);
 
     public:
-        WSCLIENT_EXPORT ConnectTokenProvider(IImsClientPtr client, IConnectAuthenticationPersistencePtr customPersistence = nullptr);
+        WSCLIENT_EXPORT static IdentityTokenProviderPtr Create
+            (
+            IImsClientPtr client,
+            ITokenStorePtr store,
+            std::function<void()> tokenExpiredHandler = nullptr
+            );
 
-        //! Set new token lifetime in minutes
-        WSCLIENT_EXPORT void Configure(uint64_t tokenLifetime);
+        //! Set new token lifetime and refresh rate in minutes
+        WSCLIENT_EXPORT void Configure(uint64_t tokenLifetime, uint64_t tokenRefreshRate);
 
         WSCLIENT_EXPORT SamlTokenPtr UpdateToken() override;
         WSCLIENT_EXPORT SamlTokenPtr GetToken() override;

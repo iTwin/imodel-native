@@ -197,11 +197,11 @@ HttpResponse StubWSInfoHttpResponseWebApi(BeVersion webApiVersion)
     {
     auto info = StubWSInfoWebApi(webApiVersion);
     Utf8PrintfString serverHeader(
-            "Bentley-WSG/%s, Bentley-WebAPI/%d.%d",
-            info.GetVersion().ToString().c_str(),
-            info.GetWebApiVersion().GetMajor(),
-            info.GetWebApiVersion().GetMinor()
-            );
+        "Bentley-WSG/%s, Bentley-WebAPI/%d.%d",
+        info.GetVersion().ToString().c_str(),
+        info.GetWebApiVersion().GetMajor(),
+        info.GetWebApiVersion().GetMinor()
+        );
     return StubHttpResponse(HttpStatus::OK, "", {{"Server", serverHeader}});
     }
 
@@ -263,6 +263,12 @@ WSError StubWSConflictError()
 ClientInfoPtr StubClientInfo()
     {
     return std::shared_ptr<ClientInfo>(new ClientInfo("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", "TestAppProductId"));
+    }
+
+ClientInfoPtr StubValidClientInfo()
+    {
+    auto productId = "1654"; // Navigator Desktop
+    return std::shared_ptr<ClientInfo>(new ClientInfo("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId));
     }
 
 ECSchemaPtr ParseSchema(Utf8StringCR schemaXml, ECSchemaReadContextPtr context)

@@ -2,14 +2,14 @@
 |
 |     $Source: Connect/Authentication.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include <WebServices/Connect/Authentication.h>
 
 #include <DgnClientFx/DgnClientUi.h>
-#include <WebServices/Connect/Connect.h>
+#include <WebServices/Connect/ImsClient.h>
 #include <WebServices/Connect/Authentication.h>
 
 #include "AuthenticationData.h"
@@ -24,8 +24,8 @@ void WebServices::Authenticate(JsonValueCR messageDataObj)
     Utf8String username = messageDataObj[AuthenticationData::USERNAME].asString();
     Utf8String password = messageDataObj[AuthenticationData::PASSWORD].asString();
     DGNCLIENTFX_LOGI("NavigatorApp::Msg_SignIn::Username:: %s!!", username.c_str());
-    SamlToken token;
-    StatusInt result = Connect::BC_ERROR;
+
+    SamlTokenResult result;
     bool isSignOut = false;
 
     if (password.empty())
@@ -34,10 +34,11 @@ void WebServices::Authenticate(JsonValueCR messageDataObj)
         }
     else
         {
-        result = Connect::Login(Credentials(username, password), token);
+        auto rpUri = ImsClient::GetLegacyRelyingPartyUri();
+        result = ImsClient::GetShared()->RequestToken(Credentials(username, password), rpUri)->GetResult();
         }
 
-    if (Connect::BC_SUCCESS != result)
+    if (!result.IsSuccess())
         {
         Json::Value setupData(Json::objectValue);
         setupData[AuthenticationData::USERNAME] = username;
@@ -57,7 +58,7 @@ void WebServices::Authenticate(JsonValueCR messageDataObj)
         else
             {
             Utf8String message;
-            if (result == Connect::BC_ERROR)
+            if (result.GetError().GetHttpStatus() != HttpStatus::Unauthorized)
                 {
                 // Server error
                 message = ConnectLocalizedString(ALERT_SignInFailed_ServerError);
@@ -74,20 +75,22 @@ void WebServices::Authenticate(JsonValueCR messageDataObj)
         return;
         }
 
+    SamlTokenPtr token = result.GetValue();
+
     DgnClientApp::App().Messages().Send(NotificationMessage("FieldApps.Message.Connect.SignIn_Succeeded"));
     Json::Value userData(Json::objectValue);
     userData[AuthenticationData::USERNAME] = username;
     userData[AuthenticationData::PASSWORD] = password;
-    userData[AuthenticationData::TOKEN] = token.AsString();
+    userData[AuthenticationData::TOKEN] = token->AsString();
     DgnClientApp::App().Messages().Send(JsonMessage(CONNECT_COMMAND_SHOW_USER_DATA, userData));
 
     Json::Value setupData(messageDataObj);
-    setupData[AuthenticationData::TOKEN] = token.AsString();
+    setupData[AuthenticationData::TOKEN] = token->AsString();
 
     // XXX: duplicate properties under Data. Quick workaround for WorkSite
     // demo, to be unified after.
     Json::Value data(messageDataObj);
-    data[AuthenticationData::TOKEN] = token.AsString();
+    data[AuthenticationData::TOKEN] = token->AsString();
     setupData["Data"] = data;
 
     DgnClientUi::SendMessageToWorkThreadInternal(CONNECT_REQUEST_SETUP, std::move(setupData));

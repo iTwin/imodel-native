@@ -2,25 +2,25 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/ConnectTestsHelper.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConnectTestsHelper.h"
 
-Utf8String StubSamlTokenXML (uint32_t validMinutes, Utf8StringCR stubCertificate)
+Utf8String StubSamlTokenXML(uint32_t validMinutes, Utf8StringCR stubCertificate)
     {
     BentleyStatus status;
-    DateTime notBeforeDate = DateTime::GetCurrentTimeUtc ();
+    DateTime notBeforeDate = DateTime::GetCurrentTimeUtc();
 
     int64_t unixMs = 0;
-    status = notBeforeDate.ToUnixMilliseconds (unixMs);
-    EXPECT_EQ (SUCCESS, status);
+    status = notBeforeDate.ToUnixMilliseconds(unixMs);
+    EXPECT_EQ(SUCCESS, status);
 
     DateTime notOnOrAfterDate;
-    status = DateTime::FromUnixMilliseconds (notOnOrAfterDate, unixMs + validMinutes * 60 * 1000);
-    EXPECT_EQ (SUCCESS, status);
+    status = DateTime::FromUnixMilliseconds(notOnOrAfterDate, unixMs + validMinutes * 60 * 1000);
+    EXPECT_EQ(SUCCESS, status);
 
-    Utf8PrintfString token
+    Utf8PrintfString tokenStr
         (
         R"(<saml:Assertion MajorVersion="1" MinorVersion="1" xmlns:saml="urn:oasis:names:tc:SAML:1.0:assertion">
             <saml:Conditions 
@@ -34,32 +34,45 @@ Utf8String StubSamlTokenXML (uint32_t validMinutes, Utf8StringCR stubCertificate
                     </X509Data>
                 </KeyInfo>
             </ds:Signature>
+            <saml:AttributeStatement>
+                <saml:Attribute AttributeName="unique-test-attribute">
+                    <saml:AttributeValue>%s</saml:AttributeValue>
+                </saml:Attribute>
+            </saml:AttributeStatement>
         </saml:Assertion>)",
-        Utf8String (notBeforeDate.ToString ()).c_str (),
-        Utf8String (notOnOrAfterDate.ToString ()).c_str (),
-        stubCertificate.c_str ()
+        Utf8String(notBeforeDate.ToString()).c_str(),
+        Utf8String(notOnOrAfterDate.ToString()).c_str(),
+        stubCertificate.c_str(),
+        BeGuid().ToString().c_str()
         );
 
+    return tokenStr;
+    }
+
+SamlTokenPtr StubSamlToken(uint32_t validMinutes)
+    {
+    auto token = std::make_shared<SamlToken>(StubSamlTokenXML(validMinutes));
+    EXPECT_FALSE(token->AsString().empty());
     return token;
     }
 
-SamlTokenPtr StubSamlToken (uint32_t validMinutes)
-    {
-    auto token = std::make_shared<SamlToken> (StubSamlTokenXML (validMinutes));
-    EXPECT_FALSE (token->AsString ().empty ());
-    return token;
-    }
-
-HttpResponse StubImsTokenHttpResponse (uint32_t validMinutes)
+HttpResponse StubImsTokenHttpResponse(uint32_t validMinutes)
     {
     Json::Value authBody;
-    authBody["RequestedSecurityToken"] = StubSamlToken (validMinutes)->AsString ();
-    return StubHttpResponse (HttpStatus::OK, authBody.toStyledString ());
+    authBody["RequestedSecurityToken"] = StubSamlToken(validMinutes)->AsString();
+    return StubHttpResponse(HttpStatus::OK, authBody.toStyledString());
     }
 
-HttpResponse StubImsTokenHttpResponse (SamlTokenCR token)
+HttpResponse StubImsTokenHttpResponse(SamlTokenCR token)
     {
     Json::Value authBody;
-    authBody["RequestedSecurityToken"] = token.AsString ();
-    return StubHttpResponse (HttpStatus::OK, authBody.toStyledString ());
+    authBody["RequestedSecurityToken"] = token.AsString();
+    return StubHttpResponse(HttpStatus::OK, authBody.toStyledString());
     }
+
+BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
+bool operator==(const SamlToken& a, const SamlToken& b)
+    {
+    return a.AsString() == b.AsString();
+    }
+END_BENTLEY_WEBSERVICES_NAMESPACE

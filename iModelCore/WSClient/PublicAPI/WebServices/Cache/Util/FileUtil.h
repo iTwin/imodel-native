@@ -1,27 +1,40 @@
 /*--------------------------------------------------------------------------------------+
- |
- |     $Source: PublicAPI/WebServices/Cache/Util/FileUtil.h $
- |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
- |
- +--------------------------------------------------------------------------------------*/
+|
+|     $Source: PublicAPI/WebServices/Cache/Util/FileUtil.h $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
 #include <WebServices/Cache/WebServicesCache.h>
+#include <MobileDgn/Utils/Threading/CancellationToken.h>
 #include <Bentley/BeFile.h>
 #include <Bentley/BeFileName.h>
-#include <Bentley/WString.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
+
+USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct FileUtil
     {
+    public:
+        typedef std::function<void(double bytesTransfered, double bytesTotal)> ProgressCallback;
+
     private:
-        static BentleyStatus CopyFileContent(BeFileNameCR sourcePath, BeFile& source, BeFileNameCR targetPath, BeFile& target);
+        static BentleyStatus CopyFileContent
+            (
+            BeFileNameCR sourcePath,
+            BeFile& source,
+            BeFileNameCR targetPath,
+            BeFile& target,
+            ProgressCallback onProgress,
+            ICancellationTokenPtr ct
+            );
 
     public:
         //! Get file size in bytes. Returns zero on failure
@@ -46,7 +59,13 @@ struct FileUtil
         WSCACHE_EXPORT static Utf8String SanitizeFileName(Utf8StringCR fileName);
 
         //! Copy file content from destanation file to target file to override it.
-        WSCACHE_EXPORT static BentleyStatus CopyFileContent(BeFileNameCR source, BeFileNameCR target);
+        WSCACHE_EXPORT static BentleyStatus CopyFileContent
+            (
+            BeFileNameCR source,
+            BeFileNameCR target,
+            ProgressCallback onProgress = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            );
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

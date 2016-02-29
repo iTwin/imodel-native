@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/IntegrationTests/Cache/CachingDataSourceTests.h $
+|     $Source: Tests/UnitTests/Published/WebServices/Cache/Util/ProgressFilterTests.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,10 +8,8 @@
 
 #pragma once
 
-#include <WebServicesTestsHelper.h>
+#include "../../../Utils/WebServicesTestsHelper.h"
 
-struct CachingDataSourceTests : public WSClientBaseTest
+class ProgressFilterTests : public ::testing::Test
     {
-    StubLocalState m_localState;
-    void SetUp();
     };

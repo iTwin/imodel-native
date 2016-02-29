@@ -38,9 +38,9 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakeOutput>$(OutRoot)Winx64\build\WSClientIntegrationTests\WSClientIntegrationTests.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>USE_GTEST;BENTLEY_WIN32</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>bb $(BB2N0) -v4 -ax64 -r WSClient -f WSClient -p WSClientIntegrationTests re  WebServicesClient* WebServicesCache* WSClient-PublishedAPI WSClientIntegrationTests</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>bb $(BB2N0) -v4 -ax64 -r WSClient -f WSClient -p WSClientIntegrationTests re  WSClientIntegrationTests WebServices*</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClientIntegrationTests b</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb $(BB2N0) -v4 -ax64 -r WSClient -f WSClient -p WSClientIntegrationTests re  WebServicesClient* WebServicesCache* WSClient-PublishedAPI WSClientIntegrationTests -c</NMakeCleanCommandLine>
+    <NMakeCleanCommandLine>bb $(BB2N0) -v4 -ax64 -r WSClient -f WSClient -p WSClientIntegrationTests re  WSClientIntegrationTests WebServices* -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <IncludePath>$(SrcRoot)util\gtest\include;$(SrcRoot)util\gmock\include;$(OutRoot)Winx64\Product\DgnClientSdk-Winx64\include;$(SrcRoot)WSClient\Tests\UnitTests\Published\Utils;$(IncludePath)</IncludePath>
     <OutDir>$(OutRoot)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
@@ -80,7 +80,7 @@
     <ClCompile Include="TestUtils\WSClientIntegrationTestsHost.cpp" />
     <ClCompile Include="TestUtils\TestMain.cpp" />
     <ClCompile Include="Repository\ConnectWorkspaceManagerTests.cpp" />
-    <ClCompile Include="Connect\ConnectTests.cpp" />
+    <ClCompile Include="Connect\ImsClientTests.cpp" />
     <ClCompile Include="Client\WSClientTests.cpp" />
     <ClCompile Include="Client\WSRepositoryClientTests.cpp" />
   </ItemGroup>
@@ -96,7 +96,7 @@
     <ClInclude Include="Repository\WorkspaceTests.h" />
     <ClInclude Include="Repository\WorkspaceUpgradeTests.h" />
     <ClInclude Include="Repository\ConnectWorkspaceManagerTests.h" />
-    <ClInclude Include="Connect\ConnectTests.h" />
+    <ClInclude Include="Connect\ImsClientTests.h" />
     <ClInclude Include="Client\WSClientTests.h" />
     <ClInclude Include="Client\WSRepositoryClientTests.h" />
     <ClInclude Include="TestUtils\WSClientIntegrationTestsHost.h" />

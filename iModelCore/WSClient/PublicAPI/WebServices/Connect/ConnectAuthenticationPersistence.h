@@ -57,12 +57,11 @@ struct EXPORT_VTABLE_ATTRIBUTE ConnectAuthenticationPersistence : public IConnec
             std::shared_ptr<ISecureStore> customSecureStore = nullptr
             );
 
-        //! Get shared thread-safe persistence instance
+        //! Get shared thread-safe persistence instance. Data stored in this instance may be available
+        //! seperate different apps if SecureStore implmenetation allows it
         WSCLIENT_EXPORT static ConnectAuthenticationPersistencePtr GetShared();
 
-        //! Connect credentials are shared between apps if SecureStore implementation allows it
         WSCLIENT_EXPORT void SetCredentials(CredentialsCR credentials) override;
-        //! Connect credentials are shared between apps if SecureStore implementation allows it
         WSCLIENT_EXPORT Credentials GetCredentials() const override;
 
         WSCLIENT_EXPORT void SetToken(SamlTokenPtr token) override;

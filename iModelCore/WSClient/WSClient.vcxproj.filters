@@ -90,9 +90,6 @@
     <ClCompile Include="Connect\AuthenticationData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Connect\Connect.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Connect\ConnectAuthenticationHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -390,6 +387,18 @@
     <ClCompile Include="Connect\ConnectSessionAuthenticationPersistence.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Connect\DelegationTokenProvider.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Connect\IdentityAuthenticationPersistence.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Connect\IdentityTokenProvider.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Connect\ImsClient.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client\WebApi\WebApi.h">
@@ -476,9 +485,6 @@
     <ClInclude Include="PublicAPI\WebServices\Connect\Authentication.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\WebServices\Connect\Connect.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectAuthenticationHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -495,9 +501,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectTokenProvider.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\WebServices\Connect\IConnectAuthenticationPersistence.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Connect\IConnectTokenProvider.h">
@@ -849,6 +852,30 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Connect\IConnectAuthenticationProvider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ProgressFilter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Connect\DelegationTokenProvider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Connect\ITokenStore.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Connect\IConnectAuthenticationPersistence.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Connect\IdentityTokenProvider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Connect\IdentityAuthenticationPersistence.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Connect\IImsClient.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Connect\ImsClient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

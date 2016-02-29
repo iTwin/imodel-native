@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/IntegrationTests/Connect/ConnectTests.h $
+|     $Source: Tests/IntegrationTests/Connect/ImsClientTests.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -10,5 +10,5 @@
 
 #include <WebServicesTestsHelper.h>
 
-struct ConnectTests : public WSClientBaseTest
+struct ImsClientTests : public WSClientBaseTest
     {};
