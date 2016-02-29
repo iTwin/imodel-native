@@ -43,7 +43,7 @@ DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_dom
                  m_links(*this), m_authorities(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_revisionManager(nullptr),
                  m_queryQueue(*this)
     {
-    //
+    m_memoryManager.AddConsumer(m_elements, IMemoryConsumer::Priority::Highest);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -54,11 +54,7 @@ void DgnDb::Destroy()
     m_queryQueue.Terminate();
     m_models.Empty();
     m_txnManager = nullptr; // RefCountedPtr, deletes TxnManager
-    if (nullptr != m_revisionManager)
-        {
-        delete m_revisionManager;
-        m_revisionManager = nullptr;
-        }
+    DELETE_AND_CLEAR(m_revisionManager)
     m_ecsqlCache.Empty();
     m_briefcaseManager = nullptr;
     m_localStateDb.Destroy();

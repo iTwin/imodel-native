@@ -969,19 +969,6 @@ public:
 #define __DGNPLATFORM_NON_PUBLISHED_HEADER__ 1
 /*__PUBLISH_SECTION_START__*/
 
-/*=================================================================================**//**
-* Interface to be adopted by a class that wants to supply a copyright message that must
-* be display in a viewport.
-* @bsiclass                                                     Sam.Wilson      10/15
-+===============+===============+===============+===============+===============+======*/
-struct CopyrightSupplier
-    {
-    //! Return the copyright message to display in the specified viewport
-    //! @param vp   The viewport that is being displayed
-    //! @return a copyright message to display or an empty string to display nothing
-    virtual Utf8String _GetCopyrightMessage(DgnViewportCR vp) = 0;
-    };
-
 
 /** @endcond */
 
