@@ -923,7 +923,7 @@ struct JsECProperty : RefCountedBaseWithCreate
         }
     bool GetIsPrimitive() const 
         {
-        DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
+        DGNJSAPI_VALIDATE_ARGS(IsValid(),false);
         return m_property->GetIsPrimitive();
         }
     JsECInstanceP GetCustomAttribute(Utf8StringCR className);
