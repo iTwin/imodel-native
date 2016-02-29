@@ -16,6 +16,183 @@
 
 DPILOG_DEFINE(WebMercator)
 
+#define WEBMERCATOR_COMPARE_VALUES(val0, val1)  if (val0 < val1) { return true; } if (val0 > val1) { return false; }
+
+BEGIN_UNNAMED_NAMESPACE
+
+struct CompareDPoint3dLess
+    {
+    bool operator() (DPoint3dCR l, DPoint3dCR r) const 
+        {
+        WEBMERCATOR_COMPARE_VALUES(l.x,r.x);
+        WEBMERCATOR_COMPARE_VALUES(l.y,r.y);
+        WEBMERCATOR_COMPARE_VALUES(l.z,r.z);
+        return false;
+        }
+    };
+
+struct CompareGeoPointLess
+    {
+    bool operator() (GeoPointCR l, GeoPointCR r) const 
+        {
+        WEBMERCATOR_COMPARE_VALUES(l.latitude,r.latitude);
+        WEBMERCATOR_COMPARE_VALUES(l.longitude,r.longitude);
+        WEBMERCATOR_COMPARE_VALUES(l.elevation,r.elevation);
+        return false;
+        }
+    };
+
+enum {MIN_ZOOM_LEVEL=0, MAX_ZOOM_LEVEL=22};
+
+//=======================================================================================
+// Utility for converting between DgnDb coordinates and WebMercator coordinates.
+// Conversions are based on the ground resolution (i.e., meters/pixel) at the latitude 
+// of the DgnDb's geo origin. That same ground resolution is used for coordinates
+// in all parts of the WebMercator projection.
+// @bsiclass                                                    Sam.Wilson      10/2014
+//=======================================================================================
+struct WebMercatorUnitConverter
+{
+    DgnUnits& m_units;
+    double m_originLatitudeInRadians;
+    bmap<DPoint3d, GeoPoint, CompareDPoint3dLess> m_metersToLatLng;
+    bmap<GeoPoint, DPoint3d, CompareGeoPointLess> m_latLngToMeters;
+
+    WebMercatorUnitConverter(DgnViewportR);
+
+    bool IsValid() const {return m_units.GetDgnGCS() != NULL;}
+
+    BentleyStatus ComputeTileCorners(DPoint3d* corners, WebMercatorModel::TileId const& tileid);
+
+    //! Compute how many meters per pixel are displayed in the view. We measure the diagonals.
+    double ComputeViewResolutionInMetersPerPixel(DgnViewportR);
+
+    //! Compute meters/pixel at the DgnDb's geo origin the specified zoomLevel.
+    double ComputeGroundResolutionInMeters(uint8_t zoomLevel);
+
+    //! Convert a DPoint3d expressed in the Project's coordinate system to a GeoPoint.
+    GeoPoint ConvertMetersToLatLng(DPoint3dCR pt);
+
+    //! Convert a GeoPoint to a point expressed in the Project's coordinate system.
+    DPoint3d ConvertLatLngToMeters(GeoPoint gp);
+
+    //! Convert a DPoint2d expressed in the Project's coordinate system to a DPoint2d expressed in wpixels.
+    DPoint2d ConvertMetersToWpixels(DPoint2dCR pt);
+
+    static uint8_t GetZoomLevels() {return (uint8_t)(MAX_ZOOM_LEVEL - MIN_ZOOM_LEVEL);}
+
+    //! Figure out what zoom level to use. The basic algorithm is to use tiles with about the same meters/pixel resolution as the
+    //! Dgn view is using for model data. Normally, we find two zoom levels, one with less and the other with more resolution.
+    //! The preferFinerResolution parameter specifies which to use. The finer the resolution, the more tiles must be downloaded and displayed.
+    BentleyStatus GetOptimalZoomLevelForView(uint8_t& zoomLevel, DgnViewportR, bool preferFinerResolution);
+    BentleyStatus GetTileIdsForView(bvector<WebMercatorModel::TileId>& tileids, uint8_t desiredZoomLevel, DgnViewportR);
+};
+
+
+//=======================================================================================
+// Utility for displaying WebMercator tiles
+// @bsiclass                                                    Sam.Wilson      10/2014
+//=======================================================================================
+struct WebMercatorTileDisplay
+{
+
+    WebMercatorUnitConverter m_converter;
+    ByteStream m_rgbBuffer;
+    bool m_drawingSubstituteTiles;
+
+    //! Construct a helper object
+    //! @param[in] vp      The viewport
+    WebMercatorTileDisplay(DgnViewportR vp) : m_converter(vp), m_drawingSubstituteTiles(false) {}
+
+    //! Define a texture to represent an image in preparation for calling DrawTile. When it defines a texture,
+    //! QuickVision converts the raw image data into a form that is ready to be displayed by the native graphics card.
+    //! @note You must either call CacheTexture to take ownership of the returned texture, or you must delete the texture yourself when you are done with it.
+    //! @note This function will fail with unpredictable results if the image is bigger than about 2048x2048.
+    //! @return a unique ID to identify the texture
+    //! @param[in] rgbData  The raw image data
+    //! @param[in] imageInfo Defines the format, size, and orientation of the raw image data
+    static Render::TexturePtr DefineTexture(ByteStream const& rgbData, RgbImageInfo const& imageInfo, SceneContextR context);
+
+    //! Add texture to temporary cache, or if a texture is already cached for this url, then replace it.
+    //! @note Do not delete the texture. The cache will delete it if and when it is removed by trim or by replacement.
+    //! @param[in] url  The key
+    //! @param[in] textureId Identifies the texture
+    //! @param[in] imageInfo Additional info about the image stored in the texture
+    static void CacheTexture(Utf8StringCR url, Render::TextureR textureId, RgbImageInfo const& imageInfo);
+
+    //! Get an existing texture from the cache.
+    static Render::TextureP GetCachedTexture(RgbImageInfo& cachedImageInfo, Utf8StringCR url);
+
+    //! Draw the specified tile
+    //! @param[in] context      The viewcontext
+    //! @param[in] tileid       The tile id
+    //! @param[in] imageInfo    Information about the image
+    //! @param[in] textureId    The texture id to use
+    void DrawTile(ViewContextR context, WebMercatorModel::TileId const& tileid, RgbImageInfo const& imageInfo, Render::TextureR textureId);
+
+    void DrawMissingTile(ViewContextR context, WebMercatorModel::TileId const& tileid);
+
+    void DrawAndCacheTile(SceneContextR context, WebMercatorModel::TileId const& tileid, Utf8StringCR url, TiledRaster& realityData);
+
+    #ifdef WEBMERCATOR_DEBUG_TILES
+    void DrawTileDebugInfo(ViewContextR context, WebMercatorModel::TileId const& tileid);
+    void DrawTileAsBox(ViewContextR context, WebMercatorModel::TileId const& tileid, double z, bool filled);
+    #endif
+};
+
+//=======================================================================================
+// Dislays tiles of a street map as they become available over time.
+// @bsiclass                                                    Sam.Wilson      10/2014
+//=======================================================================================
+struct WebMercatorDisplay : ProgressiveTask
+{
+    friend struct WebMercatorModel;
+
+protected:
+    WebMercatorModel const& m_model;              //!< The model
+    bvector<WebMercatorModel::TileId> m_missingTilesToBeRequested;    //!< Tiles that are missing and that should be requested
+    bmap<Utf8String, WebMercatorModel::TileId> m_missingTilesPending; //!< Tiles that are missing and that we are waiting for.
+    uint32_t m_failedAttempts;
+    uint64_t m_nextRetryTime;                             //!< When to re-try m_missingTilesPending. unix millis UTC
+    uint64_t m_waitTime;                                  //!< How long to wait before re-trying m_missingTilesPending. millis 
+    uint8_t m_optimalZoomLevel;                           //!< The zoomLevel that would be optimal for the view. Not necessarily used by every tile.
+    bool m_hadError;                                    //!< If true, no tiles could be found or displayed.
+    bool m_drawSubstitutes;
+    bool m_preferFinerResolution;                       //!< Download and display more tiles, in order to get the best resolution? Else, go with 1/4 as many tiles and be satisfied with slightly fuzzy resolution.
+    WebMercatorTileDisplay m_helper;
+    TextStringStylePtr m_copyrightStyle;
+
+protected:
+    BentleyStatus DrawSubstituteTilesFinerFromTextureCache(ViewContextR context, WebMercatorModel::TileId const& tileid, uint32_t maxLevelsToTry);
+    BentleyStatus DrawCoarserTilesForViewFromTextureCache(ViewContextR context, uint8_t zoomLevel, uint32_t maxLevelsToTry);
+
+    struct TileDisplayImageData
+        {
+        WebMercatorModel::TileId m_tileid;
+        RgbImageInfo m_imageInfo;
+        Render::TexturePtr m_texture;
+        };
+
+    BentleyStatus GetCachedTiles(bvector<TileDisplayImageData>& tilesAndUrls, bool& allFoundInTextureCache, uint8_t zoomLevel, ViewContextR context);
+
+    //! Displays tiled rasters and schedules downloads. 
+    //! INPUT: This function assumes that m_missingTiles has been populated.
+    //! This function removes items from m_missingTiles that can be displayed.
+    //! This function does not request tiles to be downloaded.
+    //! This function returns Finished if m_missingTiles becomes empty.
+    //! This function stops whenever view.CheckStop is true.
+    //! OUTPUT: This function removes 0 or more items from m_missingTiles.
+    DGNPLATFORM_EXPORT virtual Completion _DoProgressive(SceneContext& context, WantShow&) override;
+
+    DGNPLATFORM_EXPORT void DrawView(ViewContextR);
+
+    //! Construct an instance of a WebMercatorRealityDataHandler.
+    //! @param[in] model        The WebMercatorModel
+    //! @param[in] vp           The viewport that is to display the map
+    DGNPLATFORM_EXPORT WebMercatorDisplay(WebMercatorModel const& model, DgnViewportR vp);
+
+};
+
 static bool s_drawSubstitutes = true;
 
 /*---------------------------------------------------------------------------------**//**
@@ -53,7 +230,6 @@ static bool s_drawSubstitutes = true;
 * Max size of a tile coordiante is 2^22
 *
 +---------------+---------------+---------------+---------------+---------------+------*/
-BEGIN_UNNAMED_NAMESPACE
 
 static int const TILE_SIZE = 256;
 
@@ -153,7 +329,7 @@ static void setSymbology(ViewContextR context, RgbColorDefCR color, uint32_t tra
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool isZoomLevelInRange(uint8_t zoomLevel)
     {
-    return zoomLevel <= WebMercatorTilingSystem::MAX_ZOOM_LEVEL;
+    return zoomLevel <= MAX_ZOOM_LEVEL;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -271,11 +447,11 @@ Upoint2d fromPixelPointToTileCoordinates(DPoint2dCR pixelPoint)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WebMercatorTilingSystem::TileId fromWpixelPointToTileId(DPoint2dCR wpixelPoint, uint8_t zoomLevel)
+WebMercatorModel::TileId fromWpixelPointToTileId(DPoint2dCR wpixelPoint, uint8_t zoomLevel)
     {
     BeAssert(isZoomLevelInRange(zoomLevel));
     Upoint2d xy = fromPixelPointToTileCoordinates(fromWpixelToPixelPoint(wpixelPoint, zoomLevel));
-    WebMercatorTilingSystem::TileId tileid;
+    WebMercatorModel::TileId tileid;
     tileid.column = xy.x;
     tileid.row    = xy.y;
     tileid.zoomLevel =  zoomLevel;
@@ -285,7 +461,7 @@ WebMercatorTilingSystem::TileId fromWpixelPointToTileId(DPoint2dCR wpixelPoint, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint2d fromTileIdToWpixelPoint(WebMercatorTilingSystem::TileId const& tileid)
+DPoint2d fromTileIdToWpixelPoint(WebMercatorModel::TileId const& tileid)
     {
     auto pix = tileid.column * TILE_SIZE;
     auto piy = tileid.row    * TILE_SIZE;
@@ -334,17 +510,22 @@ static double computeGroundResolutionInMeters(uint8_t zoomLevel, double latitude
 struct TextureCache
 {
     struct Entry 
-        {
+    {
         static uint64_t Next() {static uint64_t s_count=0; return ++s_count;}
         mutable uint64_t m_accessed;
         Render::TexturePtr  m_texture;
-        ImageUtilities::RgbImageInfo m_imageInfo;
+        RgbImageInfo m_imageInfo;
         void Accessed() const {m_accessed = Next();}
-        };
+    };
 
+    struct TileSpec
+    {
+        DgnModelId m_model;
+
+    };
     bmap<Utf8String, Entry> m_map;
 
-    void Insert(Utf8StringCR url, ImageUtilities::RgbImageInfo const& info, Render::TextureR texture)
+    void Insert(Utf8StringCR url, RgbImageInfo const& info, Render::TextureR texture)
         {
         Trim();
 
@@ -401,7 +582,7 @@ double WebMercatorUnitConverter::ComputeViewResolutionInMetersPerPixel(DgnViewpo
     DPoint3d cornersWorld[8];
     vp.ViewToWorld(cornersWorld, corners, _countof(cornersWorld));
 
-    double viewDiagInMeters = cornersWorld[0].Distance(cornersWorld[3]); // UORs
+    double viewDiagInMeters = cornersWorld[0].Distance(cornersWorld[3]); // 
     
     return viewDiagInMeters / viewDiagInPixels;                 // meters/pixel
     }
@@ -409,7 +590,7 @@ double WebMercatorUnitConverter::ComputeViewResolutionInMetersPerPixel(DgnViewpo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus projectPointToPlaneInDirection(DPoint3d& pointOnPlane, DPlane3dCR plane, DPoint3dCR pt, DVec3dCR dir)
+static BentleyStatus projectPointToPlaneInDirection(DPoint3dR pointOnPlane, DPlane3dCR plane, DPoint3dCR pt, DVec3dCR dir)
     {
     DRay3d ray;
     ray.origin = pt;
@@ -492,9 +673,9 @@ DPoint2d WebMercatorUnitConverter::ConvertMetersToWpixels(DPoint2dCR pt)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WebMercatorUnitConverter::ComputeTileCorners(DPoint3d* corners, WebMercatorTilingSystem::TileId const& tileid)
+BentleyStatus WebMercatorUnitConverter::ComputeTileCorners(DPoint3d* corners, WebMercatorModel::TileId const& tileid)
     {
-    WebMercatorTilingSystem::TileId t11(tileid);
+    WebMercatorModel::TileId t11(tileid);
     t11.row = t11.column = 1;
     auto t11Wpixels = fromTileIdToWpixelPoint(t11);
     auto tileSizeWpixels = t11Wpixels.x;
@@ -522,7 +703,7 @@ BentleyStatus WebMercatorUnitConverter::ComputeTileCorners(DPoint3d* corners, We
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::TextureP WebMercatorTileDisplay::GetCachedTexture(ImageUtilities::RgbImageInfo& cachedImageInfo, Utf8StringCR url)
+Render::TextureP WebMercatorTileDisplay::GetCachedTexture(RgbImageInfo& cachedImageInfo, Utf8StringCR url)
     {
     auto existingTexture = s_textureCache.Get(url);
     if (existingTexture == nullptr)
@@ -536,18 +717,18 @@ Render::TextureP WebMercatorTileDisplay::GetCachedTexture(ImageUtilities::RgbIma
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::TexturePtr WebMercatorTileDisplay::DefineTexture(ByteStream const& rgbData, ImageUtilities::RgbImageInfo const& imageInfo, SceneContextR context)
+Render::TexturePtr WebMercatorTileDisplay::DefineTexture(ByteStream const& rgbData, RgbImageInfo const& imageInfo, SceneContextR context)
     {
-    BeAssert(!imageInfo.isBGR);
+    BeAssert(!imageInfo.m_isBGR);
     
-    Render::ImagePtr image = new Render::Image(imageInfo.width, imageInfo.height, imageInfo.hasAlpha ? Render::Image::Format::Rgba : Render::Image::Format::Rgb, rgbData.GetData(), rgbData.GetSize());
+    Render::ImagePtr image = new Render::Image(imageInfo.m_width, imageInfo.m_height, imageInfo.m_hasAlpha ? Render::Image::Format::Rgba : Render::Image::Format::Rgb, rgbData.GetData(), rgbData.GetSize());
     return context.GetTargetR().CreateTileSection(*image, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorTileDisplay::CacheTexture(Utf8StringCR url, Render::TextureR textureId, ImageUtilities::RgbImageInfo const& imageInfo)
+void WebMercatorTileDisplay::CacheTexture(Utf8StringCR url, Render::TextureR textureId, RgbImageInfo const& imageInfo)
     {
     s_textureCache.Insert(url, imageInfo, textureId);
     }
@@ -555,7 +736,7 @@ void WebMercatorTileDisplay::CacheTexture(Utf8StringCR url, Render::TextureR tex
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorTileDisplay::DrawTile(ViewContextR context, WebMercatorTilingSystem::TileId const& tileid, ImageUtilities::RgbImageInfo const& imageInfo, Render::TextureR texture)
+void WebMercatorTileDisplay::DrawTile(ViewContextR context, WebMercatorModel::TileId const& tileid, RgbImageInfo const& imageInfo, Render::TextureR texture)
     {
     // Get 4 corners in this order:
     //  [0]     [1]
@@ -564,7 +745,7 @@ void WebMercatorTileDisplay::DrawTile(ViewContextR context, WebMercatorTilingSys
     DPoint3d uvPts[4];
     m_converter.ComputeTileCorners(uvPts, tileid);
 
-    if (!imageInfo.isTopDown)
+    if (!imageInfo.m_isTopDown)
         {
         std::swap(uvPts[0], uvPts[2]);
         std::swap(uvPts[1], uvPts[3]);
@@ -605,12 +786,11 @@ void WebMercatorTileDisplay::DrawTile(ViewContextR context, WebMercatorTilingSys
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorTileDisplay::DrawAndCacheTile(SceneContextR context, WebMercatorTilingSystem::TileId const& tileid, Utf8StringCR url, TiledRaster& realityData)
+void WebMercatorTileDisplay::DrawAndCacheTile(SceneContextR context, WebMercatorModel::TileId const& tileid, Utf8StringCR url, TiledRaster& realityData)
     {
     auto const& data = realityData.GetData();
-    auto const& expectedImageInfo = realityData.GetImageInfo();
-    ImageUtilities::RgbImageInfo actualImageInfo = realityData.GetImageInfo();
-    Utf8String contentType = realityData.GetContentType();
+    RgbImageInfo actualImageInfo = realityData.GetImageInfo();
+    Utf8String const& contentType = realityData.GetContentType();
     
     BentleyStatus status;
 
@@ -618,13 +798,13 @@ void WebMercatorTileDisplay::DrawAndCacheTile(SceneContextR context, WebMercator
 
     if (contentType.Equals("image/png"))
         {
-        status = ImageUtilities::ReadImageFromPngBuffer(m_rgbBuffer, actualImageInfo, data.GetData(), data.GetSize());
+        status = actualImageInfo.ReadImageFromPngBuffer(m_rgbBuffer, data.GetData(), data.GetSize());
         if (SUCCESS != status)
             LOG.warningv("Invalid png image data: %s", url.c_str());
         }
     else if (contentType.Equals("image/jpeg"))
         {
-        status = ImageUtilities::ReadImageFromJpgBuffer(m_rgbBuffer, actualImageInfo, data.GetData(), data.GetSize(), expectedImageInfo);
+        status = actualImageInfo.ReadImageFromJpgBuffer(m_rgbBuffer, data.GetData(), data.GetSize());
         if (SUCCESS != status)
             LOG.warningv("Invalid jpeg image data: %s", url.c_str());
         }
@@ -647,7 +827,7 @@ void WebMercatorTileDisplay::DrawAndCacheTile(SceneContextR context, WebMercator
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 #ifdef WEBMERCATOR_DEBUG_TILES
-void WebMercatorTileDisplay::DrawTileAsBox(ViewContextR context, WebMercatorTilingSystem::TileId const& tileid, double z, bool filled)
+void WebMercatorTileDisplay::DrawTileAsBox(ViewContextR context, WebMercatorModel::TileId const& tileid, double z, bool filled)
     {
     DPoint3d uvPts[4];
     m_converter.ComputeTileCorners(uvPts, tileid);
@@ -677,7 +857,7 @@ void WebMercatorTileDisplay::DrawTileAsBox(ViewContextR context, WebMercatorTili
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorTileDisplay::DrawMissingTile(ViewContextR context, WebMercatorTilingSystem::TileId const& tileid)
+void WebMercatorTileDisplay::DrawMissingTile(ViewContextR context, WebMercatorModel::TileId const& tileid)
     {
 #ifdef WEBMERCATOR_DEBUG_TILES
     RgbColorDef color = {100,100,100};
@@ -746,15 +926,15 @@ static void drawText(ViewContextR context, DPoint3dCR ptUl, Utf8StringCR strings
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WebMercatorTilingSystem::GetOptimalZoomLevelForView(uint8_t& zoomLevel, DgnViewportR vp, WebMercatorUnitConverter& converter, bool preferFinerResolution)
+BentleyStatus WebMercatorUnitConverter::GetOptimalZoomLevelForView(uint8_t& zoomLevel, DgnViewportR vp, bool preferFinerResolution)
     {
     // Get the number of meters / screen pixel that we are showing in the view
-    double viewResolution = converter.ComputeViewResolutionInMetersPerPixel(vp); 
+    double viewResolution = ComputeViewResolutionInMetersPerPixel(vp); 
 
     // Return the zoom level that has about the same "ground resolution", which is defined as meters / pixel.
     for (uint8_t i=0; i<=MAX_ZOOM_LEVEL; ++i)
         {
-        double gr = converter.ComputeGroundResolutionInMeters(i);
+        double gr = ComputeGroundResolutionInMeters(i);
         if (BeNumerical::Compare(gr, viewResolution) <= 0)
             {
             zoomLevel = i;
@@ -772,9 +952,9 @@ BentleyStatus WebMercatorTilingSystem::GetOptimalZoomLevelForView(uint8_t& zoomL
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WebMercatorTilingSystem::GetTileIdsForView(bvector<TileId>& tileids, uint8_t zoomLevel, DgnViewportR vp, WebMercatorUnitConverter& converter)
+BentleyStatus WebMercatorUnitConverter::GetTileIdsForView(bvector<WebMercatorModel::TileId>& tileids, uint8_t zoomLevel, DgnViewportR vp)
     {
-    auto const& vc = vp.GetViewController();
+    ViewControllerCR vc = vp.GetViewController();
 
     // Get upper left and lower right of view in WebMercator "world coordinates" (i.e., pixels at zoomLevel 0)
     // NB: The origin of the WebMercator tiling system is in the upper left.
@@ -807,23 +987,23 @@ BentleyStatus WebMercatorTilingSystem::GetTileIdsForView(bvector<TileId>& tileid
         ulptxy.y = std::max(llptxy.y, urptxy.y);
         lrptxy.y = std::min(llptxy.y, urptxy.y);
 
-        ul = converter.ConvertMetersToWpixels(ulptxy);
-        lr = converter.ConvertMetersToWpixels(lrptxy);
+        ul = ConvertMetersToWpixels(ulptxy);
+        lr = ConvertMetersToWpixels(lrptxy);
         }
 
     // Get tileids of upper left and lower right
     clampWpixelPoint(ul);
     clampWpixelPoint(lr);
 
-    WebMercatorTilingSystem::TileId ultileid = fromWpixelPointToTileId(ul, zoomLevel);
-    WebMercatorTilingSystem::TileId lrtileid = fromWpixelPointToTileId(lr, zoomLevel);
+    WebMercatorModel::TileId ultileid = fromWpixelPointToTileId(ul, zoomLevel);
+    WebMercatorModel::TileId lrtileid = fromWpixelPointToTileId(lr, zoomLevel);
 
     // Get tileids of all tiles in the rectangular area
     for (auto row = ultileid.row; row <= lrtileid.row; ++row)
         {
         for (auto col = ultileid.column; col <= lrtileid.column; ++col)
             {
-            WebMercatorTilingSystem::TileId tid;
+            WebMercatorModel::TileId tid;
             tid.zoomLevel = zoomLevel;
             tid.column = col;
             tid.row = row;
@@ -858,14 +1038,14 @@ static bool shouldDraw(ViewContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WebMercatorDisplay::DrawSubstituteTilesFinerFromTextureCache(ViewContextR context, WebMercatorTilingSystem::TileId const& tileid, uint32_t maxLevelsToTry)
+BentleyStatus WebMercatorDisplay::DrawSubstituteTilesFinerFromTextureCache(ViewContextR context, WebMercatorModel::TileId const& tileid, uint32_t maxLevelsToTry)
     {
-    if (tileid.zoomLevel >= WebMercatorTilingSystem::MAX_ZOOM_LEVEL)
+    if (tileid.zoomLevel >= MAX_ZOOM_LEVEL)
         return BSIERROR;
 
     // Get tiles at the next finer resolution to fill in the space defined by the specified tileid
 
-    WebMercatorTilingSystem::TileId finerUlTileid(tileid); // The tile in the upper left corner of the tile that we need to fill.
+    WebMercatorModel::TileId finerUlTileid(tileid); // The tile in the upper left corner of the tile that we need to fill.
     ++finerUlTileid.zoomLevel;
     finerUlTileid.row <<= 1;
     finerUlTileid.column <<= 1;
@@ -874,12 +1054,12 @@ BentleyStatus WebMercatorDisplay::DrawSubstituteTilesFinerFromTextureCache(ViewC
         {
         for (uint32_t col=0; col < 2; ++col)
             {
-            WebMercatorTilingSystem::TileId finerTileid(finerUlTileid);
+            WebMercatorModel::TileId finerTileid(finerUlTileid);
             finerTileid.column += col;
             finerTileid.row += row;
 
             Utf8String finerUrl;
-            ImageUtilities::RgbImageInfo finerImageInfo;
+            RgbImageInfo finerImageInfo;
             if (m_model._CreateUrl(finerUrl, finerImageInfo, finerTileid) != BSISUCCESS)
                 continue;
 
@@ -927,7 +1107,7 @@ BentleyStatus WebMercatorDisplay::DrawCoarserTilesForViewFromTextureCache(ViewCo
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 #ifdef WEBMERCATOR_DEBUG_TILES
-void WebMercatorTileDisplay::DrawTileDebugInfo(ViewContextR context, WebMercatorTilingSystem::TileId const& tileid)
+void WebMercatorTileDisplay::DrawTileDebugInfo(ViewContextR context, WebMercatorModel::TileId const& tileid)
     {
     DPoint3d corners[4];
     m_converter.ComputeTileCorners(corners, tileid); // corners[0] is upper left
@@ -955,9 +1135,9 @@ void WebMercatorTileDisplay::DrawTileDebugInfo(ViewContextR context, WebMercator
 BentleyStatus WebMercatorDisplay::GetCachedTiles(bvector<TileDisplayImageData>& tileDisplayImageData, bool& allFoundInTextureCache, uint8_t zoomLevel, ViewContextR context)
     {
     allFoundInTextureCache = true;
-    bvector<WebMercatorTilingSystem::TileId> tileIds;
+    bvector<WebMercatorModel::TileId> tileIds;
     
-    if (WebMercatorTilingSystem::GetTileIdsForView(tileIds, zoomLevel, *context.GetViewport(), m_helper.m_converter) != BSISUCCESS)
+    if (m_helper.m_converter.GetTileIdsForView(tileIds, zoomLevel, *context.GetViewport()) != BSISUCCESS)
         return BSIERROR; // we get an error if the ground is not in the view at all. In that case, there are no tiles to draw.
 
     for (auto tileid  : tileIds)
@@ -1017,7 +1197,7 @@ void WebMercatorDisplay::DrawView(ViewContextR context)
     //
     //  Decide what zoom level we should use for a view of this size.
     //
-    if (WebMercatorTilingSystem::GetOptimalZoomLevelForView(m_optimalZoomLevel, *context.GetViewport(), m_helper.m_converter, m_preferFinerResolution) != BSISUCCESS)
+    if (m_helper.m_converter.GetOptimalZoomLevelForView(m_optimalZoomLevel, *context.GetViewport(), m_preferFinerResolution) != BSISUCCESS)
         return;
 
 #ifdef WIP_REALITY_DATACACHE
@@ -1106,7 +1286,7 @@ ProgressiveTask::Completion WebMercatorDisplay::_DoProgressive(SceneContextR con
         m_missingTilesToBeRequested.pop_back();
         
         Utf8String url;
-        ImageUtilities::RgbImageInfo expectedImageInfo;
+        RgbImageInfo expectedImageInfo;
         m_model._CreateUrl(url, expectedImageInfo, tileid);
         RefCountedPtr<TiledRaster> realityData;
         if (RealityDataCacheResult::Success == T_HOST.GetRealityDataAdmin().GetCache().Get<TiledRaster>(realityData, url.c_str(), *TiledRaster::RequestOptions::Create(expectedImageInfo)))
@@ -1245,7 +1425,7 @@ static Utf8String getBingToken()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String StreetMapModelHandler::CreateBingUrl(WebMercatorTilingSystem::TileId const& tileid)
+Utf8String StreetMapModelHandler::CreateBingUrl(WebMercatorModel::TileId const& tileid)
     {
     Utf8String bingURL = "http://";
 
@@ -1271,7 +1451,7 @@ Utf8String StreetMapModelHandler::CreateBingUrl(WebMercatorTilingSystem::TileId 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String StreetMapModelHandler::CreateGoogleMapsUrl(WebMercatorTilingSystem::TileId const& tileid)
+Utf8String StreetMapModelHandler::CreateGoogleMapsUrl(WebMercatorModel::TileId const& tileid)
     {
     // *** WIP_WEBMERCATOR We must append an API key -- need to get one.
     // *** WIP_WEBMERCATOR m_mapType
@@ -1283,7 +1463,7 @@ Utf8String StreetMapModelHandler::CreateGoogleMapsUrl(WebMercatorTilingSystem::T
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String StreetMapModel::CreateOsmUrl(WebMercatorTilingSystem::TileId const& tileid) const
+Utf8String StreetMapModel::CreateOsmUrl(WebMercatorModel::TileId const& tileid) const
     {
     Utf8String url;
 
@@ -1303,7 +1483,7 @@ Utf8String StreetMapModel::CreateOsmUrl(WebMercatorTilingSystem::TileId const& t
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String StreetMapModel::CreateMapBoxUrl(WebMercatorTilingSystem::TileId const& tileid) const
+Utf8String StreetMapModel::CreateMapBoxUrl(WebMercatorModel::TileId const& tileid) const
     {
     Utf8String url;
 
@@ -1335,7 +1515,7 @@ Utf8String StreetMapModel::CreateMapBoxUrl(WebMercatorTilingSystem::TileId const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool StreetMapModel::_ShouldRejectTile(WebMercatorTilingSystem::TileId const& tileid, Utf8StringCR url, TiledRaster& realityData) const
+bool StreetMapModel::_ShouldRejectTile(WebMercatorModel::TileId const& tileid, Utf8StringCR url, TiledRaster& realityData) const
     {
     if (m_mercator.m_mapService[0] != '0' || m_mercator.m_mapType[0] != '1')
         return false;
@@ -1374,13 +1554,13 @@ bool StreetMapModel::_ShouldRejectTile(WebMercatorTilingSystem::TileId const& ti
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus StreetMapModel::_CreateUrl(Utf8StringR url, ImageUtilities::RgbImageInfo& expectedImageInfo, WebMercatorTilingSystem::TileId const& tileid) const
+BentleyStatus StreetMapModel::_CreateUrl(Utf8StringR url, RgbImageInfo& expectedImageInfo, WebMercatorModel::TileId const& tileid) const
     {
     // The usual image format info
-    expectedImageInfo.height = expectedImageInfo.width = 256;
-    expectedImageInfo.hasAlpha = false;
-    expectedImageInfo.isBGR = false;
-    expectedImageInfo.isTopDown = true;
+    expectedImageInfo.m_height = expectedImageInfo.m_width = 256;
+    expectedImageInfo.m_hasAlpha = false;
+    expectedImageInfo.m_isBGR = false;
+    expectedImageInfo.m_isTopDown = true;
 
     if (m_mercator.m_mapService.empty())
         {
@@ -1790,31 +1970,31 @@ BentleyStatus TiledRaster::_Persist(BeSQLite::Db& db, BeMutex& cs) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String TiledRaster::SerializeRasterInfo(ImageUtilities::RgbImageInfo const& info)
+Utf8String TiledRaster::SerializeRasterInfo(RgbImageInfo const& info)
     {
     Json::Value json;
-    json["hasAlpha"] = info.hasAlpha;
-    json["height"] = info.height;
-    json["width"] = info.width;
-    json["isBGR"] = info.isBGR;
-    json["isTopDown"] = info.isTopDown;
+    json["hasAlpha"] = info.m_hasAlpha;
+    json["height"] = info.m_height;
+    json["width"] = info.m_width;
+    json["isBGR"] = info.m_isBGR;
+    json["isTopDown"] = info.m_isTopDown;
     return Json::FastWriter::ToString(json);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ImageUtilities::RgbImageInfo TiledRaster::DeserializeRasterInfo(Utf8CP serializedJson)
+RgbImageInfo TiledRaster::DeserializeRasterInfo(Utf8CP serializedJson)
     {
     Json::Value json;
     Json::Reader reader;
     reader.parse(serializedJson, json);
 
-    ImageUtilities::RgbImageInfo info;
-    info.hasAlpha = json["hasAlpha"].asBool();
-    info.height = json["height"].asInt();
-    info.width = json["width"].asInt();
-    info.isBGR = json["isBGR"].asBool();
-    info.isTopDown = json["isTopDown"].asBool();
+    RgbImageInfo info;
+    info.m_hasAlpha = json["hasAlpha"].asBool();
+    info.m_height = json["height"].asInt();
+    info.m_width = json["width"].asInt();
+    info.m_isBGR = json["isBGR"].asBool();
+    info.m_isTopDown = json["isTopDown"].asBool();
     return info;
     }
