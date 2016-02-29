@@ -16,13 +16,13 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ECDbProfileUpgrader
     {
 private:
-    virtual SchemaVersion _GetTargetVersion () const = 0;
-    virtual DbResult _Upgrade (ECDbR ecdb) const = 0;
+    virtual SchemaVersion _GetTargetVersion() const = 0;
+    virtual DbResult _Upgrade(ECDbR) const = 0;
 
-    static DbResult AlterColumnsInView (ECDbR ecdb, Utf8CP viewName, Utf8CP allColumnNamesAfter);
-    static DbResult AlterColumnsInTable (ECDbR ecdb, Utf8CP tableName, Utf8CP newDdlBody, bool recreateIndices, Utf8CP allColumnNamesAfter, Utf8CP matchingColumnNamesWithOldNames);
-    static bool IsView (ECDbCR ecdb, Utf8CP tableOrViewName);
-    static DbResult RetrieveIndexDdlListForTable (std::vector<Utf8String>& indexDdlList, ECDbR ecdb, Utf8CP tableName);
+    static DbResult AlterColumnsInView(ECDbR, Utf8CP viewName, Utf8CP allColumnNamesAfter);
+    static DbResult AlterColumnsInTable(ECDbR, Utf8CP tableName, Utf8CP newDdlBody, bool recreateIndices, Utf8CP allColumnNamesAfter, Utf8CP matchingColumnNamesWithOldNames);
+    static bool IsView(ECDbCR, Utf8CP tableOrViewName);
+    static DbResult RetrieveIndexDdlListForTable(std::vector<Utf8String>& indexDdlList, ECDbR, Utf8CP tableName);
 
 protected:
     //! Drops a table or view
@@ -30,7 +30,7 @@ protected:
     //! @param[in] ecdb ECDb file handle
     //! @param[in] tableOrViewName Name of table / view to be dropped
     //! @return ::BE_SQLITE_OK in case of succes. Error codes otherwise.
-    static DbResult DropTableOrView (ECDbR ecdb, Utf8CP tableOrViewName);
+    static DbResult DropTableOrView(ECDbR ecdb, Utf8CP tableOrViewName);
 
     //! Modifies column(s) in a table.
     //! If tableName refers to an empty view, the empty view is modified.
@@ -47,12 +47,12 @@ protected:
     //! @param[in] matchingColumnNamesWithOldNames Comma-separated list of the same columns as in @p allColumnNamesAfter but with their names before the modification.
     //!               Pass nullptr if the modifications don't include a column rename.
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise.
-    static DbResult AlterColumns (ECDbR ecdb, Utf8CP tableName, Utf8CP newDdlBody, bool recreateIndices, Utf8CP allColumnNamesAfter, Utf8CP matchingColumnNamesWithOldNames = nullptr);
+    static DbResult AlterColumns(ECDbR ecdb, Utf8CP tableName, Utf8CP newDdlBody, bool recreateIndices, Utf8CP allColumnNamesAfter, Utf8CP matchingColumnNamesWithOldNames = nullptr);
 
 public:
-    virtual ~ECDbProfileUpgrader () {}
-    SchemaVersion GetTargetVersion () const;
-    DbResult Upgrade (ECDbR ecdb) const;
+    virtual ~ECDbProfileUpgrader() {}
+    SchemaVersion GetTargetVersion() const { return _GetTargetVersion(); }
+    DbResult Upgrade(ECDbR ecdb) const { return _Upgrade(ecdb); }
     };
 
 //=======================================================================================
@@ -63,7 +63,18 @@ struct ECDbProfileUpgrader_3001 : ECDbProfileUpgrader
 //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
 private:
     virtual SchemaVersion _GetTargetVersion() const override { return SchemaVersion(3, 0, 0, 1); }
-    virtual DbResult _Upgrade(ECDbR ecdb) const override;
+    virtual DbResult _Upgrade(ECDbR) const override;
+    };
+
+//=======================================================================================
+// @bsiclass                                                 Krischan.Eberle      02/2016
+//+===============+===============+===============+===============+===============+======
+struct ECDbProfileUpgrader_3100 : ECDbProfileUpgrader
+    {
+//intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
+private:
+    virtual SchemaVersion _GetTargetVersion() const override { return SchemaVersion(3, 1, 0, 0); }
+    virtual DbResult _Upgrade(ECDbR) const override;
     };
 
 //=======================================================================================
@@ -74,16 +85,16 @@ struct ECDbProfileECSchemaUpgrader
 private:
     static ECN::SchemaKey s_ecdbfileinfoSchemaKey; // cannot be const as schema location modifies the checksum in the key (which is not relevant for us)
 
-    ECDbProfileECSchemaUpgrader ();
-    ~ECDbProfileECSchemaUpgrader ();
+    ECDbProfileECSchemaUpgrader();
+    ~ECDbProfileECSchemaUpgrader();
 
-    static Utf8CP GetECDbSystemECSchemaXml ();
+    static Utf8CP GetECDbSystemECSchemaXml();
 
-    static BentleyStatus ReadECDbSystemSchema (ECN::ECSchemaReadContextR readContext, Utf8CP ecdbFileName);
-    static BentleyStatus ReadECDbFileInfoSchema (ECN::ECSchemaReadContextR readContext, Utf8CP ecdbFileName);
+    static BentleyStatus ReadECDbSystemSchema(ECN::ECSchemaReadContextR readContext, Utf8CP ecdbFileName);
+    static BentleyStatus ReadECDbFileInfoSchema(ECN::ECSchemaReadContextR readContext, Utf8CP ecdbFileName);
 
 public:
-    static DbResult ImportProfileSchemas (ECDbR ecdb);
+    static DbResult ImportProfileSchemas(ECDbCR);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

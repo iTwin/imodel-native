@@ -34,7 +34,11 @@ bool UserECDbMapStrategy::IsValid() const
         {
             case Strategy::None:
             {
-            return !m_appliesToSubclasses && !Enum::Contains(m_options, invalidOptions1) && !Enum::Contains(m_options, invalidOptions2) && !Enum::Contains(m_options, invalidOptions3);
+            bool isValid = !m_appliesToSubclasses && !Enum::Contains(m_options, invalidOptions1) && !Enum::Contains(m_options, invalidOptions2) && !Enum::Contains(m_options, invalidOptions3);
+            if (!isValid)
+                return false;
+
+            return m_minimumSharedColumnCount == ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT || Enum::Intersects(m_options, Options::SharedColumns | Options::SharedColumnsForSubclasses);
             }
             case Strategy::SharedTable:
             {
@@ -48,11 +52,11 @@ bool UserECDbMapStrategy::IsValid() const
             }
 
             case Strategy::ExistingTable:
-                return !m_appliesToSubclasses && m_options == Options::None;
+                return !m_appliesToSubclasses && m_options == Options::None && m_minimumSharedColumnCount == ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT;
 
             default:
                 //these strategies must not have any options
-                return m_options == Options::None;
+                return m_options == Options::None && m_minimumSharedColumnCount == ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT;
         }
     }
 
@@ -252,12 +256,12 @@ BentleyStatus ECDbMapStrategy::Assign(UserECDbMapStrategy const& userStrategy)
     m_options = Options::None;
     if (Enum::Contains(userOptions, UserECDbMapStrategy::Options::SharedColumns))
         m_options = Enum::Or(m_options, Options::SharedColumns);
-    
+
     if (Enum::Contains(userOptions, UserECDbMapStrategy::Options::JoinedTablePerDirectSubclass))
         m_options = Enum::Or(m_options, Options::ParentOfJoinedTable);
 
-    m_minimumSharedColumnCount = userStrategy.GetMinimumSharedColumnCount();
-
+    //MinimumSharedColumnCount is not directly taken over into the effective map strategy. It is handled
+    //expliclity when evaluating the class map info
     if (!IsValid())
         return ERROR;
 
@@ -299,7 +303,11 @@ bool ECDbMapStrategy::IsValid() const
 
             const Options validOptions1 = Enum::Or(Options::SharedColumns, Options::JoinedTable);
             const Options validOptions2 = Enum::Or(Options::SharedColumns, Options::ParentOfJoinedTable);
-            return m_options == Options::None || Enum::Contains(validOptions1, m_options) || Enum::Contains(validOptions2, m_options);
+            bool isValid = m_options == Options::None || Enum::Contains(validOptions1, m_options) || Enum::Contains(validOptions2, m_options);
+            if (!isValid)
+                return false;
+
+            return Enum::Contains(m_options, Options::SharedColumns) || m_minimumSharedColumnCount == ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT;
             }
 
             default:

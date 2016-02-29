@@ -1353,7 +1353,8 @@ BentleyStatus ECDbMapAnalyser::BuildPolymorphicUpdateTrigger (Class& nclass)
         for (PropertyMapSet::EndPoint const* rootE : rootEndPoints)
             {
             PropertyMapSet::EndPoint const* childE = childPMS->GetEndPointByAccessString(rootE->GetAccessString().c_str());
-            if (rootE->GetColumnKind() != ColumnKind::DataColumn)
+            ColumnKind rootEColKind = rootE->GetColumnKind();
+            if (rootEColKind != ColumnKind::DataColumn && rootEColKind != ColumnKind::SharedDataColumn)
                 continue;
 
             if (!isFirstSetExpr)

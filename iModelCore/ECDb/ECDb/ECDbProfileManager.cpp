@@ -114,7 +114,7 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
     StopWatch timer(true);
 
     SchemaVersion actualProfileVersion(0, 0, 0, 0);
-    auto stat = ReadProfileVersion(actualProfileVersion, ecdb, *ecdb.GetDefaultTransaction());
+    DbResult stat = ReadProfileVersion(actualProfileVersion, ecdb, *ecdb.GetDefaultTransaction());
     if (stat != BE_SQLITE_OK)
         return stat;       //File is no ECDb file, i.e. doesn't have the ECDb profile
 
@@ -138,7 +138,7 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
     //enforcement is disabled). When the context goes out of scope its destructor automatically performs the clean-up so that the ECDb file is
     //in the same state as before the upgrade.
     ProfileUpgradeContext context(ecdb, *ecdb.GetDefaultTransaction()); //also commits the transaction (if active) right now
-    if (context.GetBeginTransError() == BE_SQLITE_BUSY)
+    if (BE_SQLITE_BUSY == context.GetBeginTransError())
         return BE_SQLITE_BUSY;
 
     //Call upgrader sequence and let upgraders incrementally upgrade the profile
@@ -147,14 +147,12 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
     BeAssert(upgraderIterator != GetUpgraderSequence().end() && "Upgrader sequence is not expected to be empty as the profile status is 'requires upgrade'");
     for (;upgraderIterator != GetUpgraderSequence().end(); ++upgraderIterator)
         {
-        auto const& upgrader = *upgraderIterator;
-        auto stat = upgrader->Upgrade(ecdb);
-        if (stat != BE_SQLITE_OK)
+        std::unique_ptr<ECDbProfileUpgrader> const& upgrader = *upgraderIterator;
+        if (BE_SQLITE_OK != upgrader->Upgrade(ecdb))
             return BE_SQLITE_ERROR_ProfileUpgradeFailed; //context dtor ensures that changes are rolled back
         }
 
-    stat = ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ecdb);
-    if (stat != BE_SQLITE_OK)
+    if (BE_SQLITE_OK != ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ecdb))
         return BE_SQLITE_ERROR_ProfileUpgradeFailed; //context dtor ensures that changes are rolled back
 
     //after upgrade procedure set new profile version in ECDb file
@@ -189,7 +187,7 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
 DbResult ECDbProfileManager::AssignProfileVersion(ECDbR ecdb)
     {
     //Save the profile version as string (JSON format)
-    const auto profileVersionStr = GetExpectedProfileVersion().ToJson();
+    const Utf8String profileVersionStr = GetExpectedProfileVersion().ToJson();
     return ecdb.SavePropertyString(PROFILEVERSION_PROPSPEC, profileVersionStr);
     }
 
@@ -207,18 +205,14 @@ DbResult ECDbProfileManager::AssignProfileVersion(ECDbR ecdb)
         defaultTransaction.Begin();
 
     Utf8String currentVersionString;
-    DbResult stat = BE_SQLITE_OK;
-    if (BE_SQLITE_ROW == ecdb.QueryProperty(currentVersionString, PROFILEVERSION_PROPSPEC))
-        {
-        profileVersion.FromJson(currentVersionString.c_str());
-        }
-    // version entry does not exist. This either means it is ECDb profile 1.0 (because we did not store
+    //if version entry does not exist, this either means it is ECDb profile 1.0 (because we did not store
     // a version entry for profile 1.0 or it isn't an ECDb file at all. In order to tell these we need
     // to check for a typical table of the ECDb profile:
+    DbResult stat = BE_SQLITE_OK;
+    if (BE_SQLITE_ROW == ecdb.QueryProperty(currentVersionString, PROFILEVERSION_PROPSPEC))
+        profileVersion.FromJson(currentVersionString.c_str());
     else if (ecdb.TableExists("ec_Schema"))
-        {
         profileVersion = SchemaVersion(1, 0, 0, 0);
-        }
     else
         //File is no ECDb file
         stat = BE_SQLITE_ERROR_InvalidProfileVersion;
@@ -288,7 +282,9 @@ ECDbProfileManager::ECDbProfileUpgraderSequence const& ECDbProfileManager::GetUp
     {
     if (s_upgraderSequence.empty())
         {
+        //upgraders must be listed in ascending order
         s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3001()));
+        s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3100()));
         }
 
     return s_upgraderSequence;
@@ -564,20 +560,6 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
     if (BE_SQLITE_OK != stat)
         return stat;
 
-#ifdef ENABLE_TRIGGER_DEBUGGING
-    stat = ecdb.ExecuteSql (
-        "CREATE TABLE ec_TriggerLog("
-        "EventId INTEGER PRIMARY KEY AUTOINCREMENT,"
-        "EventTime DOUBLE DEFAULT CURRENT_TIMESTAMP,"
-        "TriggerId TEXT,"
-        "AffectedECInstanceId INTEGER,"
-        "AffectedECClassId INTEGER,"
-        "Scope TEXT,"
-        "Comment TEXT)");
-
-    if (stat != BE_SQLITE_OK)
-        return stat;
-#endif
     return BE_SQLITE_OK;
     }
 
@@ -610,7 +592,7 @@ void ProfileUpgradeContext::DisableForeignKeyEnforcement()
 
     //Need to use TryExecuteSql which calls SQLite directly without any checks (Calling ExecuteSql would
     //check that a transaction is active which we explicity must not have for setting this pragma)
-    auto stat = m_ecdb.TryExecuteSql("PRAGMA foreign_keys = OFF;");
+    auto stat = m_ecdb.TryExecuteSql("PRAGMA foreign_keys=OFF;");
     if (stat != BE_SQLITE_OK)
         {
         LOG.error("ECDb profile upgrade: Disabling foreign key enforcement in SQLite failed.");
@@ -633,7 +615,7 @@ void ProfileUpgradeContext::EnableForeignKeyEnforcement() const
 
     //Need to use TryExecuteSql which calls SQLite directly without any checks (Calling ExecuteSql would
     //check that a transaction is active which we explicity must not have for setting this pragma)
-    auto stat = m_ecdb.TryExecuteSql("PRAGMA foreign_keys = ON;");
+    auto stat = m_ecdb.TryExecuteSql("PRAGMA foreign_keys=ON;");
     if (stat != BE_SQLITE_OK)
         {
         LOG.error("ECDb profile upgrade: Re-enabling foreign key enforcement in SQLite failed.");
