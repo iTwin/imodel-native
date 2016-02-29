@@ -204,6 +204,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR);
 
     virtual void _CreateScene(SceneContextR context) {_DrawView(context);}
+    virtual void _CreateTerrain(TerrainContextR context) {}
     virtual bool _IsSceneReady() const {return false;}
     virtual void _InvalidateScene() {}
 

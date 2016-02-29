@@ -162,6 +162,7 @@ protected:
     DMap4d CalcNpcToView();
     void QueueDrawFrame();
     void CalcTargetNumElements(UpdatePlan const& plan, bool isForProgressive);
+    void CreateTerrain(UpdatePlan const& plan);
     StatusInt CreateScene(UpdatePlan const& plan);
     DGNPLATFORM_EXPORT void SaveViewUndo();
 
@@ -205,7 +206,7 @@ public:
     bool Allow3dManipulations() const {return m_viewController->Allow3dManipulations();}
     void DrawToolGraphics(ViewContextR context, bool isPreUpdate);
     void SetViewCmdTargetCenter(DPoint3dCP newCenter);
-    DPoint3dCP GetViewCmdTargetCenter() {return !m_sync.IsValidRotatePoint() ? &m_viewCmdTargetCenter : nullptr;}
+    DPoint3dCP GetViewCmdTargetCenter() {return m_sync.IsValidRotatePoint() ? &m_viewCmdTargetCenter : nullptr;}
     Point2d GetScreenOrigin() const {return m_renderTarget->GetScreenOrigin();}
     DGNVIEW_EXPORT double PixelsFromInches(double inches) const;
     DGNVIEW_EXPORT void ForceHeal();

@@ -571,6 +571,11 @@ private:
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement, bool isForUpdate);
     template<class T> void CallAppData(T const& caller) const;
 
+    DGNPLATFORM_EXPORT void LoadUserProperties() const;
+    void UnloadUserProperties() const;
+    DgnDbStatus SaveUserProperties() const;
+    void CopyUserProperties(DgnElementCR other);
+
 protected:
     //! @private
     struct Flags
@@ -591,6 +596,8 @@ protected:
     DgnClassId      m_classId;
     DgnCode         m_code;
     Utf8String      m_label;
+    mutable ECN::AdHocJsonValueP m_userProperties;
+
     mutable Flags   m_flags;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
@@ -815,8 +822,6 @@ protected:
     virtual DgnElementCP _ToDgnElement() const override final {return this;}
     virtual DgnDbR _GetDgnDb() const override final {return m_dgndb;}
     virtual GeometrySourceCP _ToGeometrySource() const {return nullptr;}
-    virtual SpatialElementCP _ToSpatialElement() const {return nullptr;}
-    virtual PhysicalElementCP _ToPhysicalElement() const {return nullptr;}
     virtual AnnotationElement2dCP _ToAnnotationElement2d() const {return nullptr;}
     virtual DrawingGraphicCP _ToDrawingGraphic() const {return nullptr;}
     virtual DefinitionElementCP _ToDefinitionElement() const {return nullptr;}
@@ -854,8 +859,6 @@ public:
 
     DefinitionElementCP ToDefinitionElement() const {return _ToDefinitionElement();}    //!< more efficient substitute for dynamic_cast<DefinitionElementCP>(el)
     DictionaryElementCP ToDictionaryElement() const {return _ToDictionaryElement();}    //!< more efficient substitute for dynamic_cast<DictionaryElementCP>(el)
-    SpatialElementCP ToSpatialElement() const {return _ToSpatialElement();}             //!< more efficient substitute for dynamic_cast<SpatialElementCP>(el)
-    PhysicalElementCP ToPhysicalElement() const {return _ToPhysicalElement();}          //!< more efficient substitute for dynamic_cast<PhysicalElementCP>(el)
     AnnotationElement2dCP ToAnnotationElement2d() const {return _ToAnnotationElement2d();} //!< more efficient substitute for dynamic_cast<AnnotationElement2dCP>(el)
     DrawingGraphicCP ToDrawingGraphic() const {return _ToDrawingGraphic();}             //!< more efficient substitute for dynamic_cast<DrawingGraphicCP>(el)
     IElementGroupCP ToIElementGroup() const {return _ToIElementGroup();}                //!< more efficient substitute for dynamic_cast<IElementGroup>(el)
@@ -866,8 +869,6 @@ public:
 
     DefinitionElementP ToDefinitionElementP() {return const_cast<DefinitionElementP>(_ToDefinitionElement());}  //!< more efficient substitute for dynamic_cast<DefinitionElementP>(el)
     DictionaryElementP ToDictionaryElementP() {return const_cast<DictionaryElementP>(_ToDictionaryElement());}  //!< more efficient substitute for dynamic_cast<DictionaryElementP>(el)
-    SpatialElementP ToSpatialElementP() {return const_cast<SpatialElementP>(_ToSpatialElement());}              //!< more efficient substitute for dynamic_cast<PhysicalElementP>(el)
-    PhysicalElementP ToPhysicalElementP() {return const_cast<PhysicalElementP>(_ToPhysicalElement());}          //!< more efficient substitute for dynamic_cast<PhysicalElementP>(el)
     AnnotationElement2dP ToAnnotationElement2dP() {return const_cast<AnnotationElement2dP>(_ToAnnotationElement2d());} //!< more efficient substitute for dynamic_cast<AnnotationElement2dP>(el)
     DrawingGraphicP ToDrawingGraphicP() {return const_cast<DrawingGraphicP>(_ToDrawingGraphic());}              //!< more efficient substitute for dynamic_cast<DrawingGraphicP>(el)
     //! @}
@@ -1001,6 +1002,12 @@ public:
     //! @note The default implementation returns the label if it is set or the code if the label is not set.
     //! @see GetLabel, GetCode, _GetDisplayLabel
     Utf8String GetDisplayLabel() const {return _GetDisplayLabel();}
+
+    //! Get the (read-only reference to) user properties of this DgnElement
+    ECN::AdHocJsonValueCR GetUserProperties() const {LoadUserProperties(); return *m_userProperties;}
+
+    //! Get the (writable reference to) user properties of this DgnElement
+    ECN::AdHocJsonValueR GetUserPropertiesR() { LoadUserProperties(); return *m_userProperties; }
 
     //! Query the DgnDb for the children of this DgnElement.
     //! @return DgnElementIdSet containing the DgnElementIds of all child elements of this DgnElement. Will be empty if no children.
@@ -1427,7 +1434,7 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE GraphicalElement3d : GeometricElement3d
 {
     DEFINE_T_SUPER(GeometricElement3d);
-public:
+protected:
     explicit GraphicalElement3d(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -1442,8 +1449,6 @@ struct EXPORT_VTABLE_ATTRIBUTE SpatialElement : GeometricElement3d
 {
     DEFINE_T_SUPER(GeometricElement3d);
 protected:
-    SpatialElementCP _ToSpatialElement() const override final {return this;}
-public:
     explicit SpatialElement(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -1457,8 +1462,6 @@ struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : SpatialElement
 {
     DEFINE_T_SUPER(SpatialElement)
 protected:
-    PhysicalElementCP _ToPhysicalElement() const override final {return this;}
-public:
     explicit PhysicalElement(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -1471,7 +1474,7 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE SpatialLocationElement : SpatialElement
 {
     DEFINE_T_SUPER(SpatialElement);
-public:
+protected:
     explicit SpatialLocationElement(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -1483,7 +1486,7 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE GraphicalElement2d : GeometricElement2d
 {
     DEFINE_T_SUPER(GeometricElement2d);
-public:
+protected:
     explicit GraphicalElement2d(CreateParams const& params) : T_Super(params) {}
 };
 
